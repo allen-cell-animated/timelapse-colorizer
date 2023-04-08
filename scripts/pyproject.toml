@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "timelapse-colorizer-data"
+authors = [
+    {name = "", email = "danielt@alleninstitute.org"},
+]
+description = "data prep scripts"
+readme = "README.rst"
+requires-python = ">=3.10"
+keywords = ["one", "two"]
+license = {text = "BSD-3-Clause"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "aicsimageio",
+    "numpy",
+    "pillow",
+]
+dynamic = ["version"]
+
+[project.scripts]
+my-script = "my_package.module:function"
+
+# ... other project metadata fields as specified in:
+#     https://packaging.python.org/en/latest/specifications/declaring-project-metadata/

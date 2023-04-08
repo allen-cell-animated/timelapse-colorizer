@@ -20,6 +20,12 @@ For full package documentation please visit
 
 ## Quick Start
 
+To generate some test data,
+
+cd scripts
+pip install .
+python generate_test_data.py
+
 Describe the most common operations, step by step, that a first time user would want to know, here.
 
 ## Development

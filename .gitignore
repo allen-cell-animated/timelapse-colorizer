@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# python
+.conda
+scripts/build/
+scripts/*.egg-info
+scripts/data/
+
