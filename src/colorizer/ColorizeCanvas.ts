@@ -1,4 +1,4 @@
-import { Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, WebGLRenderer } from "three";
+import { GLSL3, Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, WebGLRenderer } from "three";
 
 import vertexShader from "./shader/colorize.vert";
 import fragmentShader from "./shader/colorize.frag";
@@ -14,10 +14,13 @@ export default class ColorizeCanvas {
   constructor() {
     this.scene = new Scene();
     this.geometry = new PlaneGeometry(2, 2);
-    this.material = new ShaderMaterial({ vertexShader, fragmentShader });
-
-    this.material.depthWrite = false;
-    this.material.depthTest = false;
+    this.material = new ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      depthWrite: false,
+      depthTest: false,
+      glslVersion: GLSL3,
+    });
 
     this.mesh = new Mesh(this.geometry, this.material);
     this.scene.add(this.mesh);
