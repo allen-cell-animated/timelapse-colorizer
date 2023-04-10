@@ -43,22 +43,7 @@ from nuc_morph_analysis.preprocessing.load_data import (
 # NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
 			
 
-def make_dataset(output_dir="./data/", dataset="baby_bear"):
-    os.makedirs(output_dir + dataset, exist_ok=True)
-
-    # use nucmorph to load data
-    datadir, figdir = create_base_directories(dataset)
-    pixsize = get_dataset_pixel_size(dataset)
-    a = load_dataset(dataset, datadir=None)
-
-
-    columns = ["track_id", "index_sequence", "seg_full_zstack_path"] # , "CellID"]
-    b = a[columns]
-
-    # get a single path from each time in the set.
-    frames = b.groupby('index_sequence').apply(lambda df: df.sample(1))
-
-    nframes = len(frames)
+def make_frames(frames, output_dir, dataset, nframes):
     for i in range(nframes):
         zstackpath = frames.iloc[i]["seg_full_zstack_path"]
         if platform.system() == "Windows":
@@ -79,23 +64,50 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
         img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
         img.save(output_dir + dataset + "/frame_" + str(i) + ".png")
 
-    # totalcells = cellsperframe * nframes
 
-    # for i in range(nfeatures):
-    #     # create a fake feature in a random range:
-    #     fmin = 92.1
-    #     fmax = 437.8
-    #     feature = (fmax - fmin) * np.random.random_sample((totalcells,)) + fmin
-    #     true_fmin = np.min(feature)
-    #     true_fmax = np.max(feature)
-    #     js = {"data": feature.tolist(), "min": true_fmin, "max": true_fmax}
-    #     with open(output_dir + dataset + "/feature_" + str(i) + ".json", "w") as f:
-    #         json.dump(js, f)
+def make_features(a, features, output_dir, dataset):
+    nfeatures = len(features)
 
-    nfeatures = 0
+    # TODO check outlier and replace values with NaN or something!
+    outliers = a["is_outlier"].to_numpy()
+
+    for i in range(nfeatures):
+        f = a[features[i]].to_numpy()
+        fmin = np.min(f)
+        fmax = np.max(f)
+        # TODO normalize output range excluding outliers?
+        js = {"data": f.tolist(), "min": fmin, "max": fmax}
+        with open(output_dir + dataset + "/feature_" + str(i) + ".json", "w") as f:
+            json.dump(js, f)
+
+
+def make_dataset(output_dir="./data/", dataset="baby_bear"):
+    os.makedirs(output_dir + dataset, exist_ok=True)
+
+    # use nucmorph to load data
+    datadir, figdir = create_base_directories(dataset)
+    pixsize = get_dataset_pixel_size(dataset)
+
+    # a is the full dataset!
+    a = load_dataset(dataset, datadir=None)
+
+    columns = ["track_id", "index_sequence", "seg_full_zstack_path"] # , "CellID"]
+    b = a[columns]
+
+    # get a single path from each time in the set.
+    frames = b.groupby('index_sequence').apply(lambda df: df.sample(1))
+
+    nframes = len(frames)
+
+    make_frames(frames, output_dir, dataset, nframes)
+
+    features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
+
+    make_features(a, features, output_dir, dataset)
+
     # write some kind of manifest
     featmap = {}
-    for i in range(nfeatures):
+    for i in range(len(features)):
         featmap["feature_" + str(i)] = "feature_" + str(i) + ".json"
     js = {
         "frames": ["frame_" + str(i) + ".png" for i in range(nframes)],
