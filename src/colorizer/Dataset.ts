@@ -4,39 +4,39 @@ type FeatureDataJson = {
   data: number[];
   min: number;
   max: number;
-}
+};
 
 export type FeatureData = {
   data: Float32Array;
   min: number;
   max: number;
-}
+};
 
 type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
-}
+};
 
 type OnProgressType = (event: ProgressEvent<EventTarget>) => void;
 
 export default class Dataset {
   private loader: DataTextureLoader;
-  private frameData: (DataTexture | null)[];
-  public readonly featureData: Record<string, FeatureData>;
+  private frames: (DataTexture | null)[];
+  public readonly features: Record<string, FeatureData>;
 
-  private frames: string[];
-  private features: Record<string, string>;
-  
+  private frameFiles: string[];
+  private featureFiles: Record<string, string>;
+
   public baseUrl: string;
-  
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     this.loader = new DataTextureLoader();
 
+    this.frameFiles = [];
     this.frames = [];
-    this.frameData = [];
+    this.featureFiles = {};
     this.features = {};
-    this.featureData = {};
   }
 
   /**
@@ -56,8 +56,8 @@ export default class Dataset {
   }
 
   private async loadOneFeature(name: string): Promise<void> {
-    const { data, min, max }: FeatureDataJson = await this.fetchJson(this.features[name]);
-    this.featureData[name] = {
+    const { data, min, max }: FeatureDataJson = await this.fetchJson(this.featureFiles[name]);
+    this.features[name] = {
       data: new Float32Array(data),
       min,
       max,
@@ -65,31 +65,31 @@ export default class Dataset {
   }
 
   public getNumberOfFrames(): number {
-    return this.frames.length;
+    return this.frameFiles.length;
   }
 
   public async loadFrame(index: number): Promise<DataTexture | undefined> {
-    if (index < 0 || index >= this.frameData.length) {
+    if (index < 0 || index >= this.frames.length) {
       return undefined;
     }
 
-    const cachedFrame = this.frameData[index];
+    const cachedFrame = this.frames[index];
     if (cachedFrame !== null) {
       return cachedFrame;
     }
 
-    this.frameData[index] = await this.fetchTexture(this.frames[index]);
-    return this.frameData[index]!;
+    this.frames[index] = await this.fetchTexture(this.frameFiles[index]);
+    return this.frames[index]!;
   }
 
   /** Performs initial dataset loading: manifest, features */
   public async open(): Promise<void> {
     const manifest: DatasetManifest = await this.fetchJson("manifest.json");
 
-    this.frames = manifest.frames;
-    this.features = manifest.features;
+    this.frameFiles = manifest.frames;
+    this.featureFiles = manifest.features;
 
-    this.frameData = new Array(this.frames.length).fill(null);
-    await Promise.all(Object.keys(this.features).map(this.loadOneFeature.bind(this)));
+    this.frames = new Array(this.frameFiles.length).fill(null);
+    await Promise.all(Object.keys(this.featureFiles).map(this.loadOneFeature.bind(this)));
   }
 }
