@@ -70,11 +70,14 @@ def make_features(a, features, output_dir, dataset):
 
     # TODO check outlier and replace values with NaN or something!
     outliers = a["is_outlier"].to_numpy()
+    ojs = {"data": outliers.tolist(), "min": False, "max": True}
+    with open(output_dir + dataset + "/outliers.json", "w") as f:
+        json.dump(ojs, f)
 
     for i in range(nfeatures):
         f = a[features[i]].to_numpy()
-        fmin = np.min(f)
-        fmax = np.max(f)
+        fmin = np.nanmin(f)
+        fmax = np.nanmax(f)
         # TODO normalize output range excluding outliers?
         js = {"data": f.tolist(), "min": fmin, "max": fmax}
         with open(output_dir + dataset + "/feature_" + str(i) + ".json", "w") as f:
