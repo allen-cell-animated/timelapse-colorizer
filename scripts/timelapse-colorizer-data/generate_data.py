@@ -1,9 +1,11 @@
 from aicsimageio import AICSImage
 from PIL import Image
+import argparse
 import json
 import numpy as np
 import os
 import platform
+import skimage
 
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
 from nuc_morph_analysis.preprocessing.load_data import (
@@ -44,16 +46,20 @@ from nuc_morph_analysis.preprocessing.load_data import (
 			
 
 def make_frames(frames, output_dir, dataset, nframes):
+    downsample = 1
+
     for i in range(nframes):
         zstackpath = frames.iloc[i]["seg_full_zstack_path"]
         if platform.system() == "Windows":
             zstackpath = "/" + zstackpath
         zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
         seg2d = zstack.max(axis=0)
-        mx = np.max(seg2d)
-        mn = np.min(seg2d[np.nonzero(seg2d)])
-        # mn = np.min(maxproj)
-        # print(mx, mn)
+        mx = np.nanmax(seg2d)
+        mn = np.nanmin(seg2d[np.nonzero(seg2d)])
+
+        # TODO test this
+        if downsample != 1:
+            seg2d = skimage.transform.rescale(seg2d, downsample, anti_aliasing=False, order=0)
 
         # convert data to RGBA
         seg_rgba = np.zeros((seg2d.shape[0], seg2d.shape[1], 4), dtype=np.uint8)
@@ -120,9 +126,9 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
         json.dump(js, f)
 
 
-def main():
-    make_dataset()
-
-
+parser = argparse.ArgumentParser()
+parser.add_argument("--output_dir", type=str, default="./data/")
+parser.add_argument("--dataset", type=str, default="baby_bear")
+args = parser.parse_args()
 if __name__ == "__main__":
-    main()
+    make_dataset(output_dir=args.output_dir, dataset=args.dataset)
