@@ -12,6 +12,10 @@ from nuc_morph_analysis.preprocessing.load_data import (
     load_dataset,
     get_dataset_pixel_size)
 
+# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear
+# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
+# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks
+
 # DATASET SPEC:
 # manifest.json:
 #   frames: [frame_0.png, frame_1.png, ...]
@@ -74,10 +78,11 @@ def make_frames(frames, output_dir, dataset, nframes):
 def make_features(a, features, output_dir, dataset):
     nfeatures = len(features)
 
+    outpath = os.path.join(output_dir, dataset)
     # TODO check outlier and replace values with NaN or something!
     outliers = a["is_outlier"].to_numpy()
     ojs = {"data": outliers.tolist(), "min": False, "max": True}
-    with open(output_dir + dataset + "/outliers.json", "w") as f:
+    with open(outpath + "/outliers.json", "w") as f:
         json.dump(ojs, f)
 
     for i in range(nfeatures):
@@ -86,12 +91,12 @@ def make_features(a, features, output_dir, dataset):
         fmax = np.nanmax(f)
         # TODO normalize output range excluding outliers?
         js = {"data": f.tolist(), "min": fmin, "max": fmax}
-        with open(output_dir + dataset + "/feature_" + str(i) + ".json", "w") as f:
+        with open(outpath + "/feature_" + str(i) + ".json", "w") as f:
             json.dump(js, f)
 
 
 def make_dataset(output_dir="./data/", dataset="baby_bear"):
-    os.makedirs(output_dir + dataset, exist_ok=True)
+    os.makedirs(os.path.join(output_dir, dataset), exist_ok=True)
 
     # use nucmorph to load data
     datadir, figdir = create_base_directories(dataset)
@@ -122,7 +127,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
         "frames": ["frame_" + str(i) + ".png" for i in range(nframes)],
         "features": featmap,
     }
-    with open(output_dir + dataset + "/manifest.json", "w") as f:
+    with open(os.path.join(output_dir, dataset) + "/manifest.json", "w") as f:
         json.dump(js, f)
 
 
