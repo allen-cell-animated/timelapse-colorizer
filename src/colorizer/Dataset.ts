@@ -1,16 +1,10 @@
-import { DataTexture, FloatType, RedFormat, RedIntegerFormat, UnsignedIntType } from "three";
+import { DataTexture, IntType, RedIntegerFormat } from "three";
 
-import { IFeatureLoader, IFrameLoader } from "./loader/ILoader";
+import { FeatureData, IFeatureLoader, IFrameLoader } from "./loader/ILoader";
 import ImageFrameLoader from "./loader/ImageFrameLoader";
 import JsonFeatureLoader from "./loader/JsonFeatureLoader";
 
 import FrameCache from "./FrameCache";
-
-type FeatureData = {
-  data: DataTexture;
-  min: number;
-  max: number;
-};
 
 type DatasetManifest = {
   frames: string[];
@@ -54,15 +48,11 @@ export default class Dataset {
 
   private async loadFeature(name: string): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
-    const { data, min, max } = await this.featureLoader.load(url);
-    const dataTex = new DataTexture(data, data.length, 1, RedFormat, FloatType);
-    dataTex.internalFormat = "R32F";
-    dataTex.needsUpdate = true;
-    this.features[name] = { data: dataTex, min, max };
+    this.features[name] = await this.featureLoader.load(url);
   }
 
   public get numberOfFrames(): number {
-    return this.frameFiles.length;
+    return this.frames?.length || 0;
   }
 
   public get featureNames(): string[] {
@@ -81,8 +71,8 @@ export default class Dataset {
 
     const fullUrl = this.resolveUrl(this.frameFiles[index]);
     const { data, width, height } = await this.frameLoader.load(fullUrl);
-    const loadedFrame = new DataTexture(data, width, height, RedIntegerFormat, UnsignedIntType);
-    loadedFrame.internalFormat = "R32UI";
+    const loadedFrame = new DataTexture(data, width, height, RedIntegerFormat, IntType);
+    loadedFrame.internalFormat = "R32I";
     loadedFrame.needsUpdate = true;
     this.frames?.insert(index, loadedFrame);
     return loadedFrame;

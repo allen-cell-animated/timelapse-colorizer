@@ -10,10 +10,11 @@ let currentFrame = 0;
 
 async function start(): Promise<void> {
   await dataset.open();
-  const firstFeature = Object.keys(dataset.features)[0];
+  const firstFeature = dataset.featureNames[1];
   canv.setDataset(dataset);
   canv.setFeature(firstFeature);
-  drawLoop();
+  drawFrame(0);
+  // drawLoop();
 }
 
 async function drawFrame(index: number): Promise<void> {

@@ -66,6 +66,10 @@ export default class FrameCache {
     entry.next = null;
   }
 
+  public get length(): number {
+    return this.data.length;
+  }
+
   public insert(index: number, frame: DataTexture): void {
     if (index >= this.data.length) {
       return;

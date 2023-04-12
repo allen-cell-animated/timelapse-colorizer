@@ -9,9 +9,10 @@ import {
   WebGLRenderer,
   DataTexture,
   RedFormat,
-  UnsignedIntType,
+  IntType,
   FloatType,
   RedIntegerFormat,
+  Color,
 } from "three";
 
 import Dataset from "./Dataset";
@@ -19,27 +20,34 @@ import Dataset from "./Dataset";
 import vertexShader from "./shader/colorize.vert";
 import fragmentShader from "./shader/colorize.frag";
 
+const BACKGROUND_COLOR_DEFAULT = 0xffffff;
+const OUTLIER_COLOR_DEFAULT = 0x00ff00;
+
 type ColorizeUniformTypes = {
   frame: DataTexture;
   featureData: DataTexture;
   featureMin: number;
   featureMax: number;
+  backgroundColor: Color;
+  outlierColor: Color;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyFrame = new DataTexture(new Uint32Array([0, 1, 1, 0]), 1, 1, RedIntegerFormat, UnsignedIntType);
-  emptyFrame.internalFormat = "R32UI";
+  const emptyFrame = new DataTexture(new Int32Array([0, 1, 1, 0]), 2, 2, RedIntegerFormat, IntType);
+  emptyFrame.internalFormat = "R32I";
   emptyFrame.needsUpdate = true;
-  const emptyFeature = new DataTexture(new Float32Array([1, 1]), 2, 1, RedFormat, FloatType);
+  const emptyFeature = new DataTexture(new Float32Array([0, 1]), 2, 1, RedFormat, FloatType);
   emptyFeature.internalFormat = "R32F";
   emptyFeature.needsUpdate = true;
   return {
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
     featureMin: new Uniform(0),
-    featureMax: new Uniform(0),
+    featureMax: new Uniform(1),
+    backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
+    outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
   };
 };
 
@@ -85,6 +93,14 @@ export default class ColorizeCanvas {
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
     this.material.uniforms[name].value = value;
+  }
+
+  setBackgroundColor(color: Color): void {
+    this.setUniform("backgroundColor", color);
+  }
+
+  setOutlierColor(color: Color): void {
+    this.setUniform("outlierColor", color);
   }
 
   setFeature(name: string): void {

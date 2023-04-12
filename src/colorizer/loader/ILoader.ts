@@ -1,11 +1,13 @@
+import { DataTexture } from "three";
+
 export type FrameData = {
-  data: Uint32Array;
+  data: Int32Array;
   width: number;
   height: number;
 };
 
 export type FeatureData = {
-  data: Float32Array;
+  data: DataTexture;
   min: number;
   max: number;
 };

@@ -39,7 +39,7 @@ export default class ImageFrameLoader implements IFrameLoader {
 
     ctx.drawImage(image, 0, 0);
     const imageData = ctx.getImageData(0, 0, width, height).data;
-    const data = new Uint32Array(imageData.buffer);
+    const data = new Int32Array(imageData.buffer);
     return { data, width, height };
   }
 }
