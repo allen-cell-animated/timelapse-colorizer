@@ -28,23 +28,12 @@ void main() {
     return;
   }
 
+  // Data buffer starts at 0, segmentation IDs start at 1
   float featureVal = getFeatureVal(index - 1);
-  // gOutputColor = vec4(
-  //   (index & 1u) != 0u ? 1.0 : 0.0,
-  //   (index & 2u) != 0u ? 1.0 : 0.0,
-  //   (index & 4u) != 0u ? 1.0 : 0.0,
-  //   1.0
-  // );
   if (isnan(featureVal)) {
     gOutputColor = vec4(outlierColor, 1.0);
   } else {
     float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
-    // gOutputColor = vec4(
-    //   featureVal == 0.0 ? 0.0 : 1.0,
-    //   index == 0 ? 0.0 : 1.0, 
-    //   0.0,
-    //   1.0
-    // );
     gOutputColor = vec4(0.0, 0.0, normFeatureVal, 1.0);
   }
 }

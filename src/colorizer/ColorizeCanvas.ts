@@ -79,12 +79,24 @@ export default class ColorizeCanvas {
     this.scene.add(this.mesh);
 
     this.renderer = new WebGLRenderer();
+    this.checkPixelRatio();
 
     this.dataset = null;
   }
 
   get domElement(): HTMLCanvasElement {
     return this.renderer.domElement;
+  }
+
+  private checkPixelRatio(): void {
+    if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
+      this.renderer.setPixelRatio(window.devicePixelRatio);
+    }
+  }
+
+  setSize(width: number, height: number): void {
+    this.checkPixelRatio();
+    this.renderer.setSize(width, height);
   }
 
   setDataset(dataset: Dataset): void {
@@ -112,7 +124,7 @@ export default class ColorizeCanvas {
 
     this.setUniform("featureData", data);
     this.setUniform("featureMin", min);
-    this.setUniform("featureMax", max);
+    this.setUniform("featureMax", max / 1.5);
   }
 
   async setFrame(index: number): Promise<void> {

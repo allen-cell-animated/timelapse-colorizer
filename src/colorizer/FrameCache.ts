@@ -26,7 +26,7 @@ export default class FrameCache {
 
   private evictLast() {
     if (!this.last) {
-      console.error("Attempt to evict last from frame cache with no last set");
+      console.error("Attempt to evict last frame from cache when no last frame has been set");
       return;
     }
 
