@@ -4,6 +4,8 @@ import { IFeatureLoader, IFrameLoader } from "./loader/ILoader";
 import ImageFrameLoader from "./loader/ImageFrameLoader";
 import JsonFeatureLoader from "./loader/JsonFeatureLoader";
 
+import FrameCache from "./FrameCache";
+
 type FeatureData = {
   data: DataTexture;
   min: number;
@@ -15,12 +17,13 @@ type DatasetManifest = {
   features: Record<string, string>;
 };
 
+const MAX_CACHED_FRAMES = 15;
 const MANIFEST_FILENAME = "manifest.json";
 
 export default class Dataset {
   private frameLoader: IFrameLoader;
   private frameFiles: string[];
-  private frames: (DataTexture | null)[];
+  private frames: FrameCache | null;
 
   private featureLoader: IFeatureLoader;
   private featureFiles: Record<string, string>;
@@ -35,7 +38,7 @@ export default class Dataset {
 
     this.frameLoader = frameLoader || new ImageFrameLoader();
     this.frameFiles = [];
-    this.frames = [];
+    this.frames = null;
 
     this.featureLoader = featureLoader || new JsonFeatureLoader();
     this.featureFiles = {};
@@ -66,17 +69,13 @@ export default class Dataset {
     return Object.keys(this.featureFiles);
   }
 
-  public get isLoaded(): boolean {
-    return this.frames.length > 0;
-  }
-
   public async loadFrame(index: number): Promise<DataTexture | undefined> {
-    if (index < 0 || index >= this.frames.length) {
+    if (index < 0 || index >= this.frameFiles.length) {
       return undefined;
     }
 
-    const cachedFrame = this.frames[index];
-    if (cachedFrame !== null) {
+    const cachedFrame = this.frames?.get(index);
+    if (cachedFrame) {
       return cachedFrame;
     }
 
@@ -85,7 +84,7 @@ export default class Dataset {
     const loadedFrame = new DataTexture(data, width, height, RedIntegerFormat, UnsignedIntType);
     loadedFrame.internalFormat = "R32UI";
     loadedFrame.needsUpdate = true;
-    this.frames[index] = loadedFrame;
+    this.frames?.insert(index, loadedFrame);
     return loadedFrame;
   }
 
@@ -101,13 +100,12 @@ export default class Dataset {
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
 
-    this.frames = new Array(this.frameFiles.length).fill(null);
+    this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     await Promise.all(this.featureNames.map(this.loadFeature.bind(this)));
   }
 
   public dispose(): void {
-    this.frames.forEach((frame) => frame?.dispose());
     Object.values(this.features).forEach(({ data }) => data.dispose());
-    this.frames = [];
+    this.frames?.dispose();
   }
 }

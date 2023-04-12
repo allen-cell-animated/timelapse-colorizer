@@ -24,7 +24,8 @@ async function drawFrame(index: number): Promise<void> {
 function drawLoop(): void {
   drawFrame(currentFrame);
   currentFrame = (currentFrame + 1) % dataset.numberOfFrames;
-  window.setTimeout(drawLoop, 500);
+  // window.setTimeout(drawLoop, 500);
+  window.requestAnimationFrame(drawLoop);
 }
 
 start();
