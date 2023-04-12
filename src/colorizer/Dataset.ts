@@ -1,12 +1,10 @@
-import { DataTexture, FloatType, RedFormat, Texture, TextureLoader } from "three";
+import { DataTexture, FloatType, RedFormat, RedIntegerFormat, UnsignedIntType } from "three";
 
-type FeatureDataJson = {
-  data: number[];
-  min: number;
-  max: number;
-};
+import { IFeatureLoader, IFrameLoader } from "./loader/ILoader";
+import ImageFrameLoader from "./loader/ImageFrameLoader";
+import JsonFeatureLoader from "./loader/JsonFeatureLoader";
 
-export type FeatureData = {
+type FeatureData = {
   data: DataTexture;
   min: number;
   max: number;
@@ -17,41 +15,47 @@ type DatasetManifest = {
   features: Record<string, string>;
 };
 
-export default class Dataset {
-  private loader: TextureLoader;
-  private frames: (Texture | null)[];
-  public readonly features: Record<string, FeatureData>;
+const MANIFEST_FILENAME = "manifest.json";
 
+export default class Dataset {
+  private frameLoader: IFrameLoader;
   private frameFiles: string[];
+  private frames: (DataTexture | null)[];
+
+  private featureLoader: IFeatureLoader;
   private featureFiles: Record<string, string>;
+  public readonly features: Record<string, FeatureData>;
 
   public baseUrl: string;
   private hasOpened: boolean;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, frameLoader?: IFrameLoader, featureLoader?: IFeatureLoader) {
     this.baseUrl = baseUrl;
     this.hasOpened = false;
-    this.loader = new TextureLoader();
 
+    this.frameLoader = frameLoader || new ImageFrameLoader();
     this.frameFiles = [];
     this.frames = [];
+
+    this.featureLoader = featureLoader || new JsonFeatureLoader();
     this.featureFiles = {};
     this.features = {};
   }
 
-  private async fetchJson(filename: string): Promise<any> {
-    const fullUrl = `${this.baseUrl}/${filename}`;
-    const response = await fetch(fullUrl);
+  private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
+
+  private async fetchManifest(): Promise<DatasetManifest> {
+    const response = await fetch(this.resolveUrl(MANIFEST_FILENAME));
     return await response.json();
   }
 
-  private async loadOneFeature(name: string): Promise<void> {
-    const { data, min, max }: FeatureDataJson = await this.fetchJson(this.featureFiles[name]);
-    this.features[name] = {
-      data: new DataTexture(new Float32Array(data), data.length, 1, RedFormat, FloatType),
-      min,
-      max,
-    };
+  private async loadFeature(name: string): Promise<void> {
+    const url = this.resolveUrl(this.featureFiles[name]);
+    const { data, min, max } = await this.featureLoader.load(url);
+    const dataTex = new DataTexture(data, data.length, 1, RedFormat, FloatType);
+    dataTex.internalFormat = "R32F";
+    dataTex.needsUpdate = true;
+    this.features[name] = { data: dataTex, min, max };
   }
 
   public get numberOfFrames(): number {
@@ -66,7 +70,7 @@ export default class Dataset {
     return this.frames.length > 0;
   }
 
-  public async loadFrame(index: number): Promise<Texture | undefined> {
+  public async loadFrame(index: number): Promise<DataTexture | undefined> {
     if (index < 0 || index >= this.frames.length) {
       return undefined;
     }
@@ -76,8 +80,11 @@ export default class Dataset {
       return cachedFrame;
     }
 
-    const fullUrl = `${this.baseUrl}/${this.frameFiles[index]}`;
-    const loadedFrame = await this.loader.loadAsync(fullUrl);
+    const fullUrl = this.resolveUrl(this.frameFiles[index]);
+    const { data, width, height } = await this.frameLoader.load(fullUrl);
+    const loadedFrame = new DataTexture(data, width, height, RedIntegerFormat, UnsignedIntType);
+    loadedFrame.internalFormat = "R32UI";
+    loadedFrame.needsUpdate = true;
     this.frames[index] = loadedFrame;
     return loadedFrame;
   }
@@ -89,13 +96,13 @@ export default class Dataset {
     }
     this.hasOpened = true;
 
-    const manifest: DatasetManifest = await this.fetchJson("manifest.json");
+    const manifest = await this.fetchManifest();
 
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
 
     this.frames = new Array(this.frameFiles.length).fill(null);
-    await Promise.all(this.featureNames.map(this.loadOneFeature.bind(this)));
+    await Promise.all(this.featureNames.map(this.loadFeature.bind(this)));
   }
 
   public dispose(): void {

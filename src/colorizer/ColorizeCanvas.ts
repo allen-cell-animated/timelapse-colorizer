@@ -6,9 +6,12 @@ import {
   PlaneGeometry,
   Scene,
   ShaderMaterial,
-  Texture,
   WebGLRenderer,
   DataTexture,
+  RedFormat,
+  UnsignedIntType,
+  FloatType,
+  RedIntegerFormat,
 } from "three";
 
 import Dataset from "./Dataset";
@@ -17,7 +20,7 @@ import vertexShader from "./shader/colorize.vert";
 import fragmentShader from "./shader/colorize.frag";
 
 type ColorizeUniformTypes = {
-  frame: Texture;
+  frame: DataTexture;
   featureData: DataTexture;
   featureMin: number;
   featureMax: number;
@@ -25,25 +28,33 @@ type ColorizeUniformTypes = {
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
-const getDefaultUniforms = (): ColorizeUniforms => ({
-  frame: new Uniform(new Texture()),
-  featureData: new Uniform(new DataTexture()),
-  featureMin: new Uniform(0),
-  featureMax: new Uniform(0),
-});
+const getDefaultUniforms = (): ColorizeUniforms => {
+  const emptyFrame = new DataTexture(new Uint32Array([0, 1, 1, 0]), 1, 1, RedIntegerFormat, UnsignedIntType);
+  emptyFrame.internalFormat = "R32UI";
+  emptyFrame.needsUpdate = true;
+  const emptyFeature = new DataTexture(new Float32Array([1, 1]), 2, 1, RedFormat, FloatType);
+  emptyFeature.internalFormat = "R32F";
+  emptyFeature.needsUpdate = true;
+  return {
+    frame: new Uniform(emptyFrame),
+    featureData: new Uniform(emptyFeature),
+    featureMin: new Uniform(0),
+    featureMax: new Uniform(0),
+  };
+};
 
 export default class ColorizeCanvas {
+  private geometry: PlaneGeometry;
+  private material: ShaderMaterial;
+  private mesh: Mesh;
+
   private scene: Scene;
   private camera: OrthographicCamera;
-  private material: ShaderMaterial;
-  private geometry: PlaneGeometry;
-  private mesh: Mesh;
   private renderer: WebGLRenderer;
 
   private dataset: Dataset | null;
 
   constructor() {
-    this.scene = new Scene();
     this.geometry = new PlaneGeometry(2, 2);
     this.material = new ShaderMaterial({
       vertexShader,
@@ -53,11 +64,11 @@ export default class ColorizeCanvas {
       depthTest: false,
       glslVersion: GLSL3,
     });
-
     this.mesh = new Mesh(this.geometry, this.material);
-    this.scene.add(this.mesh);
 
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.scene = new Scene();
+    this.scene.add(this.mesh);
 
     this.renderer = new WebGLRenderer();
 

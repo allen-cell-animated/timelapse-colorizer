@@ -2,7 +2,7 @@ import ColorizeCanvas from "./colorizer/ColorizeCanvas";
 import Dataset from "./colorizer/Dataset";
 
 const canv = new ColorizeCanvas();
-const dataset = new Dataset("scripts/data/dataset0");
+const dataset = new Dataset("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data/mama_bear");
 document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
 canv.render();
 
