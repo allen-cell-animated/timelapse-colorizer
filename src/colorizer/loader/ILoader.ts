@@ -1,10 +1,4 @@
-import { DataTexture } from "three";
-
-export type FrameData = {
-  data: Int32Array;
-  width: number;
-  height: number;
-};
+import { Texture, DataTexture } from "three";
 
 export type FeatureData = {
   data: DataTexture;
@@ -16,5 +10,5 @@ interface ILoader<DataType> {
   load(url: string): Promise<DataType>;
 }
 
-export interface IFrameLoader extends ILoader<FrameData> {}
+export interface IFrameLoader extends ILoader<Texture> {}
 export interface IFeatureLoader extends ILoader<FeatureData> {}

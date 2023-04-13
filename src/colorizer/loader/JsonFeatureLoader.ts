@@ -1,28 +1,11 @@
-import { DataTexture, FloatType, RedFormat } from "three";
-
 import { FeatureData, IFeatureLoader } from "./ILoader";
+import { packFloatDataTexture } from "./util";
 
 type FeatureDataJson = {
   data: number[];
   min: number;
   max: number;
 };
-
-/** Pack a 1d data array into the squarest 2d texture possible */
-function packFloatDataTexture(data: number[]): DataTexture {
-  const width = Math.ceil(Math.sqrt(data.length));
-  const height = Math.ceil(data.length / width);
-  const length = width * height;
-
-  while (data.length < length) {
-    data.push(0);
-  }
-
-  const tex = new DataTexture(new Float32Array(data), width, height, RedFormat, FloatType);
-  tex.internalFormat = "R32F";
-  tex.needsUpdate = true;
-  return tex;
-}
 
 const nanToNull = (json: string): string => json.replace(/NaN/g, "null");
 
