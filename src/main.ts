@@ -14,8 +14,8 @@ async function start(): Promise<void> {
   canv.setSize(window.innerWidth, window.innerHeight);
   canv.setDataset(dataset);
   canv.setFeature(firstFeature);
-  drawFrame(200);
-  // drawLoop();
+  // drawFrame(200);
+  drawLoop();
 }
 
 async function drawFrame(index: number): Promise<void> {

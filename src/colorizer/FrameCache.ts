@@ -3,16 +3,14 @@ import { DataTexture } from "three";
 type CacheEntry = {
   frame: DataTexture;
   index: number;
-  prev: CacheEntryNullable;
-  next: CacheEntryNullable;
+  prev: number | null;
+  next: number | null;
 };
 
-type CacheEntryNullable = CacheEntry | null;
-
 export default class FrameCache {
-  private data: CacheEntryNullable[];
-  private first: CacheEntryNullable;
-  private last: CacheEntryNullable;
+  private data: (CacheEntry | null)[];
+  private first: number | null;
+  private last: number | null;
   private numItems: number;
   private maxSize: number;
 
@@ -24,46 +22,50 @@ export default class FrameCache {
     this.maxSize = maxSize;
   }
 
-  private evictLast() {
-    if (!this.last) {
-      console.error("Attempt to evict last frame from cache when no last frame has been set");
+  private evictLast(): void {
+    if (this.last === null) {
+      console.error("Frame Cache: Attempt to evict last frame from cache when no last frame has been set");
       return;
     }
 
-    if (this.last.next) {
-      this.last.next.prev = null;
+    const last = this.data[this.last];
+    if (last === null) {
+      console.error("Frame Cache: No frame to evict in last cache position");
+      return;
     }
 
-    this.last.frame.dispose();
-    this.data[this.last.index] = null;
-    this.last = this.last.next;
+    if (last.next) {
+      this.data[last.next]!.prev = null;
+    }
+
+    last.frame.dispose();
+    this.data[last.index] = null;
+    this.last = last.next;
   }
 
   private setFirst(entry: CacheEntry): void {
-    if (this.first) {
-      this.first.next = entry;
-    }
-    entry.prev = this.first;
-    this.first = entry;
-  }
-
-  private splice(entry: CacheEntry): void {
     const { prev, next } = entry;
 
-    if (prev) {
-      prev.next = next;
+    if (next === null) {
+      return; // this entry is already first
     } else {
+      this.data[next]!.prev = prev;
+    }
+
+    if (prev === null) {
+      // this entry is last
       this.last = next;
-    }
-
-    if (next) {
-      next.prev = prev;
     } else {
-      this.first = prev;
+      this.data[prev]!.next = next;
     }
 
-    entry.prev = null;
+    if (this.first) {
+      this.data[this.first]!.next = entry.index;
+    }
+
+    entry.prev = this.first;
     entry.next = null;
+    this.first = entry.index;
   }
 
   public get length(): number {
@@ -77,7 +79,6 @@ export default class FrameCache {
 
     const currentEntry = this.data[index];
     if (currentEntry !== null) {
-      this.splice(currentEntry);
       currentEntry.frame = frame;
       this.setFirst(currentEntry);
     } else {
@@ -89,7 +90,7 @@ export default class FrameCache {
         this.evictLast();
       } else {
         if (!this.last) {
-          this.last = newEntry;
+          this.last = newEntry.index;
         }
         this.numItems++;
       }
@@ -97,7 +98,11 @@ export default class FrameCache {
   }
 
   public get(index: number): DataTexture | undefined {
-    return this.data[index]?.frame;
+    const entry = this.data[index];
+    if (entry !== null) {
+      this.setFirst(entry);
+    }
+    return entry?.frame;
   }
 
   public dispose(): void {
