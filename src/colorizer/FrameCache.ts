@@ -1,7 +1,7 @@
-import { DataTexture } from "three";
+import { Texture } from "three";
 
 type CacheEntry = {
-  frame: DataTexture;
+  frame: Texture;
   index: number;
   prev: number | null;
   next: number | null;
@@ -72,7 +72,7 @@ export default class FrameCache {
     return this.data.length;
   }
 
-  public insert(index: number, frame: DataTexture): void {
+  public insert(index: number, frame: Texture): void {
     if (index >= this.data.length) {
       return;
     }
@@ -97,7 +97,7 @@ export default class FrameCache {
     }
   }
 
-  public get(index: number): DataTexture | undefined {
+  public get(index: number): Texture | undefined {
     const entry = this.data[index];
     if (entry !== null) {
       this.setFirst(entry);

@@ -10,7 +10,7 @@ let currentFrame = 0;
 
 async function start(): Promise<void> {
   await dataset.open();
-  const firstFeature = dataset.featureNames[1];
+  const firstFeature = dataset.featureNames[0];
   canv.setSize(window.innerWidth, window.innerHeight);
   canv.setDataset(dataset);
   canv.setFeature(firstFeature);
@@ -23,8 +23,8 @@ async function drawFrame(index: number): Promise<void> {
   canv.render();
 }
 
-function drawLoop(): void {
-  drawFrame(currentFrame);
+async function drawLoop(): Promise<void> {
+  await drawFrame(currentFrame);
   currentFrame = (currentFrame + 1) % dataset.numberOfFrames;
   // window.setTimeout(drawLoop, 500);
   window.requestAnimationFrame(drawLoop);

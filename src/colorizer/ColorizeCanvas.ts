@@ -13,6 +13,7 @@ import {
   FloatType,
   RedIntegerFormat,
   Color,
+  Texture,
 } from "three";
 
 import Dataset from "./Dataset";
@@ -24,7 +25,7 @@ const BACKGROUND_COLOR_DEFAULT = 0xffffff;
 const OUTLIER_COLOR_DEFAULT = 0x00ff00;
 
 type ColorizeUniformTypes = {
-  frame: DataTexture;
+  frame: Texture;
   featureData: DataTexture;
   featureMin: number;
   featureMax: number;

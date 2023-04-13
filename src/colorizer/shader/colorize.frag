@@ -30,7 +30,7 @@ void main() {
 
   // Data buffer starts at 0, segmentation IDs start at 1
   float featureVal = getFeatureVal(index - 1);
-  if (isnan(featureVal)) {
+  if (isnan(featureVal) || featureVal == 0.0) {
     gOutputColor = vec4(outlierColor, 1.0);
   } else {
     float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);

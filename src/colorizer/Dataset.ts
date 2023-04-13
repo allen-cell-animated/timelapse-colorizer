@@ -1,7 +1,7 @@
-import { DataTexture, IntType, RedIntegerFormat } from "three";
+import { Texture } from "three";
 
 import { FeatureData, IFeatureLoader, IFrameLoader } from "./loader/ILoader";
-import ImageFrameLoader from "./loader/ImageFrameLoader";
+import ImageDataFrameLoader from "./loader/ImageDataFrameLoader";
 import JsonFeatureLoader from "./loader/JsonFeatureLoader";
 
 import FrameCache from "./FrameCache";
@@ -30,7 +30,7 @@ export default class Dataset {
     this.baseUrl = baseUrl;
     this.hasOpened = false;
 
-    this.frameLoader = frameLoader || new ImageFrameLoader();
+    this.frameLoader = frameLoader || new ImageDataFrameLoader();
     this.frameFiles = [];
     this.frames = null;
 
@@ -59,7 +59,7 @@ export default class Dataset {
     return Object.keys(this.featureFiles);
   }
 
-  public async loadFrame(index: number): Promise<DataTexture | undefined> {
+  public async loadFrame(index: number): Promise<Texture | undefined> {
     if (index < 0 || index >= this.frameFiles.length) {
       return undefined;
     }
@@ -70,10 +70,7 @@ export default class Dataset {
     }
 
     const fullUrl = this.resolveUrl(this.frameFiles[index]);
-    const { data, width, height } = await this.frameLoader.load(fullUrl);
-    const loadedFrame = new DataTexture(data, width, height, RedIntegerFormat, IntType);
-    loadedFrame.internalFormat = "R32I";
-    loadedFrame.needsUpdate = true;
+    const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frames?.insert(index, loadedFrame);
     return loadedFrame;
   }
