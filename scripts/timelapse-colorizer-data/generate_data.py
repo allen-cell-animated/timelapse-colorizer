@@ -122,7 +122,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
     # write some kind of manifest
     featmap = {}
     for i in range(len(features)):
-        featmap["feature_" + str(i)] = "feature_" + str(i) + ".json"
+        featmap[features[i]] = "feature_" + str(i) + ".json"
     js = {
         "frames": ["frame_" + str(i) + ".png" for i in range(nframes)],
         "features": featmap,
