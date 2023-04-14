@@ -6,6 +6,7 @@ const dataset = new Dataset("http://dev-aics-dtp-001.corp.alleninstitute.org/dan
 document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
 canv.render();
 
+const MAX_FRAME = 100;
 let currentFrame = 0;
 
 async function start(): Promise<void> {
@@ -14,8 +15,8 @@ async function start(): Promise<void> {
   canv.setSize(window.innerWidth, window.innerHeight);
   canv.setDataset(dataset);
   canv.setFeature(firstFeature);
-  // drawFrame(200);
-  drawLoop();
+  drawFrame(200);
+  // drawLoop();
 }
 
 async function drawFrame(index: number): Promise<void> {
@@ -26,8 +27,11 @@ async function drawFrame(index: number): Promise<void> {
 async function drawLoop(): Promise<void> {
   await drawFrame(currentFrame);
   currentFrame = (currentFrame + 1) % dataset.numberOfFrames;
-  // window.setTimeout(drawLoop, 500);
-  window.requestAnimationFrame(drawLoop);
+  if (currentFrame < MAX_FRAME) {
+    window.requestAnimationFrame(drawLoop);
+  } else {
+    console.log(canv);
+  }
 }
 
 start();

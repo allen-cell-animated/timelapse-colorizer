@@ -19,9 +19,9 @@ import {
 import Dataset from "./Dataset";
 
 import vertexShader from "./shader/colorize.vert";
-import fragmentShader from "./shader/colorize.frag";
+import fragmentShader from "./shader/colorize_RGBA8U.frag";
 
-const BACKGROUND_COLOR_DEFAULT = 0xffffff;
+const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0x00ff00;
 
 type ColorizeUniformTypes = {

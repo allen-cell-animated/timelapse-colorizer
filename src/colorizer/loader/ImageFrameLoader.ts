@@ -1,4 +1,4 @@
-import { ByteType, NearestFilter, RGBAFormat, Texture } from "three";
+import { NearestFilter, RGBAIntegerFormat, Texture } from "three";
 import { IFrameLoader } from "./ILoader";
 import { loadImageElement } from "./util";
 
@@ -6,9 +6,9 @@ import { loadImageElement } from "./util";
 export default class ImageFrameLoader implements IFrameLoader {
   async load(url: string): Promise<Texture> {
     const img = await loadImageElement(url);
-    const tex = new Texture(img, undefined, undefined, undefined, NearestFilter, NearestFilter, RGBAFormat, ByteType);
+    const tex = new Texture(img, undefined, undefined, undefined, NearestFilter, NearestFilter, RGBAIntegerFormat);
     tex.unpackAlignment = 1;
-    tex.internalFormat = "RGBA8I";
+    tex.internalFormat = "RGBA8UI";
     tex.needsUpdate = true;
     return tex;
   }

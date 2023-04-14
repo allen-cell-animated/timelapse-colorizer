@@ -1,8 +1,8 @@
 import { Texture } from "three";
 
 import { FeatureData, IFeatureLoader, IFrameLoader } from "./loader/ILoader";
-import ImageDataFrameLoader from "./loader/ImageDataFrameLoader";
 import JsonFeatureLoader from "./loader/JsonFeatureLoader";
+import ImageFrameLoader from "./loader/ImageFrameLoader";
 
 import FrameCache from "./FrameCache";
 
@@ -30,7 +30,7 @@ export default class Dataset {
     this.baseUrl = baseUrl;
     this.hasOpened = false;
 
-    this.frameLoader = frameLoader || new ImageDataFrameLoader();
+    this.frameLoader = frameLoader || new ImageFrameLoader();
     this.frameFiles = [];
     this.frames = null;
 
