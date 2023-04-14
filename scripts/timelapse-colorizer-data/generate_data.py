@@ -126,6 +126,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
     js = {
         "frames": ["frame_" + str(i) + ".png" for i in range(nframes)],
         "features": featmap,
+        "outliers": "outliers.json",
     }
     with open(os.path.join(output_dir, dataset) + "/manifest.json", "w") as f:
         json.dump(js, f)
