@@ -15,8 +15,8 @@ async function start(): Promise<void> {
   canv.setSize(window.innerWidth, window.innerHeight);
   canv.setDataset(dataset);
   canv.setFeature(firstFeature);
-  drawFrame(200);
-  // drawLoop();
+  // drawFrame(200);
+  drawLoop();
 }
 
 async function drawFrame(index: number): Promise<void> {
@@ -27,11 +27,8 @@ async function drawFrame(index: number): Promise<void> {
 async function drawLoop(): Promise<void> {
   await drawFrame(currentFrame);
   currentFrame = (currentFrame + 1) % dataset.numberOfFrames;
-  if (currentFrame < MAX_FRAME) {
-    window.requestAnimationFrame(drawLoop);
-  } else {
-    console.log(canv);
-  }
+  window.requestAnimationFrame(drawLoop);
 }
 
+window.addEventListener("beforeunload", () => canv.dispose());
 start();
