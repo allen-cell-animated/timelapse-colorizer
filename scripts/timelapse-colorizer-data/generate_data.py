@@ -51,6 +51,7 @@ from nuc_morph_analysis.preprocessing.load_data import (
 
 def make_frames(grouped_frames, output_dir, dataset):
     downsample = 1
+    outpath = os.path.join(output_dir, dataset)
 
     nframes = len(grouped_frames)
     for group_name, frame in grouped_frames:
@@ -68,7 +69,7 @@ def make_frames(grouped_frames, output_dir, dataset):
         if downsample != 1:
             seg2d = skimage.transform.rescale(seg2d, downsample, anti_aliasing=False, order=0)
         seg2d = seg2d.astype(np.uint32)
-        
+
         lut = np.zeros((mx + 1), dtype=np.uint32)
         for row_index, row in frame.iterrows():
             # build our remapping LUT:
@@ -86,7 +87,7 @@ def make_frames(grouped_frames, output_dir, dataset):
         seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
         seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
         img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
-        img.save(output_dir + dataset + "/frame_" + str(frame_number) + ".png")
+        img.save(outpath + "/frame_" + str(frame_number) + ".png")
 
 
 def make_features(a, features, output_dir, dataset):
@@ -130,7 +131,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
 
     nframes = len(grouped_frames)
 
-    make_frames(grouped_frames, output_dir, b)
+    make_frames(grouped_frames, output_dir, dataset)
 
     features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
 
