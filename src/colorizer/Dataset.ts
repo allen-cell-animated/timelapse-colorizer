@@ -11,7 +11,7 @@ type DatasetManifest = {
   features: Record<string, string>;
 };
 
-const MAX_CACHED_FRAMES = 15;
+const MAX_CACHED_FRAMES = 30;
 const MANIFEST_FILENAME = "manifest.json";
 
 export default class Dataset {

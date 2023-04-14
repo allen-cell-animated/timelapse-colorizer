@@ -11,7 +11,7 @@ in vec2 vUv;
 layout(location = 0) out vec4 gOutputColor;
 
 uint combineColor(uvec4 color) {
-  return (color.b << 16u) & (color.g << 8u) & color.r;
+  return (color.b << 16u) | (color.g << 8u) | color.r;
 }
 
 float getFeatureVal(int index) {

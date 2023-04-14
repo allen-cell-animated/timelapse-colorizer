@@ -9,9 +9,9 @@ import {
   WebGLRenderer,
   DataTexture,
   RedFormat,
-  IntType,
+  UnsignedByteType,
   FloatType,
-  RedIntegerFormat,
+  RGBAIntegerFormat,
   Color,
   Texture,
 } from "three";
@@ -36,12 +36,14 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
-  const emptyFrame = new DataTexture(new Int32Array([0, 1, 1, 0]), 2, 2, RedIntegerFormat, IntType);
-  emptyFrame.internalFormat = "R32I";
+  const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
+  emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
-  const emptyFeature = new DataTexture(new Float32Array([0, 1]), 2, 1, RedFormat, FloatType);
+
+  const emptyFeature = new DataTexture(new Float32Array([0]), 1, 1, RedFormat, FloatType);
   emptyFeature.internalFormat = "R32F";
   emptyFeature.needsUpdate = true;
+
   return {
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
@@ -101,6 +103,9 @@ export default class ColorizeCanvas {
   }
 
   setDataset(dataset: Dataset): void {
+    if (this.dataset !== null) {
+      this.dataset.dispose();
+    }
     this.dataset = dataset;
   }
 
@@ -138,5 +143,13 @@ export default class ColorizeCanvas {
 
   render(): void {
     this.renderer.render(this.scene, this.camera);
+  }
+
+  dispose(): void {
+    this.dataset?.dispose();
+    this.dataset = null;
+    this.material.dispose();
+    this.geometry.dispose();
+    this.renderer.dispose();
   }
 }
