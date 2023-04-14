@@ -22,6 +22,7 @@ export default class FrameCache {
     this.maxSize = maxSize;
   }
 
+  /** Evict the last-used entry from the cache */
   private evictLast(): void {
     if (this.last === null) {
       console.error("Frame Cache: Attempt to evict last frame from cache when no last frame has been set");
@@ -43,14 +44,16 @@ export default class FrameCache {
     this.last = last.next;
   }
 
-  private setFirst(entry: CacheEntry): void {
-    const { prev, next } = entry;
+  /** Move a current entry in the cache to first position */
+  private moveToFirst(entry: CacheEntry): void {
+    const { prev, next, index } = entry;
 
-    if (next === null) {
-      return; // this entry is already first
-    } else {
-      this.data[next]!.prev = prev;
+    // This entry is already first
+    if (this.first === index) {
+      return;
     }
+
+    this.data[next!]!.prev = prev;
 
     if (prev === null) {
       // this entry is last
@@ -60,11 +63,20 @@ export default class FrameCache {
     }
 
     if (this.first) {
-      this.data[this.first]!.next = entry.index;
+      this.data[this.first]!.next = index;
     }
 
     entry.prev = this.first;
     entry.next = null;
+    this.first = index;
+  }
+
+  /** Add a new entry to the cache in first position */
+  private addAsFirst(entry: CacheEntry): void {
+    if (this.first !== null) {
+      this.data[this.first]!.next = entry.index;
+      entry.prev = this.first;
+    }
     this.first = entry.index;
   }
 
@@ -72,6 +84,7 @@ export default class FrameCache {
     return this.data.length;
   }
 
+  /** Add a frame to the cache at the specified index */
   public insert(index: number, frame: Texture): void {
     if (index >= this.data.length) {
       return;
@@ -80,16 +93,16 @@ export default class FrameCache {
     const currentEntry = this.data[index];
     if (currentEntry !== null) {
       currentEntry.frame = frame;
-      this.setFirst(currentEntry);
+      this.moveToFirst(currentEntry);
     } else {
       const newEntry = { frame, index, prev: null, next: null };
       this.data[index] = newEntry;
-      this.setFirst(newEntry);
+      this.addAsFirst(newEntry);
 
       if (this.numItems >= this.maxSize) {
         this.evictLast();
       } else {
-        if (!this.last) {
+        if (this.last === null) {
           this.last = newEntry.index;
         }
         this.numItems++;
@@ -100,7 +113,7 @@ export default class FrameCache {
   public get(index: number): Texture | undefined {
     const entry = this.data[index];
     if (entry !== null) {
-      this.setFirst(entry);
+      this.moveToFirst(entry);
     }
     return entry?.frame;
   }
