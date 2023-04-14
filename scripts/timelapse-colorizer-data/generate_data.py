@@ -49,30 +49,44 @@ from nuc_morph_analysis.preprocessing.load_data import (
 # NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
 			
 
-def make_frames(frames, output_dir, dataset, nframes):
+def make_frames(grouped_frames, output_dir, dataset):
     downsample = 1
 
-    for i in range(nframes):
-        zstackpath = frames.iloc[i]["seg_full_zstack_path"]
+    nframes = len(grouped_frames)
+    for group_name, frame in grouped_frames:
+        # take first row to get zstack path
+        row = frame.iloc[0]
+        frame_number = row["index_sequence"]
+        zstackpath = row["seg_full_zstack_path"]
         if platform.system() == "Windows":
             zstackpath = "/" + zstackpath
         zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
         seg2d = zstack.max(axis=0)
         mx = np.nanmax(seg2d)
         mn = np.nanmin(seg2d[np.nonzero(seg2d)])
-
         # TODO test this
         if downsample != 1:
             seg2d = skimage.transform.rescale(seg2d, downsample, anti_aliasing=False, order=0)
+        seg2d = seg2d.astype(np.uint32)
+        
+        lut = np.zeros((mx + 1), dtype=np.uint32)
+        for row_index, row in frame.iterrows():
+            # build our remapping LUT:
+            label = int(row["label_img"])
+            rowind = int(row["initialIndex"])
+            lut[label] = rowind+1
+
+        # remap indices of this frame.
+        seg_remapped = lut[seg2d]
 
         # convert data to RGBA
-        seg_rgba = np.zeros((seg2d.shape[0], seg2d.shape[1], 4), dtype=np.uint8)
-        seg_rgba[:, :, 0] = (seg2d & 0x000000FF) >> 0
-        seg_rgba[:, :, 1] = (seg2d & 0x0000FF00) >> 8
-        seg_rgba[:, :, 2] = (seg2d & 0x00FF0000) >> 16
+        seg_rgba = np.zeros((seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8)
+        seg_rgba[:, :, 0] = (seg_remapped & 0x000000FF) >> 0
+        seg_rgba[:, :, 1] = (seg_remapped & 0x0000FF00) >> 8
+        seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
         seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
         img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
-        img.save(output_dir + dataset + "/frame_" + str(i) + ".png")
+        img.save(output_dir + dataset + "/frame_" + str(frame_number) + ".png")
 
 
 def make_features(a, features, output_dir, dataset):
@@ -105,15 +119,18 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
     # a is the full dataset!
     a = load_dataset(dataset, datadir=None)
 
-    columns = ["track_id", "index_sequence", "seg_full_zstack_path"] # , "CellID"]
+    columns = ["track_id", "index_sequence", "seg_full_zstack_path", "label_img"]
     b = a[columns]
+    b = b.reset_index(drop=True)
+    b["initialIndex"] = b.index.values
 
+    grouped_frames = b.groupby('index_sequence')
     # get a single path from each time in the set.
-    frames = b.groupby('index_sequence').apply(lambda df: df.sample(1))
+    # frames = grouped_frames.apply(lambda df: df.sample(1))
 
-    nframes = len(frames)
+    nframes = len(grouped_frames)
 
-    make_frames(frames, output_dir, dataset, nframes)
+    make_frames(grouped_frames, output_dir, b)
 
     features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
 
