@@ -21,7 +21,7 @@ import {
 import Dataset from "./Dataset";
 
 import vertexShader from "./shaders/colorize.vert";
-import fragmentShader from "./shaders/colorize_RGBA8.frag";
+import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import ColorRamp from "./ColorRamp";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;

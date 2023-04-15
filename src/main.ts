@@ -1,7 +1,5 @@
 import { HexColorString } from "three";
-import ColorRamp from "./colorizer/ColorRamp";
-import ColorizeCanvas from "./colorizer/ColorizeCanvas";
-import Dataset from "./colorizer/Dataset";
+import { ColorizeCanvas, ColorRamp, Dataset } from "./colorizer";
 
 const canv = new ColorizeCanvas();
 const dataset = new Dataset("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data/mama_bear");
