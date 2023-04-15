@@ -4,6 +4,7 @@ uniform float featureMin;
 uniform float featureMax;
 
 uniform float aspect;
+uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
 uniform vec3 outlierColor;
 
@@ -19,6 +20,13 @@ float getFeatureVal(int index) {
   int width = textureSize(featureData, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
   return texelFetch(featureData, featurePos, 0).r;
+}
+
+vec4 getColorRamp(float val) {
+  float width = float(textureSize(colorRamp, 0).x);
+  float range = (width - 1.0) / width;
+  float adjustedVal = (0.5 / width) + (val * range);
+  return texture(colorRamp, vec2(adjustedVal, 0.5));
 }
 
 void main() {
@@ -50,6 +58,6 @@ void main() {
     gOutputColor = vec4(outlierColor, 1.0);
   } else {
     float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
-    gOutputColor = vec4(0.0, 0.0, normFeatureVal, 1.0);
+    gOutputColor = getColorRamp(normFeatureVal);
   }
 }

@@ -14,12 +14,15 @@ import {
   RGBAIntegerFormat,
   Color,
   Texture,
+  RGBAFormat,
+  LinearFilter,
 } from "three";
 
 import Dataset from "./Dataset";
 
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8.frag";
+import ColorRamp from "./ColorRamp";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0x00ff00;
@@ -30,6 +33,7 @@ type ColorizeUniformTypes = {
   featureData: DataTexture;
   featureMin: number;
   featureMax: number;
+  colorRamp: DataTexture;
   backgroundColor: Color;
   outlierColor: Color;
 };
@@ -45,12 +49,19 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   emptyFeature.internalFormat = "R32F";
   emptyFeature.needsUpdate = true;
 
+  const emptyColorRamp = new DataTexture(new Float32Array([0, 0, 0, 1]), 1, 1, RGBAFormat, FloatType);
+  emptyColorRamp.internalFormat = "RGBA32F";
+  emptyColorRamp.minFilter = LinearFilter;
+  emptyColorRamp.magFilter = LinearFilter;
+  emptyColorRamp.needsUpdate = true;
+
   return {
     aspect: new Uniform(2),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
     featureMin: new Uniform(0),
     featureMax: new Uniform(1),
+    colorRamp: new Uniform(emptyColorRamp),
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
   };
@@ -114,6 +125,10 @@ export default class ColorizeCanvas {
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
     this.material.uniforms[name].value = value;
+  }
+
+  setColorRamp(ramp: ColorRamp): void {
+    this.setUniform("colorRamp", ramp.texture);
   }
 
   setBackgroundColor(color: Color): void {

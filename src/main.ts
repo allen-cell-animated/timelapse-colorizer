@@ -1,12 +1,18 @@
+import { HexColorString } from "three";
+import ColorRamp from "./colorizer/ColorRamp";
 import ColorizeCanvas from "./colorizer/ColorizeCanvas";
 import Dataset from "./colorizer/Dataset";
 
 const canv = new ColorizeCanvas();
 const dataset = new Dataset("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data/mama_bear");
 document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
-canv.render();
 
 let currentFrame = 0;
+
+// Esri color ramps - Blue 14
+const colorStops = ["#3a4d6b", "#3d6da2", "#799a96", "#ccbe6a", "#ffec99"] as HexColorString[];
+const colorRamp = new ColorRamp(colorStops);
+canv.setColorRamp(colorRamp);
 
 async function start(): Promise<void> {
   await dataset.open();
