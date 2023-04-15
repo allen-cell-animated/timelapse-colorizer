@@ -1,8 +1,8 @@
 import { Texture } from "three";
 
-import { FeatureData, IFeatureLoader, IFrameLoader } from "./loader/ILoader";
-import JsonFeatureLoader from "./loader/JsonFeatureLoader";
-import ImageFrameLoader from "./loader/ImageFrameLoader";
+import { FeatureData, IFeatureLoader, IFrameLoader } from "./loaders/ILoader";
+import JsonFeatureLoader from "./loaders/JsonFeatureLoader";
+import ImageFrameLoader from "./loaders/ImageFrameLoader";
 
 import FrameCache from "./FrameCache";
 
@@ -59,6 +59,7 @@ export default class Dataset {
     return Object.keys(this.featureFiles);
   }
 
+  /** Loads a single frame from the dataset */
   public async loadFrame(index: number): Promise<Texture | undefined> {
     if (index < 0 || index >= this.frameFiles.length) {
       return undefined;
@@ -91,6 +92,7 @@ export default class Dataset {
     await Promise.all(this.featureNames.map(this.loadFeature.bind(this)));
   }
 
+  /** Frees the GPU resources held by this dataset */
   public dispose(): void {
     Object.values(this.features).forEach(({ data }) => data.dispose());
     this.frames?.dispose();

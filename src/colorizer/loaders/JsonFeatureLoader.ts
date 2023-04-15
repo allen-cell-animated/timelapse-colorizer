@@ -15,7 +15,7 @@ export default class JsonFeatureLoader implements IFeatureLoader {
     const text = await response.text();
     const { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
     // const { data, min, max }: FeatureDataJson = await response.json();
-    const sanitizedData = data.map((val) => (val === null ? NaN : val));
+    const sanitizedData = data.map((val) => (val === null ? Infinity : val));
     return {
       data: packFloatDataTexture(sanitizedData),
       min,

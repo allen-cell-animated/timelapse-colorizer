@@ -15,13 +15,24 @@ async function start(): Promise<void> {
   canv.setSize(window.innerWidth, window.innerHeight);
   canv.setDataset(dataset);
   canv.setFeature(firstFeature);
-  // drawFrame(200);
-  drawLoop();
+  await drawFrame(0);
+  window.addEventListener("keyup", handleKey);
+  // drawLoop();
 }
 
 async function drawFrame(index: number): Promise<void> {
   await canv.setFrame(index);
   canv.render();
+}
+
+function handleKey({ key }: KeyboardEvent): void {
+  if (key === "Left" || key === "ArrowLeft") {
+    currentFrame = (currentFrame - 1 + dataset.numberOfFrames) % dataset.numberOfFrames;
+    drawFrame(currentFrame);
+  } else if (key === "Right" || key === "ArrowRight") {
+    currentFrame = (currentFrame + 1) % dataset.numberOfFrames;
+    drawFrame(currentFrame);
+  }
 }
 
 async function drawLoop(): Promise<void> {

@@ -24,6 +24,7 @@ void main() {
   uint index = combineColor(texture(frame, vUv));
 
   if (index == 0u) {
+    // float maybeNan = getFeatureVal(34027);
     gOutputColor = vec4(backgroundColor, 1.0);
     return;
   }
@@ -31,7 +32,7 @@ void main() {
   // Data buffer starts at 0, segmentation IDs start at 1
   float featureVal = getFeatureVal(int(index) - 1);
 
-  if (isnan(featureVal) || featureVal == 0.0) {
+  if (isinf(featureVal)) {
     gOutputColor = vec4(outlierColor, 1.0);
   } else {
     float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);

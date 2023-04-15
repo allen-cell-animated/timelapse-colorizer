@@ -18,13 +18,14 @@ import {
 
 import Dataset from "./Dataset";
 
-import vertexShader from "./shader/colorize.vert";
-import fragmentShader from "./shader/colorize_RGBA8U.frag";
+import vertexShader from "./shaders/colorize.vert";
+import fragmentShader from "./shaders/colorize_RGBA8.frag";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0x00ff00;
 
 type ColorizeUniformTypes = {
+  aspect: number;
   frame: Texture;
   featureData: DataTexture;
   featureMin: number;
@@ -45,6 +46,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   emptyFeature.needsUpdate = true;
 
   return {
+    aspect: new Uniform(2),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
     featureMin: new Uniform(0),
@@ -99,6 +101,7 @@ export default class ColorizeCanvas {
 
   setSize(width: number, height: number): void {
     this.checkPixelRatio();
+    this.setUniform("aspect", width / height);
     this.renderer.setSize(width, height);
   }
 

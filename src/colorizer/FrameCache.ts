@@ -9,6 +9,7 @@ type CacheEntry = {
 
 type CacheEntryNullable = CacheEntry | null;
 
+/** LRU cache for textures. Calls `dispose` on eviction to keep GPU memory under control. */
 export default class FrameCache {
   private data: CacheEntryNullable[];
   private first: CacheEntryNullable;
@@ -16,7 +17,7 @@ export default class FrameCache {
   private numItems: number;
   private maxSize: number;
 
-  constructor(length: number, maxSize: number = 15) {
+  constructor(length: number, maxSize: number = 30) {
     this.data = new Array(length).fill(null);
     this.first = null;
     this.last = null;
@@ -24,6 +25,7 @@ export default class FrameCache {
     this.maxSize = maxSize;
   }
 
+  /** Evicts the least recently used entry from the cache */
   private evictLast() {
     if (!this.last) {
       console.error("Attempt to evict last frame from cache when no last frame has been set");
@@ -39,6 +41,7 @@ export default class FrameCache {
     this.last = this.last.next;
   }
 
+  /** Places an entry in the front of the list */
   private setFirst(entry: CacheEntry): void {
     if (this.first) {
       this.first.next = entry;
@@ -47,7 +50,9 @@ export default class FrameCache {
     this.first = entry;
   }
 
-  private splice(entry: CacheEntry): void {
+  /** Moves an entry currently in the list to the front */
+  private moveToFirst(entry: CacheEntry): void {
+    if (entry === this.first) return;
     const { prev, next } = entry;
 
     if (prev) {
@@ -58,18 +63,17 @@ export default class FrameCache {
 
     if (next) {
       next.prev = prev;
-    } else {
-      this.first = prev;
     }
 
-    entry.prev = null;
     entry.next = null;
+    this.setFirst(entry);
   }
 
   public get length(): number {
     return this.data.length;
   }
 
+  /** Inserts a frame into the cache at `index` */
   public insert(index: number, frame: Texture): void {
     if (index >= this.data.length) {
       return;
@@ -77,9 +81,8 @@ export default class FrameCache {
 
     const currentEntry = this.data[index];
     if (currentEntry !== null) {
-      this.splice(currentEntry);
       currentEntry.frame = frame;
-      this.setFirst(currentEntry);
+      this.moveToFirst(currentEntry);
     } else {
       const newEntry = { frame, index, prev: null, next: null };
       this.data[index] = newEntry;
@@ -96,10 +99,16 @@ export default class FrameCache {
     }
   }
 
+  /** Gets a frame from the cache. Returns `undefined` if no frame is present at `index`. */
   public get(index: number): Texture | undefined {
-    return this.data[index]?.frame;
+    const entry = this.data[index];
+    if (entry) {
+      this.moveToFirst(entry);
+    }
+    return entry?.frame;
   }
 
+  /** Clears the cache and frees the GPU resources held by the textures in it */
   public dispose(): void {
     this.first = null;
     this.last = null;
