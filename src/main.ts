@@ -6,7 +6,6 @@ const dataset = new Dataset("http://dev-aics-dtp-001.corp.alleninstitute.org/dan
 document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
 canv.render();
 
-const MAX_FRAME = 100;
 let currentFrame = 0;
 
 async function start(): Promise<void> {
@@ -16,6 +15,10 @@ async function start(): Promise<void> {
   canv.setDataset(dataset);
   canv.setFeature(firstFeature);
   await drawFrame(0);
+  window.addEventListener("resize", () => {
+    canv.setSize(window.innerWidth, window.innerHeight);
+    canv.render();
+  });
   window.addEventListener("keyup", handleKey);
   // drawLoop();
 }
