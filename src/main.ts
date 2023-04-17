@@ -7,6 +7,7 @@ document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
 
 let currentFrame = 0;
 
+// https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
 // Esri color ramps - Blue 14
 const colorStops = ["#3a4d6b", "#3d6da2", "#799a96", "#ccbe6a", "#ffec99"] as HexColorString[];
 const colorRamp = new ColorRamp(colorStops);

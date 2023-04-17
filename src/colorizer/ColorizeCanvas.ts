@@ -1,21 +1,19 @@
 import {
+  Color,
+  DataTexture,
+  FloatType,
   GLSL3,
-  Uniform,
+  RedFormat,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
+  RGBAIntegerFormat,
   Scene,
   ShaderMaterial,
-  WebGLRenderer,
-  DataTexture,
-  RedFormat,
-  UnsignedByteType,
-  FloatType,
-  RGBAIntegerFormat,
-  Color,
   Texture,
-  RGBAFormat,
-  LinearFilter,
+  Uniform,
+  UnsignedByteType,
+  WebGLRenderer,
 } from "three";
 
 import Dataset from "./Dataset";
@@ -49,11 +47,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   emptyFeature.internalFormat = "R32F";
   emptyFeature.needsUpdate = true;
 
-  const emptyColorRamp = new DataTexture(new Float32Array([0, 0, 0, 1]), 1, 1, RGBAFormat, FloatType);
-  emptyColorRamp.internalFormat = "RGBA32F";
-  emptyColorRamp.minFilter = LinearFilter;
-  emptyColorRamp.magFilter = LinearFilter;
-  emptyColorRamp.needsUpdate = true;
+  const emptyColorRamp = new ColorRamp(["black"]).texture;
 
   return {
     aspect: new Uniform(2),

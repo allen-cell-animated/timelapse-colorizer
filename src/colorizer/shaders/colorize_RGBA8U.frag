@@ -12,6 +12,7 @@ in vec2 vUv;
 
 layout(location = 0) out vec4 gOutputColor;
 
+// Combine non-alpha color channels into one 24-bit value
 uint combineColor(uvec4 color) {
   return (color.b << 16u) | (color.g << 8u) | color.r;
 }
@@ -30,27 +31,28 @@ vec4 getColorRamp(float val) {
 }
 
 void main() {
-  // Scale to match the aspect of the frame
+  // Scale uv to compensate for the aspect of the frame
   ivec2 frameDims = textureSize(frame, 0);
   float frameAspect = float(frameDims.x) / float(frameDims.y);
   vec2 scale = max(vec2(aspect / frameAspect, frameAspect / aspect), 1.0);
   vec2 sUv = (vUv - 0.5) * scale + 0.5;
 
+  // This pixel is background if, after scaling uv, it is outside the frame
   if (sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0) {
     gOutputColor = vec4(backgroundColor, 1.0);
     return;
   }
 
-  // Get the feature value at this pixel
+  // Get the segmentation id at this pixel
   uint index = combineColor(texture(frame, sUv));
 
+  // A segmentation id of 0 represents background
   if (index == 0u) {
-    // float maybeNan = getFeatureVal(34027);
     gOutputColor = vec4(backgroundColor, 1.0);
     return;
   }
 
-  // Data buffer starts at 0, segmentation IDs start at 1
+  // Data buffer starts at 0, non-background segmentation IDs start at 1
   float featureVal = getFeatureVal(int(index) - 1);
 
   if (isinf(featureVal)) {
