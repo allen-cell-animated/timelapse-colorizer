@@ -9,7 +9,7 @@ let currentFrame = 0;
 
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
 // Esri color ramps - Blue 14
-const colorStops = ["#3a4d6b", "#3d6da2", "#799a96", "#ccbe6a", "#ffec99"] as HexColorString[];
+const colorStops: HexColorString[] = ["#3a4d6b", "#3d6da2", "#799a96", "#ccbe6a", "#ffec99"];
 const colorRamp = new ColorRamp(colorStops);
 canv.setColorRamp(colorRamp);
 
@@ -24,8 +24,34 @@ async function start(): Promise<void> {
     canv.setSize(window.innerWidth, window.innerHeight);
     canv.render();
   });
-  window.addEventListener("keyup", handleKey);
+  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("keyup", handleKeyUp);
   // drawLoop();
+}
+
+let leftArrowDown = false;
+let rightArrowDown = false;
+let drawLoopRunning = false;
+
+function handleKeyDown({ key, repeat }: KeyboardEvent): void {
+  if (repeat) return;
+  if (key === "ArrowLeft" || key === "Left") {
+    leftArrowDown = true;
+    if (!drawLoopRunning) drawLoop();
+  } else if (key === "ArrowRight" || key === "Right") {
+    rightArrowDown = true;
+    if (!drawLoopRunning) drawLoop();
+  }
+}
+
+function handleKeyUp({ key }: KeyboardEvent): void {
+  if (key === "ArrowLeft" || key === "Left") {
+    leftArrowDown = false;
+    if (!drawLoopRunning) drawLoop();
+  } else if (key === "ArrowRight" || key === "Right") {
+    rightArrowDown = false;
+    if (!drawLoopRunning) drawLoop();
+  }
 }
 
 async function drawFrame(index: number): Promise<void> {
@@ -33,20 +59,16 @@ async function drawFrame(index: number): Promise<void> {
   canv.render();
 }
 
-function handleKey({ key }: KeyboardEvent): void {
-  if (key === "Left" || key === "ArrowLeft") {
-    currentFrame = (currentFrame - 1 + dataset.numberOfFrames) % dataset.numberOfFrames;
-    drawFrame(currentFrame);
-  } else if (key === "Right" || key === "ArrowRight") {
-    currentFrame = (currentFrame + 1) % dataset.numberOfFrames;
-    drawFrame(currentFrame);
-  }
-}
-
 async function drawLoop(): Promise<void> {
-  await drawFrame(currentFrame);
-  currentFrame = (currentFrame + 1) % dataset.numberOfFrames;
-  window.requestAnimationFrame(drawLoop);
+  drawLoopRunning = true;
+  if ((leftArrowDown || rightArrowDown) && !(leftArrowDown && rightArrowDown)) {
+    await drawFrame(currentFrame);
+    const delta = leftArrowDown ? -1 : 1;
+    currentFrame = (currentFrame + delta + dataset.numberOfFrames) % dataset.numberOfFrames;
+    window.requestAnimationFrame(drawLoop);
+  } else {
+    drawLoopRunning = false;
+  }
 }
 
 window.addEventListener("beforeunload", () => canv.dispose());
