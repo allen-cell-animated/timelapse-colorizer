@@ -1,5 +1,8 @@
-uniform highp usampler2D frame;
+precision highp usampler2D;
+
+uniform usampler2D frame;
 uniform sampler2D featureData;
+uniform usampler2D outlierData;
 uniform float featureMin;
 uniform float featureMax;
 
@@ -23,6 +26,12 @@ float getFeatureVal(int index) {
   return texelFetch(featureData, featurePos, 0).r;
 }
 
+uint getOutlierVal(int index) {
+  int width = textureSize(outlierData, 0).x;
+  ivec2 featurePos = ivec2(index % width, index / width);
+  return texelFetch(outlierData, featurePos, 0).r;
+}
+
 vec4 getColorRamp(float val) {
   float width = float(textureSize(colorRamp, 0).x);
   float range = (width - 1.0) / width;
@@ -44,18 +53,19 @@ void main() {
   }
 
   // Get the segmentation id at this pixel
-  uint index = combineColor(texture(frame, sUv));
+  uint id = combineColor(texture(frame, sUv));
 
   // A segmentation id of 0 represents background
-  if (index == 0u) {
+  if (id == 0u) {
     gOutputColor = vec4(backgroundColor, 1.0);
     return;
   }
 
   // Data buffer starts at 0, non-background segmentation IDs start at 1
-  float featureVal = getFeatureVal(int(index) - 1);
+  float featureVal = getFeatureVal(int(id) - 1);
+  uint outlierVal = getOutlierVal(int(id) - 1);
 
-  if (isinf(featureVal)) {
+  if (isinf(featureVal) || outlierVal != 0u) {
     // outlier
     gOutputColor = vec4(outlierColor, 1.0);
   } else {

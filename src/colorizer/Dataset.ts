@@ -1,4 +1,4 @@
-import { Texture } from "three";
+import { DataTexture, Texture } from "three";
 
 import { FeatureData, IFeatureLoader, IFrameLoader } from "./loaders/ILoader";
 import JsonFeatureLoader from "./loaders/JsonFeatureLoader";
@@ -9,6 +9,7 @@ import FrameCache from "./FrameCache";
 type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
+  outliers?: string;
 };
 
 const MAX_CACHED_FRAMES = 30;
@@ -21,13 +22,19 @@ export default class Dataset {
 
   private featureLoader: IFeatureLoader;
   private featureFiles: Record<string, string>;
-  public readonly features: Record<string, FeatureData>;
+  public features: Record<string, FeatureData>;
+
+  private outlierFile?: string;
+  public outliers?: DataTexture;
 
   public baseUrl: string;
   private hasOpened: boolean;
 
   constructor(baseUrl: string, frameLoader?: IFrameLoader, featureLoader?: IFeatureLoader) {
     this.baseUrl = baseUrl;
+    if (this.baseUrl.endsWith("/")) {
+      this.baseUrl = this.baseUrl.slice(0, this.baseUrl.length - 1);
+    }
     this.hasOpened = false;
 
     this.frameLoader = frameLoader || new ImageFrameLoader();
@@ -49,6 +56,14 @@ export default class Dataset {
   private async loadFeature(name: string): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
     this.features[name] = await this.featureLoader.load(url);
+  }
+
+  private async loadOutliers(): Promise<void> {
+    if (!this.outlierFile) {
+      return;
+    }
+    const url = this.resolveUrl(this.outlierFile);
+    this.outliers = (await this.featureLoader.load(url)).tex;
   }
 
   public get numberOfFrames(): number {
@@ -87,14 +102,17 @@ export default class Dataset {
 
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
+    this.outlierFile = manifest.outliers;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
-    await Promise.all(this.featureNames.map(this.loadFeature.bind(this)));
+    const promises = this.featureNames.map(this.loadFeature.bind(this));
+    promises.push(this.loadOutliers());
+    await Promise.all(promises);
   }
 
   /** Frees the GPU resources held by this dataset */
   public dispose(): void {
-    Object.values(this.features).forEach(({ data }) => data.dispose());
+    Object.values(this.features).forEach(({ tex }) => tex.dispose());
     this.frames?.dispose();
   }
 }

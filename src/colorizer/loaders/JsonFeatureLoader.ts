@@ -1,12 +1,13 @@
 import { FeatureData, IFeatureLoader } from "./ILoader";
-import { packFloatDataTexture } from "./util";
+import { packBooleanDataTexture, packFloatDataTexture } from "../utils/texture_utils";
 
 type FeatureDataJson = {
-  data: number[];
+  data: number[] | boolean[];
   min: number;
   max: number;
 };
 
+const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 const nanToNull = (json: string): string => json.replace(/NaN/g, "null");
 
 export default class JsonFeatureLoader implements IFeatureLoader {
@@ -14,12 +15,9 @@ export default class JsonFeatureLoader implements IFeatureLoader {
     const response = await fetch(url);
     const text = await response.text();
     const { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
-    // const { data, min, max }: FeatureDataJson = await response.json();
-    const sanitizedData = data.map((val) => (val === null ? Infinity : val));
-    return {
-      data: packFloatDataTexture(sanitizedData),
-      min,
-      max,
-    };
+    const tex = isBoolArray(data)
+      ? packBooleanDataTexture(data)
+      : packFloatDataTexture(data.map((val) => (val === null ? Infinity : val)));
+    return { tex, min, max };
   }
 }

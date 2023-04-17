@@ -1,7 +1,7 @@
 import { Texture, DataTexture } from "three";
 
 export type FeatureData = {
-  data: DataTexture;
+  tex: DataTexture;
   min: number;
   max: number;
 };

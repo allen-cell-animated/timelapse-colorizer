@@ -1,9 +1,7 @@
 import {
   Color,
   DataTexture,
-  FloatType,
   GLSL3,
-  RedFormat,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
@@ -16,19 +14,20 @@ import {
   WebGLRenderer,
 } from "three";
 
+import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-
+import { packBooleanDataTexture, packFloatDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
-import ColorRamp from "./ColorRamp";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
-const OUTLIER_COLOR_DEFAULT = 0x00ff00;
+const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 
 type ColorizeUniformTypes = {
   aspect: number;
   frame: Texture;
   featureData: DataTexture;
+  outlierData: DataTexture;
   featureMin: number;
   featureMax: number;
   colorRamp: DataTexture;
@@ -42,17 +41,15 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
-
-  const emptyFeature = new DataTexture(new Float32Array([0]), 1, 1, RedFormat, FloatType);
-  emptyFeature.internalFormat = "R32F";
-  emptyFeature.needsUpdate = true;
-
+  const emptyFeature = packFloatDataTexture([0]);
+  const emptyOutliers = packBooleanDataTexture([false]);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
 
   return {
     aspect: new Uniform(2),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
+    outlierData: new Uniform(emptyOutliers),
     featureMin: new Uniform(0),
     featureMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
@@ -115,6 +112,11 @@ export default class ColorizeCanvas {
       this.dataset.dispose();
     }
     this.dataset = dataset;
+    if (this.dataset.outliers) {
+      this.setUniform("outlierData", this.dataset.outliers);
+    } else {
+      this.setUniform("outlierData", packBooleanDataTexture([false]));
+    }
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
@@ -138,9 +140,9 @@ export default class ColorizeCanvas {
       return;
     }
 
-    const { data, min, max } = this.dataset.features[name];
+    const { tex, min, max } = this.dataset.features[name];
 
-    this.setUniform("featureData", data);
+    this.setUniform("featureData", tex);
     this.setUniform("featureMin", min);
     this.setUniform("featureMax", max / 1.5);
   }
