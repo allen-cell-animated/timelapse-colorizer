@@ -12,7 +12,7 @@ type DatasetManifest = {
   outliers?: string;
 };
 
-const MAX_CACHED_FRAMES = 30;
+const MAX_CACHED_FRAMES = 60;
 const MANIFEST_FILENAME = "manifest.json";
 
 export default class Dataset {
