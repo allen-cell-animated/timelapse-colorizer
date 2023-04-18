@@ -59,12 +59,13 @@ const colorStops: HexColorString[][] = [
   ],
 ];
 const colorRamps = colorStops.map((ramp) => new ColorRamp(ramp));
+const DEFAULT_RAMP = 4;
 
 function populateColorRampSelect(): void {
   colorRampSelectEl.innerHTML = "";
   colorRamps.forEach((ramp, idx) => {
     const rampCanvas = ramp.createGradientCanvas(120, 25);
-    if (idx === 4) {
+    if (idx === DEFAULT_RAMP) {
       rampCanvas.className = "selected";
     }
     colorRampSelectEl.appendChild(rampCanvas);
@@ -185,7 +186,7 @@ async function drawLoop(): Promise<void> {
 async function start(): Promise<void> {
   setSize();
   populateColorRampSelect();
-  canv.setColorRamp(colorRamps[0]);
+  canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
   await loadDataset("mama_bear");
 
   window.addEventListener("keydown", handleKeyDown);
