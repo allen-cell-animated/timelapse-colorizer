@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nuclear Morphogenesis Colorizer</title>
+    <style>
+#color_ramp {
+  position: absolute;
+  margin-left: 5px;
+}
+
+#color_ramp canvas {
+  display: block;
+}
+
+#color_ramp:not(:hover) canvas:not(.selected) {
+  display: none;
+}
+
+#color_ramp canvas:hover, #color_ramp canvas.selected {
+  outline: 3px solid black;
+  outline-offset: -2px;
+}
+    </style>
+    <script type="module" crossorigin src="/assets/index-d7d38291.js"></script>
+  </head>
+  <body>
+    <div style="height: 30px;">
+      <label for="dataset">Dataset</label>
+      <select name="Dataset" id="dataset">
+        <option value="mama_bear">mama_bear</option>
+        <option value="goldilocks">goldilocks</option>
+        <option value="baby_bear">baby_bear</option>
+      </select>
+      <label for="feature">Feature</label>
+      <select name="Feature" id="feature"></select>
+      <label for="color_ramp">Color ramp</label>
+      <span id="color_ramp"></span>
+    </div>
+    <div id="app"></div>
+    <div>(use arrow keys)</div>
+    
+  </body>
+</html>
