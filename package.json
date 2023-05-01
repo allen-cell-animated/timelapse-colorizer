@@ -7,6 +7,7 @@
     "start": "vite",
     "dev": "vite",
     "build": "tsc && vite build",
+    "build-internal": "tsc && vite build --base=/nucmorph-colorizer/dist/",
     "preview": "vite preview",
     "deploy": "tsc && vite build --base=/nucmorph-colorizer/ && gh-pages -d dist",
     "lint": "eslint --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx",
