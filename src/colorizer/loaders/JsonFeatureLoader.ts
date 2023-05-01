@@ -15,9 +15,11 @@ export default class JsonFeatureLoader implements IFeatureLoader {
     const response = await fetch(url);
     const text = await response.text();
     const { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
+
     const tex = isBoolArray(data)
       ? packBooleanDataTexture(data)
       : packFloatDataTexture(data.map((val) => (val === null ? Infinity : val)));
-    return { tex, min, max };
+    const dataArr = isBoolArray(data) ? new Float32Array(data.map((value) => (value ? 1 : 0))) : new Float32Array(data);
+    return { data: dataArr, tex, min, max };
   }
 }

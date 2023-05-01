@@ -1,8 +1,9 @@
 import { DataTexture, Texture } from "three";
 
-import { FeatureData, IFeatureLoader, IFrameLoader } from "./loaders/ILoader";
+import { FeatureData, IFeatureLoader, IFrameLoader, ITracksLoader } from "./loaders/ILoader";
 import JsonFeatureLoader from "./loaders/JsonFeatureLoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
+import JsonTracksLoader from "./loaders/JsonTracksLoader";
 
 import FrameCache from "./FrameCache";
 
@@ -10,6 +11,7 @@ type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
   outliers?: string;
+  tracks?: string;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -27,10 +29,20 @@ export default class Dataset {
   private outlierFile?: string;
   public outliers?: DataTexture;
 
+  private tracksLoader: ITracksLoader;
+  private tracksFile?: string;
+  public trackIds?: Uint32Array;
+  public times?: Uint32Array;
+
   public baseUrl: string;
   private hasOpened: boolean;
 
-  constructor(baseUrl: string, frameLoader?: IFrameLoader, featureLoader?: IFeatureLoader) {
+  constructor(
+    baseUrl: string,
+    frameLoader?: IFrameLoader,
+    featureLoader?: IFeatureLoader,
+    tracksLoader?: ITracksLoader
+  ) {
     this.baseUrl = baseUrl;
     if (this.baseUrl.endsWith("/")) {
       this.baseUrl = this.baseUrl.slice(0, this.baseUrl.length - 1);
@@ -44,6 +56,8 @@ export default class Dataset {
     this.featureLoader = featureLoader || new JsonFeatureLoader();
     this.featureFiles = {};
     this.features = {};
+
+    this.tracksLoader = tracksLoader || new JsonTracksLoader();
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
@@ -64,6 +78,18 @@ export default class Dataset {
     }
     const url = this.resolveUrl(this.outlierFile);
     this.outliers = (await this.featureLoader.load(url)).tex;
+  }
+
+  private async loadTracks(): Promise<void> {
+    if (!this.tracksFile) {
+      return;
+    }
+    const url = this.resolveUrl(this.tracksFile);
+    const { trackIds, times } = await this.tracksLoader.load(url);
+    this.trackIds = trackIds;
+    this.times = times;
+    console.log(this.times);
+    console.log(this.trackIds);
   }
 
   public get numberOfFrames(): number {
@@ -103,10 +129,12 @@ export default class Dataset {
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
     this.outlierFile = manifest.outliers;
+    this.tracksFile = manifest.tracks;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     const promises = this.featureNames.map(this.loadFeature.bind(this));
     promises.push(this.loadOutliers());
+    promises.push(this.loadTracks());
     await Promise.all(promises);
   }
 
@@ -114,5 +142,56 @@ export default class Dataset {
   public dispose(): void {
     Object.values(this.features).forEach(({ tex }) => tex.dispose());
     this.frames?.dispose();
+  }
+
+  /** get frame index of a given cell id */
+  public getTime(index: number): number {
+    return this.times?.[index] || 0;
+  }
+
+  /** get track id of a given cell id */
+  public getTrackId(index: number): number {
+    return this.trackIds?.[index] || 0;
+  }
+
+  // get the times and values of a track for a given feature
+  // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
+  public buildTrack(trackId: number, feature: string): { domain: number[]; range: number[] } {
+    // if we don't have track info then return empty arrays
+    if (!this.trackIds || !this.times) {
+      return { domain: [], range: [] };
+    }
+    console.time("buildTrack");
+    // trackIds contains a track id for every cell id in order.
+    // get all cell ids for given track
+    const track = this.trackIds.reduce(function (arr: number[], elem: number, ind: number) {
+      if (elem === trackId) arr.push(ind);
+      return arr;
+    }, []);
+    // track now contains all cell ids that have trackId.
+    // get all the times and the feature values for those cell, in the same order
+    const domain = track.map((i) => (this.times ? this.times[i] : 0));
+    const range = track.map((i) => this.features[feature].data[i]);
+
+    let sortedDomain = domain;
+    let sortedRange = range;
+
+    // TODO sort both, ascending by domain?
+    // I have no idea if the domain would be presorted or not
+    const shouldSort = false;
+    if (shouldSort) {
+      const indices = [...domain.keys()];
+      indices.sort((a, b) => (domain[a] < domain[b] ? -1 : domain[a] === domain[b] ? 0 : 1));
+      sortedDomain = indices.map((i) => domain[i]);
+      sortedRange = indices.map((i) => range[i]);
+    }
+
+    console.timeEnd("buildTrack");
+    console.log(
+      `Track ${trackId} has ${track.length} timepoints starting from ${sortedDomain[0]} to ${
+        sortedDomain[domain.length - 1]
+      }`
+    );
+    return { domain: sortedDomain, range: sortedRange };
   }
 }

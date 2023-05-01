@@ -7,12 +7,14 @@
     "start": "vite",
     "dev": "vite",
     "build": "tsc && vite build",
+    "build-internal": "tsc && vite build --base=/nucmorph-colorizer/dist/",
     "preview": "vite preview",
     "deploy": "tsc && vite build --base=/nucmorph-colorizer/ && gh-pages -d dist",
     "lint": "eslint --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@types/plotly.js-dist-min": "^2.3.1",
     "@types/three": "^0.150.1",
     "eslint": "^8.38.0",
     "gh-pages": "^5.0.0",
@@ -22,6 +24,7 @@
     "vite-plugin-glsl": "^1.1.2"
   },
   "dependencies": {
+    "plotly.js-dist-min": "^2.22.0",
     "three": "^0.151.3"
   }
 }
