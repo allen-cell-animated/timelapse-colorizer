@@ -9,6 +9,8 @@ type FeatureDataJson = {
   max?: number;
 };
 
+const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
+
 class JsonDataSource implements DataSource {
   array: number[];
   isBool: boolean;
@@ -50,11 +52,10 @@ class JsonDataSource implements DataSource {
   }
 }
 
-const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 const nanToNull = (json: string): string => json.replace(/NaN/g, "null");
 
 export default class JsonFeatureLoader implements IFeatureLoader {
-  async load(url: string): Promise<DataSource> {
+  async load(url: string): Promise<JsonDataSource> {
     const response = await fetch(url);
     const text = await response.text();
     let { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
