@@ -1,17 +1,18 @@
 import { DataTexture, Texture } from "three";
 
-import { FeatureData, IFeatureLoader, IFrameLoader, ITracksLoader } from "./loaders/ILoader";
+import { FeatureData, IFeatureLoader, IFrameLoader } from "./loaders/ILoader";
 import JsonFeatureLoader from "./loaders/JsonFeatureLoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import JsonTracksLoader from "./loaders/JsonTracksLoader";
 
 import FrameCache from "./FrameCache";
+import { FeatureDataType } from "./utils/feature_utils";
 
 type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
   outliers?: string;
   tracks?: string;
+  times?: string;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -29,20 +30,15 @@ export default class Dataset {
   private outlierFile?: string;
   public outliers?: DataTexture;
 
-  private tracksLoader: ITracksLoader;
   private tracksFile?: string;
+  private timesFile?: string;
   public trackIds?: Uint32Array;
   public times?: Uint32Array;
 
   public baseUrl: string;
   private hasOpened: boolean;
 
-  constructor(
-    baseUrl: string,
-    frameLoader?: IFrameLoader,
-    featureLoader?: IFeatureLoader,
-    tracksLoader?: ITracksLoader
-  ) {
+  constructor(baseUrl: string, frameLoader?: IFrameLoader, featureLoader?: IFeatureLoader) {
     this.baseUrl = baseUrl;
     if (this.baseUrl.endsWith("/")) {
       this.baseUrl = this.baseUrl.slice(0, this.baseUrl.length - 1);
@@ -56,8 +52,6 @@ export default class Dataset {
     this.featureLoader = featureLoader || new JsonFeatureLoader();
     this.featureFiles = {};
     this.features = {};
-
-    this.tracksLoader = tracksLoader || new JsonTracksLoader();
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
@@ -69,7 +63,13 @@ export default class Dataset {
 
   private async loadFeature(name: string): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
-    this.features[name] = await this.featureLoader.load(url);
+    const source = await this.featureLoader.load(url);
+    this.features[name] = {
+      tex: source.getTexture(FeatureDataType.F32),
+      data: source.getBuffer(FeatureDataType.F32),
+      min: source.getMin(),
+      max: source.getMax(),
+    };
   }
 
   private async loadOutliers(): Promise<void> {
@@ -77,7 +77,8 @@ export default class Dataset {
       return;
     }
     const url = this.resolveUrl(this.outlierFile);
-    this.outliers = (await this.featureLoader.load(url)).tex;
+    const source = await this.featureLoader.load(url);
+    this.outliers = source.getTexture(FeatureDataType.U8);
   }
 
   private async loadTracks(): Promise<void> {
@@ -85,11 +86,17 @@ export default class Dataset {
       return;
     }
     const url = this.resolveUrl(this.tracksFile);
-    const { trackIds, times } = await this.tracksLoader.load(url);
-    this.trackIds = trackIds;
-    this.times = times;
-    console.log(this.times);
-    console.log(this.trackIds);
+    const source = await this.featureLoader.load(url);
+    this.trackIds = source.getBuffer(FeatureDataType.U32);
+  }
+
+  private async loadTimes(): Promise<void> {
+    if (!this.timesFile) {
+      return;
+    }
+    const url = this.resolveUrl(this.timesFile);
+    const source = await this.featureLoader.load(url);
+    this.times = source.getBuffer(FeatureDataType.U32);
   }
 
   public get numberOfFrames(): number {
@@ -130,11 +137,13 @@ export default class Dataset {
     this.featureFiles = manifest.features;
     this.outlierFile = manifest.outliers;
     this.tracksFile = manifest.tracks;
+    this.timesFile = manifest.times;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     const promises = this.featureNames.map(this.loadFeature.bind(this));
     promises.push(this.loadOutliers());
     promises.push(this.loadTracks());
+    promises.push(this.loadTimes());
     await Promise.all(promises);
   }
 

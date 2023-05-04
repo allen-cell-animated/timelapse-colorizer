@@ -17,7 +17,7 @@ import {
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { packBooleanDataTexture, packFloatDataTexture } from "./utils/texture_utils";
+import { FeatureDataType, packBooleanDataTexture, packDataTexture } from "./utils/feature_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
@@ -43,8 +43,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
-  const emptyFeature = packFloatDataTexture([0]);
-  const emptyOutliers = packBooleanDataTexture([false]);
+  const emptyFeature = packDataTexture([0], FeatureDataType.F32);
+  const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
 
   return {
