@@ -110,10 +110,14 @@ def make_features(a, features, output_dir, dataset):
 
     # Note these must be in same order as features and same row order as the dataframe.
     tracks = a["track_id"].to_numpy()
-    trackTimes = a["index_sequence"].to_numpy()
-    tjs = {"trackIds": tracks.tolist(), "trackTimes": trackTimes.tolist()}
+    trjs = {"data": tracks.tolist()}
     with open(outpath + "/tracks.json", "w") as f:
-        json.dump(tjs, f)
+        json.dump(trjs, f)
+
+    times = a["index_sequence"].to_numpy()
+    tijs = {"data": times.toList()}
+    with open(outpath + "/times.json", "w") as f:
+        json.dump(tijs, f)
 
     for i in range(nfeatures):
         f = a[features[i]].to_numpy()
@@ -162,6 +166,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
         "features": featmap,
         "outliers": "outliers.json",
         "tracks": "tracks.json",
+        "times": "times.json",
     }
     with open(os.path.join(output_dir, dataset) + "/manifest.json", "w") as f:
         json.dump(js, f)
