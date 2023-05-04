@@ -1,11 +1,11 @@
 import { DataTexture, Texture } from "three";
 
-import { FeatureData, IFeatureLoader, IFrameLoader } from "./loaders/ILoader";
+import { IFeatureLoader, IFrameLoader } from "./loaders/ILoader";
 import JsonFeatureLoader from "./loaders/JsonFeatureLoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 
 import FrameCache from "./FrameCache";
-import { FeatureDataType } from "./utils/feature_utils";
+import { FeatureDataType } from "./types";
 
 type DatasetManifest = {
   frames: string[];
@@ -13,6 +13,13 @@ type DatasetManifest = {
   outliers?: string;
   tracks?: string;
   times?: string;
+};
+
+type FeatureData = {
+  data: Float32Array;
+  tex: DataTexture;
+  min: number;
+  max: number;
 };
 
 const MAX_CACHED_FRAMES = 60;

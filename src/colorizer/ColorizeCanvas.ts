@@ -17,7 +17,8 @@ import {
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { FeatureDataType, packBooleanDataTexture, packDataTexture } from "./utils/feature_utils";
+import { FeatureDataType } from "./types";
+import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
@@ -138,7 +139,7 @@ export default class ColorizeCanvas {
     if (this.dataset.outliers) {
       this.setUniform("outlierData", this.dataset.outliers);
     } else {
-      this.setUniform("outlierData", packBooleanDataTexture([false]));
+      this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
   }
 

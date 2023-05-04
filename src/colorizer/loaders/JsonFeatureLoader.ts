@@ -1,5 +1,6 @@
 import { DataSource, IFeatureLoader } from "./ILoader";
-import { FeatureDataType, FeatureArrayType, featureTypeSpecs, packDataTexture } from "../utils/feature_utils";
+import { FeatureDataType, FeatureArrayType, featureTypeSpecs } from "../types";
+import { packDataTexture } from "../utils/texture_utils";
 import { DataTexture } from "three";
 
 type FeatureDataJson = {
@@ -57,12 +58,6 @@ export default class JsonFeatureLoader implements IFeatureLoader {
     const response = await fetch(url);
     const text = await response.text();
     let { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
-
-    // const tex = isBoolArray(data)
-    //   ? packBooleanDataTexture(data)
-    //   : packFloatDataTexture(data.map((val) => (val === null ? Infinity : val)));
-    // const dataArr = isBoolArray(data) ? new Float32Array(data.map((value) => (value ? 1 : 0))) : new Float32Array(data);
-    // return { data: dataArr, tex, min, max };
     return new JsonDataSource(data, min, max);
   }
 }
