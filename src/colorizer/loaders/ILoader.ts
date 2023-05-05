@@ -1,14 +1,19 @@
-import { Texture, DataTexture } from "three";
+import { Texture } from "three";
 import { FeatureDataType, FeatureArrayType } from "../types";
 
 export interface DataSource {
+  /** Create a `TypedArray` of the specified type from this data source */
   getBuffer<T extends FeatureDataType>(type: T): FeatureArrayType[T];
-  getTexture(type: FeatureDataType): DataTexture;
+  /** Create a square texture of the specified type from this data source */
+  getTexture(type: FeatureDataType): Texture;
+  /** Get the minimum value of the contained data */
   getMin(): number;
+  /** Get the maximum value of the contained data */
   getMax(): number;
 }
 
 interface ILoader<DataType> {
+  /** Begin loading data */
   load(url: string): Promise<DataType>;
 }
 

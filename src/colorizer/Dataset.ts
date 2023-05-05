@@ -1,4 +1,4 @@
-import { DataTexture, Texture } from "three";
+import { Texture } from "three";
 
 import { IFeatureLoader, IFrameLoader } from "./loaders/ILoader";
 import JsonFeatureLoader from "./loaders/JsonFeatureLoader";
@@ -17,7 +17,7 @@ type DatasetManifest = {
 
 type FeatureData = {
   data: Float32Array;
-  tex: DataTexture;
+  tex: Texture;
   min: number;
   max: number;
 };
@@ -35,7 +35,7 @@ export default class Dataset {
   public features: Record<string, FeatureData>;
 
   private outlierFile?: string;
-  public outliers?: DataTexture;
+  public outliers?: Texture;
 
   private tracksFile?: string;
   private timesFile?: string;
