@@ -8,14 +8,24 @@ export default class Plotting {
   constructor(divId: string) {
     this.parentDivId = divId;
     this.dataset = null;
-    Plotly.newPlot(this.parentDivId, []);
+    const layout: Partial<Plotly.Layout> = {
+      xaxis: {
+        title: "time index",
+      },
+      yaxis: {
+        title: "[None]",
+      },
+      title: "No track selected",
+    };
+
+    Plotly.newPlot(this.parentDivId, [], layout);
   }
 
   setDataset(dataset: Dataset): void {
     this.dataset = dataset;
   }
 
-  plot(trackId: number, feature: string): void {
+  plot(trackId: number, feature: string, time: number): void {
     if (!this.dataset) {
       return;
     }
@@ -28,7 +38,39 @@ export default class Plotting {
 
     const data = [trace1];
 
-    Plotly.react(this.parentDivId, data);
+    const ymin = Math.min(...plotinfo.range);
+    const ymax = Math.max(...plotinfo.range);
+    const layout: Partial<Plotly.Layout> = {
+      yaxis: {
+        title: feature,
+      },
+      shapes: [
+        {
+          type: "line",
+          x0: time,
+          y0: ymin,
+          x1: time,
+          yref: "paper",
+          y1: ymax,
+          line: {
+            color: "grey",
+            width: 1.5,
+            dash: "dot",
+          },
+        },
+      ],
+      title: "track " + trackId,
+    };
+
+    Plotly.react(this.parentDivId, data, layout);
+  }
+
+  setTime(t: number): void {
+    const layout: Partial<Plotly.Layout> = {
+      "shapes[0].x0": t,
+      "shapes[0].x1": t,
+    };
+    Plotly.relayout(this.parentDivId, layout);
   }
 
   removePlot(): void {
