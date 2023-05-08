@@ -128,7 +128,7 @@ function handleFeatureChange({ currentTarget }: Event): void {
   featureName = value;
   // only update plot if active
   if (selectedTrackId > 0) {
-    plot.plot(selectedTrackId, value);
+    plot.plot(selectedTrackId, value, currentFrame);
   }
 }
 
@@ -140,7 +140,7 @@ function handleCanvasClick(event: MouseEvent): void {
     return;
   }
   selectedTrackId = dataset!.getTrackId(id);
-  plot.plot(selectedTrackId, featureName);
+  plot.plot(selectedTrackId, featureName, currentFrame);
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -198,6 +198,7 @@ async function drawLoop(): Promise<void> {
     await drawFrame(currentFrame);
     const delta = leftArrowDown ? -1 : 1;
     currentFrame = (currentFrame + delta + dataset.numberOfFrames) % dataset.numberOfFrames;
+    plot.setTime(currentFrame);
     window.requestAnimationFrame(drawLoop);
   } else {
     drawLoopRunning = false;
