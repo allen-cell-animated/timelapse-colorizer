@@ -1,6 +1,23 @@
 import Dataset from "./Dataset";
 import Plotly from "plotly.js-dist-min";
 
+const LINE_OPACITY = 0.5;
+const LINE_COLOR = "rgb(25, 25, 25)";
+const LINE_SPEC: Partial<Plotly.Shape> = {
+  type: "line",
+  x0: 0,
+  y0: 0,
+  x1: 0,
+  yref: "paper",
+  y1: 1,
+  opacity: LINE_OPACITY,
+  line: {
+    color: LINE_COLOR,
+    width: 1,
+    dash: "dot",
+  },
+};
+
 export default class Plotting {
   private parentDivId: string;
   private dataset: Dataset | null;
@@ -38,25 +55,17 @@ export default class Plotting {
 
     const data = [trace1];
 
-    const ymin = Math.min(...plotinfo.range);
-    const ymax = Math.max(...plotinfo.range);
+    //const ymin = Math.min(...plotinfo.range);
+    //const ymax = Math.max(...plotinfo.range);
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
         title: feature,
       },
       shapes: [
         {
-          type: "line",
+          ...LINE_SPEC,
           x0: time,
-          y0: ymin,
           x1: time,
-          yref: "paper",
-          y1: ymax,
-          line: {
-            color: "grey",
-            width: 1.5,
-            dash: "dot",
-          },
         },
       ],
       title: "track " + trackId,
@@ -67,8 +76,13 @@ export default class Plotting {
 
   setTime(t: number): void {
     const layout: Partial<Plotly.Layout> = {
-      "shapes[0].x0": t,
-      "shapes[0].x1": t,
+      shapes: [
+        {
+          ...LINE_SPEC,
+          x0: t,
+          x1: t,
+        },
+      ],
     };
     Plotly.relayout(this.parentDivId, layout);
   }
