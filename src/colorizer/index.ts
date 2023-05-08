@@ -5,5 +5,6 @@ import JsonFeatureLoader from "./loaders/JsonFeatureLoader";
 import ColorRamp from "./ColorRamp";
 import ColorizeCanvas from "./ColorizeCanvas";
 import Dataset from "./Dataset";
+import Plotting from "./Plotting";
 
-export { ColorizeCanvas, Dataset, ColorRamp, ImageFrameLoader, JsonFeatureLoader };
+export { ColorizeCanvas, Dataset, ColorRamp, ImageFrameLoader, JsonFeatureLoader, Plotting };

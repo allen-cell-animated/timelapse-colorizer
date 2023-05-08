@@ -10,7 +10,8 @@ import skimage
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
 from nuc_morph_analysis.preprocessing.load_data import (
     load_dataset,
-    get_dataset_pixel_size)
+    get_dataset_pixel_size,
+)
 
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
@@ -20,6 +21,8 @@ from nuc_morph_analysis.preprocessing.load_data import (
 # manifest.json:
 #   frames: [frame_0.png, frame_1.png, ...]
 #   features: { feature_0: feature_0.json, feature_1: feature_1.json, ... }
+#   outliers: [ bool, bool, ... ] // per cell, same order as featureN.json files
+#   tracks: {trackIds, trackTimes} // per cell, same order as featureN.json files
 #
 # frame0.png:  numbers stored in RGB. true scalar index is (R + G*256 + B*256*256)
 #
@@ -47,7 +50,7 @@ from nuc_morph_analysis.preprocessing.load_data import (
 # NUC_PC6	float	Needs calculated and added	Value for shape mode 6 for a single nucleus in a given frame
 # NUC_PC7	float	Needs calculated and added	Value for shape mode 7 for a single nucleus in a given frame
 # NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
-			
+
 
 def make_frames(grouped_frames, output_dir, dataset):
     downsample = 1
@@ -67,7 +70,9 @@ def make_frames(grouped_frames, output_dir, dataset):
         mn = np.nanmin(seg2d[np.nonzero(seg2d)])
         # TODO test this
         if downsample != 1:
-            seg2d = skimage.transform.rescale(seg2d, downsample, anti_aliasing=False, order=0)
+            seg2d = skimage.transform.rescale(
+                seg2d, downsample, anti_aliasing=False, order=0
+            )
         seg2d = seg2d.astype(np.uint32)
 
         lut = np.zeros((mx + 1), dtype=np.uint32)
@@ -75,13 +80,15 @@ def make_frames(grouped_frames, output_dir, dataset):
             # build our remapping LUT:
             label = int(row["label_img"])
             rowind = int(row["initialIndex"])
-            lut[label] = rowind+1
+            lut[label] = rowind + 1
 
         # remap indices of this frame.
         seg_remapped = lut[seg2d]
 
         # convert data to RGBA
-        seg_rgba = np.zeros((seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8)
+        seg_rgba = np.zeros(
+            (seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8
+        )
         seg_rgba[:, :, 0] = (seg_remapped & 0x000000FF) >> 0
         seg_rgba[:, :, 1] = (seg_remapped & 0x0000FF00) >> 8
         seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
@@ -94,11 +101,19 @@ def make_features(a, features, output_dir, dataset):
     nfeatures = len(features)
 
     outpath = os.path.join(output_dir, dataset)
+
     # TODO check outlier and replace values with NaN or something!
     outliers = a["is_outlier"].to_numpy()
     ojs = {"data": outliers.tolist(), "min": False, "max": True}
     with open(outpath + "/outliers.json", "w") as f:
         json.dump(ojs, f)
+
+    # Note these must be in same order as features and same row order as the dataframe.
+    tracks = a["track_id"].to_numpy()
+    trackTimes = a["index_sequence"].to_numpy()
+    tjs = {"trackIds": tracks.tolist(), "trackTimes": trackTimes.tolist()}
+    with open(outpath + "/tracks.json", "w") as f:
+        json.dump(tjs, f)
 
     for i in range(nfeatures):
         f = a[features[i]].to_numpy()
@@ -110,7 +125,7 @@ def make_features(a, features, output_dir, dataset):
             json.dump(js, f)
 
 
-def make_dataset(output_dir="./data/", dataset="baby_bear"):
+def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
     os.makedirs(os.path.join(output_dir, dataset), exist_ok=True)
 
     # use nucmorph to load data
@@ -125,13 +140,14 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
     b = b.reset_index(drop=True)
     b["initialIndex"] = b.index.values
 
-    grouped_frames = b.groupby('index_sequence')
+    grouped_frames = b.groupby("index_sequence")
     # get a single path from each time in the set.
     # frames = grouped_frames.apply(lambda df: df.sample(1))
 
     nframes = len(grouped_frames)
 
-    make_frames(grouped_frames, output_dir, dataset)
+    if do_frames:
+        make_frames(grouped_frames, output_dir, dataset)
 
     features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
 
@@ -145,6 +161,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
         "frames": ["frame_" + str(i) + ".png" for i in range(nframes)],
         "features": featmap,
         "outliers": "outliers.json",
+        "tracks": "tracks.json",
     }
     with open(os.path.join(output_dir, dataset) + "/manifest.json", "w") as f:
         json.dump(js, f)
@@ -153,6 +170,9 @@ def make_dataset(output_dir="./data/", dataset="baby_bear"):
 parser = argparse.ArgumentParser()
 parser.add_argument("--output_dir", type=str, default="./data/")
 parser.add_argument("--dataset", type=str, default="baby_bear")
+parser.add_argument("--noframes", action="store_true")
 args = parser.parse_args()
 if __name__ == "__main__":
-    make_dataset(output_dir=args.output_dir, dataset=args.dataset)
+    make_dataset(
+        output_dir=args.output_dir, dataset=args.dataset, do_frames=not args.noframes
+    )

@@ -1,8 +1,9 @@
 import { HexColorString } from "three";
-import { ColorizeCanvas, ColorRamp, Dataset } from "./colorizer";
+import { ColorizeCanvas, ColorRamp, Dataset, Plotting } from "./colorizer";
 
 const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
+const plot = new Plotting("plot");
 const canv = new ColorizeCanvas();
 document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
 
@@ -80,8 +81,10 @@ let dataset: Dataset | null = null;
 let datasetName = "";
 let datasetOpen = false;
 let featureName = "";
+let selectedTrackId = 0;
 
 async function loadDataset(name: string): Promise<void> {
+  console.time("loadDataset");
   datasetOpen = false;
   datasetSelectEl.disabled = true;
   featureSelectEl.disabled = true;
@@ -97,6 +100,7 @@ async function loadDataset(name: string): Promise<void> {
   featureName = dataset.featureNames[0];
   canv.setDataset(dataset);
   canv.setFeature(featureName);
+  plot.setDataset(dataset);
   await drawFrame(0);
 
   featureSelectEl.innerHTML = "";
@@ -105,6 +109,7 @@ async function loadDataset(name: string): Promise<void> {
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
+  console.timeEnd("loadDataset");
 }
 
 // DISPLAY CONTROLS //////////////////////////////////////////////////////
@@ -120,6 +125,22 @@ function handleFeatureChange({ currentTarget }: Event): void {
   const value = (currentTarget as HTMLOptionElement).value;
   canv.setFeature(value);
   canv.render();
+  featureName = value;
+  // only update plot if active
+  if (selectedTrackId > 0) {
+    plot.plot(selectedTrackId, value, currentFrame);
+  }
+}
+
+function handleCanvasClick(event: MouseEvent): void {
+  const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+  console.log("clicked id " + id);
+  if (id < 0) {
+    plot.removePlot();
+    return;
+  }
+  selectedTrackId = dataset!.getTrackId(id);
+  plot.plot(selectedTrackId, featureName, currentFrame);
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -177,6 +198,7 @@ async function drawLoop(): Promise<void> {
     await drawFrame(currentFrame);
     const delta = leftArrowDown ? -1 : 1;
     currentFrame = (currentFrame + delta + dataset.numberOfFrames) % dataset.numberOfFrames;
+    plot.setTime(currentFrame);
     window.requestAnimationFrame(drawLoop);
   } else {
     drawLoopRunning = false;
@@ -194,9 +216,13 @@ async function start(): Promise<void> {
   datasetSelectEl.addEventListener("change", handleDatasetChange);
   featureSelectEl.addEventListener("change", handleFeatureChange);
   colorRampSelectEl.addEventListener("click", handleColorRampClick);
+  canv.domElement.addEventListener("click", handleCanvasClick);
 }
 
-window.addEventListener("beforeunload", () => canv.dispose());
+window.addEventListener("beforeunload", () => {
+  canv.domElement.removeEventListener("click", handleCanvasClick);
+  canv.dispose();
+});
 window.addEventListener("resize", () => {
   setSize();
   canv.render();
