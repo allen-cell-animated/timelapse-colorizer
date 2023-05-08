@@ -21,10 +21,12 @@ const LINE_SPEC: Partial<Plotly.Shape> = {
 export default class Plotting {
   private parentDivId: string;
   private dataset: Dataset | null;
+  private trace: Plotly.Data | null;
 
   constructor(divId: string) {
     this.parentDivId = divId;
     this.dataset = null;
+    this.trace = null;
     const layout: Partial<Plotly.Layout> = {
       xaxis: {
         title: "time index",
@@ -47,16 +49,12 @@ export default class Plotting {
       return;
     }
     const plotinfo = this.dataset?.buildTrack(trackId, feature);
-    const trace1: Plotly.Data = {
+    this.trace = {
       x: plotinfo.domain,
       y: plotinfo.range,
       type: "scatter",
     };
 
-    const data = [trace1];
-
-    //const ymin = Math.min(...plotinfo.range);
-    //const ymax = Math.max(...plotinfo.range);
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
         title: feature,
@@ -71,7 +69,7 @@ export default class Plotting {
       title: "track " + trackId,
     };
 
-    Plotly.react(this.parentDivId, data, layout);
+    Plotly.react(this.parentDivId, [this.trace], layout);
   }
 
   setTime(t: number): void {
@@ -85,6 +83,7 @@ export default class Plotting {
       ],
     };
     Plotly.relayout(this.parentDivId, layout);
+    //Plotly.react(this.parentDivId, this.trace ? [this.trace] : [], layout);
   }
 
   removePlot(): void {
