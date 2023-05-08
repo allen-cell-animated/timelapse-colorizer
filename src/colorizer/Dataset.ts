@@ -88,8 +88,6 @@ export default class Dataset {
     const { trackIds, times } = await this.tracksLoader.load(url);
     this.trackIds = trackIds;
     this.times = times;
-    console.log(this.times);
-    console.log(this.trackIds);
   }
 
   public get numberOfFrames(): number {
