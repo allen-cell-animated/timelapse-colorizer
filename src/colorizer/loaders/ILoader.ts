@@ -1,7 +1,7 @@
 import { Texture } from "three";
 import { FeatureDataType, FeatureArrayType } from "../types";
 
-export interface DataSource {
+export interface ArraySource {
   /** Create a `TypedArray` of the specified type from this data source */
   getBuffer<T extends FeatureDataType>(type: T): FeatureArrayType[T];
   /** Create a square texture of the specified type from this data source */
@@ -18,4 +18,4 @@ interface ILoader<DataType> {
 }
 
 export interface IFrameLoader extends ILoader<Texture> {}
-export interface IFeatureLoader extends ILoader<DataSource> {}
+export interface IArrayLoader extends ILoader<ArraySource> {}

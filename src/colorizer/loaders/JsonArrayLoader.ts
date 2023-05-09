@@ -1,4 +1,4 @@
-import { DataSource, IFeatureLoader } from "./ILoader";
+import { ArraySource, IArrayLoader } from "./ILoader";
 import { FeatureDataType, FeatureArrayType, featureTypeSpecs } from "../types";
 import { packDataTexture } from "../utils/texture_utils";
 import { DataTexture } from "three";
@@ -11,7 +11,7 @@ type FeatureDataJson = {
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
-class JsonDataSource implements DataSource {
+class JsonArraySource implements ArraySource {
   array: number[];
   isBool: boolean;
   min?: number;
@@ -54,11 +54,11 @@ class JsonDataSource implements DataSource {
 
 const nanToNull = (json: string): string => json.replace(/NaN/g, "null");
 
-export default class JsonFeatureLoader implements IFeatureLoader {
-  async load(url: string): Promise<JsonDataSource> {
+export default class JsonArrayLoader implements IArrayLoader {
+  async load(url: string): Promise<JsonArraySource> {
     const response = await fetch(url);
     const text = await response.text();
     let { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
-    return new JsonDataSource(data, min, max);
+    return new JsonArraySource(data, min, max);
   }
 }

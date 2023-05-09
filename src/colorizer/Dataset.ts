@@ -1,7 +1,7 @@
 import { Texture } from "three";
 
-import { IFeatureLoader, IFrameLoader } from "./loaders/ILoader";
-import JsonFeatureLoader from "./loaders/JsonFeatureLoader";
+import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
+import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 
 import FrameCache from "./FrameCache";
@@ -30,7 +30,7 @@ export default class Dataset {
   private frameFiles: string[];
   private frames: FrameCache | null;
 
-  private featureLoader: IFeatureLoader;
+  private arrayLoader: IArrayLoader;
   private featureFiles: Record<string, string>;
   public features: Record<string, FeatureData>;
 
@@ -45,7 +45,7 @@ export default class Dataset {
   public baseUrl: string;
   private hasOpened: boolean;
 
-  constructor(baseUrl: string, frameLoader?: IFrameLoader, featureLoader?: IFeatureLoader) {
+  constructor(baseUrl: string, frameLoader?: IFrameLoader, arrayLoader?: IArrayLoader) {
     this.baseUrl = baseUrl;
     if (this.baseUrl.endsWith("/")) {
       this.baseUrl = this.baseUrl.slice(0, this.baseUrl.length - 1);
@@ -56,7 +56,7 @@ export default class Dataset {
     this.frameFiles = [];
     this.frames = null;
 
-    this.featureLoader = featureLoader || new JsonFeatureLoader();
+    this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.featureFiles = {};
     this.features = {};
   }
@@ -70,7 +70,7 @@ export default class Dataset {
 
   private async loadFeature(name: string): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
-    const source = await this.featureLoader.load(url);
+    const source = await this.arrayLoader.load(url);
     this.features[name] = {
       tex: source.getTexture(FeatureDataType.F32),
       data: source.getBuffer(FeatureDataType.F32),
@@ -84,7 +84,7 @@ export default class Dataset {
       return;
     }
     const url = this.resolveUrl(this.outlierFile);
-    const source = await this.featureLoader.load(url);
+    const source = await this.arrayLoader.load(url);
     this.outliers = source.getTexture(FeatureDataType.U8);
   }
 
@@ -93,7 +93,7 @@ export default class Dataset {
       return;
     }
     const url = this.resolveUrl(this.tracksFile);
-    const source = await this.featureLoader.load(url);
+    const source = await this.arrayLoader.load(url);
     this.trackIds = source.getBuffer(FeatureDataType.U32);
   }
 
@@ -102,7 +102,7 @@ export default class Dataset {
       return;
     }
     const url = this.resolveUrl(this.timesFile);
-    const source = await this.featureLoader.load(url);
+    const source = await this.arrayLoader.load(url);
     this.times = source.getBuffer(FeatureDataType.U32);
   }
 
