@@ -2,7 +2,7 @@ import { NearestFilter, RGBAIntegerFormat, Texture } from "three";
 import { IFrameLoader } from "./ILoader";
 
 /** Promise-ifies image loading */
-export async function loadImageElement(url: string): Promise<HTMLImageElement> {
+async function loadImageElement(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = document.createElement("img");
     image.crossOrigin = url;

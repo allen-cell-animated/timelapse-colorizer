@@ -1,4 +1,6 @@
-import { DataTexture, RedFormat, FloatType, UnsignedByteType, RedIntegerFormat } from "three";
+import { DataTexture } from "three";
+
+import { FeatureDataType, featureTypeSpecs } from "../types";
 
 /**
  * Calculate the squarest possible texture that `data` can fit into, extend it with
@@ -16,23 +18,15 @@ function fitIntoSquare<T>(data: T[], emptyVal: T): [number, number] {
   return [width, height];
 }
 
-/** Pack a 1d float array into the squarest 2d texture possible */
-export function packFloatDataTexture(data: number[]): DataTexture {
+/** Pack a 1d array of data into the squarest 2d texture possible */
+export function packDataTexture(data: number[], type: FeatureDataType): DataTexture {
   const [width, height] = fitIntoSquare(data, 0);
 
-  const tex = new DataTexture(new Float32Array(data), width, height, RedFormat, FloatType);
-  tex.internalFormat = "R32F";
-  tex.needsUpdate = true;
-  return tex;
-}
+  const spec = featureTypeSpecs[type];
+  const buffer = new spec.arrayConstructor(data);
 
-/** Pack a 1d boolean array into the squarest possible 2d texture of bytes */
-export function packBooleanDataTexture(data: boolean[]): DataTexture {
-  const numberArr = data.map((val) => (val ? 1 : 0));
-  const [width, height] = fitIntoSquare(numberArr, 0);
-
-  const tex = new DataTexture(new Uint8Array(numberArr), width, height, RedIntegerFormat, UnsignedByteType);
-  tex.internalFormat = "R8UI";
+  const tex = new DataTexture(buffer, width, height, spec.format, spec.dataType);
+  tex.internalFormat = spec.internalFormat;
   tex.needsUpdate = true;
   return tex;
 }
