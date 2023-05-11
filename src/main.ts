@@ -205,7 +205,7 @@ async function drawLoop(): Promise<void> {
     // update higlighted cell id if any
     if (selectedTrack) {
       const id = selectedTrack.getIdAtTime(currentFrame);
-      canv.setHighlightedId(id);
+      canv.setHighlightedId(id - 1);
       // console.log(`selected track: ${selectedTrack.trackId}; highlighted id ${id}`);
     }
     // update current time in plot
