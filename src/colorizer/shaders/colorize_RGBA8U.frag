@@ -63,8 +63,18 @@ void main() {
     return;
   }
   else if (int(id) - 1 == highlightedId) {
-    gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
-    return;
+    float thickness = 2.0;
+    float wStep = 1.0 / float(frameDims.x);
+    float hStep = 1.0 / float(frameDims.y);        
+    // sample around the pixel to see if we are on an edge
+    uint R = combineColor(texture(frame, sUv + vec2(thickness*wStep, 0)));
+    uint L = combineColor(texture(frame, sUv + vec2(-thickness*wStep, 0)));
+    uint T = combineColor(texture(frame, sUv + vec2(0, thickness*hStep)));
+    uint B = combineColor(texture(frame, sUv + vec2(0, -thickness*hStep)));
+    if (R == 0u || L == 0u || T == 0u || B == 0u) {
+        gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
+        return;
+    }
   }
 
   // Data buffer starts at 0, non-background segmentation IDs start at 1
