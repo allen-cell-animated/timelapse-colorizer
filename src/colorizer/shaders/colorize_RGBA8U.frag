@@ -72,7 +72,7 @@ void main() {
     uint T = combineColor(texture(frame, sUv + vec2(0, thickness*hStep)));
     uint B = combineColor(texture(frame, sUv + vec2(0, -thickness*hStep)));
     if (R == 0u || L == 0u || T == 0u || B == 0u) {
-        gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
+        gOutputColor = vec4(1.0, 0.0, 1.0, 1.0);
         return;
     }
   }
