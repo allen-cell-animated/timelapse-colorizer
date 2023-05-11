@@ -11,6 +11,8 @@ uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
 uniform vec3 outlierColor;
 
+uniform int highlightedId;
+
 in vec2 vUv;
 
 layout(location = 0) out vec4 gOutputColor;
@@ -58,6 +60,10 @@ void main() {
   // A segmentation id of 0 represents background
   if (id == 0u) {
     gOutputColor = vec4(backgroundColor, 1.0);
+    return;
+  }
+  else if (int(id) - 1 == highlightedId) {
+    gOutputColor = vec4(1.0, 0.0, 0.0, 1.0);
     return;
   }
 

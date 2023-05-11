@@ -5,6 +5,8 @@ import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 
 import FrameCache from "./FrameCache";
+import Track from "./Track";
+
 import { FeatureDataType } from "./types";
 
 type DatasetManifest = {
@@ -170,44 +172,33 @@ export default class Dataset {
     return this.trackIds?.[index] || 0;
   }
 
-  // get the times and values of a track for a given feature
-  // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
-  public buildTrack(trackId: number, feature: string): { domain: number[]; range: number[] } {
-    // if we don't have track info then return empty arrays
-    if (!this.trackIds || !this.times) {
-      return { domain: [], range: [] };
-    }
-    console.time("buildTrack");
-    // trackIds contains a track id for every cell id in order.
-    // get all cell ids for given track
-    const track = this.trackIds.reduce(function (arr: number[], elem: number, ind: number) {
+  private getIdsOfTrack(trackId: number): number[] {
+    return this.trackIds?.reduce(function (arr: number[], elem: number, ind: number) {
       if (elem === trackId) arr.push(ind);
       return arr;
-    }, []);
-    // track now contains all cell ids that have trackId.
-    // get all the times and the feature values for those cell, in the same order
-    const domain = track.map((i) => (this.times ? this.times[i] : 0));
-    const range = track.map((i) => this.features[feature].data[i]);
+    }, []) as number[];
+  }
 
-    let sortedDomain = domain;
-    let sortedRange = range;
-
-    // TODO sort both, ascending by domain?
-    // I have no idea if the domain would be presorted or not
-    const shouldSort = false;
-    if (shouldSort) {
-      const indices = [...domain.keys()];
-      indices.sort((a, b) => (domain[a] < domain[b] ? -1 : domain[a] === domain[b] ? 0 : 1));
-      sortedDomain = indices.map((i) => domain[i]);
-      sortedRange = indices.map((i) => range[i]);
+  public buildTrack(trackId: number): Track {
+    // if we don't have track info then return empty arrays
+    if (!this.trackIds || !this.times) {
+      return new Track(trackId, [], []);
     }
+    // trackIds contains a track id for every cell id in order.
+    // get all cell ids for given track
+    const ids = this.getIdsOfTrack(trackId);
+    // ids now contains all cell ids that have trackId.
+    // get all the times for those cells, in the same order
+    const times = ids.map((i) => (this.times ? this.times[i] : 0));
 
-    console.timeEnd("buildTrack");
-    console.log(
-      `Track ${trackId} has ${track.length} timepoints starting from ${sortedDomain[0]} to ${
-        sortedDomain[domain.length - 1]
-      }`
-    );
-    return { domain: sortedDomain, range: sortedRange };
+    return new Track(trackId, times, ids);
+  }
+
+  // get the times and values of a track for a given feature
+  // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
+  public buildTrackFeaturePlot(track: Track, feature: string): { domain: number[]; range: number[] } {
+    const range = track.ids.map((i) => this.features[feature].data[i]);
+    const domain = track.times;
+    return { domain, range };
   }
 }
