@@ -1,4 +1,5 @@
 import { Texture } from "three";
+import { HTTPStore, openArray, slice } from "zarr";
 
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
@@ -66,6 +67,14 @@ export default class Dataset {
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
   private async fetchManifest(): Promise<DatasetManifest> {
+    const z = await openArray({
+      store: new HTTPStore("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data/baby-bear/"),
+      path: "frames.zarr",
+      mode: "r",
+    });
+    const arr = await z.get([0, slice(null, null)]);
+    console.log(arr);
+
     const response = await fetch(this.resolveUrl(MANIFEST_FILENAME));
     return await response.json();
   }

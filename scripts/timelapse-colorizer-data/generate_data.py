@@ -1,4 +1,5 @@
 from aicsimageio import AICSImage
+from aicsimageio.writers import OmeZarrWriter
 from PIL import Image
 import argparse
 import json
@@ -6,6 +7,9 @@ import numpy as np
 import os
 import platform
 import skimage
+import dask
+from dask import array as da
+from distributed import Client, LocalCluster
 
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
 from nuc_morph_analysis.preprocessing.load_data import (
@@ -52,6 +56,17 @@ from nuc_morph_analysis.preprocessing.load_data import (
 # NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
 
 
+def write_frame_png(seg2d, outpath, frame_number):
+    # convert data to RGBA
+    seg_rgba = np.zeros((seg2d.shape[0], seg2d.shape[1], 4), dtype=np.uint8)
+    seg_rgba[:, :, 0] = (seg2d & 0x000000FF) >> 0
+    seg_rgba[:, :, 1] = (seg2d & 0x0000FF00) >> 8
+    seg_rgba[:, :, 2] = (seg2d & 0x00FF0000) >> 16
+    seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
+    img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
+    img.save(outpath + "/frame_" + str(frame_number) + ".png")
+
+
 def make_frames(grouped_frames, output_dir, dataset):
     downsample = 1
     outpath = os.path.join(output_dir, dataset)
@@ -85,16 +100,88 @@ def make_frames(grouped_frames, output_dir, dataset):
         # remap indices of this frame.
         seg_remapped = lut[seg2d]
 
-        # convert data to RGBA
-        seg_rgba = np.zeros(
-            (seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8
+        write_frame_png(seg_remapped, outpath, frame_number)
+
+
+@dask.delayed
+def get_max_proj(zstack, downsample=1):
+    seg2d = zstack.max(axis=0)
+    # TODO test this
+    if downsample != 1:
+        seg2d = skimage.transform.rescale(
+            seg2d, downsample, anti_aliasing=False, order=0
         )
-        seg_rgba[:, :, 0] = (seg_remapped & 0x000000FF) >> 0
-        seg_rgba[:, :, 1] = (seg_remapped & 0x0000FF00) >> 8
-        seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
-        seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
-        img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
-        img.save(outpath + "/frame_" + str(frame_number) + ".png")
+    seg2d = seg2d.astype(np.uint32)
+    return seg2d
+
+
+@dask.delayed
+def load_zstack(zstackpath):
+    zstack = AICSImage(zstackpath).get_image_dask_data("ZYX", S=0, T=0, C=0)
+    return zstack
+
+
+@dask.delayed
+def remap_max_proj(seg2d, frame):
+    mx = da.nanmax(seg2d).compute()
+    lut = np.arange((mx + 1), dtype=np.uint32)
+    for row_index, row in frame.iterrows():
+        # build our remapping LUT:
+        label = int(row["label_img"])
+        rowind = int(row["initialIndex"])
+        lut[label] = rowind + 1
+
+    # remap indices of this frame.
+    # seg_remapped = seg2d.map_blocks(lambda x: lut[x], dtype=np.uint32)
+    # seg_remapped = da.take(lut, seg2d)  # lut.take(seg2d)
+    seg_remapped = lut.take(seg2d)
+    return seg_remapped
+
+
+def make_frames_zarr(grouped_frames, output_dir, dataset):
+    downsample = 1
+    outpath = os.path.join(output_dir, dataset)
+
+    nframes = len(grouped_frames)
+    out_array = []
+
+    # get shape of first entry.
+    for group_name, frame in grouped_frames:
+        # take first row to get zstack path
+        row = frame.iloc[0]
+        frame_number = row["index_sequence"]
+        zstackpath = row["seg_full_zstack_path"]
+        if platform.system() == "Windows":
+            zstackpath = "/" + zstackpath
+        segshape = AICSImage(zstackpath).shape
+        break
+
+    for group_name, frame in grouped_frames:
+        # take first row to get zstack path
+        row = frame.iloc[0]
+        frame_number = row["index_sequence"]
+        zstackpath = row["seg_full_zstack_path"]
+        if platform.system() == "Windows":
+            zstackpath = "/" + zstackpath
+        # zstack = load_zstack(zstackpath)
+        zstack = AICSImage(zstackpath).get_image_dask_data("ZYX", S=0, T=0, C=0)
+        maxproj = get_max_proj(zstack, downsample)
+        seg = remap_max_proj(maxproj, frame)
+        out_array.append(da.from_delayed(seg, shape=(segshape[-2:]), dtype=np.uint32))
+
+    out_array = da.stack(out_array, axis=0)
+    os.makedirs(outpath + "/frames.zarr/", exist_ok=True)
+    chunkshape = (1, segshape[-2], segshape[-1])
+    w = OmeZarrWriter(outpath + "/frames.zarr")
+    w.write_image(
+        out_array,
+        image_name="",
+        dimension_order="TYX",
+        physical_pixel_sizes=None,
+        channel_names=None,
+        channel_colors=None,
+    )
+    # da.to_zarr(out_array, outpath + "/frames.zarr", overwrite=True)
 
 
 def make_features(a, features, output_dir, dataset):
@@ -115,7 +202,7 @@ def make_features(a, features, output_dir, dataset):
         json.dump(trjs, f)
 
     times = a["index_sequence"].to_numpy()
-    tijs = {"data": times.toList()}
+    tijs = {"data": times.tolist()}
     with open(outpath + "/times.json", "w") as f:
         json.dump(tijs, f)
 
@@ -151,7 +238,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
     nframes = len(grouped_frames)
 
     if do_frames:
-        make_frames(grouped_frames, output_dir, dataset)
+        make_frames_zarr(grouped_frames, output_dir, dataset)
 
     features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
 
@@ -178,6 +265,8 @@ parser.add_argument("--dataset", type=str, default="baby_bear")
 parser.add_argument("--noframes", action="store_true")
 args = parser.parse_args()
 if __name__ == "__main__":
+    cluster = LocalCluster(n_workers=4, processes=True, threads_per_worker=1)
+    client = Client(cluster)
     make_dataset(
         output_dir=args.output_dir, dataset=args.dataset, do_frames=not args.noframes
     )
