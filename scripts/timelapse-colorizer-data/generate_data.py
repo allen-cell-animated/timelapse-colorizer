@@ -115,7 +115,7 @@ def make_features(a, features, output_dir, dataset):
         json.dump(trjs, f)
 
     times = a["index_sequence"].to_numpy()
-    tijs = {"data": times.toList()}
+    tijs = {"data": times.tolist()}
     with open(outpath + "/times.json", "w") as f:
         json.dump(tijs, f)
 
