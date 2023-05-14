@@ -1,5 +1,5 @@
 import { Texture } from "three";
-import { HTTPStore, openArray, slice } from "zarr";
+import { HTTPStore, openArray, slice, NestedArray, TypedArray } from "zarr";
 
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
@@ -68,12 +68,17 @@ export default class Dataset {
 
   private async fetchManifest(): Promise<DatasetManifest> {
     const z = await openArray({
-      store: new HTTPStore("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data/baby-bear/"),
-      path: "frames.zarr",
+      store: new HTTPStore("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data/baby_bear/frames.zarr"),
+      path: "0",
       mode: "r",
     });
-    const arr = await z.get([0, slice(null, null)]);
-    console.log(arr);
+    const arr = await z.get([0, slice(null, null)]) as NestedArray<TypedArray>;;
+    const x = arr.shape[1];
+    const y = arr.shape[0];
+    const arr2 = new Uint32Array(x*y);
+    for (let i = 0; i < y; i++) {
+      arr2.set(arr.data[i] as TypedArray, i*x);
+    }
 
     const response = await fetch(this.resolveUrl(MANIFEST_FILENAME));
     return await response.json();
