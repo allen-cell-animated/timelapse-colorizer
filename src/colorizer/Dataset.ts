@@ -1,5 +1,6 @@
 import { Texture } from "three";
 import { HTTPStore, openArray, slice, NestedArray, TypedArray } from "zarr";
+import { RawArray } from "zarr/types/rawArray";
 
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
@@ -72,13 +73,15 @@ export default class Dataset {
       path: "0",
       mode: "r",
     });
-    const arr = await z.get([0, slice(null, null)]) as NestedArray<TypedArray>;;
-    const x = arr.shape[1];
-    const y = arr.shape[0];
-    const arr2 = new Uint32Array(x*y);
-    for (let i = 0; i < y; i++) {
-      arr2.set(arr.data[i] as TypedArray, i*x);
-    }
+    const arr = await z.getRaw([0, null, null]) as RawArray;
+    const arr2 = arr.data;
+    // const arr = await z.get([0, slice(null, null)]) as NestedArray<TypedArray>;
+    // const x = arr.shape[1];
+    // const y = arr.shape[0];
+    // const arr2 = new Uint32Array(x*y);
+    // for (let i = 0; i < y; i++) {
+    //   arr2.set(arr.data[i] as TypedArray, i*x);
+    // }
 
     const response = await fetch(this.resolveUrl(MANIFEST_FILENAME));
     return await response.json();
