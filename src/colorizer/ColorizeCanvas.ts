@@ -29,11 +29,11 @@ const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 type ColorizeUniformTypes = {
   aspect: number;
   frame: Texture;
-  featureData: DataTexture;
-  outlierData: DataTexture;
+  featureData: Texture;
+  outlierData: Texture;
   featureMin: number;
   featureMax: number;
-  colorRamp: DataTexture;
+  colorRamp: Texture;
   backgroundColor: Color;
   outlierColor: Color;
 };
