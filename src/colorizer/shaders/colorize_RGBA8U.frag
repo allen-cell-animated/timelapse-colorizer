@@ -41,6 +41,19 @@ vec4 getColorRamp(float val) {
   return texture(colorRamp, vec2(adjustedVal, 0.5));
 }
 
+bool isEdge(vec2 uv, ivec2 frameDims) {
+    float thickness = 2.0;
+    float wStep = 1.0 / float(frameDims.x);
+    float hStep = 1.0 / float(frameDims.y);        
+    // sample around the pixel to see if we are on an edge
+    uint R = combineColor(texture(frame, uv + vec2(thickness*wStep, 0)));
+    uint L = combineColor(texture(frame, uv + vec2(-thickness*wStep, 0)));
+    uint T = combineColor(texture(frame, uv + vec2(0, thickness*hStep)));
+    uint B = combineColor(texture(frame, uv + vec2(0, -thickness*hStep)));
+    // consider comparing R,L,T,B against the highlightedId instead?
+    return (R == 0u || L == 0u || T == 0u || B == 0u);
+}
+
 void main() {
   // Scale uv to compensate for the aspect of the frame
   ivec2 frameDims = textureSize(frame, 0);
@@ -63,17 +76,10 @@ void main() {
     return;
   }
   else if (int(id) - 1 == highlightedId) {
-    float thickness = 2.0;
-    float wStep = 1.0 / float(frameDims.x);
-    float hStep = 1.0 / float(frameDims.y);        
-    // sample around the pixel to see if we are on an edge
-    uint R = combineColor(texture(frame, sUv + vec2(thickness*wStep, 0)));
-    uint L = combineColor(texture(frame, sUv + vec2(-thickness*wStep, 0)));
-    uint T = combineColor(texture(frame, sUv + vec2(0, thickness*hStep)));
-    uint B = combineColor(texture(frame, sUv + vec2(0, -thickness*hStep)));
-    if (R == 0u || L == 0u || T == 0u || B == 0u) {
-        gOutputColor = vec4(1.0, 0.0, 1.0, 1.0);
-        return;
+    // do an outline around highlighted object
+    if (isEdge(sUv, frameDims)) {
+      gOutputColor = vec4(1.0, 0.0, 1.0, 1.0);
+      return;
     }
   }
 
