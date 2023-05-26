@@ -173,7 +173,7 @@ export default class Dataset {
   }
 
   private getIdsOfTrack(trackId: number): number[] {
-    return this.trackIds?.reduce(function (arr: number[], elem: number, ind: number) {
+    return this.trackIds?.reduce((arr: number[], elem: number, ind: number) => {
       if (elem === trackId) arr.push(ind);
       return arr;
     }, []) as number[];
