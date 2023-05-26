@@ -11,6 +11,139 @@ const datasetSelectEl: HTMLSelectElement = document.querySelector("#dataset")!;
 const featureSelectEl: HTMLSelectElement = document.querySelector("#feature")!;
 const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp")!;
 
+// time / playback controls
+class TimeControls {
+  private playBtn: HTMLButtonElement;
+  private pauseBtn: HTMLButtonElement;
+  private forwardBtn: HTMLButtonElement;
+  private backBtn: HTMLButtonElement;
+  private timeSlider: HTMLInputElement;
+  private timeInput: HTMLInputElement;
+  private totalFrames: number;
+  public currentFrame: number;
+  private timerId: number;
+  private redrawfn: () => void;
+
+  constructor(redrawfn: () => void) {
+    this.redrawfn = redrawfn;
+    this.totalFrames = 0;
+    this.currentFrame = 0;
+    this.timerId = 0;
+    this.playBtn = document.querySelector("#playBtn")!;
+    this.pauseBtn = document.querySelector("#pauseBtn")!;
+    this.forwardBtn = document.querySelector("#forwardBtn")!;
+    this.backBtn = document.querySelector("#backBtn")!;
+    this.timeSlider = document.querySelector("#timeSlider")!;
+    this.timeInput = document.querySelector("#timeValue")!;
+    this.playBtn.addEventListener("click", ()=>this.handlePlayButtonClick());
+    this.pauseBtn.addEventListener("click", ()=>this.handlePauseButtonClick());
+    this.forwardBtn.addEventListener("click", ()=>this.handleFrameAdvance(1));
+    this.backBtn.addEventListener("click", () => this.handleFrameAdvance(-1));
+    // only update when DONE sliding: change event
+    this.timeSlider.addEventListener("change", ()=>this.handleTimeSliderChange());
+    this.timeInput.addEventListener("change", ()=>this.handleTimeInputChange());
+  }    
+
+  private playTimeSeries(onNewFrameCallback: () => void) {
+    clearInterval(this.timerId);
+  
+    const loadNextFrame = () => {
+      let nextFrame = this.currentFrame + 1;
+      if (nextFrame >= this.totalFrames) {
+        nextFrame = 0;
+      }
+
+      // do the necessary update
+      //drawLoopRunning = true;
+      this.redrawfn();
+      this.currentFrame = nextFrame;
+      onNewFrameCallback();
+    };
+    this.timerId = window.setInterval(loadNextFrame, 40);
+  }
+
+  private goToFrame(targetFrame: number):boolean {
+    const wrap = true;
+    // wrap around is ok
+    if (wrap) {
+      this.currentFrame = (targetFrame + this.totalFrames) % this.totalFrames;
+      return true;  
+    }
+
+    console.log("going to Frame " + targetFrame);
+    const outOfBounds = targetFrame > this.totalFrames - 1 || targetFrame < 0;
+    if (outOfBounds) {
+      console.log(`frame ${targetFrame} out of bounds`);
+      return false;
+    }
+  
+    // check to see if we have pre-cached the frame, else load it...
+    //     f(targetFrame);
+
+    this.currentFrame = targetFrame;
+    return true;
+  }
+  
+  
+  private handlePlayButtonClick() {
+    if (this.currentFrame >= this.totalFrames - 1) {
+      this.currentFrame = -1;
+    }
+    this.playTimeSeries(() => {
+      if (this.timeInput) {
+        this.timeInput.value = "" + this.currentFrame;
+      }
+      if (this.timeSlider) {
+        this.timeSlider.value = "" + this.currentFrame;
+      }
+    });
+  }
+  private handlePauseButtonClick() {
+    clearInterval(this.timerId);
+  }
+  public handleFrameAdvance(delta: number = 1) {
+    if (this.goToFrame(this.currentFrame + delta)) {
+        this.redrawfn();
+        this.timeInput.value = "" + this.currentFrame;
+        this.timeSlider.value = "" + this.currentFrame;
+    }
+  }
+  private handleTimeSliderChange() {
+    // trigger loading new time
+    if (this.goToFrame(this.timeSlider.valueAsNumber)) {
+        this.timeInput.value = this.timeSlider.value;
+        this.redrawfn();
+    }
+  }
+  private handleTimeInputChange() {
+    // trigger loading new time
+    if (this.goToFrame(this.timeInput.valueAsNumber)) {
+      // update slider
+        this.timeSlider.value = this.timeInput.value;
+        this.redrawfn();
+    }
+  }
+  
+  public updateTimeUI(totalFrames: number) {
+    this.totalFrames = totalFrames;
+      this.timeSlider.max = `${totalFrames - 1}`;
+      this.timeInput.max = `${totalFrames - 1}`;
+  
+    if (totalFrames < 2) {
+      this.playBtn.disabled = true;
+    } else {
+      this.playBtn.disabled = false;
+    }
+    if (totalFrames < 2) {
+      this.pauseBtn.disabled = true;
+    } else {
+      this.pauseBtn.disabled = false;
+    }
+  }
+  
+}
+const timeControls = new TimeControls(drawLoop);
+
 function addOptionTo(parent: HTMLSelectElement, value: string, child?: HTMLElement): void {
   const optionEl = document.createElement("option");
   optionEl.value = value;
@@ -75,8 +208,6 @@ function populateColorRampSelect(): void {
 
 // DATASET LOADING ///////////////////////////////////////////////////////
 
-let currentFrame = 0;
-
 let dataset: Dataset | null = null;
 let datasetName = "";
 let datasetOpen = false;
@@ -95,8 +226,9 @@ async function loadDataset(name: string): Promise<void> {
 
   datasetName = name;
   dataset = new Dataset(`${baseUrl}/${name}`);
-  currentFrame = 0;
+  timeControls.currentFrame = 0;
   await dataset.open();
+  timeControls.updateTimeUI(dataset.numberOfFrames);
   featureName = dataset.featureNames[0];
   canv.setDataset(dataset);
   canv.setFeature(featureName);
@@ -128,7 +260,7 @@ function handleFeatureChange({ currentTarget }: Event): void {
   featureName = value;
   // only update plot if active
   if (selectedTrack) {
-    plot.plot(selectedTrack, value, currentFrame);
+    plot.plot(selectedTrack, value, timeControls.currentFrame);
   }
 }
 
@@ -144,7 +276,7 @@ function handleCanvasClick(event: MouseEvent): void {
   }
   const trackId = dataset!.getTrackId(id);
   selectedTrack = dataset!.buildTrack(trackId);
-  plot.plot(selectedTrack, featureName, currentFrame);
+  plot.plot(selectedTrack, featureName, timeControls.currentFrame);
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -161,28 +293,13 @@ function handleColorRampClick({ target }: MouseEvent): void {
 
 // SCRUBBING CONTROLS ////////////////////////////////////////////////////
 
-let leftArrowDown = false;
-let rightArrowDown = false;
 let drawLoopRunning = false;
 
-function handleKeyDown({ key, repeat }: KeyboardEvent): void {
-  if (repeat) return;
+function handleKeyDown({ key }: KeyboardEvent): void {
   if (key === "ArrowLeft" || key === "Left") {
-    leftArrowDown = true;
-    if (!drawLoopRunning) drawLoop();
+    timeControls.handleFrameAdvance(-1);
   } else if (key === "ArrowRight" || key === "Right") {
-    rightArrowDown = true;
-    if (!drawLoopRunning) drawLoop();
-  }
-}
-
-function handleKeyUp({ key }: KeyboardEvent): void {
-  if (key === "ArrowLeft" || key === "Left") {
-    leftArrowDown = false;
-    if (!drawLoopRunning) drawLoop();
-  } else if (key === "ArrowRight" || key === "Right") {
-    rightArrowDown = false;
-    if (!drawLoopRunning) drawLoop();
+    timeControls.handleFrameAdvance(1);
   }
 }
 
@@ -196,24 +313,19 @@ async function drawFrame(index: number): Promise<void> {
 }
 
 async function drawLoop(): Promise<void> {
-  drawLoopRunning = true;
-  const oneArrowDown = (leftArrowDown || rightArrowDown) && !(leftArrowDown && rightArrowDown);
-  if (dataset && datasetOpen && oneArrowDown) {
-    await drawFrame(currentFrame);
-    const delta = leftArrowDown ? -1 : 1;
-    currentFrame = (currentFrame + delta + dataset.numberOfFrames) % dataset.numberOfFrames;
+  if (dataset && datasetOpen) {
     // update higlighted cell id if any
     if (selectedTrack) {
-      const id = selectedTrack.getIdAtTime(currentFrame);
+      const id = selectedTrack.getIdAtTime(timeControls.currentFrame);
       canv.setHighlightedId(id - 1);
       // console.log(`selected track: ${selectedTrack.trackId}; highlighted id ${id}`);
     }
     // update current time in plot
-    plot.setTime(currentFrame);
-
+    plot.setTime(timeControls.currentFrame);
+    await drawFrame(timeControls.currentFrame);
+  }
+  if (drawLoopRunning) {
     window.requestAnimationFrame(drawLoop);
-  } else {
-    drawLoopRunning = false;
   }
 }
 
@@ -224,7 +336,6 @@ async function start(): Promise<void> {
   await loadDataset("mama_bear");
 
   window.addEventListener("keydown", handleKeyDown);
-  window.addEventListener("keyup", handleKeyUp);
   datasetSelectEl.addEventListener("change", handleDatasetChange);
   featureSelectEl.addEventListener("change", handleFeatureChange);
   colorRampSelectEl.addEventListener("click", handleColorRampClick);
