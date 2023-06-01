@@ -22,7 +22,8 @@ from nuc_morph_analysis.preprocessing.load_data import (
 #   frames: [frame_0.png, frame_1.png, ...]
 #   features: { feature_0: feature_0.json, feature_1: feature_1.json, ... }
 #   outliers: [ bool, bool, ... ] // per cell, same order as featureN.json files
-#   tracks: {trackIds, trackTimes} // per cell, same order as featureN.json files
+#   tracks: "tracks.json" // per-cell track id, same format as featureN.json files
+#   times: "times.json" // per-cell frame index, same format as featureN.json files
 #
 # frame0.png:  numbers stored in RGB. true scalar index is (R + G*256 + B*256*256)
 #
