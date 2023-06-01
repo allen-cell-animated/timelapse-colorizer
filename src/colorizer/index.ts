@@ -5,6 +5,7 @@ import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import ColorRamp from "./ColorRamp";
 import ColorizeCanvas from "./ColorizeCanvas";
 import Dataset from "./Dataset";
+import Track from "./Track";
 import Plotting from "./Plotting";
 
-export { ColorizeCanvas, Plotting, Dataset, ColorRamp, ImageFrameLoader, JsonArrayLoader };
+export { ColorizeCanvas, Plotting, Dataset, Track, ColorRamp, ImageFrameLoader, JsonArrayLoader };

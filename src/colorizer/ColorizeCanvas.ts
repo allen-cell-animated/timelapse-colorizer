@@ -36,6 +36,7 @@ type ColorizeUniformTypes = {
   colorRamp: Texture;
   backgroundColor: Color;
   outlierColor: Color;
+  highlightedId: number;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -58,6 +59,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     colorRamp: new Uniform(emptyColorRamp),
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
+    highlightedId: new Uniform(-1),
   };
 };
 
@@ -158,6 +160,10 @@ export default class ColorizeCanvas {
 
   setOutlierColor(color: Color): void {
     this.setUniform("outlierColor", color);
+  }
+
+  setHighlightedId(id: number): void {
+    this.setUniform("highlightedId", id);
   }
 
   setFeature(name: string): void {

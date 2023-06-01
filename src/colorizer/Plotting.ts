@@ -1,4 +1,5 @@
 import Dataset from "./Dataset";
+import Track from "./Track";
 import Plotly from "plotly.js-dist-min";
 
 const LINE_OPACITY = 0.5;
@@ -44,11 +45,11 @@ export default class Plotting {
     this.dataset = dataset;
   }
 
-  plot(trackId: number, feature: string, time: number): void {
+  plot(track: Track, feature: string, time: number): void {
     if (!this.dataset) {
       return;
     }
-    const plotinfo = this.dataset?.buildTrack(trackId, feature);
+    const plotinfo = this.dataset?.buildTrackFeaturePlot(track, feature);
     this.trace = {
       x: plotinfo.domain,
       y: plotinfo.range,
@@ -66,7 +67,7 @@ export default class Plotting {
           x1: time,
         },
       ],
-      title: "track " + trackId,
+      title: "track " + track.trackId,
     };
 
     Plotly.react(this.parentDivId, [this.trace], layout);

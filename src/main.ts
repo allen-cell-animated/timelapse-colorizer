@@ -1,5 +1,5 @@
 import { HexColorString } from "three";
-import { ColorizeCanvas, ColorRamp, Dataset, Plotting } from "./colorizer";
+import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 
 const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
@@ -81,7 +81,7 @@ let dataset: Dataset | null = null;
 let datasetName = "";
 let datasetOpen = false;
 let featureName = "";
-let selectedTrackId = 0;
+let selectedTrack: Track | null = null;
 
 async function loadDataset(name: string): Promise<void> {
   console.time("loadDataset");
@@ -127,20 +127,24 @@ function handleFeatureChange({ currentTarget }: Event): void {
   canv.render();
   featureName = value;
   // only update plot if active
-  if (selectedTrackId > 0) {
-    plot.plot(selectedTrackId, value, currentFrame);
+  if (selectedTrack) {
+    plot.plot(selectedTrack, value, currentFrame);
   }
 }
 
 function handleCanvasClick(event: MouseEvent): void {
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
   console.log("clicked id " + id);
+  canv.setHighlightedId(id);
+  canv.render();
   if (id < 0) {
+    selectedTrack = null;
     plot.removePlot();
     return;
   }
-  selectedTrackId = dataset!.getTrackId(id);
-  plot.plot(selectedTrackId, featureName, currentFrame);
+  const trackId = dataset!.getTrackId(id);
+  selectedTrack = dataset!.buildTrack(trackId);
+  plot.plot(selectedTrack, featureName, currentFrame);
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -198,7 +202,15 @@ async function drawLoop(): Promise<void> {
     await drawFrame(currentFrame);
     const delta = leftArrowDown ? -1 : 1;
     currentFrame = (currentFrame + delta + dataset.numberOfFrames) % dataset.numberOfFrames;
+    // update higlighted cell id if any
+    if (selectedTrack) {
+      const id = selectedTrack.getIdAtTime(currentFrame);
+      canv.setHighlightedId(id - 1);
+      // console.log(`selected track: ${selectedTrack.trackId}; highlighted id ${id}`);
+    }
+    // update current time in plot
     plot.setTime(currentFrame);
+
     window.requestAnimationFrame(drawLoop);
   } else {
     drawLoopRunning = false;
