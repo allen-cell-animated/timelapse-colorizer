@@ -35,18 +35,18 @@ class TimeControls {
     this.backBtn = document.querySelector("#backBtn")!;
     this.timeSlider = document.querySelector("#timeSlider")!;
     this.timeInput = document.querySelector("#timeValue")!;
-    this.playBtn.addEventListener("click", ()=>this.handlePlayButtonClick());
-    this.pauseBtn.addEventListener("click", ()=>this.handlePauseButtonClick());
-    this.forwardBtn.addEventListener("click", ()=>this.handleFrameAdvance(1));
+    this.playBtn.addEventListener("click", () => this.handlePlayButtonClick());
+    this.pauseBtn.addEventListener("click", () => this.handlePauseButtonClick());
+    this.forwardBtn.addEventListener("click", () => this.handleFrameAdvance(1));
     this.backBtn.addEventListener("click", () => this.handleFrameAdvance(-1));
     // only update when DONE sliding: change event
-    this.timeSlider.addEventListener("change", ()=>this.handleTimeSliderChange());
-    this.timeInput.addEventListener("change", ()=>this.handleTimeInputChange());
-  }    
+    this.timeSlider.addEventListener("change", () => this.handleTimeSliderChange());
+    this.timeInput.addEventListener("change", () => this.handleTimeInputChange());
+  }
 
   private playTimeSeries(onNewFrameCallback: () => void) {
     clearInterval(this.timerId);
-  
+
     const loadNextFrame = () => {
       let nextFrame = this.currentFrame + 1;
       if (nextFrame >= this.totalFrames) {
@@ -54,7 +54,6 @@ class TimeControls {
       }
 
       // do the necessary update
-      //drawLoopRunning = true;
       this.redrawfn();
       this.currentFrame = nextFrame;
       onNewFrameCallback();
@@ -62,12 +61,12 @@ class TimeControls {
     this.timerId = window.setInterval(loadNextFrame, 40);
   }
 
-  private goToFrame(targetFrame: number):boolean {
+  private goToFrame(targetFrame: number): boolean {
     const wrap = true;
     // wrap around is ok
     if (wrap) {
       this.currentFrame = (targetFrame + this.totalFrames) % this.totalFrames;
-      return true;  
+      return true;
     }
 
     console.log("going to Frame " + targetFrame);
@@ -76,15 +75,14 @@ class TimeControls {
       console.log(`frame ${targetFrame} out of bounds`);
       return false;
     }
-  
+
     // check to see if we have pre-cached the frame, else load it...
     //     f(targetFrame);
 
     this.currentFrame = targetFrame;
     return true;
   }
-  
-  
+
   private handlePlayButtonClick() {
     if (this.currentFrame >= this.totalFrames - 1) {
       this.currentFrame = -1;
@@ -103,44 +101,40 @@ class TimeControls {
   }
   public handleFrameAdvance(delta: number = 1) {
     if (this.goToFrame(this.currentFrame + delta)) {
-        this.redrawfn();
-        this.timeInput.value = "" + this.currentFrame;
-        this.timeSlider.value = "" + this.currentFrame;
+      this.redrawfn();
+      this.timeInput.value = "" + this.currentFrame;
+      this.timeSlider.value = "" + this.currentFrame;
     }
   }
   private handleTimeSliderChange() {
     // trigger loading new time
     if (this.goToFrame(this.timeSlider.valueAsNumber)) {
-        this.timeInput.value = this.timeSlider.value;
-        this.redrawfn();
+      this.timeInput.value = this.timeSlider.value;
+      this.redrawfn();
     }
   }
   private handleTimeInputChange() {
     // trigger loading new time
     if (this.goToFrame(this.timeInput.valueAsNumber)) {
       // update slider
-        this.timeSlider.value = this.timeInput.value;
-        this.redrawfn();
+      this.timeSlider.value = this.timeInput.value;
+      this.redrawfn();
     }
   }
-  
+
   public updateTimeUI(totalFrames: number) {
     this.totalFrames = totalFrames;
-      this.timeSlider.max = `${totalFrames - 1}`;
-      this.timeInput.max = `${totalFrames - 1}`;
-  
+    this.timeSlider.max = `${totalFrames - 1}`;
+    this.timeInput.max = `${totalFrames - 1}`;
+
     if (totalFrames < 2) {
       this.playBtn.disabled = true;
-    } else {
-      this.playBtn.disabled = false;
-    }
-    if (totalFrames < 2) {
       this.pauseBtn.disabled = true;
     } else {
+      this.playBtn.disabled = false;
       this.pauseBtn.disabled = false;
     }
   }
-  
 }
 const timeControls = new TimeControls(drawLoop);
 
@@ -293,8 +287,6 @@ function handleColorRampClick({ target }: MouseEvent): void {
 
 // SCRUBBING CONTROLS ////////////////////////////////////////////////////
 
-let drawLoopRunning = false;
-
 function handleKeyDown({ key }: KeyboardEvent): void {
   if (key === "ArrowLeft" || key === "Left") {
     timeControls.handleFrameAdvance(-1);
@@ -323,9 +315,6 @@ async function drawLoop(): Promise<void> {
     // update current time in plot
     plot.setTime(timeControls.currentFrame);
     await drawFrame(timeControls.currentFrame);
-  }
-  if (drawLoopRunning) {
-    window.requestAnimationFrame(drawLoop);
   }
 }
 
