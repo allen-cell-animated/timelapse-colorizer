@@ -10,6 +10,23 @@ Conduct][code_of_conduct].
 
 [code_of_conduct]: CODE_OF_CONDUCT.md
 
+## Getting Started
+
+1. To get up and running:
+```
+npm install
+npm run dev
+```
+
+2. To do all code static analysis checks: (DO THIS BEFORE PUSHING COMMITS)
+```
+npm run lint
+npm run typeCheck
+```
+
+3. Currently `npm run build-internal` is the only code path that results in a working deployment,
+due to data being hosted only on internal servers.
+
 ## Project Documentation
 
 The `README` in the root of the repository should contain or link to
