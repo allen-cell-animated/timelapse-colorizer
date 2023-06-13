@@ -136,7 +136,8 @@ class TimeControls {
   }
 
   /**
-   * Sets the current frame and updates this TimeControls UI to match.
+   * Attempts to set the current frame. If frame is updated, updates the time control UI and
+   * triggers a redraw.
    * @returns true if the frame was set correctly (false if the frame is out of range).
    */
   public setCurrentFrame(frame: number): boolean {
@@ -239,8 +240,8 @@ async function loadDataset(name: string): Promise<void> {
   datasetName = name;
   dataset = new Dataset(`${baseUrl}/${name}`);
   await dataset.open();
-  timeControls.setCurrentFrame(0);
   timeControls.updateTotalFrames(dataset.numberOfFrames);
+  timeControls.setCurrentFrame(0);
   resetTrackUI();
   featureName = dataset.featureNames[0];
   canv.setDataset(dataset);
@@ -328,7 +329,6 @@ async function handleFindTrack(): Promise<void> {
   selectedTrack = newTrack;
   timeControls.setCurrentFrame(selectedTrack.times[0]);
   plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
-  await drawLoop();
 }
 
 function resetTrackUI(): void {
