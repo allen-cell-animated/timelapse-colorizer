@@ -10,6 +10,8 @@ document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
 const datasetSelectEl: HTMLSelectElement = document.querySelector("#dataset")!;
 const featureSelectEl: HTMLSelectElement = document.querySelector("#feature")!;
 const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp")!;
+const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
+const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;;
 
 // time / playback controls
 class TimeControls {
@@ -19,8 +21,9 @@ class TimeControls {
   private backBtn: HTMLButtonElement;
   private timeSlider: HTMLInputElement;
   private timeInput: HTMLInputElement;
+
   private totalFrames: number;
-  public currentFrame: number;
+  private currentFrame: number;
   private timerId: number;
   private redrawfn: () => void;
 
@@ -100,11 +103,7 @@ class TimeControls {
     clearInterval(this.timerId);
   }
   public handleFrameAdvance(delta: number = 1) {
-    if (this.goToFrame(this.currentFrame + delta)) {
-      this.redrawfn();
-      this.timeInput.value = "" + this.currentFrame;
-      this.timeSlider.value = "" + this.currentFrame;
-    }
+    this.setCurrentFrame(this.currentFrame + delta);
   }
   private handleTimeSliderChange() {
     // trigger loading new time
@@ -122,7 +121,7 @@ class TimeControls {
     }
   }
 
-  public updateTimeUI(totalFrames: number) {
+  public updateTotalFrames(totalFrames: number): void {
     this.totalFrames = totalFrames;
     this.timeSlider.max = `${totalFrames - 1}`;
     this.timeInput.max = `${totalFrames - 1}`;
@@ -134,6 +133,26 @@ class TimeControls {
       this.playBtn.disabled = false;
       this.pauseBtn.disabled = false;
     }
+  }
+
+  /**
+   * Attempts to set the current frame. If frame is updated, updates the time control UI and
+   * triggers a redraw.
+   * @returns true if the frame was set correctly (false if the frame is out of range).
+   */
+  public setCurrentFrame(frame: number): boolean {
+    if (this.goToFrame(frame)) {
+      this.redrawfn();
+      // Update time slider fields
+      this.timeSlider.value = "" + this.currentFrame;
+      this.timeInput.value = "" + this.currentFrame;
+      return true;
+    }
+    return false;
+  }
+
+  public getCurrentFrame(): number {
+    return this.currentFrame;
   }
 }
 const timeControls = new TimeControls(drawLoop);
@@ -220,13 +239,15 @@ async function loadDataset(name: string): Promise<void> {
 
   datasetName = name;
   dataset = new Dataset(`${baseUrl}/${name}`);
-  timeControls.currentFrame = 0;
   await dataset.open();
-  timeControls.updateTimeUI(dataset.numberOfFrames);
+  timeControls.updateTotalFrames(dataset.numberOfFrames);
+  timeControls.setCurrentFrame(0);
+  resetTrackUI();
   featureName = dataset.featureNames[0];
   canv.setDataset(dataset);
   canv.setFeature(featureName);
   plot.setDataset(dataset);
+  plot.removePlot();
   await drawFrame(0);
 
   featureSelectEl.innerHTML = "";
@@ -254,7 +275,7 @@ function handleFeatureChange({ currentTarget }: Event): void {
   featureName = value;
   // only update plot if active
   if (selectedTrack) {
-    plot.plot(selectedTrack, value, timeControls.currentFrame);
+    plot.plot(selectedTrack, value, timeControls.getCurrentFrame());
   }
 }
 
@@ -263,6 +284,8 @@ function handleCanvasClick(event: MouseEvent): void {
   console.log("clicked id " + id);
   canv.setHighlightedId(id);
   canv.render();
+  // Reset track input
+  resetTrackUI();
   if (id < 0) {
     selectedTrack = null;
     plot.removePlot();
@@ -270,7 +293,7 @@ function handleCanvasClick(event: MouseEvent): void {
   }
   const trackId = dataset!.getTrackId(id);
   selectedTrack = dataset!.buildTrack(trackId);
-  plot.plot(selectedTrack, featureName, timeControls.currentFrame);
+  plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -295,6 +318,23 @@ function handleKeyDown({ key }: KeyboardEvent): void {
   }
 }
 
+async function handleFindTrack(): Promise<void> {
+  // Load track value
+  const trackId = trackInput.valueAsNumber;
+  const newTrack = dataset!.buildTrack(trackId);
+
+  if (newTrack.length() < 1) {  // Check track validity
+    return;
+  }
+  selectedTrack = newTrack;
+  timeControls.setCurrentFrame(selectedTrack.times[0]);
+  plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
+}
+
+function resetTrackUI(): void {
+  trackInput.value = "";
+}
+
 // SETUP & DRAWING ///////////////////////////////////////////////////////
 
 const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
@@ -308,13 +348,13 @@ async function drawLoop(): Promise<void> {
   if (dataset && datasetOpen) {
     // update higlighted cell id if any
     if (selectedTrack) {
-      const id = selectedTrack.getIdAtTime(timeControls.currentFrame);
+      const id = selectedTrack.getIdAtTime(timeControls.getCurrentFrame());
       canv.setHighlightedId(id - 1);
       // console.log(`selected track: ${selectedTrack.trackId}; highlighted id ${id}`);
     }
     // update current time in plot
-    plot.setTime(timeControls.currentFrame);
-    await drawFrame(timeControls.currentFrame);
+    plot.setTime(timeControls.getCurrentFrame());
+    await drawFrame(timeControls.getCurrentFrame());
   }
 }
 
@@ -329,6 +369,8 @@ async function start(): Promise<void> {
   featureSelectEl.addEventListener("change", handleFeatureChange);
   colorRampSelectEl.addEventListener("click", handleColorRampClick);
   canv.domElement.addEventListener("click", handleCanvasClick);
+  findTrackBtn.addEventListener("click", () => handleFindTrack());
+  trackInput.addEventListener("change", () => handleFindTrack());
 }
 
 window.addEventListener("beforeunload", () => {
