@@ -103,11 +103,7 @@ class TimeControls {
     clearInterval(this.timerId);
   }
   public handleFrameAdvance(delta: number = 1) {
-    if (this.goToFrame(this.currentFrame + delta)) {
-      this.redrawfn();
-      this.timeInput.value = "" + this.currentFrame;
-      this.timeSlider.value = "" + this.currentFrame;
-    }
+    this.setCurrentFrame(this.currentFrame + delta);
   }
   private handleTimeSliderChange() {
     // trigger loading new time
@@ -145,7 +141,7 @@ class TimeControls {
    */
   public setCurrentFrame(frame: number): boolean {
     if (this.goToFrame(frame)) {
-      this.currentFrame = frame;
+      this.redrawfn();
       // Update time slider fields
       this.timeSlider.value = "" + this.currentFrame;
       this.timeInput.value = "" + this.currentFrame;
@@ -326,13 +322,13 @@ async function handleFindTrack(): Promise<void> {
   const trackId = trackInput.valueAsNumber;
   const newTrack = dataset!.buildTrack(trackId);
 
-  // Check for track validity
-  if (newTrack.length() > 0) {
-    selectedTrack = newTrack;
-    timeControls.setCurrentFrame(selectedTrack.times[0]);
-    plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
-    await drawLoop();
+  if (newTrack.length() < 1) {  // Check track validity
+    return;
   }
+  selectedTrack = newTrack;
+  timeControls.setCurrentFrame(selectedTrack.times[0]);
+  plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
+  await drawLoop();
 }
 
 function resetTrackUI(): void {
