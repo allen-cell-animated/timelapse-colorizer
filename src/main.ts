@@ -17,8 +17,11 @@ class TimeControls {
   private pauseBtn: HTMLButtonElement;
   private forwardBtn: HTMLButtonElement;
   private backBtn: HTMLButtonElement;
+  private findTrackBtn: HTMLButtonElement;
   private timeSlider: HTMLInputElement;
   private timeInput: HTMLInputElement;
+  private trackInput: HTMLInputElement;
+
   private totalFrames: number;
   public currentFrame: number;
   private timerId: number;
@@ -33,12 +36,16 @@ class TimeControls {
     this.pauseBtn = document.querySelector("#pauseBtn")!;
     this.forwardBtn = document.querySelector("#forwardBtn")!;
     this.backBtn = document.querySelector("#backBtn")!;
+    this.findTrackBtn = document.querySelector("#findTrackBtn")!;
     this.timeSlider = document.querySelector("#timeSlider")!;
     this.timeInput = document.querySelector("#timeValue")!;
+    this.trackInput = document.querySelector("#trackValue")!;
     this.playBtn.addEventListener("click", () => this.handlePlayButtonClick());
     this.pauseBtn.addEventListener("click", () => this.handlePauseButtonClick());
     this.forwardBtn.addEventListener("click", () => this.handleFrameAdvance(1));
     this.backBtn.addEventListener("click", () => this.handleFrameAdvance(-1));
+    this.findTrackBtn.addEventListener("click", () => this.handleFindTrack());
+    this.trackInput.addEventListener("change", () => this.handleFindTrack());
     // only update when DONE sliding: change event
     this.timeSlider.addEventListener("change", () => this.handleTimeSliderChange());
     this.timeInput.addEventListener("change", () => this.handleTimeInputChange());
@@ -120,6 +127,28 @@ class TimeControls {
       this.timeSlider.value = this.timeInput.value;
       this.redrawfn();
     }
+  }
+
+  private async handleFindTrack() {
+    // Load track value
+    let trackId = this.trackInput.valueAsNumber;
+    let newTrack = dataset!.buildTrack(trackId);
+ 
+    // Check for track validity
+    if (newTrack.times.length > 0) {
+      selectedTrack = newTrack;
+      this.currentFrame = selectedTrack.times[0];
+      this.goToFrame(this.currentFrame);
+      // Update time slider fields
+      this.timeSlider.value = "" + this.currentFrame;
+      this.timeInput.value = "" + this.currentFrame;
+      plot.plot(selectedTrack, featureName, this.currentFrame);
+      await drawLoop();
+    }
+  }
+
+  public resetTrackUI() {
+    this.trackInput.value = "";
   }
 
   public updateTimeUI(totalFrames: number) {
@@ -263,6 +292,8 @@ function handleCanvasClick(event: MouseEvent): void {
   console.log("clicked id " + id);
   canv.setHighlightedId(id);
   canv.render();
+  // Reset track input
+  timeControls.resetTrackUI();
   if (id < 0) {
     selectedTrack = null;
     plot.removePlot();
