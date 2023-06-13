@@ -23,7 +23,7 @@ class TimeControls {
   private timeInput: HTMLInputElement;
 
   private totalFrames: number;
-  public currentFrame: number;
+  private currentFrame: number;
   private timerId: number;
   private redrawfn: () => void;
 
@@ -140,8 +140,8 @@ class TimeControls {
   }
 
   public setCurrentFrame(frame: number) {
-    this.currentFrame = frame;
-    if (this.goToFrame(this.currentFrame)) {
+    if (this.goToFrame(frame)) {
+      this.currentFrame = frame;
       // Update time slider fields
       this.timeSlider.value = "" + this.currentFrame;
       this.timeInput.value = "" + this.currentFrame;
