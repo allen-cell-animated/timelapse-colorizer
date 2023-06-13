@@ -125,7 +125,7 @@ class TimeControls {
     }
   }
 
-  public updateTotalFrames(totalFrames: number) {
+  public updateTotalFrames(totalFrames: number): void {
     this.totalFrames = totalFrames;
     this.timeSlider.max = `${totalFrames - 1}`;
     this.timeInput.max = `${totalFrames - 1}`;
@@ -139,13 +139,19 @@ class TimeControls {
     }
   }
 
-  public setCurrentFrame(frame: number) {
+  /**
+   * Sets the current frame and updates this TimeControls UI to match.
+   * @returns true if the frame was set correctly (false if the frame is out of range).
+   */
+  public setCurrentFrame(frame: number): boolean {
     if (this.goToFrame(frame)) {
       this.currentFrame = frame;
       // Update time slider fields
       this.timeSlider.value = "" + this.currentFrame;
       this.timeInput.value = "" + this.currentFrame;
+      return true;
     }
+    return false;
   }
 
   public getCurrentFrame(): number {
@@ -315,13 +321,13 @@ function handleKeyDown({ key }: KeyboardEvent): void {
   }
 }
 
-async function handleFindTrack() {
+async function handleFindTrack(): Promise<void> {
   // Load track value
-  let trackId = trackInput.valueAsNumber;
-  let newTrack = dataset!.buildTrack(trackId);
+  const trackId = trackInput.valueAsNumber;
+  const newTrack = dataset!.buildTrack(trackId);
 
   // Check for track validity
-  if (newTrack.times.length > 0) {
+  if (newTrack.length() > 0) {
     selectedTrack = newTrack;
     timeControls.setCurrentFrame(selectedTrack.times[0]);
     plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
@@ -329,7 +335,7 @@ async function handleFindTrack() {
   }
 }
 
-function resetTrackUI() {
+function resetTrackUI(): void {
   trackInput.value = "";
 }
 
