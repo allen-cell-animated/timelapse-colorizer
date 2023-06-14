@@ -30,6 +30,7 @@
     "no-unused-vars": 0, // Rely on typescript-eslint rule above
     "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
     "@typescript-eslint/typedef": ["error", { "parameters": true }],
+    "prefer-const": 1,
     "radix": 1,
     "react/jsx-uses-vars": 1,
     "react/no-deprecated": 0,
