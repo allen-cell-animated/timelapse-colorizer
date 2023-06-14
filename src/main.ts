@@ -10,6 +10,9 @@ document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
 const datasetSelectEl: HTMLSelectElement = document.querySelector("#dataset")!;
 const featureSelectEl: HTMLSelectElement = document.querySelector("#feature")!;
 const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp")!;
+const colorRampContainerEl: HTMLDivElement = document.querySelector("#color_ramp_container")!;
+const colorRampMinEl: HTMLLabelElement = document.querySelector("#color_ramp_min")!;
+const colorRampMaxEl: HTMLLabelElement = document.querySelector("#color_ramp_max")!;
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;;
 
@@ -204,14 +207,28 @@ const colorStops: HexColorString[][] = [
     "#ffe3aa",
     "#ffffff",
   ],
+  // Esri color ramps - Blue and Red 9
+  ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
+  // Esri color ramps - Blue and Red 8
+  ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"],
+  // Esri color ramps - Red and Green 9
+  ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
+  // Esri color ramps - Purple and Red 2
+  ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"],
+  // Esri color ramps - Green and Brown 1
+  ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"],
 ];
 const colorRamps = colorStops.map((ramp) => new ColorRamp(ramp));
 const DEFAULT_RAMP = 4;
 
 function populateColorRampSelect(): void {
   colorRampSelectEl.innerHTML = "";
+  const width = 120, height = 25;
+  // Sets dimensions for color ramp container, as color ramp isn't inline (absolute/floating)
+  colorRampContainerEl.style.width = `${width}px`;
+  colorRampContainerEl.style.height = `${height}px`;
   colorRamps.forEach((ramp, idx) => {
-    const rampCanvas = ramp.createGradientCanvas(120, 25);
+    const rampCanvas = ramp.createGradientCanvas(width, height);
     if (idx === DEFAULT_RAMP) {
       rampCanvas.className = "selected";
     }
@@ -244,6 +261,7 @@ async function loadDataset(name: string): Promise<void> {
   timeControls.setCurrentFrame(0);
   resetTrackUI();
   featureName = dataset.featureNames[0];
+  console.log("features: " + dataset.featureNames[0]);
   canv.setDataset(dataset);
   canv.setFeature(featureName);
   plot.setDataset(dataset);
@@ -256,6 +274,8 @@ async function loadDataset(name: string): Promise<void> {
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
+  colorRampMinEl.innerText = `${dataset!.features[featureName].min}`;
+  colorRampMaxEl.innerText = `${dataset!.features[featureName].max}`;
   console.timeEnd("loadDataset");
 }
 
@@ -270,6 +290,7 @@ function handleDatasetChange({ currentTarget }: Event): void {
 
 function handleFeatureChange({ currentTarget }: Event): void {
   const value = (currentTarget as HTMLOptionElement).value;
+  console.log(value);
   canv.setFeature(value);
   canv.render();
   featureName = value;
@@ -277,6 +298,8 @@ function handleFeatureChange({ currentTarget }: Event): void {
   if (selectedTrack) {
     plot.plot(selectedTrack, value, timeControls.getCurrentFrame());
   }
+  colorRampMinEl.innerText = `${dataset!.features[featureName].min}`;
+  colorRampMaxEl.innerText = `${dataset!.features[featureName].max}`;
 }
 
 function handleCanvasClick(event: MouseEvent): void {

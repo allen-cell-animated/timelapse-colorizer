@@ -7,7 +7,6 @@
     <style>
 #color_ramp {
   position: absolute;
-  margin-left: 5px;
 }
 
 #color_ramp canvas {
@@ -22,6 +21,13 @@
   outline: 3px solid black;
   outline-offset: -2px;
 }
+
+#labeled_color_ramp {
+  display: inline-flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 5px;
+}
     </style>
   </head>
   <body>
@@ -34,8 +40,13 @@
       </select>
       <label for="feature">Feature</label>
       <select name="Feature" id="feature"></select>
-      <label for="color_ramp">Color ramp</label>
-      <span id="color_ramp"></span>
+      <div id="labeled_color_ramp">
+        <label for="color_ramp" id="color_ramp_min" style="min-width: 20px; text-align: end;">0.0</label>
+        <div id="color_ramp_container">
+          <span id="color_ramp"></span>
+        </div>
+        <label for="color_ramp" id="color_ramp_max">0.0</label>
+      </div>
     </div>
     <div id="app"></div>
     <div>Time (use arrow keys)
