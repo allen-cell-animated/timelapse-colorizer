@@ -204,8 +204,7 @@ const DEFAULT_RAMP = 4;
 
 function populateColorRampSelect(): void {
   colorRampSelectEl.innerHTML = "";
-  const width = 120;
-  const height = 25;
+  const width = 120, height = 25;
   // Sets dimensions for color ramp container, as color ramp isn't inline (absolute/floating)
   colorRampContainerEl.attributeStyleMap.set("width", `${width}px`);
   colorRampContainerEl.attributeStyleMap.set("height", `${height}px`);
