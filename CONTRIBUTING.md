@@ -20,7 +20,7 @@ npm run dev
 
 2. To do all code static analysis checks: (DO THIS BEFORE PUSHING COMMITS)
 ```
-npm run lint .
+npm run lint
 npm run typeCheck
 ```
 
