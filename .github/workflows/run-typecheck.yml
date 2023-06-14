@@ -1,5 +1,5 @@
 name: run-typecheck
-run-name: ✅ Type Checking for ${{github.ref_name}}
+run-name: ✅ Type Checking \#${{github.ref_name}} on ${{github.head_ref}}
 on: pull_request
 jobs:
   eslint:
