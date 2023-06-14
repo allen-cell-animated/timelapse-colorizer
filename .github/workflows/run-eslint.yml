@@ -1,5 +1,5 @@
 name: run-eslint
-run-name: ✅ Linting for ${{'#'}}${{github.ref_name}} on ${{github.head_ref}}
+run-name: ✅ Linting '${{'#'}}${{github.ref_name}}' on branch '${{github.head_ref}}'
 on: pull_request
 jobs:
   eslint:
