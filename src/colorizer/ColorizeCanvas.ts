@@ -167,7 +167,7 @@ export default class ColorizeCanvas {
   }
 
   setFeature(name: string): void {
-    if (!this.dataset?.features.hasOwnProperty(name)) {
+    if (!this.dataset || !Object.prototype.hasOwnProperty.call(this.dataset.features, name)) {
       return;
     }
 

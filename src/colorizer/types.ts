@@ -32,7 +32,7 @@ export type FeatureArrayType = {
 
 type FeatureTypeSpec<T extends FeatureDataType> = {
   /** The constructor for a `TypedArray` of this numeric type */
-  arrayConstructor: { new (arr: number[]): FeatureArrayType[T] };
+  ArrayConstructor: { new (arr: number[]): FeatureArrayType[T] };
   format: PixelFormat;
   dataType: TextureDataType;
   internalFormat: PixelFormatGPU;
@@ -41,25 +41,25 @@ type FeatureTypeSpec<T extends FeatureDataType> = {
 /** Maps `FeatureDataType` to values required to create a valid texture of that type */
 export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = {
   [FeatureDataType.F32]: {
-    arrayConstructor: Float32Array,
+    ArrayConstructor: Float32Array,
     format: RedFormat,
     dataType: FloatType,
     internalFormat: "R32F",
   },
   [FeatureDataType.U32]: {
-    arrayConstructor: Uint32Array,
+    ArrayConstructor: Uint32Array,
     format: RedIntegerFormat,
     dataType: UnsignedIntType,
     internalFormat: "R32UI",
   },
   [FeatureDataType.I32]: {
-    arrayConstructor: Int32Array,
+    ArrayConstructor: Int32Array,
     format: RedIntegerFormat,
     dataType: IntType,
     internalFormat: "R32I",
   },
   [FeatureDataType.U8]: {
-    arrayConstructor: Uint8Array,
+    ArrayConstructor: Uint8Array,
     format: RedIntegerFormat,
     dataType: UnsignedByteType,
     internalFormat: "R8UI",

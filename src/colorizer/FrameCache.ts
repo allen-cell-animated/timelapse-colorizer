@@ -26,7 +26,7 @@ export default class FrameCache {
   }
 
   /** Evicts the least recently used entry from the cache */
-  private evictLast() {
+  private evictLast(): void {
     if (!this.last) {
       console.error("Attempt to evict last frame from cache when no last frame has been set");
       return;

@@ -11,7 +11,7 @@ const datasetSelectEl: HTMLSelectElement = document.querySelector("#dataset")!;
 const featureSelectEl: HTMLSelectElement = document.querySelector("#feature")!;
 const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp")!;
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
-const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;;
+const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
 
 // time / playback controls
 class TimeControls {
@@ -47,10 +47,10 @@ class TimeControls {
     this.timeInput.addEventListener("change", () => this.handleTimeInputChange());
   }
 
-  private playTimeSeries(onNewFrameCallback: () => void) {
+  private playTimeSeries(onNewFrameCallback: () => void): void {
     clearInterval(this.timerId);
 
-    const loadNextFrame = () => {
+    const loadNextFrame = (): void => {
       let nextFrame = this.currentFrame + 1;
       if (nextFrame >= this.totalFrames) {
         nextFrame = 0;
@@ -86,7 +86,7 @@ class TimeControls {
     return true;
   }
 
-  private handlePlayButtonClick() {
+  private handlePlayButtonClick(): void {
     if (this.currentFrame >= this.totalFrames - 1) {
       this.currentFrame = -1;
     }
@@ -99,20 +99,20 @@ class TimeControls {
       }
     });
   }
-  private handlePauseButtonClick() {
+  private handlePauseButtonClick(): void {
     clearInterval(this.timerId);
   }
-  public handleFrameAdvance(delta: number = 1) {
+  public handleFrameAdvance(delta: number = 1): void {
     this.setCurrentFrame(this.currentFrame + delta);
   }
-  private handleTimeSliderChange() {
+  private handleTimeSliderChange(): void {
     // trigger loading new time
     if (this.goToFrame(this.timeSlider.valueAsNumber)) {
       this.timeInput.value = this.timeSlider.value;
       this.redrawfn();
     }
   }
-  private handleTimeInputChange() {
+  private handleTimeInputChange(): void {
     // trigger loading new time
     if (this.goToFrame(this.timeInput.valueAsNumber)) {
       // update slider

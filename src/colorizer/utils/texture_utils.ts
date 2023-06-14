@@ -23,7 +23,7 @@ export function packDataTexture(data: number[], type: FeatureDataType): DataText
   const [width, height] = fitIntoSquare(data, 0);
 
   const spec = featureTypeSpecs[type];
-  const buffer = new spec.arrayConstructor(data);
+  const buffer = new spec.ArrayConstructor(data);
 
   const tex = new DataTexture(buffer, width, height, spec.format, spec.dataType);
   tex.internalFormat = spec.internalFormat;
