@@ -1,5 +1,5 @@
-name: run-eslint
-run-name: ✅ Linting for ${{github.ref_name}}
+name: run-typecheck
+run-name: ✅ Type Checking for ${{github.ref_name}}
 on: pull_request
 jobs:
   eslint:
@@ -10,4 +10,4 @@ jobs:
         with:
           node-version: '14'
       - run: npm install
-      - run: npm run lint .
+      - run: npm run typeCheck .
