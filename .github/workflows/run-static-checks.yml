@@ -1,0 +1,18 @@
+name: run-static-checks
+run-name: ✅ Checking '${{'#'}}${{github.ref_name}}' on branch '${{github.head_ref}}'
+on: pull_request
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - name: Run Linter
+        run: npm run lint
+      - name: Run Typechecker
+        # Run type check even if the previous linter step failed
+        if: success() || failure()
+        run: npm run typecheck
