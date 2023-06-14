@@ -206,10 +206,10 @@ function populateColorRampSelect(): void {
   colorRampSelectEl.innerHTML = "";
   const width = 120, height = 25;
   // Sets dimensions for color ramp container, as color ramp isn't inline (absolute/floating)
-  colorRampContainerEl.attributeStyleMap.set("width", `${width}px`);
-  colorRampContainerEl.attributeStyleMap.set("height", `${height}px`);
+  colorRampContainerEl.style.width = `${width}px`;
+  colorRampContainerEl.style.height = `${height}px`;
   colorRamps.forEach((ramp, idx) => {
-    const rampCanvas = ramp.createGradientCanvas(120, 25);
+    const rampCanvas = ramp.createGradientCanvas(width, height);
     if (idx === DEFAULT_RAMP) {
       rampCanvas.className = "selected";
     }
@@ -241,6 +241,7 @@ async function loadDataset(name: string): Promise<void> {
   await dataset.open();
   timeControls.updateTimeUI(dataset.numberOfFrames);
   featureName = dataset.featureNames[0];
+  console.log("features: " + dataset.featureNames[0]);
   canv.setDataset(dataset);
   canv.setFeature(featureName);
   plot.setDataset(dataset);
@@ -268,6 +269,7 @@ function handleDatasetChange({ currentTarget }: Event): void {
 
 function handleFeatureChange({ currentTarget }: Event): void {
   const value = (currentTarget as HTMLOptionElement).value;
+  console.log(value);
   canv.setFeature(value);
   canv.render();
   featureName = value;
