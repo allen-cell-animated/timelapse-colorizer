@@ -2,7 +2,7 @@ name: run-typecheck
 run-name: ✅ Type Checking '${{'#'}}${{github.ref_name}}' on branch '${{github.head_ref}}'
 on: pull_request
 jobs:
-  eslint:
+  typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
