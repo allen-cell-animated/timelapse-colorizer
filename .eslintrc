@@ -5,8 +5,8 @@
     "browser": true
   },
   "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "ecmaFeatures": {
+  "parserOptions": {
+    "ecmaFeatures": {
       "jsx": true,
       "experimentalObjectRestSpread": true,
       "impliedStrict": true
@@ -32,7 +32,7 @@
     "@typescript-eslint/typedef": ["error", { "parameters": true }],
     "prefer-const": 1,
     "radix": 1,
-    "react/jsx-uses-vars": 1,
+    "react/jsx-uses-vars": 0,  // Project does not use react
     "react/no-deprecated": 0,
     "react/prop-types": 0,
     "semi": 2,
