@@ -10,6 +10,9 @@ document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
 const datasetSelectEl: HTMLSelectElement = document.querySelector("#dataset")!;
 const featureSelectEl: HTMLSelectElement = document.querySelector("#feature")!;
 const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp")!;
+const colorRampContainerEl: HTMLDivElement = document.querySelector("#color_ramp_container")!;
+const colorRampMinEl: HTMLLabelElement = document.querySelector("#color_ramp_min")!;
+const colorRampMaxEl: HTMLLabelElement = document.querySelector("#color_ramp_max")!;
 
 // time / playback controls
 class TimeControls {
@@ -185,12 +188,27 @@ const colorStops: HexColorString[][] = [
     "#ffe3aa",
     "#ffffff",
   ],
+  // Esri color ramps - Blue and Red 9
+  ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
+  // Esri color ramps - Blue and Red 8
+  ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"],
+  // Esri color ramps - Red and Green 9
+  ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
+  // Esri color ramps - Purple and Red 2
+  ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"],
+  // Esri color ramps - Green and Brown 1
+  ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"],
 ];
 const colorRamps = colorStops.map((ramp) => new ColorRamp(ramp));
 const DEFAULT_RAMP = 4;
 
 function populateColorRampSelect(): void {
   colorRampSelectEl.innerHTML = "";
+  const width = 120;
+  const height = 25;
+  // Sets dimensions for color ramp container, as color ramp isn't inline (absolute/floating)
+  colorRampContainerEl.attributeStyleMap.set("width", `${width}px`);
+  colorRampContainerEl.attributeStyleMap.set("height", `${height}px`);
   colorRamps.forEach((ramp, idx) => {
     const rampCanvas = ramp.createGradientCanvas(120, 25);
     if (idx === DEFAULT_RAMP) {
@@ -235,6 +253,8 @@ async function loadDataset(name: string): Promise<void> {
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
+  colorRampMinEl.innerText = `${dataset!.features[featureName].min}`;
+  colorRampMaxEl.innerText = `${dataset!.features[featureName].max}`;
   console.timeEnd("loadDataset");
 }
 
@@ -256,6 +276,8 @@ function handleFeatureChange({ currentTarget }: Event): void {
   if (selectedTrack) {
     plot.plot(selectedTrack, value, timeControls.currentFrame);
   }
+  colorRampMinEl.innerText = `${dataset!.features[featureName].min}`;
+  colorRampMaxEl.innerText = `${dataset!.features[featureName].max}`;
 }
 
 function handleCanvasClick(event: MouseEvent): void {
