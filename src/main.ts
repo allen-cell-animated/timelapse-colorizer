@@ -13,8 +13,6 @@ const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp
 const colorRampContainerEl: HTMLDivElement = document.querySelector("#color_ramp_container")!;
 const colorRampMinEl: HTMLLabelElement = document.querySelector("#color_ramp_min")!;
 const colorRampMaxEl: HTMLLabelElement = document.querySelector("#color_ramp_max")!;
-let colorRampMin: number = 0;
-let colorRampMax: number = 0;
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
@@ -307,29 +305,21 @@ function updateFeature(newFeatureName: string): void {
     return;
   }
   featureName = newFeatureName;
-  // TODO: Decide if feature range should be unlocked when the feature changes.
-  // Don't update the range values when locked
-  if (!lockRangeCheckbox.checked) {
-    colorRampMin = featureData.min;
-    colorRampMax = featureData.max;
-  }
 
-  canv.setFeature(featureData.tex, colorRampMin, colorRampMax);
+  canv.setFeature(featureName);
   canv.render();
   // only update plot if active
   if (selectedTrack) {
     plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
   }
-  colorRampMinEl.innerText = `${colorRampMin}`;
-  colorRampMaxEl.innerText = `${colorRampMax}`;
+  colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
+  colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
 
 function handleLockRangeCheckboxChange(): void {
-  // When the lock is disabled, reset the color ramp min and max to match the
-  // currently selected feature.
-  if (!lockRangeCheckbox.checked) {
-    updateFeature(featureName);
-  }
+  canv.setColorMapRangeLock(lockRangeCheckbox.checked);
+  colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
+  colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
 
 function handleCanvasClick(event: MouseEvent): void {
