@@ -17,7 +17,6 @@ import {
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { FeatureData } from "./Dataset";
 import { FeatureDataType } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
