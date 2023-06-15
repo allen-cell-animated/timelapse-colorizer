@@ -81,6 +81,14 @@ export default class Dataset {
     };
   }
 
+  public getFeatureData(name: string): FeatureData | null {
+    if (Object.keys(this.features).includes(name)) {
+      return this.features[name];
+    } else {
+      return null;
+    }
+  }
+
   private async loadOutliers(): Promise<void> {
     if (!this.outlierFile) {
       return;

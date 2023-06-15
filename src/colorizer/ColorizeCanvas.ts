@@ -167,13 +167,6 @@ export default class ColorizeCanvas {
     this.setUniform("highlightedId", id);
   }
 
-  getFeatureData(name: string): FeatureData | null {
-    if (!this.dataset || !Object.keys(this.dataset.features).includes(name)) {
-      return null;
-    }
-    return this.dataset.features[name];
-  }
-
   setFeature(tex: Texture, min: number, max: number): void {
     this.setUniform("featureData", tex);
     this.setUniform("featureMin", min);
