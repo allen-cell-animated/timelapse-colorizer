@@ -300,7 +300,7 @@ function handleFeatureChange({ currentTarget }: Event): void {
 }
 
 function updateFeature(newFeatureName: string): void {
-  const featureData = dataset?.getFeatureData(newFeatureName)
+  const featureData = dataset?.getFeatureData(newFeatureName);
   if (!featureData) {
     return;
   }

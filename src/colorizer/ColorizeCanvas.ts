@@ -192,7 +192,7 @@ export default class ColorizeCanvas {
     this.setUniform("featureMax", this.colorMapRangeMax);
   }
 
-  setColorMapRangeLock(locked: boolean) {
+  setColorMapRangeLock(locked: boolean): void {
     this.isColorMapRangeLocked = locked;
     if (this.featureName) {  // trigger update for color map range
       this.setFeature(this.featureName);
