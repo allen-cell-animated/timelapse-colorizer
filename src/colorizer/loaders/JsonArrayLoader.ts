@@ -30,7 +30,7 @@ class JsonArraySource implements ArraySource {
   }
 
   getBuffer<T extends FeatureDataType>(type: T): FeatureArrayType[T] {
-    return new featureTypeSpecs[type].arrayConstructor(this.array);
+    return new featureTypeSpecs[type].ArrayConstructor(this.array);
   }
 
   getTexture(type: FeatureDataType): DataTexture {
@@ -58,7 +58,7 @@ export default class JsonArrayLoader implements IArrayLoader {
   async load(url: string): Promise<JsonArraySource> {
     const response = await fetch(url);
     const text = await response.text();
-    let { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
+    const { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
     return new JsonArraySource(data, min, max);
   }
 }

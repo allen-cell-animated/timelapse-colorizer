@@ -168,7 +168,7 @@ export default class ColorizeCanvas {
   }
 
   getFeatureData(name: string): FeatureData | null {
-    if (!this.dataset?.features.hasOwnProperty(name)) {
+    if (!this.dataset || !Object.keys(this.dataset.features).includes(name)) {
       return null;
     }
     return this.dataset.features[name];
