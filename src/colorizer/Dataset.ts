@@ -17,7 +17,7 @@ type DatasetManifest = {
   times?: string;
 };
 
-type FeatureData = {
+export type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;

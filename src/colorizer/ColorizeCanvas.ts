@@ -17,6 +17,7 @@ import {
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
+import { FeatureData } from "./Dataset";
 import { FeatureDataType } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
@@ -166,16 +167,17 @@ export default class ColorizeCanvas {
     this.setUniform("highlightedId", id);
   }
 
-  setFeature(name: string): void {
+  getFeatureData(name: string): FeatureData | null {
     if (!this.dataset?.features.hasOwnProperty(name)) {
-      return;
+      return null;
     }
+    return this.dataset.features[name];
+  }
 
-    const { tex, min, max } = this.dataset.features[name];
-
+  setFeature(tex: Texture, min: number, max: number): void {
     this.setUniform("featureData", tex);
     this.setUniform("featureMin", min);
-    this.setUniform("featureMax", max / 1.5);
+    this.setUniform("featureMax", max);
   }
 
   async setFrame(index: number): Promise<void> {
