@@ -256,6 +256,8 @@ async function drawLoop(): Promise<void> {
   // Update UI Elements
   timeControls.setIsDisabled(recordingControls.isRecording());
   timeControls.updateUI();
+  recordingControls.setIsDisabled(!dataset); 
+  recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
   recordingControls.updateUI();
   // update current time in plot
   plot.setTime(canv.getCurrentFrame());

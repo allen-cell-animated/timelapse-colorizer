@@ -1,5 +1,4 @@
 import ColorizeCanvas from "./ColorizeCanvas";
-import Dataset from "./Dataset";
 
 export default class RecordingControls {
   private startBtn: HTMLButtonElement;
@@ -9,34 +8,43 @@ export default class RecordingControls {
 
   // TODO: Add internal flag for overriding
   private filePrefixInput: HTMLInputElement;
+  private filePrefixResetBtn: HTMLButtonElement;
+  private useDefaultPrefix: boolean;
+  private defaultPrefix: string;
   private hiddenAnchorEl: HTMLAnchorElement;
 
   private timerId: number;
   private startingFrame: number;
   private redrawfn: () => void;
+  private isDisabled: boolean;
 
-  private dataset: Dataset | null;
   private canvas: ColorizeCanvas;
 
   constructor(canvas: ColorizeCanvas, redrawfn: () => void) {
     this.startBtn = document.querySelector("#sequence_start_btn")!;
     this.abortBtn = document.querySelector("#sequence_abort_btn")!;
+
+    this.filePrefixResetBtn = document.querySelector("#sequence_prefix_reset_btn")!;
     this.startAtCurrentFrameChkbx = document.querySelector("#sequence_start_frame_checkbox")!;
     this.filePrefixInput = document.querySelector("#sequence_prefix")!;
+    this.useDefaultPrefix = true;
+    this.defaultPrefix = "";
     
     this.hiddenAnchorEl = document.createElement("a");
     document.body.appendChild(this.hiddenAnchorEl);
     
     this.recording = false;
-    this.dataset = null;
     this.canvas = canvas;
 
     this.timerId = 0;
     this.startingFrame = 0;
     this.redrawfn = redrawfn;
+    this.isDisabled = false;
 
     this.startBtn.addEventListener("click", () => this.handleStartButtonClick());
     this.abortBtn.addEventListener("click", () => this.handleAbortButtonClick());
+    this.filePrefixInput.addEventListener("changed", () => this.handlePrefixChanged());
+    this.filePrefixResetBtn.addEventListener("click", () => this.handlePrefixResetClicked());
   }
 
   public setCanvas(canvas: ColorizeCanvas) {
@@ -92,7 +100,7 @@ export default class RecordingControls {
       this.hiddenAnchorEl.click();
       
       // Advance to the next frame, checking if we've exceeded bounds.
-      if (!await this.canvas.setFrame(currentFrame + 1, false)) {
+      if (await this.canvas.setFrame(currentFrame + 1, false)) {
         // Reached end, so stop and reset UI
         clearInterval(this.timerId);
         this.recording = false;
@@ -105,9 +113,31 @@ export default class RecordingControls {
     this.timerId = window.setInterval(loadAndRecordFrame, 0);
   }
 
+  public handlePrefixChanged(): void {
+    this.useDefaultPrefix = false;
+  }
+
+  public handlePrefixResetClicked(): void {
+    this.useDefaultPrefix = true;
+    this.updateUI();
+  }
+
   public updateUI(): void {
-    this.startBtn.disabled = this.recording;
-    this.abortBtn.disabled = !this.recording;
+    this.startBtn.disabled = this.recording || this.isDisabled;
+    this.abortBtn.disabled = !this.recording || this.isDisabled;
+    if (this.useDefaultPrefix) {
+      this.filePrefixInput.value = this.defaultPrefix;
+    }
+  }
+
+  public setDefaultFilePrefix(prefix: string) {
+    this.defaultPrefix = prefix;
+    this.updateUI();
+  }
+
+  public setIsDisabled(disabled: boolean) {
+    this.isDisabled = disabled;
+    this.updateUI();
   }
 
   public isRecording(): boolean {
