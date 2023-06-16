@@ -20,7 +20,7 @@ const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 
 const timeControls = new TimeControls(canv, drawLoop);
-const recordingControls = new RecordingControls(canv);
+const recordingControls = new RecordingControls(canv, drawLoop);
 
 function addOptionTo(parent: HTMLSelectElement, value: string, child?: HTMLElement): void {
   const optionEl = document.createElement("option");
@@ -119,7 +119,6 @@ async function loadDataset(name: string): Promise<void> {
   datasetName = name;
   dataset = new Dataset(`${baseUrl}/${name}`);
   await dataset.open();
-  canv.setFrame(0);
   resetTrackUI();
 
   // Only change the feature if there's no equivalent in the new dataset
@@ -131,7 +130,8 @@ async function loadDataset(name: string): Promise<void> {
   updateFeature(featureName);
   plot.setDataset(dataset);
   plot.removePlot();
-  await drawFrame(0);
+  canv.setFrame(0);
+  await drawLoop();
 
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
@@ -167,7 +167,6 @@ function updateFeature(newFeatureName: string): void {
   featureName = newFeatureName;
 
   canv.setFeature(featureName);
-  canv.render();
   // only update plot if active
   if (selectedTrack) {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
@@ -243,24 +242,24 @@ function resetTrackUI(): void {
 
 const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
-async function drawFrame(index: number): Promise<void> {
-  await canv.setFrame(index);
-  canv.render();
-}
-
 async function drawLoop(): Promise<void> {
   if (dataset && datasetOpen) {
     // update higlighted cell id if any
     if (selectedTrack) {
       const id = selectedTrack.getIdAtTime(canv.getCurrentFrame());
       canv.setHighlightedId(id - 1);
-      // console.log(`selected track: ${selectedTrack.trackId}; highlighted id ${id}`);
     }
+
+    await canv.render();
+
+    // Update UI Elements
+    timeControls.setIsDisabled(recordingControls.isRecording());
+    timeControls.updateUI();
+    recordingControls.updateUI();
     // update current time in plot
     plot.setTime(canv.getCurrentFrame());
-    await drawFrame(canv.getCurrentFrame());
   }
-  timeControls.updateUI();
+
 }
 
 async function start(): Promise<void> {

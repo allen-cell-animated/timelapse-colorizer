@@ -145,7 +145,7 @@ export default class ColorizeCanvas {
     this.pickRenderTarget.setSize(width, height);
   }
 
-  setDataset(dataset: Dataset): void {
+  public async setDataset(dataset: Dataset): Promise<void> {
     if (this.dataset !== null) {
       this.dataset.dispose();
     }
@@ -155,7 +155,15 @@ export default class ColorizeCanvas {
     } else {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
+  
+    // Force load of frame data (clear cached frame data)
     this.totalFrames = dataset.numberOfFrames;
+    const frame = await this.dataset?.loadFrame(this.currentFrame);
+    if (!frame) {
+      return;
+    }
+    this.setUniform("frame", frame);
+    this.render();
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
@@ -243,7 +251,6 @@ export default class ColorizeCanvas {
     if (this.currentFrame !== index) {
       // Trigger re-render + frame loading only if the frame is different
       this.currentFrame = index;
-      // TODO: Add bounds checking
       const frame = await this.dataset?.loadFrame(index);
       if (!frame) {
         return false;

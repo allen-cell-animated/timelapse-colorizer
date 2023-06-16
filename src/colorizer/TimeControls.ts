@@ -13,11 +13,14 @@ export default class TimeControls {
   private redrawfn: () => void;
 
   private canvas: ColorizeCanvas;
+  private isDisabled: boolean;
 
   constructor(canvas: ColorizeCanvas, redrawfn: () => void) {
     this.redrawfn = redrawfn;
     this.canvas = canvas;
     this.timerId = 0;
+    this.isDisabled = false;
+
     this.playBtn = document.querySelector("#playBtn")!;
     this.pauseBtn = document.querySelector("#pauseBtn")!;
     this.forwardBtn = document.querySelector("#forwardBtn")!;
@@ -36,15 +39,21 @@ export default class TimeControls {
   private playTimeSeries(onNewFrameCallback: () => void): void {
     clearInterval(this.timerId);
 
+    // TODO: Fix this function so that it doesn't stop the
+    // slider from also operating
     const loadNextFrame = (): void => {
+      if (this.isDisabled) {
+        // stop render loop if time controls have been disabled.
+        return;
+      }
       let nextFrame = this.canvas.getCurrentFrame() + 1;
       if (nextFrame >= this.canvas.getTotalFrames()) {
         nextFrame = 0;
       }
 
       // do the necessary update
-      this.redrawfn();
       this.canvas.setFrame(nextFrame);
+      this.redrawfn();
       onNewFrameCallback();
     };
     this.timerId = window.setInterval(loadNextFrame, 40);
@@ -55,12 +64,7 @@ export default class TimeControls {
       this.canvas.setFrame(0);
     }
     this.playTimeSeries(() => {
-      if (this.timeInput) {
-        this.timeInput.value = "" + this.canvas.getCurrentFrame();
-      }
-      if (this.timeSlider) {
-        this.timeSlider.value = "" + this.canvas.getCurrentFrame();
-      }
+      this.updateUI();
     });
   }
   private handlePauseButtonClick(): void {
@@ -86,14 +90,26 @@ export default class TimeControls {
     }
   }
 
+  public setIsDisabled(disabled: boolean): void {
+    this.isDisabled = disabled;
+    // Disable and clean up playback interval timer
+    if (disabled) {
+      clearInterval(this.timerId);
+    }
+  }
+
   public updateUI(): void {
     this.timeSlider.max = `${this.canvas.getTotalFrames() - 1}`;
     this.timeInput.max = `${this.canvas.getTotalFrames() - 1}`;
 
     this.timeSlider.value = "" + this.canvas.getCurrentFrame();
     this.timeInput.value = "" + this.canvas.getCurrentFrame();
+    this.timeSlider.disabled = this.isDisabled;
+    this.timeInput.disabled = this.isDisabled;
+    this.backBtn.disabled = this.isDisabled;
+    this.forwardBtn.disabled = this.isDisabled;
 
-    if (this.canvas.getTotalFrames() < 2) {
+    if (this.canvas.getTotalFrames() < 2 || this.isDisabled) {
       this.playBtn.disabled = true;
       this.pauseBtn.disabled = true;
     } else {
