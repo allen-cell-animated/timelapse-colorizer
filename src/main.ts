@@ -1,5 +1,6 @@
 import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
+import RecordingControls from "./colorizer/RecordingControls";
 
 const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
@@ -160,6 +161,7 @@ class TimeControls {
   }
 }
 const timeControls = new TimeControls(drawLoop);
+const recordingControls = new RecordingControls(canv);
 
 function addOptionTo(parent: HTMLSelectElement, value: string, child?: HTMLElement): void {
   const optionEl = document.createElement("option");
@@ -414,6 +416,7 @@ async function start(): Promise<void> {
   findTrackBtn.addEventListener("click", () => handleFindTrack());
   trackInput.addEventListener("change", () => handleFindTrack());
   lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
+  recordingControls.setCanvas(canv);
 }
 
 window.addEventListener("beforeunload", () => {
