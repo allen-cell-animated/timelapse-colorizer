@@ -175,10 +175,10 @@ export default class ColorizeCanvas {
   }
 
   setFeature(name: string): void {
-    const featureData = this.dataset?.getFeatureData(name);
-    if (!featureData) {
+    if(!this.dataset?.hasFeature(name)) {
       return;
     }
+    const featureData = this.dataset?.getFeatureData(name)!;
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);
     // Don't update the range values when locked
@@ -186,7 +186,6 @@ export default class ColorizeCanvas {
     if (!this.isColorMapRangeLocked) {
       this.colorMapRangeMin = featureData.min;
       this.colorMapRangeMax = featureData.max;
-      console.log("Update");
     }
     this.setUniform("featureMin", this.colorMapRangeMin);
     this.setUniform("featureMax", this.colorMapRangeMax);
