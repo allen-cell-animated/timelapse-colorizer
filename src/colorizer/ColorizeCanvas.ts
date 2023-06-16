@@ -189,6 +189,7 @@ export default class ColorizeCanvas {
     }
     this.setUniform("featureMin", this.colorMapRangeMin);
     this.setUniform("featureMax", this.colorMapRangeMax);
+    this.render();  // re-render necessary because map range may have changed
   }
 
   setColorMapRangeLock(locked: boolean): void {
