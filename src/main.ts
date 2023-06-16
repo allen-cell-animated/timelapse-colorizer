@@ -98,6 +98,10 @@ function populateColorRampSelect(): void {
   });
 }
 
+function setColorRampDisabled(disabled: boolean) {
+  colorRampSelectEl.className = disabled ? "disabled" : "";
+}
+
 // DATASET LOADING ///////////////////////////////////////////////////////
 
 let dataset: Dataset | null = null;
@@ -259,6 +263,9 @@ async function drawLoop(): Promise<void> {
   recordingControls.setIsDisabled(!dataset); 
   recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
   recordingControls.updateUI();
+
+  setColorRampDisabled(recordingControls.isRecording());
+  
   // update current time in plot
   plot.setTime(canv.getCurrentFrame());
 }

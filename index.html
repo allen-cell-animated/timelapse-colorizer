@@ -19,16 +19,26 @@ p {
   align-items: center;
 }
 
+#color_ramp_container {
+  position: relative;
+}
+
 #color_ramp {
+  width: 100%;
+  height: 100%;
   position: absolute;
 }
 
 #color_ramp canvas {
+  display: none;
+}
+
+#color_ramp:hover:not(.disabled) canvas {
   display: block;
 }
 
-#color_ramp:not(:hover) canvas:not(.selected) {
-  display: none;
+#color_ramp canvas.selected {
+  display: block;
 }
 
 #color_ramp canvas:hover, #color_ramp canvas.selected {
@@ -86,7 +96,7 @@ p {
       <p>
         <label>Image prefix:</label>
         <input id="sequence_prefix" value="image-"/>
-        <button id="sequence_prefix_reset_btn">Reset to Default</button>
+        <button id="sequence_prefix_reset_btn">Use default prefix</button>
       </p>
       <p>
         <input id="sequence_start_frame_checkbox" type="checkbox" checked="true">
