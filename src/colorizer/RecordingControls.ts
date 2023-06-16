@@ -99,7 +99,7 @@ export default class RecordingControls {
       this.hiddenAnchorEl.click();
       
       // Advance to the next frame, checking if we've exceeded bounds.
-      if (await this.canvas.setFrame(currentFrame + 1, false)) {
+      if (await this.canvas.setFrame(currentFrame + 1, false) && this.recording) {
         // Trigger the next run.
         this.timerId = setTimeout(loadAndRecordFrame, 10 /* 10 ms*/);
       } else {
