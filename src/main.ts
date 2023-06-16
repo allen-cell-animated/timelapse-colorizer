@@ -130,17 +130,17 @@ async function loadDataset(name: string): Promise<void> {
   updateFeature(featureName);
   plot.setDataset(dataset);
   plot.removePlot();
-  canv.setFrame(0);
-  await drawLoop();
-
+  await canv.setFrame(0);
+  
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
   featureSelectEl.value = featureName;
-
+  
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
-  timeControls.updateUI();
+
+  await drawLoop();
 
   console.timeEnd("loadDataset");
 }
@@ -181,11 +181,10 @@ function handleLockRangeCheckboxChange(): void {
   colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
 
-function handleCanvasClick(event: MouseEvent): void {
+async function handleCanvasClick(event: MouseEvent): Promise<void> {
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
   console.log("clicked id " + id);
-  canv.setHighlightedId(id);
-  canv.render();
+  canv.setHighlightedId(id - 1);
   // Reset track input
   resetTrackUI();
   if (id < 0) {
@@ -196,6 +195,7 @@ function handleCanvasClick(event: MouseEvent): void {
   const trackId = dataset!.getTrackId(id);
   selectedTrack = dataset!.buildTrack(trackId);
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
+  await drawLoop();
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -229,7 +229,7 @@ async function handleFindTrack(): Promise<void> {
     return;
   }
   selectedTrack = newTrack;
-  canv.setFrame(selectedTrack.times[0]);
+  await canv.setFrame(selectedTrack.times[0]);
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
 }
@@ -249,17 +249,16 @@ async function drawLoop(): Promise<void> {
       const id = selectedTrack.getIdAtTime(canv.getCurrentFrame());
       canv.setHighlightedId(id - 1);
     }
-
-    await canv.render();
-
-    // Update UI Elements
-    timeControls.setIsDisabled(recordingControls.isRecording());
-    timeControls.updateUI();
-    recordingControls.updateUI();
-    // update current time in plot
-    plot.setTime(canv.getCurrentFrame());
   }
 
+  await canv.render();
+
+  // Update UI Elements
+  timeControls.setIsDisabled(recordingControls.isRecording());
+  timeControls.updateUI();
+  recordingControls.updateUI();
+  // update current time in plot
+  plot.setTime(canv.getCurrentFrame());
 }
 
 async function start(): Promise<void> {

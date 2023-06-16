@@ -41,7 +41,7 @@ export default class TimeControls {
 
     // TODO: Fix this function so that it doesn't stop the
     // slider from also operating
-    const loadNextFrame = (): void => {
+    const loadNextFrame = async (): Promise<void> => {
       if (this.isDisabled) {
         // stop render loop if time controls have been disabled.
         return;
@@ -52,39 +52,39 @@ export default class TimeControls {
       }
 
       // do the necessary update
-      this.canvas.setFrame(nextFrame);
+      await this.canvas.setFrame(nextFrame);
       this.redrawfn();
       onNewFrameCallback();
     };
     this.timerId = window.setInterval(loadNextFrame, 40);
   }
 
-  private handlePlayButtonClick(): void {
+  private async handlePlayButtonClick(): Promise<void> {
     if (this.canvas.getCurrentFrame() >= this.canvas.getTotalFrames() - 1) {
-      this.canvas.setFrame(0);
+      await this.canvas.setFrame(0);
     }
     this.playTimeSeries(() => {
       this.updateUI();
     });
   }
+
   private handlePauseButtonClick(): void {
     clearInterval(this.timerId);
   }
-  public handleFrameAdvance(delta: number = 1): void {
-    this.canvas.setFrame(this.canvas.getCurrentFrame() + delta);
+
+  public async handleFrameAdvance(delta: number = 1): Promise<void> {
+    await this.canvas.setFrame(this.canvas.getCurrentFrame() + delta);
     this.redrawfn();
   }
+
   private async handleTimeSliderChange(): Promise<void> {
-    // trigger loading new time
-    if (await this.canvas.setFrame(this.timeSlider.valueAsNumber)) {
-      this.timeInput.value = this.timeSlider.value;
-      this.redrawfn();
-    }
+      if (await this.canvas.setFrame(this.timeSlider.valueAsNumber)) {
+        this.timeInput.value = this.timeSlider.value;
+        this.redrawfn();
+      }
   }
   private async handleTimeInputChange(): Promise<void> {
-    // trigger loading new time
     if (await this.canvas.setFrame(this.timeInput.valueAsNumber)) {
-      // update slider
       this.timeSlider.value = this.timeInput.value;
       this.redrawfn();
     }

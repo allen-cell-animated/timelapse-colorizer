@@ -50,7 +50,7 @@ export default class RecordingControls {
       this.recording = true;
 
       if (!this.startAtCurrentFrameChkbx.checked) {
-        this.canvas.setFrame(0);  // start at beginning
+        await this.canvas.setFrame(0);  // start at beginning
       }
       this.startingFrame = this.canvas.getCurrentFrame();
 
@@ -62,7 +62,7 @@ export default class RecordingControls {
     if (this.recording) {
       clearInterval(this.timerId);
       this.recording = false;
-      this.canvas.setFrame(this.startingFrame);  // Reset to starting frame
+      await this.canvas.setFrame(this.startingFrame);  // Reset to starting frame
       this.redrawfn();
     }
   }
@@ -71,6 +71,9 @@ export default class RecordingControls {
     // Reset any existing timers
     clearInterval(this.timerId);
 
+    // Formatting setup
+    const maxDigits = this.canvas.getTotalFrames().toString().length
+    
     const loadAndRecordFrame = async (): Promise<void> => {
       const currentFrame = this.canvas.getCurrentFrame();
       
@@ -84,7 +87,8 @@ export default class RecordingControls {
       // Update our anchor (link) element with the image data, then force
       // a click to initiate the download.
       this.hiddenAnchorEl.href = imageURL;
-      this.hiddenAnchorEl.download = `${this.filePrefixInput.value}${currentFrame}.png`;
+      const frameNumber: string = currentFrame.toString().padStart(maxDigits, "0");
+      this.hiddenAnchorEl.download = `${this.filePrefixInput.value}${frameNumber}.png`;
       this.hiddenAnchorEl.click();
       
       // Advance to the next frame, checking if we've exceeded bounds.
@@ -92,7 +96,7 @@ export default class RecordingControls {
         // Reached end, so stop and reset UI
         clearInterval(this.timerId);
         this.recording = false;
-        this.canvas.setFrame(this.startingFrame);  // Reset to starting frame
+        await this.canvas.setFrame(this.startingFrame);  // Reset to starting frame
         this.redrawfn();
       }
     }

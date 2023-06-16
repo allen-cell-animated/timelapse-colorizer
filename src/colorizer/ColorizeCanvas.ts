@@ -246,8 +246,6 @@ export default class ColorizeCanvas {
       }
     }
 
-    console.log("going to Frame " + index);
-
     if (this.currentFrame !== index) {
       // Trigger re-render + frame loading only if the frame is different
       this.currentFrame = index;
