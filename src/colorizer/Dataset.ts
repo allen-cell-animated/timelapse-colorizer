@@ -81,6 +81,10 @@ export default class Dataset {
     };
   }
 
+  public hasFeature(name: string): boolean {
+    return this.featureNames.includes(name);
+  }
+
   public getFeatureData(name: string): FeatureData | null {
     if (Object.keys(this.features).includes(name)) {
       return this.features[name];

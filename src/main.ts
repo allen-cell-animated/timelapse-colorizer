@@ -263,7 +263,7 @@ async function loadDataset(name: string): Promise<void> {
   resetTrackUI();
 
   // Only change the feature if there's no equivalent in the new dataset
-  if (!dataset.featureNames.includes(featureName)) {
+  if (!dataset.hasFeature(featureName)) {
     featureName = dataset.featureNames[0];
   }
 
@@ -300,8 +300,7 @@ function handleFeatureChange({ currentTarget }: Event): void {
 }
 
 function updateFeature(newFeatureName: string): void {
-  const featureData = dataset?.getFeatureData(newFeatureName);
-  if (!featureData) {
+  if (!dataset?.hasFeature(newFeatureName)) {
     return;
   }
   featureName = newFeatureName;
