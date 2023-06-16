@@ -47,9 +47,8 @@ export default class RecordingControls {
     this.filePrefixResetBtn.addEventListener("click", () => this.handlePrefixResetClicked());
   }
 
-  public setCanvas(canvas: ColorizeCanvas) {
+  public setCanvas(canvas: ColorizeCanvas): void {
     this.canvas = canvas;
-    console.log(this.canvas.domElement);
   }
 
   private async handleStartButtonClick(): Promise<void> {
@@ -68,7 +67,7 @@ export default class RecordingControls {
 
   private async handleAbortButtonClick(): Promise<void> {
     if (this.recording) {
-      clearInterval(this.timerId);
+      clearTimeout(this.timerId);
       this.recording = false;
       await this.canvas.setFrame(this.startingFrame);  // Reset to starting frame
       this.redrawfn();
@@ -77,10 +76,10 @@ export default class RecordingControls {
 
   private async startRecording(): Promise<void> {
     // Reset any existing timers
-    clearInterval(this.timerId);
+    clearTimeout(this.timerId);
 
     // Formatting setup
-    const maxDigits = this.canvas.getTotalFrames().toString().length
+    const maxDigits = this.canvas.getTotalFrames().toString().length;
     
     const loadAndRecordFrame = async (): Promise<void> => {
       const currentFrame = this.canvas.getCurrentFrame();
@@ -90,7 +89,7 @@ export default class RecordingControls {
       
       // Get canvas as an image URL that can be downloaded
       const dataURL = this.canvas.domElement.toDataURL("image/png");
-      let imageURL = dataURL.replace(/^data:image\/png/, "data:application/octet-stream");
+      const imageURL = dataURL.replace(/^data:image\/png/, "data:application/octet-stream");
       
       // Update our anchor (link) element with the image data, then force
       // a click to initiate the download.
@@ -101,16 +100,18 @@ export default class RecordingControls {
       
       // Advance to the next frame, checking if we've exceeded bounds.
       if (await this.canvas.setFrame(currentFrame + 1, false)) {
+        // Trigger the next run.
+        this.timerId = setTimeout(loadAndRecordFrame, 10 /* 10 ms*/);
+      } else {
         // Reached end, so stop and reset UI
-        clearInterval(this.timerId);
         this.recording = false;
         await this.canvas.setFrame(this.startingFrame);  // Reset to starting frame
         this.redrawfn();
       }
-    }
+    };
   
     // Start interval loop
-    this.timerId = window.setInterval(loadAndRecordFrame, 0);
+    loadAndRecordFrame();
   }
 
   public handlePrefixChanged(): void {
@@ -130,12 +131,12 @@ export default class RecordingControls {
     }
   }
 
-  public setDefaultFilePrefix(prefix: string) {
+  public setDefaultFilePrefix(prefix: string): void {
     this.defaultPrefix = prefix;
     this.updateUI();
   }
 
-  public setIsDisabled(disabled: boolean) {
+  public setIsDisabled(disabled: boolean): void {
     this.isDisabled = disabled;
     this.updateUI();
   }
