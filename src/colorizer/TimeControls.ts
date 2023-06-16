@@ -1,3 +1,5 @@
+import ColorizeCanvas from "./ColorizeCanvas";
+
 // time / playback controls
 export default class TimeControls {
   private playBtn: HTMLButtonElement;
@@ -7,15 +9,14 @@ export default class TimeControls {
   private timeSlider: HTMLInputElement;
   private timeInput: HTMLInputElement;
 
-  private totalFrames: number;
-  private currentFrame: number;
   private timerId: number;
   private redrawfn: () => void;
 
-  constructor(redrawfn: () => void) {
+  private canvas: ColorizeCanvas;
+
+  constructor(canvas: ColorizeCanvas, redrawfn: () => void) {
     this.redrawfn = redrawfn;
-    this.totalFrames = 0;
-    this.currentFrame = 0;
+    this.canvas = canvas;
     this.timerId = 0;
     this.playBtn = document.querySelector("#playBtn")!;
     this.pauseBtn = document.querySelector("#pauseBtn")!;
@@ -36,50 +37,29 @@ export default class TimeControls {
     clearInterval(this.timerId);
 
     const loadNextFrame = (): void => {
-      let nextFrame = this.currentFrame + 1;
-      if (nextFrame >= this.totalFrames) {
+      let nextFrame = this.canvas.getCurrentFrame() + 1;
+      if (nextFrame >= this.canvas.getTotalFrames()) {
         nextFrame = 0;
       }
 
       // do the necessary update
       this.redrawfn();
-      this.currentFrame = nextFrame;
+      this.canvas.setFrame(nextFrame);
       onNewFrameCallback();
     };
     this.timerId = window.setInterval(loadNextFrame, 40);
   }
 
-  private goToFrame(targetFrame: number): boolean {
-    const wrap = true;
-    // wrap around is ok
-    if (wrap) {
-      this.currentFrame = (targetFrame + this.totalFrames) % this.totalFrames;
-      return true;
-    }
-
-    console.log("going to Frame " + targetFrame);
-    const outOfBounds = targetFrame > this.totalFrames - 1 || targetFrame < 0;
-    if (outOfBounds) {
-      console.log(`frame ${targetFrame} out of bounds`);
-      return false;
-    }
-
-    // check to see if we have pre-cached the frame, else load it...
-    //     f(targetFrame);
-    this.currentFrame = targetFrame;
-    return true;
-  }
-
   private handlePlayButtonClick(): void {
-    if (this.currentFrame >= this.totalFrames - 1) {
-      this.currentFrame = -1;
+    if (this.canvas.getCurrentFrame() >= this.canvas.getTotalFrames() - 1) {
+      this.canvas.setFrame(0);
     }
     this.playTimeSeries(() => {
       if (this.timeInput) {
-        this.timeInput.value = "" + this.currentFrame;
+        this.timeInput.value = "" + this.canvas.getCurrentFrame();
       }
       if (this.timeSlider) {
-        this.timeSlider.value = "" + this.currentFrame;
+        this.timeSlider.value = "" + this.canvas.getCurrentFrame();
       }
     });
   }
@@ -87,55 +67,38 @@ export default class TimeControls {
     clearInterval(this.timerId);
   }
   public handleFrameAdvance(delta: number = 1): void {
-    this.setCurrentFrame(this.currentFrame + delta);
+    this.canvas.setFrame(this.canvas.getCurrentFrame() + delta);
+    this.redrawfn();
   }
-  private handleTimeSliderChange(): void {
+  private async handleTimeSliderChange(): Promise<void> {
     // trigger loading new time
-    if (this.goToFrame(this.timeSlider.valueAsNumber)) {
+    if (await this.canvas.setFrame(this.timeSlider.valueAsNumber)) {
       this.timeInput.value = this.timeSlider.value;
       this.redrawfn();
     }
   }
-  private handleTimeInputChange(): void {
+  private async handleTimeInputChange(): Promise<void> {
     // trigger loading new time
-    if (this.goToFrame(this.timeInput.valueAsNumber)) {
+    if (await this.canvas.setFrame(this.timeInput.valueAsNumber)) {
       // update slider
       this.timeSlider.value = this.timeInput.value;
       this.redrawfn();
     }
   }
 
-  public updateTotalFrames(totalFrames: number): void {
-    this.totalFrames = totalFrames;
-    this.timeSlider.max = `${totalFrames - 1}`;
-    this.timeInput.max = `${totalFrames - 1}`;
+  public updateUI(): void {
+    this.timeSlider.max = `${this.canvas.getTotalFrames() - 1}`;
+    this.timeInput.max = `${this.canvas.getTotalFrames() - 1}`;
 
-    if (totalFrames < 2) {
+    this.timeSlider.value = "" + this.canvas.getCurrentFrame();
+    this.timeInput.value = "" + this.canvas.getCurrentFrame();
+
+    if (this.canvas.getTotalFrames() < 2) {
       this.playBtn.disabled = true;
       this.pauseBtn.disabled = true;
     } else {
       this.playBtn.disabled = false;
       this.pauseBtn.disabled = false;
     }
-  }
-
-  /**
-   * Attempts to set the current frame. If frame is updated, updates the time control UI and
-   * triggers a redraw.
-   * @returns true if the frame was set correctly (false if the frame is out of range).
-   */
-  public setCurrentFrame(frame: number): boolean {
-    if (this.goToFrame(frame)) {
-      this.redrawfn();
-      // Update time slider fields
-      this.timeSlider.value = "" + this.currentFrame;
-      this.timeInput.value = "" + this.currentFrame;
-      return true;
-    }
-    return false;
-  }
-
-  public getCurrentFrame(): number {
-    return this.currentFrame;
   }
 }

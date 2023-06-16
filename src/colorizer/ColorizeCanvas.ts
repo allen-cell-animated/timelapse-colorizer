@@ -81,6 +81,8 @@ export default class ColorizeCanvas {
   private isColorMapRangeLocked: boolean;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
+  private currentFrame: number;
+  private totalFrames: number;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -120,6 +122,8 @@ export default class ColorizeCanvas {
     this.isColorMapRangeLocked = false;
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
+    this.currentFrame = 0;
+    this.totalFrames = 0;
   }
 
   get domElement(): HTMLCanvasElement {
@@ -151,6 +155,7 @@ export default class ColorizeCanvas {
     } else {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
+    this.totalFrames = dataset.numberOfFrames;
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
@@ -207,12 +212,45 @@ export default class ColorizeCanvas {
     return this.colorMapRangeMax;
   }
 
-  async setFrame(index: number): Promise<void> {
-    const frame = await this.dataset?.loadFrame(index);
-    if (!frame) {
-      return;
+  getTotalFrames(): number {
+    return this.totalFrames;
+  }
+
+  getCurrentFrame(): number {
+    return this.currentFrame;
+  }
+
+  /**
+   * Sets the current frame of the canvas. If the frame index changed, triggers a
+   * load of frame data. (NOTE: this does not trigger a re-render!)
+   * @param index Index of the new frame.
+   * @param wrap Whether to wrap frame indices around if out of bounds.
+   * @returns whether the frame was set correctly and in range.
+   */
+  async setFrame(index: number, wrap = true): Promise<boolean> {
+    if (wrap) {
+      index = (index + this.totalFrames) % this.totalFrames;
+    } else {
+      const outOfBounds = index > this.totalFrames - 1 || index < 0;
+      if (outOfBounds) {
+        console.log(`frame ${index} out of bounds`);
+        return false;
+      }
     }
-    this.setUniform("frame", frame);
+
+    console.log("going to Frame " + index);
+
+    if (this.currentFrame !== index) {
+      // Trigger re-render + frame loading only if the frame is different
+      this.currentFrame = index;
+      // TODO: Add bounds checking
+      const frame = await this.dataset?.loadFrame(index);
+      if (!frame) {
+        return false;
+      }
+      this.setUniform("frame", frame);
+    }
+    return true;
   }
 
   render(): void {

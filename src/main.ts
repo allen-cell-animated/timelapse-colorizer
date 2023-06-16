@@ -1,4 +1,4 @@
-import { HexColorString } from "three";
+import { Camera, HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
@@ -19,7 +19,7 @@ const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 
-const timeControls = new TimeControls(drawLoop);
+const timeControls = new TimeControls(canv, drawLoop);
 const recordingControls = new RecordingControls(canv);
 
 function addOptionTo(parent: HTMLSelectElement, value: string, child?: HTMLElement): void {
@@ -119,8 +119,7 @@ async function loadDataset(name: string): Promise<void> {
   datasetName = name;
   dataset = new Dataset(`${baseUrl}/${name}`);
   await dataset.open();
-  timeControls.updateTotalFrames(dataset.numberOfFrames);
-  timeControls.setCurrentFrame(0);
+  canv.setFrame(0);
   resetTrackUI();
 
   // Only change the feature if there's no equivalent in the new dataset
@@ -141,6 +140,7 @@ async function loadDataset(name: string): Promise<void> {
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
+  timeControls.updateUI();
 
   console.timeEnd("loadDataset");
 }
@@ -170,7 +170,7 @@ function updateFeature(newFeatureName: string): void {
   canv.render();
   // only update plot if active
   if (selectedTrack) {
-    plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
+    plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
   colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
   colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
@@ -196,7 +196,7 @@ function handleCanvasClick(event: MouseEvent): void {
   }
   const trackId = dataset!.getTrackId(id);
   selectedTrack = dataset!.buildTrack(trackId);
-  plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
+  plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -230,8 +230,9 @@ async function handleFindTrack(): Promise<void> {
     return;
   }
   selectedTrack = newTrack;
-  timeControls.setCurrentFrame(selectedTrack.times[0]);
-  plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
+  canv.setFrame(selectedTrack.times[0]);
+  plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
+  await drawLoop();
 }
 
 function resetTrackUI(): void {
@@ -251,14 +252,15 @@ async function drawLoop(): Promise<void> {
   if (dataset && datasetOpen) {
     // update higlighted cell id if any
     if (selectedTrack) {
-      const id = selectedTrack.getIdAtTime(timeControls.getCurrentFrame());
+      const id = selectedTrack.getIdAtTime(canv.getCurrentFrame());
       canv.setHighlightedId(id - 1);
       // console.log(`selected track: ${selectedTrack.trackId}; highlighted id ${id}`);
     }
     // update current time in plot
-    plot.setTime(timeControls.getCurrentFrame());
-    await drawFrame(timeControls.getCurrentFrame());
+    plot.setTime(canv.getCurrentFrame());
+    await drawFrame(canv.getCurrentFrame());
   }
+  timeControls.updateUI();
 }
 
 async function start(): Promise<void> {
