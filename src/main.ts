@@ -15,6 +15,7 @@ const colorRampMinEl: HTMLLabelElement = document.querySelector("#color_ramp_min
 const colorRampMaxEl: HTMLLabelElement = document.querySelector("#color_ramp_max")!;
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
+const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 
 // time / playback controls
 class TimeControls {
@@ -260,22 +261,26 @@ async function loadDataset(name: string): Promise<void> {
   timeControls.updateTotalFrames(dataset.numberOfFrames);
   timeControls.setCurrentFrame(0);
   resetTrackUI();
-  featureName = dataset.featureNames[0];
-  console.log("features: " + dataset.featureNames[0]);
+
+  // Only change the feature if there's no equivalent in the new dataset
+  if (!dataset.hasFeature(featureName)) {
+    featureName = dataset.featureNames[0];
+  }
+
   canv.setDataset(dataset);
-  canv.setFeature(featureName);
+  updateFeature(featureName);
   plot.setDataset(dataset);
   plot.removePlot();
   await drawFrame(0);
 
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
+  featureSelectEl.value = featureName;
 
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
-  colorRampMinEl.innerText = `${dataset!.features[featureName].min}`;
-  colorRampMaxEl.innerText = `${dataset!.features[featureName].max}`;
+
   console.timeEnd("loadDataset");
 }
 
@@ -291,15 +296,29 @@ function handleDatasetChange({ currentTarget }: Event): void {
 function handleFeatureChange({ currentTarget }: Event): void {
   const value = (currentTarget as HTMLOptionElement).value;
   console.log(value);
-  canv.setFeature(value);
+  updateFeature(value);
+}
+
+function updateFeature(newFeatureName: string): void {
+  if (!dataset?.hasFeature(newFeatureName)) {
+    return;
+  }
+  featureName = newFeatureName;
+
+  canv.setFeature(featureName);
   canv.render();
-  featureName = value;
   // only update plot if active
   if (selectedTrack) {
-    plot.plot(selectedTrack, value, timeControls.getCurrentFrame());
+    plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
   }
-  colorRampMinEl.innerText = `${dataset!.features[featureName].min}`;
-  colorRampMaxEl.innerText = `${dataset!.features[featureName].max}`;
+  colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
+  colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
+}
+
+function handleLockRangeCheckboxChange(): void {
+  canv.setColorMapRangeLock(lockRangeCheckbox.checked);
+  colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
+  colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
 
 function handleCanvasClick(event: MouseEvent): void {
@@ -394,6 +413,7 @@ async function start(): Promise<void> {
   canv.domElement.addEventListener("click", handleCanvasClick);
   findTrackBtn.addEventListener("click", () => handleFindTrack());
   trackInput.addEventListener("change", () => handleFindTrack());
+  lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
 }
 
 window.addEventListener("beforeunload", () => {

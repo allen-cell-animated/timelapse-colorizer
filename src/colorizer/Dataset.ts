@@ -17,7 +17,7 @@ type DatasetManifest = {
   times?: string;
 };
 
-type FeatureData = {
+export type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
@@ -79,6 +79,18 @@ export default class Dataset {
       min: source.getMin(),
       max: source.getMax(),
     };
+  }
+
+  public hasFeature(name: string): boolean {
+    return this.featureNames.includes(name);
+  }
+
+  public getFeatureData(name: string): FeatureData | null {
+    if (Object.keys(this.features).includes(name)) {
+      return this.features[name];
+    } else {
+      return null;
+    }
   }
 
   private async loadOutliers(): Promise<void> {

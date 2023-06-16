@@ -77,6 +77,10 @@ export default class ColorizeCanvas {
   private pickRenderTarget: WebGLRenderTarget;
 
   private dataset: Dataset | null;
+  private featureName: string | null;
+  private isColorMapRangeLocked: boolean;
+  private colorMapRangeMin: number;
+  private colorMapRangeMax: number;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -112,6 +116,10 @@ export default class ColorizeCanvas {
     this.checkPixelRatio();
 
     this.dataset = null;
+    this.featureName = null;
+    this.isColorMapRangeLocked = false;
+    this.colorMapRangeMin = 0;
+    this.colorMapRangeMax = 0;
   }
 
   get domElement(): HTMLCanvasElement {
@@ -167,15 +175,35 @@ export default class ColorizeCanvas {
   }
 
   setFeature(name: string): void {
-    if (!this.dataset || !Object.keys(this.dataset.features).includes(name)) {
+    if(!this.dataset?.hasFeature(name)) {
       return;
     }
+    const featureData = this.dataset.getFeatureData(name)!;
+    this.featureName = name;
+    this.setUniform("featureData", featureData.tex);
+    // Don't update the range values when locked
+    // TODO: Decide if feature range should be unlocked when the feature changes.
+    if (!this.isColorMapRangeLocked) {
+      this.colorMapRangeMin = featureData.min;
+      this.colorMapRangeMax = featureData.max;
+    }
+    this.setUniform("featureMin", this.colorMapRangeMin);
+    this.setUniform("featureMax", this.colorMapRangeMax);
+  }
 
-    const { tex, min, max } = this.dataset.features[name];
+  setColorMapRangeLock(locked: boolean): void {
+    this.isColorMapRangeLocked = locked;
+    if (this.featureName) {  // trigger update for color map range
+      this.setFeature(this.featureName);
+    }
+  }
 
-    this.setUniform("featureData", tex);
-    this.setUniform("featureMin", min);
-    this.setUniform("featureMax", max / 1.5);
+  getColorMapRangeMin(): number {
+    return this.colorMapRangeMin;
+  }
+
+  getColorMapRangeMax(): number {
+    return this.colorMapRangeMax;
   }
 
   async setFrame(index: number): Promise<void> {
