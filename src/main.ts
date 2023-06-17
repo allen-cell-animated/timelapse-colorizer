@@ -164,7 +164,7 @@ function handleFeatureChange({ currentTarget }: Event): void {
   updateFeature(value);
 }
 
-function updateFeature(newFeatureName: string): void {
+async function updateFeature(newFeatureName: string): Promise<void> {
   if (!dataset?.hasFeature(newFeatureName)) {
     return;
   }
@@ -175,6 +175,7 @@ function updateFeature(newFeatureName: string): void {
   if (selectedTrack) {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
+  await drawLoop();  // update UI
   colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
   colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
@@ -264,7 +265,12 @@ async function drawLoop(): Promise<void> {
   recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
   recordingControls.updateUI();
 
-  setColorRampDisabled(recordingControls.isRecording());
+  const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
+  setColorRampDisabled(disableUI);
+  datasetSelectEl.disabled = disableUI;
+  featureSelectEl.disabled = disableUI;
+  findTrackBtn.disabled = disableUI;
+  trackInput.disabled = disableUI;
   
   // update current time in plot
   plot.setTime(canv.getCurrentFrame());

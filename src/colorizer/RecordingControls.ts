@@ -101,7 +101,7 @@ export default class RecordingControls {
       // Advance to the next frame, checking if we've exceeded bounds.
       if (await this.canvas.setFrame(currentFrame + 1, false) && this.recording) {
         // Trigger the next run.
-        this.timerId = setTimeout(loadAndRecordFrame, 10 /* 10 ms*/);
+        this.timerId = setTimeout(loadAndRecordFrame, 50 /* 50 ms*/);
       } else {
         // Reached end, so stop and reset UI
         this.recording = false;
