@@ -100,7 +100,10 @@ export default class RecordingControls {
       // Advance to the next frame, checking if we've exceeded bounds.
       if (await this.canvas.setFrame(currentFrame + 1, false) && this.recording) {
         // Trigger the next run.
-        this.timerId = setTimeout(loadAndRecordFrame, 50 /* 50 ms*/);
+        // Timeout is required to prevent skipped/dropped frames. 100 ms is a magic 
+        // number that prevented frame drop on a developer machine, but is not very robust.
+        // TODO: Replace magic number for frame delay with a check for download completion?
+        this.timerId = setTimeout(loadAndRecordFrame, 100);
       } else {
         // Reached end, so stop and reset UI
         this.recording = false;
