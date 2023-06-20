@@ -98,7 +98,7 @@ function populateColorRampSelect(): void {
   });
 }
 
-function setColorRampDisabled(disabled: boolean) {
+function setColorRampDisabled(disabled: boolean): void {
   colorRampSelectEl.className = disabled ? "disabled" : "";
 }
 
