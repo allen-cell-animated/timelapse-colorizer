@@ -20,25 +20,23 @@ export default class RecordingControls {
   private canvas: ColorizeCanvas;
 
   constructor(canvas: ColorizeCanvas, redrawfn: () => void) {
-    this.startBtn = document.querySelector("#sequence_start_btn")!;
-    this.abortBtn = document.querySelector("#sequence_abort_btn")!;
-
-    this.filePrefixResetBtn = document.querySelector("#sequence_prefix_reset_btn")!;
-    this.startAtCurrentFrameChkbx = document.querySelector("#sequence_start_frame_checkbox")!;
-    this.filePrefixInput = document.querySelector("#sequence_prefix")!;
     this.useDefaultPrefix = true;
-    this.defaultPrefix = "";
-    
-    this.hiddenAnchorEl = document.createElement("a");
-    document.body.appendChild(this.hiddenAnchorEl);
-    
+    this.defaultPrefix = "";    
     this.recording = false;
     this.canvas = canvas;
-
     this.timerId = 0;
     this.startingFrame = 0;
     this.redrawfn = redrawfn;
     this.isDisabled = false;
+
+    this.startBtn = document.querySelector("#sequence_start_btn")!;
+    this.abortBtn = document.querySelector("#sequence_abort_btn")!;
+    this.filePrefixResetBtn = document.querySelector("#sequence_prefix_reset_btn")!;
+    this.startAtCurrentFrameChkbx = document.querySelector("#sequence_start_frame_checkbox")!;
+    this.filePrefixInput = document.querySelector("#sequence_prefix")!;
+
+    this.hiddenAnchorEl = document.createElement("a");  // Hidden element for initiating download later
+    document.body.appendChild(this.hiddenAnchorEl);
 
     this.startBtn.addEventListener("click", () => this.handleStartButtonClick());
     this.abortBtn.addEventListener("click", () => this.handleAbortButtonClick());
