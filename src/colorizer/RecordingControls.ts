@@ -6,7 +6,6 @@ export default class RecordingControls {
   private recording: boolean;
   private startAtCurrentFrameChkbx: HTMLInputElement;
 
-  // TODO: Add internal flag for overriding
   private filePrefixInput: HTMLInputElement;
   private filePrefixResetBtn: HTMLButtonElement;
   private useDefaultPrefix: boolean;
