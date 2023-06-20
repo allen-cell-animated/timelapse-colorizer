@@ -96,7 +96,8 @@ export default class RecordingControls {
       this.hiddenAnchorEl.click();
       
       // Advance to the next frame, checking if we've exceeded bounds.
-      if (await this.canvas.setFrame(currentFrame + 1, false) && this.recording) {
+      if (this.canvas.isValidFrame(currentFrame + 1) && this.recording) {
+        await this.canvas.setFrame(currentFrame + 1);
         // Trigger the next run.
         // Timeout is required to prevent skipped/dropped frames. 100 ms is a magic 
         // number that prevented frame drop on a developer machine, but is not very robust.

@@ -228,34 +228,27 @@ export default class ColorizeCanvas {
     return this.currentFrame;
   }
 
-  /**
-   * Sets the current frame of the canvas. If the frame index changed, triggers a
-   * load of frame data. (NOTE: this does not trigger a re-render!)
-   * @param index Index of the new frame.
-   * @param wrap Whether to wrap frame indices around if out of bounds.
-   * @returns whether the frame was set correctly and in range.
-   */
-  async setFrame(index: number, wrap = true): Promise<boolean> {
-    if (wrap) {
-      index = (index + this.totalFrames) % this.totalFrames;
-    } else {
-      const outOfBounds = index > this.totalFrames - 1 || index < 0;
-      if (outOfBounds) {
-        console.log(`frame ${index} out of bounds`);
-        return false;
-      }
-    }
+  public isValidFrame(index: number): boolean {
+    return index >= 0 && index < this.totalFrames;
+  }
 
-    if (this.currentFrame !== index) {
-      // Trigger re-render + frame loading only if the frame is different
-      this.currentFrame = index;
-      const frame = await this.dataset?.loadFrame(index);
-      if (!frame) {
-        return false;
-      }
-      this.setUniform("frame", frame);
+  /**
+   * Sets the current frame of the canvas, loading the new frame data if the
+   * frame number changes.
+   * @param index Index of the new frame.
+   */
+  async setFrame(index: number): Promise<void> {
+    // Ignore same or bad frame indices
+    if (this.currentFrame === index || !this.isValidFrame(index)) {
+      return;
     }
-    return true;
+    // New frame, so load the frame data.
+    this.currentFrame = index;
+    const frame = await this.dataset?.loadFrame(index);
+    if (!frame) {
+      return;
+    }
+    this.setUniform("frame", frame);
   }
 
   render(): void {

@@ -36,6 +36,15 @@ export default class TimeControls {
     this.timeInput.addEventListener("change", () => this.handleTimeInputChange());
   }
 
+  private wrapFrame(index: number): number {
+    const totalFrames = this.canvas.getTotalFrames();
+    return (index + totalFrames) % totalFrames;
+  }
+  
+  private clampFrame(index: number): number {
+    return Math.min(Math.max(index, 0), this.canvas.getTotalFrames() - 1);
+  }
+
   private playTimeSeries(onNewFrameCallback: () => void): void {
     clearInterval(this.timerId);
 
@@ -73,18 +82,21 @@ export default class TimeControls {
   }
 
   public async handleFrameAdvance(delta: number = 1): Promise<void> {
-    await this.canvas.setFrame(this.canvas.getCurrentFrame() + delta);
+    await this.canvas.setFrame(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
     this.redrawfn();
   }
 
   private async handleTimeSliderChange(): Promise<void> {
-      if (await this.canvas.setFrame(this.timeSlider.valueAsNumber)) {
+      if (this.canvas.isValidFrame(this.timeSlider.valueAsNumber)) {
+        await this.canvas.setFrame(this.timeSlider.valueAsNumber);
         this.timeInput.value = this.timeSlider.value;
         this.redrawfn();
       }
   }
   private async handleTimeInputChange(): Promise<void> {
-    if (await this.canvas.setFrame(this.timeInput.valueAsNumber)) {
+    const newFrame = this.clampFrame(this.timeInput.valueAsNumber);
+    if (this.canvas.isValidFrame(newFrame)) {
+      await this.canvas.setFrame(newFrame);
       this.timeSlider.value = this.timeInput.value;
       this.redrawfn();
     }
