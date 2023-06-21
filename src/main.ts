@@ -312,31 +312,32 @@ function updateFeature(newFeatureName: string): void {
   if (selectedTrack) {
     plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
   }
-  updateColorRampRangeUI()
+  updateColorRampRangeUI();
 }
 
 function handleHideOutOfRangeCheckboxChange(): void {
   canv.setHideValuesOutOfRange(hideOutOfRangeCheckbox.checked);
+  drawLoop();  // force a render update in case elements should disappear.
 }
 
 function handleLockRangeCheckboxChange(): void {
   canv.setColorMapRangeLock(lockRangeCheckbox.checked);
-  updateColorRampRangeUI()
+  updateColorRampRangeUI();
 }
 
 function handleColorRampMinChanged(): void {
   canv.setColorMapRangeMin(colorRampMinEl.valueAsNumber);
   drawLoop();
-  updateColorRampRangeUI()
+  updateColorRampRangeUI();
 }
 
 function handleColorRampMaxChanged(): void {
   canv.setColorMapRangeMax(colorRampMaxEl.valueAsNumber);
   drawLoop();
-  updateColorRampRangeUI()
+  updateColorRampRangeUI();
 }
 
-function updateColorRampRangeUI() {
+function updateColorRampRangeUI(): void {
   colorRampMinEl.value = `${canv.getColorMapRangeMin()}`;
   colorRampMaxEl.value = `${canv.getColorMapRangeMax()}`;
 }

@@ -207,7 +207,7 @@ export default class ColorizeCanvas {
     return this.colorMapRangeLocked;
   }
 
-  setHideValuesOutOfRange(hide: boolean) {
+  setHideValuesOutOfRange(hide: boolean): void {
     this.hideValuesOutOfRange = hide;
     this.setUniform("hideOutOfRange", this.hideValuesOutOfRange);
   }
