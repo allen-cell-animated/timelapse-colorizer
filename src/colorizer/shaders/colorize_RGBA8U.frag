@@ -88,14 +88,15 @@ void main() {
   // Data buffer starts at 0, non-background segmentation IDs start at 1
   float featureVal = getFeatureVal(int(id) - 1);
   uint outlierVal = getOutlierVal(int(id) - 1);
+  float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
 
-  if (isinf(featureVal) || outlierVal != 0u) {
-    // outlier
-    gOutputColor = vec4(outlierColor, 1.0);
+  // Mask all values, including outliers, that are outside the range.
+  if (hideOutOfRange && (normFeatureVal < 0.0 || normFeatureVal > 1.0)) {
+    gOutputColor = vec4(backgroundColor, 1.0);
   } else {
-    float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
-    if (hideOutOfRange && (normFeatureVal < 0.0 || normFeatureVal > 1.0)) {
-      gOutputColor = vec4(backgroundColor, 1.0);
+    if (isinf(featureVal) || outlierVal != 0u) {
+      // outlier
+      gOutputColor = vec4(outlierColor, 1.0);
     } else {
       gOutputColor = getColorRamp(normFeatureVal);
     }
