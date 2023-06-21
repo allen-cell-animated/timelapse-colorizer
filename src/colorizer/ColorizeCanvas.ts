@@ -78,7 +78,7 @@ export default class ColorizeCanvas {
 
   private dataset: Dataset | null;
   private featureName: string | null;
-  private isColorMapRangeLocked: boolean;
+  private colorMapRangeLocked: boolean;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
 
@@ -117,7 +117,7 @@ export default class ColorizeCanvas {
 
     this.dataset = null;
     this.featureName = null;
-    this.isColorMapRangeLocked = false;
+    this.colorMapRangeLocked = false;
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
   }
@@ -183,7 +183,7 @@ export default class ColorizeCanvas {
     this.setUniform("featureData", featureData.tex);
     // Don't update the range values when locked
     // TODO: Decide if feature range should be unlocked when the feature changes.
-    if (!this.isColorMapRangeLocked) {
+    if (!this.colorMapRangeLocked) {
       this.colorMapRangeMin = featureData.min;
       this.colorMapRangeMax = featureData.max;
     }
@@ -193,10 +193,22 @@ export default class ColorizeCanvas {
   }
 
   setColorMapRangeLock(locked: boolean): void {
-    this.isColorMapRangeLocked = locked;
+    this.colorMapRangeLocked = locked;
     if (this.featureName) {  // trigger update for color map range
       this.setFeature(this.featureName);
     }
+  }
+
+  setColorMapRangeMin(newMin: number): void {
+    this.colorMapRangeMin = newMin;
+    this.colorMapRangeLocked = true;
+    this.setUniform("featureMin", this.colorMapRangeMin);
+  }
+
+  setColorMapRangeMax(newMax: number): void {
+    this.colorMapRangeMax = newMax;
+    this.colorMapRangeLocked = true;
+    this.setUniform("featureMax", this.colorMapRangeMax);
   }
 
   getColorMapRangeMin(): number {
@@ -205,6 +217,10 @@ export default class ColorizeCanvas {
 
   getColorMapRangeMax(): number {
     return this.colorMapRangeMax;
+  }
+
+  isColorMapRangeLocked(): boolean {
+    return this.colorMapRangeLocked;
   }
 
   async setFrame(index: number): Promise<void> {

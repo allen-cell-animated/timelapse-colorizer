@@ -11,8 +11,8 @@ const datasetSelectEl: HTMLSelectElement = document.querySelector("#dataset")!;
 const featureSelectEl: HTMLSelectElement = document.querySelector("#feature")!;
 const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp")!;
 const colorRampContainerEl: HTMLDivElement = document.querySelector("#color_ramp_container")!;
-const colorRampMinEl: HTMLLabelElement = document.querySelector("#color_ramp_min")!;
-const colorRampMaxEl: HTMLLabelElement = document.querySelector("#color_ramp_max")!;
+const colorRampMinEl: HTMLInputElement = document.querySelector("#color_ramp_min")!;
+const colorRampMaxEl: HTMLInputElement = document.querySelector("#color_ramp_max")!;
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
@@ -311,14 +311,29 @@ function updateFeature(newFeatureName: string): void {
   if (selectedTrack) {
     plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
   }
-  colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
-  colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
+  updateColorRampRangeUI()
 }
 
 function handleLockRangeCheckboxChange(): void {
   canv.setColorMapRangeLock(lockRangeCheckbox.checked);
-  colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
-  colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
+  updateColorRampRangeUI()
+}
+
+function handleColorRampMinChanged(): void {
+  canv.setColorMapRangeMin(colorRampMinEl.valueAsNumber);
+  drawLoop();
+  updateColorRampRangeUI()
+}
+
+function handleColorRampMaxChanged(): void {
+  canv.setColorMapRangeMax(colorRampMaxEl.valueAsNumber);
+  drawLoop();
+  updateColorRampRangeUI()
+}
+
+function updateColorRampRangeUI() {
+  colorRampMinEl.value = `${canv.getColorMapRangeMin()}`;
+  colorRampMaxEl.value = `${canv.getColorMapRangeMax()}`;
 }
 
 function handleCanvasClick(event: MouseEvent): void {
@@ -398,6 +413,8 @@ async function drawLoop(): Promise<void> {
     plot.setTime(timeControls.getCurrentFrame());
     await drawFrame(timeControls.getCurrentFrame());
   }
+
+  lockRangeCheckbox.checked = canv.isColorMapRangeLocked();
 }
 
 async function start(): Promise<void> {
@@ -413,6 +430,8 @@ async function start(): Promise<void> {
   canv.domElement.addEventListener("click", handleCanvasClick);
   findTrackBtn.addEventListener("click", () => handleFindTrack());
   trackInput.addEventListener("change", () => handleFindTrack());
+  colorRampMinEl.addEventListener("change", () => handleColorRampMinChanged());
+  colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
   lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
 }
 

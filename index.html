@@ -41,11 +41,11 @@
       <label for="feature">Feature</label>
       <select name="Feature" id="feature"></select>
       <div id="labeled_color_ramp">
-        <label for="color_ramp" id="color_ramp_min" style="min-width: 20px; text-align: end;">0.0</label>
+        <input type="number" id="color_ramp_min" style="width: 50px; text-align: start;" value="0" min="0"/>
         <div id="color_ramp_container">
           <span id="color_ramp"></span>
         </div>
-        <label for="color_ramp" id="color_ramp_max">0.0</label>
+        <input type="number" id="color_ramp_max" style="width: 80px; text-align: start;" value="0" min="0"/>
         <input type="checkbox" id="lock_range_checkbox" />
         <label for="lock_range_checkbox">Lock Color Map Range</label>
       </div>
