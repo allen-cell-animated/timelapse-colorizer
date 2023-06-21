@@ -36,7 +36,6 @@ export default class RecordingControls {
     this.filePrefixInput = document.querySelector("#sequence_prefix")!;
 
     this.hiddenAnchorEl = document.createElement("a");  // Hidden element for initiating download later
-    document.body.appendChild(this.hiddenAnchorEl);
 
     this.startBtn.addEventListener("click", () => this.handleStartButtonClick());
     this.abortBtn.addEventListener("click", () => this.handleAbortButtonClick());
