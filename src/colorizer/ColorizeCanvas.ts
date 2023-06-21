@@ -82,7 +82,6 @@ export default class ColorizeCanvas {
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
   private currentFrame: number;
-  private totalFrames: number;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -123,7 +122,6 @@ export default class ColorizeCanvas {
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
-    this.totalFrames = 0;
   }
 
   get domElement(): HTMLCanvasElement {
@@ -157,7 +155,6 @@ export default class ColorizeCanvas {
     }
   
     // Force load of frame data (clear cached frame data)
-    this.totalFrames = dataset.numberOfFrames;
     const frame = await this.dataset?.loadFrame(this.currentFrame);
     if (!frame) {
       return;
@@ -220,8 +217,12 @@ export default class ColorizeCanvas {
     return this.colorMapRangeMax;
   }
 
+  /**
+   * @returns The number of frames in the dataset. If no dataset is loaded,
+   * returns 0 by default.
+   */
   getTotalFrames(): number {
-    return this.totalFrames;
+    return this.dataset ? this.dataset.numberOfFrames : 0;
   }
 
   getCurrentFrame(): number {
@@ -229,7 +230,7 @@ export default class ColorizeCanvas {
   }
 
   public isValidFrame(index: number): boolean {
-    return index >= 0 && index < this.totalFrames;
+    return index >= 0 && index < this.getTotalFrames();
   }
 
   /**
