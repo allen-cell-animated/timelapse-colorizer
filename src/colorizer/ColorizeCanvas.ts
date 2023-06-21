@@ -37,6 +37,7 @@ type ColorizeUniformTypes = {
   backgroundColor: Color;
   outlierColor: Color;
   highlightedId: number;
+  hideOutOfRange: boolean;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -60,6 +61,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     highlightedId: new Uniform(-1),
+    hideOutOfRange: new Uniform(false),
   };
 };
 
@@ -79,6 +81,7 @@ export default class ColorizeCanvas {
   private dataset: Dataset | null;
   private featureName: string | null;
   private colorMapRangeLocked: boolean;
+  private hideValuesOutOfRange: boolean;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
 
@@ -118,6 +121,7 @@ export default class ColorizeCanvas {
     this.dataset = null;
     this.featureName = null;
     this.colorMapRangeLocked = false;
+    this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
   }
@@ -199,6 +203,15 @@ export default class ColorizeCanvas {
     }
   }
 
+  isColorMapRangeLocked(): boolean {
+    return this.colorMapRangeLocked;
+  }
+
+  setHideValuesOutOfRange(hide: boolean) {
+    this.hideValuesOutOfRange = hide;
+    this.setUniform("hideOutOfRange", this.hideValuesOutOfRange);
+  }
+
   setColorMapRangeMin(newMin: number): void {
     this.colorMapRangeMin = newMin;
     this.colorMapRangeLocked = true;
@@ -217,10 +230,6 @@ export default class ColorizeCanvas {
 
   getColorMapRangeMax(): number {
     return this.colorMapRangeMax;
-  }
-
-  isColorMapRangeLocked(): boolean {
-    return this.colorMapRangeLocked;
   }
 
   async setFrame(index: number): Promise<void> {

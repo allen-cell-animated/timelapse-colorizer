@@ -13,6 +13,8 @@ uniform vec3 outlierColor;
 
 uniform int highlightedId;
 
+uniform bool hideOutOfRange;  // bool
+
 in vec2 vUv;
 
 layout(location = 0) out vec4 gOutputColor;
@@ -92,6 +94,10 @@ void main() {
     gOutputColor = vec4(outlierColor, 1.0);
   } else {
     float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
-    gOutputColor = getColorRamp(normFeatureVal);
+    if (hideOutOfRange && (normFeatureVal < 0.0 || normFeatureVal > 1.0)) {
+      gOutputColor = vec4(backgroundColor, 1.0);
+    } else {
+      gOutputColor = getColorRamp(normFeatureVal);
+    }
   }
 }

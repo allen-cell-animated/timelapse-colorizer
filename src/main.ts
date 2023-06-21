@@ -16,6 +16,7 @@ const colorRampMaxEl: HTMLInputElement = document.querySelector("#color_ramp_max
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
+const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
 
 // time / playback controls
 class TimeControls {
@@ -314,6 +315,10 @@ function updateFeature(newFeatureName: string): void {
   updateColorRampRangeUI()
 }
 
+function handleHideOutOfRangeCheckboxChange(): void {
+  canv.setHideValuesOutOfRange(hideOutOfRangeCheckbox.checked);
+}
+
 function handleLockRangeCheckboxChange(): void {
   canv.setColorMapRangeLock(lockRangeCheckbox.checked);
   updateColorRampRangeUI()
@@ -433,6 +438,7 @@ async function start(): Promise<void> {
   colorRampMinEl.addEventListener("change", () => handleColorRampMinChanged());
   colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
   lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
+  hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
 }
 
 window.addEventListener("beforeunload", () => {
