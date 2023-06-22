@@ -17,6 +17,7 @@ const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
+const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
 
 // time / playback controls
 class TimeControls {
@@ -320,6 +321,12 @@ function handleHideOutOfRangeCheckboxChange(): void {
   drawLoop();  // force a render update in case elements should disappear.
 }
 
+function handleResetRangeClick(): void {
+  canv.resetColorMapRange();
+  drawLoop();
+  updateColorRampRangeUI();
+}
+
 function handleLockRangeCheckboxChange(): void {
   canv.setColorMapRangeLock(lockRangeCheckbox.checked);
   updateColorRampRangeUI();
@@ -440,6 +447,7 @@ async function start(): Promise<void> {
   colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
   lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
   hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
+  resetRangeBtn.addEventListener("click", handleResetRangeClick);
 }
 
 window.addEventListener("beforeunload", () => {
