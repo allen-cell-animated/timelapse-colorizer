@@ -84,6 +84,7 @@ export default class ColorizeCanvas {
   private hideValuesOutOfRange: boolean;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
+  private currentFrame: number;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -124,6 +125,7 @@ export default class ColorizeCanvas {
     this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
+    this.currentFrame = 0;
   }
 
   get domElement(): HTMLCanvasElement {
@@ -145,7 +147,7 @@ export default class ColorizeCanvas {
     this.pickRenderTarget.setSize(width, height);
   }
 
-  setDataset(dataset: Dataset): void {
+  public async setDataset(dataset: Dataset): Promise<void> {
     if (this.dataset !== null) {
       this.dataset.dispose();
     }
@@ -155,6 +157,14 @@ export default class ColorizeCanvas {
     } else {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
+  
+    // Force load of frame data (clear cached frame data)
+    const frame = await this.dataset?.loadFrame(this.currentFrame);
+    if (!frame) {
+      return;
+    }
+    this.setUniform("frame", frame);
+    this.render();
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
@@ -240,7 +250,34 @@ export default class ColorizeCanvas {
     return this.colorMapRangeMax;
   }
 
+  /**
+   * @returns The number of frames in the dataset. If no dataset is loaded,
+   * returns 0 by default.
+   */
+  getTotalFrames(): number {
+    return this.dataset ? this.dataset.numberOfFrames : 0;
+  }
+
+  getCurrentFrame(): number {
+    return this.currentFrame;
+  }
+
+  public isValidFrame(index: number): boolean {
+    return index >= 0 && index < this.getTotalFrames();
+  }
+
+  /**
+   * Sets the current frame of the canvas, loading the new frame data if the
+   * frame number changes.
+   * @param index Index of the new frame.
+   */
   async setFrame(index: number): Promise<void> {
+    // Ignore same or bad frame indices
+    if (this.currentFrame === index || !this.isValidFrame(index)) {
+      return;
+    }
+    // New frame, so load the frame data.
+    this.currentFrame = index;
     const frame = await this.dataset?.loadFrame(index);
     if (!frame) {
       return;

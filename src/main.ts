@@ -1,5 +1,7 @@
 import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
+import RecordingControls from "./colorizer/RecordingControls";
+import TimeControls from "./colorizer/TimeControls";
 
 const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
@@ -19,149 +21,8 @@ const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_
 const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
 const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
 
-// time / playback controls
-class TimeControls {
-  private playBtn: HTMLButtonElement;
-  private pauseBtn: HTMLButtonElement;
-  private forwardBtn: HTMLButtonElement;
-  private backBtn: HTMLButtonElement;
-  private timeSlider: HTMLInputElement;
-  private timeInput: HTMLInputElement;
-
-  private totalFrames: number;
-  private currentFrame: number;
-  private timerId: number;
-  private redrawfn: () => void;
-
-  constructor(redrawfn: () => void) {
-    this.redrawfn = redrawfn;
-    this.totalFrames = 0;
-    this.currentFrame = 0;
-    this.timerId = 0;
-    this.playBtn = document.querySelector("#playBtn")!;
-    this.pauseBtn = document.querySelector("#pauseBtn")!;
-    this.forwardBtn = document.querySelector("#forwardBtn")!;
-    this.backBtn = document.querySelector("#backBtn")!;
-    this.timeSlider = document.querySelector("#timeSlider")!;
-    this.timeInput = document.querySelector("#timeValue")!;
-    this.playBtn.addEventListener("click", () => this.handlePlayButtonClick());
-    this.pauseBtn.addEventListener("click", () => this.handlePauseButtonClick());
-    this.forwardBtn.addEventListener("click", () => this.handleFrameAdvance(1));
-    this.backBtn.addEventListener("click", () => this.handleFrameAdvance(-1));
-    // only update when DONE sliding: change event
-    this.timeSlider.addEventListener("change", () => this.handleTimeSliderChange());
-    this.timeInput.addEventListener("change", () => this.handleTimeInputChange());
-  }
-
-  private playTimeSeries(onNewFrameCallback: () => void): void {
-    clearInterval(this.timerId);
-
-    const loadNextFrame = (): void => {
-      let nextFrame = this.currentFrame + 1;
-      if (nextFrame >= this.totalFrames) {
-        nextFrame = 0;
-      }
-
-      // do the necessary update
-      this.redrawfn();
-      this.currentFrame = nextFrame;
-      onNewFrameCallback();
-    };
-    this.timerId = window.setInterval(loadNextFrame, 40);
-  }
-
-  private goToFrame(targetFrame: number): boolean {
-    const wrap = true;
-    // wrap around is ok
-    if (wrap) {
-      this.currentFrame = (targetFrame + this.totalFrames) % this.totalFrames;
-      return true;
-    }
-
-    console.log("going to Frame " + targetFrame);
-    const outOfBounds = targetFrame > this.totalFrames - 1 || targetFrame < 0;
-    if (outOfBounds) {
-      console.log(`frame ${targetFrame} out of bounds`);
-      return false;
-    }
-
-    // check to see if we have pre-cached the frame, else load it...
-    //     f(targetFrame);
-
-    this.currentFrame = targetFrame;
-    return true;
-  }
-
-  private handlePlayButtonClick(): void {
-    if (this.currentFrame >= this.totalFrames - 1) {
-      this.currentFrame = -1;
-    }
-    this.playTimeSeries(() => {
-      if (this.timeInput) {
-        this.timeInput.value = "" + this.currentFrame;
-      }
-      if (this.timeSlider) {
-        this.timeSlider.value = "" + this.currentFrame;
-      }
-    });
-  }
-  private handlePauseButtonClick(): void {
-    clearInterval(this.timerId);
-  }
-  public handleFrameAdvance(delta: number = 1): void {
-    this.setCurrentFrame(this.currentFrame + delta);
-  }
-  private handleTimeSliderChange(): void {
-    // trigger loading new time
-    if (this.goToFrame(this.timeSlider.valueAsNumber)) {
-      this.timeInput.value = this.timeSlider.value;
-      this.redrawfn();
-    }
-  }
-  private handleTimeInputChange(): void {
-    // trigger loading new time
-    if (this.goToFrame(this.timeInput.valueAsNumber)) {
-      // update slider
-      this.timeSlider.value = this.timeInput.value;
-      this.redrawfn();
-    }
-  }
-
-  public updateTotalFrames(totalFrames: number): void {
-    this.totalFrames = totalFrames;
-    this.timeSlider.max = `${totalFrames - 1}`;
-    this.timeInput.max = `${totalFrames - 1}`;
-
-    if (totalFrames < 2) {
-      this.playBtn.disabled = true;
-      this.pauseBtn.disabled = true;
-    } else {
-      this.playBtn.disabled = false;
-      this.pauseBtn.disabled = false;
-    }
-  }
-
-  /**
-   * Attempts to set the current frame. If frame is updated, updates the time control UI and
-   * triggers a redraw.
-   * @returns true if the frame was set correctly (false if the frame is out of range).
-   */
-  public setCurrentFrame(frame: number): boolean {
-    if (this.goToFrame(frame)) {
-      this.redrawfn();
-      // Update time slider fields
-      this.timeSlider.value = "" + this.currentFrame;
-      this.timeInput.value = "" + this.currentFrame;
-      return true;
-    }
-    return false;
-  }
-
-  public getCurrentFrame(): number {
-    return this.currentFrame;
-  }
-}
-const timeControls = new TimeControls(drawLoop);
+const timeControls = new TimeControls(canv, drawLoop);
+const recordingControls = new RecordingControls(canv, drawLoop);
 
 function addOptionTo(parent: HTMLSelectElement, value: string, child?: HTMLElement): void {
   const optionEl = document.createElement("option");
@@ -239,6 +100,10 @@ function populateColorRampSelect(): void {
   });
 }
 
+function setColorRampDisabled(disabled: boolean): void {
+  colorRampSelectEl.className = disabled ? "disabled" : "";
+}
+
 // DATASET LOADING ///////////////////////////////////////////////////////
 
 let dataset: Dataset | null = null;
@@ -260,8 +125,6 @@ async function loadDataset(name: string): Promise<void> {
   datasetName = name;
   dataset = new Dataset(`${baseUrl}/${name}`);
   await dataset.open();
-  timeControls.updateTotalFrames(dataset.numberOfFrames);
-  timeControls.setCurrentFrame(0);
   resetTrackUI();
 
   // Only change the feature if there's no equivalent in the new dataset
@@ -273,15 +136,17 @@ async function loadDataset(name: string): Promise<void> {
   updateFeature(featureName);
   plot.setDataset(dataset);
   plot.removePlot();
-  await drawFrame(0);
-
+  await canv.setFrame(0);
+  
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
   featureSelectEl.value = featureName;
-
+  
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
+
+  await drawLoop();
 
   console.timeEnd("loadDataset");
 }
@@ -301,17 +166,16 @@ function handleFeatureChange({ currentTarget }: Event): void {
   updateFeature(value);
 }
 
-function updateFeature(newFeatureName: string): void {
+async function updateFeature(newFeatureName: string): Promise<void> {
   if (!dataset?.hasFeature(newFeatureName)) {
     return;
   }
   featureName = newFeatureName;
 
   canv.setFeature(featureName);
-  canv.render();
   // only update plot if active
   if (selectedTrack) {
-    plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
+    plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
   updateColorRampRangeUI();
 }
@@ -321,10 +185,12 @@ function handleHideOutOfRangeCheckboxChange(): void {
   drawLoop();  // force a render update in case elements should disappear.
 }
 
-function handleResetRangeClick(): void {
+async function handleResetRangeClick(): Promise<void> {
   canv.resetColorMapRange();
-  drawLoop();
   updateColorRampRangeUI();
+  await drawLoop();  // update UI
+  colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
+  colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
 
 function handleLockRangeCheckboxChange(): void {
@@ -349,11 +215,10 @@ function updateColorRampRangeUI(): void {
   colorRampMaxEl.value = `${canv.getColorMapRangeMax()}`;
 }
 
-function handleCanvasClick(event: MouseEvent): void {
+async function handleCanvasClick(event: MouseEvent): Promise<void> {
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
   console.log("clicked id " + id);
-  canv.setHighlightedId(id);
-  canv.render();
+  canv.setHighlightedId(id - 1);
   // Reset track input
   resetTrackUI();
   if (id < 0) {
@@ -363,7 +228,8 @@ function handleCanvasClick(event: MouseEvent): void {
   }
   const trackId = dataset!.getTrackId(id);
   selectedTrack = dataset!.buildTrack(trackId);
-  plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
+  plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
+  await drawLoop();
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -397,8 +263,9 @@ async function handleFindTrack(): Promise<void> {
     return;
   }
   selectedTrack = newTrack;
-  timeControls.setCurrentFrame(selectedTrack.times[0]);
-  plot.plot(selectedTrack, featureName, timeControls.getCurrentFrame());
+  await canv.setFrame(selectedTrack.times[0]);
+  plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
+  await drawLoop();
 }
 
 function resetTrackUI(): void {
@@ -409,25 +276,35 @@ function resetTrackUI(): void {
 
 const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
-async function drawFrame(index: number): Promise<void> {
-  await canv.setFrame(index);
-  canv.render();
-}
-
 async function drawLoop(): Promise<void> {
   if (dataset && datasetOpen) {
     // update higlighted cell id if any
     if (selectedTrack) {
-      const id = selectedTrack.getIdAtTime(timeControls.getCurrentFrame());
+      const id = selectedTrack.getIdAtTime(canv.getCurrentFrame());
       canv.setHighlightedId(id - 1);
-      // console.log(`selected track: ${selectedTrack.trackId}; highlighted id ${id}`);
     }
-    // update current time in plot
-    plot.setTime(timeControls.getCurrentFrame());
-    await drawFrame(timeControls.getCurrentFrame());
   }
 
+  await canv.render();
+  
+  // Update UI Elements
+  timeControls.setIsDisabled(recordingControls.isRecording());
+  timeControls.updateUI();
+  recordingControls.setIsDisabled(!dataset); 
+  recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
+  recordingControls.updateUI();
+  
   lockRangeCheckbox.checked = canv.isColorMapRangeLocked();
+
+  const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
+  setColorRampDisabled(disableUI);
+  datasetSelectEl.disabled = disableUI;
+  featureSelectEl.disabled = disableUI;
+  findTrackBtn.disabled = disableUI;
+  trackInput.disabled = disableUI;
+  
+  // update current time in plot
+  plot.setTime(canv.getCurrentFrame());
 }
 
 async function start(): Promise<void> {
@@ -448,6 +325,7 @@ async function start(): Promise<void> {
   lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
   hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
+  recordingControls.setCanvas(canv);
 }
 
 window.addEventListener("beforeunload", () => {

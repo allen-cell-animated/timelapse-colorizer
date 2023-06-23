@@ -166,6 +166,9 @@ export default class Dataset {
     promises.push(this.loadTracks());
     promises.push(this.loadTimes());
     await Promise.all(promises);
+
+    // TODO: Dynamically fetch features
+    // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
   }
 
   /** Frees the GPU resources held by this dataset */
