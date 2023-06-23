@@ -55,7 +55,7 @@ export default class TimeControls {
         // stop render loop if time controls have been disabled.
         return;
       }
-      let nextFrame = this.wrapFrame(this.canvas.getCurrentFrame() + 1);
+      const nextFrame = this.wrapFrame(this.canvas.getCurrentFrame() + 1);
 
       // do the necessary update
       await this.canvas.setFrame(nextFrame);
