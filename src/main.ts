@@ -13,11 +13,13 @@ const datasetSelectEl: HTMLSelectElement = document.querySelector("#dataset")!;
 const featureSelectEl: HTMLSelectElement = document.querySelector("#feature")!;
 const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp")!;
 const colorRampContainerEl: HTMLDivElement = document.querySelector("#color_ramp_container")!;
-const colorRampMinEl: HTMLLabelElement = document.querySelector("#color_ramp_min")!;
-const colorRampMaxEl: HTMLLabelElement = document.querySelector("#color_ramp_max")!;
+const colorRampMinEl: HTMLInputElement = document.querySelector("#color_ramp_min")!;
+const colorRampMaxEl: HTMLInputElement = document.querySelector("#color_ramp_max")!;
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
+const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
+const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
 
 const timeControls = new TimeControls(canv, drawLoop);
 const recordingControls = new RecordingControls(canv, drawLoop);
@@ -175,6 +177,17 @@ async function updateFeature(newFeatureName: string): Promise<void> {
   if (selectedTrack) {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
+  updateColorRampRangeUI();
+}
+
+function handleHideOutOfRangeCheckboxChange(): void {
+  canv.setHideValuesOutOfRange(hideOutOfRangeCheckbox.checked);
+  drawLoop();  // force a render update in case elements should disappear.
+}
+
+async function handleResetRangeClick(): Promise<void> {
+  canv.resetColorMapRange();
+  updateColorRampRangeUI();
   await drawLoop();  // update UI
   colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
   colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
@@ -182,8 +195,24 @@ async function updateFeature(newFeatureName: string): Promise<void> {
 
 function handleLockRangeCheckboxChange(): void {
   canv.setColorMapRangeLock(lockRangeCheckbox.checked);
-  colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
-  colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
+  updateColorRampRangeUI();
+}
+
+function handleColorRampMinChanged(): void {
+  canv.setColorMapRangeMin(colorRampMinEl.valueAsNumber);
+  drawLoop();
+  updateColorRampRangeUI();
+}
+
+function handleColorRampMaxChanged(): void {
+  canv.setColorMapRangeMax(colorRampMaxEl.valueAsNumber);
+  drawLoop();
+  updateColorRampRangeUI();
+}
+
+function updateColorRampRangeUI(): void {
+  colorRampMinEl.value = `${canv.getColorMapRangeMin()}`;
+  colorRampMaxEl.value = `${canv.getColorMapRangeMax()}`;
 }
 
 async function handleCanvasClick(event: MouseEvent): Promise<void> {
@@ -257,13 +286,15 @@ async function drawLoop(): Promise<void> {
   }
 
   await canv.render();
-
+  
   // Update UI Elements
   timeControls.setIsDisabled(recordingControls.isRecording());
   timeControls.updateUI();
   recordingControls.setIsDisabled(!dataset); 
   recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
   recordingControls.updateUI();
+  
+  lockRangeCheckbox.checked = canv.isColorMapRangeLocked();
 
   const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
   setColorRampDisabled(disableUI);
@@ -289,7 +320,11 @@ async function start(): Promise<void> {
   canv.domElement.addEventListener("click", handleCanvasClick);
   findTrackBtn.addEventListener("click", () => handleFindTrack());
   trackInput.addEventListener("change", () => handleFindTrack());
+  colorRampMinEl.addEventListener("change", () => handleColorRampMinChanged());
+  colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
   lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
+  hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
+  resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
 }
 

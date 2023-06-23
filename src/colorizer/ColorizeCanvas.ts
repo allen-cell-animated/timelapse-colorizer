@@ -37,6 +37,7 @@ type ColorizeUniformTypes = {
   backgroundColor: Color;
   outlierColor: Color;
   highlightedId: number;
+  hideOutOfRange: boolean;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -60,6 +61,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     highlightedId: new Uniform(-1),
+    hideOutOfRange: new Uniform(false),
   };
 };
 
@@ -78,7 +80,8 @@ export default class ColorizeCanvas {
 
   private dataset: Dataset | null;
   private featureName: string | null;
-  private isColorMapRangeLocked: boolean;
+  private colorMapRangeLocked: boolean;
+  private hideValuesOutOfRange: boolean;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
   private currentFrame: number;
@@ -118,7 +121,8 @@ export default class ColorizeCanvas {
 
     this.dataset = null;
     this.featureName = null;
-    this.isColorMapRangeLocked = false;
+    this.colorMapRangeLocked = false;
+    this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
@@ -193,7 +197,7 @@ export default class ColorizeCanvas {
     this.setUniform("featureData", featureData.tex);
     // Don't update the range values when locked
     // TODO: Decide if feature range should be unlocked when the feature changes.
-    if (!this.isColorMapRangeLocked) {
+    if (!this.colorMapRangeLocked) {
       this.colorMapRangeMin = featureData.min;
       this.colorMapRangeMax = featureData.max;
     }
@@ -203,12 +207,41 @@ export default class ColorizeCanvas {
   }
 
   setColorMapRangeLock(locked: boolean): void {
-    this.isColorMapRangeLocked = locked;
-    if (this.featureName) {  // trigger update for color map range
-      this.setFeature(this.featureName);
-    }
+    this.colorMapRangeLocked = locked;
   }
 
+  isColorMapRangeLocked(): boolean {
+    return this.colorMapRangeLocked;
+  }
+
+  setHideValuesOutOfRange(hide: boolean): void {
+    this.hideValuesOutOfRange = hide;
+    this.setUniform("hideOutOfRange", this.hideValuesOutOfRange);
+  }
+
+  setColorMapRangeMin(newMin: number): void {
+    this.colorMapRangeMin = newMin;
+    this.setUniform("featureMin", this.colorMapRangeMin);
+  }
+
+  setColorMapRangeMax(newMax: number): void {
+    this.colorMapRangeMax = newMax;
+    this.setUniform("featureMax", this.colorMapRangeMax);
+  }
+
+  resetColorMapRange(): void {
+    if (!this.featureName) {
+      return;
+    }
+    const featureData = this.dataset?.getFeatureData(this.featureName);
+    if (featureData) {
+      this.colorMapRangeMin = featureData.min;
+      this.colorMapRangeMax = featureData.max;
+      this.setUniform("featureMin", this.colorMapRangeMin);
+      this.setUniform("featureMax", this.colorMapRangeMax);
+    }
+  }
+  
   getColorMapRangeMin(): number {
     return this.colorMapRangeMin;
   }
