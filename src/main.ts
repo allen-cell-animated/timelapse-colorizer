@@ -111,6 +111,7 @@ let datasetName = "";
 let datasetOpen = false;
 let featureName = "";
 let selectedTrack: Track | null = null;
+const DEFAULT_DATASET = "mama_bear";
 
 async function loadDataset(name: string): Promise<void> {
   console.time("loadDataset");
@@ -147,7 +148,8 @@ async function loadDataset(name: string): Promise<void> {
   featureSelectEl.disabled = false;
 
   await drawLoop();
-
+  updateURL();
+  
   console.timeEnd("loadDataset");
 }
 
@@ -228,6 +230,7 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
   }
   const trackId = dataset!.getTrackId(id);
   selectedTrack = dataset!.buildTrack(trackId);
+  updateURL();
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
 }
@@ -266,10 +269,27 @@ async function handleFindTrack(): Promise<void> {
   await canv.setFrame(selectedTrack.times[0]);
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
+  updateURL();
 }
 
 function resetTrackUI(): void {
   trackInput.value = "";
+}
+
+// URL STATE /////////////////////////////////////////////////////////////
+
+const URL_PARAM_TRACK = "track";
+const URL_PARAM_DATASET = "dataset";
+// const URL_PARAM_FEATURE = "feature";
+// const URL_PARAM_RAMP = "color";
+
+function updateURL() {
+  // Firs time should push onto state rather than replacing it, so that users can go back to the original page when doing forward/backwards
+  // navigation?
+  if (selectedTrack) { 
+    window.history.pushState(null, document.title, `?${URL_PARAM_DATASET}=${datasetName}&${URL_PARAM_TRACK}=${selectedTrack?.trackId}`);
+  }
+  
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -308,11 +328,36 @@ async function drawLoop(): Promise<void> {
 }
 
 async function start(): Promise<void> {
+  // Get params from URL and load instead of defaults
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const datasetParam = urlParams.has(URL_PARAM_DATASET) ? urlParams.get(URL_PARAM_DATASET) : DEFAULT_DATASET;
+  const trackParam = urlParams.get(URL_PARAM_TRACK);
+  // const featureParam = urlParams.get(URL_PARAM_FEATURE);
+  // loading bad track ID?
+  // loading bad dataset?
+  
   setSize();
   populateColorRampSelect();
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
-  await loadDataset("mama_bear");
-
+  
+  if (datasetParam) {
+    try { 
+      await loadDataset(datasetParam);
+      datasetSelectEl.value = datasetParam;
+    } catch (e) {
+      console.log(`Encountered error while loading dataset '${datasetParam}'. Defaulting to ${DEFAULT_DATASET}`);
+      await loadDataset(DEFAULT_DATASET);
+    }
+  } else {
+    await loadDataset(DEFAULT_DATASET);
+  }
+  if (trackParam !== null) {
+    // Seek to the track ID
+    trackInput.value = trackParam;
+    handleFindTrack();
+  }
+  
   window.addEventListener("keydown", handleKeyDown);
   datasetSelectEl.addEventListener("change", handleDatasetChange);
   featureSelectEl.addEventListener("change", handleFeatureChange);
