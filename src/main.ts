@@ -140,11 +140,9 @@ async function loadDataset(name: string): Promise<void> {
   plot.setDataset(dataset);
   plot.removePlot();
   await canv.setFrame(0);
-
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
   featureSelectEl.value = featureName;
-
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
@@ -228,7 +226,7 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
   if (id < 0) {
     selectedTrack = null;
     plot.removePlot();
-    selectedTrack = null;
+    selectedTrack = null; // clear selected track when clicking off of cells
     return;
   }
   const trackId = dataset!.getTrackId(id);
@@ -290,9 +288,8 @@ const URL_PARAM_FEATURE = "feature";
 const URL_PARAM_TIME = "t";
 
 function updateURL(): void {
-  // Firs time should push onto state rather than replacing it, so that users can go back to the original page when doing forward/backwards
-  // navigation?
   const params: string[] = [];
+  // Get parameters, ignoring null/empty values
   if (datasetName) {
     params.push(`${URL_PARAM_DATASET}=${datasetName}`);
   }
@@ -304,6 +301,7 @@ function updateURL(): void {
   }
   params.push(`${URL_PARAM_TIME}=${canv.getCurrentFrame()}`);
 
+  // If parameters present, join with URL syntax and push into the URL
   const paramString = params.length > 0 ? "?" + params.join("&") : "";
   window.history.pushState(null, document.title, paramString);
 }
@@ -322,7 +320,6 @@ async function drawLoop(): Promise<void> {
   }
 
   await canv.render();
-
   // Update UI Elements
   timeControls.setIsDisabled(recordingControls.isRecording());
   timeControls.updateUI();
@@ -342,7 +339,7 @@ async function drawLoop(): Promise<void> {
   // update current time in plot
   plot.setTime(canv.getCurrentFrame());
 
-  updateURL();
+  updateURL(); // Update as part of drawloop so that it reflects visual changes to canvas
 }
 
 async function start(): Promise<void> {
