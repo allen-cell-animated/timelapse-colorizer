@@ -264,7 +264,7 @@ async function handleFindTrack(): Promise<void> {
   await findTrack(trackInput.valueAsNumber);
 }
 
-async function findTrack(trackId: number) {
+async function findTrack(trackId: number): Promise<void> {
   const newTrack = dataset!.buildTrack(trackId);
 
   if (newTrack.length() < 1) {
@@ -289,10 +289,10 @@ const URL_PARAM_DATASET = "dataset";
 const URL_PARAM_FEATURE = "feature";
 const URL_PARAM_TIME = "t";
 
-function updateURL() {
+function updateURL(): void {
   // Firs time should push onto state rather than replacing it, so that users can go back to the original page when doing forward/backwards
   // navigation?
-  let params: string[] = [];
+  const params: string[] = [];
   if (datasetName) {
     params.push(`${URL_PARAM_DATASET}=${datasetName}`);
   }
@@ -304,7 +304,7 @@ function updateURL() {
   }
   params.push(`${URL_PARAM_TIME}=${canv.getCurrentFrame()}`);
 
-  let paramString = params.length > 0 ? "?" + params.join("&") : "";
+  const paramString = params.length > 0 ? "?" + params.join("&") : "";
   window.history.pushState(null, document.title, paramString);
 }
 
@@ -350,11 +350,12 @@ async function start(): Promise<void> {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
 
+  const base10Radix = 10;
   const datasetParam = urlParams.get(URL_PARAM_DATASET) || DEFAULT_DATASET;
-  const trackParam = parseInt(urlParams.get(URL_PARAM_TRACK) || "-1");
+  const trackParam = parseInt(urlParams.get(URL_PARAM_TRACK) || "-1", base10Radix);
   const featureParam = urlParams.get(URL_PARAM_FEATURE);
   // Assumes a minimum time of t=0 for the dataset
-  const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1");
+  const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1", base10Radix);
 
   setSize();
   populateColorRampSelect();
