@@ -112,6 +112,7 @@ let datasetName = "";
 let datasetOpen = false;
 let featureName = "";
 let selectedTrack: Track | null = null;
+// TODO: Get the first dataset in a manifest JSON?
 const DEFAULT_DATASET = "mama_bear";
 
 async function loadDataset(name: string): Promise<void> {
