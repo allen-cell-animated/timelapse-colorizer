@@ -87,7 +87,8 @@ const DEFAULT_RAMP = 4;
 
 function populateColorRampSelect(): void {
   colorRampSelectEl.innerHTML = "";
-  const width = 120, height = 25;
+  const width = 120,
+    height = 25;
   // Sets dimensions for color ramp container, as color ramp isn't inline (absolute/floating)
   colorRampContainerEl.style.width = `${width}px`;
   colorRampContainerEl.style.height = `${height}px`;
@@ -138,18 +139,17 @@ async function loadDataset(name: string): Promise<void> {
   plot.setDataset(dataset);
   plot.removePlot();
   await canv.setFrame(0);
-  
+
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
   featureSelectEl.value = featureName;
-  
+
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
 
   await drawLoop();
-  updateURL();
-  
+
   console.timeEnd("loadDataset");
 }
 
@@ -180,17 +180,18 @@ async function updateFeature(newFeatureName: string): Promise<void> {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
   updateColorRampRangeUI();
+  featureSelectEl.value = featureName;
 }
 
 function handleHideOutOfRangeCheckboxChange(): void {
   canv.setHideValuesOutOfRange(hideOutOfRangeCheckbox.checked);
-  drawLoop();  // force a render update in case elements should disappear.
+  drawLoop(); // force a render update in case elements should disappear.
 }
 
 async function handleResetRangeClick(): Promise<void> {
   canv.resetColorMapRange();
   updateColorRampRangeUI();
-  await drawLoop();  // update UI
+  await drawLoop(); // update UI
   colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
   colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
@@ -226,11 +227,11 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
   if (id < 0) {
     selectedTrack = null;
     plot.removePlot();
+    selectedTrack = null;
     return;
   }
   const trackId = dataset!.getTrackId(id);
   selectedTrack = dataset!.buildTrack(trackId);
-  updateURL();
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
 }
@@ -259,17 +260,21 @@ function handleKeyDown({ key }: KeyboardEvent): void {
 
 async function handleFindTrack(): Promise<void> {
   // Load track value
-  const trackId = trackInput.valueAsNumber;
+  await findTrack(trackInput.valueAsNumber);
+}
+
+async function findTrack(trackId: number) {
   const newTrack = dataset!.buildTrack(trackId);
 
-  if (newTrack.length() < 1) {  // Check track validity
+  if (newTrack.length() < 1) {
+    // Check track validity
     return;
   }
   selectedTrack = newTrack;
   await canv.setFrame(selectedTrack.times[0]);
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
-  updateURL();
+  trackInput.value = "" + trackId;
 }
 
 function resetTrackUI(): void {
@@ -280,16 +285,26 @@ function resetTrackUI(): void {
 
 const URL_PARAM_TRACK = "track";
 const URL_PARAM_DATASET = "dataset";
-// const URL_PARAM_FEATURE = "feature";
-// const URL_PARAM_RAMP = "color";
+const URL_PARAM_FEATURE = "feature";
+const URL_PARAM_TIME = "t";
 
 function updateURL() {
   // Firs time should push onto state rather than replacing it, so that users can go back to the original page when doing forward/backwards
   // navigation?
-  if (selectedTrack) { 
-    window.history.pushState(null, document.title, `?${URL_PARAM_DATASET}=${datasetName}&${URL_PARAM_TRACK}=${selectedTrack?.trackId}`);
+  let params: string[] = [];
+  if (datasetName) {
+    params.push(`${URL_PARAM_DATASET}=${datasetName}`);
   }
-  
+  if (featureName) {
+    params.push(`${URL_PARAM_FEATURE}=${featureName}`);
+  }
+  if (selectedTrack) {
+    params.push(`${URL_PARAM_TRACK}=${selectedTrack.trackId}`);
+  }
+  params.push(`${URL_PARAM_TIME}=${canv.getCurrentFrame()}`);
+
+  let paramString = params.length > 0 ? "?" + params.join("&") : "";
+  window.history.pushState(null, document.title, paramString);
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -306,14 +321,14 @@ async function drawLoop(): Promise<void> {
   }
 
   await canv.render();
-  
+
   // Update UI Elements
   timeControls.setIsDisabled(recordingControls.isRecording());
   timeControls.updateUI();
-  recordingControls.setIsDisabled(!dataset); 
+  recordingControls.setIsDisabled(!dataset);
   recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
   recordingControls.updateUI();
-  
+
   lockRangeCheckbox.checked = canv.isColorMapRangeLocked();
 
   const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
@@ -322,27 +337,31 @@ async function drawLoop(): Promise<void> {
   featureSelectEl.disabled = disableUI;
   findTrackBtn.disabled = disableUI;
   trackInput.disabled = disableUI;
-  
+
   // update current time in plot
   plot.setTime(canv.getCurrentFrame());
+
+  updateURL();
 }
 
 async function start(): Promise<void> {
   // Get params from URL and load instead of defaults
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const datasetParam = urlParams.has(URL_PARAM_DATASET) ? urlParams.get(URL_PARAM_DATASET) : DEFAULT_DATASET;
-  const trackParam = urlParams.get(URL_PARAM_TRACK);
-  // const featureParam = urlParams.get(URL_PARAM_FEATURE);
-  // loading bad track ID?
-  // loading bad dataset?
-  
+
+  const datasetParam = urlParams.get(URL_PARAM_DATASET) || DEFAULT_DATASET;
+  const trackParam = parseInt(urlParams.get(URL_PARAM_TRACK) || "-1");
+  const featureParam = urlParams.get(URL_PARAM_FEATURE);
+  // Assumes a minimum time of t=0 for the dataset
+  const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1");
+
   setSize();
   populateColorRampSelect();
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
-  
+
+  // Set dataset if provided
   if (datasetParam) {
-    try { 
+    try {
       await loadDataset(datasetParam);
       datasetSelectEl.value = datasetParam;
     } catch (e) {
@@ -352,12 +371,22 @@ async function start(): Promise<void> {
   } else {
     await loadDataset(DEFAULT_DATASET);
   }
+  // Load feature (if unset, do nothing because loadDataset already loads a default)
+  if (featureParam) {
+    await updateFeature(featureParam);
+  }
+  // Load track
   if (trackParam !== null) {
     // Seek to the track ID
-    trackInput.value = trackParam;
-    handleFindTrack();
+    await findTrack(trackParam);
   }
-  
+  // Load time (if unset, defaults to track time or default t=0)
+  if (timeParam >= 0) {
+    await canv.setFrame(timeParam);
+    timeControls.updateUI();
+    await drawLoop(); // Force redraw to show the new frame
+  }
+
   window.addEventListener("keydown", handleKeyDown);
   datasetSelectEl.addEventListener("change", handleDatasetChange);
   featureSelectEl.addEventListener("change", handleFeatureChange);
