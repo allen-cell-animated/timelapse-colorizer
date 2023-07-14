@@ -284,7 +284,7 @@ function resetTrackUI(): void {
 }
 
 // URL STATE /////////////////////////////////////////////////////////////
-function updateURL() {
+function updateURL(): void {
   UrlUtility.updateURL(datasetName, featureName, selectedTrack?.trackId || null, canv.getCurrentFrame());
 }
 
