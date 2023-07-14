@@ -2,6 +2,8 @@ import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
+import UrlUtility from "./colorizer/UrlUtility";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
 const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
@@ -87,7 +89,8 @@ const DEFAULT_RAMP = 4;
 
 function populateColorRampSelect(): void {
   colorRampSelectEl.innerHTML = "";
-  const width = 120, height = 25;
+  const width = 120,
+    height = 25;
   // Sets dimensions for color ramp container, as color ramp isn't inline (absolute/floating)
   colorRampContainerEl.style.width = `${width}px`;
   colorRampContainerEl.style.height = `${height}px`;
@@ -111,6 +114,8 @@ let datasetName = "";
 let datasetOpen = false;
 let featureName = "";
 let selectedTrack: Track | null = null;
+// TODO: Get the first dataset in a manifest JSON?
+const DEFAULT_DATASET = "mama_bear";
 
 async function loadDataset(name: string): Promise<void> {
   console.time("loadDataset");
@@ -137,17 +142,15 @@ async function loadDataset(name: string): Promise<void> {
   plot.setDataset(dataset);
   plot.removePlot();
   await canv.setFrame(0);
-  
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
   featureSelectEl.value = featureName;
-  
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
 
   await drawLoop();
-
+  updateURL();
   console.timeEnd("loadDataset");
 }
 
@@ -178,17 +181,19 @@ async function updateFeature(newFeatureName: string): Promise<void> {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
   updateColorRampRangeUI();
+  featureSelectEl.value = featureName;
+  updateURL();
 }
 
 function handleHideOutOfRangeCheckboxChange(): void {
   canv.setHideValuesOutOfRange(hideOutOfRangeCheckbox.checked);
-  drawLoop();  // force a render update in case elements should disappear.
+  drawLoop(); // force a render update in case elements should disappear.
 }
 
 async function handleResetRangeClick(): Promise<void> {
   canv.resetColorMapRange();
   updateColorRampRangeUI();
-  await drawLoop();  // update UI
+  await drawLoop(); // update UI
   colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
   colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
@@ -218,18 +223,18 @@ function updateColorRampRangeUI(): void {
 async function handleCanvasClick(event: MouseEvent): Promise<void> {
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
   console.log("clicked id " + id);
-  canv.setHighlightedId(id - 1);
   // Reset track input
   resetTrackUI();
   if (id < 0) {
-    selectedTrack = null;
     plot.removePlot();
-    return;
+    selectedTrack = null; // clear selected track when clicking off of cells
+  } else {
+    const trackId = dataset!.getTrackId(id);
+    selectedTrack = dataset!.buildTrack(trackId);
+    plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
-  const trackId = dataset!.getTrackId(id);
-  selectedTrack = dataset!.buildTrack(trackId);
-  plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
+  updateURL();
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -256,20 +261,31 @@ function handleKeyDown({ key }: KeyboardEvent): void {
 
 async function handleFindTrack(): Promise<void> {
   // Load track value
-  const trackId = trackInput.valueAsNumber;
+  await findTrack(trackInput.valueAsNumber);
+}
+
+async function findTrack(trackId: number): Promise<void> {
   const newTrack = dataset!.buildTrack(trackId);
 
-  if (newTrack.length() < 1) {  // Check track validity
+  if (newTrack.length() < 1) {
+    // Check track validity
     return;
   }
   selectedTrack = newTrack;
   await canv.setFrame(selectedTrack.times[0]);
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
+  trackInput.value = "" + trackId;
+  updateURL();
 }
 
 function resetTrackUI(): void {
   trackInput.value = "";
+}
+
+// URL STATE /////////////////////////////////////////////////////////////
+function updateURL(): void {
+  UrlUtility.updateURL(datasetName, featureName, selectedTrack ? selectedTrack.trackId : null, canv.getCurrentFrame());
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -282,18 +298,19 @@ async function drawLoop(): Promise<void> {
     if (selectedTrack) {
       const id = selectedTrack.getIdAtTime(canv.getCurrentFrame());
       canv.setHighlightedId(id - 1);
+    } else {
+      canv.setHighlightedId(BACKGROUND_ID); // clear selection
     }
   }
 
   await canv.render();
-  
   // Update UI Elements
   timeControls.setIsDisabled(recordingControls.isRecording());
   timeControls.updateUI();
-  recordingControls.setIsDisabled(!dataset); 
+  recordingControls.setIsDisabled(!dataset);
   recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
   recordingControls.updateUI();
-  
+
   lockRangeCheckbox.checked = canv.isColorMapRangeLocked();
 
   const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
@@ -302,16 +319,48 @@ async function drawLoop(): Promise<void> {
   featureSelectEl.disabled = disableUI;
   findTrackBtn.disabled = disableUI;
   trackInput.disabled = disableUI;
-  
+
   // update current time in plot
   plot.setTime(canv.getCurrentFrame());
+
+  if (!timeControls.isPlaying()) {
+    // Do not update URL while playing for performance + UX reasons
+    updateURL();
+  }
 }
 
 async function start(): Promise<void> {
   setSize();
   populateColorRampSelect();
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
-  await loadDataset("mama_bear");
+
+  // Set dataset if provided
+  const { dataset, feature, track, time } = UrlUtility.loadParamsFromUrl();
+  if (dataset) {
+    try {
+      await loadDataset(dataset);
+      datasetSelectEl.value = dataset;
+    } catch (e) {
+      console.log(`Encountered error while loading dataset '${dataset}'. Defaulting to ${DEFAULT_DATASET}`);
+      await loadDataset(DEFAULT_DATASET);
+    }
+  } else {
+    await loadDataset(DEFAULT_DATASET);
+  }
+  if (feature) {
+    // Load feature (if unset, do nothing because loadDataset already loads a default)
+    await updateFeature(feature);
+  }
+  if (track >= 0) {
+    // Seek to the track ID
+    await findTrack(track);
+  }
+  if (time >= 0) {
+    // Load time (if unset, defaults to track time or default t=0)
+    await canv.setFrame(time);
+    timeControls.updateUI();
+  }
+  await drawLoop(); // Force redraw to show the new frame
 
   window.addEventListener("keydown", handleKeyDown);
   datasetSelectEl.addEventListener("change", handleDatasetChange);
@@ -326,6 +375,7 @@ async function start(): Promise<void> {
   hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
+  timeControls.addPauseListener(updateURL);
 }
 
 window.addEventListener("beforeunload", () => {
