@@ -345,15 +345,15 @@ async function drawLoop(): Promise<void> {
 }
 
 async function start(): Promise<void> {
-  // Get params from URL and load instead of defaults
+  // Get params from URL and load, with default fallbacks.
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
 
-  const base10Radix = 10;
+  const base10Radix = 10; // required for parseInt
   const datasetParam = urlParams.get(URL_PARAM_DATASET) || DEFAULT_DATASET;
   const trackParam = parseInt(urlParams.get(URL_PARAM_TRACK) || "-1", base10Radix);
   const featureParam = urlParams.get(URL_PARAM_FEATURE);
-  // Assumes a minimum time of t=0 for the dataset
+  // This assumes there are no negative timestamps in the dataset
   const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1", base10Radix);
 
   setSize();
