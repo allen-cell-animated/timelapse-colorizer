@@ -303,7 +303,9 @@ function updateURL(): void {
 
   // If parameters present, join with URL syntax and push into the URL
   const paramString = params.length > 0 ? "?" + params.join("&") : "";
-  window.history.pushState(null, document.title, paramString);
+  // Use replaceState rather than pushState, because otherwise every frame will be a unique
+  // URL in the browser history
+  window.history.replaceState(null, document.title, paramString);
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -383,8 +385,8 @@ async function start(): Promise<void> {
   if (timeParam >= 0) {
     await canv.setFrame(timeParam);
     timeControls.updateUI();
-    await drawLoop(); // Force redraw to show the new frame
   }
+  await drawLoop(); // Force redraw to show the new frame
 
   window.addEventListener("keydown", handleKeyDown);
   datasetSelectEl.addEventListener("change", handleDatasetChange);

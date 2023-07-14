@@ -157,7 +157,7 @@ export default class ColorizeCanvas {
     } else {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
-  
+
     // Force load of frame data (clear cached frame data)
     const frame = await this.dataset?.loadFrame(this.currentFrame);
     if (!frame) {
@@ -189,7 +189,7 @@ export default class ColorizeCanvas {
   }
 
   setFeature(name: string): void {
-    if(!this.dataset?.hasFeature(name)) {
+    if (!this.dataset?.hasFeature(name)) {
       return;
     }
     const featureData = this.dataset.getFeatureData(name)!;
@@ -203,7 +203,7 @@ export default class ColorizeCanvas {
     }
     this.setUniform("featureMin", this.colorMapRangeMin);
     this.setUniform("featureMax", this.colorMapRangeMax);
-    this.render();  // re-render necessary because map range may have changed
+    this.render(); // re-render necessary because map range may have changed
   }
 
   setColorMapRangeLock(locked: boolean): void {
@@ -241,7 +241,7 @@ export default class ColorizeCanvas {
       this.setUniform("featureMax", this.colorMapRangeMax);
     }
   }
-  
+
   getColorMapRangeMin(): number {
     return this.colorMapRangeMin;
   }
