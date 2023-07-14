@@ -224,7 +224,6 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
   // Reset track input
   resetTrackUI();
   if (id < 0) {
-    selectedTrack = null;
     plot.removePlot();
     selectedTrack = null; // clear selected track when clicking off of cells
     return;
