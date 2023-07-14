@@ -25,6 +25,7 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
+export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
   aspect: number;

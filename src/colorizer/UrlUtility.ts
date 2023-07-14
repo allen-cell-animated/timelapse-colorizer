@@ -26,10 +26,11 @@ export default class UrlUtility {
     if (feature) {
       params.push(`${URL_PARAM_FEATURE}=${feature}`);
     }
-    if (track) {
+    if (track || track === 0) {
       params.push(`${URL_PARAM_TRACK}=${track}`);
     }
     if (time) {
+      // time = 0 is ignored because it's the default frame.
       params.push(`${URL_PARAM_TIME}=${time}`);
     }
 

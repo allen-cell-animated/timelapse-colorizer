@@ -3,6 +3,7 @@ import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import UrlUtility from "./colorizer/UrlUtility";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
 const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
@@ -222,7 +223,6 @@ function updateColorRampRangeUI(): void {
 async function handleCanvasClick(event: MouseEvent): Promise<void> {
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
   console.log("clicked id " + id);
-  canv.setHighlightedId(id - 1);
   // Reset track input
   resetTrackUI();
   if (id < 0) {
@@ -285,7 +285,9 @@ function resetTrackUI(): void {
 
 // URL STATE /////////////////////////////////////////////////////////////
 function updateURL(): void {
-  UrlUtility.updateURL(datasetName, featureName, selectedTrack?.trackId || null, canv.getCurrentFrame());
+  console.log("selectedTrack is :");
+  console.log(selectedTrack);
+  UrlUtility.updateURL(datasetName, featureName, selectedTrack ? selectedTrack.trackId : null, canv.getCurrentFrame());
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -298,6 +300,8 @@ async function drawLoop(): Promise<void> {
     if (selectedTrack) {
       const id = selectedTrack.getIdAtTime(canv.getCurrentFrame());
       canv.setHighlightedId(id - 1);
+    } else {
+      canv.setHighlightedId(BACKGROUND_ID); // clear selection
     }
   }
 
