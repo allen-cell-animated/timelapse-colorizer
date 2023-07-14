@@ -5,12 +5,12 @@ const URL_PARAM_TIME = "t";
 
 export default class UrlUtility {
   /**
-   * Updates the current URL path of the webpage. If any parameter value is falsy (null), it will not be
+   * Updates the current URL path of the webpage. If any parameter value is null, it will not be
    * included.
-   * @param dataset
-   * @param feature
-   * @param track
-   * @param time
+   * @param dataset string name of the dataset. Null values will be ignored.
+   * @param feature string name of the feature. Null values will be ignored.
+   * @param track integer track number.
+   * @param time integer frame number. Ignores values where `time <= 0`.
    */
   public static updateURL(
     dataset: string | null,
@@ -29,7 +29,7 @@ export default class UrlUtility {
     if (track || track === 0) {
       params.push(`${URL_PARAM_TRACK}=${track}`);
     }
-    if (time) {
+    if (time && time > 0) {
       // time = 0 is ignored because it's the default frame.
       params.push(`${URL_PARAM_TIME}=${time}`);
     }
