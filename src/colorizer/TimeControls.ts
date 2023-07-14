@@ -16,11 +16,14 @@ export default class TimeControls {
   private canvas: ColorizeCanvas;
   private isDisabled: boolean;
 
+  private pauseCallbacks: (() => void)[];
+
   constructor(canvas: ColorizeCanvas, redrawfn: () => void) {
     this.redrawfn = redrawfn;
     this.canvas = canvas;
     this.timerId = DEFAULT_TIMER_ID;
     this.isDisabled = false;
+    this.pauseCallbacks = [];
 
     this.playBtn = document.querySelector("#playBtn")!;
     this.pauseBtn = document.querySelector("#pauseBtn")!;
@@ -78,6 +81,7 @@ export default class TimeControls {
   private handlePauseButtonClick(): void {
     clearInterval(this.timerId);
     this.timerId = DEFAULT_TIMER_ID;
+    this.pauseCallbacks.every((callback) => callback());
   }
 
   public async handleFrameAdvance(delta: number = 1): Promise<void> {
@@ -112,6 +116,10 @@ export default class TimeControls {
 
   public isPlaying(): boolean {
     return this.timerId !== -1;
+  }
+
+  public addPauseListener(callback: () => void): void {
+    this.pauseCallbacks.push(callback);
   }
 
   public updateUI(): void {

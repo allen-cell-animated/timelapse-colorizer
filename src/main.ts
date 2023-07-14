@@ -149,7 +149,7 @@ async function loadDataset(name: string): Promise<void> {
   featureSelectEl.disabled = false;
 
   await drawLoop();
-
+  updateURL();
   console.timeEnd("loadDataset");
 }
 
@@ -181,6 +181,7 @@ async function updateFeature(newFeatureName: string): Promise<void> {
   }
   updateColorRampRangeUI();
   featureSelectEl.value = featureName;
+  updateURL();
 }
 
 function handleHideOutOfRangeCheckboxChange(): void {
@@ -233,6 +234,7 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
   await drawLoop();
+  updateURL();
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -274,6 +276,7 @@ async function findTrack(trackId: number): Promise<void> {
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
   trackInput.value = "" + trackId;
+  updateURL();
 }
 
 function resetTrackUI(): void {
@@ -370,6 +373,7 @@ async function start(): Promise<void> {
   hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
+  timeControls.addPauseListener(updateURL);
 }
 
 window.addEventListener("beforeunload", () => {
