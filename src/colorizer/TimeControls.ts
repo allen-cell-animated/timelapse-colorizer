@@ -1,6 +1,7 @@
 import ColorizeCanvas from "./ColorizeCanvas";
 
 // time / playback controls
+const DEFAULT_TIMER_ID = -1;
 export default class TimeControls {
   private playBtn: HTMLButtonElement;
   private pauseBtn: HTMLButtonElement;
@@ -18,7 +19,7 @@ export default class TimeControls {
   constructor(canvas: ColorizeCanvas, redrawfn: () => void) {
     this.redrawfn = redrawfn;
     this.canvas = canvas;
-    this.timerId = 0;
+    this.timerId = DEFAULT_TIMER_ID;
     this.isDisabled = false;
 
     this.playBtn = document.querySelector("#playBtn")!;
@@ -40,7 +41,7 @@ export default class TimeControls {
     const totalFrames = this.canvas.getTotalFrames();
     return (index + totalFrames) % totalFrames;
   }
-  
+
   private clampFrame(index: number): number {
     return Math.min(Math.max(index, 0), this.canvas.getTotalFrames() - 1);
   }
@@ -76,6 +77,7 @@ export default class TimeControls {
 
   private handlePauseButtonClick(): void {
     clearInterval(this.timerId);
+    this.timerId = DEFAULT_TIMER_ID;
   }
 
   public async handleFrameAdvance(delta: number = 1): Promise<void> {
@@ -84,11 +86,11 @@ export default class TimeControls {
   }
 
   private async handleTimeSliderChange(): Promise<void> {
-      if (this.canvas.isValidFrame(this.timeSlider.valueAsNumber)) {
-        await this.canvas.setFrame(this.timeSlider.valueAsNumber);
-        this.timeInput.value = this.timeSlider.value;
-        this.redrawfn();
-      }
+    if (this.canvas.isValidFrame(this.timeSlider.valueAsNumber)) {
+      await this.canvas.setFrame(this.timeSlider.valueAsNumber);
+      this.timeInput.value = this.timeSlider.value;
+      this.redrawfn();
+    }
   }
   private async handleTimeInputChange(): Promise<void> {
     const newFrame = this.clampFrame(this.timeInput.valueAsNumber);
@@ -104,7 +106,12 @@ export default class TimeControls {
     // Disable and clean up playback interval timer
     if (disabled) {
       clearInterval(this.timerId);
+      this.timerId = DEFAULT_TIMER_ID;
     }
+  }
+
+  public isPlaying(): boolean {
+    return this.timerId !== -1;
   }
 
   public updateUI(): void {

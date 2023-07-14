@@ -2,6 +2,7 @@ import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
+import UrlUtility from "./colorizer/UrlUtility";
 
 const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
@@ -226,11 +227,11 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
   if (id < 0) {
     plot.removePlot();
     selectedTrack = null; // clear selected track when clicking off of cells
-    return;
+  } else {
+    const trackId = dataset!.getTrackId(id);
+    selectedTrack = dataset!.buildTrack(trackId);
+    plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
-  const trackId = dataset!.getTrackId(id);
-  selectedTrack = dataset!.buildTrack(trackId);
-  plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
 }
 
@@ -280,31 +281,8 @@ function resetTrackUI(): void {
 }
 
 // URL STATE /////////////////////////////////////////////////////////////
-
-const URL_PARAM_TRACK = "track";
-const URL_PARAM_DATASET = "dataset";
-const URL_PARAM_FEATURE = "feature";
-const URL_PARAM_TIME = "t";
-
-function updateURL(): void {
-  const params: string[] = [];
-  // Get parameters, ignoring null/empty values
-  if (datasetName) {
-    params.push(`${URL_PARAM_DATASET}=${datasetName}`);
-  }
-  if (featureName) {
-    params.push(`${URL_PARAM_FEATURE}=${featureName}`);
-  }
-  if (selectedTrack) {
-    params.push(`${URL_PARAM_TRACK}=${selectedTrack.trackId}`);
-  }
-  params.push(`${URL_PARAM_TIME}=${canv.getCurrentFrame()}`);
-
-  // If parameters present, join with URL syntax and push into the URL
-  const paramString = params.length > 0 ? "?" + params.join("&") : "";
-  // Use replaceState rather than pushState, because otherwise every frame will be a unique
-  // URL in the browser history
-  window.history.replaceState(null, document.title, paramString);
+function updateURL() {
+  UrlUtility.updateURL(datasetName, featureName, selectedTrack?.trackId || null, canv.getCurrentFrame());
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -340,49 +318,41 @@ async function drawLoop(): Promise<void> {
   // update current time in plot
   plot.setTime(canv.getCurrentFrame());
 
-  updateURL(); // Update as part of drawloop so that it reflects visual changes to canvas
+  if (!timeControls.isPlaying()) {
+    // Do not update URL while playing for performance + UX reasons
+    updateURL();
+  }
 }
 
 async function start(): Promise<void> {
-  // Get params from URL and load, with default fallbacks.
-  const queryString = window.location.search;
-  const urlParams = new URLSearchParams(queryString);
-
-  const base10Radix = 10; // required for parseInt
-  const datasetParam = urlParams.get(URL_PARAM_DATASET) || DEFAULT_DATASET;
-  const trackParam = parseInt(urlParams.get(URL_PARAM_TRACK) || "-1", base10Radix);
-  const featureParam = urlParams.get(URL_PARAM_FEATURE);
-  // This assumes there are no negative timestamps in the dataset
-  const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1", base10Radix);
-
   setSize();
   populateColorRampSelect();
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
   // Set dataset if provided
-  if (datasetParam) {
+  const { dataset, feature, track, time } = UrlUtility.loadParamsFromUrl();
+  if (dataset) {
     try {
-      await loadDataset(datasetParam);
-      datasetSelectEl.value = datasetParam;
+      await loadDataset(dataset);
+      datasetSelectEl.value = dataset;
     } catch (e) {
-      console.log(`Encountered error while loading dataset '${datasetParam}'. Defaulting to ${DEFAULT_DATASET}`);
+      console.log(`Encountered error while loading dataset '${dataset}'. Defaulting to ${DEFAULT_DATASET}`);
       await loadDataset(DEFAULT_DATASET);
     }
   } else {
     await loadDataset(DEFAULT_DATASET);
   }
-  // Load feature (if unset, do nothing because loadDataset already loads a default)
-  if (featureParam) {
-    await updateFeature(featureParam);
+  if (feature) {
+    // Load feature (if unset, do nothing because loadDataset already loads a default)
+    await updateFeature(feature);
   }
-  // Load track
-  if (trackParam !== null) {
+  if (track >= 0) {
     // Seek to the track ID
-    await findTrack(trackParam);
+    await findTrack(track);
   }
-  // Load time (if unset, defaults to track time or default t=0)
-  if (timeParam >= 0) {
-    await canv.setFrame(timeParam);
+  if (time >= 0) {
+    // Load time (if unset, defaults to track time or default t=0)
+    await canv.setFrame(time);
     timeControls.updateUI();
   }
   await drawLoop(); // Force redraw to show the new frame
