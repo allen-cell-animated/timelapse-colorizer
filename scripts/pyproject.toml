@@ -17,6 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "aicsimageio",
+    "aicspylibczi",
     "numpy",
     "pillow",
     "scikit-image",
