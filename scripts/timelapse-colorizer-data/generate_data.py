@@ -1,8 +1,10 @@
+import time
 from aicsimageio import AICSImage
 from PIL import Image
 import argparse
 import json
 import numpy as np
+import pandas as pd
 import os
 import platform
 import skimage
@@ -24,6 +26,7 @@ from nuc_morph_analysis.preprocessing.load_data import (
 #   outliers: [ bool, bool, ... ] // per cell, same order as featureN.json files
 #   tracks: "tracks.json" // per-cell track id, same format as featureN.json files
 #   times: "times.json" // per-cell frame index, same format as featureN.json files
+#   centroids: "centroids.json"  // per-cell centroid
 #
 # frame0.png:  numbers stored in RGB. true scalar index is (R + G*256 + B*256*256)
 #
@@ -58,6 +61,12 @@ def make_frames(grouped_frames, output_dir, dataset):
     outpath = os.path.join(output_dir, dataset)
 
     nframes = len(grouped_frames)
+    # Get the highest index across all groups
+    maxIndex = grouped_frames.initialIndex.max().max()
+    # Create an 3-dimensional array, where for each segmentation index
+    # we have a 2x2 array representing the bounds. (this will be flattened later for export.)
+    # ushort can represent up to 65_535
+    bbox_data = np.zeros(shape=(maxIndex, 2, 2), dtype=np.ushort)
     for group_name, frame in grouped_frames:
         # take first row to get zstack path
         row = frame.iloc[0]
@@ -86,6 +95,20 @@ def make_frames(grouped_frames, output_dir, dataset):
         # remap indices of this frame.
         seg_remapped = lut[seg2d]
 
+        # Capture bounding boxes
+        # Optimize by skipping i = 0, since it's used as a null value in every frame
+        for i in range(1, lut.size):
+            # Boolean array that represents all pixels segmented with this index
+            cell = np.argwhere(seg_remapped == lut[i])
+
+            if cell.size > 0:
+                bbox_data[lut[i]] = np.array(
+                    [
+                        cell.min(0).tolist(),
+                        cell.max(0).tolist(),
+                    ]
+                )
+
         # convert data to RGBA
         seg_rgba = np.zeros(
             (seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8
@@ -96,6 +119,11 @@ def make_frames(grouped_frames, output_dir, dataset):
         seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
         img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
         img.save(outpath + "/frame_" + str(frame_number) + ".png")
+
+    # Save bounding box to JSON
+    bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
+    with open(outpath + "/bounds.json", "w") as f:
+        json.dump(bbox_json, f)
 
 
 def make_features(a, features, output_dir, dataset):
@@ -120,6 +148,13 @@ def make_features(a, features, output_dir, dataset):
     with open(outpath + "/times.json", "w") as f:
         json.dump(tijs, f)
 
+    centroids_x = a["centroid_x"].to_numpy()
+    centroids_y = a["centroid_y"].to_numpy()
+    centroids_stacked = np.ravel(np.dstack([centroids_x, centroids_y]))
+    centroids_json = {"data": centroids_stacked.tolist()}
+    with open(outpath + "/centroids.json", "w") as f:
+        json.dump(centroids_json, f)
+
     for i in range(nfeatures):
         f = a[features[i]].to_numpy()
         fmin = np.nanmin(f)
@@ -139,8 +174,10 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
 
     # a is the full dataset!
     a = load_dataset(dataset, datadir=None)
+    # a = pd.read_csv("./data/baby_bear/baby_bear_dataset.csv")
 
     columns = ["track_id", "index_sequence", "seg_full_zstack_path", "label_img"]
+    # b is the reduced dataset
     b = a[columns]
     b = b.reset_index(drop=True)
     b["initialIndex"] = b.index.values
@@ -168,6 +205,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
         "outliers": "outliers.json",
         "tracks": "tracks.json",
         "times": "times.json",
+        "centroids": "centroids.json",
     }
     with open(os.path.join(output_dir, dataset) + "/manifest.json", "w") as f:
         json.dump(js, f)
