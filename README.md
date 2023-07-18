@@ -1,32 +1,46 @@
-# Project name
+# Nucmorph-Colorizer 🔬🎨
+#### A web visualizer for time-sequence data from the Nuclear Morphogenesis project.
 
-One line description
-
----
 
 ## Description
+Nucmorph-Colorizer is a web tool for interacting with data from the nuclear morphogenesis project! You can apply color maps and ranges,
+switch between features, play frames to observe motion, and view plots showing how features change over time.
 
-Main features in a brief descriptive text.
+![image](https://github.com/allen-cell-animated/nucmorph-colorizer/assets/30200665/d9d22cba-faa0-4366-a647-973bc2fce360)
+
 
 ## Installation
+**Prerequisites:**
+- Node
+- Python 3 (and optionally, a virtual Python environment)
 
-Describe how to obtain the software and get it ready to run
+Clone this git repository.
 
-## Documentation
+### Web tool
+Navigate to the project's root directory.
+```
+npm install
+npm run dev
+```
+This will start a development server you can access from your browser. By default, the server will be hosted at `http://localhost:5173/`.
 
-If you have more extensive technical documentation (whether generated or not), ensure they are published to the following address:
-For full package documentation please visit
-[organization.github.io/projectname](https://organization.github.io/projectname/index.html).
+### Data preprocessing
 
-## Quick Start
+For loading of datasets to work correctly, you'll need to run these commands from a device that has access to Allen Institute's on-premises data storage.
 
-To generate some test data,
-
-cd scripts
+Navigate to the project's scripts directory.
+```
+cd scripts/
+# If running off of shared resources, remember to initialize your virtual environment first.
+# This may look like 'conda activate {my_env}'.
 pip install .
-python generate_test_data.py
+```
 
-Describe the most common operations, step by step, that a first time user would want to know, here.
+The `generate_data.py` script can take in a named dataset (like `baby_bear`, `mama_bear`, or `goldilocks`) and convert it to a format readable
+by the web client. To run it, enter:
+```
+python timelapse-colorizer-data/generate_data.py --output_dir {output_dir} --dataset {dataset_name}
+```
 
 ## Development
 
