@@ -120,10 +120,10 @@ def make_frames(grouped_frames, output_dir, dataset):
         img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
         img.save(outpath + "/frame_" + str(frame_number) + ".png")
 
-        # Save bounding box to JSON
-        bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
-        with open(outpath + "/bounds.json", "w") as f:
-            json.dump(bbox_json, f)
+    # Save bounding box to JSON
+    bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
+    with open(outpath + "/bounds.json", "w") as f:
+        json.dump(bbox_json, f)
 
 
 def make_features(a, features, output_dir, dataset):
