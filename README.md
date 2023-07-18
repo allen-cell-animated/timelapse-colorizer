@@ -49,6 +49,8 @@ by the web client.
 python timelapse-colorizer-data/generate_data.py --output_dir {output_dir} --dataset {dataset_name}
 ```
 
+_TODO: Uploading data for the web client. See [Issue #34](https://github.com/allen-cell-animated/nucmorph-colorizer/issues/34)._
+
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for information related to developing the code.
