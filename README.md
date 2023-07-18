@@ -31,15 +31,14 @@ This will start a development server you can access from your browser. By defaul
 
 ### Data preprocessing
 
-Data must be preprocessed to work with Nucmorph-Colorizer. [You can read more about the data format specification here.](./scripts/timelapse-colorizer-data/generate_data.py). Utilities are included in this repository to convert standard time-series data.
+Data must be preprocessed to work with Nucmorph-Colorizer. [You can read more about the data format specification here.](./scripts/timelapse-colorizer-data/generate_data.py) Utilities are included in this repository to convert standard time-series data.
 
-For loading of datasets to work correctly, you'll need to run these commands from a device that has access to Allen Institute's on-premises data storage. If running off of shared resources, remember to initialize your virtual environment first. This may look like `conda activate {my_env}`.
+For loading of datasets to work correctly, you'll need to run these commands from a device that has access to Allen Institute's on-premises data storage. If running off of shared resources, remember to initialize your virtual environment first! This may look like `conda activate {my_env}`.
 
 Navigate to the project's scripts directory.
 
 ```
 cd scripts/
-
 pip install .
 ```
 
