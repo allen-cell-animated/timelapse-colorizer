@@ -26,7 +26,10 @@ from nuc_morph_analysis.preprocessing.load_data import (
 #   outliers: [ bool, bool, ... ] // per cell, same order as featureN.json files
 #   tracks: "tracks.json" // per-cell track id, same format as featureN.json files
 #   times: "times.json" // per-cell frame index, same format as featureN.json files
-#   centroids: "centroids.json"  // per-cell centroid
+#   centroids: "centroids.json"  // per-cell centroid. For each index i, the coordinates are (x: data[2i + 1], y: data[2i]).
+#   bounds: "bounds.json"  // bounding boxes for each cell. For each index i, the minimum bounding box coordinates (upper left corner)
+#       are given by (x: data[4i + 1], y: data[4i]), and the maximum bounding box coordinates (lower right corner) are given by
+#       (x: data[4i + 3], y: data[4i + 2]).
 #
 # frame0.png:  numbers stored in RGB. true scalar index is (R + G*256 + B*256*256)
 #
@@ -63,10 +66,10 @@ def make_frames(grouped_frames, output_dir, dataset):
     nframes = len(grouped_frames)
     # Get the highest index across all groups
     maxIndex = grouped_frames.initialIndex.max().max()
-    # Create an 3-dimensional array, where for each segmentation index
-    # we have a 2x2 array representing the bounds. (this will be flattened later for export.)
-    # ushort can represent up to 65_535
-    bbox_data = np.zeros(shape=(maxIndex, 2, 2), dtype=np.ushort)
+    # Create an array, where for each segmentation index
+    # we have 4 indices representing the bounds (2 sets of x,y coordinates).
+    # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
+    bbox_data = np.zeros(shape=(maxIndex * 2 * 2), dtype=np.ushort)
     for group_name, frame in grouped_frames:
         # take first row to get zstack path
         row = frame.iloc[0]
@@ -102,12 +105,9 @@ def make_frames(grouped_frames, output_dir, dataset):
             cell = np.argwhere(seg_remapped == lut[i])
 
             if cell.size > 0:
-                bbox_data[lut[i]] = np.array(
-                    [
-                        cell.min(0).tolist(),
-                        cell.max(0).tolist(),
-                    ]
-                )
+                write_index = lut[i] * 4
+                bbox_data[write_index : write_index + 2] = cell.min(0).tolist()
+                bbox_data[write_index + 2 : write_index + 4] = cell.max(0).tolist()
 
         # convert data to RGBA
         seg_rgba = np.zeros(
@@ -120,10 +120,10 @@ def make_frames(grouped_frames, output_dir, dataset):
         img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
         img.save(outpath + "/frame_" + str(frame_number) + ".png")
 
-    # Save bounding box to JSON
-    bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
-    with open(outpath + "/bounds.json", "w") as f:
-        json.dump(bbox_json, f)
+        # Save bounding box to JSON
+        bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
+        with open(outpath + "/bounds.json", "w") as f:
+            json.dump(bbox_json, f)
 
 
 def make_features(a, features, output_dir, dataset):
@@ -173,8 +173,8 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
     pixsize = get_dataset_pixel_size(dataset)
 
     # a is the full dataset!
-    a = load_dataset(dataset, datadir=None)
-    # a = pd.read_csv("./data/baby_bear/baby_bear_dataset.csv")
+    # a = load_dataset(dataset, datadir=None)
+    a = pd.read_csv("./data/baby_bear/baby_bear_dataset.csv")
 
     columns = ["track_id", "index_sequence", "seg_full_zstack_path", "label_img"]
     # b is the reduced dataset
@@ -206,6 +206,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
         "tracks": "tracks.json",
         "times": "times.json",
         "centroids": "centroids.json",
+        "bounds": "bounds.json",
     }
     with open(os.path.join(output_dir, dataset) + "/manifest.json", "w") as f:
         json.dump(js, f)
