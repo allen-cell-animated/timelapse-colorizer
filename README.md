@@ -21,7 +21,7 @@ Installing is optional! You can use the [hosted version of Nucmorph Colorizer](h
 to access our existing datasets without installing the project. 
 
 **Prerequisites:**
-- Node
+- Node 18 or higher
 - Python 3 (and optionally, a virtual Python environment)
 - This repository, cloned with `git clone`
 
