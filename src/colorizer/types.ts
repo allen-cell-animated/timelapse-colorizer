@@ -17,6 +17,7 @@ export enum FeatureDataType {
   F32,
   U32,
   I32,
+  U16,
   U8,
 }
 
@@ -26,6 +27,7 @@ export type FeatureArrayType = {
     [FeatureDataType.F32]: Float32Array;
     [FeatureDataType.U32]: Uint32Array;
     [FeatureDataType.I32]: Int32Array;
+    [FeatureDataType.U16]: Uint16Array;
     [FeatureDataType.U8]: Uint8Array;
   }[T];
 };
@@ -57,6 +59,12 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
     format: RedIntegerFormat,
     dataType: IntType,
     internalFormat: "R32I",
+  },
+  [FeatureDataType.U16]: {
+    ArrayConstructor: Uint16Array,
+    format: RedIntegerFormat,
+    dataType: UnsignedIntType,
+    internalFormat: "R16UI",
   },
   [FeatureDataType.U8]: {
     ArrayConstructor: Uint8Array,

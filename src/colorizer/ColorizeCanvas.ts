@@ -1,7 +1,11 @@
 import {
+  BufferGeometry,
   Color,
   DataTexture,
   GLSL3,
+  Line,
+  LineBasicMaterial,
+  Material,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
@@ -11,6 +15,7 @@ import {
   Texture,
   Uniform,
   UnsignedByteType,
+  Vector3,
   WebGLRenderTarget,
   WebGLRenderer,
 } from "three";
@@ -22,9 +27,11 @@ import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
+import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
+const SELECTED_COLOR_DEFAULT = 0xffff00ff; // ARGB
 export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
@@ -73,6 +80,11 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  // Rendered track line that shows the trajectory of a cell.
+  private lineGeometry: BufferGeometry;
+  private lineMaterial: Material;
+  private line: Line;
+
   private scene: Scene;
   private pickScene: Scene;
   private camera: OrthographicCamera;
@@ -80,6 +92,7 @@ export default class ColorizeCanvas {
   private pickRenderTarget: WebGLRenderTarget;
 
   private dataset: Dataset | null;
+  private track: Track | null;
   private featureName: string | null;
   private colorMapRangeLocked: boolean;
   private hideValuesOutOfRange: boolean;
@@ -114,6 +127,20 @@ export default class ColorizeCanvas {
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
 
+    // Configure lines
+    const points = [];
+    points.push(new Vector3(0, 0, 0));
+    points.push(new Vector3(0.5, 0.5, 0));
+    points.push(new Vector3(0, 1, 0));
+    points.push(new Vector3(0, 0, 0));
+    this.lineGeometry = new BufferGeometry().setFromPoints(points);
+    this.lineMaterial = new LineBasicMaterial({
+      color: SELECTED_COLOR_DEFAULT,
+    });
+    this.line = new Line(this.lineGeometry, this.lineMaterial);
+    this.lineGeometry;
+    this.scene.add(this.line);
+
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
     });
@@ -122,6 +149,7 @@ export default class ColorizeCanvas {
 
     this.dataset = null;
     this.featureName = null;
+    this.track = null;
     this.colorMapRangeLocked = false;
     this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
@@ -187,6 +215,10 @@ export default class ColorizeCanvas {
 
   setHighlightedId(id: number): void {
     this.setUniform("highlightedId", id);
+  }
+
+  setSelectedTrack(track: Track): void {
+    this.track = track;
   }
 
   setFeature(name: string): void {

@@ -15,6 +15,8 @@ type DatasetManifest = {
   outliers?: string;
   tracks?: string;
   times?: string;
+  centroids?: string;
+  bounds?: string;
 };
 
 export type FeatureData = {
@@ -43,6 +45,9 @@ export default class Dataset {
   private timesFile?: string;
   public trackIds?: Uint32Array;
   public times?: Uint32Array;
+
+  public centroidsFile?: string;
+  public centroids?: Uint16Array;
 
   public baseUrl: string;
   private hasOpened: boolean;
@@ -120,6 +125,15 @@ export default class Dataset {
     this.times = source.getBuffer(FeatureDataType.U32);
   }
 
+  private async loadCentroids(): Promise<void> {
+    if (!this.centroidsFile) {
+      return;
+    }
+    const url = this.resolveUrl(this.centroidsFile);
+    const source = await this.arrayLoader.load(url);
+    this.centroids = source.getBuffer(FeatureDataType.U16);
+  }
+
   public get numberOfFrames(): number {
     return this.frames?.length || 0;
   }
@@ -159,12 +173,14 @@ export default class Dataset {
     this.outlierFile = manifest.outliers;
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
+    this.centroidsFile = manifest.centroids;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     const promises = this.featureNames.map(this.loadFeature.bind(this));
     promises.push(this.loadOutliers());
     promises.push(this.loadTracks());
     promises.push(this.loadTimes());
+    promises.push(this.loadCentroids());
     await Promise.all(promises);
 
     // TODO: Dynamically fetch features

@@ -2,21 +2,25 @@ export default class Track {
   public trackId: number;
   public times: number[];
   public ids: number[];
+  public centroids: number[][] | undefined;
   // TODO:  centroids
 
-  constructor(trackId: number, times: number[], ids: number[]) {
+  constructor(trackId: number, times: number[], ids: number[], centroids?: number[][]) {
     this.trackId = trackId;
     this.times = times;
     this.ids = ids;
+    this.centroids = centroids;
 
-    // sort both, ascending by time
-    // I have no idea if the time domain would be presorted or not
+    // sort time, id, and centroids, ascending by time
     const shouldSort = true;
     if (shouldSort) {
       const indices = [...times.keys()];
       indices.sort((a, b) => (times[a] < times[b] ? -1 : times[a] === times[b] ? 0 : 1));
       this.times = indices.map((i) => times[i]);
       this.ids = indices.map((i) => ids[i]);
+      if (centroids) {
+        this.centroids = indices.map((i) => centroids[i]);
+      }
     }
     console.log(
       `Track ${trackId} has ${this.length()} timepoints starting from ${this.times[0]} to ${
