@@ -5,7 +5,6 @@ import argparse
 import json
 import logging
 import numpy as np
-import pandas as pd
 import os
 import platform
 import skimage
@@ -68,13 +67,12 @@ def make_frames(grouped_frames, output_dir, dataset):
 
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
-    # Get the highest index across all groups
-    maxIndex = grouped_frames.initialIndex.max().max()
+    # Get the highest index across all groups, and add one for zero-based indexing
+    totalIndices = grouped_frames.initialIndex.max().max() + 1
     # Create an array, where for each segmentation index
     # we have 4 indices representing the bounds (2 sets of x,y coordinates).
     # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
-
-    bbox_data = np.zeros(shape=((maxIndex + 1) * 2 * 2), dtype=np.ushort)
+    bbox_data = np.zeros(shape=(totalIndices * 2 * 2), dtype=np.ushort)
 
     for group_name, frame in grouped_frames:
         # take first row to get zstack path
@@ -202,7 +200,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
 
     # a is the full dataset!
     a = load_dataset(dataset, datadir=None)
-    logging.info("Loaded dataset.")
+    logging.info("Loaded dataset '" + str(dataset) + "'.")
 
     columns = ["track_id", "index_sequence", "seg_full_zstack_path", "label_img"]
     # b is the reduced dataset
@@ -249,11 +247,13 @@ parser.add_argument("--noframes", action="store_true")
 args = parser.parse_args()
 if __name__ == "__main__":
     # Set up logging
+    debug_file = args.output_dir + "debug.log"
+    open(debug_file, "w").close()  # clear debug file if it exists
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[  # output to both log file and stdout stream
-            logging.FileHandler(args.output_dir + "debug.log"),
+            logging.FileHandler(debug_file),
             logging.StreamHandler(),
         ],
     )
