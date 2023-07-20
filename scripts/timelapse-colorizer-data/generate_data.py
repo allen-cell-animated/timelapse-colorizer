@@ -1,4 +1,3 @@
-import time
 from aicsimageio import AICSImage
 from PIL import Image
 import argparse
@@ -8,6 +7,7 @@ import numpy as np
 import os
 import platform
 import skimage
+import time
 
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
 from nuc_morph_analysis.preprocessing.load_data import (
