@@ -107,6 +107,7 @@ export default class ColorizeCanvas {
   private lineGeometry: BufferGeometry;
   private lineMaterial: ShaderMaterial;
   private line: Line;
+  private showTrackPath: boolean;
 
   private scene: Scene;
   private pickScene: Scene;
@@ -180,6 +181,7 @@ export default class ColorizeCanvas {
     this.frameResolution = null;
     this.featureName = null;
     this.track = null;
+    this.showTrackPath = false;
     this.colorMapRangeLocked = false;
     this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
@@ -278,14 +280,25 @@ export default class ColorizeCanvas {
     console.log(this.points);
     // Assign new BufferAttribute because the old array has been discarded.
     this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
-    this.line.geometry.setDrawRange(0, track.centroids.length);
     this.line.geometry.getAttribute("position").needsUpdate = true;
     this.updateTrackRange();
     this.render();
   }
 
-  updateTrackRange() {
+  setShowTrackPath(show: boolean): void {
+    this.showTrackPath = show;
+  }
+
+  /**
+   * Updates the range of the track path line based on the current frame.
+   */
+  updateTrackRange(): void {
     if (!this.track) {
+      return;
+    }
+    if (!this.showTrackPath) {
+      // Hide path
+      this.line.geometry.setDrawRange(0, 0);
       return;
     }
     const trackFirstFrame = this.track.times[0];

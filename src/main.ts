@@ -19,6 +19,7 @@ const colorRampMinEl: HTMLInputElement = document.querySelector("#color_ramp_min
 const colorRampMaxEl: HTMLInputElement = document.querySelector("#color_ramp_max")!;
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
+const showTrackPathCheckbox: HTMLInputElement = document.querySelector("#show_track_path")!;
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
 const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
@@ -185,7 +186,7 @@ async function updateFeature(newFeatureName: string): Promise<void> {
   updateURL();
 }
 
-function handleHideOutOfRangeCheckboxChange(): void {
+function handleHideOutOfRangeCheckboxChanged(): void {
   canv.setHideValuesOutOfRange(hideOutOfRangeCheckbox.checked);
   drawLoop(); // force a render update in case elements should disappear.
 }
@@ -198,7 +199,7 @@ async function handleResetRangeClick(): Promise<void> {
   colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
 
-function handleLockRangeCheckboxChange(): void {
+function handleLockRangeCheckboxChanged(): void {
   canv.setColorMapRangeLock(lockRangeCheckbox.checked);
   updateColorRampRangeUI();
 }
@@ -281,6 +282,11 @@ async function findTrack(trackId: number): Promise<void> {
 
 function resetTrackUI(): void {
   trackInput.value = "";
+}
+
+async function handleShowTrackPathChanged(): Promise<void> {
+  canv.setShowTrackPath(showTrackPathCheckbox.checked);
+  drawLoop();
 }
 
 // URL STATE /////////////////////////////////////////////////////////////
@@ -372,8 +378,9 @@ async function start(): Promise<void> {
   trackInput.addEventListener("change", () => handleFindTrack());
   colorRampMinEl.addEventListener("change", () => handleColorRampMinChanged());
   colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
-  lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
-  hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
+  showTrackPathCheckbox.addEventListener("change", () => handleShowTrackPathChanged());
+  lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChanged());
+  hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChanged());
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
   timeControls.addPauseListener(updateURL);
