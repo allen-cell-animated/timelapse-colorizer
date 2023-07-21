@@ -302,6 +302,7 @@ async function drawLoop(): Promise<void> {
       canv.setHighlightedId(BACKGROUND_ID); // clear selection
     }
   }
+  canv.setSelectedTrack(selectedTrack);
 
   await canv.render();
   // Update UI Elements

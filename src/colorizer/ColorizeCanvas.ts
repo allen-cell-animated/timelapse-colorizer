@@ -1,4 +1,5 @@
 import {
+  BufferAttribute,
   BufferGeometry,
   Color,
   DataTexture,
@@ -15,6 +16,7 @@ import {
   Texture,
   Uniform,
   UnsignedByteType,
+  Vector2,
   Vector3,
   WebGLRenderTarget,
   WebGLRenderer,
@@ -93,6 +95,9 @@ export default class ColorizeCanvas {
 
   private dataset: Dataset | null;
   private track: Track | null;
+  private points: Float32Array;
+  private frameResolution: Vector2 | null;
+
   private featureName: string | null;
   private colorMapRangeLocked: boolean;
   private hideValuesOutOfRange: boolean;
@@ -128,17 +133,25 @@ export default class ColorizeCanvas {
     this.pickScene.add(this.pickMesh);
 
     // Configure lines
-    const points = [];
-    points.push(new Vector3(0, 0, 0));
-    points.push(new Vector3(0.5, 0.5, 0));
-    points.push(new Vector3(0, 1, 0));
-    points.push(new Vector3(0, 0, 0));
-    this.lineGeometry = new BufferGeometry().setFromPoints(points);
+    this.points = new Float32Array([0, 0, 0, 1, -1, 0, 0, 1, 0, 0, 0, 0]);
+
+    this.lineGeometry = new BufferGeometry();
+    this.lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
+
+    setTimeout(() => {
+      this.points[0] = 0.25;
+      this.points[1] = 0.15;
+      this.points[2] = 0;
+      this.line.geometry.setDrawRange(0, 4);
+      this.line.geometry.getAttribute("position").needsUpdate = true;
+      this.render();
+      console.log("Delayed for 2 seconds");
+    }, 2000.0);
+
     this.lineMaterial = new LineBasicMaterial({
       color: SELECTED_COLOR_DEFAULT,
     });
     this.line = new Line(this.lineGeometry, this.lineMaterial);
-    this.lineGeometry;
     this.scene.add(this.line);
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
@@ -148,6 +161,7 @@ export default class ColorizeCanvas {
     this.checkPixelRatio();
 
     this.dataset = null;
+    this.frameResolution = null;
     this.featureName = null;
     this.track = null;
     this.colorMapRangeLocked = false;
@@ -192,6 +206,8 @@ export default class ColorizeCanvas {
     if (!frame) {
       return;
     }
+    // Save frame resolution for later calculation
+    this.frameResolution = new Vector2(frame.image.width, frame.image.height);
     this.setUniform("frame", frame);
     this.render();
   }
@@ -217,8 +233,42 @@ export default class ColorizeCanvas {
     this.setUniform("highlightedId", id);
   }
 
-  setSelectedTrack(track: Track): void {
+  setSelectedTrack(track: Track | null): void {
+    if (this.track?.trackId === track?.trackId) {
+      return;
+    }
     this.track = track;
+    if (!track || !track.centroids || track.centroids.length === 0 || !this.frameResolution) {
+      return;
+    }
+
+    // Make a new array of the centroid positions,
+    // normalizing to screen space.
+    // We need three floats per coordinates
+    this.points = new Float32Array(track.centroids.length * 3);
+    for (let i = 0; i < track.centroids.length; i++) {
+      // Screen space is in [-1, 1] range.
+      this.points[3 * i + 0] = (track.centroids[i][0] / (4.0 * this.frameResolution.x)) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((track.centroids[i][1] / (4.0 * this.frameResolution.y)) * 2.0 - 1.0);
+      this.points[3 * i + 2] = 0;
+    }
+    console.log(this.frameResolution);
+    console.log(this.points);
+    // Assign new BufferAttribute because the old array has been discarded.
+    this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
+    this.line.geometry.setDrawRange(0, track.centroids.length);
+    this.line.geometry.getAttribute("position").needsUpdate = true;
+    this.updateTrackRange();
+    this.render();
+  }
+
+  updateTrackRange() {
+    if (!this.track) {
+      return;
+    }
+    const trackFirstFrame = this.track.times[0];
+    const range = Math.min(this.currentFrame - trackFirstFrame, this.track.length());
+    this.line.geometry.setDrawRange(0, range);
   }
 
   setFeature(name: string): void {
@@ -319,6 +369,7 @@ export default class ColorizeCanvas {
   }
 
   render(): void {
+    this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
   }
 

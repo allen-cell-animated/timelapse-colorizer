@@ -8,6 +8,7 @@ import FrameCache from "./FrameCache";
 import Track from "./Track";
 
 import { FeatureDataType } from "./types";
+import { TypedArray } from "plotly.js-dist-min";
 
 type DatasetManifest = {
   frames: string[];
@@ -210,6 +211,24 @@ export default class Dataset {
     }, []) as number[];
   }
 
+  /**
+   * Converts a 1D array into a 2D array, where the elements are grouped into
+   * sub-arrays of a given width.
+   * @param arr Array of elements. Length must be divisible by `width`.
+   * @param width Width of the nested arrays in the returned 2D array.
+   * @returns Returns a new array where elements of the 1D array are nested
+   * in groups of width `width`.
+   * For example, if `width=3`, then
+   * the array [1, 2, 3, 4, 5, 6] will return [[1, 2, 3], [4, 5, 6]].
+   */
+  private arrayToMatrix(array: TypedArray, width: number): number[][] {
+    const ret: number[][] = [];
+    for (let i = 0; i < array.length; i = i + width) {
+      ret.push([...array.slice(i, i + width)]);
+    }
+    return ret;
+  }
+
   public buildTrack(trackId: number): Track {
     // if we don't have track info then return empty arrays
     if (!this.trackIds || !this.times) {
@@ -221,8 +240,15 @@ export default class Dataset {
     // ids now contains all cell ids that have trackId.
     // get all the times for those cells, in the same order
     const times = ids.map((i) => (this.times ? this.times[i] : 0));
+    let centroids2d;
 
-    return new Track(trackId, times, ids);
+    const centroids1d = this.centroids;
+    if (centroids1d) {
+      // Turn 1D array into 2D array
+      centroids2d = ids.map((i) => [centroids1d[2 * i], centroids1d[2 * i + 1]]);
+    }
+
+    return new Track(trackId, times, ids, centroids2d);
   }
 
   // get the times and values of a track for a given feature
