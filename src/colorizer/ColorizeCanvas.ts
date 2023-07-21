@@ -29,11 +29,13 @@ import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
+import lineVertexShader from "./shaders/line.vert";
+import lineFragmentShader from "./shaders/line.frag";
 import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
-const SELECTED_COLOR_DEFAULT = 0xffff00ff; // ARGB
+const SELECTED_COLOR_DEFAULT = 0xff00ff; // ARGB
 export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
@@ -50,7 +52,15 @@ type ColorizeUniformTypes = {
   hideOutOfRange: boolean;
 };
 
+type LineUniformTypes = {
+  aspect: number;
+  frame: Texture;
+  color: Color;
+};
+
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
+
+type LineUniforms = { [K in keyof LineUniformTypes]: Uniform<LineUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
@@ -75,6 +85,17 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
+const getDefaultLineUniforms = (): LineUniforms => {
+  const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
+  emptyFrame.internalFormat = "RGBA8UI";
+  emptyFrame.needsUpdate = true;
+  return {
+    aspect: new Uniform(2),
+    frame: new Uniform(emptyFrame),
+    color: new Uniform(new Color(SELECTED_COLOR_DEFAULT)),
+  };
+};
+
 export default class ColorizeCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
@@ -84,7 +105,7 @@ export default class ColorizeCanvas {
 
   // Rendered track line that shows the trajectory of a cell.
   private lineGeometry: BufferGeometry;
-  private lineMaterial: Material;
+  private lineMaterial: ShaderMaterial;
   private line: Line;
 
   private scene: Scene;
@@ -133,24 +154,19 @@ export default class ColorizeCanvas {
     this.pickScene.add(this.pickMesh);
 
     // Configure lines
-    this.points = new Float32Array([0, 0, 0, 1, -1, 0, 0, 1, 0, 0, 0, 0]);
+    this.points = new Float32Array([0, 0, 0]);
 
     this.lineGeometry = new BufferGeometry();
     this.lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
-
-    setTimeout(() => {
-      this.points[0] = 0.25;
-      this.points[1] = 0.15;
-      this.points[2] = 0;
-      this.line.geometry.setDrawRange(0, 4);
-      this.line.geometry.getAttribute("position").needsUpdate = true;
-      this.render();
-      console.log("Delayed for 2 seconds");
-    }, 2000.0);
-
-    this.lineMaterial = new LineBasicMaterial({
-      color: SELECTED_COLOR_DEFAULT,
+    this.lineMaterial = new ShaderMaterial({
+      vertexShader: lineVertexShader,
+      fragmentShader: lineFragmentShader,
+      uniforms: getDefaultLineUniforms(),
+      depthWrite: false,
+      depthTest: false,
+      glslVersion: GLSL3,
     });
+
     this.line = new Line(this.lineGeometry, this.lineMaterial);
     this.scene.add(this.line);
 
@@ -184,6 +200,7 @@ export default class ColorizeCanvas {
   setSize(width: number, height: number): void {
     this.checkPixelRatio();
     this.setUniform("aspect", width / height);
+    this.setLineUniform("aspect", width / height);
     this.renderer.setSize(width, height);
     // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
     // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
@@ -209,12 +226,17 @@ export default class ColorizeCanvas {
     // Save frame resolution for later calculation
     this.frameResolution = new Vector2(frame.image.width, frame.image.height);
     this.setUniform("frame", frame);
+    this.setLineUniform("frame", frame);
     this.render();
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
     this.material.uniforms[name].value = value;
     this.pickMaterial.uniforms[name].value = value;
+  }
+
+  private setLineUniform<U extends keyof LineUniformTypes>(name: U, value: LineUniformTypes[U]): void {
+    this.lineMaterial.uniforms[name].value = value;
   }
 
   setColorRamp(ramp: ColorRamp): void {
