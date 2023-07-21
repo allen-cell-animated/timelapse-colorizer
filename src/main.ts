@@ -299,6 +299,7 @@ function updateURL(): void {
 const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
 async function drawLoop(): Promise<void> {
+  // TODO: Replace redundant code here.
   if (dataset && datasetOpen) {
     // update higlighted cell id if any
     if (selectedTrack) {
