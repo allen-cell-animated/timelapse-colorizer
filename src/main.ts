@@ -137,7 +137,7 @@ async function loadDataset(name: string): Promise<void> {
     featureName = dataset.featureNames[0];
   }
 
-  canv.setDataset(dataset);
+  await canv.setDataset(dataset);
   updateFeature(featureName);
   plot.setDataset(dataset);
   plot.removePlot();
@@ -267,12 +267,13 @@ async function handleFindTrack(): Promise<void> {
 async function findTrack(trackId: number): Promise<void> {
   const newTrack = dataset!.buildTrack(trackId);
 
-  if (newTrack.length() < 1) {
+  if (newTrack.times.length < 1) {
     // Check track validity
     return;
   }
   selectedTrack = newTrack;
   await canv.setFrame(selectedTrack.times[0]);
+  canv.setSelectedTrack(selectedTrack);
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
   trackInput.value = "" + trackId;
@@ -285,7 +286,7 @@ function resetTrackUI(): void {
 
 async function handleShowTrackPathChanged(): Promise<void> {
   canv.setShowTrackPath(showTrackPathCheckbox.checked);
-  drawLoop();
+  await drawLoop();
 }
 
 // URL STATE /////////////////////////////////////////////////////////////

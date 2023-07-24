@@ -250,16 +250,13 @@ export default class ColorizeCanvas {
   }
 
   setSelectedTrack(track: Track | null): void {
-    console.log("Setting track:");
-    console.log(track);
-    if (this.track?.trackId === track?.trackId) {
+    if (this.track && this.track?.trackId === track?.trackId) {
       return;
     }
     this.track = track;
     if (!track || !track.centroids || track.centroids.length === 0 || !this.frameResolution) {
       return;
     }
-
     // Make a new array of the centroid positions,
     // normalizing to screen space.
     // We need three floats per coordinate
@@ -270,13 +267,10 @@ export default class ColorizeCanvas {
       this.points[3 * i + 1] = -((track.centroids[i][1] / (4.0 * this.frameResolution.y)) * 2.0 - 1.0);
       this.points[3 * i + 2] = 0;
     }
-    console.log(this.frameResolution);
-    console.log(this.points);
     // Assign new BufferAttribute because the old array has been discarded.
     this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
     this.line.geometry.getAttribute("position").needsUpdate = true;
     this.updateTrackRange();
-    this.render();
   }
 
   setShowTrackPath(show: boolean): void {
