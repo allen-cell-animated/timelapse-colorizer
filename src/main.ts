@@ -250,16 +250,24 @@ function handleColorRampClick({ target }: MouseEvent): void {
   canv.render();
 }
 
+function getFeatureValue(id: number): number {
+  if (!featureName || !dataset) {
+    return -1;
+  }
+  // Look up feature value from id
+  return dataset.getFeatureData(featureName)?.data[id] || -1;
+}
+
 function onMouseMove(event: MouseEvent): void {
   if (!dataset) {
     return;
   }
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
   if (id === -1) {
-    // Keep last known good value
+    // Ignore background pixels
     return;
   }
-  const value = canv.getFeatureValue(id);
+  const value = getFeatureValue(id);
   const trackId = dataset.getTrackId(id);
   mouseTrackIdLabel.textContent = `Track ID: ${trackId}`;
   mouseFeatureValueLabel.textContent = `Feature: ${value}`;
