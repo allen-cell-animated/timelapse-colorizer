@@ -22,8 +22,8 @@ const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
 const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
-const mouseTrackIdLabel: HTMLParagraphElement = document.querySelector("#mouse_track_id")!;
-const mouseFeatureValueLabel: HTMLParagraphElement = document.querySelector("#mouse_feature_value")!;
+const mouseTrackIdLabel: HTMLParagraphElement = document.querySelector("#mouseTrackId")!;
+const mouseFeatureValueLabel: HTMLParagraphElement = document.querySelector("#mouseFeatureValue")!;
 
 const timeControls = new TimeControls(canv, drawLoop);
 const recordingControls = new RecordingControls(canv, drawLoop);
