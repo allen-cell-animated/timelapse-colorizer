@@ -314,4 +314,12 @@ export default class ColorizeCanvas {
     // offset by 1 since 0 is background.
     return value - 1;
   }
+
+  getFeatureValue(id: number): number {
+    if (!this.featureName || !this.dataset) {
+      return -1;
+    }
+    // Look up feature value from id
+    return this.dataset.getFeatureData(this.featureName)?.data[id] || -1;
+  }
 }

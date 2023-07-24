@@ -78,18 +78,26 @@ p {
       </div>
     </div>
     <div id="app"></div>
-    <div>Time (use arrow keys)
-      <p style="margin:2px;">
-        <button id="playBtn">Play</button>
-        <button id="pauseBtn">Pause</button>
-        <button id="backBtn">Back</button>
-        <button id="forwardBtn">Forward</button>
-        <input id="timeSlider" type="range" min="0" max="0" step="1" value="0"/><input type="number" id="timeValue" min="0" max="0" value="0"/>
-      </p>
-    </div>
-    <div>Find by track:
-      <input id="trackValue" type="number" value=""/>
-      <button id="findTrackBtn">Find</button>
+    <div style="display: flex; flex-direction: row; gap: 10px;">
+      <div>
+        <div>Time (use arrow keys)
+          <p style="margin:2px;">
+            <button id="playBtn">Play</button>
+            <button id="pauseBtn">Pause</button>
+            <button id="backBtn">Back</button>
+            <button id="forwardBtn">Forward</button>
+            <input id="timeSlider" type="range" min="0" max="0" step="1" value="0"/><input type="number" id="timeValue" min="0" max="0" value="0"/>
+          </p>
+        </div>
+        <div>Find by track:
+          <input id="trackValue" type="number" value=""/>
+          <button id="findTrackBtn">Find</button>
+        </div>
+      </div>
+      <div>
+        <p id="mouse_track_id">Track ID:</p>
+        <p id="mouse_feature_value">Feature:</p>
+      </div>
     </div>
     <div id="plot" style="width:600px;height:250px;"></div>
     <div id="recording_controls_container">

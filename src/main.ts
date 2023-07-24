@@ -22,6 +22,8 @@ const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
 const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
+const mouseTrackIdLabel: HTMLParagraphElement = document.querySelector("#mouse_track_id")!;
+const mouseFeatureValueLabel: HTMLParagraphElement = document.querySelector("#mouse_feature_value")!;
 
 const timeControls = new TimeControls(canv, drawLoop);
 const recordingControls = new RecordingControls(canv, drawLoop);
@@ -222,7 +224,6 @@ function updateColorRampRangeUI(): void {
 
 async function handleCanvasClick(event: MouseEvent): Promise<void> {
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-  console.log("clicked id " + id);
   // Reset track input
   resetTrackUI();
   if (id < 0) {
@@ -247,6 +248,27 @@ function handleColorRampClick({ target }: MouseEvent): void {
     }
   });
   canv.render();
+}
+
+function onMouseMove(event: MouseEvent): void {
+  if (!dataset) {
+    return;
+  }
+  const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+  if (id === -1) {
+    // Keep last known good value
+    return;
+  }
+  const value = canv.getFeatureValue(id);
+  const trackId = dataset.getTrackId(id);
+  mouseTrackIdLabel.textContent = `Track ID: ${trackId}`;
+  mouseFeatureValueLabel.textContent = `Feature: ${value}`;
+}
+
+function onMouseLeave(event: MouseEvent): void {
+  // Clear
+  mouseTrackIdLabel.textContent = `Track ID:`;
+  mouseFeatureValueLabel.textContent = `Feature:`;
 }
 
 // SCRUBBING CONTROLS ////////////////////////////////////////////////////
@@ -376,6 +398,8 @@ async function start(): Promise<void> {
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
   timeControls.addPauseListener(updateURL);
+  canv.domElement.addEventListener("mousemove", onMouseMove);
+  canv.domElement.addEventListener("mouseleave", onMouseLeave);
 }
 
 window.addEventListener("beforeunload", () => {
