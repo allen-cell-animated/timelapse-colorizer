@@ -3,7 +3,6 @@ import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import UrlUtility from "./colorizer/UrlUtility";
-import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
 const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 

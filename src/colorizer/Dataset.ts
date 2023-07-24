@@ -211,24 +211,6 @@ export default class Dataset {
     }, []) as number[];
   }
 
-  /**
-   * Converts a 1D array into a 2D array, where the elements are grouped into
-   * sub-arrays of a given width.
-   * @param arr Array of elements. Length must be divisible by `width`.
-   * @param width Width of the nested arrays in the returned 2D array.
-   * @returns Returns a new array where elements of the 1D array are nested
-   * in groups of width `width`.
-   * For example, if `width=3`, then
-   * the array [1, 2, 3, 4, 5, 6] will return [[1, 2, 3], [4, 5, 6]].
-   */
-  private arrayToMatrix(array: TypedArray, width: number): number[][] {
-    const ret: number[][] = [];
-    for (let i = 0; i < array.length; i = i + width) {
-      ret.push([...array.slice(i, i + width)]);
-    }
-    return ret;
-  }
-
   public buildTrack(trackId: number): Track {
     // if we don't have track info then return empty arrays
     if (!this.trackIds || !this.times) {
