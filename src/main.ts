@@ -2,10 +2,8 @@ import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
-import UrlUtility from "./colorizer/UrlUtility";
+import UrlUtility, { DEFAULT_DATASET_PATH } from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-
-const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
 const plot = new Plotting("plot");
 const canv = new ColorizeCanvas();
@@ -109,6 +107,8 @@ function setColorRampDisabled(disabled: boolean): void {
 
 // DATASET LOADING ///////////////////////////////////////////////////////
 
+let collection: string | null;
+let datasetNameToPath: { [key: string]: string } | null;
 let dataset: Dataset | null = null;
 let datasetName = "";
 let datasetOpen = false;
@@ -128,7 +128,7 @@ async function loadDataset(name: string): Promise<void> {
   }
 
   datasetName = name;
-  dataset = new Dataset(`${baseUrl}/${name}`);
+  dataset = new Dataset(`${DEFAULT_DATASET_PATH}/${name}`);
   await dataset.open();
   resetTrackUI();
 
@@ -285,7 +285,13 @@ function resetTrackUI(): void {
 
 // URL STATE /////////////////////////////////////////////////////////////
 function updateURL(): void {
-  UrlUtility.updateURL(datasetName, featureName, selectedTrack ? selectedTrack.trackId : null, canv.getCurrentFrame());
+  UrlUtility.updateURL(
+    null,
+    datasetName,
+    featureName,
+    selectedTrack ? selectedTrack.trackId : null,
+    canv.getCurrentFrame()
+  );
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
