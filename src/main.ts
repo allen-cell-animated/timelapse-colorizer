@@ -265,7 +265,7 @@ function onMouseMove(event: MouseEvent): void {
   mouseFeatureValueLabel.textContent = `Feature: ${value}`;
 }
 
-function onMouseLeave(event: MouseEvent): void {
+function onMouseLeave(_event: MouseEvent): void {
   // Clear
   mouseTrackIdLabel.textContent = `Track ID:`;
   mouseFeatureValueLabel.textContent = `Feature:`;
