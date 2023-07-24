@@ -2,7 +2,8 @@ export default class Track {
   public trackId: number;
   public times: number[];
   public ids: number[];
-  // Centroids must be packed as 2D array for sorting to work correctly
+  // Centroids must be packed as 2D array for sorting to work correctly in
+  // the constructor.
   public centroids: number[][] | undefined;
 
   constructor(trackId: number, times: number[], ids: number[], centroids?: number[][]) {

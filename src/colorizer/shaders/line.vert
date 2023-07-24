@@ -4,7 +4,8 @@ uniform highp usampler2D frame;
 uniform float aspect;
 
 void main() {
-    // Apply scale to account for 
+    // Apply scale to account for frame scaling in the canvas
+    // (copied from `colorize_RGBA8U.frag`)
     ivec2 frameDims = textureSize(frame, 0);
     float frameAspect = float(frameDims.x) / float(frameDims.y);
     vec2 scale = max(vec2(aspect / frameAspect, frameAspect / aspect), 1.0);

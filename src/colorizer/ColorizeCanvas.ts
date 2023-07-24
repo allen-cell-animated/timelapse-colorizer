@@ -32,7 +32,7 @@ import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
-const SELECTED_COLOR_DEFAULT = 0xff00ff; // ARGB
+const SELECTED_COLOR_DEFAULT = 0xff00ff;
 
 type ColorizeUniformTypes = {
   aspect: number;
@@ -155,6 +155,9 @@ export default class ColorizeCanvas {
 
     this.lineGeometry = new BufferGeometry();
     this.lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
+    // Line material has its own vertex + fragment shader because they're
+    // required to make sure they resize correctly with the frame. This is because
+    // the points are drawn in a relative canvas range [-1, 1] rather than the frame.
     this.lineMaterial = new ShaderMaterial({
       vertexShader: lineVertexShader,
       fragmentShader: lineFragmentShader,
@@ -278,10 +281,12 @@ export default class ColorizeCanvas {
   }
 
   /**
-   * Updates the range of the track path line based on the current frame.
+   * Updates the range of the track path line so that it shows up the path up to the current
+   * frame.
    */
   updateTrackRange(): void {
-    if (!this.track) {
+    // Do nothing if track doesn't exist or doesn't have centroid data
+    if (!this.track || !this.track.centroids) {
       return;
     }
     if (!this.showTrackPath) {
@@ -290,6 +295,7 @@ export default class ColorizeCanvas {
       return;
     }
     const trackFirstFrame = this.track.times[0];
+    // Clamp path to track length (don't draw non-existent vertices)
     const range = Math.min(this.currentFrame - trackFirstFrame, this.track.length());
     this.line.geometry.setDrawRange(0, range);
   }
