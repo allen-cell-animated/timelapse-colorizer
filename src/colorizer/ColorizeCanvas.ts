@@ -5,8 +5,6 @@ import {
   DataTexture,
   GLSL3,
   Line,
-  LineBasicMaterial,
-  Material,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
@@ -17,7 +15,6 @@ import {
   Uniform,
   UnsignedByteType,
   Vector2,
-  Vector3,
   WebGLRenderTarget,
   WebGLRenderer,
 } from "three";
@@ -36,7 +33,6 @@ import Track from "./Track";
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 const SELECTED_COLOR_DEFAULT = 0xff00ff; // ARGB
-export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
   aspect: number;
@@ -254,6 +250,8 @@ export default class ColorizeCanvas {
   }
 
   setSelectedTrack(track: Track | null): void {
+    console.log("Setting track:");
+    console.log(track);
     if (this.track?.trackId === track?.trackId) {
       return;
     }
@@ -264,7 +262,7 @@ export default class ColorizeCanvas {
 
     // Make a new array of the centroid positions,
     // normalizing to screen space.
-    // We need three floats per coordinates
+    // We need three floats per coordinate
     this.points = new Float32Array(track.centroids.length * 3);
     for (let i = 0; i < track.centroids.length; i++) {
       // Screen space is in [-1, 1] range.
@@ -300,6 +298,20 @@ export default class ColorizeCanvas {
     const trackFirstFrame = this.track.times[0];
     const range = Math.min(this.currentFrame - trackFirstFrame, this.track.length());
     this.line.geometry.setDrawRange(0, range);
+  }
+
+  private updateHighlightedId(): void {
+    // Get highlighted id
+    if (this.track) {
+      let id;
+      // Tracks of length 1 should not be offset by 1
+      if (this.track.length() === 1) {
+        id = this.track.getIdAtTime(this.currentFrame);
+      } else {
+        id = this.track.getIdAtTime(this.currentFrame) - 1;
+      }
+      this.setUniform("highlightedId", id);
+    }
   }
 
   setFeature(name: string): void {
@@ -400,11 +412,7 @@ export default class ColorizeCanvas {
   }
 
   render(): void {
-    // Get highlighted id
-    if (this.track) {
-      const id = this.track.getIdAtTime(this.currentFrame) - 1;
-      this.setUniform("highlightedId", id);
-    }
+    this.updateHighlightedId();
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
   }

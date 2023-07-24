@@ -31,6 +31,9 @@ export default class Track {
   }
 
   getIdAtTime(t: number): number {
+    if (this.times.length === 1 && this.times[0] === t) {
+      return this.ids[0];
+    }
     const index = this.times.findIndex((time) => time > t);
     if (index === -1) {
       return -1;
