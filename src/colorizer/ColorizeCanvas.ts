@@ -253,10 +253,6 @@ export default class ColorizeCanvas {
     this.setUniform("outlierColor", color);
   }
 
-  setHighlightedId(id: number): void {
-    this.setUniform("highlightedId", id);
-  }
-
   setSelectedTrack(track: Track | null): void {
     if (this.track?.trackId === track?.trackId) {
       return;
@@ -404,6 +400,11 @@ export default class ColorizeCanvas {
   }
 
   render(): void {
+    // Get highlighted id
+    if (this.track) {
+      const id = this.track.getIdAtTime(this.currentFrame) - 1;
+      this.setUniform("highlightedId", id);
+    }
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
   }
