@@ -98,12 +98,19 @@ export default class UrlUtility {
   }
 
   private static getBaseURL(input: string): string {
-    return input.substring(0, input.lastIndexOf("/") + 1);
+    return input.substring(0, input.lastIndexOf("/"));
   }
 
   public static getJsonFilename(input: string): string {
     const path = input.substring(0, input.lastIndexOf(".json"));
     return path.substring(path.lastIndexOf("/"));
+  }
+
+  public static trimTrailingSlash(input: string): string {
+    if (input.charAt(input.length - 1) === "/") {
+      return input.slice(0, input.length - 1);
+    }
+    return input;
   }
 
   /**
@@ -206,7 +213,8 @@ export default class UrlUtility {
         collectionParam = DEFAULT_COLLECTION_PATH;
       }
       // collection param can either be a .json file or a directory URL, so strip out the base directory
-      const collectionBasePath = this.isJson(collectionParam) ? this.getBaseURL(collectionParam) : collectionParam;
+      let collectionBasePath = this.isJson(collectionParam) ? this.getBaseURL(collectionParam) : collectionParam;
+      collectionBasePath = this.trimTrailingSlash(collectionBasePath);
       // Dataset parameter is a name, so fetch the entry data (including relative path) from the collection metadata.
       const datasetEntry = collectionData.get(datasetParam);
 

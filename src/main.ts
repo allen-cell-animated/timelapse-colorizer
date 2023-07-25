@@ -2,7 +2,13 @@ import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
-import UrlUtility, { CollectionEntry, DEFAULT_DATASET_NAME, DEFAULT_DATASET_PATH } from "./colorizer/UrlUtility";
+import UrlUtility, {
+  CollectionEntry,
+  DEFAULT_COLLECTION_FILENAME,
+  DEFAULT_COLLECTION_PATH,
+  DEFAULT_DATASET_NAME,
+  DEFAULT_DATASET_PATH,
+} from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
 const plot = new Plotting("plot");
@@ -287,7 +293,7 @@ function resetTrackUI(): void {
 // URL STATE /////////////////////////////////////////////////////////////
 function updateURL(): void {
   UrlUtility.updateURL(
-    null,
+    collection,
     datasetName,
     featureName,
     selectedTrack ? selectedTrack.trackId : null,
@@ -354,7 +360,15 @@ async function start(): Promise<void> {
     datasetSelectEl.value = params.dataset;
   } else {
     // Collect collections metadata and populate the dataset selector.
-    collection = params.collection;
+    collection = params.collection ? UrlUtility.trimTrailingSlash(params.collection) : null;
+    if (
+      collection === DEFAULT_COLLECTION_PATH ||
+      collection === DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
+    ) {
+      // Set collection to null if it matches the default collections directory.
+      collection = null;
+    }
+
     collectionData = await UrlUtility.getCollectionData(params.collection);
     if (!collectionData) {
       console.warn(`Could not populate collection data: no valid data at '${collection}'.`);
