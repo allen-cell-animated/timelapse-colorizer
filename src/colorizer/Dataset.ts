@@ -25,7 +25,6 @@ export type FeatureData = {
 };
 
 const MAX_CACHED_FRAMES = 60;
-const MANIFEST_FILENAME = "manifest.json";
 
 export default class Dataset {
   private frameLoader: IFrameLoader;
@@ -45,10 +44,18 @@ export default class Dataset {
   public times?: Uint32Array;
 
   public baseUrl: string;
+  public manifestUrl: string;
   private hasOpened: boolean;
 
-  constructor(baseUrl: string, frameLoader?: IFrameLoader, arrayLoader?: IArrayLoader) {
-    this.baseUrl = baseUrl;
+  /**
+   *
+   * @param manifestUrl Must be a path to a .json manifest file.
+   * @param frameLoader
+   * @param arrayLoader
+   */
+  constructor(manifestUrl: string, frameLoader?: IFrameLoader, arrayLoader?: IArrayLoader) {
+    this.manifestUrl = manifestUrl;
+    this.baseUrl = manifestUrl.substring(0, manifestUrl.lastIndexOf("/"));
     if (this.baseUrl.endsWith("/")) {
       this.baseUrl = this.baseUrl.slice(0, this.baseUrl.length - 1);
     }
@@ -66,7 +73,7 @@ export default class Dataset {
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
   private async fetchManifest(): Promise<DatasetManifest> {
-    const response = await fetch(this.resolveUrl(MANIFEST_FILENAME));
+    const response = await fetch(this.manifestUrl);
     return await response.json();
   }
 

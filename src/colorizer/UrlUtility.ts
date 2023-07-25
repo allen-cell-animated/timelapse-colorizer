@@ -4,19 +4,20 @@ const URL_PARAM_FEATURE = "feature";
 const URL_PARAM_TIME = "t";
 const URL_PARAM_COLLECTION = "collection";
 
-export const DEFAULT_DATASET_PATH = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
+export const DEFAULT_DATASET_PATH = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data/";
 export const DEFAULT_COLLECTION_PATH = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
 
 /**
  * Default name for the manifest JSON, which provides relative filepaths
  * to the elements (frames, feature data, centroids, etc.) of this dataset.
  */
-export const DEFAULT_MANIFEST_NAME = "manifest.json";
+export const DEFAULT_DATASET_FILENAME = "manifest.json";
 /**
  * Default name for a collection descriptor JSON, which provides relative
  * filepaths to one or more datasets.
  */
 export const DEFAULT_COLLECTION_FILENAME = "collection.json";
+export const DEFAULT_DATASET_NAME = "Mama Bear";
 
 type LoadedUrlParams = {
   collection: string | null;
@@ -26,7 +27,7 @@ type LoadedUrlParams = {
   time: number;
 };
 
-type CollectionEntry = {
+export type CollectionEntry = {
   path: string;
   name: string;
 };
@@ -92,6 +93,19 @@ export default class UrlUtility {
     return input === null ? null : decodeURIComponent(input);
   }
 
+  private static isJson(input: string): boolean {
+    return /.json$/.test(input);
+  }
+
+  private static getBaseURL(input: string): string {
+    return input.substring(0, input.lastIndexOf("/") + 1);
+  }
+
+  public static getJsonFilename(input: string): string {
+    const path = input.substring(0, input.lastIndexOf(".json"));
+    return path.substring(path.lastIndexOf("/"));
+  }
+
   /**
    * Loads parameters from the current window URL.
    * @returns An object with a dataset, feature, track, and time parameters.
@@ -122,25 +136,98 @@ export default class UrlUtility {
 
   /**
    * Gets the list of datasets within a provided collection.
-   * @param collectionParam If collection is null, uses the default dataset location (`DEFAULT_DATASET_PATH`).
-   * If collection includes a .json file suffix, attempts to read the URL directly as a collection JSON.
+   * @param collectionParam If collection includes a .json file suffix, attempts to read the URL directly as a collection JSON.
    * Otherwise, attempts to load the collection data using the default collection filename
    * (`DEFAULT_COLLECTION_NAME`, `collection.json`).
-   * @returns a list of `CollectionEntry` objects. The list will empty if no data could be loaded.
+   * If collection is null, uses the default dataset location (`DEFAULT_DATASET_PATH`).
+   * @returns a map of string dataset names to their corresponding `CollectionEntry` objects.
+   * The return value will be null if the fetch failed for any reason.
    */
-  public static async getCollectionData(collectionParam: string | null): Promise<CollectionEntry[]> {
-    let collectionUrl = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
-
-    // If collection URL ends in a .json, use directly, otherwise append the default filename.
+  public static async getCollectionData(collectionParam: string | null): Promise<Map<string, CollectionEntry> | null> {
+    // If collection URL ends in a .json use it directly, otherwise append the default filename.
+    let collectionUrl;
     if (collectionParam) {
-      if (/.json$/.test(collectionParam)) {
+      if (UrlUtility.isJson(collectionParam)) {
         collectionUrl = collectionParam;
       } else {
         collectionUrl = collectionParam + "/" + DEFAULT_COLLECTION_FILENAME;
       }
+    } else {
+      collectionUrl = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
     }
 
     const response = await fetch(collectionUrl);
-    return await response.json();
+    if (!response.ok) {
+      return null;
+    }
+
+    const json = await response.json();
+    if (!Array.isArray(json)) {
+      return null;
+    }
+
+    // Convert JSON array into map
+    const datasetNameToData: Map<string, CollectionEntry> = new Map();
+    for (const entry of json) {
+      datasetNameToData.set(entry.name, entry);
+    }
+    return datasetNameToData;
+  }
+
+  /**
+   * Get a URL to the manifest of a dataset.
+   * @param datasetParam
+   * @param collectionData
+   * @returns
+   */
+  public static getDatasetPath(
+    datasetParam: string | null,
+    collectionParam: string | null,
+    collectionData: Map<string, CollectionEntry> | null
+  ): string {
+    if (!datasetParam) {
+      console.log(`No dataset parameter provided. Using default dataset path and filename.`);
+      return DEFAULT_DATASET_PATH + "/" + DEFAULT_DATASET_FILENAME;
+    }
+
+    console.log(datasetParam);
+    console.log(collectionParam);
+    console.log(collectionData);
+
+    // CASE 1: Dataset URL
+    // Add default manifest filename if URL is a directory and not a JSON
+    if (this.isUrl(datasetParam)) {
+      return this.isJson(datasetParam) ? datasetParam : datasetParam + "/" + DEFAULT_DATASET_FILENAME;
+    }
+    // CASE 2: Collection URL + dataset name
+    // Collection must be a non-empty map
+    if (collectionData && collectionData.size > 0) {
+      if (!collectionParam) {
+        collectionParam = DEFAULT_COLLECTION_PATH;
+      }
+      // collection param can either be a .json file or a directory URL, so strip out the base directory
+      const collectionBasePath = this.isJson(collectionParam) ? this.getBaseURL(collectionParam) : collectionParam;
+      // Dataset parameter is a name, so fetch the entry data (including relative path) from the collection metadata.
+      const datasetEntry = collectionData.get(datasetParam);
+
+      if (datasetParam === null || !datasetEntry) {
+        // Can't find the dataset in the collection, so return the first dataset in the map
+        const firstKey = Array.from(collectionData.keys())[0];
+        console.log(
+          `Couldn't find dataset '${datasetParam}' in collection at '${collectionBasePath}'. Defaulting to '${firstKey}'.`
+        );
+        return collectionBasePath + "/" + collectionData.get(firstKey)?.path + "/" + DEFAULT_DATASET_FILENAME;
+      }
+
+      // We have this dataset in the collection
+      // Get relative filepath to the manifest
+      const datasetPath = datasetEntry.path;
+      const manifestPath = UrlUtility.isJson(datasetPath) ? datasetPath : datasetPath + "/" + DEFAULT_DATASET_FILENAME;
+      return collectionBasePath + "/" + manifestPath;
+    }
+    // CASE 3: Dataset name only
+    // Use default collection
+    // TODO: ???
+    return "";
   }
 }

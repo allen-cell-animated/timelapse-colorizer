@@ -2,7 +2,7 @@ import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
-import UrlUtility, { DEFAULT_DATASET_PATH } from "./colorizer/UrlUtility";
+import UrlUtility, { CollectionEntry, DEFAULT_DATASET_NAME, DEFAULT_DATASET_PATH } from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
 const plot = new Plotting("plot");
@@ -108,14 +108,12 @@ function setColorRampDisabled(disabled: boolean): void {
 // DATASET LOADING ///////////////////////////////////////////////////////
 
 let collection: string | null;
-let datasetNameToPath: { [key: string]: string } | null;
+let collectionData: Map<string, CollectionEntry> | null;
 let dataset: Dataset | null = null;
 let datasetName = "";
 let datasetOpen = false;
 let featureName = "";
 let selectedTrack: Track | null = null;
-// TODO: Get the first dataset in a manifest JSON?
-const DEFAULT_DATASET = "mama_bear";
 
 async function loadDataset(name: string): Promise<void> {
   console.time("loadDataset");
@@ -128,7 +126,10 @@ async function loadDataset(name: string): Promise<void> {
   }
 
   datasetName = name;
-  dataset = new Dataset(`${DEFAULT_DATASET_PATH}/${name}`);
+  const datasetPath = UrlUtility.getDatasetPath(name, collection, collectionData);
+  datasetSelectEl.value = name;
+  console.log(datasetPath);
+  dataset = new Dataset(datasetPath);
   await dataset.open();
   resetTrackUI();
 
@@ -341,29 +342,55 @@ async function start(): Promise<void> {
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
   // Set dataset if provided
-  const { dataset, feature, track, time } = UrlUtility.loadParamsFromUrl();
-  if (dataset) {
+  const params = UrlUtility.loadParamsFromUrl();
+
+  if (params.dataset && UrlUtility.isUrl(params.dataset)) {
+    // If dataset URL is provided, do not collect collections data.
+    const datasetName = UrlUtility.getJsonFilename(params.dataset);
+    console.log(datasetName);
+    // Show current dataset and disable selector
+    const option = new Option(params.dataset);
+    datasetSelectEl.appendChild(option);
+    datasetSelectEl.value = params.dataset;
+  } else {
+    // Collect collections metadata and populate the dataset selector.
+    collection = params.collection;
+    collectionData = await UrlUtility.getCollectionData(params.collection);
+    if (!collectionData) {
+      console.warn(`Could not populate collection data: no valid data at '${collection}'.`);
+      datasetSelectEl.disabled = true;
+      return;
+    } else {
+      // Update list of datasets available
+      for (const key of collectionData.keys()) {
+        const option = new Option(key, key);
+        datasetSelectEl.appendChild(option);
+      }
+    }
+  }
+  if (params.dataset) {
     try {
-      await loadDataset(dataset);
-      datasetSelectEl.value = dataset;
+      await loadDataset(params.dataset);
     } catch (e) {
-      console.log(`Encountered error while loading dataset '${dataset}'. Defaulting to ${DEFAULT_DATASET}`);
-      await loadDataset(DEFAULT_DATASET);
+      console.warn(
+        `Encountered error while loading dataset '${params.dataset}'. Defaulting to ${DEFAULT_DATASET_NAME}`
+      );
+      await loadDataset(DEFAULT_DATASET_NAME);
     }
   } else {
-    await loadDataset(DEFAULT_DATASET);
+    await loadDataset(DEFAULT_DATASET_NAME);
   }
-  if (feature) {
+  if (params.feature) {
     // Load feature (if unset, do nothing because loadDataset already loads a default)
-    await updateFeature(feature);
+    await updateFeature(params.feature);
   }
-  if (track >= 0) {
+  if (params.track >= 0) {
     // Seek to the track ID
-    await findTrack(track);
+    await findTrack(params.track);
   }
-  if (time >= 0) {
+  if (params.time >= 0) {
     // Load time (if unset, defaults to track time or default t=0)
-    await canv.setFrame(time);
+    await canv.setFrame(params.time);
     timeControls.updateUI();
   }
   await drawLoop(); // Force redraw to show the new frame
