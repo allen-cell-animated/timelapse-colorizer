@@ -7,7 +7,6 @@ import UrlUtility, {
   DEFAULT_COLLECTION_FILENAME,
   DEFAULT_COLLECTION_PATH,
   DEFAULT_DATASET_NAME,
-  DEFAULT_DATASET_PATH,
 } from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
@@ -124,19 +123,37 @@ let selectedTrack: Track | null = null;
 async function loadDataset(name: string): Promise<void> {
   console.time("loadDataset");
   datasetOpen = false;
+  const hasLastDataset: boolean = dataset !== null;
+  const lastDataset = datasetName;
   datasetSelectEl.disabled = true;
   featureSelectEl.disabled = true;
 
   if (dataset !== null) {
     dataset.dispose();
   }
+  if (collectionData && !collectionData.has(name)) {
+    // Collection does not include the provided dataset name,
+    // so default to the first dataset in the collection.
+    console.warn(`Collection does not include '${name}' as a dataset. Defaulting to first dataset in collection.`);
+    name = Array.from(collectionData.keys())[0];
+  }
 
   datasetName = name;
   const datasetPath = UrlUtility.getDatasetPath(name, collection, collectionData);
   datasetSelectEl.value = name;
   console.log(datasetPath);
-  dataset = new Dataset(datasetPath);
-  await dataset.open();
+  try {
+    dataset = new Dataset(datasetPath);
+    await dataset.open();
+  } catch (e) {
+    console.error(`Could not load dataset '${name}': ${e}`);
+    console.timeEnd("loadDataset");
+    if (hasLastDataset) {
+      // Re-load last dataset instead of this one
+      await loadDataset(lastDataset);
+    }
+    return;
+  }
   resetTrackUI();
 
   // Only change the feature if there's no equivalent in the new dataset
@@ -347,25 +364,21 @@ async function start(): Promise<void> {
   populateColorRampSelect();
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
-  // Set dataset if provided
   const params = UrlUtility.loadParamsFromUrl();
 
+  // Handle collections metadata
   if (params.dataset && UrlUtility.isUrl(params.dataset)) {
-    // If dataset URL is provided, do not collect collections data.
-    const datasetName = UrlUtility.getJsonFilename(params.dataset);
-    console.log(datasetName);
-    // Show current dataset and disable selector
+    // If dataset URL is provided, do not collect collections data, and add
+    // the URL directly to the selector.
     const option = new Option(params.dataset);
     datasetSelectEl.appendChild(option);
     datasetSelectEl.value = params.dataset;
   } else {
-    // Collect collections metadata and populate the dataset selector.
-    collection = params.collection ? UrlUtility.trimTrailingSlash(params.collection) : null;
-    if (
-      collection === DEFAULT_COLLECTION_PATH ||
-      collection === DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
-    ) {
-      // Set collection to null if it matches the default collections directory.
+    // Format collection if non-null
+    collection = params.collection && UrlUtility.trimTrailingSlash(params.collection);
+    // Ignore collection URLs that match the default.
+    const defaultFullPath = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
+    if (collection === DEFAULT_COLLECTION_PATH || collection === defaultFullPath) {
       collection = null;
     }
 
@@ -373,7 +386,7 @@ async function start(): Promise<void> {
     if (!collectionData) {
       console.warn(`Could not populate collection data: no valid data at '${collection}'.`);
       datasetSelectEl.disabled = true;
-      return;
+      return; // disables the UI entirely because no initialization is done.
     } else {
       // Update list of datasets available
       for (const key of collectionData.keys()) {
@@ -382,6 +395,7 @@ async function start(): Promise<void> {
       }
     }
   }
+  // Load dataset
   if (params.dataset) {
     try {
       await loadDataset(params.dataset);
