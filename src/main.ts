@@ -2,11 +2,17 @@ import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
-import UrlUtility, {
+import {
   CollectionEntry,
   DEFAULT_COLLECTION_FILENAME,
   DEFAULT_COLLECTION_PATH,
   DEFAULT_DATASET_NAME,
+  getCollectionData,
+  getDatasetPath,
+  isUrl,
+  loadParamsFromUrl,
+  trimTrailingSlash,
+  updateURL,
 } from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
@@ -123,7 +129,7 @@ let selectedTrack: Track | null = null;
 async function loadDataset(name: string): Promise<void> {
   console.time("loadDataset");
   datasetOpen = false;
-  const hasLastDataset: boolean = dataset !== null;
+  const hasLoadedOtherDataset: boolean = dataset !== null && datasetName !== name;
   const lastDataset = datasetName;
   datasetSelectEl.disabled = true;
   featureSelectEl.disabled = true;
@@ -131,6 +137,7 @@ async function loadDataset(name: string): Promise<void> {
   if (dataset !== null) {
     dataset.dispose();
   }
+
   if (collectionData && !collectionData.has(name)) {
     // Collection does not include the provided dataset name,
     // so default to the first dataset in the collection.
@@ -139,16 +146,17 @@ async function loadDataset(name: string): Promise<void> {
   }
 
   datasetName = name;
-  const datasetPath = UrlUtility.getDatasetPath(name, collection, collectionData);
   datasetSelectEl.value = name;
-  console.log(datasetPath);
   try {
+    const datasetPath = getDatasetPath(name, collection, collectionData);
+    console.log(datasetPath);
     dataset = new Dataset(datasetPath);
     await dataset.open();
   } catch (e) {
     console.error(`Could not load dataset '${name}': ${e}`);
+    console.warn(`Reloading dataset '${lastDataset}' instead.`);
     console.timeEnd("loadDataset");
-    if (hasLastDataset) {
+    if (hasLoadedOtherDataset) {
       // Re-load last dataset instead of this one
       await loadDataset(lastDataset);
     }
@@ -174,7 +182,7 @@ async function loadDataset(name: string): Promise<void> {
   featureSelectEl.disabled = false;
 
   await drawLoop();
-  updateURL();
+  copyPropertiesToUrl();
   console.timeEnd("loadDataset");
 }
 
@@ -206,7 +214,7 @@ async function updateFeature(newFeatureName: string): Promise<void> {
   }
   updateColorRampRangeUI();
   featureSelectEl.value = featureName;
-  updateURL();
+  copyPropertiesToUrl();
 }
 
 function handleHideOutOfRangeCheckboxChange(): void {
@@ -258,7 +266,7 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
   await drawLoop();
-  updateURL();
+  copyPropertiesToUrl();
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -300,7 +308,7 @@ async function findTrack(trackId: number): Promise<void> {
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
   trackInput.value = "" + trackId;
-  updateURL();
+  copyPropertiesToUrl();
 }
 
 function resetTrackUI(): void {
@@ -308,14 +316,8 @@ function resetTrackUI(): void {
 }
 
 // URL STATE /////////////////////////////////////////////////////////////
-function updateURL(): void {
-  UrlUtility.updateURL(
-    collection,
-    datasetName,
-    featureName,
-    selectedTrack ? selectedTrack.trackId : null,
-    canv.getCurrentFrame()
-  );
+function copyPropertiesToUrl(): void {
+  updateURL(collection, datasetName, featureName, selectedTrack ? selectedTrack.trackId : null, canv.getCurrentFrame());
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -355,7 +357,7 @@ async function drawLoop(): Promise<void> {
 
   if (!timeControls.isPlaying()) {
     // Do not update URL while playing for performance + UX reasons
-    updateURL();
+    copyPropertiesToUrl();
   }
 }
 
@@ -364,10 +366,10 @@ async function start(): Promise<void> {
   populateColorRampSelect();
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
-  const params = UrlUtility.loadParamsFromUrl();
+  const params = loadParamsFromUrl();
 
   // Handle collections metadata
-  if (params.dataset && UrlUtility.isUrl(params.dataset)) {
+  if (params.dataset && isUrl(params.dataset)) {
     // If dataset URL is provided, do not collect collections data, and add
     // the URL directly to the selector.
     const option = new Option(params.dataset);
@@ -375,14 +377,14 @@ async function start(): Promise<void> {
     datasetSelectEl.value = params.dataset;
   } else {
     // Format collection if non-null
-    collection = params.collection && UrlUtility.trimTrailingSlash(params.collection);
+    collection = params.collection && trimTrailingSlash(params.collection);
     // Ignore collection URLs that match the default.
     const defaultFullPath = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
     if (collection === DEFAULT_COLLECTION_PATH || collection === defaultFullPath) {
       collection = null;
     }
 
-    collectionData = await UrlUtility.getCollectionData(params.collection);
+    collectionData = await getCollectionData(params.collection);
     if (!collectionData) {
       console.warn(`Could not populate collection data: no valid data at '${collection}'.`);
       datasetSelectEl.disabled = true;
@@ -436,7 +438,7 @@ async function start(): Promise<void> {
   hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
-  timeControls.addPauseListener(updateURL);
+  timeControls.addPauseListener(copyPropertiesToUrl);
 }
 
 window.addEventListener("beforeunload", () => {
