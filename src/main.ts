@@ -11,7 +11,7 @@ import {
   getDatasetPathFromCollection,
   isUrl,
   loadParamsFromUrl,
-  updateURL,
+  saveParamsToUrl,
   getDatasetPath,
 } from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
@@ -189,7 +189,7 @@ async function loadDataset(name: string): Promise<void> {
   featureSelectEl.disabled = false;
 
   await drawLoop();
-  copyPropertiesToUrl();
+  updateUrl();
   console.timeEnd("loadDataset");
 }
 
@@ -221,7 +221,7 @@ async function updateFeature(newFeatureName: string): Promise<void> {
   }
   updateColorRampRangeUI();
   featureSelectEl.value = featureName;
-  copyPropertiesToUrl();
+  updateUrl();
 }
 
 function handleHideOutOfRangeCheckboxChange(): void {
@@ -273,7 +273,7 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
   await drawLoop();
-  copyPropertiesToUrl();
+  updateUrl();
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -315,7 +315,7 @@ async function findTrack(trackId: number): Promise<void> {
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
   trackInput.value = "" + trackId;
-  copyPropertiesToUrl();
+  updateUrl();
 }
 
 function resetTrackUI(): void {
@@ -323,7 +323,7 @@ function resetTrackUI(): void {
 }
 
 // URL STATE /////////////////////////////////////////////////////////////
-function copyPropertiesToUrl(): void {
+function updateUrl(): void {
   // Don't include collection parameter in URL if it matches the default.
   let collectionParam;
   if (
@@ -335,7 +335,7 @@ function copyPropertiesToUrl(): void {
     collectionParam = collection;
   }
 
-  updateURL(
+  saveParamsToUrl(
     collectionParam,
     datasetName,
     featureName,
@@ -381,7 +381,7 @@ async function drawLoop(): Promise<void> {
 
   if (!timeControls.isPlaying()) {
     // Do not update URL while playing for performance + UX reasons
-    copyPropertiesToUrl();
+    updateUrl();
   }
 }
 
@@ -462,7 +462,7 @@ async function start(): Promise<void> {
   hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
-  timeControls.addPauseListener(copyPropertiesToUrl);
+  timeControls.addPauseListener(updateUrl);
 }
 
 window.addEventListener("beforeunload", () => {

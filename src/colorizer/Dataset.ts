@@ -49,10 +49,10 @@ export default class Dataset {
   private hasOpened: boolean;
 
   /**
-   *
+   * Constructs a new Dataset using the provided manifest path.
    * @param manifestUrl Must be a path to a .json manifest file.
-   * @param frameLoader
-   * @param arrayLoader
+   * @param frameLoader Optional.
+   * @param arrayLoader Optional.
    */
   constructor(manifestUrl: string, frameLoader?: IFrameLoader, arrayLoader?: IArrayLoader) {
     this.manifestUrl = manifestUrl;

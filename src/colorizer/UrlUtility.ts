@@ -60,7 +60,7 @@ export function fetchWithTimeout(
  * @param track integer track number.
  * @param time integer frame number. Ignores values where `time <= 0`.
  */
-export function updateURL(
+export function saveParamsToUrl(
   collection: string | null,
   dataset: string | null,
   feature: string | null,
@@ -115,7 +115,7 @@ function isJson(input: string): boolean {
   return /.json$/.test(input);
 }
 
-function getBaseURL(input: string): string {
+function getBaseUrl(input: string): string {
   return input.substring(0, input.lastIndexOf("/"));
 }
 
@@ -206,10 +206,13 @@ export async function getCollectionData(collectionParam: string | null): Promise
 }
 
 /**
- * Returns
- * @param datasetParam
+ * Gets the path to the manifest JSON of a dataset.
+ * @param datasetParam a string URL, either to a .json file or the directory of a `manifest.json` file.
+ * @returns Returns a formatted version of `datasetParam` (no whitespace, trailing slashes removed) if
+ * it is a path to a `.json` file; otherwise, appends the `DEFAULT_DATASET_FILENAME` to it.
  */
 export function getDatasetPath(datasetParam: string): string {
+  datasetParam = formatUrl(datasetParam);
   if (!isUrl(datasetParam)) {
     throw new Error(`Cannot fetch dataset '${datasetParam}' because it is not a URL.`);
   }
@@ -217,11 +220,15 @@ export function getDatasetPath(datasetParam: string): string {
 }
 
 /**
- * Gets a URL or resource path to the manifest JSON of a dataset.
- * @param datasetParam A string URL or dataset name. If no
- * @param collectionParam
- * @param collectionData
- * @returns
+ * Gets a URL/path to the manifest JSON of a dataset, using a collection.
+ * @param datasetParam A string dataset name.
+ * @param collectionParam A string parameter describing either the directory of the collection or the path to
+ * its `.json` collection file.
+ * @param collectionData A map with string keys representing database names, mapping to their stored entry data.
+ * (See `CollectionEntry`.)
+ * @throws an error if `collectionData` is empty.
+ * @returns A string url/path to a dataset JSON manifest file. If the dataset does not exist in the collection,
+ * defaults to the first dataset in the collection.
  */
 export function getDatasetPathFromCollection(
   datasetParam: string,
@@ -236,7 +243,7 @@ export function getDatasetPathFromCollection(
   }
 
   // collection param can either be a .json file or a directory URL, so get the base directory
-  let collectionBasePath = isJson(collectionParam) ? getBaseURL(collectionParam) : collectionParam;
+  let collectionBasePath = isJson(collectionParam) ? getBaseUrl(collectionParam) : collectionParam;
   collectionBasePath = formatUrl(collectionBasePath);
 
   // Dataset parameter is a name, so fetch the entry data (including relative path) from the collection metadata.
