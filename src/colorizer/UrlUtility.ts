@@ -31,6 +31,26 @@ export type CollectionEntry = {
   name: string;
 };
 
+export const DEFAULT_FETCH_TIMEOUT_MS = 5000;
+
+/**
+ * Initiates a fetch request with a given timeout, returning a promise that will reject if the timeout is reached.
+ * @param url fetch request URL
+ * @param timeoutMs timeout before the request should fail, in milliseconds. Defaults to `DEFAULT_FETCH_TIMEOUT_MS`.
+ * @param options additional
+ * @returns a Response promise, as returned by `fetch(url, options)`. The promise will reject if the timeout is exceeded.
+ */
+export function fetchWithTimeout(
+  url: string | URL | RequestInfo,
+  timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS,
+  options?: RequestInit
+): Promise<Response> {
+  const controller = new AbortController();
+  const signal = controller.signal;
+  setTimeout(controller.abort, timeoutMs);
+  return fetch(url, { signal, ...options });
+}
+
 /**
  * Updates the current URL path of the webpage. If any parameter value is null, it will not be
  * included. String are encoded via `encodeURIComponent()`.
@@ -158,7 +178,7 @@ export async function getCollectionData(collectionParam: string | null): Promise
 
   let response;
   try {
-    response = await fetch(collectionUrl);
+    response = await fetchWithTimeout(collectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
   } catch (e) {
     console.error("Could not retrieve collections JSON data. Received the following error:");
     console.error(e);

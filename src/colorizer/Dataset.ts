@@ -8,6 +8,7 @@ import FrameCache from "./FrameCache";
 import Track from "./Track";
 
 import { FeatureDataType } from "./types";
+import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } from "./UrlUtility";
 
 type DatasetManifest = {
   frames: string[];
@@ -73,7 +74,7 @@ export default class Dataset {
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
   private async fetchManifest(): Promise<DatasetManifest> {
-    const response = await fetch(this.manifestUrl);
+    const response = await fetchWithTimeout(this.manifestUrl, DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
   }
 
