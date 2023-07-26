@@ -8,11 +8,11 @@ import {
   DEFAULT_COLLECTION_PATH,
   DEFAULT_DATASET_NAME,
   getCollectionData,
-  getDatasetPath,
+  getDatasetPathFromCollection,
   isUrl,
   loadParamsFromUrl,
-  trimTrailingSlash,
   updateURL,
+  getDatasetPath,
 } from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
@@ -118,8 +118,8 @@ function setColorRampDisabled(disabled: boolean): void {
 
 // DATASET LOADING ///////////////////////////////////////////////////////
 
-let collection: string | null;
-let collectionData: Map<string, CollectionEntry> | null;
+let collection: string;
+let collectionData: Map<string, CollectionEntry>;
 let dataset: Dataset | null = null;
 let datasetName = "";
 let datasetOpen = false;
@@ -148,12 +148,19 @@ async function loadDataset(name: string): Promise<void> {
   datasetName = name;
   datasetSelectEl.value = name;
   try {
-    const datasetPath = getDatasetPath(name, collection, collectionData);
-    console.log(datasetPath);
+    let datasetPath;
+    if (isUrl(name)) {
+      datasetPath = getDatasetPath(name);
+    } else {
+      datasetPath = getDatasetPathFromCollection(name, collection, collectionData);
+    }
+
+    console.log(`Fetching dataset from path '${datasetPath}'`);
     dataset = new Dataset(datasetPath);
     await dataset.open();
   } catch (e) {
-    console.error(`Could not load dataset '${name}': ${e}`);
+    console.error(e);
+    console.error(`Could not load dataset '${name}'.`);
     console.warn(`Reloading dataset '${lastDataset}' instead.`);
     console.timeEnd("loadDataset");
     if (hasLoadedOtherDataset) {
@@ -317,7 +324,24 @@ function resetTrackUI(): void {
 
 // URL STATE /////////////////////////////////////////////////////////////
 function copyPropertiesToUrl(): void {
-  updateURL(collection, datasetName, featureName, selectedTrack ? selectedTrack.trackId : null, canv.getCurrentFrame());
+  // Don't include collection parameter in URL if it matches the default.
+  let collectionParam;
+  if (
+    collection === DEFAULT_COLLECTION_PATH ||
+    collection === DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
+  ) {
+    collectionParam = null;
+  } else {
+    collectionParam = collection;
+  }
+
+  updateURL(
+    collectionParam,
+    datasetName,
+    featureName,
+    selectedTrack ? selectedTrack.trackId : null,
+    canv.getCurrentFrame()
+  );
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -368,35 +392,35 @@ async function start(): Promise<void> {
 
   const params = loadParamsFromUrl();
 
-  // Handle collections metadata
   if (params.dataset && isUrl(params.dataset)) {
+    // CASE 1: Dataset parameter is a URL
     // If dataset URL is provided, do not collect collections data, and add
     // the URL directly to the selector.
     const option = new Option(params.dataset);
     datasetSelectEl.appendChild(option);
     datasetSelectEl.value = params.dataset;
   } else {
-    // Format collection if non-null
-    collection = params.collection && trimTrailingSlash(params.collection);
-    // Ignore collection URLs that match the default.
-    const defaultFullPath = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
-    if (collection === DEFAULT_COLLECTION_PATH || collection === defaultFullPath) {
-      collection = null;
-    }
+    // CASE 2: Dataset parameter is not a URL
+    // Set default collection value
+    collection = params.collection || DEFAULT_COLLECTION_PATH;
 
-    collectionData = await getCollectionData(params.collection);
-    if (!collectionData) {
-      console.warn(`Could not populate collection data: no valid data at '${collection}'.`);
+    let collectionResults;
+    try {
+      collectionResults = await getCollectionData(params.collection);
+    } catch (e) {
+      console.error(e);
       datasetSelectEl.disabled = true;
       return; // disables the UI entirely because no initialization is done.
-    } else {
-      // Update list of datasets available
-      for (const key of collectionData.keys()) {
-        const option = new Option(key, key);
-        datasetSelectEl.appendChild(option);
-      }
+    }
+
+    collectionData = collectionResults;
+    // Update list of datasets available
+    for (const key of collectionData.keys()) {
+      const option = new Option(key, key);
+      datasetSelectEl.appendChild(option);
     }
   }
+
   // Load dataset
   if (params.dataset) {
     try {

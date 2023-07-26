@@ -41,9 +41,9 @@ export const DEFAULT_FETCH_TIMEOUT_MS = 5000;
  * @returns a Response promise, as returned by `fetch(url, options)`. The promise will reject if the timeout is exceeded.
  */
 export function fetchWithTimeout(
-  url: string | URL | RequestInfo,
+  url: string,
   timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS,
-  options?: RequestInit
+  options?: Object
 ): Promise<Response> {
   const controller = new AbortController();
   const signal = controller.signal;
@@ -119,11 +119,17 @@ function getBaseURL(input: string): string {
   return input.substring(0, input.lastIndexOf("/"));
 }
 
-export function trimTrailingSlash(input: string): string {
+/**
+ * Removes trailing slashes and whitespace from a url.
+ * @param input the url to be formatted.
+ * @returns the url, but with trailing slashes and whitespace at the beginning or end removed.
+ */
+export function formatUrl(input: string): string {
+  input = input.trim();
   if (input.charAt(input.length - 1) === "/") {
-    return input.slice(0, input.length - 1);
+    input = input.slice(0, input.length - 1);
   }
-  return input;
+  return input.trim();
 }
 
 /**
@@ -160,18 +166,16 @@ export function loadParamsFromUrl(): LoadedUrlParams {
  * Otherwise, attempts to load the collection data using the default collection filename
  * (`DEFAULT_COLLECTION_NAME`, `collection.json`).
  * If collection is null, uses the default dataset location (`DEFAULT_COLLECTION_PATH`).
+ * @throws Throws an error if fetching the collection data fails.
  * @returns a map of string dataset names to their corresponding `CollectionEntry` objects.
  * The return value will be null if the fetch failed for any reason.
  */
-export async function getCollectionData(collectionParam: string | null): Promise<Map<string, CollectionEntry> | null> {
+export async function getCollectionData(collectionParam: string | null): Promise<Map<string, CollectionEntry>> {
   // If collection URL ends in a .json use it directly, otherwise append the default filename.
   let collectionUrl;
   if (collectionParam) {
-    if (isJson(collectionParam)) {
-      collectionUrl = collectionParam;
-    } else {
-      collectionUrl = collectionParam + "/" + DEFAULT_COLLECTION_FILENAME;
-    }
+    collectionParam = formatUrl(collectionParam);
+    collectionUrl = isJson(collectionParam) ? collectionParam : collectionParam + "/" + DEFAULT_COLLECTION_FILENAME;
   } else {
     collectionUrl = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
   }
@@ -180,17 +184,16 @@ export async function getCollectionData(collectionParam: string | null): Promise
   try {
     response = await fetchWithTimeout(collectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
   } catch (e) {
-    console.error("Could not retrieve collections JSON data. Received the following error:");
-    console.error(e);
-    return null;
+    console.error(`Could not retrieve collections JSON data from url '${collectionUrl}': '${e}'`);
+    throw e;
   }
-  if (!response || !response.ok) {
-    return null;
+  if (!response.ok) {
+    throw new Error(`Could not retrieve collections JSON data from url '${collectionUrl}': Fetch failed.`);
   }
 
   const json = await response.json();
   if (!Array.isArray(json)) {
-    return null;
+    throw new Error(`Could not retrieve collections JSON data from url '${collectionUrl}': JSON is not an array.`);
   }
 
   // Convert JSON array into map
@@ -203,46 +206,45 @@ export async function getCollectionData(collectionParam: string | null): Promise
 }
 
 /**
- * Get a URL to the manifest JSON of a dataset.
+ * Returns
  * @param datasetParam
+ */
+export function getDatasetPath(datasetParam: string): string {
+  if (!isUrl(datasetParam)) {
+    throw new Error(`Cannot fetch dataset '${datasetParam}' because it is not a URL.`);
+  }
+  return isJson(datasetParam) ? datasetParam : datasetParam + "/" + DEFAULT_DATASET_FILENAME;
+}
+
+/**
+ * Gets a URL or resource path to the manifest JSON of a dataset.
+ * @param datasetParam A string URL or dataset name. If no
+ * @param collectionParam
  * @param collectionData
  * @returns
  */
-export function getDatasetPath(
+export function getDatasetPathFromCollection(
   datasetParam: string,
-  collectionParam?: string | null,
-  collectionData?: Map<string, CollectionEntry> | null
+  collectionParam: string,
+  collectionData: Map<string, CollectionEntry>
 ): string {
-  console.log(datasetParam);
-  console.log(collectionParam);
-  console.log(collectionData);
-
-  // CASE 1: Dataset param is a URL
-  if (datasetParam && isUrl(datasetParam)) {
-    // Return the parameter, optionally appending the default filename ("manifest.json").
-    datasetParam = trimTrailingSlash(datasetParam);
-    return isJson(datasetParam) ? datasetParam : datasetParam + "/" + DEFAULT_DATASET_FILENAME;
-  }
-
-  // CASE 2: Collection is a URL, and the dataset name is provided.
   // Collection must be a non-empty map.
-  if (!collectionData || collectionData.size === 0) {
-    throw new Error("Collection data is null or empty and no dataset URL is provided. Cannot retrieve dataset path.");
-  }
-  if (!collectionParam) {
-    collectionParam = DEFAULT_COLLECTION_PATH;
+  if (collectionData.size === 0) {
+    throw new Error(
+      `Cannot retrieve dataset '${datasetParam}' from collection ${collectionParam} because collection data is empty.`
+    );
   }
 
   // collection param can either be a .json file or a directory URL, so get the base directory
   let collectionBasePath = isJson(collectionParam) ? getBaseURL(collectionParam) : collectionParam;
-  collectionBasePath = trimTrailingSlash(collectionBasePath);
+  collectionBasePath = formatUrl(collectionBasePath);
 
   // Dataset parameter is a name, so fetch the entry data (including relative path) from the collection metadata.
   let datasetEntry = datasetParam && collectionData.get(datasetParam);
   if (!datasetEntry) {
     // Can't find the dataset in the collection, so return the first dataset in the collection map
     const firstKey = Array.from(collectionData.keys())[0];
-    console.error(
+    console.warn(
       `Couldn't find dataset '${datasetParam}' in collection at '${collectionBasePath}'. Defaulting to '${firstKey}'.`
     );
     datasetEntry = collectionData.get(firstKey)!;
@@ -252,6 +254,6 @@ export function getDatasetPath(
   // Get relative filepath to the manifest
   const datasetPath = datasetEntry.path;
   let manifestPath = isJson(datasetPath) ? datasetPath : datasetPath + "/" + DEFAULT_DATASET_FILENAME;
-  manifestPath = trimTrailingSlash(manifestPath);
+  manifestPath = formatUrl(manifestPath);
   return collectionBasePath + "/" + manifestPath;
 }
