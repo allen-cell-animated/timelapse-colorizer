@@ -18,7 +18,7 @@ export const DEFAULT_DATASET_FILENAME = "manifest.json";
 export const DEFAULT_COLLECTION_FILENAME = "collection.json";
 export const DEFAULT_DATASET_NAME = "Mama Bear";
 
-type LoadedUrlParams = {
+type UrlParams = {
   collection: string | null;
   dataset: string | null;
   feature: string | null;
@@ -105,9 +105,9 @@ export function isUrl(input: string | null): boolean {
 }
 
 /**
- * Decodes non-null strings using `decodeURIComponent()`, otherwise returns null.
+ * Decodes strings using `decodeURIComponent`, handling null inputs.
  */
-function decodeNullString(input: string | null): string | null {
+function safeDecodeString(input: string | null): string | null {
   return input === null ? null : decodeURIComponent(input);
 }
 
@@ -138,15 +138,15 @@ export function formatUrl(input: string): string {
  * The dataset and feature parameters are null if no parameter was found in the URL, and the
  * track and time will have negative values (-1) if no parameter (or an invalid parameter) was found.
  */
-export function loadParamsFromUrl(): LoadedUrlParams {
+export function loadParamsFromUrl(): UrlParams {
   // Get params from URL and load, with default fallbacks.
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
 
   const base10Radix = 10; // required for parseInt
-  const collectionParam = decodeNullString(urlParams.get(URL_PARAM_COLLECTION));
-  const datasetParam = decodeNullString(urlParams.get(URL_PARAM_DATASET));
-  const featureParam = decodeNullString(urlParams.get(URL_PARAM_FEATURE));
+  const collectionParam = safeDecodeString(urlParams.get(URL_PARAM_COLLECTION));
+  const datasetParam = safeDecodeString(urlParams.get(URL_PARAM_DATASET));
+  const featureParam = safeDecodeString(urlParams.get(URL_PARAM_FEATURE));
   const trackParam = parseInt(urlParams.get(URL_PARAM_TRACK) || "-1", base10Radix);
   // This assumes there are no negative timestamps in the dataset
   const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1", base10Radix);
