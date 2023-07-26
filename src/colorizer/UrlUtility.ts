@@ -47,8 +47,8 @@ export function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   const signal = controller.signal;
-  setTimeout(controller.abort, timeoutMs);
-  return fetch(url, { signal, ...options });
+  setTimeout(() => controller.abort, timeoutMs);
+  return fetch(url, { signal: signal, ...options });
 }
 
 /**
