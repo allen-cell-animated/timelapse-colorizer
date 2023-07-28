@@ -178,14 +178,14 @@ async function loadDataset(name: string): Promise<void> {
   updateFeature(featureName);
   plot.setDataset(dataset);
   plot.removePlot();
-  await canv.setFrame(0);
+  const newFrame = canv.getCurrentFrame() % canv.getTotalFrames();
+  await canv.setFrame(newFrame);
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
   featureSelectEl.value = featureName;
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
-
   await drawLoop();
   updateUrl();
   console.timeEnd("loadDataset");
@@ -426,7 +426,7 @@ async function start(): Promise<void> {
   if (params.dataset && isUrl(params.dataset)) {
     await loadDataset(params.dataset);
   } else {
-    // Use default if collections data is available.
+    // Collections data is loaded.
     const defaultDataset = getDefaultDatasetName(collectionData);
     await loadDataset(params.dataset || defaultDataset);
   }
