@@ -6,13 +6,13 @@ import {
   CollectionEntry,
   DEFAULT_COLLECTION_FILENAME,
   DEFAULT_COLLECTION_PATH,
-  DEFAULT_DATASET_NAME,
   getCollectionData,
   getDatasetPathFromCollection,
   isUrl,
   loadParamsFromUrl,
   saveParamsToUrl,
   getDatasetPath,
+  getDefaultDatasetName,
 } from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
@@ -139,10 +139,8 @@ async function loadDataset(name: string): Promise<void> {
   }
 
   if (collectionData && !collectionData.has(name)) {
-    // Collection does not include the provided dataset name,
-    // so default to the first dataset in the collection.
-    console.warn(`Collection does not include '${name}' as a dataset. Defaulting to first dataset in collection.`);
-    name = Array.from(collectionData.keys())[0];
+    console.warn(`Collection does not include '${name}' as a dataset. Defaulting to first dataset in the collection.`);
+    name = getDefaultDatasetName(collectionData);
   }
 
   datasetName = name;
@@ -410,7 +408,10 @@ async function start(): Promise<void> {
     } catch (e) {
       console.error(e);
       datasetSelectEl.disabled = true;
-      return; // disables the UI entirely because no initialization is done.
+      // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
+      throw new Error(
+        `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
+      );
     }
 
     collectionData = collectionResults;
@@ -422,18 +423,14 @@ async function start(): Promise<void> {
   }
 
   // Load dataset
-  if (params.dataset) {
-    try {
-      await loadDataset(params.dataset);
-    } catch (e) {
-      console.warn(
-        `Encountered error while loading dataset '${params.dataset}'. Defaulting to ${DEFAULT_DATASET_NAME}`
-      );
-      await loadDataset(DEFAULT_DATASET_NAME);
-    }
+  if (params.dataset && isUrl(params.dataset)) {
+    await loadDataset(params.dataset);
   } else {
-    await loadDataset(DEFAULT_DATASET_NAME);
+    // Use default if collections data is available.
+    const defaultDataset = getDefaultDatasetName(collectionData);
+    await loadDataset(params.dataset || defaultDataset);
   }
+
   if (params.feature) {
     // Load feature (if unset, do nothing because loadDataset already loads a default)
     await updateFeature(params.feature);
