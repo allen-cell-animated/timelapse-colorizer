@@ -267,7 +267,7 @@ async function handleFindTrack(): Promise<void> {
 async function findTrack(trackId: number): Promise<void> {
   const newTrack = dataset!.buildTrack(trackId);
 
-  if (newTrack.times.length < 1) {
+  if (newTrack.length() < 1) {
     // Check track validity
     return;
   }
