@@ -1,15 +1,17 @@
 out vec2 vUv;
 
 uniform highp usampler2D frame;
-uniform float aspect;
+uniform vec2 scale;
 
 void main() {
-    // Apply scale to account for frame scaling in the canvas
-    // (copied from `colorize_RGBA8U.frag`)
+
     ivec2 frameDims = textureSize(frame, 0);
-    float frameAspect = float(frameDims.x) / float(frameDims.y);
-    vec2 scale = max(vec2(aspect / frameAspect, frameAspect / aspect), 1.0);
+
+    // Vertex coords are in pixel coordinates on the original texture.
+    // Remap X and Y to [-1, 1] relative to the canvas.
+
     vUv = uv;
     // Resize line coordinates with the window
+    //(vUv - 0.5) * scale + 0.5;
     gl_Position = vec4(position.x / scale.x, position.y / scale.y, position.z, 1.0);
 }

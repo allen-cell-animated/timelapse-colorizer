@@ -35,7 +35,7 @@ const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 
 type ColorizeUniformTypes = {
-  aspect: number;
+  scale: Vector2;
   frame: Texture;
   featureData: Texture;
   outlierData: Texture;
@@ -49,7 +49,7 @@ type ColorizeUniformTypes = {
 };
 
 type LineUniformTypes = {
-  aspect: number;
+  scale: Vector2;
   frame: Texture;
   color: Color;
 };
@@ -67,7 +67,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyColorRamp = new ColorRamp(["black"]).texture;
 
   return {
-    aspect: new Uniform(2),
+    scale: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
@@ -86,7 +86,7 @@ const getDefaultLineUniforms = (): LineUniforms => {
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
   return {
-    aspect: new Uniform(2),
+    scale: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
     color: new Uniform(new Color(SELECTED_COLOR_DEFAULT)),
   };
@@ -115,6 +115,7 @@ export default class ColorizeCanvas {
   private track: Track | null;
   private points: Float32Array;
   private frameResolution: Vector2 | null;
+  private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
   private colorMapRangeLocked: boolean;
@@ -178,6 +179,7 @@ export default class ColorizeCanvas {
 
     this.dataset = null;
     this.frameResolution = null;
+    this.canvasResolution = null;
     this.featureName = null;
     this.track = null;
     this.showTrackPath = false;
@@ -200,12 +202,40 @@ export default class ColorizeCanvas {
 
   setSize(width: number, height: number): void {
     this.checkPixelRatio();
-    this.setUniform("aspect", width / height);
-    this.setLineUniform("aspect", width / height);
+
     this.renderer.setSize(width, height);
     // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
     // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
+
+    this.canvasResolution = new Vector2(width, height);
+    this.updateScaling(this.frameResolution, this.canvasResolution);
+  }
+
+  updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
+    if (!frameResolution) {
+      return;
+    }
+    if (!canvasResolution) {
+      return;
+    }
+    console.log("Updated aspect");
+    const canvasAspect = canvasResolution.x / canvasResolution.y;
+    const frameAspect = frameResolution.x / frameResolution.y;
+    // Proportion by which the frame must be scaled to maintain its aspect ratio in the canvas.
+    // This is required because the canvas coordinates are defined in relative coordinates with
+    // a range of [-1, 1], and don't reflect scaling/changes to the canvas aspect ratio.
+    let scale: Vector2 = new Vector2(1, 1);
+    if (canvasAspect > frameAspect) {
+      // Canvas has a wider aspect ratio than the frame, so proportional height is 1
+      // and we scale width accordingly.
+      scale.x = canvasAspect / frameAspect;
+    } else {
+      scale.y = frameAspect / canvasAspect;
+    }
+
+    this.setUniform("scale", scale);
+    this.setLineUniform("scale", scale);
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -228,6 +258,7 @@ export default class ColorizeCanvas {
     this.frameResolution = new Vector2(frame.image.width, frame.image.height);
     this.setUniform("frame", frame);
     this.setLineUniform("frame", frame);
+    this.updateScaling(this.frameResolution, this.canvasResolution);
     this.render();
   }
 
@@ -428,12 +459,18 @@ export default class ColorizeCanvas {
   getIdAtPixel(x: number, y: number): number {
     const rt = this.renderer.getRenderTarget();
 
+    console.log(`x: ${x}, y: ${y}`);
+
     this.renderer.setRenderTarget(this.pickRenderTarget);
+    const renderTargetSize = new Vector2(this.pickRenderTarget.width, this.pickRenderTarget.height);
+    console.log(renderTargetSize);
+    // this.updateScaling(this.frameResolution, renderTargetSize);
     this.renderer.render(this.pickScene, this.camera);
 
     const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
     // restore main render target
+    // this.updateScaling(this.frameResolution, this.canvasResolution);
     this.renderer.setRenderTarget(rt);
 
     // get 32bit value from 4 8bit values
