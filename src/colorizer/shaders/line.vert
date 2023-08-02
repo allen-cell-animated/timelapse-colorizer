@@ -1,7 +1,7 @@
 out vec2 vUv;
 
 uniform highp usampler2D frame;
-uniform vec2 scale;
+uniform vec4 frameToCanvasScale;
 
 void main() {
 
@@ -11,7 +11,6 @@ void main() {
     // Remap X and Y to [-1, 1] relative to the canvas.
 
     vUv = uv;
-    // Resize line coordinates with the window
-    //(vUv - 0.5) * scale + 0.5;
-    gl_Position = vec4(position.x / scale.x, position.y / scale.y, position.z, 1.0);
+    // Transform vertex positions, which are given in frame coordinates, to canvas coordinates.
+    gl_Position = vec4(position, 1) * frameToCanvasScale;
 }

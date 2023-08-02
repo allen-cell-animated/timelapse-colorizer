@@ -15,6 +15,7 @@ import {
   Uniform,
   UnsignedByteType,
   Vector2,
+  Vector4,
   WebGLRenderTarget,
   WebGLRenderer,
 } from "three";
@@ -35,7 +36,8 @@ const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 
 type ColorizeUniformTypes = {
-  scale: Vector2;
+  /** Scales from canvas coordinates to frame coordinates. */
+  canvasToFrameScale: Vector2;
   frame: Texture;
   featureData: Texture;
   outlierData: Texture;
@@ -49,7 +51,8 @@ type ColorizeUniformTypes = {
 };
 
 type LineUniformTypes = {
-  scale: Vector2;
+  /** Scales from canvas coordinates to frame coordinates. */
+  frameToCanvasScale: Vector4;
   frame: Texture;
   color: Color;
 };
@@ -67,7 +70,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyColorRamp = new ColorRamp(["black"]).texture;
 
   return {
-    scale: new Uniform(new Vector2(1, 1)),
+    canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
@@ -86,7 +89,7 @@ const getDefaultLineUniforms = (): LineUniforms => {
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
   return {
-    scale: new Uniform(new Vector2(1, 1)),
+    frameToCanvasScale: new Uniform(new Vector4(1, 1, 1, 1)),
     frame: new Uniform(emptyFrame),
     color: new Uniform(new Color(SELECTED_COLOR_DEFAULT)),
   };
@@ -225,17 +228,18 @@ export default class ColorizeCanvas {
     // Proportion by which the frame must be scaled to maintain its aspect ratio in the canvas.
     // This is required because the canvas coordinates are defined in relative coordinates with
     // a range of [-1, 1], and don't reflect scaling/changes to the canvas aspect ratio.
-    let scale: Vector2 = new Vector2(1, 1);
+    let canvasToFrameScale: Vector2 = new Vector2(1, 1);
     if (canvasAspect > frameAspect) {
       // Canvas has a wider aspect ratio than the frame, so proportional height is 1
       // and we scale width accordingly.
-      scale.x = canvasAspect / frameAspect;
+      canvasToFrameScale.x = canvasAspect / frameAspect;
     } else {
-      scale.y = frameAspect / canvasAspect;
+      canvasToFrameScale.y = frameAspect / canvasAspect;
     }
+    const frameToCanvasScale = new Vector4(1 / canvasToFrameScale.x, 1 / canvasToFrameScale.y, 1, 1);
 
-    this.setUniform("scale", scale);
-    this.setLineUniform("scale", scale);
+    this.setUniform("canvasToFrameScale", canvasToFrameScale);
+    this.setLineUniform("frameToCanvasScale", frameToCanvasScale);
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {

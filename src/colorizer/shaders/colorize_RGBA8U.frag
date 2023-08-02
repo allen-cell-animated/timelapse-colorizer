@@ -6,7 +6,7 @@ uniform usampler2D outlierData;
 uniform float featureMin;
 uniform float featureMax;
 
-uniform vec2 scale;
+uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
 uniform vec3 outlierColor;
@@ -59,7 +59,7 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
 void main() {
   // Scale uv to compensate for the aspect of the frame
   ivec2 frameDims = textureSize(frame, 0);
-  vec2 sUv = (vUv - 0.5) * scale + 0.5;
+  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
   // This pixel is background if, after scaling uv, it is outside the frame
   if (sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0) {
