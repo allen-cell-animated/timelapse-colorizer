@@ -7,12 +7,11 @@ import {
   DEFAULT_COLLECTION_FILENAME,
   DEFAULT_COLLECTION_PATH,
   getCollectionData,
-  getDatasetPathFromCollection,
   isUrl,
   loadParamsFromUrl,
   saveParamsToUrl,
-  getDatasetPath,
   getDefaultDatasetName,
+  getExpectedDatasetPath,
 } from "./colorizer/UrlUtility";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
@@ -146,12 +145,7 @@ async function loadDataset(name: string): Promise<void> {
   datasetName = name;
   datasetSelectEl.value = name;
   try {
-    let datasetPath;
-    if (isUrl(name)) {
-      datasetPath = getDatasetPath(name);
-    } else {
-      datasetPath = getDatasetPathFromCollection(name, collection, collectionData);
-    }
+    const datasetPath = getExpectedDatasetPath(name, collection, collectionData);
 
     console.log(`Fetching dataset from path '${datasetPath}'`);
     dataset = new Dataset(datasetPath);

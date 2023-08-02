@@ -212,20 +212,6 @@ export async function getCollectionData(collectionParam: string | null): Promise
 }
 
 /**
- * Gets the path to the manifest JSON of a dataset.
- * @param datasetParam a string URL, either to a .json file or the directory of a `manifest.json` file.
- * @returns Returns a formatted version of `datasetParam` (no whitespace, trailing slashes removed) if
- * it is a path to a `.json` file; otherwise, appends the `DEFAULT_DATASET_FILENAME` to it.
- */
-export function getDatasetPath(datasetParam: string): string {
-  datasetParam = formatPath(datasetParam);
-  if (!isUrl(datasetParam)) {
-    throw new Error(`Cannot fetch dataset '${datasetParam}' because it is not a URL.`);
-  }
-  return isJson(datasetParam) ? datasetParam : datasetParam + "/" + DEFAULT_DATASET_FILENAME;
-}
-
-/**
  * Gets the name of the first dataset in the collection.
  * @param collectionData The loaded collection data to get data from.
  * @throws an error if the collection data is size 0.
@@ -240,6 +226,59 @@ export function getDefaultDatasetName(collectionData: Map<string, CollectionEntr
 }
 
 /**
+ * Gets the *expected* URL or filepath to the manifest JSON of a dataset.
+ *
+ * @param datasetParam String dataset parameter that is one of the following:
+ * - URL of a `.json` file
+ * - URL of a directory containing a file named `manifest.json` (see `DEFAULT_DATASET_FILENAME`)
+ * - Name of a dataset entry in a collection (if so, collection parameters must be provided.)
+ * @param collectionParam Optional string parameter describing either:
+ * - URL of a `.json` file
+ * - URL of directory of a directory containing a file named `collection.json` (see `DEFAULT_COLLECTION_FILENAME`)
+ * @param collectionData Optional map with string keys representing database names, mapping to their stored entry data.
+ * (See `CollectionEntry`.)
+ * @throws an error if the provided `datasetParam` is not a URL, but either the `collectionParam` or `collectionData` is missing.
+ * @returns An expected string url/path of the dataset JSON manifest file, ending in `.json`.
+ *
+ * - For dataset URLs, uses the default manifest name (`DEFAULT_DATASET_FILENAME`) if the URL does not end in `.json`.
+ * - For collections, if the dataset does not exist in the collection, defaults to the first dataset in the collection.
+ * */
+export function getExpectedDatasetPath(
+  datasetParam: string,
+  collectionParam?: string,
+  collectionData?: Map<string, CollectionEntry>
+): string {
+  if (isUrl(datasetParam)) {
+    return formatDatasetPath(datasetParam);
+  }
+  if (!collectionData) {
+    throw new Error(
+      "The dataset is the name of a collection entry (not a URL) but no collection data is available to look it up with. Unable to retrieve dataset path."
+    );
+  }
+  if (!collectionParam) {
+    throw new Error(
+      "The dataset is the name of a collection entry (not a URL) but no collection path was provided to find relative paths with. Unable to retrieve dataset path."
+    );
+  }
+  return getDatasetPathFromCollection(datasetParam, collectionParam, collectionData);
+}
+
+/**
+ * Gets the path to the manifest JSON of a dataset.
+ * @param datasetParam a string URL, either to a .json file or the directory of a `manifest.json` file.
+ * @returns Returns a formatted version of `datasetParam` (no whitespace, trailing slashes removed) if
+ * it is a path to a `.json` file; otherwise, appends the `DEFAULT_DATASET_FILENAME` to it.
+ */
+function formatDatasetPath(datasetParam: string): string {
+  datasetParam = formatPath(datasetParam);
+  if (!isUrl(datasetParam)) {
+    throw new Error(`Cannot fetch dataset '${datasetParam}' because it is not a URL.`);
+  }
+  return isJson(datasetParam) ? datasetParam : datasetParam + "/" + DEFAULT_DATASET_FILENAME;
+}
+
+/**
  * Gets a URL/path to the manifest JSON of a dataset, using a collection.
  * @param datasetParam A string dataset name.
  * @param collectionParam A string parameter describing either the directory of the collection or the path to
@@ -250,7 +289,7 @@ export function getDefaultDatasetName(collectionData: Map<string, CollectionEntr
  * @returns A string url/path to a dataset JSON manifest file. If the dataset does not exist in the collection,
  * defaults to the first dataset in the collection.
  */
-export function getDatasetPathFromCollection(
+function getDatasetPathFromCollection(
   datasetParam: string,
   collectionParam: string,
   collectionData: Map<string, CollectionEntry>
@@ -281,7 +320,7 @@ export function getDatasetPathFromCollection(
 
   if (isUrl(datasetPath)) {
     // Use URLs directly when provided instead of relative paths
-    return getDatasetPath(datasetPath);
+    return formatDatasetPath(datasetPath);
   } else {
     let manifestPath = isJson(datasetPath) ? datasetPath : datasetPath + "/" + DEFAULT_DATASET_FILENAME;
     manifestPath = formatPath(manifestPath);
