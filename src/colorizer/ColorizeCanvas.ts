@@ -301,9 +301,11 @@ export default class ColorizeCanvas {
     // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
     this.points = new Float32Array(track.length() * 3);
     for (let i = 0; i < track.length(); i++) {
-      // Screen space is in [-1, 1] range.
-      this.points[3 * i + 0] = track.centroids[2 * i];
-      this.points[3 * i + 1] = track.centroids[2 * i + 1];
+      // Points passed directly as pixel coordinates relative to frame resolution.
+      // TODO: See note in Dataset about replacing/removing scale factor.
+      const centroidScaleFactor = this.dataset?.centroidScaleFactor || 1;
+      this.points[3 * i + 0] = track.centroids[2 * i] * centroidScaleFactor;
+      this.points[3 * i + 1] = track.centroids[2 * i + 1] * centroidScaleFactor;
       this.points[3 * i + 2] = 1;
     }
     // Assign new BufferAttribute because the old array has been discarded.

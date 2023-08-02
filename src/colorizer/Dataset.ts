@@ -48,6 +48,9 @@ export default class Dataset {
 
   public centroidsFile?: string;
   public centroids?: Uint16Array;
+  // TODO: This is currently a hardcoded value due to a scaling issue in the centroid data.
+  // Add definition for scale factor to the manifest, or fix centroid data so it matches the frame resolution.
+  public centroidScaleFactor?: number = 0.25;
 
   public boundsFile?: string;
   public bounds?: Uint16Array;
