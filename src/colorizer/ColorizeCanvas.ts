@@ -459,18 +459,12 @@ export default class ColorizeCanvas {
   getIdAtPixel(x: number, y: number): number {
     const rt = this.renderer.getRenderTarget();
 
-    console.log(`x: ${x}, y: ${y}`);
-
     this.renderer.setRenderTarget(this.pickRenderTarget);
-    const renderTargetSize = new Vector2(this.pickRenderTarget.width, this.pickRenderTarget.height);
-    console.log(renderTargetSize);
-    // this.updateScaling(this.frameResolution, renderTargetSize);
     this.renderer.render(this.pickScene, this.camera);
 
     const pixbuf = new Uint8Array(4);
     this.renderer.readRenderTargetPixels(this.pickRenderTarget, x, this.pickRenderTarget.height - y, 1, 1, pixbuf);
     // restore main render target
-    // this.updateScaling(this.frameResolution, this.canvasResolution);
     this.renderer.setRenderTarget(rt);
 
     // get 32bit value from 4 8bit values
