@@ -236,8 +236,10 @@ export default class Dataset {
 
     let centroids: number[] = [];
     if (this.centroids) {
+      // TODO: Replace, remove, or document scale factor. See above note.
+      const scaleFactor = this.centroidScaleFactor || 1;
       centroids = ids.reduce((result, i) => {
-        result.push(this.centroids![2 * i], this.centroids![2 * i + 1]);
+        result.push(this.centroids![2 * i] * scaleFactor, this.centroids![2 * i + 1] * scaleFactor);
         return result;
       }, [] as number[]);
     }

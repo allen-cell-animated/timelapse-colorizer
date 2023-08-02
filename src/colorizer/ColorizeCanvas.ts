@@ -222,7 +222,6 @@ export default class ColorizeCanvas {
     if (!canvasResolution) {
       return;
     }
-    console.log("Updated aspect");
     const canvasAspect = canvasResolution.x / canvasResolution.y;
     const frameAspect = frameResolution.x / frameResolution.y;
     // Proportion by which the frame must be scaled to maintain its aspect ratio in the canvas.
@@ -263,7 +262,6 @@ export default class ColorizeCanvas {
     this.frameResolution = new Vector2(frame.image.width, frame.image.height);
     this.setUniform("frame", frame);
     this.setLineUniform("frameDimensions", this.frameResolution);
-    console.log(this.frameResolution);
     this.updateScaling(this.frameResolution, this.canvasResolution);
     this.render();
   }
@@ -302,10 +300,8 @@ export default class ColorizeCanvas {
     this.points = new Float32Array(track.length() * 3);
     for (let i = 0; i < track.length(); i++) {
       // Points passed directly as pixel coordinates relative to frame resolution.
-      // TODO: See note in Dataset about replacing/removing scale factor.
-      const centroidScaleFactor = this.dataset?.centroidScaleFactor || 1;
-      this.points[3 * i + 0] = track.centroids[2 * i] * centroidScaleFactor;
-      this.points[3 * i + 1] = track.centroids[2 * i + 1] * centroidScaleFactor;
+      this.points[3 * i + 0] = track.centroids[2 * i];
+      this.points[3 * i + 1] = track.centroids[2 * i + 1];
       this.points[3 * i + 2] = 1;
     }
     // Assign new BufferAttribute because the old array has been discarded.
