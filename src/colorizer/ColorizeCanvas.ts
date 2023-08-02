@@ -53,7 +53,7 @@ type ColorizeUniformTypes = {
 type LineUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
   frameToCanvasScale: Vector4;
-  frame: Texture;
+  frameDimensions: Vector2;
   color: Color;
 };
 
@@ -90,7 +90,7 @@ const getDefaultLineUniforms = (): LineUniforms => {
   emptyFrame.needsUpdate = true;
   return {
     frameToCanvasScale: new Uniform(new Vector4(1, 1, 1, 1)),
-    frame: new Uniform(emptyFrame),
+    frameDimensions: new Uniform(new Vector2(1, 1)),
     color: new Uniform(new Color(SELECTED_COLOR_DEFAULT)),
   };
 };
@@ -236,6 +236,7 @@ export default class ColorizeCanvas {
     } else {
       canvasToFrameScale.y = frameAspect / canvasAspect;
     }
+    // Inverse
     const frameToCanvasScale = new Vector4(1 / canvasToFrameScale.x, 1 / canvasToFrameScale.y, 1, 1);
 
     this.setUniform("canvasToFrameScale", canvasToFrameScale);
@@ -261,7 +262,8 @@ export default class ColorizeCanvas {
     // Save frame resolution for later calculation
     this.frameResolution = new Vector2(frame.image.width, frame.image.height);
     this.setUniform("frame", frame);
-    this.setLineUniform("frame", frame);
+    this.setLineUniform("frameDimensions", this.frameResolution);
+    console.log(this.frameResolution);
     this.updateScaling(this.frameResolution, this.canvasResolution);
     this.render();
   }
@@ -295,14 +297,14 @@ export default class ColorizeCanvas {
     if (!track || !track.centroids || track.centroids.length === 0 || !this.frameResolution) {
       return;
     }
-    // Make a new array of the centroid positions, normalizing to screen space.
-    // Points is in 3D while centroids are pairs of 2D coordinates in a 1D array
+    // Make a new array of the centroid positions in pixel coordinates.
+    // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
     this.points = new Float32Array(track.length() * 3);
     for (let i = 0; i < track.length(); i++) {
       // Screen space is in [-1, 1] range.
-      this.points[3 * i + 0] = (track.centroids[2 * i] / (4.0 * this.frameResolution.x)) * 2.0 - 1.0;
-      this.points[3 * i + 1] = -((track.centroids[2 * i + 1] / (4.0 * this.frameResolution.y)) * 2.0 - 1.0);
-      this.points[3 * i + 2] = 0;
+      this.points[3 * i + 0] = track.centroids[2 * i];
+      this.points[3 * i + 1] = track.centroids[2 * i + 1];
+      this.points[3 * i + 2] = 1;
     }
     // Assign new BufferAttribute because the old array has been discarded.
     this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
