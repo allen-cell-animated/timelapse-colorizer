@@ -2,15 +2,15 @@ export default class Track {
   public trackId: number;
   public times: number[];
   public ids: number[];
-  // Centroids must be packed as 2D array for sorting to work correctly in
-  // the constructor.
-  public centroids: number[][] | undefined;
+  public centroids: number[];
+  public bounds: number[];
 
-  constructor(trackId: number, times: number[], ids: number[], centroids?: number[][]) {
+  constructor(trackId: number, times: number[], ids: number[], centroids: number[], bounds: number[]) {
     this.trackId = trackId;
     this.times = times;
     this.ids = ids;
     this.centroids = centroids;
+    this.bounds = bounds;
 
     // sort time, id, and centroids, ascending by time
     const shouldSort = true;
@@ -19,9 +19,10 @@ export default class Track {
       indices.sort((a, b) => (times[a] < times[b] ? -1 : times[a] === times[b] ? 0 : 1));
       this.times = indices.map((i) => times[i]);
       this.ids = indices.map((i) => ids[i]);
-      if (centroids) {
-        this.centroids = indices.map((i) => centroids[i]);
-      }
+      this.centroids = indices.reduce((result, i) => {
+        result.push(centroids[i * 2], centroids[i * 2 + 1]);
+        return result;
+      }, [] as number[]);
     }
     console.log(
       `Track ${trackId} has ${this.length()} timepoints starting from ${this.times[0]} to ${

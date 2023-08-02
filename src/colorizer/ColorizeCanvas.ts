@@ -295,14 +295,13 @@ export default class ColorizeCanvas {
     if (!track || !track.centroids || track.centroids.length === 0 || !this.frameResolution) {
       return;
     }
-    // Make a new array of the centroid positions,
-    // normalizing to screen space.
-    // We need three floats per coordinate
-    this.points = new Float32Array(track.centroids.length * 3);
-    for (let i = 0; i < track.centroids.length; i++) {
+    // Make a new array of the centroid positions, normalizing to screen space.
+    // Points is in 3D while centroids are pairs of 2D coordinates in a 1D array
+    this.points = new Float32Array(track.length() * 3);
+    for (let i = 0; i < track.length(); i++) {
       // Screen space is in [-1, 1] range.
-      this.points[3 * i + 0] = (track.centroids[i][0] / (4.0 * this.frameResolution.x)) * 2.0 - 1.0;
-      this.points[3 * i + 1] = -((track.centroids[i][1] / (4.0 * this.frameResolution.y)) * 2.0 - 1.0);
+      this.points[3 * i + 0] = (track.centroids[2 * i] / (4.0 * this.frameResolution.x)) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((track.centroids[2 * i + 1] / (4.0 * this.frameResolution.y)) * 2.0 - 1.0);
       this.points[3 * i + 2] = 0;
     }
     // Assign new BufferAttribute because the old array has been discarded.

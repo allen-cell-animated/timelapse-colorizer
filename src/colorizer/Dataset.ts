@@ -49,6 +49,9 @@ export default class Dataset {
   public centroidsFile?: string;
   public centroids?: Uint16Array;
 
+  public boundsFile?: string;
+  public bounds?: Uint16Array;
+
   public baseUrl: string;
   private hasOpened: boolean;
 
@@ -134,6 +137,15 @@ export default class Dataset {
     this.centroids = source.getBuffer(FeatureDataType.U16);
   }
 
+  private async loadBounds(): Promise<void> {
+    if (!this.boundsFile) {
+      return;
+    }
+    const url = this.resolveUrl(this.boundsFile);
+    const source = await this.arrayLoader.load(url);
+    this.bounds = source.getBuffer(FeatureDataType.U16);
+  }
+
   public get numberOfFrames(): number {
     return this.frames?.length || 0;
   }
@@ -181,6 +193,7 @@ export default class Dataset {
     promises.push(this.loadTracks());
     promises.push(this.loadTimes());
     promises.push(this.loadCentroids());
+    promises.push(this.loadBounds());
     await Promise.all(promises);
 
     // TODO: Dynamically fetch features
@@ -211,25 +224,30 @@ export default class Dataset {
   }
 
   public buildTrack(trackId: number): Track {
-    // if we don't have track info then return empty arrays
-    if (!this.trackIds || !this.times) {
-      return new Track(trackId, [], []);
-    }
     // trackIds contains a track id for every cell id in order.
     // get all cell ids for given track
-    const ids = this.getIdsOfTrack(trackId);
+    const ids = this.trackIds ? this.getIdsOfTrack(trackId) : [];
     // ids now contains all cell ids that have trackId.
     // get all the times for those cells, in the same order
-    const times = ids.map((i) => (this.times ? this.times[i] : 0));
-    let centroids2d;
+    const times = this.times ? ids.map((i) => (this.times ? this.times[i] : 0)) : [];
 
-    const centroids1d = this.centroids;
-    if (centroids1d) {
-      // Turn 1D array into 2D array
-      centroids2d = ids.map((i) => [centroids1d[2 * i], centroids1d[2 * i + 1]]);
+    let centroids: number[] = [];
+    if (this.centroids) {
+      centroids = ids.reduce((result, i) => {
+        result.push(this.centroids![2 * i], this.centroids![2 * i + 1]);
+        return result;
+      }, [] as number[]);
     }
 
-    return new Track(trackId, times, ids, centroids2d);
+    let bounds: number[] = [];
+    if (this.bounds) {
+      bounds = ids.reduce((result, i) => {
+        result.push(this.bounds![4 * i], this.bounds![4 * i + 1], this.bounds![4 * i + 2], this.bounds![4 * i + 3]);
+        return result;
+      }, [] as number[]);
+    }
+
+    return new Track(trackId, times, ids, centroids, bounds);
   }
 
   // get the times and values of a track for a given feature
