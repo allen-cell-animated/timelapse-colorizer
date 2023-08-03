@@ -120,38 +120,52 @@ let selectedTrack: Track | null = null;
 async function loadDataset(name: string): Promise<void> {
   console.time("loadDataset");
   datasetOpen = false;
-  const hasLoadedOtherDataset: boolean = dataset !== null && datasetName !== name;
-  const lastDataset = datasetName;
   datasetSelectEl.disabled = true;
   featureSelectEl.disabled = true;
-
-  if (dataset !== null) {
-    dataset.dispose();
-  }
 
   if (collectionData && !collectionData.has(name)) {
     console.warn(`Collection does not include '${name}' as a dataset. Defaulting to first dataset in the collection.`);
     name = urlUtils.getDefaultDatasetName(collectionData);
   }
 
-  datasetName = name;
-  datasetSelectEl.value = name;
   try {
     const datasetPath = urlUtils.getExpectedDatasetPath(name, collection, collectionData);
 
     console.log(`Fetching dataset from path '${datasetPath}'`);
-    dataset = new Dataset(datasetPath);
-    await dataset.open();
+    const newDataset = new Dataset(datasetPath);
+    await newDataset.open();
+
+    // Replace old dataset
+    if (dataset !== null) {
+      dataset.dispose();
+    }
+
+    dataset = newDataset;
+    datasetName = name;
+    datasetSelectEl.value = name;
   } catch (e) {
     console.error(e);
     console.error(`Could not load dataset '${name}'.`);
-    console.warn(`Reloading dataset '${lastDataset}' instead.`);
     console.timeEnd("loadDataset");
-    if (hasLoadedOtherDataset) {
-      // Re-load last dataset instead of this one
-      await loadDataset(lastDataset);
+    if (dataset !== null) {
+      console.warn(`Showing last loaded dataset '${datasetName}' instead.`);
+      datasetSelectEl.disabled = false;
+      featureSelectEl.disabled = false;
+      datasetSelectEl.value = datasetName; // reverse value selection
+      return;
+    } else {
+      // Encountered error on first dataset load
+      // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
+      if (!collectionData) {
+        return;
+      }
+      const defaultName = urlUtils.getDefaultDatasetName(collectionData);
+      if (name === defaultName) {
+        return; // we already tried to load the default so give up
+      }
+      console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
+      return loadDataset(defaultName);
     }
-    return;
   }
   resetTrackUI();
 
