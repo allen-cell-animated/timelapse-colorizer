@@ -53,8 +53,17 @@ export function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   const signal = controller.signal;
-  setTimeout(() => controller.abort, timeoutMs);
-  return fetch(url, { signal: signal, ...options });
+  // If the fetch finishes before the timeout completes, clear the timeout.
+  // Note: It's ok even if the timeout still triggers, because the fetch promise is already resolved (settled) and
+  // won't change even if the AbortController signals for a promise rejection.
+  const timeoutId = setTimeout(() => controller.abort, timeoutMs);
+  const fetchPromise = fetch(url, { signal: signal, ...options });
+  fetchPromise.then(
+    // clear timeout if resolved or rejected
+    () => clearTimeout(timeoutId),
+    () => clearTimeout(timeoutId)
+  );
+  return fetchPromise;
 }
 
 /**
