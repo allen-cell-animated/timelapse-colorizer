@@ -2,17 +2,7 @@ import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
-import {
-  CollectionEntry,
-  DEFAULT_COLLECTION_FILENAME,
-  DEFAULT_COLLECTION_PATH,
-  getCollectionData,
-  isUrl,
-  loadParamsFromUrl,
-  saveParamsToUrl,
-  getDefaultDatasetName,
-  getExpectedDatasetPath,
-} from "./colorizer/utils/url_utils";
+import * as urlUtils from "./colorizer/utils/url_utils";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
 const plot = new Plotting("plot");
@@ -118,7 +108,7 @@ function setColorRampDisabled(disabled: boolean): void {
 // DATASET LOADING ///////////////////////////////////////////////////////
 
 let collection: string;
-let collectionData: Map<string, CollectionEntry>;
+let collectionData: Map<string, urlUtils.CollectionEntry>;
 let dataset: Dataset | null = null;
 let datasetName = "";
 let datasetOpen = false;
@@ -139,13 +129,13 @@ async function loadDataset(name: string): Promise<void> {
 
   if (collectionData && !collectionData.has(name)) {
     console.warn(`Collection does not include '${name}' as a dataset. Defaulting to first dataset in the collection.`);
-    name = getDefaultDatasetName(collectionData);
+    name = urlUtils.getDefaultDatasetName(collectionData);
   }
 
   datasetName = name;
   datasetSelectEl.value = name;
   try {
-    const datasetPath = getExpectedDatasetPath(name, collection, collectionData);
+    const datasetPath = urlUtils.getExpectedDatasetPath(name, collection, collectionData);
 
     console.log(`Fetching dataset from path '${datasetPath}'`);
     dataset = new Dataset(datasetPath);
@@ -319,15 +309,15 @@ function updateUrl(): void {
   // Don't include collection parameter in URL if it matches the default.
   let collectionParam;
   if (
-    collection === DEFAULT_COLLECTION_PATH ||
-    collection === DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
+    collection === urlUtils.DEFAULT_COLLECTION_PATH ||
+    collection === urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME
   ) {
     collectionParam = null;
   } else {
     collectionParam = collection;
   }
 
-  saveParamsToUrl(
+  urlUtils.saveParamsToUrl(
     collectionParam,
     datasetName,
     featureName,
@@ -382,9 +372,9 @@ async function start(): Promise<void> {
   populateColorRampSelect();
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
-  const params = loadParamsFromUrl();
+  const params = urlUtils.loadParamsFromUrl();
 
-  if (params.dataset && isUrl(params.dataset)) {
+  if (params.dataset && urlUtils.isUrl(params.dataset)) {
     // CASE 1: Dataset parameter is a URL
     // If dataset URL is provided, do not collect collections data, and add
     // the URL directly to the selector.
@@ -394,11 +384,11 @@ async function start(): Promise<void> {
   } else {
     // CASE 2: Dataset parameter is not a URL
     // Set default collection value
-    collection = params.collection || DEFAULT_COLLECTION_PATH;
+    collection = params.collection || urlUtils.DEFAULT_COLLECTION_PATH;
 
     let collectionResults;
     try {
-      collectionResults = await getCollectionData(params.collection);
+      collectionResults = await urlUtils.getCollectionData(params.collection);
     } catch (e) {
       console.error(e);
       datasetSelectEl.disabled = true;
@@ -417,11 +407,11 @@ async function start(): Promise<void> {
   }
 
   // Load dataset
-  if (params.dataset && isUrl(params.dataset)) {
+  if (params.dataset && urlUtils.isUrl(params.dataset)) {
     await loadDataset(params.dataset);
   } else {
     // Collections data is loaded.
-    const defaultDataset = getDefaultDatasetName(collectionData);
+    const defaultDataset = urlUtils.getDefaultDatasetName(collectionData);
     await loadDataset(params.dataset || defaultDataset);
   }
 
