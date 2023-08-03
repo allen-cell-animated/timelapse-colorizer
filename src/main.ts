@@ -12,7 +12,7 @@ import {
   saveParamsToUrl,
   getDefaultDatasetName,
   getExpectedDatasetPath,
-} from "./colorizer/UrlUtility";
+} from "./colorizer/utils/url_utils";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
 const plot = new Plotting("plot");

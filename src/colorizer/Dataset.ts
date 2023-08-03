@@ -8,7 +8,7 @@ import FrameCache from "./FrameCache";
 import Track from "./Track";
 
 import { FeatureDataType } from "./types";
-import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } from "./UrlUtility";
+import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } from "./utils/url_utils";
 
 type DatasetManifest = {
   frames: string[];
