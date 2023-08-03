@@ -112,7 +112,7 @@ export function saveParamsToUrl(
  * Returns if a string is a URL where resources can be fetched from, rather than just a
  * string name.
  * @param input String to be checked.
- * @returns True if a string is a web resource (http(s)://) or an internal resource (//).
+ * @returns True if a string is a web resource `http(s)://` or an internal resource `//`.
  */
 export function isUrl(input: string | null): boolean {
   // Check for strings that start with http(s):// or a double-slash (//).
@@ -178,6 +178,7 @@ export function loadParamsFromUrl(): UrlParams {
 /**
  * Gets the list of datasets within a provided collection.
  * @param collectionParam If collection includes a .json file suffix, attempts to read the URL directly as a collection JSON.
+ *
  * Otherwise, attempts to load the collection data using the default collection filename
  * (`DEFAULT_COLLECTION_NAME`, `collection.json`).
  * If collection is null, uses the default dataset location (`DEFAULT_COLLECTION_PATH`).
