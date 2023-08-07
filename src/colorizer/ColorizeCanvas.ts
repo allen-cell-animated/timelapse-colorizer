@@ -216,10 +216,7 @@ export default class ColorizeCanvas {
   }
 
   updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
-    if (!frameResolution) {
-      return;
-    }
-    if (!canvasResolution) {
+    if (!frameResolution || !canvasResolution) {
       return;
     }
     const canvasAspect = canvasResolution.x / canvasResolution.y;
@@ -336,15 +333,14 @@ export default class ColorizeCanvas {
 
   private updateHighlightedId(): void {
     // Get highlighted id
-    if (this.track) {
-      let id;
-      // Tracks of length 1 should not be offset by 1
-      if (this.track.length() === 1) {
-        id = this.track.getIdAtTime(this.currentFrame);
-      } else {
-        id = this.track.getIdAtTime(this.currentFrame) - 1;
-      }
-      this.setUniform("highlightedId", id);
+    if (!this.track) {
+      return;
+    }
+    // Tracks of length 1 should not be offset by 1
+    if (this.track.length() === 1) {
+      this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame));
+    } else {
+      this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame) - 1);
     }
   }
 
