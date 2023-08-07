@@ -1,4 +1,4 @@
-import { Texture } from "three";
+import { Texture, Vector2 } from "three";
 
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
@@ -33,6 +33,7 @@ export default class Dataset {
   private frameLoader: IFrameLoader;
   private frameFiles: string[];
   private frames: FrameCache | null;
+  private frameDimensions: Vector2 | null;
 
   private arrayLoader: IArrayLoader;
   private featureFiles: Record<string, string>;
@@ -68,6 +69,7 @@ export default class Dataset {
     this.frameLoader = frameLoader || new ImageFrameLoader();
     this.frameFiles = [];
     this.frames = null;
+    this.frameDimensions = null;
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.featureFiles = {};
@@ -170,8 +172,17 @@ export default class Dataset {
 
     const fullUrl = this.resolveUrl(this.frameFiles[index]);
     const loadedFrame = await this.frameLoader.load(fullUrl);
+    this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     this.frames?.insert(index, loadedFrame);
     return loadedFrame;
+  }
+
+  /**
+   * Gets the resolution of the last loaded frame.
+   * If no frame has been loaded yet, returns (1,1)
+   */
+  public get frameResolution(): Vector2 {
+    return this.frameDimensions || new Vector2(1, 1);
   }
 
   /** Loads the dataset manifest and features */

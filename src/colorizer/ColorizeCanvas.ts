@@ -117,7 +117,6 @@ export default class ColorizeCanvas {
   private dataset: Dataset | null;
   private track: Track | null;
   private points: Float32Array;
-  private frameResolution: Vector2 | null;
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
@@ -181,7 +180,6 @@ export default class ColorizeCanvas {
     this.checkPixelRatio();
 
     this.dataset = null;
-    this.frameResolution = null;
     this.canvasResolution = null;
     this.featureName = null;
     this.track = null;
@@ -212,7 +210,9 @@ export default class ColorizeCanvas {
     this.pickRenderTarget.setSize(width, height);
 
     this.canvasResolution = new Vector2(width, height);
-    this.updateScaling(this.frameResolution, this.canvasResolution);
+    if (this.dataset) {
+      this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    }
   }
 
   updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
@@ -256,10 +256,9 @@ export default class ColorizeCanvas {
       return;
     }
     // Save frame resolution for later calculation
-    this.frameResolution = new Vector2(frame.image.width, frame.image.height);
     this.setUniform("frame", frame);
-    this.setLineUniform("frameDimensions", this.frameResolution);
-    this.updateScaling(this.frameResolution, this.canvasResolution);
+    this.setLineUniform("frameDimensions", dataset.frameResolution);
+    this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.render();
   }
 
@@ -289,7 +288,7 @@ export default class ColorizeCanvas {
       return;
     }
     this.track = track;
-    if (!track || !track.centroids || track.centroids.length === 0 || !this.frameResolution) {
+    if (!track || !track.centroids || track.centroids.length === 0 || !this.dataset) {
       return;
     }
     // Make a new array of the centroid positions in pixel coordinates.
