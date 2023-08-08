@@ -49,9 +49,6 @@ export default class Dataset {
 
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
-  // TODO: This is currently a hardcoded value due to a scaling issue in the centroid data.
-  // Add definition for scale factor to the manifest, or fix centroid data so it matches the frame resolution.
-  public centroidScaleFactor?: number = 0.25;
 
   public boundsFile?: string;
   public bounds?: Uint16Array | null;
@@ -262,10 +259,8 @@ export default class Dataset {
 
     let centroids: number[] = [];
     if (this.centroids) {
-      // TODO: Replace, remove, or document scale factor. See above note.
-      const scaleFactor = this.centroidScaleFactor || 1;
       centroids = ids.reduce((result, i) => {
-        result.push(this.centroids![2 * i] * scaleFactor, this.centroids![2 * i + 1] * scaleFactor);
+        result.push(this.centroids![2 * i], this.centroids![2 * i + 1]);
         return result;
       }, [] as number[]);
     }
