@@ -138,9 +138,6 @@ export default class ColorizeCanvas {
 
     this.lineGeometry = new BufferGeometry();
     this.lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
-    // Line material has its own vertex + fragment shader because they're
-    // required to make sure they resize correctly with the frame. This is because
-    // the points are drawn in a relative canvas range [-1, 1] rather than the frame.
     this.lineMaterial = new LineBasicMaterial({
       color: SELECTED_COLOR_DEFAULT,
       linewidth: 1.0,
@@ -212,6 +209,7 @@ export default class ColorizeCanvas {
     const frameToCanvasScale = new Vector4(1 / canvasToFrameScale.x, 1 / canvasToFrameScale.y, 1, 1);
 
     this.setUniform("canvasToFrameScale", canvasToFrameScale);
+    // Scale the line mesh so the vertices line up correctly even when the canvas changes
     this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
   }
 
