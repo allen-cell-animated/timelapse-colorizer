@@ -7,7 +7,8 @@ import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import FrameCache from "./FrameCache";
 import Track from "./Track";
 
-import { FeatureDataType } from "./types";
+import { FeatureArrayType, FeatureDataType } from "./types";
+import { TypedArray } from "plotly.js-dist-min";
 
 type DatasetManifest = {
   frames: string[];
@@ -106,49 +107,36 @@ export default class Dataset {
     }
   }
 
-  private async loadOutliers(): Promise<void> {
-    if (!this.outlierFile) {
-      return;
+  /**
+   * Fetches and loads a data file as an array and returns its data as a Texture using the provided dataType.
+   * @param dataType The expected format of the data.
+   * @param fileUrl String url of the file to be loaded.
+   * @throws An error if fileUrl is undefined or if the data cannot be loaded from the file.
+   * @returns Promise of a texture loaded from the file.
+   */
+  private async loadToTexture(dataType: FeatureDataType, fileUrl?: string): Promise<Texture> {
+    if (!fileUrl) {
+      throw Error("File URL is not defined. No data can be loaded.");
     }
-    const url = this.resolveUrl(this.outlierFile);
+    const url = this.resolveUrl(fileUrl);
     const source = await this.arrayLoader.load(url);
-    this.outliers = source.getTexture(FeatureDataType.U8);
+    return source.getTexture(dataType);
   }
 
-  private async loadTracks(): Promise<void> {
-    if (!this.tracksFile) {
-      return;
+  /**
+   * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
+   * @param dataType The expected format of the data.
+   * @param fileUrl String url of the file to be loaded.
+   * @throws An error if fileUrl is undefined or if the data cannot be loaded from the file.
+   * @returns Promise of a TypedArray loaded from the file.
+   */
+  private async loadToBuffer<T extends FeatureDataType>(dataType: T, fileUrl?: string): Promise<FeatureArrayType[T]> {
+    if (!fileUrl) {
+      throw Error("File URL is not defined. No data can be loaded.");
     }
-    const url = this.resolveUrl(this.tracksFile);
+    const url = this.resolveUrl(fileUrl);
     const source = await this.arrayLoader.load(url);
-    this.trackIds = source.getBuffer(FeatureDataType.U32);
-  }
-
-  private async loadTimes(): Promise<void> {
-    if (!this.timesFile) {
-      return;
-    }
-    const url = this.resolveUrl(this.timesFile);
-    const source = await this.arrayLoader.load(url);
-    this.times = source.getBuffer(FeatureDataType.U32);
-  }
-
-  private async loadCentroids(): Promise<void> {
-    if (!this.centroidsFile) {
-      return;
-    }
-    const url = this.resolveUrl(this.centroidsFile);
-    const source = await this.arrayLoader.load(url);
-    this.centroids = source.getBuffer(FeatureDataType.U16);
-  }
-
-  private async loadBounds(): Promise<void> {
-    if (!this.boundsFile) {
-      return;
-    }
-    const url = this.resolveUrl(this.boundsFile);
-    const source = await this.arrayLoader.load(url);
-    this.bounds = source.getBuffer(FeatureDataType.U16);
+    return source.getBuffer(dataType);
   }
 
   public get numberOfFrames(): number {
@@ -203,12 +191,29 @@ export default class Dataset {
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     const promises = this.featureNames.map(this.loadFeature.bind(this));
-    promises.push(this.loadOutliers());
-    promises.push(this.loadTracks());
-    promises.push(this.loadTimes());
-    promises.push(this.loadCentroids());
-    promises.push(this.loadBounds());
-    await Promise.all(promises);
+
+    const loadOutlier = async () => {
+      this.outliers = await this.loadToTexture(FeatureDataType.U8, this.outlierFile);
+    };
+    const loadTracks = async () => {
+      this.trackIds = await this.loadToBuffer(FeatureDataType.U32, this.tracksFile);
+    };
+    const loadTimes = async () => {
+      this.times = await this.loadToBuffer(FeatureDataType.U32, this.timesFile);
+    };
+    const loadCentroids = async () => {
+      this.centroids = await this.loadToBuffer(FeatureDataType.U16, this.centroidsFile);
+    };
+    const loadBounds = async () => {
+      this.bounds = await this.loadToBuffer(FeatureDataType.U16, this.boundsFile);
+    };
+    promises.push(loadOutlier());
+    promises.push(loadTracks());
+    promises.push(loadTimes());
+    promises.push(loadCentroids());
+    promises.push(loadBounds());
+
+    await Promise.allSettled(promises);
 
     // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
