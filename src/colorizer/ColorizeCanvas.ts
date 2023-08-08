@@ -5,6 +5,7 @@ import {
   DataTexture,
   GLSL3,
   Line,
+  LineBasicMaterial,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
@@ -27,8 +28,6 @@ import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
-import lineVertexShader from "./shaders/line.vert";
-import lineFragmentShader from "./shaders/line.frag";
 import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
@@ -84,17 +83,6 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-const getDefaultLineUniforms = (): LineUniforms => {
-  const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-  emptyFrame.internalFormat = "RGBA8UI";
-  emptyFrame.needsUpdate = true;
-  return {
-    frameToCanvasScale: new Uniform(new Vector4(1, 1, 1, 1)),
-    frameDimensions: new Uniform(new Vector2(1, 1)),
-    color: new Uniform(new Color(SELECTED_COLOR_DEFAULT)),
-  };
-};
-
 export default class ColorizeCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
@@ -104,7 +92,7 @@ export default class ColorizeCanvas {
 
   // Rendered track line that shows the trajectory of a cell.
   private lineGeometry: BufferGeometry;
-  private lineMaterial: ShaderMaterial;
+  private lineMaterial: LineBasicMaterial;
   private line: Line;
   private showTrackPath: boolean;
 
@@ -161,13 +149,9 @@ export default class ColorizeCanvas {
     // Line material has its own vertex + fragment shader because they're
     // required to make sure they resize correctly with the frame. This is because
     // the points are drawn in a relative canvas range [-1, 1] rather than the frame.
-    this.lineMaterial = new ShaderMaterial({
-      vertexShader: lineVertexShader,
-      fragmentShader: lineFragmentShader,
-      uniforms: getDefaultLineUniforms(),
-      depthWrite: false,
-      depthTest: false,
-      glslVersion: GLSL3,
+    this.lineMaterial = new LineBasicMaterial({
+      color: SELECTED_COLOR_DEFAULT,
+      linewidth: 1.0,
     });
 
     this.line = new Line(this.lineGeometry, this.lineMaterial);
@@ -236,7 +220,7 @@ export default class ColorizeCanvas {
     const frameToCanvasScale = new Vector4(1 / canvasToFrameScale.x, 1 / canvasToFrameScale.y, 1, 1);
 
     this.setUniform("canvasToFrameScale", canvasToFrameScale);
-    this.setLineUniform("frameToCanvasScale", frameToCanvasScale);
+    this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -257,7 +241,6 @@ export default class ColorizeCanvas {
     }
     // Save frame resolution for later calculation
     this.setUniform("frame", frame);
-    this.setLineUniform("frameDimensions", dataset.frameResolution);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.render();
   }
@@ -265,10 +248,6 @@ export default class ColorizeCanvas {
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
     this.material.uniforms[name].value = value;
     this.pickMaterial.uniforms[name].value = value;
-  }
-
-  private setLineUniform<U extends keyof LineUniformTypes>(name: U, value: LineUniformTypes[U]): void {
-    this.lineMaterial.uniforms[name].value = value;
   }
 
   setColorRamp(ramp: ColorRamp): void {
@@ -294,11 +273,12 @@ export default class ColorizeCanvas {
     // Make a new array of the centroid positions in pixel coordinates.
     // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
     this.points = new Float32Array(track.length() * 3);
+
     for (let i = 0; i < track.length(); i++) {
-      // Points passed directly as pixel coordinates relative to frame resolution.
-      this.points[3 * i + 0] = track.centroids[2 * i];
-      this.points[3 * i + 1] = track.centroids[2 * i + 1];
-      this.points[3 * i + 2] = 1;
+      // Normalize from pixel coordinates to canvas space [-1, 1]
+      this.points[3 * i + 0] = (track.centroids[2 * i] / this.dataset.frameResolution.x) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((track.centroids[2 * i + 1] / this.dataset.frameResolution.y) * 2.0 - 1.0);
+      this.points[3 * i + 2] = 0;
     }
     // Assign new BufferAttribute because the old array has been discarded.
     this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
