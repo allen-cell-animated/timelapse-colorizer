@@ -57,10 +57,7 @@ p {
   <body>
     <div id="dataset_controls_container">
       <label for="dataset">Dataset</label>
-      <select name="Dataset" id="dataset">
-        <option value="mama_bear">mama_bear</option>
-        <option value="goldilocks">goldilocks</option>
-        <option value="baby_bear">baby_bear</option>
+      <select name="Dataset" id="dataset" style="text-overflow: ellipsis; max-width: 200px;">
       </select>
       <label for="feature">Feature</label>
       <select name="Feature" id="feature"></select>
@@ -78,21 +75,28 @@ p {
       </div>
     </div>
     <div id="app"></div>
-    <div>Time (use arrow keys)
-      <p style="margin:2px;">
-        <button id="playBtn">Play</button>
-        <button id="pauseBtn">Pause</button>
-        <button id="backBtn">Back</button>
-        <button id="forwardBtn">Forward</button>
-        <input id="timeSlider" type="range" min="0" max="0" step="1" value="0"/><input type="number" id="timeValue" min="0" max="0" value="0"/>
-      </p>
-    </div>
-    <div>Find by track:
-      <input id="trackValue" type="number" value=""/>
-      <button id="findTrackBtn">Find</button>
-      <input type="checkbox" id="show_track_path" />
-      <label for="show_track_path">Show track path</label>
-
+    <div style="display: flex; flex-direction: row; gap: 10px;">
+      <div>
+        <div>Time (use arrow keys)
+          <p style="margin:2px;">
+            <button id="playBtn">Play</button>
+            <button id="pauseBtn">Pause</button>
+            <button id="backBtn">Back</button>
+            <button id="forwardBtn">Forward</button>
+            <input id="timeSlider" type="range" min="0" max="0" step="1" value="0"/><input type="number" id="timeValue" min="0" max="0" value="0"/>
+          </p>
+        </div>
+        <div>Find by track:
+          <input id="trackValue" type="number" value=""/>
+          <button id="findTrackBtn">Find</button>
+        </div>
+      </div>
+      <div>
+        <p id="mouseTrackId">Track ID:</p>
+        <p id="mouseFeatureValue">Feature:</p>
+        <input type="checkbox" id="show_track_path" />
+        <label for="show_track_path">Show track path</label>
+      </div>
     </div>
     <div id="plot" style="width:600px;height:250px;"></div>
     <div id="recording_controls_container">

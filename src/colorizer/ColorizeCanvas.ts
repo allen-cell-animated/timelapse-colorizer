@@ -33,6 +33,7 @@ import Track from "./Track";
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
+export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */

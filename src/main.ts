@@ -2,9 +2,8 @@ import { HexColorString } from "three";
 import { ColorizeCanvas, ColorRamp, Dataset, Track, Plotting } from "./colorizer";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
-import UrlUtility from "./colorizer/UrlUtility";
-
-const baseUrl = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/colorizer/data";
+import * as urlUtils from "./colorizer/utils/url_utils";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 
 const plot = new Plotting("plot");
 const canv = new ColorizeCanvas();
@@ -22,6 +21,8 @@ const showTrackPathCheckbox: HTMLInputElement = document.querySelector("#show_tr
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
 const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
+const mouseTrackIdLabel: HTMLParagraphElement = document.querySelector("#mouseTrackId")!;
+const mouseFeatureValueLabel: HTMLParagraphElement = document.querySelector("#mouseFeatureValue")!;
 
 const timeControls = new TimeControls(canv, drawLoop);
 const recordingControls = new RecordingControls(canv, drawLoop);
@@ -109,13 +110,13 @@ function setColorRampDisabled(disabled: boolean): void {
 
 // DATASET LOADING ///////////////////////////////////////////////////////
 
+let collection: string;
+let collectionData: Map<string, urlUtils.CollectionEntry>;
 let dataset: Dataset | null = null;
 let datasetName = "";
 let datasetOpen = false;
 let featureName = "";
 let selectedTrack: Track | null = null;
-// TODO: Get the first dataset in a manifest JSON?
-const DEFAULT_DATASET = "mama_bear";
 
 async function loadDataset(name: string): Promise<void> {
   console.time("loadDataset");
@@ -123,13 +124,50 @@ async function loadDataset(name: string): Promise<void> {
   datasetSelectEl.disabled = true;
   featureSelectEl.disabled = true;
 
-  if (dataset !== null) {
-    dataset.dispose();
+  if (collectionData && !collectionData.has(name)) {
+    console.warn(`Collection does not include '${name}' as a dataset. Defaulting to first dataset in the collection.`);
+    name = urlUtils.getDefaultDatasetName(collectionData);
   }
 
-  datasetName = name;
-  dataset = new Dataset(`${baseUrl}/${name}`);
-  await dataset.open();
+  try {
+    const datasetPath = urlUtils.getExpectedDatasetPath(name, collection, collectionData);
+
+    console.log(`Fetching dataset from path '${datasetPath}'`);
+    const newDataset = new Dataset(datasetPath);
+    await newDataset.open();
+
+    // Replace old dataset
+    if (dataset !== null) {
+      dataset.dispose();
+    }
+
+    dataset = newDataset;
+    datasetName = name;
+    datasetSelectEl.value = name;
+  } catch (e) {
+    console.error(e);
+    console.error(`Could not load dataset '${name}'.`);
+    console.timeEnd("loadDataset");
+    if (dataset !== null) {
+      console.warn(`Showing last loaded dataset '${datasetName}' instead.`);
+      datasetSelectEl.disabled = false;
+      featureSelectEl.disabled = false;
+      datasetSelectEl.value = datasetName; // reverse value selection
+      return;
+    } else {
+      // Encountered error on first dataset load
+      // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
+      if (!collectionData) {
+        return;
+      }
+      const defaultName = urlUtils.getDefaultDatasetName(collectionData);
+      if (name === defaultName) {
+        return; // we already tried to load the default so give up
+      }
+      console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
+      return loadDataset(defaultName);
+    }
+  }
   resetTrackUI();
 
   // Only change the feature if there's no equivalent in the new dataset
@@ -141,16 +179,16 @@ async function loadDataset(name: string): Promise<void> {
   updateFeature(featureName);
   plot.setDataset(dataset);
   plot.removePlot();
-  await canv.setFrame(0);
+  const newFrame = canv.getCurrentFrame() % canv.getTotalFrames();
+  await canv.setFrame(newFrame);
   featureSelectEl.innerHTML = "";
   dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
   featureSelectEl.value = featureName;
   datasetOpen = true;
   datasetSelectEl.disabled = false;
   featureSelectEl.disabled = false;
-
   await drawLoop();
-  updateURL();
+  updateUrl();
   console.timeEnd("loadDataset");
 }
 
@@ -182,7 +220,7 @@ async function updateFeature(newFeatureName: string): Promise<void> {
   }
   updateColorRampRangeUI();
   featureSelectEl.value = featureName;
-  updateURL();
+  updateUrl();
 }
 
 function handleHideOutOfRangeCheckboxChanged(): void {
@@ -222,7 +260,6 @@ function updateColorRampRangeUI(): void {
 
 async function handleCanvasClick(event: MouseEvent): Promise<void> {
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-  console.log("clicked id " + id);
   // Reset track input
   resetTrackUI();
   if (id < 0) {
@@ -234,7 +271,7 @@ async function handleCanvasClick(event: MouseEvent): Promise<void> {
     plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   }
   await drawLoop();
-  updateURL();
+  updateUrl();
 }
 
 function handleColorRampClick({ target }: MouseEvent): void {
@@ -247,6 +284,35 @@ function handleColorRampClick({ target }: MouseEvent): void {
     }
   });
   canv.render();
+}
+
+function getFeatureValue(id: number): number {
+  if (!featureName || !dataset) {
+    return -1;
+  }
+  // Look up feature value from id
+  return dataset.getFeatureData(featureName)?.data[id] || -1;
+}
+
+function onMouseMove(event: MouseEvent): void {
+  if (!dataset) {
+    return;
+  }
+  const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+  if (id === BACKGROUND_ID) {
+    // Ignore background pixels
+    return;
+  }
+  const value = getFeatureValue(id);
+  const trackId = dataset.getTrackId(id);
+  mouseTrackIdLabel.textContent = `Track ID: ${trackId}`;
+  mouseFeatureValueLabel.textContent = `Feature: ${value}`;
+}
+
+function onMouseLeave(_event: MouseEvent): void {
+  // Clear
+  mouseTrackIdLabel.textContent = `Track ID:`;
+  mouseFeatureValueLabel.textContent = `Feature:`;
 }
 
 // SCRUBBING CONTROLS ////////////////////////////////////////////////////
@@ -277,7 +343,7 @@ async function findTrack(trackId: number): Promise<void> {
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
   trackInput.value = "" + trackId;
-  updateURL();
+  updateUrl();
 }
 
 function resetTrackUI(): void {
@@ -290,8 +356,25 @@ async function handleShowTrackPathChanged(): Promise<void> {
 }
 
 // URL STATE /////////////////////////////////////////////////////////////
-function updateURL(): void {
-  UrlUtility.updateURL(datasetName, featureName, selectedTrack ? selectedTrack.trackId : null, canv.getCurrentFrame());
+function updateUrl(): void {
+  // Don't include collection parameter in URL if it matches the default.
+  let collectionParam;
+  if (
+    collection === urlUtils.DEFAULT_COLLECTION_PATH ||
+    collection === urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME
+  ) {
+    collectionParam = null;
+  } else {
+    collectionParam = collection;
+  }
+
+  urlUtils.saveParamsToUrl(
+    collectionParam,
+    datasetName,
+    featureName,
+    selectedTrack ? selectedTrack.trackId : null,
+    canv.getCurrentFrame()
+  );
 }
 
 // SETUP & DRAWING ///////////////////////////////////////////////////////
@@ -323,7 +406,7 @@ async function drawLoop(): Promise<void> {
 
   if (!timeControls.isPlaying()) {
     // Do not update URL while playing for performance + UX reasons
-    updateURL();
+    updateUrl();
   }
 }
 
@@ -332,30 +415,60 @@ async function start(): Promise<void> {
   populateColorRampSelect();
   canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
-  // Set dataset if provided
-  const { dataset, feature, track, time } = UrlUtility.loadParamsFromUrl();
-  if (dataset) {
-    try {
-      await loadDataset(dataset);
-      datasetSelectEl.value = dataset;
-    } catch (e) {
-      console.log(`Encountered error while loading dataset '${dataset}'. Defaulting to ${DEFAULT_DATASET}`);
-      await loadDataset(DEFAULT_DATASET);
-    }
+  const params = urlUtils.loadParamsFromUrl();
+
+  if (params.dataset && urlUtils.isUrl(params.dataset)) {
+    // CASE 1: Dataset parameter is a URL
+    // If dataset URL is provided, do not collect collections data, and add
+    // the URL directly to the selector.
+    const option = new Option(params.dataset);
+    datasetSelectEl.appendChild(option);
+    datasetSelectEl.value = params.dataset;
   } else {
-    await loadDataset(DEFAULT_DATASET);
+    // CASE 2: Dataset parameter is not a URL
+    // Set default collection value
+    collection = params.collection || urlUtils.DEFAULT_COLLECTION_PATH;
+
+    let collectionResults;
+    try {
+      collectionResults = await urlUtils.getCollectionData(params.collection);
+    } catch (e) {
+      console.error(e);
+      datasetSelectEl.disabled = true;
+      // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
+      throw new Error(
+        `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
+      );
+    }
+
+    collectionData = collectionResults;
+    // Update list of datasets available
+    for (const key of collectionData.keys()) {
+      const option = new Option(key, key);
+      datasetSelectEl.appendChild(option);
+    }
   }
-  if (feature) {
+
+  // Load dataset
+  if (params.dataset && urlUtils.isUrl(params.dataset)) {
+    await loadDataset(params.dataset);
+  } else {
+    // Collections data is loaded.
+    const defaultDataset = urlUtils.getDefaultDatasetName(collectionData);
+    await loadDataset(params.dataset || defaultDataset);
+  }
+
+  if (params.feature) {
     // Load feature (if unset, do nothing because loadDataset already loads a default)
-    await updateFeature(feature);
+    await updateFeature(params.feature);
   }
-  if (track >= 0) {
+  if (params.track >= 0) {
     // Seek to the track ID
-    await findTrack(track);
+    await findTrack(params.track);
   }
-  if (time >= 0) {
+  if (params.time >= 0) {
     // Load time (if unset, defaults to track time or default t=0)
-    await canv.setFrame(time);
+    await canv.setFrame(params.time);
     timeControls.updateUI();
   }
   await drawLoop(); // Force redraw to show the new frame
@@ -374,7 +487,9 @@ async function start(): Promise<void> {
   hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChanged());
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
-  timeControls.addPauseListener(updateURL);
+  timeControls.addPauseListener(updateUrl);
+  canv.domElement.addEventListener("mousemove", onMouseMove);
+  canv.domElement.addEventListener("mouseleave", onMouseLeave);
 }
 
 window.addEventListener("beforeunload", () => {
