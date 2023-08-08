@@ -49,16 +49,7 @@ type ColorizeUniformTypes = {
   hideOutOfRange: boolean;
 };
 
-type LineUniformTypes = {
-  /** Scales from canvas coordinates to frame coordinates. */
-  frameToCanvasScale: Vector4;
-  frameDimensions: Vector2;
-  color: Color;
-};
-
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
-
-type LineUniforms = { [K in keyof LineUniformTypes]: Uniform<LineUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
@@ -208,7 +199,7 @@ export default class ColorizeCanvas {
     // Proportion by which the frame must be scaled to maintain its aspect ratio in the canvas.
     // This is required because the canvas coordinates are defined in relative coordinates with
     // a range of [-1, 1], and don't reflect scaling/changes to the canvas aspect ratio.
-    let canvasToFrameScale: Vector2 = new Vector2(1, 1);
+    const canvasToFrameScale: Vector2 = new Vector2(1, 1);
     if (canvasAspect > frameAspect) {
       // Canvas has a wider aspect ratio than the frame, so proportional height is 1
       // and we scale width accordingly.
