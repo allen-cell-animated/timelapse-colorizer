@@ -8,7 +8,6 @@ import FrameCache from "./FrameCache";
 import Track from "./Track";
 
 import { FeatureArrayType, FeatureDataType } from "./types";
-import { TypedArray } from "plotly.js-dist-min";
 
 type DatasetManifest = {
   frames: string[];
