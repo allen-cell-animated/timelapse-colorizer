@@ -205,22 +205,23 @@ export default class Dataset {
     this.centroidsFile = manifest.centroids;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
-    const promises: Promise<unknown>[] = this.featureNames.map(this.loadFeature.bind(this));
+    const featuresPromises: Promise<void>[] = this.featureNames.map(this.loadFeature.bind(this));
 
-    const loadOutlier = this.loadToTexture(FeatureDataType.U8, this.outlierFile);
-    const loadTracks = this.loadToBuffer(FeatureDataType.U32, this.tracksFile);
-    const loadTimes = this.loadToBuffer(FeatureDataType.U32, this.timesFile);
-    const loadCentroids = this.loadToBuffer(FeatureDataType.U16, this.centroidsFile);
-    const loadBounds = this.loadToBuffer(FeatureDataType.U16, this.boundsFile);
+    const result = await Promise.all([
+      this.loadToTexture(FeatureDataType.U8, this.outlierFile),
+      this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
+      this.loadToBuffer(FeatureDataType.U32, this.timesFile),
+      this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
+      this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
+      ...featuresPromises,
+    ]);
+    const [outliers, tracks, times, centroids, bounds] = result;
 
-    promises.concat([loadOutlier, loadTracks, loadTimes, loadCentroids, loadBounds]);
-    await Promise.allSettled(promises);
-
-    this.outliers = await loadOutlier;
-    this.trackIds = await loadTracks;
-    this.times = await loadTimes;
-    this.centroids = await loadCentroids;
-    this.bounds = await loadBounds;
+    this.outliers = outliers;
+    this.trackIds = tracks;
+    this.times = times;
+    this.centroids = centroids;
+    this.bounds = bounds;
 
     // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
