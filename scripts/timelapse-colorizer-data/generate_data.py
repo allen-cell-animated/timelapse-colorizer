@@ -87,9 +87,8 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
         seg2d = zstack.max(axis=0)
         mx = np.nanmax(seg2d)
         mn = np.nanmin(seg2d[np.nonzero(seg2d)])
-        if (
-            scale != 1.0
-        ):  # float comparison with 1 here is okay because this is a provided argument
+        # float comparison with 1 here is okay because this is not a calculated value
+        if scale != 1.0:
             seg2d = skimage.transform.rescale(
                 seg2d, scale, anti_aliasing=False, order=0
             )
@@ -243,11 +242,29 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--output_dir", type=str, default="./data/")
-parser.add_argument("--dataset", type=str, default="baby_bear")
-parser.add_argument("--noframes", action="store_true")
-# Scale factor. A factor of 1 is the original size, while a factor of 0.25 is a quarter of the original size.
-parser.add_argument("--scale", type=float, default=1.0)
+parser.add_argument(
+    "--output_dir",
+    type=str,
+    default="./data/",
+    help="Parent directory to output to. Data will be written to a subdirectory named after the dataset parameter.",
+)
+parser.add_argument(
+    "--dataset",
+    type=str,
+    default="baby_bear",
+    help="Named FMS dataset or FMS id to load.",
+)
+parser.add_argument(
+    "--noframes",
+    action="store_true",
+    help="If included, generates only the feature data and manifest and skips frames.",
+)
+parser.add_argument(
+    "--scale",
+    type=float,
+    default=1.0,
+    help="Scale factor that original image dimensions will be scaled by. 1 is original size, 0.5 is half-size.",
+)
 
 args = parser.parse_args()
 if __name__ == "__main__":
