@@ -1,7 +1,11 @@
 import {
+  BufferAttribute,
+  BufferGeometry,
   Color,
   DataTexture,
   GLSL3,
+  Line,
+  LineBasicMaterial,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
@@ -11,6 +15,8 @@ import {
   Texture,
   Uniform,
   UnsignedByteType,
+  Vector2,
+  Vector4,
   WebGLRenderTarget,
   WebGLRenderer,
 } from "three";
@@ -22,13 +28,16 @@ import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
+import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
+const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
-  aspect: number;
+  /** Scales from canvas coordinates to frame coordinates. */
+  canvasToFrameScale: Vector2;
   frame: Texture;
   featureData: Texture;
   outlierData: Texture;
@@ -52,7 +61,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyColorRamp = new ColorRamp(["black"]).texture;
 
   return {
-    aspect: new Uniform(2),
+    canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
@@ -73,6 +82,10 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  // Rendered track line that shows the trajectory of a cell.
+  private line: Line;
+  private showTrackPath: boolean;
+
   private scene: Scene;
   private pickScene: Scene;
   private camera: OrthographicCamera;
@@ -80,6 +93,10 @@ export default class ColorizeCanvas {
   private pickRenderTarget: WebGLRenderTarget;
 
   private dataset: Dataset | null;
+  private track: Track | null;
+  private points: Float32Array;
+  private canvasResolution: Vector2 | null;
+
   private featureName: string | null;
   private colorMapRangeLocked: boolean;
   private hideValuesOutOfRange: boolean;
@@ -114,6 +131,19 @@ export default class ColorizeCanvas {
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
 
+    // Configure lines
+    this.points = new Float32Array([0, 0, 0]);
+
+    const lineGeometry = new BufferGeometry();
+    lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
+    const lineMaterial = new LineBasicMaterial({
+      color: SELECTED_COLOR_DEFAULT,
+      linewidth: 1.0,
+    });
+
+    this.line = new Line(lineGeometry, lineMaterial);
+    this.scene.add(this.line);
+
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
     });
@@ -121,7 +151,10 @@ export default class ColorizeCanvas {
     this.checkPixelRatio();
 
     this.dataset = null;
+    this.canvasResolution = null;
     this.featureName = null;
+    this.track = null;
+    this.showTrackPath = false;
     this.colorMapRangeLocked = false;
     this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
@@ -141,11 +174,41 @@ export default class ColorizeCanvas {
 
   setSize(width: number, height: number): void {
     this.checkPixelRatio();
-    this.setUniform("aspect", width / height);
+
     this.renderer.setSize(width, height);
     // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
     // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
+
+    this.canvasResolution = new Vector2(width, height);
+    if (this.dataset) {
+      this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    }
+  }
+
+  updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
+    if (!frameResolution || !canvasResolution) {
+      return;
+    }
+    const canvasAspect = canvasResolution.x / canvasResolution.y;
+    const frameAspect = frameResolution.x / frameResolution.y;
+    // Proportion by which the frame must be scaled to maintain its aspect ratio in the canvas.
+    // This is required because the canvas coordinates are defined in relative coordinates with
+    // a range of [-1, 1], and don't reflect scaling/changes to the canvas aspect ratio.
+    const canvasToFrameScale: Vector2 = new Vector2(1, 1);
+    if (canvasAspect > frameAspect) {
+      // Canvas has a wider aspect ratio than the frame, so proportional height is 1
+      // and we scale width accordingly.
+      canvasToFrameScale.x = canvasAspect / frameAspect;
+    } else {
+      canvasToFrameScale.y = frameAspect / canvasAspect;
+    }
+    // Inverse
+    const frameToCanvasScale = new Vector4(1 / canvasToFrameScale.x, 1 / canvasToFrameScale.y, 1, 1);
+
+    this.setUniform("canvasToFrameScale", canvasToFrameScale);
+    // Scale the line mesh so the vertices line up correctly even when the canvas changes
+    this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -164,7 +227,9 @@ export default class ColorizeCanvas {
     if (!frame) {
       return;
     }
+    // Save frame resolution for later calculation
     this.setUniform("frame", frame);
+    this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.render();
   }
 
@@ -185,8 +250,65 @@ export default class ColorizeCanvas {
     this.setUniform("outlierColor", color);
   }
 
-  setHighlightedId(id: number): void {
-    this.setUniform("highlightedId", id);
+  setSelectedTrack(track: Track | null): void {
+    if (this.track && this.track?.trackId === track?.trackId) {
+      return;
+    }
+    this.track = track;
+    if (!track || !track.centroids || track.centroids.length === 0 || !this.dataset) {
+      return;
+    }
+    // Make a new array of the centroid positions in pixel coordinates.
+    // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
+    this.points = new Float32Array(track.length() * 3);
+
+    for (let i = 0; i < track.length(); i++) {
+      // Normalize from pixel coordinates to canvas space [-1, 1]
+      this.points[3 * i + 0] = (track.centroids[2 * i] / this.dataset.frameResolution.x) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((track.centroids[2 * i + 1] / this.dataset.frameResolution.y) * 2.0 - 1.0);
+      this.points[3 * i + 2] = 0;
+    }
+    // Assign new BufferAttribute because the old array has been discarded.
+    this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
+    this.line.geometry.getAttribute("position").needsUpdate = true;
+    this.updateTrackRange();
+  }
+
+  setShowTrackPath(show: boolean): void {
+    this.showTrackPath = show;
+  }
+
+  /**
+   * Updates the range of the track path line so that it shows up the path up to the current
+   * frame.
+   */
+  updateTrackRange(): void {
+    // Do nothing if track doesn't exist or doesn't have centroid data
+    if (!this.track || !this.track.centroids) {
+      return;
+    }
+    if (!this.showTrackPath) {
+      // Hide path
+      this.line.geometry.setDrawRange(0, 0);
+      return;
+    }
+    const trackFirstFrame = this.track.times[0];
+    // Clamp path to track length (don't draw non-existent vertices)
+    const range = Math.min(this.currentFrame - trackFirstFrame, this.track.length());
+    this.line.geometry.setDrawRange(0, range);
+  }
+
+  private updateHighlightedId(): void {
+    // Get highlighted id
+    if (!this.track) {
+      return;
+    }
+    // Tracks of length 1 should not be offset by 1
+    if (this.track.length() === 1) {
+      this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame));
+    } else {
+      this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame) - 1);
+    }
   }
 
   setFeature(name: string): void {
@@ -287,6 +409,8 @@ export default class ColorizeCanvas {
   }
 
   render(): void {
+    this.updateHighlightedId();
+    this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -296,6 +420,7 @@ export default class ColorizeCanvas {
     this.material.dispose();
     this.geometry.dispose();
     this.renderer.dispose();
+    this.pickMaterial.dispose();
   }
 
   getIdAtPixel(x: number, y: number): number {

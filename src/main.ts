@@ -17,6 +17,7 @@ const colorRampMinEl: HTMLInputElement = document.querySelector("#color_ramp_min
 const colorRampMaxEl: HTMLInputElement = document.querySelector("#color_ramp_max")!;
 const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
 const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
+const showTrackPathCheckbox: HTMLInputElement = document.querySelector("#show_track_path")!;
 const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
 const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
 const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
@@ -174,7 +175,7 @@ async function loadDataset(name: string): Promise<void> {
     featureName = dataset.featureNames[0];
   }
 
-  canv.setDataset(dataset);
+  await canv.setDataset(dataset);
   updateFeature(featureName);
   plot.setDataset(dataset);
   plot.removePlot();
@@ -222,7 +223,7 @@ async function updateFeature(newFeatureName: string): Promise<void> {
   updateUrl();
 }
 
-function handleHideOutOfRangeCheckboxChange(): void {
+function handleHideOutOfRangeCheckboxChanged(): void {
   canv.setHideValuesOutOfRange(hideOutOfRangeCheckbox.checked);
   drawLoop(); // force a render update in case elements should disappear.
 }
@@ -235,7 +236,7 @@ async function handleResetRangeClick(): Promise<void> {
   colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
 }
 
-function handleLockRangeCheckboxChange(): void {
+function handleLockRangeCheckboxChanged(): void {
   canv.setColorMapRangeLock(lockRangeCheckbox.checked);
   updateColorRampRangeUI();
 }
@@ -298,7 +299,7 @@ function onMouseMove(event: MouseEvent): void {
     return;
   }
   const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-  if (id === -1) {
+  if (id === BACKGROUND_ID) {
     // Ignore background pixels
     return;
   }
@@ -338,6 +339,7 @@ async function findTrack(trackId: number): Promise<void> {
   }
   selectedTrack = newTrack;
   await canv.setFrame(selectedTrack.times[0]);
+  canv.setSelectedTrack(selectedTrack);
   plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
   await drawLoop();
   trackInput.value = "" + trackId;
@@ -346,6 +348,11 @@ async function findTrack(trackId: number): Promise<void> {
 
 function resetTrackUI(): void {
   trackInput.value = "";
+}
+
+async function handleShowTrackPathChanged(): Promise<void> {
+  canv.setShowTrackPath(showTrackPathCheckbox.checked);
+  await drawLoop();
 }
 
 // URL STATE /////////////////////////////////////////////////////////////
@@ -375,15 +382,7 @@ function updateUrl(): void {
 const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
 async function drawLoop(): Promise<void> {
-  if (dataset && datasetOpen) {
-    // update higlighted cell id if any
-    if (selectedTrack) {
-      const id = selectedTrack.getIdAtTime(canv.getCurrentFrame());
-      canv.setHighlightedId(id - 1);
-    } else {
-      canv.setHighlightedId(BACKGROUND_ID); // clear selection
-    }
-  }
+  canv.setSelectedTrack(selectedTrack);
 
   await canv.render();
   // Update UI Elements
@@ -483,8 +482,9 @@ async function start(): Promise<void> {
   trackInput.addEventListener("change", () => handleFindTrack());
   colorRampMinEl.addEventListener("change", () => handleColorRampMinChanged());
   colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
-  lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChange());
-  hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChange());
+  showTrackPathCheckbox.addEventListener("change", () => handleShowTrackPathChanged());
+  lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChanged());
+  hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChanged());
   resetRangeBtn.addEventListener("click", handleResetRangeClick);
   recordingControls.setCanvas(canv);
   timeControls.addPauseListener(updateUrl);
