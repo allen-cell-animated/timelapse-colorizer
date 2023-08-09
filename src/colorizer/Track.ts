@@ -19,10 +19,7 @@ export default class Track {
       indices.sort((a, b) => (times[a] < times[b] ? -1 : times[a] === times[b] ? 0 : 1));
       this.times = indices.map((i) => times[i]);
       this.ids = indices.map((i) => ids[i]);
-      this.centroids = indices.reduce((result, i) => {
-        result.push(centroids[i * 2], centroids[i * 2 + 1]);
-        return result;
-      }, [] as number[]);
+      this.centroids = indices.flatMap((i) => [centroids[i * 2], centroids[i * 2 + 1]]);
     }
     console.log(
       `Track ${trackId} has ${this.length()} timepoints starting from ${this.times[0]} to ${
