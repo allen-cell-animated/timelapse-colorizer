@@ -259,12 +259,18 @@ export default class Dataset {
 
     let centroids: number[] = [];
     if (this.centroids) {
-      centroids = ids.flatMap((i) => [this.centroids![2 * i], this.centroids![2 * i + 1]]);
+      centroids = ids.reduce((result, i) => {
+        result.push(this.centroids![2 * i], this.centroids![2 * i + 1]);
+        return result;
+      }, [] as number[]);
     }
 
     let bounds: number[] = [];
     if (this.bounds) {
-      bounds = ids.flatMap((i) => [this.bounds![2 * i], this.bounds![2 * i + 1]]);
+      bounds = ids.reduce((result, i) => {
+        result.push(this.bounds![4 * i], this.bounds![4 * i + 1], this.bounds![4 * i + 2], this.bounds![4 * i + 3]);
+        return result;
+      }, [] as number[]);
     }
 
     return new Track(trackId, times, ids, centroids, bounds);
