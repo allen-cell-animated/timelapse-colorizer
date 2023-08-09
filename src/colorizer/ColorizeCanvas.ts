@@ -83,8 +83,6 @@ export default class ColorizeCanvas {
   private pickMesh: Mesh;
 
   // Rendered track line that shows the trajectory of a cell.
-  private lineGeometry: BufferGeometry;
-  private lineMaterial: LineBasicMaterial;
   private line: Line;
   private showTrackPath: boolean;
 
@@ -136,14 +134,14 @@ export default class ColorizeCanvas {
     // Configure lines
     this.points = new Float32Array([0, 0, 0]);
 
-    this.lineGeometry = new BufferGeometry();
-    this.lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
-    this.lineMaterial = new LineBasicMaterial({
+    const lineGeometry = new BufferGeometry();
+    lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
+    const lineMaterial = new LineBasicMaterial({
       color: SELECTED_COLOR_DEFAULT,
       linewidth: 1.0,
     });
 
-    this.line = new Line(this.lineGeometry, this.lineMaterial);
+    this.line = new Line(lineGeometry, lineMaterial);
     this.scene.add(this.line);
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
@@ -422,6 +420,7 @@ export default class ColorizeCanvas {
     this.material.dispose();
     this.geometry.dispose();
     this.renderer.dispose();
+    this.pickMaterial.dispose();
   }
 
   getIdAtPixel(x: number, y: number): number {
