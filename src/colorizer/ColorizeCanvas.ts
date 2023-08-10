@@ -296,8 +296,8 @@ export default class ColorizeCanvas {
     const trackFirstFrame = this.track.times[0];
     const range = this.currentFrame - trackFirstFrame;
 
-    if (range >= this.track.length()) {
-      // Hide track if we are past the last frame
+    if (range >= this.track.length() || range < 0) {
+      // Hide track if we are outside the track range
       this.line.geometry.setDrawRange(0, 0);
       return;
     }
