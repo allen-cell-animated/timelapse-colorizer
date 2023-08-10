@@ -288,13 +288,20 @@ export default class ColorizeCanvas {
       return;
     }
     if (!this.showTrackPath) {
-      // Hide path
       this.line.geometry.setDrawRange(0, 0);
       return;
     }
+
+    // Show path up to current frame
     const trackFirstFrame = this.track.times[0];
-    // Clamp path to track length (don't draw non-existent vertices)
-    const range = Math.min(this.currentFrame - trackFirstFrame, this.track.length());
+    const range = this.currentFrame - trackFirstFrame;
+
+    if (range >= this.track.length()) {
+      // Hide track if we are past the last frame
+      this.line.geometry.setDrawRange(0, 0);
+      return;
+    }
+
     this.line.geometry.setDrawRange(0, range);
   }
 
