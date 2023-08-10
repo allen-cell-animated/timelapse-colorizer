@@ -4,6 +4,21 @@ import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import { createRoot } from 'react-dom/client';
+import App from "./App";
+import React from "react";
+
+// Clear the existing HTML content
+document.body.innerHTML = '<div id="app"></div>';
+
+// Render your React component instead
+const container = document.getElementById('app');
+const root = createRoot(container!);
+root.render(
+<React.StrictMode>
+  <App />
+</React.StrictMode>
+);
 
 const plot = new Plotting("plot");
 const canv = new ColorizeCanvas();
