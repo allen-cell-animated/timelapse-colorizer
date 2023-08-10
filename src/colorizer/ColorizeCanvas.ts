@@ -283,23 +283,19 @@ export default class ColorizeCanvas {
    * frame.
    */
   updateTrackRange(): void {
-    // Do nothing if track doesn't exist or doesn't have centroid data
-    if (!this.track || !this.track.centroids) {
-      return;
-    }
-    if (!this.showTrackPath) {
+    // Show nothing if track doesn't exist or doesn't have centroid data
+    if (!this.track || !this.track.centroids || !this.showTrackPath) {
       this.line.geometry.setDrawRange(0, 0);
       return;
     }
 
     // Show path up to current frame
     const trackFirstFrame = this.track.times[0];
-    const range = this.currentFrame - trackFirstFrame;
+    let range = this.currentFrame - trackFirstFrame;
 
     if (range >= this.track.length() || range < 0) {
       // Hide track if we are outside the track range
-      this.line.geometry.setDrawRange(0, 0);
-      return;
+      range = 0;
     }
 
     this.line.geometry.setDrawRange(0, range);
