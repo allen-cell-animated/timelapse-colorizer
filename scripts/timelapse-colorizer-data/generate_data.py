@@ -64,10 +64,11 @@ from nuc_morph_analysis.preprocessing.load_data import (
 def make_frames(grouped_frames, output_dir, dataset, scale: float):
     outpath = os.path.join(output_dir, dataset)
 
+    lut_adjustment = 1
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
-    # Get the highest index across all groups, and add one for zero-based indexing
-    totalIndices = grouped_frames.initialIndex.max().max() + 1
+    # Get the highest index across all groups, and add +1 for zero-based indexing and the lut adjustment
+    totalIndices = grouped_frames.initialIndex.max().max() + lut_adjustment + 1
     # Create an array, where for each segmentation index
     # we have 4 indices representing the bounds (2 sets of x,y coordinates).
     # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
@@ -99,7 +100,7 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
             # build our remapping LUT:
             label = int(row["label_img"])
             rowind = int(row["initialIndex"])
-            lut[label] = rowind + 1
+            lut[label] = rowind + lut_adjustment
 
         # remap indices of this frame.
         seg_remapped = lut[seg2d]
@@ -138,10 +139,10 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
             )
         )
 
-    # Save bounding box to JSON
-    bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
-    with open(outpath + "/bounds.json", "w") as f:
-        json.dump(bbox_json, f)
+        # Save bounding box to JSON
+        bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
+        with open(outpath + "/bounds.json", "w") as f:
+            json.dump(bbox_json, f)
 
 
 def make_features(a, features, output_dir, dataset, scale: float):
