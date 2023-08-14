@@ -17,6 +17,8 @@ export const DEFAULT_COLLECTION_FILENAME = "collection.json";
  */
 export const DEFAULT_DATASET_FILENAME = "manifest.json";
 
+export type CollectionData = Map<string, CollectionEntry>;
+
 type UrlParams = {
   collection: string | null;
   dataset: string | null;

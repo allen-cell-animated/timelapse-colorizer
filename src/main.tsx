@@ -23,77 +23,216 @@ root.render(
 
 const CANVAS_PLACEHOLDER_ID = "canvasPlaceholder";
 
+/**
+ * Gets an array of dataset names from the dataset and collectionData.
+ * @param dataset The name of the current dataset.
+ * @param collectionData The loaded collectionData.
+ * @returns, in the following order:
+ * - If collectionData is not null, the array of keys (dataset names) from the collectionData.
+ * - If dataset is not null, an array containing just the dataset name.
+ * - If both are null, returns an empty array.
+ */
+function getDatasetNames(dataset: string | null, collectionData: urlUtils.CollectionData | null): string[] {
+  if (collectionData) {
+    return Array.from(collectionData.keys());
+  } else if (dataset) {
+    return [dataset];
+  } else {
+    return [];
+  }
+}
+
 function App() {
-  const plot = useMemo(() => new Plotting("plot"), []);
-  const canv = useMemo(() => new ColorizeCanvas(), []);
-  const timeControls = useMemo(() => new TimeControls(canv, drawLoop), []);
-  const recordingControls = useMemo(() => new RecordingControls(canv, drawLoop), []);
+  const [plot, setPlot] = useState(new Plotting("plot"));
+  const [canv, setCanv] = useState(new ColorizeCanvas());
+  const [timeControls, setTimeControls] = useState(new TimeControls(canv, drawLoop));
+  const [recordingControls, setRecordingControls] = useState(new RecordingControls(canv, drawLoop));
 
   const [collection, setCollection] = useState<string | undefined>();
-  const [collectionData, setCollectionData] = useState<Map<string, urlUtils.CollectionEntry> | undefined>();
+  const [collectionData, setCollectionData] = useState<urlUtils.CollectionData | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetName, setDatasetName] = useState("");
   const [datasetOpen, setDatasetOpen] = useState(false);
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
 
-  function addOptionTo(parent: HTMLSelectElement, value: string, child?: HTMLElement): void {
-    const optionEl = document.createElement("option");
-    optionEl.value = value;
-    if (child) {
-      optionEl.appendChild(child);
-    } else {
-      optionEl.innerHTML = value;
-    }
-    parent.appendChild(optionEl);
-  }
+  const [colorRampMin, setColorRampMin] = useState(0);
+  const [colorRampMax, setColorRampMax] = useState(0);
+  const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
+  const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
+  const [showTrackPath, setShowTrackPath] = useState(false);
+  const [imagePrefix, setImagePrefix] = useState("");
 
-  // Mount canvas at start
+  // TODO: Move input handler into module
+  const [findTrackInput, setFindTrackInput] = useState("");
+
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
+
+  // INITAL SETUP
   useEffect(() => {
+    setup();
+
+    // Mount canvas
     const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
     element?.parentNode?.replaceChild(canv.domElement, element);
+    canv.domElement.addEventListener("click", handleCanvasClick);
   }, []);
 
+  // SETUP & DRAWING ///////////////////////////////////////////////////////
+
+  const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
+
+  // draw loop
+  useEffect(() => {
+    drawLoop();
+  }, [datasetName, featureName, colorRampMin, colorRampMax, canv.getCurrentFrame(), showTrackPath]);
+
+  async function drawLoop(): Promise<void> {
+    canv.setSelectedTrack(selectedTrack);
+
+    await canv.render();
+    // Update UI Elements
+    timeControls.setIsDisabled(recordingControls.isRecording());
+    timeControls.updateUI();
+    recordingControls.setIsDisabled(!dataset);
+    recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
+    recordingControls.updateUI();
+
+    setColorRampDisabled(disableUI);
+
+    // update current time in plot
+    plot.setTime(canv.getCurrentFrame());
+
+    if (!timeControls.isPlaying()) {
+      // Do not update URL while playing for performance + UX reasons
+      // TODO: Delete?
+      updateUrl();
+    }
+  }
+
+  async function setup(): Promise<void> {
+    setSize();
+    populateColorRampSelect();
+    canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
+
+    const params = urlUtils.loadParamsFromUrl();
+    let { collection: _collection, dataset: _dataset, feature: _feature, track: _track, time: _time } = params;
+    let _collectionData;
+
+    // Load dataset
+    if (_dataset && urlUtils.isUrl(_dataset)) {
+      await loadDataset(_dataset);
+    } else {
+      // Collections data is loaded.
+      _collection = _collection || urlUtils.DEFAULT_COLLECTION_PATH;
+      setCollection(_collection);
+
+      try {
+        _collectionData = await urlUtils.getCollectionData(_collection);
+      } catch (e) {
+        console.error(e);
+        // datasetSelectEl.disabled = true;
+        // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
+        throw new Error(
+          `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
+        );
+      }
+
+      setCollectionData(_collectionData);
+
+      const defaultDataset = urlUtils.getDefaultDatasetName(_collectionData);
+      await loadDataset(_dataset || defaultDataset, _collection, _collectionData);
+    }
+
+    if (_feature) {
+      // Load feature (if unset, do nothing because loadDataset already loads a default)
+      await updateFeature(_feature);
+    }
+    if (_track >= 0) {
+      // Seek to the track ID
+      await findTrack(_track);
+    }
+    if (_time >= 0) {
+      // Load time (if unset, defaults to track time or default t=0)
+      await canv.setFrame(_time);
+      timeControls.updateUI();
+    }
+    await drawLoop(); // Force redraw to show the new frame
+
+    window.addEventListener("keydown", handleKeyDown);
+    // colorRampSelectEl.addEventListener("click", handleColorRampClick);
+    // findTrackBtn.addEventListener("click", () => handleFindTrack());
+    // trackInput.addEventListener("change", () => handleFindTrack());
+    // colorRampMinEl.addEventListener("change", () => handleColorRampMinChanged());
+    // colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
+    // showTrackPathCheckbox.addEventListener("change", () => handleShowTrackPathChanged());
+    // lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChanged());
+    // hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChanged());
+    // resetRangeBtn.addEventListener("click", handleResetRangeClick);
+    recordingControls.setCanvas(canv);
+    timeControls.addPauseListener(updateUrl);
+    canv.domElement.addEventListener("mousemove", onMouseMove);
+    canv.domElement.addEventListener("mouseleave", onMouseLeave);
+  }
+
+  window.addEventListener("beforeunload", () => {
+    canv.domElement.removeEventListener("click", handleCanvasClick);
+    canv.dispose();
+  });
+  window.addEventListener("resize", () => {
+    setSize();
+    canv.render();
+  });
+
   function populateColorRampSelect(): void {
-    colorRampSelectEl.innerHTML = "";
     const width = 120,
       height = 25;
     // Sets dimensions for color ramp container, as color ramp isn't inline (absolute/floating)
-    colorRampContainerEl.style.width = `${width}px`;
-    colorRampContainerEl.style.height = `${height}px`;
+    // colorRampContainerEl.style.width = `${width}px`;
+    // colorRampContainerEl.style.height = `${height}px`;
     colorRamps.forEach((ramp, idx) => {
       const rampCanvas = ramp.createGradientCanvas(width, height);
       if (idx === DEFAULT_RAMP) {
         rampCanvas.className = "selected";
       }
-      colorRampSelectEl.appendChild(rampCanvas);
+      // colorRampSelectEl.appendChild(rampCanvas);
     });
   }
 
   function setColorRampDisabled(disabled: boolean): void {
-    colorRampSelectEl.className = disabled ? "disabled" : "";
+    // colorRampSelectEl.className = disabled ? "disabled" : "";
   }
 
   // DATASET LOADING ///////////////////////////////////////////////////////
 
-  async function loadDataset(name: string): Promise<void> {
+  async function loadDataset(
+    _dataset: string,
+    _collection?: string | null,
+    _collectionData?: urlUtils.CollectionData | null
+  ): Promise<void> {
     console.time("loadDataset");
     setDatasetOpen(false);
-    datasetSelectEl.disabled = true;
-    featureSelectEl.disabled = true;
 
-    if (collectionData && !collectionData.has(name)) {
+    if (_collectionData && !_collectionData.has(_dataset)) {
       console.warn(
-        `Collection does not include '${name}' as a dataset. Defaulting to first dataset in the collection.`
+        `Collection does not include '${_dataset}' as a dataset. Defaulting to first dataset in the collection.`
       );
-      name = urlUtils.getDefaultDatasetName(collectionData);
+      _dataset = urlUtils.getDefaultDatasetName(_collectionData);
     }
+    console.log(_dataset);
+    console.log(_collection);
+    console.log(_collectionData);
 
+    let newDataset;
     try {
-      const datasetPath = urlUtils.getExpectedDatasetPath(name, collection, collectionData);
+      const datasetPath = urlUtils.getExpectedDatasetPath(
+        _dataset,
+        _collection || undefined,
+        _collectionData || undefined
+      );
 
       console.log(`Fetching dataset from path '${datasetPath}'`);
-      const newDataset = new Dataset(datasetPath);
+      newDataset = new Dataset(datasetPath);
       await newDataset.open();
 
       // Replace old dataset
@@ -101,52 +240,44 @@ function App() {
         dataset.dispose();
       }
 
-      dataset = newDataset;
-      datasetName = name;
-      datasetSelectEl.value = name;
+      setDataset(newDataset);
+      setDatasetName(_dataset);
     } catch (e) {
       console.error(e);
-      console.error(`Could not load dataset '${name}'.`);
+      console.error(`Could not load dataset '${_dataset}'.`);
       console.timeEnd("loadDataset");
       if (dataset !== null) {
-        console.warn(`Showing last loaded dataset '${datasetName}' instead.`);
-        datasetSelectEl.disabled = false;
-        featureSelectEl.disabled = false;
-        datasetSelectEl.value = datasetName; // reverse value selection
+        console.warn(`Showing last loaded dataset '${_dataset}' instead.`);
+        setDatasetOpen(true);
         return;
       } else {
         // Encountered error on first dataset load
         // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
-        if (!collectionData) {
+        if (!_collectionData) {
           return;
         }
-        const defaultName = urlUtils.getDefaultDatasetName(collectionData);
-        if (name === defaultName) {
+        const defaultName = urlUtils.getDefaultDatasetName(_collectionData);
+        if (_dataset === defaultName) {
           return; // we already tried to load the default so give up
         }
         console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
-        return loadDataset(defaultName);
+        return loadDataset(defaultName, _collection, _collectionData);
       }
     }
     resetTrackUI();
 
     // Only change the feature if there's no equivalent in the new dataset
-    if (!dataset.hasFeature(featureName)) {
-      featureName = dataset.featureNames[0];
+    if (!newDataset.hasFeature(featureName)) {
+      setFeatureName(newDataset.featureNames[0]);
     }
 
-    await canv.setDataset(dataset);
+    await canv.setDataset(newDataset);
     updateFeature(featureName);
-    plot.setDataset(dataset);
+    plot.setDataset(newDataset);
     plot.removePlot();
     const newFrame = canv.getCurrentFrame() % canv.getTotalFrames();
     await canv.setFrame(newFrame);
-    featureSelectEl.innerHTML = "";
-    dataset.featureNames.forEach((feature) => addOptionTo(featureSelectEl, feature));
-    featureSelectEl.value = featureName;
-    datasetOpen = true;
-    datasetSelectEl.disabled = false;
-    featureSelectEl.disabled = false;
+    setDatasetOpen(true);
     await drawLoop();
     updateUrl();
     console.timeEnd("loadDataset");
@@ -154,68 +285,59 @@ function App() {
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
 
-  function handleDatasetChange({ currentTarget }: Event): void {
-    const value = (currentTarget as HTMLOptionElement).value;
+  function handleDatasetChange(event: React.ChangeEvent<HTMLSelectElement>): void {
+    const value = event.target.value;
     if (value !== datasetName) {
-      loadDataset(value);
+      loadDataset(value, collection, collectionData);
     }
   }
 
-  function handleFeatureChange({ currentTarget }: Event): void {
-    const value = (currentTarget as HTMLOptionElement).value;
+  function handleFeatureChange(event: React.ChangeEvent<HTMLSelectElement>): void {
+    const value = event.target.value;
     console.log(value);
-    updateFeature(value);
+    if (value !== featureName) {
+      updateFeature(value);
+    }
   }
 
   async function updateFeature(newFeatureName: string): Promise<void> {
     if (!dataset?.hasFeature(newFeatureName)) {
       return;
     }
-    featureName = newFeatureName;
 
-    canv.setFeature(featureName);
+    setFeatureName(newFeatureName);
+    canv.setFeature(newFeatureName);
     // only update plot if active
     if (selectedTrack) {
-      plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
+      plot.plot(selectedTrack, newFeatureName, canv.getCurrentFrame());
     }
-    updateColorRampRangeUI();
-    featureSelectEl.value = featureName;
     updateUrl();
   }
 
   function handleHideOutOfRangeCheckboxChanged(): void {
-    canv.setHideValuesOutOfRange(hideOutOfRangeCheckbox.checked);
+    canv.setHideValuesOutOfRange(hideValuesOutOfRange);
     drawLoop(); // force a render update in case elements should disappear.
   }
 
   async function handleResetRangeClick(): Promise<void> {
     canv.resetColorMapRange();
-    updateColorRampRangeUI();
     await drawLoop(); // update UI
-    colorRampMinEl.innerText = `${canv.getColorMapRangeMin()}`;
-    colorRampMaxEl.innerText = `${canv.getColorMapRangeMax()}`;
+    setColorRampMin(canv.getColorMapRangeMin());
+    setColorRampMax(canv.getColorMapRangeMax());
   }
 
   function handleLockRangeCheckboxChanged(): void {
-    canv.setColorMapRangeLock(lockRangeCheckbox.checked);
-    updateColorRampRangeUI();
+    canv.setColorMapRangeLock(isColorRampRangeLocked);
   }
 
   function handleColorRampMinChanged(): void {
-    canv.setColorMapRangeMin(colorRampMinEl.valueAsNumber);
+    // canv.setColorMapRangeMin(colorRampMinEl.valueAsNumber);
     drawLoop();
-    updateColorRampRangeUI();
   }
 
   function handleColorRampMaxChanged(): void {
-    canv.setColorMapRangeMax(colorRampMaxEl.valueAsNumber);
+    // canv.setColorMapRangeMax(colorRampMaxEl.valueAsNumber);
     drawLoop();
-    updateColorRampRangeUI();
-  }
-
-  function updateColorRampRangeUI(): void {
-    colorRampMinEl.value = `${canv.getColorMapRangeMin()}`;
-    colorRampMaxEl.value = `${canv.getColorMapRangeMax()}`;
   }
 
   async function handleCanvasClick(event: MouseEvent): Promise<void> {
@@ -224,27 +346,28 @@ function App() {
     resetTrackUI();
     if (id < 0) {
       plot.removePlot();
-      selectedTrack = null; // clear selected track when clicking off of cells
+      setSelectedTrack(null); // clear selected track when clicking off of cells
     } else {
       const trackId = dataset!.getTrackId(id);
-      selectedTrack = dataset!.buildTrack(trackId);
-      plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
+      const newTrack = dataset!.buildTrack(trackId);
+      plot.plot(newTrack, featureName, canv.getCurrentFrame());
+      setSelectedTrack(newTrack);
     }
     await drawLoop();
     updateUrl();
   }
 
-  function handleColorRampClick({ target }: MouseEvent): void {
-    Array.from(colorRampSelectEl.children).forEach((el, idx) => {
-      if (el === target) {
-        canv.setColorRamp(colorRamps[idx]);
-        el.className = "selected";
-      } else {
-        el.className = "";
-      }
-    });
-    canv.render();
-  }
+  // function handleColorRampClick({ target }: MouseEvent): void {
+  //   Array.from(colorRampSelectEl.children).forEach((el, idx) => {
+  //     if (el === target) {
+  //       canv.setColorRamp(colorRamps[idx]);
+  //       el.className = "selected";
+  //     } else {
+  //       el.className = "";
+  //     }
+  //   });
+  //   canv.render();
+  // }
 
   function getFeatureValue(id: number): number {
     if (!featureName || !dataset) {
@@ -263,16 +386,11 @@ function App() {
       // Ignore background pixels
       return;
     }
-    const value = getFeatureValue(id);
-    const trackId = dataset.getTrackId(id);
-    mouseTrackIdLabel.textContent = `Track ID: ${trackId}`;
-    mouseFeatureValueLabel.textContent = `Feature: ${value}`;
+    setHoveredId(id);
   }
 
   function onMouseLeave(_event: MouseEvent): void {
-    // Clear
-    mouseTrackIdLabel.textContent = `Track ID:`;
-    mouseFeatureValueLabel.textContent = `Feature:`;
+    setHoveredId(null);
   }
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
@@ -287,7 +405,7 @@ function App() {
 
   async function handleFindTrack(): Promise<void> {
     // Load track value
-    await findTrack(trackInput.valueAsNumber);
+    await findTrack(parseInt(findTrackInput));
   }
 
   async function findTrack(trackId: number): Promise<void> {
@@ -297,35 +415,35 @@ function App() {
       // Check track validity
       return;
     }
-    selectedTrack = newTrack;
-    await canv.setFrame(selectedTrack.times[0]);
-    canv.setSelectedTrack(selectedTrack);
-    plot.plot(selectedTrack, featureName, canv.getCurrentFrame());
+    setSelectedTrack(newTrack);
+    await canv.setFrame(newTrack.times[0]);
+    canv.setSelectedTrack(newTrack);
+    plot.plot(newTrack, featureName, canv.getCurrentFrame());
     await drawLoop();
-    trackInput.value = "" + trackId;
+    setFindTrackInput("" + trackId);
     updateUrl();
   }
 
   function resetTrackUI(): void {
-    trackInput.value = "";
+    setFindTrackInput("");
   }
 
   async function handleShowTrackPathChanged(): Promise<void> {
-    canv.setShowTrackPath(showTrackPathCheckbox.checked);
+    canv.setShowTrackPath(showTrackPath);
     await drawLoop();
   }
 
   // URL STATE /////////////////////////////////////////////////////////////
   function updateUrl(): void {
     // Don't include collection parameter in URL if it matches the default.
-    let collectionParam;
+    let collectionParam = null;
     if (
       collection === urlUtils.DEFAULT_COLLECTION_PATH ||
       collection === urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME
     ) {
       collectionParam = null;
     } else {
-      collectionParam = collection;
+      collectionParam = collection || null;
     }
 
     urlUtils.saveParamsToUrl(
@@ -337,150 +455,68 @@ function App() {
     );
   }
 
-  // SETUP & DRAWING ///////////////////////////////////////////////////////
-
-  const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
-
-  async function drawLoop(): Promise<void> {
-    canv.setSelectedTrack(selectedTrack);
-
-    await canv.render();
-    // Update UI Elements
-    timeControls.setIsDisabled(recordingControls.isRecording());
-    timeControls.updateUI();
-    recordingControls.setIsDisabled(!dataset);
-    recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
-    recordingControls.updateUI();
-
-    lockRangeCheckbox.checked = canv.isColorMapRangeLocked();
-
-    const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
-    setColorRampDisabled(disableUI);
-    datasetSelectEl.disabled = disableUI;
-    featureSelectEl.disabled = disableUI;
-    findTrackBtn.disabled = disableUI;
-    trackInput.disabled = disableUI;
-
-    // update current time in plot
-    plot.setTime(canv.getCurrentFrame());
-
-    if (!timeControls.isPlaying()) {
-      // Do not update URL while playing for performance + UX reasons
-      updateUrl();
-    }
-  }
-
-  async function start(): Promise<void> {
-    setSize();
-    populateColorRampSelect();
-    canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
-
-    const params = urlUtils.loadParamsFromUrl();
-
-    if (params.dataset && urlUtils.isUrl(params.dataset)) {
-      // CASE 1: Dataset parameter is a URL
-      // If dataset URL is provided, do not collect collections data, and add
-      // the URL directly to the selector.
-      const option = new Option(params.dataset);
-      datasetSelectEl.appendChild(option);
-      datasetSelectEl.value = params.dataset;
-    } else {
-      // CASE 2: Dataset parameter is not a URL
-      // Set default collection value
-      collection = params.collection || urlUtils.DEFAULT_COLLECTION_PATH;
-
-      let collectionResults;
-      try {
-        collectionResults = await urlUtils.getCollectionData(params.collection);
-      } catch (e) {
-        console.error(e);
-        datasetSelectEl.disabled = true;
-        // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
-        throw new Error(
-          `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
-        );
-      }
-
-      collectionData = collectionResults;
-      // Update list of datasets available
-      for (const key of collectionData.keys()) {
-        const option = new Option(key, key);
-        datasetSelectEl.appendChild(option);
-      }
-    }
-
-    // Load dataset
-    if (params.dataset && urlUtils.isUrl(params.dataset)) {
-      await loadDataset(params.dataset);
-    } else {
-      // Collections data is loaded.
-      const defaultDataset = urlUtils.getDefaultDatasetName(collectionData);
-      await loadDataset(params.dataset || defaultDataset);
-    }
-
-    if (params.feature) {
-      // Load feature (if unset, do nothing because loadDataset already loads a default)
-      await updateFeature(params.feature);
-    }
-    if (params.track >= 0) {
-      // Seek to the track ID
-      await findTrack(params.track);
-    }
-    if (params.time >= 0) {
-      // Load time (if unset, defaults to track time or default t=0)
-      await canv.setFrame(params.time);
-      timeControls.updateUI();
-    }
-    await drawLoop(); // Force redraw to show the new frame
-
-    window.addEventListener("keydown", handleKeyDown);
-    datasetSelectEl.addEventListener("change", handleDatasetChange);
-    featureSelectEl.addEventListener("change", handleFeatureChange);
-    colorRampSelectEl.addEventListener("click", handleColorRampClick);
-    canv.domElement.addEventListener("click", handleCanvasClick);
-    findTrackBtn.addEventListener("click", () => handleFindTrack());
-    trackInput.addEventListener("change", () => handleFindTrack());
-    colorRampMinEl.addEventListener("change", () => handleColorRampMinChanged());
-    colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
-    showTrackPathCheckbox.addEventListener("change", () => handleShowTrackPathChanged());
-    lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChanged());
-    hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChanged());
-    resetRangeBtn.addEventListener("click", handleResetRangeClick);
-    recordingControls.setCanvas(canv);
-    timeControls.addPauseListener(updateUrl);
-    canv.domElement.addEventListener("mousemove", onMouseMove);
-    canv.domElement.addEventListener("mouseleave", onMouseLeave);
-  }
-
-  window.addEventListener("beforeunload", () => {
-    canv.domElement.removeEventListener("click", handleCanvasClick);
-    canv.dispose();
-  });
-  window.addEventListener("resize", () => {
-    setSize();
-    canv.render();
-  });
-  start();
+  const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
 
   return (
     <div>
       <p>This section is being rendered by React.</p>
+
       <div className={styles.canvasTopControlsContainer}>
         <label htmlFor="dataset">Dataset</label>
-        <select name="Dataset" id="dataset" style={{ textOverflow: "ellipsis", maxWidth: "200px" }} />
+        <select
+          name="Dataset"
+          id="dataset"
+          style={{ textOverflow: "ellipsis", maxWidth: "200px" }}
+          disabled={disableUI}
+          onChange={handleDatasetChange}
+          value={datasetName}
+        >
+          {getDatasetNames(datasetName, collectionData || null).map((name) => {
+            return <option value={name}>{name}</option>;
+          })}
+        </select>
         <label htmlFor="feature">Feature</label>
-        <select name="Feature" id="feature"></select>
+        <select
+          name="Feature"
+          id="feature"
+          disabled={disableUI}
+          onChange={handleFeatureChange}
+          value={featureName}
+        ></select>
 
         <div className={styles.labeledColorRamp}>
-          <input type="number" id="colorRampMin" style={{ width: "50px", textAlign: "start" }} value="0" min="0" />
+          <input
+            type="number"
+            id="colorRampMin"
+            style={{ width: "50px", textAlign: "start" }}
+            defaultValue="0"
+            min="0"
+          />
           <div className={styles.colorRampContainer}>
             <span id="colorRamp"></span>
           </div>
-          <input type="number" id="colorRampMax" style={{ width: "80px", textAlign: "start" }} value="0" min="0" />
-          <button id="resetRangeButton">Reset range</button>
+          <input
+            type="number"
+            id="colorRampMax"
+            style={{ width: "80px", textAlign: "start" }}
+            defaultValue="0"
+            min="0"
+          />
+          <button id="resetRangeButton" onClick={handleResetRangeClick}>
+            Reset range
+          </button>
           <input type="checkbox" id="lockRangeCheckbox" />
           <label htmlFor="lockRangeCheckbox">Lock color map range</label>
-          <input type="checkbox" id="maskRangeCheckbox" />
+          <input
+            type="checkbox"
+            id="maskRangeCheckbox"
+            checked={canv.isColorMapRangeLocked()}
+            onChange={() => {
+              // Invert lock on range
+              setIsColorRampRangeLocked(!isColorRampRangeLocked);
+              canv.setColorMapRangeLock(!isColorRampRangeLocked);
+            }}
+          />
           <label htmlFor="maskRangeCheckbox">Hide values outside of range</label>
         </div>
       </div>
@@ -496,19 +532,21 @@ function App() {
               <button id="pauseBtn">Pause</button>
               <button id="backBtn">Back</button>
               <button id="forwardBtn">Forward</button>
-              <input id="timeSlider" type="range" min="0" max="0" step="1" value="0" />
-              <input type="number" id="timeValue" min="0" max="0" value="0" />
+              <input id="timeSlider" type="range" min="0" max="0" step="1" defaultValue="0" />
+              <input type="number" id="timeValue" min="0" max="0" defaultValue="0" />
             </p>
           </div>
           <div>
             Find by track:
-            <input id="trackValue" type="number" value="" />
-            <button id="findTrackBtn">Find</button>
+            <input id="trackValue" disabled={disableUI} type="number" defaultValue="" />
+            <button id="findTrackBtn" disabled={disableUI}>
+              Find
+            </button>
           </div>
         </div>
         <div>
-          <p id="mouseTrackId">Track ID:</p>
-          <p id="mouseFeatureValue">Feature:</p>
+          <p id="mouseTrackId">Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
+          <p id="mouseFeatureValue">Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
           <input type="checkbox" id="show_track_path" />
           <label htmlFor="show_track_path">Show track path</label>
         </div>
@@ -516,23 +554,6 @@ function App() {
     </div>
   );
 }
-
-// document.querySelector<HTMLDivElement>("#app")!.appendChild(canv.domElement);
-
-// const datasetSelectEl: HTMLSelectElement = document.querySelector("#dataset")!;
-// const featureSelectEl: HTMLSelectElement = document.querySelector("#feature")!;
-// const colorRampSelectEl: HTMLSelectElement = document.querySelector("#color_ramp")!;
-// const colorRampContainerEl: HTMLDivElement = document.querySelector("#color_ramp_container")!;
-// const colorRampMinEl: HTMLInputElement = document.querySelector("#color_ramp_min")!;
-// const colorRampMaxEl: HTMLInputElement = document.querySelector("#color_ramp_max")!;
-// const trackInput: HTMLInputElement = document.querySelector("#trackValue")!;
-// const findTrackBtn: HTMLButtonElement = document.querySelector("#findTrackBtn")!;
-// const showTrackPathCheckbox: HTMLInputElement = document.querySelector("#show_track_path")!;
-// const lockRangeCheckbox: HTMLInputElement = document.querySelector("#lock_range_checkbox")!;
-// const hideOutOfRangeCheckbox: HTMLInputElement = document.querySelector("#mask_range_checkbox")!;
-// const resetRangeBtn: HTMLButtonElement = document.querySelector("#reset_range_btn")!;
-// const mouseTrackIdLabel: HTMLParagraphElement = document.querySelector("#mouseTrackId")!;
-// const mouseFeatureValueLabel: HTMLParagraphElement = document.querySelector("#mouseFeatureValue")!;
 
 // COLOR RAMPS ///////////////////////////////////////////////////////////
 
