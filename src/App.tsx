@@ -1,9 +1,9 @@
-import React, {Component} from "react";
+import React from "react";
 
 function App() {
     return (
         <p>
-            Hello! This section is being rendered by React.
+            This section is being rendered by React.
         </p>
     )
 }
