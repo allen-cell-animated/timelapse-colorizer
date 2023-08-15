@@ -61,14 +61,14 @@ from nuc_morph_analysis.preprocessing.load_data import (
 # NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
 
 
-def make_frames(grouped_frames, output_dir, dataset):
-    downsample = 1
+def make_frames(grouped_frames, output_dir, dataset, scale: float):
     outpath = os.path.join(output_dir, dataset)
 
+    lut_adjustment = 1
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
-    # Get the highest index across all groups, and add one for zero-based indexing
-    totalIndices = grouped_frames.initialIndex.max().max() + 1
+    # Get the highest index across all groups, and add +1 for zero-based indexing and the lut adjustment
+    totalIndices = grouped_frames.initialIndex.max().max() + lut_adjustment + 1
     # Create an array, where for each segmentation index
     # we have 4 indices representing the bounds (2 sets of x,y coordinates).
     # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
@@ -88,10 +88,10 @@ def make_frames(grouped_frames, output_dir, dataset):
         seg2d = zstack.max(axis=0)
         mx = np.nanmax(seg2d)
         mn = np.nanmin(seg2d[np.nonzero(seg2d)])
-        # TODO test this
-        if downsample != 1:
+        # float comparison with 1 here is okay because this is not a calculated value
+        if scale != 1.0:
             seg2d = skimage.transform.rescale(
-                seg2d, downsample, anti_aliasing=False, order=0
+                seg2d, scale, anti_aliasing=False, order=0
             )
         seg2d = seg2d.astype(np.uint32)
 
@@ -100,7 +100,7 @@ def make_frames(grouped_frames, output_dir, dataset):
             # build our remapping LUT:
             label = int(row["label_img"])
             rowind = int(row["initialIndex"])
-            lut[label] = rowind + 1
+            lut[label] = rowind + lut_adjustment
 
         # remap indices of this frame.
         seg_remapped = lut[seg2d]
@@ -139,13 +139,13 @@ def make_frames(grouped_frames, output_dir, dataset):
             )
         )
 
-    # Save bounding box to JSON
-    bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
-    with open(outpath + "/bounds.json", "w") as f:
-        json.dump(bbox_json, f)
+        # Save bounding box to JSON
+        bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
+        with open(outpath + "/bounds.json", "w") as f:
+            json.dump(bbox_json, f)
 
 
-def make_features(a, features, output_dir, dataset):
+def make_features(a, features, output_dir, dataset, scale: float):
     nfeatures = len(features)
     logging.info("Making features...")
 
@@ -175,6 +175,9 @@ def make_features(a, features, output_dir, dataset):
     centroids_x = a["centroid_x"].to_numpy()
     centroids_y = a["centroid_y"].to_numpy()
     centroids_stacked = np.ravel(np.dstack([centroids_x, centroids_y]))
+    centroids_stacked = centroids_stacked * scale
+    centroids_stacked = centroids_stacked.astype(int)
+
     centroids_json = {"data": centroids_stacked.tolist()}
     with open(outpath + "/centroids.json", "w") as f:
         json.dump(centroids_json, f)
@@ -191,7 +194,7 @@ def make_features(a, features, output_dir, dataset):
     logging.info("Done writing features.")
 
 
-def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
+def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scale=1):
     os.makedirs(os.path.join(output_dir, dataset), exist_ok=True)
 
     # use nucmorph to load data
@@ -214,12 +217,11 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
 
     nframes = len(grouped_frames)
 
-    if do_frames:
-        make_frames(grouped_frames, output_dir, dataset)
-
     features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
+    make_features(a, features, output_dir, dataset, scale)
 
-    make_features(a, features, output_dir, dataset)
+    if do_frames:
+        make_frames(grouped_frames, output_dir, dataset, scale)
 
     # write some kind of manifest
     featmap = {}
@@ -241,9 +243,30 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--output_dir", type=str, default="./data/")
-parser.add_argument("--dataset", type=str, default="baby_bear")
-parser.add_argument("--noframes", action="store_true")
+parser.add_argument(
+    "--output_dir",
+    type=str,
+    default="./data/",
+    help="Parent directory to output to. Data will be written to a subdirectory named after the dataset parameter.",
+)
+parser.add_argument(
+    "--dataset",
+    type=str,
+    default="baby_bear",
+    help="Compatible named FMS dataset or FMS id to load. Will be loaded using `nuc_morph_analysis.preprocessing.load_data.load_dataset()`.",
+)
+parser.add_argument(
+    "--noframes",
+    action="store_true",
+    help="If included, generates only the feature data, centroids, track data, and manifest, skipping the frame and bounding box generation.",
+)
+parser.add_argument(
+    "--scale",
+    type=float,
+    default=1.0,
+    help="Uniform scale factor that original image dimensions will be scaled by. 1 is original size, 0.5 is half-size in both X and Y.",
+)
+
 args = parser.parse_args()
 if __name__ == "__main__":
     # Set up logging
@@ -259,5 +282,8 @@ if __name__ == "__main__":
     )
     logging.info("Starting...")
     make_dataset(
-        output_dir=args.output_dir, dataset=args.dataset, do_frames=not args.noframes
+        output_dir=args.output_dir,
+        dataset=args.dataset,
+        do_frames=not args.noframes,
+        scale=args.scale,
     )
