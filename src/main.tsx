@@ -5,7 +5,7 @@ import TimeControls from "./colorizer/TimeControls";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { createRoot } from "react-dom/client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "./App.module.css";
 
@@ -43,10 +43,10 @@ function getDatasetNames(dataset: string | null, collectionData: urlUtils.Collec
 }
 
 function App() {
-  const [plot, setPlot] = useState(new Plotting("plot"));
-  const [canv, setCanv] = useState(new ColorizeCanvas());
-  const [timeControls, setTimeControls] = useState(new TimeControls(canv, drawLoop));
-  const [recordingControls, setRecordingControls] = useState(new RecordingControls(canv, drawLoop));
+  const [plot, setPlot] = useState<Plotting | null>(null);
+  const canv = useMemo(() => {
+    return new ColorizeCanvas();
+  }, []);
 
   const [collection, setCollection] = useState<string | undefined>();
   const [collectionData, setCollectionData] = useState<urlUtils.CollectionData | undefined>();
@@ -63,6 +63,52 @@ function App() {
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
   const [imagePrefix, setImagePrefix] = useState("");
+
+  const timeControls = useMemo(
+    () =>
+      new TimeControls(canv, (frame) => {
+        setCurrentFrame(frame);
+        canv.setFrame(frame);
+      }),
+    []
+  );
+
+  const drawLoop = useCallback(async (): Promise<void> => {
+    console.log("Draw");
+    console.log(currentFrame);
+
+    if (canv.getCurrentFrame() !== currentFrame) {
+      await canv.setFrame(currentFrame);
+    }
+
+    canv.setSelectedTrack(selectedTrack);
+
+    await canv.render();
+    // Update UI Elements
+    timeControls.setIsDisabled(recordingControls.isRecording());
+    // timeControls.updateUI();
+    recordingControls.setIsDisabled(!dataset);
+    recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
+    recordingControls.updateUI();
+
+    setColorRampDisabled(disableUi);
+
+    // update current time in plot
+    plot?.setTime(currentFrame);
+
+    if (!timeControls.isPlaying()) {
+      // Do not update URL while playing for performance + UX reasons
+      // TODO: Delete?
+      updateUrl();
+    }
+  }, [currentFrame, selectedTrack, dataset, datasetName, featureName]);
+
+  // draw loop
+  useEffect(() => {
+    drawLoop();
+  }, [datasetName, featureName, colorRampMin, colorRampMax, currentFrame, showTrackPath, hideValuesOutOfRange]);
+
+  const recordingControls = useMemo(() => new RecordingControls(canv, drawLoop), []);
 
   // TODO: Move input handler into module
   const [findTrackInput, setFindTrackInput] = useState("");
@@ -94,8 +140,7 @@ function App() {
 
   // Run updateUrl whenever it changes.
   useEffect(() => {
-    console.log(selectedTrack);
-    updateUrl();
+    // updateUrl();
   }, [updateUrl]);
 
   const handleCanvasClick = useCallback(
@@ -104,18 +149,21 @@ function App() {
       // Reset track input
       resetTrackUI();
       if (id < 0) {
-        plot.removePlot();
+        plot?.removePlot();
         setSelectedTrack(null); // clear selected track when clicking off of cells
       } else {
         const trackId = dataset!.getTrackId(id);
         const newTrack = dataset!.buildTrack(trackId);
-        plot.plot(newTrack, featureName, currentFrame);
+        plot?.plot(newTrack, featureName, currentFrame);
         setSelectedTrack(newTrack);
       }
-      await drawLoop();
     },
     [dataset, featureName]
   );
+
+  useEffect(() => {
+    console.log(currentFrame);
+  }, [currentFrame]);
 
   useEffect(() => {
     window.addEventListener("click", handleCanvasClick);
@@ -129,6 +177,7 @@ function App() {
 
   // INITAL SETUP
   useEffect(() => {
+    setPlot(new Plotting("plot")); // Have to do this after initial draw
     setup();
 
     // Mount canvas
@@ -137,40 +186,6 @@ function App() {
   }, []);
 
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
-
-  // draw loop
-  useEffect(() => {
-    drawLoop();
-  }, [datasetName, featureName, colorRampMin, colorRampMax, currentFrame, showTrackPath, hideValuesOutOfRange]);
-
-  async function drawLoop(): Promise<void> {
-    console.log("Draw");
-
-    if (canv.getCurrentFrame() !== currentFrame) {
-      await canv.setFrame(currentFrame);
-    }
-
-    canv.setSelectedTrack(selectedTrack);
-
-    await canv.render();
-    // Update UI Elements
-    timeControls.setIsDisabled(recordingControls.isRecording());
-    timeControls.updateUI();
-    recordingControls.setIsDisabled(!dataset);
-    recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
-    recordingControls.updateUI();
-
-    setColorRampDisabled(disableUI);
-
-    // update current time in plot
-    plot.setTime(currentFrame);
-
-    if (!timeControls.isPlaying()) {
-      // Do not update URL while playing for performance + UX reasons
-      // TODO: Delete?
-      updateUrl();
-    }
-  }
 
   async function setup(): Promise<void> {
     setSize();
@@ -217,9 +232,9 @@ function App() {
     if (_time >= 0) {
       // Load time (if unset, defaults to track time or default t=0)
       await canv.setFrame(_time);
-      timeControls.updateUI();
+      // timeControls.updateUI();
     }
-    await drawLoop(); // Force redraw to show the new frame
+    // await drawLoop(); // Force redraw to show the new frame
 
     window.addEventListener("keydown", handleKeyDown);
     // colorRampSelectEl.addEventListener("click", handleColorRampClick);
@@ -233,8 +248,6 @@ function App() {
     // resetRangeBtn.addEventListener("click", handleResetRangeClick);
     recordingControls.setCanvas(canv);
     timeControls.addPauseListener(updateUrl);
-    canv.domElement.addEventListener("mousemove", onMouseMove);
-    canv.domElement.addEventListener("mouseleave", onMouseLeave);
   }
 
   window.addEventListener("beforeunload", () => {
@@ -332,8 +345,8 @@ function App() {
 
     await canv.setDataset(newDataset);
     updateFeature(featureName);
-    plot.setDataset(newDataset);
-    plot.removePlot();
+    plot?.setDataset(newDataset);
+    plot?.removePlot();
     const newFrame = currentFrame % canv.getTotalFrames();
     setCurrentFrame(newFrame);
     // await canv.setFrame(newFrame);
@@ -342,7 +355,7 @@ function App() {
     setDatasetOpen(true);
     setDataset(newDataset);
     setDatasetName(_dataset);
-    await drawLoop();
+    // await drawLoop();
     updateUrl();
     console.timeEnd("loadDataset");
   }
@@ -373,19 +386,19 @@ function App() {
     canv.setFeature(newFeatureName);
     // only update plot if active
     if (selectedTrack) {
-      plot.plot(selectedTrack, newFeatureName, currentFrame);
+      plot?.plot(selectedTrack, newFeatureName, currentFrame);
     }
     updateUrl();
   }
 
   function handleHideOutOfRangeCheckboxChanged(): void {
     canv.setHideValuesOutOfRange(hideValuesOutOfRange);
-    drawLoop(); // force a render update in case elements should disappear.
+    // drawLoop(); // force a render update in case elements should disappear.
   }
 
   async function handleResetRangeClick(): Promise<void> {
     canv.resetColorMapRange();
-    await drawLoop(); // update UI
+    // await drawLoop(); // update UI
     setColorRampMin(canv.getColorMapRangeMin());
     setColorRampMax(canv.getColorMapRangeMax());
   }
@@ -406,29 +419,44 @@ function App() {
   //   canv.render();
   // }
 
-  function getFeatureValue(id: number): number {
-    if (!featureName || !dataset) {
-      return -1;
-    }
-    // Look up feature value from id
-    return dataset.getFeatureData(featureName)?.data[id] || -1;
-  }
+  const getFeatureValue = useCallback(
+    (id: number): number => {
+      if (!featureName || !dataset) {
+        return -1;
+      }
+      // Look up feature value from id
+      return dataset.getFeatureData(featureName)?.data[id] || -1;
+    },
+    [featureName, dataset]
+  );
 
-  function onMouseMove(event: MouseEvent): void {
-    if (!dataset) {
-      return;
-    }
-    const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-    if (id === BACKGROUND_ID) {
-      // Ignore background pixels
-      return;
-    }
-    setHoveredId(id);
-  }
+  const onMouseMove = useCallback(
+    (event: MouseEvent): void => {
+      if (!dataset) {
+        return;
+      }
+      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      if (id === BACKGROUND_ID) {
+        // Ignore background pixels
+        return;
+      }
+      setHoveredId(id);
+    },
+    [dataset]
+  );
 
-  function onMouseLeave(_event: MouseEvent): void {
+  const onMouseLeave = useCallback((_event: MouseEvent): void => {
     setHoveredId(null);
-  }
+  }, []);
+
+  useEffect(() => {
+    canv.domElement.addEventListener("mousemove", onMouseMove);
+    canv.domElement.addEventListener("mouseleave", onMouseLeave);
+    return () => {
+      canv.domElement.removeEventListener("mousemove", onMouseMove);
+      canv.domElement.removeEventListener("mouseleave", onMouseLeave);
+    };
+  }, [onMouseMove, onMouseLeave]);
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
 
@@ -440,27 +468,30 @@ function App() {
     }
   }
 
-  async function handleFindTrack(): Promise<void> {
+  const findTrack = useCallback(
+    async (trackId: number): Promise<void> => {
+      const newTrack = dataset!.buildTrack(trackId);
+
+      if (newTrack.length() < 1) {
+        // Check track validity
+        return;
+      }
+      setSelectedTrack(newTrack);
+      setCurrentFrame(newTrack.times[0]);
+      // await canv.setFrame(newTrack.times[0]);
+      canv.setSelectedTrack(newTrack);
+      plot?.plot(newTrack, featureName, currentFrame);
+      // await drawLoop();
+      setFindTrackInput("" + trackId);
+      updateUrl();
+    },
+    [canv, plot, dataset, featureName, currentFrame]
+  );
+
+  const handleFindTrack = useCallback(async (): Promise<void> => {
     // Load track value
     await findTrack(parseInt(findTrackInput));
-  }
-
-  async function findTrack(trackId: number): Promise<void> {
-    const newTrack = dataset!.buildTrack(trackId);
-
-    if (newTrack.length() < 1) {
-      // Check track validity
-      return;
-    }
-    setSelectedTrack(newTrack);
-    setCurrentFrame(newTrack.times[0]);
-    // await canv.setFrame(newTrack.times[0]);
-    canv.setSelectedTrack(newTrack);
-    plot.plot(newTrack, featureName, currentFrame);
-    await drawLoop();
-    setFindTrackInput("" + trackId);
-    updateUrl();
-  }
+  }, [findTrackInput, findTrack]);
 
   function resetTrackUI(): void {
     setFindTrackInput("");
@@ -468,11 +499,12 @@ function App() {
 
   async function handleShowTrackPathChanged(): Promise<void> {
     canv.setShowTrackPath(showTrackPath);
-    await drawLoop();
+    // await drawLoop();
   }
 
   // RENDERING /////////////////////////////////////////////////////////////
-  const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
+  const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
+  const disableTimeControlsUi = disableUi;
 
   return (
     <div>
@@ -484,7 +516,7 @@ function App() {
           name="Dataset"
           id="dataset"
           style={{ textOverflow: "ellipsis", maxWidth: "200px" }}
-          disabled={disableUI}
+          disabled={disableUi}
           onChange={handleDatasetChange}
           value={datasetName}
         >
@@ -497,7 +529,7 @@ function App() {
           })}
         </select>
         <label htmlFor="feature">Feature</label>
-        <select name="Feature" id="feature" disabled={disableUI} onChange={handleFeatureChange} value={featureName}>
+        <select name="Feature" id="feature" disabled={disableUi} onChange={handleFeatureChange} value={featureName}>
           {dataset?.featureNames.map((name) => {
             return (
               <option value={name} key={name}>
@@ -565,19 +597,41 @@ function App() {
         <div>
           <div>
             Time (use arrow keys)
-            <p style={{ margin: "2px" }}>
-              <button id="playBtn">Play</button>
-              <button id="pauseBtn">Pause</button>
-              <button id="backBtn">Back</button>
-              <button id="forwardBtn">Forward</button>
+            <div className={styles.timeControls} style={{ margin: "2px" }}>
+              <button
+                id="playBtn"
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls.handlePlayButtonClick()}
+              >
+                Play
+              </button>
+              <button
+                id="pauseBtn"
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls.handlePauseButtonClick()}
+              >
+                Pause
+              </button>
+              <button id="backBtn" disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
+                Back
+              </button>
+              <button
+                id="forwardBtn"
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls.handleFrameAdvance(1)}
+              >
+                Forward
+              </button>
               <input
                 id="timeSlider"
                 type="range"
                 min="0"
                 max={dataset ? dataset.numberOfFrames - 1 : 0}
+                disabled={disableTimeControlsUi}
                 step="1"
                 value={currentFrame}
                 onChange={(event) => {
+                  // TODO: Debounce changes to time slider
                   setCurrentFrame(event.target.valueAsNumber);
                   // canv.setFrame(event.target.valueAsNumber);
                 }}
@@ -586,19 +640,20 @@ function App() {
                 type="number"
                 id="timeValue"
                 min="0"
-                max="0"
+                max={dataset ? dataset.numberOfFrames - 1 : 0}
+                disabled={disableTimeControlsUi}
                 value={currentFrame}
                 onChange={(event) => {
                   setCurrentFrame(event.target.valueAsNumber);
                   // canv.setFrame(event.target.valueAsNumber);
                 }}
               />
-            </p>
+            </div>
           </div>
           <div>
             Find by track:
-            <input id="trackValue" disabled={disableUI} type="number" defaultValue="" />
-            <button id="findTrackBtn" disabled={disableUI}>
+            <input id="trackValue" disabled={disableUi} type="number" defaultValue="" />
+            <button id="findTrackBtn" disabled={disableUi}>
               Find
             </button>
           </div>
@@ -610,6 +665,8 @@ function App() {
           <label htmlFor="show_track_path">Show track path</label>
         </div>
       </div>
+
+      <div id="plot" style={{ width: "600px", height: "250px" }}></div>
     </div>
   );
 }
