@@ -315,6 +315,9 @@ export default class ColorizeCanvas {
     if (!this.dataset?.hasFeature(name)) {
       return;
     }
+    if (this.featureName === name) {
+      return;
+    }
     const featureData = this.dataset.getFeatureData(name)!;
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);

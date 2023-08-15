@@ -5,7 +5,7 @@ import TimeControls from "./colorizer/TimeControls";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { createRoot } from "react-dom/client";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import styles from "./App.module.css";
 
@@ -42,6 +42,37 @@ function getDatasetNames(dataset: string | null, collectionData: urlUtils.Collec
   }
 }
 
+/**
+ * Loads a dataset from a URL, handling
+ * @param dataset
+ * @param collection
+ * @param collectionData
+ * @throws an error if the dataset could not be loaded.
+ */
+async function loadDataset(
+  dataset: string,
+  collection?: string | null,
+  collectionData?: urlUtils.CollectionData | null
+): Promise<Dataset> {
+  console.time("loadDataset");
+
+  // Handle default case
+  if (collectionData && !collectionData.has(dataset)) {
+    console.warn(
+      `Collection does not include '${dataset}' as a dataset. Defaulting to first dataset in the collection.`
+    );
+    dataset = urlUtils.getDefaultDatasetName(collectionData);
+  }
+
+  let newDataset;
+  const datasetPath = urlUtils.getExpectedDatasetPath(dataset, collection || undefined, collectionData || undefined);
+  console.log(`Fetching dataset from path '${datasetPath}'`);
+  newDataset = new Dataset(datasetPath);
+  await newDataset.open();
+
+  return newDataset;
+}
+
 function App() {
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
@@ -75,11 +106,8 @@ function App() {
 
   const drawLoop = useCallback(async (): Promise<void> => {
     console.log("Draw");
-    console.log(currentFrame);
 
-    if (canv.getCurrentFrame() !== currentFrame) {
-      await canv.setFrame(currentFrame);
-    }
+    await canv.setFrame(currentFrame);
 
     canv.setSelectedTrack(selectedTrack);
 
@@ -98,12 +126,11 @@ function App() {
 
     if (!timeControls.isPlaying()) {
       // Do not update URL while playing for performance + UX reasons
-      // TODO: Delete?
       updateUrl();
     }
   }, [currentFrame, selectedTrack, dataset, datasetName, featureName]);
 
-  // draw loop
+  // Draw loop; update UI when any of the dependencies change
   useEffect(() => {
     drawLoop();
   }, [datasetName, featureName, colorRampMin, colorRampMax, currentFrame, showTrackPath, hideValuesOutOfRange]);
@@ -138,11 +165,6 @@ function App() {
     );
   }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
 
-  // Run updateUrl whenever it changes.
-  useEffect(() => {
-    // updateUrl();
-  }, [updateUrl]);
-
   const handleCanvasClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
@@ -176,29 +198,22 @@ function App() {
   // SETUP & DRAWING ///////////////////////////////////////////////////////
 
   // INITAL SETUP
-  useEffect(() => {
-    setPlot(new Plotting("plot")); // Have to do this after initial draw
-    setup();
-
-    // Mount canvas
-    const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
-    element?.parentNode?.replaceChild(canv.domElement, element);
-  }, []);
 
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
-  async function setup(): Promise<void> {
-    setSize();
-    populateColorRampSelect();
-    canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
-
+  async function initialSetup(): Promise<void> {
     const params = urlUtils.loadParamsFromUrl();
     let { collection: _collection, dataset: _dataset, feature: _feature, track: _track, time: _time } = params;
     let _collectionData;
 
+    console.trace();
+    setSize();
+    populateColorRampSelect();
+    canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
+
     // Load dataset
     if (_dataset && urlUtils.isUrl(_dataset)) {
-      await loadDataset(_dataset);
+      await replaceDataset(_dataset);
     } else {
       // Collections data is loaded.
       _collection = _collection || urlUtils.DEFAULT_COLLECTION_PATH;
@@ -208,7 +223,6 @@ function App() {
         _collectionData = await urlUtils.getCollectionData(_collection);
       } catch (e) {
         console.error(e);
-        // datasetSelectEl.disabled = true;
         // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
         throw new Error(
           `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
@@ -218,7 +232,7 @@ function App() {
       setCollectionData(_collectionData);
 
       const defaultDataset = urlUtils.getDefaultDatasetName(_collectionData);
-      await loadDataset(_dataset || defaultDataset, _collection, _collectionData);
+      await replaceDataset(_dataset || defaultDataset, _collection, _collectionData);
     }
 
     if (_feature) {
@@ -231,29 +245,35 @@ function App() {
     }
     if (_time >= 0) {
       // Load time (if unset, defaults to track time or default t=0)
-      await canv.setFrame(_time);
+      setCurrentFrame(_time);
+      canv.setFrame(_time);
       // timeControls.updateUI();
     }
     // await drawLoop(); // Force redraw to show the new frame
 
     window.addEventListener("keydown", handleKeyDown);
-    // colorRampSelectEl.addEventListener("click", handleColorRampClick);
-    // findTrackBtn.addEventListener("click", () => handleFindTrack());
-    // trackInput.addEventListener("change", () => handleFindTrack());
-    // colorRampMinEl.addEventListener("change", () => handleColorRampMinChanged());
-    // colorRampMaxEl.addEventListener("change", () => handleColorRampMaxChanged());
-    // showTrackPathCheckbox.addEventListener("change", () => handleShowTrackPathChanged());
-    // lockRangeCheckbox.addEventListener("change", () => handleLockRangeCheckboxChanged());
-    // hideOutOfRangeCheckbox.addEventListener("change", () => handleHideOutOfRangeCheckboxChanged());
-    // resetRangeBtn.addEventListener("click", handleResetRangeClick);
     recordingControls.setCanvas(canv);
     timeControls.addPauseListener(updateUrl);
   }
+
+  useMemo(() => {
+    initialSetup();
+  }, []);
+
+  // After first render
+  useEffect(() => {
+    setPlot(new Plotting("plot")); // Done after initial render so it can replace the HTML Element w/ id "plot"
+
+    // Mount canvas
+    const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
+    element?.parentNode?.replaceChild(canv.domElement, element);
+  }, []);
 
   window.addEventListener("beforeunload", () => {
     canv.domElement.removeEventListener("click", handleCanvasClick);
     canv.dispose();
   });
+
   window.addEventListener("resize", () => {
     setSize();
     canv.render();
@@ -280,7 +300,7 @@ function App() {
 
   // DATASET LOADING ///////////////////////////////////////////////////////
 
-  async function loadDataset(
+  async function replaceDataset(
     _dataset: string,
     _collection?: string | null,
     _collectionData?: urlUtils.CollectionData | null
@@ -333,41 +353,46 @@ function App() {
           return; // we already tried to load the default so give up
         }
         console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
-        return loadDataset(defaultName, _collection, _collectionData);
+        return replaceDataset(defaultName, _collection, _collectionData);
       }
     }
     resetTrackUI();
 
     // Only change the feature if there's no equivalent in the new dataset
-    if (!newDataset.hasFeature(featureName)) {
-      setFeatureName(newDataset.featureNames[0]);
+    let newFeatureName = featureName;
+    if (!newDataset.hasFeature(newFeatureName)) {
+      newFeatureName = newDataset.featureNames[0];
     }
 
     await canv.setDataset(newDataset);
-    updateFeature(featureName);
+    updateFeature(newFeatureName);
     plot?.setDataset(newDataset);
     plot?.removePlot();
+
     const newFrame = currentFrame % canv.getTotalFrames();
+    canv.setFrame(newFrame);
+    // Update state variables
     setCurrentFrame(newFrame);
-    // await canv.setFrame(newFrame);
-    console.log("Updating dataset...");
-    console.log(newDataset);
     setDatasetOpen(true);
     setDataset(newDataset);
     setDatasetName(_dataset);
-    // await drawLoop();
+    setFeatureName(newFeatureName);
+
     updateUrl();
     console.timeEnd("loadDataset");
   }
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
 
-  function handleDatasetChange(event: React.ChangeEvent<HTMLSelectElement>): void {
-    const value = event.target.value;
-    if (value !== datasetName) {
-      loadDataset(value, collection, collectionData);
-    }
-  }
+  const handleDatasetChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>): void => {
+      const value = event.target.value;
+      if (value !== datasetName) {
+        replaceDataset(value, collection, collectionData);
+      }
+    },
+    [datasetName, collection, collectionData]
+  );
 
   function handleFeatureChange(event: React.ChangeEvent<HTMLSelectElement>): void {
     const value = event.target.value;
@@ -391,20 +416,11 @@ function App() {
     updateUrl();
   }
 
-  function handleHideOutOfRangeCheckboxChanged(): void {
-    canv.setHideValuesOutOfRange(hideValuesOutOfRange);
-    // drawLoop(); // force a render update in case elements should disappear.
-  }
-
   async function handleResetRangeClick(): Promise<void> {
     canv.resetColorMapRange();
     // await drawLoop(); // update UI
     setColorRampMin(canv.getColorMapRangeMin());
     setColorRampMax(canv.getColorMapRangeMax());
-  }
-
-  function handleLockRangeCheckboxChanged(): void {
-    canv.setColorMapRangeLock(isColorRampRangeLocked);
   }
 
   // function handleColorRampClick({ target }: MouseEvent): void {
@@ -544,8 +560,9 @@ function App() {
             type="number"
             id="colorRampMin"
             style={{ width: "50px", textAlign: "start" }}
-            defaultValue={colorRampMin}
+            value={canv.getColorMapRangeMin()}
             onChange={(event) => {
+              canv.setColorMapRangeMin(event.target.valueAsNumber);
               setColorRampMin(event.target.valueAsNumber);
             }}
             min="0"
@@ -557,8 +574,9 @@ function App() {
             type="number"
             id="colorRampMax"
             style={{ width: "80px", textAlign: "start" }}
-            value={colorRampMax}
+            value={canv.getColorMapRangeMax()}
             onChange={(event) => {
+              canv.setColorMapRangeMax(event.target.valueAsNumber);
               setColorRampMax(event.target.valueAsNumber);
             }}
             min="0"
@@ -650,6 +668,7 @@ function App() {
               />
             </div>
           </div>
+
           <div>
             Find by track:
             <input id="trackValue" disabled={disableUi} type="number" defaultValue="" />
@@ -658,10 +677,20 @@ function App() {
             </button>
           </div>
         </div>
+
+        {/* Hover value section */}
         <div>
           <p id="mouseTrackId">Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
           <p id="mouseFeatureValue">Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
-          <input type="checkbox" id="show_track_path" />
+          <input
+            type="checkbox"
+            id="show_track_path"
+            checked={showTrackPath}
+            onChange={() => {
+              setShowTrackPath(!showTrackPath);
+              canv.setShowTrackPath(!showTrackPath);
+            }}
+          />
           <label htmlFor="show_track_path">Show track path</label>
         </div>
       </div>
