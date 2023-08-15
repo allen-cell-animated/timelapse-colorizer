@@ -253,18 +253,18 @@ parser.add_argument(
     "--dataset",
     type=str,
     default="baby_bear",
-    help="Named FMS dataset or FMS id to load.",
+    help="Compatible named FMS dataset or FMS id to load. Will be loaded using `nuc_morph_analysis.preprocessing.load_data.load_dataset()`.",
 )
 parser.add_argument(
     "--noframes",
     action="store_true",
-    help="If included, generates only the feature data and manifest and skips frames.",
+    help="If included, generates only the feature data, centroids, track data, and manifest, skipping the frame and bounding box generation.",
 )
 parser.add_argument(
     "--scale",
     type=float,
     default=1.0,
-    help="Scale factor that original image dimensions will be scaled by. 1 is original size, 0.5 is half-size.",
+    help="Uniform scale factor that original image dimensions will be scaled by. 1 is original size, 0.5 is half-size in both X and Y.",
 )
 
 args = parser.parse_args()
