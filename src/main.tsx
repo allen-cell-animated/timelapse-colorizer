@@ -5,7 +5,7 @@ import TimeControls from "./colorizer/TimeControls";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { createRoot } from "react-dom/client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import styles from "./App.module.css";
 
@@ -55,6 +55,7 @@ function App() {
   const [datasetOpen, setDatasetOpen] = useState(false);
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const [currentFrame, setCurrentFrame] = useState<number>(0);
 
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
@@ -68,6 +69,64 @@ function App() {
 
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
+  // URL STATE /////////////////////////////////////////////////////////////
+  // Treat Url as a callback to reduce computation, and to let it be called from other immediate actions.
+  const updateUrl = useCallback((): void => {
+    // Don't include collection parameter in URL if it matches the default.
+    let collectionParam = null;
+    if (
+      collection === urlUtils.DEFAULT_COLLECTION_PATH ||
+      collection === urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME
+    ) {
+      collectionParam = null;
+    } else {
+      collectionParam = collection || null;
+    }
+
+    urlUtils.saveParamsToUrl(
+      collectionParam,
+      datasetName,
+      featureName,
+      selectedTrack ? selectedTrack.trackId : null,
+      currentFrame
+    );
+  }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
+
+  // Run updateUrl whenever it changes.
+  useEffect(() => {
+    console.log(selectedTrack);
+    updateUrl();
+  }, [updateUrl]);
+
+  const handleCanvasClick = useCallback(
+    async (event: MouseEvent): Promise<void> => {
+      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      // Reset track input
+      resetTrackUI();
+      if (id < 0) {
+        plot.removePlot();
+        setSelectedTrack(null); // clear selected track when clicking off of cells
+      } else {
+        const trackId = dataset!.getTrackId(id);
+        const newTrack = dataset!.buildTrack(trackId);
+        plot.plot(newTrack, featureName, currentFrame);
+        setSelectedTrack(newTrack);
+      }
+      await drawLoop();
+    },
+    [dataset, featureName]
+  );
+
+  useEffect(() => {
+    window.addEventListener("click", handleCanvasClick);
+    // Returned callback is fired if/when App is removed from the DOM
+    return () => {
+      window.removeEventListener("click", handleCanvasClick);
+    };
+  }, [handleCanvasClick]);
+
+  // SETUP & DRAWING ///////////////////////////////////////////////////////
+
   // INITAL SETUP
   useEffect(() => {
     setup();
@@ -75,19 +134,22 @@ function App() {
     // Mount canvas
     const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
     element?.parentNode?.replaceChild(canv.domElement, element);
-    canv.domElement.addEventListener("click", handleCanvasClick);
   }, []);
-
-  // SETUP & DRAWING ///////////////////////////////////////////////////////
 
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
   // draw loop
   useEffect(() => {
     drawLoop();
-  }, [datasetName, featureName, colorRampMin, colorRampMax, canv.getCurrentFrame(), showTrackPath]);
+  }, [datasetName, featureName, colorRampMin, colorRampMax, currentFrame, showTrackPath, hideValuesOutOfRange]);
 
   async function drawLoop(): Promise<void> {
+    console.log("Draw");
+
+    if (canv.getCurrentFrame() !== currentFrame) {
+      await canv.setFrame(currentFrame);
+    }
+
     canv.setSelectedTrack(selectedTrack);
 
     await canv.render();
@@ -101,7 +163,7 @@ function App() {
     setColorRampDisabled(disableUI);
 
     // update current time in plot
-    plot.setTime(canv.getCurrentFrame());
+    plot.setTime(currentFrame);
 
     if (!timeControls.isPlaying()) {
       // Do not update URL while playing for performance + UX reasons
@@ -239,9 +301,6 @@ function App() {
       if (dataset !== null) {
         dataset.dispose();
       }
-
-      setDataset(newDataset);
-      setDatasetName(_dataset);
     } catch (e) {
       console.error(e);
       console.error(`Could not load dataset '${_dataset}'.`);
@@ -275,9 +334,14 @@ function App() {
     updateFeature(featureName);
     plot.setDataset(newDataset);
     plot.removePlot();
-    const newFrame = canv.getCurrentFrame() % canv.getTotalFrames();
-    await canv.setFrame(newFrame);
+    const newFrame = currentFrame % canv.getTotalFrames();
+    setCurrentFrame(newFrame);
+    // await canv.setFrame(newFrame);
+    console.log("Updating dataset...");
+    console.log(newDataset);
     setDatasetOpen(true);
+    setDataset(newDataset);
+    setDatasetName(_dataset);
     await drawLoop();
     updateUrl();
     console.timeEnd("loadDataset");
@@ -309,7 +373,7 @@ function App() {
     canv.setFeature(newFeatureName);
     // only update plot if active
     if (selectedTrack) {
-      plot.plot(selectedTrack, newFeatureName, canv.getCurrentFrame());
+      plot.plot(selectedTrack, newFeatureName, currentFrame);
     }
     updateUrl();
   }
@@ -328,33 +392,6 @@ function App() {
 
   function handleLockRangeCheckboxChanged(): void {
     canv.setColorMapRangeLock(isColorRampRangeLocked);
-  }
-
-  function handleColorRampMinChanged(): void {
-    // canv.setColorMapRangeMin(colorRampMinEl.valueAsNumber);
-    drawLoop();
-  }
-
-  function handleColorRampMaxChanged(): void {
-    // canv.setColorMapRangeMax(colorRampMaxEl.valueAsNumber);
-    drawLoop();
-  }
-
-  async function handleCanvasClick(event: MouseEvent): Promise<void> {
-    const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-    // Reset track input
-    resetTrackUI();
-    if (id < 0) {
-      plot.removePlot();
-      setSelectedTrack(null); // clear selected track when clicking off of cells
-    } else {
-      const trackId = dataset!.getTrackId(id);
-      const newTrack = dataset!.buildTrack(trackId);
-      plot.plot(newTrack, featureName, canv.getCurrentFrame());
-      setSelectedTrack(newTrack);
-    }
-    await drawLoop();
-    updateUrl();
   }
 
   // function handleColorRampClick({ target }: MouseEvent): void {
@@ -416,9 +453,10 @@ function App() {
       return;
     }
     setSelectedTrack(newTrack);
-    await canv.setFrame(newTrack.times[0]);
+    setCurrentFrame(newTrack.times[0]);
+    // await canv.setFrame(newTrack.times[0]);
     canv.setSelectedTrack(newTrack);
-    plot.plot(newTrack, featureName, canv.getCurrentFrame());
+    plot.plot(newTrack, featureName, currentFrame);
     await drawLoop();
     setFindTrackInput("" + trackId);
     updateUrl();
@@ -433,28 +471,7 @@ function App() {
     await drawLoop();
   }
 
-  // URL STATE /////////////////////////////////////////////////////////////
-  function updateUrl(): void {
-    // Don't include collection parameter in URL if it matches the default.
-    let collectionParam = null;
-    if (
-      collection === urlUtils.DEFAULT_COLLECTION_PATH ||
-      collection === urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME
-    ) {
-      collectionParam = null;
-    } else {
-      collectionParam = collection || null;
-    }
-
-    urlUtils.saveParamsToUrl(
-      collectionParam,
-      datasetName,
-      featureName,
-      selectedTrack ? selectedTrack.trackId : null,
-      canv.getCurrentFrame()
-    );
-  }
-
+  // RENDERING /////////////////////////////////////////////////////////////
   const disableUI: boolean = recordingControls.isRecording() || !datasetOpen;
 
   return (
@@ -472,24 +489,33 @@ function App() {
           value={datasetName}
         >
           {getDatasetNames(datasetName, collectionData || null).map((name) => {
-            return <option value={name}>{name}</option>;
+            return (
+              <option value={name} key={name}>
+                {name}
+              </option>
+            );
           })}
         </select>
         <label htmlFor="feature">Feature</label>
-        <select
-          name="Feature"
-          id="feature"
-          disabled={disableUI}
-          onChange={handleFeatureChange}
-          value={featureName}
-        ></select>
+        <select name="Feature" id="feature" disabled={disableUI} onChange={handleFeatureChange} value={featureName}>
+          {dataset?.featureNames.map((name) => {
+            return (
+              <option value={name} key={name}>
+                {name}
+              </option>
+            );
+          })}
+        </select>
 
         <div className={styles.labeledColorRamp}>
           <input
             type="number"
             id="colorRampMin"
             style={{ width: "50px", textAlign: "start" }}
-            defaultValue="0"
+            defaultValue={colorRampMin}
+            onChange={(event) => {
+              setColorRampMin(event.target.valueAsNumber);
+            }}
             min="0"
           />
           <div className={styles.colorRampContainer}>
@@ -499,25 +525,37 @@ function App() {
             type="number"
             id="colorRampMax"
             style={{ width: "80px", textAlign: "start" }}
-            defaultValue="0"
+            value={colorRampMax}
+            onChange={(event) => {
+              setColorRampMax(event.target.valueAsNumber);
+            }}
             min="0"
           />
           <button id="resetRangeButton" onClick={handleResetRangeClick}>
             Reset range
           </button>
-          <input type="checkbox" id="lockRangeCheckbox" />
-          <label htmlFor="lockRangeCheckbox">Lock color map range</label>
           <input
             type="checkbox"
-            id="maskRangeCheckbox"
-            checked={canv.isColorMapRangeLocked()}
+            id="lockRangeCheckbox"
+            checked={isColorRampRangeLocked}
             onChange={() => {
               // Invert lock on range
               setIsColorRampRangeLocked(!isColorRampRangeLocked);
               canv.setColorMapRangeLock(!isColorRampRangeLocked);
             }}
           />
-          <label htmlFor="maskRangeCheckbox">Hide values outside of range</label>
+          <label htmlFor="lockRangeCheckbox">Lock color map range</label>
+          <input
+            type="checkbox"
+            id="hideOutOfRangeCheckbox"
+            checked={hideValuesOutOfRange}
+            onChange={() => {
+              // Invert lock on range
+              setHideValuesOutOfRange(!hideValuesOutOfRange);
+              canv.setHideValuesOutOfRange(!hideValuesOutOfRange);
+            }}
+          />
+          <label htmlFor="hideOutOfRangeCheckbox">Hide values outside of range</label>
         </div>
       </div>
 
@@ -532,8 +570,29 @@ function App() {
               <button id="pauseBtn">Pause</button>
               <button id="backBtn">Back</button>
               <button id="forwardBtn">Forward</button>
-              <input id="timeSlider" type="range" min="0" max="0" step="1" defaultValue="0" />
-              <input type="number" id="timeValue" min="0" max="0" defaultValue="0" />
+              <input
+                id="timeSlider"
+                type="range"
+                min="0"
+                max={dataset ? dataset.numberOfFrames - 1 : 0}
+                step="1"
+                value={currentFrame}
+                onChange={(event) => {
+                  setCurrentFrame(event.target.valueAsNumber);
+                  // canv.setFrame(event.target.valueAsNumber);
+                }}
+              />
+              <input
+                type="number"
+                id="timeValue"
+                min="0"
+                max="0"
+                value={currentFrame}
+                onChange={(event) => {
+                  setCurrentFrame(event.target.valueAsNumber);
+                  // canv.setFrame(event.target.valueAsNumber);
+                }}
+              />
             </p>
           </div>
           <div>
