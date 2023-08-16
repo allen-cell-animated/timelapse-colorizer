@@ -65,17 +65,12 @@ function App() {
 
   const [debugForceRender, setDebugForceRender] = useState(false);
 
-  const timeControls = useMemo(
-    () =>
-      new TimeControls(canv, (frame) => {
-        console.log("Set frame to " + frame);
-        setCurrentFrame(frame);
-        canv.setFrame(frame);
-      }),
-    []
-  );
+  // TODO: Remove unused dummy functions that will be replaced later
+  const timeControls = useMemo(() => new TimeControls(canv, (_frame) => {}), []);
+  const recordingControls = useMemo(() => new RecordingControls(canv, (_frame) => {}), []);
 
   // TODO: Merge into one memoized block?
+  // TODO: Rename?
   const drawLoop = useCallback(
     async (frame: number): Promise<void> => {
       // TODO: The canvas current frame currently breaks the React paradigm, since it's updated
@@ -119,6 +114,7 @@ function App() {
       showTrackPath,
       colorRampMin,
       colorRampMax,
+      timeControls.isPlaying(), // updates URL when timeControls stops
     ]
   );
 
@@ -141,10 +137,8 @@ function App() {
   // Update UI when any of the dependencies change
   useEffect(() => {
     timeControls.setFrameCallback(setFrame);
+    recordingControls.setFrameCallback(setFrame);
   }, [setFrame, drawLoop]);
-
-  // TODO: Refactor and move to top
-  const recordingControls = useMemo(() => new RecordingControls(canv, setFrame), []);
 
   // TODO: Move input handler into module
   const [findTrackInput, setFindTrackInput] = useState("");
@@ -160,7 +154,7 @@ function App() {
         return;
       }
       setSelectedTrack(newTrack);
-      setCurrentFrame(newTrack.times[0]);
+      setFrame(newTrack.times[0]);
       // await canv.setFrame(newTrack.times[0]);
       canv.setSelectedTrack(newTrack);
       plot?.plot(newTrack, featureName, currentFrame);
@@ -287,12 +281,15 @@ function App() {
         // Seek to the track ID
         await findTrack(initialUrlParams.track);
       }
+      let newTime = currentFrame;
       if (initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
-        await canv.setFrame(initialUrlParams.time);
-        setCurrentFrame(initialUrlParams.time);
+        newTime = initialUrlParams.time;
+        setCurrentFrame(newTime);
+        await canv.setFrame(newTime);
         // timeControls.updateUI();
       }
+      drawLoop(newTime);
     };
 
     setupInitialParameters();
@@ -683,8 +680,16 @@ function App() {
 
           <div>
             Find by track:
-            <input id="trackValue" disabled={disableUi} type="number" defaultValue="" />
-            <button id="findTrackBtn" disabled={disableUi}>
+            <input
+              id="trackValue"
+              disabled={disableUi}
+              type="number"
+              value={findTrackInput}
+              onChange={(event) => {
+                setFindTrackInput(event.target.value);
+              }}
+            />
+            <button id="findTrackBtn" disabled={disableUi} onClick={handleFindTrack}>
               Find
             </button>
           </div>

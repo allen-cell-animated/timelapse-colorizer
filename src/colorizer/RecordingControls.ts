@@ -43,6 +43,10 @@ export default class RecordingControls {
     this.filePrefixResetBtn.addEventListener("click", () => this.handlePrefixResetClicked());
   }
 
+  public setFrameCallback(fn: (frame: number) => void): void {
+    this.setFrameFn = fn;
+  }
+
   public setCanvas(canvas: ColorizeCanvas): void {
     this.canvas = canvas;
   }
