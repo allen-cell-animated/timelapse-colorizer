@@ -70,61 +70,18 @@ async function loadDataset(
   return newDataset;
 }
 
-// TODO: Add return type
-// TODO: Add docstring
-/**
- *
- * @returns
- */
-async function getInitialParams() {
-  const params = urlUtils.loadParamsFromUrl();
-  let { collection, dataset: datasetName, feature, track, time } = params;
-  let collectionData;
-  let dataset;
-  console.trace();
-
-  // Load dataset
-  if (datasetName && urlUtils.isUrl(datasetName)) {
-    dataset = await loadDataset(datasetName);
-  } else {
-    // Collections data is loaded.
-    collection = collection || urlUtils.DEFAULT_COLLECTION_PATH;
-
-    try {
-      collectionData = await urlUtils.getCollectionData(collection);
-    } catch (e) {
-      console.error(e);
-      // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
-      throw new Error(
-        `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
-      );
-    }
-
-    const defaultDataset = urlUtils.getDefaultDatasetName(collectionData);
-    dataset = await loadDataset(dataset || defaultDataset, collection, collectionData);
-  }
-
-  return {
-    collection: collection,
-    collectionData: collectionData,
-    dataset: dataset,
-    datasetName: datasetName,
-    featureName: feature,
-    track: track,
-    time: time,
-  };
-}
-
 function App() {
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
     return new ColorizeCanvas();
   }, []);
 
+  const initialUrlParams = useMemo(urlUtils.loadParamsFromUrl, []);
   const [collection, setCollection] = useState<string | undefined>();
   const [collectionData, setCollectionData] = useState<urlUtils.CollectionData | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetName, setDatasetName] = useState("");
+  const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -205,6 +162,26 @@ function App() {
 
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
+  const findTrack = useCallback(
+    async (trackId: number): Promise<void> => {
+      const newTrack = dataset!.buildTrack(trackId);
+
+      if (newTrack.length() < 1) {
+        // Check track validity
+        return;
+      }
+      setSelectedTrack(newTrack);
+      setCurrentFrame(newTrack.times[0]);
+      // await canv.setFrame(newTrack.times[0]);
+      canv.setSelectedTrack(newTrack);
+      plot?.plot(newTrack, featureName, currentFrame);
+      // await drawLoop();
+      setFindTrackInput("" + trackId);
+      updateUrl();
+    },
+    [canv, plot, dataset, featureName, currentFrame]
+  );
+
   // URL STATE /////////////////////////////////////////////////////////////
   // Treat Url as a callback to reduce computation, and to let it be called from other immediate actions.
   const updateUrl = useCallback((): void => {
@@ -260,9 +237,8 @@ function App() {
 
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
-  async function initialSetup(): Promise<void> {
-    const params = urlUtils.loadParamsFromUrl();
-    let { collection: _collection, dataset: _dataset, feature: _feature, track: _track, time: _time } = params;
+  async function loadInitialDatabase(): Promise<void> {
+    let { collection: _collection, dataset: _datasetName } = initialUrlParams;
     let _collectionData;
 
     console.trace();
@@ -271,8 +247,9 @@ function App() {
     canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
     // Load dataset
-    if (_dataset && urlUtils.isUrl(_dataset)) {
-      await replaceDataset(_dataset);
+    if (_datasetName && urlUtils.isUrl(_datasetName)) {
+      await replaceDataset(_datasetName);
+      setIsInitialDatasetLoaded(true);
     } else {
       // Collections data is loaded.
       _collection = _collection || urlUtils.DEFAULT_COLLECTION_PATH;
@@ -290,34 +267,47 @@ function App() {
 
       setCollectionData(_collectionData);
 
-      const defaultDataset = urlUtils.getDefaultDatasetName(_collectionData);
-      await replaceDataset(_dataset || defaultDataset, _collection, _collectionData);
+      const defaultDatasetName = urlUtils.getDefaultDatasetName(_collectionData);
+      await replaceDataset(_datasetName || defaultDatasetName, _collection, _collectionData);
+      setIsInitialDatasetLoaded(true);
     }
-
-    if (_feature) {
-      // Load feature (if unset, do nothing because loadDataset already loads a default)
-      await updateFeature(_feature);
-    }
-    if (_track >= 0) {
-      // Seek to the track ID
-      await findTrack(_track);
-    }
-    if (_time >= 0) {
-      // Load time (if unset, defaults to track time or default t=0)
-      setCurrentFrame(_time);
-      canv.setFrame(_time);
-      // timeControls.updateUI();
-    }
-    // await drawLoop(); // Force redraw to show the new frame
 
     window.addEventListener("keydown", handleKeyDown);
     recordingControls.setCanvas(canv);
+    // TODO: Move these?
     timeControls.addPauseListener(updateUrl);
   }
 
+  // Run initial setup only once
   useMemo(() => {
-    initialSetup();
+    loadInitialDatabase();
   }, []);
+
+  // Run once the first dataset is loaded (and then never again).
+  useEffect(() => {
+    if (!isInitialDatasetLoaded) {
+      return;
+    }
+    console.log("Setup");
+    const setupInitialParameters = async (): Promise<void> => {
+      if (initialUrlParams.feature) {
+        // Load feature (if unset, do nothing because loadDataset already loads a default)
+        await updateFeature(initialUrlParams.feature);
+      }
+      if (initialUrlParams.track >= 0) {
+        // Seek to the track ID
+        await findTrack(initialUrlParams.track);
+      }
+      if (initialUrlParams.time >= 0) {
+        // Load time (if unset, defaults to track time or default t=0)
+        await canv.setFrame(initialUrlParams.time);
+        setCurrentFrame(initialUrlParams.time);
+        // timeControls.updateUI();
+      }
+    };
+
+    setupInitialParameters();
+  }, [isInitialDatasetLoaded]);
 
   // After first render
   useEffect(() => {
@@ -337,6 +327,8 @@ function App() {
     setSize();
     canv.render();
   });
+
+  // COLOR RAMP /////////////////////////////////////////////////////////////
 
   function populateColorRampSelect(): void {
     const width = 120,
@@ -373,9 +365,6 @@ function App() {
       );
       _dataset = urlUtils.getDefaultDatasetName(_collectionData);
     }
-    console.log(_dataset);
-    console.log(_collection);
-    console.log(_collectionData);
 
     let newDataset;
     try {
@@ -542,26 +531,6 @@ function App() {
       timeControls.handleFrameAdvance(1);
     }
   }
-
-  const findTrack = useCallback(
-    async (trackId: number): Promise<void> => {
-      const newTrack = dataset!.buildTrack(trackId);
-
-      if (newTrack.length() < 1) {
-        // Check track validity
-        return;
-      }
-      setSelectedTrack(newTrack);
-      setCurrentFrame(newTrack.times[0]);
-      // await canv.setFrame(newTrack.times[0]);
-      canv.setSelectedTrack(newTrack);
-      plot?.plot(newTrack, featureName, currentFrame);
-      // await drawLoop();
-      setFindTrackInput("" + trackId);
-      updateUrl();
-    },
-    [canv, plot, dataset, featureName, currentFrame]
-  );
 
   const handleFindTrack = useCallback(async (): Promise<void> => {
     // Load track value
