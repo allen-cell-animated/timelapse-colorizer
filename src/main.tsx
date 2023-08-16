@@ -324,6 +324,8 @@ function App() {
       return;
     }
     console.log("Setup");
+    plot?.removePlot();
+    plot?.setDataset(dataset!);
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.feature) {
         // Load feature (if unset, do nothing because loadDataset already loads a default)
