@@ -39,37 +39,6 @@ function getDatasetNames(dataset: string | null, collectionData: urlUtils.Collec
   }
 }
 
-/**
- * Loads a dataset from a URL, handling
- * @param dataset
- * @param collection
- * @param collectionData
- * @throws an error if the dataset could not be loaded.
- */
-async function loadDataset(
-  dataset: string,
-  collection?: string | null,
-  collectionData?: urlUtils.CollectionData | null
-): Promise<Dataset> {
-  console.time("loadDataset");
-
-  // Handle default case
-  if (collectionData && !collectionData.has(dataset)) {
-    console.warn(
-      `Collection does not include '${dataset}' as a dataset. Defaulting to first dataset in the collection.`
-    );
-    dataset = urlUtils.getDefaultDatasetName(collectionData);
-  }
-
-  let newDataset;
-  const datasetPath = urlUtils.getExpectedDatasetPath(dataset, collection || undefined, collectionData || undefined);
-  console.log(`Fetching dataset from path '${datasetPath}'`);
-  newDataset = new Dataset(datasetPath);
-  await newDataset.open();
-
-  return newDataset;
-}
-
 function App() {
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
@@ -115,13 +84,14 @@ function App() {
       // setCurrentFrame(frame);
 
       // TODO: Update documentation for these to explicitly state that the
-      // canvas will cache results/won't re-run calculations if the value has not changed
+      // canvas will cache results/won't re-run calculations if the value has not changed for these methods.
       // await canv.setFrame(frame);
       // canv.setFeature(featureName);
-      // canv.setShowTrackPath(showTrackPath);
+      canv.setShowTrackPath(showTrackPath);
       canv.setSelectedTrack(selectedTrack);
-
+      canv.setHideValuesOutOfRange(hideValuesOutOfRange);
       await canv.render();
+
       timeControls.setIsDisabled(recordingControls.isRecording());
       recordingControls.setIsDisabled(!dataset);
       recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
@@ -139,7 +109,17 @@ function App() {
         updateUrl();
       }
     },
-    [dataset, datasetName, featureName, currentFrame, selectedTrack, hideValuesOutOfRange, showTrackPath]
+    [
+      dataset,
+      datasetName,
+      featureName,
+      currentFrame,
+      selectedTrack,
+      hideValuesOutOfRange,
+      showTrackPath,
+      colorRampMin,
+      colorRampMax,
+    ]
   );
 
   const setFrame = useCallback(
@@ -550,11 +530,6 @@ function App() {
     setFindTrackInput("");
   }
 
-  async function handleShowTrackPathChanged(): Promise<void> {
-    canv.setShowTrackPath(showTrackPath);
-    // await drawLoop();
-  }
-
   // RENDERING /////////////////////////////////////////////////////////////
   const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
   const disableTimeControlsUi = disableUi;
@@ -637,9 +612,7 @@ function App() {
             id="hideOutOfRangeCheckbox"
             checked={hideValuesOutOfRange}
             onChange={() => {
-              // Invert lock on range
               setHideValuesOutOfRange(!hideValuesOutOfRange);
-              canv.setHideValuesOutOfRange(!hideValuesOutOfRange);
             }}
           />
           <label htmlFor="hideOutOfRangeCheckbox">Hide values outside of range</label>
@@ -727,7 +700,7 @@ function App() {
             checked={showTrackPath}
             onChange={() => {
               setShowTrackPath(!showTrackPath);
-              canv.setShowTrackPath(!showTrackPath);
+              // canv.setShowTrackPath(!showTrackPath);
             }}
           />
           <label htmlFor="show_track_path">Show track path</label>
