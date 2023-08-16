@@ -302,10 +302,12 @@ export default class ColorizeCanvas {
   }
 
   private updateHighlightedId(): void {
-    // Get highlighted id
+    // Hide highlight if no track is selected
     if (!this.track) {
+      this.setUniform("highlightedId", -1);
       return;
     }
+
     // Tracks of length 1 should not be offset by 1
     if (this.track.length() === 1) {
       this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame));
@@ -415,6 +417,7 @@ export default class ColorizeCanvas {
   }
 
   render(): void {
+    console.log("Canvas render for frame " + this.getCurrentFrame());
     this.updateHighlightedId();
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);

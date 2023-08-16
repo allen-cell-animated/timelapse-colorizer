@@ -112,13 +112,13 @@ function App() {
       // TODO: The canvas current frame currently breaks the React paradigm, since it's updated
       // outside of a state update.
       console.log("Drawing frame " + frame + " (" + currentFrame + ")");
-      setCurrentFrame(frame);
+      // setCurrentFrame(frame);
 
       // TODO: Update documentation for these to explicitly state that the
       // canvas will cache results/won't re-run calculations if the value has not changed
-      await canv.setFrame(frame);
-      canv.setFeature(featureName);
-      canv.setShowTrackPath(showTrackPath);
+      // await canv.setFrame(frame);
+      // canv.setFeature(featureName);
+      // canv.setShowTrackPath(showTrackPath);
       canv.setSelectedTrack(selectedTrack);
 
       await canv.render();
@@ -154,10 +154,13 @@ function App() {
     [drawLoop]
   );
 
-  // Draw loop; update UI when any of the dependencies change
+  useEffect(() => {
+    drawLoop(currentFrame);
+  }, [drawLoop]);
+
+  // Update UI when any of the dependencies change
   useEffect(() => {
     timeControls.setFrameCallback(setFrame);
-    // drawLoop();
   }, [setFrame, drawLoop]);
 
   // TODO: Refactor and move to top
@@ -448,14 +451,6 @@ function App() {
     [datasetName, collection, collectionData]
   );
 
-  function handleFeatureChange(event: React.ChangeEvent<HTMLSelectElement>): void {
-    const value = event.target.value;
-    console.log(value);
-    if (value !== featureName) {
-      updateFeature(value);
-    }
-  }
-
   async function updateFeature(newFeatureName: string): Promise<void> {
     if (!dataset?.hasFeature(newFeatureName)) {
       return;
@@ -468,6 +463,14 @@ function App() {
       plot?.plot(selectedTrack, newFeatureName, currentFrame);
     }
     updateUrl();
+  }
+
+  function handleFeatureChange(event: React.ChangeEvent<HTMLSelectElement>): void {
+    const value = event.target.value;
+    console.log(value);
+    if (value !== featureName) {
+      updateFeature(value);
+    }
   }
 
   async function handleResetRangeClick(): Promise<void> {
