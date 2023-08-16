@@ -19,6 +19,58 @@ root.render(
 );
 
 const CANVAS_PLACEHOLDER_ID = "canvasPlaceholder";
+const COLOR_RAMP_PLACEHOLDER_ID = "colorRamp";
+const PLOT_PLACEHOLDER_ID = "plot";
+
+// COLOR RAMPS ///////////////////////////////////////////////////////////
+
+// https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
+const colorStops: HexColorString[][] = [
+  // Esri color ramps - Red 5
+  ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
+  // Esri color ramps - Orange 5
+  ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
+  // Esri color ramps - Yellow 2
+  ["#584100", "#886200", "#b78300", "#e7a300", "#ffc800"],
+  // Esri color ramps - Green 4
+  ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
+  // Esri color ramps - Blue 14
+  ["#3a4d6b", "#3d6da2", "#799a96", "#ccbe6a", "#ffec99"],
+  // Esri color ramps - Purple 4
+  ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"],
+  // Esri color ramps - Mentone Beach
+  ["#48385f", "#995375", "#db4a5b", "#fc9a59", "#fee086"],
+  // Esri color ramps - Retro Flow
+  ["#007fd9", "#443dbf", "#881fc5", "#bf00bf", "#d43f70", "#d9874c", "#b6a135", "#adbf27", "#c4dc66", "#ebe498"],
+  // Esri color ramps - Heatmap 4
+  [
+    "#0022c8",
+    "#2b1ca7",
+    "#551785",
+    "#801164",
+    "#aa0b43",
+    "#d50621",
+    "#ff0000",
+    "#ff3900",
+    "#ff7100",
+    "#ffaa00",
+    "#ffc655",
+    "#ffe3aa",
+    "#ffffff",
+  ],
+  // Esri color ramps - Blue and Red 9
+  ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
+  // Esri color ramps - Blue and Red 8
+  ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"],
+  // Esri color ramps - Red and Green 9
+  ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
+  // Esri color ramps - Purple and Red 2
+  ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"],
+  // Esri color ramps - Green and Brown 1
+  ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"],
+];
+const colorRamps = colorStops.map((ramp) => new ColorRamp(ramp));
+const DEFAULT_RAMP = 4;
 
 /**
  * Gets an array of dataset names from the dataset and collectionData.
@@ -92,7 +144,6 @@ function App() {
       recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
       recordingControls.updateUI();
 
-      setColorRampDisabled(disableUi);
       setColorRampMin(canv.getColorMapRangeMin());
       setColorRampMax(canv.getColorMapRangeMax());
 
@@ -226,7 +277,6 @@ function App() {
 
     console.trace();
     setSize();
-    populateColorRampSelect();
     canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
     // Load dataset
@@ -297,7 +347,7 @@ function App() {
 
   // After first render
   useEffect(() => {
-    setPlot(new Plotting("plot")); // Done after initial render so it can replace the HTML Element w/ id "plot"
+    setPlot(new Plotting(PLOT_PLACEHOLDER_ID)); // Done after initial render so it can replace the HTML Element w/ id PLOT_PLACEHOLDER_ID
 
     // Mount canvas
     const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
@@ -316,23 +366,51 @@ function App() {
 
   // COLOR RAMP /////////////////////////////////////////////////////////////
 
-  function populateColorRampSelect(): void {
-    const width = 120,
-      height = 25;
-    // Sets dimensions for color ramp container, as color ramp isn't inline (absolute/floating)
-    // colorRampContainerEl.style.width = `${width}px`;
-    // colorRampContainerEl.style.height = `${height}px`;
-    colorRamps.forEach((ramp, idx) => {
-      const rampCanvas = ramp.createGradientCanvas(width, height);
-      if (idx === DEFAULT_RAMP) {
-        rampCanvas.className = "selected";
-      }
-      // colorRampSelectEl.appendChild(rampCanvas);
-    });
-  }
+  // Update color ramp element with new options once selected
+  useEffect(() => {
+    // const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
+    // element?.parentNode?.replaceChild(canv.domElement, element);
+    const rampContainer = document.getElementById(COLOR_RAMP_PLACEHOLDER_ID);
+    if (!rampContainer) {
+      return;
+    }
 
-  function setColorRampDisabled(disabled: boolean): void {
-    // colorRampSelectEl.className = disabled ? "disabled" : "";
+    // Clear existing children, if any exist.
+    let lastChild = rampContainer.lastChild;
+    while (lastChild) {
+      rampContainer.removeChild(lastChild);
+      lastChild = rampContainer.lastChild;
+    }
+
+    // Make the color ramps, then append them to the container
+    const ramps = colorRamps.map((ramp, idx) => {
+      const rampCanvas = ramp.createGradientCanvas(120, 25);
+      if (idx === DEFAULT_RAMP) {
+        rampCanvas.className = styles.selected;
+      }
+      return rampCanvas;
+    });
+
+    for (let ramp of ramps) {
+      rampContainer.appendChild(ramp);
+    }
+  }, []);
+
+  function handleColorRampClick({ target }: React.MouseEvent<HTMLSpanElement, MouseEvent>): void {
+    const rampContainer = document.getElementById(COLOR_RAMP_PLACEHOLDER_ID);
+    if (!rampContainer) {
+      return;
+    }
+    // Select the element that was clicked on and set it as the new color ramp.
+    Array.from(rampContainer.children).forEach((el, idx) => {
+      if (el === target) {
+        canv.setColorRamp(colorRamps[idx]);
+        el.className = styles.selected;
+      } else {
+        el.className = "";
+      }
+    });
+    canv.render();
   }
 
   // DATASET LOADING ///////////////////////////////////////////////////////
@@ -457,18 +535,6 @@ function App() {
     setColorRampMax(canv.getColorMapRangeMax());
   }
 
-  // function handleColorRampClick({ target }: MouseEvent): void {
-  //   Array.from(colorRampSelectEl.children).forEach((el, idx) => {
-  //     if (el === target) {
-  //       canv.setColorRamp(colorRamps[idx]);
-  //       el.className = "selected";
-  //     } else {
-  //       el.className = "";
-  //     }
-  //   });
-  //   canv.render();
-  // }
-
   const getFeatureValue = useCallback(
     (id: number): number => {
       if (!featureName || !dataset) {
@@ -577,7 +643,11 @@ function App() {
             min="0"
           />
           <div className={styles.colorRampContainer}>
-            <span id="colorRamp"></span>
+            <span
+              id={COLOR_RAMP_PLACEHOLDER_ID}
+              className={`${styles.colorRamp} ${disableUi ? styles.disabled : ""}`}
+              onClick={(event) => handleColorRampClick(event)}
+            ></span>
           </div>
           <input
             type="number"
@@ -712,57 +782,7 @@ function App() {
         </div>
       </div>
 
-      <div id="plot" style={{ width: "600px", height: "250px" }}></div>
+      <div id={PLOT_PLACEHOLDER_ID} style={{ width: "600px", height: "250px" }}></div>
     </div>
   );
 }
-
-// COLOR RAMPS ///////////////////////////////////////////////////////////
-
-// https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
-const colorStops: HexColorString[][] = [
-  // Esri color ramps - Red 5
-  ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
-  // Esri color ramps - Orange 5
-  ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
-  // Esri color ramps - Yellow 2
-  ["#584100", "#886200", "#b78300", "#e7a300", "#ffc800"],
-  // Esri color ramps - Green 4
-  ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
-  // Esri color ramps - Blue 14
-  ["#3a4d6b", "#3d6da2", "#799a96", "#ccbe6a", "#ffec99"],
-  // Esri color ramps - Purple 4
-  ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"],
-  // Esri color ramps - Mentone Beach
-  ["#48385f", "#995375", "#db4a5b", "#fc9a59", "#fee086"],
-  // Esri color ramps - Retro Flow
-  ["#007fd9", "#443dbf", "#881fc5", "#bf00bf", "#d43f70", "#d9874c", "#b6a135", "#adbf27", "#c4dc66", "#ebe498"],
-  // Esri color ramps - Heatmap 4
-  [
-    "#0022c8",
-    "#2b1ca7",
-    "#551785",
-    "#801164",
-    "#aa0b43",
-    "#d50621",
-    "#ff0000",
-    "#ff3900",
-    "#ff7100",
-    "#ffaa00",
-    "#ffc655",
-    "#ffe3aa",
-    "#ffffff",
-  ],
-  // Esri color ramps - Blue and Red 9
-  ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
-  // Esri color ramps - Blue and Red 8
-  ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"],
-  // Esri color ramps - Red and Green 9
-  ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
-  // Esri color ramps - Purple and Red 2
-  ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"],
-  // Esri color ramps - Green and Brown 1
-  ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"],
-];
-const colorRamps = colorStops.map((ramp) => new ColorRamp(ramp));
-const DEFAULT_RAMP = 4;
