@@ -4,19 +4,23 @@ import ColorizeCanvas from "./ColorizeCanvas";
 const DEFAULT_TIMER_ID = -1;
 export default class TimeControls {
   private timerId: number;
-  private redrawfn: (frame: number) => void;
+  private setFrameFn: (frame: number) => void;
 
   private canvas: ColorizeCanvas;
   private isDisabled: boolean;
 
   private pauseCallbacks: (() => void)[];
 
-  constructor(canvas: ColorizeCanvas, updateFrameAndRedrawFn: (frame: number) => void) {
-    this.redrawfn = updateFrameAndRedrawFn;
+  constructor(canvas: ColorizeCanvas, setFrameFn: (frame: number) => void) {
+    this.setFrameFn = setFrameFn;
     this.canvas = canvas;
     this.timerId = DEFAULT_TIMER_ID;
     this.isDisabled = false;
     this.pauseCallbacks = [];
+  }
+
+  public setFrameCallback(fn: (frame: number) => void): void {
+    this.setFrameFn = fn;
   }
 
   private wrapFrame(index: number): number {
@@ -41,7 +45,7 @@ export default class TimeControls {
       const nextFrame = this.wrapFrame(this.canvas.getCurrentFrame() + 1);
 
       // do the necessary update
-      this.redrawfn(nextFrame);
+      this.setFrameFn(nextFrame);
       onNewFrameCallback();
     };
     this.timerId = window.setInterval(loadNextFrame, 40);
@@ -61,7 +65,7 @@ export default class TimeControls {
   }
 
   public async handleFrameAdvance(delta: number = 1): Promise<void> {
-    this.redrawfn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
+    this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
   }
 
   public setIsDisabled(disabled: boolean): void {

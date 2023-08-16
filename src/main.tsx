@@ -9,10 +9,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import styles from "./App.module.css";
 
-// Clear the existing HTML content
-// document.body.innerHTML = '<div id="app"></div>';
-
-// Render your React component instead
+// Render React component
 const container = document.getElementById("root");
 const root = createRoot(container!);
 root.render(
@@ -73,6 +70,51 @@ async function loadDataset(
   return newDataset;
 }
 
+// TODO: Add return type
+// TODO: Add docstring
+/**
+ *
+ * @returns
+ */
+async function getInitialParams() {
+  const params = urlUtils.loadParamsFromUrl();
+  let { collection, dataset: datasetName, feature, track, time } = params;
+  let collectionData;
+  let dataset;
+  console.trace();
+
+  // Load dataset
+  if (datasetName && urlUtils.isUrl(datasetName)) {
+    dataset = await loadDataset(datasetName);
+  } else {
+    // Collections data is loaded.
+    collection = collection || urlUtils.DEFAULT_COLLECTION_PATH;
+
+    try {
+      collectionData = await urlUtils.getCollectionData(collection);
+    } catch (e) {
+      console.error(e);
+      // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
+      throw new Error(
+        `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
+      );
+    }
+
+    const defaultDataset = urlUtils.getDefaultDatasetName(collectionData);
+    dataset = await loadDataset(dataset || defaultDataset, collection, collectionData);
+  }
+
+  return {
+    collection: collection,
+    collectionData: collectionData,
+    dataset: dataset,
+    datasetName: datasetName,
+    featureName: feature,
+    track: track,
+    time: time,
+  };
+}
+
 function App() {
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
@@ -95,31 +137,38 @@ function App() {
   const [showTrackPath, setShowTrackPath] = useState(false);
   const [imagePrefix, setImagePrefix] = useState("");
 
+  const [debugForceRender, setDebugForceRender] = useState(false);
+
   const timeControls = useMemo(
     () =>
       new TimeControls(canv, (frame) => {
+        console.log("Set frame to " + frame);
         setCurrentFrame(frame);
         canv.setFrame(frame);
       }),
     []
   );
 
+  // TODO: Merge into one memoized block?
   const drawLoop = useCallback(async (): Promise<void> => {
-    console.log("Draw");
+    console.log("Drawing frame " + canv.getCurrentFrame() + " (" + currentFrame + ")");
 
+    // TODO: Update documentation for these to explicitly state that the
+    // canvas will cache results/won't re-run calculations if the value has not changed
     await canv.setFrame(currentFrame);
-
+    canv.setFeature(featureName);
+    canv.setShowTrackPath(showTrackPath);
     canv.setSelectedTrack(selectedTrack);
 
     await canv.render();
-    // Update UI Elements
     timeControls.setIsDisabled(recordingControls.isRecording());
-    // timeControls.updateUI();
     recordingControls.setIsDisabled(!dataset);
     recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
     recordingControls.updateUI();
 
     setColorRampDisabled(disableUi);
+    setColorRampMin(canv.getColorMapRangeMin());
+    setColorRampMax(canv.getColorMapRangeMax());
 
     // update current time in plot
     plot?.setTime(currentFrame);
@@ -128,13 +177,27 @@ function App() {
       // Do not update URL while playing for performance + UX reasons
       updateUrl();
     }
-  }, [currentFrame, selectedTrack, dataset, datasetName, featureName]);
+  }, [dataset, datasetName, featureName, currentFrame, selectedTrack, hideValuesOutOfRange, showTrackPath]);
+
+  const setFrame = useCallback(
+    (frame: number) => {
+      console.log("Set frame to " + frame);
+      canv.setFrame(frame);
+      setCurrentFrame(frame);
+      // Must initiate re-render here, otherwise the canvas render won't be updated by
+      // react until after the next state update
+      drawLoop();
+    },
+    [drawLoop]
+  );
 
   // Draw loop; update UI when any of the dependencies change
   useEffect(() => {
+    timeControls.setFrameCallback(setFrame);
     drawLoop();
-  }, [datasetName, featureName, colorRampMin, colorRampMax, currentFrame, showTrackPath, hideValuesOutOfRange]);
+  }, [drawLoop]);
 
+  // TODO: Refactor and move to top
   const recordingControls = useMemo(() => new RecordingControls(canv, drawLoop), []);
 
   // TODO: Move input handler into module
@@ -182,10 +245,6 @@ function App() {
     },
     [dataset, featureName]
   );
-
-  useEffect(() => {
-    console.log(currentFrame);
-  }, [currentFrame]);
 
   useEffect(() => {
     window.addEventListener("click", handleCanvasClick);
