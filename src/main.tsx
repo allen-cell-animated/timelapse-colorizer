@@ -107,6 +107,7 @@ function App() {
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+  const [colorRamp, setColorRamp] = useState(colorRamps[DEFAULT_RAMP]);
 
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
@@ -137,6 +138,7 @@ function App() {
       canv.setShowTrackPath(showTrackPath);
       canv.setSelectedTrack(selectedTrack);
       canv.setHideValuesOutOfRange(hideValuesOutOfRange);
+      canv.setColorRamp(colorRamp);
       await canv.render();
 
       timeControls.setIsDisabled(recordingControls.isRecording());
@@ -163,6 +165,7 @@ function App() {
       selectedTrack,
       hideValuesOutOfRange,
       showTrackPath,
+      colorRamp,
       colorRampMin,
       colorRampMax,
       timeControls.isPlaying(), // updates URL when timeControls stops
@@ -277,7 +280,6 @@ function App() {
 
     console.trace();
     setSize();
-    canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
 
     // Load dataset
     if (_datasetName && urlUtils.isUrl(_datasetName)) {
@@ -404,13 +406,12 @@ function App() {
     // Select the element that was clicked on and set it as the new color ramp.
     Array.from(rampContainer.children).forEach((el, idx) => {
       if (el === target) {
-        canv.setColorRamp(colorRamps[idx]);
+        setColorRamp(colorRamps[idx]);
         el.className = styles.selected;
       } else {
         el.className = "";
       }
     });
-    canv.render();
   }
 
   // DATASET LOADING ///////////////////////////////////////////////////////
