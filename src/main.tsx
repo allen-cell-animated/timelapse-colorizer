@@ -107,43 +107,49 @@ function App() {
   );
 
   // TODO: Merge into one memoized block?
-  const drawLoop = useCallback(async (): Promise<void> => {
-    console.log("Drawing frame " + canv.getCurrentFrame() + " (" + currentFrame + ")");
+  const drawLoop = useCallback(
+    async (frame: number): Promise<void> => {
+      // TODO: The canvas current frame currently breaks the React paradigm, since it's updated
+      // outside of a state update.
+      console.log("Drawing frame " + frame + " (" + currentFrame + ")");
+      setCurrentFrame(frame);
 
-    // TODO: Update documentation for these to explicitly state that the
-    // canvas will cache results/won't re-run calculations if the value has not changed
-    await canv.setFrame(currentFrame);
-    canv.setFeature(featureName);
-    canv.setShowTrackPath(showTrackPath);
-    canv.setSelectedTrack(selectedTrack);
+      // TODO: Update documentation for these to explicitly state that the
+      // canvas will cache results/won't re-run calculations if the value has not changed
+      await canv.setFrame(frame);
+      canv.setFeature(featureName);
+      canv.setShowTrackPath(showTrackPath);
+      canv.setSelectedTrack(selectedTrack);
 
-    await canv.render();
-    timeControls.setIsDisabled(recordingControls.isRecording());
-    recordingControls.setIsDisabled(!dataset);
-    recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
-    recordingControls.updateUI();
+      await canv.render();
+      timeControls.setIsDisabled(recordingControls.isRecording());
+      recordingControls.setIsDisabled(!dataset);
+      recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
+      recordingControls.updateUI();
 
-    setColorRampDisabled(disableUi);
-    setColorRampMin(canv.getColorMapRangeMin());
-    setColorRampMax(canv.getColorMapRangeMax());
+      setColorRampDisabled(disableUi);
+      setColorRampMin(canv.getColorMapRangeMin());
+      setColorRampMax(canv.getColorMapRangeMax());
 
-    // update current time in plot
-    plot?.setTime(currentFrame);
+      // update current time in plot
+      plot?.setTime(currentFrame);
 
-    if (!timeControls.isPlaying()) {
-      // Do not update URL while playing for performance + UX reasons
-      updateUrl();
-    }
-  }, [dataset, datasetName, featureName, currentFrame, selectedTrack, hideValuesOutOfRange, showTrackPath]);
+      if (!timeControls.isPlaying()) {
+        // Do not update URL while playing for performance + UX reasons
+        updateUrl();
+      }
+    },
+    [dataset, datasetName, featureName, currentFrame, selectedTrack, hideValuesOutOfRange, showTrackPath]
+  );
 
   const setFrame = useCallback(
-    (frame: number) => {
+    async (frame: number) => {
       console.log("Set frame to " + frame);
-      canv.setFrame(frame);
+      await canv.setFrame(frame);
       setCurrentFrame(frame);
       // Must initiate re-render here, otherwise the canvas render won't be updated by
       // react until after the next state update
-      drawLoop();
+      drawLoop(frame);
     },
     [drawLoop]
   );
@@ -151,11 +157,11 @@ function App() {
   // Draw loop; update UI when any of the dependencies change
   useEffect(() => {
     timeControls.setFrameCallback(setFrame);
-    drawLoop();
-  }, [drawLoop]);
+    // drawLoop();
+  }, [setFrame, drawLoop]);
 
   // TODO: Refactor and move to top
-  const recordingControls = useMemo(() => new RecordingControls(canv, drawLoop), []);
+  const recordingControls = useMemo(() => new RecordingControls(canv, setFrame), []);
 
   // TODO: Move input handler into module
   const [findTrackInput, setFindTrackInput] = useState("");
@@ -205,6 +211,8 @@ function App() {
     );
   }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
 
+  // CANVAS ACTIONS ///////////////////////////////////////////////////////////
+
   const handleCanvasClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
@@ -224,16 +232,14 @@ function App() {
   );
 
   useEffect(() => {
-    window.addEventListener("click", handleCanvasClick);
+    canv.domElement.addEventListener("click", handleCanvasClick);
     // Returned callback is fired if/when App is removed from the DOM
     return () => {
-      window.removeEventListener("click", handleCanvasClick);
+      canv.domElement.removeEventListener("click", handleCanvasClick);
     };
   }, [handleCanvasClick]);
 
-  // SETUP & DRAWING ///////////////////////////////////////////////////////
-
-  // INITAL SETUP
+  // SETUP //////////////////////////////////////////////////////////////////
 
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
@@ -678,7 +684,8 @@ function App() {
                 value={currentFrame}
                 onChange={(event) => {
                   // TODO: Debounce changes to time slider
-                  setCurrentFrame(event.target.valueAsNumber);
+                  setFrame(event.target.valueAsNumber);
+                  // setCurrentFrame(event.target.valueAsNumber);
                   // canv.setFrame(event.target.valueAsNumber);
                 }}
               />
@@ -690,7 +697,8 @@ function App() {
                 disabled={disableTimeControlsUi}
                 value={currentFrame}
                 onChange={(event) => {
-                  setCurrentFrame(event.target.valueAsNumber);
+                  setFrame(event.target.valueAsNumber);
+                  // setCurrentFrame(event.target.valueAsNumber);
                   // canv.setFrame(event.target.valueAsNumber);
                 }}
               />

@@ -14,19 +14,19 @@ export default class RecordingControls {
 
   private timerId: number;
   private startingFrame: number;
-  private redrawfn: () => void;
+  private setFrameFn: (frame: number) => void;
   private isDisabled: boolean;
 
   private canvas: ColorizeCanvas;
 
-  constructor(canvas: ColorizeCanvas, redrawfn: () => void) {
+  constructor(canvas: ColorizeCanvas, setFrameFn: (frame: number) => void) {
     this.useDefaultPrefix = true;
     this.defaultPrefix = "";
     this.recording = false;
     this.canvas = canvas;
     this.timerId = 0;
     this.startingFrame = 0;
-    this.redrawfn = redrawfn;
+    this.setFrameFn = setFrameFn;
     this.isDisabled = false;
 
     this.startBtn = document.querySelector("#sequence_start_btn")!;
@@ -65,8 +65,7 @@ export default class RecordingControls {
     if (this.recording) {
       clearTimeout(this.timerId);
       this.recording = false;
-      await this.canvas.setFrame(this.startingFrame); // Reset to starting frame
-      this.redrawfn();
+      this.setFrameFn(this.startingFrame);
     }
   }
 
@@ -81,7 +80,7 @@ export default class RecordingControls {
       const currentFrame = this.canvas.getCurrentFrame();
 
       // Trigger a render through the redrawfn parameter so other UI elements update
-      this.redrawfn();
+      // this.setFrameFn(currentFrame);
 
       // Get canvas as an image URL that can be downloaded
       const dataURL = this.canvas.domElement.toDataURL("image/png");
@@ -105,8 +104,7 @@ export default class RecordingControls {
       } else {
         // Reached end, so stop and reset UI
         this.recording = false;
-        await this.canvas.setFrame(this.startingFrame); // Reset to starting frame
-        this.redrawfn();
+        this.setFrameFn(this.startingFrame);
       }
     };
 
