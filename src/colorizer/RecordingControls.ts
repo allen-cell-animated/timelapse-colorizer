@@ -84,7 +84,9 @@ export default class RecordingControls {
       const currentFrame = this.canvas.getCurrentFrame();
 
       // Trigger a render through the redrawfn parameter so other UI elements update
-      // this.setFrameFn(currentFrame);
+      // TODO: Make async, await
+      this.setFrameFn(currentFrame);
+      this.canvas.render();
 
       // Get canvas as an image URL that can be downloaded
       const dataURL = this.canvas.domElement.toDataURL("image/png");
