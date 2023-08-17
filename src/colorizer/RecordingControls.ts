@@ -1,13 +1,8 @@
 import ColorizeCanvas from "./ColorizeCanvas";
 
 export default class RecordingControls {
-  private startBtn: HTMLButtonElement;
-  private abortBtn: HTMLButtonElement;
   private recording: boolean;
-  private startAtCurrentFrameChkbx: HTMLInputElement;
 
-  private filePrefixInput: HTMLInputElement;
-  private filePrefixResetBtn: HTMLButtonElement;
   private useDefaultPrefix: boolean;
   private defaultPrefix: string;
   private hiddenAnchorEl: HTMLAnchorElement;
@@ -29,18 +24,18 @@ export default class RecordingControls {
     this.setFrameFn = setFrameFn;
     this.isDisabled = false;
 
-    this.startBtn = document.querySelector("#sequence_start_btn")!;
-    this.abortBtn = document.querySelector("#sequence_abort_btn")!;
-    this.filePrefixResetBtn = document.querySelector("#sequence_prefix_reset_btn")!;
-    this.startAtCurrentFrameChkbx = document.querySelector("#sequence_start_frame_checkbox")!;
-    this.filePrefixInput = document.querySelector("#sequence_prefix")!;
+    // this.startBtn = document.querySelector("#sequence_start_btn")!;
+    // this.abortBtn = document.querySelector("#sequence_abort_btn")!;
+    // this.filePrefixResetBtn = document.querySelector("#sequence_prefix_reset_btn")!;
+    // this.startAtCurrentFrameChkbx = document.querySelector("#sequence_start_frame_checkbox")!;
+    // this.filePrefixInput = document.querySelector("#sequence_prefix")!;
 
     this.hiddenAnchorEl = document.createElement("a"); // Hidden element for initiating download later
 
-    this.startBtn.addEventListener("click", () => this.handleStartButtonClick());
-    this.abortBtn.addEventListener("click", () => this.handleAbortButtonClick());
-    this.filePrefixInput.addEventListener("changed", () => this.handlePrefixChanged());
-    this.filePrefixResetBtn.addEventListener("click", () => this.handlePrefixResetClicked());
+    // this.startBtn.addEventListener("click", () => this.handleStartButtonClick());
+    // this.abortBtn.addEventListener("click", () => this.handleAbortButtonClick());
+    // this.filePrefixInput.addEventListener("changed", () => this.handlePrefixChanged());
+    // this.filePrefixResetBtn.addEventListener("click", () => this.handlePrefixResetClicked());
   }
 
   public setFrameCallback(fn: (frame: number) => void): void {
@@ -51,21 +46,26 @@ export default class RecordingControls {
     this.canvas = canvas;
   }
 
-  private async handleStartButtonClick(): Promise<void> {
+  /**
+   *
+   * @param prefix
+   * @param startAtFirstFrame
+   */
+  public async start(prefix: string, startAtFirstFrame: boolean = false): Promise<void> {
     if (!this.recording) {
       this.startingFrame = this.canvas.getCurrentFrame();
       this.recording = true;
 
-      if (!this.startAtCurrentFrameChkbx.checked) {
+      if (startAtFirstFrame) {
         await this.canvas.setFrame(0); // start at beginning
       }
       this.startingFrame = this.canvas.getCurrentFrame();
 
-      this.startRecording(); // Start recording loop
+      this.startRecording(prefix); // Start recording loop
     }
   }
 
-  private async handleAbortButtonClick(): Promise<void> {
+  public async abort(): Promise<void> {
     if (this.recording) {
       clearTimeout(this.timerId);
       this.recording = false;
@@ -73,7 +73,7 @@ export default class RecordingControls {
     }
   }
 
-  private async startRecording(): Promise<void> {
+  private async startRecording(prefix: string): Promise<void> {
     // Reset any existing timers
     clearTimeout(this.timerId);
 
@@ -94,7 +94,7 @@ export default class RecordingControls {
       // a click to initiate the download.
       this.hiddenAnchorEl.href = imageURL;
       const frameNumber: string = currentFrame.toString().padStart(maxDigits, "0");
-      this.hiddenAnchorEl.download = `${this.filePrefixInput.value}${frameNumber}.png`;
+      this.hiddenAnchorEl.download = `${prefix}${frameNumber}.png`;
       this.hiddenAnchorEl.click();
 
       // Advance to the next frame, checking if we've exceeded bounds.
@@ -122,25 +122,14 @@ export default class RecordingControls {
 
   public handlePrefixResetClicked(): void {
     this.useDefaultPrefix = true;
-    this.updateUI();
-  }
-
-  public updateUI(): void {
-    this.startBtn.disabled = this.recording || this.isDisabled;
-    this.abortBtn.disabled = !this.recording || this.isDisabled;
-    if (this.useDefaultPrefix) {
-      this.filePrefixInput.value = this.defaultPrefix;
-    }
   }
 
   public setDefaultFilePrefix(prefix: string): void {
     this.defaultPrefix = prefix;
-    this.updateUI();
   }
 
   public setIsDisabled(disabled: boolean): void {
     this.isDisabled = disabled;
-    this.updateUI();
   }
 
   public isRecording(): boolean {

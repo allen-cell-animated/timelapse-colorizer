@@ -92,9 +92,19 @@ function getDatasetNames(dataset: string | null, collectionData: urlUtils.Collec
 }
 
 function App() {
+  // TODO: ColorizeCanvas breaks some of React's rendering/state update model. Should it be turned into
+  // a React component?
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
     return new ColorizeCanvas();
+  }, []);
+
+  // Setup for plot + canvas after initial render, since they replace DOM nodes.
+  useEffect(() => {
+    setPlot(new Plotting(PLOT_PLACEHOLDER_ID)); // Done after initial render so it can replace the HTML Element w/ id PLOT_PLACEHOLDER_ID
+
+    const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
+    element?.parentNode?.replaceChild(canv.domElement, element);
   }, []);
 
   const initialUrlParams = useMemo(urlUtils.loadParamsFromUrl, []);
@@ -114,13 +124,32 @@ function App() {
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
+  // Recording
   const [imagePrefix, setImagePrefix] = useState("");
-
-  const [debugForceRender, setDebugForceRender] = useState(false);
+  const [useDefaultPrefix, setUseDefaultPrefix] = useState(true);
+  const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
 
   // TODO: Remove unused dummy functions that will be replaced later
-  const timeControls = useMemo(() => new TimeControls(canv, (_frame) => {}), []);
-  const recordingControls = useMemo(() => new RecordingControls(canv, (_frame) => {}), []);
+  const [timeControls, setTimeControls] = useState<TimeControls | undefined>();
+  const [recordingControls, setRecordingControls] = useState<RecordingControls | undefined>();
+
+  // Initialize after first render, as they directly access HTML DOM elements
+  // TODO: Refactor into React components
+  useEffect(() => {
+    const newTimeControls = new TimeControls(canv, (_frame) => {});
+    const newRecordingControls = new RecordingControls(canv, (_frame) => {});
+    setTimeControls(newTimeControls);
+    setRecordingControls(newRecordingControls);
+    newTimeControls.addPauseListener(updateUrl);
+    newRecordingControls.setCanvas(canv);
+  }, []);
+
+  // Update recording controls prefix.
+  useEffect(() => {
+    if (useDefaultPrefix && datasetName && featureName) {
+      setImagePrefix(`${datasetName}-${featureName}-`);
+    }
+  }, [useDefaultPrefix, datasetName, featureName]);
 
   // TODO: Merge into one memoized block?
   // TODO: Rename?
@@ -141,10 +170,10 @@ function App() {
       canv.setColorRamp(colorRamp);
       await canv.render();
 
-      timeControls.setIsDisabled(recordingControls.isRecording());
-      recordingControls.setIsDisabled(!dataset);
-      recordingControls.setDefaultFilePrefix(`${datasetName}-${featureName}-`);
-      recordingControls.updateUI();
+      if (timeControls && recordingControls) {
+        recordingControls.setIsDisabled(!dataset);
+        timeControls.setIsDisabled(recordingControls.isRecording());
+      }
 
       setColorRampMin(canv.getColorMapRangeMin());
       setColorRampMax(canv.getColorMapRangeMax());
@@ -152,7 +181,7 @@ function App() {
       // update current time in plot
       plot?.setTime(currentFrame);
 
-      if (!timeControls.isPlaying()) {
+      if (!timeControls?.isPlaying()) {
         // Do not update URL while playing for performance + UX reasons
         updateUrl();
       }
@@ -168,7 +197,7 @@ function App() {
       colorRamp,
       colorRampMin,
       colorRampMax,
-      timeControls.isPlaying(), // updates URL when timeControls stops
+      timeControls?.isPlaying(), // updates URL when timeControls stops
     ]
   );
 
@@ -190,8 +219,8 @@ function App() {
 
   // Update UI when any of the dependencies change
   useEffect(() => {
-    timeControls.setFrameCallback(setFrame);
-    recordingControls.setFrameCallback(setFrame);
+    timeControls?.setFrameCallback(setFrame);
+    recordingControls?.setFrameCallback(setFrame);
   }, [setFrame, drawLoop]);
 
   // TODO: Move input handler into module
@@ -308,9 +337,6 @@ function App() {
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    recordingControls.setCanvas(canv);
-    // TODO: Move these?
-    timeControls.addPauseListener(updateUrl);
   }
 
   // Run initial setup only once
@@ -348,15 +374,6 @@ function App() {
 
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
-
-  // After first render
-  useEffect(() => {
-    setPlot(new Plotting(PLOT_PLACEHOLDER_ID)); // Done after initial render so it can replace the HTML Element w/ id PLOT_PLACEHOLDER_ID
-
-    // Mount canvas
-    const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
-    element?.parentNode?.replaceChild(canv.domElement, element);
-  }, []);
 
   window.addEventListener("beforeunload", () => {
     canv.domElement.removeEventListener("click", handleCanvasClick);
@@ -581,9 +598,9 @@ function App() {
 
   function handleKeyDown({ key }: KeyboardEvent): void {
     if (key === "ArrowLeft" || key === "Left") {
-      timeControls.handleFrameAdvance(-1);
+      timeControls?.handleFrameAdvance(-1);
     } else if (key === "ArrowRight" || key === "Right") {
-      timeControls.handleFrameAdvance(1);
+      timeControls?.handleFrameAdvance(1);
     }
   }
 
@@ -597,7 +614,7 @@ function App() {
   }
 
   // RENDERING /////////////////////////////////////////////////////////////
-  const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
+  const disableUi: boolean = recordingControls?.isRecording() || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
   return (
@@ -699,24 +716,28 @@ function App() {
               <button
                 id="playBtn"
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handlePlayButtonClick()}
+                onClick={() => timeControls?.handlePlayButtonClick()}
               >
                 Play
               </button>
               <button
                 id="pauseBtn"
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handlePauseButtonClick()}
+                onClick={() => timeControls?.handlePauseButtonClick()}
               >
                 Pause
               </button>
-              <button id="backBtn" disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
+              <button
+                id="backBtn"
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls?.handleFrameAdvance(-1)}
+              >
                 Back
               </button>
               <button
                 id="forwardBtn"
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handleFrameAdvance(1)}
+                onClick={() => timeControls?.handleFrameAdvance(1)}
               >
                 Forward
               </button>
@@ -786,6 +807,43 @@ function App() {
       </div>
 
       <div id={PLOT_PLACEHOLDER_ID} style={{ width: "600px", height: "250px" }}></div>
+
+      <div id="recording_controls_container">
+        <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
+        <p>1) Set your default download location</p>
+        <p>2) Turn off 'Ask where to save each file before downloading'</p>
+        <br />
+        <p>Save image sequence:</p>
+        <button id="sequence_start_btn" onClick={() => recordingControls?.start(imagePrefix)}>
+          Start
+        </button>
+        <button id="sequence_abort_btn" onClick={() => recordingControls?.abort()}>
+          Abort
+        </button>
+        <p>
+          <label>Image prefix:</label>
+          <input
+            id="sequencePrefix"
+            value={imagePrefix}
+            onChange={(event) => {
+              setImagePrefix(event.target.value);
+              setUseDefaultPrefix(false);
+            }}
+          />
+          <button
+            id="sequencePrefix_reset_btn"
+            onClick={() => {
+              setUseDefaultPrefix(true);
+            }}
+          >
+            Use default prefix
+          </button>
+        </p>
+        <p>
+          <input id="sequenceStartFrameCheckbox" type="checkbox" checked={true} onChange={() => {}} />
+          <label htmlFor="sequenceStartFrameCheckbox">Start at current frame</label>
+        </p>
+      </div>
     </div>
   );
 }
