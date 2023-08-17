@@ -814,7 +814,7 @@ function App() {
         <p>2) Turn off 'Ask where to save each file before downloading'</p>
         <br />
         <p>Save image sequence:</p>
-        <button id="sequence_start_btn" onClick={() => recordingControls?.start(imagePrefix)}>
+        <button id="sequence_start_btn" onClick={() => recordingControls?.start(imagePrefix, startAtFirstFrame)}>
           Start
         </button>
         <button id="sequence_abort_btn" onClick={() => recordingControls?.abort()}>
@@ -840,8 +840,15 @@ function App() {
           </button>
         </p>
         <p>
-          <input id="sequenceStartFrameCheckbox" type="checkbox" checked={true} onChange={() => {}} />
-          <label htmlFor="sequenceStartFrameCheckbox">Start at current frame</label>
+          <input
+            id="sequenceStartFrameCheckbox"
+            type="checkbox"
+            checked={startAtFirstFrame}
+            onChange={() => {
+              setStartAtFirstFrame(!startAtFirstFrame);
+            }}
+          />
+          <label htmlFor="sequenceStartFrameCheckbox">Start at first frame</label>
         </p>
       </div>
     </div>
