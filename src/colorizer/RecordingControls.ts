@@ -84,7 +84,8 @@ export default class RecordingControls {
       const currentFrame = this.canvas.getCurrentFrame();
 
       // Trigger a render through the redrawfn parameter so other UI elements update
-      // TODO: Make async, await
+      // TODO: Make async, await.
+      // Must force render here or else empty image data is returned.
       this.setFrameFn(currentFrame);
       this.canvas.render();
 

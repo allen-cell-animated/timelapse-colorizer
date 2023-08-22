@@ -124,6 +124,9 @@ function App() {
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
+
+  const [canvasNeedsRender, setCanvasNeedsRender] = useState(false);
+
   // Recording
   const [imagePrefix, setImagePrefix] = useState("");
   const [useDefaultPrefix, setUseDefaultPrefix] = useState(true);
@@ -157,6 +160,7 @@ function App() {
     async (frame: number): Promise<void> => {
       // TODO: The canvas current frame currently breaks the React paradigm, since it's updated
       // outside of a state update.
+      console.trace();
       console.log("Drawing frame " + frame + " (" + currentFrame + ")");
       // setCurrentFrame(frame);
 
@@ -179,6 +183,7 @@ function App() {
       setColorRampMax(canv.getColorMapRangeMax());
 
       // update current time in plot
+
       plot?.setTime(currentFrame);
 
       if (!timeControls?.isPlaying()) {
@@ -215,7 +220,7 @@ function App() {
 
   useEffect(() => {
     drawLoop(currentFrame);
-  }, [drawLoop]);
+  }, [drawLoop, currentFrame]);
 
   // Update UI when any of the dependencies change
   useEffect(() => {
@@ -229,7 +234,7 @@ function App() {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   const findTrack = useCallback(
-    async (trackId: number): Promise<void> => {
+    async (trackId: number, seekToFrame: boolean = true): Promise<void> => {
       const newTrack = dataset!.buildTrack(trackId);
 
       if (newTrack.length() < 1) {
@@ -237,7 +242,9 @@ function App() {
         return;
       }
       setSelectedTrack(newTrack);
-      setFrame(newTrack.times[0]);
+      if (seekToFrame) {
+        setFrame(newTrack.times[0]);
+      }
       // await canv.setFrame(newTrack.times[0]);
       canv.setSelectedTrack(newTrack);
       plot?.plot(newTrack, featureName, currentFrame);
@@ -358,8 +365,8 @@ function App() {
         await updateFeature(initialUrlParams.feature);
       }
       if (initialUrlParams.track >= 0) {
-        // Seek to the track ID
-        await findTrack(initialUrlParams.track);
+        // Seek to the track ID. Override current frame only if time = -1.
+        await findTrack(initialUrlParams.track, initialUrlParams.time < 0);
       }
       let newTime = currentFrame;
       if (initialUrlParams.time >= 0) {
