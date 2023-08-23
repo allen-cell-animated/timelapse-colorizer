@@ -96,7 +96,9 @@ function App() {
   // a React component?
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
-    return new ColorizeCanvas();
+    const canv = new ColorizeCanvas();
+    canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
+    return canv;
   }, []);
 
   // Setup for plot + canvas after initial render, since they replace DOM nodes.
@@ -124,8 +126,6 @@ function App() {
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
-
-  const [canvasNeedsRender, setCanvasNeedsRender] = useState(false);
 
   // Recording
   const [imagePrefix, setImagePrefix] = useState("");
@@ -156,55 +156,52 @@ function App() {
 
   // TODO: Merge into one memoized block?
   // TODO: Rename?
-  const drawLoop = useCallback(
-    async (frame: number): Promise<void> => {
-      // TODO: The canvas current frame currently breaks the React paradigm, since it's updated
-      // outside of a state update.
-      console.trace();
-      console.log("Drawing frame " + frame + " (" + currentFrame + ")");
-      // setCurrentFrame(frame);
+  const drawLoop = useCallback(async (): Promise<void> => {
+    // TODO: The canvas current frame currently breaks the React paradigm, since it's updated
+    // outside of a state update.
+    canv.setShowTrackPath(showTrackPath);
+    // canv.setSelectedTrack(selectedTrack);
+    canv.setColorMapRangeLock(isColorRampRangeLocked);
+    canv.setHideValuesOutOfRange(hideValuesOutOfRange);
+    canv.setColorRamp(colorRamp);
+    await canv.render();
 
-      // TODO: Update documentation for these to explicitly state that the
-      // canvas will cache results/won't re-run calculations if the value has not changed for these methods.
-      // await canv.setFrame(frame);
-      // canv.setFeature(featureName);
-      canv.setShowTrackPath(showTrackPath);
-      canv.setSelectedTrack(selectedTrack);
-      canv.setHideValuesOutOfRange(hideValuesOutOfRange);
-      canv.setColorRamp(colorRamp);
-      await canv.render();
+    if (timeControls && recordingControls) {
+      recordingControls.setIsDisabled(!dataset);
+      timeControls.setIsDisabled(recordingControls.isRecording());
+    }
 
-      if (timeControls && recordingControls) {
-        recordingControls.setIsDisabled(!dataset);
-        timeControls.setIsDisabled(recordingControls.isRecording());
-      }
+    setColorRampMin(canv.getColorMapRangeMin());
+    setColorRampMax(canv.getColorMapRangeMax());
 
-      setColorRampMin(canv.getColorMapRangeMin());
-      setColorRampMax(canv.getColorMapRangeMax());
+    // update current time in plot
 
-      // update current time in plot
+    plot?.setTime(currentFrame);
 
-      plot?.setTime(currentFrame);
+    if (!timeControls?.isPlaying()) {
+      // Do not update URL while playing for performance + UX reasons
+      updateUrl();
+    }
+  }, [
+    dataset,
+    datasetName,
+    featureName,
+    currentFrame,
+    selectedTrack,
+    hideValuesOutOfRange,
+    showTrackPath,
+    colorRamp,
+    colorRampMin,
+    colorRampMax,
+    timeControls?.isPlaying(), // updates URL when timeControls stops
+  ]);
 
-      if (!timeControls?.isPlaying()) {
-        // Do not update URL while playing for performance + UX reasons
-        updateUrl();
-      }
-    },
-    [
-      dataset,
-      datasetName,
-      featureName,
-      currentFrame,
-      selectedTrack,
-      hideValuesOutOfRange,
-      showTrackPath,
-      colorRamp,
-      colorRampMin,
-      colorRampMax,
-      timeControls?.isPlaying(), // updates URL when timeControls stops
-    ]
-  );
+  useMemo(() => {
+    drawLoop();
+  }, [drawLoop]);
+  // useEffect(() => {
+  //   drawLoop();
+  // }, [drawLoop]);
 
   const setFrame = useCallback(
     async (frame: number) => {
@@ -213,14 +210,11 @@ function App() {
       setCurrentFrame(frame);
       // Must initiate re-render here, otherwise the canvas render won't be updated by
       // react until after the next state update
-      drawLoop(frame);
+      drawLoop();
+      //setCanvasNeedsRender(true);
     },
-    [drawLoop]
+    [drawLoop, canv]
   );
-
-  useEffect(() => {
-    drawLoop(currentFrame);
-  }, [drawLoop, currentFrame]);
 
   // Update UI when any of the dependencies change
   useEffect(() => {
@@ -287,13 +281,16 @@ function App() {
       resetTrackUI();
       if (id < 0) {
         plot?.removePlot();
+        canv.setSelectedTrack(null);
         setSelectedTrack(null); // clear selected track when clicking off of cells
       } else {
         const trackId = dataset!.getTrackId(id);
         const newTrack = dataset!.buildTrack(trackId);
         plot?.plot(newTrack, featureName, currentFrame);
+        canv.setSelectedTrack(newTrack);
         setSelectedTrack(newTrack);
       }
+      drawLoop();
     },
     [dataset, featureName]
   );
@@ -310,13 +307,12 @@ function App() {
 
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
-  async function loadInitialDatabase(): Promise<void> {
-    let { collection: _collection, dataset: _datasetName } = initialUrlParams;
-    let _collectionData;
-
-    console.trace();
+  // Run initial setup only once. Load the database and collections data.
+  useMemo(async () => {
     setSize();
 
+    let { collection: _collection, dataset: _datasetName } = initialUrlParams;
+    let _collectionData;
     // Load dataset
     if (_datasetName && urlUtils.isUrl(_datasetName)) {
       await replaceDataset(_datasetName);
@@ -344,11 +340,6 @@ function App() {
     }
 
     window.addEventListener("keydown", handleKeyDown);
-  }
-
-  // Run initial setup only once
-  useMemo(() => {
-    loadInitialDatabase();
   }, []);
 
   // Run once the first dataset is loaded (and then never again).
@@ -376,12 +367,15 @@ function App() {
         await canv.setFrame(newTime);
         // timeControls.updateUI();
       }
-      drawLoop(newTime);
+      drawLoop();
     };
 
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
 
+  // TODO: Add/update event handlers in a reasonable way here.
+  // Note that repeated use of addEventListener here can cause memory issues.
+  // See https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#memory_issues
   window.addEventListener("beforeunload", () => {
     canv.domElement.removeEventListener("click", handleCanvasClick);
     canv.dispose();
@@ -508,7 +502,8 @@ function App() {
     plot?.setDataset(newDataset);
     plot?.removePlot();
 
-    const newFrame = currentFrame % canv.getTotalFrames();
+    // Clamp frame to new range
+    const newFrame = Math.min(currentFrame, canv.getTotalFrames());
     canv.setFrame(newFrame);
     // Update state variables
     setCurrentFrame(newFrame);
@@ -806,7 +801,6 @@ function App() {
             checked={showTrackPath}
             onChange={() => {
               setShowTrackPath(!showTrackPath);
-              // canv.setShowTrackPath(!showTrackPath);
             }}
           />
           <label htmlFor="show_track_path">Show track path</label>

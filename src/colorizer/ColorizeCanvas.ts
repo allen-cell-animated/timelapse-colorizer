@@ -160,6 +160,8 @@ export default class ColorizeCanvas {
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
+
+    this.render = this.render.bind(this);
   }
 
   get domElement(): HTMLCanvasElement {
