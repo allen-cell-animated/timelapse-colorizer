@@ -310,36 +310,36 @@ function App() {
   // Run initial setup only once. Load the database and collections data.
   useMemo(async () => {
     setSize();
+    window.addEventListener("keydown", handleKeyDown);
 
     let { collection: _collection, dataset: _datasetName } = initialUrlParams;
     let _collectionData;
-    // Load dataset
+    // Load single dataset instead of collection
     if (_datasetName && urlUtils.isUrl(_datasetName)) {
       await replaceDataset(_datasetName);
       setIsInitialDatasetLoaded(true);
-    } else {
-      // Collections data is loaded.
-      _collection = _collection || urlUtils.DEFAULT_COLLECTION_PATH;
-      setCollection(_collection);
-
-      try {
-        _collectionData = await urlUtils.getCollectionData(_collection);
-      } catch (e) {
-        console.error(e);
-        // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
-        throw new Error(
-          `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
-        );
-      }
-
-      setCollectionData(_collectionData);
-
-      const defaultDatasetName = urlUtils.getDefaultDatasetName(_collectionData);
-      await replaceDataset(_datasetName || defaultDatasetName, _collection, _collectionData);
-      setIsInitialDatasetLoaded(true);
+      return;
     }
 
-    window.addEventListener("keydown", handleKeyDown);
+    // Load collection data.
+    _collection = _collection || urlUtils.DEFAULT_COLLECTION_PATH;
+    setCollection(_collection);
+
+    try {
+      _collectionData = await urlUtils.getCollectionData(_collection);
+    } catch (e) {
+      console.error(e);
+      // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
+      throw new Error(
+        `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
+      );
+    }
+
+    setCollectionData(_collectionData);
+
+    const defaultDatasetName = urlUtils.getDefaultDatasetName(_collectionData);
+    await replaceDataset(_datasetName || defaultDatasetName, _collection, _collectionData);
+    setIsInitialDatasetLoaded(true);
   }, []);
 
   // Run once the first dataset is loaded (and then never again).
@@ -351,9 +351,9 @@ function App() {
     plot?.removePlot();
     plot?.setDataset(dataset!);
     const setupInitialParameters = async (): Promise<void> => {
-      if (initialUrlParams.feature) {
-        // Load feature (if unset, do nothing because loadDataset already loads a default)
-        await updateFeature(initialUrlParams.feature);
+      if (initialUrlParams.feature && dataset) {
+        // Load feature (if unset, do nothing because replaceDataset already loads a default)
+        await updateFeature(dataset, initialUrlParams.feature);
       }
       if (initialUrlParams.track >= 0) {
         // Seek to the track ID. Override current frame only if time = -1.
@@ -498,7 +498,7 @@ function App() {
     }
 
     await canv.setDataset(newDataset);
-    updateFeature(newFeatureName);
+    updateFeature(newDataset, newFeatureName);
     plot?.setDataset(newDataset);
     plot?.removePlot();
 
@@ -528,11 +528,11 @@ function App() {
     [datasetName, collection, collectionData]
   );
 
-  async function updateFeature(newFeatureName: string): Promise<void> {
-    if (!dataset?.hasFeature(newFeatureName)) {
+  async function updateFeature(newDataset: Dataset, newFeatureName: string): Promise<void> {
+    if (!newDataset?.hasFeature(newFeatureName)) {
+      console.warn("Dataset does not have feature '" + newFeatureName + "'.");
       return;
     }
-
     setFeatureName(newFeatureName);
     canv.setFeature(newFeatureName);
     // only update plot if active
@@ -545,8 +545,8 @@ function App() {
   function handleFeatureChange(event: React.ChangeEvent<HTMLSelectElement>): void {
     const value = event.target.value;
     console.log(value);
-    if (value !== featureName) {
-      updateFeature(value);
+    if (value !== featureName && dataset) {
+      updateFeature(dataset, value);
     }
   }
 
