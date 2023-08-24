@@ -97,7 +97,6 @@ function App(): ReactElement {
     element?.parentNode?.replaceChild(canv.domElement, element);
   }, []);
 
-  const initialUrlParams = useMemo(urlUtils.loadParamsFromUrl, []);
   const [collection, setCollection] = useState<string | undefined>();
   const [collectionData, setCollectionData] = useState<urlUtils.CollectionData | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -118,7 +117,7 @@ function App(): ReactElement {
   const [timeControls, setTimeControls] = useState<TimeControls | undefined>();
   const [recordingControls, setRecordingControls] = useState<RecordingControls | undefined>();
 
-  // Recording UI Data
+  // Recording UI
   const [imagePrefix, setImagePrefix] = useState("");
   const [useDefaultPrefix, setUseDefaultPrefix] = useState(true);
   const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
@@ -154,8 +153,9 @@ function App(): ReactElement {
    */
   const drawLoop = useCallback(async (): Promise<void> => {
     // Note: Selected track, frame number, etc. are not updated here.
+    // Those operations are async, and need to complete before a state update to be
+    // rendered correctly.
     canv.setShowTrackPath(showTrackPath);
-    // canv.setSelectedTrack(selectedTrack);
     canv.setColorMapRangeLock(isColorRampRangeLocked);
     canv.setHideValuesOutOfRange(hideValuesOutOfRange);
     canv.setColorRamp(colorRamp);
@@ -227,6 +227,8 @@ function App(): ReactElement {
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
   // INITIAL SETUP  //////////////////////////////////////////////////////////////////
+  const initialUrlParams = useMemo(urlUtils.loadParamsFromUrl, []);
+
   // Load database and collections data from the URL.
   useMemo(async () => {
     setSize();
@@ -275,9 +277,8 @@ function App(): ReactElement {
         await updateFeature(dataset, initialUrlParams.feature);
       }
       if (initialUrlParams.track >= 0) {
-        // Seek to the track ID. Override current frame only if time = -1.
+        // Highlight the track. Seek to start of frame only if time is not defined.
         await findTrack(initialUrlParams.track, initialUrlParams.time < 0);
-        setFindTrackInput("" + initialUrlParams.track); // Placing state update after the async operation forces a re-render
       }
       let newTime = currentFrame;
       if (initialUrlParams.time >= 0) {
@@ -347,16 +348,14 @@ function App(): ReactElement {
   }, [handleCanvasClick]);
 
   // COLOR RAMP /////////////////////////////////////////////////////////////
-  // Update color ramp element with new options once selected
+  // Initialize the color ramp gradients after the initial render.
   useEffect(() => {
-    // const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
-    // element?.parentNode?.replaceChild(canv.domElement, element);
     const rampContainer = document.getElementById(COLOR_RAMP_PLACEHOLDER_ID);
     if (!rampContainer) {
       return;
     }
 
-    // Clear existing children, if any exist.
+    // Clear existing children.
     let lastChild = rampContainer.lastChild;
     while (lastChild) {
       rampContainer.removeChild(lastChild);
