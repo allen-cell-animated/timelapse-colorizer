@@ -33,10 +33,8 @@ export default class Track {
   }
 
   getIdAtTime(t: number): number {
-    if (this.times.length === 1 && this.times[0] === t) {
-      return this.ids[0];
-    }
-    const index = this.times.findIndex((time) => time > t);
+    // assume that times passed in would be an exact match.
+    const index = this.times.findIndex((time) => time === t);
     if (index === -1) {
       return -1;
     }
@@ -44,6 +42,7 @@ export default class Track {
   }
 
   length(): number {
-    return this.times.length;
+    // note that a track with only one time in it will report length 0??
+    return this.times[this.times.length - 1] - this.times[0];
   }
 }

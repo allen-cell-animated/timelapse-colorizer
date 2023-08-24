@@ -273,8 +273,8 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
     if dataset != "":
         plate = dataset.split("_")[0]
         position = dataset.split("_")[1]
-        c = a.loc[a["Image_Metadata_Plate"] == plate]
-        c = c.loc[c["Image_Metadata_Position"] == position]
+        c = a.loc[a["Image_Metadata_Plate"] == int(plate)]
+        c = c.loc[c["Image_Metadata_Position"] == int(position)]
         make_dataset(c, output_dir, dataset, do_frames, scale)
     else:
         # for every combination of plate and position, make a dataset
@@ -296,7 +296,7 @@ parser.add_argument(
 parser.add_argument(
     "--dataset",
     type=str,
-    default="",
+    default="3500005820_3",
     help="Compatible named FMS dataset or FMS id to load. Will be loaded from hardcoded csv.",
 )
 parser.add_argument(

@@ -293,7 +293,7 @@ export default class ColorizeCanvas {
     const trackFirstFrame = this.track.times[0];
     let range = this.currentFrame - trackFirstFrame;
 
-    if (range >= this.track.length() || range < 0) {
+    if (range > this.track.length() || range < 0) {
       // Hide track if we are outside the track range
       range = 0;
     }
@@ -302,16 +302,12 @@ export default class ColorizeCanvas {
   }
 
   private updateHighlightedId(): void {
-    // Get highlighted id
+    // Hide highlight if no track is selected
     if (!this.track) {
+      this.setUniform("highlightedId", -1);
       return;
     }
-    // Tracks of length 1 should not be offset by 1
-    if (this.track.length() === 1) {
-      this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame));
-    } else {
-      this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame) - 1);
-    }
+    this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame));
   }
 
   setFeature(name: string): void {
