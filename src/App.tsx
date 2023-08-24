@@ -7,6 +7,7 @@ import TimeControls from "./colorizer/TimeControls";
 import * as urlUtils from "./colorizer/utils/url_utils";
 
 import styles from "./App.module.css";
+import { useDebounce } from "./colorizer/utils/react_utils";
 
 const CANVAS_PLACEHOLDER_ID = "canvasPlaceholder";
 const COLOR_RAMP_PLACEHOLDER_ID = "colorRamp";
@@ -101,13 +102,14 @@ function App(): ReactElement {
   const [collectionData, setCollectionData] = useState<urlUtils.CollectionData | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetName, setDatasetName] = useState("");
-  const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
-  const [datasetOpen, setDatasetOpen] = useState(false);
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
-  const [colorRamp, setColorRamp] = useState(colorRamps[DEFAULT_RAMP]);
 
+  const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
+  const [datasetOpen, setDatasetOpen] = useState(false);
+
+  const [colorRamp, setColorRamp] = useState(colorRamps[DEFAULT_RAMP]);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
@@ -121,11 +123,18 @@ function App(): ReactElement {
   const [imagePrefix, setImagePrefix] = useState("");
   const [useDefaultPrefix, setUseDefaultPrefix] = useState(true);
   const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
-
+  /** The frame selected by the time UI. Changes to frameInput are reflected in
+   * canvas after a short delay.
+   */
+  const [frameInput, setFrameInput] = useState(0);
   const [findTrackInput, setFindTrackInput] = useState("");
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
+  /**
+   * Copy the current collection, dataset, feature, track, and frame information
+   * to the page URL.
+   */
   const updateUrl = useCallback((): void => {
     // Don't include collection parameter in URL if it matches the default.
     let collectionParam = null;
@@ -195,6 +204,7 @@ function App(): ReactElement {
     async (frame: number) => {
       await canv.setFrame(frame);
       setCurrentFrame(frame);
+      setFrameInput(frame);
     },
     [drawLoop, canv]
   );
@@ -211,7 +221,6 @@ function App(): ReactElement {
       if (seekToFrame) {
         setFrame(newTrack.times[0]);
       }
-      // await canv.setFrame(newTrack.times[0]);
       canv.setSelectedTrack(newTrack);
       plot?.plot(newTrack, featureName, currentFrame);
       // await drawLoop();
@@ -286,6 +295,7 @@ function App(): ReactElement {
         newTime = initialUrlParams.time;
         await canv.setFrame(newTime);
         setCurrentFrame(newTime); // Force render
+        setFrameInput(newTime);
       }
     };
 
@@ -565,6 +575,13 @@ function App(): ReactElement {
     window.addEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Store the current value of the time slider as its own state, and update
+  // the frame using a debounced value to prevent constant updates as it moves.
+  const debouncedFrameInput = useDebounce(frameInput, 250);
+  useEffect(() => {
+    setFrame(debouncedFrameInput);
+  }, [debouncedFrameInput]);
+
   const handleFindTrack = useCallback(async (): Promise<void> => {
     // Load track value
     await findTrack(parseInt(findTrackInput, 10));
@@ -723,10 +740,10 @@ function App(): ReactElement {
                 max={dataset ? dataset.numberOfFrames - 1 : 0}
                 disabled={disableTimeControlsUi}
                 step="1"
-                value={currentFrame}
+                value={frameInput}
                 onChange={(event) => {
                   // TODO: Debounce changes to time slider (currently instantly changes)
-                  setFrame(event.target.valueAsNumber);
+                  setFrameInput(event.target.valueAsNumber);
                 }}
               />
               <input
@@ -735,7 +752,7 @@ function App(): ReactElement {
                 min="0"
                 max={dataset ? dataset.numberOfFrames - 1 : 0}
                 disabled={disableTimeControlsUi}
-                value={currentFrame}
+                value={frameInput}
                 onChange={(event) => {
                   setFrame(event.target.valueAsNumber);
                 }}

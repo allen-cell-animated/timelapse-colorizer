@@ -85,7 +85,6 @@ export default class Plotting {
         },
       ],
     };
-    console.log("Plot time: " + t);
     Plotly.relayout(this.parentDivId, layout);
     //Plotly.react(this.parentDivId, this.trace ? [this.trace] : [], layout);
   }
