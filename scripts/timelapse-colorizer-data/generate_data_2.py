@@ -59,6 +59,9 @@ import time
 def make_frames(grouped_frames, output_dir, dataset, scale: float):
     outpath = os.path.join(output_dir, dataset)
 
+    # rows of spreadsheet (referring to unique cells) are zero based
+    # however, we need to reserve 0 in our output image files for "no cell here"
+    # so bump each row index by 1 (lut_adjustment) for output image files
     lut_adjustment = 1
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
