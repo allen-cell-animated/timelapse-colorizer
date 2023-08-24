@@ -162,6 +162,7 @@ export default class ColorizeCanvas {
     this.currentFrame = 0;
 
     this.render = this.render.bind(this);
+    this.getCurrentFrame = this.getCurrentFrame.bind(this);
   }
 
   get domElement(): HTMLCanvasElement {

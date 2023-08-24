@@ -101,10 +101,9 @@ function App() {
     return canv;
   }, []);
 
-  // Setup for plot + canvas after initial render, since they replace DOM nodes.
+  // Setup for plot + canvas after initial render, since they replace DOM elements.
   useEffect(() => {
-    setPlot(new Plotting(PLOT_PLACEHOLDER_ID)); // Done after initial render so it can replace the HTML Element w/ id PLOT_PLACEHOLDER_ID
-
+    setPlot(new Plotting(PLOT_PLACEHOLDER_ID));
     const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
     element?.parentNode?.replaceChild(canv.domElement, element);
   }, []);
@@ -127,14 +126,39 @@ function App() {
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
-  // Recording
+  const [timeControls, setTimeControls] = useState<TimeControls | undefined>();
+  const [recordingControls, setRecordingControls] = useState<RecordingControls | undefined>();
+
+  // Recording UI Data
   const [imagePrefix, setImagePrefix] = useState("");
   const [useDefaultPrefix, setUseDefaultPrefix] = useState(true);
   const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
 
-  // TODO: Remove unused dummy functions that will be replaced later
-  const [timeControls, setTimeControls] = useState<TimeControls | undefined>();
-  const [recordingControls, setRecordingControls] = useState<RecordingControls | undefined>();
+  const [findTrackInput, setFindTrackInput] = useState("");
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
+
+  // UTILITY METHODS /////////////////////////////////////////////////////////////
+  // Treat Url as a callback to reduce computation, and to let it be called from other immediate actions.
+  const updateUrl = useCallback((): void => {
+    // Don't include collection parameter in URL if it matches the default.
+    let collectionParam = null;
+    if (
+      collection === urlUtils.DEFAULT_COLLECTION_PATH ||
+      collection === urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME
+    ) {
+      collectionParam = null;
+    } else {
+      collectionParam = collection || null;
+    }
+
+    urlUtils.saveParamsToUrl(
+      collectionParam,
+      datasetName,
+      featureName,
+      selectedTrack ? selectedTrack.trackId : null,
+      currentFrame
+    );
+  }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
 
   // Initialize after first render, as they directly access HTML DOM elements
   // TODO: Refactor into React components
@@ -148,7 +172,7 @@ function App() {
   }, []);
 
   // Update recording controls prefix.
-  useEffect(() => {
+  useMemo(() => {
     if (useDefaultPrefix && datasetName && featureName) {
       setImagePrefix(`${datasetName}-${featureName}-`);
     }
@@ -194,38 +218,30 @@ function App() {
     colorRampMin,
     colorRampMax,
     timeControls?.isPlaying(), // updates URL when timeControls stops
+    updateUrl,
   ]);
 
+  // Call draw loop whenever its dependencies change.
   useMemo(() => {
     drawLoop();
   }, [drawLoop]);
-  // useEffect(() => {
-  //   drawLoop();
-  // }, [drawLoop]);
 
   const setFrame = useCallback(
     async (frame: number) => {
       console.log("Set frame to " + frame);
       await canv.setFrame(frame);
       setCurrentFrame(frame);
-      // Must initiate re-render here, otherwise the canvas render won't be updated by
-      // react until after the next state update
-      drawLoop();
-      //setCanvasNeedsRender(true);
     },
     [drawLoop, canv]
   );
 
-  // Update UI when any of the dependencies change
-  useEffect(() => {
+  // Update the callback for time controls and recording controls if it changes.
+  // TODO: TimeControls and RecordingControls should be refactored to receive
+  // setFrame as props.
+  useMemo(() => {
     timeControls?.setFrameCallback(setFrame);
     recordingControls?.setFrameCallback(setFrame);
-  }, [setFrame, drawLoop]);
-
-  // TODO: Move input handler into module
-  const [findTrackInput, setFindTrackInput] = useState("");
-
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
+  }, [setFrame]);
 
   const findTrack = useCallback(
     async (trackId: number, seekToFrame: boolean = true): Promise<void> => {
@@ -249,29 +265,6 @@ function App() {
     [canv, plot, dataset, featureName, currentFrame]
   );
 
-  // URL STATE /////////////////////////////////////////////////////////////
-  // Treat Url as a callback to reduce computation, and to let it be called from other immediate actions.
-  const updateUrl = useCallback((): void => {
-    // Don't include collection parameter in URL if it matches the default.
-    let collectionParam = null;
-    if (
-      collection === urlUtils.DEFAULT_COLLECTION_PATH ||
-      collection === urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME
-    ) {
-      collectionParam = null;
-    } else {
-      collectionParam = collection || null;
-    }
-
-    urlUtils.saveParamsToUrl(
-      collectionParam,
-      datasetName,
-      featureName,
-      selectedTrack ? selectedTrack.trackId : null,
-      currentFrame
-    );
-  }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
-
   // CANVAS ACTIONS ///////////////////////////////////////////////////////////
 
   const handleCanvasClick = useCallback(
@@ -292,7 +285,7 @@ function App() {
       }
       drawLoop();
     },
-    [dataset, featureName]
+    [dataset, featureName, currentFrame, canv, plot]
   );
 
   useEffect(() => {
@@ -347,7 +340,6 @@ function App() {
     if (!isInitialDatasetLoaded) {
       return;
     }
-    console.log("Setup");
     plot?.removePlot();
     plot?.setDataset(dataset!);
     const setupInitialParameters = async (): Promise<void> => {
@@ -367,7 +359,6 @@ function App() {
         await canv.setFrame(newTime);
         // timeControls.updateUI();
       }
-      drawLoop();
     };
 
     setupInitialParameters();

@@ -39,6 +39,7 @@ export default class Plotting {
     };
 
     Plotly.newPlot(this.parentDivId, [], layout);
+    this.plot = this.plot.bind(this);
   }
 
   setDataset(dataset: Dataset): void {
@@ -50,6 +51,7 @@ export default class Plotting {
       return;
     }
     const plotinfo = this.dataset?.buildTrackFeaturePlot(track, feature);
+    console.log("Plot time: " + time);
     this.trace = {
       x: plotinfo.domain,
       y: plotinfo.range,
@@ -83,6 +85,7 @@ export default class Plotting {
         },
       ],
     };
+    console.log("Plot time: " + t);
     Plotly.relayout(this.parentDivId, layout);
     //Plotly.react(this.parentDivId, this.trace ? [this.trace] : [], layout);
   }
