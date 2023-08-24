@@ -84,6 +84,7 @@ function getDatasetNames(dataset: string | null, collectionData: urlUtils.Collec
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
+
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
     const canv = new ColorizeCanvas();
@@ -131,6 +132,7 @@ function App(): ReactElement {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
+
   /**
    * Copy the current collection, dataset, feature, track, and frame information
    * to the page URL.
@@ -235,7 +237,8 @@ function App(): ReactElement {
    */
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
-  // INITIAL SETUP  //////////////////////////////////////////////////////////////////
+  // INITIAL SETUP  ////////////////////////////////////////////////////////////////
+
   const initialUrlParams = useMemo(urlUtils.loadParamsFromUrl, []);
 
   // Load database and collections data from the URL.
@@ -403,27 +406,28 @@ function App(): ReactElement {
   }
 
   // DATASET LOADING ///////////////////////////////////////////////////////
+
   async function replaceDataset(
-    _dataset: string,
-    _collection?: string | null,
-    _collectionData?: urlUtils.CollectionData | null
+    datasetNameParam: string,
+    collectionParam?: string | null,
+    collectionDataParam?: urlUtils.CollectionData | null
   ): Promise<void> {
     console.time("loadDataset");
     setDatasetOpen(false);
 
-    if (_collectionData && !_collectionData.has(_dataset)) {
+    if (collectionDataParam && !collectionDataParam.has(datasetNameParam)) {
       console.warn(
-        `Collection does not include '${_dataset}' as a dataset. Defaulting to first dataset in the collection.`
+        `Collection does not include '${datasetNameParam}' as a dataset. Defaulting to first dataset in the collection.`
       );
-      _dataset = urlUtils.getDefaultDatasetName(_collectionData);
+      datasetNameParam = urlUtils.getDefaultDatasetName(collectionDataParam);
     }
 
     let newDataset;
     try {
       const datasetPath = urlUtils.getExpectedDatasetPath(
-        _dataset,
-        _collection || undefined,
-        _collectionData || undefined
+        datasetNameParam,
+        collectionParam || undefined,
+        collectionDataParam || undefined
       );
 
       console.log(`Fetching dataset from path '${datasetPath}'`);
@@ -436,24 +440,24 @@ function App(): ReactElement {
       }
     } catch (e) {
       console.error(e);
-      console.error(`Could not load dataset '${_dataset}'.`);
+      console.error(`Could not load dataset '${datasetNameParam}'.`);
       console.timeEnd("loadDataset");
       if (dataset !== null) {
-        console.warn(`Showing last loaded dataset '${_dataset}' instead.`);
+        console.warn(`Showing last loaded dataset '${datasetNameParam}' instead.`);
         setDatasetOpen(true);
         return;
       } else {
         // Encountered error on first dataset load
         // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
-        if (!_collectionData) {
+        if (!collectionDataParam) {
           return;
         }
-        const defaultName = urlUtils.getDefaultDatasetName(_collectionData);
-        if (_dataset === defaultName) {
+        const defaultName = urlUtils.getDefaultDatasetName(collectionDataParam);
+        if (datasetNameParam === defaultName) {
           return; // we already tried to load the default so give up
         }
         console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
-        return replaceDataset(defaultName, _collection, _collectionData);
+        return replaceDataset(defaultName, collectionParam, collectionDataParam);
       }
     }
     setFindTrackInput("");
@@ -476,7 +480,7 @@ function App(): ReactElement {
     setCurrentFrame(newFrame);
     setDatasetOpen(true);
     setDataset(newDataset);
-    setDatasetName(_dataset);
+    setDatasetName(datasetNameParam);
     setFeatureName(newFeatureName);
 
     updateUrl();
@@ -484,6 +488,7 @@ function App(): ReactElement {
   }
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
+
   const handleDatasetChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>): void => {
       const value = event.target.value;
@@ -518,7 +523,6 @@ function App(): ReactElement {
 
   async function handleResetRangeClick(): Promise<void> {
     canv.resetColorMapRange();
-    // await drawLoop(); // update UI
     setColorRampMin(canv.getColorMapRangeMin());
     setColorRampMax(canv.getColorMapRangeMax());
   }
@@ -563,6 +567,7 @@ function App(): ReactElement {
   }, [onMouseMove, onMouseLeave]);
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
+
   function handleKeyDown({ key }: KeyboardEvent): void {
     if (key === "ArrowLeft" || key === "Left") {
       timeControls?.handleFrameAdvance(-1);
@@ -588,6 +593,7 @@ function App(): ReactElement {
   }, [findTrackInput, findTrack]);
 
   // RECORDING CONTROLS ////////////////////////////////////////////////////
+
   // Update the callback for TimeControls and RecordingControls if it changes.
   // TODO: TimeControls and RecordingControls should be refactored to receive
   // setFrame as props.
@@ -604,6 +610,7 @@ function App(): ReactElement {
   }, [useDefaultPrefix, datasetName, featureName]);
 
   // RENDERING /////////////////////////////////////////////////////////////
+
   const disableUi: boolean = recordingControls?.isRecording() || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
@@ -647,6 +654,7 @@ function App(): ReactElement {
             style={{ width: "50px", textAlign: "start" }}
             value={canv.getColorMapRangeMin()}
             onChange={(event) => {
+              // Must set both to force render update
               canv.setColorMapRangeMin(event.target.valueAsNumber);
               setColorRampMin(event.target.valueAsNumber);
             }}
@@ -742,7 +750,6 @@ function App(): ReactElement {
                 step="1"
                 value={frameInput}
                 onChange={(event) => {
-                  // TODO: Debounce changes to time slider (currently instantly changes)
                   setFrameInput(event.target.valueAsNumber);
                 }}
               />
