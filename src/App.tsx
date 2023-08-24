@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import { HexColorString } from "three";
 import { ColorRamp, Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
@@ -81,11 +81,8 @@ function getDatasetNames(dataset: string | null, collectionData: urlUtils.Collec
   }
 }
 
-function App() {
+function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
-
-  // TODO: ColorizeCanvas breaks some of React's rendering/state update model. Should it be turned into
-  // a React component?
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
     const canv = new ColorizeCanvas();
@@ -164,11 +161,6 @@ function App() {
     canv.setColorRamp(colorRamp);
     await canv.render();
 
-    if (timeControls && recordingControls) {
-      recordingControls.setIsDisabled(!dataset);
-      timeControls.setIsDisabled(recordingControls.isRecording());
-    }
-
     setColorRampMin(canv.getColorMapRangeMin());
     setColorRampMax(canv.getColorMapRangeMax());
 
@@ -201,7 +193,6 @@ function App() {
 
   const setFrame = useCallback(
     async (frame: number) => {
-      console.log("Set frame to " + frame);
       await canv.setFrame(frame);
       setCurrentFrame(frame);
     },
@@ -240,7 +231,8 @@ function App() {
   useMemo(async () => {
     setSize();
 
-    let { collection: _collection, dataset: _datasetName } = initialUrlParams;
+    let _collection = initialUrlParams.collection;
+    const _datasetName = initialUrlParams.dataset;
     let _collectionData;
     // Load single dataset instead of collection
     if (_datasetName && urlUtils.isUrl(_datasetName)) {
@@ -299,6 +291,7 @@ function App() {
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
 
+  // Run once, after mounting
   useEffect(() => {
     // Initialize controls after first render, as they directly access HTML DOM elements
     // TODO: Refactor into React components
@@ -380,7 +373,7 @@ function App() {
       return rampCanvas;
     });
 
-    for (let ramp of ramps) {
+    for (const ramp of ramps) {
       rampContainer.appendChild(ramp);
     }
   }, []);
@@ -576,7 +569,7 @@ function App() {
 
   const handleFindTrack = useCallback(async (): Promise<void> => {
     // Load track value
-    await findTrack(parseInt(findTrackInput));
+    await findTrack(parseInt(findTrackInput, 10));
   }, [findTrackInput, findTrack]);
 
   // RECORDING CONTROLS ////////////////////////////////////////////////////
@@ -813,6 +806,7 @@ function App() {
             id="sequencePrefix"
             value={imagePrefix}
             onChange={(event) => {
+              // TODO: Check for illegal characters
               setImagePrefix(event.target.value);
               setUseDefaultPrefix(false);
             }}

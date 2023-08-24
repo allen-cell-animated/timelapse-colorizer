@@ -3,26 +3,20 @@ import ColorizeCanvas from "./ColorizeCanvas";
 export default class RecordingControls {
   private recording: boolean;
 
-  private useDefaultPrefix: boolean;
-  private defaultPrefix: string;
   private hiddenAnchorEl: HTMLAnchorElement;
 
   private timerId: number;
   private startingFrame: number;
   private setFrameFn: (frame: number) => void;
-  private isDisabled: boolean;
 
   private canvas: ColorizeCanvas;
 
   constructor(canvas: ColorizeCanvas, setFrameFn: (frame: number) => void) {
-    this.useDefaultPrefix = true;
-    this.defaultPrefix = "";
     this.recording = false;
     this.canvas = canvas;
     this.timerId = 0;
     this.startingFrame = 0;
     this.setFrameFn = setFrameFn;
-    this.isDisabled = false;
 
     // this.startBtn = document.querySelector("#sequence_start_btn")!;
     // this.abortBtn = document.querySelector("#sequence_abort_btn")!;
@@ -117,22 +111,6 @@ export default class RecordingControls {
 
     // Start interval loop
     loadAndRecordFrame();
-  }
-
-  public handlePrefixChanged(): void {
-    this.useDefaultPrefix = false;
-  }
-
-  public handlePrefixResetClicked(): void {
-    this.useDefaultPrefix = true;
-  }
-
-  public setDefaultFilePrefix(prefix: string): void {
-    this.defaultPrefix = prefix;
-  }
-
-  public setIsDisabled(disabled: boolean): void {
-    this.isDisabled = disabled;
   }
 
   public isRecording(): boolean {

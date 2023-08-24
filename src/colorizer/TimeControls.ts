@@ -28,10 +28,6 @@ export default class TimeControls {
     return (index + totalFrames) % totalFrames;
   }
 
-  private clampFrame(index: number): number {
-    return Math.min(Math.max(index, 0), this.canvas.getTotalFrames() - 1);
-  }
-
   private playTimeSeries(onNewFrameCallback: () => void): void {
     clearInterval(this.timerId);
 
