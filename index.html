@@ -4,60 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nuclear Morphogenesis Colorizer</title>
-    <style>
-
-p {
-  margin: 2px;
-}
-
-#dataset_controls_container {
-  margin: 10px 0;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 5px;
-  align-items: center;
-}
-
-#color_ramp_container {
-  position: relative;
-}
-
-#color_ramp {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-}
-
-#color_ramp canvas {
-  display: none;
-}
-
-#color_ramp:hover:not(.disabled) canvas {
-  display: block;
-}
-
-#color_ramp canvas.selected {
-  display: block;
-}
-
-#color_ramp canvas:hover, #color_ramp canvas.selected {
-  outline: 3px solid black;
-  outline-offset: -2px;
-}
-
-#labeled_color_ramp {
-  display: inline-flex;
-  align-items: center;
-  flex-direction: row;
-  gap: 5px;
-}
-    </style>
   </head>
   <body>
     <div id="root"></div>
-    <br/>
-    <hr/>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
