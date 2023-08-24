@@ -167,13 +167,11 @@ function App(): ReactElement {
     // Those operations are async, and need to complete before a state update to be
     // rendered correctly.
     canv.setShowTrackPath(showTrackPath);
-    canv.setColorMapRangeLock(isColorRampRangeLocked);
     canv.setHideValuesOutOfRange(hideValuesOutOfRange);
     canv.setColorRamp(colorRamp);
+    canv.setColorMapRangeMin(colorRampMin);
+    canv.setColorMapRangeMax(colorRampMax);
     await canv.render();
-
-    setColorRampMin(canv.getColorMapRangeMin());
-    setColorRampMax(canv.getColorMapRangeMax());
 
     // update current time in plot
     plot?.setTime(currentFrame);
@@ -488,16 +486,12 @@ function App(): ReactElement {
   }
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
-
-  const handleDatasetChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>): void => {
-      const value = event.target.value;
-      if (value !== datasetName) {
-        replaceDataset(value, collection, collectionData);
-      }
-    },
-    [datasetName, collection, collectionData]
-  );
+  function handleDatasetChange(event: React.ChangeEvent<HTMLSelectElement>): void {
+    const value = event.target.value;
+    if (value !== datasetName) {
+      replaceDataset(value, collection, collectionData);
+    }
+  }
 
   async function updateFeature(newDataset: Dataset, newFeatureName: string): Promise<void> {
     if (!newDataset?.hasFeature(newFeatureName)) {
@@ -505,6 +499,12 @@ function App(): ReactElement {
       return;
     }
     setFeatureName(newFeatureName);
+
+    if (!isColorRampRangeLocked) {
+      setColorRampMin(newDataset?.features[newFeatureName].min || colorRampMin);
+      setColorRampMax(newDataset?.features[newFeatureName].max || colorRampMax);
+    }
+
     canv.setFeature(newFeatureName);
     // only update plot if active
     if (selectedTrack) {
@@ -688,7 +688,6 @@ function App(): ReactElement {
             onChange={() => {
               // Invert lock on range
               setIsColorRampRangeLocked(!isColorRampRangeLocked);
-              canv.setColorMapRangeLock(!isColorRampRangeLocked);
             }}
           />
           <label htmlFor="lockRangeCheckbox">Lock color map range</label>
