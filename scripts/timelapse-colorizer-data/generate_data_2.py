@@ -279,11 +279,17 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
     else:
         # for every combination of plate and position, make a dataset
         b = a.groupby(["Image_Metadata_Plate", "Image_Metadata_Position"])
+        collection = []
         for name, group in b:
             dataset = str(name[0]) + "_" + str(name[1])
+            print(dataset)
+            collection.append({"name": dataset, "path": dataset})
             c = a.loc[a["Image_Metadata_Plate"] == name[0]]
             c = c.loc[c["Image_Metadata_Position"] == name[1]]
             make_dataset(c, output_dir, dataset, do_frames, scale)
+        # write the collection.json file
+        with open(output_dir + "/collection.json", "w") as f:
+            json.dump(collection, f)
 
 
 parser = argparse.ArgumentParser()
@@ -296,7 +302,7 @@ parser.add_argument(
 parser.add_argument(
     "--dataset",
     type=str,
-    default="3500005820_3",
+    default="",
     help="Compatible named FMS dataset or FMS id to load. Will be loaded from hardcoded csv.",
 )
 parser.add_argument(
