@@ -175,8 +175,8 @@ function App() {
     // update current time in plot
     plot?.setTime(currentFrame);
 
-    if (!timeControls?.isPlaying()) {
-      // Do not update URL while playing for performance + UX reasons
+    if (!timeControls?.isPlaying() && !recordingControls?.isRecording()) {
+      // Do not update URL while playback is happening for performance + UX reasons
       updateUrl();
     }
   }, [
@@ -285,14 +285,14 @@ function App() {
       if (initialUrlParams.track >= 0) {
         // Seek to the track ID. Override current frame only if time = -1.
         await findTrack(initialUrlParams.track, initialUrlParams.time < 0);
+        setFindTrackInput("" + initialUrlParams.track); // Placing state update after the async operation forces a re-render
       }
       let newTime = currentFrame;
       if (initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
         newTime = initialUrlParams.time;
-        setCurrentFrame(newTime);
         await canv.setFrame(newTime);
-        // timeControls.updateUI();
+        setCurrentFrame(newTime); // Force render
       }
     };
 
@@ -601,8 +601,6 @@ function App() {
 
   return (
     <div>
-      <p>This section is being rendered by React.</p>
-
       {/** Top Control Bar */}
       <div className={styles.canvasTopControlsContainer}>
         <label htmlFor="dataset">Dataset</label>
