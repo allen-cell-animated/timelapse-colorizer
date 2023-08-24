@@ -42,7 +42,9 @@ export default class Track {
   }
 
   length(): number {
-    // note that a track with only one time in it will report length 0??
+    // tracks may have gaps (missing or elided data) in their list of times.
+    // So since the times are pre-sorted above, the length of the track is the difference between the last time and the first time.
+    // note that a track with only one time in it will report length 0
     return this.times[this.times.length - 1] - this.times[0];
   }
 }
