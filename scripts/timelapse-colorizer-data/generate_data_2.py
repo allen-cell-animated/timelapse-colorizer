@@ -74,10 +74,10 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
 
     for group_name, frame in grouped_frames:
         # sanity check - expect to have only one unique zstack per frame
-        print("Number of cells at timepoint: " + str(len(frame)))
-        n = len(pd.unique(frame['OutputMask (CAAX)']))
-        print(pd.unique(frame['OutputMask (CAAX)']))
-        print("Number of unique zstacks: " + str(n))
+        #print("Number of cells at timepoint: " + str(len(frame)))
+        # n = len(pd.unique(frame['OutputMask (CAAX)']))
+        #print(pd.unique(frame['OutputMask (CAAX)']))
+        #print("Number of unique zstacks: " + str(n))
 
 
         # take first row to get zstack path
@@ -102,7 +102,7 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
             )
         seg2d = seg2d.astype(np.uint32)
 
-        lut = np.zeros((mx + 1+1), dtype=np.uint32)
+        lut = np.zeros((mx + 1), dtype=np.uint32)
         for row_index, row in frame.iterrows():
             # build our remapping LUT:
             label = int(row["R0Nuclei_Number_Object_Number"])
@@ -210,16 +210,10 @@ def make_features(a, features, output_dir, dataset, scale: float):
     logging.info("Done writing features.")
 
 
-def make_dataset(output_dir="./data/", dataset="3500005820_3", do_frames=True, scale=1):
+def make_dataset(data, output_dir="./data/", dataset="3500005820_3", do_frames=True, scale=1):
     os.makedirs(os.path.join(output_dir, dataset), exist_ok=True)
 
-    # use pandas to load data
-    # a is the full dataset!
-    a = pd.read_csv("//allen/aics/microscopy/EMTImmunostainingResults/EMTTimelapse_7-25-23/Output_CAAX/MigratoryTracksTable_AvgColonyOverlapLessThan0.9_AllPaths.csv")
-    # dataset encodes plate and position.
-    (plate, position) = dataset.split("_")
-    a = a.loc[a["Image_Metadata_Plate"] == int(plate)]
-    a = a.loc[a["Image_Metadata_Position"] == int(position)]
+    a = data
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
     # track id = R0Nuclei_TrackObjects_Label_75
@@ -270,6 +264,28 @@ def make_dataset(output_dir="./data/", dataset="3500005820_3", do_frames=True, s
     logging.info("Finished writing dataset.")
 
 
+def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
+    # example dataset name : 3500005820_3
+    # use pandas to load data
+    # a is the full collection!
+    a = pd.read_csv("//allen/aics/microscopy/EMTImmunostainingResults/EMTTimelapse_7-25-23/Output_CAAX/MigratoryTracksTable_AvgColonyOverlapLessThan0.9_AllPaths.csv")
+
+    if dataset != "":
+        plate = dataset.split("_")[0]
+        position = dataset.split("_")[1]
+        c = a.loc[a["Image_Metadata_Plate"] == plate]
+        c = c.loc[c["Image_Metadata_Position"] == position]
+        make_dataset(c, output_dir, dataset, do_frames, scale)
+    else:
+        # for every combination of plate and position, make a dataset
+        b = a.groupby(["Image_Metadata_Plate", "Image_Metadata_Position"])
+        for name, group in b:
+            dataset = str(name[0]) + "_" + str(name[1])
+            c = a.loc[a["Image_Metadata_Plate"] == name[0]]
+            c = c.loc[c["Image_Metadata_Position"] == name[1]]
+            make_dataset(c, output_dir, dataset, do_frames, scale)
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--output_dir",
@@ -280,7 +296,7 @@ parser.add_argument(
 parser.add_argument(
     "--dataset",
     type=str,
-    default="3500005820_3",
+    default="",
     help="Compatible named FMS dataset or FMS id to load. Will be loaded from hardcoded csv.",
 )
 parser.add_argument(
@@ -309,7 +325,7 @@ if __name__ == "__main__":
         ],
     )
     logging.info("Starting...")
-    make_dataset(
+    make_collection(
         output_dir=args.output_dir,
         dataset=args.dataset,
         do_frames=not args.noframes,
