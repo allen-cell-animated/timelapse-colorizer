@@ -18,32 +18,20 @@ export default class RecordingControls {
     this.startingFrame = 0;
     this.setFrameFn = setFrameFn;
 
-    // this.startBtn = document.querySelector("#sequence_start_btn")!;
-    // this.abortBtn = document.querySelector("#sequence_abort_btn")!;
-    // this.filePrefixResetBtn = document.querySelector("#sequence_prefix_reset_btn")!;
-    // this.startAtCurrentFrameChkbx = document.querySelector("#sequence_start_frame_checkbox")!;
-    // this.filePrefixInput = document.querySelector("#sequence_prefix")!;
-
     this.hiddenAnchorEl = document.createElement("a"); // Hidden element for initiating download later
-
-    // this.startBtn.addEventListener("click", () => this.handleStartButtonClick());
-    // this.abortBtn.addEventListener("click", () => this.handleAbortButtonClick());
-    // this.filePrefixInput.addEventListener("changed", () => this.handlePrefixChanged());
-    // this.filePrefixResetBtn.addEventListener("click", () => this.handlePrefixResetClicked());
   }
 
   public setFrameCallback(fn: (frame: number) => void): void {
     this.setFrameFn = fn;
   }
 
-  public setCanvas(canvas: ColorizeCanvas): void {
-    this.canvas = canvas;
-  }
-
   /**
+   * Starts a recording loop with the given file prefix.
+   * @param prefix The file prefix to save each image capture with.
+   * @param startAtFirstFrame If true, starts the sequence at the first frame in the dataset.
+   * By default, this is false and recording starts at the current frame.
    *
-   * @param prefix
-   * @param startAtFirstFrame
+   * When the recording is completed, returns the canvas to the original frame.
    */
   public async start(prefix: string, startAtFirstFrame: boolean = false): Promise<void> {
     if (!this.recording) {

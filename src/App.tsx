@@ -300,7 +300,6 @@ function App(): ReactElement {
     setTimeControls(newTimeControls);
     setRecordingControls(newRecordingControls);
     newTimeControls.addPauseListener(updateUrl);
-    newRecordingControls.setCanvas(canv);
 
     // Add event listeners for unloading and resizing.
     window.addEventListener("beforeunload", () => {
