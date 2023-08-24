@@ -92,6 +92,8 @@ function getDatasetNames(dataset: string | null, collectionData: urlUtils.Collec
 }
 
 function App() {
+  // STATE INITIALIZATION /////////////////////////////////////////////////////////
+
   // TODO: ColorizeCanvas breaks some of React's rendering/state update model. Should it be turned into
   // a React component?
   const [plot, setPlot] = useState<Plotting | null>(null);
@@ -138,7 +140,6 @@ function App() {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
-  // Treat Url as a callback to reduce computation, and to let it be called from other immediate actions.
   const updateUrl = useCallback((): void => {
     // Don't include collection parameter in URL if it matches the default.
     let collectionParam = null;
@@ -160,29 +161,12 @@ function App() {
     );
   }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
 
-  // Initialize after first render, as they directly access HTML DOM elements
-  // TODO: Refactor into React components
-  useEffect(() => {
-    const newTimeControls = new TimeControls(canv, (_frame) => {});
-    const newRecordingControls = new RecordingControls(canv, (_frame) => {});
-    setTimeControls(newTimeControls);
-    setRecordingControls(newRecordingControls);
-    newTimeControls.addPauseListener(updateUrl);
-    newRecordingControls.setCanvas(canv);
-  }, []);
-
-  // Update recording controls prefix.
-  useMemo(() => {
-    if (useDefaultPrefix && datasetName && featureName) {
-      setImagePrefix(`${datasetName}-${featureName}-`);
-    }
-  }, [useDefaultPrefix, datasetName, featureName]);
-
-  // TODO: Merge into one memoized block?
-  // TODO: Rename?
+  /**
+   * Handles updating the canvas from state (for some common properties) and initiating the canvas
+   * render. Also updates other UI elements, including the plot and URL.
+   */
   const drawLoop = useCallback(async (): Promise<void> => {
-    // TODO: The canvas current frame currently breaks the React paradigm, since it's updated
-    // outside of a state update.
+    // Note: Selected track, frame number, etc. are not updated here.
     canv.setShowTrackPath(showTrackPath);
     // canv.setSelectedTrack(selectedTrack);
     canv.setColorMapRangeLock(isColorRampRangeLocked);
@@ -199,7 +183,6 @@ function App() {
     setColorRampMax(canv.getColorMapRangeMax());
 
     // update current time in plot
-
     plot?.setTime(currentFrame);
 
     if (!timeControls?.isPlaying()) {
@@ -221,7 +204,7 @@ function App() {
     updateUrl,
   ]);
 
-  // Call draw loop whenever its dependencies change.
+  // Call drawLoop whenever its dependencies change.
   useMemo(() => {
     drawLoop();
   }, [drawLoop]);
@@ -234,14 +217,6 @@ function App() {
     },
     [drawLoop, canv]
   );
-
-  // Update the callback for time controls and recording controls if it changes.
-  // TODO: TimeControls and RecordingControls should be refactored to receive
-  // setFrame as props.
-  useMemo(() => {
-    timeControls?.setFrameCallback(setFrame);
-    recordingControls?.setFrameCallback(setFrame);
-  }, [setFrame]);
 
   const findTrack = useCallback(
     async (trackId: number, seekToFrame: boolean = true): Promise<void> => {
@@ -265,45 +240,15 @@ function App() {
     [canv, plot, dataset, featureName, currentFrame]
   );
 
-  // CANVAS ACTIONS ///////////////////////////////////////////////////////////
-
-  const handleCanvasClick = useCallback(
-    async (event: MouseEvent): Promise<void> => {
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
-      resetTrackUI();
-      if (id < 0) {
-        plot?.removePlot();
-        canv.setSelectedTrack(null);
-        setSelectedTrack(null); // clear selected track when clicking off of cells
-      } else {
-        const trackId = dataset!.getTrackId(id);
-        const newTrack = dataset!.buildTrack(trackId);
-        plot?.plot(newTrack, featureName, currentFrame);
-        canv.setSelectedTrack(newTrack);
-        setSelectedTrack(newTrack);
-      }
-      drawLoop();
-    },
-    [dataset, featureName, currentFrame, canv, plot]
-  );
-
-  useEffect(() => {
-    canv.domElement.addEventListener("click", handleCanvasClick);
-    // Returned callback is fired if/when App is removed from the DOM
-    return () => {
-      canv.domElement.removeEventListener("click", handleCanvasClick);
-    };
-  }, [handleCanvasClick]);
-
-  // SETUP //////////////////////////////////////////////////////////////////
-
+  /**
+   * Update the canvas dimensions based on the current window size.
+   */
   const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
 
-  // Run initial setup only once. Load the database and collections data.
+  // INITIAL SETUP  //////////////////////////////////////////////////////////////////
+  // Load database and collections data from the URL.
   useMemo(async () => {
     setSize();
-    window.addEventListener("keydown", handleKeyDown);
 
     let { collection: _collection, dataset: _datasetName } = initialUrlParams;
     let _collectionData;
@@ -335,7 +280,7 @@ function App() {
     setIsInitialDatasetLoaded(true);
   }, []);
 
-  // Run once the first dataset is loaded (and then never again).
+  // Run only once the first dataset is loaded.
   useEffect(() => {
     if (!isInitialDatasetLoaded) {
       return;
@@ -364,21 +309,62 @@ function App() {
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
 
-  // TODO: Add/update event handlers in a reasonable way here.
-  // Note that repeated use of addEventListener here can cause memory issues.
-  // See https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#memory_issues
-  window.addEventListener("beforeunload", () => {
-    canv.domElement.removeEventListener("click", handleCanvasClick);
-    canv.dispose();
-  });
+  useEffect(() => {
+    // Initialize controls after first render, as they directly access HTML DOM elements
+    // TODO: Refactor into React components
+    const newTimeControls = new TimeControls(canv, setFrame);
+    const newRecordingControls = new RecordingControls(canv, setFrame);
+    setTimeControls(newTimeControls);
+    setRecordingControls(newRecordingControls);
+    newTimeControls.addPauseListener(updateUrl);
+    newRecordingControls.setCanvas(canv);
 
-  window.addEventListener("resize", () => {
-    setSize();
-    canv.render();
-  });
+    // Add event listeners for unloading and resizing.
+    window.addEventListener("beforeunload", () => {
+      canv.domElement.removeEventListener("click", handleCanvasClick);
+      canv.dispose();
+    });
+
+    window.addEventListener("resize", () => {
+      setSize();
+      canv.render();
+    });
+  }, []);
+
+  // CANVAS ACTIONS ///////////////////////////////////////////////////////////
+
+  const handleCanvasClick = useCallback(
+    async (event: MouseEvent): Promise<void> => {
+      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      // Reset track input
+      setFindTrackInput("");
+      if (id < 0) {
+        plot?.removePlot();
+        canv.setSelectedTrack(null);
+        setSelectedTrack(null); // clear selected track when clicking off of cells
+      } else {
+        const trackId = dataset!.getTrackId(id);
+        const newTrack = dataset!.buildTrack(trackId);
+        plot?.plot(newTrack, featureName, currentFrame);
+        canv.setSelectedTrack(newTrack);
+        setSelectedTrack(newTrack);
+      }
+      drawLoop();
+    },
+    [dataset, featureName, currentFrame, canv, plot]
+  );
+
+  useEffect(() => {
+    canv.domElement.addEventListener("click", handleCanvasClick);
+    // Returned callback is fired if/when App is removed from the DOM,
+    // or before running useEffect again. This prevents memory issues with
+    // duplicate event listeners.
+    return () => {
+      canv.domElement.removeEventListener("click", handleCanvasClick);
+    };
+  }, [handleCanvasClick]);
 
   // COLOR RAMP /////////////////////////////////////////////////////////////
-
   // Update color ramp element with new options once selected
   useEffect(() => {
     // const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
@@ -426,7 +412,6 @@ function App() {
   }
 
   // DATASET LOADING ///////////////////////////////////////////////////////
-
   async function replaceDataset(
     _dataset: string,
     _collection?: string | null,
@@ -480,7 +465,7 @@ function App() {
         return replaceDataset(defaultName, _collection, _collectionData);
       }
     }
-    resetTrackUI();
+    setFindTrackInput("");
 
     // Only change the feature if there's no equivalent in the new dataset
     let newFeatureName = featureName;
@@ -508,7 +493,6 @@ function App() {
   }
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
-
   const handleDatasetChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>): void => {
       const value = event.target.value;
@@ -588,7 +572,6 @@ function App() {
   }, [onMouseMove, onMouseLeave]);
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
-
   function handleKeyDown({ key }: KeyboardEvent): void {
     if (key === "ArrowLeft" || key === "Left") {
       timeControls?.handleFrameAdvance(-1);
@@ -597,14 +580,30 @@ function App() {
     }
   }
 
+  useMemo(() => {
+    window.addEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handleFindTrack = useCallback(async (): Promise<void> => {
     // Load track value
     await findTrack(parseInt(findTrackInput));
   }, [findTrackInput, findTrack]);
 
-  function resetTrackUI(): void {
-    setFindTrackInput("");
-  }
+  // RECORDING CONTROLS ////////////////////////////////////////////////////
+  // Update the callback for TimeControls and RecordingControls if it changes.
+  // TODO: TimeControls and RecordingControls should be refactored to receive
+  // setFrame as props.
+  useMemo(() => {
+    timeControls?.setFrameCallback(setFrame);
+    recordingControls?.setFrameCallback(setFrame);
+  }, [setFrame]);
+
+  // Update the default recording controls prefix.
+  useMemo(() => {
+    if (useDefaultPrefix && datasetName && featureName) {
+      setImagePrefix(`${datasetName}-${featureName}-`);
+    }
+  }, [useDefaultPrefix, datasetName, featureName]);
 
   // RENDERING /////////////////////////////////////////////////////////////
   const disableUi: boolean = recordingControls?.isRecording() || !datasetOpen;
@@ -614,6 +613,7 @@ function App() {
     <div>
       <p>This section is being rendered by React.</p>
 
+      {/** Top Control Bar */}
       <div className={styles.canvasTopControlsContainer}>
         <label htmlFor="dataset">Dataset</label>
         <select
@@ -643,6 +643,7 @@ function App() {
           })}
         </select>
 
+        {/** Color Ramp */}
         <div className={styles.labeledColorRamp}>
           <input
             type="number"
@@ -699,8 +700,10 @@ function App() {
         </div>
       </div>
 
+      {/** Canvas */}
       <div id={CANVAS_PLACEHOLDER_ID}></div>
 
+      {/** Bottom Control Bar */}
       <div className={styles.canvasBottomControlsContainer}>
         <div>
           <div>
@@ -743,10 +746,8 @@ function App() {
                 step="1"
                 value={currentFrame}
                 onChange={(event) => {
-                  // TODO: Debounce changes to time slider
+                  // TODO: Debounce changes to time slider (currently instantly changes)
                   setFrame(event.target.valueAsNumber);
-                  // setCurrentFrame(event.target.valueAsNumber);
-                  // canv.setFrame(event.target.valueAsNumber);
                 }}
               />
               <input
@@ -758,8 +759,6 @@ function App() {
                 value={currentFrame}
                 onChange={(event) => {
                   setFrame(event.target.valueAsNumber);
-                  // setCurrentFrame(event.target.valueAsNumber);
-                  // canv.setFrame(event.target.valueAsNumber);
                 }}
               />
             </div>
@@ -782,7 +781,7 @@ function App() {
           </div>
         </div>
 
-        {/* Hover value section */}
+        {/* Hover values */}
         <div>
           <p id="mouseTrackId">Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
           <p id="mouseFeatureValue">Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
@@ -806,10 +805,18 @@ function App() {
         <p>2) Turn off 'Ask where to save each file before downloading'</p>
         <br />
         <p>Save image sequence:</p>
-        <button id="sequence_start_btn" onClick={() => recordingControls?.start(imagePrefix, startAtFirstFrame)}>
+        <button
+          id="sequence_start_btn"
+          onClick={() => recordingControls?.start(imagePrefix, startAtFirstFrame)}
+          disabled={recordingControls?.isRecording() || timeControls?.isPlaying()}
+        >
           Start
         </button>
-        <button id="sequence_abort_btn" onClick={() => recordingControls?.abort()}>
+        <button
+          id="sequence_abort_btn"
+          onClick={() => recordingControls?.abort()}
+          disabled={!recordingControls?.isRecording()}
+        >
           Abort
         </button>
         <p>
