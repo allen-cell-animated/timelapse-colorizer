@@ -48,12 +48,12 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
   float wStep = 1.0 / float(frameDims.x);
   float hStep = 1.0 / float(frameDims.y);        
     // sample around the pixel to see if we are on an edge
-  uint R = combineColor(texture(frame, uv + vec2(thickness * wStep, 0)));
-  uint L = combineColor(texture(frame, uv + vec2(-thickness * wStep, 0)));
-  uint T = combineColor(texture(frame, uv + vec2(0, thickness * hStep)));
-  uint B = combineColor(texture(frame, uv + vec2(0, -thickness * hStep)));
-    // consider comparing R,L,T,B against the highlightedId instead?
-  return (R == 0u || L == 0u || T == 0u || B == 0u);
+  int R = int(combineColor(texture(frame, uv + vec2(thickness * wStep, 0))))-1;
+  int L = int(combineColor(texture(frame, uv + vec2(-thickness * wStep, 0))))-1;
+  int T = int(combineColor(texture(frame, uv + vec2(0, thickness * hStep))))-1;
+  int B = int(combineColor(texture(frame, uv + vec2(0, -thickness * hStep))))-1;
+  // if any neighbors are not highlightedId then color this as edge
+  return (R != highlightedId || L != highlightedId || T != highlightedId || B != highlightedId);
 }
 
 void main() {
