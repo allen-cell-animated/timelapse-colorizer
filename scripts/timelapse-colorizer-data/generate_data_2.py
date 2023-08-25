@@ -35,26 +35,6 @@ import time
 #   the min and max should be the global min and max across the whole movie
 #   NaN (outlier) values are not yet supported
 
-# dataset	string	In FMS manifest	Name of which dataset this row of data belongs to (baby_bear, goldilocks, or mama_bear)
-# track_id	int	In FMS manifest	ID for a single nucleus in all frames for which it exists (single value per nucleus, consistent across multiple frames)
-# CellID	hash	In FMS manifest	ID for a single instance/frame of a nucleus (every nucleus has a different value in every frame)
-# index_sequence	int	In FMS manifest	frame number associated with the nucleus data in a given row, relative to the start of the movie
-# colony_time	int	Needs calculated and added	Frame number staggered by a given amount per dataset, so that the frame numbers in all datasets are temporally algined relative to one another rather than all starting at 0
-# raw_full_zstack_path	String	In FMS manifest	Path to zstack of raw image of entire colony in a single frame
-# seg_full_zstack_path	String	In FMS manifest	Path to zstack of segmentation of entire colony in a single frame
-# is_outlier	boolean	In FMS manifest	True if this nucleus in this frame is flagged as an outlier (a single nucleus may be an outlier in some frames but not others)
-# edge_cell	boolean	In FMS manifest	True if this nucleus touches the edge of the FOV
-# NUC_shape_volume_lcc	float	In FMS manifest	Volume of a single nucleus in pixels in a given frame
-# NUC_position_depth	float	In FMS manifest	Height (in the z-direction) of the a single nucleus in pixels in a given frame
-# NUC_PC1	float	Needs calculated and added	Value for shape mode 1 for a single nucleus in a given frame
-# NUC_PC2	float	Needs calculated and added	Value for shape mode 2 for a single nucleus in a given frame
-# NUC_PC3	float	Needs calculated and added	Value for shape mode 3 for a single nucleus in a given frame
-# NUC_PC4	float	Needs calculated and added	Value for shape mode 4 for a single nucleus in a given frame
-# NUC_PC5	float	Needs calculated and added	Value for shape mode 5 for a single nucleus in a given frame
-# NUC_PC6	float	Needs calculated and added	Value for shape mode 6 for a single nucleus in a given frame
-# NUC_PC7	float	Needs calculated and added	Value for shape mode 7 for a single nucleus in a given frame
-# NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
-
 
 def make_frames(grouped_frames, output_dir, dataset, scale: float):
     outpath = os.path.join(output_dir, dataset)
