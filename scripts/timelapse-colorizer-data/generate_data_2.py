@@ -160,8 +160,8 @@ def make_features(a, features, output_dir, dataset, scale: float):
         json.dump(tijs, f)
 
     logging.info("Writing centroids.json...")
-    centroids_x = a["R0Cell_AreaShape_Center_X"].to_numpy()
-    centroids_y = a["R0Cell_AreaShape_Center_Y"].to_numpy()
+    centroids_x = a["R0Nuclei_AreaShape_Center_X"].to_numpy()
+    centroids_y = a["R0Nuclei_AreaShape_Center_Y"].to_numpy()
     centroids_stacked = np.ravel(np.dstack([centroids_x, centroids_y]))
     centroids_stacked = centroids_stacked * scale
     centroids_stacked = centroids_stacked.astype(int)
