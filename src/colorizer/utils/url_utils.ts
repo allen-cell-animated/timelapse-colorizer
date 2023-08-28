@@ -345,3 +345,22 @@ function getDatasetPathFromCollection(
     return collectionBasePath + "/" + manifestPath;
   }
 }
+
+/**
+ * Gets an array of dataset names from the dataset and collectionData.
+ * @param dataset The name of the current dataset.
+ * @param collectionData The loaded collectionData.
+ * @returns, in the following order:
+ * - If collectionData is not null, the array of keys (dataset names) from the collectionData.
+ * - If dataset is not null, an array containing just the dataset name.
+ * - If both are null, returns an empty array.
+ */
+export function getDatasetNames(dataset: string | null, collectionData: CollectionData | null): string[] {
+  if (collectionData) {
+    return Array.from(collectionData.keys());
+  } else if (dataset) {
+    return [dataset];
+  } else {
+    return [];
+  }
+}

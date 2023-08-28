@@ -13,26 +13,6 @@ const COLOR_RAMP_PLACEHOLDER_ID = "colorRamp";
 const PLOT_PLACEHOLDER_ID = "plot";
 const DEFAULT_COLOR_RAMP = 4;
 
-// TODO: Move into url utils or a separate utils?
-/**
- * Gets an array of dataset names from the dataset and collectionData.
- * @param dataset The name of the current dataset.
- * @param collectionData The loaded collectionData.
- * @returns, in the following order:
- * - If collectionData is not null, the array of keys (dataset names) from the collectionData.
- * - If dataset is not null, an array containing just the dataset name.
- * - If both are null, returns an empty array.
- */
-function getDatasetNames(dataset: string | null, collectionData: urlUtils.CollectionData | null): string[] {
-  if (collectionData) {
-    return Array.from(collectionData.keys());
-  } else if (dataset) {
-    return [dataset];
-  } else {
-    return [];
-  }
-}
-
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
 
@@ -341,8 +321,6 @@ function App(): ReactElement {
   }, []);
 
   // DATASET LOADING ///////////////////////////////////////////////////////
-
-  // TODO: Change functions to useCallback
   const replaceDataset = useCallback(
     async (
       datasetNameParam: string,
@@ -584,7 +562,7 @@ function App(): ReactElement {
           onChange={handleDatasetChange}
           value={datasetName}
         >
-          {getDatasetNames(datasetName, collectionData || null).map((name) => {
+          {urlUtils.getDatasetNames(datasetName, collectionData || null).map((name) => {
             return (
               <option value={name} key={name}>
                 {name}
