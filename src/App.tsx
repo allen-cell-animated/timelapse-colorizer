@@ -1,6 +1,5 @@
 import React, { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
-import { HexColorString } from "three";
-import { ColorRamp, Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
+import { colorRamps, Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
@@ -12,57 +11,9 @@ import { useDebounce } from "./colorizer/utils/react_utils";
 const CANVAS_PLACEHOLDER_ID = "canvasPlaceholder";
 const COLOR_RAMP_PLACEHOLDER_ID = "colorRamp";
 const PLOT_PLACEHOLDER_ID = "plot";
+const DEFAULT_COLOR_RAMP = 4;
 
-// COLOR RAMPS ///////////////////////////////////////////////////////////
-
-// https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
-const colorStops: HexColorString[][] = [
-  // Esri color ramps - Red 5
-  ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
-  // Esri color ramps - Orange 5
-  ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
-  // Esri color ramps - Yellow 2
-  ["#584100", "#886200", "#b78300", "#e7a300", "#ffc800"],
-  // Esri color ramps - Green 4
-  ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
-  // Esri color ramps - Blue 14
-  ["#3a4d6b", "#3d6da2", "#799a96", "#ccbe6a", "#ffec99"],
-  // Esri color ramps - Purple 4
-  ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"],
-  // Esri color ramps - Mentone Beach
-  ["#48385f", "#995375", "#db4a5b", "#fc9a59", "#fee086"],
-  // Esri color ramps - Retro Flow
-  ["#007fd9", "#443dbf", "#881fc5", "#bf00bf", "#d43f70", "#d9874c", "#b6a135", "#adbf27", "#c4dc66", "#ebe498"],
-  // Esri color ramps - Heatmap 4
-  [
-    "#0022c8",
-    "#2b1ca7",
-    "#551785",
-    "#801164",
-    "#aa0b43",
-    "#d50621",
-    "#ff0000",
-    "#ff3900",
-    "#ff7100",
-    "#ffaa00",
-    "#ffc655",
-    "#ffe3aa",
-    "#ffffff",
-  ],
-  // Esri color ramps - Blue and Red 9
-  ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
-  // Esri color ramps - Blue and Red 8
-  ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"],
-  // Esri color ramps - Red and Green 9
-  ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
-  // Esri color ramps - Purple and Red 2
-  ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"],
-  // Esri color ramps - Green and Brown 1
-  ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"],
-];
-const colorRamps = colorStops.map((ramp) => new ColorRamp(ramp));
-const DEFAULT_RAMP = 4;
-
+// TODO: Move into url utils or a separate utils?
 /**
  * Gets an array of dataset names from the dataset and collectionData.
  * @param dataset The name of the current dataset.
@@ -88,10 +39,9 @@ function App(): ReactElement {
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useMemo(() => {
     const canv = new ColorizeCanvas();
-    canv.setColorRamp(colorRamps[DEFAULT_RAMP]);
+    canv.setColorRamp(colorRamps[DEFAULT_COLOR_RAMP]);
     return canv;
   }, []);
-
   // Setup for plot + canvas after initial render, since they replace DOM elements.
   useEffect(() => {
     setPlot(new Plotting(PLOT_PLACEHOLDER_ID));
@@ -110,13 +60,14 @@ function App(): ReactElement {
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const [colorRamp, setColorRamp] = useState(colorRamps[DEFAULT_RAMP]);
+  const [colorRamp, setColorRamp] = useState(colorRamps[DEFAULT_COLOR_RAMP]);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
+  // TODO: Initialize immediately
   const [timeControls, setTimeControls] = useState<TimeControls | undefined>();
   const [recordingControls, setRecordingControls] = useState<RecordingControls | undefined>();
 
@@ -138,6 +89,7 @@ function App(): ReactElement {
    * to the page URL.
    */
   const updateUrl = useCallback((): void => {
+    // TODO: Move to saveParamsToUrl
     // Don't include collection parameter in URL if it matches the default.
     let collectionParam = null;
     if (
@@ -221,9 +173,9 @@ function App(): ReactElement {
       if (seekToFrame) {
         setFrame(newTrack.times[0]);
       }
+      // TODO: Check if this can be moved to drawloop
       canv.setSelectedTrack(newTrack);
       plot?.plot(newTrack, featureName, currentFrame);
-      // await drawLoop();
       setFindTrackInput("" + trackId);
       updateUrl();
     },
@@ -237,6 +189,7 @@ function App(): ReactElement {
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
+  // Memoized because the URL can update as data is loaded in
   const initialUrlParams = useMemo(urlUtils.loadParamsFromUrl, []);
 
   // Load database and collections data from the URL.
@@ -306,6 +259,7 @@ function App(): ReactElement {
   // Run once, after mounting
   useEffect(() => {
     // Initialize controls after first render, as they directly access HTML DOM elements
+    // TODO: Initialize as part of state
     // TODO: Refactor into React components
     const newTimeControls = new TimeControls(canv, setFrame);
     const newRecordingControls = new RecordingControls(canv, setFrame);
@@ -376,7 +330,7 @@ function App(): ReactElement {
     // Make the color ramps, then append them to the container
     const ramps = colorRamps.map((ramp, idx) => {
       const rampCanvas = ramp.createGradientCanvas(120, 25);
-      if (idx === DEFAULT_RAMP) {
+      if (idx === DEFAULT_COLOR_RAMP) {
         rampCanvas.className = styles.selected;
       }
       return rampCanvas;
@@ -405,6 +359,7 @@ function App(): ReactElement {
 
   // DATASET LOADING ///////////////////////////////////////////////////////
 
+  // TODO: Change functions to useCallback
   async function replaceDataset(
     datasetNameParam: string,
     collectionParam?: string | null,
@@ -550,7 +505,7 @@ function App(): ReactElement {
       }
       setHoveredId(id);
     },
-    [dataset]
+    [dataset, canv]
   );
 
   const onMouseLeave = useCallback((_event: MouseEvent): void => {
@@ -564,7 +519,7 @@ function App(): ReactElement {
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", onMouseLeave);
     };
-  }, [onMouseMove, onMouseLeave]);
+  }, [onMouseMove, onMouseLeave, canv]);
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
 
