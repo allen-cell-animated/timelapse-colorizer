@@ -1,5 +1,6 @@
 import ColorizeCanvas from "./ColorizeCanvas";
 
+// TODO: Remove class?
 export default class RecordingControls {
   private recording: boolean;
 

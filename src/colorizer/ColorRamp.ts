@@ -1,7 +1,7 @@
 import { DataTexture, Color, ColorRepresentation, RGBAFormat, FloatType, LinearFilter } from "three";
 import { HexColorString } from "three";
 
-export class ColorRamp {
+export default class ColorRamp {
   private colorStops: Color[];
   public readonly texture: DataTexture;
 

@@ -1,8 +1,11 @@
 import ColorizeCanvas from "./ColorizeCanvas";
 
+// TODO: Remove class?
+
 // time / playback controls
 const DEFAULT_TIMER_ID = -1;
 export default class TimeControls {
+  // TODO: Change to be React state
   private timerId: number;
   private setFrameFn: (frame: number) => void;
 

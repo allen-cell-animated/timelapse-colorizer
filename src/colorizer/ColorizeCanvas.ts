@@ -75,6 +75,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
+// TODO: Change into a component
 export default class ColorizeCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;

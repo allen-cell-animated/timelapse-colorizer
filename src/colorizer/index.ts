@@ -2,7 +2,7 @@ export type { IFrameLoader, IArrayLoader, ArraySource } from "./loaders/ILoader"
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
 
-import { colorRamps, ColorRamp } from "./ColorRamp";
+import ColorRamp, { colorRamps } from "./ColorRamp";
 import ColorizeCanvas from "./ColorizeCanvas";
 import Dataset from "./Dataset";
 import Track from "./Track";
