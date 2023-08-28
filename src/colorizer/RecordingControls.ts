@@ -8,16 +8,15 @@ export default class RecordingControls {
 
   private timerId: number;
   private startingFrame: number;
-  private setFrameFn: (frame: number) => void;
+  private setFrameFn?: (frame: number) => void;
 
   private canvas: ColorizeCanvas;
 
-  constructor(canvas: ColorizeCanvas, setFrameFn: (frame: number) => void) {
+  constructor(canvas: ColorizeCanvas) {
     this.recording = false;
     this.canvas = canvas;
     this.timerId = 0;
     this.startingFrame = 0;
-    this.setFrameFn = setFrameFn;
 
     this.hiddenAnchorEl = document.createElement("a"); // Hidden element for initiating download later
   }
@@ -52,7 +51,9 @@ export default class RecordingControls {
     if (this.recording) {
       clearTimeout(this.timerId);
       this.recording = false;
-      this.setFrameFn(this.startingFrame);
+      if (this.setFrameFn) {
+        this.setFrameFn(this.startingFrame);
+      }
     }
   }
 
@@ -69,7 +70,9 @@ export default class RecordingControls {
       // Trigger a render through the redrawfn parameter so other UI elements update
       // TODO: Make async, await.
       // Must force render here or else empty image data is returned.
-      this.setFrameFn(currentFrame);
+      if (this.setFrameFn) {
+        this.setFrameFn(currentFrame);
+      }
       this.canvas.render();
 
       // Get canvas as an image URL that can be downloaded
@@ -94,7 +97,9 @@ export default class RecordingControls {
       } else {
         // Reached end, so stop and reset UI
         this.recording = false;
-        this.setFrameFn(this.startingFrame);
+        if (this.setFrameFn) {
+          this.setFrameFn(this.startingFrame);
+        }
       }
     };
 

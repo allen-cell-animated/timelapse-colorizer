@@ -7,15 +7,14 @@ const DEFAULT_TIMER_ID = -1;
 export default class TimeControls {
   // TODO: Change to be React state
   private timerId: number;
-  private setFrameFn: (frame: number) => void;
+  private setFrameFn?: (frame: number) => void;
 
   private canvas: ColorizeCanvas;
   private isDisabled: boolean;
 
   private pauseCallbacks: (() => void)[];
 
-  constructor(canvas: ColorizeCanvas, setFrameFn: (frame: number) => void) {
-    this.setFrameFn = setFrameFn;
+  constructor(canvas: ColorizeCanvas) {
     this.canvas = canvas;
     this.timerId = DEFAULT_TIMER_ID;
     this.isDisabled = false;
@@ -44,7 +43,9 @@ export default class TimeControls {
       const nextFrame = this.wrapFrame(this.canvas.getCurrentFrame() + 1);
 
       // do the necessary update
-      this.setFrameFn(nextFrame);
+      if (this.setFrameFn) {
+        this.setFrameFn(nextFrame);
+      }
       onNewFrameCallback();
     };
     this.timerId = window.setInterval(loadNextFrame, 40);
@@ -64,7 +65,9 @@ export default class TimeControls {
   }
 
   public async handleFrameAdvance(delta: number = 1): Promise<void> {
-    this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
+    if (this.setFrameFn) {
+      this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
+    }
   }
 
   public setIsDisabled(disabled: boolean): void {

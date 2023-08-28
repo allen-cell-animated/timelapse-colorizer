@@ -84,9 +84,15 @@ export function saveParamsToUrl(
   track: number | null,
   time: number | null
 ): void {
-  const params: string[] = [];
   // Get parameters, ignoring null/empty values
-  if (collection) {
+  const params: string[] = [];
+
+  // Don't include collection parameter in URL if it matches the default.
+  if (
+    collection &&
+    collection !== DEFAULT_COLLECTION_PATH &&
+    collection !== DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
+  ) {
     params.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(collection)}`);
   }
   if (dataset) {

@@ -67,9 +67,12 @@ function App(): ReactElement {
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
-  // TODO: Initialize immediately
-  const [timeControls, setTimeControls] = useState<TimeControls | undefined>();
-  const [recordingControls, setRecordingControls] = useState<RecordingControls | undefined>();
+  const timeControls = useMemo(() => {
+    return new TimeControls(canv);
+  }, []);
+  const recordingControls = useMemo(() => {
+    return new RecordingControls(canv);
+  }, []);
 
   // Recording UI
   const [imagePrefix, setImagePrefix] = useState("");
@@ -89,20 +92,8 @@ function App(): ReactElement {
    * to the page URL.
    */
   const updateUrl = useCallback((): void => {
-    // TODO: Move to saveParamsToUrl
-    // Don't include collection parameter in URL if it matches the default.
-    let collectionParam = null;
-    if (
-      collection === urlUtils.DEFAULT_COLLECTION_PATH ||
-      collection === urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME
-    ) {
-      collectionParam = null;
-    } else {
-      collectionParam = collection || null;
-    }
-
     urlUtils.saveParamsToUrl(
-      collectionParam,
+      collection || null,
       datasetName,
       featureName,
       selectedTrack ? selectedTrack.trackId : null,
@@ -256,17 +247,8 @@ function App(): ReactElement {
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
 
-  // Run once, after mounting
+  // Run once
   useEffect(() => {
-    // Initialize controls after first render, as they directly access HTML DOM elements
-    // TODO: Initialize as part of state
-    // TODO: Refactor into React components
-    const newTimeControls = new TimeControls(canv, setFrame);
-    const newRecordingControls = new RecordingControls(canv, setFrame);
-    setTimeControls(newTimeControls);
-    setRecordingControls(newRecordingControls);
-    newTimeControls.addPauseListener(updateUrl);
-
     // Add event listeners for unloading and resizing.
     window.addEventListener("beforeunload", () => {
       canv.domElement.removeEventListener("click", handleCanvasClick);
