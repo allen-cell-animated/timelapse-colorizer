@@ -114,6 +114,7 @@ function App(): ReactElement {
     canv.setColorRamp(colorRamp);
     canv.setColorMapRangeMin(colorRampMin);
     canv.setColorMapRangeMax(colorRampMax);
+    canv.setSelectedTrack(selectedTrack);
     await canv.render();
 
     // update current time in plot
@@ -163,10 +164,10 @@ function App(): ReactElement {
       setSelectedTrack(newTrack);
       if (seekToFrame) {
         setFrame(newTrack.times[0]);
+        plot?.plot(newTrack, featureName, newTrack.times[0]);
+      } else {
+        plot?.plot(newTrack, featureName, currentFrame);
       }
-      // TODO: Check if this can be moved to drawloop
-      canv.setSelectedTrack(newTrack);
-      plot?.plot(newTrack, featureName, currentFrame);
       setFindTrackInput("" + trackId);
       updateUrl();
     },
@@ -532,8 +533,8 @@ function App(): ReactElement {
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
   // Update the callback for TimeControls and RecordingControls if it changes.
-  // TODO: TimeControls and RecordingControls should be refactored to receive
-  // setFrame as props.
+  // TODO: TimeControls and RecordingControls should be refactored into components
+  // and receive setFrame as props.
   useMemo(() => {
     timeControls?.setFrameCallback(setFrame);
     recordingControls?.setFrameCallback(setFrame);
