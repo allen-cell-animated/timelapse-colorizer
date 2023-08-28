@@ -161,10 +161,13 @@ function App(): ReactElement {
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
-  // Memoized because the URL can update as data is loaded in
+  // Use a memoized value here and only retrieve parameters once, because the URL can be updated
+  // by state updates and lose information (like the track, feature, time, etc.) that isn't
+  // accessed in the first render.
   const initialUrlParams = useMemo(urlUtils.loadParamsFromUrl, []);
 
   // Load database and collections data from the URL.
+  // This is memoized so that it only runs one time on startup.
   useMemo(async () => {
     setSize();
 
