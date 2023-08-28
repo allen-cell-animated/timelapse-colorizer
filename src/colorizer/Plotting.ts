@@ -51,7 +51,6 @@ export default class Plotting {
       return;
     }
     const plotinfo = this.dataset?.buildTrackFeaturePlot(track, feature);
-    console.log("Plot time: " + time);
     this.trace = {
       x: plotinfo.domain,
       y: plotinfo.range,

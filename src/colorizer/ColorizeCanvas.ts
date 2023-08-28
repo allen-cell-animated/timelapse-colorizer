@@ -399,8 +399,6 @@ export default class ColorizeCanvas {
   }
 
   render(): void {
-    console.log("Canvas render for frame " + this.getCurrentFrame());
-    console.log(`${this.colorMapRangeMin} - ${this.colorMapRangeMax}`);
     this.updateHighlightedId();
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
