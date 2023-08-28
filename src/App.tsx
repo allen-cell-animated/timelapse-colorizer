@@ -324,7 +324,7 @@ function App(): ReactElement {
     }
   }, []);
 
-  function handleColorRampClick({ target }: React.MouseEvent<HTMLSpanElement, MouseEvent>): void {
+  const handleColorRampClick = useCallback(({ target }: React.MouseEvent<HTMLSpanElement, MouseEvent>): void => {
     const rampContainer = document.getElementById(COLOR_RAMP_PLACEHOLDER_ID);
     if (!rampContainer) {
       return;
@@ -338,132 +338,144 @@ function App(): ReactElement {
         el.className = "";
       }
     });
-  }
+  }, []);
 
   // DATASET LOADING ///////////////////////////////////////////////////////
 
   // TODO: Change functions to useCallback
-  async function replaceDataset(
-    datasetNameParam: string,
-    collectionParam?: string | null,
-    collectionDataParam?: urlUtils.CollectionData | null
-  ): Promise<void> {
-    console.time("loadDataset");
-    setDatasetOpen(false);
+  const replaceDataset = useCallback(
+    async (
+      datasetNameParam: string,
+      collectionParam?: string | null,
+      collectionDataParam?: urlUtils.CollectionData | null
+    ): Promise<void> => {
+      console.time("loadDataset");
+      setDatasetOpen(false);
 
-    if (collectionDataParam && !collectionDataParam.has(datasetNameParam)) {
-      console.warn(
-        `Collection does not include '${datasetNameParam}' as a dataset. Defaulting to first dataset in the collection.`
-      );
-      datasetNameParam = urlUtils.getDefaultDatasetName(collectionDataParam);
-    }
-
-    let newDataset;
-    try {
-      const datasetPath = urlUtils.getExpectedDatasetPath(
-        datasetNameParam,
-        collectionParam || undefined,
-        collectionDataParam || undefined
-      );
-
-      console.log(`Fetching dataset from path '${datasetPath}'`);
-      newDataset = new Dataset(datasetPath);
-      await newDataset.open();
-
-      // Replace old dataset
-      if (dataset !== null) {
-        dataset.dispose();
+      if (collectionDataParam && !collectionDataParam.has(datasetNameParam)) {
+        console.warn(
+          `Collection does not include '${datasetNameParam}' as a dataset. Defaulting to first dataset in the collection.`
+        );
+        datasetNameParam = urlUtils.getDefaultDatasetName(collectionDataParam);
       }
-    } catch (e) {
-      console.error(e);
-      console.error(`Could not load dataset '${datasetNameParam}'.`);
-      console.timeEnd("loadDataset");
-      if (dataset !== null) {
-        console.warn(`Showing last loaded dataset '${datasetNameParam}' instead.`);
-        setDatasetOpen(true);
-        return;
-      } else {
-        // Encountered error on first dataset load
-        // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
-        if (!collectionDataParam) {
+
+      let newDataset;
+      try {
+        const datasetPath = urlUtils.getExpectedDatasetPath(
+          datasetNameParam,
+          collectionParam || undefined,
+          collectionDataParam || undefined
+        );
+
+        console.log(`Fetching dataset from path '${datasetPath}'`);
+        newDataset = new Dataset(datasetPath);
+        await newDataset.open();
+
+        // Replace old dataset
+        if (dataset !== null) {
+          dataset.dispose();
+        }
+      } catch (e) {
+        console.error(e);
+        console.error(`Could not load dataset '${datasetNameParam}'.`);
+        console.timeEnd("loadDataset");
+        if (dataset !== null) {
+          console.warn(`Showing last loaded dataset '${datasetNameParam}' instead.`);
+          setDatasetOpen(true);
           return;
+        } else {
+          // Encountered error on first dataset load
+          // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
+          if (!collectionDataParam) {
+            return;
+          }
+          const defaultName = urlUtils.getDefaultDatasetName(collectionDataParam);
+          if (datasetNameParam === defaultName) {
+            return; // we already tried to load the default so give up
+          }
+          console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
+          return replaceDataset(defaultName, collectionParam, collectionDataParam);
         }
-        const defaultName = urlUtils.getDefaultDatasetName(collectionDataParam);
-        if (datasetNameParam === defaultName) {
-          return; // we already tried to load the default so give up
-        }
-        console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
-        return replaceDataset(defaultName, collectionParam, collectionDataParam);
       }
-    }
-    setFindTrackInput("");
+      setFindTrackInput("");
 
-    // Only change the feature if there's no equivalent in the new dataset
-    let newFeatureName = featureName;
-    if (!newDataset.hasFeature(newFeatureName)) {
-      newFeatureName = newDataset.featureNames[0];
-    }
+      // Only change the feature if there's no equivalent in the new dataset
+      let newFeatureName = featureName;
+      if (!newDataset.hasFeature(newFeatureName)) {
+        newFeatureName = newDataset.featureNames[0];
+      }
 
-    await canv.setDataset(newDataset);
-    updateFeature(newDataset, newFeatureName);
-    plot?.setDataset(newDataset);
-    plot?.removePlot();
+      await canv.setDataset(newDataset);
+      updateFeature(newDataset, newFeatureName);
+      plot?.setDataset(newDataset);
+      plot?.removePlot();
 
-    // Clamp frame to new range
-    const newFrame = Math.min(currentFrame, canv.getTotalFrames());
-    canv.setFrame(newFrame);
-    // Update state variables
-    setCurrentFrame(newFrame);
-    setDatasetOpen(true);
-    setDataset(newDataset);
-    setDatasetName(datasetNameParam);
-    setFeatureName(newFeatureName);
+      // Clamp frame to new range
+      const newFrame = Math.min(currentFrame, canv.getTotalFrames());
+      canv.setFrame(newFrame);
+      // Update state variables
+      setCurrentFrame(newFrame);
+      setDatasetOpen(true);
+      setDataset(newDataset);
+      setDatasetName(datasetNameParam);
+      setFeatureName(newFeatureName);
 
-    updateUrl();
-    console.timeEnd("loadDataset");
-  }
+      updateUrl();
+      console.timeEnd("loadDataset");
+    },
+    [dataset, featureName, canv, plot, currentFrame, updateUrl]
+  );
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
-  function handleDatasetChange(event: React.ChangeEvent<HTMLSelectElement>): void {
-    const value = event.target.value;
-    if (value !== datasetName) {
-      replaceDataset(value, collection, collectionData);
-    }
-  }
+  const handleDatasetChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>): void => {
+      const value = event.target.value;
+      if (value !== datasetName) {
+        replaceDataset(value, collection, collectionData);
+      }
+    },
+    [replaceDataset, collection, collectionData, datasetName]
+  );
 
-  async function updateFeature(newDataset: Dataset, newFeatureName: string): Promise<void> {
-    if (!newDataset?.hasFeature(newFeatureName)) {
-      console.warn("Dataset does not have feature '" + newFeatureName + "'.");
-      return;
-    }
-    setFeatureName(newFeatureName);
+  const updateFeature = useCallback(
+    async (newDataset: Dataset, newFeatureName: string): Promise<void> => {
+      if (!newDataset?.hasFeature(newFeatureName)) {
+        console.warn("Dataset does not have feature '" + newFeatureName + "'.");
+        return;
+      }
+      setFeatureName(newFeatureName);
 
-    if (!isColorRampRangeLocked) {
-      setColorRampMin(newDataset?.features[newFeatureName].min || colorRampMin);
-      setColorRampMax(newDataset?.features[newFeatureName].max || colorRampMax);
-    }
+      if (!isColorRampRangeLocked) {
+        setColorRampMin(newDataset?.features[newFeatureName].min || colorRampMin);
+        setColorRampMax(newDataset?.features[newFeatureName].max || colorRampMax);
+      }
 
-    canv.setFeature(newFeatureName);
-    // only update plot if active
-    if (selectedTrack) {
-      plot?.plot(selectedTrack, newFeatureName, currentFrame);
-    }
-    updateUrl();
-  }
+      canv.setFeature(newFeatureName);
+      // only update plot if active
+      if (selectedTrack) {
+        plot?.plot(selectedTrack, newFeatureName, currentFrame);
+      }
+      updateUrl();
+    },
+    [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, plot, selectedTrack, currentFrame]
+  );
 
-  function handleFeatureChange(event: React.ChangeEvent<HTMLSelectElement>): void {
-    const value = event.target.value;
-    console.log(value);
-    if (value !== featureName && dataset) {
-      updateFeature(dataset, value);
-    }
-  }
+  const handleFeatureChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>): void => {
+      const value = event.target.value;
+      console.log(value);
+      if (value !== featureName && dataset) {
+        updateFeature(dataset, value);
+      }
+    },
+    [featureName, dataset, updateFeature]
+  );
 
-  async function handleResetRangeClick(): Promise<void> {
+  const handleResetRangeClick = useCallback(async (): Promise<void> => {
     canv.resetColorMapRange();
     setColorRampMin(canv.getColorMapRangeMin());
     setColorRampMax(canv.getColorMapRangeMax());
-  }
+  }, [canv]);
 
   const getFeatureValue = useCallback(
     (id: number): number => {
@@ -506,17 +518,24 @@ function App(): ReactElement {
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
 
-  function handleKeyDown({ key }: KeyboardEvent): void {
-    if (key === "ArrowLeft" || key === "Left") {
-      timeControls?.handleFrameAdvance(-1);
-    } else if (key === "ArrowRight" || key === "Right") {
-      timeControls?.handleFrameAdvance(1);
-    }
-  }
+  const handleKeyDown = useCallback(
+    ({ key }: KeyboardEvent): void => {
+      if (key === "ArrowLeft" || key === "Left") {
+        timeControls?.handleFrameAdvance(-1);
+      } else if (key === "ArrowRight" || key === "Right") {
+        timeControls?.handleFrameAdvance(1);
+      }
+    },
+    [timeControls]
+  );
 
-  useMemo(() => {
+  useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
-  }, []);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   // Store the current value of the time slider as its own state, and update
   // the frame using a debounced value to prevent constant updates as it moves.
