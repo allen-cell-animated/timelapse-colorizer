@@ -168,6 +168,8 @@ function App(): ReactElement {
 
   // Load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
+  // TODO: Move this out of App's render into either `Collections.ts` or `url_utils.ts`.
+  //  Also, handle collections when single-URL datasets are loaded by making a new collection with a single entry?
   useMemo(async () => {
     setSize();
 
