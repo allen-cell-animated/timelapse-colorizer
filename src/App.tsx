@@ -83,7 +83,7 @@ function App(): ReactElement {
    * Handle updating the canvas from state (for some common properties) and initiating the canvas
    * render. Also update other UI elements, including the plot and URL.
    */
-  useLayoutEffect(() => {
+  useEffect(() => {
     // Note: Selected track, frame number, etc. are not updated here.
     // Those operations are async, and need to complete before a state update to be
     // rendered correctly.
