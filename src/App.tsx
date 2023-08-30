@@ -549,39 +549,41 @@ function App(): ReactElement {
     <div>
       {/** Top Control Bar */}
       <div className={styles.canvasTopControlsContainer}>
-        <label htmlFor="dataset">Dataset</label>
-        <select
-          name="Dataset"
-          id="dataset"
-          style={{ textOverflow: "ellipsis", maxWidth: "200px" }}
-          disabled={disableUi}
-          onChange={handleDatasetChange}
-          value={datasetName}
-        >
-          {urlUtils.getDatasetNames(datasetName, collectionData || null).map((name) => {
-            return (
-              <option value={name} key={name}>
-                {name}
-              </option>
-            );
-          })}
-        </select>
-        <label htmlFor="feature">Feature</label>
-        <select name="Feature" id="feature" disabled={disableUi} onChange={handleFeatureChange} value={featureName}>
-          {dataset?.featureNames.map((name) => {
-            return (
-              <option value={name} key={name}>
-                {name}
-              </option>
-            );
-          })}
-        </select>
+        <label>
+          Dataset
+          <select
+            name="Dataset"
+            style={{ textOverflow: "ellipsis", maxWidth: "200px" }}
+            disabled={disableUi}
+            onChange={handleDatasetChange}
+            value={datasetName}
+          >
+            {urlUtils.getDatasetNames(datasetName, collectionData || null).map((name) => {
+              return (
+                <option value={name} key={name}>
+                  {name}
+                </option>
+              );
+            })}
+          </select>
+        </label>
+        <label>
+          Feature
+          <select name="Feature" disabled={disableUi} onChange={handleFeatureChange} value={featureName}>
+            {dataset?.featureNames.map((name) => {
+              return (
+                <option value={name} key={name}>
+                  {name}
+                </option>
+              );
+            })}
+          </select>
+        </label>
 
         {/** Color Ramp */}
         <div className={styles.labeledColorRamp}>
           <input
             type="number"
-            id="colorRampMin"
             style={{ width: "50px", textAlign: "start" }}
             value={canv.getColorMapRangeMin()}
             onChange={(event) => {
@@ -600,7 +602,6 @@ function App(): ReactElement {
           </div>
           <input
             type="number"
-            id="colorRampMax"
             style={{ width: "80px", textAlign: "start" }}
             value={canv.getColorMapRangeMax()}
             onChange={(event) => {
@@ -609,28 +610,28 @@ function App(): ReactElement {
             }}
             min="0"
           />
-          <button id="resetRangeButton" onClick={handleResetRangeClick}>
-            Reset range
-          </button>
-          <input
-            type="checkbox"
-            id="lockRangeCheckbox"
-            checked={isColorRampRangeLocked}
-            onChange={() => {
-              // Invert lock on range
-              setIsColorRampRangeLocked(!isColorRampRangeLocked);
-            }}
-          />
-          <label htmlFor="lockRangeCheckbox">Lock color map range</label>
-          <input
-            type="checkbox"
-            id="hideOutOfRangeCheckbox"
-            checked={hideValuesOutOfRange}
-            onChange={() => {
-              setHideValuesOutOfRange(!hideValuesOutOfRange);
-            }}
-          />
-          <label htmlFor="hideOutOfRangeCheckbox">Hide values outside of range</label>
+          <button onClick={handleResetRangeClick}>Reset range</button>
+          <label>
+            <input
+              type="checkbox"
+              checked={isColorRampRangeLocked}
+              onChange={() => {
+                // Invert lock on range
+                setIsColorRampRangeLocked(!isColorRampRangeLocked);
+              }}
+            />
+            Lock color map range
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={hideValuesOutOfRange}
+              onChange={() => {
+                setHideValuesOutOfRange(!hideValuesOutOfRange);
+              }}
+            />
+            Hide values outside of range
+          </label>
         </div>
       </div>
 
@@ -643,32 +644,19 @@ function App(): ReactElement {
           <div>
             Time (use arrow keys)
             <div className={styles.timeControls} style={{ margin: "2px" }}>
-              <button
-                id="playBtn"
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handlePlayButtonClick()}
-              >
+              <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePlayButtonClick()}>
                 Play
               </button>
-              <button
-                id="pauseBtn"
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handlePauseButtonClick()}
-              >
+              <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePauseButtonClick()}>
                 Pause
               </button>
-              <button id="backBtn" disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
+              <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
                 Back
               </button>
-              <button
-                id="forwardBtn"
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handleFrameAdvance(1)}
-              >
+              <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(1)}>
                 Forward
               </button>
               <input
-                id="timeSlider"
                 type="range"
                 min="0"
                 max={dataset ? dataset.numberOfFrames - 1 : 0}
@@ -681,7 +669,6 @@ function App(): ReactElement {
               />
               <input
                 type="number"
-                id="timeValue"
                 min="0"
                 max={dataset ? dataset.numberOfFrames - 1 : 0}
                 disabled={disableTimeControlsUi}
@@ -696,7 +683,6 @@ function App(): ReactElement {
           <div>
             Find by track:
             <input
-              id="trackValue"
               disabled={disableUi}
               type="number"
               value={findTrackInput}
@@ -704,7 +690,7 @@ function App(): ReactElement {
                 setFindTrackInput(event.target.value);
               }}
             />
-            <button id="findTrackBtn" disabled={disableUi} onClick={handleFindTrack}>
+            <button disabled={disableUi} onClick={handleFindTrack}>
               Find
             </button>
           </div>
@@ -712,55 +698,51 @@ function App(): ReactElement {
 
         {/* Hover values */}
         <div>
-          <p id="mouseTrackId">Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
-          <p id="mouseFeatureValue">Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
-          <input
-            type="checkbox"
-            id="show_track_path"
-            checked={showTrackPath}
-            onChange={() => {
-              setShowTrackPath(!showTrackPath);
-            }}
-          />
-          <label htmlFor="show_track_path">Show track path</label>
+          <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
+          <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
+          <label>
+            <input
+              type="checkbox"
+              checked={showTrackPath}
+              onChange={() => {
+                setShowTrackPath(!showTrackPath);
+              }}
+            />
+            Show track path
+          </label>
         </div>
       </div>
 
       <div ref={plotRef} style={{ width: "600px", height: "250px" }}></div>
 
-      <div id="recording_controls_container">
+      <div>
         <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
         <p>1) Set your default download location</p>
         <p>2) Turn off 'Ask where to save each file before downloading'</p>
         <br />
         <p>Save image sequence:</p>
         <button
-          id="sequence_start_btn"
           onClick={() => recordingControls.start(imagePrefix, startAtFirstFrame)}
           disabled={recordingControls.isRecording() || timeControls.isPlaying()}
         >
           Start
         </button>
-        <button
-          id="sequence_abort_btn"
-          onClick={() => recordingControls.abort()}
-          disabled={!recordingControls.isRecording()}
-        >
+        <button onClick={() => recordingControls.abort()} disabled={!recordingControls.isRecording()}>
           Abort
         </button>
         <p>
-          <label>Image prefix:</label>
-          <input
-            id="sequencePrefix"
-            value={imagePrefix}
-            onChange={(event) => {
-              // TODO: Check for illegal characters
-              setImagePrefix(event.target.value);
-              setUseDefaultPrefix(false);
-            }}
-          />
+          <label>
+            Image prefix:
+            <input
+              value={imagePrefix}
+              onChange={(event) => {
+                // TODO: Check for illegal characters
+                setImagePrefix(event.target.value);
+                setUseDefaultPrefix(false);
+              }}
+            />
+          </label>
           <button
-            id="sequencePrefix_reset_btn"
             onClick={() => {
               setUseDefaultPrefix(true);
             }}
@@ -769,15 +751,16 @@ function App(): ReactElement {
           </button>
         </p>
         <p>
-          <input
-            id="sequenceStartFrameCheckbox"
-            type="checkbox"
-            checked={startAtFirstFrame}
-            onChange={() => {
-              setStartAtFirstFrame(!startAtFirstFrame);
-            }}
-          />
-          <label htmlFor="sequenceStartFrameCheckbox">Start at first frame</label>
+          <label>
+            <input
+              type="checkbox"
+              checked={startAtFirstFrame}
+              onChange={() => {
+                setStartAtFirstFrame(!startAtFirstFrame);
+              }}
+            />
+            Start at first frame
+          </label>
         </p>
       </div>
     </div>

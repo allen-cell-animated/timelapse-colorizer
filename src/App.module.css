@@ -2,6 +2,12 @@ p {
   margin: 2px;
 }
 
+label {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
+
 .canvasTopControlsContainer {
   margin: 10px 0;
   display: flex;
