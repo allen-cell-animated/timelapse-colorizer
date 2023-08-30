@@ -23,7 +23,6 @@ const colorStops: HexColorString[][] = [
   ["#ebe498", "#c4dc66", "#adbf27", "#b6a135", "#d9874c", "#d43f70", "#bf00bf", "#881fc5", "#443dbf", "#007fd9"],
   // Esri color ramps - Heatmap 4
   [
-    //
     "#ffffff",
     "#ffe3aa",
     "#ffc655",
