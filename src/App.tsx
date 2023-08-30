@@ -584,10 +584,8 @@ function App(): ReactElement {
           <input
             type="number"
             style={{ width: "50px", textAlign: "start" }}
-            value={canv.getColorMapRangeMin()}
+            value={colorRampMin}
             onChange={(event) => {
-              // Must set both to force render update
-              canv.setColorMapRangeMin(event.target.valueAsNumber);
               setColorRampMin(event.target.valueAsNumber);
             }}
             min="0"
@@ -602,9 +600,8 @@ function App(): ReactElement {
           <input
             type="number"
             style={{ width: "80px", textAlign: "start" }}
-            value={canv.getColorMapRangeMax()}
+            value={colorRampMax}
             onChange={(event) => {
-              canv.setColorMapRangeMax(event.target.valueAsNumber);
               setColorRampMax(event.target.valueAsNumber);
             }}
             min="0"
