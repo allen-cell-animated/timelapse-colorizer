@@ -6,7 +6,7 @@ import TimeControls from "./colorizer/TimeControls";
 import * as urlUtils from "./colorizer/utils/url_utils";
 
 import styles from "./App.module.css";
-import { useDebounce } from "./colorizer/utils/react_utils";
+import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 
 const CANVAS_PLACEHOLDER_ID = "canvasPlaceholder";
 const COLOR_RAMP_PLACEHOLDER_ID = "colorRamp";
@@ -17,11 +17,10 @@ function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
 
   const [plot, setPlot] = useState<Plotting | null>(null);
-  const canv = useMemo(() => {
-    const canv = new ColorizeCanvas();
-    canv.setColorRamp(colorRamps[DEFAULT_COLOR_RAMP]);
-    return canv;
-  }, []);
+  const canv = useConstructor(() => {
+    return new ColorizeCanvas();
+  });
+
   // Setup for plot + canvas after initial render, since they replace DOM elements.
   useEffect(() => {
     setPlot(new Plotting(PLOT_PLACEHOLDER_ID));
@@ -47,12 +46,12 @@ function App(): ReactElement {
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
-  const timeControls = useMemo(() => {
-    return new TimeControls(canv);
-  }, []);
-  const recordingControls = useMemo(() => {
+  const timeControls = useConstructor(() => {
+    return new TimeControls(canv!);
+  });
+  const recordingControls = useConstructor(() => {
     return new RecordingControls(canv);
-  }, []);
+  });
 
   // Recording UI
   const [imagePrefix, setImagePrefix] = useState("");

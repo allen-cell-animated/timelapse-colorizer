@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -38,4 +38,26 @@ export function useDebounce<T>(value: T, delayMs?: number): T {
   }, [value, delayMs]);
 
   return debouncedValue;
+}
+
+/**
+ * Returns a reference to a constructed value that will not be re-computed between renders.
+ *
+ * Functionally, this is a wrapper around useRef and allows it to be used in a type-safe way.
+ * See https://react.dev/reference/react/useRef for more details.
+ *
+ * @param constructor A callback used to assign the value. This will only be called
+ * once.
+ * @returns The value as returned by the constructor.
+ * @example
+ * ```
+ * const value = useConstructor(() => {return new ValueConstructor()});
+ * ```
+ */
+export function useConstructor<T>(constructor: () => T): T {
+  const value = useRef<T | null>(null);
+  if (value.current === null) {
+    value.current = constructor();
+  }
+  return value.current;
 }
