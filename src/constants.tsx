@@ -10,32 +10,33 @@ const colorStops: HexColorString[][] = [
   // Esri color ramps - Orange 5
   ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
   // Esri color ramps - Yellow 2
-  ["#584100", "#886200", "#b78300", "#e7a300", "#ffc800"],
+  ["#ffc800", "#e7a300", "#b78300", "#886200", "#584100"],
   // Esri color ramps - Green 4
   ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
   // Esri color ramps - Blue 14
-  ["#3a4d6b", "#3d6da2", "#799a96", "#ccbe6a", "#ffec99"],
+  ["#ffec99", "#ccbe6a", "#799a96", "#3d6da2", "#3a4d6b"],
   // Esri color ramps - Purple 4
   ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"],
   // Esri color ramps - Mentone Beach
-  ["#48385f", "#995375", "#db4a5b", "#fc9a59", "#fee086"],
+  ["#fee086", "#fc9a59", "#db4a5b", "#995375", "#48385f"],
   // Esri color ramps - Retro Flow
-  ["#007fd9", "#443dbf", "#881fc5", "#bf00bf", "#d43f70", "#d9874c", "#b6a135", "#adbf27", "#c4dc66", "#ebe498"],
+  ["#ebe498", "#c4dc66", "#adbf27", "#b6a135", "#d9874c", "#d43f70", "#bf00bf", "#881fc5", "#443dbf", "#007fd9"],
   // Esri color ramps - Heatmap 4
   [
-    "#0022c8",
-    "#2b1ca7",
-    "#551785",
-    "#801164",
-    "#aa0b43",
-    "#d50621",
-    "#ff0000",
-    "#ff3900",
-    "#ff7100",
-    "#ffaa00",
-    "#ffc655",
-    "#ffe3aa",
+    //
     "#ffffff",
+    "#ffe3aa",
+    "#ffc655",
+    "#ffaa00",
+    "#ff7100",
+    "#ff3900",
+    "#ff0000",
+    "#d50621",
+    "#aa0b43",
+    "#801164",
+    "#551785",
+    "#2b1ca7",
+    "#0022c8",
   ],
   // Esri color ramps - Blue and Red 9
   ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
