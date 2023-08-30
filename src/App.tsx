@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import { Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import RecordingControls from "./colorizer/RecordingControls";
@@ -53,8 +53,7 @@ function App(): ReactElement {
   });
 
   // Recording UI
-  const [imagePrefix, setImagePrefix] = useState("");
-  const [useDefaultPrefix, setUseDefaultPrefix] = useState(true);
+  const [imagePrefix, setImagePrefix] = useState<null | string>(null);
   const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
@@ -154,47 +153,52 @@ function App(): ReactElement {
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
-  // Use a memoized value here and only retrieve parameters once, because the URL can be updated
-  // by state updates and lose information (like the track, feature, time, etc.) that isn't
+  // Only retrieve parameters once, because the URL can be updated by state updates
+  // and lose information (like the track, feature, time, etc.) that isn't
   // accessed in the first render.
-  const initialUrlParams = useMemo(urlUtils.loadParamsFromUrl, []);
+  const initialUrlParams = useConstructor(() => {
+    return urlUtils.loadParamsFromUrl();
+  });
 
   // Load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
   // TODO: Move this out of App's render into either `Collections.ts` or `url_utils.ts`.
   //  Also, handle collections when single-URL datasets are loaded by making a new collection with a single entry?
-  useMemo(async () => {
-    setSize();
+  useEffect(() => {
+    const loadInitialDatabase = async (): Promise<void> => {
+      setSize();
 
-    let _collection = initialUrlParams.collection;
-    const _datasetName = initialUrlParams.dataset;
-    let _collectionData;
-    // Load single dataset instead of collection
-    if (_datasetName && urlUtils.isUrl(_datasetName)) {
-      await replaceDataset(_datasetName);
+      let _collection = initialUrlParams.collection;
+      const _datasetName = initialUrlParams.dataset;
+      let _collectionData;
+      // Load single dataset instead of collection
+      if (_datasetName && urlUtils.isUrl(_datasetName)) {
+        await replaceDataset(_datasetName);
+        setIsInitialDatasetLoaded(true);
+        return;
+      }
+
+      // Load collection data.
+      _collection = _collection || urlUtils.DEFAULT_COLLECTION_PATH;
+      setCollection(_collection);
+
+      try {
+        _collectionData = await urlUtils.getCollectionData(_collection);
+      } catch (e) {
+        console.error(e);
+        // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
+        throw new Error(
+          `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
+        );
+      }
+
+      setCollectionData(_collectionData);
+
+      const defaultDatasetName = urlUtils.getDefaultDatasetName(_collectionData);
+      await replaceDataset(_datasetName || defaultDatasetName, _collection, _collectionData);
       setIsInitialDatasetLoaded(true);
-      return;
-    }
-
-    // Load collection data.
-    _collection = _collection || urlUtils.DEFAULT_COLLECTION_PATH;
-    setCollection(_collection);
-
-    try {
-      _collectionData = await urlUtils.getCollectionData(_collection);
-    } catch (e) {
-      console.error(e);
-      // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
-      throw new Error(
-        `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
-      );
-    }
-
-    setCollectionData(_collectionData);
-
-    const defaultDatasetName = urlUtils.getDefaultDatasetName(_collectionData);
-    await replaceDataset(_datasetName || defaultDatasetName, _collection, _collectionData);
-    setIsInitialDatasetLoaded(true);
+    };
+    loadInitialDatabase();
   }, []);
 
   // Run only once the first dataset is loaded.
@@ -532,12 +536,7 @@ function App(): ReactElement {
   timeControls.setFrameCallback(setFrame);
   recordingControls.setFrameCallback(setFrame);
 
-  // Update the default recording controls prefix.
-  useMemo(() => {
-    if (useDefaultPrefix && datasetName && featureName) {
-      setImagePrefix(`${datasetName}-${featureName}-`);
-    }
-  }, [useDefaultPrefix, datasetName, featureName]);
+  const getImagePrefix = (): string => imagePrefix || `${datasetName}-${featureName}-`;
 
   // RENDERING /////////////////////////////////////////////////////////////
 
@@ -718,7 +717,7 @@ function App(): ReactElement {
         <br />
         <p>Save image sequence:</p>
         <button
-          onClick={() => recordingControls.start(imagePrefix, startAtFirstFrame)}
+          onClick={() => recordingControls.start(getImagePrefix(), startAtFirstFrame)}
           disabled={recordingControls.isRecording() || timeControls.isPlaying()}
         >
           Start
@@ -730,17 +729,16 @@ function App(): ReactElement {
           <label>
             Image prefix:
             <input
-              value={imagePrefix}
+              value={getImagePrefix()}
               onChange={(event) => {
                 // TODO: Check for illegal characters
                 setImagePrefix(event.target.value);
-                setUseDefaultPrefix(false);
               }}
             />
           </label>
           <button
             onClick={() => {
-              setUseDefaultPrefix(true);
+              setImagePrefix(null);
             }}
           >
             Use default prefix
