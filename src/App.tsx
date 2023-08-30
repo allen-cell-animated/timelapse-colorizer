@@ -165,7 +165,7 @@ function App(): ReactElement {
   // TODO: Move this out of App's render into either `Collections.ts` or `url_utils.ts`.
   //  Also, handle collections when single-URL datasets are loaded by making a new collection with a single entry?
   useEffect(() => {
-    const loadInitialDatabase = async () => {
+    const loadInitialDatabase = async (): Promise<void> => {
       setSize();
 
       let _collection = initialUrlParams.collection;
@@ -536,7 +536,7 @@ function App(): ReactElement {
   timeControls.setFrameCallback(setFrame);
   recordingControls.setFrameCallback(setFrame);
 
-  const getImagePrefix = () => imagePrefix || `${datasetName}-${featureName}-`;
+  const getImagePrefix = (): string => imagePrefix || `${datasetName}-${featureName}-`;
 
   // RENDERING /////////////////////////////////////////////////////////////
 
