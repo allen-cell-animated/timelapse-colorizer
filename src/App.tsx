@@ -1,5 +1,5 @@
 import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { colorRamps, Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
+import { Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
@@ -7,8 +7,7 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
-
-const DEFAULT_COLOR_RAMP = 4;
+import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -39,7 +38,7 @@ function App(): ReactElement {
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const [colorRamp, setColorRamp] = useState(colorRamps[DEFAULT_COLOR_RAMP]);
+  const [colorRamp, setColorRamp] = useState(DEFAULT_COLOR_RAMPS[DEFAULT_COLOR_RAMP_ID]);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
@@ -289,9 +288,9 @@ function App(): ReactElement {
     }
 
     // Make the color ramps, then append them to the container
-    const ramps = colorRamps.map((ramp, idx) => {
+    const ramps = DEFAULT_COLOR_RAMPS.map((ramp, idx) => {
       const rampCanvas = ramp.createGradientCanvas(120, 25);
-      if (idx === DEFAULT_COLOR_RAMP) {
+      if (idx === DEFAULT_COLOR_RAMP_ID) {
         rampCanvas.className = styles.selected;
       }
       return rampCanvas;
@@ -310,7 +309,7 @@ function App(): ReactElement {
     // Select the element that was clicked on and set it as the new color ramp.
     Array.from(rampContainer.children).forEach((el, idx) => {
       if (el === target) {
-        setColorRamp(colorRamps[idx]);
+        setColorRamp(DEFAULT_COLOR_RAMPS[idx]);
         el.className = styles.selected;
       } else {
         el.className = "";
