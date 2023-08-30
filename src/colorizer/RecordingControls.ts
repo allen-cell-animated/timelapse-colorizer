@@ -1,144 +1,110 @@
 import ColorizeCanvas from "./ColorizeCanvas";
 
+// TODO: Remove class?
 export default class RecordingControls {
-  private startBtn: HTMLButtonElement;
-  private abortBtn: HTMLButtonElement;
   private recording: boolean;
-  private startAtCurrentFrameChkbx: HTMLInputElement;
 
-  private filePrefixInput: HTMLInputElement;
-  private filePrefixResetBtn: HTMLButtonElement;
-  private useDefaultPrefix: boolean;
-  private defaultPrefix: string;
   private hiddenAnchorEl: HTMLAnchorElement;
 
   private timerId: number;
   private startingFrame: number;
-  private redrawfn: () => void;
-  private isDisabled: boolean;
+  private setFrameFn?: (frame: number) => void;
 
   private canvas: ColorizeCanvas;
 
-  constructor(canvas: ColorizeCanvas, redrawfn: () => void) {
-    this.useDefaultPrefix = true;
-    this.defaultPrefix = "";    
+  constructor(canvas: ColorizeCanvas) {
     this.recording = false;
     this.canvas = canvas;
     this.timerId = 0;
     this.startingFrame = 0;
-    this.redrawfn = redrawfn;
-    this.isDisabled = false;
 
-    this.startBtn = document.querySelector("#sequence_start_btn")!;
-    this.abortBtn = document.querySelector("#sequence_abort_btn")!;
-    this.filePrefixResetBtn = document.querySelector("#sequence_prefix_reset_btn")!;
-    this.startAtCurrentFrameChkbx = document.querySelector("#sequence_start_frame_checkbox")!;
-    this.filePrefixInput = document.querySelector("#sequence_prefix")!;
-
-    this.hiddenAnchorEl = document.createElement("a");  // Hidden element for initiating download later
-
-    this.startBtn.addEventListener("click", () => this.handleStartButtonClick());
-    this.abortBtn.addEventListener("click", () => this.handleAbortButtonClick());
-    this.filePrefixInput.addEventListener("changed", () => this.handlePrefixChanged());
-    this.filePrefixResetBtn.addEventListener("click", () => this.handlePrefixResetClicked());
+    this.hiddenAnchorEl = document.createElement("a"); // Hidden element for initiating download later
   }
 
-  public setCanvas(canvas: ColorizeCanvas): void {
-    this.canvas = canvas;
+  public setFrameCallback(fn: (frame: number) => void): void {
+    this.setFrameFn = fn;
   }
 
-  private async handleStartButtonClick(): Promise<void> {
+  /**
+   * Starts a recording loop with the given file prefix.
+   * @param prefix The file prefix to save each image capture with.
+   * @param startAtFirstFrame If true, starts the sequence at the first frame in the dataset.
+   * By default, this is false and recording starts at the current frame.
+   *
+   * When the recording is completed, returns the canvas to the original frame.
+   */
+  public async start(prefix: string, startAtFirstFrame: boolean = false): Promise<void> {
     if (!this.recording) {
       this.startingFrame = this.canvas.getCurrentFrame();
       this.recording = true;
 
-      if (!this.startAtCurrentFrameChkbx.checked) {
-        await this.canvas.setFrame(0);  // start at beginning
+      if (startAtFirstFrame) {
+        await this.canvas.setFrame(0); // start at beginning
       }
       this.startingFrame = this.canvas.getCurrentFrame();
 
-      this.startRecording();  // Start recording loop
+      this.startRecording(prefix); // Start recording loop
     }
   }
 
-  private async handleAbortButtonClick(): Promise<void> {
+  public async abort(): Promise<void> {
     if (this.recording) {
       clearTimeout(this.timerId);
       this.recording = false;
-      await this.canvas.setFrame(this.startingFrame);  // Reset to starting frame
-      this.redrawfn();
+      if (this.setFrameFn) {
+        this.setFrameFn(this.startingFrame);
+      }
     }
   }
 
-  private async startRecording(): Promise<void> {
+  private async startRecording(prefix: string): Promise<void> {
     // Reset any existing timers
     clearTimeout(this.timerId);
 
     // Formatting setup
     const maxDigits = this.canvas.getTotalFrames().toString().length;
-    
+
     const loadAndRecordFrame = async (): Promise<void> => {
       const currentFrame = this.canvas.getCurrentFrame();
-      
+
       // Trigger a render through the redrawfn parameter so other UI elements update
-      this.redrawfn();
-      
+      // TODO: Make async, await.
+      // Must force render here or else empty image data is returned.
+      if (this.setFrameFn) {
+        this.setFrameFn(currentFrame);
+      }
+      this.canvas.render();
+
       // Get canvas as an image URL that can be downloaded
       const dataURL = this.canvas.domElement.toDataURL("image/png");
       const imageURL = dataURL.replace(/^data:image\/png/, "data:application/octet-stream");
-      
+
       // Update our anchor (link) element with the image data, then force
       // a click to initiate the download.
       this.hiddenAnchorEl.href = imageURL;
       const frameNumber: string = currentFrame.toString().padStart(maxDigits, "0");
-      this.hiddenAnchorEl.download = `${this.filePrefixInput.value}${frameNumber}.png`;
+      this.hiddenAnchorEl.download = `${prefix}${frameNumber}.png`;
       this.hiddenAnchorEl.click();
-      
+
       // Advance to the next frame, checking if we've exceeded bounds.
       if (this.canvas.isValidFrame(currentFrame + 1) && this.recording) {
         await this.canvas.setFrame(currentFrame + 1);
         // Trigger the next run.
-        // Timeout is required to prevent skipped/dropped frames. 100 ms is a magic 
+        // Timeout is required to prevent skipped/dropped frames. 100 ms is a magic
         // number that prevented frame drop on a developer machine, but is not very robust.
         // TODO: Replace magic number for frame delay with a check for download completion?
-        this.timerId = setTimeout(loadAndRecordFrame, 100);
+        this.timerId = window.setTimeout(loadAndRecordFrame, 100);
       } else {
         // Reached end, so stop and reset UI
         this.recording = false;
-        await this.canvas.setFrame(this.startingFrame);  // Reset to starting frame
-        this.redrawfn();
+        if (this.setFrameFn) {
+          this.setFrameFn(this.startingFrame);
+        }
       }
     };
-  
+
     // Start interval loop
     loadAndRecordFrame();
-  }
-
-  public handlePrefixChanged(): void {
-    this.useDefaultPrefix = false;
-  }
-
-  public handlePrefixResetClicked(): void {
-    this.useDefaultPrefix = true;
-    this.updateUI();
-  }
-
-  public updateUI(): void {
-    this.startBtn.disabled = this.recording || this.isDisabled;
-    this.abortBtn.disabled = !this.recording || this.isDisabled;
-    if (this.useDefaultPrefix) {
-      this.filePrefixInput.value = this.defaultPrefix;
-    }
-  }
-
-  public setDefaultFilePrefix(prefix: string): void {
-    this.defaultPrefix = prefix;
-    this.updateUI();
-  }
-
-  public setIsDisabled(disabled: boolean): void {
-    this.isDisabled = disabled;
-    this.updateUI();
   }
 
   public isRecording(): boolean {
