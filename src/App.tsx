@@ -99,7 +99,7 @@ function App(): ReactElement {
     // update current time in plot
     plot?.setTime(currentFrame);
 
-    if (!timeControls?.isPlaying() && !recordingControls?.isRecording()) {
+    if (!timeControls.isPlaying() && !recordingControls.isRecording()) {
       // Do not update URL while playback is happening for performance + UX reasons
       updateUrl();
     }
@@ -114,7 +114,7 @@ function App(): ReactElement {
     colorRamp,
     colorRampMin,
     colorRampMax,
-    timeControls?.isPlaying(), // updates URL when timeControls stops
+    timeControls.isPlaying(), // updates URL when timeControls stops
     updateUrl,
   ]);
 
@@ -497,9 +497,9 @@ function App(): ReactElement {
   const handleKeyDown = useCallback(
     ({ key }: KeyboardEvent): void => {
       if (key === "ArrowLeft" || key === "Left") {
-        timeControls?.handleFrameAdvance(-1);
+        timeControls.handleFrameAdvance(-1);
       } else if (key === "ArrowRight" || key === "Right") {
-        timeControls?.handleFrameAdvance(1);
+        timeControls.handleFrameAdvance(1);
       }
     },
     [timeControls]
@@ -530,10 +530,8 @@ function App(): ReactElement {
   // Update the callback for TimeControls and RecordingControls if it changes.
   // TODO: TimeControls and RecordingControls should be refactored into components
   // and receive setFrame as props.
-  useMemo(() => {
-    timeControls?.setFrameCallback(setFrame);
-    recordingControls?.setFrameCallback(setFrame);
-  }, [setFrame]);
+  timeControls.setFrameCallback(setFrame);
+  recordingControls.setFrameCallback(setFrame);
 
   // Update the default recording controls prefix.
   useMemo(() => {
@@ -544,7 +542,7 @@ function App(): ReactElement {
 
   // RENDERING /////////////////////////////////////////////////////////////
 
-  const disableUi: boolean = recordingControls?.isRecording() || !datasetOpen;
+  const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
   return (
@@ -648,28 +646,24 @@ function App(): ReactElement {
               <button
                 id="playBtn"
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls?.handlePlayButtonClick()}
+                onClick={() => timeControls.handlePlayButtonClick()}
               >
                 Play
               </button>
               <button
                 id="pauseBtn"
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls?.handlePauseButtonClick()}
+                onClick={() => timeControls.handlePauseButtonClick()}
               >
                 Pause
               </button>
-              <button
-                id="backBtn"
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls?.handleFrameAdvance(-1)}
-              >
+              <button id="backBtn" disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
                 Back
               </button>
               <button
                 id="forwardBtn"
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls?.handleFrameAdvance(1)}
+                onClick={() => timeControls.handleFrameAdvance(1)}
               >
                 Forward
               </button>
@@ -742,15 +736,15 @@ function App(): ReactElement {
         <p>Save image sequence:</p>
         <button
           id="sequence_start_btn"
-          onClick={() => recordingControls?.start(imagePrefix, startAtFirstFrame)}
-          disabled={recordingControls?.isRecording() || timeControls?.isPlaying()}
+          onClick={() => recordingControls.start(imagePrefix, startAtFirstFrame)}
+          disabled={recordingControls.isRecording() || timeControls.isPlaying()}
         >
           Start
         </button>
         <button
           id="sequence_abort_btn"
-          onClick={() => recordingControls?.abort()}
-          disabled={!recordingControls?.isRecording()}
+          onClick={() => recordingControls.abort()}
+          disabled={!recordingControls.isRecording()}
         >
           Abort
         </button>
