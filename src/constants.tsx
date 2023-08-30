@@ -3,6 +3,8 @@ import { ColorRamp } from "./colorizer";
 
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
 const colorStops: HexColorString[][] = [
+  // Matplotlib - cool
+  ["#00ffff", "#ff00ff"],
   // Esri color ramps - Red 5
   ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
   // Esri color ramps - Orange 5
@@ -48,4 +50,4 @@ const colorStops: HexColorString[][] = [
 ];
 
 export const DEFAULT_COLOR_RAMPS = colorStops.map((ramp) => new ColorRamp(ramp));
-export const DEFAULT_COLOR_RAMP_ID = 4;
+export const DEFAULT_COLOR_RAMP_ID = 0;
