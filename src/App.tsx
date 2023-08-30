@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { colorRamps, Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import RecordingControls from "./colorizer/RecordingControls";
@@ -8,13 +8,14 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 
-const CANVAS_PLACEHOLDER_ID = "canvasPlaceholder";
-const COLOR_RAMP_PLACEHOLDER_ID = "colorRamp";
-const PLOT_PLACEHOLDER_ID = "plot";
 const DEFAULT_COLOR_RAMP = 4;
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
+
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const colorRampRef = useRef<HTMLSpanElement>(null);
+  const plotRef = useRef<HTMLDivElement>(null);
 
   const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useConstructor(() => {
@@ -23,9 +24,8 @@ function App(): ReactElement {
 
   // Setup for plot + canvas after initial render, since they replace DOM elements.
   useEffect(() => {
-    setPlot(new Plotting(PLOT_PLACEHOLDER_ID));
-    const element = document.getElementById(CANVAS_PLACEHOLDER_ID);
-    element?.parentNode?.replaceChild(canv.domElement, element);
+    setPlot(new Plotting(plotRef.current!));
+    canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
   }, []);
 
   const [collection, setCollection] = useState<string | undefined>();
@@ -276,7 +276,7 @@ function App(): ReactElement {
   // COLOR RAMP /////////////////////////////////////////////////////////////
   // Initialize the color ramp gradients after the initial render.
   useEffect(() => {
-    const rampContainer = document.getElementById(COLOR_RAMP_PLACEHOLDER_ID);
+    const rampContainer = colorRampRef.current;
     if (!rampContainer) {
       return;
     }
@@ -303,7 +303,7 @@ function App(): ReactElement {
   }, []);
 
   const handleColorRampClick = useCallback(({ target }: React.MouseEvent<HTMLSpanElement, MouseEvent>): void => {
-    const rampContainer = document.getElementById(COLOR_RAMP_PLACEHOLDER_ID);
+    const rampContainer = colorRampRef.current;
     if (!rampContainer) {
       return;
     }
@@ -593,7 +593,7 @@ function App(): ReactElement {
           />
           <div className={styles.colorRampContainer}>
             <span
-              id={COLOR_RAMP_PLACEHOLDER_ID}
+              ref={colorRampRef}
               className={`${styles.colorRamp} ${disableUi ? styles.disabled : ""}`}
               onClick={(event) => handleColorRampClick(event)}
             ></span>
@@ -635,7 +635,7 @@ function App(): ReactElement {
       </div>
 
       {/** Canvas */}
-      <div id={CANVAS_PLACEHOLDER_ID}></div>
+      <div ref={canvasRef}></div>
 
       {/** Bottom Control Bar */}
       <div className={styles.canvasBottomControlsContainer}>
@@ -726,7 +726,7 @@ function App(): ReactElement {
         </div>
       </div>
 
-      <div id={PLOT_PLACEHOLDER_ID} style={{ width: "600px", height: "250px" }}></div>
+      <div ref={plotRef} style={{ width: "600px", height: "250px" }}></div>
 
       <div id="recording_controls_container">
         <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
