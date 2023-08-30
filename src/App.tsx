@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import RecordingControls from "./colorizer/RecordingControls";
