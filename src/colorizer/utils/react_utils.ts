@@ -46,8 +46,7 @@ export function useDebounce<T>(value: T, delayMs?: number): T {
  * Functionally, this is a wrapper around useRef and allows it to be used in a type-safe way.
  * See https://react.dev/reference/react/useRef for more details.
  *
- * @param constructor A callback used to assign the value. This will only be called
- * once.
+ * @param constructor A callback used to assign the value. This will only be called once.
  * @returns The value as returned by the constructor.
  * @example
  * ```

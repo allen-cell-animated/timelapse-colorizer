@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { colorRamps, Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import RecordingControls from "./colorizer/RecordingControls";
@@ -81,10 +81,10 @@ function App(): ReactElement {
   }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
 
   /**
-   * Handles updating the canvas from state (for some common properties) and initiating the canvas
-   * render. Also updates other UI elements, including the plot and URL.
+   * Handle updating the canvas from state (for some common properties) and initiating the canvas
+   * render. Also update other UI elements, including the plot and URL.
    */
-  const drawLoop = useCallback(async (): Promise<void> => {
+  useLayoutEffect(() => {
     // Note: Selected track, frame number, etc. are not updated here.
     // Those operations are async, and need to complete before a state update to be
     // rendered correctly.
@@ -94,7 +94,7 @@ function App(): ReactElement {
     canv.setColorMapRangeMin(colorRampMin);
     canv.setColorMapRangeMax(colorRampMax);
     canv.setSelectedTrack(selectedTrack);
-    await canv.render();
+    canv.render();
 
     // update current time in plot
     plot?.setTime(currentFrame);
@@ -118,18 +118,13 @@ function App(): ReactElement {
     updateUrl,
   ]);
 
-  // Call drawLoop whenever its dependencies change.
-  useMemo(() => {
-    drawLoop();
-  }, [drawLoop]);
-
   const setFrame = useCallback(
     async (frame: number) => {
       await canv.setFrame(frame);
       setCurrentFrame(frame);
       setFrameInput(frame);
     },
-    [drawLoop, canv]
+    [canv]
   );
 
   const findTrack = useCallback(
@@ -264,7 +259,6 @@ function App(): ReactElement {
         canv.setSelectedTrack(newTrack);
         setSelectedTrack(newTrack);
       }
-      drawLoop();
     },
     [dataset, featureName, currentFrame, canv, plot]
   );
