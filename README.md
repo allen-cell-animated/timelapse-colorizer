@@ -15,6 +15,19 @@ for more details about potential future features!
 
 ![image](https://github.com/allen-cell-animated/nucmorph-colorizer/assets/30200665/d9d22cba-faa0-4366-a647-973bc2fce360)
 
+### Opening New Datasets
+
+To add new datasets to the web client, you'll need to format it for compatibility with Nucmorph-Colorizer and store it in a HTTP-accessible location. More details can be found in the [data format specification](./DATA_FORMAT.md).
+
+Modify one of the following links to open your dataset from the browser:
+
+```
+http://dev-aics-dtp-001.corp.alleninstitute.org/nucmorph-colorizer/dist/index.html?collection={collection URL}
+http://dev-aics-dtp-001.corp.alleninstitute.org/nucmorph-colorizer/dist/index.html?dataset={dataset URL}
+```
+
+Support for opening datasets via the UI is coming soon!
+
 ## Installation
 
 Installing is optional! You can use the [hosted version of Nucmorph Colorizer](http://dev-aics-dtp-001.corp.alleninstitute.org/nucmorph-colorizer/dist/index.html)
@@ -57,9 +70,6 @@ by the web client.
 ```
 python timelapse-colorizer-data/generate_data.py --output_dir {output_dir} --dataset {dataset_name}
 ```
-
-Note: Currently, Nucmorph-Colorizer only searches one on-prem storage location for data, though adding support for external datasets via URL is on our roadmap of future changes. _(See [Issue #34](https://github.com/allen-cell-animated/nucmorph-colorizer/issues/34).)_
-To add new datasets to the web client, you'll need to upload them to the existing folder. More details can be found in [`generate_data.py`](./scripts/timelapse-colorizer-data/generate_data.py)
 
 ## Development
 
