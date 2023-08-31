@@ -244,45 +244,5 @@ Here's a list of where Nucmorph-Colorizer will check for the manifest files for 
 ## Getting Started
 
 For most datasets, the easiest way to get started is to modify one of the existing data generation scripts, like [`generate_data.py`](./timelapse-colorizer-data/generate_data.py).
+
 (Check with your team or one of the developers on the Animated Cell team to see if there's already a data generation script for your project!)
-
-### Steps:
-
-\*These steps may be more or less involved depending on your data format.
-
-1. Change the dataset that's being loaded by replacing the `load_dataset()` method in `make_dataset()`.
-
-```
-a = load_dataset(dataset, datadir=None)
-```
-
-2. Modify the names of your columns that correspond to track ID, track number, etc. by replacing all the keys defined in `columns` wherever they appear in the file.
-
-```
-# Replace these terms!
-columns = [<track ID>, <track number>, <path to zstack data>, <label>]
-b = a[columns]
-b = b.reset_index(drop=True)
-b["initialIndex"] = b.index.values
-```
-
-3. Update the features you want to include in the dataset.
-
-```
-features = [<feature 1>, <feature 2>]
-make_features(a, features, output_dir, dataset, scale)
-```
-
-4. Modify `make_features()` so that the column names/keys it accesses matches your data.
-
-```
-logging.info("Writing track.json...")
-tracks = a[<track id>].to_numpy()  //< ex: replace <track_id> with what your data uses for indexing
-trjs = {"data": tracks.tolist()}
-with open(outpath + "/tracks.json", "w") as f:
-    json.dump(trjs, f)
-```
-
-5. Modify `make_frames()` so that the column names/keys match your data too. (Make frames will automatically make bounding box data for you once the frame data is loaded.)
-
-## Troubleshooting
