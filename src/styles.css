@@ -14,7 +14,7 @@
   --default-font: "Lato";
 }
 
-* {
+body {
   font-family: var(--default-font);
   font-style: normal;
   font-weight: 400;
@@ -24,6 +24,8 @@
 h1 {
   color: var(--text-primary);
   font-size: 20px;
+  font-style: normal;
+  font-weight: 400;
 }
 
 h2 {

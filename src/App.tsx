@@ -8,6 +8,10 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import { Dropdown, Button, Space, MenuProps, Tooltip } from "antd";
+import { DownOutlined, UserOutlined } from "@ant-design/icons";
+import { ItemType } from "antd/es/menu/hooks/useItems";
+import LabeledDropdown from "./components/LabeledDropdown";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -407,8 +411,7 @@ function App(): ReactElement {
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>): void => {
-      const value = event.target.value;
+    (value: string): void => {
       if (value !== datasetName) {
         replaceDataset(value, collection, collectionData);
       }
@@ -543,28 +546,31 @@ function App(): ReactElement {
   const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
+  const datasets: ItemType[] = urlUtils.getDatasetNames(datasetName, collectionData || null).map((name) => {
+    return {
+      label: name,
+      key: name,
+    };
+  });
+
   return (
     <div>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1>Timelapse Colorizer</h1>
+          <span className={styles.verticalDivider}></span>
+
+          <LabeledDropdown
+            disabled={disableUi}
+            label="Dataset"
+            selected={datasetName}
+            items={urlUtils.getDatasetNames(datasetName, collectionData || null)}
+            onChange={handleDatasetChange}
+          />
+        </div>
+      </div>
       {/** Top Control Bar */}
       <div className={styles.canvasTopControlsContainer}>
-        <label>
-          Dataset
-          <select
-            name="Dataset"
-            style={{ textOverflow: "ellipsis", maxWidth: "200px" }}
-            disabled={disableUi}
-            onChange={handleDatasetChange}
-            value={datasetName}
-          >
-            {urlUtils.getDatasetNames(datasetName, collectionData || null).map((name) => {
-              return (
-                <option value={name} key={name}>
-                  {name}
-                </option>
-              );
-            })}
-          </select>
-        </label>
         <label>
           Feature
           <select name="Feature" disabled={disableUi} onChange={handleFeatureChange} value={featureName}>

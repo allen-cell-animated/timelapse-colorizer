@@ -8,6 +8,33 @@ label {
   gap: 2px;
 }
 
+.header {
+  width: auto;
+  min-height: 24px;
+  padding: 18px 30px;
+  display: flex;
+  flex-direction: row;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  align-items: center;
+}
+
+.header > * > h1 {
+  margin: 0;
+  line-height: normal;
+}
+
+.verticalDivider {
+  height: 100%;
+  width: 1px;
+  background-color: var(--dividers);
+  display: inline-block;
+}
+
 .canvasTopControlsContainer {
   margin: 10px 0;
   display: flex;
