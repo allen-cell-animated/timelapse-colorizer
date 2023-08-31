@@ -4,7 +4,7 @@ Nucmorph-Colorizer can only load datasets that follow the defined data specifica
 
 The easiest way to get started is to modify one of our existing data processing scripts, like [`generate_data.py`](./timelapse-colorizer-data/generate_data.py)!
 
-## Format Overview
+## Terms
 
 Here are a few important terms:
 
@@ -12,17 +12,203 @@ Here are a few important terms:
 - **Dataset**: A dataset is a single time-series, and can have any number of tracked objects and features.
 - **Collection**: An arbitrary grouping of datasets.
 
-### Dataset
+## Dataset
 
-A dataset consists of a series of files
+A dataset consists of a group of files that describe the tracks, feature data, processed images, and additional metadata for a single time-series.
 
-### Collections
+The most important file is the **manifest**, which describes all the files in the dataset.
+
+```
+--manifest.json--
+{
+    "frames": [
+        <relative path to image frame 0>,
+        <relative path to image frame 1>,
+        ...
+    ],
+    "features": {
+        <feature name 1>: <relative path to feature JSON>,
+        <feature name 2>: <relative path to feature JSON>,
+        ...
+    },
+    "outliers": <relative path to outlier JSON>,
+    "tracks": <relative path to tracks JSON>,
+    "times": <relative path to times JSON>,
+    "centroids": <relative path to centroids JSON>,
+    "bounds": <relative path to bounds JSON>
+}
+
+*Note: all paths are relative to this JSON file
+```
+
+### Tracks
+
+Every segmented object in each time step has a **track ID**, an integer identifier that's unique across all time steps. To recognize a single track across multiple frames, these track IDs must be grouped together with a single **track number**.
+
+A **track JSON file** consists of a JSON object with a `data` array, where for each track ID `i`, `data[i]` is the track number that track ID is part of.
+
+```
+--track.json--
+{
+    "data": [
+        <track number for id 0>,
+        <track number for id 1>,
+        <track number for id 2>,
+        ...
+    ]
+}
+```
+
+For example, if there were the following two tracks in some dataset, the track file might look something like this.
+| Track # | Track IDs |
+| --- | --- |
+| 1 | 0, 1, 4 |
+| 2 | 2, 3, 5 |
+
+```
+--track.json--
+{
+    "data": [
+        1, // 0
+        1, // 1
+        2, // 2
+        2, // 3
+        1, // 4
+        2  // 5
+    ]
+}
+```
+
+### Times
+
+The times JSON is similar to the tracks JSON. It also contains a `data` array that maps from track IDs to the frame number that they appear on.
+
+```
+--times.json--
+{
+    "data": [
+        <frame number for track id 0>,
+        <frame number for track id 1>,
+        <frame number for track id 2>,
+        ...
+    ]
+}
+```
+
+### Frames
+
+_Example frame:_
+![](./documentation/frame_0.png)
+_Each unique color in this frame is a different track ID._
+
+**Frames** are image textures that store the track IDs for each time step in the time series. Each pixel in the image can encode a single track ID in its RGB value (`= R + G*256 + B*256*256`). Note that there is currently no way to indicate overlaps in the data-- your script will need to flatten 3D data and segmentations.
+
+There should be one frame for every time step in the time series, and they must all be listed in order in the **manifest** file.
+
+### Features
+
+Datasets can contain any number of features, which are a numeric value assigned to each track ID in the dataset. Each feature file usually corresponds to a single column of data.
+
+Features must also provide a `min` and `max` range property.
+
+```
+--feature1.json--
+{
+    "data": [
+        <feature value for track id 0>,
+        <feature value for track id 1>,
+        <feature value for track id 2>,
+        ...
+    ],
+    "min": <min value for all features>,
+    "max": <max value for all features>
+}
+```
+
+### Centroids
+
+The centroids file defines the center of each track ID in the dataset. For each index `i`, the coordinates are `(x: data[2i], y: data[2i + 1])`.
+Coordinates are defined in pixels in the frame, where the upper left corner of the frame is (0, 0).
+
+```
+--centroids.json--
+{
+    "data": [
+        <x coordinate for track id 0>,
+        <y coordinate for track id 0>,
+        <x coordinate for track id 1>,
+        <y coordinate for track id 1>,
+        ...
+    ]
+}
+```
+
+### Bounds
+
+The bounds file defines the rectangular boundary occupied by each track ID. For each track ID `i`, the minimum bounding box coordinates (upper left corner) are given by
+`(x: data[4i], y: data[4i + 1])`, and the maximum bounding box coordinates (lower right corner) are given by `(x: data[4i + 2], y: data[4i + 3])`.
+
+Again, coordinates are defined in pixels in the image frame, where the upper left corner is (0, 0).
+
+```
+--bounds.json--
+{
+    "data": [
+        <upper left x for track id 0>,
+        <upper left y for track id 0>,
+        <lower right x for track id 0>,
+        <lower right y for track id 0>,
+        <upper left x for track id 1>,
+        <upper left y for track id 1>,
+        ...
+    ]
+}
+```
+
+### Outliers
+
+The outliers file stores marks whether a given track ID should be marked as an outlier using an array of booleans (`true`/`false`). Indices that are `true` indicate outlier values, and are given a unique color in Nucmorph-Colorizer.
+
+```
+--outliers.json--
+{
+    "data": [
+        <whether track id 0 is an outlier>,
+        <whether track id 1 is an outlier>,
+        <whether track id 2 is an outlier>,
+        ...
+    ]
+}
+```
+
+For example, if a dataset had the following tracks and outliers, the file might look something like this.
+| Track # | Track IDs | Outliers |
+| --- | --- | --- |
+| 1 | 0, 1, 4 | 1 |
+| 2 | 2, 3, 5 | 2, 5 |
+
+```
+--outliers.json--
+{
+    "data": [
+        false, // 0
+        true,  // 1
+        true,  // 2
+        false, // 3
+        false, // 4
+        true   // 5
+    ]
+}
+```
+
+## Collections
 
 Collections are defined by an optional JSON file and group one or more datasets for easy access. By default, they should be named `collection.json`.
 
 Collections are an array of JSON objects, each of which define the `name` (an **alias**) and the `path` of a dataset. This can either be a relative path on a file server, or a complete URL\*.
 
 ```
+--collection.json--
 [
     { "name": <some_name_1>, "path": <some_path_1>},
     { "name": <some_name_2>, "path": <some_path_2>},
@@ -30,9 +216,10 @@ Collections are an array of JSON objects, each of which define the `name` (an **
 ]
 ```
 
-For example, let's say a collection is located at `http://example.com/data/collection.json`, and my `collection.json` contains this:
+For example, let's say a collection is located at `http://example.com/data/collection.json`, and the `collection.json` contains this:
 
 ```
+--collection.json--
 [
   { "name": "Mama Bear", "path": "mama_bear" },
   { "name": "Baby Bear", "path": "nested/baby_bear" },
@@ -52,6 +239,50 @@ Here's a list of where Nucmorph-Colorizer will check for the manifest files for 
 | Goldilocks   | http://example2.com/files/goldilocks/manifest.json     |
 | Papa Bear    | http://example3.com/files/papa_bear.json               |
 
-\*Note: There _is_ also support for loading dataset URLs from network filesystem paths, but this is currently untested and is not recommended.
+---
 
 ## Getting Started
+
+For most datasets, the easiest way to get started is to modify one of the existing data generation scripts, like [`generate_data.py`](./timelapse-colorizer-data/generate_data.py).
+(Check with your team or one of the developers on the Animated Cell team to see if there's already a data generation script for your project!)
+
+### Steps:
+
+\*These steps may be more or less involved depending on your data format.
+
+1. Change the dataset that's being loaded by replacing the `load_dataset()` method in `make_dataset()`.
+
+```
+a = load_dataset(dataset, datadir=None)
+```
+
+2. Modify the names of your columns that correspond to track ID, track number, etc. by replacing all the keys defined in `columns` wherever they appear in the file.
+
+```
+# Replace these terms!
+columns = [<track ID>, <track number>, <path to zstack data>, <label>]
+b = a[columns]
+b = b.reset_index(drop=True)
+b["initialIndex"] = b.index.values
+```
+
+3. Update the features you want to include in the dataset.
+
+```
+features = [<feature 1>, <feature 2>]
+make_features(a, features, output_dir, dataset, scale)
+```
+
+4. Modify `make_features()` so that the column names/keys it accesses matches your data.
+
+```
+logging.info("Writing track.json...")
+tracks = a[<track id>].to_numpy()  //< ex: replace <track_id> with what your data uses for indexing
+trjs = {"data": tracks.tolist()}
+with open(outpath + "/tracks.json", "w") as f:
+    json.dump(trjs, f)
+```
+
+5. Modify `make_frames()` so that the column names/keys match your data too. (Make frames will automatically make bounding box data for you once the frame data is loaded.)
+
+## Troubleshooting
