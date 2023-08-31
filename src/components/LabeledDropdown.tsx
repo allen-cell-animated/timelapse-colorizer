@@ -9,6 +9,7 @@ type LabeledDropdownProps = {
   selected: string;
   items: ItemType[] | string[];
   disabled?: boolean;
+  buttonType?: "primary" | "default" | "dashed" | "text" | "link";
   onChange: (value: string) => void;
 };
 
@@ -44,7 +45,7 @@ export default function LabeledDropdown(props: LabeledDropdownProps) {
       {props.label}
       <Dropdown menu={datasetMenuProps} disabled={props.disabled}>
         <Tooltip title={props.selected} placement="right">
-          <Button disabled={props.disabled} type="primary">
+          <Button disabled={props.disabled} type={props.buttonType}>
             <div className={styles.buttonContents}>
               <div className={styles.buttonText}>{props.selected}</div>
               <DownOutlined />

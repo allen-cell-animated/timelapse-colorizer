@@ -443,8 +443,7 @@ function App(): ReactElement {
   );
 
   const handleFeatureChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>): void => {
-      const value = event.target.value;
+    (value: string): void => {
       console.log(value);
       if (value !== featureName && dataset) {
         updateFeature(dataset, value);
@@ -546,13 +545,6 @@ function App(): ReactElement {
   const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
-  const datasets: ItemType[] = urlUtils.getDatasetNames(datasetName, collectionData || null).map((name) => {
-    return {
-      label: name,
-      key: name,
-    };
-  });
-
   return (
     <div>
       <div className={styles.header}>
@@ -564,26 +556,21 @@ function App(): ReactElement {
             disabled={disableUi}
             label="Dataset"
             selected={datasetName}
+            buttonType="primary"
             items={urlUtils.getDatasetNames(datasetName, collectionData || null)}
             onChange={handleDatasetChange}
+          />
+          <LabeledDropdown
+            disabled={disableUi}
+            label="Feature"
+            selected={featureName}
+            items={dataset?.featureNames || []}
+            onChange={handleFeatureChange}
           />
         </div>
       </div>
       {/** Top Control Bar */}
       <div className={styles.canvasTopControlsContainer}>
-        <label>
-          Feature
-          <select name="Feature" disabled={disableUi} onChange={handleFeatureChange} value={featureName}>
-            {dataset?.featureNames.map((name) => {
-              return (
-                <option value={name} key={name}>
-                  {name}
-                </option>
-              );
-            })}
-          </select>
-        </label>
-
         {/** Color Ramp */}
         <div className={styles.labeledColorRamp}>
           <input

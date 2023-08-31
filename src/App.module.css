@@ -10,15 +10,21 @@ label {
 
 .header {
   width: auto;
-  min-height: 24px;
+  height: fit-content;
+  --min-height: 24px;
+  min-height: var(--min-height);
   padding: 18px 30px;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--borders);
 }
 
 .headerLeft {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: 20px;
   align-items: center;
 }
@@ -29,7 +35,7 @@ label {
 }
 
 .verticalDivider {
-  height: 100%;
+  height: var(--min-height);
   width: 1px;
   background-color: var(--dividers);
   display: inline-block;

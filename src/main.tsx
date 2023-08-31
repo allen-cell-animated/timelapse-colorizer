@@ -13,7 +13,8 @@ root.render(
       theme={{
         token: {
           colorPrimary: "#8962d3",
-          controlHeight: 28,
+          controlHeight: 24,
+          fontFamily: "Lato",
         },
       }}
     >
