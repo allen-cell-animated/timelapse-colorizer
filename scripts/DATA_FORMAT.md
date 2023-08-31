@@ -265,7 +265,7 @@ For example, if a dataset had the following tracks and outliers, the file might 
 
 Collections are defined by an optional JSON file and group one or more datasets for easy access. By default, they should be named `collection.json`.
 
-Collections are an array of JSON objects, each of which define the `name` (an **alias**) and the `path` of a dataset. This can either be a relative path on a file server, or a complete URL\*.
+Collections are an array of JSON objects, each of which define the `name` (an **alias**) and the `path` of a dataset. This can either be a relative path on a file server, or a complete URL.
 
 ```
 --collection.json--
