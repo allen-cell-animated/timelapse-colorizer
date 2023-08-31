@@ -43,6 +43,9 @@ The most important file is the **manifest**, which describes all the files in th
 
 <details>
 <summary><b>Show me an example!</b></summary>
+
+---
+
 An example dataset directory could look like this:
 
 ```
@@ -89,6 +92,8 @@ The `manifest.json` file would look something like this:
 }
 ```
 
+---
+
 </details>
 
 ### Tracks
@@ -111,6 +116,9 @@ A **track JSON file** consists of a JSON object with a `data` array, where for e
 
 <details>
 <summary><b>Show me an example!</b></summary>
+
+---
+
 For example, if there were the following two tracks in some dataset, the track file might look something like this.
 
 | Track # | Track IDs |
@@ -131,6 +139,8 @@ For example, if there were the following two tracks in some dataset, the track f
     ]
 }
 ```
+
+---
 
 </details>
 
@@ -238,6 +248,9 @@ The outliers file stores marks whether a given track ID should be marked as an o
 
 <details>
 <summary><b>Show me an example!</b></summary>
+
+---
+
 For example, if a dataset had the following tracks and outliers, the file might look something like this.
 
 | Track # | Track IDs | Outliers |
@@ -259,6 +272,8 @@ For example, if a dataset had the following tracks and outliers, the file might 
 }
 ```
 
+---
+
 </details>
 
 ## Collections
@@ -278,6 +293,8 @@ Collections are an array of JSON objects, each of which define the `name` (an **
 
 <details>
 <summary><b>Show me an example!</b></summary>
+
+---
 
 For example, let's say a collection is located at `http://example.com/data/collection.json`, and the `collection.json` contains this:
 
