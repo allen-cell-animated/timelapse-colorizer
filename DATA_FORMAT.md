@@ -12,7 +12,7 @@ Here are a few important terms:
 - **Dataset**: A dataset is a single time-series, and can have any number of tracked objects and features.
 - **Collection**: An arbitrary grouping of datasets.
 
-## Dataset
+## 📁 Dataset
 
 A dataset consists of a group of files that describe the tracks, feature data, processed images, and additional metadata for a single time-series.
 
@@ -42,7 +42,7 @@ The most important file is the **manifest**, which describes all the files in th
 ```
 
 <details>
-<summary><b>Show me an example!</b></summary>
+<summary><b>[Show me an example!]</b></summary>
 
 ---
 
@@ -96,7 +96,7 @@ The `manifest.json` file would look something like this:
 
 </details>
 
-### Tracks
+### 1. Tracks
 
 Every segmented object in each time step has a **track ID**, an integer identifier that's unique across all time steps. To recognize a single track across multiple frames, these track IDs must be grouped together with a single **track number**.
 
@@ -115,7 +115,7 @@ A **track JSON file** consists of a JSON object with a `data` array, where for e
 ```
 
 <details>
-<summary><b>Show me an example!</b></summary>
+<summary><b>[Show me an example!]</b></summary>
 
 ---
 
@@ -144,7 +144,7 @@ For example, if there were the following two tracks in some dataset, the track f
 
 </details>
 
-### Times
+### 2. Times
 
 The times JSON is similar to the tracks JSON. It also contains a `data` array that maps from track IDs to the frame number that they appear on.
 
@@ -160,7 +160,7 @@ The times JSON is similar to the tracks JSON. It also contains a `data` array th
 }
 ```
 
-### Frames
+### 3. Frames
 
 _Example frame:_
 ![](./documentation/frame_0.png)
@@ -170,7 +170,7 @@ _Each unique color in this frame is a different track ID._
 
 There should be one frame for every time step in the time series, and they must all be listed in order in the **manifest** file.
 
-### Features
+### 4. Features
 
 Datasets can contain any number of features, which are a numeric value assigned to each track ID in the dataset. Each feature file usually corresponds to a single column of data.
 
@@ -190,7 +190,7 @@ Features must also provide a `min` and `max` range property.
 }
 ```
 
-### Centroids
+### 5. Centroids
 
 The centroids file defines the center of each track ID in the dataset. For each index `i`, the coordinates are `(x: data[2i], y: data[2i + 1])`.
 Coordinates are defined in pixels in the frame, where the upper left corner of the frame is (0, 0).
@@ -208,7 +208,7 @@ Coordinates are defined in pixels in the frame, where the upper left corner of t
 }
 ```
 
-### Bounds
+### 6. Bounds
 
 The bounds file defines the rectangular boundary occupied by each track ID. For each track ID `i`, the minimum bounding box coordinates (upper left corner) are given by
 `(x: data[4i], y: data[4i + 1])`, and the maximum bounding box coordinates (lower right corner) are given by `(x: data[4i + 2], y: data[4i + 3])`.
@@ -230,7 +230,7 @@ Again, coordinates are defined in pixels in the image frame, where the upper lef
 }
 ```
 
-### Outliers
+### 7. Outliers
 
 The outliers file stores marks whether a given track ID should be marked as an outlier using an array of booleans (`true`/`false`). Indices that are `true` indicate outlier values, and are given a unique color in Nucmorph-Colorizer.
 
@@ -247,7 +247,7 @@ The outliers file stores marks whether a given track ID should be marked as an o
 ```
 
 <details>
-<summary><b>Show me an example!</b></summary>
+<summary><b>[Show me an example!]</b></summary>
 
 ---
 
@@ -292,7 +292,7 @@ Collections are an array of JSON objects, each of which define the `name` (an **
 ```
 
 <details>
-<summary><b>Show me an example!</b></summary>
+<summary><b>[Show me an example!]</b></summary>
 
 ---
 
