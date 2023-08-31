@@ -549,7 +549,7 @@ function App(): ReactElement {
     <div>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1>Timelapse Colorizer</h1>
+          <h2>Timelapse Colorizer</h2>
           <span className={styles.verticalDivider}></span>
 
           <LabeledDropdown
@@ -567,6 +567,19 @@ function App(): ReactElement {
             items={dataset?.featureNames || []}
             onChange={handleFeatureChange}
           />
+
+          <div className={styles.colorRampContainer}>
+            <span
+              ref={colorRampRef}
+              className={`${styles.colorRamp} ${disableUi ? styles.disabled : ""}`}
+              onClick={(event) => handleColorRampClick(event)}
+            ></span>
+          </div>
+        </div>
+        <div className={styles.headerRight}>
+          <Button type="text">Copy URL</Button>
+          <Button type="primary">Export</Button>
+          <Button type="primary">Load</Button>
         </div>
       </div>
       {/** Top Control Bar */}
@@ -582,13 +595,7 @@ function App(): ReactElement {
             }}
             min="0"
           />
-          <div className={styles.colorRampContainer}>
-            <span
-              ref={colorRampRef}
-              className={`${styles.colorRamp} ${disableUi ? styles.disabled : ""}`}
-              onClick={(event) => handleColorRampClick(event)}
-            ></span>
-          </div>
+
           <input
             type="number"
             style={{ width: "80px", textAlign: "start" }}
