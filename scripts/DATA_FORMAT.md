@@ -41,6 +41,56 @@ The most important file is the **manifest**, which describes all the files in th
 *Note: all paths are relative to this JSON file
 ```
 
+<details>
+<summary><b>Show me an example!</b></summary>
+An example dataset directory could look like this:
+
+```
+📂 my_dataset/
+  - 📄 manifest.json
+  - 📄 outliers.json
+  - 📄 tracks.json
+  - 📄 times.json
+  - 📄 centroids.json
+  - 📄 bounds.json
+  - 📒 feature_0.json
+  - 📒 feature_1.json
+  - 📒 feature_2.json
+  - 📁 frames/
+    - 🖼 frame_0.png
+    - 🖼 frame_1.png
+    - 🖼 frame_2.png
+    ...
+    - 🖼 frame_245.png
+```
+
+The `manifest.json` file would look something like this:
+
+```
+--manifest.json--
+{
+    "frames": [
+        "frames/frame_0.png",
+        "frames/frame_1.png",
+        "frames/frame_2.png",
+        ...
+        "frames/frame_245.png",
+    ],
+    "features": {
+        "My Cool Feature": "feature_0.json",
+        "Another Cool Feature": "feature_1.json",
+        "The Coolest Feature": "feature_2.json",
+    },
+    "outliers": "outliers.json",
+    "tracks": "tracks.json",
+    "times": "times.json",
+    "centroids": "centroids.json",
+    "bounds": "bounds.json"
+}
+```
+
+</details>
+
 ### Tracks
 
 Every segmented object in each time step has a **track ID**, an integer identifier that's unique across all time steps. To recognize a single track across multiple frames, these track IDs must be grouped together with a single **track number**.
@@ -59,11 +109,14 @@ A **track JSON file** consists of a JSON object with a `data` array, where for e
 }
 ```
 
+<details>
+<summary><b>Show me an example!</b></summary>
 For example, if there were the following two tracks in some dataset, the track file might look something like this.
+
 | Track # | Track IDs |
-| --- | --- |
-| 1 | 0, 1, 4 |
-| 2 | 2, 3, 5 |
+| ------- | --------- |
+| 1       | 0, 1, 4   |
+| 2       | 2, 3, 5   |
 
 ```
 --track.json--
@@ -78,6 +131,8 @@ For example, if there were the following two tracks in some dataset, the track f
     ]
 }
 ```
+
+</details>
 
 ### Times
 
@@ -181,11 +236,14 @@ The outliers file stores marks whether a given track ID should be marked as an o
 }
 ```
 
+<details>
+<summary><b>Show me an example!</b></summary>
 For example, if a dataset had the following tracks and outliers, the file might look something like this.
+
 | Track # | Track IDs | Outliers |
-| --- | --- | --- |
-| 1 | 0, 1, 4 | 1 |
-| 2 | 2, 3, 5 | 2, 5 |
+| ------- | --------- | -------- |
+| 1       | 0, 1, 4   | 1        |
+| 2       | 2, 3, 5   | 2, 5     |
 
 ```
 --outliers.json--
@@ -200,6 +258,8 @@ For example, if a dataset had the following tracks and outliers, the file might 
     ]
 }
 ```
+
+</details>
 
 ## Collections
 
@@ -216,6 +276,9 @@ Collections are an array of JSON objects, each of which define the `name` (an **
 ]
 ```
 
+<details>
+<summary><b>Show me an example!</b></summary>
+
 For example, let's say a collection is located at `http://example.com/data/collection.json`, and the `collection.json` contains this:
 
 ```
@@ -231,15 +294,17 @@ For example, let's say a collection is located at `http://example.com/data/colle
 
 Here's a list of where Nucmorph-Colorizer will check for the manifest files for all of the datasets:
 
-| Dataset      | Expected URL Path                                      |
-| ------------ | ------------------------------------------------------ |
-| Mama Bear    | http://example.com/data/mama_bear/manifest.json        |
-| Baby Bear    | http://example.com/data/nested/baby_bear/manifest.json |
-| Babiest Bear | http://example.com/data/babiest_bear/dataset.json      |
-| Goldilocks   | http://example2.com/files/goldilocks/manifest.json     |
-| Papa Bear    | http://example3.com/files/papa_bear.json               |
+| Dataset      | Expected URL Path                                        |
+| ------------ | -------------------------------------------------------- |
+| Mama Bear    | `http://example.com/data/mama_bear/manifest.json`        |
+| Baby Bear    | `http://example.com/data/nested/baby_bear/manifest.json` |
+| Babiest Bear | `http://example.com/data/babiest_bear/dataset.json`      |
+| Goldilocks   | `http://example2.com/files/goldilocks/manifest.json`     |
+| Papa Bear    | `http://example3.com/files/papa_bear.json`               |
 
 ---
+
+</details>
 
 ## Getting Started
 
