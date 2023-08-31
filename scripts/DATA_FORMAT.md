@@ -53,15 +53,15 @@ An example dataset directory could look like this:
   - 📄 times.json
   - 📄 centroids.json
   - 📄 bounds.json
-  - 📒 feature_0.json
-  - 📒 feature_1.json
-  - 📒 feature_2.json
+  - 📕 feature_0.json
+  - 📗 feature_1.json
+  - 📘 feature_2.json
   - 📁 frames/
-    - 🖼 frame_0.png
-    - 🖼 frame_1.png
-    - 🖼 frame_2.png
+    - 📷 frame_0.png
+    - 📷 frame_1.png
+    - 📷 frame_2.png
     ...
-    - 🖼 frame_245.png
+    - 📷 frame_245.png
 ```
 
 The `manifest.json` file would look something like this:
