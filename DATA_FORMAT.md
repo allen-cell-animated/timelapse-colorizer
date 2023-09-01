@@ -31,15 +31,18 @@ The most important file is the **manifest JSON**, which describes all the files 
         <feature name 2>: <relative path to feature JSON>,
         ...
     },
-    "outliers": <relative path to outlier JSON>,
     "tracks": <relative path to tracks JSON>,
     "times": <relative path to times JSON>,
-    "centroids": <relative path to centroids JSON>,
-    "bounds": <relative path to bounds JSON>
+    "outliers": <relative path to outlier JSON>,    //< optional
+    "centroids": <relative path to centroids JSON>, //< optional
+    "bounds": <relative path to bounds JSON>        //< optional
 }
+
 
 *Note: all paths are relative to this JSON file.
 ```
+
+Note that the `outliers`, `centroids`, and `bounds` files are optional, but certain features of Nucmorph-Colorizer won't work without them.
 
 <details>
 <summary><b>[Show me an example!]</b></summary>
@@ -84,9 +87,9 @@ The `manifest.json` file would look something like this:
         "Another Cool Feature": "feature_1.json",
         "The Coolest Feature": "feature_2.json",
     },
-    "outliers": "outliers.json",
     "tracks": "tracks.json",
     "times": "times.json",
+    "outliers": "outliers.json",
     "centroids": "centroids.json",
     "bounds": "bounds.json"
 }
@@ -222,7 +225,7 @@ Features must also provide a `min` and `max` range property.
 }
 ```
 
-### 5. Centroids
+### 5. Centroids (optional)
 
 The centroids file defines the center of each object ID in the dataset. It follows the same format as the feature file, but each ID has two entries corresponding to the `x` and `y` coordinates of the object's centroid, making the `data` array twice as long.
 
@@ -242,10 +245,11 @@ Coordinates are defined in pixels in the frame, where the upper left corner of t
 }
 ```
 
-### 6. Bounds
+### 6. Bounds (optional)
 
-The bounds file defines the rectangular boundary occupied by each object ID. For each object ID `i`, the minimum bounding box coordinates (upper left corner) are given by
-`(x: data[4i], y: data[4i + 1])`, and the maximum bounding box coordinates (lower right corner) are given by `(x: data[4i + 2], y: data[4i + 3])`.
+The bounds file defines the rectangular boundary occupied by each object ID. Like centroids and features, the file defines a `data` array, but has four entries for each object ID to represent the `x` and `y` coordinates of the upper left and lower right corners of the bounding box.
+
+For each object ID `i`, the minimum bounding box coordinates (upper left corner) are given by `(x: data[4i], y: data[4i + 1])`, and the maximum bounding box coordinates (lower right corner) are given by `(x: data[4i + 2], y: data[4i + 3])`.
 
 Again, coordinates are defined in pixels in the image frame, where the upper left corner is (0, 0).
 
@@ -264,7 +268,7 @@ Again, coordinates are defined in pixels in the image frame, where the upper lef
 }
 ```
 
-### 7. Outliers
+### 7. Outliers (optional)
 
 The outliers file stores whether a given object ID should be marked as an outlier using an array of booleans (`true`/`false`). Indices that are `true` indicate outlier values, and are given a unique color in Nucmorph-Colorizer.
 
