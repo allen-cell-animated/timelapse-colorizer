@@ -30,6 +30,7 @@ def make_dataset(output_dir="./data/", dataset="dataset1", nframes=5, nfeatures=
     centroid_data = np.zeros(shape=(cells_per_frame * nframes * 2), dtype=np.ushort)
     track_data = np.zeros(shape=(cells_per_frame * nframes), dtype=np.ushort)
     times_data = np.zeros(shape=(cells_per_frame * nframes), dtype=np.ushort)
+    outliers_data = np.zeros(shape=(cells_per_frame * nframes), dtype=np.ushort)
 
     for i in range(nframes):
         # Interpolation index
@@ -68,18 +69,22 @@ def make_dataset(output_dir="./data/", dataset="dataset1", nframes=5, nfeatures=
 
     totalcells = cells_per_frame * nframes
 
-    bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
+    bbox_json = {"data": bbox_data.tolist()}
     with open(out_path + "/bounds.json", "w") as f:
         json.dump(bbox_json, f)
-    times_json = {"data": np.ravel(times_data).tolist()}  # flatten to 2D
+    times_json = {"data": times_data.tolist()}
     with open(out_path + "/times.json", "w") as f:
         json.dump(times_json, f)
-    track_json = {"data": np.ravel(track_data).tolist()}  # flatten to 2D
+    track_json = {"data": track_data.tolist()}
     with open(out_path + "/tracks.json", "w") as f:
         json.dump(track_json, f)
-    centroid_json = {"data": np.ravel(centroid_data).tolist()}  # flatten to 2D
+    centroid_json = {"data": centroid_data.tolist()}
     with open(out_path + "/centroids.json", "w") as f:
         json.dump(centroid_json, f)
+    # Convert to boolean
+    outliers_json = {"data": np.array(outliers_data, dtype="bool").tolist()}
+    with open(out_path + "/outliers.json", "w") as f:
+        json.dump(outliers_json, f)
 
     for i in range(nfeatures):
         # create a fake feature in a random range:
@@ -103,6 +108,7 @@ def make_dataset(output_dir="./data/", dataset="dataset1", nframes=5, nfeatures=
         "times": "times.json",
         "tracks": "tracks.json",
         "centroids": "centroids.json",
+        "outliers": "outliers.json",
     }
     with open(out_path + "/manifest.json", "w") as f:
         json.dump(js, f)
