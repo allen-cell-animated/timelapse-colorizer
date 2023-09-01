@@ -73,10 +73,18 @@ label {
   gap: 5px;
 }
 
+.viewport {
+  margin: 8px 30px;
+}
+
 .canvasBottomControlsContainer {
   display: flex;
   flex-direction: row;
   gap: 10px;
+}
+
+.sliderContainer {
+  width: 289px;
 }
 
 .timeControls {

@@ -8,7 +8,7 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
-import { Button, notification } from "antd";
+import { Button, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
 
@@ -596,180 +596,198 @@ function App(): ReactElement {
           <Button type="primary">Load</Button>
         </div>
       </div>
-      {/** Top Control Bar */}
-      <div className={styles.canvasTopControlsContainer}>
-        {/** Color Ramp */}
-        <div className={styles.labeledColorRamp}>
-          <input
-            type="number"
-            style={{ width: "50px", textAlign: "start" }}
-            value={colorRampMin}
-            onChange={(event) => {
-              setColorRampMin(event.target.valueAsNumber);
-            }}
-            min="0"
-          />
 
-          <input
-            type="number"
-            style={{ width: "80px", textAlign: "start" }}
-            value={colorRampMax}
-            onChange={(event) => {
-              setColorRampMax(event.target.valueAsNumber);
-            }}
-            min="0"
-          />
-          <button onClick={handleResetRangeClick}>Reset range</button>
-          <label>
-            <input
-              type="checkbox"
-              checked={isColorRampRangeLocked}
-              onChange={() => {
-                // Invert lock on range
-                setIsColorRampRangeLocked(!isColorRampRangeLocked);
+      <div className={styles.viewport}>
+        {/** Top Control Bar */}
+        <div className={styles.canvasTopControlsContainer}>
+          {/** Color Ramp */}
+          <div className={styles.labeledColorRamp}>
+            <InputNumber
+              size="small"
+              style={{ width: "80px" }}
+              value={colorRampMin}
+              onChange={(value) => {
+                value && setColorRampMin(value);
               }}
+              controls={false}
+              min={0}
             />
-            Lock color map range
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={hideValuesOutOfRange}
-              onChange={() => {
-                setHideValuesOutOfRange(!hideValuesOutOfRange);
-              }}
-            />
-            Hide values outside of range
-          </label>
-        </div>
-      </div>
-
-      {/** Canvas */}
-      <div ref={canvasRef}></div>
-
-      {/** Bottom Control Bar */}
-      <div className={styles.canvasBottomControlsContainer}>
-        <div>
-          <div>
-            Time (use arrow keys)
-            <div className={styles.timeControls} style={{ margin: "2px" }}>
-              <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePlayButtonClick()}>
-                Play
-              </button>
-              <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePauseButtonClick()}>
-                Pause
-              </button>
-              <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
-                Back
-              </button>
-              <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(1)}>
-                Forward
-              </button>
-              <input
-                type="range"
-                min="0"
-                max={dataset ? dataset.numberOfFrames - 1 : 0}
-                disabled={disableTimeControlsUi}
-                step="1"
-                value={frameInput}
-                onChange={(event) => {
-                  setFrameInput(event.target.valueAsNumber);
-                }}
-              />
-              <input
-                type="number"
-                min="0"
-                max={dataset ? dataset.numberOfFrames - 1 : 0}
-                disabled={disableTimeControlsUi}
-                value={frameInput}
-                onChange={(event) => {
-                  setFrame(event.target.valueAsNumber);
+            <div className={styles.sliderContainer}>
+              <Slider
+                min={dataset?.getFeatureData(featureName)?.min}
+                max={dataset?.getFeatureData(featureName)?.max}
+                range={{ draggableTrack: true }}
+                value={[colorRampMin, colorRampMax]}
+                onChange={(value: [number, number]) => {
+                  setColorRampMin(value[0]);
+                  setColorRampMax(value[1]);
                 }}
               />
             </div>
-          </div>
 
-          <div>
-            Find by track:
-            <input
-              disabled={disableUi}
+            <InputNumber
+              size="small"
               type="number"
-              value={findTrackInput}
-              onChange={(event) => {
-                setFindTrackInput(event.target.value);
+              style={{ width: "80px" }}
+              value={colorRampMax}
+              onChange={(value) => {
+                value && setColorRampMax(value);
               }}
+              controls={false}
+              min={0}
             />
-            <button disabled={disableUi} onClick={handleFindTrack}>
-              Find
-            </button>
+            <button onClick={handleResetRangeClick}>Reset range</button>
+            <label>
+              <input
+                type="checkbox"
+                checked={isColorRampRangeLocked}
+                onChange={() => {
+                  // Invert lock on range
+                  setIsColorRampRangeLocked(!isColorRampRangeLocked);
+                }}
+              />
+              Lock color map range
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={hideValuesOutOfRange}
+                onChange={() => {
+                  setHideValuesOutOfRange(!hideValuesOutOfRange);
+                }}
+              />
+              Hide values outside of range
+            </label>
           </div>
         </div>
 
-        {/* Hover values */}
-        <div>
-          <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
-          <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
-          <label>
-            <input
-              type="checkbox"
-              checked={showTrackPath}
-              onChange={() => {
-                setShowTrackPath(!showTrackPath);
-              }}
-            />
-            Show track path
-          </label>
+        {/** Canvas */}
+        <div ref={canvasRef}></div>
+
+        {/** Bottom Control Bar */}
+        <div className={styles.canvasBottomControlsContainer}>
+          <div>
+            <div>
+              Time (use arrow keys)
+              <div className={styles.timeControls} style={{ margin: "2px" }}>
+                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePlayButtonClick()}>
+                  Play
+                </button>
+                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePauseButtonClick()}>
+                  Pause
+                </button>
+                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
+                  Back
+                </button>
+                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(1)}>
+                  Forward
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max={dataset ? dataset.numberOfFrames - 1 : 0}
+                  disabled={disableTimeControlsUi}
+                  step="1"
+                  value={frameInput}
+                  onChange={(event) => {
+                    setFrameInput(event.target.valueAsNumber);
+                  }}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max={dataset ? dataset.numberOfFrames - 1 : 0}
+                  disabled={disableTimeControlsUi}
+                  value={frameInput}
+                  onChange={(event) => {
+                    setFrame(event.target.valueAsNumber);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              Find by track:
+              <input
+                disabled={disableUi}
+                type="number"
+                value={findTrackInput}
+                onChange={(event) => {
+                  setFindTrackInput(event.target.value);
+                }}
+              />
+              <button disabled={disableUi} onClick={handleFindTrack}>
+                Find
+              </button>
+            </div>
+          </div>
+
+          {/* Hover values */}
+          <div>
+            <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
+            <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
+            <label>
+              <input
+                type="checkbox"
+                checked={showTrackPath}
+                onChange={() => {
+                  setShowTrackPath(!showTrackPath);
+                }}
+              />
+              Show track path
+            </label>
+          </div>
         </div>
-      </div>
 
-      <div ref={plotRef} style={{ width: "600px", height: "250px" }}></div>
+        <div ref={plotRef} style={{ width: "600px", height: "250px" }}></div>
 
-      <div>
-        <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
-        <p>1) Set your default download location</p>
-        <p>2) Turn off 'Ask where to save each file before downloading'</p>
-        <br />
-        <p>Save image sequence:</p>
-        <button
-          onClick={() => recordingControls.start(getImagePrefix(), startAtFirstFrame)}
-          disabled={recordingControls.isRecording() || timeControls.isPlaying()}
-        >
-          Start
-        </button>
-        <button onClick={() => recordingControls.abort()} disabled={!recordingControls.isRecording()}>
-          Abort
-        </button>
-        <p>
-          <label>
-            Image prefix:
-            <input
-              value={getImagePrefix()}
-              onChange={(event) => {
-                // TODO: Check for illegal characters
-                setImagePrefix(event.target.value);
-              }}
-            />
-          </label>
+        <div>
+          <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
+          <p>1) Set your default download location</p>
+          <p>2) Turn off 'Ask where to save each file before downloading'</p>
+          <br />
+          <p>Save image sequence:</p>
           <button
-            onClick={() => {
-              setImagePrefix(null);
-            }}
+            onClick={() => recordingControls.start(getImagePrefix(), startAtFirstFrame)}
+            disabled={recordingControls.isRecording() || timeControls.isPlaying()}
           >
-            Use default prefix
+            Start
           </button>
-        </p>
-        <p>
-          <label>
-            <input
-              type="checkbox"
-              checked={startAtFirstFrame}
-              onChange={() => {
-                setStartAtFirstFrame(!startAtFirstFrame);
+          <button onClick={() => recordingControls.abort()} disabled={!recordingControls.isRecording()}>
+            Abort
+          </button>
+          <p>
+            <label>
+              Image prefix:
+              <input
+                value={getImagePrefix()}
+                onChange={(event) => {
+                  // TODO: Check for illegal characters
+                  setImagePrefix(event.target.value);
+                }}
+              />
+            </label>
+            <button
+              onClick={() => {
+                setImagePrefix(null);
               }}
-            />
-            Start at first frame
-          </label>
-        </p>
+            >
+              Use default prefix
+            </button>
+          </p>
+          <p>
+            <label>
+              <input
+                type="checkbox"
+                checked={startAtFirstFrame}
+                onChange={() => {
+                  setStartAtFirstFrame(!startAtFirstFrame);
+                }}
+              />
+              Start at first frame
+            </label>
+          </p>
+        </div>
       </div>
     </div>
   );
