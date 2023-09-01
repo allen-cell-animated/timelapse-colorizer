@@ -278,9 +278,9 @@ The outliers file stores whether a given object ID should be marked as an outlie
 --outliers.json--
 {
     "data": [
-        <whether object id 0 is an outlier>,
-        <whether object id 1 is an outlier>,
-        <whether object id 2 is an outlier>,
+        <whether id 0 is an outlier>,
+        <whether id 1 is an outlier>,
+        <whether id 2 is an outlier>,
         ...
     ]
 }
