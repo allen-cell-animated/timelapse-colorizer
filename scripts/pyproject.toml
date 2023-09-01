@@ -19,6 +19,7 @@ dependencies = [
     "aicsimageio",
     "aicspylibczi",
     "numpy",
+    "pandas",
     "pillow",
     "scikit-image",
     "lkaccess @ https://artifactory.corp.alleninstitute.org/artifactory/api/pypi/pypi-release-local/lkaccess/1.4.25/lkaccess-1.4.25-py2.py3-none-any.whl#md5=dc51f01c6452c8b69a5e212b9f5b318d",

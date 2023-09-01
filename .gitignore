@@ -28,4 +28,5 @@ dist-ssr
 scripts/build/
 scripts/*.egg-info
 scripts/data/
+data/
 
