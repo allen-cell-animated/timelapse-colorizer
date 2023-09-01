@@ -16,19 +16,46 @@ import os
 #   NaN (outlier) values are not yet supported
 
 
-def make_dataset(output_dir="./data/", dataset="dataset0", nframes=10, nfeatures=2):
-    os.makedirs(output_dir + dataset, exist_ok=True)
+def make_dataset(output_dir="./data/", dataset="dataset1", nframes=5, nfeatures=2):
+    out_path = output_dir + dataset
+    os.makedirs(out_path, exist_ok=True)
+
     xres = 360
     yres = 240
+    cells_per_frame = 4
+    cell_size = xres // cells_per_frame
+    cell_half_size = cell_size // 2
+
+    bbox_data = np.zeros(shape=(cells_per_frame * nframes * 2 * 2), dtype=np.ushort)
+    centroid_data = np.zeros(shape=(cells_per_frame * nframes * 2), dtype=np.ushort)
+    track_data = np.zeros(shape=(cells_per_frame * nframes), dtype=np.ushort)
+    times_data = np.zeros(shape=(cells_per_frame * nframes), dtype=np.ushort)
+
     for i in range(nframes):
+        # Interpolation index
+        t = (1.0 * i) / (nframes - 1)
         # make a fake segmentation
         seg2d = np.zeros((yres, xres), dtype=np.uint32)
-        cellsperframe = (xres // 10) * (yres // 10)
-        for j in range(yres // 10):
-            for k in range(xres // 10):
-                seg2d[j * 10 : j * 10 + 10, k * 10 : k * 10 + 10] = (
-                    (cellsperframe * i) + j * 10 + k
-                )
+        for track in range(cells_per_frame):
+            id = track * nframes + i
+
+            x_centroid = cell_half_size + track * cell_size
+            # Move "cells" down vertically over the frames
+            y_centroid = int(cell_half_size + t * (yres - cell_size))
+            x_min = x_centroid - cell_half_size + 2
+            y_min = y_centroid - cell_half_size + 2
+            x_max = x_centroid + cell_half_size - 2
+            y_max = y_centroid + cell_half_size - 2
+
+            seg2d[y_min:y_max, x_min:x_max] = id + 1
+            times_data[id] = i
+            track_data[id] = track
+            bbox_data[4 * id + 0] = x_min
+            bbox_data[4 * id + 1] = y_min
+            bbox_data[4 * id + 2] = x_max
+            bbox_data[4 * id + 3] = y_max
+            centroid_data[2 * id + 0] = x_centroid
+            centroid_data[2 * id + 1] = y_centroid
 
         # convert data to RGBA
         seg_rgba = np.zeros((yres, xres, 4), dtype=np.uint8)
@@ -37,19 +64,32 @@ def make_dataset(output_dir="./data/", dataset="dataset0", nframes=10, nfeatures
         seg_rgba[:, :, 2] = (seg2d & 0x00FF0000) >> 16
         seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
         img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
-        img.save(output_dir + dataset + "/frame_" + str(i) + ".png")
+        img.save(out_path + "/frame_" + str(i) + ".png")
 
-    totalcells = cellsperframe * nframes
+    totalcells = cells_per_frame * nframes
+
+    bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
+    with open(out_path + "/bounds.json", "w") as f:
+        json.dump(bbox_json, f)
+    times_json = {"data": np.ravel(times_data).tolist()}  # flatten to 2D
+    with open(out_path + "/times.json", "w") as f:
+        json.dump(times_json, f)
+    track_json = {"data": np.ravel(track_data).tolist()}  # flatten to 2D
+    with open(out_path + "/tracks.json", "w") as f:
+        json.dump(track_json, f)
+    centroid_json = {"data": np.ravel(centroid_data).tolist()}  # flatten to 2D
+    with open(out_path + "/centroids.json", "w") as f:
+        json.dump(centroid_json, f)
 
     for i in range(nfeatures):
         # create a fake feature in a random range:
-        fmin = 92.1
-        fmax = 437.8
+        fmin = 0.0
+        fmax = 10.0
         feature = (fmax - fmin) * np.random.random_sample((totalcells,)) + fmin
         true_fmin = np.min(feature)
         true_fmax = np.max(feature)
         js = {"data": feature.tolist(), "min": true_fmin, "max": true_fmax}
-        with open(output_dir + dataset + "/feature_" + str(i) + ".json", "w") as f:
+        with open(out_path + "/feature_" + str(i) + ".json", "w") as f:
             json.dump(js, f)
 
     # write some kind of manifest
@@ -59,8 +99,12 @@ def make_dataset(output_dir="./data/", dataset="dataset0", nframes=10, nfeatures
     js = {
         "frames": ["frame_" + str(i) + ".png" for i in range(nframes)],
         "features": featmap,
+        "bounds": "bounds.json",
+        "times": "times.json",
+        "tracks": "tracks.json",
+        "centroids": "centroids.json",
     }
-    with open(output_dir + dataset + "/manifest.json", "w") as f:
+    with open(out_path + "/manifest.json", "w") as f:
         json.dump(js, f)
 
 
