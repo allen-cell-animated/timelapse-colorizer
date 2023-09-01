@@ -17,6 +17,7 @@ root.render(
           colorLinkHover: "#5f369f",
           controlHeight: 24,
           fontFamily: "Lato",
+          borderRadiusLG: 4,
         },
       }}
     >

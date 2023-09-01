@@ -39,10 +39,7 @@ label {
   align-items: center;
 }
 
-.copyNotification {
-  border-radius: 3px;
-}
-
+/* Color the success icon in the copy notification*/
 .copyNotification div span {
   font-size: 20px;
   color: var(--success);
