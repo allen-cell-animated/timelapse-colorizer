@@ -106,7 +106,7 @@ Every segmented object in each time step has an **object ID**, an integer identi
 A **track JSON file** consists of a JSON object with a `data` array, where for each object ID `i`, `data[i]` is the track number that object is assigned to.
 
 ```
---track.json--
+--tracks.json--
 {
     "data": [
         <track number for id 0>,
@@ -129,10 +129,10 @@ For example, if there were the following two tracks in some dataset, the track f
 | 1       | 0, 1, 4    |
 | 2       | 2, 3, 5    |
 
-Note that the object IDs are not guaranteed to be sequential!
+Note that the object IDs in a track are not guaranteed to be sequential!
 
 ```
---track.json--
+--tracks.json--
 {
     "data": [
         1, // 0
@@ -175,9 +175,9 @@ _Each unique color in this frame is a different object ID._
 
 Additional notes:
 
-- There is currently no way to indicate overlaps in the data-- your script will need to flatten 3D data and segmentations.
 - Encoded object ID's in the frame data start at `1` instead of `0`, because `#000000` (black) is reserved for the background.
 - The highest object ID that can currently be represented is `16,843,007`.
+  - If the **total number of segmented objects** for an entire time series exceeds this number, it is possible to remove this limit. [Submit an issue](https://github.com/allen-cell-animated/nucmorph-colorizer/issues) or send us a message!
 
 There should be one frame for every time step in the time series, and they must all be listed in order in the **manifest** file to be included in the dataset.
 
@@ -207,7 +207,7 @@ The resulting frame would look like this:
 
 ### 4. Features
 
-Datasets can contain any number of `features`, which are a numeric value assigned to each object ID in the dataset. Each feature file usually corresponds to a single column of data.
+Datasets can contain any number of `features`, which are a numeric value assigned to each object ID in the dataset. Each feature file corresponds to a single column of data.
 
 Features must also provide a `min` and `max` range property.
 
@@ -276,9 +276,9 @@ The outliers file stores whether a given object ID should be marked as an outlie
 --outliers.json--
 {
     "data": [
-        <whether track id 0 is an outlier>,
-        <whether track id 1 is an outlier>,
-        <whether track id 2 is an outlier>,
+        <whether object id 0 is an outlier>,
+        <whether object id 1 is an outlier>,
+        <whether object id 2 is an outlier>,
         ...
     ]
 }
