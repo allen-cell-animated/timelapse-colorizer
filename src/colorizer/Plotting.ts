@@ -20,14 +20,14 @@ const LINE_SPEC: Partial<Plotly.Shape> = {
 };
 
 export default class Plotting {
-  private parentDivId: string;
+  private parentRef: HTMLElement;
   private dataset: Dataset | null;
   private trace: Plotly.Data | null;
 
-  constructor(divId: string) {
-    this.parentDivId = divId;
+  constructor(parentRef: HTMLElement) {
     this.dataset = null;
     this.trace = null;
+    this.parentRef = parentRef;
     const layout: Partial<Plotly.Layout> = {
       xaxis: {
         title: "time index",
@@ -38,7 +38,8 @@ export default class Plotting {
       title: "No track selected",
     };
 
-    Plotly.newPlot(this.parentDivId, [], layout);
+    Plotly.newPlot(this.parentRef, [], layout);
+    this.plot = this.plot.bind(this);
   }
 
   setDataset(dataset: Dataset): void {
@@ -70,7 +71,7 @@ export default class Plotting {
       title: "track " + track.trackId,
     };
 
-    Plotly.react(this.parentDivId, [this.trace], layout);
+    Plotly.react(this.parentRef, [this.trace], layout);
   }
 
   setTime(t: number): void {
@@ -83,11 +84,11 @@ export default class Plotting {
         },
       ],
     };
-    Plotly.relayout(this.parentDivId, layout);
+    Plotly.relayout(this.parentRef, layout);
     //Plotly.react(this.parentDivId, this.trace ? [this.trace] : [], layout);
   }
 
   removePlot(): void {
-    Plotly.react(this.parentDivId, []);
+    Plotly.react(this.parentRef, []);
   }
 }

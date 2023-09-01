@@ -75,6 +75,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
+// TODO: Change into a component?
 export default class ColorizeCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
@@ -98,7 +99,6 @@ export default class ColorizeCanvas {
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
-  private colorMapRangeLocked: boolean;
   private hideValuesOutOfRange: boolean;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
@@ -155,11 +155,13 @@ export default class ColorizeCanvas {
     this.featureName = null;
     this.track = null;
     this.showTrackPath = false;
-    this.colorMapRangeLocked = false;
     this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
+
+    this.render = this.render.bind(this);
+    this.getCurrentFrame = this.getCurrentFrame.bind(this);
   }
 
   get domElement(): HTMLCanvasElement {
@@ -317,23 +319,7 @@ export default class ColorizeCanvas {
     const featureData = this.dataset.getFeatureData(name)!;
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);
-    // Don't update the range values when locked
-    // TODO: Decide if feature range should be unlocked when the feature changes.
-    if (!this.colorMapRangeLocked) {
-      this.colorMapRangeMin = featureData.min;
-      this.colorMapRangeMax = featureData.max;
-    }
-    this.setUniform("featureMin", this.colorMapRangeMin);
-    this.setUniform("featureMax", this.colorMapRangeMax);
     this.render(); // re-render necessary because map range may have changed
-  }
-
-  setColorMapRangeLock(locked: boolean): void {
-    this.colorMapRangeLocked = locked;
-  }
-
-  isColorMapRangeLocked(): boolean {
-    return this.colorMapRangeLocked;
   }
 
   setHideValuesOutOfRange(hide: boolean): void {

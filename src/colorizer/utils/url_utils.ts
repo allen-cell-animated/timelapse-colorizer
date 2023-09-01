@@ -17,6 +17,8 @@ export const DEFAULT_COLLECTION_FILENAME = "collection.json";
  */
 export const DEFAULT_DATASET_FILENAME = "manifest.json";
 
+export type CollectionData = Map<string, CollectionEntry>;
+
 type UrlParams = {
   collection: string | null;
   dataset: string | null;
@@ -82,9 +84,15 @@ export function saveParamsToUrl(
   track: number | null,
   time: number | null
 ): void {
-  const params: string[] = [];
   // Get parameters, ignoring null/empty values
-  if (collection) {
+  const params: string[] = [];
+
+  // Don't include collection parameter in URL if it matches the default.
+  if (
+    collection &&
+    collection !== DEFAULT_COLLECTION_PATH &&
+    collection !== DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
+  ) {
     params.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(collection)}`);
   }
   if (dataset) {
@@ -335,5 +343,24 @@ function getDatasetPathFromCollection(
     let manifestPath = isJson(datasetPath) ? datasetPath : datasetPath + "/" + DEFAULT_DATASET_FILENAME;
     manifestPath = formatPath(manifestPath);
     return collectionBasePath + "/" + manifestPath;
+  }
+}
+
+/**
+ * Gets an array of dataset names from the dataset and collectionData.
+ * @param dataset The name of the current dataset.
+ * @param collectionData The loaded collectionData.
+ * @returns, in the following order:
+ * - If collectionData is not null, the array of keys (dataset names) from the collectionData.
+ * - If dataset is not null, an array containing just the dataset name.
+ * - If both are null, returns an empty array.
+ */
+export function getDatasetNames(dataset: string | null, collectionData: CollectionData | null): string[] {
+  if (collectionData) {
+    return Array.from(collectionData.keys());
+  } else if (dataset) {
+    return [dataset];
+  } else {
+    return [];
   }
 }
