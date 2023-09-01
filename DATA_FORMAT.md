@@ -44,6 +44,8 @@ The most important file is the **manifest JSON**, which describes all the files 
 
 Note that the `outliers`, `centroids`, and `bounds` files are optional, but certain features of Nucmorph-Colorizer won't work without them.
 
+A complete example dataset is also available in the [`documentation`](./documentation/example_dataset) directory of this project, and can be [viewed on Nucmorph-Colorizer](http://dev-aics-dtp-001.corp.alleninstitute.org/nucmorph-colorizer/dist/?dataset=https://raw.githubusercontent.com/allen-cell-animated/nucmorph-colorizer/main/documentation/example_dataset/manifest.json).
+
 <details>
 <summary><b>[Show me an example!]</b></summary>
 
@@ -168,7 +170,7 @@ The times JSON is similar to the tracks JSON. It also contains a `data` array th
 ### 3. Frames
 
 _Example frame:_
-![](./documentation/frame_0.png)
+![](./documentation/frame_example.png)
 _Each unique color in this frame is a different object ID._
 
 **Frames** are image textures that store the object IDs for each time step in the time series. Each pixel in the image can encode a single object ID in its RGB value (`object ID = R + G*256 + B*256*256 - 1`), and background pixels are `#000000` (black).
@@ -195,11 +197,11 @@ The calculation for the RGB value would follow this process.
 3. Get the Green channel value. (`G = ⌊ID / 256⌋ % 256 = 1 % 256 = 2`)
 4. Get the Blue channel value. (`B = ⌊ID / (256^2)⌋ = ⌊641 / (256^2)⌋ = 0`)
 
-So the RGB value for ID `640` will be `RGB(129, 2, 0)`, or `#810200`.
+The RGB value for ID `640` will be `RGB(129, 2, 0)`, or `#810200`.
 
 The resulting frame would look like this:
 
-![](./documentation/frame_example.png)
+![](./documentation/frame_example_simple.png)
 
 ---
 
