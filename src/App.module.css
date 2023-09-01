@@ -39,6 +39,15 @@ label {
   align-items: center;
 }
 
+.copyNotification {
+  border-radius: 3px;
+}
+
+.copyNotification div span {
+  font-size: 20px;
+  color: var(--success);
+}
+
 .header h2 {
   margin: 0;
   line-height: normal;

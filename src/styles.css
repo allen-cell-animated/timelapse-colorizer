@@ -7,11 +7,14 @@
   --text-theme-alt: #ffffff;
   --background: #ffffff;
   --theme: #8962d3;
+  --theme-hover: #5f369f;
   --borders: #cbcbcc;
   --dividers: #e7e7e7;
   --ui-background: #f2f2f2;
   --modal-overlay: rgba(0, 0, 0, 0.7);
   --default-font: "Lato";
+  --success: #2fc022;
+  --error: #f92d20;
 }
 
 body {

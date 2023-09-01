@@ -77,13 +77,13 @@ export function fetchWithTimeout(
  * @param track integer track number.
  * @param time integer frame number. Ignores values where `time <= 0`.
  */
-export function saveParamsToUrl(
+export function getUrlParams(
   collection: string | null,
   dataset: string | null,
   feature: string | null,
   track: number | null,
   time: number | null
-): void {
+): string {
   // Get parameters, ignoring null/empty values
   const params: string[] = [];
 
@@ -110,10 +110,13 @@ export function saveParamsToUrl(
   }
 
   // If parameters present, join with URL syntax and push into the URL
-  const paramString = params.length > 0 ? "?" + params.join("&") : "";
+  return params.length > 0 ? "?" + params.join("&") : "";
+}
+
+export function updateUrl(urlParams: string): void {
   // Use replaceState rather than pushState, because otherwise every frame will be a unique
   // URL in the browser history
-  window.history.replaceState(null, document.title, paramString);
+  window.history.replaceState(null, document.title, urlParams);
 }
 
 /**

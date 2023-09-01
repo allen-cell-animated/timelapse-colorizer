@@ -28,6 +28,7 @@
     "vite-plugin-glsl": "^1.1.2"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.2.5",
     "antd": "^5.8.5",
     "plotly.js-dist-min": "^2.22.0",
     "react": "^18.2.0",

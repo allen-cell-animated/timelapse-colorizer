@@ -13,6 +13,8 @@ root.render(
       theme={{
         token: {
           colorPrimary: "#8962d3",
+          colorLink: "#8962d3",
+          colorLinkHover: "#5f369f",
           controlHeight: 24,
           fontFamily: "Lato",
         },

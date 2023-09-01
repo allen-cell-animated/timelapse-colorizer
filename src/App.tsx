@@ -8,9 +8,8 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
-import { Dropdown, Button, Space, MenuProps, Tooltip } from "antd";
-import { DownOutlined, UserOutlined } from "@ant-design/icons";
-import { ItemType } from "antd/es/menu/hooks/useItems";
+import { Button, notification } from "antd";
+import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
 
 function App(): ReactElement {
@@ -69,11 +68,10 @@ function App(): ReactElement {
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
   /**
-   * Copy the current collection, dataset, feature, track, and frame information
-   * to the page URL.
+   * Get a page URL from the current collection, dataset, feature, track, and frame information.
    */
-  const updateUrl = useCallback((): void => {
-    urlUtils.saveParamsToUrl(
+  const getUrlParams = useCallback((): string => {
+    return urlUtils.getUrlParams(
       collection || null,
       datasetName,
       featureName,
@@ -103,7 +101,7 @@ function App(): ReactElement {
 
     if (!timeControls.isPlaying() && !recordingControls.isRecording()) {
       // Do not update URL while playback is happening for performance + UX reasons
-      updateUrl();
+      urlUtils.updateUrl(getUrlParams());
     }
   }, [
     dataset,
@@ -117,7 +115,7 @@ function App(): ReactElement {
     colorRampMin,
     colorRampMax,
     timeControls.isPlaying(), // updates URL when timeControls stops
-    updateUrl,
+    getUrlParams,
   ]);
 
   const setFrame = useCallback(
@@ -145,7 +143,7 @@ function App(): ReactElement {
         plot?.plot(newTrack, featureName, currentFrame);
       }
       setFindTrackInput("" + trackId);
-      updateUrl();
+      urlUtils.updateUrl(getUrlParams());
     },
     [canv, plot, dataset, featureName, currentFrame]
   );
@@ -403,10 +401,10 @@ function App(): ReactElement {
       setDatasetName(datasetNameParam);
       setFeatureName(newFeatureName);
 
-      updateUrl();
+      urlUtils.updateUrl(getUrlParams());
       console.timeEnd("loadDataset");
     },
-    [dataset, featureName, canv, plot, currentFrame, updateUrl]
+    [dataset, featureName, canv, plot, currentFrame, getUrlParams]
   );
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
@@ -437,7 +435,7 @@ function App(): ReactElement {
       if (selectedTrack) {
         plot?.plot(selectedTrack, newFeatureName, currentFrame);
       }
-      updateUrl();
+      urlUtils.updateUrl(getUrlParams());
     },
     [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, plot, selectedTrack, currentFrame]
   );
@@ -542,11 +540,24 @@ function App(): ReactElement {
 
   // RENDERING /////////////////////////////////////////////////////////////
 
+  const [notificationApi, notificationContextHolder] = notification.useNotification();
+  const openCopyNotification = () => {
+    navigator.clipboard.writeText(document.URL);
+    notificationApi["success"]({
+      message: "URL copied to clipboard",
+      className: styles.copyNotification,
+      placement: "bottomLeft",
+      duration: 4,
+      icon: <CheckCircleOutlined />,
+    });
+  };
+
   const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
   return (
     <div>
+      {notificationContextHolder}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2>Timelapse Colorizer</h2>
@@ -577,7 +588,10 @@ function App(): ReactElement {
           </div>
         </div>
         <div className={styles.headerRight}>
-          <Button type="text">Copy URL</Button>
+          <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
+            <LinkOutlined />
+            Copy URL
+          </Button>
           <Button type="primary">Export</Button>
           <Button type="primary">Load</Button>
         </div>
