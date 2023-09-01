@@ -8,15 +8,15 @@ The easiest way to get started is to modify one of our existing data processing 
 
 Here are a few important terms:
 
-- **Track**: A segmented object that has been tracked across one or more frames in the time series.
 - **Dataset**: A dataset is a single time-series, and can have any number of tracked objects and features.
 - **Collection**: An arbitrary grouping of datasets.
+- **Object ID**: Every segmentation object in every frame has an integer identifier that is unique across all time steps. This identifier will be used to map an object to relevant data. Object IDs must be sequential, starting from 0, across the whole dataset.
 
-## 📁 Dataset
+## Dataset
 
-A dataset consists of a group of files that describe the tracks, feature data, processed images, and additional metadata for a single time-series.
+A dataset consists of a group of files that describe the segmentations, tracks, feature data, processed images, and additional metadata for a single time-series.
 
-The most important file is the **manifest**, which describes all the files in the dataset.
+The most important file is the **manifest JSON**, which describes all the files in the dataset. (Manifests should be named `manifest.json` by default.)
 
 ```
 --manifest.json--
@@ -38,7 +38,7 @@ The most important file is the **manifest**, which describes all the files in th
     "bounds": <relative path to bounds JSON>
 }
 
-*Note: all paths are relative to this JSON file
+*Note: all paths are relative to this JSON file.
 ```
 
 <details>
@@ -98,9 +98,9 @@ The `manifest.json` file would look something like this:
 
 ### 1. Tracks
 
-Every segmented object in each time step has a **track ID**, an integer identifier that's unique across all time steps. To recognize a single track across multiple frames, these track IDs must be grouped together with a single **track number**.
+Every segmented object in each time step has an **object ID**, an integer identifier that is unique across all time steps. To recognize the same object across multiple frames, these object IDs must be grouped together into a **track** with a single **track number/track ID**.
 
-A **track JSON file** consists of a JSON object with a `data` array, where for each track ID `i`, `data[i]` is the track number that track ID is part of.
+A **track JSON file** consists of a JSON object with a `data` array, where for each object ID `i`, `data[i]` is the track number that object is assigned to.
 
 ```
 --track.json--
@@ -121,10 +121,12 @@ A **track JSON file** consists of a JSON object with a `data` array, where for e
 
 For example, if there were the following two tracks in some dataset, the track file might look something like this.
 
-| Track # | Track IDs |
-| ------- | --------- |
-| 1       | 0, 1, 4   |
-| 2       | 2, 3, 5   |
+| Track # | Object IDs |
+| ------- | ---------- |
+| 1       | 0, 1, 4    |
+| 2       | 2, 3, 5    |
+
+Note that the object IDs are not guaranteed to be sequential!
 
 ```
 --track.json--
@@ -146,15 +148,15 @@ For example, if there were the following two tracks in some dataset, the track f
 
 ### 2. Times
 
-The times JSON is similar to the tracks JSON. It also contains a `data` array that maps from track IDs to the frame number that they appear on.
+The times JSON is similar to the tracks JSON. It also contains a `data` array that maps from object IDs to the frame number that they appear on.
 
 ```
 --times.json--
 {
     "data": [
-        <frame number for track id 0>,
-        <frame number for track id 1>,
-        <frame number for track id 2>,
+        <frame number for id 0>,
+        <frame number for id 1>,
+        <frame number for id 2>,
         ...
     ]
 }
@@ -164,15 +166,45 @@ The times JSON is similar to the tracks JSON. It also contains a `data` array th
 
 _Example frame:_
 ![](./documentation/frame_0.png)
-_Each unique color in this frame is a different track ID._
+_Each unique color in this frame is a different object ID._
 
-**Frames** are image textures that store the track IDs for each time step in the time series. Each pixel in the image can encode a single track ID in its RGB value (`= R + G*256 + B*256*256`). Note that there is currently no way to indicate overlaps in the data-- your script will need to flatten 3D data and segmentations.
+**Frames** are image textures that store the object IDs for each time step in the time series. Each pixel in the image can encode a single object ID in its RGB value (`object ID = R + G*256 + B*256*256 - 1`), and background pixels are `#000000` (black).
 
-There should be one frame for every time step in the time series, and they must all be listed in order in the **manifest** file.
+Additional notes:
+
+- There is currently no way to indicate overlaps in the data-- your script will need to flatten 3D data and segmentations.
+- Encoded object ID's in the frame data start at `1` instead of `0`, because `#000000` (black) is reserved for the background.
+- The highest object ID that can currently be represented is `16,843,007`.
+
+There should be one frame for every time step in the time series, and they must all be listed in order in the **manifest** file to be included in the dataset.
+
+<details>
+<summary><b>[Show me an example!]</b></summary>
+
+---
+
+Let's say we have a simple 3x3 image, and the center pixel is mapped to the object ID `640` surrounded by the background.
+
+The calculation for the RGB value would follow this process.
+
+1. Add one to the object ID, because of 1-based indexing. (`ID = 641`)
+2. Get the Red channel value. (`R = ID % 256 = 641 % 256 = 129`)
+3. Get the Green channel value. (`G = ⌊ID / 256⌋ % 256 = 1 % 256 = 2`)
+4. Get the Blue channel value. (`B = ⌊ID / (256^2)⌋ = ⌊641 / (256^2)⌋ = 0`)
+
+So the RGB value for ID `640` will be `RGB(129, 2, 0)`, or `#810200`.
+
+The resulting frame would look like this:
+
+![](./documentation/frame_example.png)
+
+---
+
+</details>
 
 ### 4. Features
 
-Datasets can contain any number of features, which are a numeric value assigned to each track ID in the dataset. Each feature file usually corresponds to a single column of data.
+Datasets can contain any number of `features`, which are a numeric value assigned to each object ID in the dataset. Each feature file usually corresponds to a single column of data.
 
 Features must also provide a `min` and `max` range property.
 
@@ -180,9 +212,9 @@ Features must also provide a `min` and `max` range property.
 --feature1.json--
 {
     "data": [
-        <feature value for track id 0>,
-        <feature value for track id 1>,
-        <feature value for track id 2>,
+        <feature value for id 0>,
+        <feature value for id 1>,
+        <feature value for id 2>,
         ...
     ],
     "min": <min value for all features>,
@@ -192,17 +224,19 @@ Features must also provide a `min` and `max` range property.
 
 ### 5. Centroids
 
-The centroids file defines the center of each track ID in the dataset. For each index `i`, the coordinates are `(x: data[2i], y: data[2i + 1])`.
+The centroids file defines the center of each object ID in the dataset. It follows the same format as the feature file, but each ID has two entries corresponding to the `x` and `y` coordinates of the object's centroid, making the `data` array twice as long.
+
+For each index `i`, the coordinates are `(x: data[2i], y: data[2i + 1])`.
 Coordinates are defined in pixels in the frame, where the upper left corner of the frame is (0, 0).
 
 ```
 --centroids.json--
 {
     "data": [
-        <x coordinate for track id 0>,
-        <y coordinate for track id 0>,
-        <x coordinate for track id 1>,
-        <y coordinate for track id 1>,
+        <x coordinate for id 0>,
+        <y coordinate for id 0>,
+        <x coordinate for id 1>,
+        <y coordinate for id 1>,
         ...
     ]
 }
@@ -210,7 +244,7 @@ Coordinates are defined in pixels in the frame, where the upper left corner of t
 
 ### 6. Bounds
 
-The bounds file defines the rectangular boundary occupied by each track ID. For each track ID `i`, the minimum bounding box coordinates (upper left corner) are given by
+The bounds file defines the rectangular boundary occupied by each object ID. For each object ID `i`, the minimum bounding box coordinates (upper left corner) are given by
 `(x: data[4i], y: data[4i + 1])`, and the maximum bounding box coordinates (lower right corner) are given by `(x: data[4i + 2], y: data[4i + 3])`.
 
 Again, coordinates are defined in pixels in the image frame, where the upper left corner is (0, 0).
@@ -219,12 +253,12 @@ Again, coordinates are defined in pixels in the image frame, where the upper lef
 --bounds.json--
 {
     "data": [
-        <upper left x for track id 0>,
-        <upper left y for track id 0>,
-        <lower right x for track id 0>,
-        <lower right y for track id 0>,
-        <upper left x for track id 1>,
-        <upper left y for track id 1>,
+        <upper left x for id 0>,
+        <upper left y for id 0>,
+        <lower right x for id 0>,
+        <lower right y for id 0>,
+        <upper left x for id 1>,
+        <upper left y for id 1>,
         ...
     ]
 }
@@ -232,7 +266,7 @@ Again, coordinates are defined in pixels in the image frame, where the upper lef
 
 ### 7. Outliers
 
-The outliers file stores marks whether a given track ID should be marked as an outlier using an array of booleans (`true`/`false`). Indices that are `true` indicate outlier values, and are given a unique color in Nucmorph-Colorizer.
+The outliers file stores whether a given object ID should be marked as an outlier using an array of booleans (`true`/`false`). Indices that are `true` indicate outlier values, and are given a unique color in Nucmorph-Colorizer.
 
 ```
 --outliers.json--
@@ -253,10 +287,10 @@ The outliers file stores marks whether a given track ID should be marked as an o
 
 For example, if a dataset had the following tracks and outliers, the file might look something like this.
 
-| Track # | Track IDs | Outliers |
-| ------- | --------- | -------- |
-| 1       | 0, 1, 4   | 1        |
-| 2       | 2, 3, 5   | 2, 5     |
+| Track # | Object IDs | Outliers |
+| ------- | ---------- | -------- |
+| 1       | 0, 1, 4    | 1        |
+| 2       | 2, 3, 5    | 2, 5     |
 
 ```
 --outliers.json--
@@ -278,9 +312,13 @@ For example, if a dataset had the following tracks and outliers, the file might 
 
 ## Collections
 
-Collections are defined by an optional JSON file and group one or more datasets for easy access. By default, they should be named `collection.json`.
+Collections are defined by an optional JSON file and group one or more datasets for easy access. Nucmorph-Colorizer can parse collection files and present its datasets for easier comparison and analysis from the UI.
 
-Collections are an array of JSON objects, each of which define the `name` (an **alias**) and the `path` of a dataset. This can either be a relative path on a file server, or a complete URL.
+By default, collection files should be named `collection.json`.
+
+Collections are an array of JSON objects, each of which define the `name` (an **alias**) and the `path` of a dataset. This can either be a relative path from the location of the collection file, or a complete URL.
+
+If the path does not define a `.json` file specifically, Nucmorph-Colorizer will assume that the dataset's manifest is named `manifest.json` by default.
 
 ```
 --collection.json--
