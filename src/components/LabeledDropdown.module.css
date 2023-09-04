@@ -28,5 +28,17 @@
 }
 
 .buttonIcon {
-  width: 100%;
+  width: 14px;
+  height: 14px;
+}
+
+/* Custom coloring for dropdown arrow*/
+.buttonIcon.primary {
+  fill: var(--text-theme-alt);
+}
+
+/* Dropdown arrow should match disabled text */
+.button:disabled,
+.button:disabled .buttonIcon.primary {
+  fill: var(--text-disabled);
 }
