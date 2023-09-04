@@ -55,5 +55,6 @@ const colorStops: [string, HexColorString[]][] = [
   ["esri-green_brown_1", ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"]],
 ];
 
-export const DEFAULT_COLOR_RAMPS = colorStops.map(([_name, ramp]) => new ColorRamp(ramp));
-export const DEFAULT_COLOR_RAMP_ID = 0;
+export const DEFAULT_COLOR_RAMPS = new Map(colorStops.map(([name, ramp]) => [name, new ColorRamp(ramp)]));
+export const DEFAULT_COLOR_RAMP_ID = colorStops[0][0];
+export const DEFAULT_COLOR_RAMP = new ColorRamp(["#ffffff", "#000000"]);

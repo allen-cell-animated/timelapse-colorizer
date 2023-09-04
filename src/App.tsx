@@ -7,7 +7,7 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
-import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import { DEFAULT_COLOR_RAMP, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
 import { Button, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
@@ -41,7 +41,8 @@ function App(): ReactElement {
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const [colorRamp, setColorRamp] = useState(DEFAULT_COLOR_RAMPS[DEFAULT_COLOR_RAMP_ID]);
+  const [colorRamps, setColorRamp] = useState(DEFAULT_COLOR_RAMPS);
+  const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
@@ -91,7 +92,7 @@ function App(): ReactElement {
     // rendered correctly.
     canv.setShowTrackPath(showTrackPath);
     canv.setHideValuesOutOfRange(hideValuesOutOfRange);
-    canv.setColorRamp(colorRamp);
+    canv.setColorRamp(colorRamps.get(colorRampKey)!); // TODO: Add fallback
     canv.setColorMapRangeMin(colorRampMin);
     canv.setColorMapRangeMax(colorRampMax);
     canv.setSelectedTrack(selectedTrack);
@@ -112,7 +113,8 @@ function App(): ReactElement {
     selectedTrack,
     hideValuesOutOfRange,
     showTrackPath,
-    colorRamp,
+    colorRamps,
+    colorRampKey,
     colorRampMin,
     colorRampMax,
     timeControls.isPlaying(), // updates URL when timeControls stops
@@ -295,12 +297,13 @@ function App(): ReactElement {
     }
 
     // Make the color ramps, then append them to the container
-    const ramps = DEFAULT_COLOR_RAMPS.map((ramp, idx) => {
+    const ramps: HTMLCanvasElement[] = [];
+    colorRamps.forEach((ramp, key) => {
       const rampCanvas = ramp.createGradientCanvas(120, 25);
-      if (idx === DEFAULT_COLOR_RAMP_ID) {
+      if (key === colorRampKey) {
         rampCanvas.className = styles.selected;
       }
-      return rampCanvas;
+      ramps.push(rampCanvas);
     });
 
     for (const ramp of ramps) {
@@ -316,7 +319,7 @@ function App(): ReactElement {
     // Select the element that was clicked on and set it as the new color ramp.
     Array.from(rampContainer.children).forEach((el, idx) => {
       if (el === target) {
-        setColorRamp(DEFAULT_COLOR_RAMPS[idx]);
+        setColorRampKey(Array.from(colorRamps.keys())[idx]);
         el.className = styles.selected;
       } else {
         el.className = "";
