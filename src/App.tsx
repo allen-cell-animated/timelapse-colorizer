@@ -68,7 +68,8 @@ function App(): ReactElement {
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
   /**
-   * Get a page URL from the current collection, dataset, feature, track, and frame information.
+   * Get a set of URL parameters that represent the current collection, dataset, feature, track,
+   * and frame information. (Convenience wrapper for `urlUtils.getUrlParams`.)
    */
   const getUrlParams = useCallback((): string => {
     return urlUtils.getUrlParams(
@@ -559,6 +560,7 @@ function App(): ReactElement {
     <div>
       {notificationContextHolder}
 
+      {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2>Timelapse Colorizer</h2>
@@ -598,6 +600,7 @@ function App(): ReactElement {
         </div>
       </div>
 
+      {/** Viewport: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.viewport}>
         {/** Top Control Bar */}
         <div className={styles.canvasTopControlsContainer}>
