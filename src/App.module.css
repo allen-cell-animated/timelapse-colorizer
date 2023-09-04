@@ -9,34 +9,39 @@ label {
 }
 
 .header {
-  width: auto;
-  height: fit-content;
-  --min-height: 24px;
-  min-height: var(--min-height);
-  padding: 18px 30px;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  width: auto;
+  height: fit-content;
+  --min-height: 24px; /* Pass to children, namely for vertical divider formatting*/
+  min-height: var(--min-height);
+  padding: 18px 30px;
   border-bottom: 1px solid var(--borders);
+  gap: 10px;
 }
 
-.headerLeft {
+.header > div {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 20px;
   align-items: center;
+}
+
+.headerLeft {
+  gap: 20px;
 }
 
 .headerRight {
   height: 100%;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
   gap: 10px;
-  align-items: center;
+}
+
+.copyUrlButton {
+  padding-left: 0;
+  padding-right: 6px;
 }
 
 /* Color the success icon in the copy notification*/

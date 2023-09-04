@@ -558,6 +558,7 @@ function App(): ReactElement {
   return (
     <div>
       {notificationContextHolder}
+
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2>Timelapse Colorizer</h2>
@@ -600,7 +601,6 @@ function App(): ReactElement {
       <div className={styles.viewport}>
         {/** Top Control Bar */}
         <div className={styles.canvasTopControlsContainer}>
-          {/** Color Ramp */}
           <div className={styles.labeledColorRamp}>
             <InputNumber
               size="small"
