@@ -84,6 +84,7 @@ export function getUrlParams(
   track: number | null,
   time: number | null
 ): string {
+  // TODO: Write unit tests for this
   // Get parameters, ignoring null/empty values
   const params: string[] = [];
 
@@ -165,6 +166,7 @@ export function formatPath(input: string): string {
  * track and time will have negative values (-1) if no parameter (or an invalid parameter) was found.
  */
 export function loadParamsFromUrl(): UrlParams {
+  // TODO: Write unit tests for this method.
   // Get params from URL and load, with default fallbacks.
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
