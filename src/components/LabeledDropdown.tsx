@@ -1,7 +1,6 @@
-import React, { useMemo } from "react";
+import React, { ReactElement, useMemo } from "react";
 import styles from "./LabeledDropdown.module.css";
 import { Dropdown, Tooltip, Button, MenuProps } from "antd";
-import { DownOutlined } from "@ant-design/icons";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 
 type LabeledDropdownProps = {
@@ -13,7 +12,7 @@ type LabeledDropdownProps = {
   onChange: (value: string) => void;
 };
 
-export default function LabeledDropdown(props: LabeledDropdownProps) {
+export default function LabeledDropdown(props: LabeledDropdownProps): ReactElement {
   const items = useMemo((): ItemType[] => {
     if (props.items.length === 0) {
       return [];
@@ -45,6 +44,7 @@ export default function LabeledDropdown(props: LabeledDropdownProps) {
     <Button disabled={props.disabled} type={props.buttonType} rootClassName={styles.button}>
       <div className={styles.buttonContents}>
         <div className={styles.buttonText}>{props.selected}</div>
+        {/* Custom arrow dropdown */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className={`${styles.buttonIcon} ${styles[props.buttonType || "default"]}`}

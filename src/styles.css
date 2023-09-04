@@ -29,7 +29,7 @@
   --color-modal-overlay: rgba(0, 0, 0, 0.7);
 
   /* Buttons */
-  /* Note: Button color is largely controlled by Antd. See `main.tsx` to override. */
+  /* Note: Button color is largely controlled by Antd. See `main.tsx` and https://ant.design/docs/react/customize-theme#maptoken to override. */
   --color-button: var(--color-theme);
   --color-button-hover: var(--color-theme-light);
   --color-button-active: var(--color-theme-dark);
@@ -40,6 +40,9 @@
 
 /* TODO: Dark theme? - https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 
 https://usehooks-ts.com/react-hook/use-dark-mode
+
+or use Antd's theme selector?
+https://ant.design/docs/react/customize-theme
 
 [data-theme="dark"] {
   --color-text-primary: var(--color-gray-0);

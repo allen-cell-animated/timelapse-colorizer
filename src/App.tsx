@@ -541,7 +541,7 @@ function App(): ReactElement {
   // RENDERING /////////////////////////////////////////////////////////////
 
   const [notificationApi, notificationContextHolder] = notification.useNotification();
-  const openCopyNotification = () => {
+  const openCopyNotification = (): void => {
     navigator.clipboard.writeText(document.URL);
     notificationApi["success"]({
       message: "URL copied to clipboard",
