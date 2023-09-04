@@ -1,22 +1,51 @@
 @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
 
 :root {
-  --text-primary: #323233;
-  --text-secondary: #575859;
-  --text-hint: #a3a4a5;
-  --text-disabled: #a3a4a5;
-  --text-theme-alt: #ffffff;
-  --background: #ffffff;
-  --theme: #8962d3;
-  --theme-hover: #5f369f;
-  --borders: #cbcbcc;
-  --dividers: #e7e7e7;
-  --ui-background: #f2f2f2;
-  --modal-overlay: rgba(0, 0, 0, 0.7);
+  /* UI Design Colors */
+  --color-theme-dark: #5f369f;
+  --color-theme: #8962d3;
+  --color-theme-light: #aa88ed;
+  --color-gray-0: #ffffff;
+  --color-gray-10: #e6e7e8;
+  --color-gray-20: #cbcbcc;
+  --color-gray-30: #a3a4a5;
+  --color-gray-40: #7c7d7f;
+  --color-gray-50: #575859;
+  --color-gray-60: #323233;
+  --color-success: #2fc022;
+  --color-error: #f92d20;
+
+  /* Text */
+  --color-text-primary: var(--color-gray-60);
+  --color-text-secondary: var(--color-gray-50);
+  --color-text-hint: var(--color-gray-30);
+  --color-text-disabled: var(--color-gray-30);
+  --color-text-button: var(--color-gray-0);
+
+  /* Layout */
+  --color-background: var(--color-gray-0);
+  --color-borders: var(--color-gray-20);
+  --color-dividers: var(--color-gray-10);
+  --color-modal-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Buttons */
+  /* Note: Button color is largely controlled by Antd. See `main.tsx` to override. */
+  --color-button: var(--color-theme);
+  --color-button-hover: var(--color-theme-light);
+  --color-button-active: var(--color-theme-dark);
+
+  /* Fonts */
   --default-font: "Lato";
-  --success: #2fc022;
-  --error: #f92d20;
 }
+
+/* TODO: Dark theme? - https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 
+https://usehooks-ts.com/react-hook/use-dark-mode
+
+[data-theme="dark"] {
+  --color-text-primary: var(--color-gray-0);
+  --color-text-secondary: var(--color-gray-20);
+}
+*/
 
 body {
   font-family: var(--default-font);
@@ -27,25 +56,25 @@ body {
 }
 
 h1 {
-  color: var(--text-primary);
+  color: var(--color-text-primary);
   font-size: 22px;
   font-style: normal;
   font-weight: 400;
 }
 
 h2 {
-  color: var(--text-primary);
+  color: var(--color-text-primary);
   font-size: 20px;
   font-style: normal;
   font-weight: 400;
 }
 
 button {
-  color: var(--text-theme-alt);
+  color: var(--color-text-button);
   font-size: 14x;
   padding: 1px 12px;
   border-radius: 4px;
-  background-color: var(--theme);
+  background-color: var(--color-theme);
   border-style: none;
 }
 

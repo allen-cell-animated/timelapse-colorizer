@@ -34,11 +34,11 @@
 
 /* Custom coloring for dropdown arrow*/
 .buttonIcon.primary {
-  fill: var(--text-theme-alt);
+  fill: var(--color-text-button);
 }
 
 /* Dropdown arrow should match disabled text */
 .button:disabled,
 .button:disabled .buttonIcon.primary {
-  fill: var(--text-disabled);
+  fill: var(--color-text-disabled);
 }

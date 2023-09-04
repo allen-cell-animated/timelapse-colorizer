@@ -59,7 +59,8 @@ export default function LabeledDropdown(props: LabeledDropdownProps) {
   );
 
   // Add a tooltip for the currently selected element.
-  // Workaround: Remove the tooltip when the dropdown is disabled, as otherwise it introduces a span element that messes with the height of the button.
+  // Workaround: Remove the tooltip when the dropdown is disabled, as otherwise it introduces a placeholder span
+  // element that messes with the height of the button when disabled.
   if (!props.disabled) {
     dropdownContents = (
       <Tooltip title={props.selected} placement="right">

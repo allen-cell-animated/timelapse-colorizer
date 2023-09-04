@@ -19,7 +19,7 @@ label {
   --min-height: 24px; /* Pass to children, namely for vertical divider formatting*/
   min-height: var(--min-height);
   padding: 18px 30px;
-  border-bottom: 1px solid var(--borders);
+  border-bottom: 1px solid var(--color-borders);
   gap: 10px;
 }
 
@@ -47,7 +47,7 @@ label {
 /* Color the success icon in the copy notification*/
 .copyNotification div span {
   font-size: 20px;
-  color: var(--success);
+  color: var(--color-success);
 }
 
 .header h2 {
@@ -58,7 +58,7 @@ label {
 .verticalDivider {
   height: var(--min-height);
   width: 1px;
-  background-color: var(--dividers);
+  background-color: var(--color-dividers);
   display: inline-block;
 }
 
