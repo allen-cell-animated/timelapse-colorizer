@@ -69,13 +69,17 @@ export function fetchWithTimeout(
 }
 
 /**
- * Updates the current URL path of the webpage. If any parameter value is null, it will not be
- * included. String are encoded via `encodeURIComponent()`.
- * @param collection string path to the collection. Null values will be ignored.
+ * Creates a string of parameters that can be appended onto the base URL as metadata.
+ *
+ * @param collection string path to the collection. Null values (paths matching the default collection address) will be ignored.
  * @param dataset string name or URL of the dataset. Null values will be ignored.
  * @param feature string name of the feature. Null values will be ignored.
- * @param track integer track number.
+ * @param track integer track number. Ignores values where `track < 0`.
  * @param time integer frame number. Ignores values where `time <= 0`.
+ *
+ * @returns
+ * - If no parameters are non-null, returns an empty string.
+ * - Else, returns a string of URL parameters that can be appended to the URL directly (ex: `?collection=<some_url>&time=23`).
  */
 export function getUrlParams(
   collection: string | null,
@@ -85,6 +89,9 @@ export function getUrlParams(
   time: number | null
 ): string {
   // TODO: Write unit tests for this
+  // TODO: May be easier to accept a typed object with optional properties than positional
+  // arguments as more data gets stored to the URL.
+
   // Get parameters, ignoring null/empty values
   const params: string[] = [];
 
@@ -102,7 +109,7 @@ export function getUrlParams(
   if (feature) {
     params.push(`${URL_PARAM_FEATURE}=${encodeURIComponent(feature)}`);
   }
-  if (track || track === 0) {
+  if (track && track >= 0) {
     params.push(`${URL_PARAM_TRACK}=${track}`);
   }
   if (time && time > 0) {
@@ -114,6 +121,11 @@ export function getUrlParams(
   return params.length > 0 ? "?" + params.join("&") : "";
 }
 
+/**
+ * Replaces the current URL in the browser history with a new one, made by appending
+ * the urlParams to the base URL.
+ * @param urlParams A string of parameters that can be appended to the base URL.
+ */
 export function updateUrl(urlParams: string): void {
   // Use replaceState rather than pushState, because otherwise every frame will be a unique
   // URL in the browser history
