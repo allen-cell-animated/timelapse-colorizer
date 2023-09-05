@@ -600,8 +600,8 @@ function App(): ReactElement {
         </div>
       </div>
 
-      {/** Viewport: Contains canvas and plot, ramp controls, time controls, etc. */}
-      <div className={styles.viewport}>
+      {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
+      <div className={styles.mainContent}>
         {/** Top Control Bar */}
         <div className={styles.canvasTopControlsContainer}>
           <div className={styles.labeledColorRamp}>
