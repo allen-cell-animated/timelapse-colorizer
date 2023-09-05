@@ -72,13 +72,13 @@ function App(): ReactElement {
    * and frame information. (Convenience wrapper for `urlUtils.getUrlParams`.)
    */
   const getUrlParams = useCallback((): string => {
-    return urlUtils.getUrlParams(
-      collection || null,
-      datasetName,
-      featureName,
-      selectedTrack ? selectedTrack.trackId : null,
-      currentFrame
-    );
+    return urlUtils.getUrlParams({
+      collection: collection || null,
+      dataset: datasetName,
+      feature: featureName,
+      track: selectedTrack?.trackId,
+      time: currentFrame,
+    });
   }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
 
   /**
