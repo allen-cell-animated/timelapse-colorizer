@@ -1,0 +1,64 @@
+.colorRampSelector {
+  display: flex;
+  height: 100%;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+}
+
+.buttonContainer {
+  position: relative;
+}
+
+.selectorButton {
+  padding: 0;
+  overflow: hidden;
+}
+
+.hoverContainer {
+  z-index: 1;
+  position: absolute;
+  display: none;
+  top: 25px;
+  left: 0;
+  gap: 0;
+}
+
+/** 
+ * Show the container if the root button is hovered, and keep
+ * it visible while it continues to be hovered over.
+ */
+.buttonContainer:hover > .hoverContainer,
+.hoverContainer:hover {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background-color: var(--color-button);
+  border-radius: 4px;
+  padding: 1px 1px;
+}
+
+.hoverContainer > button {
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
+  border: 0px solid transparent;
+  outline: 0px solid var(--color-text-button);
+  outline-offset: -1px;
+  transition: outline 0s ease 0s;
+  overflow: hidden;
+}
+
+.hoverContainer > .dropdownFirst {
+  border-radius: 3px 3px 0 0;
+}
+
+.hoverContainer > .dropdownLast {
+  border-radius: 0 0 3px 3px;
+}
+
+.hoverContainer > button:hover {
+  outline: 1px solid var(--color-text-button);
+  outline-offset: -1px;
+}

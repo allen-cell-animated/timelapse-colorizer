@@ -11,6 +11,7 @@ import { DEFAULT_COLOR_RAMP, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "
 import { Button, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
+import ColorRampSelector from "./components/ColorRampSelector";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -592,6 +593,13 @@ function App(): ReactElement {
               onClick={(event) => handleColorRampClick(event)}
             ></span>
           </div>
+
+          <ColorRampSelector
+            selected={colorRampKey}
+            onChange={function (value: string): void {
+              throw new Error("Function not implemented.");
+            }}
+          />
         </div>
         <div className={styles.headerRight}>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
