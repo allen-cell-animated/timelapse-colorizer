@@ -74,13 +74,13 @@ function App(): ReactElement {
    * and frame information. (Convenience wrapper for `urlUtils.getUrlParams`.)
    */
   const getUrlParams = useCallback((): string => {
-    return urlUtils.getUrlParams(
-      collection || null,
-      datasetName,
-      featureName,
-      selectedTrack ? selectedTrack.trackId : null,
-      currentFrame
-    );
+    return urlUtils.stateToUrlParamString({
+      collection: collection || null,
+      dataset: datasetName,
+      feature: featureName,
+      track: selectedTrack?.trackId,
+      time: currentFrame,
+    });
   }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
 
   /**
@@ -611,8 +611,8 @@ function App(): ReactElement {
         </div>
       </div>
 
-      {/** Viewport: Contains canvas and plot, ramp controls, time controls, etc. */}
-      <div className={styles.viewport}>
+      {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
+      <div className={styles.mainContent}>
         {/** Top Control Bar */}
         <div className={styles.canvasTopControlsContainer}>
           <div className={styles.labeledColorRamp}>
