@@ -1,4 +1,4 @@
-import { assert, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import * as urlUtils from "./url_utils";
 
@@ -28,7 +28,7 @@ function makeDummyFetchMethod(validUrl: string, bodyJson: any): typeof urlUtils.
       throw new Error("Function not implemented.");
     },
     json: function (): Promise<any> {
-      const dummyAsync = async () => {
+      const dummyAsync = async (): Promise<any> => {
         return bodyJson;
       };
       return dummyAsync();
@@ -39,7 +39,7 @@ function makeDummyFetchMethod(validUrl: string, bodyJson: any): typeof urlUtils.
   };
   return (url: string, _timeoutMs?: number, _options?: Object) => {
     if (url === validUrl) {
-      const resolve = async () => {
+      const resolve = async (): Promise<Response> => {
         return response;
       };
       return resolve();

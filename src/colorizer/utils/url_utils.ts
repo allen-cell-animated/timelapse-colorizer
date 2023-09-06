@@ -223,7 +223,6 @@ export async function getCollectionData(
   let response;
   try {
     response = await optionalFetchMethod(collectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
-    console.log(response);
   } catch (e) {
     console.error(`Could not retrieve collections JSON data from url '${collectionUrl}': '${e}'`);
     throw e;
