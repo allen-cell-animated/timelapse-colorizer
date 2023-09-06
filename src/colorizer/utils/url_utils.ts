@@ -201,11 +201,16 @@ export function loadParamsFromUrl(): UrlParams {
  * Otherwise, attempts to load the collection data using the default collection filename
  * (`DEFAULT_COLLECTION_NAME`, `collection.json`).
  * If collection is null, uses the default dataset location (`DEFAULT_COLLECTION_PATH`).
+ * @param optionalFetchMethod An optional override for the default fetch method. By default, uses `fetchWithTimeout`.
+ *
  * @throws Throws an error if fetching the collection data fails.
  * @returns a map of string dataset names to their corresponding `CollectionEntry` objects.
  * The return value will be null if the fetch failed for any reason.
  */
-export async function getCollectionData(collectionParam: string | null): Promise<Map<string, CollectionEntry>> {
+export async function getCollectionData(
+  collectionParam: string | null,
+  optionalFetchMethod = fetchWithTimeout
+): Promise<Map<string, CollectionEntry>> {
   // If collection URL ends in a .json use it directly, otherwise append the default filename.
   let collectionUrl;
   if (collectionParam) {
@@ -217,7 +222,8 @@ export async function getCollectionData(collectionParam: string | null): Promise
 
   let response;
   try {
-    response = await fetchWithTimeout(collectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
+    response = await optionalFetchMethod(collectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
+    console.log(response);
   } catch (e) {
     console.error(`Could not retrieve collections JSON data from url '${collectionUrl}': '${e}'`);
     throw e;
