@@ -72,7 +72,7 @@ function App(): ReactElement {
    * and frame information. (Convenience wrapper for `urlUtils.getUrlParams`.)
    */
   const getUrlParams = useCallback((): string => {
-    return urlUtils.getUrlParams({
+    return urlUtils.stateToUrlParamString({
       collection: collection || null,
       dataset: datasetName,
       feature: featureName,

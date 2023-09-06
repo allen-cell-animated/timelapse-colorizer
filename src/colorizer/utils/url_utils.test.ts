@@ -70,29 +70,29 @@ describe("Test URL Utils", () => {
     });
   });
 
-  describe("getUrlParams", () => {
+  describe("stateToUrlParamString", () => {
     it("Handles null values", () => {
-      const result = urlUtils.getUrlParams({});
+      const result = urlUtils.stateToUrlParamString({});
       expect(result).to.be.empty;
     });
 
     it("Ignores default collections", () => {
-      let result = urlUtils.getUrlParams({ collection: urlUtils.DEFAULT_COLLECTION_PATH });
+      let result = urlUtils.stateToUrlParamString({ collection: urlUtils.DEFAULT_COLLECTION_PATH });
       expect(result).to.be.empty;
 
-      result = urlUtils.getUrlParams({
+      result = urlUtils.stateToUrlParamString({
         collection: urlUtils.DEFAULT_COLLECTION_PATH + "/" + urlUtils.DEFAULT_COLLECTION_FILENAME,
       });
       expect(result).to.be.empty;
     });
 
     it("Ignores bad time values", () => {
-      const result = urlUtils.getUrlParams({ time: -56 });
+      const result = urlUtils.stateToUrlParamString({ time: -56 });
       expect(result).to.be.empty;
     });
 
     it("Encodes URI components", () => {
-      const result = urlUtils.getUrlParams({
+      const result = urlUtils.stateToUrlParamString({
         collection: "https://some-url.com/collection.json", // https%3A%2F%2Fsome-url.com%2Fcollection.json
         dataset: "你好世界", // %E4%BD%A0%E5%A5%BD%E4%B8%96%E7%95%8C
         feature: "Привет, мир", // %D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2C%20%D0%BC%D0%B8%D1%80
@@ -106,12 +106,12 @@ describe("Test URL Utils", () => {
     });
 
     it("Ignores bad track values", () => {
-      const result = urlUtils.getUrlParams({ time: -56 });
+      const result = urlUtils.stateToUrlParamString({ time: -56 });
       expect(result).to.be.empty;
     });
 
     it("Gets URL parameters", () => {
-      const result = urlUtils.getUrlParams({
+      const result = urlUtils.stateToUrlParamString({
         collection: "collection",
         dataset: "dataset",
         feature: "feature",

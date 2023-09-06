@@ -71,7 +71,7 @@ export function fetchWithTimeout(
 /**
  * Creates a string of parameters that can be appended onto the base URL as metadata.
  *
- * @param params: An object matching any of the properties of `UrlParams`.
+ * @param state: An object matching any of the properties of `UrlParams`.
  * - `collection`: string path to the collection. Ignores paths matching the default collection address.
  * - `dataset`: string name or URL of the dataset.
  * - `feature`: string name of the feature.
@@ -82,12 +82,12 @@ export function fetchWithTimeout(
  * - If no parameters are present or valid, returns an empty string.
  * - Else, returns a string of URL parameters that can be appended to the URL directly (ex: `?collection=<some_url>&time=23`).
  */
-export function getUrlParams(params: Partial<UrlParams>): string {
+export function stateToUrlParamString(state: Partial<UrlParams>): string {
   // arguments as more data gets stored to the URL.
 
   // Get parameters, ignoring null/empty values
   const includedParameters: string[] = [];
-  const { collection, dataset, feature, track, time } = params;
+  const { collection, dataset, feature, track, time } = state;
 
   // Don't include collection parameter in URL if it matches the default.
   if (
