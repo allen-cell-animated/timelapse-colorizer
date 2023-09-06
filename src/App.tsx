@@ -586,7 +586,7 @@ function App(): ReactElement {
             onChange={handleFeatureChange}
           />
 
-          <ColorRampSelector selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={false} />
+          <ColorRampSelector selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
         </div>
         <div className={styles.headerRight}>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>

@@ -38,7 +38,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
       if (i === 0) {
         className += " " + styles.dropdownFirst;
       }
-      if (i === props.colorRamps!.size) {
+      if (i === props.colorRamps!.size - 1) {
         className += " " + styles.dropdownLast;
       }
       const [name, colorRamp] = colorRampEntries[i];
@@ -56,18 +56,28 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
   // Force tooltip to be hidden (false) when the disabled flag is true.
   // Otherwise, don't override the default behavior.
   const showTooltip = props.disabled ? false : undefined;
-  const buttonDivClassName = styles.buttonContainer + " " + props.disabled ? styles.buttonContainer : "";
+  const buttonDivClassName = styles.buttonContainer + " " + (props.disabled ? styles.disabled : "");
+
+  let selectorButton = (
+    <Button rootClassName={styles.selectorButton} disabled={props.disabled}>
+      <img src={selectedRampColorUrl} />
+    </Button>
+  );
+
+  // Remove tooltip when disabled to avoid spacing/layout issues
+  if (!props.disabled) {
+    selectorButton = (
+      <Tooltip title={props.selected} placement="right" open={showTooltip}>
+        {selectorButton}
+      </Tooltip>
+    );
+  }
 
   return (
     <div className={styles.colorRampSelector}>
       Color Ramp
       <div className={buttonDivClassName}>
-        <Tooltip title={props.selected} placement="right" open={showTooltip}>
-          <Button rootClassName={styles.selectorButton} disabled={props.disabled}>
-            <img src={selectedRampColorUrl} />
-          </Button>
-        </Tooltip>
-
+        {selectorButton}
         <div className={styles.dropdownContainer}>{dropdownContents}</div>
       </div>
     </div>

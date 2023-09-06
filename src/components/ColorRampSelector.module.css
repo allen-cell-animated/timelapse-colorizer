@@ -1,6 +1,7 @@
 .colorRampSelector {
   display: flex;
-  height: 100%;
+  --height: var(--button-height);
+  height: var(--height);
   flex-direction: row;
   gap: 6px;
   align-items: center;
@@ -8,24 +9,36 @@
 
 .buttonContainer {
   position: relative;
+  height: var(--height);
+  padding: 0;
 }
 
 .selectorButton {
   padding: 0;
+  margin: 0;
   overflow: hidden;
   height: 24px;
+}
+
+.selectorButton:disabled > img {
+  filter: grayscale(100%);
 }
 
 .dropdownContainer {
   z-index: 1;
   position: absolute;
-  top: 25px;
+  top: calc(--height + 1px);
   display: flex;
   flex-direction: column;
-  padding: 1px 1px;
-  gap: 1px;
   background-color: var(--color-button);
-  border-radius: 4px;
+
+  --outline-width: 1px;
+  --radius: 4px;
+  padding: var(--outline-width) var(--outline-width);
+  gap: var(--outline-width);
+  border-radius: var(--radius);
+
+  --button-radius: calc(var(--radius) - var(--outline-width));
 
   transform-origin: top;
   visibility: hidden;
@@ -61,11 +74,11 @@
 }
 
 .dropdownContainer > .dropdownFirst {
-  border-radius: 3px 3px 0 0;
+  border-radius: var(--button-radius) var(--button-radius) 0 0;
 }
 
 .dropdownContainer > .dropdownLast {
-  border-radius: 0 0 3px 3px;
+  border-radius: 0 0 var(--button-radius) var(--button-radius);
 }
 
 .dropdownContainer > button:hover {

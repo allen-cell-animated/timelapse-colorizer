@@ -33,6 +33,7 @@
   --color-button: var(--color-theme);
   --color-button-hover: var(--color-theme-light);
   --color-button-active: var(--color-theme-dark);
+  --button-height: 24px;
 
   /* Fonts */
   --default-font: "Lato";
