@@ -13,9 +13,10 @@
 .selectorButton {
   padding: 0;
   overflow: hidden;
+  height: 24px;
 }
 
-.hoverContainer {
+.dropdownContainer {
   z-index: 1;
   position: absolute;
   display: none;
@@ -28,8 +29,8 @@
  * Show the container if the root button is hovered, and keep
  * it visible while it continues to be hovered over.
  */
-.buttonContainer:hover > .hoverContainer,
-.hoverContainer:hover {
+.buttonContainer:hover:not(.disabled) > .dropdownContainer,
+.dropdownContainer:hover {
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -38,7 +39,7 @@
   padding: 1px 1px;
 }
 
-.hoverContainer > button {
+.dropdownContainer > button {
   border-radius: 0;
   box-shadow: none;
   margin: 0;
@@ -50,15 +51,15 @@
   overflow: hidden;
 }
 
-.hoverContainer > .dropdownFirst {
+.dropdownContainer > .dropdownFirst {
   border-radius: 3px 3px 0 0;
 }
 
-.hoverContainer > .dropdownLast {
+.dropdownContainer > .dropdownLast {
   border-radius: 0 0 3px 3px;
 }
 
-.hoverContainer > button:hover {
+.dropdownContainer > button:hover {
   outline: 1px solid var(--color-text-button);
   outline-offset: -1px;
 }

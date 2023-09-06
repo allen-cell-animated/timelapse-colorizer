@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from "react";
+import React, { ReactElement, useMemo } from "react";
 import styles from "./ColorRampSelector.module.css";
 import { ColorRamp } from "../colorizer";
 import { DEFAULT_COLOR_RAMP, DEFAULT_COLOR_RAMPS } from "../constants";
@@ -18,36 +18,57 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElement => {
   props = { ...defaultProps, ...props };
 
-  const ramp = props.colorRamps?.get(props.selected);
-  if (!ramp) {
-    throw new Error("ColorRamp is undefined.");
+  const selectedRamp = props.colorRamps?.get(props.selected);
+  if (!selectedRamp) {
+    throw new Error("No ColorRamp is selected.");
   }
 
-  if (props.disabled !== undefined && !props.disabled) {
-  }
+  const selectedRampColorUrl = useMemo(() => {
+    return selectedRamp.createGradientCanvas(120, 25).toDataURL();
+  }, [props.selected]);
+
+  // Memoize to avoid recalculating dropdown contents
+  const dropdownContents: ReactElement[] = useMemo(() => {
+    const contents: ReactElement[] = [];
+    const colorRampEntries = Array.from(props.colorRamps!.entries());
+    // Make a button for every color ramp
+    for (let i = 0; i < props.colorRamps!.size; i++) {
+      let className = "";
+      // Manipulate class names for rounding at start and end of dropdown list
+      if (i === 0) {
+        className += " " + styles.dropdownFirst;
+      }
+      if (i === props.colorRamps!.size) {
+        className += " " + styles.dropdownLast;
+      }
+      const [name, colorRamp] = colorRampEntries[i];
+      contents.push(
+        <Tooltip title={name} placement="right" key={name}>
+          <Button key={name} className={className} onClick={() => props.onChange(name)}>
+            <img src={colorRamp.createGradientCanvas(120, 25).toDataURL()} />
+          </Button>
+        </Tooltip>
+      );
+    }
+    return contents;
+  }, [props.colorRamps]);
+
+  // Force tooltip to be hidden (false) when the disabled flag is true.
+  // Otherwise, don't override the default behavior.
+  const showTooltip = props.disabled ? false : undefined;
+  const buttonDivClassName = styles.buttonContainer + " " + props.disabled ? styles.buttonContainer : "";
+
   return (
     <div className={styles.colorRampSelector}>
       Color Ramp
-      <div className={styles.buttonContainer}>
-        <Button className={styles.selectorButton}>
-          <img src={ramp.createGradientCanvas(120, 25).toDataURL()} />
-        </Button>
-
-        <div className={styles.hoverContainer}>
-          <Tooltip title="AAAAAAAAAAAAA" placement="right">
-            <Button className={styles.selectorButton + " " + styles.dropdownFirst}>
-              <img src={ramp.createGradientCanvas(120, 25).toDataURL()} />
-            </Button>
-          </Tooltip>
-          <Tooltip title={"AAAAAAA"} placement="right">
-            <Button className={styles.selectorButton}>
-              <img src={ramp.createGradientCanvas(120, 25).toDataURL()} />
-            </Button>
-          </Tooltip>
-          <Button className={styles.selectorButton + " " + styles.dropdownLast}>
-            <img src={ramp.createGradientCanvas(120, 25).toDataURL()} />
+      <div className={buttonDivClassName}>
+        <Tooltip title={props.selected} placement="right" open={showTooltip}>
+          <Button rootClassName={styles.selectorButton} disabled={props.disabled}>
+            <img src={selectedRampColorUrl} />
           </Button>
-        </div>
+        </Tooltip>
+
+        <div className={styles.dropdownContainer}>{dropdownContents}</div>
       </div>
     </div>
   );

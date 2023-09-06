@@ -586,20 +586,7 @@ function App(): ReactElement {
             onChange={handleFeatureChange}
           />
 
-          <div className={styles.colorRampContainer}>
-            <span
-              ref={colorRampRef}
-              className={`${styles.colorRamp} ${disableUi ? styles.disabled : ""}`}
-              onClick={(event) => handleColorRampClick(event)}
-            ></span>
-          </div>
-
-          <ColorRampSelector
-            selected={colorRampKey}
-            onChange={function (value: string): void {
-              throw new Error("Function not implemented.");
-            }}
-          />
+          <ColorRampSelector selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={false} />
         </div>
         <div className={styles.headerRight}>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
