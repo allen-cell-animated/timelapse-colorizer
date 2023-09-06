@@ -7,7 +7,7 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
-import { DEFAULT_COLOR_RAMP, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
 import { Button, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
@@ -17,7 +17,6 @@ function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
 
   const canvasRef = useRef<HTMLDivElement>(null);
-  const colorRampRef = useRef<HTMLSpanElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
 
   const [plot, setPlot] = useState<Plotting | null>(null);
@@ -42,7 +41,7 @@ function App(): ReactElement {
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const [colorRamps, setColorRamp] = useState(DEFAULT_COLOR_RAMPS);
+  const [colorRamps] = useState(DEFAULT_COLOR_RAMPS);
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
@@ -281,52 +280,6 @@ function App(): ReactElement {
       canv.domElement.removeEventListener("click", handleCanvasClick);
     };
   }, [handleCanvasClick]);
-
-  // COLOR RAMP /////////////////////////////////////////////////////////////
-  // Initialize the color ramp gradients after the initial render.
-  useEffect(() => {
-    const rampContainer = colorRampRef.current;
-    if (!rampContainer) {
-      return;
-    }
-
-    // Clear existing children.
-    let lastChild = rampContainer.lastChild;
-    while (lastChild) {
-      rampContainer.removeChild(lastChild);
-      lastChild = rampContainer.lastChild;
-    }
-
-    // Make the color ramps, then append them to the container
-    const ramps: HTMLCanvasElement[] = [];
-    colorRamps.forEach((ramp, key) => {
-      const rampCanvas = ramp.createGradientCanvas(120, 25);
-      if (key === colorRampKey) {
-        rampCanvas.className = styles.selected;
-      }
-      ramps.push(rampCanvas);
-    });
-
-    for (const ramp of ramps) {
-      rampContainer.appendChild(ramp);
-    }
-  }, []);
-
-  const handleColorRampClick = useCallback(({ target }: React.MouseEvent<HTMLSpanElement, MouseEvent>): void => {
-    const rampContainer = colorRampRef.current;
-    if (!rampContainer) {
-      return;
-    }
-    // Select the element that was clicked on and set it as the new color ramp.
-    Array.from(rampContainer.children).forEach((el, idx) => {
-      if (el === target) {
-        setColorRampKey(Array.from(colorRamps.keys())[idx]);
-        el.className = styles.selected;
-      } else {
-        el.className = "";
-      }
-    });
-  }, []);
 
   // DATASET LOADING ///////////////////////////////////////////////////////
   const replaceDataset = useCallback(
