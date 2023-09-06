@@ -19,10 +19,20 @@
 .dropdownContainer {
   z-index: 1;
   position: absolute;
-  display: none;
   top: 25px;
-  left: 0;
-  gap: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1px 1px;
+  gap: 1px;
+  background-color: var(--color-button);
+  border-radius: 4px;
+
+  transform-origin: top;
+  visibility: hidden;
+  transform: scaleY(0.9);
+  opacity: 0;
+
+  transition: all ease-in 0.2s 0.25s;
 }
 
 /** 
@@ -31,12 +41,11 @@
  */
 .buttonContainer:hover:not(.disabled) > .dropdownContainer,
 .dropdownContainer:hover {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  background-color: var(--color-button);
-  border-radius: 4px;
-  padding: 1px 1px;
+  visibility: visible;
+  transform: scaleY(1);
+  opacity: 1;
+
+  transition: all 0.1s;
 }
 
 .dropdownContainer > button {
