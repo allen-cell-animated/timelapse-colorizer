@@ -20,7 +20,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
 
   const selectedRamp = props.colorRamps?.get(props.selected);
   if (!selectedRamp) {
-    throw new Error("No ColorRamp is selected.");
+    throw new Error(`Selected color ramp name '${props.selected}' is invalid.`);
   }
 
   const selectedRampColorUrl = useMemo(() => {

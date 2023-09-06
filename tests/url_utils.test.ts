@@ -1,8 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import * as urlUtils from "../src/colorizer/utils/url_utils";
-
-const ANY_ERROR = /[.]*/;
+import { ANY_ERROR } from "./test_utils";
 
 function makeDummyFetchMethod(validUrl: string, bodyJson: any): typeof urlUtils.fetchWithTimeout {
   const response: Response = {
@@ -131,6 +130,8 @@ describe("getCollectionData", () => {
   });
 
   it("Throws an error with a bad url", async () => {
+    console.error = vi.fn(); // hide error output
+
     const fetchMethod = makeDummyFetchMethod("", []);
     await expect(urlUtils.getCollectionData("bad", fetchMethod)).rejects.toThrow(ANY_ERROR);
   });
