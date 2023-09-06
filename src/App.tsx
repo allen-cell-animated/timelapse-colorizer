@@ -12,6 +12,7 @@ import { Button, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
 import ColorRampSelector from "./components/ColorRampSelector";
+import LoadDatasetButton from "./components/LoadDatasetButton";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -48,6 +49,8 @@ function App(): ReactElement {
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
+
+  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
 
   const timeControls = useConstructor(() => {
     return new TimeControls(canv!);
@@ -546,8 +549,16 @@ function App(): ReactElement {
             <LinkOutlined />
             Copy URL
           </Button>
+
           <Button type="primary">Export</Button>
-          <Button type="primary">Load</Button>
+
+          <LoadDatasetButton
+            onRequestLoad={async (url: string): Promise<boolean> => {
+              console.log("Loading " + url);
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+              return false;
+            }}
+          />
         </div>
       </div>
 

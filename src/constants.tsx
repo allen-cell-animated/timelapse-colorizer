@@ -2,9 +2,10 @@ import { HexColorString } from "three";
 import { ColorRamp } from "./colorizer";
 
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
+// TODO: Separate display names and internal names for color ramps
 const colorStops: [string, HexColorString[]][] = [
   // Matplotlib - cool
-  ["matplotlib - cool", ["#00ffff", "#ff00ff"]],
+  ["Matplotlib - Cool", ["#00ffff", "#ff00ff"]],
   // Esri color ramps - Red 5
   ["ESRI - Red 5", ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"]],
   // Esri color ramps - Orange 5
