@@ -8,7 +8,7 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
-import { Button, ConfigProvider, InputNumber, Slider, notification } from "antd";
+import { Button, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
 import AppStyle from "./components/AppStyle";
