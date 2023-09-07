@@ -51,8 +51,6 @@ function App(): ReactElement {
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
-  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
-
   const timeControls = useConstructor(() => {
     return new TimeControls(canv!);
   });
