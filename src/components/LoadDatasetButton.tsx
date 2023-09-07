@@ -19,9 +19,13 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showError, setShowError] = useState<boolean>(false);
+  const [errorText, setErrorText] = useState<string>("");
 
   const handleLoadClicked = useCallback(async (): Promise<void> => {
+    if (urlInput === "") {
+      setErrorText("Please enter a URL!");
+      return;
+    }
     if (isLoading) {
       return;
     }
@@ -30,14 +34,14 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     if (succeeded) {
       setIsLoadModalOpen(false);
     } else {
-      setShowError(true);
+      setErrorText("The dataset(s) could not be loaded with the URL provided. Please check it and try again.");
     }
     setIsLoading(false);
   }, [urlInput, props.onRequestLoad]);
 
   const handleCancel = () => {
     // should this cancel dataset loading mid-load?
-    setShowError(false);
+    setErrorText("");
     setUrlInput("");
     setIsLoadModalOpen(false);
   };
@@ -57,15 +61,13 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         cancelButtonProps={{ hidden: true }}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <p>Load a dataset collection (.json) or a single dataset by providing a URL specifying its location below.</p>
-          <Input placeholder="Enter a URL..." value={urlInput} onChange={(event) => setUrlInput(event.target.value)} />
-          {showError ? (
-            <p style={{ color: "var(--color-error)" }}>
-              The dataset(s) could not be loaded with the URL provided. Please check it and try again.
-            </p>
-          ) : (
-            <></>
-          )}
+          <p>Load a collection of datasets or a single dataset by providing its URL.</p>
+          <Input
+            placeholder="https://example.com/collection.json"
+            value={urlInput}
+            onChange={(event) => setUrlInput(event.target.value)}
+          />
+          {errorText ? <p className={styles.errorText}>{errorText}</p> : <></>}
         </div>
       </Modal>
     </>
