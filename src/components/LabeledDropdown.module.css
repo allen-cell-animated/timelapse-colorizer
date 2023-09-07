@@ -1,15 +1,15 @@
 .labeledDropdown {
   display: flex;
-  flex-direction: row;
-  gap: 6px;
   align-items: center;
   width: max-content;
 }
 
 .labeledDropdown button {
   max-width: 164px;
-  width: 164px;
+  width: 15vw;
   min-width: 84px;
+  transition: width 0s; /* Override Antd width transition */
+  margin-left: 6px;
 }
 
 .buttonContents {

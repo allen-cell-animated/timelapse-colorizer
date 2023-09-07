@@ -13,6 +13,7 @@ import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
 import ColorRampSelector from "./components/ColorRampSelector";
 import LoadDatasetButton from "./components/LoadDatasetButton";
+import AppStyle from "./components/AppStyle";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -517,10 +518,11 @@ function App(): ReactElement {
   const disableTimeControlsUi = disableUi;
 
   return (
-    <div>
+    <AppStyle className={styles.app}>
       {notificationContextHolder}
 
       {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
+      {/* TODO: Split into its own component? */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2>Timelapse Colorizer</h2>
@@ -754,7 +756,7 @@ function App(): ReactElement {
           </p>
         </div>
       </div>
-    </div>
+    </AppStyle>
   );
 }
 
