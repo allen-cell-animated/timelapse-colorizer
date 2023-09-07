@@ -4,14 +4,28 @@ import { Dropdown, Tooltip, Button, MenuProps } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 
 type LabeledDropdownProps = {
+  /** Text label to include with the dropdown. */
   label: string;
+  /** The key of the item that is currently selected. */
   selected: string;
+  /** An array of ItemType that describes the item properties (`{key, label}`),
+   * or an array of strings. Dropdown items will be presented in the provided array order.
+   *
+   * If a string array is provided, ItemType objects will be
+   * auto-generated with `key` and `label` values set to the string.*/
   items: ItemType[] | string[];
   disabled?: boolean;
+  /** The type of button to render for the dropdown. See Antd's button types:
+   * https://ant.design/components/button#components-button-demo-basic */
   buttonType?: "primary" | "default" | "dashed" | "text" | "link";
-  onChange: (value: string) => void;
+  /** Callback that is fired whenever an item in the dropdown is selected.
+   * The callback will be passed the `key` of the selected item. */
+  onChange: (key: string) => void;
 };
 
+/**
+ * A wrapper around the Antd Dropdown with tooltips and a text label added.
+ */
 export default function LabeledDropdown(props: LabeledDropdownProps): ReactElement {
   const items = useMemo((): ItemType[] => {
     if (props.items.length === 0) {
@@ -72,7 +86,7 @@ export default function LabeledDropdown(props: LabeledDropdownProps): ReactEleme
   return (
     <div className={styles.labeledDropdown}>
       {props.label}
-      <Dropdown menu={datasetMenuProps} disabled={props.disabled} rootClassName={styles.dropdown}>
+      <Dropdown menu={datasetMenuProps} disabled={props.disabled}>
         {dropdownContents}
       </Dropdown>
     </div>
