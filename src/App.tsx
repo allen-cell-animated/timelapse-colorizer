@@ -14,6 +14,7 @@ import LabeledDropdown from "./components/LabeledDropdown";
 import ColorRampSelector from "./components/ColorRampSelector";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import AppStyle from "./components/AppStyle";
+import { NotificationConfig } from "antd/es/notification/interface";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -50,6 +51,8 @@ function App(): ReactElement {
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
+
+  const notificationContainer = useRef<HTMLDivElement>(null);
 
   const timeControls = useConstructor(() => {
     return new TimeControls(canv!);
@@ -500,14 +503,20 @@ function App(): ReactElement {
 
   // RENDERING /////////////////////////////////////////////////////////////
 
-  const [notificationApi, notificationContextHolder] = notification.useNotification();
+  const notificationConfig: NotificationConfig = {
+    getContainer: () => {
+      return notificationContainer.current as HTMLElement;
+    },
+  };
+  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
   const openCopyNotification = (): void => {
     navigator.clipboard.writeText(document.URL);
     notificationApi["success"]({
       message: "URL copied to clipboard",
       className: styles.copyNotification,
       placement: "bottomLeft",
-      duration: 4,
+      duration: 0,
+
       icon: <CheckCircleOutlined />,
     });
   };
@@ -517,7 +526,7 @@ function App(): ReactElement {
 
   return (
     <AppStyle className={styles.app}>
-      {notificationContextHolder}
+      <div ref={notificationContainer}>{notificationContextHolder}</div>
 
       {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
       {/* TODO: Split into its own component? */}
