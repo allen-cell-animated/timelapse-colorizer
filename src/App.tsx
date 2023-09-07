@@ -562,6 +562,7 @@ function App(): ReactElement {
       {notificationContextHolder}
 
       {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
+      {/* TODO: Split into its own component? */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2>Timelapse Colorizer</h2>
