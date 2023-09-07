@@ -1,6 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
 
-:root {
+/**
+ * Import into other modules using `composes: vars from "./vars.module.css";`
+*/
+.vars {
   /* UI Design Colors */
   --color-theme-dark: #5f369f;
   --color-theme: #8962d3;
@@ -24,8 +27,8 @@
 
   /* Layout */
   --color-background: var(--color-gray-0);
-  --color-borders: var(--color-gray-20);
   --color-dividers: var(--color-gray-10);
+  --color-borders: var(--color-gray-20);
   --color-modal-overlay: rgba(0, 0, 0, 0.7);
 
   /* Buttons */
@@ -49,47 +52,3 @@ https://ant.design/docs/react/customize-theme
   --color-text-secondary: var(--color-gray-20);
 }
 */
-
-body {
-  font-family: var(--default-font);
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
-  margin: 0;
-}
-
-h1 {
-  color: var(--color-text-primary);
-  font-size: 22px;
-  font-style: normal;
-  font-weight: 400;
-}
-
-h2 {
-  color: var(--color-text-primary);
-  font-size: 20px;
-  font-style: normal;
-  font-weight: 400;
-}
-
-button {
-  color: var(--color-text-button);
-  font-size: 14x;
-  padding: 1px 12px;
-  border-radius: 4px;
-  background-color: var(--color-theme);
-  border-style: none;
-}
-
-label {
-  font-size: 14px;
-}
-
-p,
-label {
-  color: var(--text-primary);
-  font-family: var(--default-font);
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 400;
-}

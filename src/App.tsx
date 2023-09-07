@@ -8,9 +8,10 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
-import { Button, InputNumber, Slider, notification } from "antd";
+import { Button, ConfigProvider, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
+import AppStyle from "./components/AppStyle";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -557,7 +558,7 @@ function App(): ReactElement {
   const disableTimeControlsUi = disableUi;
 
   return (
-    <div>
+    <AppStyle className={styles.app}>
       {notificationContextHolder}
 
       {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
@@ -792,7 +793,7 @@ function App(): ReactElement {
           </p>
         </div>
       </div>
-    </div>
+    </AppStyle>
   );
 }
 

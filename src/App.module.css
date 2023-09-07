@@ -1,14 +1,52 @@
-p {
+.app {
+  composes: vars from "./vars.module.css";
+  font-family: var(--default-font);
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  margin: 0;
+}
+
+.app h1 {
+  color: var(--color-text-primary);
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.app h2 {
+  color: var(--color-text-primary);
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.app label {
+  font-size: 14px;
+}
+
+.app p,
+.app label {
+  color: var(--text-primary);
+  font-family: var(--default-font);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.app p {
   margin: 2px;
 }
 
-label {
+.app label {
   display: flex;
   flex-direction: row;
   gap: 2px;
 }
 
 .header {
+  --header-content-height: 24px;
+
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -16,8 +54,7 @@ label {
   justify-content: space-between;
   width: auto;
   height: fit-content;
-  --min-height: 24px; /* Pass to children, namely for vertical divider formatting*/
-  min-height: var(--min-height);
+  min-height: var(--header-content-height);
   padding: 18px 30px;
   border-bottom: 1px solid var(--color-borders);
   gap: 10px;
@@ -56,7 +93,7 @@ label {
 }
 
 .verticalDivider {
-  height: var(--min-height);
+  height: var(--header-content-height);
   width: 1px;
   background-color: var(--color-dividers);
   display: inline-block;
