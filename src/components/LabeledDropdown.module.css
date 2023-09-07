@@ -1,0 +1,44 @@
+.labeledDropdown {
+  display: flex;
+  align-items: center;
+  width: max-content;
+}
+
+.labeledDropdown button {
+  max-width: 164px;
+  width: 15vw;
+  min-width: 84px;
+  transition: width 0s; /* Override Antd width transition */
+  margin-left: 6px;
+}
+
+.buttonContents {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.buttonText {
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buttonIcon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Custom coloring for dropdown arrow*/
+.buttonIcon.primary {
+  fill: var(--color-text-button);
+}
+
+/* Dropdown arrow should match disabled text */
+.button:disabled,
+.button:disabled .buttonIcon.primary {
+  fill: var(--color-text-disabled);
+}

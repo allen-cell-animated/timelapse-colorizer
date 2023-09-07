@@ -19,7 +19,7 @@ export const DEFAULT_DATASET_FILENAME = "manifest.json";
 
 export type CollectionData = Map<string, CollectionEntry>;
 
-type UrlParams = {
+export type UrlParams = {
   collection: string | null;
   dataset: string | null;
   feature: string | null;
@@ -69,23 +69,25 @@ export function fetchWithTimeout(
 }
 
 /**
- * Updates the current URL path of the webpage. If any parameter value is null, it will not be
- * included. String are encoded via `encodeURIComponent()`.
- * @param collection string path to the collection. Null values will be ignored.
- * @param dataset string name or URL of the dataset. Null values will be ignored.
- * @param feature string name of the feature. Null values will be ignored.
- * @param track integer track number.
- * @param time integer frame number. Ignores values where `time <= 0`.
+ * Creates a string of parameters that can be appended onto the base URL as metadata.
+ *
+ * @param state: An object matching any of the properties of `UrlParams`.
+ * - `collection`: string path to the collection. Ignores paths matching the default collection address.
+ * - `dataset`: string name or URL of the dataset.
+ * - `feature`: string name of the feature.
+ * - `track`: integer track number. Ignores values where `track < 0`.
+ * - `time`: integer frame number. Ignores values where `time <= 0`.
+ *
+ * @returns
+ * - If no parameters are present or valid, returns an empty string.
+ * - Else, returns a string of URL parameters that can be appended to the URL directly (ex: `?collection=<some_url>&time=23`).
  */
-export function saveParamsToUrl(
-  collection: string | null,
-  dataset: string | null,
-  feature: string | null,
-  track: number | null,
-  time: number | null
-): void {
+export function stateToUrlParamString(state: Partial<UrlParams>): string {
+  // arguments as more data gets stored to the URL.
+
   // Get parameters, ignoring null/empty values
-  const params: string[] = [];
+  const includedParameters: string[] = [];
+  const { collection, dataset, feature, track, time } = state;
 
   // Don't include collection parameter in URL if it matches the default.
   if (
@@ -93,27 +95,35 @@ export function saveParamsToUrl(
     collection !== DEFAULT_COLLECTION_PATH &&
     collection !== DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
   ) {
-    params.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(collection)}`);
+    includedParameters.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(collection)}`);
   }
   if (dataset) {
-    params.push(`${URL_PARAM_DATASET}=${encodeURIComponent(dataset)}`);
+    includedParameters.push(`${URL_PARAM_DATASET}=${encodeURIComponent(dataset)}`);
   }
   if (feature) {
-    params.push(`${URL_PARAM_FEATURE}=${encodeURIComponent(feature)}`);
+    includedParameters.push(`${URL_PARAM_FEATURE}=${encodeURIComponent(feature)}`);
   }
-  if (track || track === 0) {
-    params.push(`${URL_PARAM_TRACK}=${track}`);
+  if (track && track >= 0) {
+    includedParameters.push(`${URL_PARAM_TRACK}=${track}`);
   }
   if (time && time > 0) {
     // time = 0 is ignored because it's the default frame.
-    params.push(`${URL_PARAM_TIME}=${time}`);
+    includedParameters.push(`${URL_PARAM_TIME}=${time}`);
   }
 
   // If parameters present, join with URL syntax and push into the URL
-  const paramString = params.length > 0 ? "?" + params.join("&") : "";
+  return includedParameters.length > 0 ? "?" + includedParameters.join("&") : "";
+}
+
+/**
+ * Replaces the current URL in the browser history with a new one, made by appending
+ * the urlParams to the base URL.
+ * @param urlParams A string of parameters that can be appended to the base URL.
+ */
+export function updateUrl(urlParams: string): void {
   // Use replaceState rather than pushState, because otherwise every frame will be a unique
   // URL in the browser history
-  window.history.replaceState(null, document.title, paramString);
+  window.history.replaceState(null, document.title, urlParams);
 }
 
 /**
@@ -162,6 +172,7 @@ export function formatPath(input: string): string {
  * track and time will have negative values (-1) if no parameter (or an invalid parameter) was found.
  */
 export function loadParamsFromUrl(): UrlParams {
+  // TODO: Write unit tests for this method.
   // Get params from URL and load, with default fallbacks.
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
@@ -190,11 +201,16 @@ export function loadParamsFromUrl(): UrlParams {
  * Otherwise, attempts to load the collection data using the default collection filename
  * (`DEFAULT_COLLECTION_NAME`, `collection.json`).
  * If collection is null, uses the default dataset location (`DEFAULT_COLLECTION_PATH`).
+ * @param optionalFetchMethod An optional override for the default fetch method. By default, uses `fetchWithTimeout`.
+ *
  * @throws Throws an error if fetching the collection data fails.
  * @returns a map of string dataset names to their corresponding `CollectionEntry` objects.
  * The return value will be null if the fetch failed for any reason.
  */
-export async function getCollectionData(collectionParam: string | null): Promise<Map<string, CollectionEntry>> {
+export async function getCollectionData(
+  collectionParam: string | null,
+  optionalFetchMethod = fetchWithTimeout
+): Promise<Map<string, CollectionEntry>> {
   // If collection URL ends in a .json use it directly, otherwise append the default filename.
   let collectionUrl;
   if (collectionParam) {
@@ -206,7 +222,7 @@ export async function getCollectionData(collectionParam: string | null): Promise
 
   let response;
   try {
-    response = await fetchWithTimeout(collectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
+    response = await optionalFetchMethod(collectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
   } catch (e) {
     console.error(`Could not retrieve collections JSON data from url '${collectionUrl}': '${e}'`);
     throw e;
@@ -233,7 +249,7 @@ export async function getCollectionData(collectionParam: string | null): Promise
  * Gets the name of the first dataset in the collection.
  * @param collectionData The loaded collection data to get data from.
  * @throws an error if the collection data is size 0.
- * @returns The string key of the first entry in the `collectionData` map.
+ * @returns The string name of the first entry in the `collectionData` map.
  */
 export function getDefaultDatasetName(collectionData: Map<string, CollectionEntry>): string {
   if (collectionData.size === 0) {

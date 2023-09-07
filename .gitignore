@@ -30,3 +30,6 @@ scripts/*.egg-info
 scripts/data/
 data/
 
+# Test resources
+coverage/
+
