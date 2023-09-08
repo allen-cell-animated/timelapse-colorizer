@@ -192,13 +192,13 @@ export default class Collection {
    * containing just the dataset).
    * @param url
    */
-  public static loadFromAmbiguousUrl(url: string, fetchMethod = fetchWithTimeout): Collection {
-    // Attempt to parse the URL to both a dataset and a collection?
+  public static async loadFromAmbiguousUrl(url: string, fetchMethod = fetchWithTimeout): Promise<Collection> {
+    // TODO: Attempt to parse the URL to both a dataset and a collection
 
     if (!isUrl(url)) {
       throw new Error(`Provided resource '${url}' is not a URL and cannot be loaded.`);
     }
-    throw new Error("Not yet implemented");
+    return await Collection.loadCollection(url, fetchMethod);
   }
 
   // Needs to return URL for parameters (dataset URL + collection URL) + collection object? idk

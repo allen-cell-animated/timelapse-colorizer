@@ -12,7 +12,7 @@ import { Button, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
 import ColorRampSelector from "./components/ColorRampSelector";
-import LoadDatasetButton from "./components/LoadDatasetButton";
+import LoadDatasetButton, { LoadResult } from "./components/LoadDatasetButton";
 import AppStyle from "./components/AppStyle";
 import { NotificationConfig } from "antd/es/notification/interface";
 import Collection from "./colorizer/Collection";
@@ -372,6 +372,24 @@ function App(): ReactElement {
     [replaceDataset, collection, datasetName]
   );
 
+  const handleLoadRequest = useCallback(async (url: string): Promise<LoadResult> => {
+    let newCollection;
+    try {
+      console.log("Loading '" + url + "'.");
+      newCollection = await Collection.loadFromAmbiguousUrl(url);
+      setCollection(newCollection);
+      setCollectionUrl(url);
+      await replaceDataset(newCollection.getDefaultDatasetName(), newCollection);
+      return { result: true };
+    } catch (e) {
+      console.error(e);
+      if (e instanceof Error) {
+        return { result: false, errorMessage: "Error: " + e.message };
+      }
+      return { result: false };
+    }
+  }, []);
+
   const updateFeature = useCallback(
     async (newDataset: Dataset, newFeatureName: string): Promise<void> => {
       if (!newDataset?.hasFeature(newFeatureName)) {
@@ -553,13 +571,7 @@ function App(): ReactElement {
 
           <Button type="primary">Export</Button>
 
-          <LoadDatasetButton
-            onRequestLoad={async (url: string): Promise<boolean> => {
-              console.log("Loading " + url);
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-              return false;
-            }}
-          />
+          <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
       </div>
 

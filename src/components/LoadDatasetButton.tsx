@@ -1,6 +1,11 @@
-import React, { ReactElement, useCallback, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import styles from "./LoadDatasetButton.module.css";
 import { Button, Input, Modal } from "antd";
+
+export type LoadResult = {
+  result: boolean;
+  errorMessage?: string;
+};
 
 type LoadDatasetButtonProps = {
   /**
@@ -8,7 +13,7 @@ type LoadDatasetButtonProps = {
    * @param url The string URL, as typed into the URL input field.
    * @returns a boolean promise of whether the load operation was successful or not.
    */
-  onRequestLoad: (url: string) => Promise<boolean>;
+  onRequestLoad: (url: string) => Promise<LoadResult>;
 };
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
@@ -17,6 +22,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   props = { ...defaultProps, ...props };
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+  const modalContextRef = useRef<HTMLDivElement>(null);
   const [urlInput, setUrlInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string>("");
@@ -30,24 +36,39 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       return;
     }
     setIsLoading(true);
-    const succeeded = await props.onRequestLoad(urlInput);
-    if (succeeded) {
+    const result = await props.onRequestLoad(urlInput);
+    if (result.result) {
+      // success!
+      setErrorText("");
+      setUrlInput("");
       setIsLoadModalOpen(false);
-    } else {
-      setErrorText("The dataset(s) could not be loaded with the URL provided. Please check it and try again.");
+      setIsLoading(false);
+      return;
     }
+
+    setErrorText(
+      result.errorMessage || "The dataset(s) could not be loaded with the URL provided. Please check it and try again."
+    );
+
     setIsLoading(false);
   }, [urlInput, props.onRequestLoad]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     // should this cancel dataset loading mid-load?
     setErrorText("");
     setUrlInput("");
     setIsLoadModalOpen(false);
-  };
+  }, []);
+
+  // Override modal container method if the ref has been set (after first render)
+  const modalGetContainer = modalContextRef
+    ? () => {
+        return modalContextRef.current!;
+      }
+    : undefined;
 
   return (
-    <>
+    <div ref={modalContextRef}>
       <Button type="primary" onClick={() => setIsLoadModalOpen(true)}>
         Load
       </Button>
@@ -59,6 +80,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         okButtonProps={{ loading: isLoading }}
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
+        getContainer={modalGetContainer}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <p>Load a collection of datasets or a single dataset by providing its URL.</p>
@@ -67,9 +89,15 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
             value={urlInput}
             onChange={(event) => setUrlInput(event.target.value)}
           />
-          {errorText ? <p className={styles.errorText}>{errorText}</p> : <></>}
+          {errorText ? (
+            <p>
+              <span className={styles.errorText}>{errorText}</span>
+            </p>
+          ) : (
+            <></>
+          )}
         </div>
       </Modal>
-    </>
+    </div>
   );
 }
