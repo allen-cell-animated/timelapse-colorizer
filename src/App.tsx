@@ -341,6 +341,10 @@ function App(): ReactElement {
         newFeatureName = newDataset.featureNames[0];
       }
 
+      // Clamp frames if out of bounds
+      if (newDataset.numberOfFrames > currentFrame) {
+        await canv.setFrame(newDataset.numberOfFrames - 1);
+      }
       await canv.setDataset(newDataset);
       updateFeature(newDataset, newFeatureName);
       plot?.setDataset(newDataset);
