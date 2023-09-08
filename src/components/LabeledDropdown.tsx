@@ -50,7 +50,7 @@ export default function LabeledDropdown(props: LabeledDropdownProps): ReactEleme
     },
     items: items,
     selectable: true,
-    defaultSelectedKeys: [props.selected],
+    selectedKeys: [props.selected],
     // TODO: Override render property for menu to add text clipping + tooltips for long entries
   };
 

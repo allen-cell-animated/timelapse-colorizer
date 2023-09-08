@@ -365,7 +365,7 @@ function App(): ReactElement {
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(
     (value: string): void => {
-      if (value !== datasetName) {
+      if (value !== datasetName && collection) {
         replaceDataset(value, collection);
       }
     },
