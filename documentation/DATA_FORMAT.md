@@ -4,6 +4,8 @@ Nucmorph-Colorizer can only load datasets that follow the defined data specifica
 
 The easiest way to get started is to modify one of our existing data processing scripts, like [`generate_data.py`](../scripts/timelapse-colorizer-data/generate_data.py)!
 
+(Check with your team or one of the developers on the Animated Cell team to see if there's already a data generation script for your project!)
+
 ## Terms
 
 Here are a few important terms:
@@ -16,7 +18,7 @@ Here are a few important terms:
 
 A dataset consists of a group of files that describe the segmentations, tracks, feature data, processed images, and additional metadata for a single time-series.
 
-The most important file is the **manifest JSON**, which describes all the files in the dataset. (Manifests should be named `manifest.json` by default.)
+The most important file is the **manifest**, which is a JSON file that describes all the files in the dataset. (Manifests should be named `manifest.json` by default.)
 
 ```
 --manifest.json--
@@ -39,7 +41,7 @@ The most important file is the **manifest JSON**, which describes all the files 
 }
 
 
-*Note: all paths are relative to this JSON file.
+*Note: all paths are relative to the location of the manifest file.
 ```
 
 Note that the `outliers`, `centroids`, and `bounds` files are optional, but certain features of Nucmorph-Colorizer won't work without them.
@@ -209,9 +211,9 @@ The resulting frame would look like this:
 
 ### 4. Features
 
-Datasets can contain any number of `features`, which are a numeric value assigned to each object ID in the dataset. Each feature file corresponds to a single column of data.
+Datasets can contain any number of `features`, which are a numeric value assigned to each object ID in the dataset. Features are used by the Nucmorph-Colorizer to colorize objects, and each feature file corresponds to a single column of data. Examples of relevant features might include the volume, depth, number of neighbors, age, etc. of each object.
 
-Features must also provide a `min` and `max` range property.
+Features include a `data` array, specifying the feature value for each object ID, and should also provide a `min` and `max` range property.
 
 ```
 --feature1.json--
@@ -366,9 +368,3 @@ Here's a list of where Nucmorph-Colorizer will check for the manifest files for 
 ---
 
 </details>
-
-## Getting Started
-
-For most datasets, the easiest way to get started is to modify one of the existing data generation scripts, like [`generate_data.py`](../scripts/timelapse-colorizer-data/generate_data.py).
-
-(Check with your team or one of the developers on the Animated Cell team to see if there's already a data generation script for your project!)
