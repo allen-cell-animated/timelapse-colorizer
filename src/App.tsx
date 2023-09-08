@@ -7,7 +7,7 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 
 import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
-import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
 import { Button, InputNumber, Slider, notification } from "antd";
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
 import LabeledDropdown from "./components/LabeledDropdown";
@@ -15,6 +15,7 @@ import ColorRampSelector from "./components/ColorRampSelector";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import AppStyle from "./components/AppStyle";
 import { NotificationConfig } from "antd/es/notification/interface";
+import Collection from "./colorizer/Collection";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -33,10 +34,11 @@ function App(): ReactElement {
     canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
   }, []);
 
-  const [collection, setCollection] = useState<string | undefined>();
-  const [collectionData, setCollectionData] = useState<urlUtils.CollectionData | undefined>();
+  const [collectionUrl, setCollectionUrl] = useState<string | undefined>();
+  const [collection, setCollection] = useState<Collection | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetName, setDatasetName] = useState("");
+
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
@@ -79,7 +81,7 @@ function App(): ReactElement {
    */
   const getUrlParams = useCallback((): string => {
     return urlUtils.stateToUrlParamString({
-      collection: collection || null,
+      collection: collectionUrl || null,
       dataset: datasetName,
       feature: featureName,
       track: selectedTrack?.trackId,
@@ -178,22 +180,26 @@ function App(): ReactElement {
     const loadInitialDatabase = async (): Promise<void> => {
       setSize();
 
-      let _collection = initialUrlParams.collection;
+      let _collectionUrl = initialUrlParams.collection;
       const _datasetName = initialUrlParams.dataset;
-      let _collectionData;
-      // Load single dataset instead of collection
-      if (_datasetName && urlUtils.isUrl(_datasetName)) {
-        await replaceDataset(_datasetName);
+      let _collection: Collection;
+
+      // Dataset is a URL and no collection URL is provided; load only the dataset
+      if (_datasetName && urlUtils.isUrl(_datasetName) && !_collectionUrl) {
+        // Make a dummy collection that will include this
+        _collection = Collection.makeCollectionFromSingleDataset(_datasetName);
+        setCollection(_collection);
+        await replaceDataset(_datasetName, _collection);
         setIsInitialDatasetLoaded(true);
         return;
       }
 
       // Load collection data.
-      _collection = _collection || urlUtils.DEFAULT_COLLECTION_PATH;
-      setCollection(_collection);
+      _collectionUrl = _collectionUrl || DEFAULT_COLLECTION_PATH;
+      setCollectionUrl(_collectionUrl);
 
       try {
-        _collectionData = await urlUtils.getCollectionData(_collection);
+        _collection = await Collection.loadCollection(_collectionUrl);
       } catch (e) {
         console.error(e);
         // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
@@ -202,10 +208,10 @@ function App(): ReactElement {
         );
       }
 
-      setCollectionData(_collectionData);
+      setCollection(_collection);
 
-      const defaultDatasetName = urlUtils.getDefaultDatasetName(_collectionData);
-      await replaceDataset(_datasetName || defaultDatasetName, _collection, _collectionData);
+      const defaultDatasetName = _collection.getDefaultDatasetName();
+      await replaceDataset(_datasetName || defaultDatasetName, _collection);
       setIsInitialDatasetLoaded(true);
     };
     loadInitialDatabase();
@@ -288,32 +294,20 @@ function App(): ReactElement {
 
   // DATASET LOADING ///////////////////////////////////////////////////////
   const replaceDataset = useCallback(
-    async (
-      datasetNameParam: string,
-      collectionParam?: string | null,
-      collectionDataParam?: urlUtils.CollectionData | null
-    ): Promise<void> => {
+    async (_datasetName: string, _collection: Collection): Promise<void> => {
       console.time("loadDataset");
       setDatasetOpen(false);
 
-      if (collectionDataParam && !collectionDataParam.has(datasetNameParam)) {
+      if (!_collection.hasDataset(_datasetName)) {
         console.warn(
-          `Collection does not include '${datasetNameParam}' as a dataset. Defaulting to first dataset in the collection.`
+          `Collection does not include '${_datasetName}' as a dataset. Defaulting to first dataset in the collection.`
         );
-        datasetNameParam = urlUtils.getDefaultDatasetName(collectionDataParam);
+        _datasetName = _collection.getDefaultDatasetName();
       }
 
       let newDataset;
       try {
-        const datasetPath = urlUtils.getExpectedDatasetPath(
-          datasetNameParam,
-          collectionParam || undefined,
-          collectionDataParam || undefined
-        );
-
-        console.log(`Fetching dataset from path '${datasetPath}'`);
-        newDataset = new Dataset(datasetPath);
-        await newDataset.open();
+        newDataset = await _collection.tryLoadDataset(_datasetName);
 
         // Replace old dataset
         if (dataset !== null) {
@@ -321,24 +315,22 @@ function App(): ReactElement {
         }
       } catch (e) {
         console.error(e);
-        console.error(`Could not load dataset '${datasetNameParam}'.`);
+        console.error(`Could not load dataset '${_datasetName}'.`);
         console.timeEnd("loadDataset");
         if (dataset !== null) {
-          console.warn(`Showing last loaded dataset '${datasetNameParam}' instead.`);
+          console.warn(`Showing last loaded dataset '${_datasetName}' instead.`);
           setDatasetOpen(true);
           return;
         } else {
           // Encountered error on first dataset load
           // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
-          if (!collectionDataParam) {
-            return;
-          }
-          const defaultName = urlUtils.getDefaultDatasetName(collectionDataParam);
-          if (datasetNameParam === defaultName) {
+
+          const defaultName = _collection.getDefaultDatasetName();
+          if (_datasetName === defaultName) {
             return; // we already tried to load the default so give up
           }
           console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
-          return replaceDataset(defaultName, collectionParam, collectionDataParam);
+          return replaceDataset(defaultName, _collection);
         }
       }
       setFindTrackInput("");
@@ -361,7 +353,7 @@ function App(): ReactElement {
       setCurrentFrame(newFrame);
       setDatasetOpen(true);
       setDataset(newDataset);
-      setDatasetName(datasetNameParam);
+      setDatasetName(_datasetName);
       setFeatureName(newFeatureName);
 
       urlUtils.updateUrl(getUrlParams());
@@ -374,10 +366,10 @@ function App(): ReactElement {
   const handleDatasetChange = useCallback(
     (value: string): void => {
       if (value !== datasetName) {
-        replaceDataset(value, collection, collectionData);
+        replaceDataset(value, collection);
       }
     },
-    [replaceDataset, collection, collectionData, datasetName]
+    [replaceDataset, collection, datasetName]
   );
 
   const updateFeature = useCallback(
@@ -540,7 +532,7 @@ function App(): ReactElement {
             label="Dataset"
             selected={datasetName}
             buttonType="primary"
-            items={urlUtils.getDatasetNames(datasetName, collectionData || null)}
+            items={collection?.getDatasetNames() || []}
             onChange={handleDatasetChange}
           />
           <LabeledDropdown

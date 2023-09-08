@@ -1,5 +1,5 @@
 import { HexColorString } from "three";
-import { ColorRamp } from "./colorizer";
+import { ColorRamp } from "./../colorizer";
 
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
 // TODO: Separate display names and internal names for color ramps

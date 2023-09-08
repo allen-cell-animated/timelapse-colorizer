@@ -1,7 +1,7 @@
 import React, { ReactElement, useMemo } from "react";
 import styles from "./ColorRampSelector.module.css";
 import { ColorRamp } from "../colorizer";
-import { DEFAULT_COLOR_RAMPS } from "../constants";
+import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { Button, Tooltip } from "antd";
 
 type ColorRampSelectorProps = {
