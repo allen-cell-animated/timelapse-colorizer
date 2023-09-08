@@ -115,16 +115,17 @@ export function isUrl(input: string | null): boolean {
 /**
  * Decodes strings using `decodeURIComponent`, handling null inputs.
  */
-export function safeDecodeString(input: string | null): string | null {
+function safeDecodeString(input: string | null): string | null {
   return input === null ? null : decodeURIComponent(input);
 }
 
-export function isJson(input: string): boolean {
-  return /.json$/.test(input);
-}
-
-export function getBaseUrl(input: string): string {
-  return input.substring(0, input.lastIndexOf("/"));
+/**
+ * Returns whether the input string is a path to a .json file.
+ * @param path The string path to test.
+ * @returns true if input ends in `.json`.
+ */
+export function isJson(path: string): boolean {
+  return /.json$/.test(path);
 }
 
 /**

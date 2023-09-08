@@ -57,7 +57,9 @@ export default class Collection {
   }
 
   public getDatasetNames(): string[] {
-    return Array.from(this.entries.keys());
+    return Array.from(this.entries.values()).map((value) => {
+      return value.name;
+    });
   }
 
   /**
