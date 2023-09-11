@@ -113,6 +113,7 @@ function App(): ReactElement {
       urlUtils.updateUrl(getUrlParams());
     }
   }, [
+    collection,
     dataset,
     datasetName,
     featureName,
@@ -172,7 +173,7 @@ function App(): ReactElement {
     return urlUtils.loadParamsFromUrl();
   });
 
-  // Load database and collections data from the URL.
+  // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
   // TODO: Move this out of App's render into either `Collections.ts` or `url_utils.ts`.
   //  Also, handle collections when single-URL datasets are loaded by making a new collection with a single entry?
@@ -341,20 +342,16 @@ function App(): ReactElement {
         newFeatureName = newDataset.featureNames[0];
       }
 
-      // Clamp frames if out of bounds
-      if (newDataset.numberOfFrames > currentFrame) {
-        await canv.setFrame(newDataset.numberOfFrames - 1);
-      }
       await canv.setDataset(newDataset);
       updateFeature(newDataset, newFeatureName);
       plot?.setDataset(newDataset);
       plot?.removePlot();
+      setSelectedTrack(null);
 
       // Clamp frame to new range
-      const newFrame = Math.min(currentFrame, canv.getTotalFrames());
-      canv.setFrame(newFrame);
+      const newFrame = Math.min(currentFrame, canv.getTotalFrames() - 1);
       // Update state variables
-      setCurrentFrame(newFrame);
+      await setFrame(newFrame);
       setDatasetOpen(true);
       setDataset(newDataset);
       setDatasetName(_datasetName);
@@ -376,23 +373,27 @@ function App(): ReactElement {
     [replaceDataset, collection, datasetName]
   );
 
-  const handleLoadRequest = useCallback(async (url: string): Promise<LoadResult> => {
-    let newCollection;
-    try {
-      console.log("Loading '" + url + "'.");
-      newCollection = await Collection.loadFromAmbiguousUrl(url);
-      setCollection(newCollection);
-      setCollectionUrl(url);
-      await replaceDataset(newCollection.getDefaultDatasetName(), newCollection);
-      return { result: true };
-    } catch (e) {
-      console.error(e);
-      if (e instanceof Error) {
-        return { result: false, errorMessage: "Error: " + e.message };
+  const handleLoadRequest = useCallback(
+    async (url: string): Promise<LoadResult> => {
+      let newCollection;
+      try {
+        console.log("Loading '" + url + "'.");
+        newCollection = await Collection.loadFromAmbiguousUrl(url);
+        setCollection(newCollection);
+        setCollectionUrl(url);
+        await replaceDataset(newCollection.getDefaultDatasetName(), newCollection);
+        setSize(); // Force dimension calculation to prevent scaling issue on load
+        return { result: true };
+      } catch (e) {
+        console.error(e);
+        if (e instanceof Error) {
+          return { result: false, errorMessage: "Error: " + e.message };
+        }
+        return { result: false };
       }
-      return { result: false };
-    }
-  }, []);
+    },
+    [replaceDataset]
+  );
 
   const updateFeature = useCallback(
     async (newDataset: Dataset, newFeatureName: string): Promise<void> => {

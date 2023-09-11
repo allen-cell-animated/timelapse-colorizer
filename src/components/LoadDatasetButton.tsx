@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useRef, useState } from "react";
 import styles from "./LoadDatasetButton.module.css";
 import { Button, Input, Modal } from "antd";
 
