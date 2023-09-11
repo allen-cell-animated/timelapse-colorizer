@@ -1,3 +1,6 @@
+// Typescript doesn't recognize RequestInit
+/* global RequestInit */
+
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../../constants";
 
 const URL_PARAM_TRACK = "track";
