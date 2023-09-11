@@ -1,14 +1,13 @@
 import React, { ReactElement, useMemo } from "react";
 import styles from "./ColorRampSelector.module.css";
-import { ColorRamp } from "../colorizer";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { Button, Tooltip } from "antd";
 
 type ColorRampSelectorProps = {
   selected: string;
-  colorRamps?: Map<string, ColorRamp>;
+  onChange: (colorRampKey: string) => void;
+  colorRamps?: typeof DEFAULT_COLOR_RAMPS;
   disabled?: boolean;
-  onChange: (value: string) => void;
 };
 
 const defaultProps: Partial<ColorRampSelectorProps> = {
@@ -18,7 +17,9 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElement => {
   props = { ...defaultProps, ...props };
 
-  const selectedRamp = props.colorRamps?.get(props.selected);
+  const selectedRampData = props.colorRamps?.get(props.selected);
+  const selectedRamp = selectedRampData?.colorRamp;
+
   if (!selectedRamp) {
     throw new Error(`Selected color ramp name '${props.selected}' is invalid.`);
   }
@@ -41,11 +42,13 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
       if (i === props.colorRamps!.size - 1) {
         className += " " + styles.dropdownLast;
       }
-      const [name, colorRamp] = colorRampEntries[i];
+
+      // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
+      const [key, colorRampData] = colorRampEntries[i];
       contents.push(
-        <Tooltip title={name} placement="right" key={name}>
-          <Button key={name} className={className} onClick={() => props.onChange(name)}>
-            <img src={colorRamp.createGradientCanvas(120, 25).toDataURL()} />
+        <Tooltip title={colorRampData.name} placement="right" key={key}>
+          <Button key={key} className={className} onClick={() => props.onChange(key)}>
+            <img src={colorRampData.colorRamp.createGradientCanvas(120, 25).toDataURL()} />
           </Button>
         </Tooltip>
       );
@@ -67,7 +70,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
   // Remove tooltip when disabled to avoid spacing/layout issues
   if (!props.disabled) {
     selectorButton = (
-      <Tooltip title={props.selected} placement="right" open={showTooltip}>
+      <Tooltip title={selectedRampData.name} placement="right" open={showTooltip}>
         {selectorButton}
       </Tooltip>
     );

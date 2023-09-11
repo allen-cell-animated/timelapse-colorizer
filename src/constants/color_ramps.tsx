@@ -1,34 +1,77 @@
 import { HexColorString } from "three";
 import { ColorRamp } from "./../colorizer";
 
+// TODO: Could add additional tags for filtering, etc. to each color ramp!
+export type RawColorRampData = {
+  /** Display name */
+  key: string;
+  name: string;
+  colorStops: HexColorString[];
+};
+
+export type ColorRampData = RawColorRampData & {
+  colorRamp: ColorRamp;
+};
+
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
-// TODO: Separate display names and internal names for color ramps
-const colorStops: [string, HexColorString[]][] = [
-  // Matplotlib - cool
-  ["Matplotlib - Cool", ["#00ffff", "#ff00ff"]],
-  // Esri color ramps - Red 5
-  ["ESRI - Red 5", ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"]],
-  // Esri color ramps - Orange 5
-  ["ESRI - Orange 5", ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"]],
-  // Esri color ramps - Yellow 2
-  ["ESRI - Yellow 2", ["#ffc800", "#e7a300", "#b78300", "#886200", "#584100"]],
-  // Esri color ramps - Green 4
-  ["ESRI - Green 4", ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"]],
-  // Esri color ramps - Blue 14
-  ["ESRI - Blue 14", ["#ffec99", "#ccbe6a", "#799a96", "#3d6da2", "#3a4d6b"]],
-  // Esri color ramps - Purple 4
-  ["ESRI - Purple 4", ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"]],
-  // Esri color ramps - Mentone Beach
-  ["ESRI - Mentone Beach", ["#fee086", "#fc9a59", "#db4a5b", "#995375", "#48385f"]],
-  // Esri color ramps - Retro Flow
-  [
-    "ESRI - Retro Flow",
-    ["#ebe498", "#c4dc66", "#adbf27", "#b6a135", "#d9874c", "#d43f70", "#bf00bf", "#881fc5", "#443dbf", "#007fd9"],
-  ],
-  // Esri color ramps - Heatmap 4
-  [
-    "ESRI - Heatmap 4",
-    [
+const rawColorRampData: RawColorRampData[] = [
+  { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
+  { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
+  {
+    key: "esri-orange_5",
+    name: "ESRI - Orange 5",
+    colorStops: ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
+  },
+  {
+    key: "esri-yellow_2",
+    name: "ESRI - Yellow 2",
+    colorStops: ["#ffc800", "#e7a300", "#b78300", "#886200", "#584100"],
+  },
+  {
+    key: "esri-green_4",
+    name: "ESRI - Green 4",
+    colorStops: ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
+  },
+  {
+    key: "esri-blue_14",
+    name: "ESRI - Blue 14",
+    colorStops: ["#ffec99", "#ccbe6a", "#799a96", "#3d6da2", "#3a4d6b"],
+  },
+  {
+    key: "esri-purple_4",
+    name: "ESRI - Orange 5",
+    colorStops: ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"],
+  },
+  {
+    key: "esri-mentone_beach",
+    name: "ESRI - Mentone Beach",
+    colorStops: ["#fee086", "#fc9a59", "#db4a5b", "#995375", "#48385f"],
+  },
+  {
+    key: "esri-orange_5",
+    name: "ESRI - Orange 5 - Cool",
+    colorStops: ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
+  },
+  {
+    key: "esri-retro_flow",
+    name: "ESRI - Retro Flow",
+    colorStops: [
+      "#ebe498",
+      "#c4dc66",
+      "#adbf27",
+      "#b6a135",
+      "#d9874c",
+      "#d43f70",
+      "#bf00bf",
+      "#881fc5",
+      "#443dbf",
+      "#007fd9",
+    ],
+  },
+  {
+    key: "esri-heatmap_4",
+    name: "ESRI - Heatmap 4",
+    colorStops: [
       "#ffffff",
       "#ffe3aa",
       "#ffc655",
@@ -43,19 +86,47 @@ const colorStops: [string, HexColorString[]][] = [
       "#2b1ca7",
       "#0022c8",
     ],
-  ],
-  // Esri color ramps - Blue and Red 9
-  ["ESRI - Blue Red 9", ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"]],
-  // Esri color ramps - Blue and Red 8
-  ["ESRI - Blue Red 8", ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"]],
-  // Esri color ramps - Red and Green 9
-  ["ESRI - Red Green 9", ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"]],
-  // Esri color ramps - Purple and Red 2
-  ["ESRI - Purple Red 2", ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"]],
-  // Esri color ramps - Green and Brown 1
-  ["ESRI - Green Brown 1", ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"]],
+  },
+  {
+    key: "esri-blue_red_9",
+    name: "ESRI - Blue Red 9",
+    colorStops: ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
+  },
+  {
+    key: "esri-blue_red_8",
+    name: "ESRI - Blue Red 8",
+    colorStops: ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"],
+  },
+  {
+    key: "esri-red_green_9",
+    name: "ESRI - Red Green 9",
+    colorStops: ["#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641"],
+  },
+  {
+    key: "esri-purple_red_2",
+    name: "ESRI - Purple Red 2",
+    colorStops: ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"],
+  },
+  {
+    key: "esri-green_brown_1",
+    name: "ESRI - Green Brown 1",
+    colorStops: ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"],
+  },
 ];
 
-export const DEFAULT_COLOR_RAMPS = new Map(colorStops.map(([name, ramp]) => [name, new ColorRamp(ramp)]));
-export const DEFAULT_COLOR_RAMP_ID = colorStops[0][0];
-export const DEFAULT_COLOR_RAMP = new ColorRamp(["#ffffff", "#000000"]);
+// Convert the color stops into color ramps
+const colorRampData: ColorRampData[] = rawColorRampData.map((value) => {
+  return {
+    ...value,
+    colorRamp: new ColorRamp(value.colorStops),
+  };
+});
+
+// Format the array so it can be read as a map
+const keyedColorRampData: [string, ColorRampData][] = colorRampData.map((value) => {
+  return [value.key, value];
+});
+const colorRampMap = new Map(keyedColorRampData);
+
+export const DEFAULT_COLOR_RAMPS = colorRampMap;
+export const DEFAULT_COLOR_RAMP_ID = Array.from(colorRampMap.keys())[0];

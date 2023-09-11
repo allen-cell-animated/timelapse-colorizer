@@ -45,7 +45,7 @@ function App(): ReactElement {
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const [colorRamps] = useState(DEFAULT_COLOR_RAMPS);
+  const [colorRampData] = useState(DEFAULT_COLOR_RAMPS);
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
@@ -53,6 +53,8 @@ function App(): ReactElement {
   const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
+  // Provides a mounting point for Antd's notification component. Otherwise, the notifications
+  // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
 
   const timeControls = useConstructor(() => {
@@ -80,7 +82,7 @@ function App(): ReactElement {
    */
   const getUrlParams = useCallback((): string => {
     return urlUtils.stateToUrlParamString({
-      collection: collection?.url || null,
+      collection: collection?.url,
       dataset: datasetName,
       feature: featureName,
       track: selectedTrack?.trackId,
@@ -98,7 +100,7 @@ function App(): ReactElement {
     // rendered correctly.
     canv.setShowTrackPath(showTrackPath);
     canv.setHideValuesOutOfRange(hideValuesOutOfRange);
-    canv.setColorRamp(colorRamps.get(colorRampKey)!); // TODO: Add fallback
+    canv.setColorRamp(colorRampData.get(colorRampKey)?.colorRamp!); // TODO: Add fallback
     canv.setColorMapRangeMin(colorRampMin);
     canv.setColorMapRangeMax(colorRampMax);
     canv.setSelectedTrack(selectedTrack);
@@ -120,7 +122,7 @@ function App(): ReactElement {
     selectedTrack,
     hideValuesOutOfRange,
     showTrackPath,
-    colorRamps,
+    colorRampData,
     colorRampKey,
     colorRampMin,
     colorRampMax,

@@ -3,18 +3,18 @@ import { describe, expect, it, vi } from "vitest";
 import ColorRampSelector from "../src/components/ColorRampSelector";
 import React from "react";
 import { ColorRamp } from "../src/colorizer";
-import { ColorRepresentation } from "three";
 import { ANY_ERROR } from "./test_utils";
+import { RawColorRampData } from "../src/constants";
 
 describe("ColorRampSelector", () => {
-  const colorRamps: [string, ColorRepresentation[]][] = [
-    ["map1", ["#ffffff", "#000000"]],
-    ["map2", ["#ffffff", "#000000"]],
-    ["map3", ["#ffffff", "#000000"]],
+  const colorRamps: [string, RawColorRampData][] = [
+    ["map1", { key: "map1", name: "Map 1", colorStops: ["#ffffff", "#000000"] }],
+    ["map2", { key: "map2", name: "Map 2", colorStops: ["#ffffff", "#000000"] }],
+    ["map3", { key: "map3", name: "Map 3", colorStops: ["#ffffff", "#000000"] }],
   ];
   const customColorRamps = new Map(
-    colorRamps.map(([name, gradient]) => {
-      return [name, new ColorRamp(gradient)];
+    colorRamps.map(([key, data]) => {
+      return [key, { ...data, colorRamp: new ColorRamp(data.colorStops) }];
     })
   );
 
