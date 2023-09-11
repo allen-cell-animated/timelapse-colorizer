@@ -22,22 +22,22 @@ describe("Collection", () => {
       expect(() => new Collection(collectionMap)).toThrowError(ANY_ERROR);
     });
 
-    it("should use names and not keys of dataset", () => {
-      const datasetNames = defaultCollection.getDatasetNames();
+    it("should use keys and not names of dataset", () => {
+      const datasetNames = defaultCollection.getDatasetKeys();
 
-      expect(datasetNames).to.deep.equal(["dataset1", "dataset2", "dataset3"]);
+      expect(datasetNames).to.deep.equal(["d1", "d2", "d3"]);
     });
   });
 
-  describe("getDefaultDatasetName", () => {
+  describe("getDefaultDataset", () => {
     it("throws an error for empty collections", () => {
       // allow any error message as long as it throws
       const collection = new Collection(new Map());
-      expect(() => collection.getDefaultDatasetName()).toThrowError(ANY_ERROR);
+      expect(() => collection.getDefaultDataset()).toThrowError(ANY_ERROR);
     });
 
     it("returns the first dataset in a collection", () => {
-      expect(defaultCollection.getDefaultDatasetName()).to.equal("dataset1");
+      expect(defaultCollection.getDefaultDataset()).to.equal("d1");
     });
   });
 
@@ -55,7 +55,7 @@ describe("Collection", () => {
       const mockFetch = makeMockFetchMethod("https://e.com/collection.json", collectionJson);
       const collection = await Collection.loadCollection(url, mockFetch);
 
-      expect(collection.getDatasetNames().length).to.equal(5);
+      expect(collection.getDatasetKeys().length).to.equal(5);
       expect(collection.getDatasetPath("dataset1")).to.equal("https://e.com/dir1/manifest.json");
       expect(collection.getDatasetPath("dataset2")).to.equal("https://e.com/dir2/nested/some_dir/manifest.json");
       expect(collection.getDatasetPath("dataset3")).to.equal("https://e.com/dir3/data.json");
@@ -78,18 +78,25 @@ describe("Collection", () => {
       const collection = Collection.makeCollectionFromSingleDataset(datasetPath);
       const fullPath = datasetPath + "/" + DEFAULT_DATASET_FILENAME;
 
-      expect(collection.getDatasetNames().length).to.equal(1);
+      expect(collection.getDatasetKeys().length).to.equal(1);
       expect(collection.hasDataset(fullPath)).to.be.true;
       expect(collection.getDatasetPath(fullPath)).to.equal(fullPath);
     });
 
-    it("makes a collection with absolute dataset paths", async () => {
+    it("makes a collection with absolute dataset paths", () => {
       const datasetPath = "http://website.com/data/some-manifest.json";
       const collection = Collection.makeCollectionFromSingleDataset(datasetPath);
 
-      expect(collection.getDatasetNames().length).to.equal(1);
+      expect(collection.getDatasetKeys().length).to.equal(1);
       expect(collection.hasDataset(datasetPath)).to.be.true;
       expect(collection.getDatasetPath(datasetPath)).to.equal(datasetPath);
+    });
+
+    it("sets the URL to null", () => {
+      const datasetPath = "http://website.com/data/some-manifest.json";
+      const collection = Collection.makeCollectionFromSingleDataset(datasetPath);
+
+      expect(collection.url).to.be.null;
     });
   });
 });

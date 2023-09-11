@@ -34,7 +34,6 @@ function App(): ReactElement {
     canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
   }, []);
 
-  const [collectionUrl, setCollectionUrl] = useState<string | undefined>();
   const [collection, setCollection] = useState<Collection | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetName, setDatasetName] = useState("");
@@ -81,7 +80,7 @@ function App(): ReactElement {
    */
   const getUrlParams = useCallback((): string => {
     return urlUtils.stateToUrlParamString({
-      collection: collectionUrl || null,
+      collection: collection?.url || null,
       dataset: datasetName,
       feature: featureName,
       track: selectedTrack?.trackId,
@@ -196,10 +195,8 @@ function App(): ReactElement {
       }
 
       // Load collection data.
-      _collectionUrl = _collectionUrl || DEFAULT_COLLECTION_PATH;
-      setCollectionUrl(_collectionUrl);
-
       try {
+        _collectionUrl = _collectionUrl || DEFAULT_COLLECTION_PATH;
         _collection = await Collection.loadCollection(_collectionUrl);
       } catch (e) {
         console.error(e);
@@ -211,7 +208,7 @@ function App(): ReactElement {
 
       setCollection(_collection);
 
-      const defaultDatasetName = _collection.getDefaultDatasetName();
+      const defaultDatasetName = _collection.getDefaultDataset();
       await replaceDataset(_datasetName || defaultDatasetName, _collection);
       setIsInitialDatasetLoaded(true);
     };
@@ -303,7 +300,7 @@ function App(): ReactElement {
         console.warn(
           `Collection does not include '${_datasetName}' as a dataset. Defaulting to first dataset in the collection.`
         );
-        _datasetName = _collection.getDefaultDatasetName();
+        _datasetName = _collection.getDefaultDataset();
       }
 
       let newDataset;
@@ -326,7 +323,7 @@ function App(): ReactElement {
           // Encountered error on first dataset load
           // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
 
-          const defaultName = _collection.getDefaultDatasetName();
+          const defaultName = _collection.getDefaultDataset();
           if (_datasetName === defaultName) {
             return; // we already tried to load the default so give up
           }
@@ -380,8 +377,7 @@ function App(): ReactElement {
         console.log("Loading '" + url + "'.");
         newCollection = await Collection.loadFromAmbiguousUrl(url);
         setCollection(newCollection);
-        setCollectionUrl(url);
-        await replaceDataset(newCollection.getDefaultDatasetName(), newCollection);
+        await replaceDataset(newCollection.getDefaultDataset(), newCollection);
         setSize(); // Force dimension calculation to prevent scaling issue on load
         return { result: true };
       } catch (e) {
@@ -555,7 +551,7 @@ function App(): ReactElement {
             label="Dataset"
             selected={datasetName}
             buttonType="primary"
-            items={collection?.getDatasetNames() || []}
+            items={collection?.getDatasetKeys() || []}
             onChange={handleDatasetChange}
           />
           <LabeledDropdown
