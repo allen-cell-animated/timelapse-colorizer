@@ -21,6 +21,13 @@
   font-weight: 400;
 }
 
+.app h3 {
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+}
+
 .app label {
   font-size: 14px;
 }
@@ -99,12 +106,15 @@
   display: inline-block;
 }
 
-.canvasTopControlsContainer {
+.mainContentTopControls {
   margin: 10px 0;
+}
+
+.topControlsContainer {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 20px;
   align-items: center;
 }
 

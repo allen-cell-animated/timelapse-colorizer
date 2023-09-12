@@ -24,6 +24,14 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
           fontFamily: "Lato",
           borderRadiusLG: 4,
         },
+        components: {
+          Checkbox: {
+            borderRadiusSM: 2,
+            controlInteractiveSize: 16,
+            fontSize: 14,
+            paddingXS: 6,
+          },
+        },
       }}
     >
       <div className={props.className}>{props.children}</div>

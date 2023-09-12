@@ -1,7 +1,7 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
-import { Button, InputNumber, Slider, notification } from "antd";
+import { Button, Checkbox, InputNumber, Slider, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 
 import styles from "./App.module.css";
@@ -568,64 +568,64 @@ function App(): ReactElement {
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
-        <div className={styles.canvasTopControlsContainer}>
-          <div className={styles.labeledColorRamp}>
-            <InputNumber
-              size="small"
-              style={{ width: "80px" }}
-              value={colorRampMin}
-              onChange={(value) => {
-                value && setColorRampMin(value);
-              }}
-              controls={false}
-              min={0}
-            />
-            <div className={styles.sliderContainer}>
-              <Slider
-                min={dataset?.getFeatureData(featureName)?.min}
-                max={dataset?.getFeatureData(featureName)?.max}
-                range={{ draggableTrack: true }}
-                value={[colorRampMin, colorRampMax]}
-                onChange={(value: [number, number]) => {
-                  setColorRampMin(value[0]);
-                  setColorRampMax(value[1]);
+        <div className={styles.mainContentTopControls}>
+          <h3 style={{ margin: "0" }}>Feature value range</h3>
+          <div className={styles.topControlsContainer}>
+            <div className={styles.labeledColorRamp}>
+              <InputNumber
+                size="small"
+                style={{ width: "80px" }}
+                value={colorRampMin}
+                onChange={(value) => {
+                  value && setColorRampMin(value);
                 }}
+                controls={false}
+                min={0}
+              />
+              <div className={styles.sliderContainer}>
+                <Slider
+                  min={dataset?.getFeatureData(featureName)?.min}
+                  max={dataset?.getFeatureData(featureName)?.max}
+                  range={{ draggableTrack: true }}
+                  value={[colorRampMin, colorRampMax]}
+                  onChange={(value: [number, number]) => {
+                    setColorRampMin(value[0]);
+                    setColorRampMax(value[1]);
+                  }}
+                />
+              </div>
+              <InputNumber
+                size="small"
+                type="number"
+                style={{ width: "80px" }}
+                value={colorRampMax}
+                onChange={(value) => {
+                  value && setColorRampMax(value);
+                }}
+                controls={false}
+                min={0}
               />
             </div>
-
-            <InputNumber
-              size="small"
-              type="number"
-              style={{ width: "80px" }}
-              value={colorRampMax}
-              onChange={(value) => {
-                value && setColorRampMax(value);
-              }}
-              controls={false}
-              min={0}
-            />
-            <button onClick={handleResetRangeClick}>Reset range</button>
-            <label>
-              <input
-                type="checkbox"
-                checked={isColorRampRangeLocked}
-                onChange={() => {
-                  // Invert lock on range
-                  setIsColorRampRangeLocked(!isColorRampRangeLocked);
-                }}
-              />
-              Lock color map range
-            </label>
-            <label>
-              <input
+            <div>
+              <Checkbox
                 type="checkbox"
                 checked={hideValuesOutOfRange}
                 onChange={() => {
                   setHideValuesOutOfRange(!hideValuesOutOfRange);
                 }}
-              />
-              Hide values outside of range
-            </label>
+              >
+                Hide values outside of range
+              </Checkbox>
+              <Checkbox
+                checked={isColorRampRangeLocked}
+                onChange={() => {
+                  // Invert lock on range
+                  setIsColorRampRangeLocked(!isColorRampRangeLocked);
+                }}
+              >
+                Keep range between datasets
+              </Checkbox>
+            </div>
           </div>
         </div>
 
