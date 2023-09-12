@@ -142,7 +142,11 @@ export default class Collection {
       // TODO: Return error message?
       console.timeEnd("loadDataset");
       if (e instanceof Error) {
-        return { loaded: false, dataset: null, errorMessage: e?.toString() };
+        return {
+          loaded: false,
+          dataset: null,
+          errorMessage: `Error: Could not load dataset manifest '${datasetKey}'. ("${e}")`,
+        };
       } else {
         return { loaded: false, dataset: null };
       }
@@ -213,8 +217,7 @@ export default class Collection {
     try {
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
-      console.error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
-      throw e;
+      throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
     }
     if (!response.ok) {
       throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': Fetch failed.`);

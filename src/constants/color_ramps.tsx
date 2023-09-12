@@ -40,18 +40,13 @@ const rawColorRampData: RawColorRampData[] = [
   },
   {
     key: "esri-purple_4",
-    name: "ESRI - Orange 5",
+    name: "ESRI - Purple 4",
     colorStops: ["#edf8fb", "#b3cde3", "#8c96c6", "#8856a7", "#810f7c"],
   },
   {
     key: "esri-mentone_beach",
     name: "ESRI - Mentone Beach",
     colorStops: ["#fee086", "#fc9a59", "#db4a5b", "#995375", "#48385f"],
-  },
-  {
-    key: "esri-orange_5",
-    name: "ESRI - Orange 5 - Cool",
-    colorStops: ["#dfe1e6", "#bbbfc9", "#b39e93", "#c4703e", "#8c4a23"],
   },
   {
     key: "esri-retro_flow",
