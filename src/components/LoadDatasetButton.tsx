@@ -2,18 +2,17 @@ import React, { ReactElement, useCallback, useRef, useState } from "react";
 import styles from "./LoadDatasetButton.module.css";
 import { Button, Input, Modal } from "antd";
 
-export type LoadResult = {
-  result: boolean;
-  errorMessage?: string;
-};
-
 type LoadDatasetButtonProps = {
   /**
    * Callback for when a URL is requested to be loaded.
    * @param url The string URL, as typed into the URL input field.
-   * @returns a boolean promise of whether the load operation was successful or not.
+   * @returns a Promise object repreesenting the status of the request.
+   * - The promise should reject if the load fails for any reason. If it provides
+   * a reason, the reason will be shown in the modal.
+   * - The promise should resolve when the load has completed, which will cause the
+   * modal to dismiss.
    */
-  onRequestLoad: (url: string) => Promise<LoadResult>;
+  onRequestLoad: (url: string) => Promise<void>;
 };
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
@@ -36,21 +35,24 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       return;
     }
     setIsLoading(true);
-    const result = await props.onRequestLoad(urlInput);
-    if (result.result) {
-      // success!
-      setErrorText("");
-      setUrlInput("");
-      setIsLoadModalOpen(false);
-      setIsLoading(false);
-      return;
-    }
-
-    setErrorText(
-      result.errorMessage || "The dataset(s) could not be loaded with the URL provided. Please check it and try again."
+    props.onRequestLoad(urlInput).then(
+      () => {
+        // success
+        setErrorText("");
+        setUrlInput("");
+        setIsLoadModalOpen(false);
+        setIsLoading(false);
+        return;
+      },
+      (reason) => {
+        // failed
+        setErrorText(
+          reason.toString() ||
+            "The dataset(s) could not be loaded with the URL provided. Please check it and try again."
+        );
+        setIsLoading(false);
+      }
     );
-
-    setIsLoading(false);
   }, [urlInput, props.onRequestLoad]);
 
   const handleCancel = useCallback(() => {

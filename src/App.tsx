@@ -1,21 +1,22 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
-import { Plotting, ColorizeCanvas, Dataset, Track } from "./colorizer";
+
+import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
+import { Button, InputNumber, Slider, notification } from "antd";
+import { NotificationConfig } from "antd/es/notification/interface";
+
+import styles from "./App.module.css";
+import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
+import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import RecordingControls from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
-import * as urlUtils from "./colorizer/utils/url_utils";
-
-import styles from "./App.module.css";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
-import { Button, InputNumber, Slider, notification } from "antd";
-import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
-import LabeledDropdown from "./components/LabeledDropdown";
-import ColorRampSelector from "./components/ColorRampSelector";
-import LoadDatasetButton, { LoadResult } from "./components/LoadDatasetButton";
+import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle from "./components/AppStyle";
-import { NotificationConfig } from "antd/es/notification/interface";
-import Collection from "./colorizer/Collection";
+import ColorRampSelector from "./components/ColorRampSelector";
+import LabeledDropdown from "./components/LabeledDropdown";
+import LoadDatasetButton from "./components/LoadDatasetButton";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -36,7 +37,7 @@ function App(): ReactElement {
 
   const [collection, setCollection] = useState<Collection | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
-  const [datasetName, setDatasetName] = useState("");
+  const [datasetKey, setDatasetKey] = useState("");
 
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -83,12 +84,12 @@ function App(): ReactElement {
   const getUrlParams = useCallback((): string => {
     return urlUtils.stateToUrlParamString({
       collection: collection?.url,
-      dataset: datasetName,
+      dataset: datasetKey,
       feature: featureName,
       track: selectedTrack?.trackId,
       time: currentFrame,
     });
-  }, [collection, datasetName, featureName, selectedTrack, currentFrame]);
+  }, [collection, datasetKey, featureName, selectedTrack, currentFrame]);
 
   /**
    * Handle updating the canvas from state (for some common properties) and initiating the canvas
@@ -100,7 +101,7 @@ function App(): ReactElement {
     // rendered correctly.
     canv.setShowTrackPath(showTrackPath);
     canv.setHideValuesOutOfRange(hideValuesOutOfRange);
-    canv.setColorRamp(colorRampData.get(colorRampKey)?.colorRamp!); // TODO: Add fallback
+    canv.setColorRamp(colorRampData.get(colorRampKey)?.colorRamp!); // TODO: Add fallback?
     canv.setColorMapRangeMin(colorRampMin);
     canv.setColorMapRangeMax(colorRampMax);
     canv.setSelectedTrack(selectedTrack);
@@ -116,7 +117,7 @@ function App(): ReactElement {
   }, [
     collection,
     dataset,
-    datasetName,
+    datasetKey,
     featureName,
     currentFrame,
     selectedTrack,
@@ -183,15 +184,15 @@ function App(): ReactElement {
       setSize();
 
       let _collectionUrl = initialUrlParams.collection;
-      const _datasetName = initialUrlParams.dataset;
+      const _datasetKey = initialUrlParams.dataset;
       let _collection: Collection;
 
       // Dataset is a URL and no collection URL is provided; load only the dataset
-      if (_datasetName && urlUtils.isUrl(_datasetName) && !_collectionUrl) {
+      if (_datasetKey && urlUtils.isUrl(_datasetKey) && !_collectionUrl) {
         // Make a dummy collection that will include this
-        _collection = Collection.makeCollectionFromSingleDataset(_datasetName);
+        _collection = Collection.makeCollectionFromSingleDataset(_datasetKey);
         setCollection(_collection);
-        await replaceDataset(_datasetName, _collection);
+        await replaceDataset(_datasetKey, _collection);
         setIsInitialDatasetLoaded(true);
         return;
       }
@@ -210,8 +211,8 @@ function App(): ReactElement {
 
       setCollection(_collection);
 
-      const defaultDatasetName = _collection.getDefaultDataset();
-      await replaceDataset(_datasetName || defaultDatasetName, _collection);
+      const defaultDatasetKey = _collection.getDefaultDataset();
+      await replaceDataset(_datasetKey || defaultDatasetKey, _collection);
       setIsInitialDatasetLoaded(true);
     };
     loadInitialDatabase();
@@ -293,21 +294,38 @@ function App(): ReactElement {
   }, [handleCanvasClick]);
 
   // DATASET LOADING ///////////////////////////////////////////////////////
+  /**
+   * Replaces the current dataset by loading in another.
+   * @param _datasetKey the key of the dataset to load.
+   * @param _collection a Collection object to get the dataset path with.
+   * @param allowFallback if true (default), allows loading the default dataset in the collection
+   * or the last loaded dataset if the new dataset cannot be loaded.
+   * @throws an error if the dataset fails to load and `allowFallback` is false, or if no fallback
+   * is available.
+   * @returns a Promise<void> that resolves when the loading is complete.
+   */
   const replaceDataset = useCallback(
-    async (_datasetName: string, _collection: Collection): Promise<void> => {
+    async (newDatasetKey: string, newCollection: Collection, allowFallback: boolean = true): Promise<void> => {
+      /**
+       * TODO: Split this method into two! One should handle loading datasets with fallbacks, and the
+       * other should handle updating the state
+       */
       console.time("loadDataset");
-      setDatasetOpen(false);
 
-      if (!_collection.hasDataset(_datasetName)) {
+      if (!newCollection.hasDataset(newDatasetKey)) {
+        if (!allowFallback) {
+          throw new Error(`Collection does not include '${newDatasetKey}' as a dataset.`);
+        }
         console.warn(
-          `Collection does not include '${_datasetName}' as a dataset. Defaulting to first dataset in the collection.`
+          `Collection does not include '${newDatasetKey}' as a dataset. Defaulting to first dataset in the collection.`
         );
-        _datasetName = _collection.getDefaultDataset();
+        newDatasetKey = newCollection.getDefaultDataset();
       }
 
       let newDataset;
       try {
-        newDataset = await _collection.tryLoadDataset(_datasetName);
+        setDatasetOpen(false);
+        newDataset = await newCollection.tryLoadDataset(newDatasetKey);
 
         // Replace old dataset
         if (dataset !== null) {
@@ -315,24 +333,29 @@ function App(): ReactElement {
         }
       } catch (e) {
         console.error(e);
-        console.error(`Could not load dataset '${_datasetName}'.`);
+        if (!allowFallback) {
+          throw new Error(`Could not load dataset '${newDatasetKey}'.`);
+        }
+        // Attempt to load a fallback
+        console.error(`Could not load dataset '${newDatasetKey}'.`);
         console.timeEnd("loadDataset");
         if (dataset !== null) {
-          console.warn(`Showing last loaded dataset '${_datasetName}' instead.`);
+          console.warn(`Showing last loaded dataset '${newDatasetKey}' instead.`);
           setDatasetOpen(true);
           return;
         } else {
           // Encountered error on first dataset load
           // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
 
-          const defaultName = _collection.getDefaultDataset();
-          if (_datasetName === defaultName) {
-            return; // we already tried to load the default so give up
+          const defaultName = newCollection.getDefaultDataset();
+          if (newDatasetKey === defaultName) {
+            throw new Error(); // we already tried to load the default so throw an error
           }
           console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
-          return replaceDataset(defaultName, _collection);
+          return replaceDataset(defaultName, newCollection);
         }
       }
+
       setFindTrackInput("");
 
       // Only change the feature if there's no equivalent in the new dataset
@@ -353,10 +376,11 @@ function App(): ReactElement {
       await setFrame(newFrame);
       setDatasetOpen(true);
       setDataset(newDataset);
-      setDatasetName(_datasetName);
+      setDatasetKey(newDatasetKey);
       setFeatureName(newFeatureName);
 
       urlUtils.updateUrl(getUrlParams());
+      setSize();
       console.timeEnd("loadDataset");
     },
     [dataset, featureName, canv, plot, currentFrame, getUrlParams]
@@ -365,30 +389,29 @@ function App(): ReactElement {
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(
     (value: string): void => {
-      if (value !== datasetName && collection) {
+      if (value !== datasetKey && collection) {
         replaceDataset(value, collection);
       }
     },
-    [replaceDataset, collection, datasetName]
+    [replaceDataset, collection, datasetKey]
   );
 
+  /**
+   * Attempt to load an ambiguous URL as either a dataset or a collection.
+   * @param url the url to load.
+   * @returns a LoadResult, which includes a `result` boolean flag (true if successful, false if not)
+   * and an optional `errorMessage`.
+   */
   const handleLoadRequest = useCallback(
-    async (url: string): Promise<LoadResult> => {
+    async (url: string): Promise<void> => {
       let newCollection;
-      try {
-        console.log("Loading '" + url + "'.");
-        newCollection = await Collection.loadFromAmbiguousUrl(url);
-        setCollection(newCollection);
-        await replaceDataset(newCollection.getDefaultDataset(), newCollection);
-        setSize(); // Force dimension calculation to prevent scaling issue on load
-        return { result: true };
-      } catch (e) {
-        console.error(e);
-        if (e instanceof Error) {
-          return { result: false, errorMessage: "Error: " + e.message };
-        }
-        return { result: false };
-      }
+
+      console.log("Loading '" + url + "'.");
+      newCollection = await Collection.loadFromAmbiguousUrl(url);
+      // Do not allow fallbacks; if this load action fails, the user should know.
+      await replaceDataset(newCollection.getDefaultDataset(), newCollection, false);
+      // If replacing the dataset was successful, replace the collection.
+      setCollection(newCollection);
     },
     [replaceDataset]
   );
@@ -512,7 +535,7 @@ function App(): ReactElement {
   timeControls.setFrameCallback(setFrame);
   recordingControls.setFrameCallback(setFrame);
 
-  const getImagePrefix = (): string => imagePrefix || `${datasetName}-${featureName}-`;
+  const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
 
   // RENDERING /////////////////////////////////////////////////////////////
 
@@ -551,7 +574,7 @@ function App(): ReactElement {
           <LabeledDropdown
             disabled={disableUi}
             label="Dataset"
-            selected={datasetName}
+            selected={datasetKey}
             buttonType="primary"
             items={collection?.getDatasetKeys() || []}
             onChange={handleDatasetChange}

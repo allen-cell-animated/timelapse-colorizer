@@ -17,7 +17,7 @@ export type UrlParams = {
   time: number;
 };
 
-export const DEFAULT_FETCH_TIMEOUT_MS = 5000;
+export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
 
 /**
  * Initiates a fetch request with a given timeout, returning a promise that will reject if the timeout is reached.
