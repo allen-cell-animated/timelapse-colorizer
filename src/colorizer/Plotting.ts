@@ -36,6 +36,8 @@ export default class Plotting {
         title: "[None]",
       },
       title: "No track selected",
+      width: 600,
+      height: 400,
     };
 
     Plotly.newPlot(this.parentRef, [], layout);

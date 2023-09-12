@@ -1,0 +1,19 @@
+.iconButton {
+  width: var(--button-height);
+  border-radius: 4px;
+  border: 2px solid var(--color-theme);
+  padding: 0;
+  background-color: transparent;
+  color: var(--color-theme);
+}
+
+.iconButton:hover {
+  border-color: var(--color-theme-light);
+  background-color: var(--color-theme-light);
+  color: var(--color-text-button);
+}
+
+.iconButton:active {
+  background-color: var(--color-theme-light);
+  border-color: var(--color-theme);
+}

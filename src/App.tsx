@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
-import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, LinkOutlined, PauseOutlined, PlaySquareOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Divider, InputNumber, Slider, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 
@@ -17,6 +17,7 @@ import ColorRampSelector from "./components/ColorRampSelector";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import IconButton from "./components/IconButton";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -641,6 +642,13 @@ function App(): ReactElement {
                 <div>
                   Time (use arrow keys)
                   <div className={styles.timeControls} style={{ margin: "2px" }}>
+                    <Button ghost type="primary">
+                      <PauseOutlined />
+                    </Button>
+                    <IconButton>a</IconButton>
+                    <IconButton>
+                      <PauseOutlined />
+                    </IconButton>
                     <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePlayButtonClick()}>
                       Play
                     </button>
