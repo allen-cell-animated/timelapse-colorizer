@@ -285,7 +285,4 @@ export default class Collection {
     // Could not load as a collection, attempt to load as a daataset.
     return await Collection.makeCollectionFromSingleDataset(url);
   }
-
-  // Needs to return URL for parameters (dataset URL + collection URL) + collection object? idk
-  // Load dataset by name => returns actual dataset that was loaded?
 }

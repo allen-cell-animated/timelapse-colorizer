@@ -182,8 +182,6 @@ function App(): ReactElement {
 
   // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
-  // TODO: Move this out of App's render into either `Collections.ts` or `url_utils.ts`.
-  //  Also, handle collections when single-URL datasets are loaded by making a new collection with a single entry?
   useEffect(() => {
     const loadInitialDatabase = async (): Promise<void> => {
       setSize();
@@ -193,20 +191,21 @@ function App(): ReactElement {
       const datasetParam = initialUrlParams.dataset;
       let datasetKey: string;
 
-      // Dataset is a URL and no collection URL is provided; load only the dataset
       if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
-        // Make a dummy collection that will include this
+        // Dataset is a URL and no collection URL is provided;
+        // Make a dummy collection that will include only this dataset
         newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
         datasetKey = newCollection.getDefaultDatasetKey();
       } else {
+        // Try loading the collection, with the default collection as a fallback.
         newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
         datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
       }
 
       setCollection(newCollection);
-      // Note: newDataset may be null if loading failed.
       const datasetResult = await newCollection.tryLoadDataset(datasetKey);
 
+      // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
       await replaceDataset(datasetResult.dataset, datasetKey);
       setIsInitialDatasetLoaded(true);
       return;
@@ -214,7 +213,8 @@ function App(): ReactElement {
     loadInitialDatabase();
   }, []);
 
-  // Run only once the first dataset is loaded.
+  // Load additional properties from the URL, including the time, track, and feature, once the first
+  // dataset has been loaded. Runs only once.
   useEffect(() => {
     if (!isInitialDatasetLoaded) {
       return;
@@ -243,9 +243,8 @@ function App(): ReactElement {
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
 
-  // Run once
+  // Add event listeners for unloading and resizing on startup.
   useEffect(() => {
-    // Add event listeners for unloading and resizing.
     window.addEventListener("beforeunload", () => {
       canv.domElement.removeEventListener("click", handleCanvasClick);
       canv.dispose();
@@ -292,6 +291,8 @@ function App(): ReactElement {
   // DATASET LOADING ///////////////////////////////////////////////////////
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
+   * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
+   * @param newDatasetKey the key of the new dataset in the Collection.
    * @returns a Promise<void> that resolves when the loading is complete.
    */
   const replaceDataset = useCallback(
@@ -346,6 +347,7 @@ function App(): ReactElement {
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
         } else {
+          // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
           console.error(result.errorMessage);
         }
       }
@@ -363,7 +365,6 @@ function App(): ReactElement {
     async (url: string): Promise<void> => {
       console.log("Loading '" + url + "'.");
       const newCollection = await Collection.loadFromAmbiguousUrl(url);
-      // Do not allow fallbacks; if this load action fails, the user should know.
       const newDatasetKey = newCollection.getDefaultDatasetKey();
       const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
       if (!loadResult.loaded) {

@@ -14,6 +14,7 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
   colorRamps: DEFAULT_COLOR_RAMPS,
   disabled: false,
 };
+
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElement => {
   props = { ...defaultProps, ...props };
 
@@ -56,9 +57,6 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
     return contents;
   }, [props.colorRamps]);
 
-  // Force tooltip to be hidden (false) when the disabled flag is true.
-  // Otherwise, don't override the default behavior.
-  const showTooltip = props.disabled ? false : undefined;
   const buttonDivClassName = styles.buttonContainer + " " + (props.disabled ? styles.disabled : "");
 
   let selectorButton = (
@@ -70,7 +68,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
   // Remove tooltip when disabled to avoid spacing/layout issues
   if (!props.disabled) {
     selectorButton = (
-      <Tooltip title={selectedRampData.name} placement="right" open={showTooltip}>
+      <Tooltip title={selectedRampData.name} placement="right">
         {selectorButton}
       </Tooltip>
     );

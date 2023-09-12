@@ -3,8 +3,9 @@ import { ColorRamp } from "./../colorizer";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorRampData = {
-  /** Display name */
+  /** Internal key name, to be stored in the URL. CHANGING THIS WILL BREAK COMPATIBILITY. */
   key: string;
+  /** Display name. */
   name: string;
   colorStops: HexColorString[];
 };
