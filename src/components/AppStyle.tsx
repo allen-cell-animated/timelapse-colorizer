@@ -13,13 +13,17 @@ type AppStyleProps = {
  *   - children: All the children that should be rendered with the applied styling.
  */
 export default function AppStyle(props: PropsWithChildren<AppStyleProps>): ReactElement {
+  const theme = "#8962d3";
+  const themeDark = "#5f369f";
+  const themeLight = "#aa88ed";
+
   return (
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#8962d3",
-          colorLink: "#8962d3",
-          colorLinkHover: "#5f369f",
+          colorPrimary: theme,
+          colorLink: theme,
+          colorLinkHover: themeDark,
           controlHeight: 24,
           fontFamily: "Lato",
           borderRadiusLG: 4,
@@ -30,6 +34,17 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             controlInteractiveSize: 16,
             fontSize: 14,
             paddingXS: 6,
+          },
+          Slider: {
+            dotActiveBorderColor: theme,
+            dotBorderColor: themeLight,
+            handleActiveColor: themeLight,
+            handleColor: theme,
+            trackBg: theme,
+            trackHoverBg: themeLight,
+          },
+          Divider: {
+            marginLG: 0,
           },
         },
       }}

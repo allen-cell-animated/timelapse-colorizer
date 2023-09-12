@@ -136,11 +136,43 @@
 }
 
 .sliderContainer {
+  position: relative;
   width: 289px;
+  margin: 17px 0 17px 0;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+.sliderContainer > .minSliderLabel {
+  position: absolute;
+  left: 0;
+  bottom: -15px;
+}
+.sliderContainer > .maxSliderLabel {
+  position: absolute;
+  right: 0;
+  bottom: -15px;
+}
+
+.contentPanels {
+  display: flex;
+  flex: row;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.canvasPanel {
+}
+
+.app canvas {
+  border: 1px solid var(--color-dividers);
 }
 
 .timeControls {
   display: flex;
   flex-direction: row;
   gap: 4px;
+}
+
+.plotPanel {
 }

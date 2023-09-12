@@ -1,7 +1,7 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
 import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
-import { Button, Checkbox, InputNumber, Slider, notification } from "antd";
+import { Button, Checkbox, Divider, InputNumber, Slider, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 
 import styles from "./App.module.css";
@@ -580,7 +580,6 @@ function App(): ReactElement {
                   value && setColorRampMin(value);
                 }}
                 controls={false}
-                min={0}
               />
               <div className={styles.sliderContainer}>
                 <Slider
@@ -593,6 +592,8 @@ function App(): ReactElement {
                     setColorRampMax(value[1]);
                   }}
                 />
+                <p className={styles.minSliderLabel}>{dataset?.getFeatureData(featureName)?.min}</p>
+                <p className={styles.maxSliderLabel}>{dataset?.getFeatureData(featureName)?.max}</p>
               </div>
               <InputNumber
                 size="small"
@@ -603,7 +604,6 @@ function App(): ReactElement {
                   value && setColorRampMax(value);
                 }}
                 controls={false}
-                min={0}
               />
             </div>
             <div>
@@ -629,85 +629,93 @@ function App(): ReactElement {
           </div>
         </div>
 
-        {/** Canvas */}
-        <div ref={canvasRef}></div>
+        {/* Organize the main content areas */}
+        <div className={styles.contentPanels}>
+          <div className={styles.canvasPanel}>
+            {/** Canvas */}
+            <div ref={canvasRef}></div>
 
-        {/** Bottom Control Bar */}
-        <div className={styles.canvasBottomControlsContainer}>
-          <div>
-            <div>
-              Time (use arrow keys)
-              <div className={styles.timeControls} style={{ margin: "2px" }}>
-                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePlayButtonClick()}>
-                  Play
-                </button>
-                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePauseButtonClick()}>
-                  Pause
-                </button>
-                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
-                  Back
-                </button>
-                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(1)}>
-                  Forward
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max={dataset ? dataset.numberOfFrames - 1 : 0}
-                  disabled={disableTimeControlsUi}
-                  step="1"
-                  value={frameInput}
-                  onChange={(event) => {
-                    setFrameInput(event.target.valueAsNumber);
-                  }}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  max={dataset ? dataset.numberOfFrames - 1 : 0}
-                  disabled={disableTimeControlsUi}
-                  value={frameInput}
-                  onChange={(event) => {
-                    setFrame(event.target.valueAsNumber);
-                  }}
-                />
+            {/** Bottom Control Bar */}
+            <div className={styles.canvasBottomControlsContainer}>
+              <div>
+                <div>
+                  Time (use arrow keys)
+                  <div className={styles.timeControls} style={{ margin: "2px" }}>
+                    <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePlayButtonClick()}>
+                      Play
+                    </button>
+                    <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePauseButtonClick()}>
+                      Pause
+                    </button>
+                    <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
+                      Back
+                    </button>
+                    <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(1)}>
+                      Forward
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max={dataset ? dataset.numberOfFrames - 1 : 0}
+                      disabled={disableTimeControlsUi}
+                      step="1"
+                      value={frameInput}
+                      onChange={(event) => {
+                        setFrameInput(event.target.valueAsNumber);
+                      }}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max={dataset ? dataset.numberOfFrames - 1 : 0}
+                      disabled={disableTimeControlsUi}
+                      value={frameInput}
+                      onChange={(event) => {
+                        setFrame(event.target.valueAsNumber);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  Find by track:
+                  <input
+                    disabled={disableUi}
+                    type="number"
+                    value={findTrackInput}
+                    onChange={(event) => {
+                      setFindTrackInput(event.target.value);
+                    }}
+                  />
+                  <button disabled={disableUi} onClick={handleFindTrack}>
+                    Find
+                  </button>
+                </div>
+              </div>
+
+              {/* Hover values */}
+              <div>
+                <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
+                <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showTrackPath}
+                    onChange={() => {
+                      setShowTrackPath(!showTrackPath);
+                    }}
+                  />
+                  Show track path
+                </label>
               </div>
             </div>
-
-            <div>
-              Find by track:
-              <input
-                disabled={disableUi}
-                type="number"
-                value={findTrackInput}
-                onChange={(event) => {
-                  setFindTrackInput(event.target.value);
-                }}
-              />
-              <button disabled={disableUi} onClick={handleFindTrack}>
-                Find
-              </button>
-            </div>
           </div>
 
-          {/* Hover values */}
-          <div>
-            <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
-            <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
-            <label>
-              <input
-                type="checkbox"
-                checked={showTrackPath}
-                onChange={() => {
-                  setShowTrackPath(!showTrackPath);
-                }}
-              />
-              Show track path
-            </label>
+          <div className={styles.plotPanel}>
+            <Divider orientationMargin={0} />
+            <div ref={plotRef} style={{ width: "600px", height: "250px" }}></div>
           </div>
         </div>
-
-        <div ref={plotRef} style={{ width: "600px", height: "250px" }}></div>
 
         <div>
           <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
