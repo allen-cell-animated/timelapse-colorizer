@@ -56,11 +56,13 @@ describe("Collection", () => {
       const collection = await Collection.loadCollection(url, mockFetch);
 
       expect(collection.getDatasetKeys().length).to.equal(5);
-      expect(collection.getDatasetPath("dataset1")).to.equal("https://e.com/dir1/manifest.json");
-      expect(collection.getDatasetPath("dataset2")).to.equal("https://e.com/dir2/nested/some_dir/manifest.json");
-      expect(collection.getDatasetPath("dataset3")).to.equal("https://e.com/dir3/data.json");
-      expect(collection.getDatasetPath("dataset4")).to.equal("https://b.com/dataset4/manifest.json");
-      expect(collection.getDatasetPath("dataset5")).to.equal("https://b.com/dataset5/custom.json");
+      expect(collection.getAbsoluteDatasetPath("dataset1")).to.equal("https://e.com/dir1/manifest.json");
+      expect(collection.getAbsoluteDatasetPath("dataset2")).to.equal(
+        "https://e.com/dir2/nested/some_dir/manifest.json"
+      );
+      expect(collection.getAbsoluteDatasetPath("dataset3")).to.equal("https://e.com/dir3/data.json");
+      expect(collection.getAbsoluteDatasetPath("dataset4")).to.equal("https://b.com/dataset4/manifest.json");
+      expect(collection.getAbsoluteDatasetPath("dataset5")).to.equal("https://b.com/dataset5/custom.json");
     });
 
     it("should substitute default collection filename if URL is not a JSON", async () => {
@@ -80,7 +82,7 @@ describe("Collection", () => {
 
       expect(collection.getDatasetKeys().length).to.equal(1);
       expect(collection.hasDataset(fullPath)).to.be.true;
-      expect(collection.getDatasetPath(fullPath)).to.equal(fullPath);
+      expect(collection.getAbsoluteDatasetPath(fullPath)).to.equal(fullPath);
     });
 
     it("makes a collection with absolute dataset paths", () => {
@@ -89,7 +91,7 @@ describe("Collection", () => {
 
       expect(collection.getDatasetKeys().length).to.equal(1);
       expect(collection.hasDataset(datasetPath)).to.be.true;
-      expect(collection.getDatasetPath(datasetPath)).to.equal(datasetPath);
+      expect(collection.getAbsoluteDatasetPath(datasetPath)).to.equal(datasetPath);
     });
 
     it("sets the URL to null", () => {

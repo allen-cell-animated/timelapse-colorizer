@@ -42,13 +42,13 @@ export default class Collection {
   /**
    * Constructs a new Collection from a CollectionData map.
    * @param entries A map from string keys to CollectionEntry objects. The `path` of all
-   * entries must be the absolute path to the manifest JSON file of the dataset.
+   * entries MUST be the absolute path to the manifest JSON file of the dataset.
    * @param url the optional string url representing the source of the Collection. `null` by default.
    * @throws an error if a `path` is not a URL to a JSON resource.
    */
   constructor(entries: CollectionData, url: string | null = null) {
     this.entries = entries;
-    this.url = url;
+    this.url = url ? Collection.formatAbsoluteCollectionPath(url) : url;
 
     // Check that all entry paths are JSON urls.
     this.entries.forEach((value, key) => {
@@ -69,7 +69,7 @@ export default class Collection {
    * @throws an error if the dataset key is not in this dataset.
    * @returns the absolute URL path to the manifest file of the dataset.
    */
-  public getDatasetPath(datasetKey: string): string {
+  public getAbsoluteDatasetPath(datasetKey: string): string {
     if (this.hasDataset(datasetKey)) {
       return this.entries.get(datasetKey)!.path;
     }
@@ -121,6 +121,8 @@ export default class Collection {
    * - On a success, returns an object with a Dataset `dataset` and the `loaded` flag set to true.
    * - On a failure, returns an object with a null `dataset` and `loaded` set to false, as well as
    * an optional string `errorMessage`.
+   *
+   * See `DatasetLoadResult` for more details.
    */
   public async tryLoadDataset(datasetKey: string): Promise<DatasetLoadResult> {
     console.time("loadDataset");
@@ -128,7 +130,7 @@ export default class Collection {
     if (!this.hasDataset(datasetKey)) {
       return { loaded: false, dataset: null, errorMessage: `Error: Collection does not have key ${datasetKey}.` };
     }
-    const path = this.getDatasetPath(datasetKey);
+    const path = this.getAbsoluteDatasetPath(datasetKey);
     console.log(`Fetching dataset from path '${path}'`);
     // TODO: Override fetch method
     try {
@@ -158,12 +160,28 @@ export default class Collection {
     return isJson(datasetPath) ? datasetPath : datasetPath + "/" + DEFAULT_DATASET_FILENAME;
   }
 
-  private static getAbsoluteCollectionPath(collectionUrl: string): string {
+  /**
+   * Formats a URL of a collections path as an absolute path to a possible JSON collection file.
+   * @param collectionUrl the URL to format.
+   * @returns A formatted string path to a possible JSON file, with no trailing slashes or whitespace padding.
+   * If the input `collectionUrl` did not specify a JSON file, appends the default collection filename
+   * (`DEFAULT_COLLECTION_FILENAME`).
+   */
+  public static formatAbsoluteCollectionPath(collectionUrl: string): string {
     collectionUrl = formatPath(collectionUrl);
     return isJson(collectionUrl) ? collectionUrl : collectionUrl + "/" + DEFAULT_COLLECTION_FILENAME;
   }
 
-  private static getAbsoluteDatasetPath(collectionUrl: string, datasetPath: string): string {
+  /**
+   * Formats a URL of a dataset path as an absolute path to a possible JSON manifest file.
+   * @param collectionUrl the URL of the collections resource.
+   * @param datasetPath path of the dataset. Can be a relative path or a URL.
+   * @returns a formatted string path to a possible JSON manifest file, with no trailing slashes or whitespace padding.
+   * Includes the default dataset filename (`DEFAULT_DATASET_FILENAME`) if no specific file is described.
+   * - If datasetPath describes a URL, returns the URL path.
+   * - If datasetPath describes a relative path, returns the absolute URL path using the collectionUrl's base directory.
+   */
+  public static formatAbsoluteDatasetPath(collectionUrl: string, datasetPath: string): string {
     datasetPath = formatPath(datasetPath);
 
     // Dataset path is a URL, so we just apply formatting and the default filename if needed.
@@ -172,7 +190,7 @@ export default class Collection {
     }
 
     // Dataset is a relative path; strip out the filename from the collection path to get just the directory URL
-    collectionUrl = Collection.getAbsoluteCollectionPath(collectionUrl);
+    collectionUrl = Collection.formatAbsoluteCollectionPath(collectionUrl);
     const collectionDirectory = formatPath(collectionUrl.substring(0, collectionUrl.lastIndexOf("/")));
     return this.formatDatasetPath(collectionDirectory + "/" + datasetPath);
   }
@@ -189,7 +207,7 @@ export default class Collection {
    * @returns A new Collection object containing the retrieved data.
    */
   public static async loadCollection(collectionParam: string, fetchMethod = fetchWithTimeout): Promise<Collection> {
-    const absoluteCollectionUrl = Collection.getAbsoluteCollectionPath(collectionParam);
+    const absoluteCollectionUrl = Collection.formatAbsoluteCollectionPath(collectionParam);
 
     let response;
     try {
@@ -218,7 +236,7 @@ export default class Collection {
     // Convert paths to absolute paths
     collectionData.forEach((entry, key) => {
       const newEntry = entry;
-      newEntry.path = this.getAbsoluteDatasetPath(absoluteCollectionUrl, entry.path);
+      newEntry.path = this.formatAbsoluteDatasetPath(absoluteCollectionUrl, entry.path);
       collectionData.set(key, newEntry);
     });
 
