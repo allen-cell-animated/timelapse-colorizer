@@ -33,11 +33,11 @@ describe("Collection", () => {
     it("throws an error for empty collections", () => {
       // allow any error message as long as it throws
       const collection = new Collection(new Map());
-      expect(() => collection.getDefaultDataset()).toThrowError(ANY_ERROR);
+      expect(() => collection.getDefaultDatasetKey()).toThrowError(ANY_ERROR);
     });
 
     it("returns the first dataset in a collection", () => {
-      expect(defaultCollection.getDefaultDataset()).to.equal("d1");
+      expect(defaultCollection.getDefaultDatasetKey()).to.equal("d1");
     });
   });
 

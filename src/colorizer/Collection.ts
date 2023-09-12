@@ -15,6 +15,17 @@ export type CollectionEntry = {
 };
 export type CollectionData = Map<string, CollectionEntry>;
 
+export type DatasetLoadResult =
+  | {
+      loaded: false;
+      dataset: null;
+      errorMessage?: string;
+    }
+  | {
+      loaded: true;
+      dataset: Dataset;
+    };
+
 /**
  * Collections describe a group of datasets, designated with a string name and a path.
  * The class is a wrapper around a simple map, with convenience functions for getting dataset
@@ -96,7 +107,7 @@ export default class Collection {
    * @throws an error if the collection data is size 0.
    * @returns the string key of the first entry in the `collectionData` map.
    */
-  public getDefaultDataset(): string {
+  public getDefaultDatasetKey(): string {
     if (this.entries.size === 0) {
       throw new Error("Cannot get default dataset for a collection with size 0.");
     }
@@ -106,19 +117,34 @@ export default class Collection {
   /**
    * Attempts to load and return the dataset specified by the key.
    * @param datasetKey string key of the dataset.
-   * @throws an error if there is no dataset matching `datasetKey`.
-   * @returns A Promise of a Dataset object. If the dataset fails to load, the promise will reject.
+   * @returns A promise of a `DatasetLoadResult`.
+   * - On a success, returns an object with a Dataset `dataset` and the `loaded` flag set to true.
+   * - On a failure, returns an object with a null `dataset` and `loaded` set to false, as well as
+   * an optional string `errorMessage`.
    */
-  public async tryLoadDataset(datasetKey: string): Promise<Dataset> {
+  public async tryLoadDataset(datasetKey: string): Promise<DatasetLoadResult> {
+    console.time("loadDataset");
+
     if (!this.hasDataset(datasetKey)) {
-      throw new Error(`Dataset '${datasetKey}' could not be found in this collection.`);
+      return { loaded: false, dataset: null, errorMessage: `Error: Collection does not have key ${datasetKey}.` };
     }
     const path = this.getDatasetPath(datasetKey);
     console.log(`Fetching dataset from path '${path}'`);
     // TODO: Override fetch method
-    const dataset = new Dataset(path);
-    await dataset.open();
-    return dataset;
+    try {
+      const dataset = new Dataset(path);
+      await dataset.open();
+      console.timeEnd("loadDataset");
+      return { loaded: true, dataset: dataset };
+    } catch (e) {
+      // TODO: Return error message?
+      console.timeEnd("loadDataset");
+      if (e instanceof Error) {
+        return { loaded: false, dataset: null, errorMessage: e?.toString() };
+      } else {
+        return { loaded: false, dataset: null };
+      }
+    }
   }
 
   // ===================================================================================

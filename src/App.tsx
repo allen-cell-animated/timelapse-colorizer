@@ -82,9 +82,14 @@ function App(): ReactElement {
    * and frame information. (Convenience wrapper for `urlUtils.getUrlParams`.)
    */
   const getUrlParams = useCallback((): string => {
+    let datasetParam: string | undefined = datasetKey;
+    if (!collection?.url) {
+      // The collection has no source file; use the dataset URL instead
+      datasetParam = dataset?.manifestUrl;
+    }
     return urlUtils.stateToUrlParamString({
       collection: collection?.url,
-      dataset: datasetKey,
+      dataset: datasetParam,
       feature: featureName,
       track: selectedTrack?.trackId,
       time: currentFrame,
@@ -183,37 +188,28 @@ function App(): ReactElement {
     const loadInitialDatabase = async (): Promise<void> => {
       setSize();
 
-      let _collectionUrl = initialUrlParams.collection;
-      const _datasetKey = initialUrlParams.dataset;
-      let _collection: Collection;
+      let newCollection: Collection;
+      const collectionUrlParam = initialUrlParams.collection;
+      const datasetParam = initialUrlParams.dataset;
+      let datasetKey: string;
 
       // Dataset is a URL and no collection URL is provided; load only the dataset
-      if (_datasetKey && urlUtils.isUrl(_datasetKey) && !_collectionUrl) {
+      if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
         // Make a dummy collection that will include this
-        _collection = Collection.makeCollectionFromSingleDataset(_datasetKey);
-        setCollection(_collection);
-        await replaceDataset(_datasetKey, _collection);
-        setIsInitialDatasetLoaded(true);
-        return;
+        newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+        datasetKey = newCollection.getDefaultDatasetKey();
+      } else {
+        newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
+        datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
       }
 
-      // Load collection data.
-      try {
-        _collectionUrl = _collectionUrl || DEFAULT_COLLECTION_PATH;
-        _collection = await Collection.loadCollection(_collectionUrl);
-      } catch (e) {
-        console.error(e);
-        // TODO: Handle errors with an on-screen popup? This disables the UI entirely because no initialization is done.
-        throw new Error(
-          `The collection URL is invalid and the default collection data could not be loaded. Please check the collection URL '${collection}'.`
-        );
-      }
+      setCollection(newCollection);
+      // Note: newDataset may be null if loading failed.
+      const datasetResult = await newCollection.tryLoadDataset(datasetKey);
 
-      setCollection(_collection);
-
-      const defaultDatasetKey = _collection.getDefaultDataset();
-      await replaceDataset(_datasetKey || defaultDatasetKey, _collection);
+      await replaceDataset(datasetResult.dataset, datasetKey);
       setIsInitialDatasetLoaded(true);
+      return;
     };
     loadInitialDatabase();
   }, []);
@@ -295,102 +291,63 @@ function App(): ReactElement {
 
   // DATASET LOADING ///////////////////////////////////////////////////////
   /**
-   * Replaces the current dataset by loading in another.
-   * @param _datasetKey the key of the dataset to load.
-   * @param _collection a Collection object to get the dataset path with.
-   * @param allowFallback if true (default), allows loading the default dataset in the collection
-   * or the last loaded dataset if the new dataset cannot be loaded.
-   * @throws an error if the dataset fails to load and `allowFallback` is false, or if no fallback
-   * is available.
+   * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @returns a Promise<void> that resolves when the loading is complete.
    */
   const replaceDataset = useCallback(
-    async (newDatasetKey: string, newCollection: Collection, allowFallback: boolean = true): Promise<void> => {
-      /**
-       * TODO: Split this method into two! One should handle loading datasets with fallbacks, and the
-       * other should handle updating the state
-       */
-      console.time("loadDataset");
-
-      if (!newCollection.hasDataset(newDatasetKey)) {
-        if (!allowFallback) {
-          throw new Error(`Collection does not include '${newDatasetKey}' as a dataset.`);
-        }
-        console.warn(
-          `Collection does not include '${newDatasetKey}' as a dataset. Defaulting to first dataset in the collection.`
-        );
-        newDatasetKey = newCollection.getDefaultDataset();
+    async (newDataset: Dataset | null, newDatasetKey: string): Promise<void> => {
+      setDatasetOpen(false);
+      if (newDataset === null) {
+        // TODO: Determine with UX what expected behavior should be for bad datasets
+        return;
       }
 
-      let newDataset;
-      try {
-        setDatasetOpen(false);
-        newDataset = await newCollection.tryLoadDataset(newDatasetKey);
-
-        // Replace old dataset
-        if (dataset !== null) {
-          dataset.dispose();
-        }
-      } catch (e) {
-        console.error(e);
-        if (!allowFallback) {
-          throw new Error(`Could not load dataset '${newDatasetKey}'.`);
-        }
-        // Attempt to load a fallback
-        console.error(`Could not load dataset '${newDatasetKey}'.`);
-        console.timeEnd("loadDataset");
-        if (dataset !== null) {
-          console.warn(`Showing last loaded dataset '${newDatasetKey}' instead.`);
-          setDatasetOpen(true);
-          return;
-        } else {
-          // Encountered error on first dataset load
-          // Check if this is a collection-- if so, there's maybe a default dataset that can be loaded instead
-
-          const defaultName = newCollection.getDefaultDataset();
-          if (newDatasetKey === defaultName) {
-            throw new Error(); // we already tried to load the default so throw an error
-          }
-          console.warn(`Attempting to load this collection's default dataset '${defaultName}' instead.`);
-          return replaceDataset(defaultName, newCollection);
-        }
+      // Dispose of the old dataset
+      if (dataset !== null) {
+        dataset.dispose();
       }
-
-      setFindTrackInput("");
+      // State updates
+      setDataset(newDataset);
+      setDatasetKey(newDatasetKey);
 
       // Only change the feature if there's no equivalent in the new dataset
       let newFeatureName = featureName;
       if (!newDataset.hasFeature(newFeatureName)) {
         newFeatureName = newDataset.featureNames[0];
       }
+      updateFeature(newDataset, newFeatureName);
+      setFeatureName(newFeatureName);
 
       await canv.setDataset(newDataset);
-      updateFeature(newDataset, newFeatureName);
-      plot?.setDataset(newDataset);
-      plot?.removePlot();
-      setSelectedTrack(null);
+      canv.setFeature(newFeatureName);
 
       // Clamp frame to new range
       const newFrame = Math.min(currentFrame, canv.getTotalFrames() - 1);
-      // Update state variables
       await setFrame(newFrame);
-      setDatasetOpen(true);
-      setDataset(newDataset);
-      setDatasetKey(newDatasetKey);
-      setFeatureName(newFeatureName);
 
+      // Clear and/or update UI
+      plot?.setDataset(newDataset);
+      plot?.removePlot();
+      setFindTrackInput("");
+      setSelectedTrack(null);
       urlUtils.updateUrl(getUrlParams());
       setSize();
-      console.timeEnd("loadDataset");
+
+      setDatasetOpen(true);
     },
     [dataset, featureName, canv, plot, currentFrame, getUrlParams]
   );
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(
-    (value: string): void => {
-      if (value !== datasetKey && collection) {
-        replaceDataset(value, collection);
+    async (newDatasetKey: string): Promise<void> => {
+      if (newDatasetKey !== datasetKey && collection) {
+        const result = await collection.tryLoadDataset(newDatasetKey);
+        if (result.loaded) {
+          await replaceDataset(result.dataset, newDatasetKey);
+        } else {
+          console.error(result.errorMessage);
+        }
       }
     },
     [replaceDataset, collection, datasetKey]
@@ -404,14 +361,20 @@ function App(): ReactElement {
    */
   const handleLoadRequest = useCallback(
     async (url: string): Promise<void> => {
-      let newCollection;
-
       console.log("Loading '" + url + "'.");
-      newCollection = await Collection.loadFromAmbiguousUrl(url);
+      const newCollection = await Collection.loadFromAmbiguousUrl(url);
       // Do not allow fallbacks; if this load action fails, the user should know.
-      await replaceDataset(newCollection.getDefaultDataset(), newCollection, false);
-      // If replacing the dataset was successful, replace the collection.
+      const newDatasetKey = newCollection.getDefaultDatasetKey();
+      const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
+      if (!loadResult.loaded) {
+        // Reject the promise with the error message
+        return new Promise((_resolve, reject) => {
+          reject(loadResult.errorMessage);
+        });
+      }
+
       setCollection(newCollection);
+      await replaceDataset(loadResult.dataset, newDatasetKey);
     },
     [replaceDataset]
   );
