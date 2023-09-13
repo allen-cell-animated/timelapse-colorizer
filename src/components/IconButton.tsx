@@ -6,6 +6,7 @@ import { COLOR_THEME_LIGHT } from "../constants/theme";
 type IconButtonProps = {
   onClick?: () => void;
   disabled?: boolean;
+  type?: "outlined" | "primary";
 };
 
 /**
@@ -20,7 +21,12 @@ type IconButtonProps = {
 export default function IconButton(props: PropsWithChildren<IconButtonProps>): ReactElement {
   return (
     <ConfigProvider theme={{ components: { Button: { colorPrimaryActive: COLOR_THEME_LIGHT } } }}>
-      <Button type="primary" className={styles.iconButton} disabled={props.disabled} onClick={props.onClick}>
+      <Button
+        type="primary"
+        className={styles.iconButton + " " + styles[props.type || "primary"]}
+        disabled={props.disabled}
+        onClick={props.onClick}
+      >
         {props.children}
       </Button>
     </ConfigProvider>

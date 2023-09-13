@@ -1,11 +1,20 @@
 .iconButton {
+  height: var(--button-height);
   width: var(--button-height);
+  min-width: var(--button-height);
   border-radius: 4px;
-  border: 1px solid var(--color-theme);
   padding: 0;
+}
+
+.iconButton.outlined {
+  border: 1px solid var(--color-theme);
   background-color: transparent;
   color: var(--color-theme);
   fill: var(--color-theme);
+}
+
+.iconButton.primary {
+  fill: var(--color-text-button);
 }
 
 .iconButton:disabled {
