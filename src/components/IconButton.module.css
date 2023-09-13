@@ -1,19 +1,25 @@
 .iconButton {
   width: var(--button-height);
   border-radius: 4px;
-  border: 2px solid var(--color-theme);
+  border: 1px solid var(--color-theme);
   padding: 0;
   background-color: transparent;
   color: var(--color-theme);
+  fill: var(--color-theme);
 }
 
-.iconButton:hover {
+.iconButton:disabled {
+  fill: var(--color-text-disabled);
+}
+
+.iconButton:not(:disabled):hover {
   border-color: var(--color-theme-light);
   background-color: var(--color-theme-light);
   color: var(--color-text-button);
+  fill: var(--color-text-button);
 }
 
-.iconButton:active {
+.iconButton:not(:disabled):active {
   background-color: var(--color-theme-light);
   border-color: var(--color-theme);
 }
