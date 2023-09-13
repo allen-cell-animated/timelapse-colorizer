@@ -1,6 +1,7 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  CaretDownOutlined,
   CheckCircleOutlined,
   LinkOutlined,
   PauseOutlined,
@@ -24,6 +25,7 @@ import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
 import IconButton from "./components/IconButton";
+import SpinBox from "./components/SpinBox";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -524,7 +526,7 @@ function App(): ReactElement {
       message: "URL copied to clipboard",
       className: styles.copyNotification,
       placement: "bottomLeft",
-      duration: 0,
+      duration: 4,
 
       icon: <CheckCircleOutlined />,
     });
@@ -645,7 +647,7 @@ function App(): ReactElement {
             <div ref={canvasRef}></div>
 
             {/** Time Control Bar */}
-            <div className={styles.timeControls} style={{ margin: "2px" }}>
+            <div className={styles.timeControls}>
               {timeControls.isPlaying() ? (
                 // Swap between play and pause button
                 <IconButton
@@ -694,6 +696,17 @@ function App(): ReactElement {
                 <StepForwardFilled />
               </IconButton>
 
+              <InputNumber
+                min={0}
+                max={dataset ? dataset.numberOfFrames - 1 : 0}
+                disabled={disableTimeControlsUi}
+                value={frameInput}
+                onChange={(value) => {
+                  value && setFrame(value);
+                }}
+                controls={{ upIcon: <CaretDownOutlined />, downIcon: <CaretDownOutlined /> }}
+              />
+
               <input
                 type="number"
                 min="0"
@@ -704,6 +717,8 @@ function App(): ReactElement {
                   setFrame(event.target.valueAsNumber);
                 }}
               />
+
+              <SpinBox value={frameInput} onChange={setFrame} />
             </div>
           </div>
 
