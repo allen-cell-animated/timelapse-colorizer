@@ -172,11 +172,11 @@
   border: 1px solid var(--color-dividers);
 }
 
-.timeControls {
+.canvasPanel .timeControls {
   display: flex;
   flex-direction: row;
   gap: 4px;
-  width: 100%;
+  width: calc(100% - 60px);
 }
 
 .timeSliderContainer {

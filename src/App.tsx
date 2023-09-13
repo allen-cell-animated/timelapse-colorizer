@@ -175,8 +175,10 @@ function App(): ReactElement {
 
   /**
    * Update the canvas dimensions based on the current window size.
+   *
+   * TODO: Find calculation for margin magic number
    */
-  const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
+  const setSize = (): void => canv.setSize(Math.min(window.innerWidth - 75, 730), Math.min(window.innerHeight, 500));
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
@@ -642,7 +644,7 @@ function App(): ReactElement {
             {/** Canvas */}
             <div ref={canvasRef}></div>
 
-            {/** Bottom Control Bar */}
+            {/** Time Control Bar */}
             <div className={styles.timeControls} style={{ margin: "2px" }}>
               {timeControls.isPlaying() ? (
                 // Swap between play and pause button
