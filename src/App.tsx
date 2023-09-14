@@ -1,7 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
 import {
-  CaretDownOutlined,
   CheckCircleOutlined,
   LinkOutlined,
   PauseOutlined,
@@ -423,12 +422,6 @@ function App(): ReactElement {
     },
     [featureName, dataset, updateFeature]
   );
-
-  const handleResetRangeClick = useCallback(async (): Promise<void> => {
-    canv.resetColorMapRange();
-    setColorRampMin(canv.getColorMapRangeMin());
-    setColorRampMax(canv.getColorMapRangeMax());
-  }, [canv]);
 
   const getFeatureValue = useCallback(
     (id: number): number => {

@@ -1,6 +1,5 @@
-import React, { ReactElement, useCallback, useEffect } from "react";
+import React, { KeyboardEvent, ReactElement, useCallback, useEffect, useState } from "react";
 import styles from "./SpinBox.module.css";
-import { CaretDownOutlined, CaretUpOutlined } from "@ant-design/icons";
 
 type SpinBoxProps = {
   min?: number;
@@ -28,6 +27,18 @@ const defaultProps: Partial<SpinBoxProps> = {
 export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
   const props = { ...defaultProps, ...propsInput } as Required<SpinBoxProps>;
 
+  /**
+   * The input value, which updates as the user types.
+   * When focus exits or enter is pressed, it will be synced with min/max values
+   * and onChange will be called.
+   */
+  const [inputValue, setInputValue] = useState(props.value);
+
+  // If the prop value changes, reset the input value to it.
+  useEffect(() => {
+    setInputValue(props.value);
+  }, [props.value]);
+
   const adjustValue = useCallback(
     (delta: number): void => {
       let newValue = props.value + delta;
@@ -47,20 +58,50 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
     [props.min, props.max, props.value]
   );
 
+  const syncInputValue = useCallback(() => {
+    // Clamp input value between min and max
+    let newValue = inputValue;
+    newValue = Math.max(props.min, Math.min(props.max, newValue));
+
+    if (Number.isNaN(newValue)) {
+      newValue = 0;
+    }
+
+    if (newValue === props.value && inputValue !== newValue) {
+      // Force input value to reset
+      setInputValue(newValue);
+    } else if (newValue !== props.value) {
+      props.onChange(newValue);
+    }
+  }, [inputValue, props.min, props.max, props.value]);
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Enter") {
+      console.log("Wow!");
+      syncInputValue();
+    }
+  };
+
+  const onInputValueChange = useCallback((newValue: number) => {
+    setInputValue(newValue);
+  }, []);
+
   return (
     <div className={styles.spinBox + " " + (props.disabled ? styles.disabled : "")}>
       <input
         type="number"
         min={props.min}
         max={props.max}
-        value={props.value}
+        value={inputValue}
         onChange={(event) => {
-          props.onChange(event.target.valueAsNumber);
+          onInputValueChange(event.target.valueAsNumber);
         }}
+        onKeyDown={handleKeyDown}
         disabled={props.disabled}
         onSubmitCapture={() => {
           console.log("Submit: " + props.value);
         }}
+        onBlur={syncInputValue}
       ></input>
       <div className={styles.spinButtons + " " + (props.disabled ? styles.disabled : "")}>
         <button tabIndex={-1} onClick={() => adjustValue(1)} disabled={props.disabled}>
