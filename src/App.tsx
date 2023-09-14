@@ -706,50 +706,60 @@ function App(): ReactElement {
             </div>
           </div>
 
-          {/* Hover values */}
-          <div>
-            <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
-            <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
-          </div>
-
           <div className={styles.plotPanel}>
             <Divider orientationMargin={0} />
-            <div className={styles.trackTitleBar}>
-              <h2>Track</h2>
+            <div>
+              <div className={styles.trackTitleBar}>
+                <h2>Track</h2>
 
-              <div className={styles.trackSearch}>
-                <h3>Search</h3>
-                <Input
-                  type="number"
-                  value={findTrackInput}
-                  size="small"
-                  placeholder="Track ID..."
-                  disabled={disableUi}
-                  onChange={(event) => {
-                    setFindTrackInput(event.target.value);
-                  }}
-                />
-                <IconButton disabled={disableUi} onClick={handleFindTrack}>
-                  <SearchOutlined />
-                </IconButton>
+                <div className={styles.trackSearch}>
+                  <h3>Search</h3>
+                  <Input
+                    type="number"
+                    value={findTrackInput}
+                    size="small"
+                    placeholder="Track ID..."
+                    disabled={disableUi}
+                    onChange={(event) => {
+                      setFindTrackInput(event.target.value);
+                    }}
+                  />
+                  <IconButton disabled={disableUi} onClick={handleFindTrack}>
+                    <SearchOutlined />
+                  </IconButton>
+                </div>
               </div>
+              <div ref={plotRef} style={{ width: "600px", height: "400px" }} />
             </div>
-            <div ref={plotRef} style={{ width: "600px", height: "400px" }} />
             <Divider orientationMargin={0} />
-            <h2>Viewer settings</h2>
-            <Checkbox
-              type="checkbox"
-              checked={showTrackPath}
-              onChange={() => {
-                setShowTrackPath(!showTrackPath);
-              }}
-            >
-              Show track path
-            </Checkbox>
+            <div>
+              <h2>Viewer settings</h2>
+              <Checkbox
+                type="checkbox"
+                checked={showTrackPath}
+                onChange={() => {
+                  setShowTrackPath(!showTrackPath);
+                }}
+              >
+                Show track path
+              </Checkbox>
+            </div>
           </div>
         </div>
-
+        {/* Hover values */}
         <div>
+          <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
+          <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
+        </div>
+      </div>
+    </AppStyle>
+  );
+}
+
+export default App;
+
+/**
+ * <div>
           <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
           <p>1) Set your default download location</p>
           <p>2) Turn off 'Ask where to save each file before downloading'</p>
@@ -796,9 +806,4 @@ function App(): ReactElement {
             </label>
           </p>
         </div>
-      </div>
-    </AppStyle>
-  );
-}
-
-export default App;
+ */

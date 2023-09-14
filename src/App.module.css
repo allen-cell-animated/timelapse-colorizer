@@ -156,9 +156,11 @@
   flex: row;
   flex-wrap: wrap;
   gap: 20px;
+  width: auto;
 }
 
 .canvasPanel {
+  flex-grow: 0;
 }
 
 .canvasPanel .bottomControls {
@@ -176,7 +178,7 @@
   display: flex;
   flex-direction: row;
   gap: 4px;
-  width: calc(100% - 60px);
+  max-width: calc(100vw - 60px);
   margin-top: 10px;
 }
 
@@ -186,6 +188,13 @@
 }
 
 .plotPanel {
+  max-width: calc(100vw - 60px);
+  flex-grow: 1;
+}
+
+.plotPanel > div {
+  width: fit-content;
+  max-width: 100%;
 }
 
 .plotPanel .trackTitleBar {
@@ -193,6 +202,8 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  max-width: 734px;
 }
 
 .trackSearch {
