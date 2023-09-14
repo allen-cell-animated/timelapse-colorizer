@@ -4,10 +4,11 @@ import {
   CheckCircleOutlined,
   LinkOutlined,
   PauseOutlined,
+  SearchOutlined,
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Divider, InputNumber, Slider, notification } from "antd";
+import { Button, Checkbox, Divider, Input, InputNumber, Slider, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 
 import styles from "./App.module.css";
@@ -536,7 +537,7 @@ function App(): ReactElement {
       {/* TODO: Split into its own component? */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2>Timelapse Colorizer</h2>
+          <h1>Timelapse Colorizer</h1>
           <span className={styles.verticalDivider}></span>
 
           <LabeledDropdown
@@ -563,7 +564,9 @@ function App(): ReactElement {
             Copy URL
           </Button>
 
-          <Button type="primary">Export</Button>
+          <Button type="primary" disabled={true}>
+            Export
+          </Button>
 
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
@@ -711,32 +714,38 @@ function App(): ReactElement {
 
           <div className={styles.plotPanel}>
             <Divider orientationMargin={0} />
-            <div ref={plotRef} style={{ width: "600px", height: "400px" }}></div>
-            <Divider orientationMargin={0} />
-            <div>
-              Find by track:
-              <input
-                disabled={disableUi}
-                type="number"
-                value={findTrackInput}
-                onChange={(event) => {
-                  setFindTrackInput(event.target.value);
-                }}
-              />
-              <button disabled={disableUi} onClick={handleFindTrack}>
-                Find
-              </button>
+            <div className={styles.trackTitleBar}>
+              <h2>Track</h2>
+
+              <div className={styles.trackSearch}>
+                <h3>Search</h3>
+                <Input
+                  type="number"
+                  value={findTrackInput}
+                  size="small"
+                  placeholder="Track ID..."
+                  disabled={disableUi}
+                  onChange={(event) => {
+                    setFindTrackInput(event.target.value);
+                  }}
+                />
+                <IconButton disabled={disableUi} onClick={handleFindTrack}>
+                  <SearchOutlined />
+                </IconButton>
+              </div>
             </div>
-            <label>
-              <input
-                type="checkbox"
-                checked={showTrackPath}
-                onChange={() => {
-                  setShowTrackPath(!showTrackPath);
-                }}
-              />
+            <div ref={plotRef} style={{ width: "600px", height: "400px" }} />
+            <Divider orientationMargin={0} />
+            <h2>Viewer settings</h2>
+            <Checkbox
+              type="checkbox"
+              checked={showTrackPath}
+              onChange={() => {
+                setShowTrackPath(!showTrackPath);
+              }}
+            >
               Show track path
-            </label>
+            </Checkbox>
           </div>
         </div>
 
