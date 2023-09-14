@@ -10,6 +10,7 @@
   --color-theme-rgb: 137, 98, 211;
   --color-theme-light: #aa88ed;
   --color-gray-0: #ffffff;
+  --color-gray-5: #f3f4f5;
   --color-gray-10: #e6e7e8;
   --color-gray-20: #cbcbcc;
   --color-gray-30: #a3a4a5;
@@ -37,6 +38,7 @@
   --color-button: var(--color-theme);
   --color-button-hover: var(--color-theme-light);
   --color-button-active: var(--color-theme-dark);
+  --color-button-disabled: var(--color-gray-5);
   --button-height: 24px;
 
   --color-focus-shadow: rgba(137, 98, 211, 0.06);

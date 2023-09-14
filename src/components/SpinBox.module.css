@@ -1,21 +1,57 @@
 .spinBox {
   --border-width: 1px;
-  --border-radius: 4px;
+  --border-radius: 6px;
 
   position: relative;
-  height: var(--button-height);
+  height: calc(var(--button-height) - 2px);
+  width: 80px;
+
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+
   padding: 0;
   transition: all 0.2s linear;
+  border-radius: var(--border-radius);
+  border: solid 1px var(--color-borders);
+  overflow: clip;
+}
+
+.spinBox.disabled {
+  color: var(--color-text-disabled);
+  background-color: var(--color-button-disabled);
+  cursor: not-allowed;
+}
+
+.spinBox.disabled * {
+  cursor: not-allowed;
+}
+
+.spinBox:not(.disabled):hover {
+  border: solid 1px var(--color-theme-light);
+}
+
+.spinBox:focus-within {
+  border: solid 1px var(--color-theme-light);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(137, 98, 211, 0.06);
+  border-inline-end-width: 1px;
 }
 
 .spinBox input {
   font-family: var(--default-font);
   font-size: 14px;
   height: calc(var(--button-height) - 4px);
-  border-radius: var(--border-radius);
-  border: solid 1px var(--color-borders);
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 0;
   text-align: right;
-  padding-right: calc(var(--button-height) / 2 + 4px);
+  background-color: transparent;
+}
+
+.spinBox input:disabled {
+  color: var(--color-text-disabled);
 }
 
 /* Disable number input field default spinner handles*/
@@ -30,25 +66,22 @@
   -moz-appearance: textfield;
 }
 
+/* Prevent the input from changing its styling when focused*/
 .spinBox input:focus,
 .spinBox input:focus-visible,
 .spinBox input:active {
-  border: solid 1px var(--color-theme-light);
+  border: none;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(137, 98, 211, 0.06);
-  border-inline-end-width: 1px;
 }
 
 .spinButtons {
-  position: absolute;
   display: flex;
   flex-direction: column;
   right: var(--border-width);
   bottom: var(--border-width);
-  height: calc(100% - 2 * var(--border-width));
-  background: var(--color-background);
-  border-top-right-radius: calc(var(--border-radius) - 1px);
-  border-bottom-right-radius: calc(var(--border-radius) - 1px);
+  height: 100%;
+  min-width: calc(var(--button-height) * 0.6);
+
   overflow: hidden;
 }
 
@@ -56,13 +89,19 @@
   background-color: var(--color-theme);
 }
 
+.spinButtons.disabled:hover {
+  background-color: transparent;
+}
+
 .spinButtons button {
-  color: --color-theme;
+  color: var(--color-theme);
   fill: var(--color-theme);
   border: none;
   background-color: transparent;
   margin: 0;
   height: calc(50%);
+  width: 100%;
+  text-align: center;
   padding: 0 3px;
   transition: all 0.2s linear;
 }
@@ -71,10 +110,14 @@
   fill: var(--color-text-button);
 }
 
-.spinButtons button:hover {
+.spinButtons button:disabled {
+  fill: var(--color-text-disabled);
+}
+
+.spinButtons button:not(:disabled):hover {
   background-color: var(--color-theme-light);
 }
 
-.spinButtons button:active {
+.spinButtons button:not(:disabled):active {
   background-color: var(--color-theme-dark);
 }

@@ -591,6 +591,7 @@ function App(): ReactElement {
                   value && setColorRampMin(value);
                 }}
                 controls={false}
+                disabled={disableUi}
               />
               <div className={styles.sliderContainer}>
                 <Slider
@@ -598,6 +599,7 @@ function App(): ReactElement {
                   max={dataset?.getFeatureData(featureName)?.max}
                   range={{ draggableTrack: true }}
                   value={[colorRampMin, colorRampMax]}
+                  disabled={disableUi}
                   onChange={(value: [number, number]) => {
                     setColorRampMin(value[0]);
                     setColorRampMax(value[1]);
@@ -615,6 +617,7 @@ function App(): ReactElement {
                   value && setColorRampMax(value);
                 }}
                 controls={false}
+                disabled={disableUi}
               />
             </div>
             <div>
@@ -696,29 +699,14 @@ function App(): ReactElement {
                 <StepForwardFilled />
               </IconButton>
 
-              <InputNumber
+              <SpinBox
                 min={0}
-                max={dataset ? dataset.numberOfFrames - 1 : 0}
-                disabled={disableTimeControlsUi}
+                max={dataset?.numberOfFrames && dataset?.numberOfFrames - 1}
                 value={frameInput}
-                onChange={(value) => {
-                  value && setFrame(value);
-                }}
-                controls={{ upIcon: <CaretDownOutlined />, downIcon: <CaretDownOutlined /> }}
-              />
-
-              <input
-                type="number"
-                min="0"
-                max={dataset ? dataset.numberOfFrames - 1 : 0}
+                onChange={setFrame}
                 disabled={disableTimeControlsUi}
-                value={frameInput}
-                onChange={(event) => {
-                  setFrame(event.target.valueAsNumber);
-                }}
+                wrapIncrement={true}
               />
-
-              <SpinBox value={frameInput} onChange={setFrame} />
             </div>
           </div>
 
