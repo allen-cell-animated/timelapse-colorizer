@@ -1,4 +1,5 @@
 .spinBox {
+  composes: nospinner from "../styles/utils.module.css";
   --border-width: 1px;
   --border-radius: 6px;
 
@@ -52,18 +53,6 @@
 
 .spinBox input:disabled {
   color: var(--color-text-disabled);
-}
-
-/* Disable number input field default spinner handles*/
-/* Chrome, Safari, Edge, Opera */
-.spinBox input::-webkit-outer-spin-button,
-.spinBox input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-/* Firefox */
-.spinBox input[type="number"] {
-  -moz-appearance: textfield;
 }
 
 /* Prevent the input from changing its styling when focused*/
