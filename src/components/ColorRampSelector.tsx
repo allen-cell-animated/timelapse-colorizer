@@ -15,16 +15,17 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
   disabled: false,
 };
 
-const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElement => {
-  props = { ...defaultProps, ...props };
+const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
+  const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
 
-  const selectedRampData = props.colorRamps?.get(props.selected);
-  const selectedRamp = selectedRampData?.colorRamp;
+  const selectedRampData = props.colorRamps.get(props.selected);
 
-  if (!selectedRamp) {
+  if (!selectedRampData || !selectedRampData.colorRamp) {
     throw new Error(`Selected color ramp name '${props.selected}' is invalid.`);
   }
 
+  // Only regenerate the gradient canvas URL if the selected ramp changes!
+  const selectedRamp = selectedRampData.colorRamp;
   const selectedRampColorUrl = useMemo(() => {
     return selectedRamp.createGradientCanvas(120, 25).toDataURL();
   }, [props.selected]);
@@ -34,7 +35,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
     const contents: ReactElement[] = [];
     const colorRampEntries = Array.from(props.colorRamps!.entries());
     // Make a button for every color ramp
-    for (let i = 0; i < props.colorRamps!.size; i++) {
+    for (let i = 0; i < props.colorRamps.size; i++) {
       let className = "";
       // Manipulate class names for rounding at start and end of dropdown list
       if (i === 0) {
@@ -57,7 +58,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (props): ReactElemen
     return contents;
   }, [props.colorRamps]);
 
-  const buttonDivClassName = styles.buttonContainer + " " + (props.disabled ? styles.disabled : "");
+  const buttonDivClassName = styles.buttonContainer + " " + (props.disabled && styles.disabled);
 
   let selectorButton = (
     <Button rootClassName={styles.selectorButton} disabled={props.disabled}>

@@ -62,13 +62,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     setIsLoadModalOpen(false);
   }, []);
 
-  // Override modal container method if the ref has been set (after first render)
-  const modalGetContainer = modalContextRef
-    ? () => {
-        return modalContextRef.current!;
-      }
-    : undefined;
-
   return (
     <div ref={modalContextRef}>
       <Button type="primary" onClick={() => setIsLoadModalOpen(true)}>
@@ -82,7 +75,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         okButtonProps={{ loading: isLoading }}
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
-        getContainer={modalGetContainer}
+        getContainer={modalContextRef.current || undefined}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <p>Load a collection of datasets or a single dataset by providing its URL.</p>
@@ -91,12 +84,10 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
             value={urlInput}
             onChange={(event) => setUrlInput(event.target.value)}
           />
-          {errorText ? (
+          {errorText && (
             <p>
               <span className={styles.errorText}>{errorText}</span>
             </p>
-          ) : (
-            <></>
           )}
         </div>
       </Modal>
