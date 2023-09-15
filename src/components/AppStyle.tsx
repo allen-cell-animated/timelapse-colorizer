@@ -1,7 +1,7 @@
 import React, { PropsWithChildren, ReactElement } from "react";
 import { ConfigProvider } from "antd";
 
-type Props = {
+type AppStyleProps = {
   className?: string;
 };
 
@@ -12,7 +12,7 @@ type Props = {
  *     contains the provided children elements.
  *   - children: All the children that should be rendered with the applied styling.
  */
-export default function (props: PropsWithChildren<Props>): ReactElement {
+export default function AppStyle(props: PropsWithChildren<AppStyleProps>): ReactElement {
   return (
     <ConfigProvider
       theme={{

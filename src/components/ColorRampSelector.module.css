@@ -1,0 +1,87 @@
+.colorRampSelector {
+  display: flex;
+  --height: var(--button-height);
+  height: var(--height);
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+}
+
+.buttonContainer {
+  position: relative;
+  height: var(--height);
+  padding: 0;
+}
+
+.selectorButton {
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  height: 24px;
+}
+
+.selectorButton:disabled > img {
+  filter: grayscale(100%);
+}
+
+.dropdownContainer {
+  z-index: 1;
+  position: absolute;
+  top: calc(--height + 1px);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-button);
+
+  --outline-width: 1px;
+  --radius: 4px;
+  padding: var(--outline-width) var(--outline-width);
+  gap: var(--outline-width);
+  border-radius: var(--radius);
+
+  --button-radius: calc(var(--radius) - var(--outline-width));
+
+  transform-origin: top;
+  visibility: hidden;
+  transform: scaleY(0.9);
+  opacity: 0;
+
+  transition: all ease-in 0.2s 0.25s;
+}
+
+/** 
+ * Show the container if the root button is hovered, and keep
+ * it visible while it continues to be hovered over.
+ */
+.buttonContainer:hover:not(.disabled) > .dropdownContainer,
+.dropdownContainer:hover {
+  visibility: visible;
+  transform: scaleY(1);
+  opacity: 1;
+
+  transition: all 0.1s;
+}
+
+.dropdownContainer > button {
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
+  border: 0px solid transparent;
+  outline: 0px solid var(--color-text-button);
+  outline-offset: -1px;
+  transition: outline 0s ease 0s;
+  overflow: hidden;
+}
+
+.dropdownContainer > .dropdownFirst {
+  border-radius: var(--button-radius) var(--button-radius) 0 0;
+}
+
+.dropdownContainer > .dropdownLast {
+  border-radius: 0 0 var(--button-radius) var(--button-radius);
+}
+
+.dropdownContainer > button:hover {
+  outline: 1px solid var(--color-text-button);
+  outline-offset: -1px;
+}
