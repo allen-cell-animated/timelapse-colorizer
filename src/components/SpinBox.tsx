@@ -24,6 +24,13 @@ const defaultProps: Partial<SpinBoxProps> = {
   wrapIncrement: false,
 };
 
+/**
+ * A numeric input with custom styled spinner handles.
+ * - Enforces min/max value clamping.
+ * - Displays a deferred value, only calling `onChange` when the user
+ * presses enter or leaves focus.
+ * - Optionally wraps increments that go past the min/max bounds.
+ */
 export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
   const props = { ...defaultProps, ...propsInput } as Required<SpinBoxProps>;
 
@@ -77,7 +84,6 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter") {
-      console.log("Wow!");
       syncInputValue();
     }
   };
@@ -102,6 +108,7 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
           console.log("Submit: " + props.value);
         }}
         onBlur={syncInputValue}
+        data-testid="spinbox-input"
       ></input>
       <div className={styles.spinButtons + " " + (props.disabled ? styles.disabled : "")}>
         <button tabIndex={-1} onClick={() => adjustValue(1)} disabled={props.disabled}>
