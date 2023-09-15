@@ -6,15 +6,50 @@ type AppStyleProps = {
   className?: string;
 };
 
+const palette = {
+  theme: "#8962d3",
+  themeDark: "#5f369f",
+  themeLight: "#aa88ed",
+  gray0: "#ffffff",
+  gray5: "#f3f4f5",
+  gray10: "#e6e7e8",
+  gray20: "#cbcbcc",
+  gray30: "#a3a4a5",
+  gray40: "#7c7d7f",
+  gray50: "#575859",
+  gray60: "#323233",
+  success: "#2fc022",
+  error: "#f92d20",
+};
+
 // TODO: Some future version of this could swap different theme objects, and
 // regenerate the CssContainer along with the theme.
-// TODO: Parameterize the rest of the variables as needed!
 /** Top-level theme variables, used to drive the styling of the entire app. */
 const theme = {
   color: {
-    theme: "#8962d3",
-    themeDark: "#5f369f",
-    themeLight: "#aa88ed",
+    theme: palette.theme,
+    themeDark: palette.themeDark,
+    themeLight: palette.themeLight,
+    text: {
+      primary: palette.gray60,
+      secondary: palette.gray50,
+      hint: palette.gray30,
+      disabled: palette.gray30,
+      button: palette.gray0,
+    },
+    layout: {
+      background: palette.gray0,
+      dividers: palette.gray10,
+      borders: palette.gray20,
+      modalOverlay: "rgba(0, 0, 0, 0.7)",
+    },
+    button: {
+      background: palette.theme,
+      hover: palette.themeLight,
+      active: palette.themeDark,
+      disabled: palette.gray5,
+      focusShadow: "rgba(137, 98, 211, 0.06)",
+    },
   },
   font: {
     family: "Lato",
@@ -32,6 +67,7 @@ const theme = {
   },
 };
 
+// TODO: Remove --color-theme wherever it's used in other CSS documents
 /** Applies theme as CSS variables that affect the rest of the document. */
 const CssContainer = styled.div`
   @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
@@ -39,38 +75,26 @@ const CssContainer = styled.div`
   /* UI Design Colors */
   --color-theme: ${theme.color.theme};
   --color-theme-dark: ${theme.color.themeDark};
-  --color-theme-rgb: 137, 98, 211;
   --color-theme-light: ${theme.color.themeLight};
-  --color-gray-0: #ffffff;
-  --color-gray-5: #f3f4f5;
-  --color-gray-10: #e6e7e8;
-  --color-gray-20: #cbcbcc;
-  --color-gray-30: #a3a4a5;
-  --color-gray-40: #7c7d7f;
-  --color-gray-50: #575859;
-  --color-gray-60: #323233;
-  --color-success: #2fc022;
-  --color-error: #f92d20;
 
   /* Text */
-  --color-text-primary: var(--color-gray-60);
-  --color-text-secondary: var(--color-gray-50);
-  --color-text-hint: var(--color-gray-30);
-  --color-text-disabled: var(--color-gray-30);
-  --color-text-button: var(--color-gray-0);
+  --color-text-primary: ${theme.color.text.primary}
+  --color-text-secondary: ${theme.color.text.secondary};
+  --color-text-hint: ${theme.color.text.hint};
+  --color-text-disabled: ${theme.color.text.disabled};
+  --color-text-button: ${theme.color.text.button};
 
   /* Layout */
-  --color-background: var(--color-gray-0);
-  --color-dividers: var(--color-gray-10);
-  --color-borders: var(--color-gray-20);
-  --color-modal-overlay: rgba(0, 0, 0, 0.7);
+  --color-background: ${theme.color.layout.background};
+  --color-dividers: ${theme.color.layout.dividers};
+  --color-borders: ${theme.color.layout.borders};
+  --color-modal-overlay: ${theme.color.layout.modalOverlay};
 
   /* Buttons */
-  /* Note: Button color is largely controlled by Antd. See 'main.tsx' and https://ant.design/docs/react/customize-theme#maptoken to override. */
-  --color-button: var(--color-theme);
-  --color-button-hover: var(--color-theme-light);
-  --color-button-active: var(--color-theme-dark);
-  --color-button-disabled: var(--color-gray-5);
+  --color-button: ${theme.color.button.background};
+  --color-button-hover: ${theme.color.button.hover};
+  --color-button-active: ${theme.color.button.active};
+  --color-button-disabled: ${theme.color.button.disabled};
 
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;
@@ -117,6 +141,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
             borderRadiusLG: 4,
+            colorText: theme.color.text.primary,
           },
           components: {
             Checkbox: {
