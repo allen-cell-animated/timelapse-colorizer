@@ -1,5 +1,5 @@
 import { HexColorString } from "three";
-import { ColorRamp } from "./../colorizer";
+import { ColorRamp } from "../colorizer";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorRampData = {
