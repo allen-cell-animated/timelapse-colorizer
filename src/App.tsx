@@ -46,7 +46,7 @@ function App(): ReactElement {
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const [colorRampData] = useState(DEFAULT_COLOR_RAMPS);
+  const colorRampData = DEFAULT_COLOR_RAMPS;
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
@@ -369,9 +369,7 @@ function App(): ReactElement {
       const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
       if (!loadResult.loaded) {
         // Reject the promise with the error message
-        return new Promise((_resolve, reject) => {
-          reject(loadResult.errorMessage);
-        });
+        throw new Error(loadResult.errorMessage);
       }
 
       setCollection(newCollection);
@@ -504,9 +502,7 @@ function App(): ReactElement {
   // RENDERING /////////////////////////////////////////////////////////////
 
   const notificationConfig: NotificationConfig = {
-    getContainer: () => {
-      return notificationContainer.current as HTMLElement;
-    },
+    getContainer: () => notificationContainer.current as HTMLElement,
   };
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
   const openCopyNotification = (): void => {
