@@ -1,5 +1,4 @@
 .app {
-  composes: vars from "./styles/vars.module.css";
   font-family: var(--default-font);
   font-style: normal;
   font-weight: 400;
