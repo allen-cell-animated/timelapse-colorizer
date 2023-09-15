@@ -185,6 +185,14 @@
 .timeSliderContainer {
   width: 100%;
   max-width: 300px;
+  margin: 0 4px;
+  height: var(--button-height);
+  display: flex;
+  align-items: center;
+}
+
+.timeSliderContainer > div {
+  width: 100%;
 }
 
 .plotPanel {
