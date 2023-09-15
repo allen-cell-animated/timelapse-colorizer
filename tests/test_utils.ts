@@ -2,7 +2,7 @@ import { fetchWithTimeout } from "../src/colorizer/utils/url_utils";
 
 export const ANY_ERROR = /[.]*/;
 
-export async function sleep(timeoutMs: number) {
+export async function sleep(timeoutMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, timeoutMs));
 }
 

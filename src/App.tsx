@@ -75,8 +75,8 @@ function App(): ReactElement {
   });
 
   // Recording UI
-  const [imagePrefix, setImagePrefix] = useState<null | string>(null);
-  const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
+  // const [imagePrefix, setImagePrefix] = useState<null | string>(null);
+  // const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
    */
@@ -504,7 +504,7 @@ function App(): ReactElement {
   timeControls.setFrameCallback(setFrame);
   recordingControls.setFrameCallback(setFrame);
 
-  const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
+  // const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
 
   // RENDERING /////////////////////////////////////////////////////////////
 

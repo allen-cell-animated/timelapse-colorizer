@@ -82,7 +82,7 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
     }
   }, [inputValue, props.min, props.max, props.value]);
 
-  const handleKeyDown = (event: KeyboardEvent) => {
+  const handleKeyDown = (event: KeyboardEvent): void => {
     if (event.key === "Enter") {
       syncInputValue();
     }
