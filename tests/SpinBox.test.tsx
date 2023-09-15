@@ -1,12 +1,11 @@
 import { assert, describe, expect, it, vi } from "vitest";
-import { fireEvent, getByTestId, queryByTestId, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import SpinBox from "../src/components/SpinBox";
 import React from "react";
-import { sleep } from "./test_utils";
 
 describe("SpinBox", () => {
-  it("Calls onChange when blurred", async () => {
+  it("calls onChange when blurred", async () => {
     const onChange = (_value: number): void => {};
     const mockOnChange = vi.fn(onChange);
 
@@ -19,7 +18,7 @@ describe("SpinBox", () => {
     fireEvent.blur(element);
   });
 
-  it("Calls onChange when Enter is pressed", () => {
+  it("calls onChange when Enter is pressed", () => {
     const onChange = (_value: number): void => {};
     const mockOnChange = vi.fn(onChange);
     render(<SpinBox value={1} onChange={mockOnChange}></SpinBox>);
@@ -34,7 +33,7 @@ describe("SpinBox", () => {
     expect(mockOnChange.mock.calls).deep.equals([[2222]]);
   });
 
-  it("Enforces min and max", () => {
+  it("enforces min and max", () => {
     const onChange = (_value: number): void => {};
     const mockOnChange = vi.fn(onChange);
     const { rerender } = render(<SpinBox value={1} min={0} max={10} onChange={mockOnChange} />);
