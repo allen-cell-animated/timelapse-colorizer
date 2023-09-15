@@ -368,11 +368,11 @@ function App(): ReactElement {
       const newDatasetKey = newCollection.getDefaultDatasetKey();
       const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
       if (!loadResult.loaded) {
-        let errorMessage = loadResult.errorMessage;
+        const errorMessage = loadResult.errorMessage;
 
         if (errorMessage) {
           // Remove 'Error:' prefixes
-          let matches = errorMessage.replace(/^(Error:)*/, "");
+          const matches = errorMessage.replace(/^(Error:)*/, "");
           // Reject the promise with the error message
           throw new Error(matches);
           // throw new Error(errorMessage);
