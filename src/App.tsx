@@ -710,7 +710,7 @@ function App(): ReactElement {
             <Divider orientationMargin={0} />
             <div>
               <div className={styles.trackTitleBar}>
-                <h2>Track</h2>
+                <h2>Plot</h2>
 
                 <div className={styles.trackSearch}>
                   <h3>Search</h3>

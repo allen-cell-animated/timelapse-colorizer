@@ -1,7 +1,7 @@
 .iconButton {
-  height: var(--button-height);
-  width: var(--button-height);
-  min-width: var(--button-height);
+  height: var(--button-height-small);
+  width: var(--button-height-small);
+  min-width: var(--button-height-small);
   border-radius: 4px;
   padding: 0;
 }

@@ -4,7 +4,7 @@
   --border-radius: 6px;
 
   position: relative;
-  height: calc(var(--button-height) - 2px);
+  height: calc(var(--button-height-small) - 2px);
   width: 80px;
 
   display: flex;

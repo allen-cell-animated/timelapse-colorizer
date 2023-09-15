@@ -17,6 +17,15 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
   const themeDark = "#5f369f";
   const themeLight = "#aa88ed";
 
+  // TODO: Make a single source of truth for CSS variables + theme so that
+  // JS and CSS can access the same values.
+  // Solution should accommodate the ability to switch themes on the fly.
+  //
+  // Possible solutions include:
+  //  - CSS modules (export), variables live in CSS
+  //  - Create a local style using styled-components
+  // https://www.joshwcomeau.com/css/css-variables-for-react-devs/
+
   return (
     <ConfigProvider
       theme={{
@@ -24,7 +33,8 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
           colorPrimary: theme,
           colorLink: theme,
           colorLinkHover: themeDark,
-          controlHeight: 24,
+          controlHeight: 30,
+          controlHeightSM: 28,
           fontFamily: "Lato",
           borderRadiusLG: 4,
         },
@@ -41,6 +51,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             handleActiveColor: themeLight,
             handleColor: theme,
             trackBg: theme,
+            controlHeightSM: 20,
             trackHoverBg: themeLight,
           },
           Divider: {
