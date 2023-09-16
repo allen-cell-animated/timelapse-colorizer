@@ -80,7 +80,7 @@ const CssContainer = styled.div`
   --color-theme-light: ${theme.color.themeLight};
 
   /* Text */
-  --color-text-primary: ${theme.color.text.primary}
+  --color-text-primary: ${theme.color.text.primary};
   --color-text-secondary: ${theme.color.text.secondary};
   --color-text-hint: ${theme.color.text.hint};
   --color-text-disabled: ${theme.color.text.disabled};

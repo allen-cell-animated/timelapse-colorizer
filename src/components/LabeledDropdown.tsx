@@ -85,7 +85,7 @@ export default function LabeledDropdown(props: LabeledDropdownProps): ReactEleme
 
   return (
     <div className={styles.labeledDropdown}>
-      {props.label}
+      <h2>{props.label}</h2>
       <Dropdown menu={datasetMenuProps} disabled={props.disabled}>
         {dropdownContents}
       </Dropdown>

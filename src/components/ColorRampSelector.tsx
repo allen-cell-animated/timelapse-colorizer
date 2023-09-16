@@ -79,7 +79,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   return (
     <div className={styles.colorRampSelector}>
-      Color Ramp
+      <h2>Color Map</h2>
       <div className={buttonDivClassName}>
         {selectorButton}
         <div className={styles.dropdownContainer}>{dropdownContents}</div>

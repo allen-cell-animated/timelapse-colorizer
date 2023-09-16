@@ -308,6 +308,7 @@ function App(): ReactElement {
    */
   const replaceDataset = useCallback(
     async (newDataset: Dataset | null, newDatasetKey: string): Promise<void> => {
+      // TODO: Change the way flags are handled to prevent flickering during dataset replacement
       setDatasetOpen(false);
       if (newDataset === null) {
         // TODO: Determine with UX what expected behavior should be for bad datasets
