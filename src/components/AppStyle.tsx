@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { PropsWithChildren, ReactElement, createContext } from "react";
 import { ConfigProvider } from "antd";
 import styled from "styled-components";
 
@@ -66,6 +66,8 @@ const theme = {
     heightSmall: 28,
   },
 };
+
+export const ThemeContext = createContext(theme);
 
 // TODO: Remove --color-theme wherever it's used in other CSS documents
 /** Applies theme as CSS variables that affect the rest of the document. */
