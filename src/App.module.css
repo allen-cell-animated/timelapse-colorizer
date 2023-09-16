@@ -11,6 +11,7 @@
   font-size: var(--font-size-header);
   font-style: normal;
   font-weight: 400;
+  margin: 5px 0;
 }
 
 .app h2 {
@@ -25,7 +26,7 @@
   font-size: var(--font-size-label);
   font-style: normal;
   font-weight: 400;
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .app p,
@@ -222,4 +223,8 @@
 
 .trackSearch input {
   max-width: 80px;
+}
+
+.trackSearch h3 {
+  margin: 0;
 }

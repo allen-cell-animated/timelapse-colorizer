@@ -56,13 +56,13 @@ const theme = {
     resource: "https://fonts.googleapis.com/css2?family=Lato&display=swap",
     size: {
       header: 22,
-      section: 20,
+      section: 18,
       label: 16,
       content: 14,
     },
   },
   controls: {
-    height: 30,
+    height: 28,
     heightSmall: 28,
   },
 };
