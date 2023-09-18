@@ -20,7 +20,7 @@ describe("ColorRampSelector", () => {
 
   it("can render with correct label", async () => {
     render(<ColorRampSelector selected={"map1"} colorRamps={customColorRamps} onChange={(_value: string) => {}} />);
-    const element = screen.getByText(/Color Ramp/);
+    const element = screen.getByText(/Color Map/);
     expect(element).toBeInTheDocument();
   });
 
