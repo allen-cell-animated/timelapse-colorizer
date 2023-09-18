@@ -26,15 +26,14 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
   props = { ...defaultProps, ...props } as PropsWithChildren<Required<HoverTooltipProps>>;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [relativeMousePosition, setRelativeMousePosition] = useState<[number, number]>([0, 0]);
 
   // Add a listener for mouse events
   useEffect(() => {
-    const onMouseOver = (_event: MouseEvent) => setIsHovered(true);
-    const onMouseOut = (_event: MouseEvent) => setIsHovered(false);
-    const onMouseMove = (event: MouseEvent) => {
+    const onMouseOver = (_event: MouseEvent): void => setIsHovered(true);
+    const onMouseOut = (_event: MouseEvent): void => setIsHovered(false);
+    const onMouseMove = (event: MouseEvent): void => {
       if (isHovered) {
         setRelativeMousePosition([event.clientX, event.clientY]);
       }
@@ -65,7 +64,6 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
           top: `calc(${relativeMousePosition[1]}px + ${props.offsetPx![1]}px)`,
           opacity: visible ? 1 : 0,
         }}
-        ref={tooltipRef}
       >
         {props.tooltipContent}
       </TooltipDiv>
