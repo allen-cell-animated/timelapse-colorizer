@@ -15,7 +15,6 @@
     "sourceType": "module"
   },
   "plugins": ["@typescript-eslint"],
-  "ignorePatterns": ["dist/**/*.js"],
   "rules": {
     "comma-style": [1, "last"],
     "curly": [1, "multi-line"],
