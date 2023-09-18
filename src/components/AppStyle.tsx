@@ -22,8 +22,9 @@ const palette = {
   error: "#f92d20",
 };
 
-// Note: Some future version of this could swap different theme objects, and
+// Note: Some advanced version of this could swap different theme objects, and
 // regenerate the CssContainer along with the theme.
+// These could probably be added as props to AppStyle in the future!
 /** Top-level theme variables, used to drive the styling of the entire app. */
 const theme = {
   color: {
@@ -115,15 +116,6 @@ const CssContainer = styled.div`
  *   - children: All the children that should be rendered with the applied styling.
  */
 export default function AppStyle(props: PropsWithChildren<AppStyleProps>): ReactElement {
-  // TODO: Make a single source of truth for CSS variables + theme so that
-  // JS and CSS can access the same values.
-  // Solution should accommodate the ability to switch themes on the fly.
-  //
-  // Possible solutions include:
-  //  - CSS modules (export), variables live in CSS
-  //  - Create a local style using styled-components
-  // https://www.joshwcomeau.com/css/css-variables-for-react-devs/
-
   return (
     <CssContainer className={props.className}>
       <link rel="preconnect" href="https://fonts.gstatic.com" />

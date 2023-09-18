@@ -1,13 +1,62 @@
 import React, { PropsWithChildren, ReactElement, useContext } from "react";
-import styles from "./IconButton.module.css";
 import { Button, ConfigProvider } from "antd";
 import { ThemeContext } from "./AppStyle";
+import styled, { css } from "styled-components";
 
 type IconButtonProps = {
   onClick?: () => void;
   disabled?: boolean;
   type?: "outlined" | "primary";
 };
+
+// Button styling varies based on the type (outlined vs. primary)
+const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
+  height: var(--button-height-small);
+  width: var(--button-height-small);
+  min-width: var(--button-height-small);
+  border-radius: 4px;
+  padding: 0;
+
+  ${(props) => {
+    switch (props.$type) {
+      case "outlined":
+        return css`
+          border: 1px solid var(--color-button);
+          background-color: transparent;
+          color: var(--color-button);
+          fill: var(--color-button);
+
+          &:disabled {
+            border: 1px solid var(--color-borders);
+            background-color: var(--color-button-disabled);
+            color: var(--color-text-disabled);
+            fill: var(--color-text-disabled);
+          }
+        `;
+      case "primary":
+      default:
+        return css`
+          fill: var(--color-text-button);
+
+          &:disabled {
+            fill: var(--color-text-disabled);
+          }
+        `;
+    }
+  }}
+
+  &:not(:disabled):hover {
+    border-color: var(--color-button-hover);
+    background-color: var(--color-button-hover);
+    color: var(--color-text-button);
+    fill: var(--color-text-button);
+  }
+
+  &:not(:disabled):active {
+    background-color: var(--color-button-hover);
+    border-color: var(--color-button);
+  }
+`;
 
 /**
  * Custom styled button intended to hold a single icon passed in as a child.
@@ -23,14 +72,9 @@ export default function IconButton(props: PropsWithChildren<IconButtonProps>): R
 
   return (
     <ConfigProvider theme={{ components: { Button: { colorPrimaryActive: themeContext.color.button.hover } } }}>
-      <Button
-        type="primary"
-        className={styles.iconButton + " " + styles[props.type || "primary"]}
-        disabled={props.disabled}
-        onClick={props.onClick}
-      >
+      <StyledButton type="primary" $type={props.type || "primary"} disabled={props.disabled} onClick={props.onClick}>
         {props.children}
-      </Button>
+      </StyledButton>
     </ConfigProvider>
   );
 }
