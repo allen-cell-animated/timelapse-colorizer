@@ -45,6 +45,22 @@
   gap: 2px;
 }
 
+.app .ant-btn:active {
+  border: 1px solid var(--color-button);
+}
+
+.app .ant-btn-default:not(:disabled):hover {
+  background-color: var(--color-button-hover);
+  color: var(--color-text-button);
+  fill: var(--color-text-button);
+}
+
+.app .ant-btn-default:not(:disabled):active {
+  border: 1px solid var(--color-button);
+  color: var(--color-text-button);
+  fill: var(--color-text-button);
+}
+
 .header {
   --header-content-height: 24px;
 

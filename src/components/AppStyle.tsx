@@ -89,6 +89,10 @@ const CssContainer = styled.div`
   --color-modal-overlay: ${theme.color.layout.modalOverlay};
 
   /* Controls */
+  /* TODO: Possible issue with hover/active colors because the UI design
+  styling has the same active and hover colors (just with different outlines).
+  Would dark/light theme be more descriptive? 
+   */
   --color-button: ${theme.color.button.background};
   --color-button-hover: ${theme.color.button.hover};
   --color-button-active: ${theme.color.button.active};
@@ -106,10 +110,6 @@ const CssContainer = styled.div`
   --font-size-section: ${theme.font.size.section}px;
   --font-size-label: ${theme.font.size.label}px;
   --font-size-content: ${theme.font.size.content}px;
-
-  & button:active {
-    border: 1px solid var(--color-button);
-  }
 `;
 
 /**

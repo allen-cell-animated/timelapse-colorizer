@@ -16,6 +16,7 @@ type SpinBoxProps = {
    */
   wrapIncrement?: boolean;
 };
+
 const defaultProps: Partial<SpinBoxProps> = {
   min: Number.MIN_SAFE_INTEGER,
   max: Number.MAX_SAFE_INTEGER,
