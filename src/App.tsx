@@ -83,9 +83,9 @@ function App(): ReactElement {
    */
   const [frameInput, setFrameInput] = useState(0);
   const [findTrackInput, setFindTrackInput] = useState("");
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
   // Prevent jarring jumps in the hover tooltip by using the last non-null value
-  const lastNonNullHoverId = useRef<number>(0);
+  const [lastHoveredId, setLastHoveredId] = useState<number | null>(null);
+  const [showHoveredId, setShowHoveredId] = useState(false);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
@@ -454,17 +454,17 @@ function App(): ReactElement {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       if (id === BACKGROUND_ID) {
         // Ignore background pixels
-        setHoveredId(null);
+        setShowHoveredId(false);
         return;
       }
-      setHoveredId(id);
-      lastNonNullHoverId.current = id;
+      setLastHoveredId(id);
+      setShowHoveredId(true);
     },
     [dataset, canv]
   );
 
   const onMouseLeave = useCallback((_event: MouseEvent): void => {
-    setHoveredId(null);
+    setLastHoveredId(null);
   }, []);
 
   useEffect(() => {
@@ -657,11 +657,11 @@ function App(): ReactElement {
             <HoverTooltip
               tooltipContent={
                 <>
-                  <p>Track ID: {dataset?.getTrackId(lastNonNullHoverId.current)}</p>
-                  <p>Feature: {getFeatureValue(lastNonNullHoverId.current)}</p>
+                  <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
+                  <p>Feature: {lastHoveredId && getFeatureValue(lastHoveredId)}</p>
                 </>
               }
-              disabled={hoveredId === null}
+              disabled={!showHoveredId}
             >
               <div ref={canvasRef}></div>
             </HoverTooltip>
@@ -683,7 +683,7 @@ function App(): ReactElement {
                   onClick={() => timeControls.handlePlayButtonClick()}
                   type="outlined"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="11" viewBox="0 0 8 12">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="11" viewBox="0 0 8 12" aria-label="play">
                     <path d="M7.78017 6.3152L0.654546 11.9127C0.389566 12.1209 0 11.9331 0 11.5975V0.402353C0 0.0667129 0.389566 -0.120911 0.654546 0.0873534L7.78017 5.68483C7.82798 5.72228 7.86665 5.77012 7.89325 5.82473C7.91984 5.87934 7.93366 5.93928 7.93366 6.00002C7.93366 6.06076 7.91984 6.1207 7.89325 6.17531C7.86665 6.22991 7.82798 6.27775 7.78017 6.3152Z" />
                   </svg>
                 </IconButton>
