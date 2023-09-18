@@ -55,7 +55,9 @@
   color: var(--color-text-disabled);
 }
 
-/* Prevent the input from changing its styling when focused*/
+/* Prevent the input from changing its styling when focused, since the
+ * parent spinbox has styling for this already.
+ */
 .spinBox input:focus,
 .spinBox input:focus-visible,
 .spinBox input:active {

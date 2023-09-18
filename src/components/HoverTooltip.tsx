@@ -46,7 +46,7 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
     const onMouseOut = (_event: MouseEvent): void => setIsHovered(false);
     const onMouseMove = (event: MouseEvent): void => {
       if (isHovered) {
-        // Use last position within the tooltip region
+        // Use last position on the screen
         setRelativeMousePosition([event.clientX, event.clientY]);
       }
     };
