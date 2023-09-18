@@ -4,10 +4,10 @@
   font-weight: 400;
   line-height: normal;
   margin: 0;
+  color: var(--color-text-primary);
 }
 
 .app h1 {
-  color: var(--color-text-primary);
   font-size: var(--font-size-header);
   font-style: normal;
   font-weight: 400;
@@ -15,34 +15,31 @@
 }
 
 .app h2 {
-  color: var(--color-text-primary);
   font-size: var(--font-size-section);
   font-style: normal;
   font-weight: 400;
 }
 
 .app h3 {
-  color: var(--color-text-primary);
   font-size: var(--font-size-label);
   font-style: normal;
   font-weight: 400;
   margin: 0;
 }
 
-.app p,
-.app label {
-  color: var(--text-primary);
+.app p {
   font-family: var(--default-font);
   font-size: var(--font-size-content);
   font-style: normal;
   font-weight: 400;
-}
-
-.app p {
   margin: 2px;
 }
 
 .app label {
+  font-family: var(--default-font);
+  font-size: var(--font-size-content);
+  font-style: normal;
+  font-weight: 400;
   display: flex;
   flex-direction: row;
   gap: 2px;
