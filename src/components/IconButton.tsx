@@ -47,13 +47,11 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
 
   &:not(:disabled):hover {
     border-color: var(--color-button-hover);
-    background-color: var(--color-button-hover);
     color: var(--color-text-button);
     fill: var(--color-text-button);
   }
 
   &:not(:disabled):active {
-    background-color: var(--color-button-hover);
     border-color: var(--color-button);
   }
 `;

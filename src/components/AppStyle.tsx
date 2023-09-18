@@ -106,6 +106,10 @@ const CssContainer = styled.div`
   --font-size-section: ${theme.font.size.section}px;
   --font-size-label: ${theme.font.size.label}px;
   --font-size-content: ${theme.font.size.content}px;
+
+  & button:active {
+    border: 1px solid var(--color-button);
+  }
 `;
 
 /**
@@ -127,6 +131,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorPrimary: theme.color.theme,
             colorLink: theme.color.theme,
             colorLinkHover: theme.color.themeDark,
+
             controlHeight: theme.controls.height,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
@@ -134,6 +139,10 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorText: theme.color.text.primary,
           },
           components: {
+            Button: {
+              colorPrimaryActive: theme.color.button.hover,
+              colorPrimaryHover: theme.color.button.hover,
+            },
             Checkbox: {
               borderRadiusSM: 2,
               controlInteractiveSize: 16,
