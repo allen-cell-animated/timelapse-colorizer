@@ -2,26 +2,37 @@ import React, { PropsWithChildren, ReactElement, ReactNode, useEffect, useRef, u
 import styled from "styled-components";
 
 type HoverTooltipProps = {
+  /** Content to show in the Tooltip box. */
   tooltipContent?: ReactNode;
+  /** If disabled is true, tooltip will be hidden. */
   disabled?: boolean;
+  /** Offset of the tooltip box relative to the mouse, in pixels. By default, set to 15 pixels in x and y. */
   offsetPx?: [number, number];
 };
+
 const defaultProps: Partial<HoverTooltipProps> = {
   tooltipContent: <p>Tooltip</p>,
   disabled: false,
   offsetPx: [15, 15],
 };
 
+// Styling for the tooltip
 const TooltipDiv = styled.div`
   position: fixed;
+
   border-radius: var(--radius-control-small);
   border: 1px solid var(--color-dividers);
   background-color: var(--color-background);
   padding: 6px 8px;
+
   transition: opacity 300ms;
   z-index: 1;
 `;
 
+/**
+ * Adds a tooltip region around the provided child. A tooltip will appear next to the mouse when
+ * the mouse enters the area, and disappear on exit.
+ */
 export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>): ReactElement {
   props = { ...defaultProps, ...props } as PropsWithChildren<Required<HoverTooltipProps>>;
 
@@ -35,6 +46,7 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
     const onMouseOut = (_event: MouseEvent): void => setIsHovered(false);
     const onMouseMove = (event: MouseEvent): void => {
       if (isHovered) {
+        // Use last position within the tooltip region
         setRelativeMousePosition([event.clientX, event.clientY]);
       }
     };

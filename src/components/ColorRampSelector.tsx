@@ -16,6 +16,9 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
   disabled: false,
 };
 
+/**
+ * A dropdown selector for color ramp gradients.
+ */
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
   const theme = useContext(ThemeContext);

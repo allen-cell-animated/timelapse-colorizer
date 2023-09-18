@@ -22,7 +22,7 @@ const palette = {
   error: "#f92d20",
 };
 
-// TODO: Some future version of this could swap different theme objects, and
+// Note: Some future version of this could swap different theme objects, and
 // regenerate the CssContainer along with the theme.
 /** Top-level theme variables, used to drive the styling of the entire app. */
 const theme = {
@@ -70,15 +70,9 @@ const theme = {
 
 export const ThemeContext = createContext(theme);
 
-// TODO: Remove --color-theme wherever it's used in other CSS documents
 /** Applies theme as CSS variables that affect the rest of the document. */
 const CssContainer = styled.div`
   @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
-
-  /* UI Design Colors */
-  --color-theme: ${theme.color.theme};
-  --color-theme-dark: ${theme.color.themeDark};
-  --color-theme-light: ${theme.color.themeLight};
 
   /* Text */
   --color-text-primary: ${theme.color.text.primary};

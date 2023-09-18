@@ -29,11 +29,11 @@
 }
 
 .spinBox:not(.disabled):hover {
-  border: solid 1px var(--color-theme-light);
+  border: solid 1px var(--color-button-hover);
 }
 
 .spinBox:focus-within {
-  border: solid 1px var(--color-theme-light);
+  border: solid 1px var(--color-button-hover);
   outline: none;
   box-shadow: 0 0 0 2px rgba(137, 98, 211, 0.06);
   border-inline-end-width: 1px;
@@ -75,7 +75,7 @@
 }
 
 .spinButtons:hover {
-  background-color: var(--color-theme);
+  background-color: var(--color-button);
 }
 
 .spinButtons.disabled:hover {
@@ -83,8 +83,8 @@
 }
 
 .spinButtons button {
-  color: var(--color-theme);
-  fill: var(--color-theme);
+  color: var(--color-button);
+  fill: var(--color-button);
   border: none;
   background-color: transparent;
   margin: 0;
@@ -104,9 +104,9 @@
 }
 
 .spinButtons button:not(:disabled):hover {
-  background-color: var(--color-theme-light);
+  background-color: var(--color-button-hover);
 }
 
 .spinButtons button:not(:disabled):active {
-  background-color: var(--color-theme-dark);
+  background-color: var(--color-button-active);
 }

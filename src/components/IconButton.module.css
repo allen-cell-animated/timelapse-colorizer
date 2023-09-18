@@ -7,10 +7,10 @@
 }
 
 .iconButton.outlined {
-  border: 1px solid var(--color-theme);
+  border: 1px solid var(--color-button);
   background-color: transparent;
-  color: var(--color-theme);
-  fill: var(--color-theme);
+  color: var(--color-button);
+  fill: var(--color-button);
 }
 
 .iconButton.outlined:disabled {
@@ -29,13 +29,13 @@
 }
 
 .iconButton:not(:disabled):hover {
-  border-color: var(--color-theme-light);
-  background-color: var(--color-theme-light);
+  border-color: var(--color-button-hover);
+  background-color: var(--color-button-hover);
   color: var(--color-text-button);
   fill: var(--color-text-button);
 }
 
 .iconButton:not(:disabled):active {
-  background-color: var(--color-theme-light);
-  border-color: var(--color-theme);
+  background-color: var(--color-button-hover);
+  border-color: var(--color-button);
 }
