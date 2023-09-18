@@ -64,6 +64,7 @@ const theme = {
   controls: {
     height: 28,
     heightSmall: 28,
+    radius: 4,
   },
 };
 
@@ -92,7 +93,7 @@ const CssContainer = styled.div`
   --color-borders: ${theme.color.layout.borders};
   --color-modal-overlay: ${theme.color.layout.modalOverlay};
 
-  /* Buttons */
+  /* Controls */
   --color-button: ${theme.color.button.background};
   --color-button-hover: ${theme.color.button.hover};
   --color-button-active: ${theme.color.button.active};
@@ -100,6 +101,7 @@ const CssContainer = styled.div`
 
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;
+  --radius-control-small: ${theme.controls.radius}px;
 
   --color-focus-shadow: rgba(137, 98, 211, 0.06);
 

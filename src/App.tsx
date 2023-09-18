@@ -26,6 +26,7 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
 import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
+import HoverTooltip from "./components/HoverTooltip";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -649,7 +650,9 @@ function App(): ReactElement {
         <div className={styles.contentPanels}>
           <div className={styles.canvasPanel}>
             {/** Canvas */}
-            <div ref={canvasRef}></div>
+            <HoverTooltip>
+              <div ref={canvasRef}></div>
+            </HoverTooltip>
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
