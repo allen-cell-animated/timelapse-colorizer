@@ -84,6 +84,8 @@ function App(): ReactElement {
   const [frameInput, setFrameInput] = useState(0);
   const [findTrackInput, setFindTrackInput] = useState("");
   const [hoveredId, setHoveredId] = useState<number | null>(null);
+  // Prevent jarring jumps in the hover tooltip by using the last non-null value
+  const lastNonNullHoverId = useRef<number>(0);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
@@ -452,9 +454,11 @@ function App(): ReactElement {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       if (id === BACKGROUND_ID) {
         // Ignore background pixels
+        setHoveredId(null);
         return;
       }
       setHoveredId(id);
+      lastNonNullHoverId.current = id;
     },
     [dataset, canv]
   );
@@ -650,7 +654,15 @@ function App(): ReactElement {
         <div className={styles.contentPanels}>
           <div className={styles.canvasPanel}>
             {/** Canvas */}
-            <HoverTooltip>
+            <HoverTooltip
+              tooltipContent={
+                <>
+                  <p>Track ID: {dataset?.getTrackId(lastNonNullHoverId.current)}</p>
+                  <p>Feature: {getFeatureValue(lastNonNullHoverId.current)}</p>
+                </>
+              }
+              disabled={hoveredId === null}
+            >
               <div ref={canvasRef}></div>
             </HoverTooltip>
 
@@ -754,11 +766,6 @@ function App(): ReactElement {
               </Checkbox>
             </div>
           </div>
-        </div>
-        {/* Hover values */}
-        <div>
-          <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
-          <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
         </div>
       </div>
     </AppStyle>

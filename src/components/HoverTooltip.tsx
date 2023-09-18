@@ -1,19 +1,15 @@
 import React, { PropsWithChildren, ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
-// import styles from "./HoverTooltip.module.css";
-
 type HoverTooltipProps = {
   tooltipContent?: ReactNode;
-  visible?: boolean;
   disabled?: boolean;
   offsetPx?: [number, number];
 };
 const defaultProps: Partial<HoverTooltipProps> = {
-  tooltipContent: <></>,
-  visible: true,
+  tooltipContent: <p>Tooltip</p>,
   disabled: false,
-  offsetPx: [10, 10],
+  offsetPx: [15, 15],
 };
 
 const TooltipDiv = styled.div`
@@ -22,6 +18,8 @@ const TooltipDiv = styled.div`
   border: 1px solid var(--color-dividers);
   background-color: var(--color-background);
   padding: 6px 8px;
+  transition: opacity 300ms;
+  z-index: 1;
 `;
 
 export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>): ReactElement {
@@ -36,7 +34,11 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
   useEffect(() => {
     const onMouseOver = (_event: MouseEvent) => setIsHovered(true);
     const onMouseOut = (_event: MouseEvent) => setIsHovered(false);
-    const onMouseMove = (event: MouseEvent) => setRelativeMousePosition([event.pageX, event.pageY]);
+    const onMouseMove = (event: MouseEvent) => {
+      if (isHovered) {
+        setRelativeMousePosition([event.clientX, event.clientY]);
+      }
+    };
 
     if (containerRef.current) {
       const ref = containerRef.current;
@@ -51,20 +53,20 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
       };
     }
     return;
-  }, [containerRef.current]);
+  }, [containerRef.current, isHovered]);
+
+  const visible = isHovered && !props.disabled && props.tooltipContent;
 
   return (
-    <div ref={containerRef} style={{ position: "relative" }}>
+    <div ref={containerRef}>
       <TooltipDiv
         style={{
           left: `calc(${relativeMousePosition[0]}px + ${props.offsetPx![0]}px)`,
           top: `calc(${relativeMousePosition[1]}px + ${props.offsetPx![1]}px)`,
-          visibility: isHovered ? "visible" : "hidden",
+          opacity: visible ? 1 : 0,
         }}
         ref={tooltipRef}
       >
-        <p>Line 1</p>
-        <p>Line 2</p>
         {props.tooltipContent}
       </TooltipDiv>
       {props.children}
