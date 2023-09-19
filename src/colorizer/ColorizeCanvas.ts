@@ -252,6 +252,18 @@ export default class ColorizeCanvas {
     this.setUniform("outlierColor", color);
   }
 
+  setHideValuesOutOfRange(hide: boolean): void {
+    this.hideValuesOutOfRange = hide;
+    this.setUniform("hideOutOfRange", this.hideValuesOutOfRange);
+  }
+
+  // TODO:
+  // setOutlierDrawMode(mode: DrawMode, color?: Color): void {}
+
+  // setValuesOutOfRangeDrawMode(mode: DrawMode, color?: Color): void {}
+
+  // setHighlightColor(color: Color): void {}
+
   setSelectedTrack(track: Track | null): void {
     if (this.track && this.track?.trackId === track?.trackId) {
       return;
@@ -320,11 +332,6 @@ export default class ColorizeCanvas {
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);
     this.render(); // re-render necessary because map range may have changed
-  }
-
-  setHideValuesOutOfRange(hide: boolean): void {
-    this.hideValuesOutOfRange = hide;
-    this.setUniform("hideOutOfRange", this.hideValuesOutOfRange);
   }
 
   setColorMapRangeMin(newMin: number): void {
