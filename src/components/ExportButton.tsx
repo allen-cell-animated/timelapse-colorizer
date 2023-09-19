@@ -6,9 +6,13 @@ type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => void;
   currentFrame: number;
+  startRecording: (min: number, max: number, prefix: string, onCompleted: () => void) => void;
+  stopRecording: () => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
 };
+
+export const EXPORT_BUTTON_TEST_ID = "export-action";
 
 const defaultProps: Partial<ExportButtonProps> = {
   defaultImagePrefix: "image",
@@ -64,6 +68,15 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     }
   }, [props.defaultImagePrefix, useDefaultImagePrefix]);
 
+  const closeModal = useCallback(() => {
+    setIsRecording(false);
+    setIsCancelModalOpen(false);
+    setIsLoadModalOpen(false);
+  }, []);
+
+  /**
+   * Triggered when the user attempts to cancel or exit the main modal.
+   */
   const handleCancel = useCallback(() => {
     if (!isRecording) {
       setIsLoadModalOpen(false);
@@ -75,6 +88,9 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     setIsCancelModalOpen(true);
   }, [isRecording]);
 
+  /**
+   * Handle the user pressing the Export button and starting a recording
+   */
   const onClickExport = useCallback(() => {
     if (isRecording) {
       return;
@@ -99,11 +115,13 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
 
     // Start the recording
     setIsRecording(true);
-    // props.setFrame(min);
-  }, [props.setFrame, isRecording, customMin, customMax]);
+    props.setFrame(min);
+    props.startRecording(min, max, imagePrefix, closeModal);
+  }, [props.setFrame, isRecording, customMin, customMax, exportMode]);
 
   const handleCancelExport = useCallback(() => {
     // TODO: Stop recording action
+    props.stopRecording();
     setIsRecording(false);
     setIsCancelModalOpen(false);
     setIsLoadModalOpen(false);
@@ -119,7 +137,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         title={"Export image sequence"}
         open={isLoadModalOpen}
         okText={isRecording ? "Stop" : "Export"}
-        okButtonProps={{ loading: isRecording }}
+        okButtonProps={{ loading: isRecording, "data-testid": EXPORT_BUTTON_TEST_ID }}
         onOk={onClickExport}
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
@@ -142,6 +160,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
                 // Render the custom range input in the radio list if selected
                 <CustomRangeDiv>
                   <InputNumber
+                    aria-label="min frame"
                     controls={false}
                     min={0}
                     max={props.totalFrames - 1}
@@ -151,6 +170,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
                   />
                   <p>-</p>
                   <InputNumber
+                    aria-label="max frame"
                     controls={false}
                     min={customMin}
                     max={props.totalFrames - 1}
@@ -173,15 +193,18 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
           </div>
 
           <HorizontalDiv>
-            <p>/</p>
-            <Input
-              onChange={(event) => {
-                setImagePrefix(event.target.value);
-                setUseDefaultImagePrefix(false);
-              }}
-              value={imagePrefix}
-              disabled={isRecording}
-            />
+            <label style={{ width: "100%" }}>
+              <p>Prefix:</p>
+              <Input
+                onChange={(event) => {
+                  setImagePrefix(event.target.value);
+                  setUseDefaultImagePrefix(false);
+                }}
+                size="small"
+                value={imagePrefix}
+                disabled={isRecording}
+              />
+            </label>
             <p>#.png</p>
             <Button
               disabled={isRecording}
