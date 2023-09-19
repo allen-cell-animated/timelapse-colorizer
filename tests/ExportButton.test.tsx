@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, getByRole, queryByAttribute, queryByText, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { ReactElement } from "react";
 import { EXPORT_BUTTON_TEST_ID } from "../src/components/ExportButton";
 import ExportButton from "../src/components/ExportButton";
@@ -12,11 +12,11 @@ describe("ExportButton", () => {
         <ExportButton
           defaultImagePrefix={prefix}
           totalFrames={0}
-          setFrame={function (frame: number): void {
+          setFrame={function (_frame: number): void {
             throw new Error("Function not implemented.");
           }}
           currentFrame={0}
-          startRecording={function (min: number, max: number, prefix: string): void {
+          startRecording={function (_min: number, _max: number, _prefix: string): void {
             throw new Error("Function not implemented.");
           }}
           stopRecording={function (): void {
