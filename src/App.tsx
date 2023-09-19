@@ -578,9 +578,10 @@ function App(): ReactElement {
 
           <ExportButton
             totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={function (frame: number): void {
-              throw new Error("Function not implemented.");
-            }}
+            setFrame={setFrame}
+            currentFrame={currentFrame}
+            startRecording={function (min: number, max: number, prefix: string, onCompleted: () => void): void {}}
+            stopRecording={function (): void {}}
           />
 
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />

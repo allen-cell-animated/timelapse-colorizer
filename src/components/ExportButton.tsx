@@ -1,6 +1,7 @@
-import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber } from "antd";
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App } from "antd";
+import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
+import SpinBox from "./SpinBox";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -23,6 +24,12 @@ const HorizontalDiv = styled.div`
   display: flex;
   flex-direction: row;
   gap: 6px;
+`;
+
+const VerticalDiv = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 `;
 
 const CustomRangeDiv = styled(HorizontalDiv)`
@@ -48,7 +55,6 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   const modalContextRef = useRef<HTMLDivElement>(null);
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   const [isRecording, setIsRecording] = useState(false);
 
@@ -57,6 +63,9 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   const [customMax, setCustomMax] = useState(props.totalFrames - 1);
   const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
+  const [frameSkip, setFrameSkip] = useState(0);
+
+  const { modal } = App.useApp();
 
   useEffect(() => {
     setCustomMax(props.totalFrames - 1);
@@ -68,9 +77,12 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     }
   }, [props.defaultImagePrefix, useDefaultImagePrefix]);
 
+  // Close the modal and stop any ongoing recordings.
   const closeModal = useCallback(() => {
+    if (isRecording) {
+      props.stopRecording();
+    }
     setIsRecording(false);
-    setIsCancelModalOpen(false);
     setIsLoadModalOpen(false);
   }, []);
 
@@ -80,13 +92,26 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   const handleCancel = useCallback(() => {
     if (!isRecording) {
       setIsLoadModalOpen(false);
-      setIsCancelModalOpen(false);
       return;
     }
 
     // Currently recording; user must be prompted to confirm
-    setIsCancelModalOpen(true);
-  }, [isRecording]);
+    modal.confirm({
+      title: "Cancel export",
+      content: "Are you sure you want to cancel and exit?",
+      okText: "Cancel",
+      cancelText: "Back",
+      centered: true,
+      icon: null,
+      getContainer: modalContextRef.current || undefined,
+      onOk() {
+        props.stopRecording();
+        setIsRecording(false);
+        setIsLoadModalOpen(false);
+      },
+    });
+    // setIsCancelModalOpen(true);
+  }, [isRecording, modalContextRef.current, props.stopRecording]);
 
   /**
    * Handle the user pressing the Export button and starting a recording
@@ -119,13 +144,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     props.startRecording(min, max, imagePrefix, closeModal);
   }, [props.setFrame, isRecording, customMin, customMax, exportMode]);
 
-  const handleCancelExport = useCallback(() => {
-    // TODO: Stop recording action
-    props.stopRecording();
-    setIsRecording(false);
-    setIsCancelModalOpen(false);
-    setIsLoadModalOpen(false);
-  }, []);
+  const numExportedFrames = Math.max(Math.floor((customMax - customMin + 1) / (frameSkip + 1)), 1);
 
   return (
     <div ref={modalContextRef}>
@@ -137,11 +156,12 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         title={"Export image sequence"}
         open={isLoadModalOpen}
         okText={isRecording ? "Stop" : "Export"}
-        okButtonProps={{ loading: isRecording, "data-testid": EXPORT_BUTTON_TEST_ID }}
+        okButtonProps={{ "data-testid": EXPORT_BUTTON_TEST_ID }}
         onOk={onClickExport}
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
         centered={true}
+        // TODO: Add custom footer instead of ok/cancel buttons
         getContainer={modalContextRef.current || undefined}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" }}>
@@ -158,28 +178,36 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
               <Radio value={ExportMode.CUSTOM}>Custom</Radio>
               {exportMode === ExportMode.CUSTOM ? (
                 // Render the custom range input in the radio list if selected
-                <CustomRangeDiv>
-                  <InputNumber
-                    aria-label="min frame"
-                    controls={false}
-                    min={0}
-                    max={props.totalFrames - 1}
-                    value={customMin}
-                    onChange={(value) => value && setCustomMin(value)}
-                    disabled={isRecording}
-                  />
-                  <p>-</p>
-                  <InputNumber
-                    aria-label="max frame"
-                    controls={false}
-                    min={customMin}
-                    max={props.totalFrames - 1}
-                    value={customMax}
-                    onChange={(value) => value && setCustomMax(value)}
-                    disabled={isRecording}
-                  />
-                  <p>of {props.totalFrames - 1}</p>
-                </CustomRangeDiv>
+                <VerticalDiv style={{ paddingLeft: "25px" }}>
+                  <CustomRangeDiv>
+                    <p>Range:</p>
+                    <InputNumber
+                      aria-label="min frame"
+                      controls={false}
+                      min={0}
+                      max={props.totalFrames - 1}
+                      value={customMin}
+                      onChange={(value) => value && setCustomMin(value)}
+                      disabled={isRecording}
+                    />
+                    <p>-</p>
+                    <InputNumber
+                      aria-label="max frame"
+                      controls={false}
+                      min={customMin}
+                      max={props.totalFrames - 1}
+                      value={customMax}
+                      onChange={(value) => value && setCustomMax(value)}
+                      disabled={isRecording}
+                    />
+                    <p>of {props.totalFrames - 1}</p>
+                  </CustomRangeDiv>
+                  <HorizontalDiv>
+                    <p>Frame Skip:</p>
+                    <SpinBox value={frameSkip} onChange={setFrameSkip} min={0} max={props.totalFrames} />
+                    <p style={{ color: "var(--color-text-secondary)" }}>({numExportedFrames} frames)</p>
+                  </HorizontalDiv>
+                </VerticalDiv>
               ) : null}
             </Space>
           </Radio.Group>
@@ -216,21 +244,6 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
             </Button>
           </HorizontalDiv>
         </div>
-      </Modal>
-      {/* Cancel Export modal */}
-      <Modal
-        title={"Cancel export"}
-        okText={"Cancel"}
-        cancelText={"Back"}
-        open={isCancelModalOpen}
-        onOk={handleCancelExport}
-        onCancel={() => setIsCancelModalOpen(false)}
-        centered={true}
-        /* Make slightly smaller than original modal */
-        width={380}
-        zIndex={1000}
-      >
-        Are you sure you want to cancel and exit?
       </Modal>
     </div>
   );

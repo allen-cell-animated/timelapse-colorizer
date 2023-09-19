@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, ReactElement, createContext } from "react";
-import { ConfigProvider } from "antd";
+import { App, ConfigProvider } from "antd";
 import styled from "styled-components";
 
 type AppStyleProps = {
@@ -169,7 +169,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
           },
         }}
       >
-        {props.children}
+        <App>{props.children}</App>
       </ConfigProvider>
     </CssContainer>
   );

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, getByRole, queryByAttribute, queryByText, render, screen } from "@testing-library/react";
 import { ReactElement } from "react";
-import ExportButton, { EXPORT_BUTTON_TEST_ID } from "../src/components/ExportButton";
+import { EXPORT_BUTTON_TEST_ID } from "../src/components/ExportButton";
+import ExportButton from "../src/components/ExportButton";
 import React from "react";
 
 describe("ExportButton", () => {
