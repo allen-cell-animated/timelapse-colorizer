@@ -2,7 +2,7 @@ import React, { ReactElement, useContext, useMemo } from "react";
 import styles from "./ColorRampSelector.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { Button, Tooltip } from "antd";
-import { ThemeContext } from "./AppStyle";
+import { AppThemeContext } from "./AppStyle";
 
 type ColorRampSelectorProps = {
   selected: string;
@@ -21,7 +21,7 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
  */
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
-  const theme = useContext(ThemeContext);
+  const theme = useContext(AppThemeContext);
 
   const selectedRampData = props.colorRamps.get(props.selected);
 

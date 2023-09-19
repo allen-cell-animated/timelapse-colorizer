@@ -1,7 +1,6 @@
 import React, { ReactElement, useCallback, useContext, useRef, useState } from "react";
-import styles from "./LoadDatasetButton.module.css";
 import { Button, Input, Modal } from "antd";
-import { ThemeContext } from "./AppStyle";
+import { AppThemeContext } from "./AppStyle";
 
 type LoadDatasetButtonProps = {
   /**
@@ -21,7 +20,7 @@ const defaultProps: Partial<LoadDatasetButtonProps> = {};
 export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactElement {
   props = { ...defaultProps, ...props };
 
-  const theme = useContext(ThemeContext);
+  const theme = useContext(AppThemeContext);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const modalContextRef = useRef<HTMLDivElement>(null);
   const [urlInput, setUrlInput] = useState("");
