@@ -27,6 +27,7 @@ import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } f
 import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
+import ExportButton from "./components/ExportButton";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -575,9 +576,12 @@ function App(): ReactElement {
             Copy URL
           </Button>
 
-          <Button type="primary" disabled={true}>
-            Export
-          </Button>
+          <ExportButton
+            totalFrames={dataset?.numberOfFrames || 0}
+            setFrame={function (frame: number): void {
+              throw new Error("Function not implemented.");
+            }}
+          />
 
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
@@ -773,53 +777,3 @@ function App(): ReactElement {
 }
 
 export default App;
-
-/**
- * <div>
-          <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
-          <p>1) Set your default download location</p>
-          <p>2) Turn off 'Ask where to save each file before downloading'</p>
-          <br />
-          <p>Save image sequence:</p>
-          <button
-            onClick={() => recordingControls.start(getImagePrefix(), startAtFirstFrame)}
-            disabled={recordingControls.isRecording() || timeControls.isPlaying()}
-          >
-            Start
-          </button>
-          <button onClick={() => recordingControls.abort()} disabled={!recordingControls.isRecording()}>
-            Abort
-          </button>
-          <p>
-            <label>
-              Image prefix:
-              <input
-                value={getImagePrefix()}
-                onChange={(event) => {
-                  // TODO: Check for illegal characters
-                  setImagePrefix(event.target.value);
-                }}
-              />
-            </label>
-            <button
-              onClick={() => {
-                setImagePrefix(null);
-              }}
-            >
-              Use default prefix
-            </button>
-          </p>
-          <p>
-            <label>
-              <input
-                type="checkbox"
-                checked={startAtFirstFrame}
-                onChange={() => {
-                  setStartAtFirstFrame(!startAtFirstFrame);
-                }}
-              />
-              Start at first frame
-            </label>
-          </p>
-        </div>
- */
