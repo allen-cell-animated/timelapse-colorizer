@@ -101,7 +101,7 @@
 /* Color the success icon in the copy notification*/
 .copyNotification div span {
   font-size: 20px;
-  color: var(--color-success);
+  color: var(--color-text-success);
 }
 
 .header h2 {

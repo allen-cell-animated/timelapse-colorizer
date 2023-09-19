@@ -37,6 +37,8 @@ const theme = {
       hint: palette.gray30,
       disabled: palette.gray30,
       button: palette.gray0,
+      error: palette.error,
+      success: palette.success,
     },
     layout: {
       background: palette.gray0,
@@ -81,6 +83,8 @@ const CssContainer = styled.div`
   --color-text-hint: ${theme.color.text.hint};
   --color-text-disabled: ${theme.color.text.disabled};
   --color-text-button: ${theme.color.text.button};
+  --color-text-error: ${theme.color.text.error};
+  --color-text-success: ${theme.color.text.success};
 
   /* Layout */
   --color-background: ${theme.color.layout.background};
