@@ -15,7 +15,7 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-import RecordingControls from "./colorizer/RecordingControls";
+import RecordingControls, { RecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -73,7 +73,7 @@ function App(): ReactElement {
     return new TimeControls(canv!);
   });
   const recordingControls = useConstructor(() => {
-    return new RecordingControls(canv);
+    return new RecordingControls();
   });
 
   // Recording UI
@@ -516,7 +516,14 @@ function App(): ReactElement {
   // TODO: TimeControls and RecordingControls should be refactored into components
   // and receive setFrame as props.
   timeControls.setFrameCallback(setFrame);
-  recordingControls.setFrameCallback(setFrame);
+
+  const setFrameAndRender = useCallback(
+    async (frame: number) => {
+      await setFrame(frame);
+      await canv.render();
+    },
+    [setFrame, canv]
+  );
 
   // const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
 
@@ -580,8 +587,10 @@ function App(): ReactElement {
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrame}
             currentFrame={currentFrame}
-            startRecording={function (min: number, max: number, prefix: string, onCompleted: () => void): void {}}
-            stopRecording={function (): void {}}
+            startRecording={(options: Partial<RecordingOptions>) => {
+              recordingControls.start(setFrameAndRender, canv.domElement, options);
+            }}
+            stopRecording={() => recordingControls.abort()}
           />
 
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />

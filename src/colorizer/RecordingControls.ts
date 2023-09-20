@@ -1,110 +1,113 @@
-import ColorizeCanvas from "./ColorizeCanvas";
+export type RecordingOptions = {
+  /** Frame to start recording from, inclusive. 0 by default. */
+  min: number;
+  /** Highest frame number to record, inclusive. */
+  max: number;
+  /** Number of frames to skip over. 0 means no frames will be skipped,
+   * 1 means every other frame will be skipped, and so on. 0 by default. */
+  frameSkip: number;
+  /** String file prefix added to recorded frames.
+   * Filenames will be formatted as `{prefix}{frame #}.png` */
+  prefix: string;
+  /** Delay between each recorded frame, in milliseconds. 100 ms by default. */
+  delayMs: number;
+  /** Called when the recording has completed successfully. (Will not be called if the recording
+   * operation is cancelled.) */
+  onCompletedCallback: () => void;
+  /** Called when each frame has completed */
+  onRecordedFrameCallback: (frame: number) => void;
+};
 
-// TODO: Remove class?
+const defaultRecordingOptions: RecordingOptions = {
+  min: 0,
+  max: 0,
+  frameSkip: 0,
+  prefix: "image-",
+  delayMs: 100,
+  onCompletedCallback: function (): void {},
+  onRecordedFrameCallback: function (_frame: number): void {},
+};
+
 export default class RecordingControls {
   private recording: boolean;
-
   private hiddenAnchorEl: HTMLAnchorElement;
-
   private timerId: number;
-  private startingFrame: number;
-  private setFrameFn?: (frame: number) => void;
 
-  private canvas: ColorizeCanvas;
-
-  constructor(canvas: ColorizeCanvas) {
+  constructor() {
     this.recording = false;
-    this.canvas = canvas;
     this.timerId = 0;
-    this.startingFrame = 0;
 
     this.hiddenAnchorEl = document.createElement("a"); // Hidden element for initiating download later
   }
 
-  public setFrameCallback(fn: (frame: number) => void): void {
-    this.setFrameFn = fn;
-  }
-
   /**
-   * Starts a recording loop with the given file prefix.
-   * @param prefix The file prefix to save each image capture with.
-   * @param startAtFirstFrame If true, starts the sequence at the first frame in the dataset.
-   * By default, this is false and recording starts at the current frame.
+   * Records and downloads an image sequence, if not already recording.
    *
-   * When the recording is completed, returns the canvas to the original frame.
+   * @param setFrameAndRender Async callback to set and update the currently displayed frame.
+   * @param canvasElement The canvas element to record updated frames from.
+   * @param recordingOptions Configurable options for the recording.
+   *
+   * Note that the recording will change the current frame and will not reset it once
+   * recording completes. Any cleanup should be done using the `onCompletedCallback` parameter
+   * in the `recordingOptions` object.
    */
-  public async start(prefix: string, startAtFirstFrame: boolean = false): Promise<void> {
-    if (!this.recording) {
-      this.startingFrame = this.canvas.getCurrentFrame();
-      this.recording = true;
-
-      if (startAtFirstFrame) {
-        await this.canvas.setFrame(0); // start at beginning
-      }
-      this.startingFrame = this.canvas.getCurrentFrame();
-
-      this.startRecording(prefix); // Start recording loop
-    }
-  }
-
-  public async abort(): Promise<void> {
+  public start(
+    setFrameAndRender: (frame: number) => Promise<void>,
+    canvasElement: HTMLCanvasElement,
+    recordingOptions: Partial<RecordingOptions>
+  ): void {
     if (this.recording) {
-      clearTimeout(this.timerId);
-      this.recording = false;
-      if (this.setFrameFn) {
-        this.setFrameFn(this.startingFrame);
-      }
+      return;
     }
-  }
 
-  private async startRecording(prefix: string): Promise<void> {
+    this.recording = true;
+    const options = { ...defaultRecordingOptions, ...recordingOptions };
+
     // Reset any existing timers
     clearTimeout(this.timerId);
 
     // Formatting setup
-    const maxDigits = this.canvas.getTotalFrames().toString().length;
+    const maxDigits = options.max.toString().length;
 
-    const loadAndRecordFrame = async (): Promise<void> => {
-      const currentFrame = this.canvas.getCurrentFrame();
+    const loadAndRecordFrame = async (frame: number): Promise<void> => {
+      if (frame > options.max || !this.recording) {
+        this.recording = false;
+        options.onCompletedCallback();
+        return;
+      }
 
       // Trigger a render through the redrawfn parameter so other UI elements update
-      // TODO: Make async, await.
       // Must force render here or else empty image data is returned.
-      if (this.setFrameFn) {
-        this.setFrameFn(currentFrame);
-      }
-      this.canvas.render();
+      await setFrameAndRender(frame);
 
       // Get canvas as an image URL that can be downloaded
-      const dataURL = this.canvas.domElement.toDataURL("image/png");
+      const dataURL = canvasElement.toDataURL("image/png");
       const imageURL = dataURL.replace(/^data:image\/png/, "data:application/octet-stream");
 
       // Update our anchor (link) element with the image data, then force
       // a click to initiate the download.
       this.hiddenAnchorEl.href = imageURL;
-      const frameNumber: string = currentFrame.toString().padStart(maxDigits, "0");
-      this.hiddenAnchorEl.download = `${prefix}${frameNumber}.png`;
+      const frameSuffix: string = frame.toString().padStart(maxDigits, "0");
+      this.hiddenAnchorEl.download = `${options.prefix}${frameSuffix}.png`;
       this.hiddenAnchorEl.click();
 
-      // Advance to the next frame, checking if we've exceeded bounds.
-      if (this.canvas.isValidFrame(currentFrame + 1) && this.recording) {
-        await this.canvas.setFrame(currentFrame + 1);
-        // Trigger the next run.
-        // Timeout is required to prevent skipped/dropped frames. 100 ms is a magic
-        // number that prevented frame drop on a developer machine, but is not very robust.
-        // TODO: Replace magic number for frame delay with a check for download completion?
-        this.timerId = window.setTimeout(loadAndRecordFrame, 100);
-      } else {
-        // Reached end, so stop and reset UI
+      const nextFrame = frame + options.frameSkip + 1;
+      if (nextFrame > options.max) {
+        // Stop recording
         this.recording = false;
-        if (this.setFrameFn) {
-          this.setFrameFn(this.startingFrame);
-        }
+        options.onCompletedCallback();
+        return;
       }
+      this.timerId = window.setTimeout(() => loadAndRecordFrame(nextFrame), options.delayMs);
     };
 
     // Start interval loop
-    loadAndRecordFrame();
+    loadAndRecordFrame(options.min);
+  }
+
+  public abort(): void {
+    clearTimeout(this.timerId);
+    this.recording = false;
   }
 
   public isRecording(): boolean {

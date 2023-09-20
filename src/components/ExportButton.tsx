@@ -2,12 +2,13 @@ import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App 
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
+import { RecordingOptions } from "../colorizer/RecordingControls";
 
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => void;
   currentFrame: number;
-  startRecording: (min: number, max: number, prefix: string, onCompleted: () => void) => void;
+  startRecording: (options: Partial<RecordingOptions>) => void;
   stopRecording: () => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
@@ -65,6 +66,8 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameSkip, setFrameSkip] = useState(0);
 
+  const [originalFrame, setOriginalFrame] = useState(0);
+
   // Static convenience method for creating simple modals. Used here for the cancel modal.
   const { modal } = App.useApp();
 
@@ -80,12 +83,11 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
 
   // Close the modal and stop any ongoing recordings.
   const onRecordingFinished = useCallback(() => {
-    if (isRecording) {
-      props.stopRecording();
-    }
+    // Reset the frame number (clean up!)
+    props.setFrame(originalFrame);
     setIsRecording(false);
     setIsLoadModalOpen(false);
-  }, []);
+  }, [originalFrame]);
 
   /**
    * Triggered when the user attempts to cancel or exit the main modal.
@@ -108,19 +110,21 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       getContainer: modalContextRef.current || undefined,
       onOk() {
         props.stopRecording();
-        setIsRecording(false);
-        setIsLoadModalOpen(false);
+        onRecordingFinished();
       },
     });
-  }, [isRecording, modalContextRef.current, props.stopRecording]);
+  }, [isRecording, modalContextRef.current, onRecordingFinished, props.stopRecording]);
 
   /**
    * Handle the user pressing the Export button and starting a recording
    */
-  const handleExport = useCallback(() => {
+  const handleStartExport = useCallback(() => {
     if (isRecording) {
       return;
     }
+
+    // Store the frame to return to when the operations have finished.
+    setOriginalFrame(props.currentFrame);
 
     /** Min and max are both inclusive */
     let min: number, max: number;
@@ -141,8 +145,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
 
     // Start the recording
     setIsRecording(true);
-    props.setFrame(min);
-    props.startRecording(min, max, imagePrefix, onRecordingFinished);
+    props.startRecording({ min: min, max: max, prefix: imagePrefix, onCompletedCallback: onRecordingFinished });
   }, [props.setFrame, isRecording, customMin, customMax, exportMode, onRecordingFinished]);
 
   const numExportedFrames = Math.max(Math.floor((customMax - customMin + 1) / (frameSkip + 1)), 1);
@@ -158,7 +161,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         open={isLoadModalOpen}
         okText={isRecording ? "Stop" : "Export"}
         okButtonProps={{ "data-testid": EXPORT_BUTTON_TEST_ID }}
-        onOk={handleExport}
+        onOk={isRecording ? handleCancel : handleStartExport}
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
         centered={true}
