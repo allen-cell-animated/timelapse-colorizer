@@ -1,4 +1,4 @@
-import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App } from "antd";
+import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress } from "antd";
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
@@ -67,6 +67,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   const [frameSkip, setFrameSkip] = useState(0);
 
   const [originalFrame, setOriginalFrame] = useState(0);
+  const [percentComplete, setPercentComplete] = useState(0);
 
   // Static convenience method for creating simple modals. Used here for the cancel modal.
   const { modal } = App.useApp();
@@ -89,6 +90,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       setIsRecording(false);
       if (closeModal) {
         setIsLoadModalOpen(false);
+        setPercentComplete(0);
       }
     },
     [originalFrame]
@@ -114,7 +116,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         centered: true,
         icon: null,
         getContainer: modalContextRef.current || undefined,
-        onOk() {
+        onOk: () => {
           props.stopRecording();
           onRecordingFinished(closeModalOnCancel);
         },
@@ -122,6 +124,24 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     },
     [isRecording, modalContextRef.current, onRecordingFinished, props.stopRecording]
   );
+
+  const handleStop = useCallback(() => {
+    modal.confirm({
+      title: "Stop export",
+      content: "Are you sure you want to stop the recording?",
+      okText: "Stop",
+      cancelText: "Back",
+      centered: true,
+      icon: null,
+      getContainer: modalContextRef.current || undefined,
+      onOk: () => {
+        props.stopRecording();
+        props.setFrame(originalFrame);
+        setIsRecording(false);
+        setPercentComplete(0);
+      },
+    });
+  }, []);
 
   /**
    * Handle the user pressing the Export button and starting a recording
@@ -157,11 +177,16 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       min: min,
       max: max,
       prefix: imagePrefix,
+      frameSkip: frameSkip,
       // Close modal once recording finishes
       onCompletedCallback: () => onRecordingFinished(true),
+      onRecordedFrameCallback: (frame: number) => {
+        setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
+      },
     });
   }, [props.setFrame, isRecording, customMin, customMax, exportMode, onRecordingFinished]);
 
+  // TODO: Check math
   const numExportedFrames = Math.max(Math.floor((customMax - customMin + 1) / (frameSkip + 1)), 1);
 
   return (
@@ -173,10 +198,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       <Modal
         title={"Export image sequence"}
         open={isLoadModalOpen}
-        okText={isRecording ? "Stop" : "Export"}
-        okButtonProps={{ "data-testid": EXPORT_BUTTON_TEST_ID }}
         // Stop button should not close the modal
-        onOk={isRecording ? () => handleCancel(false) : handleStartExport}
         onCancel={() => handleCancel(true)}
         cancelButtonProps={{ hidden: true }}
         centered={true}
@@ -184,6 +206,21 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         maskClosable={!isRecording}
         // TODO: Add custom footer instead of ok/cancel buttons
         getContainer={modalContextRef.current || undefined}
+        footer={
+          <>
+            {(percentComplete !== 0 || isRecording) && (
+              <Progress style={{ marginRight: "6px" }} type="circle" size={18} percent={percentComplete} />
+            )}
+            <Button
+              type="primary"
+              onClick={isRecording ? () => handleStop() : handleStartExport}
+              data-testid={EXPORT_BUTTON_TEST_ID}
+            >
+              {isRecording ? "Stop" : "Export"}
+            </Button>
+            <Button onClick={() => handleCancel(true)}>Cancel</Button>
+          </>
+        }
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" }}>
           <Radio.Group
@@ -256,7 +293,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
             </label>
             <p>#.png</p>
             <Button
-              disabled={isRecording}
+              disabled={isRecording || useDefaultImagePrefix}
               onClick={() => {
                 setUseDefaultImagePrefix(true);
               }}

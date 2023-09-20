@@ -91,6 +91,8 @@ export default class RecordingControls {
       this.hiddenAnchorEl.download = `${options.prefix}${frameSuffix}.png`;
       this.hiddenAnchorEl.click();
 
+      options.onRecordedFrameCallback(frame);
+
       const nextFrame = frame + options.frameSkip + 1;
       if (nextFrame > options.max) {
         // Stop recording
