@@ -31,14 +31,3 @@
   width: 14px;
   height: 14px;
 }
-
-/* Custom coloring for dropdown arrow*/
-.buttonIcon.primary {
-  fill: var(--color-text-button);
-}
-
-/* Dropdown arrow should match disabled text */
-.button:disabled,
-.button:disabled .buttonIcon.primary {
-  fill: var(--color-text-disabled);
-}
