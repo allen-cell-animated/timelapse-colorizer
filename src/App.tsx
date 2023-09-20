@@ -591,6 +591,7 @@ function App(): ReactElement {
               recordingControls.start(setFrameAndRender, canv.domElement, options);
             }}
             stopRecording={() => recordingControls.abort()}
+            defaultImagePrefix={datasetKey + "-" + featureName + "-"}
           />
 
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />

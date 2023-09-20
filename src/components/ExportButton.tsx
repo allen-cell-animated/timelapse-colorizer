@@ -82,38 +82,46 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   }, [props.defaultImagePrefix, useDefaultImagePrefix]);
 
   // Close the modal and stop any ongoing recordings.
-  const onRecordingFinished = useCallback(() => {
-    // Reset the frame number (clean up!)
-    props.setFrame(originalFrame);
-    setIsRecording(false);
-    setIsLoadModalOpen(false);
-  }, [originalFrame]);
+  const onRecordingFinished = useCallback(
+    (closeModal: boolean) => {
+      // Reset the frame number (clean up!)
+      props.setFrame(originalFrame);
+      setIsRecording(false);
+      if (closeModal) {
+        setIsLoadModalOpen(false);
+      }
+    },
+    [originalFrame]
+  );
 
   /**
    * Triggered when the user attempts to cancel or exit the main modal.
    */
-  const handleCancel = useCallback(() => {
-    // Not recording; exit
-    if (!isRecording) {
-      setIsLoadModalOpen(false);
-      return;
-    }
+  const handleCancel = useCallback(
+    (closeModalOnCancel: boolean = true) => {
+      // Not recording; exit
+      if (!isRecording) {
+        setIsLoadModalOpen(false);
+        return;
+      }
 
-    // Currently recording; user must be prompted to confirm
-    modal.confirm({
-      title: "Cancel export",
-      content: "Are you sure you want to cancel and exit?",
-      okText: "Cancel",
-      cancelText: "Back",
-      centered: true,
-      icon: null,
-      getContainer: modalContextRef.current || undefined,
-      onOk() {
-        props.stopRecording();
-        onRecordingFinished();
-      },
-    });
-  }, [isRecording, modalContextRef.current, onRecordingFinished, props.stopRecording]);
+      // Currently recording; user must be prompted to confirm
+      modal.confirm({
+        title: "Cancel export",
+        content: "Are you sure you want to cancel the recording?",
+        okText: "Cancel",
+        cancelText: "Back",
+        centered: true,
+        icon: null,
+        getContainer: modalContextRef.current || undefined,
+        onOk() {
+          props.stopRecording();
+          onRecordingFinished(closeModalOnCancel);
+        },
+      });
+    },
+    [isRecording, modalContextRef.current, onRecordingFinished, props.stopRecording]
+  );
 
   /**
    * Handle the user pressing the Export button and starting a recording
@@ -145,7 +153,13 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
 
     // Start the recording
     setIsRecording(true);
-    props.startRecording({ min: min, max: max, prefix: imagePrefix, onCompletedCallback: onRecordingFinished });
+    props.startRecording({
+      min: min,
+      max: max,
+      prefix: imagePrefix,
+      // Close modal once recording finishes
+      onCompletedCallback: () => onRecordingFinished(true),
+    });
   }, [props.setFrame, isRecording, customMin, customMax, exportMode, onRecordingFinished]);
 
   const numExportedFrames = Math.max(Math.floor((customMax - customMin + 1) / (frameSkip + 1)), 1);
@@ -161,10 +175,13 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         open={isLoadModalOpen}
         okText={isRecording ? "Stop" : "Export"}
         okButtonProps={{ "data-testid": EXPORT_BUTTON_TEST_ID }}
-        onOk={isRecording ? handleCancel : handleStartExport}
-        onCancel={handleCancel}
+        // Stop button should not close the modal
+        onOk={isRecording ? () => handleCancel(false) : handleStartExport}
+        onCancel={() => handleCancel(true)}
         cancelButtonProps={{ hidden: true }}
         centered={true}
+        // Don't allow cancellation of modal by clicking off it when the recording is happening
+        maskClosable={!isRecording}
         // TODO: Add custom footer instead of ok/cancel buttons
         getContainer={modalContextRef.current || undefined}
       >
