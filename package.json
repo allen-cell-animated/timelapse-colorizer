@@ -8,10 +8,10 @@
     "dev": "vite",
     "test": "vitest",
     "checks": "npm run lint & npm run typeCheck & npx vitest run",
-    "build": "tsc && vite build",
-    "build-internal": "tsc && vite build --base=/nucmorph-colorizer/dist/",
+    "build": "vite build",
+    "build-internal": "vite build --base=/nucmorph-colorizer/dist/",
     "preview": "vite preview",
-    "deploy": "tsc && vite build --base=/nucmorph-colorizer/ && gh-pages -d dist",
+    "deploy": "vite build --base=/nucmorph-colorizer/ && gh-pages -d dist",
     "lint": "eslint --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -33,6 +33,7 @@
     "typescript": "^4.9.5",
     "vite": "^4.2.0",
     "vite-plugin-glsl": "^1.1.2",
+    "vite-plugin-svgr": "^4.0.0",
     "vitest": "^0.34.3",
     "vitest-canvas-mock": "^0.3.3"
   },

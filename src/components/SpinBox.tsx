@@ -1,5 +1,7 @@
 import React, { KeyboardEvent, ReactElement, useCallback, useEffect, useState } from "react";
 import styles from "./SpinBox.module.css";
+import SpinBoxHandleUpSVG from "../assets/spin_box-handle-up.svg?react";
+import SpinBoxHandleDownSVG from "../assets/spin_box-handle-down.svg?react";
 
 /** Path for the SVG of the spin box handles */
 const spinBoxHandlePath =
@@ -120,14 +122,10 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
       <div className={styles.spinButtons + " " + (props.disabled ? styles.disabled : "")}>
         {/** Tab index -1 prevents spin handles from being selected via tab navigation */}
         <button tabIndex={-1} onClick={() => adjustValue(1)} disabled={props.disabled}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="8" height="12" viewBox="0 0 8 5">
-            <path d={spinBoxHandlePath} />
-          </svg>
+          <SpinBoxHandleUpSVG />
         </button>
         <button tabIndex={-1} onClick={() => adjustValue(-1)} disabled={props.disabled}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="8" height="12" viewBox="0 0 8 5">
-            <path transform="scale(1, -1) translate(0, -4)" d={spinBoxHandlePath} />
-          </svg>
+          <SpinBoxHandleDownSVG />
         </button>
       </div>
     </div>
