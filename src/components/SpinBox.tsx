@@ -3,10 +3,6 @@ import styles from "./SpinBox.module.css";
 import SpinBoxHandleUpSVG from "../assets/spin_box-handle-up.svg?react";
 import SpinBoxHandleDownSVG from "../assets/spin_box-handle-down.svg?react";
 
-/** Path for the SVG of the spin box handles */
-const spinBoxHandlePath =
-  "M3.78987 0.0967351L0.0582207 4.58749C-0.0806219 4.75448 0.0445836 5 0.268344 5L7.73176 5C7.95552 5 8.08061 4.75449 7.94176 4.58749L4.21012 0.0967352C4.18515 0.0665993 4.15325 0.0422287 4.11685 0.025469C4.08045 0.00870925 4.04048 -2.20023e-07 3.99999 -2.22273e-07C3.9595 -2.24523e-07 3.91954 0.00870924 3.88313 0.025469C3.84673 0.0422287 3.81484 0.0665993 3.78987 0.0967351Z";
-
 type SpinBoxProps = {
   min?: number;
   max?: number;
