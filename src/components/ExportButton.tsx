@@ -198,7 +198,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
 
   return (
     <div ref={modalContextRef}>
-      <Button type="primary" onClick={() => setIsLoadModalOpen(true)}>
+      <Button type="primary" onClick={() => setIsLoadModalOpen(true)} disabled={props.disabled}>
         Export
       </Button>
       {/* Main Export modal */}
