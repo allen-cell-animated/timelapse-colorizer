@@ -173,6 +173,9 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
           },
         }}
       >
+        {/* App provides context for the static notification, modal, and message APIs.
+         * See https://ant.design/components/app.
+         */}
         <App>{props.children}</App>
       </ConfigProvider>
     </CssContainer>

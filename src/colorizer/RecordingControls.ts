@@ -3,7 +3,20 @@ export type RecordingOptions = {
   min: number;
   /** Highest frame number to record, inclusive. 0 by default. */
   max: number;
-  /** Number of frames to increment by. 1 by default. */
+  /** Minimum digits for exported file numbers. If a frame number's string length
+   * is smaller than this, pads the filename with 0 to reach the minimum.
+   *
+   * If no `minDigits` is provided, uses the number of digits in max.
+   *
+   * ex: if `minDigits=3`, then frame 12 will be saved as `012`.
+   */
+  minDigits?: number;
+  /** Number of frames to increment by after each saved frame.
+   * 1 (default) means no frames will be skipped.
+   *
+   * If `frameIncrement=2`, increments the recorded frame number by 2 each time
+   * (e.g. 0, 2, 4, ...)
+   */
   frameIncrement: number;
   /** String file prefix added to recorded frames.
    * Filenames will be formatted as `{prefix}{frame #}.png` */
@@ -73,7 +86,7 @@ export default class RecordingControls {
     clearTimeout(this.timerId);
 
     // Formatting setup
-    const maxDigits = options.max.toString().length;
+    const minDigits = options.minDigits || options.max.toString().length;
 
     const loadAndRecordFrame = async (frame: number): Promise<void> => {
       if (frame > options.max || !this.recording) {
@@ -92,7 +105,7 @@ export default class RecordingControls {
       // Update our anchor (link) element with the image data, then force
       // a click to initiate the download.
       this.hiddenAnchorEl.href = imageURL;
-      const frameSuffix: string = frame.toString().padStart(maxDigits, "0");
+      const frameSuffix: string = frame.toString().padStart(minDigits, "0");
       this.hiddenAnchorEl.download = `${options.prefix}${frameSuffix}.png`;
       this.hiddenAnchorEl.click();
 

@@ -1,7 +1,7 @@
 import { Mock, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ReactElement } from "react";
-import { EXPORT_ACTION_BUTTON_TEST_ID, OPEN_EXPORT_MODAL_BUTTON_TEST_ID } from "../src/components/ExportButton";
+import { TEST_ID_EXPORT_ACTION_BUTTON, TEST_ID_OPEN_EXPORT_MODAL_BUTTON } from "../src/components/ExportButton";
 import ExportButton from "../src/components/ExportButton";
 import React from "react";
 import { RecordingOptions } from "../src/colorizer/RecordingControls";
@@ -86,12 +86,12 @@ describe("ExportButton", () => {
     };
 
     const openModal = (): void => {
-      const exportButton = screen.getByTestId(OPEN_EXPORT_MODAL_BUTTON_TEST_ID);
+      const exportButton = screen.getByTestId(TEST_ID_OPEN_EXPORT_MODAL_BUTTON);
       fireEvent.click(exportButton); // open modal
     };
 
     const pressExport = (): void => {
-      fireEvent.click(screen.getByTestId(EXPORT_ACTION_BUTTON_TEST_ID));
+      fireEvent.click(screen.getByTestId(TEST_ID_EXPORT_ACTION_BUTTON));
     };
 
     it("records all frames", () => {
