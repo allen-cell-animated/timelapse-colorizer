@@ -114,6 +114,10 @@ const CssContainer = styled.div`
   --font-size-section: ${theme.font.size.section}px;
   --font-size-label: ${theme.font.size.label}px;
   --font-size-content: ${theme.font.size.content}px;
+
+  .ant-input-number-input {
+    text-align: right;
+  }
 `;
 
 /**

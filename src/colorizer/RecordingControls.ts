@@ -3,9 +3,8 @@ export type RecordingOptions = {
   min: number;
   /** Highest frame number to record, inclusive. */
   max: number;
-  /** Number of frames to skip over. 0 means no frames will be skipped,
-   * 1 means every other frame will be skipped, and so on. 0 by default. */
-  frameSkip: number;
+  /** Number of frames to increment by. 1 by default. */
+  frameIncrement: number;
   /** String file prefix added to recorded frames.
    * Filenames will be formatted as `{prefix}{frame #}.png` */
   prefix: string;
@@ -21,7 +20,7 @@ export type RecordingOptions = {
 const defaultRecordingOptions: RecordingOptions = {
   min: 0,
   max: 0,
-  frameSkip: 0,
+  frameIncrement: 1,
   prefix: "image-",
   delayMs: 100,
   onCompletedCallback: function (): void {},
@@ -93,7 +92,7 @@ export default class RecordingControls {
 
       options.onRecordedFrameCallback(frame);
 
-      const nextFrame = frame + options.frameSkip + 1;
+      const nextFrame = frame + options.frameIncrement;
       if (nextFrame > options.max) {
         // Stop recording
         this.recording = false;

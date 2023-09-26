@@ -26,6 +26,7 @@ const HorizontalDiv = styled.div`
   display: flex;
   flex-direction: row;
   gap: 6px;
+  flex-wrap: wrap;
 `;
 
 const VerticalDiv = styled.div`
@@ -67,7 +68,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   const [customMax, setCustomMax] = useState(props.totalFrames - 1);
   const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
-  const [frameSkip, setFrameSkip] = useState(0);
+  const [frameIncrement, setFrameIncrement] = useState(1);
 
   const [originalFrame, setOriginalFrame] = useState(0);
   const [percentComplete, setPercentComplete] = useState(0);
@@ -183,7 +184,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       min: min,
       max: max,
       prefix: imagePrefix,
-      frameSkip: frameSkip,
+      frameIncrement: frameIncrement,
       // Close modal once recording finishes
       onCompletedCallback: () => onRecordingFinished(true),
       onRecordedFrameCallback: (frame: number) => {
@@ -193,7 +194,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   };
 
   // TODO: Check math
-  const numExportedFrames = Math.max(Math.ceil((customMax - customMin + 1) / (frameSkip + 1)), 1);
+  const numExportedFrames = Math.max(Math.ceil((customMax - customMin + 1) / frameIncrement), 1);
 
   return (
     <div ref={modalContextRef}>
@@ -223,7 +224,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
                   percent={percentComplete}
                   showInfo={false}
                   strokeColor={theme.color.theme}
-                  strokeWidth={10}
+                  strokeWidth={12}
                 />
               </Tooltip>
             )}
@@ -280,9 +281,9 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
                     <p>of {props.totalFrames - 1}</p>
                   </CustomRangeDiv>
                   <HorizontalDiv>
-                    <p>Skip Increment:</p>
-                    <SpinBox value={frameSkip} onChange={setFrameSkip} min={0} max={props.totalFrames - 1} />
-                    <p style={{ color: "var(--color-text-secondary)" }}>({numExportedFrames} frames)</p>
+                    <p>Frame Increment:</p>
+                    <SpinBox value={frameIncrement} onChange={setFrameIncrement} min={1} max={props.totalFrames - 1} />
+                    <p style={{ color: "var(--color-text-secondary)" }}>({numExportedFrames} frames total)</p>
                   </HorizontalDiv>
                 </VerticalDiv>
               ) : null}
@@ -297,7 +298,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
             </div>
           </div>
 
-          <HorizontalDiv>
+          <HorizontalDiv style={{ flexWrap: "nowrap" }}>
             <label style={{ width: "100%" }}>
               <p>Prefix:</p>
               <Input
