@@ -70,7 +70,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameIncrement, setFrameIncrement] = useState(1);
 
-  const [originalFrame, setOriginalFrame] = useState(0);
+  const [originalFrame, setOriginalFrame] = useState(props.currentFrame);
   const [percentComplete, setPercentComplete] = useState(0);
 
   // Static convenience method for creating simple modals. Used here for the cancel modal.
@@ -86,19 +86,22 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     }
   }, [props.defaultImagePrefix, useDefaultImagePrefix]);
 
-  // Close the modal and stop any ongoing recordings.
-  const onRecordingFinished = useCallback(
-    (closeModal: boolean) => {
-      // Reset the frame number (clean up!)
-      props.setFrame(originalFrame);
-      setIsRecording(false);
-      if (closeModal) {
-        setIsLoadModalOpen(false);
-        setPercentComplete(0);
-      }
-    },
-    [originalFrame]
-  );
+  // Store the current frame whenever the load modal opens so we can reset to it when
+  // the modal is closed.
+  useEffect(() => {
+    setOriginalFrame(props.currentFrame);
+  }, [isLoadModalOpen]);
+
+  // Stop any ongoing recordings and reset, optionally closing the modal.
+  const onRecordingFinished = useCallback((resetFrame: number, closeModal: boolean) => {
+    // Reset the frame number (clean up!)
+    props.setFrame(resetFrame);
+    setIsRecording(false);
+    if (closeModal) {
+      setIsLoadModalOpen(false);
+      setPercentComplete(0);
+    }
+  }, []);
 
   /**
    * Triggered when the user attempts to cancel or exit the main modal.
@@ -122,7 +125,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         getContainer: modalContextRef.current || undefined,
         onOk: () => {
           props.stopRecording();
-          onRecordingFinished(closeModalOnCancel);
+          onRecordingFinished(originalFrame, closeModalOnCancel);
         },
       });
     },
@@ -158,9 +161,6 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       return;
     }
 
-    // Store the frame to return to when the operations have finished.
-    setOriginalFrame(props.currentFrame);
-
     /** Min and max are both inclusive */
     let min: number, max: number;
     switch (exportMode) {
@@ -186,7 +186,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       prefix: imagePrefix,
       frameIncrement: frameIncrement,
       // Close modal once recording finishes
-      onCompletedCallback: () => onRecordingFinished(true),
+      onCompletedCallback: () => onRecordingFinished(originalFrame, true),
       onRecordedFrameCallback: (frame: number) => {
         setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
       },
