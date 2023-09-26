@@ -112,7 +112,7 @@ describe("ExportButton", () => {
     it("can export single frame", () => {
       const totalFrames = 900;
       const currentFrame = 434;
-      const { mockStartRecording, mockSetFrame } = setupTest(totalFrames, currentFrame);
+      const { mockStartRecording } = setupTest(totalFrames, currentFrame);
 
       openModal();
       const currentFrameRadio: HTMLInputElement = screen.getByLabelText(/^Current frame*/);
@@ -128,7 +128,7 @@ describe("ExportButton", () => {
     it("can set custom frame range", () => {
       const totalFrames = 500;
       const currentFrame = 434;
-      const { mockStartRecording, mockSetFrame } = setupTest(totalFrames, currentFrame);
+      const { mockStartRecording } = setupTest(totalFrames, currentFrame);
 
       openModal();
       const currentFrameRadio: HTMLInputElement = screen.getByLabelText(/^Custom*/);

@@ -98,12 +98,6 @@
   padding-right: 6px;
 }
 
-/* Color the success icon in the copy notification*/
-.copyNotification div span {
-  font-size: 20px;
-  color: var(--color-text-success);
-}
-
 .header h2 {
   margin: 0;
   line-height: normal;

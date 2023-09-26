@@ -4,6 +4,7 @@ import styled from "styled-components";
 import SpinBox from "./SpinBox";
 import { RecordingOptions } from "../colorizer/RecordingControls";
 import { AppThemeContext } from "./AppStyle";
+import { CheckCircleOutlined } from "@ant-design/icons";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -78,8 +79,10 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   const [originalFrame, setOriginalFrame] = useState(props.currentFrame);
   const [percentComplete, setPercentComplete] = useState(0);
 
+  // Note: notification API seems to only place notifications at the top-level under the
+  // <body> tag, which causes some issues with styling.
   // Static convenience method for creating simple modals. Used here for the cancel modal.
-  const { modal } = App.useApp();
+  const { modal, notification } = App.useApp();
 
   useEffect(() => {
     setCustomMax(props.totalFrames - 1);
@@ -98,7 +101,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   }, [isLoadModalOpen]);
 
   // Stop any ongoing recordings and reset, optionally closing the modal.
-  const onRecordingFinished = useCallback((resetFrame: number, closeModal: boolean) => {
+  const stopRecording = useCallback((resetFrame: number, closeModal: boolean) => {
     // Reset the frame number (clean up!)
     props.setFrame(resetFrame);
     setIsRecording(false);
@@ -130,11 +133,11 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         getContainer: modalContextRef.current || undefined,
         onOk: () => {
           props.stopRecording();
-          onRecordingFinished(originalFrame, closeModalOnCancel);
+          stopRecording(originalFrame, closeModalOnCancel);
         },
       });
     },
-    [isRecording, modalContextRef.current, onRecordingFinished, props.stopRecording]
+    [isRecording, modalContextRef.current, stopRecording, props.stopRecording]
   );
 
   const handleStop = useCallback(() => {
@@ -191,7 +194,16 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       prefix: imagePrefix,
       frameIncrement: frameIncrement,
       // Close modal once recording finishes
-      onCompletedCallback: () => onRecordingFinished(originalFrame, true),
+      onCompletedCallback: () => {
+        // Show completion notification
+        notification.success({
+          message: "Export complete.",
+          placement: "bottomLeft",
+          duration: 0,
+          icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
+        });
+        stopRecording(originalFrame, true);
+      },
       onRecordedFrameCallback: (frame: number) => {
         setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
       },
@@ -222,7 +234,6 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
           centered={true}
           // Don't allow cancellation of modal by clicking off it when the recording is happening
           maskClosable={!isRecording}
-          // TODO: Add custom footer instead of ok/cancel buttons
           getContainer={modalContextRef.current || undefined}
           footer={
             <HorizontalDiv style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>

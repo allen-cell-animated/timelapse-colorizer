@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import {
   CheckCircleOutlined,
@@ -19,7 +19,7 @@ import RecordingControls, { RecordingOptions } from "./colorizer/RecordingContro
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
-import AppStyle from "./components/AppStyle";
+import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import ColorRampSelector from "./components/ColorRampSelector";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
@@ -31,6 +31,7 @@ import ExportButton from "./components/ExportButton";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
+  const theme = useContext(AppThemeContext);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
@@ -537,11 +538,9 @@ function App(): ReactElement {
     navigator.clipboard.writeText(document.URL);
     notificationApi["success"]({
       message: "URL copied to clipboard",
-      className: styles.copyNotification,
       placement: "bottomLeft",
       duration: 4,
-
-      icon: <CheckCircleOutlined />,
+      icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
     });
   };
 
