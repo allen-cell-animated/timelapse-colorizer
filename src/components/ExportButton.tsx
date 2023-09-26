@@ -1,8 +1,9 @@
-import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress } from "antd";
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress, Tooltip } from "antd";
+import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
 import { RecordingOptions } from "../colorizer/RecordingControls";
+import { AppThemeContext } from "./AppStyle";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -46,6 +47,8 @@ function clamp(value: number, min: number, max: number) {
 
 export default function ExportButton(inputProps: ExportButtonProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ExportButtonProps>;
+
+  const theme = useContext(AppThemeContext);
 
   const enum ExportMode {
     ALL,
@@ -144,9 +147,12 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   }, []);
 
   /**
-   * Handle the user pressing the Export button and starting a recording
+   * Handle the user pressing the Export button and starting a recording.
+   *
+   * Note: This is not wrapped in a useCallback because it has a large number
+   * of dependencies, and is likely to update whenever any prop or input changes.
    */
-  const handleStartExport = useCallback(() => {
+  const handleStartExport = () => {
     if (isRecording) {
       return;
     }
@@ -184,10 +190,10 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
       },
     });
-  }, [props.setFrame, isRecording, customMin, customMax, exportMode, onRecordingFinished]);
+  };
 
   // TODO: Check math
-  const numExportedFrames = Math.max(Math.floor((customMax - customMin + 1) / (frameSkip + 1)), 1);
+  const numExportedFrames = Math.max(Math.ceil((customMax - customMin + 1) / (frameSkip + 1)), 1);
 
   return (
     <div ref={modalContextRef}>
@@ -207,19 +213,32 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         // TODO: Add custom footer instead of ok/cancel buttons
         getContainer={modalContextRef.current || undefined}
         footer={
-          <>
-            {(percentComplete !== 0 || isRecording) && (
-              <Progress style={{ marginRight: "6px" }} type="circle" size={18} percent={percentComplete} />
+          <HorizontalDiv style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
+            {(true || percentComplete !== 0 || isRecording) && (
+              <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>
+                <Progress
+                  style={{ marginRight: "8px", verticalAlign: "middle" }}
+                  type="circle"
+                  size={theme.controls.heightSmall - 6}
+                  percent={percentComplete}
+                  showInfo={false}
+                  strokeColor={theme.color.theme}
+                  strokeWidth={10}
+                />
+              </Tooltip>
             )}
             <Button
               type="primary"
               onClick={isRecording ? () => handleStop() : handleStartExport}
               data-testid={EXPORT_BUTTON_TEST_ID}
+              style={{ width: "76px" }}
             >
               {isRecording ? "Stop" : "Export"}
             </Button>
-            <Button onClick={() => handleCancel(true)}>Cancel</Button>
-          </>
+            <Button onClick={() => handleCancel(true)} style={{ width: "76px" }}>
+              Cancel
+            </Button>
+          </HorizontalDiv>
         }
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" }}>
@@ -261,8 +280,8 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
                     <p>of {props.totalFrames - 1}</p>
                   </CustomRangeDiv>
                   <HorizontalDiv>
-                    <p>Frame Skip:</p>
-                    <SpinBox value={frameSkip} onChange={setFrameSkip} min={0} max={props.totalFrames} />
+                    <p>Skip Increment:</p>
+                    <SpinBox value={frameSkip} onChange={setFrameSkip} min={0} max={props.totalFrames - 1} />
                     <p style={{ color: "var(--color-text-secondary)" }}>({numExportedFrames} frames)</p>
                   </HorizontalDiv>
                 </VerticalDiv>
@@ -306,53 +325,3 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     </div>
   );
 }
-
-/**
- * <div>
-          <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
-          <p>1) Set your default download location</p>
-          <p>2) Turn off 'Ask where to save each file before downloading'</p>
-          <br />
-          <p>Save image sequence:</p>
-          <button
-            onClick={() => recordingControls.start(getImagePrefix(), startAtFirstFrame)}
-            disabled={recordingControls.isRecording() || timeControls.isPlaying()}
-          >
-            Start
-          </button>
-          <button onClick={() => recordingControls.abort()} disabled={!recordingControls.isRecording()}>
-            Abort
-          </button>
-          <p>
-            <label>
-              Image prefix:
-              <input
-                value={getImagePrefix()}
-                onChange={(event) => {
-                  // TODO: Check for illegal characters
-                  setImagePrefix(event.target.value);
-                }}
-              />
-            </label>
-            <button
-              onClick={() => {
-                setImagePrefix(null);
-              }}
-            >
-              Use default prefix
-            </button>
-          </p>
-          <p>
-            <label>
-              <input
-                type="checkbox"
-                checked={startAtFirstFrame}
-                onChange={() => {
-                  setStartAtFirstFrame(!startAtFirstFrame);
-                }}
-              />
-              Start at first frame
-            </label>
-          </p>
-        </div>
- */
