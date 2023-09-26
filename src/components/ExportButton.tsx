@@ -236,6 +236,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         maskClosable={!isRecording}
         getContainer={modalContextRef.current || undefined}
         footer={
+          // Layout: Optional Progress meter - Export/Stop Button - Cancel Button
           <HorizontalDiv style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
             {(percentComplete !== 0 || isRecording) && (
               <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>

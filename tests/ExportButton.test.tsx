@@ -99,7 +99,7 @@ describe("ExportButton", () => {
       const { mockStartRecording } = setupTest(totalFrames, 0);
 
       openModal();
-      const allFramesRadio: HTMLInputElement = screen.getByLabelText("All frames");
+      const allFramesRadio: HTMLInputElement = screen.getByLabelText(/^All frames/);
       fireEvent.click(allFramesRadio);
       pressExport();
 
