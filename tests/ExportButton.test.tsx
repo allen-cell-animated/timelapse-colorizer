@@ -4,6 +4,7 @@ import { ReactElement } from "react";
 import { EXPORT_BUTTON_TEST_ID } from "../src/components/ExportButton";
 import ExportButton from "../src/components/ExportButton";
 import React from "react";
+import { RecordingOptions } from "../src/colorizer/RecordingControls";
 
 describe("ExportButton", () => {
   describe("Image Prefixing", () => {
@@ -16,7 +17,7 @@ describe("ExportButton", () => {
             throw new Error("Function not implemented.");
           }}
           currentFrame={0}
-          startRecording={function (_min: number, _max: number, _prefix: string): void {
+          startRecording={function (_options: Partial<RecordingOptions>): void {
             throw new Error("Function not implemented.");
           }}
           stopRecording={function (): void {

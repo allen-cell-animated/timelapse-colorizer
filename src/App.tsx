@@ -545,6 +545,12 @@ function App(): ReactElement {
     });
   };
 
+  /** Get the current HTML Canvas data as a URL that can be downloaded. */
+  const getCanvasImageAsUrl = () => {
+    const dataUrl = canv.domElement.toDataURL("image/png");
+    return dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
+  };
+
   const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
@@ -588,7 +594,7 @@ function App(): ReactElement {
             setFrame={setFrame}
             currentFrame={currentFrame}
             startRecording={(options: Partial<RecordingOptions>) => {
-              recordingControls.start(setFrameAndRender, canv.domElement, options);
+              recordingControls.start(setFrameAndRender, getCanvasImageAsUrl, options);
             }}
             stopRecording={() => recordingControls.abort()}
             defaultImagePrefix={datasetKey + "-" + featureName + "-"}

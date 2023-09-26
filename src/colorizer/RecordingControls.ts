@@ -1,7 +1,7 @@
 export type RecordingOptions = {
   /** Frame to start recording from, inclusive. 0 by default. */
   min: number;
-  /** Highest frame number to record, inclusive. */
+  /** Highest frame number to record, inclusive. 0 by default. */
   max: number;
   /** Number of frames to increment by. 1 by default. */
   frameIncrement: number;
@@ -43,16 +43,23 @@ export default class RecordingControls {
    * Records and downloads an image sequence, if not already recording.
    *
    * @param setFrameAndRender Async callback to set and update the currently displayed frame.
-   * @param canvasElement The canvas element to record updated frames from.
+   * @param getImageUrl Callback to get a downloadable image URL for the rendered frame.
+   *    ex:
+   * ```
+   * () => {
+   *   const dataUrl = HTMLCanvas.toDataURL("image/png");
+   *   return dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
+   * };
+   * ```
    * @param recordingOptions Configurable options for the recording.
    *
    * Note that the recording will change the current frame and will not reset it once
    * recording completes. Any cleanup should be done using the `onCompletedCallback` parameter
-   * in the `recordingOptions` object.
+   * in the `recordingOptions` object or where `abort()` is called.
    */
   public start(
     setFrameAndRender: (frame: number) => Promise<void>,
-    canvasElement: HTMLCanvasElement,
+    getImageUrl: () => string,
     recordingOptions: Partial<RecordingOptions>
   ): void {
     if (this.recording) {
@@ -80,8 +87,7 @@ export default class RecordingControls {
       await setFrameAndRender(frame);
 
       // Get canvas as an image URL that can be downloaded
-      const dataURL = canvasElement.toDataURL("image/png");
-      const imageURL = dataURL.replace(/^data:image\/png/, "data:application/octet-stream");
+      const imageURL = getImageUrl();
 
       // Update our anchor (link) element with the image data, then force
       // a click to initiate the download.
@@ -90,6 +96,7 @@ export default class RecordingControls {
       this.hiddenAnchorEl.download = `${options.prefix}${frameSuffix}.png`;
       this.hiddenAnchorEl.click();
 
+      // Notify listeners about frame recording
       options.onRecordedFrameCallback(frame);
 
       const nextFrame = frame + options.frameIncrement;
