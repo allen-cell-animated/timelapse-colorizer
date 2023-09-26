@@ -266,6 +266,8 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         }
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" }}>
+          {/* Radio options (All/Current Frame/Custom) */}
+
           <Radio.Group
             value={exportMode}
             onChange={(e: RadioChangeEvent) => {
@@ -284,6 +286,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
               </Radio>
               <Radio value={ExportMode.CURRENT}>Current frame only</Radio>
               <Radio value={ExportMode.CUSTOM}>Custom</Radio>
+
               {exportMode === ExportMode.CUSTOM ? (
                 // Render the custom range input in the radio list if selected
                 <VerticalDiv style={{ paddingLeft: "25px" }}>
@@ -328,6 +331,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
             </div>
           </div>
 
+          {/* Filename prefix */}
           <HorizontalDiv style={{ flexWrap: "nowrap" }}>
             <label style={{ width: "100%" }}>
               <p>Prefix:</p>
