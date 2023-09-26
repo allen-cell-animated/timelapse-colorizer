@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { Mock, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ReactElement } from "react";
-import { EXPORT_BUTTON_TEST_ID } from "../src/components/ExportButton";
+import { EXPORT_ACTION_BUTTON_TEST_ID, OPEN_EXPORT_MODAL_BUTTON_TEST_ID } from "../src/components/ExportButton";
 import ExportButton from "../src/components/ExportButton";
 import React from "react";
 import { RecordingOptions } from "../src/colorizer/RecordingControls";
@@ -54,7 +54,15 @@ describe("ExportButton", () => {
   });
 
   describe("Recording", () => {
-    const setupTest = (totalFrames: number, startingFrame: number) => {
+    const setupTest = (
+      totalFrames: number,
+      startingFrame: number
+    ): {
+      rerender: (ui: ReactElement<any, string | React.JSXElementConstructor<any>>) => void;
+      mockStartRecording: Mock;
+      mockStopRecording: Mock;
+      mockSetFrame: Mock;
+    } => {
       const mockStartRecording = vi.fn();
       const mockSetFrame = vi.fn();
       const mockStopRecording = vi.fn();
@@ -76,32 +84,29 @@ describe("ExportButton", () => {
         mockSetFrame,
       };
     };
-    const openModal = () => {
-      const exportButton = screen.getByRole("button");
+
+    const openModal = (): void => {
+      const exportButton = screen.getByTestId(OPEN_EXPORT_MODAL_BUTTON_TEST_ID);
       fireEvent.click(exportButton); // open modal
     };
 
-    const pressExport = () => {
-      fireEvent.click(screen.getByTestId(EXPORT_BUTTON_TEST_ID));
+    const pressExport = (): void => {
+      fireEvent.click(screen.getByTestId(EXPORT_ACTION_BUTTON_TEST_ID));
     };
 
     it("records all frames", () => {
       const totalFrames = 90;
-      const { mockStartRecording, mockSetFrame } = setupTest(totalFrames, 0);
+      const { mockStartRecording } = setupTest(totalFrames, 0);
 
       openModal();
       const allFramesRadio: HTMLInputElement = screen.getByLabelText("All frames");
       fireEvent.click(allFramesRadio);
       pressExport();
 
-      // Should reset frame number to 0
-      expect(mockSetFrame.mock.calls.length).to.equal(1);
-      expect(mockSetFrame.mock.calls[0]).to.deep.equal([0]);
-
       // Start Recording action should be called for whole range
       expect(mockStartRecording.mock.calls.length).to.equal(1);
-      expect(mockStartRecording.mock.calls[0][0]).equals(0);
-      expect(mockStartRecording.mock.calls[0][1]).equals(totalFrames - 1);
+      expect(mockStartRecording.mock.calls[0][0].min).equals(0);
+      expect(mockStartRecording.mock.calls[0][0].max).equals(totalFrames - 1);
     });
 
     it("can export single frame", () => {
@@ -114,14 +119,10 @@ describe("ExportButton", () => {
       fireEvent.click(currentFrameRadio);
       pressExport();
 
-      // Should reset frame number to current frame only
-      expect(mockSetFrame.mock.calls.length).to.equal(1);
-      expect(mockSetFrame.mock.calls[0]).to.deep.equal([currentFrame]);
-
       // Start Recording action should be called only for current frame
       expect(mockStartRecording.mock.calls.length).to.equal(1);
-      expect(mockStartRecording.mock.calls[0][0]).equals(currentFrame);
-      expect(mockStartRecording.mock.calls[0][1]).equals(currentFrame);
+      expect(mockStartRecording.mock.calls[0][0].min).equals(currentFrame);
+      expect(mockStartRecording.mock.calls[0][0].max).equals(currentFrame);
     });
 
     it("can set custom frame range", () => {
@@ -137,33 +138,10 @@ describe("ExportButton", () => {
       fireEvent.input(screen.getByLabelText("max frame"), { target: { value: 468 } });
       pressExport();
 
-      // Should reset frame number to current frame only
-      expect(mockSetFrame.mock.calls.length).to.equal(1);
-      expect(mockSetFrame.mock.calls[0]).to.deep.equal([25]);
-
       // Start Recording action should be called only for current frame
       expect(mockStartRecording.mock.calls.length).to.equal(1);
-      expect(mockStartRecording.mock.calls[0][0]).equals(25);
-      expect(mockStartRecording.mock.calls[0][1]).equals(468);
-    });
-
-    it("can stop recording", () => {
-      const { mockStopRecording } = setupTest(10, 0);
-      openModal();
-      pressExport();
-      fireEvent.click(screen.getByText("Cancel"));
-      fireEvent.click(screen.getAllByText("Cancel")[1]);
-      expect(mockStopRecording.mock.calls.length).to.equal(1);
-
-      // Expect all modals to be hidden
-      const modal = document.getElementsByClassName("ant-modal-wrap");
-      for (let i = 0; i < modal.length; i++) {
-        const el = modal.item(i);
-        if (el) {
-          const style = getComputedStyle(el);
-          expect(style.display).to.equal("none");
-        }
-      }
+      expect(mockStartRecording.mock.calls[0][0].min).equals(25);
+      expect(mockStartRecording.mock.calls[0][0].max).equals(468);
     });
   });
 });

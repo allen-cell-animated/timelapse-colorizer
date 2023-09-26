@@ -546,7 +546,7 @@ function App(): ReactElement {
   };
 
   /** Get the current HTML Canvas data as a URL that can be downloaded. */
-  const getCanvasImageAsUrl = () => {
+  const getCanvasImageAsUrl = (): string => {
     const dataUrl = canv.domElement.toDataURL("image/png");
     return dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
   };

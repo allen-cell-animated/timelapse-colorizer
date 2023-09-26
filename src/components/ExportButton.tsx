@@ -15,7 +15,8 @@ type ExportButtonProps = {
   disabled?: boolean;
 };
 
-export const EXPORT_BUTTON_TEST_ID = "export-action";
+export const EXPORT_ACTION_BUTTON_TEST_ID = "export-action";
+export const OPEN_EXPORT_MODAL_BUTTON_TEST_ID = "open-export-modal";
 
 const defaultProps: Partial<ExportButtonProps> = {
   defaultImagePrefix: "image",
@@ -42,10 +43,14 @@ const CustomRangeDiv = styled(HorizontalDiv)`
   }
 `;
 
-function clamp(value: number, min: number, max: number) {
+function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(value, min));
 }
 
+/**
+ * A single Export button that opens up an export modal when clicked. Manages starting and stopping
+ * an image sequence recording and resetting state when complete.
+ */
 export default function ExportButton(inputProps: ExportButtonProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ExportButtonProps>;
 
@@ -156,7 +161,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
    * Note: This is not wrapped in a useCallback because it has a large number
    * of dependencies, and is likely to update whenever any prop or input changes.
    */
-  const handleStartExport = () => {
+  const handleStartExport = (): void => {
     if (isRecording) {
       return;
     }
@@ -193,136 +198,148 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     });
   };
 
-  // TODO: Check math
   const numExportedFrames = Math.max(Math.ceil((customMax - customMin + 1) / frameIncrement), 1);
 
   return (
-    <div ref={modalContextRef}>
-      <Button type="primary" onClick={() => setIsLoadModalOpen(true)} disabled={props.disabled}>
-        Export
-      </Button>
-      {/* Main Export modal */}
-      <Modal
-        title={"Export image sequence"}
-        open={isLoadModalOpen}
-        // Stop button should not close the modal
-        onCancel={() => handleCancel(true)}
-        cancelButtonProps={{ hidden: true }}
-        centered={true}
-        // Don't allow cancellation of modal by clicking off it when the recording is happening
-        maskClosable={!isRecording}
-        // TODO: Add custom footer instead of ok/cancel buttons
-        getContainer={modalContextRef.current || undefined}
-        footer={
-          <HorizontalDiv style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
-            {(true || percentComplete !== 0 || isRecording) && (
-              <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>
-                <Progress
-                  style={{ marginRight: "8px", verticalAlign: "middle" }}
-                  type="circle"
-                  size={theme.controls.heightSmall - 6}
-                  percent={percentComplete}
-                  showInfo={false}
-                  strokeColor={theme.color.theme}
-                  strokeWidth={12}
-                />
-              </Tooltip>
-            )}
-            <Button
-              type="primary"
-              onClick={isRecording ? () => handleStop() : handleStartExport}
-              data-testid={EXPORT_BUTTON_TEST_ID}
-              style={{ width: "76px" }}
-            >
-              {isRecording ? "Stop" : "Export"}
-            </Button>
-            <Button onClick={() => handleCancel(true)} style={{ width: "76px" }}>
-              Cancel
-            </Button>
-          </HorizontalDiv>
-        }
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" }}>
-          <Radio.Group
-            value={exportMode}
-            onChange={(e: RadioChangeEvent) => {
-              setExportMode(e.target.value);
-            }}
-            disabled={isRecording}
-          >
-            <Space direction="vertical">
-              <Radio value={ExportMode.ALL}>All frames</Radio>
-              <Radio value={ExportMode.CURRENT}>Current frame only</Radio>
-              <Radio value={ExportMode.CUSTOM}>Custom</Radio>
-              {exportMode === ExportMode.CUSTOM ? (
-                // Render the custom range input in the radio list if selected
-                <VerticalDiv style={{ paddingLeft: "25px" }}>
-                  <CustomRangeDiv>
-                    <p>Range:</p>
-                    <InputNumber
-                      aria-label="min frame"
-                      controls={false}
-                      min={0}
-                      max={props.totalFrames - 1}
-                      value={customMin}
-                      onChange={(value) => value && setCustomMin(value)}
-                      disabled={isRecording}
-                    />
-                    <p>-</p>
-                    <InputNumber
-                      aria-label="max frame"
-                      controls={false}
-                      min={customMin}
-                      max={props.totalFrames - 1}
-                      value={customMax}
-                      onChange={(value) => value && setCustomMax(value)}
-                      disabled={isRecording}
-                    />
-                    <p>of {props.totalFrames - 1}</p>
-                  </CustomRangeDiv>
-                  <HorizontalDiv>
-                    <p>Frame Increment:</p>
-                    <SpinBox value={frameIncrement} onChange={setFrameIncrement} min={1} max={props.totalFrames - 1} />
-                    <p style={{ color: "var(--color-text-secondary)" }}>({numExportedFrames} frames total)</p>
-                  </HorizontalDiv>
-                </VerticalDiv>
-              ) : null}
-            </Space>
-          </Radio.Group>
-
-          <div>
-            <p>Helpful tips:</p>
-            <div style={{ paddingLeft: "4px" }}>
-              <p>1. Set your default download location </p>
-              <p>2. Turn off "Ask where to save each file before downloading" in your browser settings</p>
-            </div>
-          </div>
-
-          <HorizontalDiv style={{ flexWrap: "nowrap" }}>
-            <label style={{ width: "100%" }}>
-              <p>Prefix:</p>
-              <Input
-                onChange={(event) => {
-                  setImagePrefix(event.target.value);
-                  setUseDefaultImagePrefix(false);
-                }}
-                size="small"
-                value={imagePrefix}
-                disabled={isRecording}
-              />
-            </label>
-            <p>#.png</p>
-            <Button
-              disabled={isRecording || useDefaultImagePrefix}
-              onClick={() => {
-                setUseDefaultImagePrefix(true);
+    // Antd App provides style context for modal.confirm API.
+    <App>
+      <div ref={modalContextRef}>
+        <Button
+          type="primary"
+          onClick={() => setIsLoadModalOpen(true)}
+          disabled={props.disabled}
+          data-testid={OPEN_EXPORT_MODAL_BUTTON_TEST_ID}
+        >
+          Export
+        </Button>
+        {/* Main Export modal */}
+        <Modal
+          title={"Export image sequence"}
+          open={isLoadModalOpen}
+          // Stop button should not close the modal
+          onCancel={() => handleCancel(true)}
+          cancelButtonProps={{ hidden: true }}
+          centered={true}
+          // Don't allow cancellation of modal by clicking off it when the recording is happening
+          maskClosable={!isRecording}
+          // TODO: Add custom footer instead of ok/cancel buttons
+          getContainer={modalContextRef.current || undefined}
+          footer={
+            <HorizontalDiv style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
+              {(true || percentComplete !== 0 || isRecording) && (
+                <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>
+                  <Progress
+                    style={{ marginRight: "8px", verticalAlign: "middle" }}
+                    type="circle"
+                    size={theme.controls.heightSmall - 6}
+                    percent={percentComplete}
+                    showInfo={false}
+                    strokeColor={theme.color.theme}
+                    strokeWidth={12}
+                  />
+                </Tooltip>
+              )}
+              <Button
+                type="primary"
+                onClick={isRecording ? () => handleStop() : handleStartExport}
+                data-testid={EXPORT_ACTION_BUTTON_TEST_ID}
+                style={{ width: "76px" }}
+              >
+                {isRecording ? "Stop" : "Export"}
+              </Button>
+              <Button onClick={() => handleCancel(true)} style={{ width: "76px" }}>
+                Cancel
+              </Button>
+            </HorizontalDiv>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" }}>
+            <Radio.Group
+              value={exportMode}
+              onChange={(e: RadioChangeEvent) => {
+                setExportMode(e.target.value);
               }}
+              disabled={isRecording}
             >
-              Reset
-            </Button>
-          </HorizontalDiv>
-        </div>
-      </Modal>
-    </div>
+              <Space direction="vertical">
+                <Radio value={ExportMode.ALL}>All frames</Radio>
+                <Radio value={ExportMode.CURRENT}>Current frame only</Radio>
+                <Radio value={ExportMode.CUSTOM}>Custom</Radio>
+                {exportMode === ExportMode.CUSTOM ? (
+                  // Render the custom range input in the radio list if selected
+                  <VerticalDiv style={{ paddingLeft: "25px" }}>
+                    <CustomRangeDiv>
+                      <p>Range:</p>
+                      <InputNumber
+                        aria-label="min frame"
+                        controls={false}
+                        min={0}
+                        max={props.totalFrames - 1}
+                        value={customMin}
+                        onChange={(value) => value && setCustomMin(value)}
+                        disabled={isRecording}
+                      />
+                      <p>-</p>
+                      <InputNumber
+                        aria-label="max frame"
+                        controls={false}
+                        min={customMin}
+                        max={props.totalFrames - 1}
+                        value={customMax}
+                        onChange={(value) => value && setCustomMax(value)}
+                        disabled={isRecording}
+                      />
+                      <p>of {props.totalFrames - 1}</p>
+                    </CustomRangeDiv>
+                    <HorizontalDiv>
+                      <p>Frame Increment:</p>
+                      <SpinBox
+                        value={frameIncrement}
+                        onChange={setFrameIncrement}
+                        min={1}
+                        max={props.totalFrames - 1}
+                      />
+                      <p style={{ color: "var(--color-text-secondary)" }}>({numExportedFrames} frames total)</p>
+                    </HorizontalDiv>
+                  </VerticalDiv>
+                ) : null}
+              </Space>
+            </Radio.Group>
+
+            <div>
+              <p>Helpful tips:</p>
+              <div style={{ paddingLeft: "4px" }}>
+                <p>1. Set your default download location </p>
+                <p>2. Turn off "Ask where to save each file before downloading" in your browser settings</p>
+              </div>
+            </div>
+
+            <HorizontalDiv style={{ flexWrap: "nowrap" }}>
+              <label style={{ width: "100%" }}>
+                <p>Prefix:</p>
+                <Input
+                  onChange={(event) => {
+                    setImagePrefix(event.target.value);
+                    setUseDefaultImagePrefix(false);
+                  }}
+                  size="small"
+                  value={imagePrefix}
+                  disabled={isRecording}
+                />
+              </label>
+              <p>#.png</p>
+              <Button
+                disabled={isRecording || useDefaultImagePrefix}
+                onClick={() => {
+                  setUseDefaultImagePrefix(true);
+                }}
+              >
+                Reset
+              </Button>
+            </HorizontalDiv>
+          </div>
+        </Modal>
+      </div>
+    </App>
   );
 }
