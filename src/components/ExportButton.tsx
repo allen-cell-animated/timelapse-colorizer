@@ -186,13 +186,15 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       frameIncrement: frameIncrement,
       onCompletedCallback: () => {
         // Close modal once recording finishes and show completion notification
+        setPercentComplete(100);
         notification.success({
           message: "Export complete.",
           placement: "bottomLeft",
           duration: 4,
           icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
         });
-        stopRecording(originalFrame, true);
+        // Close the modal after a small delay so the success notification can be seen
+        setTimeout(() => stopRecording(originalFrame, true), 750);
       },
       onRecordedFrameCallback: (frame: number) => {
         // Update the progress bar as frames are recorded.
@@ -236,7 +238,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
                   size={theme.controls.heightSmall - 6}
                   percent={percentComplete}
                   showInfo={false}
-                  strokeColor={theme.color.theme}
+                  strokeColor={percentComplete === 100 ? theme.color.text.success : theme.color.theme}
                   strokeWidth={12}
                 />
               </Tooltip>
