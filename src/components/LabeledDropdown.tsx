@@ -5,8 +5,8 @@ import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 
 type LabeledDropdownProps = {
-  /** Text label to include with the dropdown. */
-  label: string;
+  /** Text label to include with the dropdown. If null or undefined, hides the label. */
+  label?: string | null;
   /** The key of the item that is currently selected. */
   selected: string;
   /** An array of ItemType that describes the item properties (`{key, label}`),
@@ -26,6 +26,7 @@ type LabeledDropdownProps = {
 };
 
 const defaultProps = {
+  label: null,
   disabled: false,
   buttonType: "default",
   showTooltip: true,
@@ -95,7 +96,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
 
   return (
     <div className={styles.labeledDropdown}>
-      <h3>{props.label}</h3>
+      {props.label && <h3>{props.label}</h3>}
       <Dropdown menu={datasetMenuProps} disabled={props.disabled}>
         {dropdownContents}
       </Dropdown>

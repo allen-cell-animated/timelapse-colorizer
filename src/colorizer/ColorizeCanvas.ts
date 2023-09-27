@@ -31,8 +31,8 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
-const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
-const OUT_OF_RANGE_COLOR_DEFAULT = 0xc0c0c0;
+export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
+export const OUT_OF_RANGE_COLOR_DEFAULT = 0xc0c0c0;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 
@@ -179,6 +179,7 @@ export default class ColorizeCanvas {
 
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
+    this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
   }
 
   get domElement(): HTMLCanvasElement {
@@ -282,6 +283,7 @@ export default class ColorizeCanvas {
     if (mode === DrawMode.USE_COLOR && color) {
       this.setUniform("outOfRangeColor", color);
     }
+    console.log("Mode: " + mode);
   }
 
   setSelectedTrack(track: Track | null): void {
