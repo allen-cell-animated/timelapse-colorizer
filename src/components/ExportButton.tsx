@@ -97,7 +97,9 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   // Store the current frame whenever the modal opens so we can reset to it when
   // the modal is closed.
   useEffect(() => {
-    setOriginalFrame(props.currentFrame);
+    if (isLoadModalOpen) {
+      setOriginalFrame(props.currentFrame);
+    }
   }, [isLoadModalOpen]);
 
   /** Stop any ongoing recordings and reset the current frame, optionally closing the modal. */
@@ -124,7 +126,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
     // Currently recording; user must be prompted to confirm
     modal.confirm({
       title: "Cancel export",
-      content: "Are you sure you want to cancel the recording?",
+      content: "Are you sure you want to cancel and exit?",
       okText: "Cancel",
       cancelText: "Back",
       centered: true,
@@ -135,34 +137,22 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
         stopRecording(originalFrame, true);
       },
     });
-  }, [isRecording, modalContextRef.current, stopRecording, props.stopRecording]);
+  }, [isRecording, originalFrame, modalContextRef.current, stopRecording, props.stopRecording]);
 
   /**
    * Stop the recording without closing the modal.
    */
   const handleStop = useCallback(() => {
-    modal.confirm({
-      title: "Stop export",
-      content: "Are you sure you want to stop the recording?",
-      okText: "Stop",
-      cancelText: "Back",
-      centered: true,
-      icon: null,
-      getContainer: modalContextRef.current || undefined,
-      onOk: () => {
-        props.stopRecording();
-        props.setFrame(originalFrame);
-        setIsRecording(false);
-        setPercentComplete(0);
-      },
-    });
-  }, []);
+    props.stopRecording();
+    props.setFrame(originalFrame);
+    setIsRecording(false);
+    setPercentComplete(0);
+  }, [originalFrame, props.stopRecording]);
 
+  // Note: This is not wrapped in a useCallback because it has a large number
+  // of dependencies, and is likely to update whenever ANY prop or input changes.
   /**
    * Handle the user pressing the Export button and starting a recording.
-   *
-   * Note: This is not wrapped in a useCallback because it has a large number
-   * of dependencies, and is likely to update whenever any prop or input changes.
    */
   const handleStartExport = (): void => {
     if (isRecording) {
@@ -252,7 +242,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
               </Tooltip>
             )}
             <Button
-              type="primary"
+              type={isRecording ? "default" : "primary"}
               onClick={isRecording ? () => handleStop() : handleStartExport}
               data-testid={TEST_ID_EXPORT_ACTION_BUTTON}
               style={{ width: "76px" }}
@@ -260,7 +250,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
               {isRecording ? "Stop" : "Export"}
             </Button>
             <Button onClick={handleCancel} style={{ width: "76px" }}>
-              Cancel
+              {isRecording ? "Cancel" : "Close"}
             </Button>
           </HorizontalDiv>
         }
