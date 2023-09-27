@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react";
+import React, { ReactElement } from "react";
 import styled from "styled-components";
 import LabeledDropdown from "./LabeledDropdown";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
@@ -35,6 +35,8 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
     { key: DrawMode.USE_RAMP.toString(), label: "Use color map" },
   ];
 
+  const showColorPicker = props.selected === DrawMode.USE_COLOR;
+
   return (
     <MainLayout style={{ margin: "5px 0" }}>
       <h3>{props.label}</h3>
@@ -48,17 +50,16 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
             props.onChange(Number.parseInt(key), props.color);
           }}
         ></LabeledDropdown>
-        {props.selected === DrawMode.USE_COLOR && (
-          <ColorPicker
-            size="small"
-            disabledAlpha={true}
-            defaultValue={new AntdColor(props.color.getHexString())}
-            color={new AntdColor(props.color.getHexString())}
-            // onChange returns a different color type, so must convert from hex
-            // TODO: also call onChange here
-            onChange={(_color, hex) => props.onChange(props.selected, new ThreeColor(hex as ColorRepresentation))}
-          />
-        )}
+
+        <ColorPicker
+          style={{ visibility: showColorPicker ? "visible" : "hidden", opacity: showColorPicker ? "1" : "0" }}
+          size="small"
+          disabledAlpha={true}
+          defaultValue={new AntdColor(props.color.getHexString())}
+          color={new AntdColor(props.color.getHexString())}
+          // onChange returns a different color type, so must convert from hex
+          onChange={(_color, hex) => props.onChange(props.selected, new ThreeColor(hex as ColorRepresentation))}
+        />
       </HorizontalDiv>
     </MainLayout>
   );

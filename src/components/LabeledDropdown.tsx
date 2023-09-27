@@ -75,7 +75,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   };
 
   let dropdownContents = (
-    <Button disabled={props.disabled} type={props.buttonType} rootClassName={styles.button}>
+    <Button disabled={props.disabled} type={props.buttonType}>
       <div className={styles.buttonContents}>
         <div className={styles.buttonText}>{selectedLabel}</div>
         <DropdownSVG className={`${styles.buttonIcon} ${styles[props.buttonType || "default"]}`} />
