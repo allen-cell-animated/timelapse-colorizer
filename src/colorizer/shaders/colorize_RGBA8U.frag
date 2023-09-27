@@ -9,7 +9,15 @@ uniform float featureMax;
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
+
+const uint DRAW_MODE_HIDE = 0u;
+const uint DRAW_MODE_RAMP = 1u;
+const uint DRAW_MODE_COLOR = 2u;
+
 uniform vec3 outlierColor;
+uniform uint outlierDrawMode;
+uniform vec3 outOfRangeColor;
+uniform uint outOfRangeDrawMode;
 
 uniform int highlightedId;
 
@@ -48,12 +56,22 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
   float wStep = 1.0 / float(frameDims.x);
   float hStep = 1.0 / float(frameDims.y);        
     // sample around the pixel to see if we are on an edge
-  int R = int(combineColor(texture(frame, uv + vec2(thickness * wStep, 0))))-1;
-  int L = int(combineColor(texture(frame, uv + vec2(-thickness * wStep, 0))))-1;
-  int T = int(combineColor(texture(frame, uv + vec2(0, thickness * hStep))))-1;
-  int B = int(combineColor(texture(frame, uv + vec2(0, -thickness * hStep))))-1;
+  int R = int(combineColor(texture(frame, uv + vec2(thickness * wStep, 0)))) - 1;
+  int L = int(combineColor(texture(frame, uv + vec2(-thickness * wStep, 0)))) - 1;
+  int T = int(combineColor(texture(frame, uv + vec2(0, thickness * hStep)))) - 1;
+  int B = int(combineColor(texture(frame, uv + vec2(0, -thickness * hStep)))) - 1;
   // if any neighbors are not highlightedId then color this as edge
   return (R != highlightedId || L != highlightedId || T != highlightedId || B != highlightedId);
+}
+
+vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor, float normFeatureVal) {
+  if (drawMode == DRAW_MODE_HIDE) {
+    return vec4(backgroundColor, 1.0);
+  } else if (drawMode == DRAW_MODE_COLOR) {
+    return vec4(defaultColor, 1.0);
+  } else {
+    return getColorRamp(normFeatureVal);
+  }
 }
 
 void main() {
@@ -88,14 +106,14 @@ void main() {
   float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
 
   // Mask all values, including outliers, that are outside the range.
-  if (hideOutOfRange && (normFeatureVal < 0.0 || normFeatureVal > 1.0)) {
-    gOutputColor = vec4(backgroundColor, 1.0);
+  bool isOutOfRange = normFeatureVal < 0.0 || normFeatureVal > 1.0;
+  bool isOutlier = isinf(featureVal) || outlierVal != 0u;
+
+  if (isOutlier) {
+    gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor, normFeatureVal);
+  } else if (isOutOfRange) {
+    gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor, normFeatureVal);
   } else {
-    if (isinf(featureVal) || outlierVal != 0u) {
-      // outlier
-      gOutputColor = vec4(outlierColor, 1.0);
-    } else {
-      gOutputColor = getColorRamp(normFeatureVal);
-    }
+    gOutputColor = getColorRamp(normFeatureVal);
   }
 }
