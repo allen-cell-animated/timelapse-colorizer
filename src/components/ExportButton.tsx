@@ -103,15 +103,19 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
   }, [isLoadModalOpen]);
 
   /** Stop any ongoing recordings and reset the current frame, optionally closing the modal. */
-  const stopRecording = useCallback((resetFrame: number, closeModal: boolean) => {
-    // Reset the frame number (clean up!)
-    props.setFrame(resetFrame);
-    setIsRecording(false);
-    if (closeModal) {
-      setIsLoadModalOpen(false);
+  const stopRecording = useCallback(
+    (closeModal: boolean) => {
+      props.stopRecording();
+      // Reset the frame number (clean up!)
+      props.setFrame(originalFrame);
+      setIsRecording(false);
       setPercentComplete(0);
-    }
-  }, []);
+      if (closeModal) {
+        setIsLoadModalOpen(false);
+      }
+    },
+    [originalFrame, props.stopRecording]
+  );
 
   /**
    * Triggered when the user attempts to cancel or exit the main modal.
@@ -133,21 +137,17 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       icon: null,
       getContainer: modalContextRef.current || undefined,
       onOk: () => {
-        props.stopRecording();
-        stopRecording(originalFrame, true);
+        stopRecording(true);
       },
     });
-  }, [isRecording, originalFrame, modalContextRef.current, stopRecording, props.stopRecording]);
+  }, [isRecording, modalContextRef.current, stopRecording]);
 
   /**
    * Stop the recording without closing the modal.
    */
   const handleStop = useCallback(() => {
-    props.stopRecording();
-    props.setFrame(originalFrame);
-    setIsRecording(false);
-    setPercentComplete(0);
-  }, [originalFrame, props.stopRecording]);
+    stopRecording(false);
+  }, [stopRecording]);
 
   // Note: This is not wrapped in a useCallback because it has a large number
   // of dependencies, and is likely to update whenever ANY prop or input changes.
@@ -194,7 +194,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
           icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
         });
         // Close the modal after a small delay so the success notification can be seen
-        setTimeout(() => stopRecording(originalFrame, true), 750);
+        setTimeout(() => stopRecording(true), 750);
       },
       onRecordedFrameCallback: (frame: number) => {
         // Update the progress bar as frames are recorded.
@@ -245,7 +245,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
             )}
             <Button
               type={isRecording ? "default" : "primary"}
-              onClick={isRecording ? () => handleStop() : handleStartExport}
+              onClick={isRecording ? handleStop : handleStartExport}
               data-testid={TEST_ID_EXPORT_ACTION_BUTTON}
               style={{ width: "76px" }}
             >
