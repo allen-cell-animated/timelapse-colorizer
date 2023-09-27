@@ -1,7 +1,7 @@
 import React, { ReactElement, useMemo } from "react";
 import styles from "./LabeledDropdown.module.css";
 import { Dropdown, Tooltip, Button, MenuProps } from "antd";
-import { ItemType } from "antd/es/menu/hooks/useItems";
+import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 
 type LabeledDropdownProps = {
@@ -22,18 +22,27 @@ type LabeledDropdownProps = {
   /** Callback that is fired whenever an item in the dropdown is selected.
    * The callback will be passed the `key` of the selected item. */
   onChange: (key: string) => void;
+  showTooltip?: boolean;
+};
+
+const defaultProps = {
+  disabled: false,
+  buttonType: "default",
+  showTooltip: true,
 };
 
 /**
  * A wrapper around the Antd Dropdown with tooltips and a text label added.
  */
-export default function LabeledDropdown(props: LabeledDropdownProps): ReactElement {
-  const items = useMemo((): ItemType[] => {
+export default function LabeledDropdown(inputProps: LabeledDropdownProps): ReactElement {
+  const props = { ...defaultProps, ...inputProps } as Required<LabeledDropdownProps>;
+
+  const items = useMemo((): MenuItemType[] => {
     if (props.items.length === 0) {
       return [];
     }
     if (typeof props.items[0] === "string") {
-      // Convert items into ItemType by missing properties
+      // Convert items into MenuItemType by missing properties
       return (props.items as string[]).map((name) => {
         return {
           label: name,
@@ -41,9 +50,18 @@ export default function LabeledDropdown(props: LabeledDropdownProps): ReactEleme
         };
       });
     } else {
-      return props.items as ItemType[];
+      return props.items as MenuItemType[];
     }
   }, [props.items]);
+
+  let selectedLabel = useMemo((): string => {
+    for (const item of items) {
+      if (item && item.key === props.selected) {
+        return item.label?.toString() || "";
+      }
+    }
+    return "";
+  }, [props.selected, items]);
 
   const datasetMenuProps: MenuProps = {
     onClick: (e) => {
@@ -58,18 +76,18 @@ export default function LabeledDropdown(props: LabeledDropdownProps): ReactEleme
   let dropdownContents = (
     <Button disabled={props.disabled} type={props.buttonType} rootClassName={styles.button}>
       <div className={styles.buttonContents}>
-        <div className={styles.buttonText}>{props.selected}</div>
+        <div className={styles.buttonText}>{selectedLabel}</div>
         <DropdownSVG className={`${styles.buttonIcon} ${styles[props.buttonType || "default"]}`} />
       </div>
     </Button>
   );
 
   // Add a tooltip for the currently selected element.
-  // Workaround: Remove the tooltip when the dropdown is disabled, as otherwise it introduces a placeholder span
-  // element that messes with the height of the button when disabled.
-  if (!props.disabled) {
+  // Workaround: Remove the tooltip when the dropdown is disabled, as otherwise it
+  // introduces a placeholder span element that messes with the height of the button when disabled.
+  if (!props.disabled && props.showTooltip) {
     dropdownContents = (
-      <Tooltip title={props.selected} placement="right">
+      <Tooltip title={selectedLabel} placement="right">
         {dropdownContents}
       </Tooltip>
     );
