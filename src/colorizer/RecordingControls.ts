@@ -42,28 +42,20 @@ const defaultRecordingOptions: RecordingOptions = {
 
 export default class RecordingControls {
   private recording: boolean;
-  private hiddenAnchorEl: HTMLAnchorElement;
   private timerId: number;
 
   constructor() {
     this.recording = false;
     this.timerId = 0;
-
-    this.hiddenAnchorEl = document.createElement("a"); // Hidden element for initiating download later
   }
 
   /**
    * Records and downloads an image sequence, if not already recording.
    *
    * @param setFrameAndRender Async callback to set and update the currently displayed frame.
-   * @param getImageUrl Callback to get a downloadable image URL for the rendered frame.
-   *    ex:
-   * ```
-   * () => {
-   *   const dataUrl = HTMLCanvas.toDataURL("image/png");
-   *   return dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
-   * };
-   * ```
+   * @param recordingAction Async callback for the recording action. The recording will wait until
+   * the callback resolves before continuing. The `recordingOptions` will be passed to the action,
+   * with default values given for any undefined options.
    * @param recordingOptions Configurable options for the recording.
    *
    * Note that the recording will change the current frame and will not reset it once
@@ -72,7 +64,7 @@ export default class RecordingControls {
    */
   public start(
     setFrameAndRender: (frame: number) => Promise<void>,
-    getImageUrl: () => string,
+    recordingAction: (frame: number, recordingOptions: RecordingOptions) => Promise<void>,
     recordingOptions: Partial<RecordingOptions>
   ): void {
     if (this.recording) {
@@ -86,8 +78,6 @@ export default class RecordingControls {
     clearTimeout(this.timerId);
 
     // Formatting setup
-    const minDigits = options.minDigits || options.max.toString().length;
-
     const loadAndRecordFrame = async (frame: number): Promise<void> => {
       if (frame > options.max || !this.recording) {
         this.recording = false;
@@ -98,16 +88,7 @@ export default class RecordingControls {
       // Trigger a render through the redrawfn parameter so other UI elements update
       // Must force render here or else empty image data is returned.
       await setFrameAndRender(frame);
-
-      // Get canvas as an image URL that can be downloaded
-      const imageURL = getImageUrl();
-
-      // Update our anchor (link) element with the image data, then force
-      // a click to initiate the download.
-      this.hiddenAnchorEl.href = imageURL;
-      const frameSuffix: string = frame.toString().padStart(minDigits, "0");
-      this.hiddenAnchorEl.download = `${options.prefix}${frameSuffix}.png`;
-      this.hiddenAnchorEl.click();
+      await recordingAction(frame, options);
 
       // Notify listeners about frame recording
       options.onRecordedFrameCallback(frame);

@@ -28,6 +28,7 @@ import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 import ExportButton from "./components/ExportButton";
+import { sleep } from "../tests/test_utils";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -57,6 +58,9 @@ function App(): ReactElement {
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
+
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const downloadAnchorRef = useRef<HTMLAnchorElement | null>(null);
 
   const colorRampData = DEFAULT_COLOR_RAMPS;
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
@@ -544,10 +548,66 @@ function App(): ReactElement {
     });
   };
 
-  /** Get the current HTML Canvas data as a URL that can be downloaded. */
-  const getCanvasImageAsUrl = (): string => {
+  /** Download the current rendered canvas frame as an image. */
+  const downloadCanvas = async (frame: number, options: RecordingOptions): Promise<void> => {
+    if (!downloadAnchorRef.current) {
+      downloadAnchorRef.current = document.createElement("a");
+      document.appendChild(downloadAnchorRef.current);
+    }
+
+    const minDigits = options.minDigits || options.max.toString().length || 1;
     const dataUrl = canv.domElement.toDataURL("image/png");
-    return dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
+    const imageUrl = dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
+
+    // Update the anchor (link) element with the image data, then force
+    // a click to initiate the download.
+    downloadAnchorRef.current.href = imageUrl;
+    const frameSuffix: string = frame.toString().padStart(minDigits, "0");
+    downloadAnchorRef.current.download = `${options.prefix}${frameSuffix}.png`;
+    downloadAnchorRef.current.click();
+  };
+
+  const handleVideoDataAvailable = (event: BlobEvent) => {
+    if (!downloadAnchorRef.current) {
+      downloadAnchorRef.current = document.createElement("a");
+      document.appendChild(downloadAnchorRef.current);
+    }
+
+    const webmBlob = new Blob([event.data], { type: "video/webm" });
+    const url = URL.createObjectURL(webmBlob);
+
+    downloadAnchorRef.current.href = url;
+    downloadAnchorRef.current.download = "video.webm";
+    downloadAnchorRef.current.click();
+  };
+
+  const stopVideoRecording = () => {
+    mediaRecorder.current?.stop();
+  };
+
+  const startVideoRecording = () => {
+    const stream = canv.domElement.captureStream();
+    mediaRecorder.current = new MediaRecorder(stream, {
+      mimeType: "video/webm",
+      // Default of 2.5 Mbps is unsatisfactory
+      videoBitsPerSecond: 5000000,
+    });
+    mediaRecorder.current.ondataavailable = handleVideoDataAvailable;
+    mediaRecorder.current.start();
+    mediaRecorder.current.pause();
+  };
+
+  const recordVideoFrame = async (_frame: number, _options: RecordingOptions): Promise<void> => {
+    if (!mediaRecorder.current) {
+      return;
+    }
+
+    // Add a little buffer before recording the frame in case the canvas is still rendering.
+    await sleep(10);
+    const timer = sleep(1000 / 30);
+    mediaRecorder.current.resume();
+    await timer;
+    mediaRecorder.current.pause();
   };
 
   const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
@@ -587,19 +647,39 @@ function App(): ReactElement {
             <LinkOutlined />
             Copy URL
           </Button>
-
+          {"Experimental Video Recording =>"}
           <ExportButton
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrame}
             currentFrame={currentFrame}
             startRecording={(options: Partial<RecordingOptions>) => {
-              recordingControls.start(setFrameAndRender, getCanvasImageAsUrl, options);
+              // Extend onCompletedCallback to stop the video recording too
+              const oldOnComplete = options.onCompletedCallback;
+              options.onCompletedCallback = () => {
+                stopVideoRecording();
+                oldOnComplete && oldOnComplete();
+              };
+              startVideoRecording();
+              recordingControls.start(setFrameAndRender, recordVideoFrame, options);
+            }}
+            stopRecording={() => {
+              stopVideoRecording();
+              recordingControls.abort();
+            }}
+            defaultImagePrefix={datasetKey + "-" + featureName + "-"}
+            disabled={dataset === null}
+          />
+          <ExportButton
+            totalFrames={dataset?.numberOfFrames || 0}
+            setFrame={setFrame}
+            currentFrame={currentFrame}
+            startRecording={(options: Partial<RecordingOptions>) => {
+              recordingControls.start(setFrameAndRender, downloadCanvas, options);
             }}
             stopRecording={() => recordingControls.abort()}
             defaultImagePrefix={datasetKey + "-" + featureName + "-"}
             disabled={dataset === null}
           />
-
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
       </div>
@@ -788,6 +868,7 @@ function App(): ReactElement {
             </div>
           </div>
         </div>
+        <a ref={downloadAnchorRef}></a>
       </div>
     </AppStyle>
   );
