@@ -27,7 +27,7 @@ import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } f
 import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
-import ExportButton from "./components/ExportButton";
+import Export from "./components/Export";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -588,7 +588,7 @@ function App(): ReactElement {
             Copy URL
           </Button>
 
-          <ExportButton
+          <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrame}
             currentFrame={currentFrame}

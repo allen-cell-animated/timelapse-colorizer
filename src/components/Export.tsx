@@ -52,7 +52,7 @@ function clamp(value: number, min: number, max: number): number {
  * A single Export button that opens up an export modal when clicked. Manages starting and stopping
  * an image sequence recording, resetting state when complete.
  */
-export default function ExportButton(inputProps: ExportButtonProps): ReactElement {
+export default function Export(inputProps: ExportButtonProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ExportButtonProps>;
 
   const theme = useContext(AppThemeContext);
