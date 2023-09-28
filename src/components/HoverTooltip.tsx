@@ -37,17 +37,19 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
   props = { ...defaultProps, ...props } as PropsWithChildren<Required<HoverTooltipProps>>;
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [relativeMousePosition, setRelativeMousePosition] = useState<[number, number]>([0, 0]);
 
   // Add a listener for mouse events
   useEffect(() => {
     const onMouseOver = (_event: MouseEvent): void => setIsHovered(true);
     const onMouseOut = (_event: MouseEvent): void => setIsHovered(false);
     const onMouseMove = (event: MouseEvent): void => {
-      if (isHovered) {
-        // Use last position on the screen
-        setRelativeMousePosition([event.clientX, event.clientY]);
+      // Use last position on the screen
+      // setRelativeMousePosition([event.clientX, event.clientY]);
+      if (tooltipRef.current) {
+        tooltipRef.current.style.left = `calc(${event.clientX}px + ${props.offsetPx![0]}px)`;
+        tooltipRef.current.style.top = `calc(${event.clientY}px + ${props.offsetPx![0]}px)`;
       }
     };
 
@@ -64,19 +66,13 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
       };
     }
     return;
-  }, [containerRef.current, isHovered]);
+  }, [containerRef.current, isHovered, props.disabled, props.tooltipContent]);
 
   const visible = isHovered && !props.disabled && props.tooltipContent;
 
   return (
     <div ref={containerRef}>
-      <TooltipDiv
-        style={{
-          left: `calc(${relativeMousePosition[0]}px + ${props.offsetPx![0]}px)`,
-          top: `calc(${relativeMousePosition[1]}px + ${props.offsetPx![1]}px)`,
-          opacity: visible ? 1 : 0,
-        }}
-      >
+      <TooltipDiv ref={tooltipRef} style={{ opacity: visible ? 1 : 0 }}>
         {props.tooltipContent}
       </TooltipDiv>
       {props.children}
