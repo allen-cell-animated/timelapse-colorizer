@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import LabeledDropdown from "./LabeledDropdown";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
-import { Color as ThreeColor, ColorRepresentation } from "three";
+import { Color as ThreeColor, ColorRepresentation, Color } from "three";
 import { Collapse, CollapseProps, ColorPicker } from "antd";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { ColorRampData } from "../constants";
@@ -69,9 +69,26 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   // Optionally add on color map presets
   if (props.colorMap) {
     // Sample color map to generate presets list
-    const colorMapColors: string[] = Array.apply(null, Array(PRESET_COLORS_WIDTH)).map(function (_value, index) {
-      return props.colorMap!.colorRamp.sample(index / (PRESET_COLORS_WIDTH - 1)).getHexString();
-    });
+    const directColorMap: string[] = [];
+    const desatColorMap: string[] = [];
+
+    for (let i = 0; i < PRESET_COLORS_WIDTH; i++) {
+      const sampledColor = props.colorMap!.colorRamp.sample(i / (PRESET_COLORS_WIDTH - 1));
+      let hsl = { h: 0, s: 0, l: 0 };
+      sampledColor.getHSL(hsl);
+
+      let mutedHsl = { ...hsl };
+      mutedHsl.s *= 0.25;
+      mutedHsl.l = 0.6;
+      directColorMap.push(new Color("#000000").setHSL(mutedHsl.h, mutedHsl.s, mutedHsl.l).getHexString());
+
+      let desaturatedHsl = { ...hsl };
+      desaturatedHsl.s *= 0.25;
+      desaturatedHsl.l = 0.8;
+      const desaturatedColor = new Color("#000000").setHSL(desaturatedHsl.h, desaturatedHsl.s, desaturatedHsl.l);
+
+      desatColorMap.push(desaturatedColor.getHexString());
+    }
 
     presets.push({
       label: (
@@ -79,7 +96,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
           Use Color Map
         </p>
       ),
-      colors: colorMapColors,
+      colors: [...directColorMap, ...desatColorMap],
     });
   }
 
