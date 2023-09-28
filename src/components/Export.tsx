@@ -281,7 +281,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 )}
               </Radio>
               <Radio value={ExportMode.CURRENT}>Current frame only</Radio>
-              <Radio value={ExportMode.CUSTOM}>Custom</Radio>
+              <Radio value={ExportMode.CUSTOM}>Custom range</Radio>
 
               {exportMode === ExportMode.CUSTOM ? (
                 // Render the custom range input in the radio list if selected
