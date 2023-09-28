@@ -1,7 +1,8 @@
-import React, { ReactElement, useMemo } from "react";
+import React, { ReactElement, useContext, useMemo } from "react";
 import styles from "./ColorRampSelector.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { Button, Tooltip } from "antd";
+import { ThemeContext } from "./AppStyle";
 
 type ColorRampSelectorProps = {
   selected: string;
@@ -15,8 +16,12 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
   disabled: false,
 };
 
+/**
+ * A dropdown selector for color ramp gradients.
+ */
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
+  const theme = useContext(ThemeContext);
 
   const selectedRampData = props.colorRamps.get(props.selected);
 
@@ -27,7 +32,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   // Only regenerate the gradient canvas URL if the selected ramp changes!
   const selectedRamp = selectedRampData.colorRamp;
   const selectedRampColorUrl = useMemo(() => {
-    return selectedRamp.createGradientCanvas(120, 25).toDataURL();
+    return selectedRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
   }, [props.selected]);
 
   // Memoize to avoid recalculating dropdown contents
@@ -50,7 +55,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key}>
           <Button key={key} className={className} onClick={() => props.onChange(key)}>
-            <img src={colorRampData.colorRamp.createGradientCanvas(120, 25).toDataURL()} />
+            <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>
       );
@@ -77,7 +82,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   return (
     <div className={styles.colorRampSelector}>
-      Color Ramp
+      <h3>Color Map</h3>
       <div className={buttonDivClassName}>
         {selectorButton}
         <div className={styles.dropdownContainer}>{dropdownContents}</div>

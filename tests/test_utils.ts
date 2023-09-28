@@ -2,6 +2,10 @@ import { fetchWithTimeout } from "../src/colorizer/utils/url_utils";
 
 export const ANY_ERROR = /[.]*/;
 
+export async function sleep(timeoutMs: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, timeoutMs));
+}
+
 export function makeMockFetchMethod(validUrl: string, bodyJson: any): typeof fetchWithTimeout {
   const response: Response = {
     headers: new Headers(),

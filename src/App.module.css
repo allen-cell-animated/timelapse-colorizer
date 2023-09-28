@@ -1,47 +1,64 @@
 .app {
-  composes: vars from "./vars.module.css";
   font-family: var(--default-font);
   font-style: normal;
   font-weight: 400;
   line-height: normal;
   margin: 0;
+  color: var(--color-text-primary);
 }
 
 .app h1 {
-  color: var(--color-text-primary);
-  font-size: 22px;
+  font-size: var(--font-size-header);
   font-style: normal;
   font-weight: 400;
+  margin: 5px 0;
 }
 
 .app h2 {
-  color: var(--color-text-primary);
-  font-size: 20px;
+  font-size: var(--font-size-section);
   font-style: normal;
   font-weight: 400;
 }
 
-.app label {
-  font-size: 14px;
-}
-
-.app p,
-.app label {
-  color: var(--text-primary);
-  font-family: var(--default-font);
-  font-size: 12px;
+.app h3 {
+  font-size: var(--font-size-label);
   font-style: normal;
   font-weight: 400;
+  margin: 0;
 }
 
 .app p {
+  font-family: var(--default-font);
+  font-size: var(--font-size-content);
+  font-style: normal;
+  font-weight: 400;
   margin: 2px;
 }
 
 .app label {
+  font-family: var(--default-font);
+  font-size: var(--font-size-content);
+  font-style: normal;
+  font-weight: 400;
   display: flex;
   flex-direction: row;
   gap: 2px;
+}
+
+.app .ant-btn:active {
+  border: 1px solid var(--color-button);
+}
+
+.app .ant-btn-default:not(:disabled):hover {
+  background-color: var(--color-button-hover);
+  color: var(--color-text-button);
+  fill: var(--color-text-button);
+}
+
+.app .ant-btn-default:not(:disabled):active {
+  border: 1px solid var(--color-button);
+  color: var(--color-text-button);
+  fill: var(--color-text-button);
 }
 
 .header {
@@ -99,12 +116,14 @@
   display: inline-block;
 }
 
-.canvasTopControlsContainer {
+.mainContent .topControls {
   margin: 10px 0;
+}
+
+.mainContent .controlsContainer {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 5px;
   align-items: center;
 }
 
@@ -113,24 +132,114 @@
   align-items: center;
   flex-direction: row;
   gap: 5px;
+  width: 100%;
+  max-width: 460px;
+  margin-right: 20px;
 }
 
 .mainContent {
   margin: 8px 30px;
 }
 
-.canvasBottomControlsContainer {
+.sliderContainer {
+  position: relative;
+  max-width: 289px;
+  width: 100%;
+  font-size: 10px;
+  margin: 4px;
+  margin-bottom: 6px;
+  color: var(--color-text-secondary);
+  --label-position: -10px;
+}
+
+.sliderContainer > .minSliderLabel {
+  position: absolute;
+  left: 0;
+  /* TODO: Make this automatic */
+  bottom: var(--label-position);
+}
+.sliderContainer > .maxSliderLabel {
+  position: absolute;
+  right: 0;
+  bottom: var(--label-position);
+}
+
+.contentPanels {
+  display: flex;
+  flex: row;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: auto;
+}
+
+.canvasPanel {
+  flex-grow: 0;
+}
+
+.canvasPanel .bottomControls {
   display: flex;
   flex-direction: row;
   gap: 10px;
+  width: 100%;
 }
 
-.sliderContainer {
-  width: 289px;
+.app canvas {
+  border: 1px solid var(--color-dividers);
 }
 
-.timeControls {
+.canvasPanel .timeControls {
   display: flex;
   flex-direction: row;
   gap: 4px;
+  max-width: calc(100vw - 60px);
+  margin-top: 10px;
+}
+
+.timeSliderContainer {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 4px;
+  height: var(--button-height);
+  display: flex;
+  align-items: center;
+}
+
+.timeSliderContainer > div {
+  width: 100%;
+}
+
+.plotPanel {
+  max-width: calc(100vw - 60px);
+  flex-grow: 1;
+}
+
+.plotPanel > div {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.plotPanel .trackTitleBar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 734px;
+}
+
+.trackSearch {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+
+  composes: nospinner from "./styles/utils.module.css";
+}
+
+.trackSearch input {
+  max-width: 80px;
+}
+
+.trackSearch h3 {
+  margin: 0;
 }

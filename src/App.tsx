@@ -1,7 +1,14 @@
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
-import { CheckCircleOutlined, LinkOutlined } from "@ant-design/icons";
-import { Button, InputNumber, Slider, notification } from "antd";
+import {
+  CheckCircleOutlined,
+  LinkOutlined,
+  PauseOutlined,
+  SearchOutlined,
+  StepBackwardFilled,
+  StepForwardFilled,
+} from "@ant-design/icons";
+import { Button, Checkbox, Divider, Input, InputNumber, Slider, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 
 import styles from "./App.module.css";
@@ -17,6 +24,9 @@ import ColorRampSelector from "./components/ColorRampSelector";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import IconButton from "./components/IconButton";
+import SpinBox from "./components/SpinBox";
+import HoverTooltip from "./components/HoverTooltip";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -66,14 +76,16 @@ function App(): ReactElement {
   });
 
   // Recording UI
-  const [imagePrefix, setImagePrefix] = useState<null | string>(null);
-  const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
+  // const [imagePrefix, setImagePrefix] = useState<null | string>(null);
+  // const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
    */
   const [frameInput, setFrameInput] = useState(0);
   const [findTrackInput, setFindTrackInput] = useState("");
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
+  // Prevent jarring jumps in the hover tooltip by using the last non-null value
+  const [lastHoveredId, setLastHoveredId] = useState<number | null>(null);
+  const [showHoveredId, setShowHoveredId] = useState(false);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
@@ -168,8 +180,10 @@ function App(): ReactElement {
 
   /**
    * Update the canvas dimensions based on the current window size.
+   *
+   * TODO: Find calculation for margin magic number
    */
-  const setSize = (): void => canv.setSize(Math.min(window.innerWidth, 730), Math.min(window.innerHeight, 500));
+  const setSize = (): void => canv.setSize(Math.min(window.innerWidth - 75, 730), Math.min(window.innerHeight, 500));
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
@@ -297,6 +311,7 @@ function App(): ReactElement {
    */
   const replaceDataset = useCallback(
     async (newDataset: Dataset | null, newDatasetKey: string): Promise<void> => {
+      // TODO: Change the way flags are handled to prevent flickering during dataset replacement
       setDatasetOpen(false);
       if (newDataset === null) {
         // TODO: Determine with UX what expected behavior should be for bad datasets
@@ -420,12 +435,6 @@ function App(): ReactElement {
     [featureName, dataset, updateFeature]
   );
 
-  const handleResetRangeClick = useCallback(async (): Promise<void> => {
-    canv.resetColorMapRange();
-    setColorRampMin(canv.getColorMapRangeMin());
-    setColorRampMax(canv.getColorMapRangeMax());
-  }, [canv]);
-
   const getFeatureValue = useCallback(
     (id: number): number => {
       if (!featureName || !dataset) {
@@ -445,15 +454,17 @@ function App(): ReactElement {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       if (id === BACKGROUND_ID) {
         // Ignore background pixels
+        setShowHoveredId(false);
         return;
       }
-      setHoveredId(id);
+      setLastHoveredId(id);
+      setShowHoveredId(true);
     },
     [dataset, canv]
   );
 
   const onMouseLeave = useCallback((_event: MouseEvent): void => {
-    setHoveredId(null);
+    setShowHoveredId(false);
   }, []);
 
   useEffect(() => {
@@ -506,7 +517,7 @@ function App(): ReactElement {
   timeControls.setFrameCallback(setFrame);
   recordingControls.setFrameCallback(setFrame);
 
-  const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
+  // const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
 
   // RENDERING /////////////////////////////////////////////////////////////
 
@@ -520,7 +531,7 @@ function App(): ReactElement {
       message: "URL copied to clipboard",
       className: styles.copyNotification,
       placement: "bottomLeft",
-      duration: 0,
+      duration: 4,
 
       icon: <CheckCircleOutlined />,
     });
@@ -537,7 +548,7 @@ function App(): ReactElement {
       {/* TODO: Split into its own component? */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2>Timelapse Colorizer</h2>
+          <h1>Timelapse Colorizer</h1>
           <span className={styles.verticalDivider}></span>
 
           <LabeledDropdown
@@ -564,7 +575,9 @@ function App(): ReactElement {
             Copy URL
           </Button>
 
-          <Button type="primary">Export</Button>
+          <Button type="primary" disabled={true}>
+            Export
+          </Button>
 
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
@@ -573,148 +586,196 @@ function App(): ReactElement {
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
-        <div className={styles.canvasTopControlsContainer}>
-          <div className={styles.labeledColorRamp}>
-            <InputNumber
-              size="small"
-              style={{ width: "80px" }}
-              value={colorRampMin}
-              onChange={(value) => {
-                value && setColorRampMin(value);
-              }}
-              controls={false}
-              min={0}
-            />
-            <div className={styles.sliderContainer}>
-              <Slider
-                min={dataset?.getFeatureData(featureName)?.min}
-                max={dataset?.getFeatureData(featureName)?.max}
-                range={{ draggableTrack: true }}
-                value={[colorRampMin, colorRampMax]}
-                onChange={(value: [number, number]) => {
-                  setColorRampMin(value[0]);
-                  setColorRampMax(value[1]);
+        <div className={styles.topControls}>
+          <h3 style={{ margin: "0" }}>Feature value range</h3>
+          <div className={styles.controlsContainer}>
+            <div className={styles.labeledColorRamp}>
+              <InputNumber
+                size="small"
+                style={{ width: "80px" }}
+                value={colorRampMin}
+                onChange={(value) => {
+                  value && setColorRampMin(value);
                 }}
+                controls={false}
+                disabled={disableUi}
+              />
+              <div className={styles.sliderContainer}>
+                <Slider
+                  min={dataset?.getFeatureData(featureName)?.min}
+                  max={dataset?.getFeatureData(featureName)?.max}
+                  range={{ draggableTrack: true }}
+                  value={[colorRampMin, colorRampMax]}
+                  disabled={disableUi}
+                  onChange={(value: [number, number]) => {
+                    setColorRampMin(value[0]);
+                    setColorRampMax(value[1]);
+                  }}
+                />
+                <p className={styles.minSliderLabel}>{dataset?.getFeatureData(featureName)?.min}</p>
+                <p className={styles.maxSliderLabel}>{dataset?.getFeatureData(featureName)?.max}</p>
+              </div>
+              <InputNumber
+                size="small"
+                type="number"
+                style={{ width: "80px" }}
+                value={colorRampMax}
+                onChange={(value) => {
+                  value && setColorRampMax(value);
+                }}
+                controls={false}
+                disabled={disableUi}
               />
             </div>
-
-            <InputNumber
-              size="small"
-              type="number"
-              style={{ width: "80px" }}
-              value={colorRampMax}
-              onChange={(value) => {
-                value && setColorRampMax(value);
-              }}
-              controls={false}
-              min={0}
-            />
-            <button onClick={handleResetRangeClick}>Reset range</button>
-            <label>
-              <input
-                type="checkbox"
-                checked={isColorRampRangeLocked}
-                onChange={() => {
-                  // Invert lock on range
-                  setIsColorRampRangeLocked(!isColorRampRangeLocked);
-                }}
-              />
-              Lock color map range
-            </label>
-            <label>
-              <input
+            <div>
+              <Checkbox
                 type="checkbox"
                 checked={hideValuesOutOfRange}
                 onChange={() => {
                   setHideValuesOutOfRange(!hideValuesOutOfRange);
                 }}
-              />
-              Hide values outside of range
-            </label>
+              >
+                Hide values outside of range
+              </Checkbox>
+              <Checkbox
+                checked={isColorRampRangeLocked}
+                onChange={() => {
+                  // Invert lock on range
+                  setIsColorRampRangeLocked(!isColorRampRangeLocked);
+                }}
+              >
+                Keep range between datasets
+              </Checkbox>
+            </div>
           </div>
         </div>
 
-        {/** Canvas */}
-        <div ref={canvasRef}></div>
+        {/* Organize the main content areas */}
+        <div className={styles.contentPanels}>
+          <div className={styles.canvasPanel}>
+            {/** Canvas */}
+            <HoverTooltip
+              tooltipContent={
+                <>
+                  <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
+                  <p>Feature: {lastHoveredId && getFeatureValue(lastHoveredId)}</p>
+                </>
+              }
+              disabled={!showHoveredId}
+            >
+              <div ref={canvasRef}></div>
+            </HoverTooltip>
 
-        {/** Bottom Control Bar */}
-        <div className={styles.canvasBottomControlsContainer}>
-          <div>
-            <div>
-              Time (use arrow keys)
-              <div className={styles.timeControls} style={{ margin: "2px" }}>
-                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePlayButtonClick()}>
-                  Play
-                </button>
-                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handlePauseButtonClick()}>
-                  Pause
-                </button>
-                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(-1)}>
-                  Back
-                </button>
-                <button disabled={disableTimeControlsUi} onClick={() => timeControls.handleFrameAdvance(1)}>
-                  Forward
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max={dataset ? dataset.numberOfFrames - 1 : 0}
+            {/** Time Control Bar */}
+            <div className={styles.timeControls}>
+              {timeControls.isPlaying() ? (
+                // Swap between play and pause button
+                <IconButton
+                  type="outlined"
                   disabled={disableTimeControlsUi}
-                  step="1"
-                  value={frameInput}
-                  onChange={(event) => {
-                    setFrameInput(event.target.valueAsNumber);
-                  }}
-                />
-                <input
-                  type="number"
-                  min="0"
+                  onClick={() => timeControls.handlePauseButtonClick()}
+                >
+                  <PauseOutlined />
+                </IconButton>
+              ) : (
+                <IconButton
+                  disabled={disableTimeControlsUi}
+                  onClick={() => timeControls.handlePlayButtonClick()}
+                  type="outlined"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="11" viewBox="0 0 8 12" aria-label="play">
+                    <path d="M7.78017 6.3152L0.654546 11.9127C0.389566 12.1209 0 11.9331 0 11.5975V0.402353C0 0.0667129 0.389566 -0.120911 0.654546 0.0873534L7.78017 5.68483C7.82798 5.72228 7.86665 5.77012 7.89325 5.82473C7.91984 5.87934 7.93366 5.93928 7.93366 6.00002C7.93366 6.06076 7.91984 6.1207 7.89325 6.17531C7.86665 6.22991 7.82798 6.27775 7.78017 6.3152Z" />
+                  </svg>
+                </IconButton>
+              )}
+
+              <div className={styles.timeSliderContainer}>
+                <Slider
+                  min={0}
                   max={dataset ? dataset.numberOfFrames - 1 : 0}
                   disabled={disableTimeControlsUi}
                   value={frameInput}
-                  onChange={(event) => {
-                    setFrame(event.target.valueAsNumber);
+                  onChange={(value) => {
+                    setFrameInput(value);
                   }}
                 />
               </div>
-            </div>
 
-            <div>
-              Find by track:
-              <input
-                disabled={disableUi}
-                type="number"
-                value={findTrackInput}
-                onChange={(event) => {
-                  setFindTrackInput(event.target.value);
-                }}
+              <IconButton
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls.handleFrameAdvance(-1)}
+                type="outlined"
+              >
+                <StepBackwardFilled />
+              </IconButton>
+              <IconButton
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls.handleFrameAdvance(1)}
+                type="outlined"
+              >
+                <StepForwardFilled />
+              </IconButton>
+
+              <SpinBox
+                min={0}
+                max={dataset?.numberOfFrames && dataset?.numberOfFrames - 1}
+                value={frameInput}
+                onChange={setFrame}
+                disabled={disableTimeControlsUi}
+                wrapIncrement={true}
               />
-              <button disabled={disableUi} onClick={handleFindTrack}>
-                Find
-              </button>
             </div>
           </div>
 
-          {/* Hover values */}
-          <div>
-            <p>Track ID: {hoveredId ? dataset?.getTrackId(hoveredId) : ""}</p>
-            <p>Feature: {hoveredId ? getFeatureValue(hoveredId) : ""}</p>
-            <label>
-              <input
+          <div className={styles.plotPanel}>
+            <Divider orientationMargin={0} />
+            <div>
+              <div className={styles.trackTitleBar}>
+                <h2>Plot</h2>
+
+                <div className={styles.trackSearch}>
+                  <h3>Search</h3>
+                  <Input
+                    type="number"
+                    value={findTrackInput}
+                    size="small"
+                    placeholder="Track ID..."
+                    disabled={disableUi}
+                    onChange={(event) => {
+                      setFindTrackInput(event.target.value);
+                    }}
+                  />
+                  <IconButton disabled={disableUi} onClick={handleFindTrack}>
+                    <SearchOutlined />
+                  </IconButton>
+                </div>
+              </div>
+              <div ref={plotRef} style={{ width: "600px", height: "400px" }} />
+            </div>
+            <Divider orientationMargin={0} />
+            <div>
+              <h2>Viewer settings</h2>
+              <Checkbox
                 type="checkbox"
                 checked={showTrackPath}
                 onChange={() => {
                   setShowTrackPath(!showTrackPath);
                 }}
-              />
-              Show track path
-            </label>
+              >
+                Show track path
+              </Checkbox>
+            </div>
           </div>
         </div>
+      </div>
+    </AppStyle>
+  );
+}
 
-        <div ref={plotRef} style={{ width: "600px", height: "250px" }}></div>
+export default App;
 
-        <div>
+/**
+ * <div>
           <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
           <p>1) Set your default download location</p>
           <p>2) Turn off 'Ask where to save each file before downloading'</p>
@@ -761,9 +822,4 @@ function App(): ReactElement {
             </label>
           </p>
         </div>
-      </div>
-    </AppStyle>
-  );
-}
-
-export default App;
+ */
