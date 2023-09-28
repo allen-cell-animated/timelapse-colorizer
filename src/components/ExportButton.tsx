@@ -72,6 +72,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
 
   const [exportMode, setExportMode] = useState(ExportMode.ALL);
   const [customMin, setCustomMin] = useState(0);
@@ -109,6 +110,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
       // Reset the frame number (clean up!)
       props.setFrame(originalFrame);
       setIsRecording(false);
+      setIsPlayingCloseAnimation(false);
       setPercentComplete(0);
       if (closeModal) {
         setIsLoadModalOpen(false);
@@ -194,6 +196,7 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
           icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
         });
         // Close the modal after a small delay so the success notification can be seen
+        setIsPlayingCloseAnimation(true);
         setTimeout(() => stopRecording(true), 750);
       },
       onRecordedFrameCallback: (frame: number) => {
@@ -248,10 +251,11 @@ export default function ExportButton(inputProps: ExportButtonProps): ReactElemen
               onClick={isRecording ? handleStop : handleStartExport}
               data-testid={TEST_ID_EXPORT_ACTION_BUTTON}
               style={{ width: "76px" }}
+              disabled={isPlayingCloseAnimation}
             >
               {isRecording ? "Stop" : "Export"}
             </Button>
-            <Button onClick={handleCancel} style={{ width: "76px" }}>
+            <Button onClick={handleCancel} style={{ width: "76px" }} disabled={isPlayingCloseAnimation}>
               {isRecording ? "Cancel" : "Close"}
             </Button>
           </HorizontalDiv>
