@@ -74,7 +74,6 @@ function App(): ReactElement {
   });
 
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
-  const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
@@ -132,7 +131,6 @@ function App(): ReactElement {
     // Those operations are async, and need to complete before a state update to be
     // rendered correctly.
     canv.setShowTrackPath(showTrackPath);
-    canv.setHideValuesOutOfRange(hideValuesOutOfRange);
 
     canv.setOutOfRangeDrawMode(outOfRangeDrawSettings.mode, outOfRangeDrawSettings.color);
     canv.setOutlierDrawMode(outlierDrawSettings.mode, outlierDrawSettings.color);
@@ -157,7 +155,6 @@ function App(): ReactElement {
     featureName,
     currentFrame,
     selectedTrack,
-    hideValuesOutOfRange,
     showTrackPath,
     colorRampData,
     colorRampKey,
@@ -668,15 +665,6 @@ function App(): ReactElement {
               />
             </div>
             <div>
-              <Checkbox
-                type="checkbox"
-                checked={hideValuesOutOfRange}
-                onChange={() => {
-                  setHideValuesOutOfRange(!hideValuesOutOfRange);
-                }}
-              >
-                Hide values outside of range
-              </Checkbox>
               <Checkbox
                 checked={isColorRampRangeLocked}
                 onChange={() => {
