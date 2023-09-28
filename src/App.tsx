@@ -788,7 +788,6 @@ function App(): ReactElement {
                   label="Values outside of range"
                   selected={outOfRangeDrawSettings.mode}
                   color={outOfRangeDrawSettings.color}
-                  colorMap={colorRampData.get(colorRampKey)}
                   onChange={(mode: DrawMode, color: Color) => {
                     setoutOfRangeDrawSettings({ mode, color });
                   }}
@@ -797,7 +796,6 @@ function App(): ReactElement {
                   label="Outliers"
                   selected={outlierDrawSettings.mode}
                   color={outlierDrawSettings.color}
-                  colorMap={colorRampData.get(colorRampKey)}
                   onChange={(mode: DrawMode, color: Color) => {
                     setOutlierDrawSettings({ mode, color });
                   }}

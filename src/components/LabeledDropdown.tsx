@@ -55,7 +55,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     }
   }, [props.items]);
 
-  let selectedLabel = useMemo((): string => {
+  const selectedLabel = useMemo((): string => {
     for (const item of items) {
       if (item && item.key === props.selected) {
         return item.label?.toString() || "";

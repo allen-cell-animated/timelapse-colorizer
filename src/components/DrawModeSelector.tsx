@@ -1,26 +1,20 @@
-import React, { ReactElement, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
 import LabeledDropdown from "./LabeledDropdown";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
-import { Color as ThreeColor, ColorRepresentation, Color } from "three";
-import { Collapse, CollapseProps, ColorPicker } from "antd";
+import { Color as ThreeColor, ColorRepresentation } from "three";
+import { ColorPicker } from "antd";
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { ColorRampData } from "../constants";
 import { PresetsItem } from "antd/es/color-picker/interface";
-
-const PRESET_COLORS_WIDTH = 10;
 
 type DrawModeSelectorProps = {
   label: string;
   selected: DrawMode;
   onChange: (mode: DrawMode, color: ThreeColor) => void;
   color: ThreeColor;
-  colorMap?: ColorRampData | null;
 };
 
-const defaultProps: Partial<DrawModeSelectorProps> = {
-  colorMap: null,
-};
+const defaultProps: Partial<DrawModeSelectorProps> = {};
 
 const MainLayout = styled.div`
   display: flex;
@@ -37,8 +31,6 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const props = { ...defaultProps, ...propsInput } as Required<DrawModeSelectorProps>;
 
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
-  const colorMapHeaderRef = useRef<HTMLParagraphElement>(null);
-  const [selectedColorMapIndex, setSelectedColorMapIndex] = useState(-1);
 
   const items = [
     { key: DrawMode.HIDE.toString(), label: "Hide values" },
@@ -66,92 +58,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
     },
   ];
 
-  // Optionally add on color map presets
-  if (props.colorMap) {
-    // Sample color map to generate presets list
-    const directColorMap: string[] = [];
-    const desatColorMap: string[] = [];
-
-    for (let i = 0; i < PRESET_COLORS_WIDTH; i++) {
-      const sampledColor = props.colorMap!.colorRamp.sample(i / (PRESET_COLORS_WIDTH - 1));
-      let hsl = { h: 0, s: 0, l: 0 };
-      sampledColor.getHSL(hsl);
-
-      let mutedHsl = { ...hsl };
-      mutedHsl.s *= 0.25;
-      mutedHsl.l = 0.6;
-      directColorMap.push(new Color("#000000").setHSL(mutedHsl.h, mutedHsl.s, mutedHsl.l).getHexString());
-
-      let desaturatedHsl = { ...hsl };
-      desaturatedHsl.s *= 0.25;
-      desaturatedHsl.l = 0.8;
-      const desaturatedColor = new Color("#000000").setHSL(desaturatedHsl.h, desaturatedHsl.s, desaturatedHsl.l);
-
-      desatColorMap.push(desaturatedColor.getHexString());
-    }
-
-    presets.push({
-      label: (
-        <p style={{ fontSize: "12px", margin: "0" }} ref={colorMapHeaderRef}>
-          Use Color Map
-        </p>
-      ),
-      colors: [...directColorMap, ...desatColorMap],
-    });
-  }
-
-  // Bind listener events to each of the "Use Color Map" buttons, since Antd doesn't give us a way to distinguish when a button preset is clicked.
-  // Buckle up, this is going to be a wild one.
-  useEffect(() => {
-    if (!colorMapHeaderRef) {
-      return;
-    }
-    // Use ref to the label to get the
-    // p > div.ant-color-picker-presets-label > span.ant-collapse-header-text > div.ant-collapse-header > div.ant-collapse-item
-    const parentCollapseItem = colorMapHeaderRef.current?.parentElement?.parentElement?.parentElement?.parentElement;
-    // div.ant-collapse-content
-    const collapseContent = parentCollapseItem?.children[1];
-    // div.ant-collapse-content > ant-collapse-content-box > ant-color-picker-presets-items
-    const itemContainer = collapseContent?.children[0].children[0];
-
-    // All the clickable buttons are divs inside of the itemContainer. Bind click event listeners
-    // so we can retrieve
-    if (!itemContainer?.children) {
-      console.log("sad");
-      return;
-    }
-    for (let i = 0; i < itemContainer.children.length; i++) {
-      const divButton = itemContainer.children.item(i) as HTMLDivElement;
-      divButton.addEventListener("click", () => {
-        setSelectedColorMapIndex(i);
-        console.log(i);
-      });
-    }
-  }, []);
-
-  // Bind click handlers for all the inputs that change the currently selected color.
-  useEffect(() => {
-    if (colorPickerRef.current) {
-      const palette = colorPickerRef.current.querySelectorAll(".ant-color-picker-palette")[0];
-      console.log(colorPickerRef.current.querySelectorAll(".ant-color-picker-palette"));
-      const slider = colorPickerRef.current.querySelectorAll(".ant-color-picker-slider")[0];
-      const presets = colorPickerRef.current.querySelectorAll(".ant-color-picker-color-block");
-
-      // Reset the color map selector if the palette, slider, or non-color map presets are used to change colors.
-      palette?.addEventListener("click", () => {
-        setSelectedColorMapIndex(-1);
-        console.log("palette");
-      });
-      slider?.addEventListener("click", () => {
-        setSelectedColorMapIndex(-1);
-        console.log("slider");
-      });
-    }
-  }, []);
-
   const showColorPicker = props.selected === DrawMode.USE_COLOR;
-
-  const collapseItems: CollapseProps["items"] = [{ key: "1", label: "Use Color Ramp", children: <p>Some Text</p> }];
 
   return (
     <MainLayout style={{ margin: "5px 0" }}>
@@ -163,7 +70,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
           items={items}
           showTooltip={false}
           onChange={(key: string) => {
-            props.onChange(Number.parseInt(key), props.color);
+            props.onChange(Number.parseInt(key, 10), props.color);
           }}
         ></LabeledDropdown>
 
