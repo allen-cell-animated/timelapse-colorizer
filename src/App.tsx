@@ -68,7 +68,7 @@ function App(): ReactElement {
     mode: DrawMode.USE_RAMP,
     color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
   });
-  const [outlierDrawSettings, setoutlierDrawSettings] = useState({
+  const [outlierDrawSettings, setOutlierDrawSettings] = useState({
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
@@ -126,6 +126,8 @@ function App(): ReactElement {
    * render. Also update other UI elements, including the plot and URL.
    */
   useEffect(() => {
+    // TODO: This is getting larger... ColorizeCanvas needs to be refactored to take
+    // all of these in as props.
     // Note: Selected track, frame number, etc. are not updated here.
     // Those operations are async, and need to complete before a state update to be
     // rendered correctly.
@@ -807,7 +809,7 @@ function App(): ReactElement {
                   selected={outlierDrawSettings.mode}
                   color={outlierDrawSettings.color}
                   onChange={(mode: DrawMode, color: Color) => {
-                    setoutlierDrawSettings({ mode, color });
+                    setOutlierDrawSettings({ mode, color });
                   }}
                 />
                 <Checkbox

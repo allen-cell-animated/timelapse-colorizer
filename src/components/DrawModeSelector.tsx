@@ -35,6 +35,24 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
     { key: DrawMode.USE_RAMP.toString(), label: "Use color map" },
   ];
 
+  const presetColors = [
+    {
+      label: "Presets",
+      colors: [
+        "#ffffff",
+        "#f0f0f0",
+        "#dddddd",
+        "#c0c0c0",
+        "#9d9d9d",
+        "#808080",
+        "#525252",
+        "#393939",
+        "#191919",
+        "#000000",
+      ],
+    },
+  ];
+
   const showColorPicker = props.selected === DrawMode.USE_COLOR;
 
   return (
@@ -52,11 +70,15 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
         ></LabeledDropdown>
 
         <ColorPicker
-          style={{ visibility: showColorPicker ? "visible" : "hidden", opacity: showColorPicker ? "1" : "0" }}
+          style={{
+            visibility: showColorPicker ? "visible" : "hidden",
+            opacity: showColorPicker ? "1" : "0",
+          }}
           size="small"
           disabledAlpha={true}
           defaultValue={new AntdColor(props.color.getHexString())}
           color={new AntdColor(props.color.getHexString())}
+          presets={presetColors}
           // onChange returns a different color type, so must convert from hex
           onChange={(_color, hex) => props.onChange(props.selected, new ThreeColor(hex as ColorRepresentation))}
         />
