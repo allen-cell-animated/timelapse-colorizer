@@ -147,19 +147,21 @@
   width: 100%;
   font-size: 10px;
   margin: 4px;
+  margin-bottom: 6px;
   color: var(--color-text-secondary);
+  --label-position: -10px;
 }
 
 .sliderContainer > .minSliderLabel {
   position: absolute;
   left: 0;
   /* TODO: Make this automatic */
-  bottom: -8px;
+  bottom: var(--label-position);
 }
 .sliderContainer > .maxSliderLabel {
   position: absolute;
   right: 0;
-  bottom: -8px;
+  bottom: var(--label-position);
 }
 
 .contentPanels {
