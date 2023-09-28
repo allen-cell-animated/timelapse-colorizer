@@ -485,7 +485,7 @@ function App(): ReactElement {
   );
 
   const onMouseLeave = useCallback((_event: MouseEvent): void => {
-    setLastHoveredId(null);
+    setShowHoveredId(false);
   }, []);
 
   useEffect(() => {
