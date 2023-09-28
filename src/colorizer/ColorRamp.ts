@@ -39,4 +39,24 @@ export default class ColorRamp {
   public dispose(): void {
     this.texture.dispose();
   }
+
+  public sample(t: number): Color {
+    // Clamp t
+    t = Math.min(Math.max(t, 0), 1);
+
+    const tIndex = t * (this.colorStops.length - 1);
+    const minIndex = Math.floor(tIndex);
+    const maxIndex = Math.ceil(tIndex);
+
+    if (maxIndex === minIndex) {
+      return new Color(this.colorStops[minIndex]);
+    }
+    // Get a new normalized t value between the min and max indices
+
+    const tNormalized = (tIndex - minIndex) / (maxIndex - minIndex);
+    const minColor = new Color(this.colorStops[minIndex]);
+    const maxColor = new Color(this.colorStops[maxIndex]);
+
+    return minColor.lerp(maxColor, tNormalized);
+  }
 }
