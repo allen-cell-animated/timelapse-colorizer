@@ -352,6 +352,13 @@ function App(): ReactElement {
       updateFeature(newDataset, newFeatureName);
       setFeatureName(newFeatureName);
 
+      // Update feature range
+      const newFeatureData = newDataset.getFeatureData(newFeatureName);
+      if (!isColorRampRangeLocked && newFeatureData) {
+        setColorRampMin(newFeatureData.min);
+        setColorRampMax(newFeatureData.max);
+      }
+
       await canv.setDataset(newDataset);
       canv.setFeature(newFeatureName);
 
@@ -362,6 +369,7 @@ function App(): ReactElement {
       // Clear and/or update UI
       plot?.setDataset(newDataset);
       plot?.removePlot();
+
       setFindTrackInput("");
       setSelectedTrack(null);
       urlUtils.updateUrl(getUrlParams());
