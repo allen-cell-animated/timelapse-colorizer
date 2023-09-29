@@ -530,23 +530,7 @@ function App(): ReactElement {
     [setFrame, canv]
   );
 
-  // const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
-
-  // RENDERING /////////////////////////////////////////////////////////////
-
-  const notificationConfig: NotificationConfig = {
-    getContainer: () => notificationContainer.current as HTMLElement,
-  };
-  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
-  const openCopyNotification = (): void => {
-    navigator.clipboard.writeText(document.URL);
-    notificationApi["success"]({
-      message: "URL copied to clipboard",
-      placement: "bottomLeft",
-      duration: 4,
-      icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
-    });
-  };
+  // RECORDING & EXPORT /////////////////////////////////////////////////////////////
 
   /** Download the current rendered canvas frame as an image. */
   const downloadCanvas = async (frame: number, options: RecordingOptions): Promise<void> => {
@@ -590,7 +574,7 @@ function App(): ReactElement {
     mediaRecorder.current = new MediaRecorder(stream, {
       mimeType: "video/webm",
       // Default of 2.5 Mbps is unsatisfactory
-      videoBitsPerSecond: 5000000,
+      videoBitsPerSecond: 10 * 10e6,
     });
     mediaRecorder.current.ondataavailable = handleVideoDataAvailable;
     mediaRecorder.current.start();
@@ -608,6 +592,22 @@ function App(): ReactElement {
     mediaRecorder.current.resume();
     await timer;
     mediaRecorder.current.pause();
+  };
+
+  // RENDERING /////////////////////////////////////////////////////////////
+
+  const notificationConfig: NotificationConfig = {
+    getContainer: () => notificationContainer.current as HTMLElement,
+  };
+  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
+  const openCopyNotification = (): void => {
+    navigator.clipboard.writeText(document.URL);
+    notificationApi["success"]({
+      message: "URL copied to clipboard",
+      placement: "bottomLeft",
+      duration: 4,
+      icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
+    });
   };
 
   const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
