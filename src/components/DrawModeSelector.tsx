@@ -27,6 +27,13 @@ const HorizontalDiv = styled(MainLayout)`
   flex-wrap: wrap;
 `;
 
+/**
+ * UI element for choosing between different drawing modes, and provides callbacks for when
+ * changes are made to selections.
+ * - `HIDE`: Hide an object type
+ * - `USE_COLOR`: Use a custom, solid color. (When selected, also shows a ColorPicker.)
+ * - `USE_RAMP`: Use the color ramp.
+ */
 export default function DrawModeSelector(propsInput: DrawModeSelectorProps): ReactElement {
   const props = { ...defaultProps, ...propsInput } as Required<DrawModeSelectorProps>;
 
@@ -50,7 +57,6 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
     "#191919",
     "#000000",
   ];
-
   const presets: PresetsItem[] = [
     {
       label: "Presets",
@@ -75,6 +81,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
         ></LabeledDropdown>
 
         <ColorPicker
+          // Uses the default 1s transition animation
           style={{
             visibility: showColorPicker ? "visible" : "hidden",
             opacity: showColorPicker ? "1" : "0",
