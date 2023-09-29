@@ -352,13 +352,6 @@ function App(): ReactElement {
       updateFeature(newDataset, newFeatureName);
       setFeatureName(newFeatureName);
 
-      // Update feature range
-      const newFeatureData = newDataset.getFeatureData(newFeatureName);
-      if (!isColorRampRangeLocked && newFeatureData) {
-        setColorRampMin(newFeatureData.min);
-        setColorRampMax(newFeatureData.max);
-      }
-
       await canv.setDataset(newDataset);
       canv.setFeature(newFeatureName);
 
@@ -436,9 +429,10 @@ function App(): ReactElement {
       }
       setFeatureName(newFeatureName);
 
-      if (!isColorRampRangeLocked) {
-        setColorRampMin(newDataset?.features[newFeatureName].min || colorRampMin);
-        setColorRampMax(newDataset?.features[newFeatureName].max || colorRampMax);
+      const featureData = newDataset.getFeatureData(newFeatureName);
+      if (!isColorRampRangeLocked && featureData) {
+        setColorRampMin(featureData.min);
+        setColorRampMax(featureData.max);
       }
 
       canv.setFeature(newFeatureName);
