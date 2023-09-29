@@ -105,7 +105,8 @@ void main() {
   uint outlierVal = getOutlierVal(int(id) - 1);
   float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
 
-  // Mask all values, including outliers, that are outside the range.
+  // Use the selected draw mode to handle out of range and outlier values;
+  // otherwise color with the color ramp as usual.
   bool isOutOfRange = normFeatureVal < 0.0 || normFeatureVal > 1.0;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
 

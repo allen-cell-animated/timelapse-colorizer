@@ -12,9 +12,12 @@ type DrawModeSelectorProps = {
   selected: DrawMode;
   onChange: (mode: DrawMode, color: ThreeColor) => void;
   color: ThreeColor;
+  disabled?: boolean;
 };
 
-const defaultProps: Partial<DrawModeSelectorProps> = {};
+const defaultProps: Partial<DrawModeSelectorProps> = {
+  disabled: false,
+};
 
 const MainLayout = styled.div`
   display: flex;
@@ -78,6 +81,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
           onChange={(key: string) => {
             props.onChange(Number.parseInt(key, 10), props.color);
           }}
+          disabled={props.disabled}
         ></LabeledDropdown>
 
         <ColorPicker
@@ -93,6 +97,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
           presets={presets}
           // onChange returns a different color type, so must convert from hex
           onChange={(_color, hex) => props.onChange(props.selected, new ThreeColor(hex as ColorRepresentation))}
+          disabled={props.disabled}
         />
       </HorizontalDiv>
     </MainLayout>
