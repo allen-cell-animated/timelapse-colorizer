@@ -1,4 +1,6 @@
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 import {
   CheckCircleOutlined,
@@ -576,12 +578,87 @@ function App(): ReactElement {
       // Default of 2.5 Mbps is unsatisfactory
       videoBitsPerSecond: 10 * 10e6,
     });
-    mediaRecorder.current.ondataavailable = handleVideoDataAvailable;
+    mediaRecorder.current.ondataavailable = convertWebmToMp4;
     mediaRecorder.current.start();
     mediaRecorder.current.pause();
   };
 
   const recordVideoFrame = async (_frame: number, _options: RecordingOptions): Promise<void> => {
+    if (!mediaRecorder.current) {
+      return;
+    }
+
+    // Add a little buffer before recording the frame in case the canvas is still rendering.
+    await sleep(10);
+    const timer = sleep(1000 / 30);
+    mediaRecorder.current.resume();
+    await timer;
+    mediaRecorder.current.pause();
+  };
+
+  const ffmpegRef = useRef(new FFmpeg());
+
+  const convertWebmToMp4 = async (event: BlobEvent) => {
+    if (!downloadAnchorRef.current) {
+      downloadAnchorRef.current = document.createElement("a");
+      document.appendChild(downloadAnchorRef.current);
+    }
+
+    const webmBlob = new Blob([event.data], { type: "video/webm" });
+
+    const transcodeToMp4 = async (webmBlob: Blob) => {
+      // Load ffmpeg
+      const ffmpeg = ffmpegRef.current;
+      ffmpeg.on("log", ({ message }) => {
+        console.log(message);
+      });
+
+      // Must be `esm` for vite instead of `umd`
+      console.log("Importing ffmpeg");
+      const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.3/dist/esm";
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseUrl}/ffmpeg-core.js`, "text/javascript"),
+        wasmURL: await toBlobURL(`${baseUrl}/ffmpeg-core.wasm`, "application/wasm"),
+      });
+
+      console.log("Converting .webm to .mp4 file...");
+      ffmpeg.on("progress", ({ progress, time }) => {
+        console.log("Progress: " + progress * 100 + "% | time: " + time / 1000000 + " s");
+
+        console.log("Progress: " + progress * 100 + "% | time: " + time / 1000000 + " s");
+      });
+      ffmpeg.writeFile("video.webm", await fetchFile(webmBlob));
+      await ffmpeg.exec(["-i", "video.webm", "video.mp4"]);
+      return ffmpeg.readFile("video.mp4");
+    };
+    const mp4Data = await transcodeToMp4(webmBlob);
+    const mp4Blob = new Blob([(mp4Data as Uint8Array).buffer], { type: "video/mp4" });
+    const url = URL.createObjectURL(mp4Blob);
+
+    console.log("Downloading...");
+    downloadAnchorRef.current.href = url;
+    downloadAnchorRef.current.download = "video.mp4";
+    downloadAnchorRef.current.click();
+  };
+
+  const codecsStopVideoRecording = () => {
+    // TODO: Override onstop so it doesn't try and output the video
+    mediaRecorder.current?.stop();
+  };
+
+  const codecsStartVideoRecording = () => {
+    const stream = canv.domElement.captureStream();
+    mediaRecorder.current = new MediaRecorder(stream, {
+      mimeType: "video/webm",
+      // Default of 2.5 Mbps is unsatisfactory
+      videoBitsPerSecond: 10 * 10e6,
+    });
+    mediaRecorder.current.ondataavailable = handleVideoDataAvailable;
+    mediaRecorder.current.start();
+    mediaRecorder.current.pause();
+  };
+
+  const codecsRecordVideoFrame = async (_frame: number, _options: RecordingOptions): Promise<void> => {
     if (!mediaRecorder.current) {
       return;
     }
@@ -655,7 +732,7 @@ function App(): ReactElement {
             startRecording={(options: Partial<RecordingOptions>) => {
               // Extend onCompletedCallback to stop the video recording too
               const oldOnComplete = options.onCompletedCallback;
-              options.onCompletedCallback = () => {
+              options.onCompletedCallback = async () => {
                 stopVideoRecording();
                 oldOnComplete && oldOnComplete();
               };

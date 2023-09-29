@@ -25,7 +25,7 @@ export type RecordingOptions = {
   delayMs: number;
   /** Called when the recording has completed successfully. (Will not be called if the recording
    * operation is cancelled.) */
-  onCompletedCallback: () => void;
+  onCompletedCallback: () => Promise<void>;
   /** Called when each frame has completed */
   onRecordedFrameCallback: (frame: number) => void;
 };
@@ -36,7 +36,7 @@ const defaultRecordingOptions: RecordingOptions = {
   frameIncrement: 1,
   prefix: "image-",
   delayMs: 100,
-  onCompletedCallback: function (): void {},
+  onCompletedCallback: async function (): Promise<void> {},
   onRecordedFrameCallback: function (_frame: number): void {},
 };
 
@@ -81,7 +81,7 @@ export default class RecordingControls {
     const loadAndRecordFrame = async (frame: number): Promise<void> => {
       if (frame > options.max || !this.recording) {
         this.recording = false;
-        options.onCompletedCallback();
+        await options.onCompletedCallback();
         return;
       }
 
