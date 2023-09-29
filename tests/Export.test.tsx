@@ -1,8 +1,8 @@
 import { Mock, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ReactElement } from "react";
-import { TEST_ID_EXPORT_ACTION_BUTTON, TEST_ID_OPEN_EXPORT_MODAL_BUTTON } from "../src/components/ExportButton";
-import ExportButton from "../src/components/ExportButton";
+import { TEST_ID_EXPORT_ACTION_BUTTON, TEST_ID_OPEN_EXPORT_MODAL_BUTTON } from "../src/components/Export";
+import Export from "../src/components/Export";
 import React from "react";
 import { RecordingOptions } from "../src/colorizer/RecordingControls";
 
@@ -10,7 +10,7 @@ describe("ExportButton", () => {
   describe("Image Prefixing", () => {
     function makeExportButtonWithImagePrefix(prefix: string): ReactElement {
       return (
-        <ExportButton
+        <Export
           defaultImagePrefix={prefix}
           totalFrames={0}
           setFrame={function (_frame: number): void {
@@ -68,7 +68,7 @@ describe("ExportButton", () => {
       const mockStopRecording = vi.fn();
 
       const { rerender } = render(
-        <ExportButton
+        <Export
           totalFrames={totalFrames}
           setFrame={mockSetFrame}
           currentFrame={startingFrame}
