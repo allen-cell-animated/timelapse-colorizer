@@ -186,7 +186,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       prefix: imagePrefix,
       minDigits: (props.totalFrames - 1).toString().length,
       frameIncrement: frameIncrement,
-      onCompletedCallback: () => {
+      onCompletedCallback: async () => {
         // Close modal once recording finishes and show completion notification
         setPercentComplete(100);
         notification.success({
