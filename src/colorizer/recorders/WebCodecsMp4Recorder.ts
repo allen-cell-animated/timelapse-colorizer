@@ -14,7 +14,7 @@ export default class WebCodecsMp4Recorder extends Recorder {
 
   constructor(
     setFrameAndRender: (frame: number) => Promise<void>,
-    getCanvas: () => HTMLCanvasElement | OffscreenCanvas,
+    getCanvas: () => HTMLCanvasElement,
     options: Partial<RecordingOptions>
   ) {
     super(setFrameAndRender, getCanvas);

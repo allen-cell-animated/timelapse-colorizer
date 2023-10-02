@@ -148,6 +148,7 @@ export default class ColorizeCanvas {
       depthBuffer: false,
     });
     this.renderer = new WebGLRenderer();
+
     this.checkPixelRatio();
 
     this.dataset = null;

@@ -15,7 +15,6 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-import { RecordingOptions, defaultRecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -525,27 +524,6 @@ function App(): ReactElement {
     [setFrame, canv]
   );
 
-  // RECORDING & EXPORT /////////////////////////////////////////////////////////////
-
-  /** Download the current rendered canvas frame as an image. */
-  const downloadCanvas = async (frame: number, options: RecordingOptions): Promise<void> => {
-    if (!downloadAnchorRef.current) {
-      downloadAnchorRef.current = document.createElement("a");
-      document.appendChild(downloadAnchorRef.current);
-    }
-
-    const minDigits = options.minDigits || options.max.toString().length || 1;
-    const dataUrl = canv.domElement.toDataURL("image/png");
-    const imageUrl = dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
-
-    // Update the anchor (link) element with the image data, then force
-    // a click to initiate the download.
-    downloadAnchorRef.current.href = imageUrl;
-    const frameSuffix: string = frame.toString().padStart(minDigits, "0");
-    downloadAnchorRef.current.download = `${options.prefix}${frameSuffix}.png`;
-    downloadAnchorRef.current.click();
-  };
-
   // RENDERING /////////////////////////////////////////////////////////////
 
   const notificationConfig: NotificationConfig = {
@@ -595,7 +573,6 @@ function App(): ReactElement {
           <ColorRampSelector selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
         </div>
         <div className={styles.headerRight}>
-          <Button onClick={() => downloadCanvas(0, defaultRecordingOptions)}>Coolbutton</Button>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
             <LinkOutlined />
             Copy URL

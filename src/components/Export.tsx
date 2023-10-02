@@ -11,7 +11,7 @@ import WebCodecsMp4Recorder from "../colorizer/recorders/WebCodecsMp4Recorder";
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
-  getCanvas: () => HTMLCanvasElement | OffscreenCanvas;
+  getCanvas: () => HTMLCanvasElement;
   currentFrame: number;
   setIsRecording?: (recording: boolean) => void;
   defaultImagePrefix?: string;
