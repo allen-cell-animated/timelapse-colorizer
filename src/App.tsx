@@ -17,7 +17,7 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-import RecordingControls, { RecordingOptions } from "./colorizer/RecordingControls";
+import Recorder, { RecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -32,7 +32,6 @@ import HoverTooltip from "./components/HoverTooltip";
 
 import { sleep } from "../tests/test_utils";
 import Export from "./components/Export";
-import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 
 const ffmpegRef = new FFmpeg();
 
@@ -51,114 +50,6 @@ const loadFfmpeg = async (): Promise<FFmpeg> => {
     wasmURL: await toBlobURL(`${baseUrl}/ffmpeg-core.wasm`, "application/wasm"),
   });
   return ffmpeg;
-};
-
-let videoChunks: Uint8Array[] = [];
-let muxer: Muxer<ArrayBufferTarget>;
-
-let videoEncoder: VideoEncoder | undefined;
-if (typeof VideoEncoder === "function") {
-  console.log("video encoder!!");
-  videoEncoder = new VideoEncoder({
-    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
-    error: (e) => console.error(e),
-  });
-} else {
-  console.log("No video encoder!!");
-}
-
-const codecsStopVideoRecording = () => {
-  // TODO: Override onstop so it doesn't try and output the video?
-  if (videoEncoder) {
-    videoEncoder.reset();
-    muxer.finalize(); // Do nothing with the file.
-    // videoEncoder.flush();
-    // TODO: Clear muxer
-  }
-};
-
-const codecsStartVideoRecording = (canv: ColorizeCanvas) => {
-  const width = canv.domElement.width;
-  const height = canv.domElement.height;
-  const bitrate = 10e7;
-
-  videoChunks = [];
-
-  videoEncoder?.configure({
-    codec: "avc1.420028",
-    width,
-    height,
-    bitrate,
-    bitrateMode: "constant",
-  });
-  muxer = new Muxer({
-    target: new ArrayBufferTarget(),
-    video: {
-      codec: "avc",
-      width: 730,
-      height: 500,
-    },
-  });
-};
-
-const onCodecsRecordingCompleted = async (): Promise<void> => {
-  console.log("Flushing");
-  await videoEncoder?.flush();
-  muxer.finalize();
-  const { buffer } = muxer.target;
-  const videoBlob = new Blob([buffer], { type: "video/mp4" });
-  const url = URL.createObjectURL(videoBlob);
-
-  const downloadAnchorRef = document.createElement("a");
-  document.body.appendChild(downloadAnchorRef);
-
-  downloadAnchorRef.href = url;
-  downloadAnchorRef.download = "video.mp4";
-  downloadAnchorRef.click();
-
-  URL.revokeObjectURL(url);
-  // await codecsHandleCompleted();
-};
-
-const codecsRecordVideoFrame = async (
-  frame: number,
-  canv: ColorizeCanvas,
-  options: RecordingOptions
-): Promise<void> => {
-  if (!videoEncoder) {
-    return;
-  }
-  const frameIndex = frame - options.min;
-
-  // Every 30 frames, add a new keyframe.
-  // Video compression works by recording changes from one frame to the next. Keyframes
-  // have the full frame data saved, so adding them in ensures a smaller drop in frame
-  // quality. See https://en.wikipedia.org/wiki/Key_frame for more details.
-  const keyFrame = true;
-  const fps = 30;
-  const timestampMicroseconds = (frameIndex / fps) * 10e6;
-  const durationMicroseconds = 10e6 / fps;
-  console.log(
-    `Frame ${frame} - Index ${frameIndex} - Timestamp ${timestampMicroseconds} - Duration ${durationMicroseconds}`
-  );
-  // Add a slight timer to make sure the canvas is actually done rendering.
-  await sleep(10);
-
-  // Delay if needed so video encoder can finish processing.
-  // See https://developer.chrome.com/articles/webcodecs/#encoding
-  while (videoEncoder.encodeQueueSize > 2) {
-    await sleep(10);
-  }
-
-  // Add the frame to the video encoder
-  const videoFrame = new VideoFrame(canv.domElement, {
-    duration: durationMicroseconds / 10,
-    timestamp: timestampMicroseconds / 10,
-  });
-  videoEncoder.encode(videoFrame, {
-    keyFrame,
-  });
-  videoFrame.close();
 };
 
 function App(): ReactElement {
@@ -207,9 +98,6 @@ function App(): ReactElement {
 
   const timeControls = useConstructor(() => {
     return new TimeControls(canv!);
-  });
-  const recordingControls = useConstructor(() => {
-    return new RecordingControls();
   });
 
   // Recording UI
@@ -818,8 +706,8 @@ function App(): ReactElement {
             startRecording={(options: Partial<RecordingOptions>) => {
               // Extend onCompletedCallback to stop the video recording too
               options.delayMs = 0;
-              const oldOnComplete = options.onCompletedCallback;
-              options.onCompletedCallback = async () => {
+              const oldOnComplete = options.onCompleted;
+              options.onCompleted = async () => {
                 onCodecsRecordingCompleted();
                 oldOnComplete && oldOnComplete();
               };
@@ -844,8 +732,8 @@ function App(): ReactElement {
             currentFrame={currentFrame}
             startRecording={(options: Partial<RecordingOptions>) => {
               // Extend onCompletedCallback to stop the video recording too
-              const oldOnComplete = options.onCompletedCallback;
-              options.onCompletedCallback = async () => {
+              const oldOnComplete = options.onCompleted;
+              options.onCompleted = async () => {
                 stopVideoRecording();
                 oldOnComplete && oldOnComplete();
               };

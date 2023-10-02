@@ -23,96 +23,161 @@ export type RecordingOptions = {
   prefix: string;
   /** Delay between each recorded frame, in milliseconds. 100 ms by default. */
   delayMs: number;
+  /** Width, height of output video or image. */
+  outputSize: [number, number];
   /** Called when the recording has completed successfully. (Will not be called if the recording
    * operation is cancelled.) */
-  onCompletedCallback: () => Promise<void>;
+  onCompleted: () => Promise<void>;
   /** Called when each frame has completed */
-  onRecordedFrameCallback: (frame: number) => void;
+  onRecordedFrame: (frame: number) => void;
 };
 
-const defaultRecordingOptions: RecordingOptions = {
+export const defaultRecordingOptions: RecordingOptions = {
   min: 0,
   max: 0,
   frameIncrement: 1,
   prefix: "image-",
   delayMs: 100,
-  onCompletedCallback: async function (): Promise<void> {},
-  onRecordedFrameCallback: function (_frame: number): void {},
+  outputSize: [730, 500],
+  onCompleted: async function (): Promise<void> {},
+  onRecordedFrame: function (_frame: number): void {},
 };
 
-export default class RecordingControls {
+/**
+ * Abstract
+ */
+export default class Recorder {
   private recording: boolean;
+  private finishedRecording: boolean;
   private timerId: number;
 
-  constructor() {
+  private setFrameAndRender: (frame: number) => Promise<void>;
+  protected getCanvas: () => HTMLCanvasElement | OffscreenCanvas;
+  protected download: (name: string, url: string) => void;
+  protected options: RecordingOptions;
+
+  /**
+   *
+   * @param setFrameAndRender Async callback to set and update the currently displayed frame.
+   * @param getCanvas A callback to fetch the current canvas.
+   * @param download
+   * @param options Configurable options for the recording.
+   */
+  constructor(
+    setFrameAndRender: (frame: number) => Promise<void>,
+    getCanvas: () => HTMLCanvasElement | OffscreenCanvas,
+    download: (name: string, url: string) => void,
+    options?: Partial<RecordingOptions>
+  ) {
+    if (new.target === Recorder) {
+      throw new TypeError("Recorder is an abstract class. Do not construct instances of it directly!");
+    }
+
     this.recording = false;
+    this.finishedRecording = false;
     this.timerId = 0;
+
+    this.setFrameAndRender = setFrameAndRender;
+    this.getCanvas = getCanvas;
+    this.download = download;
+
+    this.options = { ...defaultRecordingOptions, ...options };
+
+    // Any setup goes here
   }
 
   /**
-   * Records and downloads an image sequence, if not already recording.
-   *
-   * @param setFrameAndRender Async callback to set and update the currently displayed frame.
-   * @param recordingAction Async callback for the recording action. The recording will wait until
-   * the callback resolves before continuing. The `recordingOptions` will be passed to the action,
-   * with default values given for any undefined options.
-   * @param recordingOptions Configurable options for the recording.
+   * Starts the recording process.
    *
    * Note that the recording will change the current frame and will not reset it once
-   * recording completes. Any cleanup should be done using the `onCompletedCallback` parameter
-   * in the `recordingOptions` object or where `abort()` is called.
+   * recording completes. Any cleanup should be done using the `onCompleted` callback parameter
+   * in the `recordingOptions` object or wherever `abort()` is called.
    */
-  public start(
-    setFrameAndRender: (frame: number) => Promise<void>,
-    recordingAction: (frame: number, recordingOptions: RecordingOptions) => Promise<void>,
-    recordingOptions: Partial<RecordingOptions>
-  ): void {
-    if (this.recording) {
+  public start(): void {
+    this.startRecordingLoop();
+  }
+
+  private startRecordingLoop(): void {
+    if (this.recording || this.finishedRecording) {
       return;
     }
 
     this.recording = true;
-    const options = { ...defaultRecordingOptions, ...recordingOptions };
 
     // Reset any existing timers
     clearTimeout(this.timerId);
 
-    // Formatting setup
     const loadAndRecordFrame = async (frame: number): Promise<void> => {
-      if (frame > options.max || !this.recording) {
+      if (frame > this.options.max || !this.recording) {
         this.recording = false;
-        await options.onCompletedCallback();
+        await this.options.onCompleted();
         return;
       }
 
       // Trigger a render through the redrawfn parameter so other UI elements update
       // Must force render here or else empty image data is returned.
-      await setFrameAndRender(frame);
-      await recordingAction(frame, options);
+      await this.setFrameAndRender(frame);
+      await this.recordFrame(frame);
 
       // Notify listeners about frame recording
-      options.onRecordedFrameCallback(frame);
+      this.options.onRecordedFrame(frame);
 
-      const nextFrame = frame + options.frameIncrement;
-      if (nextFrame > options.max) {
+      const nextFrame = frame + this.options.frameIncrement;
+      if (nextFrame > this.options.max) {
         // Stop recording
         this.recording = false;
-        options.onCompletedCallback();
+        await this.onCompletedRecording();
+        this.cleanup();
+        this.options.onCompleted();
         return;
       }
-      this.timerId = window.setTimeout(() => loadAndRecordFrame(nextFrame), options.delayMs);
+      this.timerId = window.setTimeout(() => loadAndRecordFrame(nextFrame), this.options.delayMs);
     };
 
     // Start interval loop
-    loadAndRecordFrame(options.min);
+    loadAndRecordFrame(this.options.min);
   }
 
-  public abort(): void {
+  /**
+   * Called on each frame that will be recorded, but before the
+   * optional `onRecordFrame` callback.
+   */
+  protected async recordFrame(_frame: number): Promise<void> {}
+
+  /**
+   * Called once all frames have been recorded, but before the
+   * optional `onCompleted` callback.
+   */
+  protected async onCompletedRecording(): Promise<void> {}
+
+  /**
+   * Called after the recording has completed, or when abort is called.
+   */
+  protected cleanup(): void {
     clearTimeout(this.timerId);
     this.recording = false;
   }
 
+  /**
+   * Stops the recording; for image sequences, no more images will be downloaded,
+   * and in-progress videos will be discarded.
+   */
+  public abort(): void {
+    this.cleanup();
+  }
+
   public isRecording(): boolean {
     return this.recording;
+  }
+
+  public isFinishedRecording(): boolean {
+    return this.finishedRecording;
+  }
+
+  /**
+   * Whether this recorder is supported by the current client.
+   */
+  public isSupported(): boolean {
+    return true;
   }
 }

@@ -8,10 +8,9 @@ import { CheckCircleOutlined } from "@ant-design/icons";
 
 type ExportButtonProps = {
   totalFrames: number;
-  setFrame: (frame: number) => void;
+  setFrame: (frame: number) => Promise<void>;
+  getRenderedImage: () => string;
   currentFrame: number;
-  startRecording: (options: Partial<RecordingOptions>) => void;
-  stopRecording: () => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
 };
@@ -186,7 +185,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       prefix: imagePrefix,
       minDigits: (props.totalFrames - 1).toString().length,
       frameIncrement: frameIncrement,
-      onCompletedCallback: async () => {
+      onCompleted: async () => {
         // Close modal once recording finishes and show completion notification
         setPercentComplete(100);
         notification.success({
@@ -199,7 +198,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         setIsPlayingCloseAnimation(true);
         setTimeout(() => stopRecording(true), 750);
       },
-      onRecordedFrameCallback: (frame: number) => {
+      onRecordedFrame: (frame: number) => {
         // Update the progress bar as frames are recorded.
         setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
       },
