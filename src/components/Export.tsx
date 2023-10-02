@@ -70,7 +70,17 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const { modal, notification } = App.useApp();
   const modalContextRef = useRef<HTMLDivElement>(null);
 
-  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+  const originalFrameRef = useRef(props.currentFrame);
+  const [isLoadModalOpen, _setIsLoadModalOpen] = useState(false);
+  // Override setIsLoadModalOpen to store the current frame whenever the modal opens.
+  // This is so we can reset to it when the modal is closed.
+  const setIsLoadModalOpen = (isOpen: boolean): void => {
+    if (isOpen) {
+      originalFrameRef.current = props.currentFrame;
+    }
+    _setIsLoadModalOpen(isOpen);
+  };
+
   const [isRecording, setIsRecording] = useState(false);
   const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
 
@@ -81,7 +91,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameIncrement, setFrameIncrement] = useState(1);
 
-  const [originalFrame, setOriginalFrame] = useState(props.currentFrame);
   const [percentComplete, setPercentComplete] = useState(0);
 
   // If dataset changes, update the max range field with the total frames.
@@ -89,26 +98,14 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     setCustomMax(props.totalFrames - 1);
   }, [props.totalFrames]);
 
-  useEffect(() => {
-    if (useDefaultImagePrefix) {
-      setImagePrefix(props.defaultImagePrefix);
-    }
-  }, [props.defaultImagePrefix, useDefaultImagePrefix]);
-
-  // Store the current frame whenever the modal opens so we can reset to it when
-  // the modal is closed.
-  useEffect(() => {
-    if (isLoadModalOpen) {
-      setOriginalFrame(props.currentFrame);
-    }
-  }, [isLoadModalOpen]);
+  const getImagePrefix = (): string => (useDefaultImagePrefix ? props.defaultImagePrefix : imagePrefix);
 
   /** Stop any ongoing recordings and reset the current frame, optionally closing the modal. */
   const stopRecording = useCallback(
     (closeModal: boolean) => {
       props.stopRecording();
       // Reset the frame number (clean up!)
-      props.setFrame(originalFrame);
+      props.setFrame(originalFrameRef.current);
       setIsRecording(false);
       setIsPlayingCloseAnimation(false);
       setPercentComplete(0);
@@ -116,7 +113,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         setIsLoadModalOpen(false);
       }
     },
-    [originalFrame, props.stopRecording]
+    [props.stopRecording]
   );
 
   /**
@@ -183,7 +180,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     props.startRecording({
       min: min,
       max: max,
-      prefix: imagePrefix,
+      prefix: getImagePrefix(),
       minDigits: (props.totalFrames - 1).toString().length,
       frameIncrement: frameIncrement,
       onCompletedCallback: () => {
@@ -337,7 +334,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   setUseDefaultImagePrefix(false);
                 }}
                 size="small"
-                value={imagePrefix}
+                value={getImagePrefix()}
                 disabled={isRecording}
               />
             </label>
