@@ -33,6 +33,132 @@ import HoverTooltip from "./components/HoverTooltip";
 import { sleep } from "../tests/test_utils";
 import Export from "./components/Export";
 
+const ffmpegRef = new FFmpeg();
+
+const loadFfmpeg = async (): Promise<FFmpeg> => {
+  // Load ffmpeg
+  const ffmpeg = ffmpegRef;
+  ffmpeg.on("log", ({ message }) => {
+    console.log(message);
+  });
+
+  // Must be `esm` for vite instead of `umd`
+  console.log("Importing ffmpeg");
+  const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.3/dist/esm";
+  await ffmpeg.load({
+    coreURL: await toBlobURL(`${baseUrl}/ffmpeg-core.js`, "text/javascript"),
+    wasmURL: await toBlobURL(`${baseUrl}/ffmpeg-core.wasm`, "application/wasm"),
+  });
+  return ffmpeg;
+};
+
+let videoChunks: Uint8Array[] = [];
+
+const handleChunk = (chunk: EncodedVideoChunk, metadata?: EncodedVideoChunkMetadata) => {
+  console.log("Chunk time");
+  const chunkData = new Uint8Array(chunk.byteLength);
+  chunk.copyTo(chunkData);
+  videoChunks.push(chunkData);
+};
+
+const videoEncoder = new VideoEncoder({
+  output: (chunk, metadata) => {
+    console.log("oh hi");
+    handleChunk(chunk, metadata);
+  },
+  error: (e) => console.error(e),
+});
+
+const codecsHandleCompleted = async () => {
+  // Mux chunkdata using ffmpeg
+  const ffmpeg = await loadFfmpeg();
+
+  console.log(videoChunks);
+
+  // writeFile makes the file available to ffmpeg on the filesystem
+  await ffmpeg.writeFile("chunks", await fetchFile(new Blob(videoChunks)));
+  await ffmpeg.exec(["-i", "chunks", "-c", "copy", "output.webm"]);
+
+  // Try downloading the webm file and see what happens 👀
+  const webmData = await ffmpeg.readFile("output.webm");
+  const webmBlob = new Blob([(webmData as Uint8Array).buffer], { type: "video/webm" });
+  const url = URL.createObjectURL(webmBlob);
+
+  console.log("Downloading...");
+
+  const downloadAnchorRef = document.createElement("a");
+  document.appendChild(downloadAnchorRef);
+
+  downloadAnchorRef.href = url;
+  downloadAnchorRef.download = "video.webm";
+  downloadAnchorRef.click();
+
+  videoChunks = [];
+};
+
+const codecsStopVideoRecording = () => {
+  // TODO: Override onstop so it doesn't try and output the video?
+  videoEncoder.reset();
+  // videoEncoder.flush();
+};
+
+const codecsStartVideoRecording = (canv: ColorizeCanvas) => {
+  const width = canv.domElement.width;
+  const height = canv.domElement.height;
+  const bitrate = 10e6;
+
+  videoChunks = [];
+
+  videoEncoder.configure({
+    codec: "vp09.00.10.08",
+    width,
+    height,
+    bitrate,
+    bitrateMode: "constant",
+  });
+};
+
+const onCodecsRecordingCompleted = async (): Promise<void> => {
+  console.log("Flushing");
+  await videoEncoder.flush();
+  await codecsHandleCompleted();
+};
+
+const codecsRecordVideoFrame = async (
+  frame: number,
+  canv: ColorizeCanvas,
+  options: RecordingOptions
+): Promise<void> => {
+  const frameIndex = frame - options.min;
+
+  // Every 30 frames, add a new keyframe.
+  // Video compression works by recording changes from one frame to the next. Keyframes
+  // have the full frame data saved, so adding them in ensures a smaller drop in frame
+  // quality. See https://en.wikipedia.org/wiki/Key_frame for more details.
+  const keyFrame = true;
+  const fps = 30;
+  const timestampMicroseconds = (frameIndex / fps) * 10e6;
+  const durationMicroseconds = 10e6 / fps;
+  // Add a slight timer to make sure the canvas is actually done rendering.
+  await sleep(10);
+
+  // Delay if needed so video encoder can finish processing.
+  // See https://developer.chrome.com/articles/webcodecs/#encoding
+  while (videoEncoder.encodeQueueSize > 2) {
+    await sleep(10);
+  }
+
+  // Add the frame to the video encoder
+  const videoFrame = new VideoFrame(canv.domElement, {
+    duration: durationMicroseconds,
+    timestamp: timestampMicroseconds,
+  });
+  videoEncoder.encode(videoFrame, {
+    keyFrame,
+  });
+  videoFrame.close();
+};
+
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
@@ -597,25 +723,6 @@ function App(): ReactElement {
     mediaRecorder.current.pause();
   };
 
-  const ffmpegRef = useRef(new FFmpeg());
-
-  const loadFfmpeg = async (): Promise<FFmpeg> => {
-    // Load ffmpeg
-    const ffmpeg = ffmpegRef.current;
-    ffmpeg.on("log", ({ message }) => {
-      console.log(message);
-    });
-
-    // Must be `esm` for vite instead of `umd`
-    console.log("Importing ffmpeg");
-    const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.3/dist/esm";
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseUrl}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${baseUrl}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    return ffmpeg;
-  };
-
   const convertWebmToMp4 = async (event: BlobEvent) => {
     if (!downloadAnchorRef.current) {
       downloadAnchorRef.current = document.createElement("a");
@@ -646,115 +753,6 @@ function App(): ReactElement {
     downloadAnchorRef.current.href = url;
     downloadAnchorRef.current.download = "video.mp4";
     downloadAnchorRef.current.click();
-  };
-
-  const videoChunks = useRef<Uint8Array[]>([]);
-
-  const handleChunk = (chunk: EncodedVideoChunk, metadata?: EncodedVideoChunkMetadata) => {
-    console.log("Chunk time");
-    const chunkData = new Uint8Array(chunk.byteLength);
-    chunk.copyTo(chunkData);
-    videoChunks.current.push(chunkData);
-  };
-
-  const handleCompleted = async () => {
-    if (!downloadAnchorRef.current) {
-      downloadAnchorRef.current = document.createElement("a");
-      document.appendChild(downloadAnchorRef.current);
-    }
-
-    // Mux chunkdata using ffmpeg
-    const ffmpeg = await loadFfmpeg();
-
-    console.log(videoChunks.current);
-
-    // writeFile makes the file available to ffmpeg on the filesystem
-    await ffmpeg.writeFile("chunks", await fetchFile(new Blob(videoChunks.current)));
-    await ffmpeg.exec(["-i", "chunks", "-c", "copy", "output.webm"]);
-
-    // Try downloading the webm file and see what happens 👀
-    const webmData = await ffmpeg.readFile("output.webm");
-    const webmBlob = new Blob([(webmData as Uint8Array).buffer], { type: "video/webm" });
-    const url = URL.createObjectURL(webmBlob);
-
-    console.log("Downloading...");
-    downloadAnchorRef.current.href = url;
-    downloadAnchorRef.current.download = "video.webm";
-    downloadAnchorRef.current.click();
-
-    videoChunks.current = [];
-  };
-
-  const videoEncoder = useRef(
-    new VideoEncoder({
-      output: (chunk, metadata) => {
-        console.log("oh hi");
-        handleChunk(chunk, metadata);
-      },
-      error: (e) => console.error(e),
-    })
-  );
-
-  const codecsStopVideoRecording = () => {
-    // TODO: Override onstop so it doesn't try and output the video?
-    videoEncoder.current.reset();
-    // videoEncoder.current.flush();
-  };
-
-  const codecsStartVideoRecording = () => {
-    const width = canv.domElement.width;
-    const height = canv.domElement.height;
-    const bitrate = 10e6;
-
-    videoChunks.current = [];
-
-    videoEncoder.current.configure({
-      codec: "vp09.00.10.08",
-      width,
-      height,
-      bitrate,
-      bitrateMode: "constant",
-    });
-  };
-
-  const onCodecsRecordingCompleted = async (): Promise<void> => {
-    console.log("Flushing");
-    await videoEncoder.current.flush();
-    await handleCompleted();
-  };
-
-  const codecsRecordVideoFrame = async (_frame: number, _options: RecordingOptions): Promise<void> => {
-    if (!mediaRecorder.current) {
-      return;
-    }
-    const frameIndex = _frame - _options.min;
-
-    // Every 30 frames, add a new keyframe.
-    // Video compression works by recording changes from one frame to the next. Keyframes
-    // have the full frame data saved, so adding them in ensures a smaller drop in frame
-    // quality. See https://en.wikipedia.org/wiki/Key_frame for more details.
-    const keyFrame = frameIndex % 30 === 0;
-    const fps = 30;
-    const timestampMicroseconds = (frameIndex / fps) * 10e6;
-    const durationMicroseconds = 10e6 / fps;
-    // Add a slight timer to make sure the canvas is actually done rendering.
-    await sleep(10);
-
-    // Delay if needed so video encoder can finish processing.
-    // See https://developer.chrome.com/articles/webcodecs/#encoding
-    while (videoEncoder.current.encodeQueueSize > 2) {
-      await sleep(10);
-    }
-
-    // Add the frame to the video encoder
-    const videoFrame = new VideoFrame(canv.domElement, {
-      duration: durationMicroseconds,
-      timestamp: timestampMicroseconds,
-    });
-    videoEncoder.current.encode(videoFrame, {
-      keyFrame,
-    });
-    videoFrame.close();
   };
 
   // RENDERING /////////////////////////////////////////////////////////////
@@ -822,8 +820,12 @@ function App(): ReactElement {
                 onCodecsRecordingCompleted();
                 oldOnComplete && oldOnComplete();
               };
-              codecsStartVideoRecording();
-              recordingControls.start(setFrameAndRender, codecsRecordVideoFrame, options);
+              codecsStartVideoRecording(canv);
+              recordingControls.start(
+                setFrameAndRender,
+                (frame, options) => codecsRecordVideoFrame(frame, canv, options),
+                options
+              );
             }}
             stopRecording={() => {
               codecsStopVideoRecording();
