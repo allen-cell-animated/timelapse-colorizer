@@ -17,7 +17,7 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-import { RecordingOptions } from "./colorizer/RecordingControls";
+import { RecordingOptions, defaultRecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -692,6 +692,7 @@ function App(): ReactElement {
           <ColorRampSelector selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
         </div>
         <div className={styles.headerRight}>
+          <Button onClick={() => downloadCanvas(0, defaultRecordingOptions)}>Coolbutton</Button>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
             <LinkOutlined />
             Copy URL

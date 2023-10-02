@@ -181,11 +181,11 @@ export default class Recorder {
   }
 
   /**
-   * Download a file resource using a fake anchor element.
+   * Download a resource using a fake anchor element.
    * @param filename
    * @param url
    */
-  protected static download(filename: string, url: string): void {
+  protected download(filename: string, url: string): void {
     // TODO: Add flag for showing save file picker? https://developer.mozilla.org/en-US/docs/Web/API/Window/showSaveFilePicker
     const anchor = document.createElement("a");
     document.body.appendChild(anchor);

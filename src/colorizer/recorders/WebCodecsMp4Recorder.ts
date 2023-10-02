@@ -98,7 +98,7 @@ export default class WebCodecsMp4Recorder extends Recorder {
     // Download the finished video file
     const videoBlob = new Blob([buffer], { type: "video/mp4" });
     const url = URL.createObjectURL(videoBlob);
-    Recorder.download(this.options.prefix + ".mp4", url);
+    this.download(this.options.prefix + ".mp4", url);
     URL.revokeObjectURL(url);
   }
 
