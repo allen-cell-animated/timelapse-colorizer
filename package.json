@@ -39,8 +39,6 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.2.5",
-    "@ffmpeg/ffmpeg": "^0.12.6",
-    "@ffmpeg/util": "^0.12.1",
     "antd": "^5.8.5",
     "mp4-muxer": "^2.2.2",
     "plotly.js-dist-min": "^2.22.0",

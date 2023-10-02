@@ -1,6 +1,4 @@
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 import {
   CheckCircleOutlined,
@@ -30,27 +28,7 @@ import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 
-import { sleep } from "../tests/test_utils";
 import Export from "./components/Export";
-
-const ffmpegRef = new FFmpeg();
-
-const loadFfmpeg = async (): Promise<FFmpeg> => {
-  // Load ffmpeg
-  const ffmpeg = ffmpegRef;
-  ffmpeg.on("log", ({ message }) => {
-    console.log(message);
-  });
-
-  // Must be `esm` for vite instead of `umd`
-  console.log("Importing ffmpeg");
-  const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.3/dist/esm";
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseUrl}/ffmpeg-core.js`, "text/javascript"),
-    wasmURL: await toBlobURL(`${baseUrl}/ffmpeg-core.wasm`, "application/wasm"),
-  });
-  return ffmpeg;
-};
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -568,81 +546,6 @@ function App(): ReactElement {
     downloadAnchorRef.current.click();
   };
 
-  const handleVideoDataAvailable = (event: BlobEvent) => {
-    if (!downloadAnchorRef.current) {
-      downloadAnchorRef.current = document.createElement("a");
-      document.appendChild(downloadAnchorRef.current);
-    }
-
-    const webmBlob = new Blob([event.data], { type: "video/webm" });
-    const url = URL.createObjectURL(webmBlob);
-
-    downloadAnchorRef.current.href = url;
-    downloadAnchorRef.current.download = "video.webm";
-    downloadAnchorRef.current.click();
-  };
-
-  const stopVideoRecording = () => {
-    mediaRecorder.current?.stop();
-  };
-
-  const startVideoRecording = () => {
-    const stream = canv.domElement.captureStream();
-    mediaRecorder.current = new MediaRecorder(stream, {
-      mimeType: "video/webm",
-      // Default of 2.5 Mbps is unsatisfactory
-      videoBitsPerSecond: 10 * 10e6,
-    });
-    mediaRecorder.current.ondataavailable = convertWebmToMp4;
-    mediaRecorder.current.start();
-    mediaRecorder.current.pause();
-  };
-
-  const recordVideoFrame = async (_frame: number, _options: RecordingOptions): Promise<void> => {
-    if (!mediaRecorder.current) {
-      return;
-    }
-
-    // Add a little buffer before recording the frame in case the canvas is still rendering.
-    await sleep(10);
-    const timer = sleep(1000 / 30);
-    mediaRecorder.current.resume();
-    await timer;
-    mediaRecorder.current.pause();
-  };
-
-  const convertWebmToMp4 = async (event: BlobEvent) => {
-    if (!downloadAnchorRef.current) {
-      downloadAnchorRef.current = document.createElement("a");
-      document.appendChild(downloadAnchorRef.current);
-    }
-
-    const webmBlob = new Blob([event.data], { type: "video/webm" });
-
-    const transcodeToMp4 = async (webmBlob: Blob) => {
-      const ffmpeg = await loadFfmpeg();
-
-      console.log("Converting .webm to .mp4 file...");
-      ffmpeg.on("progress", ({ progress, time }) => {
-        // Note: Progress is like. SUPER broken. Ideally use timestamp if the video duration is
-        // known (which it isn't with MediaRecorder for. reasons. :) )
-        // May need ffprobe to do this actually.
-        console.log("Progress: " + progress * 100 + "% | time: " + time / 1000000 + " s");
-      });
-      await ffmpeg.writeFile("video.webm", await fetchFile(webmBlob));
-      await ffmpeg.exec(["-i", "video.webm", "video.mp4"]);
-      return ffmpeg.readFile("video.mp4");
-    };
-    const mp4Data = await transcodeToMp4(webmBlob);
-    const mp4Blob = new Blob([(mp4Data as Uint8Array).buffer], { type: "video/mp4" });
-    const url = URL.createObjectURL(mp4Blob);
-
-    console.log("Downloading...");
-    downloadAnchorRef.current.href = url;
-    downloadAnchorRef.current.download = "video.mp4";
-    downloadAnchorRef.current.click();
-  };
-
   // RENDERING /////////////////////////////////////////////////////////////
 
   const notificationConfig: NotificationConfig = {
@@ -699,7 +602,7 @@ function App(): ReactElement {
           </Button>
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrame}
+            setFrame={setFrameAndRender}
             getCanvas={() => {
               return canv.domElement;
             }}
