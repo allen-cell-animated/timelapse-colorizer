@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, ReactElement, createContext } from "react";
-import { ConfigProvider } from "antd";
+import { App, ConfigProvider } from "antd";
 import styled from "styled-components";
 
 type AppStyleProps = {
@@ -37,6 +37,8 @@ const theme = {
       hint: palette.gray30,
       disabled: palette.gray30,
       button: palette.gray0,
+      error: palette.error,
+      success: palette.success,
     },
     layout: {
       background: palette.gray0,
@@ -69,7 +71,7 @@ const theme = {
   },
 };
 
-export const ThemeContext = createContext(theme);
+export const AppThemeContext = createContext(theme);
 
 /** Applies theme as CSS variables that affect the rest of the document. */
 const CssContainer = styled.div`
@@ -81,6 +83,8 @@ const CssContainer = styled.div`
   --color-text-hint: ${theme.color.text.hint};
   --color-text-disabled: ${theme.color.text.disabled};
   --color-text-button: ${theme.color.text.button};
+  --color-text-error: ${theme.color.text.error};
+  --color-text-success: ${theme.color.text.success};
 
   /* Layout */
   --color-background: ${theme.color.layout.background};
@@ -110,6 +114,10 @@ const CssContainer = styled.div`
   --font-size-section: ${theme.font.size.section}px;
   --font-size-label: ${theme.font.size.label}px;
   --font-size-content: ${theme.font.size.content}px;
+
+  .ant-input-number-input {
+    text-align: right;
+  }
 `;
 
 /**
@@ -165,7 +173,10 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
           },
         }}
       >
-        {props.children}
+        {/* App provides context for the static notification, modal, and message APIs.
+         * See https://ant.design/components/app.
+         */}
+        <App>{props.children}</App>
       </ConfigProvider>
     </CssContainer>
   );

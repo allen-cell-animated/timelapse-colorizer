@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import {
   CheckCircleOutlined,
@@ -15,11 +15,11 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-import RecordingControls from "./colorizer/RecordingControls";
+import RecordingControls, { RecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
-import AppStyle from "./components/AppStyle";
+import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import ColorRampSelector from "./components/ColorRampSelector";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
@@ -27,9 +27,11 @@ import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } f
 import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
+import Export from "./components/Export";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
+  const theme = useContext(AppThemeContext);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
@@ -72,7 +74,7 @@ function App(): ReactElement {
     return new TimeControls(canv!);
   });
   const recordingControls = useConstructor(() => {
-    return new RecordingControls(canv);
+    return new RecordingControls();
   });
 
   // Recording UI
@@ -515,7 +517,14 @@ function App(): ReactElement {
   // TODO: TimeControls and RecordingControls should be refactored into components
   // and receive setFrame as props.
   timeControls.setFrameCallback(setFrame);
-  recordingControls.setFrameCallback(setFrame);
+
+  const setFrameAndRender = useCallback(
+    async (frame: number) => {
+      await setFrame(frame);
+      canv.render();
+    },
+    [setFrame, canv]
+  );
 
   // const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
 
@@ -529,12 +538,16 @@ function App(): ReactElement {
     navigator.clipboard.writeText(document.URL);
     notificationApi["success"]({
       message: "URL copied to clipboard",
-      className: styles.copyNotification,
       placement: "bottomLeft",
       duration: 4,
-
-      icon: <CheckCircleOutlined />,
+      icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
     });
+  };
+
+  /** Get the current HTML Canvas data as a URL that can be downloaded. */
+  const getCanvasImageAsUrl = (): string => {
+    const dataUrl = canv.domElement.toDataURL("image/png");
+    return dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
   };
 
   const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
@@ -575,9 +588,17 @@ function App(): ReactElement {
             Copy URL
           </Button>
 
-          <Button type="primary" disabled={true}>
-            Export
-          </Button>
+          <Export
+            totalFrames={dataset?.numberOfFrames || 0}
+            setFrame={setFrame}
+            currentFrame={currentFrame}
+            startRecording={(options: Partial<RecordingOptions>) => {
+              recordingControls.start(setFrameAndRender, getCanvasImageAsUrl, options);
+            }}
+            stopRecording={() => recordingControls.abort()}
+            defaultImagePrefix={datasetKey + "-" + featureName + "-"}
+            disabled={dataset === null}
+          />
 
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
@@ -773,53 +794,3 @@ function App(): ReactElement {
 }
 
 export default App;
-
-/**
- * <div>
-          <p>CHANGE BROWSER DOWNLOAD SETTINGS BEFORE USE:</p>
-          <p>1) Set your default download location</p>
-          <p>2) Turn off 'Ask where to save each file before downloading'</p>
-          <br />
-          <p>Save image sequence:</p>
-          <button
-            onClick={() => recordingControls.start(getImagePrefix(), startAtFirstFrame)}
-            disabled={recordingControls.isRecording() || timeControls.isPlaying()}
-          >
-            Start
-          </button>
-          <button onClick={() => recordingControls.abort()} disabled={!recordingControls.isRecording()}>
-            Abort
-          </button>
-          <p>
-            <label>
-              Image prefix:
-              <input
-                value={getImagePrefix()}
-                onChange={(event) => {
-                  // TODO: Check for illegal characters
-                  setImagePrefix(event.target.value);
-                }}
-              />
-            </label>
-            <button
-              onClick={() => {
-                setImagePrefix(null);
-              }}
-            >
-              Use default prefix
-            </button>
-          </p>
-          <p>
-            <label>
-              <input
-                type="checkbox"
-                checked={startAtFirstFrame}
-                onChange={() => {
-                  setStartAtFirstFrame(!startAtFirstFrame);
-                }}
-              />
-              Start at first frame
-            </label>
-          </p>
-        </div>
- */

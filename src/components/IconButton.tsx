@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, ReactElement, useContext } from "react";
 import { Button, ConfigProvider } from "antd";
-import { ThemeContext } from "./AppStyle";
+import { AppThemeContext } from "./AppStyle";
 import styled, { css } from "styled-components";
 
 type IconButtonProps = {
@@ -66,7 +66,7 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
  * </IconButton>
  */
 export default function IconButton(props: PropsWithChildren<IconButtonProps>): ReactElement {
-  const themeContext = useContext(ThemeContext);
+  const themeContext = useContext(AppThemeContext);
 
   return (
     <ConfigProvider theme={{ components: { Button: { colorPrimaryActive: themeContext.color.button.hover } } }}>
