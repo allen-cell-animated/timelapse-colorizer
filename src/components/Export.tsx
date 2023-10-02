@@ -2,15 +2,18 @@ import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App,
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
-import { RecordingOptions } from "../colorizer/RecordingControls";
+import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
+import Recorder, { RecordingOptions } from "../colorizer/RecordingControls";
 import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
 
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
-  getRenderedImage: () => string;
+  getCanvas: () => HTMLCanvasElement | OffscreenCanvas;
+  download: (name: string, url: string) => void;
   currentFrame: number;
+  setIsRecording?: (recording: boolean) => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
 };
@@ -19,6 +22,7 @@ export const TEST_ID_EXPORT_ACTION_BUTTON = "export-action";
 export const TEST_ID_OPEN_EXPORT_MODAL_BUTTON = "open-export-modal";
 
 const defaultProps: Partial<ExportButtonProps> = {
+  setIsRecording: () => {},
   defaultImagePrefix: "image",
   disabled: false,
 };
@@ -56,10 +60,15 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   const theme = useContext(AppThemeContext);
 
-  const enum ExportMode {
+  const enum RangeMode {
     ALL,
     CURRENT,
     CUSTOM,
+  }
+
+  const enum RecordingMode {
+    IMAGE_SEQUENCE,
+    VIDEO_MP4,
   }
 
   // Static convenience method for creating simple modals + notifications.
@@ -71,6 +80,19 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   const originalFrameRef = useRef(props.currentFrame);
   const [isLoadModalOpen, _setIsLoadModalOpen] = useState(false);
+  const [isRecording, _setIsRecording] = useState(false);
+  const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
+  const recorder = useRef<Recorder | null>(null);
+
+  const [exportMode, setExportMode] = useState(RangeMode.ALL);
+  const [customMin, setCustomMin] = useState(0);
+  const [customMax, setCustomMax] = useState(props.totalFrames - 1);
+  const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
+  const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
+  const [frameIncrement, setFrameIncrement] = useState(1);
+
+  const [percentComplete, setPercentComplete] = useState(0);
+
   // Override setIsLoadModalOpen to store the current frame whenever the modal opens.
   // This is so we can reset to it when the modal is closed.
   const setIsLoadModalOpen = (isOpen: boolean): void => {
@@ -79,18 +101,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     }
     _setIsLoadModalOpen(isOpen);
   };
-
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
-
-  const [exportMode, setExportMode] = useState(ExportMode.ALL);
-  const [customMin, setCustomMin] = useState(0);
-  const [customMax, setCustomMax] = useState(props.totalFrames - 1);
-  const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
-  const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
-  const [frameIncrement, setFrameIncrement] = useState(1);
-
-  const [percentComplete, setPercentComplete] = useState(0);
+  // Notify parent via props if recording state changes
+  const setIsRecording = (isRecording: boolean): void => {
+    props.setIsRecording(isRecording);
+    _setIsRecording(isRecording);
+  };
 
   // If dataset changes, update the max range field with the total frames.
   useEffect(() => {
@@ -102,7 +117,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   /** Stop any ongoing recordings and reset the current frame, optionally closing the modal. */
   const stopRecording = useCallback(
     (closeModal: boolean) => {
-      props.stopRecording();
+      recorder.current?.abort();
       // Reset the frame number (clean up!)
       props.setFrame(originalFrameRef.current);
       setIsRecording(false);
@@ -112,7 +127,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         setIsLoadModalOpen(false);
       }
     },
-    [props.stopRecording]
+    [props.setFrame]
   );
 
   /**
@@ -161,22 +176,22 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     /** Min and max are both inclusive */
     let min: number, max: number;
     switch (exportMode) {
-      case ExportMode.ALL:
+      case RangeMode.ALL:
         min = 0;
         max = props.totalFrames - 1;
         break;
-      case ExportMode.CURRENT:
+      case RangeMode.CURRENT:
         min = props.currentFrame;
         max = props.currentFrame;
         break;
-      case ExportMode.CUSTOM:
+      case RangeMode.CUSTOM:
         // Clamp range values in case of unsafe input
         min = clamp(customMin, 0, props.totalFrames - 1);
         max = clamp(customMax, min, props.totalFrames - 1);
     }
 
     // Start the recording
-    props.startRecording({
+    const recordingOptions = {
       min: min,
       max: max,
       prefix: getImagePrefix(),
@@ -199,7 +214,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         // Update the progress bar as frames are recorded.
         setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
       },
-    });
+    };
+    recorder.current = new ImageSequenceRecorder(props.setFrame, props.getCanvas, props.download, recordingOptions);
+    recorder.current.start();
   };
 
   const numExportedFrames = Math.max(Math.ceil((customMax - customMin + 1) / frameIncrement), 1);
@@ -268,18 +285,18 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             disabled={isRecording}
           >
             <Space direction="vertical">
-              <Radio value={ExportMode.ALL}>
+              <Radio value={RangeMode.ALL}>
                 All frames{" "}
-                {exportMode === ExportMode.ALL && (
+                {exportMode === RangeMode.ALL && (
                   <span style={{ color: theme.color.text.hint, marginLeft: "4px" }}>
                     ({props.totalFrames} frames total)
                   </span>
                 )}
               </Radio>
-              <Radio value={ExportMode.CURRENT}>Current frame only</Radio>
-              <Radio value={ExportMode.CUSTOM}>Custom range</Radio>
+              <Radio value={RangeMode.CURRENT}>Current frame only</Radio>
+              <Radio value={RangeMode.CUSTOM}>Custom range</Radio>
 
-              {exportMode === ExportMode.CUSTOM ? (
+              {exportMode === RangeMode.CUSTOM ? (
                 // Render the custom range input in the radio list if selected
                 <VerticalDiv style={{ paddingLeft: "25px" }}>
                   <CustomRangeDiv>

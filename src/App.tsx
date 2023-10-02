@@ -17,7 +17,7 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-import Recorder, { RecordingOptions } from "./colorizer/RecordingControls";
+import { RecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -96,13 +96,11 @@ function App(): ReactElement {
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
 
+  const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => {
     return new TimeControls(canv!);
   });
 
-  // Recording UI
-  // const [imagePrefix, setImagePrefix] = useState<null | string>(null);
-  // const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
    */
@@ -152,7 +150,7 @@ function App(): ReactElement {
     // update current time in plot
     plot?.setTime(currentFrame);
 
-    if (!timeControls.isPlaying() && !recordingControls.isRecording()) {
+    if (!timeControls.isPlaying() && isRecording) {
       // Do not update URL while playback is happening for performance + UX reasons
       urlUtils.updateUrl(getUrlParams());
     }
@@ -551,6 +549,17 @@ function App(): ReactElement {
 
   // RECORDING & EXPORT /////////////////////////////////////////////////////////////
 
+  const download = (filename: string, url: string): void => {
+    if (!downloadAnchorRef.current) {
+      downloadAnchorRef.current = document.createElement("a");
+      document.appendChild(downloadAnchorRef.current);
+    }
+
+    downloadAnchorRef.current.href = url;
+    downloadAnchorRef.current.download = filename;
+    downloadAnchorRef.current.click();
+  };
+
   /** Download the current rendered canvas frame as an image. */
   const downloadCanvas = async (frame: number, options: RecordingOptions): Promise<void> => {
     if (!downloadAnchorRef.current) {
@@ -661,7 +670,7 @@ function App(): ReactElement {
     });
   };
 
-  const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
+  const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
   return (
@@ -698,63 +707,12 @@ function App(): ReactElement {
             <LinkOutlined />
             Copy URL
           </Button>
-          {"SUPER Experimental Video Recording with CODECS =>"}
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrame}
+            getCanvas={() => canv.domElement}
+            download={download}
             currentFrame={currentFrame}
-            startRecording={(options: Partial<RecordingOptions>) => {
-              // Extend onCompletedCallback to stop the video recording too
-              options.delayMs = 0;
-              const oldOnComplete = options.onCompleted;
-              options.onCompleted = async () => {
-                onCodecsRecordingCompleted();
-                oldOnComplete && oldOnComplete();
-              };
-              codecsStartVideoRecording(canv);
-              recordingControls.start(
-                setFrameAndRender,
-                (frame, options) => codecsRecordVideoFrame(frame, canv, options),
-                options
-              );
-            }}
-            stopRecording={() => {
-              codecsStopVideoRecording();
-              recordingControls.abort();
-            }}
-            defaultImagePrefix={datasetKey + "-" + featureName + "-"}
-            disabled={dataset === null}
-          />
-          {"Experimental Video Recording =>"}
-          <Export
-            totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrame}
-            currentFrame={currentFrame}
-            startRecording={(options: Partial<RecordingOptions>) => {
-              // Extend onCompletedCallback to stop the video recording too
-              const oldOnComplete = options.onCompleted;
-              options.onCompleted = async () => {
-                stopVideoRecording();
-                oldOnComplete && oldOnComplete();
-              };
-              startVideoRecording();
-              recordingControls.start(setFrameAndRender, recordVideoFrame, options);
-            }}
-            stopRecording={() => {
-              stopVideoRecording();
-              recordingControls.abort();
-            }}
-            defaultImagePrefix={datasetKey + "-" + featureName + "-"}
-            disabled={dataset === null}
-          />
-          <Export
-            totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrame}
-            currentFrame={currentFrame}
-            startRecording={(options: Partial<RecordingOptions>) => {
-              recordingControls.start(setFrameAndRender, downloadCanvas, options);
-            }}
-            stopRecording={() => recordingControls.abort()}
             defaultImagePrefix={datasetKey + "-" + featureName + "-"}
             disabled={dataset === null}
           />

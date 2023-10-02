@@ -2,7 +2,13 @@ import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import Recorder, { RecordingOptions, defaultRecordingOptions } from "../RecordingControls";
 import { sleep } from "../utils/timing_utils";
 
-export class VideoCodecRecorder extends Recorder {
+/**
+ * Records frames to an MP4 file using the WebCodecs API.
+ *
+ * Note that the VideoCodecs API is unavailable in some browsers, including Firefox,
+ * as of 10/2/2023.
+ */
+export default class VideoCodecRecorder extends Recorder {
   private videoEncoder: VideoEncoder;
   private muxer: Muxer<ArrayBufferTarget>;
 
@@ -24,6 +30,13 @@ export class VideoCodecRecorder extends Recorder {
     const width = this.options.outputSize[0];
     const height = this.options.outputSize[1];
     const bitrate = 10e7;
+    const codec = "avc1.420028";
+    const codecs = ["avc1.420028", "vp8", "vp09.00.10.08", "av01.0.04M.08"];
+    const accelerations = ["prefer-hardware", "prefer-software"];
+
+    // TODO: Check for supported configs!
+    // See https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/isConfigSupported_static
+    // for a detailed example.
 
     this.videoEncoder.configure({
       codec: "avc1.420028",
@@ -32,6 +45,7 @@ export class VideoCodecRecorder extends Recorder {
       bitrate,
       bitrateMode: "constant",
     });
+
     this.muxer = new Muxer({
       target: new ArrayBufferTarget(),
       video: {
