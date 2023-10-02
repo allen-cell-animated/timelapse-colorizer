@@ -32,6 +32,7 @@ import HoverTooltip from "./components/HoverTooltip";
 
 import { sleep } from "../tests/test_utils";
 import Export from "./components/Export";
+import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 
 const ffmpegRef = new FFmpeg();
 
@@ -53,75 +54,70 @@ const loadFfmpeg = async (): Promise<FFmpeg> => {
 };
 
 let videoChunks: Uint8Array[] = [];
+let muxer: Muxer<ArrayBufferTarget>;
 
-const handleChunk = (chunk: EncodedVideoChunk, metadata?: EncodedVideoChunkMetadata) => {
-  console.log("Chunk time");
-  const chunkData = new Uint8Array(chunk.byteLength);
-  chunk.copyTo(chunkData);
-  videoChunks.push(chunkData);
-};
-
-const videoEncoder = new VideoEncoder({
-  output: (chunk, metadata) => {
-    console.log("oh hi");
-    handleChunk(chunk, metadata);
-  },
-  error: (e) => console.error(e),
-});
-
-const codecsHandleCompleted = async () => {
-  // Mux chunkdata using ffmpeg
-  const ffmpeg = await loadFfmpeg();
-
-  console.log(videoChunks);
-
-  // writeFile makes the file available to ffmpeg on the filesystem
-  await ffmpeg.writeFile("chunks", await fetchFile(new Blob(videoChunks)));
-  await ffmpeg.exec(["-i", "chunks", "-c", "copy", "output.webm"]);
-
-  // Try downloading the webm file and see what happens 👀
-  const webmData = await ffmpeg.readFile("output.webm");
-  const webmBlob = new Blob([(webmData as Uint8Array).buffer], { type: "video/webm" });
-  const url = URL.createObjectURL(webmBlob);
-
-  console.log("Downloading...");
-
-  const downloadAnchorRef = document.createElement("a");
-  document.appendChild(downloadAnchorRef);
-
-  downloadAnchorRef.href = url;
-  downloadAnchorRef.download = "video.webm";
-  downloadAnchorRef.click();
-
-  videoChunks = [];
-};
+let videoEncoder: VideoEncoder | undefined;
+if (typeof VideoEncoder === "function") {
+  console.log("video encoder!!");
+  videoEncoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => console.error(e),
+  });
+} else {
+  console.log("No video encoder!!");
+}
 
 const codecsStopVideoRecording = () => {
   // TODO: Override onstop so it doesn't try and output the video?
-  videoEncoder.reset();
-  // videoEncoder.flush();
+  if (videoEncoder) {
+    videoEncoder.reset();
+    muxer.finalize(); // Do nothing with the file.
+    // videoEncoder.flush();
+    // TODO: Clear muxer
+  }
 };
 
 const codecsStartVideoRecording = (canv: ColorizeCanvas) => {
   const width = canv.domElement.width;
   const height = canv.domElement.height;
-  const bitrate = 10e6;
+  const bitrate = 10e7;
 
   videoChunks = [];
 
-  videoEncoder.configure({
-    codec: "vp09.00.10.08",
+  videoEncoder?.configure({
+    codec: "avc1.420028",
     width,
     height,
     bitrate,
     bitrateMode: "constant",
   });
+  muxer = new Muxer({
+    target: new ArrayBufferTarget(),
+    video: {
+      codec: "avc",
+      width: 730,
+      height: 500,
+    },
+  });
 };
 
 const onCodecsRecordingCompleted = async (): Promise<void> => {
   console.log("Flushing");
-  await videoEncoder.flush();
-  await codecsHandleCompleted();
+  await videoEncoder?.flush();
+  muxer.finalize();
+  const { buffer } = muxer.target;
+  const videoBlob = new Blob([buffer], { type: "video/mp4" });
+  const url = URL.createObjectURL(videoBlob);
+
+  const downloadAnchorRef = document.createElement("a");
+  document.body.appendChild(downloadAnchorRef);
+
+  downloadAnchorRef.href = url;
+  downloadAnchorRef.download = "video.mp4";
+  downloadAnchorRef.click();
+
+  URL.revokeObjectURL(url);
+  // await codecsHandleCompleted();
 };
 
 const codecsRecordVideoFrame = async (
@@ -129,6 +125,9 @@ const codecsRecordVideoFrame = async (
   canv: ColorizeCanvas,
   options: RecordingOptions
 ): Promise<void> => {
+  if (!videoEncoder) {
+    return;
+  }
   const frameIndex = frame - options.min;
 
   // Every 30 frames, add a new keyframe.
@@ -139,6 +138,9 @@ const codecsRecordVideoFrame = async (
   const fps = 30;
   const timestampMicroseconds = (frameIndex / fps) * 10e6;
   const durationMicroseconds = 10e6 / fps;
+  console.log(
+    `Frame ${frame} - Index ${frameIndex} - Timestamp ${timestampMicroseconds} - Duration ${durationMicroseconds}`
+  );
   // Add a slight timer to make sure the canvas is actually done rendering.
   await sleep(10);
 
@@ -150,8 +152,8 @@ const codecsRecordVideoFrame = async (
 
   // Add the frame to the video encoder
   const videoFrame = new VideoFrame(canv.domElement, {
-    duration: durationMicroseconds,
-    timestamp: timestampMicroseconds,
+    duration: durationMicroseconds / 10,
+    timestamp: timestampMicroseconds / 10,
   });
   videoEncoder.encode(videoFrame, {
     keyFrame,
@@ -815,6 +817,7 @@ function App(): ReactElement {
             currentFrame={currentFrame}
             startRecording={(options: Partial<RecordingOptions>) => {
               // Extend onCompletedCallback to stop the video recording too
+              options.delayMs = 0;
               const oldOnComplete = options.onCompletedCallback;
               options.onCompletedCallback = async () => {
                 onCodecsRecordingCompleted();
