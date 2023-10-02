@@ -28,7 +28,7 @@ import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 import Export from "./components/Export";
-import DrawModeSelector from "./components/DrawModeSelector";
+import DrawModeDropdown from "./components/DrawModeDropdown";
 import { Color } from "three";
 
 function App(): ReactElement {
@@ -786,7 +786,7 @@ function App(): ReactElement {
             <div>
               <h2>Viewer settings</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                <DrawModeSelector
+                <DrawModeDropdown
                   label="Values outside of range"
                   selected={outOfRangeDrawSettings.mode}
                   color={outOfRangeDrawSettings.color}
@@ -794,7 +794,7 @@ function App(): ReactElement {
                     setoutOfRangeDrawSettings({ mode, color });
                   }}
                 />
-                <DrawModeSelector
+                <DrawModeDropdown
                   label="Outliers"
                   selected={outlierDrawSettings.mode}
                   color={outlierDrawSettings.color}
