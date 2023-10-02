@@ -18,11 +18,14 @@ export type RecordingOptions = {
    * (e.g. 0, 2, 4, ...)
    */
   frameIncrement: number;
-  /** String file prefix added to recorded frames.
-   * Filenames will be formatted as `{prefix}{frame #}.png` */
+  /** String file prefix added to recorded frames or videos.
+   * Filenames will be formatted as `{prefix}{frame #}.{ext}` for images,
+   * and `{prefix}.{ext}` for videos. */
   prefix: string;
   /** Delay between each recorded frame, in milliseconds. 100 ms by default. */
   delayMs: number;
+  /** Frames per second for video output. Default is 30 fps.*/
+  fps: number;
   /** Width, height of output video or image. */
   outputSize: [number, number];
   /** Called when the recording has completed successfully. (Will not be called if the recording
@@ -38,13 +41,16 @@ export const defaultRecordingOptions: RecordingOptions = {
   frameIncrement: 1,
   prefix: "image-",
   delayMs: 100,
+  fps: 30,
   outputSize: [730, 500],
   onCompleted: async function (): Promise<void> {},
   onRecordedFrame: function (_frame: number): void {},
 };
 
 /**
- * Abstract
+ * Abstract class for recording images or videos from a HTMLCanvas or OffscreenCanvas.
+ * Provides lifecycle methods for recording each frame, recording completion,
+ * and cleanup.
  */
 export default class Recorder {
   private recording: boolean;
@@ -53,20 +59,16 @@ export default class Recorder {
 
   private setFrameAndRender: (frame: number) => Promise<void>;
   protected getCanvas: () => HTMLCanvasElement | OffscreenCanvas;
-  protected download: (name: string, url: string) => void;
   protected options: RecordingOptions;
 
   /**
-   *
    * @param setFrameAndRender Async callback to set and update the currently displayed frame.
    * @param getCanvas A callback to fetch the current canvas.
-   * @param download
    * @param options Configurable options for the recording.
    */
   constructor(
     setFrameAndRender: (frame: number) => Promise<void>,
     getCanvas: () => HTMLCanvasElement | OffscreenCanvas,
-    download: (name: string, url: string) => void,
     options?: Partial<RecordingOptions>
   ) {
     if (new.target === Recorder) {
@@ -79,11 +81,8 @@ export default class Recorder {
 
     this.setFrameAndRender = setFrameAndRender;
     this.getCanvas = getCanvas;
-    this.download = download;
 
     this.options = { ...defaultRecordingOptions, ...options };
-
-    // Any setup goes here
   }
 
   /**
@@ -179,5 +178,22 @@ export default class Recorder {
    */
   public isSupported(): boolean {
     return true;
+  }
+
+  /**
+   * Download a file resource using a fake anchor element.
+   * @param filename
+   * @param url
+   */
+  protected static download(filename: string, url: string): void {
+    // TODO: Add flag for showing save file picker? https://developer.mozilla.org/en-US/docs/Web/API/Window/showSaveFilePicker
+    const anchor = document.createElement("a");
+    document.body.appendChild(anchor);
+
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+
+    document.body.removeChild(anchor);
   }
 }

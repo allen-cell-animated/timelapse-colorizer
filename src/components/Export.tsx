@@ -6,12 +6,12 @@ import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder"
 import Recorder, { RecordingOptions } from "../colorizer/RecordingControls";
 import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
+import WebCodecsMp4Recorder from "../colorizer/recorders/WebCodecsMp4Recorder";
 
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
   getCanvas: () => HTMLCanvasElement | OffscreenCanvas;
-  download: (name: string, url: string) => void;
   currentFrame: number;
   setIsRecording?: (recording: boolean) => void;
   defaultImagePrefix?: string;
@@ -82,9 +82,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [isLoadModalOpen, _setIsLoadModalOpen] = useState(false);
   const [isRecording, _setIsRecording] = useState(false);
   const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
+
+  const [recordingMode, setRecordingMode] = useState(RecordingMode.IMAGE_SEQUENCE);
   const recorder = useRef<Recorder | null>(null);
 
-  const [exportMode, setExportMode] = useState(RangeMode.ALL);
+  const [rangeMode, setRangeMode] = useState(RangeMode.ALL);
   const [customMin, setCustomMin] = useState(0);
   const [customMax, setCustomMax] = useState(props.totalFrames - 1);
   const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
@@ -175,7 +177,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
     /** Min and max are both inclusive */
     let min: number, max: number;
-    switch (exportMode) {
+    switch (rangeMode) {
       case RangeMode.ALL:
         min = 0;
         max = props.totalFrames - 1;
@@ -196,6 +198,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       max: max,
       prefix: getImagePrefix(),
       minDigits: (props.totalFrames - 1).toString().length,
+      // Disable download delay for video
+      delayMs: recordingMode === RecordingMode.IMAGE_SEQUENCE ? 100 : 0,
       frameIncrement: frameIncrement,
       onCompleted: async () => {
         // Close modal once recording finishes and show completion notification
@@ -215,7 +219,16 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
       },
     };
-    recorder.current = new ImageSequenceRecorder(props.setFrame, props.getCanvas, props.download, recordingOptions);
+    // Initialize different recorders based on the provided options.
+    switch (recordingMode) {
+      case RecordingMode.VIDEO_MP4:
+        recorder.current = new WebCodecsMp4Recorder(props.setFrame, props.getCanvas, recordingOptions);
+        break;
+      case RecordingMode.IMAGE_SEQUENCE:
+      default:
+        recorder.current = new ImageSequenceRecorder(props.setFrame, props.getCanvas, recordingOptions);
+        break;
+    }
     recorder.current.start();
   };
 
@@ -278,16 +291,16 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           {/* Radio options (All/Current Frame/Custom) */}
 
           <Radio.Group
-            value={exportMode}
+            value={rangeMode}
             onChange={(e: RadioChangeEvent) => {
-              setExportMode(e.target.value);
+              setRangeMode(e.target.value);
             }}
             disabled={isRecording}
           >
             <Space direction="vertical">
               <Radio value={RangeMode.ALL}>
                 All frames{" "}
-                {exportMode === RangeMode.ALL && (
+                {rangeMode === RangeMode.ALL && (
                   <span style={{ color: theme.color.text.hint, marginLeft: "4px" }}>
                     ({props.totalFrames} frames total)
                   </span>
@@ -296,7 +309,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               <Radio value={RangeMode.CURRENT}>Current frame only</Radio>
               <Radio value={RangeMode.CUSTOM}>Custom range</Radio>
 
-              {exportMode === RangeMode.CUSTOM ? (
+              {rangeMode === RangeMode.CUSTOM ? (
                 // Render the custom range input in the radio list if selected
                 <VerticalDiv style={{ paddingLeft: "25px" }}>
                   <CustomRangeDiv>

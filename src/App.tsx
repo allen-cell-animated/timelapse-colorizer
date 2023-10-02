@@ -549,17 +549,6 @@ function App(): ReactElement {
 
   // RECORDING & EXPORT /////////////////////////////////////////////////////////////
 
-  const download = (filename: string, url: string): void => {
-    if (!downloadAnchorRef.current) {
-      downloadAnchorRef.current = document.createElement("a");
-      document.appendChild(downloadAnchorRef.current);
-    }
-
-    downloadAnchorRef.current.href = url;
-    downloadAnchorRef.current.download = filename;
-    downloadAnchorRef.current.click();
-  };
-
   /** Download the current rendered canvas frame as an image. */
   const downloadCanvas = async (frame: number, options: RecordingOptions): Promise<void> => {
     if (!downloadAnchorRef.current) {
@@ -710,8 +699,9 @@ function App(): ReactElement {
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrame}
-            getCanvas={() => canv.domElement}
-            download={download}
+            getCanvas={() => {
+              return canv.domElement;
+            }}
             currentFrame={currentFrame}
             defaultImagePrefix={datasetKey + "-" + featureName + "-"}
             disabled={dataset === null}

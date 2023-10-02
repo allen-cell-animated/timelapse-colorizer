@@ -8,17 +8,16 @@ import { sleep } from "../utils/timing_utils";
  * Note that the VideoCodecs API is unavailable in some browsers, including Firefox,
  * as of 10/2/2023.
  */
-export default class VideoCodecRecorder extends Recorder {
+export default class WebCodecsMp4Recorder extends Recorder {
   private videoEncoder: VideoEncoder;
   private muxer: Muxer<ArrayBufferTarget>;
 
   constructor(
     setFrameAndRender: (frame: number) => Promise<void>,
     getCanvas: () => HTMLCanvasElement | OffscreenCanvas,
-    download: (name: string, url: string) => void,
     options: Partial<RecordingOptions>
   ) {
-    super(setFrameAndRender, getCanvas, download);
+    super(setFrameAndRender, getCanvas);
 
     this.options = { ...defaultRecordingOptions, ...options };
 
@@ -99,7 +98,7 @@ export default class VideoCodecRecorder extends Recorder {
     // Download the finished video file
     const videoBlob = new Blob([buffer], { type: "video/mp4" });
     const url = URL.createObjectURL(videoBlob);
-    this.download(this.options.prefix + ".mp4", url);
+    Recorder.download(this.options.prefix + ".mp4", url);
     URL.revokeObjectURL(url);
   }
 
