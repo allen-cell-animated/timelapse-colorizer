@@ -4,6 +4,7 @@
     "es6": true,
     "browser": true
   },
+  "ignorePatterns": ["/dist/**"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaFeatures": {

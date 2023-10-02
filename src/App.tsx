@@ -544,7 +544,7 @@ function App(): ReactElement {
   const setFrameAndRender = useCallback(
     async (frame: number) => {
       await setFrame(frame);
-      await canv.render();
+      canv.render();
     },
     [setFrame, canv]
   );

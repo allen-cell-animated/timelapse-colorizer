@@ -63,7 +63,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     return contents;
   }, [props.colorRamps]);
 
-  const buttonDivClassName = styles.buttonContainer + " " + (props.disabled && styles.disabled);
+  const buttonDivClassName = styles.buttonContainer + " " + (props.disabled ? styles.disabled : "");
 
   let selectorButton = (
     <Button rootClassName={styles.selectorButton} disabled={props.disabled}>
