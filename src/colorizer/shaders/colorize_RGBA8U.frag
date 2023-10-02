@@ -10,6 +10,7 @@ uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
 
+/** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
 const uint DRAW_MODE_RAMP = 1u;
 const uint DRAW_MODE_COLOR = 2u;

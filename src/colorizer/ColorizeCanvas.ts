@@ -36,6 +36,7 @@ export const OUT_OF_RANGE_COLOR_DEFAULT = 0xc0c0c0;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 
+// MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
 /** Draw options for object types. */
 export enum DrawMode {
   /** Hide this object type. */
@@ -116,7 +117,6 @@ export default class ColorizeCanvas {
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
-  private hideValuesOutOfRange: boolean;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
   private currentFrame: number;
@@ -172,7 +172,6 @@ export default class ColorizeCanvas {
     this.featureName = null;
     this.track = null;
     this.showTrackPath = false;
-    this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
@@ -266,11 +265,6 @@ export default class ColorizeCanvas {
     this.setUniform("backgroundColor", color);
   }
 
-  setHideValuesOutOfRange(hide: boolean): void {
-    this.hideValuesOutOfRange = hide;
-    this.setUniform("hideOutOfRange", this.hideValuesOutOfRange);
-  }
-
   setOutlierDrawMode(mode: DrawMode, color?: Color): void {
     this.setUniform("outlierDrawMode", mode);
     if (mode === DrawMode.USE_COLOR && color) {
@@ -283,7 +277,6 @@ export default class ColorizeCanvas {
     if (mode === DrawMode.USE_COLOR && color) {
       this.setUniform("outOfRangeColor", color);
     }
-    console.log("Mode: " + mode);
   }
 
   setSelectedTrack(track: Track | null): void {
