@@ -74,7 +74,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [isLoadModalOpen, _setIsLoadModalOpen] = useState(false);
   // Override setIsLoadModalOpen to store the current frame whenever the modal opens.
   // This is so we can reset to it when the modal is closed.
-  const setIsLoadModalOpen = (isOpen: boolean) => {
+  const setIsLoadModalOpen = (isOpen: boolean): void => {
     if (isOpen) {
       originalFrameRef.current = props.currentFrame;
     }
@@ -98,7 +98,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     setCustomMax(props.totalFrames - 1);
   }, [props.totalFrames]);
 
-  const getImagePrefix = () => (useDefaultImagePrefix ? props.defaultImagePrefix : imagePrefix);
+  const getImagePrefix = (): string => (useDefaultImagePrefix ? props.defaultImagePrefix : imagePrefix);
 
   /** Stop any ongoing recordings and reset the current frame, optionally closing the modal. */
   const stopRecording = useCallback(
