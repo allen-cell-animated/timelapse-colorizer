@@ -14,7 +14,7 @@ export enum VideoBitrate {
  * Note that the VideoCodecs API is unavailable in some browsers, including Firefox,
  * as of 10/2/2023.
  */
-export default class WebCodecsMp4Recorder extends Recorder {
+export default class Mp4VideoRecorder extends Recorder {
   private videoEncoder: VideoEncoder;
   private muxer?: Muxer<ArrayBufferTarget>;
 

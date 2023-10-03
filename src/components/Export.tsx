@@ -6,7 +6,7 @@ import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder"
 import Recorder from "../colorizer/RecordingControls";
 import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
-import WebCodecsMp4Recorder, { VideoBitrate } from "../colorizer/recorders/WebCodecsMp4Recorder";
+import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -286,7 +286,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // Initialize different recorders based on the provided options.
     switch (recordingMode) {
       case RecordingMode.VIDEO_MP4:
-        recorder.current = new WebCodecsMp4Recorder(props.setFrame, props.getCanvas, recordingOptions);
+        recorder.current = new Mp4VideoRecorder(props.setFrame, props.getCanvas, recordingOptions);
         break;
       case RecordingMode.IMAGE_SEQUENCE:
       default:
@@ -304,7 +304,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     { label: "Low", value: VideoBitrate.LOW },
   ];
 
-  const isWebCodecsEnabled = WebCodecsMp4Recorder.isSupported();
+  const isWebCodecsEnabled = Mp4VideoRecorder.isSupported();
   const customRangeFrames = Math.max(Math.ceil((customMax - customMin + 1) / frameIncrement), 1);
 
   const totalFrames = rangeMode === RangeMode.CUSTOM ? customRangeFrames : props.totalFrames;
