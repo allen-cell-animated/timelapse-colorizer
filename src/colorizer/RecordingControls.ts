@@ -95,22 +95,25 @@ export default class Recorder {
    * recording completes. Any cleanup should be done using the `onCompleted` callback parameter
    * in the `recordingOptions` object or wherever `abort()` is called.
    */
-  public start(): void {
+  public async start(): Promise<void> {
+    if (this.recording || this.finishedRecording) {
+      return;
+    }
+    this.recording = true;
+
+    await this.setup();
     this.startRecordingLoop();
   }
 
   private startRecordingLoop(): void {
-    if (this.recording || this.finishedRecording) {
-      return;
-    }
-
-    this.recording = true;
-
     // Reset any existing timers
     clearTimeout(this.timerId);
 
     const loadAndRecordFrame = async (frame: number): Promise<void> => {
-      if (frame > this.options.max || !this.recording) {
+      if (!this.recording) {
+        return;
+      }
+      if (frame > this.options.max) {
         this.recording = false;
         await this.options.onCompleted();
         return;
@@ -121,12 +124,17 @@ export default class Recorder {
       await this.setFrameAndRender(frame);
       await this.recordFrame(frame);
 
+      if (!this.recording) {
+        return;
+      }
+
       // Notify listeners about frame recording
       this.options.onRecordedFrame(frame);
 
       const nextFrame = frame + this.options.frameIncrement;
       if (nextFrame > this.options.max) {
         // Stop recording
+        this.finishedRecording = true;
         this.recording = false;
         await this.onCompletedRecording();
         this.cleanup();
@@ -139,6 +147,12 @@ export default class Recorder {
     // Start interval loop
     loadAndRecordFrame(this.options.min);
   }
+
+  /**
+   * Setup step for any async processes. Runs before the recording loop is started
+   * (before the first call to `recordFrame`).
+   */
+  protected async setup(): Promise<void> {}
 
   /**
    * Called on each frame that will be recorded, but before the
@@ -165,6 +179,8 @@ export default class Recorder {
    * and in-progress videos will be discarded.
    */
   public abort(): void {
+    this.recording = false;
+    this.finishedRecording = true;
     this.cleanup();
   }
 

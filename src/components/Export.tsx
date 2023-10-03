@@ -1,17 +1,4 @@
-import {
-  Button,
-  Modal,
-  Input,
-  Radio,
-  Space,
-  RadioChangeEvent,
-  InputNumber,
-  App,
-  Progress,
-  Tooltip,
-  Card,
-  TimePicker,
-} from "antd";
+import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress, Tooltip, Card } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
@@ -194,6 +181,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       // Reset the frame number (clean up!)
       props.setFrame(originalFrameRef.current);
       setIsRecording(false);
+      recorder.current = null;
       setIsPlayingCloseAnimation(false);
       setPercentComplete(0);
       if (closeModal) {
