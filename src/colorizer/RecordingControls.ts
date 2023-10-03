@@ -26,6 +26,8 @@ export type RecordingOptions = {
   delayMs: number;
   /** Frames per second for video output. Default is 30 fps.*/
   fps: number;
+  /** Average video bitrate in bits/second. */
+  bitrate: number;
   /** Width, height of output video or image. */
   outputSize: [number, number];
   /** Called when the recording has completed successfully. (Will not be called if the recording
@@ -42,6 +44,7 @@ export const defaultRecordingOptions: RecordingOptions = {
   prefix: "image-",
   delayMs: 100,
   fps: 30,
+  bitrate: 10e6,
   outputSize: [730, 500],
   onCompleted: async function (): Promise<void> {},
   onRecordedFrame: function (_frame: number): void {},

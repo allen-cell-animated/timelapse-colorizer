@@ -2,6 +2,12 @@ import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import Recorder, { RecordingOptions, defaultRecordingOptions } from "../RecordingControls";
 import { sleep } from "../utils/timing_utils";
 
+export enum VideoBitrate {
+  HIGH = 10e7,
+  MEDIUM = 10e6,
+  LOW = 5e6,
+}
+
 /**
  * Records frames to an MP4 file using the WebCodecs API.
  *
@@ -28,7 +34,7 @@ export default class WebCodecsMp4Recorder extends Recorder {
 
     const width = this.options.outputSize[0];
     const height = this.options.outputSize[1];
-    const bitrate = 10e7;
+    const bitrate = this.options.bitrate;
     const codec = "avc1.420028";
     const codecs = ["avc1.420028", "vp8", "vp09.00.10.08", "av01.0.04M.08"];
     const accelerations = ["prefer-hardware", "prefer-software"];
@@ -61,8 +67,8 @@ export default class WebCodecsMp4Recorder extends Recorder {
     // Video compression works by recording changes from one frame to the next. Keyframes
     // have the full frame data saved, so adding them in ensures a smaller drop in frame
     // quality. See https://en.wikipedia.org/wiki/Key_frame for more details.
-    const keyFrame = true;
-    const fps = 30;
+    const keyFrame = frame % 30 === 0;
+    const fps = this.options.fps;
     // 1 second = 1,000,000 microseconds
     const timestampMicroseconds = (frameIndex / fps) * 10e6;
     const durationMicroseconds = 10e6 / fps;

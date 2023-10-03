@@ -19,7 +19,7 @@ import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder"
 import Recorder from "../colorizer/RecordingControls";
 import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
-import WebCodecsMp4Recorder from "../colorizer/recorders/WebCodecsMp4Recorder";
+import WebCodecsMp4Recorder, { VideoBitrate } from "../colorizer/recorders/WebCodecsMp4Recorder";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -75,7 +75,7 @@ const CustomRadio = styled(Radio)`
   }
 `;
 
-const CustomRadioGroup = styled(Radio.Group)`
+const ExportModeRadioGroup = styled(Radio.Group)`
   & {
     // Use standard amount of padding, unless the view is too narrow
     padding: 0 calc(min(40px, 5vw));
@@ -84,6 +84,13 @@ const CustomRadioGroup = styled(Radio.Group)`
     // Make the Radio options the same width
     flex-grow: 1;
     width: 50%;
+  }
+`;
+
+const CustomRadioGroup = styled(Radio.Group)`
+  & {
+    display: flex;
+    flex-direction: row;
   }
 `;
 
@@ -123,7 +130,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [isRecording, _setIsRecording] = useState(false);
   const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
 
-  const [recordingMode, setRecordingMode] = useState(RecordingMode.IMAGE_SEQUENCE);
+  const [recordingMode, _setRecordingMode] = useState(RecordingMode.IMAGE_SEQUENCE);
   const recorder = useRef<Recorder | null>(null);
 
   const [rangeMode, setRangeMode] = useState(RangeMode.ALL);
@@ -133,8 +140,18 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameIncrement, setFrameIncrement] = useState(1);
   const [fps, setFps] = useState(30);
+  const [videoQuality, setVideoQuality] = useState(VideoBitrate.MEDIUM);
 
   const [percentComplete, setPercentComplete] = useState(0);
+
+  // Override setRecordingMode; users should not choose video + current frame only
+  // (since exporting the current frame only doesn't really make sense.)
+  const setRecordingMode = (mode: RecordingMode): void => {
+    _setRecordingMode(mode);
+    if (mode === RecordingMode.VIDEO_MP4 && rangeMode === RangeMode.CURRENT) {
+      setRangeMode(RangeMode.ALL);
+    }
+  };
 
   // Override setIsLoadModalOpen to store the current frame whenever the modal opens.
   // This is so we can reset to it when the modal is closed.
@@ -144,6 +161,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     }
     _setIsLoadModalOpen(isOpen);
   };
+
   // Notify parent via props if recording state changes
   const setIsRecording = (isRecording: boolean): void => {
     props.setIsRecording(isRecording);
@@ -156,6 +174,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   }, [props.totalFrames]);
 
   const getImagePrefix = (): string => (useDefaultImagePrefix ? props.defaultImagePrefix : imagePrefix);
+
+  //////////////// EVENT HANDLERS ////////////////
 
   /** Stop any ongoing recordings and reset the current frame, optionally closing the modal. */
   const stopRecording = useCallback(
@@ -233,7 +253,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         max = clamp(customMax, min, props.totalFrames - 1);
     }
 
-    // Start the recording
+    // Copy configuration to options object
+    // TODO: Add a callback for when errors are encountered? This can happen if
+    // the canvas is unable to fetch an image, such as when a network error occurs.
     const recordingOptions = {
       min: min,
       max: max,
@@ -242,6 +264,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       // Disable download delay for video
       delayMs: recordingMode === RecordingMode.IMAGE_SEQUENCE ? 100 : 0,
       frameIncrement: frameIncrement,
+      fps: fps,
+      bitrate: videoQuality,
       onCompleted: async () => {
         // Close modal once recording finishes and show completion notification
         setPercentComplete(100);
@@ -260,6 +284,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
       },
     };
+
     // Initialize different recorders based on the provided options.
     switch (recordingMode) {
       case RecordingMode.VIDEO_MP4:
@@ -273,13 +298,23 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     recorder.current.start();
   };
 
+  //////////////// RENDERING ////////////////
+
+  const videoQualityOptions = [
+    { label: "High", value: VideoBitrate.HIGH },
+    { label: "Med", value: VideoBitrate.MEDIUM },
+    { label: "Low", value: VideoBitrate.LOW },
+  ];
+
   const isWebCodecsEnabled = WebCodecsMp4Recorder.isSupported();
   const customRangeFrames = Math.max(Math.ceil((customMax - customMin + 1) / frameIncrement), 1);
 
-  // Format the total seconds
-  const getDurationLabel = (): string => {
-    const totalFrames = rangeMode === RangeMode.CUSTOM ? customRangeFrames : props.totalFrames;
-    const totalSeconds = totalFrames / fps;
+  const totalFrames = rangeMode === RangeMode.CUSTOM ? customRangeFrames : props.totalFrames;
+  const totalSeconds = totalFrames / fps;
+
+  // Gets the total duration as a MM min, SS sec label.
+  // Also adds decimal places for small durations.
+  const getDurationLabel = (totalSeconds: number): string => {
     const durationMin = Math.floor(totalSeconds / 60);
     const durationSec = totalSeconds - durationMin * 60;
 
@@ -296,6 +331,21 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       timestamp += Math.floor(durationSec).toString() + " sec";
     }
     return timestamp;
+  };
+
+  const getApproximateVideoFilesizeMb = (): number => {
+    // From experimentation, filesize is independent of fps.
+    // It scales linearly with the bitrate until a maximum bitrate is hit,
+    // which seems to depend on the video dimensions.
+
+    // These are more or less magic numbers based on the dataset I'm testing with,
+    // but they're good enough for giving a ballpark range of the resulting filesize.
+    const maxVideoBits = (totalFrames * videoQuality) / 25;
+
+    const bitsPerFrame = props.getCanvas().width * props.getCanvas().height * 10e3;
+    const constrainedBitRate = bitsPerFrame / 4;
+
+    return Math.min(maxVideoBits, constrainedBitRate) / 10e6;
   };
 
   // Footer for the Export modal.
@@ -357,7 +407,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px", marginTop: "15px" }}>
           {/* Recording Mode radio */}
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <CustomRadioGroup
+            <ExportModeRadioGroup
               value={recordingMode}
               buttonStyle="solid"
               optionType="button"
@@ -379,7 +429,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   MP4 video
                 </Tooltip>
               </CustomRadio>
-            </CustomRadioGroup>
+            </ExportModeRadioGroup>
           </div>
 
           {/* Radio options (All/Current Frame/Custom) */}
@@ -452,12 +502,19 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               <VerticalDiv>
                 <HorizontalDiv>
                   <p>FPS:</p>
-                  <SpinBox value={fps} onChange={setFps} min={1} max={120} />
-                  <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
+                  <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} />
+                  <p style={{ color: theme.color.text.hint }}>({getDurationLabel(totalSeconds)})</p>
                 </HorizontalDiv>
                 <HorizontalDiv>
                   <p>Video Quality:</p>
-                  <Radio.Group />
+                  <CustomRadioGroup
+                    disabled={isRecording}
+                    options={videoQualityOptions}
+                    optionType="button"
+                    value={videoQuality}
+                    onChange={(e) => setVideoQuality(e.target.value)}
+                  />
+                  <p style={{ color: theme.color.text.hint }}>(~{Math.round(getApproximateVideoFilesizeMb())} MB)</p>
                 </HorizontalDiv>
               </VerticalDiv>
             </Card>
@@ -468,6 +525,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             <div style={{ paddingLeft: "4px" }}>
               <p>1. Set your default download location </p>
               <p>2. Turn off "Ask where to save each file before downloading" in your browser settings</p>
+              <p>3. For best results, keep this page open while recording</p>
             </div>
           </div>
 
