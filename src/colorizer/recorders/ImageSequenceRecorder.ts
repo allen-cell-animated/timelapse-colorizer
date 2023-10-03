@@ -1,4 +1,4 @@
-import Recorder from "../RecordingControls";
+import Recorder from "./CanvasRecorder";
 
 export default class ImageSequenceRecorder extends Recorder {
   protected async recordFrame(frame: number): Promise<void> {

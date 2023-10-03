@@ -1,5 +1,5 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
-import Recorder, { RecordingOptions, defaultRecordingOptions } from "../RecordingControls";
+import Recorder, { RecordingOptions, defaultRecordingOptions } from "./CanvasRecorder";
 import { sleep } from "../utils/timing_utils";
 
 export enum VideoBitrate {

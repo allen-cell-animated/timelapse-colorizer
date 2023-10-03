@@ -3,7 +3,7 @@ import React, { ReactElement, useCallback, useContext, useEffect, useRef, useSta
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
-import Recorder from "../colorizer/RecordingControls";
+import Recorder from "../colorizer/recorders/CanvasRecorder";
 import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";

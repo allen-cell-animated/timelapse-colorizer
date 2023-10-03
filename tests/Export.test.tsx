@@ -4,7 +4,7 @@ import { ReactElement } from "react";
 import { TEST_ID_EXPORT_ACTION_BUTTON, TEST_ID_OPEN_EXPORT_MODAL_BUTTON } from "../src/components/Export";
 import Export from "../src/components/Export";
 import React from "react";
-import { RecordingOptions } from "../src/colorizer/RecordingControls";
+import { RecordingOptions } from "../src/colorizer/recorders/CanvasRecorder";
 
 describe("ExportButton", () => {
   describe("Image Prefixing", () => {
