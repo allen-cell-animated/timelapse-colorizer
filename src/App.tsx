@@ -58,7 +58,6 @@ function App(): ReactElement {
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
   const downloadAnchorRef = useRef<HTMLAnchorElement | null>(null);
 
   const colorRampData = DEFAULT_COLOR_RAMPS;
@@ -586,6 +585,7 @@ function App(): ReactElement {
             currentFrame={currentFrame}
             defaultImagePrefix={datasetKey + "-" + featureName + "-"}
             disabled={dataset === null}
+            setIsRecording={setIsRecording}
           />
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>

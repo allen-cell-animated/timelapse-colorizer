@@ -1,4 +1,17 @@
-import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress, Tooltip } from "antd";
+import {
+  Button,
+  Modal,
+  Input,
+  Radio,
+  Space,
+  RadioChangeEvent,
+  InputNumber,
+  App,
+  Progress,
+  Tooltip,
+  Card,
+  TimePicker,
+} from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
@@ -47,6 +60,33 @@ const CustomRangeDiv = styled(HorizontalDiv)`
   }
 `;
 
+const CustomRadio = styled(Radio)`
+  & span {
+    // Clip text when the radio is too narrow
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & span:not(.ant-radio-button) {
+    // Text span
+    width: 100%;
+    text-align: center;
+  }
+`;
+
+const CustomRadioGroup = styled(Radio.Group)`
+  & {
+    // Use standard amount of padding, unless the view is too narrow
+    padding: 0 calc(min(40px, 5vw));
+  }
+  & label {
+    // Make the Radio options the same width
+    flex-grow: 1;
+    width: 50%;
+  }
+`;
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(value, min));
 }
@@ -92,6 +132,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameIncrement, setFrameIncrement] = useState(1);
+  const [fps, setFps] = useState(30);
 
   const [percentComplete, setPercentComplete] = useState(0);
 
@@ -232,7 +273,62 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     recorder.current.start();
   };
 
-  const numExportedFrames = Math.max(Math.ceil((customMax - customMin + 1) / frameIncrement), 1);
+  const isWebCodecsEnabled = WebCodecsMp4Recorder.isSupported();
+  const customRangeFrames = Math.max(Math.ceil((customMax - customMin + 1) / frameIncrement), 1);
+
+  // Format the total seconds
+  const getDurationLabel = (): string => {
+    const totalFrames = rangeMode === RangeMode.CUSTOM ? customRangeFrames : props.totalFrames;
+    const totalSeconds = totalFrames / fps;
+    const durationMin = Math.floor(totalSeconds / 60);
+    const durationSec = totalSeconds - durationMin * 60;
+
+    let timestamp = "";
+    if (durationMin > 0) {
+      timestamp += durationMin.toString() + " min, ";
+    }
+    // Format seconds to hundredths
+    if (durationMin === 0 && durationSec < 10) {
+      // Round to hundredths
+      const roundedSeconds = Math.round(durationSec * 100) / 100;
+      timestamp += roundedSeconds.toFixed(2) + " sec";
+    } else {
+      timestamp += Math.floor(durationSec).toString() + " sec";
+    }
+    return timestamp;
+  };
+
+  // Footer for the Export modal.
+  // Layout: Optional Progress meter - Export/Stop Button - Cancel Button
+  const modalFooter = (
+    <HorizontalDiv style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
+      {(percentComplete !== 0 || isRecording) && (
+        <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>
+          <Progress
+            style={{ marginRight: "8px", verticalAlign: "middle" }}
+            type="circle"
+            size={theme.controls.heightSmall - 6}
+            percent={percentComplete}
+            showInfo={false}
+            strokeColor={percentComplete === 100 ? theme.color.text.success : theme.color.theme}
+            strokeWidth={12}
+          />
+        </Tooltip>
+      )}
+      <Button
+        type={isRecording ? "default" : "primary"}
+        onClick={isRecording ? handleStop : handleStartExport}
+        data-testid={TEST_ID_EXPORT_ACTION_BUTTON}
+        style={{ width: "76px" }}
+        disabled={isPlayingCloseAnimation}
+      >
+        {isRecording ? "Stop" : "Export"}
+      </Button>
+      <Button onClick={handleCancel} style={{ width: "76px" }} disabled={isPlayingCloseAnimation}>
+        {isRecording ? "Cancel" : "Close"}
+      </Button>
+    </HorizontalDiv>
+  );
 
   return (
     <div ref={modalContextRef}>
@@ -248,7 +344,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
       {/* Export modal */}
       <Modal
-        title={"Export image sequence"}
+        title={"Export"}
         open={isLoadModalOpen}
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
@@ -256,94 +352,116 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         // Don't allow cancellation of modal by clicking off it when the recording is happening
         maskClosable={!isRecording}
         getContainer={modalContextRef.current || undefined}
-        footer={
-          // Layout: Optional Progress meter - Export/Stop Button - Cancel Button
-          <HorizontalDiv style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
-            {(percentComplete !== 0 || isRecording) && (
-              <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>
-                <Progress
-                  style={{ marginRight: "8px", verticalAlign: "middle" }}
-                  type="circle"
-                  size={theme.controls.heightSmall - 6}
-                  percent={percentComplete}
-                  showInfo={false}
-                  strokeColor={percentComplete === 100 ? theme.color.text.success : theme.color.theme}
-                  strokeWidth={12}
-                />
-              </Tooltip>
-            )}
-            <Button
-              type={isRecording ? "default" : "primary"}
-              onClick={isRecording ? handleStop : handleStartExport}
-              data-testid={TEST_ID_EXPORT_ACTION_BUTTON}
-              style={{ width: "76px" }}
-              disabled={isPlayingCloseAnimation}
-            >
-              {isRecording ? "Stop" : "Export"}
-            </Button>
-            <Button onClick={handleCancel} style={{ width: "76px" }} disabled={isPlayingCloseAnimation}>
-              {isRecording ? "Cancel" : "Close"}
-            </Button>
-          </HorizontalDiv>
-        }
+        footer={modalFooter}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px", marginTop: "15px" }}>
+          {/* Recording Mode radio */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <CustomRadioGroup
+              value={recordingMode}
+              buttonStyle="solid"
+              optionType="button"
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "center",
+                width: "100%",
+              }}
+              onChange={(e) => setRecordingMode(e.target.value)}
+            >
+              <CustomRadio value={RecordingMode.IMAGE_SEQUENCE}>PNG image sequence</CustomRadio>
+              <CustomRadio value={RecordingMode.VIDEO_MP4} disabled={!isWebCodecsEnabled}>
+                {/* Optional tooltip here in case WebCodecs API is not enabled. */}
+                <Tooltip
+                  title={"Video recording isn't supported by this browser."}
+                  open={isWebCodecsEnabled ? false : undefined}
+                >
+                  MP4 video
+                </Tooltip>
+              </CustomRadio>
+            </CustomRadioGroup>
+          </div>
+
           {/* Radio options (All/Current Frame/Custom) */}
+          <Card size="small">
+            <Radio.Group
+              value={rangeMode}
+              onChange={(e: RadioChangeEvent) => {
+                setRangeMode(e.target.value);
+              }}
+              disabled={isRecording}
+            >
+              <Space direction="vertical">
+                <Radio value={RangeMode.ALL}>
+                  All frames{" "}
+                  {rangeMode === RangeMode.ALL && (
+                    <span style={{ color: theme.color.text.hint, marginLeft: "4px" }}>
+                      ({props.totalFrames} frames total)
+                    </span>
+                  )}
+                </Radio>
+                <Radio value={RangeMode.CURRENT} disabled={recordingMode === RecordingMode.VIDEO_MP4}>
+                  Current frame only
+                </Radio>
+                <Radio value={RangeMode.CUSTOM}>Custom range</Radio>
 
-          <Radio.Group
-            value={rangeMode}
-            onChange={(e: RadioChangeEvent) => {
-              setRangeMode(e.target.value);
-            }}
-            disabled={isRecording}
-          >
-            <Space direction="vertical">
-              <Radio value={RangeMode.ALL}>
-                All frames{" "}
-                {rangeMode === RangeMode.ALL && (
-                  <span style={{ color: theme.color.text.hint, marginLeft: "4px" }}>
-                    ({props.totalFrames} frames total)
-                  </span>
-                )}
-              </Radio>
-              <Radio value={RangeMode.CURRENT}>Current frame only</Radio>
-              <Radio value={RangeMode.CUSTOM}>Custom range</Radio>
+                {rangeMode === RangeMode.CUSTOM ? (
+                  // Render the custom range input in the radio list if selected
+                  <VerticalDiv style={{ paddingLeft: "25px" }}>
+                    <CustomRangeDiv>
+                      <p>Range:</p>
+                      <InputNumber
+                        aria-label="min frame"
+                        controls={false}
+                        min={0}
+                        max={props.totalFrames - 1}
+                        value={customMin}
+                        onChange={(value) => value && setCustomMin(value)}
+                        disabled={isRecording}
+                      />
+                      <p>-</p>
+                      <InputNumber
+                        aria-label="max frame"
+                        controls={false}
+                        min={customMin}
+                        max={props.totalFrames - 1}
+                        value={customMax}
+                        onChange={(value) => value && setCustomMax(value)}
+                        disabled={isRecording}
+                      />
+                      <p>of {props.totalFrames - 1}</p>
+                    </CustomRangeDiv>
+                    <HorizontalDiv>
+                      <p>Frame Increment:</p>
+                      <SpinBox
+                        value={frameIncrement}
+                        onChange={setFrameIncrement}
+                        min={1}
+                        max={props.totalFrames - 1}
+                      />
+                      <p style={{ color: theme.color.text.hint }}>({customRangeFrames} frames total)</p>
+                    </HorizontalDiv>
+                  </VerticalDiv>
+                ) : null}
+              </Space>
+            </Radio.Group>
+          </Card>
 
-              {rangeMode === RangeMode.CUSTOM ? (
-                // Render the custom range input in the radio list if selected
-                <VerticalDiv style={{ paddingLeft: "25px" }}>
-                  <CustomRangeDiv>
-                    <p>Range:</p>
-                    <InputNumber
-                      aria-label="min frame"
-                      controls={false}
-                      min={0}
-                      max={props.totalFrames - 1}
-                      value={customMin}
-                      onChange={(value) => value && setCustomMin(value)}
-                      disabled={isRecording}
-                    />
-                    <p>-</p>
-                    <InputNumber
-                      aria-label="max frame"
-                      controls={false}
-                      min={customMin}
-                      max={props.totalFrames - 1}
-                      value={customMax}
-                      onChange={(value) => value && setCustomMax(value)}
-                      disabled={isRecording}
-                    />
-                    <p>of {props.totalFrames - 1}</p>
-                  </CustomRangeDiv>
-                  <HorizontalDiv>
-                    <p>Frame Increment:</p>
-                    <SpinBox value={frameIncrement} onChange={setFrameIncrement} min={1} max={props.totalFrames - 1} />
-                    <p style={{ color: theme.color.text.hint }}>({numExportedFrames} frames total)</p>
-                  </HorizontalDiv>
-                </VerticalDiv>
-              ) : null}
-            </Space>
-          </Radio.Group>
+          {recordingMode === RecordingMode.VIDEO_MP4 && (
+            <Card size="small" title={<p>Video settings</p>}>
+              <VerticalDiv>
+                <HorizontalDiv>
+                  <p>FPS:</p>
+                  <SpinBox value={fps} onChange={setFps} min={1} max={120} />
+                  <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
+                </HorizontalDiv>
+                <HorizontalDiv>
+                  <p>Video Quality:</p>
+                  <Radio.Group />
+                </HorizontalDiv>
+              </VerticalDiv>
+            </Card>
+          )}
 
           <div>
             <p>Helpful tips:</p>
