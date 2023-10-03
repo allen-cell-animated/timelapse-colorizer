@@ -173,7 +173,17 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     setCustomMax(props.totalFrames - 1);
   }, [props.totalFrames]);
 
-  const getImagePrefix = (): string => (useDefaultImagePrefix ? props.defaultImagePrefix : imagePrefix);
+  const getImagePrefix = (): string => {
+    if (useDefaultImagePrefix) {
+      if (recordingMode === RecordingMode.IMAGE_SEQUENCE) {
+        return props.defaultImagePrefix + "-";
+      } else {
+        return props.defaultImagePrefix;
+      }
+    } else {
+      return imagePrefix;
+    }
+  };
 
   //////////////// EVENT HANDLERS ////////////////
 
@@ -314,7 +324,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   // Gets the total duration as a MM min, SS sec label.
   // Also adds decimal places for small durations.
-  const getDurationLabel = (totalSeconds: number): string => {
+  const getDurationLabel = (): string => {
     const durationMin = Math.floor(totalSeconds / 60);
     const durationSec = totalSeconds - durationMin * 60;
 
@@ -339,7 +349,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // which seems to depend on the video dimensions.
 
     // These are more or less magic numbers based on the dataset I'm testing with,
-    // but they're good enough for giving a ballpark range of the resulting filesize.
+    // but they're good enough for giving an order of magnitude range of the resulting filesize.
     const maxVideoBits = (totalFrames * videoQuality) / 25;
 
     const bitsPerFrame = props.getCanvas().width * props.getCanvas().height * 10e3;
@@ -482,7 +492,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                       <p>of {props.totalFrames - 1}</p>
                     </CustomRangeDiv>
                     <HorizontalDiv>
-                      <p>Frame Increment:</p>
+                      <p>Frame increment:</p>
                       <SpinBox
                         value={frameIncrement}
                         onChange={setFrameIncrement}
@@ -503,10 +513,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 <HorizontalDiv>
                   <p>FPS:</p>
                   <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} />
-                  <p style={{ color: theme.color.text.hint }}>({getDurationLabel(totalSeconds)})</p>
+                  <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
                 </HorizontalDiv>
                 <HorizontalDiv>
-                  <p>Video Quality:</p>
+                  <p>Video quality:</p>
                   <CustomRadioGroup
                     disabled={isRecording}
                     options={videoQualityOptions}
@@ -532,7 +542,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           {/* Filename prefix */}
           <HorizontalDiv style={{ flexWrap: "nowrap" }}>
             <label style={{ width: "100%" }}>
-              <p>Prefix:</p>
+              <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "Prefix:" : "Filename:"}</p>
               <Input
                 onChange={(event) => {
                   setImagePrefix(event.target.value);
@@ -543,7 +553,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 disabled={isRecording}
               />
             </label>
-            <p>#.png</p>
+            <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "#.png" : ".mp4"}</p>
             <Button
               disabled={isRecording || useDefaultImagePrefix}
               onClick={() => {

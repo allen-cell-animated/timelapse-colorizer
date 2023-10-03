@@ -583,7 +583,7 @@ function App(): ReactElement {
               return canv.domElement;
             }}
             currentFrame={currentFrame}
-            defaultImagePrefix={datasetKey + "-" + featureName + "-"}
+            defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
             setIsRecording={setIsRecording}
           />
