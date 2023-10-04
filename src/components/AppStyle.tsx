@@ -11,7 +11,7 @@ const palette = {
   themeDark: "#5f369f",
   themeLight: "#aa88ed",
   gray0: "#ffffff",
-  gray5: "#f3f4f5",
+  gray5: "#f2f2f2",
   gray10: "#e6e7e8",
   gray20: "#cbcbcc",
   gray30: "#a3a4a5",
@@ -48,10 +48,14 @@ const theme = {
     },
     button: {
       background: palette.theme,
+      outline: palette.gray20,
       hover: palette.themeLight,
       active: palette.themeDark,
       disabled: palette.gray5,
       focusShadow: "rgba(137, 98, 211, 0.06)",
+    },
+    slider: {
+      rail: palette.gray5,
     },
   },
   font: {
@@ -139,12 +143,13 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorPrimary: theme.color.theme,
             colorLink: theme.color.theme,
             colorLinkHover: theme.color.themeDark,
-
+            colorBorder: theme.color.layout.borders,
             controlHeight: theme.controls.height,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
             borderRadiusLG: 4,
             colorText: theme.color.text.primary,
+            colorTextPlaceholder: theme.color.text.hint,
           },
           components: {
             Button: {
@@ -164,6 +169,8 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               handleActiveColor: theme.color.themeLight,
               handleColor: theme.color.theme,
               trackBg: theme.color.theme,
+              railBg: theme.color.slider.rail,
+              railHoverBg: theme.color.slider.rail,
               controlHeightSM: 20,
               trackHoverBg: theme.color.themeLight,
             },
