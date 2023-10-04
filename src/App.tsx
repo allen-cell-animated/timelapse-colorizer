@@ -10,11 +10,12 @@ import {
 } from "@ant-design/icons";
 import { Button, Checkbox, Divider, Input, InputNumber, Slider, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
+import { Color } from "three";
 
 import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import RecordingControls, { RecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -28,6 +29,7 @@ import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 import Export from "./components/Export";
+import DrawModeDropdown from "./components/DrawModeDropdown";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -62,8 +64,16 @@ function App(): ReactElement {
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
+  const [outOfRangeDrawSettings, setoutOfRangeDrawSettings] = useState({
+    mode: DrawMode.USE_RAMP,
+    color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
+  });
+  const [outlierDrawSettings, setOutlierDrawSettings] = useState({
+    mode: DrawMode.USE_COLOR,
+    color: new Color(OUTLIER_COLOR_DEFAULT),
+  });
+
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
-  const [hideValuesOutOfRange, setHideValuesOutOfRange] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
@@ -115,11 +125,16 @@ function App(): ReactElement {
    * render. Also update other UI elements, including the plot and URL.
    */
   useEffect(() => {
+    // TODO: This is getting larger... ColorizeCanvas needs to be refactored to take
+    // all of these in as props.
     // Note: Selected track, frame number, etc. are not updated here.
     // Those operations are async, and need to complete before a state update to be
     // rendered correctly.
     canv.setShowTrackPath(showTrackPath);
-    canv.setHideValuesOutOfRange(hideValuesOutOfRange);
+
+    canv.setOutOfRangeDrawMode(outOfRangeDrawSettings.mode, outOfRangeDrawSettings.color);
+    canv.setOutlierDrawMode(outlierDrawSettings.mode, outlierDrawSettings.color);
+
     canv.setColorRamp(colorRampData.get(colorRampKey)?.colorRamp!); // TODO: Add fallback?
     canv.setColorMapRangeMin(colorRampMin);
     canv.setColorMapRangeMax(colorRampMax);
@@ -140,12 +155,13 @@ function App(): ReactElement {
     featureName,
     currentFrame,
     selectedTrack,
-    hideValuesOutOfRange,
     showTrackPath,
     colorRampData,
     colorRampKey,
     colorRampMin,
     colorRampMax,
+    outOfRangeDrawSettings,
+    outlierDrawSettings,
     timeControls.isPlaying(), // updates URL when timeControls stops
     getUrlParams,
   ]);
@@ -346,6 +362,7 @@ function App(): ReactElement {
       // Clear and/or update UI
       plot?.setDataset(newDataset);
       plot?.removePlot();
+
       setFindTrackInput("");
       setSelectedTrack(null);
       urlUtils.updateUrl(getUrlParams());
@@ -412,9 +429,10 @@ function App(): ReactElement {
       }
       setFeatureName(newFeatureName);
 
-      if (!isColorRampRangeLocked) {
-        setColorRampMin(newDataset?.features[newFeatureName].min || colorRampMin);
-        setColorRampMax(newDataset?.features[newFeatureName].max || colorRampMax);
+      const featureData = newDataset.getFeatureData(newFeatureName);
+      if (!isColorRampRangeLocked && featureData) {
+        setColorRampMin(featureData.min);
+        setColorRampMax(featureData.max);
       }
 
       canv.setFeature(newFeatureName);
@@ -650,15 +668,6 @@ function App(): ReactElement {
             </div>
             <div>
               <Checkbox
-                type="checkbox"
-                checked={hideValuesOutOfRange}
-                onChange={() => {
-                  setHideValuesOutOfRange(!hideValuesOutOfRange);
-                }}
-              >
-                Hide values outside of range
-              </Checkbox>
-              <Checkbox
                 checked={isColorRampRangeLocked}
                 onChange={() => {
                   // Invert lock on range
@@ -776,15 +785,33 @@ function App(): ReactElement {
             <Divider orientationMargin={0} />
             <div>
               <h2>Viewer settings</h2>
-              <Checkbox
-                type="checkbox"
-                checked={showTrackPath}
-                onChange={() => {
-                  setShowTrackPath(!showTrackPath);
-                }}
-              >
-                Show track path
-              </Checkbox>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                <DrawModeDropdown
+                  label="Values outside of range"
+                  selected={outOfRangeDrawSettings.mode}
+                  color={outOfRangeDrawSettings.color}
+                  onChange={(mode: DrawMode, color: Color) => {
+                    setoutOfRangeDrawSettings({ mode, color });
+                  }}
+                />
+                <DrawModeDropdown
+                  label="Outliers"
+                  selected={outlierDrawSettings.mode}
+                  color={outlierDrawSettings.color}
+                  onChange={(mode: DrawMode, color: Color) => {
+                    setOutlierDrawSettings({ mode, color });
+                  }}
+                />
+                <Checkbox
+                  type="checkbox"
+                  checked={showTrackPath}
+                  onChange={() => {
+                    setShowTrackPath(!showTrackPath);
+                  }}
+                >
+                  Show track path
+                </Checkbox>
+              </div>
             </div>
           </div>
         </div>
