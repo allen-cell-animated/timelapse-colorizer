@@ -499,7 +499,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             <Card size="small" title={<p>Video settings</p>}>
               <VerticalDiv>
                 <HorizontalDiv>
-                  <p>FPS:</p>
+                  <p>Frames per second:</p>
                   <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} />
                   <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
                 </HorizontalDiv>
