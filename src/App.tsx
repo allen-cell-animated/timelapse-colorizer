@@ -10,6 +10,7 @@ import {
 } from "@ant-design/icons";
 import { Button, Checkbox, Divider, Input, InputNumber, Slider, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
+import { Color } from "three";
 
 import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
@@ -29,7 +30,6 @@ import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 import Export from "./components/Export";
 import DrawModeDropdown from "./components/DrawModeDropdown";
-import { Color } from "three";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
