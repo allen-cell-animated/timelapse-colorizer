@@ -60,7 +60,7 @@ export default class CanvasRecorder {
   private finishedRecording: boolean;
   private timerId: number;
 
-  private setFrameAndRender: (frame: number) => Promise<void>;
+  protected setFrameAndRender: (frame: number) => Promise<void>;
   protected getCanvas: () => HTMLCanvasElement;
   protected options: RecordingOptions;
 
@@ -119,7 +119,6 @@ export default class CanvasRecorder {
         return;
       }
 
-      await this.setFrameAndRender(frame);
       await this.recordFrame(frame);
 
       if (!this.recording) {
@@ -154,7 +153,8 @@ export default class CanvasRecorder {
 
   /**
    * Called on each frame that will be recorded, but before the
-   * optional `onRecordFrame` callback.
+   * optional `onRecordFrame` callback. Any work needed
+   * to set up the canvas (e.g., calling `setFrameAndRender()`) should be done here.
    */
   protected async recordFrame(_frame: number): Promise<void> {}
 

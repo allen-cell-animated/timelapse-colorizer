@@ -39,11 +39,11 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     const width = this.options.outputSize[0];
     const height = this.options.outputSize[1];
     const bitrate = this.options.bitrate;
-    // first value is browser-recognized codec, second value is muxer codec name
-
     // Note: Only avc is recognized by Windows Media player by default. The other codec formats
     // can be played if plugins are downloaded. AVC is set to be the default here, with fallbacks
     // just in case.
+
+    // first value is browser-recognized codec, second value is muxer codec name
     const codecs: [string, "avc" | "vp9" | "av1"][] = [
       ["avc1.420028", "avc"],
       ["vp09.00.10.08", "vp9"],
@@ -73,13 +73,12 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
               height: height,
             },
           });
+          return;
         }
       }
     }
 
-    if (!this.muxer) {
-      throw new Error("No valid configuration found for the VideoEncoder.");
-    }
+    throw new Error("No valid configuration found for the VideoEncoder.");
   }
 
   protected async recordFrame(frame: number): Promise<void> {
@@ -95,9 +94,6 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     const timestampMicroseconds = (frameIndex / fps) * 10e6;
     const durationMicroseconds = 10e6 / fps;
 
-    // Add a slight timer to make sure the canvas is actually done rendering.
-    await sleep(10);
-
     // Delay if needed so video encoder can finish processing.
     // See https://developer.chrome.com/articles/webcodecs/#encoding
     while (this.videoEncoder.encodeQueueSize > 2) {
@@ -108,6 +104,8 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
       return;
     }
 
+    // Force a re-render just before recording to prevent blank frames.
+    await this.setFrameAndRender(frame);
     // Add the frame to the video encoder
     const videoFrame = new VideoFrame(this.getCanvas(), {
       // Fixes weird quirk where duration/timestamps are off by a magnitude of 10
