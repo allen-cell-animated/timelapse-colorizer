@@ -3,7 +3,7 @@ import React, { ReactElement, useCallback, useContext, useEffect, useRef, useSta
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
-import Recorder from "../colorizer/recorders/CanvasRecorder";
+import CanvasRecorder from "../colorizer/recorders/CanvasRecorder";
 import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
@@ -118,7 +118,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
 
   const [recordingMode, _setRecordingMode] = useState(RecordingMode.IMAGE_SEQUENCE);
-  const recorder = useRef<Recorder | null>(null);
+  const recorder = useRef<CanvasRecorder | null>(null);
 
   const [rangeMode, setRangeMode] = useState(RangeMode.ALL);
   const [customMin, setCustomMin] = useState(0);
@@ -523,7 +523,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             <div style={{ paddingLeft: "4px" }}>
               <p>1. Set your default download location </p>
               <p>2. Turn off "Ask where to save each file before downloading" in your browser settings</p>
-              <p>3. For best results, keep this page open while recording</p>
+              <p>3. For best results, keep this page open while exporting</p>
             </div>
           </div>
 

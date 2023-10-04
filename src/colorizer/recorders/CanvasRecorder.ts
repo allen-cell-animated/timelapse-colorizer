@@ -55,7 +55,7 @@ export const defaultRecordingOptions: RecordingOptions = {
  * Provides lifecycle methods for recording each frame, recording completion,
  * and cleanup.
  */
-export default class Recorder {
+export default class CanvasRecorder {
   private recording: boolean;
   private finishedRecording: boolean;
   private timerId: number;
@@ -74,7 +74,7 @@ export default class Recorder {
     getCanvas: () => HTMLCanvasElement,
     options?: Partial<RecordingOptions>
   ) {
-    if (new.target === Recorder) {
+    if (new.target === CanvasRecorder) {
       throw new TypeError("Recorder is an abstract class. Do not construct instances of it directly!");
     }
 
@@ -119,8 +119,6 @@ export default class Recorder {
         return;
       }
 
-      // Trigger a render through the redrawfn parameter so other UI elements update
-      // Must force render here or else empty image data is returned.
       await this.setFrameAndRender(frame);
       await this.recordFrame(frame);
 

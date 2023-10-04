@@ -1,5 +1,5 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
-import Recorder, { RecordingOptions, defaultRecordingOptions } from "./CanvasRecorder";
+import CanvasRecorder, { RecordingOptions, defaultRecordingOptions } from "./CanvasRecorder";
 import { sleep } from "../utils/timing_utils";
 
 export enum VideoBitrate {
@@ -14,7 +14,7 @@ export enum VideoBitrate {
  * Note that the VideoCodecs API is unavailable in some browsers, including Firefox,
  * as of 10/2/2023.
  */
-export default class Mp4VideoRecorder extends Recorder {
+export default class Mp4VideoRecorder extends CanvasRecorder {
   private videoEncoder: VideoEncoder;
   private muxer?: Muxer<ArrayBufferTarget>;
 
@@ -40,9 +40,13 @@ export default class Mp4VideoRecorder extends Recorder {
     const height = this.options.outputSize[1];
     const bitrate = this.options.bitrate;
     // first value is browser-recognized codec, second value is muxer codec name
+
+    // Note: Only avc is recognized by Windows Media player by default. The other codec formats
+    // can be played if plugins are downloaded. AVC is set to be the default here, with fallbacks
+    // just in case.
     const codecs: [string, "avc" | "vp9" | "av1"][] = [
       ["avc1.420028", "avc"],
-      // ["vp09.00.10.08", "vp9"],  // Disabled because this is not recognized by Windows media players
+      ["vp09.00.10.08", "vp9"],
       ["av01.0.04M.08", "av1"],
     ];
     const accelerations: ("prefer-hardware" | "prefer-software")[] = ["prefer-hardware", "prefer-software"];
@@ -79,12 +83,13 @@ export default class Mp4VideoRecorder extends Recorder {
   }
 
   protected async recordFrame(frame: number): Promise<void> {
-    const frameIndex = frame - this.options.min;
+    const frameIndex = Math.floor((frame - this.options.min) / this.options.frameIncrement);
 
     // Video compression works by recording changes from one frame to the next. Keyframes
     // have the full frame data saved, so adding them in ensures a smaller drop in frame
     // quality. See https://en.wikipedia.org/wiki/Key_frame for more details.
-    const keyFrame = frame % 30 === 0;
+    console.log(frameIndex);
+    const keyFrame = frameIndex % 30 === 0;
     const fps = this.options.fps;
     // 1 second = 1,000,000 microseconds
     const timestampMicroseconds = (frameIndex / fps) * 10e6;

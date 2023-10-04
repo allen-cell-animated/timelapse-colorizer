@@ -1,6 +1,6 @@
-import Recorder from "./CanvasRecorder";
+import CanvasRecorder from "./CanvasRecorder";
 
-export default class ImageSequenceRecorder extends Recorder {
+export default class ImageSequenceRecorder extends CanvasRecorder {
   protected async recordFrame(frame: number): Promise<void> {
     const minDigits = this.options.minDigits || this.options.max.toString().length || 1;
 

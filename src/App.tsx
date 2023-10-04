@@ -27,7 +27,6 @@ import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } f
 import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
-
 import Export from "./components/Export";
 import DrawModeDropdown from "./components/DrawModeDropdown";
 
@@ -59,8 +58,6 @@ function App(): ReactElement {
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
-
-  const downloadAnchorRef = useRef<HTMLAnchorElement | null>(null);
 
   const colorRampData = DEFAULT_COLOR_RAMPS;
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
@@ -802,7 +799,6 @@ function App(): ReactElement {
             </div>
           </div>
         </div>
-        <a ref={downloadAnchorRef}></a>
       </div>
     </AppStyle>
   );
