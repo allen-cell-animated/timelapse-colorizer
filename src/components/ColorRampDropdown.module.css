@@ -66,9 +66,7 @@
   transition: all 0.1s;
 }
 
-#dropdownButton,
-#dropdownFirst,
-#dropdownLast {
+#dropdownButton {
   width: 100%;
   border-radius: 0;
   box-shadow: none;
@@ -82,16 +80,14 @@
   overflow: hidden;
 }
 
-#dropdownFirst {
+#dropdownButton.dropdownFirst {
   border-radius: var(--button-radius) var(--button-radius) 0 0;
 }
 
-#dropdownLast {
+#dropdownButton.dropdownLast {
   border-radius: 0 0 var(--button-radius) var(--button-radius);
 }
 
-#dropdownFirst:hover,
-#dropdownLast:hover,
 #dropdownButton:hover {
   outline: 1px solid var(--color-text-button);
   outline-offset: -1px;

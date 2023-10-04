@@ -1,5 +1,5 @@
 import React, { ReactElement, useContext, useMemo } from "react";
-import styles from "./ColorRampSelector.module.css";
+import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { Button, Tooltip } from "antd";
 import { AppThemeContext } from "./AppStyle";
@@ -43,20 +43,20 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     // Make a button for every color ramp
     for (let i = 0; i < props.colorRamps.size; i++) {
       let id = styles.dropdownButton;
-      let className = "";
       // Manipulate class names for rounding at start and end of dropdown list
+      let className = "";
       if (i === 0) {
-        id = styles.dropdownFirst;
+        className = styles.dropdownFirst;
       }
       if (i === props.colorRamps!.size - 1) {
-        id = styles.dropdownLast;
+        className = styles.dropdownLast;
       }
 
       // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key}>
-          <Button key={key} className={className} onClick={() => props.onChange(key)} id={id}>
+          <Button key={key} rootClassName={className} onClick={() => props.onChange(key)} id={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>

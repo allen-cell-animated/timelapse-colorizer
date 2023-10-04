@@ -21,7 +21,7 @@ import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
-import ColorRampSelector from "./components/ColorRampSelector";
+import ColorRampSelector from "./components/ColorRampDropdown";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";

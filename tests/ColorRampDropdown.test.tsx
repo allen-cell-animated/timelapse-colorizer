@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import ColorRampSelector from "../src/components/ColorRampSelector";
+import ColorRampSelector from "../src/components/ColorRampDropdown";
 import React from "react";
 import { ColorRamp } from "../src/colorizer";
 import { ANY_ERROR } from "./test_utils";
