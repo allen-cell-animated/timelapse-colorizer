@@ -1,8 +1,9 @@
 import React, { ReactElement, useMemo } from "react";
 import styles from "./LabeledDropdown.module.css";
-import { Dropdown, Tooltip, Button, MenuProps } from "antd";
+import { Dropdown, Button, MenuProps, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
+import OptionalTooltip from "./OptionalTooltip";
 
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -74,8 +75,8 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     // TODO: Override render property for menu to add text clipping + tooltips for long entries
   };
 
-  let dropdownContents = (
-    <Button disabled={props.disabled} type={props.buttonType}>
+  let dropdownContent = (
+    <Button id={styles.dropdownButton} disabled={props.disabled} type={props.buttonType}>
       <div className={styles.buttonContents}>
         <div className={styles.buttonText}>{selectedLabel}</div>
         <DropdownSVG className={`${styles.buttonIcon} ${styles[props.buttonType || "default"]}`} />
@@ -83,13 +84,13 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     </Button>
   );
 
-  // Add a tooltip for the currently selected element.
-  // Workaround: Remove the tooltip when the dropdown is disabled, as otherwise it
-  // introduces a placeholder span element that messes with the height of the button when disabled.
-  if (!props.disabled && props.showTooltip) {
-    dropdownContents = (
+  // Can't use OptionalTooltip because Ant passes props from Dropdown
+  // to the Button through the Ant Tooltip component >:(
+  const disableTooltip = props.disabled || !props.showTooltip || true;
+  if (!disableTooltip) {
+    dropdownContent = (
       <Tooltip title={selectedLabel} placement="right">
-        {dropdownContents}
+        {dropdownContent}
       </Tooltip>
     );
   }
@@ -98,7 +99,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     <div className={styles.labeledDropdown}>
       {props.label && <h3>{props.label}</h3>}
       <Dropdown menu={datasetMenuProps} disabled={props.disabled}>
-        {dropdownContents}
+        {dropdownContent}
       </Dropdown>
     </div>
   );

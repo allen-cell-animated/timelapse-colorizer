@@ -5,11 +5,26 @@
   gap: 6px;
 }
 
-.labeledDropdown button {
+#dropdownButton {
   max-width: 164px;
   width: 15vw;
   min-width: 84px;
   transition: width 0s; /* Override Antd width transition */
+}
+
+#dropdownButton:global(.ant-btn-default):not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-borders);
+}
+
+#dropdownButton:global(.ant-btn-default):not(:disabled):hover {
+  background-color: transparent;
+  border-color: var(--color-button);
+}
+
+#dropdownButton:global(.ant-btn-default):not(:disabled):active {
+  background-color: transparent;
+  border-color: var(--color-button-active);
 }
 
 .buttonContents {

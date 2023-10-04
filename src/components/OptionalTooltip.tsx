@@ -14,6 +14,10 @@ type OptionalTooltipProps = {
  *
  * This component exists because disabling a tooltip in Ant causes unwanted
  * layout changes.
+ *
+ *
+ * Note: Ant sometimes passes information in props between components, such as for the
+ * Dropdown and its children. This component will not work in those cases.
  */
 export default function OptionalTooltip(props: PropsWithChildren<OptionalTooltipProps>): ReactElement {
   if (props.disabled) {

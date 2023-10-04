@@ -126,7 +126,9 @@ const CssContainer = styled.div`
     text-align: right;
   }
 
-  // Override button styling to match design
+  // Override button styling to match design.
+  // Specifically, remove the drop shadow, and change the hover/active
+  // behavior so the border changes color instead of the background.
   .ant-btn-primary:not(:disabled),
   .ant-btn-default:not(:disabled) {
     // disable drop shadow
