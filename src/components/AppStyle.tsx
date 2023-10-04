@@ -35,7 +35,7 @@ const theme = {
       primary: palette.gray60,
       secondary: palette.gray50,
       hint: palette.gray30,
-      disabled: palette.gray30,
+      disabled: palette.gray40,
       button: palette.gray0,
       error: palette.error,
       success: palette.success,
@@ -47,11 +47,12 @@ const theme = {
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
     button: {
-      background: palette.theme,
-      outline: palette.gray20,
+      backgroundPrimary: palette.theme,
+      backgroundDisabled: palette.gray20,
+      outline: palette.theme,
+      outlineActive: palette.themeDark,
       hover: palette.themeLight,
       active: palette.themeDark,
-      disabled: palette.gray5,
       focusShadow: "rgba(137, 98, 211, 0.06)",
     },
     slider: {
@@ -66,6 +67,7 @@ const theme = {
       section: 18,
       label: 16,
       content: 14,
+      labelSmall: 12,
     },
   },
   controls: {
@@ -101,10 +103,10 @@ const CssContainer = styled.div`
   styling has the same active and hover colors (just with different outlines).
   Would dark/light theme be more descriptive? 
    */
-  --color-button: ${theme.color.button.background};
+  --color-button: ${theme.color.button.backgroundPrimary};
   --color-button-hover: ${theme.color.button.hover};
   --color-button-active: ${theme.color.button.active};
-  --color-button-disabled: ${theme.color.button.disabled};
+  --color-button-disabled: ${theme.color.button.backgroundDisabled};
 
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;
@@ -118,9 +120,43 @@ const CssContainer = styled.div`
   --font-size-section: ${theme.font.size.section}px;
   --font-size-label: ${theme.font.size.label}px;
   --font-size-content: ${theme.font.size.content}px;
+  --font-size-label-small: ${theme.font.size.labelSmall}px;
 
   .ant-input-number-input {
     text-align: right;
+  }
+
+  // Override button styling to match design
+  .ant-btn-primary:not(:disabled),
+  .ant-btn-default:not(:disabled) {
+    // disable drop shadow
+    box-shadow: none;
+  }
+
+  .ant-btn-primary:not(:disabled):active,
+  .ant-btn-primary:not(:disabled):hover,
+  .ant-btn-default:not(:disabled):active,
+  .ant-btn-default:not(:disabled):hover {
+    border-color: ${theme.color.button.hover};
+    background-color: ${theme.color.button.hover};
+    color: ${theme.color.text.button};
+  }
+
+  .ant-btn-primary:not(:disabled):active {
+    border: 1px solid ${theme.color.button.backgroundPrimary};
+  }
+
+  .ant-btn-default:not(:disabled):hover {
+    border: 1px solid ${theme.color.button.backgroundPrimary};
+  }
+
+  .ant-btn-default:not(:disabled):active {
+    border: 1px solid ${theme.color.button.outlineActive};
+  }
+
+  .ant-btn-default:not(:disabled) {
+    border-color: ${theme.color.button.outline};
+    color: ${theme.color.button.outline};
   }
 `;
 
@@ -155,6 +191,10 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             Button: {
               colorPrimaryActive: theme.color.button.hover,
               colorPrimaryHover: theme.color.button.hover,
+              textHoverBg: theme.color.text.button,
+              colorBgTextHover: theme.color.text.button,
+              defaultBorderColor: theme.color.theme,
+              defaultColor: theme.color.theme,
             },
             Checkbox: {
               borderRadiusSM: 2,
