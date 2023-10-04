@@ -13,19 +13,24 @@
   padding: 0;
 }
 
-.selectorButton {
+#selectorButton {
+  /* Override at-rest border color.*/
+  /* TODO: !important seems like an anti-pattern; find a way to replace? */
+  border: 1px solid var(--color-borders) !important;
+}
+#selectorButton {
   padding: 0;
   margin: 0;
   overflow: hidden;
   height: var(--height);
 }
 
-.selectorButton:disabled > img {
+#selectorButton:disabled > img {
   filter: grayscale(100%);
 }
 
 .dropdownContainer {
-  z-index: 1;
+  z-index: 10;
   position: absolute;
   top: calc(--height + 1px);
   display: flex;
@@ -61,11 +66,15 @@
   transition: all 0.1s;
 }
 
-.dropdownContainer > button {
+#dropdownButton,
+#dropdownFirst,
+#dropdownLast {
+  width: 100%;
   border-radius: 0;
   box-shadow: none;
   margin: 0;
   padding: 0;
+  border-width: 0;
   border: 0px solid transparent;
   outline: 0px solid var(--color-text-button);
   outline-offset: -1px;
@@ -73,15 +82,17 @@
   overflow: hidden;
 }
 
-.dropdownContainer > .dropdownFirst {
+#dropdownFirst {
   border-radius: var(--button-radius) var(--button-radius) 0 0;
 }
 
-.dropdownContainer > .dropdownLast {
+#dropdownLast {
   border-radius: 0 0 var(--button-radius) var(--button-radius);
 }
 
-.dropdownContainer > button:hover {
+#dropdownFirst:hover,
+#dropdownLast:hover,
+#dropdownButton:hover {
   outline: 1px solid var(--color-text-button);
   outline-offset: -1px;
 }

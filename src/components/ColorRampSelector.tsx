@@ -3,6 +3,7 @@ import styles from "./ColorRampSelector.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { Button, Tooltip } from "antd";
 import { AppThemeContext } from "./AppStyle";
+import OptionalTooltip from "./OptionalTooltip";
 
 type ColorRampSelectorProps = {
   selected: string;
@@ -41,20 +42,21 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     const colorRampEntries = Array.from(props.colorRamps!.entries());
     // Make a button for every color ramp
     for (let i = 0; i < props.colorRamps.size; i++) {
+      let id = styles.dropdownButton;
       let className = "";
       // Manipulate class names for rounding at start and end of dropdown list
       if (i === 0) {
-        className += " " + styles.dropdownFirst;
+        id = styles.dropdownFirst;
       }
       if (i === props.colorRamps!.size - 1) {
-        className += " " + styles.dropdownLast;
+        id = styles.dropdownLast;
       }
 
       // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key}>
-          <Button key={key} className={className} onClick={() => props.onChange(key)}>
+          <Button key={key} className={className} onClick={() => props.onChange(key)} id={id}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>
@@ -65,26 +67,15 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   const buttonDivClassName = styles.buttonContainer + " " + (props.disabled ? styles.disabled : "");
 
-  let selectorButton = (
-    <Button rootClassName={styles.selectorButton} disabled={props.disabled}>
-      <img src={selectedRampColorUrl} />
-    </Button>
-  );
-
-  // Remove tooltip when disabled to avoid spacing/layout issues
-  if (!props.disabled) {
-    selectorButton = (
-      <Tooltip title={selectedRampData.name} placement="right">
-        {selectorButton}
-      </Tooltip>
-    );
-  }
-
   return (
     <div className={styles.colorRampSelector}>
-      <h3>Color Map</h3>
+      <h3>Color map</h3>
       <div className={buttonDivClassName}>
-        {selectorButton}
+        <OptionalTooltip disabled={props.disabled} title={selectedRampData.name} placement="right">
+          <Button id={styles.selectorButton} disabled={props.disabled}>
+            <img src={selectedRampColorUrl} />
+          </Button>
+        </OptionalTooltip>
         <div className={styles.dropdownContainer}>{dropdownContents}</div>
       </div>
     </div>
