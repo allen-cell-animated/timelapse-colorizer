@@ -170,13 +170,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
         menu={{}}
         disabled={props.disabled}
         open={forceOpen || undefined}
-        getPopupContainer={
-          componentContainerRef.current
-            ? () => {
-                return componentContainerRef.current!;
-              }
-            : undefined
-        }
+        getPopupContainer={componentContainerRef.current ? () => componentContainerRef.current! : undefined}
         dropdownRender={(_menus: ReactNode) => {
           return (
             // Fake the menu background styling
