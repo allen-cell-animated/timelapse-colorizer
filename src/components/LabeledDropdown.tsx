@@ -1,9 +1,8 @@
 import React, { ReactElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./LabeledDropdown.module.css";
-import { Dropdown, Button, MenuProps, Tooltip, Popover } from "antd";
+import { Dropdown, Button, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
-import OptionalTooltip from "./OptionalTooltip";
 import useToken from "antd/es/theme/useToken";
 
 type LabeledDropdownProps = {
@@ -40,40 +39,43 @@ const defaultProps = {
 export default function LabeledDropdown(inputProps: LabeledDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<LabeledDropdownProps>;
 
+  // Support tab navigation by forcing the dropdown to stay open when clicked.
   const [forceOpen, setForceOpen] = useState(false);
-  const dropdownPlaceholderRef = useRef<HTMLDivElement>(null);
+  const componentContainerRef = useRef<HTMLDivElement>(null);
 
-  // Close the dropdown when the user clicks outside of the dropdown button or content.
+  // If open, close the dropdown when the user clicks outside of the component or focus is lost.
   useEffect(() => {
+    if (!forceOpen) {
+      return;
+    }
+
     const doesContainTarget = (target: EventTarget | null): boolean => {
       if (target instanceof Element) {
-        const dropdownPlaceholder = dropdownPlaceholderRef.current;
-
+        const dropdownPlaceholder = componentContainerRef.current;
         return (dropdownPlaceholder && dropdownPlaceholder.contains(target)) || false;
       }
       return false;
     };
     // Handle focus loss for tab navigation
     const handleFocusLoss = (event: FocusEvent) => {
-      console.log("Focus lost...");
-      console.log(event.relatedTarget);
       if (!doesContainTarget(event.relatedTarget)) {
         setForceOpen(false);
       }
     };
+    // Handle clicking off
     const handleClickEvent = (event: MouseEvent) => {
       if (!doesContainTarget(event.target)) {
         setForceOpen(false);
       }
     };
-    dropdownPlaceholderRef.current?.addEventListener("focusout", handleFocusLoss);
+    componentContainerRef.current?.addEventListener("focusout", handleFocusLoss);
+    // Listen for all mouse events outside
     document.addEventListener("mousedown", handleClickEvent);
-    // Also detect if the user clicks outside of the dropdown
     return () => {
-      dropdownPlaceholderRef.current?.removeEventListener("focusout", handleFocusLoss);
+      componentContainerRef.current?.removeEventListener("focusout", handleFocusLoss);
       document.removeEventListener("mousedown", handleClickEvent);
     };
-  }, []);
+  }, [forceOpen]);
 
   // Set up the items for the dropdown menu
   const items = useMemo((): MenuItemType[] => {
@@ -119,15 +121,14 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   );
 
   // Completely customize the dropdown menu and make the buttons manually.
-  // This is because Antd's Dropdown component doesn't allow us to customize
-  // tooltips, menu spacing, or styling.
+  // This is because Antd's Dropdown component doesn't allow us to add item tooltips.
   // TECHNICALLY Ant recommends using the Popover component for this instead of Dropdown, but
-  // the animations are different so we fake it.
-  let dropdownList: ReactElement[] = items.map((item) => {
+  // the animations look different.
+  const dropdownList: ReactElement[] = items.map((item) => {
     const isSelected = item.key === props.selected;
     const className = isSelected ? ` ${styles.selected}` : "";
     return (
-      <OptionalTooltip key={item.key} title={item.label?.toString()} placement="right">
+      <Tooltip key={item.key} title={item.label?.toString()} placement="right">
         <Button
           key={item.key}
           type={"text"}
@@ -140,7 +141,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
         >
           {item.label}
         </Button>
-      </OptionalTooltip>
+      </Tooltip>
     );
   });
 
@@ -163,7 +164,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   };
 
   return (
-    <div className={styles.labeledDropdown} ref={dropdownPlaceholderRef}>
+    <div className={styles.labeledDropdown} ref={componentContainerRef}>
       {props.label && <h3>{props.label}</h3>}
       <></>
       <Dropdown
@@ -171,9 +172,9 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
         disabled={props.disabled}
         open={forceOpen || undefined}
         getPopupContainer={
-          dropdownPlaceholderRef.current
+          componentContainerRef.current
             ? () => {
-                return dropdownPlaceholderRef.current!;
+                return componentContainerRef.current!;
               }
             : undefined
         }
