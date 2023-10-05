@@ -16,6 +16,10 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
   min-width: var(--button-height-small);
   border-radius: 4px;
   padding: 0;
+  display: flex;
+  justify-content: center;
+  vertical-align: middle;
+  align-items: center;
 
   ${(props) => {
     switch (props.$type) {
@@ -53,6 +57,19 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
 
   &:not(:disabled):active {
     border-color: var(--color-button);
+  }
+
+  & span {
+    display: flex;
+    justify-content: center;
+    vertical-align: middle;
+    align-items: center;
+  }
+
+  & svg {
+    --size: calc(var(--button-height-small) - 8px);
+    width: var(--size);
+    height: var(--size);
   }
 `;
 
