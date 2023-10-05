@@ -3,7 +3,7 @@ import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { Button } from "antd";
 import { AppThemeContext } from "./AppStyle";
-import AccessibleTooltip from "./OptionalTooltip";
+import AccessibleTooltip from "./AccessibleTooltip";
 
 type ColorRampSelectorProps = {
   selected: string;

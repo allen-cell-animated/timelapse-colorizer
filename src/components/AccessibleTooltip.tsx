@@ -40,20 +40,12 @@ const AccessibleTooltip = forwardRef(function (
       // Save to our ref
       componentRef.current = el;
 
-      // TODO: I'm not sure how much, if anything, this is doing ;-;
+      // TODO: I'm not sure how much, if anything, this is doing
       // Update the forwarded ref
       if (typeof refProp === "function") {
         refProp(el);
       } else if (refProp && refProp.current) {
         refProp.current = el;
-      }
-
-      // Call the original ref, if any
-      const { ref } = child.props;
-      if (typeof ref === "function") {
-        ref(el);
-      } else if (ref && ref.current) {
-        ref.current = el;
       }
     },
   });

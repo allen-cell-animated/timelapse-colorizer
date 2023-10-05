@@ -4,7 +4,7 @@ import { Dropdown, Button, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 import useToken from "antd/es/theme/useToken";
-import AccessibleTooltip from "./OptionalTooltip";
+import AccessibleTooltip from "./AccessibleTooltip";
 
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
