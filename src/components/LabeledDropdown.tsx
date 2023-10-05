@@ -41,35 +41,37 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   const props = { ...defaultProps, ...inputProps } as Required<LabeledDropdownProps>;
 
   const [forceOpen, setForceOpen] = useState(false);
-  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const dropdownContentRef = useRef<HTMLDivElement>(null);
   const dropdownPlaceholderRef = useRef<HTMLDivElement>(null);
-
-  const isFocused = (): boolean => {
-    return (
-      dropdownButtonRef.current?.contains(document.activeElement) ||
-      dropdownContentRef.current?.contains(document.activeElement) ||
-      false
-    );
-  };
 
   // Close the dropdown when the user clicks outside of the dropdown button or content.
   useEffect(() => {
-    const handleFocusLoss = (event: FocusEvent) => {
-      const newTarget = event.relatedTarget;
-      if (newTarget instanceof Element) {
-        if (dropdownButtonRef.current?.contains(newTarget) || dropdownContentRef.current?.contains(newTarget)) {
-          // Do nothing if the newly selected element is still inside the dropdown
-          return;
-        }
+    const doesContainTarget = (target: EventTarget | null): boolean => {
+      if (target instanceof Element) {
+        const dropdownPlaceholder = dropdownPlaceholderRef.current;
+
+        return (dropdownPlaceholder && dropdownPlaceholder.contains(target)) || false;
       }
-      setForceOpen(false);
+      return false;
     };
-    dropdownButtonRef.current?.addEventListener("focusout", handleFocusLoss);
-    dropdownContentRef.current?.addEventListener("focusout", handleFocusLoss);
+    // Handle focus loss for tab navigation
+    const handleFocusLoss = (event: FocusEvent) => {
+      console.log("Focus lost...");
+      console.log(event.relatedTarget);
+      if (!doesContainTarget(event.relatedTarget)) {
+        setForceOpen(false);
+      }
+    };
+    const handleClickEvent = (event: MouseEvent) => {
+      if (!doesContainTarget(event.target)) {
+        setForceOpen(false);
+      }
+    };
+    dropdownPlaceholderRef.current?.addEventListener("focusout", handleFocusLoss);
+    document.addEventListener("mousedown", handleClickEvent);
+    // Also detect if the user clicks outside of the dropdown
     return () => {
-      dropdownButtonRef.current?.removeEventListener("focusout", handleFocusLoss);
-      dropdownContentRef.current?.removeEventListener("focusout", handleFocusLoss);
+      dropdownPlaceholderRef.current?.removeEventListener("focusout", handleFocusLoss);
+      document.removeEventListener("mousedown", handleClickEvent);
     };
   }, []);
 
@@ -106,7 +108,6 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
       disabled={props.disabled}
       type={props.buttonType}
       className={forceOpen ? styles.forceOpen : ""}
-      ref={dropdownButtonRef}
       // Open the button when clicked for accessibility
       onClick={() => setForceOpen(!forceOpen)}
     >
@@ -162,7 +163,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   };
 
   return (
-    <div className={styles.labeledDropdown}>
+    <div className={styles.labeledDropdown} ref={dropdownPlaceholderRef}>
       {props.label && <h3>{props.label}</h3>}
       <></>
       <Dropdown
@@ -179,7 +180,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
         dropdownRender={(_menus: ReactNode) => {
           return (
             // Fake the menu background styling
-            <div style={dropdownStyle} ref={dropdownContentRef} className={styles.dropdownContent}>
+            <div style={dropdownStyle} className={styles.dropdownContent}>
               {dropdownList}
             </div>
           );
@@ -187,7 +188,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
       >
         {dropdownButton}
       </Dropdown>
-      <div ref={dropdownPlaceholderRef}></div>
+      <div></div>
     </div>
   );
 }
