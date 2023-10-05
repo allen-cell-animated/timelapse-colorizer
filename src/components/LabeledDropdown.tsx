@@ -1,9 +1,10 @@
-import React, { ReactElement, useMemo } from "react";
+import React, { ReactElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./LabeledDropdown.module.css";
-import { Dropdown, Button, MenuProps, Tooltip } from "antd";
+import { Dropdown, Button, MenuProps, Tooltip, Popover } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 import OptionalTooltip from "./OptionalTooltip";
+import useToken from "antd/es/theme/useToken";
 
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -39,6 +40,34 @@ const defaultProps = {
 export default function LabeledDropdown(inputProps: LabeledDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<LabeledDropdownProps>;
 
+  const [forceOpen, setForceOpen] = useState(false);
+  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const dropdownContentRef = useRef<HTMLDivElement>(null);
+
+  const isFocused = (): boolean => {
+    return (
+      dropdownButtonRef.current?.contains(document.activeElement) ||
+      dropdownContentRef.current?.contains(document.activeElement) ||
+      false
+    );
+  };
+
+  // Close the dropdown when the user clicks outside of the dropdown button or content.
+  useEffect(() => {
+    const handleFocusLoss = (_event: FocusEvent) => {
+      console.log("lost focus");
+      if (!isFocused()) {
+        setForceOpen(false);
+      }
+    };
+    dropdownButtonRef.current?.addEventListener("focusout", handleFocusLoss);
+    dropdownContentRef.current?.addEventListener("focusout", handleFocusLoss);
+    return () => {
+      dropdownButtonRef.current?.removeEventListener("focusout", handleFocusLoss);
+      dropdownContentRef.current?.removeEventListener("focusout", handleFocusLoss);
+    };
+  }, []);
+
   const items = useMemo((): MenuItemType[] => {
     if (props.items.length === 0) {
       return [];
@@ -66,17 +95,21 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   }, [props.selected, items]);
 
   const datasetMenuProps: MenuProps = {
-    onClick: (e) => {
-      props.onChange(e.key);
-    },
     items: items,
     selectable: true,
     selectedKeys: [props.selected],
     // TODO: Override render property for menu to add text clipping + tooltips for long entries
   };
 
-  let dropdownContent = (
-    <Button id={styles.dropdownButton} disabled={props.disabled} type={props.buttonType}>
+  let dropdownButton = (
+    <Button
+      id={styles.dropdownButton}
+      disabled={props.disabled}
+      type={props.buttonType}
+      ref={dropdownButtonRef}
+      // Open the button when clicked for accessibility
+      onClick={() => setForceOpen(!forceOpen)}
+    >
       <div className={styles.buttonContents}>
         <div className={styles.buttonText}>{selectedLabel}</div>
         <DropdownSVG className={`${styles.buttonIcon} ${styles[props.buttonType || "default"]}`} />
@@ -84,22 +117,57 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     </Button>
   );
 
+  // Completely customize the dropdown menu and make the buttons manually.
+  // This is because Antd's Dropdown component doesn't allow us to customize
+  // tooltips, menu spacing, or styling.
+  // TECHNICALLY Ant recommends using the Popover component for this instead of Dropdown, but
+  // the animations are different so we fake it.
+  let dropdownList = (
+    <div className={styles.dropdownContent}>
+      <Button>:)</Button>
+    </div>
+  );
+
   // Can't use OptionalTooltip because Ant passes props from Dropdown
   // to the Button through the Ant Tooltip component >:(
   const disableTooltip = props.disabled || !props.showTooltip || true;
   if (!disableTooltip) {
-    dropdownContent = (
+    dropdownButton = (
       <Tooltip title={selectedLabel} placement="right">
-        {dropdownContent}
+        {dropdownButton}
       </Tooltip>
     );
   }
 
+  const [, token] = useToken();
+  const contentStyle: React.CSSProperties = {
+    backgroundColor: token.colorBgElevated,
+    borderRadius: token.borderRadiusLG,
+    boxShadow: token.boxShadowSecondary,
+  };
+
+  const menuStyle: React.CSSProperties = {
+    boxShadow: "none",
+  };
+
   return (
     <div className={styles.labeledDropdown}>
       {props.label && <h3>{props.label}</h3>}
-      <Dropdown menu={datasetMenuProps} disabled={props.disabled}>
-        {dropdownContent}
+      <Dropdown
+        menu={datasetMenuProps}
+        disabled={props.disabled}
+        open={forceOpen || undefined}
+        dropdownRender={(_menus: ReactNode) => {
+          return (
+            <div style={contentStyle}>
+              {React.cloneElement(_menus as React.ReactElement, { style: menuStyle })}
+              <Button>My Cool Button</Button>
+              {dropdownList}
+            </div>
+          );
+        }}
+      >
+        {dropdownButton}
       </Dropdown>
     </div>
   );
