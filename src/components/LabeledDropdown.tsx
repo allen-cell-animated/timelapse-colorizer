@@ -4,6 +4,7 @@ import { Dropdown, Button, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 import useToken from "antd/es/theme/useToken";
+import AccessibleTooltip from "./OptionalTooltip";
 
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -48,32 +49,26 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     if (!forceOpen) {
       return;
     }
-
     const doesContainTarget = (target: EventTarget | null): boolean => {
-      if (target instanceof Element) {
-        const dropdownPlaceholder = componentContainerRef.current;
-        return (dropdownPlaceholder && dropdownPlaceholder.contains(target)) || false;
-      }
-      return false;
+      return (
+        (target instanceof Element &&
+          componentContainerRef.current &&
+          componentContainerRef.current.contains(target)) ||
+        false
+      );
     };
-    // Handle focus loss for tab navigation
-    const handleFocusLoss = (event: FocusEvent) => {
+    // Handle focus loss for tab navigation.
+    // Note that the focus loss event will fire even if the newly focused element is also
+    // inside the component, so we need to check if the new target is also a child element.
+    const handleFocusLoss = (event: FocusEvent): void => {
       if (!doesContainTarget(event.relatedTarget)) {
         setForceOpen(false);
       }
     };
-    // Handle clicking off
-    const handleClickEvent = (event: MouseEvent) => {
-      if (!doesContainTarget(event.target)) {
-        setForceOpen(false);
-      }
-    };
+
     componentContainerRef.current?.addEventListener("focusout", handleFocusLoss);
-    // Listen for all mouse events outside
-    document.addEventListener("mousedown", handleClickEvent);
     return () => {
       componentContainerRef.current?.removeEventListener("focusout", handleFocusLoss);
-      document.removeEventListener("mousedown", handleClickEvent);
     };
   }, [forceOpen]);
 
@@ -128,7 +123,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     const isSelected = item.key === props.selected;
     const className = isSelected ? ` ${styles.selected}` : "";
     return (
-      <Tooltip key={item.key} title={item.label?.toString()} placement="right">
+      <AccessibleTooltip key={item.key} title={item.label?.toString()} placement="right">
         <Button
           key={item.key}
           type={"text"}
@@ -141,20 +136,13 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
         >
           {item.label}
         </Button>
-      </Tooltip>
+      </AccessibleTooltip>
     );
   });
 
   // Can't use OptionalTooltip because Ant passes props from Dropdown
   // to the Button through the Ant Tooltip component >:(
   const disableTooltip = props.disabled || !props.showTooltip;
-  if (!disableTooltip) {
-    dropdownButton = (
-      <Tooltip title={selectedLabel} placement="right">
-        {dropdownButton}
-      </Tooltip>
-    );
-  }
 
   const [, token] = useToken();
   const dropdownStyle: React.CSSProperties = {
@@ -187,7 +175,9 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
           );
         }}
       >
-        {dropdownButton}
+        <AccessibleTooltip title={selectedLabel} placement="right" disabled={disableTooltip}>
+          {dropdownButton}
+        </AccessibleTooltip>
       </Dropdown>
       <div></div>
     </div>

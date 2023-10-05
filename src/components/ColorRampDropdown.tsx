@@ -1,9 +1,9 @@
-import React, { ReactElement, useContext, useMemo } from "react";
+import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
 import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { Button, Tooltip } from "antd";
 import { AppThemeContext } from "./AppStyle";
-import OptionalTooltip from "./OptionalTooltip";
+import AccessibleTooltip from "./OptionalTooltip";
 
 type ColorRampSelectorProps = {
   selected: string;
@@ -24,6 +24,38 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
   const theme = useContext(AppThemeContext);
 
+  /**
+   * Force the dropdown to stay open when clicked for accessibility. Close it again
+   * when focus is lost.
+   */
+  const [forceOpen, setForceOpen] = useState(false);
+  const componentContainerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!forceOpen) {
+      return;
+    }
+    const doesContainTarget = (target: EventTarget | null): boolean => {
+      return (
+        (target instanceof Element &&
+          componentContainerRef.current &&
+          componentContainerRef.current.contains(target)) ||
+        false
+      );
+    };
+    // Handle focus loss for tab navigation
+    const handleFocusLoss = (event: FocusEvent): void => {
+      if (!doesContainTarget(event.relatedTarget)) {
+        setForceOpen(false);
+      }
+    };
+
+    componentContainerRef.current?.addEventListener("focusout", handleFocusLoss);
+    return () => {
+      componentContainerRef.current?.removeEventListener("focusout", handleFocusLoss);
+    };
+  }, [forceOpen]);
+
   const selectedRampData = props.colorRamps.get(props.selected);
 
   if (!selectedRampData || !selectedRampData.colorRamp) {
@@ -42,7 +74,6 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     const colorRampEntries = Array.from(props.colorRamps!.entries());
     // Make a button for every color ramp
     for (let i = 0; i < props.colorRamps.size; i++) {
-      let id = styles.dropdownButton;
       // Manipulate class names for rounding at start and end of dropdown list
       let className = "";
       if (i === 0) {
@@ -55,28 +86,31 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
-        <Tooltip title={colorRampData.name} placement="right" key={key}>
+        <AccessibleTooltip title={colorRampData.name} placement="right" key={key}>
           <Button key={key} rootClassName={className} onClick={() => props.onChange(key)} id={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
-        </Tooltip>
+        </AccessibleTooltip>
       );
     }
     return contents;
   }, [props.colorRamps]);
 
-  const buttonDivClassName = styles.buttonContainer + " " + (props.disabled ? styles.disabled : "");
+  /// Rendering
+
+  const buttonDivClassName = styles.buttonContainer + (props.disabled ? ` ${styles.disabled}` : "");
+  const dropdownContainerClassName = styles.dropdownContainer + (forceOpen ? ` ${styles.forceOpen}` : "");
 
   return (
-    <div className={styles.colorRampSelector}>
+    <div className={styles.colorRampSelector} ref={componentContainerRef}>
       <h3>Color map</h3>
       <div className={buttonDivClassName}>
-        <OptionalTooltip disabled={props.disabled} title={selectedRampData.name} placement="right">
-          <Button id={styles.selectorButton} disabled={props.disabled}>
+        <AccessibleTooltip disabled={props.disabled} title={selectedRampData.name} placement="right">
+          <Button id={styles.selectorButton} disabled={props.disabled} onClick={() => setForceOpen(true)}>
             <img src={selectedRampColorUrl} />
           </Button>
-        </OptionalTooltip>
-        <div className={styles.dropdownContainer}>{dropdownContents}</div>
+        </AccessibleTooltip>
+        <div className={dropdownContainerClassName}>{dropdownContents}</div>
       </div>
     </div>
   );

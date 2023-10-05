@@ -14,15 +14,19 @@
 }
 
 #selectorButton {
-  /* Override at-rest border color.*/
-  /* TODO: !important seems like an anti-pattern; find a way to replace? */
-  border: 1px solid var(--color-borders) !important;
-}
-#selectorButton {
   padding: 0;
   margin: 0;
   overflow: hidden;
   height: var(--height);
+}
+
+#selectorButton:not(:hover):not(:active) {
+  /* Override at-rest border color.*/
+  border: 1px solid var(--color-borders);
+}
+
+#selectorButton.forceOpen {
+  border: 1px solid var(--color-button-active);
 }
 
 #selectorButton:disabled > img {
@@ -56,13 +60,14 @@
 /** 
  * Show the container if the root button is hovered, and keep
  * it visible while it continues to be hovered over.
+ * Also show the dropdown container when forced open (for accessibility).
  */
 .buttonContainer:hover:not(.disabled) > .dropdownContainer,
-.dropdownContainer:hover {
+.dropdownContainer:hover,
+.dropdownContainer.forceOpen {
   visibility: visible;
   transform: scaleY(1);
   opacity: 1;
-
   transition: all 0.1s;
 }
 
@@ -88,7 +93,8 @@
   border-radius: 0 0 var(--button-radius) var(--button-radius);
 }
 
-#dropdownButton:hover {
+#dropdownButton:hover,
+#dropdownButton:focus {
   outline: 1px solid var(--color-text-button);
   outline-offset: -1px;
 }
