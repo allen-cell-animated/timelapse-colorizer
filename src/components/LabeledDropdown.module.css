@@ -1,3 +1,10 @@
+.dropdownWidth {
+  max-width: 164px;
+  width: 15vw;
+  min-width: 84px;
+  transition: width 0s;
+}
+
 .labeledDropdown {
   display: flex;
   align-items: center;
@@ -27,6 +34,17 @@
   border-color: var(--color-button-active);
 }
 
+/* 
+* When the modal is opened ("pinned") by clicking on it, show an
+* extra active-style outline.
+*/
+#dropdownButton:not(:disabled).forceOpen {
+  border-color: var(--color-button-active);
+}
+#dropdownButton:global(.ant-btn-default):not(:disabled).forceOpen {
+  border-color: var(--color-button);
+}
+
 .buttonContents {
   width: 100%;
   display: flex;
@@ -40,9 +58,45 @@
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .buttonIcon {
   width: 14px;
   height: 14px;
+}
+
+.dropdownContent {
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  max-width: 164px;
+  width: 15vw;
+  min-width: 84px;
+  transition: width 0s;
+}
+
+#dropdownItem {
+  text-align: left;
+  padding: 3px 12px;
+  border: 0px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#dropdownItem span {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 100%;
+}
+
+#dropdownItem:hover,
+#dropdownItem:focus {
+  background-color: var(--color-dropdown-hover);
+}
+
+#dropdownItem.selected {
+  background-color: var(--color-dropdown-selected);
 }

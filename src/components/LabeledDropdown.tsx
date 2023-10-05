@@ -43,6 +43,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   const [forceOpen, setForceOpen] = useState(false);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
   const dropdownContentRef = useRef<HTMLDivElement>(null);
+  const dropdownPlaceholderRef = useRef<HTMLDivElement>(null);
 
   const isFocused = (): boolean => {
     return (
@@ -54,11 +55,15 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
 
   // Close the dropdown when the user clicks outside of the dropdown button or content.
   useEffect(() => {
-    const handleFocusLoss = (_event: FocusEvent) => {
-      console.log("lost focus");
-      if (!isFocused()) {
-        setForceOpen(false);
+    const handleFocusLoss = (event: FocusEvent) => {
+      const newTarget = event.relatedTarget;
+      if (newTarget instanceof Element) {
+        if (dropdownButtonRef.current?.contains(newTarget) || dropdownContentRef.current?.contains(newTarget)) {
+          // Do nothing if the newly selected element is still inside the dropdown
+          return;
+        }
       }
+      setForceOpen(false);
     };
     dropdownButtonRef.current?.addEventListener("focusout", handleFocusLoss);
     dropdownContentRef.current?.addEventListener("focusout", handleFocusLoss);
@@ -68,6 +73,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     };
   }, []);
 
+  // Set up the items for the dropdown menu
   const items = useMemo((): MenuItemType[] => {
     if (props.items.length === 0) {
       return [];
@@ -94,18 +100,12 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     return "";
   }, [props.selected, items]);
 
-  const datasetMenuProps: MenuProps = {
-    items: items,
-    selectable: true,
-    selectedKeys: [props.selected],
-    // TODO: Override render property for menu to add text clipping + tooltips for long entries
-  };
-
   let dropdownButton = (
     <Button
       id={styles.dropdownButton}
       disabled={props.disabled}
       type={props.buttonType}
+      className={forceOpen ? styles.forceOpen : ""}
       ref={dropdownButtonRef}
       // Open the button when clicked for accessibility
       onClick={() => setForceOpen(!forceOpen)}
@@ -122,15 +122,30 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   // tooltips, menu spacing, or styling.
   // TECHNICALLY Ant recommends using the Popover component for this instead of Dropdown, but
   // the animations are different so we fake it.
-  let dropdownList = (
-    <div className={styles.dropdownContent}>
-      <Button>:)</Button>
-    </div>
-  );
+  let dropdownList: ReactElement[] = items.map((item) => {
+    const isSelected = item.key === props.selected;
+    const className = isSelected ? ` ${styles.selected}` : "";
+    return (
+      <OptionalTooltip key={item.key} title={item.label?.toString()} placement="right">
+        <Button
+          key={item.key}
+          type={"text"}
+          disabled={props.disabled}
+          className={className}
+          id={styles.dropdownItem}
+          onClick={() => {
+            props.onChange(item.key.toString());
+          }}
+        >
+          {item.label}
+        </Button>
+      </OptionalTooltip>
+    );
+  });
 
   // Can't use OptionalTooltip because Ant passes props from Dropdown
   // to the Button through the Ant Tooltip component >:(
-  const disableTooltip = props.disabled || !props.showTooltip || true;
+  const disableTooltip = props.disabled || !props.showTooltip;
   if (!disableTooltip) {
     dropdownButton = (
       <Tooltip title={selectedLabel} placement="right">
@@ -140,28 +155,31 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   }
 
   const [, token] = useToken();
-  const contentStyle: React.CSSProperties = {
+  const dropdownStyle: React.CSSProperties = {
     backgroundColor: token.colorBgElevated,
     borderRadius: token.borderRadiusLG,
     boxShadow: token.boxShadowSecondary,
   };
 
-  const menuStyle: React.CSSProperties = {
-    boxShadow: "none",
-  };
-
   return (
     <div className={styles.labeledDropdown}>
       {props.label && <h3>{props.label}</h3>}
+      <></>
       <Dropdown
-        menu={datasetMenuProps}
+        menu={{}}
         disabled={props.disabled}
         open={forceOpen || undefined}
+        getPopupContainer={
+          dropdownPlaceholderRef.current
+            ? () => {
+                return dropdownPlaceholderRef.current!;
+              }
+            : undefined
+        }
         dropdownRender={(_menus: ReactNode) => {
           return (
-            <div style={contentStyle}>
-              {React.cloneElement(_menus as React.ReactElement, { style: menuStyle })}
-              <Button>My Cool Button</Button>
+            // Fake the menu background styling
+            <div style={dropdownStyle} ref={dropdownContentRef} className={styles.dropdownContent}>
               {dropdownList}
             </div>
           );
@@ -169,6 +187,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
       >
         {dropdownButton}
       </Dropdown>
+      <div ref={dropdownPlaceholderRef}></div>
     </div>
   );
 }

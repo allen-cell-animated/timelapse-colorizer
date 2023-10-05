@@ -117,6 +117,9 @@ const CssContainer = styled.div`
   --button-height-small: ${theme.controls.heightSmall}px;
   --radius-control-small: ${theme.controls.radius}px;
 
+  --color-dropdown-hover: ${theme.color.dropdown.hover};
+  --color-dropdown-selected: ${theme.color.dropdown.selected};
+
   --color-focus-shadow: rgba(137, 98, 211, 0.06);
 
   /* Fonts */
