@@ -36,7 +36,7 @@ const theme = {
       primary: palette.gray60,
       secondary: palette.gray50,
       hint: palette.gray30,
-      disabled: palette.gray40,
+      disabled: palette.gray30,
       button: palette.gray0,
       error: palette.error,
       success: palette.success,
@@ -49,7 +49,7 @@ const theme = {
     },
     button: {
       backgroundPrimary: palette.theme,
-      backgroundDisabled: palette.gray20,
+      backgroundDisabled: palette.gray5,
       outline: palette.theme,
       outlineActive: palette.themeDark,
       hover: palette.themeLight,
