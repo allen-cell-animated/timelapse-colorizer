@@ -21,6 +21,7 @@ const AccessibleTooltip = forwardRef(function (
   props: PropsWithChildren<AccessibleTooltipProps>,
   refProp
 ): ReactElement {
+  // Add listeners for focus events, forcing the tooltip open when focused
   const [forceOpen, setForceOpen] = useState(false);
   const componentRef = useRef<HTMLElement | null>(null);
 
@@ -40,7 +41,8 @@ const AccessibleTooltip = forwardRef(function (
       // Save to our ref
       componentRef.current = el;
 
-      // TODO: I'm not sure how much, if anything, this is doing
+      // TODO: Not sure how much of this is necessary, see TODO about fixing
+      // behavior with LabeledDropdown
       // Update the forwarded ref
       if (typeof refProp === "function") {
         refProp(el);
@@ -52,13 +54,13 @@ const AccessibleTooltip = forwardRef(function (
 
   if (props.disabled && !forceOpen) {
     return <>{childWithRef}</>;
+  } else {
+    return (
+      <Tooltip title={props.title} placement={props.placement} open={forceOpen ? true : undefined}>
+        {childWithRef}
+      </Tooltip>
+    );
   }
-
-  return (
-    <Tooltip title={props.title} placement={props.placement} open={forceOpen ? true : undefined}>
-      {childWithRef}
-    </Tooltip>
-  );
 });
 
 export default AccessibleTooltip;

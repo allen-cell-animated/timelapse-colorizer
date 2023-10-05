@@ -57,8 +57,8 @@ const theme = {
       focusShadow: "rgba(137, 98, 211, 0.06)",
     },
     dropdown: {
-      hover: palette.gray5,
-      selected: palette.themeGray,
+      backgroundHover: palette.gray5,
+      backgroundSelected: palette.themeGray,
     },
     slider: {
       rail: palette.gray5,
@@ -117,8 +117,8 @@ const CssContainer = styled.div`
   --button-height-small: ${theme.controls.heightSmall}px;
   --radius-control-small: ${theme.controls.radius}px;
 
-  --color-dropdown-hover: ${theme.color.dropdown.hover};
-  --color-dropdown-selected: ${theme.color.dropdown.selected};
+  --color-dropdown-hover: ${theme.color.dropdown.backgroundHover};
+  --color-dropdown-selected: ${theme.color.dropdown.backgroundSelected};
 
   --color-focus-shadow: rgba(137, 98, 211, 0.06);
 
@@ -143,6 +143,7 @@ const CssContainer = styled.div`
     box-shadow: none;
   }
 
+  // Both buttons go to solid light theme color and change text color when hovered.
   .ant-btn-primary:not(:disabled):active,
   .ant-btn-primary:not(:disabled):hover,
   .ant-btn-default:not(:disabled):active,
@@ -152,18 +153,20 @@ const CssContainer = styled.div`
     color: ${theme.color.text.button};
   }
 
+  // Use the darker theme color for the primary-style, solid-color button
   .ant-btn-primary:not(:disabled):active {
     border: 1px solid ${theme.color.button.backgroundPrimary};
   }
 
+  // Use the normal theme color for the button outline when hovered,
+  // then darken it when active. This way, the outline is always visible
+  // for the default button.
   .ant-btn-default:not(:disabled):hover {
     border: 1px solid ${theme.color.button.backgroundPrimary};
   }
-
   .ant-btn-default:not(:disabled):active {
     border: 1px solid ${theme.color.button.outlineActive};
   }
-
   .ant-btn-default:not(:disabled) {
     border-color: ${theme.color.button.outline};
     color: ${theme.color.button.outline};

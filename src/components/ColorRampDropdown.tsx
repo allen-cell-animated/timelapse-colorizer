@@ -24,10 +24,8 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
   const theme = useContext(AppThemeContext);
 
-  /**
-   * Force the dropdown to stay open when clicked for accessibility. Close it again
-   * when focus is lost.
-   */
+  // Force the dropdown to stay open when clicked for accessibility. Close it again
+  // when focus is lost.
   const [forceOpen, setForceOpen] = useState(false);
   const componentContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -61,6 +59,8 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   if (!selectedRampData || !selectedRampData.colorRamp) {
     throw new Error(`Selected color ramp name '${props.selected}' is invalid.`);
   }
+
+  ///////// Generate dropdown contents
 
   // Only regenerate the gradient canvas URL if the selected ramp changes!
   const selectedRamp = selectedRampData.colorRamp;

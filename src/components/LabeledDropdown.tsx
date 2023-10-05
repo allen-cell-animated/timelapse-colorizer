@@ -116,9 +116,10 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   );
 
   // Completely customize the dropdown menu and make the buttons manually.
-  // This is because Antd's Dropdown component doesn't allow us to add item tooltips.
-  // TECHNICALLY Ant recommends using the Popover component for this instead of Dropdown, but
-  // the animations look different.
+  // This is because Antd's Dropdown component doesn't allow us to add item tooltips, and complicates
+  // other behaviors (like tab navigation or setting width).
+  // Ant recommends using the Popover component for this instead of Dropdown, but they use
+  // different animation styling (Dropdown looks nicer).
   const dropdownList: ReactElement[] = items.map((item) => {
     const isSelected = item.key === props.selected;
     const className = isSelected ? ` ${styles.selected}` : "";
