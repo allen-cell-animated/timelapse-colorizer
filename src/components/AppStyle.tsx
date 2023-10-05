@@ -10,7 +10,7 @@ const palette = {
   theme: "#8962d3",
   themeDark: "#5f369f",
   themeLight: "#aa88ed",
-  themeGray: "#e7e4f2",
+  themeGray: "#f7f0ff",
   gray0: "#ffffff",
   gray5: "#f2f2f2",
   gray10: "#e6e7e8",
@@ -57,7 +57,7 @@ const theme = {
       focusShadow: "rgba(137, 98, 211, 0.06)",
     },
     dropdown: {
-      hover: palette.gray10,
+      hover: palette.gray5,
       selected: palette.themeGray,
     },
     slider: {

@@ -89,4 +89,5 @@
 
 #dropdownItem.selected {
   background-color: var(--color-dropdown-selected);
+  color: var(--color-button);
 }

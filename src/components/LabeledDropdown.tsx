@@ -187,7 +187,6 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
       >
         {dropdownButton}
       </Dropdown>
-      <div></div>
     </div>
   );
 }
