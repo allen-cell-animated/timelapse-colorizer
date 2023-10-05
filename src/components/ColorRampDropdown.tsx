@@ -106,7 +106,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       <h3>Color map</h3>
       <div className={buttonDivClassName}>
         <AccessibleTooltip disabled={props.disabled} title={selectedRampData.name} placement="right">
-          <Button id={styles.selectorButton} disabled={props.disabled} onClick={() => setForceOpen(true)}>
+          <Button id={styles.selectorButton} disabled={props.disabled} onClick={() => setForceOpen(!forceOpen)}>
             <img src={selectedRampColorUrl} />
           </Button>
         </AccessibleTooltip>

@@ -44,7 +44,9 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   const [forceOpen, setForceOpen] = useState(false);
   const componentContainerRef = useRef<HTMLDivElement>(null);
 
-  // If open, close the dropdown when the user clicks outside of the component or focus is lost.
+  // If open, close the dropdown when focus is lost.
+  // Note that the focus out event will fire even if the newly focused element is also
+  // inside the component, so we need to check if the new target is also a child element.
   useEffect(() => {
     if (!forceOpen) {
       return;
@@ -57,9 +59,6 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
         false
       );
     };
-    // Handle focus loss for tab navigation.
-    // Note that the focus loss event will fire even if the newly focused element is also
-    // inside the component, so we need to check if the new target is also a child element.
     const handleFocusLoss = (event: FocusEvent): void => {
       if (!doesContainTarget(event.relatedTarget)) {
         setForceOpen(false);
