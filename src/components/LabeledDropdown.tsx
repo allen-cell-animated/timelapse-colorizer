@@ -140,9 +140,19 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     );
   });
 
-  // Can't use OptionalTooltip because Ant passes props from Dropdown
+  // Can't use AccessibleTooltip because Ant passes props from Dropdown
   // to the Button through the Ant Tooltip component >:(
+  // TODO: Fix AccessibleTooltip in this use case?
+  // See what https://github.com/ant-design/ant-design/blob/master/components/tooltip/index.tsx is doing
+  // for forwarded refs.
   const disableTooltip = props.disabled || !props.showTooltip;
+  if (!disableTooltip) {
+    dropdownButton = (
+      <Tooltip title={selectedLabel} placement="right">
+        {dropdownButton}
+      </Tooltip>
+    );
+  }
 
   const [, token] = useToken();
   const dropdownStyle: React.CSSProperties = {
@@ -175,9 +185,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
           );
         }}
       >
-        <AccessibleTooltip title={selectedLabel} placement="right" disabled={disableTooltip}>
-          {dropdownButton}
-        </AccessibleTooltip>
+        {dropdownButton}
       </Dropdown>
       <div></div>
     </div>

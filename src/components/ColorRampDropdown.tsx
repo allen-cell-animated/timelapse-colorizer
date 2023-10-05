@@ -1,7 +1,7 @@
 import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
 import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
-import { Button, Tooltip } from "antd";
+import { Button } from "antd";
 import { AppThemeContext } from "./AppStyle";
 import AccessibleTooltip from "./OptionalTooltip";
 
