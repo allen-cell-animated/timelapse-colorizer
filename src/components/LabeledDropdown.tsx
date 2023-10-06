@@ -4,7 +4,6 @@ import { Dropdown, Button, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 import useToken from "antd/es/theme/useToken";
-import AccessibleTooltip from "./AccessibleTooltip";
 
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -98,7 +97,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     return "";
   }, [props.selected, items]);
 
-  let dropdownButton = (
+  const dropdownButton = (
     <Button
       id={styles.dropdownButton}
       disabled={props.disabled}
@@ -123,7 +122,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     const isSelected = item.key === props.selected;
     const className = isSelected ? ` ${styles.selected}` : "";
     return (
-      <AccessibleTooltip key={item.key} title={item.label?.toString()} placement="right">
+      <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
         <Button
           key={item.key}
           type={"text"}
@@ -136,7 +135,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
         >
           {item.label}
         </Button>
-      </AccessibleTooltip>
+      </Tooltip>
     );
   });
 
@@ -146,13 +145,6 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   // See what https://github.com/ant-design/ant-design/blob/master/components/tooltip/index.tsx is doing
   // for forwarded refs.
   const disableTooltip = props.disabled || !props.showTooltip;
-  if (!disableTooltip) {
-    dropdownButton = (
-      <Tooltip title={selectedLabel} placement="right">
-        {dropdownButton}
-      </Tooltip>
-    );
-  }
 
   const [, token] = useToken();
   const dropdownStyle: React.CSSProperties = {
@@ -179,7 +171,15 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
           );
         }}
       >
-        {dropdownButton}
+        <Tooltip
+          // Force the tooltip to be hidden (open=false) when disabled
+          open={disableTooltip ? false : undefined}
+          title={selectedLabel}
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
+          {dropdownButton}
+        </Tooltip>
       </Dropdown>
     </div>
   );

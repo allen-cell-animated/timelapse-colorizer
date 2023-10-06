@@ -1,9 +1,8 @@
 import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
 import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import { AppThemeContext } from "./AppStyle";
-import AccessibleTooltip from "./AccessibleTooltip";
 
 type ColorRampSelectorProps = {
   selected: string;
@@ -86,11 +85,11 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
-        <AccessibleTooltip title={colorRampData.name} placement="right" key={key}>
+        <Tooltip title={colorRampData.name} placement="right" key={key} trigger={["hover", "focus"]}>
           <Button key={key} rootClassName={className} onClick={() => props.onChange(key)} id={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
-        </AccessibleTooltip>
+        </Tooltip>
       );
     }
     return contents;
@@ -105,11 +104,17 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     <div className={styles.colorRampSelector} ref={componentContainerRef}>
       <h3>Color map</h3>
       <div className={buttonDivClassName}>
-        <AccessibleTooltip disabled={props.disabled} title={selectedRampData.name} placement="right">
+        <Tooltip
+          // Force the tooltip to be hidden (open=false) when disabled
+          open={props.disabled ? false : undefined}
+          title={selectedRampData.name}
+          placement="right"
+          trigger={["focus", "hover"]}
+        >
           <Button id={styles.selectorButton} disabled={props.disabled} onClick={() => setForceOpen(!forceOpen)}>
             <img src={selectedRampColorUrl} />
           </Button>
-        </AccessibleTooltip>
+        </Tooltip>
         <div className={dropdownContainerClassName}>{dropdownContents}</div>
       </div>
     </div>
