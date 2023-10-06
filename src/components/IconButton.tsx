@@ -18,7 +18,6 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
   padding: 0;
   display: flex;
   justify-content: center;
-  vertical-align: middle;
   align-items: center;
 
   ${(props) => {
