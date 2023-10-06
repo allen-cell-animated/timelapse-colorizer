@@ -11,7 +11,7 @@
   max-width: 164px;
   width: 15vw;
   min-width: 84px;
-  transition: width 0s; /* Override Antd width transition */
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s; /* Override Antd width transition */
 }
 
 #dropdownButton:global(.ant-btn-default):not(:disabled) {
