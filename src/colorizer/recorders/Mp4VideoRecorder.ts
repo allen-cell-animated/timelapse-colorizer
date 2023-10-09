@@ -3,8 +3,8 @@ import CanvasRecorder, { RecordingOptions, defaultRecordingOptions } from "./Can
 import { sleep } from "../utils/timing_utils";
 
 export enum VideoBitrate {
-  HIGH = 10e7,
-  MEDIUM = 10e6,
+  HIGH = 1e8,
+  MEDIUM = 1e7,
   LOW = 5e6,
 }
 

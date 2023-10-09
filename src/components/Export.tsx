@@ -332,18 +332,19 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   };
 
   const getApproximateVideoFilesizeMb = (): number => {
-    // From experimentation, filesize is independent of fps.
-    // It scales linearly with the bitrate until a maximum bitrate is hit,
+    // From experimentation, filesize is dependent on duration and bitrate.
+    // It scales linearly with the bitrate until a maximum filesize is hit,
     // which seems to depend on the video dimensions.
 
     // These are more or less magic numbers based on the dataset I'm testing with,
     // but they're good enough for giving an order of magnitude range of the resulting filesize.
-    const maxVideoBits = (totalFrames * videoQuality) / 25;
+    const maxVideoBits = totalSeconds * videoQuality;
 
-    const bitsPerFrame = props.getCanvas().width * props.getCanvas().height * 10e3;
-    const constrainedBitRate = bitsPerFrame / 4;
+    // Experimentally-determined compression ratio (bits per pixel).
+    const compressionRatio = 2.77;
+    const constrainedBitRate = props.getCanvas().width * props.getCanvas().height * totalFrames * compressionRatio;
 
-    return Math.min(maxVideoBits, constrainedBitRate) / 10e6;
+    return Math.min(maxVideoBits, constrainedBitRate) / 8e6;
   };
 
   // Footer for the Export modal.
