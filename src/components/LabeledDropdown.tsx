@@ -39,6 +39,7 @@ const defaultProps = {
 export default function LabeledDropdown(inputProps: LabeledDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<LabeledDropdownProps>;
 
+  // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Support tab navigation by forcing the dropdown to stay open when clicked.
   const [forceOpen, setForceOpen] = useState(false);
   const componentContainerRef = useRef<HTMLDivElement>(null);

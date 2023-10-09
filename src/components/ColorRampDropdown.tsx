@@ -23,11 +23,12 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
   const theme = useContext(AppThemeContext);
 
-  // Force the dropdown to stay open when clicked for accessibility. Close it again
-  // when focus is lost.
+  // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
+  // Override the open/close behavior for the dropdown so it's compatible with keyboard navigation.
   const [forceOpen, setForceOpen] = useState(false);
   const componentContainerRef = React.useRef<HTMLDivElement>(null);
 
+  // If open, close the dropdown when focus is lost.
   useEffect(() => {
     if (!forceOpen) {
       return;
