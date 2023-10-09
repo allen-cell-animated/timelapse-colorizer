@@ -55,8 +55,14 @@ export const defaultRecordingOptions: RecordingOptions = {
   onError: function (_error: Error): void {},
 };
 
+// TODO: Add support for OffscreenCanvas?
+// Video frames may get dropped if the user navigates away from the tab.
+// See https://evilmartians.com/chronicles/faster-webgl-three-js-3d-graphics-with-offscreencanvas-and-web-workers
+// and https://threejs.org/examples/webgl_worker_offscreencanvas.html for examples.
+// Also https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas.
+
 /**
- * Abstract class for recording images or videos from a HTMLCanvas or OffscreenCanvas.
+ * Abstract class for recording images or videos from a HTMLCanvas.
  * Provides lifecycle methods for recording each frame, recording completion,
  * and cleanup.
  */
