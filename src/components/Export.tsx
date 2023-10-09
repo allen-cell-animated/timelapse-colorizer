@@ -18,9 +18,6 @@ type ExportButtonProps = {
   disabled?: boolean;
 };
 
-export const TEST_ID_EXPORT_ACTION_BUTTON = "export-action";
-export const TEST_ID_OPEN_EXPORT_MODAL_BUTTON = "open-export-modal";
-
 const defaultProps: Partial<ExportButtonProps> = {
   setIsRecording: () => {},
   defaultImagePrefix: "image",
@@ -389,7 +386,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         <Button
           type={isRecording ? "default" : "primary"}
           onClick={isRecording ? handleStop : handleStartExport}
-          data-testid={TEST_ID_EXPORT_ACTION_BUTTON}
           style={{ width: "76px" }}
           disabled={isPlayingCloseAnimation}
         >
@@ -406,12 +402,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   return (
     <div ref={modalContextRef}>
       {/* Export button */}
-      <Button
-        type="primary"
-        onClick={() => setIsLoadModalOpen(true)}
-        disabled={props.disabled}
-        data-testid={TEST_ID_OPEN_EXPORT_MODAL_BUTTON}
-      >
+      <Button type="primary" onClick={() => setIsLoadModalOpen(true)} disabled={props.disabled}>
         Export
       </Button>
 
@@ -549,7 +540,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             <p>Helpful tips:</p>
             <div style={{ paddingLeft: "4px" }}>
               <p>1. Set your default download location </p>
-              <p>2. Turn off "Ask where to save each file before downloading" in your browser settings</p>
+              <p>2. Turn off &quot;Ask where to save each file before downloading&quot; in your browser settings</p>
               <p>3. For best results, keep this page open while exporting</p>
             </div>
           </div>

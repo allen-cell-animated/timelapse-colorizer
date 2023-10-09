@@ -2,6 +2,9 @@ import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import CanvasRecorder, { RecordingOptions, defaultRecordingOptions } from "./CanvasRecorder";
 import { sleep } from "../utils/timing_utils";
 
+// Eslint doesn't recognize the WebCodecs API yet
+/* global VideoEncoder, VideoFrame, VideoEncoderConfig*/
+
 export enum VideoBitrate {
   HIGH = 1e8, // 100 Mbps
   MEDIUM = 1e7, // 10 Mbps
@@ -28,7 +31,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     this.options = { ...defaultRecordingOptions, ...options };
     this.videoEncoder = new VideoEncoder({
       output: (chunk, meta) => this.muxer?.addVideoChunk(chunk, meta),
-      error: (e) => console.error(e),
+      error: (e: Error) => console.error(e),
     });
   }
 
@@ -135,7 +138,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
 
   protected cleanup(): void {}
 
-  public static isSupported() {
+  public static isSupported(): boolean {
     return typeof VideoEncoder === "function";
   }
 }

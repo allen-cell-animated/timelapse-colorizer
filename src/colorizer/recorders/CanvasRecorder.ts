@@ -86,7 +86,7 @@ export default class CanvasRecorder {
     options?: Partial<RecordingOptions>
   ) {
     if (new.target === CanvasRecorder) {
-      throw new TypeError("Recorder is an abstract class. Do not construct instances of it directly!");
+      throw new TypeError("CanvasRecorder is an abstract class. Do not construct instances of it directly!");
     }
 
     this.recording = false;
@@ -136,20 +136,18 @@ export default class CanvasRecorder {
         // Report errors but don't stop the recording.
         if (e instanceof Error) {
           this.options.onError(e);
-        } else if (e instanceof Event) {
+        } else if (e instanceof ErrorEvent) {
+          this.options.onError((e as ErrorEvent).error);
+        } else {
           // May throw Event type if the error is from an event listener.
           // This happens most often when a resource fails to load
           // (e.g., network issues or user not on VPN)
           // TODO: Update error message if this tool becomes public!
-          if ((e as ErrorEvent).error instanceof Error) {
-            this.options.onError((e as ErrorEvent).error);
-          } else {
-            this.options.onError(
-              new Error(
-                "Encountered an unknown error while exporting. See the console for more details. For Institute users, please check VPN status."
-              )
-            );
-          }
+          this.options.onError(
+            new Error(
+              "Encountered an unknown error while exporting. See the console for more details. For Institute users, please check VPN status."
+            )
+          );
         }
       }
 
