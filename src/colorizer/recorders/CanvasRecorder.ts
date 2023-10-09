@@ -35,6 +35,10 @@ export type RecordingOptions = {
   onCompleted: () => Promise<void>;
   /** Called when each frame has completed */
   onRecordedFrame: (frame: number) => void;
+  /** Called when the recording process encounters an error. If recording, will attempt to continue
+   * without stopping the recording process. If this is not desired, call `abort()` in the callback.
+   */
+  onError: (error: Error) => void;
 };
 
 export const defaultRecordingOptions: RecordingOptions = {
@@ -48,6 +52,7 @@ export const defaultRecordingOptions: RecordingOptions = {
   outputSize: [730, 500],
   onCompleted: async function (): Promise<void> {},
   onRecordedFrame: function (_frame: number): void {},
+  onError: function (_error: Error): void {},
 };
 
 /**
@@ -119,7 +124,28 @@ export default class CanvasRecorder {
         return;
       }
 
-      await this.recordFrame(frame);
+      try {
+        await this.recordFrame(frame);
+      } catch (e) {
+        // Report errors but don't stop the recording.
+        if (e instanceof Error) {
+          this.options.onError(e);
+        } else if (e instanceof Event) {
+          // May throw Event type if the error is from an event listener.
+          // This happens most often when a resource fails to load
+          // (e.g., network issues or user not on VPN)
+          // TODO: Update error message if this tool becomes public!
+          if ((e as ErrorEvent).error instanceof Error) {
+            this.options.onError((e as ErrorEvent).error);
+          } else {
+            this.options.onError(
+              new Error(
+                "Encountered an unknown error while exporting. See the console for more details. For Institute users, please check VPN status."
+              )
+            );
+          }
+        }
+      }
 
       if (!this.recording) {
         return;
@@ -165,7 +191,7 @@ export default class CanvasRecorder {
   protected async onCompletedRecording(): Promise<void> {}
 
   /**
-   * Called after the recording has completed, or when abort is called.
+   * Called after the recording has completed, when abort is called, or when an error is encountered.
    */
   protected cleanup(): void {
     clearTimeout(this.timerId);

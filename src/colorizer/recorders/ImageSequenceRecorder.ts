@@ -13,11 +13,9 @@ export default class ImageSequenceRecorder extends CanvasRecorder {
 
     const dataUrl = canv.toDataURL("image/png");
     downloadUrl = dataUrl;
-    console.log(downloadUrl);
 
     const frameSuffix: string = frame.toString().padStart(minDigits, "0");
     const downloadFilename = `${this.options.prefix}${frameSuffix}.png`;
-    console.log(downloadUrl);
     this.download(downloadFilename, downloadUrl);
   }
 }

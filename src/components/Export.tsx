@@ -3,7 +3,7 @@ import React, { ReactElement, useCallback, useContext, useEffect, useRef, useSta
 import styled from "styled-components";
 import SpinBox from "./SpinBox";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
-import CanvasRecorder from "../colorizer/recorders/CanvasRecorder";
+import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
@@ -119,6 +119,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   const [recordingMode, _setRecordingMode] = useState(RecordingMode.IMAGE_SEQUENCE);
   const recorder = useRef<CanvasRecorder | null>(null);
+  const [errorText, setErrorText] = useState<null | string>("bad!!!!!!! some error text is happening");
 
   const [rangeMode, setRangeMode] = useState(RangeMode.ALL);
   const [customMin, setCustomMin] = useState(0);
@@ -145,6 +146,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const setIsLoadModalOpen = (isOpen: boolean): void => {
     if (isOpen) {
       originalFrameRef.current = props.currentFrame;
+      setErrorText(null);
     }
     _setIsLoadModalOpen(isOpen);
   };
@@ -221,7 +223,17 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
    */
   const handleStop = useCallback(() => {
     stopRecording(false);
+    setErrorText(null);
   }, [stopRecording]);
+
+  const handleError = useCallback((error: Error) => {
+    // Stop current recording and show error message
+    setErrorText(error.message);
+
+    if (recorder.current) {
+      recorder.current.abort();
+    }
+  }, []);
 
   // Note: This is not wrapped in a useCallback because it has a large number
   // of dependencies, and is likely to update whenever ANY prop or input changes.
@@ -233,6 +245,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       return;
     }
     setIsRecording(true);
+    setErrorText(null);
 
     /** Min and max are both inclusive */
     let min: number, max: number;
@@ -254,7 +267,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // Copy configuration to options object
     // TODO: Add a callback for when errors are encountered? This can happen if
     // the canvas is unable to fetch an image, such as when a network error occurs.
-    const recordingOptions = {
+    const recordingOptions: Partial<RecordingOptions> = {
       min: min,
       max: max,
       prefix: getImagePrefix(),
@@ -281,6 +294,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         // Update the progress bar as frames are recorded.
         setPercentComplete(Math.floor(((frame - min) / (max - min)) * 100));
       },
+      onError: handleError,
     };
 
     // Initialize different recorders based on the provided options.
@@ -347,36 +361,46 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     return Math.min(maxVideoBits, constrainedBitRate) / 8e6;
   };
 
+  let progressBarColor = theme.color.theme;
+  if (errorText) {
+    progressBarColor = theme.color.text.error;
+  } else if (percentComplete === 100) {
+    progressBarColor = theme.color.text.success;
+  }
+
   // Footer for the Export modal.
   // Layout: Optional Progress meter - Export/Stop Button - Cancel Button
   const modalFooter = (
-    <HorizontalDiv style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
-      {(percentComplete !== 0 || isRecording) && (
-        <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>
-          <Progress
-            style={{ marginRight: "8px", verticalAlign: "middle" }}
-            type="circle"
-            size={theme.controls.heightSmall - 6}
-            percent={percentComplete}
-            showInfo={false}
-            strokeColor={percentComplete === 100 ? theme.color.text.success : theme.color.theme}
-            strokeWidth={12}
-          />
-        </Tooltip>
-      )}
-      <Button
-        type={isRecording ? "default" : "primary"}
-        onClick={isRecording ? handleStop : handleStartExport}
-        data-testid={TEST_ID_EXPORT_ACTION_BUTTON}
-        style={{ width: "76px" }}
-        disabled={isPlayingCloseAnimation}
-      >
-        {isRecording ? "Stop" : "Export"}
-      </Button>
-      <Button onClick={handleCancel} style={{ width: "76px" }} disabled={isPlayingCloseAnimation}>
-        {isRecording ? "Cancel" : "Close"}
-      </Button>
-    </HorizontalDiv>
+    <VerticalDiv>
+      <HorizontalDiv style={{ alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
+        {(percentComplete !== 0 || isRecording) && (
+          <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>
+            <Progress
+              style={{ marginRight: "8px", verticalAlign: "middle" }}
+              type="circle"
+              size={theme.controls.heightSmall - 6}
+              percent={percentComplete}
+              showInfo={false}
+              strokeColor={progressBarColor}
+              strokeWidth={12}
+            />
+          </Tooltip>
+        )}
+        <Button
+          type={isRecording ? "default" : "primary"}
+          onClick={isRecording ? handleStop : handleStartExport}
+          data-testid={TEST_ID_EXPORT_ACTION_BUTTON}
+          style={{ width: "76px" }}
+          disabled={isPlayingCloseAnimation}
+        >
+          {isRecording ? "Stop" : "Export"}
+        </Button>
+        <Button onClick={handleCancel} style={{ width: "76px" }} disabled={isPlayingCloseAnimation}>
+          {isRecording ? "Cancel" : "Close"}
+        </Button>
+      </HorizontalDiv>
+      {errorText && <p style={{ color: theme.color.text.error, textAlign: "left" }}>{errorText}</p>}
+    </VerticalDiv>
   );
 
   return (
@@ -417,9 +441,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 width: "100%",
               }}
               onChange={(e) => setRecordingMode(e.target.value)}
+              disabled={isRecording}
             >
               <CustomRadio value={RecordingMode.IMAGE_SEQUENCE}>PNG image sequence</CustomRadio>
-              <CustomRadio value={RecordingMode.VIDEO_MP4} disabled={!isWebCodecsEnabled}>
+              <CustomRadio value={RecordingMode.VIDEO_MP4} disabled={isRecording || !isWebCodecsEnabled}>
                 {/* Optional tooltip here in case WebCodecs API is not enabled. */}
                 <Tooltip
                   title={"Video recording isn't supported by this browser."}
@@ -449,7 +474,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     </span>
                   )}
                 </Radio>
-                <Radio value={RangeMode.CURRENT} disabled={recordingMode === RecordingMode.VIDEO_MP4}>
+                <Radio value={RangeMode.CURRENT} disabled={isRecording || recordingMode === RecordingMode.VIDEO_MP4}>
                   Current frame only
                 </Radio>
                 <Radio value={RangeMode.CUSTOM}>Custom range</Radio>
@@ -487,6 +512,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                         onChange={setFrameIncrement}
                         min={1}
                         max={props.totalFrames - 1}
+                        disabled={isRecording}
                       />
                       <p style={{ color: theme.color.text.hint }}>({customRangeFrames} frames total)</p>
                     </HorizontalDiv>

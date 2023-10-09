@@ -87,7 +87,6 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     // Video compression works by recording changes from one frame to the next. Keyframes
     // have the full frame data saved, so adding them in ensures a smaller drop in frame
     // quality. See https://en.wikipedia.org/wiki/Key_frame for more details.
-    console.log(frameIndex);
     const keyFrame = frameIndex % 30 === 0;
     const fps = this.options.fps;
     // 1 second = 1,000,000 microseconds
