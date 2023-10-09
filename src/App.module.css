@@ -143,21 +143,22 @@
   margin: 4px;
   margin-bottom: 6px;
   color: var(--color-text-secondary);
-  --label-position: -16px;
+  --label-position: calc(-1 * var(--font-size-label-small));
   z-index: 1;
 }
 
 .sliderContainer > .minSliderLabel {
   position: absolute;
   left: 0;
-  /* TODO: Make this automatic */
   bottom: var(--label-position);
+  font-size: var(--font-size-label-small);
   z-index: 0;
 }
 .sliderContainer > .maxSliderLabel {
   position: absolute;
   right: 0;
   bottom: var(--label-position);
+  font-size: var(--font-size-label-small);
   z-index: 0;
 }
 

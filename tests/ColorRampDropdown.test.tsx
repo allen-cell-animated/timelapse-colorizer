@@ -1,12 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import ColorRampSelector from "../src/components/ColorRampSelector";
+import ColorRampDropdown from "../src/components/ColorRampDropdown";
 import React from "react";
 import { ColorRamp } from "../src/colorizer";
 import { ANY_ERROR } from "./test_utils";
 import { RawColorRampData } from "../src/constants";
 
-describe("ColorRampSelector", () => {
+describe("ColorRampDropdown", () => {
   const colorRamps: [string, RawColorRampData][] = [
     ["map1", { key: "map1", name: "Map 1", colorStops: ["#ffffff", "#000000"] }],
     ["map2", { key: "map2", name: "Map 2", colorStops: ["#ffffff", "#000000"] }],
@@ -19,8 +19,8 @@ describe("ColorRampSelector", () => {
   );
 
   it("can render with correct label", async () => {
-    render(<ColorRampSelector selected={"map1"} colorRamps={customColorRamps} onChange={(_value: string) => {}} />);
-    const element = screen.getByText(/Color Map/);
+    render(<ColorRampDropdown selected={"map1"} colorRamps={customColorRamps} onChange={(_value: string) => {}} />);
+    const element = screen.getByText(/Color map/);
     expect(element).toBeInTheDocument();
   });
 
@@ -30,7 +30,7 @@ describe("ColorRampSelector", () => {
     };
     const mockCallback = vi.fn(callback);
 
-    render(<ColorRampSelector selected={"map1"} colorRamps={customColorRamps} onChange={mockCallback} />);
+    render(<ColorRampDropdown selected={"map1"} colorRamps={customColorRamps} onChange={mockCallback} />);
     const elements = screen.getAllByRole("button");
 
     // Expect maps to be ordered according to the color ramp, and skip the first button which is the main selector.
@@ -48,7 +48,7 @@ describe("ColorRampSelector", () => {
     console.error = vi.fn(); // hide error output
 
     expect(() =>
-      render(<ColorRampSelector selected={"bad-key"} colorRamps={customColorRamps} onChange={(_value: string) => {}} />)
+      render(<ColorRampDropdown selected={"bad-key"} colorRamps={customColorRamps} onChange={(_value: string) => {}} />)
     ).toThrow(ANY_ERROR);
   });
 });

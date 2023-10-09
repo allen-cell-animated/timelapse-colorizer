@@ -13,14 +13,24 @@
   padding: 0;
 }
 
-.selectorButton {
+#selectorButton {
   padding: 0;
   margin: 0;
   overflow: hidden;
   height: var(--height);
+  filter: none;
 }
 
-.selectorButton:disabled > img {
+#selectorButton:not(:hover):not(:active) {
+  /* Override at-rest border color.*/
+  border: 1px solid var(--color-borders);
+}
+
+#selectorButton.forceOpen {
+  border: 1px solid var(--color-button-active);
+}
+
+#selectorButton:disabled > img {
   filter: grayscale(100%);
 }
 
@@ -33,7 +43,7 @@
   background-color: var(--color-button);
 
   --outline-width: 1px;
-  --radius: 4px;
+  --radius: 6px;
   padding: var(--outline-width) var(--outline-width);
   gap: var(--outline-width);
   border-radius: var(--radius);
@@ -51,37 +61,43 @@
 /** 
  * Show the container if the root button is hovered, and keep
  * it visible while it continues to be hovered over.
+ * Also show the dropdown container when forced open (for accessibility).
  */
 .buttonContainer:hover:not(.disabled) > .dropdownContainer,
-.dropdownContainer:hover {
+.dropdownContainer:hover,
+.dropdownContainer.forceOpen {
   visibility: visible;
   transform: scaleY(1);
   opacity: 1;
-
   transition: all 0.1s;
 }
 
-.dropdownContainer > button {
+.dropdownButton {
+  width: 100%;
   border-radius: 0;
   box-shadow: none;
   margin: 0;
   padding: 0;
-  border: 0px solid transparent;
+  border-width: 0;
+  /* Required override, as default button has different border behavior */
+  border: 0px solid transparent !important;
   outline: 0px solid var(--color-text-button);
   outline-offset: -1px;
   transition: outline 0s ease 0s;
   overflow: hidden;
 }
 
-.dropdownContainer > .dropdownFirst {
+.dropdownButton:first-child {
   border-radius: var(--button-radius) var(--button-radius) 0 0;
 }
 
-.dropdownContainer > .dropdownLast {
+.dropdownButton:last-child {
   border-radius: 0 0 var(--button-radius) var(--button-radius);
 }
 
-.dropdownContainer > button:hover {
-  outline: 1px solid var(--color-text-button);
-  outline-offset: -1px;
+.dropdownButton:hover,
+.dropdownButton:focus {
+  /* Required override, as default button has different border behavior */
+  outline: 1px solid var(--color-text-button) !important;
+  outline-offset: -1px !important;
 }

@@ -1,6 +1,7 @@
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import {
+  CaretRightOutlined,
   CheckCircleOutlined,
   LinkOutlined,
   PauseOutlined,
@@ -20,7 +21,7 @@ import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
-import ColorRampSelector from "./components/ColorRampSelector";
+import ColorRampDropdown from "./components/ColorRampDropdown";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
@@ -584,7 +585,7 @@ function App(): ReactElement {
             onChange={handleFeatureChange}
           />
 
-          <ColorRampSelector selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
+          <ColorRampDropdown selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
         </div>
         <div className={styles.headerRight}>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
@@ -697,9 +698,7 @@ function App(): ReactElement {
                   onClick={() => timeControls.handlePlayButtonClick()}
                   type="outlined"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="11" viewBox="0 0 8 12" aria-label="play">
-                    <path d="M7.78017 6.3152L0.654546 11.9127C0.389566 12.1209 0 11.9331 0 11.5975V0.402353C0 0.0667129 0.389566 -0.120911 0.654546 0.0873534L7.78017 5.68483C7.82798 5.72228 7.86665 5.77012 7.89325 5.82473C7.91984 5.87934 7.93366 5.93928 7.93366 6.00002C7.93366 6.06076 7.91984 6.1207 7.89325 6.17531C7.86665 6.22991 7.82798 6.27775 7.78017 6.3152Z" />
-                  </svg>
+                  <CaretRightOutlined />
                 </IconButton>
               )}
 
