@@ -144,8 +144,8 @@ const CssContainer = styled.div`
   }
 
   // Both buttons go to solid light theme color and change text color when hovered.
-  .ant-btn-primary:not(:disabled):active,
-  .ant-btn-primary:not(:disabled):hover,
+  :where(.ant-btn-primary:not(:disabled):active),
+  :where(.ant-btn-primary:not(:disabled):hover),
   .ant-btn-default:not(:disabled):active,
   .ant-btn-default:not(:disabled):hover {
     border-color: ${theme.color.button.hover};
@@ -154,7 +154,7 @@ const CssContainer = styled.div`
   }
 
   // Use the darker theme color for the primary-style, solid-color button
-  .ant-btn-primary:not(:disabled):active {
+  .ant-btn-primary:where(:not(:disabled):active) {
     border: 1px solid ${theme.color.button.backgroundPrimary};
   }
 

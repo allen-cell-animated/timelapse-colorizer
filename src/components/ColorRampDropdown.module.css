@@ -18,6 +18,7 @@
   margin: 0;
   overflow: hidden;
   height: var(--height);
+  filter: none;
 }
 
 #selectorButton:not(:hover):not(:active) {
@@ -71,30 +72,32 @@
   transition: all 0.1s;
 }
 
-#dropdownButton {
+.dropdownButton {
   width: 100%;
   border-radius: 0;
   box-shadow: none;
   margin: 0;
   padding: 0;
   border-width: 0;
-  border: 0px solid transparent;
+  /* Required override, as default button has different border behavior */
+  border: 0px solid transparent !important;
   outline: 0px solid var(--color-text-button);
   outline-offset: -1px;
   transition: outline 0s ease 0s;
   overflow: hidden;
 }
 
-#dropdownButton:first-child {
+.dropdownButton:first-child {
   border-radius: var(--button-radius) var(--button-radius) 0 0;
 }
 
-#dropdownButton:last-child {
+.dropdownButton:last-child {
   border-radius: 0 0 var(--button-radius) var(--button-radius);
 }
 
-#dropdownButton:hover,
-#dropdownButton:focus {
-  outline: 1px solid var(--color-text-button);
-  outline-offset: -1px;
+.dropdownButton:hover,
+.dropdownButton:focus {
+  /* Required override, as default button has different border behavior */
+  outline: 1px solid var(--color-text-button) !important;
+  outline-offset: -1px !important;
 }

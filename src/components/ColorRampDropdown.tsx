@@ -78,7 +78,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key} trigger={["hover", "focus"]}>
-          <Button key={key} onClick={() => props.onChange(key)} id={styles.dropdownButton}>
+          <Button key={key} onClick={() => props.onChange(key)} rootClassName={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>

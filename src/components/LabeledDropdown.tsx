@@ -121,15 +121,14 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   // different animation styling (Dropdown looks nicer).
   const dropdownList: ReactElement[] = items.map((item) => {
     const isSelected = item.key === props.selected;
-    const className = isSelected ? ` ${styles.selected}` : "";
+    const className = styles.dropdownItem + (isSelected ? ` ${styles.selected}` : "");
     return (
       <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
         <Button
           key={item.key}
           type={"text"}
           disabled={props.disabled}
-          className={className}
-          id={styles.dropdownItem}
+          rootClassName={className}
           onClick={() => {
             props.onChange(item.key.toString());
           }}
