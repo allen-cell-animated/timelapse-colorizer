@@ -73,20 +73,11 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     const colorRampEntries = Array.from(props.colorRamps!.entries());
     // Make a button for every color ramp
     for (let i = 0; i < props.colorRamps.size; i++) {
-      // Manipulate class names for rounding at start and end of dropdown list
-      let className = "";
-      if (i === 0) {
-        className = styles.dropdownFirst;
-      }
-      if (i === props.colorRamps!.size - 1) {
-        className = styles.dropdownLast;
-      }
-
       // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key} trigger={["hover", "focus"]}>
-          <Button key={key} rootClassName={className} onClick={() => props.onChange(key)} id={styles.dropdownButton}>
+          <Button key={key} onClick={() => props.onChange(key)} id={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>
