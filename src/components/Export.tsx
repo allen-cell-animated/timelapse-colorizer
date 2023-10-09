@@ -12,7 +12,10 @@ type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
   getCanvas: () => HTMLCanvasElement;
+  /** Callback, called whenever the button is clicked. Can be used to stop playback. */
+  onClick?: () => void;
   currentFrame: number;
+  /** Callback, called whenever the recording process starts or stops. */
   setIsRecording?: (recording: boolean) => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
@@ -22,6 +25,7 @@ const defaultProps: Partial<ExportButtonProps> = {
   setIsRecording: () => {},
   defaultImagePrefix: "image",
   disabled: false,
+  onClick: () => {},
 };
 
 const HorizontalDiv = styled.div`
@@ -61,7 +65,7 @@ const CustomRadio = styled(Radio)`
 
 const ExportModeRadioGroup = styled(Radio.Group)`
   & {
-    // Use standard amount of padding, unless the view is too narrow
+    // Use standard 40px of padding, unless the view is too narrow and it needs to shrink
     padding: 0 calc(min(40px, 5vw));
   }
   & label {
@@ -116,8 +120,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   const [recordingMode, _setRecordingMode] = useState(RecordingMode.IMAGE_SEQUENCE);
   const recorder = useRef<CanvasRecorder | null>(null);
-  const [errorText, setErrorText] = useState<null | string>("bad!!!!!!! some error text is happening");
+  const [errorText, setErrorText] = useState<null | string>(null);
 
+  // TODO: Store these settings to local storage so they persist?
   const [rangeMode, setRangeMode] = useState(RangeMode.ALL);
   const [customMin, setCustomMin] = useState(0);
   const [customMax, setCustomMax] = useState(props.totalFrames - 1);
@@ -129,8 +134,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   const [percentComplete, setPercentComplete] = useState(0);
 
-  // Override setRecordingMode; users should not choose video + current frame only
-  // (since exporting the current frame only doesn't really make sense.)
+  // Override setRecordingMode when switching to video; users should not choose current frame only
+  // (since exporting the current frame only as a video doesn't really make sense.)
   const setRecordingMode = (mode: RecordingMode): void => {
     _setRecordingMode(mode);
     if (mode === RecordingMode.VIDEO_MP4 && rangeMode === RangeMode.CURRENT) {
@@ -402,7 +407,14 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   return (
     <div ref={modalContextRef}>
       {/* Export button */}
-      <Button type="primary" onClick={() => setIsLoadModalOpen(true)} disabled={props.disabled}>
+      <Button
+        type="primary"
+        onClick={() => {
+          setIsLoadModalOpen(true);
+          props.onClick();
+        }}
+        disabled={props.disabled}
+      >
         Export
       </Button>
 

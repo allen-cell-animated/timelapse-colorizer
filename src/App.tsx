@@ -139,7 +139,7 @@ function App(): ReactElement {
     // update current time in plot
     plot?.setTime(currentFrame);
 
-    if (!timeControls.isPlaying() && isRecording) {
+    if (!timeControls.isPlaying() && !isRecording) {
       // Do not update URL while playback is happening for performance + UX reasons
       urlUtils.updateUrl(getUrlParams());
     }
@@ -598,6 +598,8 @@ function App(): ReactElement {
             getCanvas={() => {
               return canv.domElement;
             }}
+            // Stop playback when exporting
+            onClick={() => timeControls.handlePauseButtonClick()}
             currentFrame={currentFrame}
             defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
