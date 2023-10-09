@@ -19,6 +19,7 @@ export enum VideoBitrate {
  */
 export default class Mp4VideoRecorder extends CanvasRecorder {
   private videoEncoder: VideoEncoder;
+  // Muxer is optional here because it depends on an async process.
   private muxer?: Muxer<ArrayBufferTarget>;
 
   constructor(
@@ -65,6 +66,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
           bitrateMode: "constant",
           framerate: this.options.fps,
         };
+        // This process needs to be in await because VideoEncoder.isConfigSupported is async.
         const { supported, config: supportedConfig } = await VideoEncoder.isConfigSupported(config);
         if (supported && supportedConfig) {
           this.videoEncoder.configure(supportedConfig);
@@ -81,10 +83,11 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
       }
     }
 
-    throw new Error("No valid configuration found for the VideoEncoder.");
+    throw new Error("No valid configuration found for the video encoder.");
   }
 
   protected async recordFrame(frame: number): Promise<void> {
+    // Account for frame skipping
     const frameIndex = Math.floor((frame - this.options.min) / this.options.frameIncrement);
 
     // Video compression works by recording changes from one frame to the next. Keyframes
@@ -93,8 +96,8 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     const keyFrame = frameIndex % 30 === 0;
     const fps = this.options.fps;
     // 1 second = 1,000,000 microseconds
-    const timestampMicroseconds = (frameIndex / fps) * 10e6;
-    const durationMicroseconds = 10e6 / fps;
+    const timestampMicroseconds = (frameIndex / fps) * 1_000_000;
+    const durationMicroseconds = 1_000_000 / fps;
 
     // Delay if needed so video encoder can finish processing.
     // See https://developer.chrome.com/articles/webcodecs/#encoding
@@ -110,9 +113,8 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     await this.setFrameAndRender(frame);
     // Add the frame to the video encoder
     const videoFrame = new VideoFrame(this.getCanvas(), {
-      // Fixes weird quirk where duration/timestamps are off by a magnitude of 10
-      duration: durationMicroseconds / 10,
-      timestamp: timestampMicroseconds / 10,
+      duration: durationMicroseconds,
+      timestamp: timestampMicroseconds,
     });
     this.videoEncoder.encode(videoFrame, {
       keyFrame,
@@ -123,7 +125,10 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
   protected async onCompletedRecording(): Promise<void> {
     await this.videoEncoder.flush();
     if (!this.muxer) {
-      throw new Error("No muxer found to convert video. Possible bad configuration.");
+      this.options.onError(
+        new Error("No muxer found to convert video. Something may have gone wrong internally during export setup.")
+      );
+      return;
     }
 
     this.muxer.finalize();
@@ -139,6 +144,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
   protected cleanup(): void {}
 
   public static isSupported(): boolean {
+    // Check if WebCodecs API exists
     return typeof VideoEncoder === "function";
   }
 }

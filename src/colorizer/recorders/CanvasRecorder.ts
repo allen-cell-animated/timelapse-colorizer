@@ -35,8 +35,8 @@ export type RecordingOptions = {
   onCompleted: () => Promise<void>;
   /** Called when each frame has completed */
   onRecordedFrame: (frame: number) => void;
-  /** Called when the recording process encounters an error. If recording, will attempt to continue
-   * without stopping the recording process. If this is not desired, call `abort()` in the callback.
+  /** Called when the recording process encounters an error. If recording has started, will attempt
+   * to continue without stopping the recording process. If this is not desired, call `abort()` in the callback.
    */
   onError: (error: Error) => void;
 };
@@ -112,7 +112,16 @@ export default class CanvasRecorder {
     }
     this.recording = true;
 
-    await this.setup();
+    try {
+      await this.setup();
+    } catch (e) {
+      if (e instanceof Error) {
+        this.options.onError(e);
+      }
+      this.recording = false;
+      return;
+    }
+
     this.startRecordingLoop();
   }
 
@@ -195,7 +204,7 @@ export default class CanvasRecorder {
   protected async onCompletedRecording(): Promise<void> {}
 
   /**
-   * Called after the recording has completed, when abort is called, or when an error is encountered.
+   * Called after the recording has completed or when `abort()` is called.
    */
   protected cleanup(): void {
     clearTimeout(this.timerId);
@@ -221,7 +230,7 @@ export default class CanvasRecorder {
   }
 
   /**
-   * Whether this recorder is supported by the current client.
+   * Whether this recorder is supported by the current client browser.
    */
   public isSupported(): boolean {
     return true;
@@ -233,7 +242,7 @@ export default class CanvasRecorder {
    * @param url
    */
   protected download(filename: string, url: string): void {
-    // TODO: Add flag for showing save file picker? https://developer.mozilla.org/en-US/docs/Web/API/Window/showSaveFilePicker
+    // TODO: Add option to show save file picker? https://developer.mozilla.org/en-US/docs/Web/API/Window/showSaveFilePicker
     const anchor = document.createElement("a");
     document.body.appendChild(anchor);
 

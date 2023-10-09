@@ -130,7 +130,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameIncrement, setFrameIncrement] = useState(1);
   const [fps, setFps] = useState(30);
-  const [videoQuality, setVideoQuality] = useState(VideoBitrate.MEDIUM);
+  const [videoBitsPerSecond, setVideoBitsPerSecond] = useState(VideoBitrate.MEDIUM);
 
   const [percentComplete, setPercentComplete] = useState(0);
 
@@ -167,6 +167,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const getImagePrefix = (): string => {
     if (useDefaultImagePrefix) {
       if (recordingMode === RecordingMode.IMAGE_SEQUENCE) {
+        // Add separator between prefix and frame number
         return props.defaultImagePrefix + "-";
       } else {
         return props.defaultImagePrefix;
@@ -231,7 +232,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const handleError = useCallback((error: Error) => {
     // Stop current recording and show error message
     setErrorText(error.message);
-
     if (recorder.current) {
       recorder.current.abort();
     }
@@ -267,8 +267,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     }
 
     // Copy configuration to options object
-    // TODO: Add a callback for when errors are encountered? This can happen if
-    // the canvas is unable to fetch an image, such as when a network error occurs.
     const recordingOptions: Partial<RecordingOptions> = {
       min: min,
       max: max,
@@ -278,7 +276,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       delayMs: recordingMode === RecordingMode.IMAGE_SEQUENCE ? 100 : 0,
       frameIncrement: frameIncrement,
       fps: fps,
-      bitrate: videoQuality,
+      bitrate: videoBitsPerSecond,
       onCompleted: async () => {
         // Close modal once recording finishes and show completion notification
         setPercentComplete(100);
@@ -336,9 +334,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     if (durationMin > 0) {
       timestamp += durationMin.toString() + " min, ";
     }
-    // Format seconds to hundredths
+    // Format seconds to hundredths if less than 10 seconds
     if (durationMin === 0 && durationSec < 10) {
-      // Round to hundredths
+      // Round digits to 2 decimal places
       const roundedSeconds = Math.round(durationSec * 100) / 100;
       timestamp += roundedSeconds.toFixed(2) + " sec";
     } else {
@@ -347,20 +345,30 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     return timestamp;
   };
 
-  const getApproximateVideoFilesizeMb = (): number => {
+  const getApproximateVideoFilesizeMb = (): string => {
     // From experimentation, filesize is dependent on duration and bitrate.
     // It scales linearly with the bitrate until a maximum filesize is hit,
     // which seems to depend on the video dimensions.
 
-    // These are more or less magic numbers based on the dataset I'm testing with,
-    // but they're good enough for giving an order of magnitude range of the resulting filesize.
-    const maxVideoBits = totalSeconds * videoQuality;
+    // Video quality is bitrate in bits/second
+    const maxVideoBitsDuration = totalSeconds * videoBitsPerSecond;
 
-    // Experimentally-determined compression ratio (bits per pixel).
-    const compressionRatio = 2.77;
-    const constrainedBitRate = props.getCanvas().width * props.getCanvas().height * totalFrames * compressionRatio;
+    // Experimentally-determined compression ratio (bits per pixel). This may not apply for all
+    // datasets, depending on image complexity.
+    // For high bitrates, the video filesize will be constrained by duration.
+    const compressionRatioBitsPerPixel = 2.77;
+    const maxVideoBitsResolution =
+      props.getCanvas().width * props.getCanvas().height * totalFrames * compressionRatioBitsPerPixel;
 
-    return Math.min(maxVideoBits, constrainedBitRate) / 8e6;
+    const sizeInMb = Math.min(maxVideoBitsDuration, maxVideoBitsResolution) / 8_000_000; // bits to MB
+
+    if (sizeInMb > 1) {
+      return Math.round(sizeInMb) + " MB";
+    } else {
+      // Round to one decimal place, with a minimum of 0.1 MB. (We don't need to be too precise
+      // because these are estimates.)
+      return Math.max(1, Math.round(sizeInMb * 10)) / 10 + " MB";
+    }
   };
 
   let progressBarColor = theme.color.theme;
@@ -431,7 +439,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         footer={modalFooter}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px", marginTop: "15px" }}>
-          {/* Recording Mode radio */}
+          {/* Recording type (image/video) radio */}
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <ExportModeRadioGroup
               value={recordingMode}
@@ -459,7 +467,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </ExportModeRadioGroup>
           </div>
 
-          {/* Radio options (All/Current Frame/Custom) */}
+          {/* Range options (All/Current Frame/Custom) */}
           <Card size="small">
             <Radio.Group
               value={rangeMode}
@@ -539,10 +547,10 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     disabled={isRecording}
                     options={videoQualityOptions}
                     optionType="button"
-                    value={videoQuality}
-                    onChange={(e) => setVideoQuality(e.target.value)}
+                    value={videoBitsPerSecond}
+                    onChange={(e) => setVideoBitsPerSecond(e.target.value)}
                   />
-                  <p style={{ color: theme.color.text.hint }}>(~{Math.round(getApproximateVideoFilesizeMb())} MB)</p>
+                  <p style={{ color: theme.color.text.hint }}>(~{getApproximateVideoFilesizeMb()})</p>
                 </HorizontalDiv>
               </VerticalDiv>
             </Card>
