@@ -10,8 +10,9 @@ const palette = {
   theme: "#8962d3",
   themeDark: "#5f369f",
   themeLight: "#aa88ed",
+  themeGray: "#f7f0ff",
   gray0: "#ffffff",
-  gray5: "#f3f4f5",
+  gray5: "#f2f2f2",
   gray10: "#e6e7e8",
   gray20: "#cbcbcc",
   gray30: "#a3a4a5",
@@ -47,11 +48,20 @@ const theme = {
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
     button: {
-      background: palette.theme,
+      backgroundPrimary: palette.theme,
+      backgroundDisabled: palette.gray5,
+      outline: palette.theme,
+      outlineActive: palette.themeDark,
       hover: palette.themeLight,
       active: palette.themeDark,
-      disabled: palette.gray5,
       focusShadow: "rgba(137, 98, 211, 0.06)",
+    },
+    dropdown: {
+      backgroundHover: palette.gray5,
+      backgroundSelected: palette.themeGray,
+    },
+    slider: {
+      rail: palette.gray5,
     },
   },
   font: {
@@ -62,6 +72,7 @@ const theme = {
       section: 18,
       label: 16,
       content: 14,
+      labelSmall: 12,
     },
   },
   controls: {
@@ -97,14 +108,17 @@ const CssContainer = styled.div`
   styling has the same active and hover colors (just with different outlines).
   Would dark/light theme be more descriptive? 
    */
-  --color-button: ${theme.color.button.background};
+  --color-button: ${theme.color.button.backgroundPrimary};
   --color-button-hover: ${theme.color.button.hover};
   --color-button-active: ${theme.color.button.active};
-  --color-button-disabled: ${theme.color.button.disabled};
+  --color-button-disabled: ${theme.color.button.backgroundDisabled};
 
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;
   --radius-control-small: ${theme.controls.radius}px;
+
+  --color-dropdown-hover: ${theme.color.dropdown.backgroundHover};
+  --color-dropdown-selected: ${theme.color.dropdown.backgroundSelected};
 
   --color-focus-shadow: rgba(137, 98, 211, 0.06);
 
@@ -114,9 +128,48 @@ const CssContainer = styled.div`
   --font-size-section: ${theme.font.size.section}px;
   --font-size-label: ${theme.font.size.label}px;
   --font-size-content: ${theme.font.size.content}px;
+  --font-size-label-small: ${theme.font.size.labelSmall}px;
 
   .ant-input-number-input {
     text-align: right;
+  }
+
+  // Override button styling to match design.
+  // Specifically, remove the drop shadow, and change the hover/active
+  // behavior so the border changes color instead of the background.
+  .ant-btn-primary:not(:disabled),
+  .ant-btn-default:not(:disabled) {
+    // disable drop shadow
+    box-shadow: none;
+  }
+
+  // Both buttons go to solid light theme color and change text color when hovered.
+  :where(.ant-btn-primary:not(:disabled):active),
+  :where(.ant-btn-primary:not(:disabled):hover),
+  .ant-btn-default:not(:disabled):active,
+  .ant-btn-default:not(:disabled):hover {
+    border-color: ${theme.color.button.hover};
+    background-color: ${theme.color.button.hover};
+    color: ${theme.color.text.button};
+  }
+
+  // Use the darker theme color for the primary-style, solid-color button
+  .ant-btn-primary:where(:not(:disabled):active) {
+    border: 1px solid ${theme.color.button.backgroundPrimary};
+  }
+
+  // Use the normal theme color for the button outline when hovered,
+  // then darken it when active. This way, the outline is always visible
+  // for the default button.
+  .ant-btn-default:not(:disabled):hover {
+    border: 1px solid ${theme.color.button.backgroundPrimary};
+  }
+  .ant-btn-default:not(:disabled):active {
+    border: 1px solid ${theme.color.button.outlineActive};
+  }
+  .ant-btn-default:not(:disabled) {
+    border-color: ${theme.color.button.outline};
+    color: ${theme.color.button.outline};
   }
 `;
 
@@ -139,17 +192,22 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorPrimary: theme.color.theme,
             colorLink: theme.color.theme,
             colorLinkHover: theme.color.themeDark,
-
+            colorBorder: theme.color.layout.borders,
             controlHeight: theme.controls.height,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
             borderRadiusLG: 4,
             colorText: theme.color.text.primary,
+            colorTextPlaceholder: theme.color.text.hint,
           },
           components: {
             Button: {
               colorPrimaryActive: theme.color.button.hover,
               colorPrimaryHover: theme.color.button.hover,
+              textHoverBg: theme.color.text.button,
+              colorBgTextHover: theme.color.text.button,
+              defaultBorderColor: theme.color.theme,
+              defaultColor: theme.color.theme,
             },
             Checkbox: {
               borderRadiusSM: 2,
@@ -164,6 +222,8 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               handleActiveColor: theme.color.themeLight,
               handleColor: theme.color.theme,
               trackBg: theme.color.theme,
+              railBg: theme.color.slider.rail,
+              railHoverBg: theme.color.slider.rail,
               controlHeightSM: 20,
               trackHoverBg: theme.color.themeLight,
             },
