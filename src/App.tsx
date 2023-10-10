@@ -31,12 +31,12 @@ import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 import Export from "./components/Export";
 import DrawModeDropdown from "./components/DrawModeDropdown";
+import CanvasWrapper from "./components/CanvasWrapper";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
 
-  const canvasRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
 
   const [plot, setPlot] = useState<Plotting | null>(null);
@@ -47,7 +47,6 @@ function App(): ReactElement {
   // Setup for plot + canvas after initial render, since they replace DOM elements.
   useEffect(() => {
     setPlot(new Plotting(plotRef.current!));
-    canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
   }, []);
 
   const [collection, setCollection] = useState<Collection | undefined>();
@@ -122,26 +121,9 @@ function App(): ReactElement {
   }, [collection, datasetKey, featureName, selectedTrack, currentFrame]);
 
   /**
-   * Handle updating the canvas from state (for some common properties) and initiating the canvas
-   * render. Also update other UI elements, including the plot and URL.
+   * Update plot and url when the current frame changes.
    */
   useEffect(() => {
-    // TODO: This is getting larger... ColorizeCanvas needs to be refactored to take
-    // all of these in as props.
-    // Note: Selected track, frame number, etc. are not updated here.
-    // Those operations are async, and need to complete before a state update to be
-    // rendered correctly.
-    canv.setShowTrackPath(showTrackPath);
-
-    canv.setOutOfRangeDrawMode(outOfRangeDrawSettings.mode, outOfRangeDrawSettings.color);
-    canv.setOutlierDrawMode(outlierDrawSettings.mode, outlierDrawSettings.color);
-
-    canv.setColorRamp(colorRampData.get(colorRampKey)?.colorRamp!); // TODO: Add fallback?
-    canv.setColorMapRangeMin(colorRampMin);
-    canv.setColorMapRangeMax(colorRampMax);
-    canv.setSelectedTrack(selectedTrack);
-    canv.render();
-
     // update current time in plot
     plot?.setTime(currentFrame);
 
@@ -150,19 +132,7 @@ function App(): ReactElement {
       urlUtils.updateUrl(getUrlParams());
     }
   }, [
-    collection,
-    dataset,
-    datasetKey,
-    featureName,
     currentFrame,
-    selectedTrack,
-    showTrackPath,
-    colorRampData,
-    colorRampKey,
-    colorRampMin,
-    colorRampMax,
-    outOfRangeDrawSettings,
-    outlierDrawSettings,
     timeControls.isPlaying(), // updates URL when timeControls stops
     getUrlParams,
   ]);
@@ -694,7 +664,16 @@ function App(): ReactElement {
               }
               disabled={!showHoveredId}
             >
-              <div ref={canvasRef}></div>
+              <CanvasWrapper
+                canv={canv}
+                showTrackPath={showTrackPath}
+                outOfRangeDrawSettings={outOfRangeDrawSettings}
+                outlierDrawSettings={outlierDrawSettings}
+                colorRamp={colorRampData.get(colorRampKey)?.colorRamp!}
+                colorRampMin={colorRampMin}
+                colorRampMax={colorRampMax}
+                selectedTrack={selectedTrack}
+              />
             </HoverTooltip>
 
             {/** Time Control Bar */}
