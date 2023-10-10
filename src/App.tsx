@@ -448,7 +448,7 @@ function App(): ReactElement {
             setFrame={setFrame}
             currentFrame={currentFrame}
             startRecording={(options: Partial<RecordingOptions>) => {
-              const setFrameAndRender = async (frame: number) => {
+              const setFrameAndRender = async (frame: number): Promise<void> => {
                 await setFrame(frame);
                 canv.render();
               };
