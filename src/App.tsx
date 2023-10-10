@@ -32,6 +32,7 @@ import HoverTooltip from "./components/HoverTooltip";
 import Export from "./components/Export";
 import DrawModeDropdown from "./components/DrawModeDropdown";
 import CanvasWrapper from "./components/CanvasWrapper";
+import LabeledRangeSlider from "./components/LabeledRangeSlider";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -562,44 +563,16 @@ function App(): ReactElement {
         <div className={styles.topControls}>
           <h3 style={{ margin: "0" }}>Feature value range</h3>
           <div className={styles.controlsContainer}>
-            <div className={styles.labeledColorRamp}>
-              <InputNumber
-                size="small"
-                style={{ width: "80px" }}
-                value={colorRampMin}
-                onChange={(value) => {
-                  value && setColorRampMin(value);
-                }}
-                controls={false}
-                disabled={disableUi}
-              />
-              <div className={styles.sliderContainer}>
-                <Slider
-                  min={dataset?.getFeatureData(featureName)?.min}
-                  max={dataset?.getFeatureData(featureName)?.max}
-                  range={{ draggableTrack: true }}
-                  value={[colorRampMin, colorRampMax]}
-                  disabled={disableUi}
-                  onChange={(value: [number, number]) => {
-                    setColorRampMin(value[0]);
-                    setColorRampMax(value[1]);
-                  }}
-                />
-                <p className={styles.minSliderLabel}>{dataset?.getFeatureData(featureName)?.min}</p>
-                <p className={styles.maxSliderLabel}>{dataset?.getFeatureData(featureName)?.max}</p>
-              </div>
-              <InputNumber
-                size="small"
-                type="number"
-                style={{ width: "80px" }}
-                value={colorRampMax}
-                onChange={(value) => {
-                  value && setColorRampMax(value);
-                }}
-                controls={false}
-                disabled={disableUi}
-              />
-            </div>
+            <LabeledRangeSlider
+              min={colorRampMin}
+              max={colorRampMax}
+              minSlider={dataset?.getFeatureData(featureName)?.min}
+              maxSlider={dataset?.getFeatureData(featureName)?.max}
+              onChange={function (min: number, max: number): void {
+                setColorRampMin(min);
+                setColorRampMax(max);
+              }}
+            />
             <div>
               <Checkbox
                 checked={isColorRampRangeLocked}
