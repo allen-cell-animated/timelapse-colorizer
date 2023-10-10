@@ -65,10 +65,8 @@ export default class Dataset {
    */
   constructor(manifestUrl: string, frameLoader?: IFrameLoader, arrayLoader?: IArrayLoader) {
     this.manifestUrl = manifestUrl;
-    this.baseUrl = manifestUrl.substring(0, manifestUrl.lastIndexOf("/"));
-    if (this.baseUrl.endsWith("/")) {
-      this.baseUrl = this.baseUrl.slice(0, this.baseUrl.length - 1);
-    }
+
+    this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
     this.hasOpened = false;
 
     this.frameLoader = frameLoader || new ImageFrameLoader();

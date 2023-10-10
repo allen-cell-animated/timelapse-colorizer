@@ -39,4 +39,32 @@ export default class ColorRamp {
   public dispose(): void {
     this.texture.dispose();
   }
+
+  /**
+   * Samples the color of the ColorRamp at an interpolation time `t`.
+   * @param t A float, in the range of 0 to 1.
+   * @returns a new `Color` object, representing the interpolated color
+   * of the ramp at the time `t`.
+   */
+  public sample(t: number): Color {
+    // Clamp t
+    t = Math.min(Math.max(t, 0), 1);
+
+    // Scale t so it represents a (float) index in the array of color stops
+    const tIndex = t * (this.colorStops.length - 1);
+
+    // Get the two colors on either side of the tIndex
+    const minIndex = Math.floor(tIndex);
+    const maxIndex = Math.ceil(tIndex);
+    // For single-color color ramps, or if t is the exact index of a color stop
+    if (maxIndex === minIndex) {
+      return new Color(this.colorStops[minIndex]);
+    }
+
+    // Get a new normalized t value between the min and max indices, range [0, 1]
+    const tNormalized = (tIndex - minIndex) / (maxIndex - minIndex);
+    const minColor = new Color(this.colorStops[minIndex]);
+    const maxColor = new Color(this.colorStops[maxIndex]);
+    return minColor.lerp(maxColor, tNormalized);
+  }
 }

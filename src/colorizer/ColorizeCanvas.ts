@@ -31,9 +31,21 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
-const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
+export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
+export const OUT_OF_RANGE_COLOR_DEFAULT = 0xc0c0c0;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
+
+// MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
+/** Draw options for object types. */
+export enum DrawMode {
+  /** Hide this object type. */
+  HIDE = 0,
+  /** Use the color ramp/map to color the object. */
+  USE_RAMP = 1,
+  /** Use a solid color for this object type. */
+  USE_COLOR = 2,
+}
 
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
@@ -46,8 +58,11 @@ type ColorizeUniformTypes = {
   colorRamp: Texture;
   backgroundColor: Color;
   outlierColor: Color;
+  outOfRangeColor: Color;
   highlightedId: number;
   hideOutOfRange: boolean;
+  outlierDrawMode: number;
+  outOfRangeDrawMode: number;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -68,10 +83,13 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     featureMin: new Uniform(0),
     featureMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
-    backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
-    outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
+    backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
+    outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
+    outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
+    outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
+    outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
   };
 };
 
@@ -99,7 +117,6 @@ export default class ColorizeCanvas {
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
-  private hideValuesOutOfRange: boolean;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
   private currentFrame: number;
@@ -155,13 +172,13 @@ export default class ColorizeCanvas {
     this.featureName = null;
     this.track = null;
     this.showTrackPath = false;
-    this.hideValuesOutOfRange = false;
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
 
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
+    this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
   }
 
   get domElement(): HTMLCanvasElement {
@@ -248,8 +265,18 @@ export default class ColorizeCanvas {
     this.setUniform("backgroundColor", color);
   }
 
-  setOutlierColor(color: Color): void {
-    this.setUniform("outlierColor", color);
+  setOutlierDrawMode(mode: DrawMode, color?: Color): void {
+    this.setUniform("outlierDrawMode", mode);
+    if (mode === DrawMode.USE_COLOR && color) {
+      this.setUniform("outlierColor", color);
+    }
+  }
+
+  setOutOfRangeDrawMode(mode: DrawMode, color?: Color): void {
+    this.setUniform("outOfRangeDrawMode", mode);
+    if (mode === DrawMode.USE_COLOR && color) {
+      this.setUniform("outOfRangeColor", color);
+    }
   }
 
   setSelectedTrack(track: Track | null): void {
@@ -320,11 +347,6 @@ export default class ColorizeCanvas {
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);
     this.render(); // re-render necessary because map range may have changed
-  }
-
-  setHideValuesOutOfRange(hide: boolean): void {
-    this.hideValuesOutOfRange = hide;
-    this.setUniform("hideOutOfRange", this.hideValuesOutOfRange);
   }
 
   setColorMapRangeMin(newMin: number): void {
