@@ -5,6 +5,7 @@ import SpinBox from "./SpinBox";
 import { RecordingOptions } from "../colorizer/RecordingControls";
 import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
+import { clamp } from "three/src/math/MathUtils";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -43,10 +44,6 @@ const CustomRangeDiv = styled(HorizontalDiv)`
     text-align: right;
   }
 `;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(value, min));
-}
 
 /**
  * A single Export button that opens up an export modal when clicked. Manages starting and stopping

@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactEventHandler, useEffect, useRef } from "react";
+import React, { ReactElement, ReactEventHandler, useRef } from "react";
 import { InputNumber, Slider } from "antd";
 import { clamp } from "three/src/math/MathUtils";
 import styled from "styled-components";
@@ -82,7 +82,7 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
   const maxInput = useRef<HTMLInputElement>(null);
 
   // Broadcast changes to input fields
-  const handleValueChange = (minValue: number, maxValue: number) => {
+  const handleValueChange = (minValue: number, maxValue: number): void => {
     // Clamp values
     if (Number.isNaN(minValue)) {
       minValue = props.min;
