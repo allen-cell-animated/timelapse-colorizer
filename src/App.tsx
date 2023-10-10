@@ -14,7 +14,7 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
 import styles from "./App.module.css";
-import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
+import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import RecordingControls, { RecordingOptions } from "./colorizer/RecordingControls";
@@ -33,22 +33,15 @@ import Export from "./components/Export";
 import DrawModeDropdown from "./components/DrawModeDropdown";
 import CanvasWrapper from "./components/CanvasWrapper";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
+import PlotWrapper from "./components/PlotWrapper";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
 
-  const plotRef = useRef<HTMLDivElement>(null);
-
-  const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useConstructor(() => {
     return new ColorizeCanvas();
   });
-
-  // Setup for plot + canvas after initial render, since they replace DOM elements.
-  useEffect(() => {
-    setPlot(new Plotting(plotRef.current!));
-  }, []);
 
   const [collection, setCollection] = useState<Collection | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -122,12 +115,9 @@ function App(): ReactElement {
   }, [collection, datasetKey, featureName, selectedTrack, currentFrame]);
 
   /**
-   * Update plot and url when the current frame changes.
+   * Update url time when the current frame changes.
    */
   useEffect(() => {
-    // update current time in plot
-    plot?.setTime(currentFrame);
-
     if (!timeControls.isPlaying() && !recordingControls.isRecording()) {
       // Do not update URL while playback is happening for performance + UX reasons
       urlUtils.updateUrl(getUrlParams());
@@ -158,14 +148,11 @@ function App(): ReactElement {
       setSelectedTrack(newTrack);
       if (seekToFrame) {
         setFrame(newTrack.times[0]);
-        plot?.plot(newTrack, featureName, newTrack.times[0]);
-      } else {
-        plot?.plot(newTrack, featureName, currentFrame);
       }
       setFindTrackInput("" + trackId);
       urlUtils.updateUrl(getUrlParams());
     },
-    [canv, plot, dataset, featureName, currentFrame]
+    [canv, dataset, featureName, currentFrame]
   );
 
   /**
@@ -223,8 +210,6 @@ function App(): ReactElement {
     if (!isInitialDatasetLoaded) {
       return;
     }
-    plot?.removePlot();
-    plot?.setDataset(dataset!);
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
@@ -262,11 +247,6 @@ function App(): ReactElement {
   // CANVAS ACTIONS ///////////////////////////////////////////////////////////
 
   const handleTrackSelected = useCallback((track: Track | null): void => {
-    if (track === null) {
-      plot?.removePlot();
-    } else {
-      plot?.plot(track, featureName, currentFrame);
-    }
     setFindTrackInput("");
     setSelectedTrack(track);
   }, []);
@@ -327,10 +307,6 @@ function App(): ReactElement {
       const newFrame = Math.min(currentFrame, canv.getTotalFrames() - 1);
       await setFrame(newFrame);
 
-      // Clear and/or update UI
-      plot?.setDataset(newDataset);
-      plot?.removePlot();
-
       setFindTrackInput("");
       setSelectedTrack(null);
       urlUtils.updateUrl(getUrlParams());
@@ -338,7 +314,7 @@ function App(): ReactElement {
 
       setDatasetOpen(true);
     },
-    [dataset, featureName, canv, plot, currentFrame, getUrlParams]
+    [dataset, featureName, canv, currentFrame, getUrlParams]
   );
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
@@ -404,13 +380,9 @@ function App(): ReactElement {
       }
 
       canv.setFeature(newFeatureName);
-      // only update plot if active
-      if (selectedTrack) {
-        plot?.plot(selectedTrack, newFeatureName, currentFrame);
-      }
       urlUtils.updateUrl(getUrlParams());
     },
-    [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, plot, selectedTrack, currentFrame]
+    [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
 
   const handleFeatureChange = useCallback(
@@ -699,7 +671,12 @@ function App(): ReactElement {
                   </IconButton>
                 </div>
               </div>
-              <div ref={plotRef} style={{ width: "600px", height: "400px" }} />
+              <PlotWrapper
+                frame={currentFrame}
+                dataset={dataset}
+                featureName={featureName}
+                selectedTrack={selectedTrack}
+              />
             </div>
             <Divider orientationMargin={0} />
             <div>
