@@ -312,6 +312,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   //////////////// RENDERING ////////////////
 
+  const tooltipTrigger: ("hover" | "focus")[] = ["hover", "focus"];
+
   const videoQualityOptions = [
     { label: "High", value: VideoBitrate.HIGH },
     { label: "Med", value: VideoBitrate.MEDIUM },
@@ -384,7 +386,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     <VerticalDiv>
       <HorizontalDiv style={{ alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
         {(percentComplete !== 0 || isRecording) && (
-          <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }}>
+          <Tooltip title={percentComplete + "%"} style={{ verticalAlign: "middle" }} trigger={tooltipTrigger}>
             <Progress
               style={{ marginRight: "8px", verticalAlign: "middle" }}
               type="circle"
@@ -455,15 +457,16 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               disabled={isRecording}
             >
               <CustomRadio value={RecordingMode.IMAGE_SEQUENCE}>PNG image sequence</CustomRadio>
-              <CustomRadio value={RecordingMode.VIDEO_MP4} disabled={isRecording || !isWebCodecsEnabled}>
-                {/* Optional tooltip here in case WebCodecs API is not enabled. */}
-                <Tooltip
-                  title={"Video recording isn't supported by this browser."}
-                  open={isWebCodecsEnabled ? false : undefined}
-                >
+              {/* Optional tooltip here in case WebCodecs API is not enabled. */}
+              <Tooltip
+                title={"Video recording isn't supported by this browser."}
+                open={isWebCodecsEnabled ? false : undefined}
+                trigger={tooltipTrigger}
+              >
+                <CustomRadio value={RecordingMode.VIDEO_MP4} disabled={isRecording || !isWebCodecsEnabled}>
                   MP4 video
-                </Tooltip>
-              </CustomRadio>
+                </CustomRadio>
+              </Tooltip>
             </ExportModeRadioGroup>
           </div>
 
