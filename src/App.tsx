@@ -637,7 +637,7 @@ function App(): ReactElement {
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 selectedTrack={selectedTrack}
-                onTrackSelected={handleTrackSelected}
+                onTrackClicked={handleTrackSelected}
                 onMouseHoveredId={handleMouseHoverId}
                 onMouseLeave={handleMouseLeaveCanvas}
               />

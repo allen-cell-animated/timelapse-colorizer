@@ -10,6 +10,10 @@ export type DrawSettings = {
 
 type CanvasWrapperProps = {
   canv: ColorizeCanvas;
+  /** Dataset to look up track and ID information in.
+   * Does NOT update the canvas datset; do so directly by calling
+   * `canvas.setDataset()`.
+   */
   dataset: Dataset | null;
   showTrackPath: boolean;
   outOfRangeDrawSettings: DrawSettings;
@@ -19,17 +23,26 @@ type CanvasWrapperProps = {
   colorRampMax: number;
   selectedTrack: Track | null;
 
+  /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHoveredId?: (id: number) => void;
+  /** Called when the mouse exits the canvas. */
   onMouseLeave?: () => void;
-  onTrackSelected?: (track: Track | null) => void;
+  /** Called when the canvas is clicked; reports the track info of the clicked object. */
+  onTrackClicked?: (track: Track | null) => void;
 };
 
 const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHoveredId() {},
   onMouseLeave() {},
-  onTrackSelected: () => {},
+  onTrackClicked: () => {},
 };
 
+/**
+ * Provides a component-style interface for interacting with ColorizeCanvas.
+ *
+ * Note that some canvas operations (like `setFrame`, `setFeature`, `setDataset`)
+ * are async and should be called directly on the canvas instance.
+ */
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
@@ -74,11 +87,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
       if (id < 0 || props.dataset === null) {
-        props.onTrackSelected(null);
+        props.onTrackClicked(null);
       } else {
         const trackId = props.dataset.getTrackId(id);
         const newTrack = props.dataset.buildTrack(trackId);
-        props.onTrackSelected(newTrack);
+        props.onTrackClicked(newTrack);
       }
     },
     [props.dataset]
@@ -112,7 +125,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [onMouseMove, canv]);
 
-  canv.render();
+  // RENDERING /////////////////////////////////////////////////
 
+  canv.render();
   return <div ref={canvasRef}></div>;
 }
