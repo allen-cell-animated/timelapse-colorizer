@@ -9,20 +9,24 @@ type PlotWrapperProps = {
 };
 const defaultProps: Partial<PlotWrapperProps> = {};
 
+/**
+ * A wrapper around the Plotting class, allowing it to be updated via a React
+ * component interface.
+ */
 export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<PlotWrapperProps>;
 
   const plotRef = useRef<HTMLDivElement>(null);
   const [plot, setPlot] = useState<Plotting | null>(null);
 
-  // Setup for plot after initial render, since it replaces DOM elements.
+  // Setup for plot after initial render, since it replaces a DOM element.
   useEffect(() => {
     const plot = new Plotting(plotRef.current!);
     setPlot(plot);
     plot.removePlot(); // Clear initial plot for consistency
   }, []);
 
-  // Update dataset
+  // Update dataset when it changes
   useMemo(() => {
     plot?.removePlot();
     if (props.dataset) {

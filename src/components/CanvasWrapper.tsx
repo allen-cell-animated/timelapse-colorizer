@@ -29,12 +29,17 @@ type CanvasWrapperProps = {
   onMouseLeave?: () => void;
   /** Called when the canvas is clicked; reports the track info of the clicked object. */
   onTrackClicked?: (track: Track | null) => void;
+
+  maxWidth?: number;
+  maxHeight?: number;
 };
 
 const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHoveredId() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
+  maxWidth: 730,
+  maxHeight: 500,
 };
 
 /**
@@ -124,6 +129,29 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
   }, [onMouseMove, canv]);
+
+  // Respond to window resizing
+  useEffect(() => {
+    /**
+     * Update the canvas dimensions based on the current window size.
+     * TODO: Margin calculation?
+     */
+    const setSize = (): void => {
+      const width = Math.min(window.innerWidth - 75, props.maxWidth);
+      const height = Math.min(window.innerHeight - 75, props.maxHeight);
+      canv.setSize(width, height);
+    };
+    const handleResize = (): void => {
+      setSize();
+      canv.render();
+    };
+
+    setSize(); // Initial size setting
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [canv]);
 
   // RENDERING /////////////////////////////////////////////////
 

@@ -114,19 +114,13 @@ function App(): ReactElement {
     });
   }, [collection, datasetKey, featureName, selectedTrack, currentFrame]);
 
-  /**
-   * Update url time when the current frame changes.
-   */
+  // Update url time when the current frame changes.
   useEffect(() => {
+    // Do not update URL while playback is happening for performance + UX reasons
     if (!timeControls.isPlaying() && !recordingControls.isRecording()) {
-      // Do not update URL while playback is happening for performance + UX reasons
       urlUtils.updateUrl(getUrlParams());
     }
-  }, [
-    currentFrame,
-    timeControls.isPlaying(), // updates URL when timeControls stops
-    getUrlParams,
-  ]);
+  }, [currentFrame, timeControls.isPlaying(), getUrlParams]);
 
   const setFrame = useCallback(
     async (frame: number) => {
@@ -155,13 +149,6 @@ function App(): ReactElement {
     [canv, dataset, featureName, currentFrame]
   );
 
-  /**
-   * Update the canvas dimensions based on the current window size.
-   *
-   * TODO: Find calculation for margin magic number
-   */
-  const setSize = (): void => canv.setSize(Math.min(window.innerWidth - 75, 730), Math.min(window.innerHeight, 500));
-
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
   // Only retrieve parameters once, because the URL can be updated by state updates
@@ -175,8 +162,6 @@ function App(): ReactElement {
   // This is memoized so that it only runs one time on startup.
   useEffect(() => {
     const loadInitialDatabase = async (): Promise<void> => {
-      setSize();
-
       let newCollection: Collection;
       const collectionUrlParam = initialUrlParams.collection;
       const datasetParam = initialUrlParams.dataset;
@@ -237,35 +222,6 @@ function App(): ReactElement {
     window.addEventListener("beforeunload", () => {
       canv.dispose();
     });
-
-    window.addEventListener("resize", () => {
-      setSize();
-      canv.render();
-    });
-  }, []);
-
-  // CANVAS ACTIONS ///////////////////////////////////////////////////////////
-
-  const handleTrackSelected = useCallback((track: Track | null): void => {
-    setFindTrackInput("");
-    setSelectedTrack(track);
-  }, []);
-
-  const handleMouseHoverId = useCallback(
-    (id: number): void => {
-      if (id === BACKGROUND_ID) {
-        // Ignore background pixels
-        setShowHoveredId(false);
-        return;
-      }
-      setLastHoveredId(id);
-      setShowHoveredId(true);
-    },
-    [dataset, canv]
-  );
-
-  const handleMouseLeaveCanvas = useCallback((): void => {
-    setShowHoveredId(false);
   }, []);
 
   // DATASET LOADING ///////////////////////////////////////////////////////
@@ -310,7 +266,6 @@ function App(): ReactElement {
       setFindTrackInput("");
       setSelectedTrack(null);
       urlUtils.updateUrl(getUrlParams());
-      setSize();
 
       setDatasetOpen(true);
     },
@@ -385,16 +340,6 @@ function App(): ReactElement {
     [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
 
-  const handleFeatureChange = useCallback(
-    (value: string): void => {
-      console.log(value);
-      if (value !== featureName && dataset) {
-        updateFeature(dataset, value);
-      }
-    },
-    [featureName, dataset, updateFeature]
-  );
-
   const getFeatureValue = useCallback(
     (id: number): number => {
       if (!featureName || !dataset) {
@@ -407,6 +352,7 @@ function App(): ReactElement {
   );
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
+  timeControls.setFrameCallback(setFrame);
 
   const handleKeyDown = useCallback(
     ({ key }: KeyboardEvent): void => {
@@ -432,26 +378,6 @@ function App(): ReactElement {
   useEffect(() => {
     setFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
-
-  const handleFindTrack = useCallback(async (): Promise<void> => {
-    // Load track value
-    await findTrack(parseInt(findTrackInput, 10));
-  }, [findTrackInput, findTrack]);
-
-  // RECORDING CONTROLS ////////////////////////////////////////////////////
-
-  // Update the callback for TimeControls and RecordingControls if it changes.
-  // TODO: TimeControls and RecordingControls should be refactored into components
-  // and receive setFrame as props.
-  timeControls.setFrameCallback(setFrame);
-
-  const setFrameAndRender = useCallback(
-    async (frame: number) => {
-      await setFrame(frame);
-      canv.render();
-    },
-    [setFrame, canv]
-  );
 
   // RENDERING /////////////////////////////////////////////////////////////
 
@@ -502,7 +428,11 @@ function App(): ReactElement {
             label="Feature"
             selected={featureName}
             items={dataset?.featureNames || []}
-            onChange={handleFeatureChange}
+            onChange={(value) => {
+              if (value !== featureName && dataset) {
+                updateFeature(dataset, value);
+              }
+            }}
           />
 
           <ColorRampDropdown selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
@@ -518,6 +448,10 @@ function App(): ReactElement {
             setFrame={setFrame}
             currentFrame={currentFrame}
             startRecording={(options: Partial<RecordingOptions>) => {
+              const setFrameAndRender = async (frame: number) => {
+                await setFrame(frame);
+                canv.render();
+              };
               recordingControls.start(setFrameAndRender, getCanvasImageAsUrl, options);
             }}
             stopRecording={() => recordingControls.abort()}
@@ -583,9 +517,17 @@ function App(): ReactElement {
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 selectedTrack={selectedTrack}
-                onTrackClicked={handleTrackSelected}
-                onMouseHoveredId={handleMouseHoverId}
-                onMouseLeave={handleMouseLeaveCanvas}
+                onTrackClicked={(track) => {
+                  setFindTrackInput("");
+                  setSelectedTrack(track);
+                }}
+                onMouseHoveredId={(id: number): void => {
+                  setShowHoveredId(id !== BACKGROUND_ID);
+                  if (id !== BACKGROUND_ID) {
+                    setLastHoveredId(id);
+                  }
+                }}
+                onMouseLeave={() => setShowHoveredId(false)}
               />
             </HoverTooltip>
 
@@ -666,7 +608,12 @@ function App(): ReactElement {
                       setFindTrackInput(event.target.value);
                     }}
                   />
-                  <IconButton disabled={disableUi} onClick={handleFindTrack}>
+                  <IconButton
+                    disabled={disableUi}
+                    onClick={async () => {
+                      await findTrack(parseInt(findTrackInput, 10));
+                    }}
+                  >
                     <SearchOutlined />
                   </IconButton>
                 </div>
