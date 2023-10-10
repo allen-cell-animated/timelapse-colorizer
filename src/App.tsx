@@ -217,7 +217,8 @@ function App(): ReactElement {
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
 
-  // Add event listeners for unloading and resizing on startup.
+  // Add event listener for unloading.
+  // TODO: Is this necessary?
   useEffect(() => {
     window.addEventListener("beforeunload", () => {
       canv.dispose();
@@ -472,8 +473,8 @@ function App(): ReactElement {
             <LabeledRangeSlider
               min={colorRampMin}
               max={colorRampMax}
-              minSlider={dataset?.getFeatureData(featureName)?.min}
-              maxSlider={dataset?.getFeatureData(featureName)?.max}
+              minSliderBound={dataset?.getFeatureData(featureName)?.min}
+              maxSliderBound={dataset?.getFeatureData(featureName)?.max}
               onChange={function (min: number, max: number): void {
                 setColorRampMin(min);
                 setColorRampMax(max);
@@ -521,7 +522,7 @@ function App(): ReactElement {
                   setFindTrackInput("");
                   setSelectedTrack(track);
                 }}
-                onMouseHoveredId={(id: number): void => {
+                onMouseHover={(id: number): void => {
                   setShowHoveredId(id !== BACKGROUND_ID);
                   if (id !== BACKGROUND_ID) {
                     setLastHoveredId(id);

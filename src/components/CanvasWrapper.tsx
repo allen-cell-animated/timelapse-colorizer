@@ -11,8 +11,8 @@ export type DrawSettings = {
 type CanvasWrapperProps = {
   canv: ColorizeCanvas;
   /** Dataset to look up track and ID information in.
-   * Does NOT update the canvas datset; do so directly by calling
-   * `canvas.setDataset()`.
+   * Changing this does NOT update the canvas dataset; do so
+   * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
   showTrackPath: boolean;
@@ -24,7 +24,7 @@ type CanvasWrapperProps = {
   selectedTrack: Track | null;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
-  onMouseHoveredId?: (id: number) => void;
+  onMouseHover?: (id: number) => void;
   /** Called when the mouse exits the canvas. */
   onMouseLeave?: () => void;
   /** Called when the canvas is clicked; reports the track info of the clicked object. */
@@ -35,7 +35,7 @@ type CanvasWrapperProps = {
 };
 
 const defaultProps: Partial<CanvasWrapperProps> = {
-  onMouseHoveredId() {},
+  onMouseHover() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
   maxWidth: 730,
@@ -43,7 +43,7 @@ const defaultProps: Partial<CanvasWrapperProps> = {
 };
 
 /**
- * Provides a component-style interface for interacting with ColorizeCanvas.
+ * Provides a React component-style interface for interacting with ColorizeCanvas.
  *
  * Note that some canvas operations (like `setFrame`, `setFeature`, `setDataset`)
  * are async and should be called directly on the canvas instance.
@@ -116,7 +116,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         return;
       }
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      props.onMouseHoveredId(id);
+      props.onMouseHover(id);
     },
     [props.dataset, canv]
   );

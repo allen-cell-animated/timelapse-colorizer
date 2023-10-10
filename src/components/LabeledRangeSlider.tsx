@@ -5,27 +5,27 @@ import styled from "styled-components";
 
 type LabeledRangeSliderProps = {
   disabled?: boolean;
-  /** Selected min range value.*/
+  /** Currently selected min range value.*/
   min: number;
-  /** Selected max range value.*/
+  /** Currently selected max range value.*/
   max: number;
   /** The lower bound for the slider. */
-  minSlider?: number;
+  minSliderBound?: number;
   /** The upper bound for the slider. */
-  maxSlider?: number;
+  maxSliderBound?: number;
   /** The lower bound for the numeric input. If undefined, uses MIN_SAFE_INTEGER. */
-  minBound?: number;
+  minInputBound?: number;
   /** The upper bound for the numeric input. If undefined, uses MAX_SAFE_INTEGER. */
-  maxBound?: number;
+  maxInputBound?: number;
 
   onChange: (min: number, max: number) => void;
 };
 
 const defaultProps: Partial<LabeledRangeSliderProps> = {
-  minBound: Number.MIN_SAFE_INTEGER,
-  maxBound: Number.MAX_SAFE_INTEGER,
-  minSlider: 0,
-  maxSlider: 1,
+  minInputBound: Number.MIN_SAFE_INTEGER,
+  maxInputBound: Number.MAX_SAFE_INTEGER,
+  minSliderBound: 0,
+  maxSliderBound: 1,
 };
 
 // STYLING /////////////////////////////////////////////////////////////////
@@ -90,8 +90,8 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
     if (Number.isNaN(maxValue)) {
       maxValue = props.max;
     }
-    minValue = clamp(minValue, props.minBound, props.maxBound);
-    maxValue = clamp(maxValue, props.minBound, props.maxBound);
+    minValue = clamp(minValue, props.minInputBound, props.maxInputBound);
+    maxValue = clamp(maxValue, props.minInputBound, props.maxInputBound);
 
     // Swap bounds if they're in the wrong order
     if (minValue > maxValue) {
@@ -102,7 +102,7 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
   };
 
   // Handle changes to input field. This only triggers with enter or blur,
-  // to prevent the inputs from swapping if the user inputs very large or small values.
+  // to prevent the input values from swapping mid-input.
   const handleMinInputChange: ReactEventHandler<HTMLInputElement> = (): void => {
     const value = Number.parseFloat(minInput.current!.value);
     handleValueChange(value, props.max);
@@ -127,8 +127,8 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
       />
       <SliderContainer>
         <Slider
-          min={props.minSlider}
-          max={props.maxSlider}
+          min={props.minSliderBound}
+          max={props.maxSliderBound}
           range={{ draggableTrack: true }}
           value={[props.min, props.max]}
           disabled={props.disabled}
@@ -136,8 +136,8 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
             handleValueChange(value[0], value[1]);
           }}
         />
-        <SliderLabel>{props.minSlider}</SliderLabel>
-        <SliderLabel>{props.maxSlider}</SliderLabel>
+        <SliderLabel>{props.minSliderBound}</SliderLabel>
+        <SliderLabel>{props.maxSliderBound}</SliderLabel>
       </SliderContainer>
       <InputNumber
         ref={maxInput}
