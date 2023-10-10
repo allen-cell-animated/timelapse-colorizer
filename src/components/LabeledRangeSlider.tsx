@@ -28,6 +28,8 @@ const defaultProps: Partial<LabeledRangeSliderProps> = {
   maxSlider: 1,
 };
 
+// STYLING /////////////////////////////////////////////////////////////////
+
 const ComponentContainer = styled.div`
   display: inline-flex;
   align-items: center;
@@ -56,7 +58,7 @@ const SliderLabel = styled.p`
   z-index: 0;
 
   &:not(:last-child) {
-    // Weird hack to override font size by increasing specificity
+    // Bit of a hack to override font size by increasing specificity
     font-size: var(--font-size-label-small);
     left: 0;
   }
@@ -66,6 +68,8 @@ const SliderLabel = styled.p`
     right: 0;
   }
 `;
+
+///////////////////////////////////////////////////////////////////
 
 /**
  * Creates a Slider with two number input fields on either side. The slider is bounded
@@ -77,6 +81,7 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
   const minInput = useRef<HTMLInputElement>(null);
   const maxInput = useRef<HTMLInputElement>(null);
 
+  // Broadcast changes to input fields
   const handleValueChange = (minValue: number, maxValue: number) => {
     // Clamp values
     if (Number.isNaN(minValue)) {
@@ -96,22 +101,15 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
     props.onChange(minValue, maxValue);
   };
 
+  // Handle changes to input field. This only triggers with enter or blur,
+  // to prevent the inputs from swapping if the user inputs very large or small values.
   const handleMinInputChange: ReactEventHandler<HTMLInputElement> = (): void => {
-    if (!minInput.current) {
-      // reset input value
-      handleValueChange(props.min, props.max);
-      return;
-    }
-    const value = Number.parseFloat(minInput.current.value);
+    const value = Number.parseFloat(minInput.current!.value);
     handleValueChange(value, props.max);
   };
 
   const handleMaxInputChange: ReactEventHandler<HTMLInputElement> = (): void => {
-    if (!maxInput.current) {
-      handleValueChange(props.min, props.max);
-      return;
-    }
-    const value = Number.parseFloat(maxInput.current.value);
+    const value = Number.parseFloat(maxInput.current!.value);
     handleValueChange(props.min, value);
   };
 

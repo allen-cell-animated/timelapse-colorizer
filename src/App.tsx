@@ -572,6 +572,7 @@ function App(): ReactElement {
                 setColorRampMin(min);
                 setColorRampMax(max);
               }}
+              disabled={disableUi}
             />
             <div>
               <Checkbox
