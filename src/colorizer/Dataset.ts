@@ -113,8 +113,8 @@ export default class Dataset {
    * Fetches and loads a data file as an array and returns its data as a Texture using the provided dataType.
    * @param dataType The expected format of the data.
    * @param fileUrl String url of the file to be loaded.
-   * @throws An error if fileUrl is undefined or if the data cannot be loaded from the file.
-   * @returns Promise of a texture loaded from the file.
+   * @throws An error if fileUrl is not undefined and the data cannot be loaded from the file.
+   * @returns Promise of a texture loaded from the file. If `fileUrl` is undefined, returns null.
    */
   private async loadToTexture(dataType: FeatureDataType, fileUrl?: string): Promise<Texture | null> {
     if (!fileUrl) {
@@ -133,8 +133,8 @@ export default class Dataset {
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
    * @param dataType The expected format of the data.
    * @param fileUrl String url of the file to be loaded.
-   * @throws An error if fileUrl is undefined or if the data cannot be loaded from the file.
-   * @returns Promise of a TypedArray loaded from the file.
+   * @throws An error if `fileUrl` is not undefined and the data cannot be loaded from the file.
+   * @returns Promise of a TypedArray loaded from the file. If `fileUrl` is undefined, returns null.
    */
   private async loadToBuffer<T extends FeatureDataType>(
     dataType: T,
