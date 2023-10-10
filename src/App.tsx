@@ -249,7 +249,6 @@ function App(): ReactElement {
   // Add event listeners for unloading and resizing on startup.
   useEffect(() => {
     window.addEventListener("beforeunload", () => {
-      canv.domElement.removeEventListener("click", handleCanvasClick);
       canv.dispose();
     });
 
@@ -261,35 +260,32 @@ function App(): ReactElement {
 
   // CANVAS ACTIONS ///////////////////////////////////////////////////////////
 
-  const handleCanvasClick = useCallback(
-    async (event: MouseEvent): Promise<void> => {
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
-      setFindTrackInput("");
-      if (id < 0) {
-        plot?.removePlot();
-        canv.setSelectedTrack(null);
-        setSelectedTrack(null); // clear selected track when clicking off of cells
-      } else {
-        const trackId = dataset!.getTrackId(id);
-        const newTrack = dataset!.buildTrack(trackId);
-        plot?.plot(newTrack, featureName, currentFrame);
-        canv.setSelectedTrack(newTrack);
-        setSelectedTrack(newTrack);
+  const handleTrackSelected = useCallback((track: Track | null): void => {
+    if (track === null) {
+      plot?.removePlot();
+    } else {
+      plot?.plot(track, featureName, currentFrame);
+    }
+    setFindTrackInput("");
+    setSelectedTrack(track);
+  }, []);
+
+  const handleMouseHoverId = useCallback(
+    (id: number): void => {
+      if (id === BACKGROUND_ID) {
+        // Ignore background pixels
+        setShowHoveredId(false);
+        return;
       }
+      setLastHoveredId(id);
+      setShowHoveredId(true);
     },
-    [dataset, featureName, currentFrame, canv, plot]
+    [dataset, canv]
   );
 
-  useEffect(() => {
-    canv.domElement.addEventListener("click", handleCanvasClick);
-    // Returned callback is fired if/when App is removed from the DOM,
-    // or before running useEffect again. This prevents memory issues with
-    // duplicate event listeners.
-    return () => {
-      canv.domElement.removeEventListener("click", handleCanvasClick);
-    };
-  }, [handleCanvasClick]);
+  const handleMouseLeaveCanvas = useCallback((): void => {
+    setShowHoveredId(false);
+  }, []);
 
   // DATASET LOADING ///////////////////////////////////////////////////////
   /**
@@ -437,36 +433,6 @@ function App(): ReactElement {
     [featureName, dataset]
   );
 
-  const onMouseMove = useCallback(
-    (event: MouseEvent): void => {
-      if (!dataset) {
-        return;
-      }
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      if (id === BACKGROUND_ID) {
-        // Ignore background pixels
-        setShowHoveredId(false);
-        return;
-      }
-      setLastHoveredId(id);
-      setShowHoveredId(true);
-    },
-    [dataset, canv]
-  );
-
-  const onMouseLeave = useCallback((_event: MouseEvent): void => {
-    setShowHoveredId(false);
-  }, []);
-
-  useEffect(() => {
-    canv.domElement.addEventListener("mousemove", onMouseMove);
-    canv.domElement.addEventListener("mouseleave", onMouseLeave);
-    return () => {
-      canv.domElement.removeEventListener("mousemove", onMouseMove);
-      canv.domElement.removeEventListener("mouseleave", onMouseLeave);
-    };
-  }, [onMouseMove, onMouseLeave, canv]);
-
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
 
   const handleKeyDown = useCallback(
@@ -482,7 +448,6 @@ function App(): ReactElement {
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
@@ -514,8 +479,6 @@ function App(): ReactElement {
     },
     [setFrame, canv]
   );
-
-  // const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
 
   // RENDERING /////////////////////////////////////////////////////////////
 
@@ -666,6 +629,7 @@ function App(): ReactElement {
             >
               <CanvasWrapper
                 canv={canv}
+                dataset={dataset}
                 showTrackPath={showTrackPath}
                 outOfRangeDrawSettings={outOfRangeDrawSettings}
                 outlierDrawSettings={outlierDrawSettings}
@@ -673,6 +637,9 @@ function App(): ReactElement {
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 selectedTrack={selectedTrack}
+                onTrackSelected={handleTrackSelected}
+                onMouseHoveredId={handleMouseHoverId}
+                onMouseLeave={handleMouseLeaveCanvas}
               />
             </HoverTooltip>
 

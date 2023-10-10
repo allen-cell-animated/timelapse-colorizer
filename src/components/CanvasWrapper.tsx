@@ -1,6 +1,6 @@
-import React, { ReactElement, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useRef } from "react";
 import { Color } from "three";
-import { ColorRamp, ColorizeCanvas, Track } from "../colorizer";
+import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
 
 export type DrawSettings = {
@@ -10,6 +10,7 @@ export type DrawSettings = {
 
 type CanvasWrapperProps = {
   canv: ColorizeCanvas;
+  dataset: Dataset | null;
   showTrackPath: boolean;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
@@ -19,10 +20,14 @@ type CanvasWrapperProps = {
   selectedTrack: Track | null;
 
   onMouseHoveredId?: (id: number) => void;
-  onTrackSelected?: (track: Track) => void;
+  onMouseLeave?: () => void;
+  onTrackSelected?: (track: Track | null) => void;
 };
+
 const defaultProps: Partial<CanvasWrapperProps> = {
-  onMouseHoveredId(_id) {},
+  onMouseHoveredId() {},
+  onMouseLeave() {},
+  onTrackSelected: () => {},
 };
 
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
@@ -30,6 +35,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // CANVAS PROPERTIES /////////////////////////////////////////////////
 
   // Mount the canvas to the wrapper's location in the document.
   useEffect(() => {
@@ -59,10 +66,53 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setShowTrackPath(props.showTrackPath);
   }, [props.selectedTrack, props.showTrackPath]);
 
-  // TODO: does this work?
-  useMemo(() => {
-    canv.render();
-  }, [props]);
+  // CANVAS ACTIONS /////////////////////////////////////////////////
+
+  /** Report clicked tracks via the passed callback. */
+  const handleCanvasClick = useCallback(
+    async (event: MouseEvent): Promise<void> => {
+      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      // Reset track input
+      if (id < 0 || props.dataset === null) {
+        props.onTrackSelected(null);
+      } else {
+        const trackId = props.dataset.getTrackId(id);
+        const newTrack = props.dataset.buildTrack(trackId);
+        props.onTrackSelected(newTrack);
+      }
+    },
+    [props.dataset]
+  );
+
+  useEffect(() => {
+    canv.domElement.addEventListener("click", handleCanvasClick);
+    return () => {
+      canv.domElement.removeEventListener("click", handleCanvasClick);
+    };
+  }, [handleCanvasClick]);
+
+  /** Report hovered id via the passed callback. */
+  const onMouseMove = useCallback(
+    (event: MouseEvent): void => {
+      if (!props.dataset) {
+        return;
+      }
+      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      props.onMouseHoveredId(id);
+    },
+    [props.dataset, canv]
+  );
+
+  useEffect(() => {
+    canv.domElement.addEventListener("mousemove", onMouseMove);
+    canv.domElement.addEventListener("mouseleave", props.onMouseLeave);
+    return () => {
+      canv.domElement.removeEventListener("mousemove", onMouseMove);
+      canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
+    };
+  }, [onMouseMove, canv]);
+
+  canv.render();
 
   return <div ref={canvasRef}></div>;
 }
