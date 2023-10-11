@@ -78,6 +78,9 @@ const SliderLabel = styled.p`
 export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<LabeledRangeSliderProps>;
 
+  // TODO: Could add a controlled/uncontrolled mode to this component, maybe with
+  // a custom hook? (e.g., use state if min/max are undefined, otherwise use props)
+
   const minInput = useRef<HTMLInputElement>(null);
   const maxInput = useRef<HTMLInputElement>(null);
 
@@ -107,7 +110,6 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
     const value = Number.parseFloat(minInput.current!.value);
     handleValueChange(value, props.max);
   };
-
   const handleMaxInputChange: ReactEventHandler<HTMLInputElement> = (): void => {
     const value = Number.parseFloat(maxInput.current!.value);
     handleValueChange(props.min, value);

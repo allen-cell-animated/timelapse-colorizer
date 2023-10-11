@@ -16,12 +16,12 @@ const defaultProps: Partial<PlotWrapperProps> = {};
 export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<PlotWrapperProps>;
 
-  const plotRef = useRef<HTMLDivElement>(null);
+  const plotDivRef = useRef<HTMLDivElement>(null);
   const [plot, setPlot] = useState<Plotting | null>(null);
 
   // Setup for plot after initial render, since it replaces a DOM element.
   useEffect(() => {
-    const plot = new Plotting(plotRef.current!);
+    const plot = new Plotting(plotDivRef.current!);
     setPlot(plot);
     plot.removePlot(); // Clear initial plot for consistency
   }, []);
@@ -47,5 +47,5 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
   }, [props.selectedTrack, props.featureName, props.frame]);
 
-  return <div ref={plotRef} style={{ width: "600px", height: "400px" }} />;
+  return <div ref={plotDivRef} style={{ width: "600px", height: "400px" }} />;
 }
