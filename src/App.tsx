@@ -515,8 +515,9 @@ function App(): ReactElement {
                   setSelectedTrack(track);
                 }}
                 onMouseHover={(id: number): void => {
-                  setShowHoveredId(id !== BACKGROUND_ID);
-                  if (id !== BACKGROUND_ID) {
+                  const isObject = id !== BACKGROUND_ID;
+                  setShowHoveredId(isObject);
+                  if (isObject) {
                     setLastHoveredId(id);
                   }
                 }}
