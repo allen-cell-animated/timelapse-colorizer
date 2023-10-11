@@ -1,4 +1,5 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
+
 import CanvasRecorder, { RecordingOptions, defaultRecordingOptions } from "./CanvasRecorder";
 import { sleep } from "../utils/timing_utils";
 
@@ -89,12 +90,13 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
   protected async recordFrame(frame: number): Promise<void> {
     // Account for frame skipping
     const frameIndex = Math.floor((frame - this.options.min) / this.options.frameIncrement);
+    const fps = this.options.fps;
 
     // Video compression works by recording changes from one frame to the next. Keyframes
     // have the full frame data saved, so adding them in ensures a smaller drop in frame
     // quality. See https://en.wikipedia.org/wiki/Key_frame for more details.
-    const keyFrame = frameIndex % 30 === 0;
-    const fps = this.options.fps;
+    // Add a keyframe every second. (1-2 seconds usually recommended)
+    const keyFrame = frameIndex % fps === 0;
     // 1 second = 1,000,000 microseconds
     const timestampMicroseconds = (frameIndex / fps) * 1_000_000;
     const durationMicroseconds = 1_000_000 / fps;
