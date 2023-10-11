@@ -148,13 +148,15 @@ export default class CanvasRecorder {
         } else if (e instanceof ErrorEvent) {
           this.options.onError((e as ErrorEvent).error);
         } else {
-          // May throw Event type if the error is from an event listener.
+          // May throw Event type if the error is from an event listener, but without
+          // information about what error was encountered.
           // This happens most often when a resource fails to load
           // (e.g., network issues or user not on VPN)
           // TODO: Update error message if this tool becomes public!
           this.options.onError(
             new Error(
-              "Encountered an unknown error while exporting. See the console for more details. For Institute users, please check VPN status."
+              "Encountered an unknown error while exporting; this is most likely a network issue. " +
+                "See the browser developer console for more details. For Institute users, please check VPN status."
             )
           );
         }

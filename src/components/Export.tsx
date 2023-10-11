@@ -1,11 +1,12 @@
-import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress, Tooltip, Card } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress, Tooltip, Card } from "antd";
+import { CheckCircleOutlined } from "@ant-design/icons";
 import styled from "styled-components";
+
 import SpinBox from "./SpinBox";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import { AppThemeContext } from "./AppStyle";
-import { CheckCircleOutlined } from "@ant-design/icons";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
 
 type ExportButtonProps = {
@@ -355,14 +356,17 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // Video quality is bitrate in bits/second
     const maxVideoBitsDuration = totalSeconds * videoBitsPerSecond;
 
-    // Experimentally-determined compression ratio (bits per pixel). This may not apply for all
-    // datasets, depending on image complexity.
-    // For high bitrates, the video filesize will be constrained by duration.
-    const compressionRatioBitsPerPixel = 2.77;
+    // Experimentally-determined compression ratio (bits per pixel), which determines
+    // maximum size a video can be at very high bitrates. This may vary wildly based
+    // on image complexity (videos with little change will compress better).
+    // This is here because otherwise the filesize estimate is way too high for high bitrates
+    // (475 MB predicted vs. 70 MB actual)
+    // TODO: Is there a way to concretely determine this?
+    const compressionRatioBitsPerPixel = 3.5; // Actual value 2.7-3.0, overshooting to be safe
     const maxVideoBitsResolution =
       props.getCanvas().width * props.getCanvas().height * totalFrames * compressionRatioBitsPerPixel;
 
-    const sizeInMb = Math.min(maxVideoBitsDuration, maxVideoBitsResolution) / 8_000_000; // bits to MB
+    const sizeInMb = Math.min(maxVideoBitsResolution, maxVideoBitsDuration) / 8_000_000; // bits to MB
 
     if (sizeInMb > 1) {
       return Math.round(sizeInMb) + " MB";
