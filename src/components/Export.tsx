@@ -349,15 +349,16 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   };
 
   const getApproximateVideoFilesizeMb = (): string => {
-    // From experimentation, filesize is dependent on duration and bitrate.
-    // It scales linearly with the bitrate until a maximum filesize is hit,
-    // which seems to depend on the video dimensions.
+    // From experimentation, filesize scales linearly (ish) with the
+    // bitrate and duration unless a maximum filesize is hit at high
+    // bitrates, which seems to depend on the video dimensions.
 
-    // Video quality is bitrate in bits/second
+    // Video quality is bitrate in bits/second.
+    // This is usually within 0.5-2x the actual filesize.
     const maxVideoBitsDuration = totalSeconds * videoBitsPerSecond;
 
     // Experimentally-determined compression ratio (bits per pixel), which determines
-    // maximum size a video can be at very high bitrates. This may vary wildly based
+    // maximum size a video can be at very high bitrates. This may vary WILDLY based
     // on image complexity (videos with little change will compress better).
     // This is here because otherwise the filesize estimate is way too high for high bitrates
     // (475 MB predicted vs. 70 MB actual)
