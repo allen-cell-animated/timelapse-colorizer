@@ -114,13 +114,13 @@ function App(): ReactElement {
     });
   }, [collection, datasetKey, featureName, selectedTrack, currentFrame]);
 
-  // Update url time when the current frame changes.
+  // Update url whenever the viewer settings change
+  // (but not while playing/recording for performance reasons)
   useEffect(() => {
-    // Do not update URL while playback is happening for performance + UX reasons
     if (!timeControls.isPlaying() && !recordingControls.isRecording()) {
       urlUtils.updateUrl(getUrlParams());
     }
-  }, [currentFrame, timeControls.isPlaying(), getUrlParams]);
+  }, [timeControls.isPlaying(), recordingControls.isRecording(), getUrlParams]);
 
   const setFrame = useCallback(
     async (frame: number) => {
@@ -216,14 +216,6 @@ function App(): ReactElement {
 
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
-
-  // Add event listener for unloading.
-  // TODO: Is this necessary?
-  useEffect(() => {
-    window.addEventListener("beforeunload", () => {
-      canv.dispose();
-    });
-  }, []);
 
   // DATASET LOADING ///////////////////////////////////////////////////////
   /**
