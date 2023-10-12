@@ -9,10 +9,12 @@ import time
 
 import pandas as pd
 
+
 from data_writer_utils import (
     INITIAL_INDEX,
     RESERVED_INDICES,
     ColorizerDatasetWriter,
+    configureLogging,
 )
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
 from nuc_morph_analysis.lib.preprocessing.load_data import (
@@ -24,7 +26,7 @@ from nuc_morph_analysis.lib.preprocessing.load_data import (
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks
 
-# DATASET SPEC:
+# DATASET SPEC: See DATA_FORMAT.md for more details.
 # manifest.json:
 #   frames: [frame_0.png, frame_1.png, ...]
 #   features: { feature_0: feature_0.json, feature_1: feature_1.json, ... }
@@ -66,11 +68,15 @@ from nuc_morph_analysis.lib.preprocessing.load_data import (
 # NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
 
 
-# Overwrite these according to your data!
+# OVERWRITE THESE!! These values should change based on your dataset.
 OBJECT_ID_COLUMN = "label_img"
+"""Name of column that stores the object ID (or unique row number)."""
 TRACK_ID_COLUMN = "track_id"
+"""Name of column that stores the track ID for each object."""
 TIMES_COLUMN = "index_sequence"
+"""Name of column storing the frame number that the object ID appears in."""
 SEGMENTED_IMAGE_COLUMN = "seg_full_zstack_path"
+"""Name of column storing the path to the segmented image data or z stack for the frame."""
 
 
 def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
@@ -85,25 +91,28 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
     bbox_data = np.zeros(shape=(totalIndices * 2 * 2), dtype=np.ushort)
 
     for group_name, frame in grouped_frames:
-        # take first row to get zstack path
-        row = frame.iloc[0]
-        frame_number = row["index_sequence"]
-
         start_time = time.time()
 
-        zstackpath = row["seg_full_zstack_path"]
+        # Get the path to the segmented zstack image frame from the first row (should be the same for
+        # all rows in this group, since they are all on the same frame).
+        row = frame.iloc[0]
+        frame_number = row[TIMES_COLUMN]
+        # Flatten the z-stack to a 2D image.
+        zstackpath = row[SEGMENTED_IMAGE_COLUMN]
         if platform.system() == "Windows":
             zstackpath = "/" + zstackpath
         zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
         seg2d = zstack.max(axis=0)
 
+        # Scale the image and format as integers.
         seg2d = writer.scale_image(seg2d)
         seg2d = seg2d.astype(np.uint32)
 
+        # Remap the frame image so the IDs are unique across the whole dataset.
         seg_remapped, lut = writer.remap_segmented_image(
             seg2d,
             frame,
-            "label_img",
+            OBJECT_ID_COLUMN,
         )
 
         writer.update_and_write_bbox_data(seg_remapped, lut, bbox_data)
@@ -117,12 +126,12 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
         )
 
 
-def make_features(a, features, writer: ColorizerDatasetWriter):
+def make_features(a: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+    # Collect array data from the dataframe for writing.
+
     outliers = a["is_outlier"].to_numpy()
-
-    tracks = a["track_id"].to_numpy()
-    times = a["index_sequence"].to_numpy()
-
+    tracks = a[TRACK_ID_COLUMN].to_numpy()
+    times = a[TIMES_COLUMN].to_numpy()
     centroids_x = a["centroid_x"].to_numpy()
     centroids_y = a["centroid_y"].to_numpy()
 
@@ -133,35 +142,33 @@ def make_features(a, features, writer: ColorizerDatasetWriter):
         feature_data.append(f)
 
     writer.write_feature_data(
-        outliers,
+        feature_data,
         tracks,
+        times,
         centroids_x,
         centroids_y,
-        times,
-        feature_data,
+        outliers,
     )
 
 
 def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scale=1):
     writer = ColorizerDatasetWriter(output_dir, dataset, scale=scale)
-    os.makedirs(os.path.join(output_dir, dataset), exist_ok=True)
 
     # use nucmorph to load data
     datadir, figdir = create_base_directories(dataset)
     pixsize = get_dataset_pixel_size(dataset)
 
-    # a is the full dataset!
+    # a is the full dataset
     a = load_dataset(dataset, datadir=None)
-    # a = pd.read_csv("./data/src/lineage_baby_bear_manifest_20230315.csv")
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
-    columns = ["track_id", "index_sequence", "seg_full_zstack_path", "label_img"]
     # b is the reduced dataset
+    columns = [TRACK_ID_COLUMN, TIMES_COLUMN, SEGMENTED_IMAGE_COLUMN, OBJECT_ID_COLUMN]
     b = a[columns]
     b = b.reset_index(drop=True)
     b[INITIAL_INDEX] = b.index.values
+    grouped_frames = b.groupby(TIMES_COLUMN)
 
-    grouped_frames = b.groupby("index_sequence")
     # get a single path from each time in the set.
     # frames = grouped_frames.apply(lambda df: df.sample(1))
 
@@ -170,9 +177,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     make_features(a, features, output_dir, dataset, scale)
     if do_frames:
         make_frames(grouped_frames, output_dir, dataset, scale)
-    writer.write_manifest(output_dir, dataset, nframes, features)
-
-    logging.info("Finished writing dataset.")
+    writer.write_manifest(nframes, features)
 
 
 parser = argparse.ArgumentParser()
@@ -182,7 +187,6 @@ parser.add_argument(
     default="./data/",
     help="Parent directory to output to. Data will be written to a subdirectory named after the dataset parameter.",
 )
-# TODO: Actually parameterize this? (does this need to be a CL arg?)
 parser.add_argument(
     "--dataset",
     type=str,
@@ -203,19 +207,9 @@ parser.add_argument(
 
 args = parser.parse_args()
 if __name__ == "__main__":
-    # Set up logging
-    os.makedirs(args.output_dir, exist_ok=True)
-    debug_file = args.output_dir + "debug.log"
-    open(debug_file, "w").close()  # clear debug file if it exists
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[  # output to both log file and stdout stream
-            logging.FileHandler(debug_file),
-            logging.StreamHandler(),
-        ],
-    )
+    configureLogging(args.output_dir)
     logging.info("Starting...")
+
     make_dataset(
         output_dir=args.output_dir,
         dataset=args.dataset,

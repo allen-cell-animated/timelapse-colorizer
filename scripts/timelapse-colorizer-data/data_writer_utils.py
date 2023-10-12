@@ -16,6 +16,8 @@ RESERVED_INDICES = 1
 
 
 class NumpyValuesEncoder(json.JSONEncoder):
+    """Handles float32 and int64 values."""
+
     def default(self, obj):
         if isinstance(obj, np.float32):
             return float(obj)
@@ -24,12 +26,28 @@ class NumpyValuesEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+def configureLogging(output_dir: Union[str, pathlib.Path], log_name: "debug.log"):
+    # Set up logging so logs are written to a file in the output directory
+    os.makedirs(output_dir, exist_ok=True)
+    debug_file = output_dir + log_name
+    open(debug_file, "w").close()  # clear debug file if it exists
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[  # output to both log file and stdout stream
+            logging.FileHandler(debug_file),
+            logging.StreamHandler(),
+        ],
+    )
+
+
 class ColorizerDatasetWriter:
     """
-    Writes
+    Writes Colorizer provided data as dataset files to the configured output directory.
     """
 
     outpath: str | pathlib.Path
+    bbox_data: np.array | None
     scale: float
 
     def __init__(
@@ -38,19 +56,21 @@ class ColorizerDatasetWriter:
         self.outpath = os.path.join(output_dir, dataset)
         os.makedirs(self.outpath, exist_ok=True)
         self.scale = scale
+        self.bbox_data = None
 
     def write_feature_data(
         self,
-        outliers: np.array,
+        features: List[np.array],
         tracks: np.array,
+        times: np.array,
         centroids_x: np.array,
         centroids_y: np.array,
-        times: np.array,
-        features: List[np.array],
+        outliers: np.array,
     ):
         """
-        Writes non-frame feature, track, and other data to JSON files.
-        Accepts numpy arrays for each file type and writes them to the configured output directory.
+        Writes non-frame feature, track, centroid, time, and outlier data to JSON files.
+        Accepts numpy arrays for each file type and writes them to the configured
+        output directory.
 
         Features will be written to files in order of the `features` list,
         starting from 0 (e.g., `feature_0.json`, `feature_1.json`, ...)
@@ -127,8 +147,14 @@ class ColorizerDatasetWriter:
         frame: pd.DataFrame,
         object_id_column: str,
         absolute_id_column: str = INITIAL_INDEX,
-        lut_adjustment: int = 1,
     ) -> (np.ndarray, np.ndarray):
+        """
+        Remap the segmented images so that each object has a unique ID across the whole
+        dataset, accounting for
+
+        Returns the remapped image and the lookup table used to remap the IDs on
+        this frame.
+        """
         # Map values in segmented image to new unique indices for whole dataset
         mx = np.nanmax(seg2d)
         lut = np.zeros((mx + 1), dtype=np.uint32)
@@ -137,7 +163,7 @@ class ColorizerDatasetWriter:
             label = int(row[object_id_column])
             # unique row ID for each object -> remap to unique index for whole dataset
             rowind = int(row[absolute_id_column])
-            lut[label] = rowind + lut_adjustment
+            lut[label] = rowind + RESERVED_INDICES
 
         # remap indices of this frame.
         seg_remapped = lut[seg2d]

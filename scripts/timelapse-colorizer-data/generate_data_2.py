@@ -3,17 +3,21 @@ import argparse
 import json
 import logging
 import numpy as np
-import os
 import pandas as pd
 import time
 
-from data_writer_utils import INITIAL_INDEX, RESERVED_INDICES, ColorizerDatasetWriter
+from data_writer_utils import (
+    INITIAL_INDEX,
+    RESERVED_INDICES,
+    ColorizerDatasetWriter,
+    configureLogging,
+)
 
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks
 
-# DATASET SPEC:
+# DATASET SPEC: See DATA_FORMAT.md for more details.
 # manifest.json:
 #   frames: [frame_0.png, frame_1.png, ...]
 #   features: { feature_0: feature_0.json, feature_1: feature_1.json, ... }
@@ -33,6 +37,14 @@ from data_writer_utils import INITIAL_INDEX, RESERVED_INDICES, ColorizerDatasetW
 #   there should be one value for every cell in the whole movie.
 #   the min and max should be the global min and max across the whole movie
 #   NaN (outlier) values are not yet supported
+OBJECT_ID_COLUMN = "R0Nuclei_Number_Object_Number"
+"""Name of column that stores the object ID (or unique row number)."""
+TRACK_ID_COLUMN = "R0Nuclei_TrackObjects_Label_75"
+"""Name of column that stores the track ID for each object."""
+TIMES_COLUMN = "Image_Metadata_Timepoint"
+"""Name of column storing the frame number that the object ID appears in."""
+SEGMENTED_IMAGE_COLUMN = "OutputMask (CAAX)"
+"""Name of column storing the path to the segmented image data or z stack for the frame."""
 
 
 def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
@@ -49,17 +61,15 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
     for group_name, frame in grouped_frames:
         # take first row to get zstack path
         row = frame.iloc[0]
-        frame_number = row["Image_Metadata_Timepoint"]
+        frame_number = row[TIMES_COLUMN]
 
         start_time = time.time()
 
-        zstackpath = row["OutputMask (CAAX)"]
+        # Get the path of the segmented zstack for this frame, then flatten it to a 2D image.
+        zstackpath = row[SEGMENTED_IMAGE_COLUMN]
         zstackpath = zstackpath.strip('"')
-        # zstackpath = zstackpath.replace(".tiff","",1)
-        # if platform.system() == "Windows":
-        #     zstackpath = "/" + zstackpath
         zstack = AICSImage(zstackpath).get_image_data("YX", S=0, T=0, C=0)
-        seg2d = zstack  # .max(axis=0)
+        seg2d = zstack
 
         seg2d = writer.scale_image(seg2d)
         seg2d = seg2d.astype(np.uint32)
@@ -67,7 +77,7 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
         seg_remapped, lut = writer.remap_segmented_image(
             seg2d,
             frame,
-            "R0Nuclei_Number_Object_Number",
+            OBJECT_ID_COLUMN,
         )
 
         writer.update_and_write_bbox_data(seg_remapped, lut, bbox_data)
@@ -81,17 +91,17 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
         )
 
 
-def make_features(a, features, writer: ColorizerDatasetWriter):
+def make_features(a: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+    # Collect array data from the dataframe for writing.
+
     # For now in this dataset there are no outliers. Just generate a list of falses.
     outliers = [False for i in range(len(a.index))]
-
-    # Note these must be in same order as features and same row order as the dataframe.
-    tracks = a["R0Nuclei_TrackObjects_Label_75"].to_numpy()
-    times = a["Image_Metadata_Timepoint"].to_numpy()
-
+    tracks = a[TRACK_ID_COLUMN].to_numpy()
+    times = a[TIMES_COLUMN].to_numpy()
     centroids_x = a["R0Nuclei_AreaShape_Center_X"].to_numpy()
     centroids_y = a["R0Nuclei_AreaShape_Center_Y"].to_numpy()
 
+    # Note these must be in same order as features and same row order as the dataframe.
     feature_data = []
     for i in range(len(features)):
         # TODO normalize output range excluding outliers?
@@ -99,12 +109,12 @@ def make_features(a, features, writer: ColorizerDatasetWriter):
         feature_data.append(f)
 
     writer.write_feature_data(
-        outliers,
+        feature_data,
         tracks,
+        times,
         centroids_x,
         centroids_y,
-        times,
-        feature_data,
+        outliers,
     )
 
 
@@ -115,22 +125,18 @@ def make_dataset(
     a = data
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
-    # track id = R0Nuclei_TrackObjects_Label_75
-    # might have to generate the index_sequence column?
-    # seg img = InputMask(CAAX) or OutputMask (CAAX)
-    # index in seg img = R0Nuclei_Number_Object_Number
-    columns = [
-        "R0Nuclei_TrackObjects_Label_75",
-        "Image_Metadata_Timepoint",
-        "OutputMask (CAAX)",
-        "R0Nuclei_Number_Object_Number",
-    ]
     # b is the reduced dataset
+    columns = [
+        TRACK_ID_COLUMN,
+        TIMES_COLUMN,
+        SEGMENTED_IMAGE_COLUMN,
+        OBJECT_ID_COLUMN,
+    ]
     b = a[columns]
     b = b.reset_index(drop=True)
     b[INITIAL_INDEX] = b.index.values
+    grouped_frames = b.groupby(TIMES_COLUMN)
 
-    grouped_frames = b.groupby("Image_Metadata_Timepoint")
     # get a single path from each time in the set.
     # frames = grouped_frames.apply(lambda df: df.sample(1))
 
@@ -147,7 +153,7 @@ def make_dataset(
     make_features(a, features, output_dir, dataset, scale)
     if do_frames:
         make_frames(grouped_frames, output_dir, dataset, scale)
-    writer.write_manifest(output_dir, dataset, nframes, features)
+    writer.write_manifest(nframes, features)
 
 
 # TODO: Make top-level function
@@ -161,6 +167,7 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
     )
 
     if dataset != "":
+        # convert just the described dataset.
         plate = dataset.split("_")[0]
         position = dataset.split("_")[1]
         c = a.loc[a["Image_Metadata_Plate"] == int(plate)]
@@ -209,18 +216,9 @@ parser.add_argument(
 
 args = parser.parse_args()
 if __name__ == "__main__":
-    # Set up logging
-    debug_file = args.output_dir + "debug.log"
-    open(debug_file, "w").close()  # clear debug file if it exists
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[  # output to both log file and stdout stream
-            logging.FileHandler(debug_file),
-            logging.StreamHandler(),
-        ],
-    )
+    configureLogging(args.output_dir)
     logging.info("Starting...")
+
     make_collection(
         output_dir=args.output_dir,
         dataset=args.dataset,
