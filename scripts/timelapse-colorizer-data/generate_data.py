@@ -80,15 +80,11 @@ SEGMENTED_IMAGE_COLUMN = "seg_full_zstack_path"
 
 
 def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
+    """
+    Generate the images and bounding boxes for each time step in the dataset.
+    """
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
-    # .max() gives the highest object ID, but not the total number of indices (we have to add 1.)
-    # 0 is a reserved index (no cells), so add 1.
-    totalIndices = grouped_frames[INITIAL_INDEX].max().max() + 1 + RESERVED_INDICES
-    # Create an array, where for each segmentation index
-    # we have 4 indices representing the bounds (2 sets of x,y coordinates).
-    # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
-    bbox_data = np.zeros(shape=(totalIndices * 2 * 2), dtype=np.ushort)
 
     for group_name, frame in grouped_frames:
         start_time = time.time()
@@ -115,7 +111,7 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
             OBJECT_ID_COLUMN,
         )
 
-        writer.update_and_write_bbox_data(seg_remapped, lut, bbox_data)
+        writer.update_and_write_bbox_data(grouped_frames, seg_remapped, lut)
         writer.write_image(seg_remapped, frame_number)
 
         time_elapsed = time.time() - start_time
@@ -127,6 +123,9 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
 
 
 def make_features(a: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+    """
+    Generate the outlier, track, time, centroid, and feature data files.
+    """
     # Collect array data from the dataframe for writing.
 
     outliers = a["is_outlier"].to_numpy()
@@ -152,6 +151,9 @@ def make_features(a: pd.DataFrame, features, writer: ColorizerDatasetWriter):
 
 
 def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scale=1):
+    """Make a new dataset from the given data, and write the complete dataset
+    files to the given output directory.
+    """
     writer = ColorizerDatasetWriter(output_dir, dataset, scale=scale)
 
     # use nucmorph to load data

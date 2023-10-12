@@ -37,6 +37,8 @@ from data_writer_utils import (
 #   there should be one value for every cell in the whole movie.
 #   the min and max should be the global min and max across the whole movie
 #   NaN (outlier) values are not yet supported
+
+# OVERWRITE THESE!! These values should change based on your dataset.
 OBJECT_ID_COLUMN = "R0Nuclei_Number_Object_Number"
 """Name of column that stores the object ID (or unique row number)."""
 TRACK_ID_COLUMN = "R0Nuclei_TrackObjects_Label_75"
@@ -48,39 +50,37 @@ SEGMENTED_IMAGE_COLUMN = "OutputMask (CAAX)"
 
 
 def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
+    """
+    Generate the images and bounding boxes for each time step in the dataset.
+    """
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
-    # .max() gives the highest object ID, but not the total number of indices (we have to add 1.)
-    # 0 is a reserved index (no cells), so add 1.
-    totalIndices = grouped_frames[INITIAL_INDEX].max().max() + 1 + RESERVED_INDICES
-    # Create an array, where for each segmentation index
-    # we have 4 indices representing the bounds (2 sets of x,y coordinates).
-    # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
-    bbox_data = np.zeros(shape=(totalIndices * 2 * 2), dtype=np.ushort)
 
     for group_name, frame in grouped_frames:
-        # take first row to get zstack path
-        row = frame.iloc[0]
-        frame_number = row[TIMES_COLUMN]
-
         start_time = time.time()
 
-        # Get the path of the segmented zstack for this frame, then flatten it to a 2D image.
+        # Get the path to the segmented zstack image frame from the first row (should be the same for
+        # all rows in this group, since they are all on the same frame).
+        row = frame.iloc[0]
+        frame_number = row[TIMES_COLUMN]
+        # Flatten the z-stack to a 2D image.
         zstackpath = row[SEGMENTED_IMAGE_COLUMN]
         zstackpath = zstackpath.strip('"')
         zstack = AICSImage(zstackpath).get_image_data("YX", S=0, T=0, C=0)
         seg2d = zstack
 
+        # Scale the image and format as integers.
         seg2d = writer.scale_image(seg2d)
         seg2d = seg2d.astype(np.uint32)
 
+        # Remap the frame image so the IDs are unique across the whole dataset.
         seg_remapped, lut = writer.remap_segmented_image(
             seg2d,
             frame,
             OBJECT_ID_COLUMN,
         )
 
-        writer.update_and_write_bbox_data(seg_remapped, lut, bbox_data)
+        writer.update_and_write_bbox_data(grouped_frames, seg_remapped, lut)
         writer.write_image(seg_remapped, frame_number)
 
         time_elapsed = time.time() - start_time
@@ -92,6 +92,9 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
 
 
 def make_features(a: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+    """
+    Generate the outlier, track, time, centroid, and feature data files.
+    """
     # Collect array data from the dataframe for writing.
 
     # For now in this dataset there are no outliers. Just generate a list of falses.
@@ -121,6 +124,9 @@ def make_features(a: pd.DataFrame, features, writer: ColorizerDatasetWriter):
 def make_dataset(
     data, output_dir="./data/", dataset="3500005820_3", do_frames=True, scale=1
 ):
+    """Make a new dataset from the given data, and write the complete dataset
+    files to the given output directory.
+    """
     writer = ColorizerDatasetWriter(output_dir, dataset, scale=scale)
     a = data
     logging.info("Loaded dataset '" + str(dataset) + "'.")

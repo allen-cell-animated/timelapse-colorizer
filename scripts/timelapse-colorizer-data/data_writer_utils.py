@@ -43,7 +43,12 @@ def configureLogging(output_dir: Union[str, pathlib.Path], log_name: "debug.log"
 
 class ColorizerDatasetWriter:
     """
-    Writes Colorizer provided data as dataset files to the configured output directory.
+    Writes provided data as Colorizer-compatible dataset files to the configured output directory.
+
+    The output directory will contain a `manifest.json` and additional dataset files,
+    following the data schema described in the project documentation. (See
+    [DATA_FORMAT.md](https://github.com/allen-cell-animated/nucmorph-colorizer/blob/main/documentation/DATA_FORMAT.md)
+    for more details.)
     """
 
     outpath: str | pathlib.Path
@@ -70,10 +75,12 @@ class ColorizerDatasetWriter:
         """
         Writes non-frame feature, track, centroid, time, and outlier data to JSON files.
         Accepts numpy arrays for each file type and writes them to the configured
-        output directory.
+        output directory according to the data format.
 
         Features will be written to files in order of the `features` list,
         starting from 0 (e.g., `feature_0.json`, `feature_1.json`, ...)
+
+        [documentation](https://github.com/allen-cell-animated/nucmorph-colorizer/blob/main/documentation/DATA_FORMAT.md#1-tracks)
         """
         # TODO check outlier and replace values with NaN or something!
         logging.info("Writing outliers.json...")
@@ -120,9 +127,29 @@ class ColorizerDatasetWriter:
         """
         Writes the final manifest file for the dataset in the configured output directory.
 
-        `feature_names` should be the names, in order, that the features should appear as
-        in the colorizer app. (You can rename or remap the original column names
-        as needed.)
+        [documentation](https://github.com/allen-cell-animated/nucmorph-colorizer/blob/main/documentation/DATA_FORMAT.md#Dataset)
+
+        `manifest.json:`
+        ```
+          frames: [frame_0.png, frame_1.png, ...]
+
+          # Names are given by `feature_names` parameter, in order.
+          features: { "feature_0_name": "feature_0.json", "feature_1_name": "feature_1.json", ... }
+
+          # per cell, same order as featureN.json files. true/false boolean values.
+          outliers: "outliers.json"
+          # per-cell track id, same format as featureN.json files
+          tracks: "tracks.json"
+          # per-cell frame index, same format as featureN.json files
+          times: "times.json"
+          # per-cell centroid. For each index i, the coordinates are (x: data[2i], y: data[2i + 1]).
+          centroids: "centroids.json"
+          # bounding boxes for each cell. For each index i, the minimum bounding box coordinates
+          # (upper left corner) are given by (x: data[4i], y: data[4i + 1]),
+          # and the maximum bounding box coordinates (lower right corner) are given by
+          # (x: data[4i + 2], y: data[4i + 3]).
+          bounds: "bounds.json"
+        ```
         """
         # write manifest file
         featmap = {}
@@ -149,10 +176,10 @@ class ColorizerDatasetWriter:
         absolute_id_column: str = INITIAL_INDEX,
     ) -> (np.ndarray, np.ndarray):
         """
-        Remap the segmented images so that each object has a unique ID across the whole
-        dataset, accounting for
+        Remap the values in the segmented image 2d array so that each object has a
+        unique ID across the whole dataset, accounting for reserved indices.
 
-        Returns the remapped image and the lookup table used to remap the IDs on
+        Returns the remapped image and the lookup table (LUT) used to remap the IDs on
         this frame.
         """
         # Map values in segmented image to new unique indices for whole dataset
@@ -169,17 +196,52 @@ class ColorizerDatasetWriter:
         seg_remapped = lut[seg2d]
         return (seg_remapped, lut)
 
-    def update_and_write_bbox_data(
-        seg_remapped: np.ndarray,
-        outpath: Union[str, pathlib.Path],
-        lut: np.ndarray,
-        bbox_data: np.array,
+    def write_image(
+        seg_remapped: np.ndarray, outpath: Union[str, pathlib.Path], frame_num: int
     ):
         """
-        Gets the bounding box data for all the indices in the current segmented image,
-        and updates the passed `bbox_data` array with the new values. Progressively
-        writes the array to a JSON file in the output directory named `bounds.json`.
+        Writes the current segmented image to a PNG file in the output directory.
+        The image will be saved as `frame_{frame_num}.png`.
+
+        IDs for each pixel are stored in the RGBA channels of the image.
+
+        [documentation](https://github.com/allen-cell-animated/nucmorph-colorizer/blob/main/documentation/DATA_FORMAT.md#3-frames)
         """
+        seg_rgba = np.zeros(
+            (seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8
+        )
+        seg_rgba[:, :, 0] = (seg_remapped & 0x000000FF) >> 0
+        seg_rgba[:, :, 1] = (seg_remapped & 0x0000FF00) >> 8
+        seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
+        seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
+        img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
+        img.save(outpath + "/frame_" + str(frame_num) + ".png")
+
+    def update_and_write_bbox_data(
+        self,
+        grouped_frames: pd.DataFrame,
+        seg_remapped: np.ndarray,
+        lut: np.ndarray,
+    ):
+        """
+        Gets the bounding box data for all the indices in the current segmented image
+        and progressively writes data to a JSON file in the output directory named `bounds.json`.
+
+        [documentation](https://github.com/allen-cell-animated/nucmorph-colorizer/blob/main/documentation/DATA_FORMAT.md#6-bounds-optional)
+        """
+        # Create new bbox data array if needed
+        if self.bbox_data is None:
+            # .max() gives the highest object ID, but not the total number of indices
+            # (we have to add 1.) 0 is a reserved index (no cells), so add 1.
+            totalIndices = (
+                grouped_frames[INITIAL_INDEX].max().max() + 1 + RESERVED_INDICES
+            )
+            # Create an array, where for each segmentation index
+            # we have 4 indices representing the bounds (2 sets of x,y coordinates).
+            # ushort can represent up to 65_535. Images with a larger resolution than this
+            # will need to replace the datatype.
+            self.bbox_data = np.zeros(shape=(totalIndices * 2 * 2), dtype=np.ushort)
+
         # Capture bounding boxes
         # Optimize by skipping i = 0, since it's used as a null value in every frame
         for i in range(1, lut.size):
@@ -193,37 +255,20 @@ class ColorizerDatasetWriter:
                 bbox_max = cell.max(0).tolist()
                 bbox_min.reverse()
                 bbox_max.reverse()
-                bbox_data[write_index : write_index + 2] = bbox_min
-                bbox_data[write_index + 2 : write_index + 4] = bbox_max
+                self.bbox_data[write_index : write_index + 2] = bbox_min
+                self.bbox_data[write_index + 2 : write_index + 4] = bbox_max
 
         # Save bounding box to JSON (write for each frame in case of crashing.)
-        bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
-        with open(outpath + "/bounds.json", "w") as f:
+        bbox_json = {"data": np.ravel(self.bbox_data).tolist()}  # flatten to 2D
+        with open(self.outpath + "/bounds.json", "w") as f:
             json.dump(bbox_json, f)
 
     def scale_image(seg2d: np.ndarray, scale: float) -> np.ndarray:
         """
-        Scale an image by the configured scale factor.
+        Scale an image by the writer's configured scale factor.
         """
         if scale != 1.0:
             seg2d = skimage.transform.rescale(
                 seg2d, scale, anti_aliasing=False, order=0
             )
         return seg2d
-
-    def write_image(
-        seg_remapped: np.ndarray, outpath: Union[str, pathlib.Path], frame_num: int
-    ):
-        """
-        Writes the current segmented image to a PNG file in the output directory.
-        IDs for each pixel are stored in the RGBA channels of the image.
-        """
-        seg_rgba = np.zeros(
-            (seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8
-        )
-        seg_rgba[:, :, 0] = (seg_remapped & 0x000000FF) >> 0
-        seg_rgba[:, :, 1] = (seg_remapped & 0x0000FF00) >> 8
-        seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
-        seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
-        img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
-        img.save(outpath + "/frame_" + str(frame_num) + ".png")
