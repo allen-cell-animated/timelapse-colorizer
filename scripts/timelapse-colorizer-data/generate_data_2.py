@@ -10,6 +10,8 @@ import platform
 import skimage
 import time
 
+from data_writer_utils import save_lists, save_manifest
+
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks
@@ -54,11 +56,10 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
 
     for group_name, frame in grouped_frames:
         # sanity check - expect to have only one unique zstack per frame
-        #print("Number of cells at timepoint: " + str(len(frame)))
+        # print("Number of cells at timepoint: " + str(len(frame)))
         # n = len(pd.unique(frame['OutputMask (CAAX)']))
-        #print(pd.unique(frame['OutputMask (CAAX)']))
-        #print("Number of unique zstacks: " + str(n))
-
+        # print(pd.unique(frame['OutputMask (CAAX)']))
+        # print("Number of unique zstacks: " + str(n))
 
         # take first row to get zstack path
         row = frame.iloc[0]
@@ -67,7 +68,7 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
         start_time = time.time()
 
         zstackpath = row["OutputMask (CAAX)"]
-        zstackpath = zstackpath.strip('\"')
+        zstackpath = zstackpath.strip('"')
         # zstackpath = zstackpath.replace(".tiff","",1)
         # if platform.system() == "Windows":
         #     zstackpath = "/" + zstackpath
@@ -133,66 +134,39 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
 
 
 def make_features(a, features, output_dir, dataset, scale: float):
-    nfeatures = len(features)
-    logging.info("Making features...")
-
-    outpath = os.path.join(output_dir, dataset)
-
-    # TODO check outlier and replace values with NaN or something!
     # For now in this dataset there are no outliers. Just generate a list of falses.
-    logging.info("Writing outliers.json...")
     outliers = [False for i in range(len(a.index))]
-    ojs = {"data": outliers, "min": False, "max": True}
-    with open(outpath + "/outliers.json", "w") as f:
-        json.dump(ojs, f)
 
     # Note these must be in same order as features and same row order as the dataframe.
-    logging.info("Writing track.json...")
     tracks = a["R0Nuclei_TrackObjects_Label_75"].to_numpy()
-    trjs = {"data": tracks.tolist()}
-    with open(outpath + "/tracks.json", "w") as f:
-        json.dump(trjs, f)
 
-    logging.info("Writing times.json...")
     times = a["Image_Metadata_Timepoint"].to_numpy()
-    tijs = {"data": times.tolist()}
-    with open(outpath + "/times.json", "w") as f:
-        json.dump(tijs, f)
 
-    logging.info("Writing centroids.json...")
     centroids_x = a["R0Nuclei_AreaShape_Center_X"].to_numpy()
     centroids_y = a["R0Nuclei_AreaShape_Center_Y"].to_numpy()
-    centroids_stacked = np.ravel(np.dstack([centroids_x, centroids_y]))
-    centroids_stacked = centroids_stacked * scale
-    centroids_stacked = centroids_stacked.astype(int)
 
-    centroids_json = {"data": centroids_stacked.tolist()}
-    with open(outpath + "/centroids.json", "w") as f:
-        json.dump(centroids_json, f)
-
-    logging.info("Writing feature json...")
-    class NumpyValuesEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, np.float32):
-                return float(obj)
-            elif isinstance(obj, np.int64):
-                return int(obj)
-            return json.JSONEncoder.default(self, obj)
-
-    for i in range(nfeatures):
+    feature_data = []
+    for i in range(len(features)):
         f = a[features[i]].to_numpy()
-        fmin = np.nanmin(f)
-        fmax = np.nanmax(f)
         # TODO normalize output range excluding outliers?
-        js = {"data": f.tolist(), "min": fmin, "max": fmax}
-        with open(outpath + "/feature_" + str(i) + ".json", "w") as fout:
-            json.dump(js, fout, cls=NumpyValuesEncoder)
-    logging.info("Done writing features.")
+        feature_data.append(f)
+
+    save_lists(
+        output_dir,
+        dataset,
+        outliers,
+        tracks,
+        centroids_x,
+        centroids_y,
+        times,
+        scale,
+        feature_data,
+    )
 
 
-def make_dataset(data, output_dir="./data/", dataset="3500005820_3", do_frames=True, scale=1):
-    os.makedirs(os.path.join(output_dir, dataset), exist_ok=True)
-
+def make_dataset(
+    data, output_dir="./data/", dataset="3500005820_3", do_frames=True, scale=1
+):
     a = data
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
@@ -200,7 +174,12 @@ def make_dataset(data, output_dir="./data/", dataset="3500005820_3", do_frames=T
     # might have to generate the index_sequence column?
     # seg img = InputMask(CAAX) or OutputMask (CAAX)
     # index in seg img = R0Nuclei_Number_Object_Number
-    columns = ["R0Nuclei_TrackObjects_Label_75", "Image_Metadata_Timepoint", "OutputMask (CAAX)", "R0Nuclei_Number_Object_Number"]
+    columns = [
+        "R0Nuclei_TrackObjects_Label_75",
+        "Image_Metadata_Timepoint",
+        "OutputMask (CAAX)",
+        "R0Nuclei_Number_Object_Number",
+    ]
     # b is the reduced dataset
     b = a[columns]
     b = b.reset_index(drop=True)
@@ -210,45 +189,33 @@ def make_dataset(data, output_dir="./data/", dataset="3500005820_3", do_frames=T
     # get a single path from each time in the set.
     # frames = grouped_frames.apply(lambda df: df.sample(1))
 
-    nframes = len(grouped_frames)
-
     features = [
         "mean migration speed per track (um/min)",
-        "Integrated Distance (um)", 
-        "Displacement (um)", 
-        "Average colony overlap per track", 
-        "migration velocity (um/min)",  
-        "R0Cell_Neighbors_NumberOfNeighbors_Adjacent", 
-        "R0Cell_Neighbors_PercentTouching_Adjacent"]
+        "Integrated Distance (um)",
+        "Displacement (um)",
+        "Average colony overlap per track",
+        "migration velocity (um/min)",
+        "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
+        "R0Cell_Neighbors_PercentTouching_Adjacent",
+    ]
     make_features(a, features, output_dir, dataset, scale)
 
     if do_frames:
         make_frames(grouped_frames, output_dir, dataset, scale)
 
-    # write some kind of manifest
-    featmap = {}
-    for i in range(len(features)):
-        featmap[features[i]] = "feature_" + str(i) + ".json"
-    js = {
-        "frames": ["frame_" + str(i) + ".png" for i in range(nframes)],
-        "features": featmap,
-        "outliers": "outliers.json",
-        "tracks": "tracks.json",
-        "times": "times.json",
-        "centroids": "centroids.json",
-        "bounds": "bounds.json",
-    }
-    with open(os.path.join(output_dir, dataset) + "/manifest.json", "w") as f:
-        json.dump(js, f)
-
-    logging.info("Finished writing dataset.")
+    nframes = len(grouped_frames)
+    save_manifest(output_dir, dataset, nframes, features)
 
 
+# TODO: Make top-level function
+# This is stuff scientists are responsible for!!
 def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
     # example dataset name : 3500005820_3
     # use pandas to load data
     # a is the full collection!
-    a = pd.read_csv("//allen/aics/microscopy/EMTImmunostainingResults/EMTTimelapse_7-25-23/Output_CAAX/MigratoryTracksTable_AvgColonyOverlapLessThan0.9_AllPaths.csv")
+    a = pd.read_csv(
+        "//allen/aics/microscopy/EMTImmunostainingResults/EMTTimelapse_7-25-23/Output_CAAX/MigratoryTracksTable_AvgColonyOverlapLessThan0.9_AllPaths.csv"
+    )
 
     if dataset != "":
         plate = dataset.split("_")[0]
