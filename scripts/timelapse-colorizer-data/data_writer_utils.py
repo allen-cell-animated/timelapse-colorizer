@@ -2,9 +2,14 @@ import json
 import logging
 import os
 import pathlib
+from PIL import Image
 from typing import List
 
 import numpy as np
+import pandas as pd
+import skimage
+
+INITIAL_INDEX = "initialIndex"
 
 
 class NumpyValuesEncoder(json.JSONEncoder):
@@ -90,3 +95,71 @@ def save_manifest(output_dir, dataset, num_frames: int, feature_names: List[str]
         json.dump(js, f)
 
     logging.info("Finished writing dataset.")
+
+
+def remap_segmented_image(
+    seg2d: np.ndarray,
+    frame: pd.DataFrame,
+    object_id_column: str,
+    absolute_id_column: str = INITIAL_INDEX,
+    lut_adjustment: int = 1,
+) -> (np.ndarray, np.ndarray):
+    # Map values in segmented image to new unique indices for whole dataset
+    mx = np.nanmax(seg2d)
+    lut = np.zeros((mx + 1), dtype=np.uint32)
+    for row_index, row in frame.iterrows():
+        # build our remapping LUT:
+        label = int(row[object_id_column])
+        # unique row ID for each object -> remap to unique index for whole dataset
+        rowind = int(row[absolute_id_column])
+        lut[label] = rowind + lut_adjustment
+
+    # remap indices of this frame.
+    seg_remapped = lut[seg2d]
+    return (seg_remapped, lut)
+
+
+def update_and_save_bbox_data(
+    seg_remapped: np.ndarray,
+    outpath: str | pathlib.Path,
+    lut: np.ndarray,
+    bbox_data: np.array,
+):
+    # Capture bounding boxes
+    # Optimize by skipping i = 0, since it's used as a null value in every frame
+    for i in range(1, lut.size):
+        # Boolean array that represents all pixels segmented with this index
+        cell = np.argwhere(seg_remapped == lut[i])
+
+        if cell.size > 0:
+            write_index = lut[i] * 4
+            # Reverse min and max so it is written in x, y order
+            bbox_min = cell.min(0).tolist()
+            bbox_max = cell.max(0).tolist()
+            bbox_min.reverse()
+            bbox_max.reverse()
+            bbox_data[write_index : write_index + 2] = bbox_min
+            bbox_data[write_index + 2 : write_index + 4] = bbox_max
+
+    # Save bounding box to JSON
+    bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
+    with open(outpath + "/bounds.json", "w") as f:
+        json.dump(bbox_json, f)
+
+
+def scale_image(seg2d: np.ndarray, scale: float) -> np.ndarray:
+    if scale != 1.0:
+        seg2d = skimage.transform.rescale(seg2d, scale, anti_aliasing=False, order=0)
+    return seg2d
+
+
+def save_image(seg_remapped: np.ndarray, outpath: str | pathlib.Path, frame_num: int):
+    seg_rgba = np.zeros(
+        (seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8
+    )
+    seg_rgba[:, :, 0] = (seg_remapped & 0x000000FF) >> 0
+    seg_rgba[:, :, 1] = (seg_remapped & 0x0000FF00) >> 8
+    seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
+    seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
+    img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
+    img.save(outpath + "/frame_" + str(frame_num) + ".png")

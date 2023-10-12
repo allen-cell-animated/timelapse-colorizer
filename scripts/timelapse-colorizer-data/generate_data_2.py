@@ -10,7 +10,15 @@ import platform
 import skimage
 import time
 
-from data_writer_utils import save_lists, save_manifest
+from data_writer_utils import (
+    INITIAL_INDEX,
+    remap_segmented_image,
+    save_image,
+    save_lists,
+    save_manifest,
+    scale_image,
+    update_and_save_bbox_data,
+)
 
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
@@ -74,51 +82,19 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
         #     zstackpath = "/" + zstackpath
         zstack = AICSImage(zstackpath).get_image_data("YX", S=0, T=0, C=0)
         seg2d = zstack  # .max(axis=0)
-        mx = np.nanmax(seg2d)
-        mn = np.nanmin(seg2d[np.nonzero(seg2d)])
+
         # float comparison with 1 here is okay because this is not a calculated value
-        if scale != 1.0:
-            seg2d = skimage.transform.rescale(
-                seg2d, scale, anti_aliasing=False, order=0
-            )
+        seg2d = scale_image(seg2d, scale)
         seg2d = seg2d.astype(np.uint32)
 
-        lut = np.zeros((mx + 1), dtype=np.uint32)
-        for row_index, row in frame.iterrows():
-            # build our remapping LUT:
-            label = int(row["R0Nuclei_Number_Object_Number"])
-            rowind = int(row["initialIndex"])
-            lut[label] = rowind + lut_adjustment
-
-        # remap indices of this frame.
-        seg_remapped = lut[seg2d]
-
-        # Capture bounding boxes
-        # Optimize by skipping i = 0, since it's used as a null value in every frame
-        for i in range(1, lut.size):
-            # Boolean array that represents all pixels segmented with this index
-            cell = np.argwhere(seg_remapped == lut[i])
-
-            if cell.size > 0:
-                write_index = lut[i] * 4
-                # Reverse min and max so it is written in x, y order
-                bbox_min = cell.min(0).tolist()
-                bbox_max = cell.max(0).tolist()
-                bbox_min.reverse()
-                bbox_max.reverse()
-                bbox_data[write_index : write_index + 2] = bbox_min
-                bbox_data[write_index + 2 : write_index + 4] = bbox_max
-
-        # convert data to RGBA
-        seg_rgba = np.zeros(
-            (seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8
+        seg_remapped, lut = remap_segmented_image(
+            seg2d,
+            frame,
+            "R0Nuclei_Number_Object_Number",
         )
-        seg_rgba[:, :, 0] = (seg_remapped & 0x000000FF) >> 0
-        seg_rgba[:, :, 1] = (seg_remapped & 0x0000FF00) >> 8
-        seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
-        seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
-        img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
-        img.save(outpath + "/frame_" + str(frame_number) + ".png")
+
+        update_and_save_bbox_data(seg_remapped, outpath, lut, bbox_data)
+        save_image(seg_remapped, outpath, frame_number)
 
         time_elapsed = time.time() - start_time
         logging.info(
@@ -127,11 +103,6 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
             )
         )
 
-        # Save bounding box to JSON
-        bbox_json = {"data": np.ravel(bbox_data).tolist()}  # flatten to 2D
-        with open(outpath + "/bounds.json", "w") as f:
-            json.dump(bbox_json, f)
-
 
 def make_features(a, features, output_dir, dataset, scale: float):
     # For now in this dataset there are no outliers. Just generate a list of falses.
@@ -139,7 +110,6 @@ def make_features(a, features, output_dir, dataset, scale: float):
 
     # Note these must be in same order as features and same row order as the dataframe.
     tracks = a["R0Nuclei_TrackObjects_Label_75"].to_numpy()
-
     times = a["Image_Metadata_Timepoint"].to_numpy()
 
     centroids_x = a["R0Nuclei_AreaShape_Center_X"].to_numpy()
@@ -147,8 +117,8 @@ def make_features(a, features, output_dir, dataset, scale: float):
 
     feature_data = []
     for i in range(len(features)):
-        f = a[features[i]].to_numpy()
         # TODO normalize output range excluding outliers?
+        f = a[features[i]].to_numpy()
         feature_data.append(f)
 
     save_lists(
@@ -183,7 +153,7 @@ def make_dataset(
     # b is the reduced dataset
     b = a[columns]
     b = b.reset_index(drop=True)
-    b["initialIndex"] = b.index.values
+    b[INITIAL_INDEX] = b.index.values
 
     grouped_frames = b.groupby("Image_Metadata_Timepoint")
     # get a single path from each time in the set.

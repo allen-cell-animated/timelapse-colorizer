@@ -16,8 +16,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "aicsimageio",
-    "aicspylibczi",
+    "aicsimageio[czi]>=4.11.0",
+    "aicspylibczi>=3.0.5",
     "numpy",
     "pandas",
     "pillow",
