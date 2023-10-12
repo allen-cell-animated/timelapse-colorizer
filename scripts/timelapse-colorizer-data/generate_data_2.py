@@ -7,15 +7,7 @@ import os
 import pandas as pd
 import time
 
-from data_writer_utils import (
-    INITIAL_INDEX,
-    remap_segmented_image,
-    save_image,
-    save_lists,
-    save_manifest,
-    scale_image,
-    update_and_save_bbox_data,
-)
+from data_writer_utils import INITIAL_INDEX, RESERVED_INDICES, ColorizerDatasetWriter
 
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear
 # python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
@@ -43,29 +35,18 @@ from data_writer_utils import (
 #   NaN (outlier) values are not yet supported
 
 
-def make_frames(grouped_frames, output_dir, dataset, scale: float):
-    outpath = os.path.join(output_dir, dataset)
-
-    # rows of spreadsheet (referring to unique cells) are zero based
-    # however, we need to reserve 0 in our output image files for "no cell here"
-    # so bump each row index by 1 (lut_adjustment) for output image files
-    lut_adjustment = 1
+def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
-    # Get the highest index across all groups, and add +1 for zero-based indexing and the lut adjustment
-    totalIndices = grouped_frames.initialIndex.max().max() + lut_adjustment + 1
+    # .max() gives the highest object ID, but not the total number of indices (we have to add 1.)
+    # 0 is a reserved index (no cells), so add 1.
+    totalIndices = grouped_frames[INITIAL_INDEX].max().max() + 1 + RESERVED_INDICES
     # Create an array, where for each segmentation index
     # we have 4 indices representing the bounds (2 sets of x,y coordinates).
     # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
     bbox_data = np.zeros(shape=(totalIndices * 2 * 2), dtype=np.ushort)
 
     for group_name, frame in grouped_frames:
-        # sanity check - expect to have only one unique zstack per frame
-        # print("Number of cells at timepoint: " + str(len(frame)))
-        # n = len(pd.unique(frame['OutputMask (CAAX)']))
-        # print(pd.unique(frame['OutputMask (CAAX)']))
-        # print("Number of unique zstacks: " + str(n))
-
         # take first row to get zstack path
         row = frame.iloc[0]
         frame_number = row["Image_Metadata_Timepoint"]
@@ -80,18 +61,17 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
         zstack = AICSImage(zstackpath).get_image_data("YX", S=0, T=0, C=0)
         seg2d = zstack  # .max(axis=0)
 
-        # float comparison with 1 here is okay because this is not a calculated value
-        seg2d = scale_image(seg2d, scale)
+        seg2d = writer.scale_image(seg2d)
         seg2d = seg2d.astype(np.uint32)
 
-        seg_remapped, lut = remap_segmented_image(
+        seg_remapped, lut = writer.remap_segmented_image(
             seg2d,
             frame,
             "R0Nuclei_Number_Object_Number",
         )
 
-        update_and_save_bbox_data(seg_remapped, outpath, lut, bbox_data)
-        save_image(seg_remapped, outpath, frame_number)
+        writer.update_and_write_bbox_data(seg_remapped, lut, bbox_data)
+        writer.write_image(seg_remapped, frame_number)
 
         time_elapsed = time.time() - start_time
         logging.info(
@@ -101,7 +81,7 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
         )
 
 
-def make_features(a, features, output_dir, dataset, scale: float):
+def make_features(a, features, writer: ColorizerDatasetWriter):
     # For now in this dataset there are no outliers. Just generate a list of falses.
     outliers = [False for i in range(len(a.index))]
 
@@ -118,15 +98,12 @@ def make_features(a, features, output_dir, dataset, scale: float):
         f = a[features[i]].to_numpy()
         feature_data.append(f)
 
-    save_lists(
-        output_dir,
-        dataset,
+    writer.write_feature_data(
         outliers,
         tracks,
         centroids_x,
         centroids_y,
         times,
-        scale,
         feature_data,
     )
 
@@ -134,6 +111,7 @@ def make_features(a, features, output_dir, dataset, scale: float):
 def make_dataset(
     data, output_dir="./data/", dataset="3500005820_3", do_frames=True, scale=1
 ):
+    writer = ColorizerDatasetWriter(output_dir, dataset, scale=scale)
     a = data
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
@@ -156,6 +134,7 @@ def make_dataset(
     # get a single path from each time in the set.
     # frames = grouped_frames.apply(lambda df: df.sample(1))
 
+    nframes = len(grouped_frames)
     features = [
         "mean migration speed per track (um/min)",
         "Integrated Distance (um)",
@@ -166,12 +145,9 @@ def make_dataset(
         "R0Cell_Neighbors_PercentTouching_Adjacent",
     ]
     make_features(a, features, output_dir, dataset, scale)
-
     if do_frames:
         make_frames(grouped_frames, output_dir, dataset, scale)
-
-    nframes = len(grouped_frames)
-    save_manifest(output_dir, dataset, nframes, features)
+    writer.write_manifest(output_dir, dataset, nframes, features)
 
 
 # TODO: Make top-level function

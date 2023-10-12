@@ -11,13 +11,8 @@ import pandas as pd
 
 from data_writer_utils import (
     INITIAL_INDEX,
-    LUT_ADJUSTMENT,
-    remap_segmented_image,
-    save_image,
-    save_lists,
-    save_manifest,
-    scale_image,
-    update_and_save_bbox_data,
+    RESERVED_INDICES,
+    ColorizerDatasetWriter,
 )
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
 from nuc_morph_analysis.lib.preprocessing.load_data import (
@@ -71,33 +66,19 @@ from nuc_morph_analysis.lib.preprocessing.load_data import (
 # NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
 
 
-@dataclass
-class config:
-    object_id = "label_img"
-    # The track associated with each ID.
-    track_id = "track_id"
-    # The frame number associated with the
-    times = "index_sequence"
-    segmented_image = "seg_full_zstack_path"
-    centroid_x = "centroid_x"
-    centroid_y = "centroid_y"
-    # Add units here? Start thinking about including units in features?
-    features = (["NUC_shape_volume_lcc", "NUC_position_depth"],)
-    outliers = "is_outlier"
+# Overwrite these according to your data!
+OBJECT_ID_COLUMN = "label_img"
+TRACK_ID_COLUMN = "track_id"
+TIMES_COLUMN = "index_sequence"
+SEGMENTED_IMAGE_COLUMN = "seg_full_zstack_path"
 
 
-# Callbacks for calculating each of these? And then derive off of a base class?
-
-
-def make_frames(grouped_frames, output_dir, dataset, scale: float):
-    outpath = os.path.join(output_dir, dataset)
-
+def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
-    # Get the highest object ID across all groups, and add +1 for zero-based indexing and the lut adjustment
-    # .max() gives the highest value, but not the total number of indices (we have to add 1.)
-    # 0 is a reserved index, so add 1 via the LUT_ADJUSTMENT value.
-    totalIndices = grouped_frames.initialIndex.max().max() + 1 + LUT_ADJUSTMENT
+    # .max() gives the highest object ID, but not the total number of indices (we have to add 1.)
+    # 0 is a reserved index (no cells), so add 1.
+    totalIndices = grouped_frames[INITIAL_INDEX].max().max() + 1 + RESERVED_INDICES
     # Create an array, where for each segmentation index
     # we have 4 indices representing the bounds (2 sets of x,y coordinates).
     # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
@@ -115,18 +96,18 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
             zstackpath = "/" + zstackpath
         zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
         seg2d = zstack.max(axis=0)
-        # float comparison with 1 here is okay because this is not a calculated value
-        seg2d = scale_image(seg2d, scale)
+
+        seg2d = writer.scale_image(seg2d)
         seg2d = seg2d.astype(np.uint32)
 
-        seg_remapped, lut = remap_segmented_image(
+        seg_remapped, lut = writer.remap_segmented_image(
             seg2d,
             frame,
             "label_img",
         )
 
-        update_and_save_bbox_data(seg_remapped, outpath, lut, bbox_data)
-        save_image(seg_remapped, outpath, frame_number)
+        writer.update_and_write_bbox_data(seg_remapped, lut, bbox_data)
+        writer.write_image(seg_remapped, frame_number)
 
         time_elapsed = time.time() - start_time
         logging.info(
@@ -136,7 +117,7 @@ def make_frames(grouped_frames, output_dir, dataset, scale: float):
         )
 
 
-def make_features(a, features, output_dir, dataset, scale: float):
+def make_features(a, features, writer: ColorizerDatasetWriter):
     outliers = a["is_outlier"].to_numpy()
 
     tracks = a["track_id"].to_numpy()
@@ -151,20 +132,18 @@ def make_features(a, features, output_dir, dataset, scale: float):
         f = a[features[i]].to_numpy()
         feature_data.append(f)
 
-    save_lists(
-        output_dir,
-        dataset,
+    writer.write_feature_data(
         outliers,
         tracks,
         centroids_x,
         centroids_y,
         times,
-        scale,
         feature_data,
     )
 
 
 def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scale=1):
+    writer = ColorizerDatasetWriter(output_dir, dataset, scale=scale)
     os.makedirs(os.path.join(output_dir, dataset), exist_ok=True)
 
     # use nucmorph to load data
@@ -187,14 +166,11 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     # frames = grouped_frames.apply(lambda df: df.sample(1))
 
     nframes = len(grouped_frames)
-
     features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
     make_features(a, features, output_dir, dataset, scale)
-
     if do_frames:
         make_frames(grouped_frames, output_dir, dataset, scale)
-
-    save_manifest(output_dir, dataset, nframes, features)
+    writer.write_manifest(output_dir, dataset, nframes, features)
 
     logging.info("Finished writing dataset.")
 
