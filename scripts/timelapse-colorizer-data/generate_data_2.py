@@ -1,13 +1,10 @@
 from aicsimageio import AICSImage
-from PIL import Image
 import argparse
 import json
 import logging
 import numpy as np
 import os
 import pandas as pd
-import platform
-import skimage
 import time
 
 from data_writer_utils import (

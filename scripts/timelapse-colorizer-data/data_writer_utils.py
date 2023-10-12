@@ -3,13 +3,19 @@ import logging
 import os
 import pathlib
 from PIL import Image
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
 import skimage
 
 INITIAL_INDEX = "initialIndex"
+LUT_ADJUSTMENT = 1
+
+# class ColorizerDataWriter:
+#     outpath: str | pathlib.Path
+
+#     ColorizerDataWriter():
 
 
 class NumpyValuesEncoder(json.JSONEncoder):
@@ -22,7 +28,7 @@ class NumpyValuesEncoder(json.JSONEncoder):
 
 
 def save_lists(
-    output_dir: str | pathlib.Path,
+    output_dir: Union[str, pathlib.Path],
     dataset: str,
     outliers: np.array,
     tracks: np.array,
@@ -73,7 +79,12 @@ def save_lists(
     logging.info("Done writing features.")
 
 
-def save_manifest(output_dir, dataset, num_frames: int, feature_names: List[str]):
+def save_manifest(
+    output_dir: Union[str, pathlib.Path],
+    dataset,
+    num_frames: int,
+    feature_names: List[str],
+):
     os.makedirs(os.path.join(output_dir, dataset), exist_ok=True)
 
     logging.info("Loaded dataset '" + str(dataset) + "'.")
@@ -121,7 +132,7 @@ def remap_segmented_image(
 
 def update_and_save_bbox_data(
     seg_remapped: np.ndarray,
-    outpath: str | pathlib.Path,
+    outpath: Union[str, pathlib.Path],
     lut: np.ndarray,
     bbox_data: np.array,
 ):
@@ -153,7 +164,9 @@ def scale_image(seg2d: np.ndarray, scale: float) -> np.ndarray:
     return seg2d
 
 
-def save_image(seg_remapped: np.ndarray, outpath: str | pathlib.Path, frame_num: int):
+def save_image(
+    seg_remapped: np.ndarray, outpath: Union[str, pathlib.Path], frame_num: int
+):
     seg_rgba = np.zeros(
         (seg_remapped.shape[0], seg_remapped.shape[1], 4), dtype=np.uint8
     )

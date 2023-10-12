@@ -1,17 +1,17 @@
 from dataclasses import dataclass
 from aicsimageio import AICSImage
-from PIL import Image
 import argparse
-import json
 import logging
 import numpy as np
 import os
 import platform
-import skimage
 import time
+
+import pandas as pd
 
 from data_writer_utils import (
     INITIAL_INDEX,
+    LUT_ADJUSTMENT,
     remap_segmented_image,
     save_image,
     save_lists,
@@ -20,7 +20,7 @@ from data_writer_utils import (
     update_and_save_bbox_data,
 )
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
-from nuc_morph_analysis.preprocessing.load_data import (
+from nuc_morph_analysis.lib.preprocessing.load_data import (
     load_dataset,
     get_dataset_pixel_size,
 )
@@ -92,11 +92,12 @@ class config:
 def make_frames(grouped_frames, output_dir, dataset, scale: float):
     outpath = os.path.join(output_dir, dataset)
 
-    lut_adjustment = 1
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
-    # Get the highest index across all groups, and add +1 for zero-based indexing and the lut adjustment
-    totalIndices = grouped_frames.initialIndex.max().max() + lut_adjustment + 1
+    # Get the highest object ID across all groups, and add +1 for zero-based indexing and the lut adjustment
+    # .max() gives the highest value, but not the total number of indices (we have to add 1.)
+    # 0 is a reserved index, so add 1 via the LUT_ADJUSTMENT value.
+    totalIndices = grouped_frames.initialIndex.max().max() + 1 + LUT_ADJUSTMENT
     # Create an array, where for each segmentation index
     # we have 4 indices representing the bounds (2 sets of x,y coordinates).
     # ushort can represent up to 65_535. Images with a larger resolution than this will need to replace the datatype.
@@ -172,6 +173,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
 
     # a is the full dataset!
     a = load_dataset(dataset, datadir=None)
+    # a = pd.read_csv("./data/src/lineage_baby_bear_manifest_20230315.csv")
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
     columns = ["track_id", "index_sequence", "seg_full_zstack_path", "label_img"]
@@ -226,6 +228,7 @@ parser.add_argument(
 args = parser.parse_args()
 if __name__ == "__main__":
     # Set up logging
+    os.makedirs(args.output_dir, exist_ok=True)
     debug_file = args.output_dir + "debug.log"
     open(debug_file, "w").close()  # clear debug file if it exists
     logging.basicConfig(
