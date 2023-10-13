@@ -771,6 +771,7 @@ function App(): ReactElement {
                     setPlaybackFps(fps);
                     timeControls.setPlaybackFps(fps);
                   }}
+                  disabled={disableTimeControlsUi}
                 />
               </div>
             </div>

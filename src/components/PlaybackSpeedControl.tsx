@@ -7,11 +7,13 @@ type PlaybackSpeedControlProps = {
   fps: number;
   onChange: (fps: number) => void;
   baselineFps?: number;
+  disabled?: boolean;
 };
 const defaultProps: Partial<PlaybackSpeedControlProps> = {
   fps: 30,
   onChange: () => {},
   baselineFps: DEFAULT_PLAYBACK_FPS,
+  disabled: false,
 };
 
 export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlProps): ReactElement {
@@ -31,6 +33,7 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
       <div style={{ width: "100%" }}>
         <Slider
           value={sliderValue}
+          disabled={props.disabled}
           onChange={onSliderChange}
           min={0.25}
           max={2.5}
