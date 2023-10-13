@@ -700,8 +700,26 @@ function App(): ReactElement {
             </HoverTooltip>
 
             {/** Time Control Bar */}
-            <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", width: "100%" }}>
-              <div className={styles.timeControls} style={{ flexGrow: "7" }}>
+            <div
+              className={styles.timeControls}
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                flexWrap: "wrap",
+                width: "100%",
+                gap: "6px",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  flexGrow: "8",
+                  gap: "6px",
+                  minWidth: "300px",
+                }}
+              >
                 {timeControls.isPlaying() ? (
                   // Swap between play and pause button
                   <IconButton
@@ -757,7 +775,8 @@ function App(): ReactElement {
                   wrapIncrement={true}
                 />
               </div>
-              <div style={{ flexGrow: "4", minWidth: "120px" }}>
+              <span className={styles.verticalDivider} style={{ height: "24px" }}></span>
+              <div style={{ flexGrow: "4", minWidth: "150px" }}>
                 <PlaybackSpeedControl
                   fps={playbackFps}
                   onChange={(fps) => {

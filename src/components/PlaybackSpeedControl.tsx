@@ -16,36 +16,29 @@ const defaultProps: Partial<PlaybackSpeedControlProps> = {
 export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<PlaybackSpeedControlProps>;
 
-  // Scale the marks for the slider so that they look linear
-  const speedOptions = [0.25, 0.5, 1, 1.5, 2];
-
-  const marks = speedOptions.reduce((acc: Record<string | number, React.ReactNode>, speed, index) => {
-    acc[index] = `${speed}x`;
-    return acc;
-  }, {});
-
   const onSliderChange = (value: number) => {
-    const speedModifier = speedOptions[value];
-    const fps = props.baselineFps * speedModifier;
+    const fps = value * props.baselineFps;
     props.onChange(fps);
   };
 
   // Convert from raw fps to slider values
-  const sliderValue = speedOptions.findIndex((speed) => Math.abs(speed - props.fps / props.baselineFps) < 0.01);
+  const sliderValue = props.fps / props.baselineFps;
 
   return (
     <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
       <h3>Speed:</h3>
       <div style={{ width: "100%" }}>
         <Slider
-          marks={marks}
-          step={null}
           value={sliderValue}
           onChange={onSliderChange}
-          min={0}
-          // hide tooltip
-          tooltip={{ formatter: null }}
-          max={speedOptions.length - 1}
+          min={0.25}
+          max={2}
+          step={0.25}
+          tooltip={{
+            formatter: (value) => {
+              return value?.toFixed(2) + "x";
+            },
+          }}
         />
       </div>
     </div>
