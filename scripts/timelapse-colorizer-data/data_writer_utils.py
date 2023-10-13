@@ -184,7 +184,7 @@ class ColorizerDatasetWriter:
         this frame.
         """
         # Map values in segmented image to new unique indices for whole dataset
-        mx = np.nanmax(seg2d)
+        mx = int(np.nanmax(frame[object_id_column]))
         lut = np.zeros((mx + 1), dtype=np.uint32)
         for row_index, row in frame.iterrows():
             # build our remapping LUT:
@@ -200,7 +200,6 @@ class ColorizerDatasetWriter:
     def write_image(
         self,
         seg_remapped: np.ndarray,
-        outpath: Union[str, pathlib.Path],
         frame_num: int,
     ):
         """
@@ -219,7 +218,7 @@ class ColorizerDatasetWriter:
         seg_rgba[:, :, 2] = (seg_remapped & 0x00FF0000) >> 16
         seg_rgba[:, :, 3] = 255  # (seg2d & 0xFF000000) >> 24
         img = Image.fromarray(seg_rgba)  # new("RGBA", (xres, yres), seg2d)
-        img.save(outpath + "/frame_" + str(frame_num) + ".png")
+        img.save(self.outpath + "/frame_" + str(frame_num) + ".png")
 
     def update_and_write_bbox_data(
         self,
