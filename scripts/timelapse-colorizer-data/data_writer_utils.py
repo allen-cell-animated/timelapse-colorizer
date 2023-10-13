@@ -9,10 +9,11 @@ import numpy as np
 import pandas as pd
 import skimage
 
-INITIAL_INDEX = "initialIndex"
+INITIAL_INDEX_COLUMN = "initialIndex"
+"""Column added to reduced datasets, holding the original indices of each row."""
 RESERVED_INDICES = 1
 """Reserved indices that cannot be used for cell data. 
-0 is reserved for no cells being present."""
+0 is reserved for the background."""
 
 
 class NumpyValuesEncoder(json.JSONEncoder):
@@ -73,7 +74,7 @@ class ColorizerDatasetWriter:
         outliers: np.array,
     ):
         """
-        Writes non-frame feature, track, centroid, time, and outlier data to JSON files.
+        Writes feature, track, centroid, time, and outlier data to JSON files.
         Accepts numpy arrays for each file type and writes them to the configured
         output directory according to the data format.
 
@@ -174,7 +175,7 @@ class ColorizerDatasetWriter:
         seg2d: np.ndarray,
         frame: pd.DataFrame,
         object_id_column: str,
-        absolute_id_column: str = INITIAL_INDEX,
+        absolute_id_column: str = INITIAL_INDEX_COLUMN,
     ) -> (np.ndarray, np.ndarray):
         """
         Remap the values in the segmented image 2d array so that each object has a
@@ -237,7 +238,7 @@ class ColorizerDatasetWriter:
             # .max() gives the highest object ID, but not the total number of indices
             # (we have to add 1.) 0 is a reserved index (no cells), so add 1.
             totalIndices = (
-                grouped_frames[INITIAL_INDEX].max().max() + 1 + RESERVED_INDICES
+                grouped_frames[INITIAL_INDEX_COLUMN].max().max() + 1 + RESERVED_INDICES
             )
             # Create an array, where for each segmentation index
             # we have 4 indices representing the bounds (2 sets of x,y coordinates).

@@ -8,8 +8,7 @@ import pandas as pd
 import time
 
 from data_writer_utils import (
-    INITIAL_INDEX,
-    RESERVED_INDICES,
+    INITIAL_INDEX_COLUMN,
     ColorizerDatasetWriter,
     configureLogging,
 )
@@ -164,7 +163,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     columns = [TRACK_ID_COLUMN, TIMES_COLUMN, SEGMENTED_IMAGE_COLUMN, OBJECT_ID_COLUMN]
     reduced_dataset = full_dataset[columns]
     reduced_dataset = reduced_dataset.reset_index(drop=True)
-    reduced_dataset[INITIAL_INDEX] = reduced_dataset.index.values
+    reduced_dataset[INITIAL_INDEX_COLUMN] = reduced_dataset.index.values
     grouped_frames = reduced_dataset.groupby(TIMES_COLUMN)
 
     # Make the features, frame data, and manifest.
