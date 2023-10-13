@@ -695,7 +695,7 @@ function App(): ReactElement {
                 flexDirection: "row",
                 flexWrap: "wrap",
                 width: "100%",
-                gap: "6px",
+                gap: "10px",
                 alignItems: "center",
               }}
             >
@@ -703,7 +703,7 @@ function App(): ReactElement {
                 style={{
                   display: "flex",
                   flexDirection: "row",
-                  flexGrow: "8",
+                  flexGrow: "1",
                   gap: "6px",
                   minWidth: "300px",
                 }}
@@ -764,7 +764,7 @@ function App(): ReactElement {
                 />
               </div>
               <span className={styles.verticalDivider} style={{ height: "24px" }}></span>
-              <div style={{ flexGrow: "4", minWidth: "150px" }}>
+              <div style={{ width: "200px" }}>
                 <PlaybackSpeedControl
                   fps={playbackFps}
                   onChange={(fps) => {
