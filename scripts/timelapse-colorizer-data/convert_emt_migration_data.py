@@ -83,7 +83,7 @@ def make_features(dataset: pd.DataFrame, features, writer: ColorizerDatasetWrite
     # Collect array data from the dataframe for writing.
 
     # For now in this dataset there are no outliers. Just generate a list of falses.
-    outliers = [False for i in range(len(dataset.index))]
+    outliers = np.array([False for i in range(len(dataset.index))])
     tracks = dataset[TRACK_ID_COLUMN].to_numpy()
     times = dataset[TIMES_COLUMN].to_numpy()
     centroids_x = dataset[CENTROIDS_X_COLUMN].to_numpy()

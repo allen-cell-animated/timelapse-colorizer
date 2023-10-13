@@ -65,7 +65,7 @@ def remap_segmented_image(
     this frame.
     """
     # Map values in segmented image to new unique indices for whole dataset
-    max_object_id = int(np.nanmax(frame[object_id_column]))
+    max_object_id = max(np.nanmax(seg2d), int(np.nanmax(frame[object_id_column])))
     lut = np.zeros((max_object_id + 1), dtype=np.uint32)
     for row_index, row in frame.iterrows():
         # build our remapping LUT:
