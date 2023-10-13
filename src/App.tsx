@@ -17,7 +17,6 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
-import RecordingControls, { RecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -83,16 +82,11 @@ function App(): ReactElement {
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
 
+  const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => {
     return new TimeControls(canv!);
   });
-  const recordingControls = useConstructor(() => {
-    return new RecordingControls();
-  });
 
-  // Recording UI
-  // const [imagePrefix, setImagePrefix] = useState<null | string>(null);
-  // const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
    */
@@ -147,7 +141,7 @@ function App(): ReactElement {
     // update current time in plot
     plot?.setTime(currentFrame);
 
-    if (!timeControls.isPlaying() && !recordingControls.isRecording()) {
+    if (!timeControls.isPlaying() && !isRecording) {
       // Do not update URL while playback is happening for performance + UX reasons
       urlUtils.updateUrl(getUrlParams());
     }
@@ -547,8 +541,6 @@ function App(): ReactElement {
     [setFrame, canv]
   );
 
-  // const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
-
   // RENDERING /////////////////////////////////////////////////////////////
 
   const notificationConfig: NotificationConfig = {
@@ -565,13 +557,7 @@ function App(): ReactElement {
     });
   };
 
-  /** Get the current HTML Canvas data as a URL that can be downloaded. */
-  const getCanvasImageAsUrl = (): string => {
-    const dataUrl = canv.domElement.toDataURL("image/png");
-    return dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
-  };
-
-  const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
+  const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
   return (
@@ -608,19 +594,19 @@ function App(): ReactElement {
             <LinkOutlined />
             Copy URL
           </Button>
-
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrame}
-            currentFrame={currentFrame}
-            startRecording={(options: Partial<RecordingOptions>) => {
-              recordingControls.start(setFrameAndRender, getCanvasImageAsUrl, options);
+            setFrame={setFrameAndRender}
+            getCanvas={() => {
+              return canv.domElement;
             }}
-            stopRecording={() => recordingControls.abort()}
-            defaultImagePrefix={datasetKey + "-" + featureName + "-"}
+            // Stop playback when exporting
+            onClick={() => timeControls.handlePauseButtonClick()}
+            currentFrame={currentFrame}
+            defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
+            setIsRecording={setIsRecording}
           />
-
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
       </div>

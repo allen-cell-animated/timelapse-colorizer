@@ -1,5 +1,5 @@
 {
-  "extends": ["eslint:recommended"],
+  "extends": ["eslint:recommended", "plugin:react/recommended"],
   "env": {
     "es6": true,
     "browser": true
@@ -33,9 +33,7 @@
     "@typescript-eslint/typedef": ["error", { "parameters": true }],
     "prefer-const": 1,
     "radix": 1,
-    "react/jsx-uses-vars": 0, // Project does not use react
-    "react/no-deprecated": 0,
-    "react/prop-types": 0,
+    "react/prop-types": 0, // This relies specifically on React PropTypes and ignores other typing methods
     "semi": 2,
     "space-before-blocks": [1, "always"]
   }
