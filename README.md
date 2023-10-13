@@ -66,11 +66,11 @@ cd scripts/
 pip install .
 ```
 
-The `generate_data.py` script can take in a named dataset (like `baby_bear`, `mama_bear`, or `goldilocks`) and convert it to a format readable
+The `convert_nucmorph_data.py` script can take in a named Nuclear Morphogenesis dataset (like `baby_bear`, `mama_bear`, or `goldilocks`) and convert it to a format readable
 by the web client.
 
 ```
-python timelapse-colorizer-data/generate_data.py --output_dir {output_dir} --dataset {dataset_name}
+python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir {output_dir} --dataset {dataset_name} --scale 0.25
 ```
 
 ## Development
