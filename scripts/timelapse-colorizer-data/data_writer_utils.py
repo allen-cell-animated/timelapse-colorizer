@@ -170,6 +170,7 @@ class ColorizerDatasetWriter:
         logging.info("Finished writing dataset.")
 
     def remap_segmented_image(
+        self,
         seg2d: np.ndarray,
         frame: pd.DataFrame,
         object_id_column: str,
@@ -197,7 +198,10 @@ class ColorizerDatasetWriter:
         return (seg_remapped, lut)
 
     def write_image(
-        seg_remapped: np.ndarray, outpath: Union[str, pathlib.Path], frame_num: int
+        self,
+        seg_remapped: np.ndarray,
+        outpath: Union[str, pathlib.Path],
+        frame_num: int,
     ):
         """
         Writes the current segmented image to a PNG file in the output directory.
@@ -263,12 +267,12 @@ class ColorizerDatasetWriter:
         with open(self.outpath + "/bounds.json", "w") as f:
             json.dump(bbox_json, f)
 
-    def scale_image(seg2d: np.ndarray, scale: float) -> np.ndarray:
+    def scale_image(self, seg2d: np.ndarray) -> np.ndarray:
         """
         Scale an image by the writer's configured scale factor.
         """
-        if scale != 1.0:
+        if self.scale != 1.0:
             seg2d = skimage.transform.rescale(
-                seg2d, scale, anti_aliasing=False, order=0
+                seg2d, self.scale, anti_aliasing=False, order=0
             )
         return seg2d

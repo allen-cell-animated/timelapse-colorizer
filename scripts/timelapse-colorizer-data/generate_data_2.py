@@ -154,9 +154,9 @@ def make_dataset(
         "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
         "R0Cell_Neighbors_PercentTouching_Adjacent",
     ]
-    make_features(full_dataset, features, output_dir, dataset, scale)
+    make_features(full_dataset, features, writer)
     if do_frames:
-        make_frames(grouped_frames, output_dir, dataset, scale)
+        make_frames(grouped_frames, writer)
     writer.write_manifest(nframes, features)
 
 

@@ -173,9 +173,9 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
     features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
-    make_features(full_dataset, features, output_dir, dataset, scale)
+    make_features(full_dataset, features, writer)
     if do_frames:
-        make_frames(grouped_frames, output_dir, dataset, scale)
+        make_frames(grouped_frames, writer)
     writer.write_manifest(nframes, features)
 
 
