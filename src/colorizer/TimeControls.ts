@@ -8,6 +8,7 @@ export default class TimeControls {
   // TODO: Change to be React state?
   private timerId: number;
   private setFrameFn?: (frame: number) => void;
+  private playbackFps: number;
 
   private canvas: ColorizeCanvas;
   private isDisabled: boolean;
@@ -19,10 +20,21 @@ export default class TimeControls {
     this.timerId = DEFAULT_TIMER_ID;
     this.isDisabled = false;
     this.pauseCallbacks = [];
+    this.playbackFps = 25;
   }
 
   public setFrameCallback(fn: (frame: number) => void): void {
     this.setFrameFn = fn;
+  }
+
+  public setPlaybackFps(fps: number): void {
+    this.playbackFps = fps;
+    if (this.timerId !== DEFAULT_TIMER_ID) {
+      // restart playback with new fps
+      clearInterval(this.timerId);
+      this.pauseCallbacks.every((callback) => callback());
+      this.playTimeSeries(() => {});
+    }
   }
 
   private wrapFrame(index: number): number {
@@ -48,7 +60,7 @@ export default class TimeControls {
       }
       onNewFrameCallback();
     };
-    this.timerId = window.setInterval(loadNextFrame, 40);
+    this.timerId = window.setInterval(loadNextFrame, 1000 / this.playbackFps);
   }
 
   public async handlePlayButtonClick(): Promise<void> {
