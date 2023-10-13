@@ -57,6 +57,8 @@ Utilities are included in this repository to convert time-series data generated 
 
 For loading of datasets to work correctly, you'll need to run these commands from a device that has access to Allen Institute's on-premises data storage. If running off of shared resources, remember to initialize your virtual environment first! This may look like `conda activate {my_env}`.
 
+NOTE: You will also need to run Python version 3.8 due to the project's dependencies. For conda, you can create an environment with `conda create --name {my_env} python=3.8`.
+
 Navigate to the project's `scripts` directory and install the Python dependencies:
 
 ```
