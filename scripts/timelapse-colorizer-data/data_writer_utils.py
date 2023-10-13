@@ -184,14 +184,14 @@ class ColorizerDatasetWriter:
         this frame.
         """
         # Map values in segmented image to new unique indices for whole dataset
-        mx = int(np.nanmax(frame[object_id_column]))
-        lut = np.zeros((mx + 1), dtype=np.uint32)
+        max_object_id = int(np.nanmax(frame[object_id_column]))
+        lut = np.zeros((max_object_id + 1), dtype=np.uint32)
         for row_index, row in frame.iterrows():
             # build our remapping LUT:
-            label = int(row[object_id_column])
+            object_id = int(row[object_id_column])
             # unique row ID for each object -> remap to unique index for whole dataset
             rowind = int(row[absolute_id_column])
-            lut[label] = rowind + RESERVED_INDICES
+            lut[object_id] = rowind + RESERVED_INDICES
 
         # remap indices of this frame.
         seg_remapped = lut[seg2d]
