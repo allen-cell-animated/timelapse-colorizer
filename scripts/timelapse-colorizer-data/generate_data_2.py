@@ -128,24 +128,22 @@ def make_dataset(
     files to the given output directory.
     """
     writer = ColorizerDatasetWriter(output_dir, dataset, scale=scale)
-    a = data
+    full_dataset = data
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
-    # b is the reduced dataset
+    # Make a reduced dataframe grouped by time (frame number).
     columns = [
         TRACK_ID_COLUMN,
         TIMES_COLUMN,
         SEGMENTED_IMAGE_COLUMN,
         OBJECT_ID_COLUMN,
     ]
-    b = a[columns]
-    b = b.reset_index(drop=True)
-    b[INITIAL_INDEX] = b.index.values
-    grouped_frames = b.groupby(TIMES_COLUMN)
+    reduced_dataset = full_dataset[columns]
+    reduced_dataset = reduced_dataset.reset_index(drop=True)
+    reduced_dataset[INITIAL_INDEX] = reduced_dataset.index.values
+    grouped_frames = reduced_dataset.groupby(TIMES_COLUMN)
 
-    # get a single path from each time in the set.
-    # frames = grouped_frames.apply(lambda df: df.sample(1))
-
+    # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
     features = [
         "mean migration speed per track (um/min)",
@@ -156,7 +154,7 @@ def make_dataset(
         "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
         "R0Cell_Neighbors_PercentTouching_Adjacent",
     ]
-    make_features(a, features, output_dir, dataset, scale)
+    make_features(full_dataset, features, output_dir, dataset, scale)
     if do_frames:
         make_frames(grouped_frames, output_dir, dataset, scale)
     writer.write_manifest(nframes, features)
