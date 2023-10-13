@@ -1,3 +1,4 @@
+import { DEFAULT_PLAYBACK_FPS } from "../constants";
 import ColorizeCanvas from "./ColorizeCanvas";
 
 // TODO: Remove class?
@@ -15,12 +16,12 @@ export default class TimeControls {
 
   private pauseCallbacks: (() => void)[];
 
-  constructor(canvas: ColorizeCanvas) {
+  constructor(canvas: ColorizeCanvas, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
     this.canvas = canvas;
     this.timerId = DEFAULT_TIMER_ID;
     this.isDisabled = false;
     this.pauseCallbacks = [];
-    this.playbackFps = 25;
+    this.playbackFps = playbackFps;
   }
 
   public setFrameCallback(fn: (frame: number) => void): void {

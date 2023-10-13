@@ -83,11 +83,7 @@ function App(): ReactElement {
   const notificationContainer = useRef<HTMLDivElement>(null);
 
   const [isRecording, setIsRecording] = useState(false);
-  const timeControls = useConstructor(() => {
-    const timeControls = new TimeControls(canv!);
-    timeControls.setPlaybackFps(playbackFps);
-    return timeControls;
-  });
+  const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
 
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
@@ -688,17 +684,7 @@ function App(): ReactElement {
             </HoverTooltip>
 
             {/** Time Control Bar */}
-            <div
-              className={styles.timeControls}
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                flexWrap: "wrap",
-                width: "100%",
-                gap: "10px",
-                alignItems: "center",
-              }}
-            >
+            <div className={styles.timeControls}>
               <div
                 style={{
                   display: "flex",
