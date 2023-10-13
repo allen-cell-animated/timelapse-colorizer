@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react";
+
 import { Dataset, Plotting, Track } from "../colorizer";
 
 type PlotWrapperProps = {

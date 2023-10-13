@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useMemo, useRef } from "react";
 import { Color } from "three";
+
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
 

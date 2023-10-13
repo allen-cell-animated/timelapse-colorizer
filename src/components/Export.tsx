@@ -1,11 +1,12 @@
 import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import SpinBox from "./SpinBox";
-import { RecordingOptions } from "../colorizer/RecordingControls";
-import { AppThemeContext } from "./AppStyle";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import { clamp } from "three/src/math/MathUtils";
+
+import { AppThemeContext } from "./AppStyle";
+import SpinBox from "./SpinBox";
+import { RecordingOptions } from "../colorizer/RecordingControls";
 
 type ExportButtonProps = {
   totalFrames: number;
