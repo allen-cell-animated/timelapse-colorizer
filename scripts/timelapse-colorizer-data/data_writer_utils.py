@@ -26,7 +26,7 @@ class NumpyValuesEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def configureLogging(output_dir: Union[str, pathlib.Path], log_name: "debug.log"):
+def configureLogging(output_dir: Union[str, pathlib.Path], log_name="debug.log"):
     # Set up logging so logs are written to a file in the output directory
     os.makedirs(output_dir, exist_ok=True)
     debug_file = output_dir + log_name
@@ -51,8 +51,8 @@ class ColorizerDatasetWriter:
     for more details.)
     """
 
-    outpath: str | pathlib.Path
-    bbox_data: np.array | None
+    outpath: Union[str, pathlib.Path]
+    bbox_data: Union[np.array, None]
     scale: float
 
     def __init__(
