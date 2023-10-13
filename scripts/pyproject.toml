@@ -9,7 +9,7 @@ authors = [
 ]
 description = "data prep scripts"
 # readme = ""
-requires-python = ">=3.8, <3.9"
+requires-python = ">=3.8"
 keywords = ["one", "two"]
 license = {text = "BSD-3-Clause"}
 classifiers = [
@@ -25,6 +25,8 @@ dependencies = [
     "lkaccess @ https://artifactory.corp.alleninstitute.org/artifactory/api/pypi/pypi-release-local/lkaccess/1.4.25/lkaccess-1.4.25-py2.py3-none-any.whl#md5=dc51f01c6452c8b69a5e212b9f5b318d",
     "aicsfiles @ https://artifactory.corp.alleninstitute.org/artifactory/api/pypi/pypi-release-local/aicsfiles/5.3.0/aicsfiles-5.3.0.tar.gz",
     # "aicsfiles @ https://artifactory.corp.alleninstitute.org/artifactory/api/pypi/pypi-release-local/aicsfiles/7.0.0/aicsfiles-7.0.0.tar.gz#md5=42e6b5e857cc77c8ec9da6a368571922",
+    
+    # Requires us to use Python 3.8. See https://github.com/aics-int/nuc-morph-analysis/blob/main/docs/INSTALL.md#basic-installation-instructions-with-conda-and-pip.
     "nuc-morph-analysis @ git+https://github.com/aics-int/nuc-morph-analysis.git"
 ]
 dynamic = ["version"]

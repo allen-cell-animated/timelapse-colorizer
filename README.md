@@ -36,7 +36,7 @@ to access our existing datasets without installing the project.
 **Prerequisites:**
 
 - Node 18 or higher
-- Python 3 (and optionally, a virtual Python environment)
+- Python 3.8 or higher (and optionally, a virtual Python environment)
 - This repository, cloned with `git clone`
 
 ### Web tool
@@ -57,7 +57,7 @@ Utilities are included in this repository to convert time-series data generated 
 
 For loading of datasets to work correctly, you'll need to run these commands from a device that has access to Allen Institute's on-premises data storage. If running off of shared resources, remember to initialize your virtual environment first! This may look like `conda activate {my_env}`.
 
-NOTE: You will also need to run Python version 3.8 due to the project's dependencies. For conda, you can create an environment with `conda create --name {my_env} python=3.8`.
+NOTE: You may also need to run Python version 3.8, due to dependencies in the [Nucmorph Analysis package](https://github.com/aics-int/nuc-morph-analysis/blob/main/docs/INSTALL.md#basic-installation-instructions-with-conda-and-pip) this project was originally built for. For conda, you can create an environment with `conda create --name {my_env} python=3.8`.
 
 Navigate to the project's `scripts` directory and install the Python dependencies:
 
