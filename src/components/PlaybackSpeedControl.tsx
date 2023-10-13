@@ -1,6 +1,7 @@
 import { Slider } from "antd";
 import React, { ReactElement } from "react";
-import type { SliderMarks } from "antd/es/slider";
+
+import { DEFAULT_PLAYBACK_FPS } from "../constants";
 
 type PlaybackSpeedControlProps = {
   fps: number;
@@ -10,7 +11,7 @@ type PlaybackSpeedControlProps = {
 const defaultProps: Partial<PlaybackSpeedControlProps> = {
   fps: 30,
   onChange: () => {},
-  baselineFps: 15,
+  baselineFps: DEFAULT_PLAYBACK_FPS,
 };
 
 export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlProps): ReactElement {
@@ -25,14 +26,14 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
   const sliderValue = props.fps / props.baselineFps;
 
   return (
-    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px" }}>
       <h3>Speed:</h3>
       <div style={{ width: "100%" }}>
         <Slider
           value={sliderValue}
           onChange={onSliderChange}
           min={0.25}
-          max={2}
+          max={2.5}
           step={0.25}
           tooltip={{
             formatter: (value) => {

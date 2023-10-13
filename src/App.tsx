@@ -24,7 +24,7 @@ import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import ColorRampDropdown from "./components/ColorRampDropdown";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
@@ -73,7 +73,7 @@ function App(): ReactElement {
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
-  const [playbackFps, setPlaybackFps] = useState(30);
+  const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
@@ -84,7 +84,9 @@ function App(): ReactElement {
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => {
-    return new TimeControls(canv!);
+    const timeControls = new TimeControls(canv!);
+    timeControls.setPlaybackFps(playbackFps);
+    return timeControls;
   });
 
   /** The frame selected by the time UI. Changes to frameInput are reflected in
