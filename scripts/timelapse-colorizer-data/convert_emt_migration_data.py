@@ -12,40 +12,25 @@ from data_writer_utils import (
     configureLogging,
 )
 
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks
 
-# DATASET SPEC: See DATA_FORMAT.md for more details.
-# manifest.json:
-#   frames: [frame_0.png, frame_1.png, ...]
-#   features: { feature_0: feature_0.json, feature_1: feature_1.json, ... }
-#   outliers: [ bool, bool, ... ] // per cell, same order as featureN.json files
-#   tracks: "tracks.json" // per-cell track id, same format as featureN.json files
-#   times: "times.json" // per-cell frame index, same format as featureN.json files
-#   centroids: "centroids.json"  // per-cell centroid. For each index i, the
-#       coordinates are (x: data[2i], y: data[2i + 1]).
-#   bounds: "bounds.json"  // bounding boxes for each cell. For each index i, the
-#       minimum bounding box coordinates (upper left corner) are given by
-#       (x: data[4i], y: data[4i + 1]), and the maximum bounding box coordinates
-#       (lower right corner) are given by (x: data[4i + 2], y: data[4i + 3]).
-#
-# frame0.png:  numbers stored in RGB. true scalar index is (R + G*256 + B*256*256)
-#
-# feature0.json: { data: [1.2, 3.4, 5.6, ...], min: 1.2, max: 5.6 }
-#   there should be one value for every cell in the whole movie.
-#   the min and max should be the global min and max across the whole movie
-#   NaN (outlier) values are not yet supported
+# DATASET SPEC: See DATA_FORMAT.md for more details on the dataset format!
+# You can find the most updated version on GitHub here:
+# https://github.com/allen-cell-animated/nucmorph-colorizer/blob/main/documentation/DATA_FORMAT.md
 
-# OVERWRITE THESE!! These values should change based on your dataset.
+# OVERWRITE THESE!! These values should change based on your dataset. These are
+# relabeled as constants here for clarity/intent of the column name.
 OBJECT_ID_COLUMN = "R0Nuclei_Number_Object_Number"
-"""Name of column that stores the object ID (or unique row number)."""
+"""Column of object IDs (or unique row number)."""
 TRACK_ID_COLUMN = "R0Nuclei_TrackObjects_Label_75"
-"""Name of column that stores the track ID for each object."""
+"""Column of track ID for each object."""
 TIMES_COLUMN = "Image_Metadata_Timepoint"
-"""Name of column storing the frame number that the object ID appears in."""
+"""Column of frame number that the object ID appears in."""
 SEGMENTED_IMAGE_COLUMN = "OutputMask (CAAX)"
-"""Name of column storing the path to the segmented image data or z stack for the frame."""
+"""Column of path to the segmented image data or z stack for the frame."""
+CENTROIDS_X_COLUMN = "R0Nuclei_AreaShape_Center_X"
+"""Column of X centroid coordinates, in pixels of original image data."""
+CENTROIDS_Y_COLUMN = "R0Nuclei_AreaShape_Center_Y"
+"""Column of Y centroid coordinates, in pixels of original image data."""
 
 
 def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
@@ -90,24 +75,23 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
         )
 
 
-def make_features(a: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+def make_features(dataset: pd.DataFrame, features, writer: ColorizerDatasetWriter):
     """
     Generate the outlier, track, time, centroid, and feature data files.
     """
     # Collect array data from the dataframe for writing.
 
     # For now in this dataset there are no outliers. Just generate a list of falses.
-    outliers = [False for i in range(len(a.index))]
-    tracks = a[TRACK_ID_COLUMN].to_numpy()
-    times = a[TIMES_COLUMN].to_numpy()
-    centroids_x = a["R0Nuclei_AreaShape_Center_X"].to_numpy()
-    centroids_y = a["R0Nuclei_AreaShape_Center_Y"].to_numpy()
+    outliers = [False for i in range(len(dataset.index))]
+    tracks = dataset[TRACK_ID_COLUMN].to_numpy()
+    times = dataset[TIMES_COLUMN].to_numpy()
+    centroids_x = dataset[CENTROIDS_X_COLUMN].to_numpy()
+    centroids_y = dataset[CENTROIDS_Y_COLUMN].to_numpy()
 
-    # Note these must be in same order as features and same row order as the dataframe.
     feature_data = []
     for i in range(len(features)):
         # TODO normalize output range excluding outliers?
-        f = a[features[i]].to_numpy()
+        f = dataset[features[i]].to_numpy()
         feature_data.append(f)
 
     writer.write_feature_data(

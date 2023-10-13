@@ -18,31 +18,16 @@ from nuc_morph_analysis.lib.preprocessing.load_data import (
     get_dataset_pixel_size,
 )
 
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks
+# Example Commands:
+# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear --scale 0.25
+# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear --scale 0.25
+# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks --scale 0.25
 
-# DATASET SPEC: See DATA_FORMAT.md for more details.
-# manifest.json:
-#   frames: [frame_0.png, frame_1.png, ...]
-#   features: { feature_0: feature_0.json, feature_1: feature_1.json, ... }
-#   outliers: [ bool, bool, ... ] // per cell, same order as featureN.json files
-#   tracks: "tracks.json" // per-cell track id, same format as featureN.json files
-#   times: "times.json" // per-cell frame index, same format as featureN.json files
-#   centroids: "centroids.json"  // per-cell centroid. For each index i, the
-#       coordinates are (x: data[2i], y: data[2i + 1]).
-#   bounds: "bounds.json"  // bounding boxes for each cell. For each index i, the
-#       minimum bounding box coordinates (upper left corner) are given by
-#       (x: data[4i], y: data[4i + 1]), and the maximum bounding box coordinates
-#       (lower right corner) are given by (x: data[4i + 2], y: data[4i + 3]).
-#
-# frame0.png:  numbers stored in RGB. true scalar index is (R + G*256 + B*256*256)
-#
-# feature0.json: { data: [1.2, 3.4, 5.6, ...], min: 1.2, max: 5.6 }
-#   there should be one value for every cell in the whole movie.
-#   the min and max should be the global min and max across the whole movie
-#   NaN (outlier) values are not yet supported
+# DATASET SPEC: See DATA_FORMAT.md for more details on the dataset format!
+# You can find the most updated version on GitHub here:
+# https://github.com/allen-cell-animated/nucmorph-colorizer/blob/main/documentation/DATA_FORMAT.md
 
+# NUCMORPH DATA REFERENCE:
 # dataset	string	In FMS manifest	Name of which dataset this row of data belongs to (baby_bear, goldilocks, or mama_bear)
 # track_id	int	In FMS manifest	ID for a single nucleus in all frames for which it exists (single value per nucleus, consistent across multiple frames)
 # CellID	hash	In FMS manifest	ID for a single instance/frame of a nucleus (every nucleus has a different value in every frame)
@@ -63,16 +48,22 @@ from nuc_morph_analysis.lib.preprocessing.load_data import (
 # NUC_PC7	float	Needs calculated and added	Value for shape mode 7 for a single nucleus in a given frame
 # NUC_PC8	float	Needs calculated and added	Value for shape mode 8 for a single nucleus in a given frame
 
-
-# OVERWRITE THESE!! These values should change based on your dataset.
+# OVERWRITE THESE!! These values should change based on your dataset. These are
+# relabeled as constants here for clarity/intent of the column name.
 OBJECT_ID_COLUMN = "label_img"
-"""Name of column that stores the object ID (or unique row number)."""
+"""Column of object IDs (or unique row number)."""
 TRACK_ID_COLUMN = "track_id"
-"""Name of column that stores the track ID for each object."""
+"""Column of track ID for each object."""
 TIMES_COLUMN = "index_sequence"
-"""Name of column storing the frame number that the object ID appears in."""
+"""Column of frame number that the object ID appears in."""
 SEGMENTED_IMAGE_COLUMN = "seg_full_zstack_path"
-"""Name of column storing the path to the segmented image data or z stack for the frame."""
+"""Column of path to the segmented image data or z stack for the frame."""
+CENTROIDS_X_COLUMN = "centroid_x"
+"""Column of X centroid coordinates, in pixels of original image data."""
+CENTROIDS_Y_COLUMN = "centroid_y"
+"""Column of Y centroid coordinates, in pixels of original image data."""
+OUTLIERS_COLUMN = "is_outlier"
+"""Column of outlier status for each object. (true/false)"""
 
 
 def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
@@ -118,22 +109,22 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
         )
 
 
-def make_features(a: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+def make_features(dataset: pd.DataFrame, features, writer: ColorizerDatasetWriter):
     """
     Generate the outlier, track, time, centroid, and feature data files.
     """
     # Collect array data from the dataframe for writing.
 
-    outliers = a["is_outlier"].to_numpy()
-    tracks = a[TRACK_ID_COLUMN].to_numpy()
-    times = a[TIMES_COLUMN].to_numpy()
-    centroids_x = a["centroid_x"].to_numpy()
-    centroids_y = a["centroid_y"].to_numpy()
+    outliers = dataset[OUTLIERS_COLUMN].to_numpy()
+    tracks = dataset[TRACK_ID_COLUMN].to_numpy()
+    times = dataset[TIMES_COLUMN].to_numpy()
+    centroids_x = dataset[CENTROIDS_X_COLUMN].to_numpy()
+    centroids_y = dataset[CENTROIDS_Y_COLUMN].to_numpy()
 
     feature_data = []
     for i in range(len(features)):
         # TODO normalize output range excluding outliers?
-        f = a[features[i]].to_numpy()
+        f = dataset[features[i]].to_numpy()
         feature_data.append(f)
 
     writer.write_feature_data(
