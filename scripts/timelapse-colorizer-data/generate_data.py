@@ -3,12 +3,9 @@ from aicsimageio import AICSImage
 import argparse
 import logging
 import numpy as np
-import os
 import platform
-import time
-
 import pandas as pd
-
+import time
 
 from data_writer_utils import (
     INITIAL_INDEX,
