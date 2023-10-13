@@ -10,8 +10,9 @@ from data_writer_utils import (
     INITIAL_INDEX_COLUMN,
     ColorizerDatasetWriter,
     configureLogging,
+    scale_image,
+    remap_segmented_image,
 )
-
 
 # DATASET SPEC: See DATA_FORMAT.md for more details on the dataset format!
 # You can find the most updated version on GitHub here:
@@ -33,7 +34,7 @@ CENTROIDS_Y_COLUMN = "R0Nuclei_AreaShape_Center_Y"
 """Column of Y centroid coordinates, in pixels of original image data."""
 
 
-def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
+def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
     """
     Generate the images and bounding boxes for each time step in the dataset.
     """
@@ -54,11 +55,11 @@ def make_frames(grouped_frames, writer: ColorizerDatasetWriter):
         seg2d = zstack
 
         # Scale the image and format as integers.
-        seg2d = writer.scale_image(seg2d)
+        seg2d = scale_image(seg2d, scale)
         seg2d = seg2d.astype(np.uint32)
 
         # Remap the frame image so the IDs are unique across the whole dataset.
-        seg_remapped, lut = writer.remap_segmented_image(
+        seg_remapped, lut = remap_segmented_image(
             seg2d,
             frame,
             OBJECT_ID_COLUMN,
@@ -139,7 +140,7 @@ def make_dataset(
     ]
     make_features(full_dataset, features, writer)
     if do_frames:
-        make_frames(grouped_frames, writer)
+        make_frames(grouped_frames, scale, writer)
     writer.write_manifest(nframes, features)
 
 

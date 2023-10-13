@@ -42,6 +42,43 @@ def configureLogging(output_dir: Union[str, pathlib.Path], log_name="debug.log")
     )
 
 
+def scale_image(seg2d: np.ndarray, scale: float) -> np.ndarray:
+    """
+    Scale an image by some scale factor.
+    """
+    if scale != 1.0:
+        seg2d = skimage.transform.rescale(seg2d, scale, anti_aliasing=False, order=0)
+    return seg2d
+
+
+def remap_segmented_image(
+    seg2d: np.ndarray,
+    frame: pd.DataFrame,
+    object_id_column: str,
+    absolute_id_column: str = INITIAL_INDEX_COLUMN,
+) -> (np.ndarray, np.ndarray):
+    """
+    Remap the values in the segmented image 2d array so that each object has a
+    unique ID across the whole dataset, accounting for reserved indices.
+
+    Returns the remapped image and the lookup table (LUT) used to remap the IDs on
+    this frame.
+    """
+    # Map values in segmented image to new unique indices for whole dataset
+    max_object_id = int(np.nanmax(frame[object_id_column]))
+    lut = np.zeros((max_object_id + 1), dtype=np.uint32)
+    for row_index, row in frame.iterrows():
+        # build our remapping LUT:
+        object_id = int(row[object_id_column])
+        # unique row ID for each object -> remap to unique index for whole dataset
+        rowind = int(row[absolute_id_column])
+        lut[object_id] = rowind + RESERVED_INDICES
+
+    # remap indices of this frame.
+    seg_remapped = lut[seg2d]
+    return (seg_remapped, lut)
+
+
 class ColorizerDatasetWriter:
     """
     Writes provided data as Colorizer-compatible dataset files to the configured output directory.
@@ -170,34 +207,6 @@ class ColorizerDatasetWriter:
 
         logging.info("Finished writing dataset.")
 
-    def remap_segmented_image(
-        self,
-        seg2d: np.ndarray,
-        frame: pd.DataFrame,
-        object_id_column: str,
-        absolute_id_column: str = INITIAL_INDEX_COLUMN,
-    ) -> (np.ndarray, np.ndarray):
-        """
-        Remap the values in the segmented image 2d array so that each object has a
-        unique ID across the whole dataset, accounting for reserved indices.
-
-        Returns the remapped image and the lookup table (LUT) used to remap the IDs on
-        this frame.
-        """
-        # Map values in segmented image to new unique indices for whole dataset
-        max_object_id = int(np.nanmax(frame[object_id_column]))
-        lut = np.zeros((max_object_id + 1), dtype=np.uint32)
-        for row_index, row in frame.iterrows():
-            # build our remapping LUT:
-            object_id = int(row[object_id_column])
-            # unique row ID for each object -> remap to unique index for whole dataset
-            rowind = int(row[absolute_id_column])
-            lut[object_id] = rowind + RESERVED_INDICES
-
-        # remap indices of this frame.
-        seg_remapped = lut[seg2d]
-        return (seg_remapped, lut)
-
     def write_image(
         self,
         seg_remapped: np.ndarray,
@@ -266,13 +275,3 @@ class ColorizerDatasetWriter:
         bbox_json = {"data": np.ravel(self.bbox_data).tolist()}  # flatten to 2D
         with open(self.outpath + "/bounds.json", "w") as f:
             json.dump(bbox_json, f)
-
-    def scale_image(self, seg2d: np.ndarray) -> np.ndarray:
-        """
-        Scale an image by the writer's configured scale factor.
-        """
-        if self.scale != 1.0:
-            seg2d = skimage.transform.rescale(
-                seg2d, self.scale, anti_aliasing=False, order=0
-            )
-        return seg2d
