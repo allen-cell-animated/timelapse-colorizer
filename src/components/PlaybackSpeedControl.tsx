@@ -10,8 +10,6 @@ type PlaybackSpeedControlProps = {
   disabled?: boolean;
 };
 const defaultProps: Partial<PlaybackSpeedControlProps> = {
-  fps: 30,
-  onChange: () => {},
   baselineFps: DEFAULT_PLAYBACK_FPS,
   disabled: false,
 };
