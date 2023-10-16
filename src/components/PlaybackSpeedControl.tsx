@@ -37,9 +37,7 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
           max={2.5}
           step={0.25}
           tooltip={{
-            formatter: (value) => {
-              return value?.toFixed(2) + "x";
-            },
+            formatter: (value) => value?.toFixed(2) + "x",
           }}
         />
       </div>
