@@ -13,6 +13,7 @@ import * as urlUtils from "./utils/url_utils";
 type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
+  featureMetadata?: Record<string, FeatureMetaData>;
   outliers?: string;
   tracks?: string;
   times?: string;
@@ -25,6 +26,11 @@ export type FeatureData = {
   tex: Texture;
   min: number;
   max: number;
+  units?: string;
+};
+
+export type FeatureMetaData = {
+  units: string;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -38,6 +44,7 @@ export default class Dataset {
   private arrayLoader: IArrayLoader;
   private featureFiles: Record<string, string>;
   public features: Record<string, FeatureData>;
+  private featureMetadata: Record<string, FeatureMetaData>;
 
   private outlierFile?: string;
   public outliers?: Texture | null;
@@ -77,6 +84,7 @@ export default class Dataset {
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.featureFiles = {};
     this.features = {};
+    this.featureMetadata = {};
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
@@ -94,6 +102,7 @@ export default class Dataset {
       data: source.getBuffer(FeatureDataType.F32),
       min: source.getMin(),
       max: source.getMax(),
+      units: this.featureMetadata?.[name]?.units,
     };
   }
 
@@ -197,7 +206,35 @@ export default class Dataset {
 
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
-    this.outlierFile = manifest.outliers;
+
+    // If feature names have units (provided in parentheses at end), strip from the
+    // feature name and save to the units field in the feature metadata unless overrriden.
+    let newFeatureFiles: Record<string, string> = {};
+    let newFeatureMetadata: Record<string, FeatureMetaData> = {};
+    for (const featureName of Object.keys(this.featureFiles)) {
+      // Matches the content inside the first set of parentheses at the end of the string
+      const units = featureName.trim().match(/\((.+)\)$/);
+      if (!units) {
+        newFeatureFiles[featureName] = this.featureFiles[featureName];
+        if (manifest.featureMetadata && manifest.featureMetadata[featureName]) {
+          newFeatureMetadata[featureName] = manifest.featureMetadata[featureName];
+        }
+        continue;
+      }
+
+      const newName = featureName.replace(units[0], "").trim();
+      newFeatureFiles[newName] = this.featureFiles[featureName];
+
+      // Override units ONLY if no units are defined in metadata
+      if (!manifest.featureMetadata || !manifest.featureMetadata[featureName].units) {
+        newFeatureMetadata[newName] = { units: units[1] };
+      } else {
+        newFeatureMetadata[newName] = manifest.featureMetadata[featureName];
+      }
+    }
+    this.featureFiles = newFeatureFiles;
+    this.featureMetadata = newFeatureMetadata;
+
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;

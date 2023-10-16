@@ -451,12 +451,18 @@ function App(): ReactElement {
   );
 
   const getFeatureValue = useCallback(
-    (id: number): number => {
+    (id: number): string => {
       if (!featureName || !dataset) {
-        return -1;
+        return "-1";
       }
       // Look up feature value from id
-      return dataset.getFeatureData(featureName)?.data[id] || -1;
+      const featureValue = dataset.getFeatureData(featureName)?.data[id] || -1;
+      // Check if int, otherwise return float
+      if (Number.isInteger(featureValue)) {
+        return featureValue.toString();
+      } else {
+        return featureValue.toFixed(3);
+      }
     },
     [featureName, dataset]
   );
@@ -555,6 +561,17 @@ function App(): ReactElement {
     });
   };
 
+  const getFeatureDropdownData = useCallback((): string[] | { key: string; label: string }[] => {
+    if (!dataset) {
+      return [];
+    }
+    return dataset.featureNames.map((name) => {
+      // Add units if present
+      const units = dataset?.getFeatureData(name)?.units;
+      return { key: name, label: units ? `${name} (${units})` : name };
+    });
+  }, [dataset]);
+
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
@@ -581,7 +598,7 @@ function App(): ReactElement {
             disabled={disableUi}
             label="Feature"
             selected={featureName}
-            items={dataset?.featureNames || []}
+            items={getFeatureDropdownData()}
             onChange={handleFeatureChange}
           />
 
