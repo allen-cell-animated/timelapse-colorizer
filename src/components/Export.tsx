@@ -2,10 +2,13 @@ import React, { ReactElement, useCallback, useContext, useEffect, useRef, useSta
 import styled from "styled-components";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import { clamp } from "three/src/math/MathUtils";
+import { App, Tooltip, Progress, Button, Modal, Card, Radio, RadioChangeEvent, Space, InputNumber, Input } from "antd";
 
 import { AppThemeContext } from "./AppStyle";
 import SpinBox from "./SpinBox";
-import { RecordingOptions } from "../colorizer/RecordingControls";
+import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
+import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
+import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -44,6 +47,40 @@ const CustomRangeDiv = styled(HorizontalDiv)`
   & input {
     width: 70px;
     text-align: right;
+  }
+`;
+
+const CustomRadio = styled(Radio)`
+  & span {
+    // Clip text when the radio is too narrow
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & span:not(.ant-radio-button) {
+    // Text span
+    width: 100%;
+    text-align: center;
+  }
+`;
+
+const ExportModeRadioGroup = styled(Radio.Group)`
+  & {
+    // Use standard 40px of padding, unless the view is too narrow and it needs to shrink
+    padding: 0 calc(min(40px, 5vw));
+  }
+  & label {
+    // Make the Radio options the same width
+    flex-grow: 1;
+    width: 50%;
+  }
+`;
+
+const CustomRadioGroup = styled(Radio.Group)`
+  & {
+    display: flex;
+    flex-direction: row;
   }
 `;
 

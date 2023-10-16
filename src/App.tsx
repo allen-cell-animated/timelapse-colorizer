@@ -33,6 +33,8 @@ import DrawModeDropdown from "./components/DrawModeDropdown";
 import CanvasWrapper from "./components/CanvasWrapper";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import PlotWrapper from "./components/PlotWrapper";
+import { RecordingOptions } from "./colorizer/recorders/CanvasRecorder";
+import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -443,19 +445,12 @@ function App(): ReactElement {
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrame}
             currentFrame={currentFrame}
-            startRecording={(options: Partial<RecordingOptions>) => {
-              const setFrameAndRender = async (frame: number): Promise<void> => {
-                await setFrame(frame);
-                canv.render();
-              };
-              recordingControls.start(setFrameAndRender, getCanvasImageAsUrl, options);
-            }}
             // Stop playback when exporting
             onClick={() => timeControls.handlePauseButtonClick()}
-            currentFrame={currentFrame}
             defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
             setIsRecording={setIsRecording}
+            getCanvas={() => canv.domElement}
           />
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
