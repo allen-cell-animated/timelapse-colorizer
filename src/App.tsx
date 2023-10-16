@@ -685,80 +685,72 @@ function App(): ReactElement {
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  flexGrow: "1",
-                  gap: "6px",
-                  minWidth: "300px",
-                }}
-              >
-                {timeControls.isPlaying() ? (
-                  // Swap between play and pause button
-                  <IconButton
-                    type="outlined"
-                    disabled={disableTimeControlsUi}
-                    onClick={() => timeControls.handlePauseButtonClick()}
-                  >
-                    <PauseOutlined />
-                  </IconButton>
-                ) : (
-                  <IconButton
-                    disabled={disableTimeControlsUi}
-                    onClick={() => timeControls.handlePlayButtonClick()}
-                    type="outlined"
-                  >
-                    <CaretRightOutlined />
-                  </IconButton>
-                )}
-
-                <div className={styles.timeSliderContainer}>
-                  <Slider
-                    min={0}
-                    max={dataset ? dataset.numberOfFrames - 1 : 0}
-                    disabled={disableTimeControlsUi}
-                    value={frameInput}
-                    onChange={(value) => {
-                      setFrameInput(value);
-                    }}
-                  />
-                </div>
-
+              {timeControls.isPlaying() ? (
+                // Swap between play and pause button
+                <IconButton
+                  type="outlined"
+                  disabled={disableTimeControlsUi}
+                  onClick={() => timeControls.handlePauseButtonClick()}
+                >
+                  <PauseOutlined />
+                </IconButton>
+              ) : (
                 <IconButton
                   disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handleFrameAdvance(-1)}
+                  onClick={() => timeControls.handlePlayButtonClick()}
                   type="outlined"
                 >
-                  <StepBackwardFilled />
+                  <CaretRightOutlined />
                 </IconButton>
-                <IconButton
-                  disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handleFrameAdvance(1)}
-                  type="outlined"
-                >
-                  <StepForwardFilled />
-                </IconButton>
+              )}
 
-                <SpinBox
+              <div className={styles.timeSliderContainer}>
+                <Slider
                   min={0}
-                  max={dataset?.numberOfFrames && dataset?.numberOfFrames - 1}
-                  value={frameInput}
-                  onChange={setFrame}
+                  max={dataset ? dataset.numberOfFrames - 1 : 0}
                   disabled={disableTimeControlsUi}
-                  wrapIncrement={true}
+                  value={frameInput}
+                  onChange={(value) => {
+                    setFrameInput(value);
+                  }}
                 />
               </div>
-              <span className={styles.verticalDivider} style={{ height: "24px" }}></span>
-              <div style={{ width: "200px" }}>
-                <PlaybackSpeedControl
-                  fps={playbackFps}
-                  onChange={(fps) => {
-                    setPlaybackFps(fps);
-                    timeControls.setPlaybackFps(fps);
-                  }}
-                  disabled={disableTimeControlsUi}
-                />
+
+              <IconButton
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls.handleFrameAdvance(-1)}
+                type="outlined"
+              >
+                <StepBackwardFilled />
+              </IconButton>
+              <IconButton
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls.handleFrameAdvance(1)}
+                type="outlined"
+              >
+                <StepForwardFilled />
+              </IconButton>
+
+              <SpinBox
+                min={0}
+                max={dataset?.numberOfFrames && dataset?.numberOfFrames - 1}
+                value={frameInput}
+                onChange={setFrame}
+                disabled={disableTimeControlsUi}
+                wrapIncrement={true}
+              />
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+                <span className={styles.verticalDivider} style={{ height: "24px", margin: "0 8px 0 0" }}></span>
+                <div style={{ width: "200px", maxWidth: "60vw" }}>
+                  <PlaybackSpeedControl
+                    fps={playbackFps}
+                    onChange={(fps) => {
+                      setPlaybackFps(fps);
+                      timeControls.setPlaybackFps(fps);
+                    }}
+                    disabled={disableTimeControlsUi}
+                  />
+                </div>
               </div>
             </div>
           </div>
