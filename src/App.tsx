@@ -740,7 +740,7 @@ function App(): ReactElement {
                 wrapIncrement={true}
               />
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                <span className={styles.verticalDivider} style={{ height: "24px", margin: "0 8px 0 0" }}></span>
+                <span className={styles.verticalDivider} style={{ height: "24px", margin: "0 8px" }}></span>
                 <div style={{ width: "200px", maxWidth: "60vw" }}>
                   <PlaybackSpeedControl
                     fps={playbackFps}

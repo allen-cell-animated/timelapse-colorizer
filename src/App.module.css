@@ -188,7 +188,7 @@
 .canvasPanel .timeControls {
   display: flex;
   flex-direction: row;
-  gap: 10px;
+  gap: 4px;
   max-width: calc(100vw - 60px);
   margin-top: 10px;
   flex-wrap: wrap;
