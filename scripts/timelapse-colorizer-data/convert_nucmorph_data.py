@@ -168,7 +168,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
 
     # Get the units and human-readable label for each feature; we include this as
     # metadata inside the dataset manifest.
-    features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
+    features = ["NUC_shape_volume_lcc", "NUC_position_depth_lcc"]
     featureLabels = []
     featureMetadata = []
     for i in range(len(features)):
