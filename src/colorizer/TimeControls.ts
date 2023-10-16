@@ -33,7 +33,7 @@ export default class TimeControls {
     if (this.timerId !== DEFAULT_TIMER_ID) {
       // restart playback with new fps
       clearInterval(this.timerId);
-      this.pauseCallbacks.every((callback) => callback());
+      this.pauseCallbacks.forEach((callback) => callback());
       this.playTimeSeries(() => {});
     }
   }
@@ -74,7 +74,7 @@ export default class TimeControls {
   public handlePauseButtonClick(): void {
     clearInterval(this.timerId);
     this.timerId = DEFAULT_TIMER_ID;
-    this.pauseCallbacks.every((callback) => callback());
+    this.pauseCallbacks.forEach((callback) => callback());
   }
 
   public async handleFrameAdvance(delta: number = 1): Promise<void> {
