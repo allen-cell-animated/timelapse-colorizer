@@ -24,12 +24,13 @@ import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import ColorRampDropdown from "./components/ColorRampDropdown";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 import Export from "./components/Export";
 import DrawModeDropdown from "./components/DrawModeDropdown";
+import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -72,6 +73,7 @@ function App(): ReactElement {
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
+  const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
@@ -81,9 +83,7 @@ function App(): ReactElement {
   const notificationContainer = useRef<HTMLDivElement>(null);
 
   const [isRecording, setIsRecording] = useState(false);
-  const timeControls = useConstructor(() => {
-    return new TimeControls(canv!);
-  });
+  const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
 
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
@@ -739,6 +739,19 @@ function App(): ReactElement {
                 disabled={disableTimeControlsUi}
                 wrapIncrement={true}
               />
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+                <span className={styles.verticalDivider} style={{ height: "24px", margin: "0 8px" }}></span>
+                <div style={{ width: "200px", maxWidth: "60vw" }}>
+                  <PlaybackSpeedControl
+                    fps={playbackFps}
+                    onChange={(fps) => {
+                      setPlaybackFps(fps);
+                      timeControls.setPlaybackFps(fps);
+                    }}
+                    disabled={disableTimeControlsUi}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
