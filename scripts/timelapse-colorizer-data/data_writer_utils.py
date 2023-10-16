@@ -161,6 +161,7 @@ class ColorizerDatasetWriter:
         self,
         num_frames: int,
         feature_names: List[str],
+        feature_metadata: List[object] = [],
     ):
         """
         Writes the final manifest file for the dataset in the configured output directory.
@@ -191,8 +192,11 @@ class ColorizerDatasetWriter:
         """
         # write manifest file
         featmap = {}
+        js = {}
+
         for i in range(len(feature_names)):
             featmap[feature_names[i]] = "feature_" + str(i) + ".json"
+
         js = {
             "frames": ["frame_" + str(i) + ".png" for i in range(num_frames)],
             "features": featmap,
@@ -202,6 +206,18 @@ class ColorizerDatasetWriter:
             "centroids": "centroids.json",
             "bounds": "bounds.json",
         }
+
+        if len(feature_metadata) != 0:
+            if len(feature_metadata) == len(feature_names):
+                featmeta = {}
+                for i in range(len(feature_metadata)):
+                    featmeta[feature_names[i]] = feature_metadata[i]
+                js["features.meta"] = featmeta
+            else:
+                logging.warn(
+                    "Feature metadata length does not match number of features. Skipping metadata."
+                )
+
         with open(self.outpath + "/manifest.json", "w") as f:
             json.dump(js, f)
 
