@@ -31,7 +31,6 @@ Installing is optional! You can use the [hosted version of Nucmorph Colorizer](h
 to access our existing HTTPS-hosted datasets without installing the project.
 
 **Prerequisites:**
-
 - Node 18 or higher: https://nodejs.org
 - Python 3 (and optionally, a virtual Python environment)
 
@@ -54,6 +53,8 @@ Utilities are included in this repository to convert time-series data generated 
 
 For loading of datasets to work correctly, you'll need to run these commands from a device that has access to Allen Institute's on-premises data storage. If running off of shared resources, remember to initialize your virtual environment first! This may look like `conda activate {my_env}`.
 
+NOTE: You may also need to run Python version 3.8, due to dependencies in the [Nucmorph Analysis package](https://github.com/aics-int/nuc-morph-analysis/blob/main/docs/INSTALL.md#basic-installation-instructions-with-conda-and-pip) this project was originally built for. For conda, you can create an environment with `conda create --name {my_env} python=3.8`.
+
 Navigate to the project's `scripts` directory and install the Python dependencies:
 
 ```
@@ -61,11 +62,11 @@ cd scripts/
 pip install .
 ```
 
-The `generate_data.py` script can take in a named dataset (like `baby_bear`, `mama_bear`, or `goldilocks`) and convert it to a format readable
+The `convert_nucmorph_data.py` script can take in a named Nuclear Morphogenesis dataset (like `baby_bear`, `mama_bear`, or `goldilocks`) and convert it to a format readable
 by the web client.
 
 ```
-python timelapse-colorizer-data/generate_data.py --output_dir {output_dir} --dataset {dataset_name}
+python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir {output_dir} --dataset {dataset_name} --scale 0.25
 ```
 
 ## Development

@@ -2,7 +2,7 @@
 
 Nucmorph-Colorizer can only load datasets that follow the defined data specification.
 
-The easiest way to get started is to modify one of our existing data processing scripts, like [`generate_data.py`](../scripts/timelapse-colorizer-data/generate_data.py)!
+The easiest way to get started is to modify one of our existing data processing scripts, like [`convert_nucmorph_data.py`](../scripts/timelapse-colorizer-data/convert_nucmorph_data.py)!
 
 (Check with your team or one of the developers on the Animated Cell team to see if there's already a data generation script for your project!)
 
