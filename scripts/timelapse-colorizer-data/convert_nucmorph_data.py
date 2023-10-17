@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import platform
 import pandas as pd
+from pandas.core.groupby.generic import DataFrameGroupBy
 import time
 
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
@@ -70,7 +71,7 @@ OUTLIERS_COLUMN = "is_outlier"
 
 
 def make_frames(
-    grouped_frames: pd.api.typing.DataFrameGroupBy,
+    grouped_frames: DataFrameGroupBy,
     scale: float,
     writer: ColorizerDatasetWriter,
 ):
@@ -157,7 +158,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     datadir, figdir = create_base_directories(dataset)
     pixsize = get_dataset_pixel_size(dataset)
 
-    full_dataset = load_dataset(dataset, datadir=None)
+    full_dataset: pd.DataFrame = load_dataset(dataset, datadir=None)
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
     # Make a reduced dataframe grouped by time (frame number).

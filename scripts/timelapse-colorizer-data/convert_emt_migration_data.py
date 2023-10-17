@@ -5,6 +5,7 @@ import json
 import logging
 import numpy as np
 import pandas as pd
+from pandas.core.groupby.generic import DataFrameGroupBy
 import time
 
 from data_writer_utils import (
@@ -36,7 +37,7 @@ CENTROIDS_Y_COLUMN = "R0Nuclei_AreaShape_Center_Y"
 
 
 def make_frames(
-    grouped_frames: pd.api.typing.DataFrameGroupBy,
+    grouped_frames: DataFrameGroupBy,
     scale: float,
     writer: ColorizerDatasetWriter,
 ):
