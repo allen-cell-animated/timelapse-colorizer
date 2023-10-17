@@ -1,3 +1,4 @@
+from typing import List
 from aicsimageio import AICSImage
 import argparse
 import json
@@ -34,7 +35,11 @@ CENTROIDS_Y_COLUMN = "R0Nuclei_AreaShape_Center_Y"
 """Column of Y centroid coordinates, in pixels of original image data."""
 
 
-def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
+def make_frames(
+    grouped_frames: pd.api.typing.DataFrameGroupBy,
+    scale: float,
+    writer: ColorizerDatasetWriter,
+):
     """
     Generate the images and bounding boxes for each time step in the dataset.
     """
@@ -76,7 +81,11 @@ def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
         )
 
 
-def make_features(dataset: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+def make_features(
+    dataset: pd.DataFrame,
+    features: List[str],
+    writer: ColorizerDatasetWriter,
+):
     """
     Generate the outlier, track, time, centroid, and feature data files.
     """
@@ -106,7 +115,11 @@ def make_features(dataset: pd.DataFrame, features, writer: ColorizerDatasetWrite
 
 
 def make_dataset(
-    data, output_dir="./data/", dataset="3500005820_3", do_frames=True, scale=1
+    data: pd.DataFrame,
+    output_dir="./data/",
+    dataset="3500005820_3",
+    do_frames=True,
+    scale=1,
 ):
     """Make a new dataset from the given data, and write the complete dataset
     files to the given output directory.
@@ -167,7 +180,7 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
         collection = []
         for name, group in b:
             dataset = str(name[0]) + "_" + str(name[1])
-            print(dataset)
+            logging.info("Making dataset '" + dataset + "'.")
             collection.append({"name": dataset, "path": dataset})
             c = a.loc[a["Image_Metadata_Plate"] == name[0]]
             c = c.loc[c["Image_Metadata_Position"] == name[1]]

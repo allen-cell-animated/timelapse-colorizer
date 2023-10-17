@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 from aicsimageio import AICSImage
 import argparse
 import logging
@@ -68,7 +69,11 @@ OUTLIERS_COLUMN = "is_outlier"
 """Column of outlier status for each object. (true/false)"""
 
 
-def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
+def make_frames(
+    grouped_frames: pd.api.typing.DataFrameGroupBy,
+    scale: float,
+    writer: ColorizerDatasetWriter,
+):
     """
     Generate the images and bounding boxes for each time step in the dataset.
     """
@@ -111,7 +116,9 @@ def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
         )
 
 
-def make_features(dataset: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+def make_features(
+    dataset: pd.DataFrame, features: List[str], writer: ColorizerDatasetWriter
+):
     """
     Generate the outlier, track, time, centroid, and feature data files.
     """
