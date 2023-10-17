@@ -17,13 +17,13 @@ for more details about potential future features!
 
 ### Opening New Datasets
 
-To add view datasets, they'll need to be format it for compatibility with Nucmorph-Colorizer and store it in a HTTPS-accessible location. More details can be found in the [data format specification](./documentation/DATA_FORMAT.md).
+Nucmorph Colorizer-compatible datasets hosted over HTTPS can be loaded directly from the interface! More details can be found in the [data format specification](./documentation/DATA_FORMAT.md).
 
-Click the **Load** button in the top right to open datasets via URL.
+Click the **Load** button in the top right to open a URL.
 
 ![image](https://github.com/allen-cell-animated/nucmorph-colorizer/assets/30200665/e2631a78-b0d6-49fc-bb93-cefc94a91a53)
 
-Note: If your dataset is hosted via HTTP rather than HTTPS, you'll need to install and run the project locally for security reasons. See below for more help.
+Note: If your dataset is hosted via **HTTP** rather than HTTPS, you'll need to install and run the project locally for security reasons. See below for more help.
 
 ## Installation
 
