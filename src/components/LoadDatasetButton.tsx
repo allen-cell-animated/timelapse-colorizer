@@ -32,6 +32,12 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       setErrorText("Please enter a URL!");
       return;
     }
+    if (window.location.protocol === "https:" && urlInput.trim().startsWith("http:")) {
+      setErrorText(
+        "Cannot load a HTTP resource from an HTTPS site. Please move your dataset so it is served over HTTPS, or install and run this project locally."
+      );
+      return;
+    }
     if (isLoading) {
       return;
     }
