@@ -105,8 +105,9 @@ def make_frames(
             OBJECT_ID_COLUMN,
         )
 
-        writer.update_and_write_bbox_data(grouped_frames, seg_remapped, lut)
-        writer.write_image(seg_remapped, frame_number)
+        writer.write_image_and_bounds_data(
+            seg_remapped, grouped_frames, frame_number, lut
+        )
 
         time_elapsed = time.time() - start_time
         logging.info(
