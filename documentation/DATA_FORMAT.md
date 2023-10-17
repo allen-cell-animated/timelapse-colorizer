@@ -46,7 +46,7 @@ The most important file is the **manifest**, which is a JSON file that describes
 
 Note that the `outliers`, `centroids`, and `bounds` files are optional, but certain features of Nucmorph-Colorizer won't work without them.
 
-A complete example dataset is also available in the [`documentation`](./example_dataset) directory of this project, and can be [viewed on Nucmorph Colorizer](https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist?dataset=https://raw.githubusercontent.com/allen-cell-animated/nucmorph-colorizer/main/documentation/example_dataset/manifest.json).
+A complete example dataset is also available in the [`documentation`](./example_dataset) directory of this project, and can be [viewed on Nucmorph Colorizer](https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/?dataset=https://raw.githubusercontent.com/allen-cell-animated/nucmorph-colorizer/main/documentation/example_dataset/manifest.json).
 
 <details>
 <summary><b>[Show me an example!]</b></summary>
