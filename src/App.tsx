@@ -33,7 +33,6 @@ import DrawModeDropdown from "./components/DrawModeDropdown";
 import CanvasWrapper from "./components/CanvasWrapper";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import PlotWrapper from "./components/PlotWrapper";
-import { RecordingOptions } from "./colorizer/recorders/CanvasRecorder";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 
 function App(): ReactElement {
@@ -331,15 +330,17 @@ function App(): ReactElement {
   const getFeatureValue = useCallback(
     (id: number): string => {
       if (!featureName || !dataset) {
-        return "-1";
+        return "";
       }
       // Look up feature value from id
-      const featureValue = dataset.getFeatureData(featureName)?.data[id] || -1;
+      const featureData = dataset.getFeatureData(featureName);
+      const featureValue = featureData?.data[id] || -1;
+      const unitsLabel = featureData?.units ? ` (${featureData?.units})` : "";
       // Check if int, otherwise return float
       if (Number.isInteger(featureValue)) {
-        return featureValue.toString();
+        return featureValue.toString() + unitsLabel;
       } else {
-        return featureValue.toFixed(3);
+        return featureValue.toFixed(3) + unitsLabel;
       }
     },
     [featureName, dataset]
