@@ -34,6 +34,7 @@ import CanvasWrapper from "./components/CanvasWrapper";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import PlotWrapper from "./components/PlotWrapper";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
+import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -334,14 +335,10 @@ function App(): ReactElement {
       }
       // Look up feature value from id
       const featureData = dataset.getFeatureData(featureName);
-      const featureValue = featureData?.data[id] || -1;
+      const featureValue = featureData?.data[id] ?? -1;
       const unitsLabel = featureData?.units ? ` ${featureData?.units}` : "";
       // Check if int, otherwise return float
-      if (Number.isInteger(featureValue)) {
-        return featureValue.toString() + unitsLabel;
-      } else {
-        return featureValue.toFixed(3) + unitsLabel;
-      }
+      return numberToStringDecimal(featureValue, 3) + unitsLabel;
     },
     [featureName, dataset]
   );
@@ -403,6 +400,8 @@ function App(): ReactElement {
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
+  const featureUnits = dataset?.featureHasUnits(featureName) ? dataset.getFeatureUnits(featureName) : "";
+
   return (
     <AppStyle className={styles.app}>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
@@ -460,7 +459,7 @@ function App(): ReactElement {
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
         <div className={styles.topControls}>
-          <h3 style={{ margin: "0" }}>Feature value range</h3>
+          <h3 style={{ margin: "0" }}>Feature value range {featureUnits ? `(${featureUnits})` : ""}</h3>
           <div className={styles.controlsContainer}>
             <LabeledRangeSlider
               min={colorRampMin}

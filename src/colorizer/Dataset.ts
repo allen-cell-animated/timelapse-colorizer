@@ -44,7 +44,7 @@ export default class Dataset {
   private arrayLoader: IArrayLoader;
   private featureFiles: Record<string, string>;
   public features: Record<string, FeatureData>;
-  private featureMetadata: Record<string, FeatureMetaData>;
+  private featureMetadata: Record<string, FeatureMetaData | undefined>;
 
   private outlierFile?: string;
   public outliers?: Texture | null;
@@ -119,11 +119,19 @@ export default class Dataset {
   }
 
   public getFeatureNameWithUnits(name: string): string {
-    if (this.featureMetadata?.[name]?.units) {
-      return `${name} (${this.featureMetadata[name].units})`;
+    if (this.featureHasUnits(name)) {
+      return `${name} (${this.featureMetadata[name]!.units})`;
     } else {
       return name;
     }
+  }
+
+  public featureHasUnits(name: string): boolean {
+    return this.featureMetadata?.[name]?.units !== undefined;
+  }
+
+  public getFeatureUnits(name: string): string | undefined {
+    return this.featureMetadata?.[name]?.units;
   }
 
   /**

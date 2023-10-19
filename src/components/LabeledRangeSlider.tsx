@@ -2,6 +2,7 @@ import React, { ReactElement, ReactEventHandler, useRef } from "react";
 import { InputNumber, Slider } from "antd";
 import { clamp } from "three/src/math/MathUtils";
 import styled from "styled-components";
+import { formatDecimal, numberToStringDecimal } from "../colorizer/utils/math_utils";
 
 type LabeledRangeSliderProps = {
   disabled?: boolean;
@@ -17,6 +18,12 @@ type LabeledRangeSliderProps = {
   minInputBound?: number;
   /** The upper bound for the numeric input. If undefined, uses MAX_SAFE_INTEGER. */
   maxInputBound?: number;
+  /** Minimum number of steps for the slider to use if integer steps cannot be used.
+   * Default is 200. */
+  minSteps?: number;
+  // TODO: Add a way to fetch significant figures for each feature. This is a temporary fix
+  // and may not work for all features. Use scientific notation maybe?
+  maxDecimalsToDisplay?: number;
 
   onChange: (min: number, max: number) => void;
 };
@@ -26,6 +33,8 @@ const defaultProps: Partial<LabeledRangeSliderProps> = {
   maxInputBound: Number.MAX_SAFE_INTEGER,
   minSliderBound: 0,
   maxSliderBound: 1,
+  minSteps: 200,
+  maxDecimalsToDisplay: 3,
 };
 
 // STYLING /////////////////////////////////////////////////////////////////
@@ -115,6 +124,10 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
     handleValueChange(props.min, value);
   };
 
+  let stepSize = (props.maxSliderBound - props.minSliderBound) / props.minSteps;
+  stepSize = clamp(stepSize, 0, 1);
+  stepSize = formatDecimal(stepSize, 3, false);
+
   return (
     <ComponentContainer>
       <InputNumber
@@ -137,9 +150,13 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
           onChange={(value: [number, number]) => {
             handleValueChange(value[0], value[1]);
           }}
+          step={stepSize}
+          // Show formatted decimals in tooltip
+          // TODO: Is this better than showing the precise value?
+          tooltip={{ formatter: (value) => numberToStringDecimal(value, props.maxDecimalsToDisplay) }}
         />
-        <SliderLabel>{props.minSliderBound}</SliderLabel>
-        <SliderLabel>{props.maxSliderBound}</SliderLabel>
+        <SliderLabel>{numberToStringDecimal(props.minSliderBound, props.maxDecimalsToDisplay)}</SliderLabel>
+        <SliderLabel>{numberToStringDecimal(props.maxSliderBound, props.maxDecimalsToDisplay)}</SliderLabel>
       </SliderContainer>
       <InputNumber
         ref={maxInput}
