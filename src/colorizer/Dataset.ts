@@ -118,6 +118,14 @@ export default class Dataset {
     }
   }
 
+  public getFeatureNameWithUnits(name: string): string {
+    if (this.featureMetadata?.[name]?.units) {
+      return `${name} (${this.featureMetadata[name].units})`;
+    } else {
+      return name;
+    }
+  }
+
   /**
    * Fetches and loads a data file as an array and returns its data as a Texture using the provided dataType.
    * @param dataType The expected format of the data.

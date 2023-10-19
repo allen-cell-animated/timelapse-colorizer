@@ -396,8 +396,7 @@ function App(): ReactElement {
     }
     return dataset.featureNames.map((name) => {
       // Add units if present
-      const units = dataset?.getFeatureData(name)?.units;
-      return { key: name, label: units ? `${name} (${units})` : name };
+      return { key: name, label: dataset.getFeatureNameWithUnits(name) };
     });
   }, [dataset]);
 
@@ -497,7 +496,8 @@ function App(): ReactElement {
                 <>
                   <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
                   <p>
-                    {featureName}: {lastHoveredId && getFeatureValue(lastHoveredId)}
+                    {featureName}:{" "}
+                    <span style={{ whiteSpace: "nowrap" }}>{lastHoveredId && getFeatureValue(lastHoveredId)}</span>
                   </p>
                 </>
               }
