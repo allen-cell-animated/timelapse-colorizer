@@ -212,7 +212,7 @@ class ColorizerDatasetWriter:
                 featmeta = {}
                 for i in range(len(feature_metadata)):
                     featmeta[feature_names[i]] = feature_metadata[i]
-                js["features.meta"] = featmeta
+                js["featureMetadata"] = featmeta
             else:
                 logging.warn(
                     "Feature metadata length does not match number of features. Skipping metadata."

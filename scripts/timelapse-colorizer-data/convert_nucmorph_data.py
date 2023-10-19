@@ -171,10 +171,17 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     features = ["NUC_shape_volume_lcc", "NUC_position_depth_lcc"]
     featureLabels = []
     featureMetadata = []
+    formattedUnits = {
+        "($\mu m$)": "μm",
+        "($\mu m^3$)": "μm³",
+        "($\mu m^3$/hr)": "μm³/hr",
+        "(min)": "min",
+        "($\mu m^{-1}$)": "μm⁻¹",
+    }
     for i in range(len(features)):
         (scale_factor, label, unit) = get_plot_labels_for_metric(features[i])
-        featureLabels.append(label)
-        featureMetadata.append({"unit": unit})
+        featureLabels.append(label.capitalize())
+        featureMetadata.append({"units": formattedUnits[unit]})
 
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
