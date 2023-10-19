@@ -10,7 +10,7 @@ import Track from "./Track";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 
-type DatasetManifest = {
+export type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
   featureMetadata?: Record<string, FeatureMetaData>;
@@ -30,7 +30,7 @@ export type FeatureData = {
 };
 
 export type FeatureMetaData = {
-  units: string;
+  units: string | null;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -44,7 +44,6 @@ export default class Dataset {
   private arrayLoader: IArrayLoader;
   private featureFiles: Record<string, string>;
   public features: Record<string, FeatureData>;
-  private featureMetadata: Record<string, FeatureMetaData | undefined>;
 
   private outlierFile?: string;
   public outliers?: Texture | null;
@@ -84,17 +83,16 @@ export default class Dataset {
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.featureFiles = {};
     this.features = {};
-    this.featureMetadata = {};
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
-  private async fetchManifest(): Promise<DatasetManifest> {
-    const response = await urlUtils.fetchWithTimeout(this.manifestUrl, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
+  private async fetchManifest(url: string): Promise<DatasetManifest> {
+    const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
   }
 
-  private async loadFeature(name: string): Promise<void> {
+  private async loadFeature(name: string, metadata: Partial<FeatureMetaData>): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
     const source = await this.arrayLoader.load(url);
     this.features[name] = {
@@ -102,8 +100,10 @@ export default class Dataset {
       data: source.getBuffer(FeatureDataType.F32),
       min: source.getMin(),
       max: source.getMax(),
-      units: this.featureMetadata?.[name]?.units,
     };
+    if (metadata && metadata.units !== undefined && metadata.units !== null) {
+      this.features[name].units = metadata.units;
+    }
   }
 
   public hasFeature(name: string): boolean {
@@ -120,18 +120,18 @@ export default class Dataset {
 
   public getFeatureNameWithUnits(name: string): string {
     if (this.featureHasUnits(name)) {
-      return `${name} (${this.featureMetadata[name]!.units})`;
+      return `${name} (${this.features[name]!.units})`;
     } else {
       return name;
     }
   }
 
   public featureHasUnits(name: string): boolean {
-    return this.featureMetadata?.[name]?.units !== undefined;
+    return this.features[name]?.units !== undefined;
   }
 
   public getFeatureUnits(name: string): string | undefined {
-    return this.featureMetadata?.[name]?.units;
+    return this.features[name]?.units;
   }
 
   /**
@@ -212,51 +212,52 @@ export default class Dataset {
   }
 
   /** Loads the dataset manifest and features */
-  public async open(): Promise<void> {
+  public async open(manifestLoader = this.fetchManifest): Promise<void> {
     if (this.hasOpened) {
       return;
     }
     this.hasOpened = true;
 
-    const manifest = await this.fetchManifest();
+    const manifest = await manifestLoader(this.manifestUrl);
 
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
 
     // If feature names have units (provided in parentheses at end), strip from the
     // feature name and save to the units field in the feature metadata unless overrriden.
-    let newFeatureFiles: Record<string, string> = {};
-    let newFeatureMetadata: Record<string, FeatureMetaData> = {};
+    let newFeaturesToFiles: Record<string, string> = {};
+    let featuresToMetadata: Record<string, Partial<FeatureMetaData>> = {};
     for (const featureName of Object.keys(this.featureFiles)) {
       // Matches the content inside the first set of parentheses at the end of the string
-      const units = featureName.trim().match(/\((.+)\)$/);
-      if (!units) {
-        newFeatureFiles[featureName] = this.featureFiles[featureName];
-        if (manifest.featureMetadata && manifest.featureMetadata[featureName]) {
-          newFeatureMetadata[featureName] = manifest.featureMetadata[featureName];
-        }
-        continue;
-      }
+      let metadata: Partial<FeatureMetaData> = {};
+      let newFeatureName = featureName;
+      const detectedUnits = featureName.trim().match(/\((.+)\)$/);
+      const metadataUnits = manifest.featureMetadata && manifest.featureMetadata[featureName]?.units;
 
-      const newName = featureName.replace(units[0], "").trim();
-      newFeatureFiles[newName] = this.featureFiles[featureName];
-
-      // Override units ONLY if no units are defined in metadata
-      if (!manifest.featureMetadata || !manifest.featureMetadata[featureName].units) {
-        newFeatureMetadata[newName] = { units: units[1] };
+      if (metadataUnits !== undefined || !detectedUnits) {
+        // Don't change feature name if units are provided in metadata, or if no units
+        // could be found.
+        metadata.units = metadataUnits;
       } else {
-        newFeatureMetadata[newName] = manifest.featureMetadata[featureName];
+        // Strip the units from the feature name and save to metadata instead
+        newFeatureName = featureName.replace(detectedUnits[0], "").trim();
+        metadata.units = detectedUnits[1];
       }
+
+      newFeaturesToFiles[newFeatureName] = this.featureFiles[featureName];
+      featuresToMetadata[newFeatureName] = metadata;
     }
-    this.featureFiles = newFeatureFiles;
-    this.featureMetadata = newFeatureMetadata;
+
+    this.featureFiles = newFeaturesToFiles;
 
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
-    const featuresPromises: Promise<void>[] = this.featureNames.map(this.loadFeature.bind(this));
+    const featuresPromises: Promise<void>[] = this.featureNames.map((name) =>
+      this.loadFeature.bind(this)(name, featuresToMetadata[name])
+    );
 
     const result = await Promise.all([
       this.loadToTexture(FeatureDataType.U8, this.outlierFile),
