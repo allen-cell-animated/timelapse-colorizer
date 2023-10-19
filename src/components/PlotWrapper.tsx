@@ -46,7 +46,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     if (props.selectedTrack) {
       plot?.plot(props.selectedTrack, props.featureName, props.frame);
     }
-  }, [props.selectedTrack, props.featureName, props.frame]);
+  }, [props.selectedTrack, props.featureName]);
 
   return <div ref={plotDivRef} style={{ width: "600px", height: "400px" }} />;
 }

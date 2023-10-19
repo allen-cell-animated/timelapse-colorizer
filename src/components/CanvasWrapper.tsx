@@ -54,6 +54,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
+  const isMouseOverCanvas = useRef(false);
+  const lastMousePositionPx = useRef([0, 0]);
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
@@ -111,25 +113,45 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [handleCanvasClick]);
 
   /** Report hovered id via the passed callback. */
-  const onMouseMove = useCallback(
-    (event: MouseEvent): void => {
+  const reportHoveredIdAtPixel = useCallback(
+    (x: number, y: number): void => {
       if (!props.dataset) {
         return;
       }
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
     [props.dataset, canv]
   );
 
+  /** Track whether the canvas is hovered, so we can determine whether to send updates about the
+   * hovered value wwhen the canvas frame updates.
+   */
   useEffect(() => {
+    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
+    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
+  });
+
+  /** Update hovered id when the canvas updates the current frame */
+  useEffect(() => {
+    if (isMouseOverCanvas.current) {
+      reportHoveredIdAtPixel(lastMousePositionPx.current[0], lastMousePositionPx.current[1]);
+    }
+  }, [canv.getCurrentFrame()]);
+
+  useEffect(() => {
+    const onMouseMove = (event: MouseEvent): void => {
+      reportHoveredIdAtPixel(event.offsetX, event.offsetY);
+      lastMousePositionPx.current = [event.offsetX, event.offsetY];
+    };
+
     canv.domElement.addEventListener("mousemove", onMouseMove);
     canv.domElement.addEventListener("mouseleave", props.onMouseLeave);
     return () => {
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [onMouseMove, canv]);
+  }, [props.dataset, canv]);
 
   // Respond to window resizing
   useEffect(() => {
