@@ -8,12 +8,14 @@ type HoverTooltipProps = {
   disabled?: boolean;
   /** Offset of the tooltip box relative to the mouse, in pixels. By default, set to 15 pixels in x and y. */
   offsetPx?: [number, number];
+  maxWidthPx?: number;
 };
 
 const defaultProps: Partial<HoverTooltipProps> = {
   tooltipContent: <p>Tooltip</p>,
   disabled: false,
   offsetPx: [15, 15],
+  maxWidthPx: 250,
 };
 
 // Styling for the tooltip
@@ -24,6 +26,7 @@ const TooltipDiv = styled.div`
   border: 1px solid var(--color-dividers);
   background-color: var(--color-background);
   padding: 6px 8px;
+  overflow-wrap: break-word;
 
   transition: opacity 300ms;
   z-index: 1;
@@ -72,7 +75,7 @@ export default function HoverTooltip(props: PropsWithChildren<HoverTooltipProps>
 
   return (
     <div ref={containerRef}>
-      <TooltipDiv ref={tooltipRef} style={{ opacity: visible ? 1 : 0 }}>
+      <TooltipDiv ref={tooltipRef} style={{ opacity: visible ? 1 : 0, maxWidth: `${props.maxWidthPx}px` }}>
         {props.tooltipContent}
       </TooltipDiv>
       {props.children}

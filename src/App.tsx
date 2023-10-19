@@ -335,7 +335,7 @@ function App(): ReactElement {
       // Look up feature value from id
       const featureData = dataset.getFeatureData(featureName);
       const featureValue = featureData?.data[id] || -1;
-      const unitsLabel = featureData?.units ? ` (${featureData?.units})` : "";
+      const unitsLabel = featureData?.units ? ` ${featureData?.units}` : "";
       // Check if int, otherwise return float
       if (Number.isInteger(featureValue)) {
         return featureValue.toString() + unitsLabel;
@@ -496,7 +496,9 @@ function App(): ReactElement {
               tooltipContent={
                 <>
                   <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
-                  <p>Feature: {lastHoveredId && getFeatureValue(lastHoveredId)}</p>
+                  <p>
+                    {featureName}: {lastHoveredId && getFeatureValue(lastHoveredId)}
+                  </p>
                 </>
               }
               disabled={!showHoveredId}
