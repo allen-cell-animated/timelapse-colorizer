@@ -46,7 +46,7 @@ The most important file is the **manifest**, which is a JSON file that describes
 
 Note that the `outliers`, `centroids`, and `bounds` files are optional, but certain features of Nucmorph-Colorizer won't work without them.
 
-A complete example dataset is also available in the [`documentation`](./example_dataset) directory of this project, and can be [viewed on Nucmorph-Colorizer](http://dev-aics-dtp-001.corp.alleninstitute.org/nucmorph-colorizer/dist/?dataset=https://raw.githubusercontent.com/allen-cell-animated/nucmorph-colorizer/main/documentation/example_dataset/manifest.json).
+A complete example dataset is also available in the [`documentation`](./example_dataset) directory of this project, and can be [viewed on Nucmorph Colorizer](https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/?dataset=https://raw.githubusercontent.com/allen-cell-animated/nucmorph-colorizer/main/documentation/example_dataset/manifest.json).
 
 <details>
 <summary><b>[Show me an example!]</b></summary>
@@ -342,7 +342,7 @@ If the path does not define a `.json` file specifically, Nucmorph-Colorizer will
 
 ---
 
-For example, let's say a collection is located at `http://example.com/data/collection.json`, and the `collection.json` contains this:
+For example, let's say a collection is located at `https://example.com/data/collection.json`, and the `collection.json` contains this:
 
 ```
 --collection.json--
@@ -350,20 +350,20 @@ For example, let's say a collection is located at `http://example.com/data/colle
   { "name": "Mama Bear", "path": "mama_bear" },
   { "name": "Baby Bear", "path": "nested/baby_bear" },
   { "name": "Babiest Bear", "path": "babiest_bear/dataset.json" },
-  { "name": "Goldilocks", "path": "http://example2.com/files/goldilocks" },
-  { "name": "Papa Bear", "path": "http://example3.com/files/papa_bear.json"}
+  { "name": "Goldilocks", "path": "https://example2.com/files/goldilocks" },
+  { "name": "Papa Bear", "path": "https://example3.com/files/papa_bear.json"}
 ]
 ```
 
 Here's a list of where Nucmorph-Colorizer will check for the manifest files for all of the datasets:
 
-| Dataset      | Expected URL Path                                        |
-| ------------ | -------------------------------------------------------- |
-| Mama Bear    | `http://example.com/data/mama_bear/manifest.json`        |
-| Baby Bear    | `http://example.com/data/nested/baby_bear/manifest.json` |
-| Babiest Bear | `http://example.com/data/babiest_bear/dataset.json`      |
-| Goldilocks   | `http://example2.com/files/goldilocks/manifest.json`     |
-| Papa Bear    | `http://example3.com/files/papa_bear.json`               |
+| Dataset      | Expected URL Path                                         |
+| ------------ | --------------------------------------------------------- |
+| Mama Bear    | `https://example.com/data/mama_bear/manifest.json`        |
+| Baby Bear    | `https://example.com/data/nested/baby_bear/manifest.json` |
+| Babiest Bear | `https://example.com/data/babiest_bear/dataset.json`      |
+| Goldilocks   | `https://example2.com/files/goldilocks/manifest.json`     |
+| Papa Bear    | `https://example3.com/files/papa_bear.json`               |
 
 ---
 

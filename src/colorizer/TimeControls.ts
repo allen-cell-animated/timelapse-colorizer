@@ -1,3 +1,4 @@
+import { DEFAULT_PLAYBACK_FPS } from "../constants";
 import ColorizeCanvas from "./ColorizeCanvas";
 
 // TODO: Remove class?
@@ -8,21 +9,33 @@ export default class TimeControls {
   // TODO: Change to be React state?
   private timerId: number;
   private setFrameFn?: (frame: number) => void;
+  private playbackFps: number;
 
   private canvas: ColorizeCanvas;
   private isDisabled: boolean;
 
   private pauseCallbacks: (() => void)[];
 
-  constructor(canvas: ColorizeCanvas) {
+  constructor(canvas: ColorizeCanvas, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
     this.canvas = canvas;
     this.timerId = DEFAULT_TIMER_ID;
     this.isDisabled = false;
     this.pauseCallbacks = [];
+    this.playbackFps = playbackFps;
   }
 
   public setFrameCallback(fn: (frame: number) => void): void {
     this.setFrameFn = fn;
+  }
+
+  public setPlaybackFps(fps: number): void {
+    this.playbackFps = fps;
+    if (this.timerId !== DEFAULT_TIMER_ID) {
+      // restart playback with new fps
+      clearInterval(this.timerId);
+      this.pauseCallbacks.forEach((callback) => callback());
+      this.playTimeSeries(() => {});
+    }
   }
 
   private wrapFrame(index: number): number {
@@ -48,7 +61,7 @@ export default class TimeControls {
       }
       onNewFrameCallback();
     };
-    this.timerId = window.setInterval(loadNextFrame, 40);
+    this.timerId = window.setInterval(loadNextFrame, 1000 / this.playbackFps);
   }
 
   public async handlePlayButtonClick(): Promise<void> {
@@ -61,7 +74,7 @@ export default class TimeControls {
   public handlePauseButtonClick(): void {
     clearInterval(this.timerId);
     this.timerId = DEFAULT_TIMER_ID;
-    this.pauseCallbacks.every((callback) => callback());
+    this.pauseCallbacks.forEach((callback) => callback());
   }
 
   public async handleFrameAdvance(delta: number = 1): Promise<void> {

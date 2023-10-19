@@ -17,7 +17,6 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
-import RecordingControls, { RecordingOptions } from "./colorizer/RecordingControls";
 import TimeControls from "./colorizer/TimeControls";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -25,12 +24,13 @@ import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import ColorRampDropdown from "./components/ColorRampDropdown";
 import LabeledDropdown from "./components/LabeledDropdown";
 import LoadDatasetButton from "./components/LoadDatasetButton";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./constants";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import IconButton from "./components/IconButton";
 import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 import Export from "./components/Export";
 import DrawModeDropdown from "./components/DrawModeDropdown";
+import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -73,6 +73,7 @@ function App(): ReactElement {
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
+  const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
@@ -81,16 +82,9 @@ function App(): ReactElement {
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
 
-  const timeControls = useConstructor(() => {
-    return new TimeControls(canv!);
-  });
-  const recordingControls = useConstructor(() => {
-    return new RecordingControls();
-  });
+  const [isRecording, setIsRecording] = useState(false);
+  const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
 
-  // Recording UI
-  // const [imagePrefix, setImagePrefix] = useState<null | string>(null);
-  // const [startAtFirstFrame, setStartAtFirstFrame] = useState(false);
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
    */
@@ -145,7 +139,7 @@ function App(): ReactElement {
     // update current time in plot
     plot?.setTime(currentFrame);
 
-    if (!timeControls.isPlaying() && !recordingControls.isRecording()) {
+    if (!timeControls.isPlaying() && !isRecording) {
       // Do not update URL while playback is happening for performance + UX reasons
       urlUtils.updateUrl(getUrlParams());
     }
@@ -545,8 +539,6 @@ function App(): ReactElement {
     [setFrame, canv]
   );
 
-  // const getImagePrefix = (): string => imagePrefix || `${datasetKey}-${featureName}-`;
-
   // RENDERING /////////////////////////////////////////////////////////////
 
   const notificationConfig: NotificationConfig = {
@@ -563,13 +555,7 @@ function App(): ReactElement {
     });
   };
 
-  /** Get the current HTML Canvas data as a URL that can be downloaded. */
-  const getCanvasImageAsUrl = (): string => {
-    const dataUrl = canv.domElement.toDataURL("image/png");
-    return dataUrl.replace(/^data:image\/png/, "data:application/octet-stream");
-  };
-
-  const disableUi: boolean = recordingControls.isRecording() || !datasetOpen;
+  const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
   return (
@@ -606,19 +592,19 @@ function App(): ReactElement {
             <LinkOutlined />
             Copy URL
           </Button>
-
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrame}
-            currentFrame={currentFrame}
-            startRecording={(options: Partial<RecordingOptions>) => {
-              recordingControls.start(setFrameAndRender, getCanvasImageAsUrl, options);
+            setFrame={setFrameAndRender}
+            getCanvas={() => {
+              return canv.domElement;
             }}
-            stopRecording={() => recordingControls.abort()}
-            defaultImagePrefix={datasetKey + "-" + featureName + "-"}
+            // Stop playback when exporting
+            onClick={() => timeControls.handlePauseButtonClick()}
+            currentFrame={currentFrame}
+            defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
+            setIsRecording={setIsRecording}
           />
-
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>
       </div>
@@ -753,6 +739,19 @@ function App(): ReactElement {
                 disabled={disableTimeControlsUi}
                 wrapIncrement={true}
               />
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+                <span className={styles.verticalDivider} style={{ height: "24px", margin: "0 8px" }}></span>
+                <div style={{ width: "200px", maxWidth: "60vw" }}>
+                  <PlaybackSpeedControl
+                    fps={playbackFps}
+                    onChange={(fps) => {
+                      setPlaybackFps(fps);
+                      timeControls.setPlaybackFps(fps);
+                    }}
+                    disabled={disableTimeControlsUi}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

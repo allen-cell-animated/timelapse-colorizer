@@ -4,5 +4,5 @@ import svgr from 'vite-plugin-svgr';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [svgr(), glsl(), react()]
+  plugins: [svgr(), glsl(), react()],
 });

@@ -223,6 +223,22 @@ class ColorizerDatasetWriter:
 
         logging.info("Finished writing dataset.")
 
+    def write_image_and_bounds_data(
+        self,
+        seg_remapped: np.ndarray,
+        grouped_frames: pd.DataFrame,
+        frame_num: int,
+        lut: np.ndarray,
+    ):
+        """
+        Writes the current segmented image to a PNG file and also updates the bounding box data
+        for the frame.
+        This is identical to calling `write_image()` and then `update_and_write_bbox_data()`
+        successively.
+        """
+        self.write_image(seg_remapped, frame_num)
+        self.update_and_write_bbox_data(grouped_frames, seg_remapped, lut)
+
     def write_image(
         self,
         seg_remapped: np.ndarray,
