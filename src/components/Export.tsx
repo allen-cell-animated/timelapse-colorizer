@@ -4,10 +4,10 @@ import { CheckCircleOutlined } from "@ant-design/icons";
 import { clamp } from "three/src/math/MathUtils";
 import { App, Tooltip, Progress, Button, Modal, Card, Radio, RadioChangeEvent, Space, InputNumber, Input } from "antd";
 
-import { AppThemeContext } from "./AppStyle";
 import SpinBox from "./SpinBox";
-import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
+import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
+import { AppThemeContext } from "./AppStyle";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
 
 type ExportButtonProps = {

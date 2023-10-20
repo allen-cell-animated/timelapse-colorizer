@@ -406,8 +406,8 @@ function App(): ReactElement {
     if (!dataset) {
       return [];
     }
+    // Add units to the dataset feature names if present
     return dataset.featureNames.map((name) => {
-      // Add units if present
       return { key: name, label: dataset.getFeatureNameWithUnits(name) };
     });
   }, [dataset]);
@@ -458,13 +458,13 @@ function App(): ReactElement {
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrameAndRender}
+            getCanvas={() => canv.domElement}
             // Stop playback when exporting
             onClick={() => timeControls.handlePauseButtonClick()}
+            currentFrame={currentFrame}
             defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
             setIsRecording={setIsRecording}
-            getCanvas={() => canv.domElement}
-            currentFrame={currentFrame}
           />
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>

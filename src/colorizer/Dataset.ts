@@ -87,7 +87,7 @@ export default class Dataset {
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
-  private async fetchManifest(url: string): Promise<DatasetManifest> {
+  private async fetchJson(url: string): Promise<DatasetManifest> {
     const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
   }
@@ -212,7 +212,7 @@ export default class Dataset {
   }
 
   /** Loads the dataset manifest and features. */
-  public async open(manifestLoader = this.fetchManifest): Promise<void> {
+  public async open(manifestLoader = this.fetchJson): Promise<void> {
     if (this.hasOpened) {
       return;
     }
@@ -228,9 +228,9 @@ export default class Dataset {
     const newFeaturesToFiles: Record<string, string> = {};
     const featuresToMetadata: Record<string, Partial<FeatureMetaData>> = {};
     for (const featureName of Object.keys(this.featureFiles)) {
-      // Matches the content inside the first set of parentheses at the end of the string
       const metadata: Partial<FeatureMetaData> = {};
       let newFeatureName = featureName;
+      // Matches the content inside the first set of parentheses at the end of the string
       const detectedUnits = featureName.trim().match(/\((.+)\)$/);
       const metadataUnits = manifest.featureMetadata && manifest.featureMetadata[featureName]?.units;
 
@@ -241,7 +241,7 @@ export default class Dataset {
       } else {
         // Strip the units from the feature name and save to metadata instead
         newFeatureName = featureName.replace(detectedUnits[0], "").trim();
-        metadata.units = detectedUnits[1];
+        metadata.units = detectedUnits[1]; // Inner part (inside parentheses)
       }
 
       newFeaturesToFiles[newFeatureName] = this.featureFiles[featureName];

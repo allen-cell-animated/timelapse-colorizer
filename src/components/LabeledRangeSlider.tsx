@@ -2,7 +2,7 @@ import React, { ReactElement, ReactEventHandler, useRef } from "react";
 import { InputNumber, Slider } from "antd";
 import { clamp } from "three/src/math/MathUtils";
 import styled from "styled-components";
-import { formatDecimal, numberToStringDecimal } from "../colorizer/utils/math_utils";
+import { setMaxDecimalPrecision, numberToStringDecimal } from "../colorizer/utils/math_utils";
 
 type LabeledRangeSliderProps = {
   disabled?: boolean;
@@ -126,7 +126,7 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
 
   let stepSize = (props.maxSliderBound - props.minSliderBound) / props.minSteps;
   stepSize = clamp(stepSize, 0, 1);
-  stepSize = formatDecimal(stepSize, 3, false);
+  stepSize = setMaxDecimalPrecision(stepSize, 3, false);
 
   return (
     <ComponentContainer>

@@ -1,5 +1,9 @@
 // TODO: Add a formatter for significant digits/scientific notation
 
+/**
+ * Formats a number as a string decimal with a defined number of digits
+ * after the decimal place. Optionally ignores integers and returns them as-is.
+ */
 export function numberToStringDecimal(
   input: number | undefined,
   decimalPlaces: number,
@@ -14,6 +18,9 @@ export function numberToStringDecimal(
   return input.toFixed(decimalPlaces);
 }
 
-export function formatDecimal(input: number, decimalPlaces: number, skipIntegers: boolean = true): number {
-  return Number.parseFloat(numberToStringDecimal(input, decimalPlaces, skipIntegers));
+/**
+ * Returns the number with a maximum number of digits after the decimal place, rounded to nearest.
+ */
+export function setMaxDecimalPrecision(input: number, decimalPlaces: number): number {
+  return Number.parseFloat(numberToStringDecimal(input, decimalPlaces, true));
 }
