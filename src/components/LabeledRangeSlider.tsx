@@ -126,7 +126,7 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
 
   let stepSize = (props.maxSliderBound - props.minSliderBound) / props.minSteps;
   stepSize = clamp(stepSize, 0, 1);
-  stepSize = setMaxDecimalPrecision(stepSize, 3, false);
+  stepSize = setMaxDecimalPrecision(stepSize, 3);
 
   return (
     <ComponentContainer>
