@@ -65,6 +65,8 @@ const theme = {
     },
   },
   font: {
+    // Lato does not provide Greek characters so Carlito (which is derived from Lato
+    // and provides Greek + Latin + Cyrillic) is used as a fallback.
     family: "Lato, Carlito, sans-serif",
     resource: "https://fonts.googleapis.com/css2?family=Lato&family=Carlito&display=swap",
     size: {
