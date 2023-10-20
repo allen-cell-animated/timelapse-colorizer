@@ -43,7 +43,7 @@
   "dependencies": {
     "@ant-design/icons": "^5.2.5",
     "mp4-muxer": "^2.2.2",
-    "antd": "5.9.x",
+    "antd": "^5.9.4",
     "plotly.js-dist-min": "^2.22.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

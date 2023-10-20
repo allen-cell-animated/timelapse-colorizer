@@ -9,12 +9,12 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Divider, Input, InputNumber, Slider, notification } from "antd";
+import { Button, Checkbox, Divider, Input, Slider, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
 import styles from "./App.module.css";
-import { ColorizeCanvas, Dataset, Plotting, Track } from "./colorizer";
+import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
@@ -30,25 +30,18 @@ import SpinBox from "./components/SpinBox";
 import HoverTooltip from "./components/HoverTooltip";
 import Export from "./components/Export";
 import DrawModeDropdown from "./components/DrawModeDropdown";
+import CanvasWrapper from "./components/CanvasWrapper";
+import LabeledRangeSlider from "./components/LabeledRangeSlider";
+import PlotWrapper from "./components/PlotWrapper";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
 
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const plotRef = useRef<HTMLDivElement>(null);
-
-  const [plot, setPlot] = useState<Plotting | null>(null);
   const canv = useConstructor(() => {
     return new ColorizeCanvas();
   });
-
-  // Setup for plot + canvas after initial render, since they replace DOM elements.
-  useEffect(() => {
-    setPlot(new Plotting(plotRef.current!));
-    canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
-  }, []);
 
   const [collection, setCollection] = useState<Collection | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -113,53 +106,15 @@ function App(): ReactElement {
       track: selectedTrack?.trackId,
       time: currentFrame,
     });
-  }, [collection, datasetKey, featureName, selectedTrack, currentFrame]);
+  }, [collection, datasetKey, dataset, featureName, selectedTrack, currentFrame]);
 
-  /**
-   * Handle updating the canvas from state (for some common properties) and initiating the canvas
-   * render. Also update other UI elements, including the plot and URL.
-   */
+  // Update url whenever the viewer settings change
+  // (but not while playing/recording for performance reasons)
   useEffect(() => {
-    // TODO: This is getting larger... ColorizeCanvas needs to be refactored to take
-    // all of these in as props.
-    // Note: Selected track, frame number, etc. are not updated here.
-    // Those operations are async, and need to complete before a state update to be
-    // rendered correctly.
-    canv.setShowTrackPath(showTrackPath);
-
-    canv.setOutOfRangeDrawMode(outOfRangeDrawSettings.mode, outOfRangeDrawSettings.color);
-    canv.setOutlierDrawMode(outlierDrawSettings.mode, outlierDrawSettings.color);
-
-    canv.setColorRamp(colorRampData.get(colorRampKey)?.colorRamp!); // TODO: Add fallback?
-    canv.setColorMapRangeMin(colorRampMin);
-    canv.setColorMapRangeMax(colorRampMax);
-    canv.setSelectedTrack(selectedTrack);
-    canv.render();
-
-    // update current time in plot
-    plot?.setTime(currentFrame);
-
     if (!timeControls.isPlaying() && !isRecording) {
-      // Do not update URL while playback is happening for performance + UX reasons
       urlUtils.updateUrl(getUrlParams());
     }
-  }, [
-    collection,
-    dataset,
-    datasetKey,
-    featureName,
-    currentFrame,
-    selectedTrack,
-    showTrackPath,
-    colorRampData,
-    colorRampKey,
-    colorRampMin,
-    colorRampMax,
-    outOfRangeDrawSettings,
-    outlierDrawSettings,
-    timeControls.isPlaying(), // updates URL when timeControls stops
-    getUrlParams,
-  ]);
+  }, [timeControls.isPlaying(), isRecording, getUrlParams]);
 
   const setFrame = useCallback(
     async (frame: number) => {
@@ -171,7 +126,7 @@ function App(): ReactElement {
   );
 
   const findTrack = useCallback(
-    async (trackId: number, seekToFrame: boolean = true): Promise<void> => {
+    (trackId: number, seekToFrame: boolean = true): void => {
       const newTrack = dataset!.buildTrack(trackId);
 
       if (newTrack.length() < 1) {
@@ -181,22 +136,11 @@ function App(): ReactElement {
       setSelectedTrack(newTrack);
       if (seekToFrame) {
         setFrame(newTrack.times[0]);
-        plot?.plot(newTrack, featureName, newTrack.times[0]);
-      } else {
-        plot?.plot(newTrack, featureName, currentFrame);
       }
       setFindTrackInput("" + trackId);
-      urlUtils.updateUrl(getUrlParams());
     },
-    [canv, plot, dataset, featureName, currentFrame]
+    [canv, dataset, featureName, currentFrame]
   );
-
-  /**
-   * Update the canvas dimensions based on the current window size.
-   *
-   * TODO: Find calculation for margin magic number
-   */
-  const setSize = (): void => canv.setSize(Math.min(window.innerWidth - 75, 730), Math.min(window.innerHeight, 500));
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
@@ -211,8 +155,6 @@ function App(): ReactElement {
   // This is memoized so that it only runs one time on startup.
   useEffect(() => {
     const loadInitialDatabase = async (): Promise<void> => {
-      setSize();
-
       let newCollection: Collection;
       const collectionUrlParam = initialUrlParams.collection;
       const datasetParam = initialUrlParams.dataset;
@@ -246,8 +188,6 @@ function App(): ReactElement {
     if (!isInitialDatasetLoaded) {
       return;
     }
-    plot?.removePlot();
-    plot?.setDataset(dataset!);
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
@@ -269,51 +209,6 @@ function App(): ReactElement {
 
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
-
-  // Add event listeners for unloading and resizing on startup.
-  useEffect(() => {
-    window.addEventListener("beforeunload", () => {
-      canv.domElement.removeEventListener("click", handleCanvasClick);
-      canv.dispose();
-    });
-
-    window.addEventListener("resize", () => {
-      setSize();
-      canv.render();
-    });
-  }, []);
-
-  // CANVAS ACTIONS ///////////////////////////////////////////////////////////
-
-  const handleCanvasClick = useCallback(
-    async (event: MouseEvent): Promise<void> => {
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
-      setFindTrackInput("");
-      if (id < 0) {
-        plot?.removePlot();
-        canv.setSelectedTrack(null);
-        setSelectedTrack(null); // clear selected track when clicking off of cells
-      } else {
-        const trackId = dataset!.getTrackId(id);
-        const newTrack = dataset!.buildTrack(trackId);
-        plot?.plot(newTrack, featureName, currentFrame);
-        canv.setSelectedTrack(newTrack);
-        setSelectedTrack(newTrack);
-      }
-    },
-    [dataset, featureName, currentFrame, canv, plot]
-  );
-
-  useEffect(() => {
-    canv.domElement.addEventListener("click", handleCanvasClick);
-    // Returned callback is fired if/when App is removed from the DOM,
-    // or before running useEffect again. This prevents memory issues with
-    // duplicate event listeners.
-    return () => {
-      canv.domElement.removeEventListener("click", handleCanvasClick);
-    };
-  }, [handleCanvasClick]);
 
   // DATASET LOADING ///////////////////////////////////////////////////////
   /**
@@ -354,18 +249,11 @@ function App(): ReactElement {
       const newFrame = Math.min(currentFrame, canv.getTotalFrames() - 1);
       await setFrame(newFrame);
 
-      // Clear and/or update UI
-      plot?.setDataset(newDataset);
-      plot?.removePlot();
-
       setFindTrackInput("");
       setSelectedTrack(null);
-      urlUtils.updateUrl(getUrlParams());
-      setSize();
-
       setDatasetOpen(true);
     },
-    [dataset, featureName, canv, plot, currentFrame, getUrlParams]
+    [dataset, featureName, canv, currentFrame, getUrlParams]
   );
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
@@ -431,23 +319,8 @@ function App(): ReactElement {
       }
 
       canv.setFeature(newFeatureName);
-      // only update plot if active
-      if (selectedTrack) {
-        plot?.plot(selectedTrack, newFeatureName, currentFrame);
-      }
-      urlUtils.updateUrl(getUrlParams());
     },
-    [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, plot, selectedTrack, currentFrame]
-  );
-
-  const handleFeatureChange = useCallback(
-    (value: string): void => {
-      console.log(value);
-      if (value !== featureName && dataset) {
-        updateFeature(dataset, value);
-      }
-    },
-    [featureName, dataset, updateFeature]
+    [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
 
   const getFeatureValue = useCallback(
@@ -461,37 +334,8 @@ function App(): ReactElement {
     [featureName, dataset]
   );
 
-  const onMouseMove = useCallback(
-    (event: MouseEvent): void => {
-      if (!dataset) {
-        return;
-      }
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      if (id === BACKGROUND_ID) {
-        // Ignore background pixels
-        setShowHoveredId(false);
-        return;
-      }
-      setLastHoveredId(id);
-      setShowHoveredId(true);
-    },
-    [dataset, canv]
-  );
-
-  const onMouseLeave = useCallback((_event: MouseEvent): void => {
-    setShowHoveredId(false);
-  }, []);
-
-  useEffect(() => {
-    canv.domElement.addEventListener("mousemove", onMouseMove);
-    canv.domElement.addEventListener("mouseleave", onMouseLeave);
-    return () => {
-      canv.domElement.removeEventListener("mousemove", onMouseMove);
-      canv.domElement.removeEventListener("mouseleave", onMouseLeave);
-    };
-  }, [onMouseMove, onMouseLeave, canv]);
-
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
+  timeControls.setFrameCallback(setFrame);
 
   const handleKeyDown = useCallback(
     ({ key }: KeyboardEvent): void => {
@@ -506,7 +350,6 @@ function App(): ReactElement {
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
@@ -518,11 +361,6 @@ function App(): ReactElement {
   useEffect(() => {
     setFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
-
-  const handleFindTrack = useCallback(async (): Promise<void> => {
-    // Load track value
-    await findTrack(parseInt(findTrackInput, 10));
-  }, [findTrackInput, findTrack]);
 
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
@@ -582,7 +420,11 @@ function App(): ReactElement {
             label="Feature"
             selected={featureName}
             items={dataset?.featureNames || []}
-            onChange={handleFeatureChange}
+            onChange={(value) => {
+              if (value !== featureName && dataset) {
+                updateFeature(dataset, value);
+              }
+            }}
           />
 
           <ColorRampDropdown selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
@@ -615,44 +457,17 @@ function App(): ReactElement {
         <div className={styles.topControls}>
           <h3 style={{ margin: "0" }}>Feature value range</h3>
           <div className={styles.controlsContainer}>
-            <div className={styles.labeledColorRamp}>
-              <InputNumber
-                size="small"
-                style={{ width: "80px" }}
-                value={colorRampMin}
-                onChange={(value) => {
-                  value && setColorRampMin(value);
-                }}
-                controls={false}
-                disabled={disableUi}
-              />
-              <div className={styles.sliderContainer}>
-                <Slider
-                  min={dataset?.getFeatureData(featureName)?.min}
-                  max={dataset?.getFeatureData(featureName)?.max}
-                  range={{ draggableTrack: true }}
-                  value={[colorRampMin, colorRampMax]}
-                  disabled={disableUi}
-                  onChange={(value: [number, number]) => {
-                    setColorRampMin(value[0]);
-                    setColorRampMax(value[1]);
-                  }}
-                />
-                <p className={styles.minSliderLabel}>{dataset?.getFeatureData(featureName)?.min}</p>
-                <p className={styles.maxSliderLabel}>{dataset?.getFeatureData(featureName)?.max}</p>
-              </div>
-              <InputNumber
-                size="small"
-                type="number"
-                style={{ width: "80px" }}
-                value={colorRampMax}
-                onChange={(value) => {
-                  value && setColorRampMax(value);
-                }}
-                controls={false}
-                disabled={disableUi}
-              />
-            </div>
+            <LabeledRangeSlider
+              min={colorRampMin}
+              max={colorRampMax}
+              minSliderBound={dataset?.getFeatureData(featureName)?.min}
+              maxSliderBound={dataset?.getFeatureData(featureName)?.max}
+              onChange={function (min: number, max: number): void {
+                setColorRampMin(min);
+                setColorRampMax(max);
+              }}
+              disabled={disableUi}
+            />
             <div>
               <Checkbox
                 checked={isColorRampRangeLocked}
@@ -680,7 +495,29 @@ function App(): ReactElement {
               }
               disabled={!showHoveredId}
             >
-              <div ref={canvasRef}></div>
+              <CanvasWrapper
+                canv={canv}
+                dataset={dataset}
+                showTrackPath={showTrackPath}
+                outOfRangeDrawSettings={outOfRangeDrawSettings}
+                outlierDrawSettings={outlierDrawSettings}
+                colorRamp={colorRampData.get(colorRampKey)?.colorRamp!}
+                colorRampMin={colorRampMin}
+                colorRampMax={colorRampMax}
+                selectedTrack={selectedTrack}
+                onTrackClicked={(track) => {
+                  setFindTrackInput("");
+                  setSelectedTrack(track);
+                }}
+                onMouseHover={(id: number): void => {
+                  const isObject = id !== BACKGROUND_ID;
+                  setShowHoveredId(isObject);
+                  if (isObject) {
+                    setLastHoveredId(id);
+                  }
+                }}
+                onMouseLeave={() => setShowHoveredId(false)}
+              />
             </HoverTooltip>
 
             {/** Time Control Bar */}
@@ -773,12 +610,22 @@ function App(): ReactElement {
                       setFindTrackInput(event.target.value);
                     }}
                   />
-                  <IconButton disabled={disableUi} onClick={handleFindTrack}>
+                  <IconButton
+                    disabled={disableUi}
+                    onClick={async () => {
+                      await findTrack(parseInt(findTrackInput, 10));
+                    }}
+                  >
                     <SearchOutlined />
                   </IconButton>
                 </div>
               </div>
-              <div ref={plotRef} style={{ width: "600px", height: "400px" }} />
+              <PlotWrapper
+                frame={currentFrame}
+                dataset={dataset}
+                featureName={featureName}
+                selectedTrack={selectedTrack}
+              />
             </div>
             <Divider orientationMargin={0} />
             <div>
