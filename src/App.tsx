@@ -106,7 +106,7 @@ function App(): ReactElement {
       track: selectedTrack?.trackId,
       time: currentFrame,
     });
-  }, [collection, datasetKey, featureName, selectedTrack, currentFrame]);
+  }, [collection, datasetKey, dataset, featureName, selectedTrack, currentFrame]);
 
   // Update url whenever the viewer settings change
   // (but not while playing/recording for performance reasons)
@@ -126,7 +126,7 @@ function App(): ReactElement {
   );
 
   const findTrack = useCallback(
-    async (trackId: number, seekToFrame: boolean = true): Promise<void> => {
+    (trackId: number, seekToFrame: boolean = true): void => {
       const newTrack = dataset!.buildTrack(trackId);
 
       if (newTrack.length() < 1) {
@@ -138,7 +138,6 @@ function App(): ReactElement {
         setFrame(newTrack.times[0]);
       }
       setFindTrackInput("" + trackId);
-      urlUtils.updateUrl(getUrlParams());
     },
     [canv, dataset, featureName, currentFrame]
   );
@@ -252,8 +251,6 @@ function App(): ReactElement {
 
       setFindTrackInput("");
       setSelectedTrack(null);
-      urlUtils.updateUrl(getUrlParams());
-
       setDatasetOpen(true);
     },
     [dataset, featureName, canv, currentFrame, getUrlParams]
@@ -322,7 +319,6 @@ function App(): ReactElement {
       }
 
       canv.setFeature(newFeatureName);
-      urlUtils.updateUrl(getUrlParams());
     },
     [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
