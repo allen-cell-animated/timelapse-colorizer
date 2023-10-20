@@ -6,6 +6,7 @@
   position: relative;
   height: calc(var(--button-height-small) - 2px);
   width: 80px;
+  min-width: 80px;
 
   display: flex;
   flex-direction: row;
