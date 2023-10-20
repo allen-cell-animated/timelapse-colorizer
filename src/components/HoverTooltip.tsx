@@ -21,6 +21,7 @@ const defaultProps: Partial<HoverTooltipProps> = {
 // Styling for the tooltip
 const TooltipDiv = styled.div`
   position: fixed;
+  font-family: var(--default-font);
 
   border-radius: var(--radius-control-small);
   border: 1px solid var(--color-dividers);

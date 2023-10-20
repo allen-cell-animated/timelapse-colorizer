@@ -65,8 +65,8 @@ const theme = {
     },
   },
   font: {
-    family: "Lato",
-    resource: "https://fonts.googleapis.com/css2?family=Lato&display=swap",
+    family: "Lato, Carlito, sans-serif",
+    resource: "https://fonts.googleapis.com/css2?family=Lato&family=Carlito&display=swap",
     size: {
       header: 22,
       section: 18,
@@ -123,7 +123,7 @@ const CssContainer = styled.div`
   --color-focus-shadow: rgba(137, 98, 211, 0.06);
 
   /* Fonts */
-  --default-font: "${theme.font.family}";
+  --default-font: ${theme.font.family};
   --font-size-header: ${theme.font.size.header}px;
   --font-size-section: ${theme.font.size.section}px;
   --font-size-label: ${theme.font.size.label}px;
