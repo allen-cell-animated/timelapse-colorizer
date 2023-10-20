@@ -371,6 +371,21 @@ function App(): ReactElement {
     setFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
 
+  // RECORDING CONTROLS ////////////////////////////////////////////////////
+
+  // Update the callback for TimeControls and RecordingControls if it changes.
+  // TODO: TimeControls and RecordingControls should be refactored into components
+  // and receive setFrame as props.
+  timeControls.setFrameCallback(setFrame);
+
+  const setFrameAndRender = useCallback(
+    async (frame: number) => {
+      await setFrame(frame);
+      canv.render();
+    },
+    [setFrame, canv]
+  );
+
   // RENDERING /////////////////////////////////////////////////////////////
 
   const notificationConfig: NotificationConfig = {
@@ -442,14 +457,14 @@ function App(): ReactElement {
           </Button>
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrame}
-            currentFrame={currentFrame}
+            setFrame={setFrameAndRender}
             // Stop playback when exporting
             onClick={() => timeControls.handlePauseButtonClick()}
             defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
             setIsRecording={setIsRecording}
             getCanvas={() => canv.domElement}
+            currentFrame={currentFrame}
           />
           <LoadDatasetButton onRequestLoad={handleLoadRequest} />
         </div>

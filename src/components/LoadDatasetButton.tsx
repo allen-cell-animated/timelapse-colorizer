@@ -1,5 +1,5 @@
 import React, { ReactElement, useCallback, useContext, useRef, useState } from "react";
-import { Button, Input, Modal } from "antd";
+import { Button, Input, InputRef, Modal } from "antd";
 import { AppThemeContext } from "./AppStyle";
 
 type LoadDatasetButtonProps = {
@@ -23,6 +23,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const theme = useContext(AppThemeContext);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const modalContextRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<InputRef>(null);
   const [urlInput, setUrlInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string>("");
@@ -30,6 +31,12 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const handleLoadClicked = useCallback(async (): Promise<void> => {
     if (urlInput === "") {
       setErrorText("Please enter a URL!");
+      return;
+    }
+    if (window.location.protocol === "https:" && urlInput.trim().startsWith("http:")) {
+      setErrorText(
+        "Cannot load a HTTP resource from an HTTPS site. Please move your dataset so it is served over HTTPS, or install and run this project locally."
+      );
       return;
     }
     if (isLoading) {
@@ -59,7 +66,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const handleCancel = useCallback(() => {
     // should this cancel dataset loading mid-load?
     setErrorText("");
-    setUrlInput("");
     setIsLoadModalOpen(false);
   }, []);
 
@@ -77,12 +83,14 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
         getContainer={modalContextRef.current || undefined}
+        afterOpenChange={(open) => open && inputRef.current?.focus({ cursor: "all" })}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <p>Load a collection of datasets or a single dataset by providing its URL.</p>
           <Input
             placeholder="https://example.com/collection.json"
             value={urlInput}
+            ref={inputRef}
             onChange={(event) => setUrlInput(event.target.value)}
           />
           {errorText && (
