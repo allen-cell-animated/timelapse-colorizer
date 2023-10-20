@@ -1,7 +1,6 @@
-import { assert, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import Dataset, { DatasetManifest } from "../src/colorizer/Dataset";
-import { fetchWithTimeout } from "../src/colorizer/utils/url_utils";
-import { ArraySource, IArrayLoader, ImageFrameLoader } from "../src/colorizer";
+import { ArraySource, IArrayLoader } from "../src/colorizer";
 import { Texture } from "three";
 import { FeatureDataType, FeatureArrayType, featureTypeSpecs } from "../src/colorizer/types";
 

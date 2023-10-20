@@ -211,7 +211,7 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
-  /** Loads the dataset manifest and features */
+  /** Loads the dataset manifest and features. */
   public async open(manifestLoader = this.fetchManifest): Promise<void> {
     if (this.hasOpened) {
       return;
@@ -225,11 +225,11 @@ export default class Dataset {
 
     // If feature names have units (provided in parentheses at end), strip from the
     // feature name and save to the units field in the feature metadata unless overrriden.
-    let newFeaturesToFiles: Record<string, string> = {};
-    let featuresToMetadata: Record<string, Partial<FeatureMetaData>> = {};
+    const newFeaturesToFiles: Record<string, string> = {};
+    const featuresToMetadata: Record<string, Partial<FeatureMetaData>> = {};
     for (const featureName of Object.keys(this.featureFiles)) {
       // Matches the content inside the first set of parentheses at the end of the string
-      let metadata: Partial<FeatureMetaData> = {};
+      const metadata: Partial<FeatureMetaData> = {};
       let newFeatureName = featureName;
       const detectedUnits = featureName.trim().match(/\((.+)\)$/);
       const metadataUnits = manifest.featureMetadata && manifest.featureMetadata[featureName]?.units;
