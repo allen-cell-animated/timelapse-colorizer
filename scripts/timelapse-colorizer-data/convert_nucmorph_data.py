@@ -175,19 +175,19 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     # Get the units and human-readable label for each feature; we include this as
     # metadata inside the dataset manifest.
     features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
-    featureLabels = []
-    featureMetadata = []
+    feature_labels = []
+    feature_metadata = []
     for i in range(len(features)):
         (scale_factor, label, unit) = get_plot_labels_for_metric(features[i])
-        featureLabels.append(label)
-        featureMetadata.append({"unit": unit})
+        feature_labels.append(label)
+        feature_metadata.append({"unit": unit})
 
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
     make_features(full_dataset, features, writer)
     if do_frames:
         make_frames(grouped_frames, scale, writer)
-    writer.write_manifest(nframes, featureLabels, featureMetadata)
+    writer.write_manifest(nframes, feature_labels, feature_metadata)
 
 
 parser = argparse.ArgumentParser()

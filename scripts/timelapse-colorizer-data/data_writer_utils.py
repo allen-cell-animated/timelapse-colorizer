@@ -192,12 +192,12 @@ class ColorizerDatasetWriter:
         """
         # write manifest file
         featmap = {}
-        js = {}
+        output_json = {}
 
         for i in range(len(feature_names)):
             featmap[feature_names[i]] = "feature_" + str(i) + ".json"
 
-        js = {
+        output_json = {
             "frames": ["frame_" + str(i) + ".png" for i in range(num_frames)],
             "features": featmap,
             "outliers": "outliers.json",
@@ -207,19 +207,20 @@ class ColorizerDatasetWriter:
             "bounds": "bounds.json",
         }
 
+        # Merge the feature metadata together and include it in the output if present
         if len(feature_metadata) != 0:
             if len(feature_metadata) == len(feature_names):
-                featmeta = {}
+                combined_feature_metadata = {}
                 for i in range(len(feature_metadata)):
-                    featmeta[feature_names[i]] = feature_metadata[i]
-                js["features.meta"] = featmeta
+                    combined_feature_metadata[feature_names[i]] = feature_metadata[i]
+                output_json["features.meta"] = combined_feature_metadata
             else:
                 logging.warn(
                     "Feature metadata length does not match number of features. Skipping metadata."
                 )
 
         with open(self.outpath + "/manifest.json", "w") as f:
-            json.dump(js, f)
+            json.dump(output_json, f)
 
         logging.info("Finished writing dataset.")
 
