@@ -1,8 +1,8 @@
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
-import styled from "styled-components";
-import { CheckCircleOutlined } from "@ant-design/icons";
-import { clamp } from "three/src/math/MathUtils";
 import { App, Tooltip, Progress, Button, Modal, Card, Radio, RadioChangeEvent, Space, InputNumber, Input } from "antd";
+import { CheckCircleOutlined } from "@ant-design/icons";
+import styled from "styled-components";
+import { clamp } from "three/src/math/MathUtils";
 
 import SpinBox from "./SpinBox";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
