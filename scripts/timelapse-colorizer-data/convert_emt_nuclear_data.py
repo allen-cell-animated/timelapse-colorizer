@@ -1,3 +1,10 @@
+"""
+A utility script for converting nuclear segmentation data from the EMT project. Original dataset
+provided by Leigh Harris!
+
+10/23/23 - Peyton Lee - peyton.lee@alleninstitute.org
+"""
+
 from typing import List
 from aicsimageio import AICSImage
 import argparse
@@ -24,28 +31,33 @@ from data_writer_utils import (
 
 # OVERWRITE THESE!! These values should change based on your dataset. These are
 # relabeled as constants here for clarity/intent of the column name.
-OBJECT_ID_COLUMN = "R0Nuclei_Number_Object_Number"
+OBJECT_ID_COLUMN = "Label"
 """Column of object IDs (or unique row number)."""
-TRACK_ID_COLUMN = "R0Nuclei_TrackObjects_Label_75"
+# TRACK_ID_COLUMN = ""
 """Column of track ID for each object."""
-TIMES_COLUMN = "Image_Metadata_Timepoint"
+TIMES_COLUMN = "Frame"
 """Column of frame number that the object ID appears in."""
-SEGMENTED_IMAGE_COLUMN = "OutputMask (CAAX)"
+SEGMENTED_IMAGE_COLUMN = "Filepath"
 """Column of path to the segmented image data or z stack for the frame."""
-CENTROIDS_X_COLUMN = "R0Nuclei_AreaShape_Center_X"
+CENTROIDS_X_COLUMN = "x"
 """Column of X centroid coordinates, in pixels of original image data."""
-CENTROIDS_Y_COLUMN = "R0Nuclei_AreaShape_Center_Y"
+CENTROIDS_Y_COLUMN = "y"
 """Column of Y centroid coordinates, in pixels of original image data."""
 FEATURE_COLUMNS = [
-    "mean migration speed per track (um/min)",
-    "Integrated Distance (um)",
-    "Displacement (um)",
-    "Average colony overlap per track",
-    "migration velocity (um/min)",
-    "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
-    "R0Cell_Neighbors_PercentTouching_Adjacent",
+    "Slice",
+    "Area",
+    "Orientation",
+    "Aspect_Ratio",
+    "Circularity",
+    "Mean_Fluor",
 ]
 """Columns of feature data to include in the dataset. Each column will be its own feature file."""
+
+FEATURE_COLUMNS_TO_UNITS = {"Area": None}
+FEATURE_COLUMNS_TO_NAMES = {
+    "Aspect_Ratio": "Aspect Ratio",
+    "Mean_Fluor": "Mean Fluorescence",
+}
 
 
 def make_frames(
@@ -176,31 +188,27 @@ def make_dataset(
 # TODO: Make top-level function
 # This is stuff scientists are responsible for!!
 def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
-    # example dataset name : 3500005820_3
-    # use pandas to load data
-    # a is the full collection!
-    a = pd.read_csv(
-        "//allen/aics/microscopy/EMTImmunostainingResults/EMTTimelapse_7-25-23/Output_CAAX/MigratoryTracksTable_AvgColonyOverlapLessThan0.9_AllPaths.csv"
-    )
-
     if dataset != "":
         # convert just the described dataset.
-        plate = dataset.split("_")[0]
-        position = dataset.split("_")[1]
-        c = a.loc[a["Image_Metadata_Plate"] == int(plate)]
-        c = c.loc[c["Image_Metadata_Position"] == int(position)]
-        make_dataset(c, output_dir, dataset, do_frames, scale)
+        readPath = f"/allen/aics/assay-dev/computational/data/EMT_deliverable_processing/LH_Analysis/Version2_ForPlotting/{dataset}.csv"
+        data = pd.read_csv(readPath)
+        logging.info("Making dataset '" + dataset + "'.")
+        make_dataset(data, output_dir, dataset, do_frames, scale)
     else:
-        # for every combination of plate and position, make a dataset
-        b = a.groupby(["Image_Metadata_Plate", "Image_Metadata_Position"])
+        # For every condition, make a dataset.
+        conditions = [
+            "LOW_Matrigel_lumenoid",
+            "High_Matrigel_lumenoid",
+        ]
         collection = []
-        for name, group in b:
-            dataset = str(name[0]) + "_" + str(name[1])
-            logging.info("Making dataset '" + dataset + "'.")
-            collection.append({"name": dataset, "path": dataset})
-            c = a.loc[a["Image_Metadata_Plate"] == name[0]]
-            c = c.loc[c["Image_Metadata_Position"] == name[1]]
-            make_dataset(c, output_dir, dataset, do_frames, scale)
+
+        for condition in conditions:
+            # Read in each of the conditions as a dataset
+            collection.append({"name": condition, "path": condition})
+            readPath = f"/allen/aics/assay-dev/computational/data/EMT_deliverable_processing/LH_Analysis/Version2_ForPlotting/{condition}.csv"
+            data = pd.read_csv(readPath)
+            logging.info("Making dataset '" + condition + "'.")
+            make_dataset(data, output_dir, dataset, do_frames, scale)
         # write the collection.json file
         with open(output_dir + "/collection.json", "w") as f:
             json.dump(collection, f)
