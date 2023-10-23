@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import pathlib
+import re
 from PIL import Image
 from typing import List, TypedDict, Union
 
@@ -53,6 +54,23 @@ def scale_image(seg2d: np.ndarray, scale: float) -> np.ndarray:
     if scale != 1.0:
         seg2d = skimage.transform.rescale(seg2d, scale, anti_aliasing=False, order=0)
     return seg2d
+
+
+def extract_units_from_feature_name(feature_name: str) -> (str, Union[str, None]):
+    """
+    Extracts units from the parentheses at the end of a feature name string, returning
+    the feature name (without units) and units as a tuple. Returns None for the units
+    if no units are found.
+
+    ex: `"Feature Name (units)" -> ("Feature Name", "units")`
+    """
+    match = re.search(r"\((.+)\)$", feature_name)
+    if match is None:
+        return (feature_name, None)
+    units = match.group()
+    units = units[1:-1]  # Remove parentheses
+    feature_name = feature_name[: match.start()].strip()
+    return (feature_name, units)
 
 
 def remap_segmented_image(

@@ -11,7 +11,9 @@ import time
 from data_writer_utils import (
     INITIAL_INDEX_COLUMN,
     ColorizerDatasetWriter,
+    FeatureMetadata,
     configureLogging,
+    extract_units_from_feature_name,
     scale_image,
     remap_segmented_image,
 )
@@ -43,6 +45,7 @@ FEATURE_COLUMNS = [
     "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
     "R0Cell_Neighbors_PercentTouching_Adjacent",
 ]
+"""Columns of feature data to include in the dataset. Each column will be its own feature file."""
 
 
 def make_frames(
@@ -150,6 +153,16 @@ def make_dataset(
     reduced_dataset = reduced_dataset.reset_index(drop=True)
     reduced_dataset[INITIAL_INDEX_COLUMN] = reduced_dataset.index.values
     grouped_frames = reduced_dataset.groupby(TIMES_COLUMN)
+
+    # Get the units and human-readable label for each feature; we include this as
+    # metadata inside the dataset manifest.
+    feature_labels = []
+    feature_metadata: List[FeatureMetadata] = []
+    for i in range(len(FEATURE_COLUMNS)):
+        (label, unit) = extract_units_from_feature_name(FEATURE_COLUMNS[i])
+        feature_labels.append(label.capitalize())
+        unit = unit.replace("um", "µm")
+        feature_metadata.append({"units": unit})
 
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
