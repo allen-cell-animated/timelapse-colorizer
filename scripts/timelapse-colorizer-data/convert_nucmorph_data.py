@@ -20,6 +20,7 @@ from nuc_morph_analysis.lib.visualization.plotting_tools import (
 from data_writer_utils import (
     INITIAL_INDEX_COLUMN,
     ColorizerDatasetWriter,
+    FeatureMetadata,
     configureLogging,
     scale_image,
     remap_segmented_image,
@@ -71,6 +72,8 @@ CENTROIDS_Y_COLUMN = "centroid_y"
 """Column of Y centroid coordinates, in pixels of original image data."""
 OUTLIERS_COLUMN = "is_outlier"
 """Column of outlier status for each object. (true/false)"""
+FEATURE_COLUMNS = ["NUC_shape_volume_lcc", "NUC_position_depth"]
+"""Columns of feature data to include in the dataset. Each column will be its own feature file."""
 
 
 def make_frames(
@@ -174,17 +177,16 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
 
     # Get the units and human-readable label for each feature; we include this as
     # metadata inside the dataset manifest.
-    features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
     feature_labels = []
-    feature_metadata = []
-    for i in range(len(features)):
-        (scale_factor, label, unit) = get_plot_labels_for_metric(features[i])
-        feature_labels.append(label)
-        feature_metadata.append({"unit": unit})
+    feature_metadata: List[FeatureMetadata] = []
+    for i in range(len(FEATURE_COLUMNS)):
+        (scale_factor, label, unit) = get_plot_labels_for_metric(FEATURE_COLUMNS[i])
+        feature_labels.append(label.capitalize())  # Enforce formatting
+        feature_metadata.append({"units": unit})
 
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
-    make_features(full_dataset, features, writer)
+    make_features(full_dataset, FEATURE_COLUMNS, writer)
     if do_frames:
         make_frames(grouped_frames, scale, writer)
     writer.write_manifest(nframes, feature_labels, feature_metadata)

@@ -34,6 +34,15 @@ CENTROIDS_X_COLUMN = "R0Nuclei_AreaShape_Center_X"
 """Column of X centroid coordinates, in pixels of original image data."""
 CENTROIDS_Y_COLUMN = "R0Nuclei_AreaShape_Center_Y"
 """Column of Y centroid coordinates, in pixels of original image data."""
+FEATURE_COLUMNS = [
+    "mean migration speed per track (um/min)",
+    "Integrated Distance (um)",
+    "Displacement (um)",
+    "Average colony overlap per track",
+    "migration velocity (um/min)",
+    "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
+    "R0Cell_Neighbors_PercentTouching_Adjacent",
+]
 
 
 def make_frames(
@@ -144,19 +153,10 @@ def make_dataset(
 
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
-    features = [
-        "mean migration speed per track (um/min)",
-        "Integrated Distance (um)",
-        "Displacement (um)",
-        "Average colony overlap per track",
-        "migration velocity (um/min)",
-        "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
-        "R0Cell_Neighbors_PercentTouching_Adjacent",
-    ]
-    make_features(full_dataset, features, writer)
+    make_features(full_dataset, FEATURE_COLUMNS, writer)
     if do_frames:
         make_frames(grouped_frames, scale, writer)
-    writer.write_manifest(nframes, features)
+    writer.write_manifest(nframes, FEATURE_COLUMNS)
 
 
 # TODO: Make top-level function

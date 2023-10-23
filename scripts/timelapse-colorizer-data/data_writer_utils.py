@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 from PIL import Image
-from typing import List, Union
+from typing import List, TypedDict, Union
 
 import numpy as np
 import pandas as pd
@@ -14,6 +14,10 @@ INITIAL_INDEX_COLUMN = "initialIndex"
 RESERVED_INDICES = 1
 """Reserved indices that cannot be used for cell data. 
 0 is reserved for the background."""
+
+
+class FeatureMetadata(TypedDict):
+    units: str
 
 
 class NumpyValuesEncoder(json.JSONEncoder):
@@ -161,7 +165,7 @@ class ColorizerDatasetWriter:
         self,
         num_frames: int,
         feature_names: List[str],
-        feature_metadata: List[object] = [],
+        feature_metadata: List[FeatureMetadata] = [],
     ):
         """
         Writes the final manifest file for the dataset in the configured output directory.
@@ -213,7 +217,7 @@ class ColorizerDatasetWriter:
                 combined_feature_metadata = {}
                 for i in range(len(feature_metadata)):
                     combined_feature_metadata[feature_names[i]] = feature_metadata[i]
-                output_json["features.meta"] = combined_feature_metadata
+                output_json["featureMetadata"] = combined_feature_metadata
             else:
                 logging.warn(
                     "Feature metadata length does not match number of features. Skipping metadata."
