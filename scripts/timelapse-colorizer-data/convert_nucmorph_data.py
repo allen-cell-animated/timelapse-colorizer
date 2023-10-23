@@ -180,11 +180,11 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     feature_labels = []
     feature_metadata = []
     formatted_units = {
-        "($\mu m$)": "μm",
-        "($\mu m^3$)": "μm³",
-        "($\mu m^3$/hr)": "μm³/hr",
+        "($\mu m$)": "µm",
+        "($\mu m^3$)": "µm³",
+        "($\mu m^3$/hr)": "µm³/hr",
         "(min)": "min",
-        "($\mu m^{-1}$)": "μm⁻¹",
+        "($\mu m^{-1}$)": "µm⁻¹",
     }
     for i in range(len(FEATURE_COLUMNS)):
         (scale_factor, label, unit) = get_plot_labels_for_metric(FEATURE_COLUMNS[i])
