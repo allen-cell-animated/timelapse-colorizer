@@ -1,15 +1,19 @@
+from typing import List
 from aicsimageio import AICSImage
 import argparse
 import json
 import logging
 import numpy as np
 import pandas as pd
+from pandas.core.groupby.generic import DataFrameGroupBy
 import time
 
 from data_writer_utils import (
     INITIAL_INDEX_COLUMN,
     ColorizerDatasetWriter,
+    FeatureMetadata,
     configureLogging,
+    extract_units_from_feature_name,
     scale_image,
     remap_segmented_image,
 )
@@ -32,9 +36,23 @@ CENTROIDS_X_COLUMN = "R0Nuclei_AreaShape_Center_X"
 """Column of X centroid coordinates, in pixels of original image data."""
 CENTROIDS_Y_COLUMN = "R0Nuclei_AreaShape_Center_Y"
 """Column of Y centroid coordinates, in pixels of original image data."""
+FEATURE_COLUMNS = [
+    "mean migration speed per track (um/min)",
+    "Integrated Distance (um)",
+    "Displacement (um)",
+    "Average colony overlap per track",
+    "migration velocity (um/min)",
+    "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
+    "R0Cell_Neighbors_PercentTouching_Adjacent",
+]
+"""Columns of feature data to include in the dataset. Each column will be its own feature file."""
 
 
-def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
+def make_frames(
+    grouped_frames: DataFrameGroupBy,
+    scale: float,
+    writer: ColorizerDatasetWriter,
+):
     """
     Generate the images and bounding boxes for each time step in the dataset.
     """
@@ -65,8 +83,9 @@ def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
             OBJECT_ID_COLUMN,
         )
 
-        writer.update_and_write_bbox_data(grouped_frames, seg_remapped, lut)
-        writer.write_image(seg_remapped, frame_number)
+        writer.write_image_and_bounds_data(
+            seg_remapped, grouped_frames, frame_number, lut
+        )
 
         time_elapsed = time.time() - start_time
         logging.info(
@@ -76,7 +95,11 @@ def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
         )
 
 
-def make_features(dataset: pd.DataFrame, features, writer: ColorizerDatasetWriter):
+def make_features(
+    dataset: pd.DataFrame,
+    features: List[str],
+    writer: ColorizerDatasetWriter,
+):
     """
     Generate the outlier, track, time, centroid, and feature data files.
     """
@@ -106,7 +129,11 @@ def make_features(dataset: pd.DataFrame, features, writer: ColorizerDatasetWrite
 
 
 def make_dataset(
-    data, output_dir="./data/", dataset="3500005820_3", do_frames=True, scale=1
+    data: pd.DataFrame,
+    output_dir="./data/",
+    dataset="3500005820_3",
+    do_frames=True,
+    scale=1,
 ):
     """Make a new dataset from the given data, and write the complete dataset
     files to the given output directory.
@@ -127,21 +154,22 @@ def make_dataset(
     reduced_dataset[INITIAL_INDEX_COLUMN] = reduced_dataset.index.values
     grouped_frames = reduced_dataset.groupby(TIMES_COLUMN)
 
+    # Get the units and human-readable label for each feature; we include this as
+    # metadata inside the dataset manifest.
+    feature_labels = []
+    feature_metadata: List[FeatureMetadata] = []
+    for i in range(len(FEATURE_COLUMNS)):
+        (label, unit) = extract_units_from_feature_name(FEATURE_COLUMNS[i])
+        feature_labels.append(label.capitalize())
+        unit = unit.replace("um", "µm")
+        feature_metadata.append({"units": unit})
+
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
-    features = [
-        "mean migration speed per track (um/min)",
-        "Integrated Distance (um)",
-        "Displacement (um)",
-        "Average colony overlap per track",
-        "migration velocity (um/min)",
-        "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
-        "R0Cell_Neighbors_PercentTouching_Adjacent",
-    ]
-    make_features(full_dataset, features, writer)
+    make_features(full_dataset, FEATURE_COLUMNS, writer)
     if do_frames:
         make_frames(grouped_frames, scale, writer)
-    writer.write_manifest(nframes, features)
+    writer.write_manifest(nframes, FEATURE_COLUMNS)
 
 
 # TODO: Make top-level function
@@ -167,7 +195,7 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
         collection = []
         for name, group in b:
             dataset = str(name[0]) + "_" + str(name[1])
-            print(dataset)
+            logging.info("Making dataset '" + dataset + "'.")
             collection.append({"name": dataset, "path": dataset})
             c = a.loc[a["Image_Metadata_Plate"] == name[0]]
             c = c.loc[c["Image_Metadata_Position"] == name[1]]

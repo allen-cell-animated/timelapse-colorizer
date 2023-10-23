@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import platform
 import pandas as pd
+from pandas.core.groupby.generic import DataFrameGroupBy
 import time
 
 from nuc_morph_analysis.utilities.create_base_directories import create_base_directories
@@ -19,6 +20,7 @@ from nuc_morph_analysis.lib.visualization.plotting_tools import (
 from data_writer_utils import (
     INITIAL_INDEX_COLUMN,
     ColorizerDatasetWriter,
+    FeatureMetadata,
     configureLogging,
     scale_image,
     remap_segmented_image,
@@ -70,9 +72,15 @@ CENTROIDS_Y_COLUMN = "centroid_y"
 """Column of Y centroid coordinates, in pixels of original image data."""
 OUTLIERS_COLUMN = "is_outlier"
 """Column of outlier status for each object. (true/false)"""
+FEATURE_COLUMNS = ["NUC_shape_volume_lcc", "NUC_position_depth"]
+"""Columns of feature data to include in the dataset. Each column will be its own feature file."""
 
 
-def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
+def make_frames(
+    grouped_frames: DataFrameGroupBy,
+    scale: float,
+    writer: ColorizerDatasetWriter,
+):
     """
     Generate the images and bounding boxes for each time step in the dataset.
     """
@@ -104,8 +112,9 @@ def make_frames(grouped_frames, scale: float, writer: ColorizerDatasetWriter):
             OBJECT_ID_COLUMN,
         )
 
-        writer.update_and_write_bbox_data(grouped_frames, seg_remapped, lut)
-        writer.write_image(seg_remapped, frame_number)
+        writer.write_image_and_bounds_data(
+            seg_remapped, grouped_frames, frame_number, lut
+        )
 
         time_elapsed = time.time() - start_time
         logging.info(
@@ -156,7 +165,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     datadir, figdir = create_base_directories(dataset)
     pixsize = get_dataset_pixel_size(dataset)
 
-    full_dataset = load_dataset(dataset, datadir=None)
+    full_dataset: pd.DataFrame = load_dataset(dataset, datadir=None)
     logging.info("Loaded dataset '" + str(dataset) + "'.")
 
     # Make a reduced dataframe grouped by time (frame number).
@@ -168,27 +177,26 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
 
     # Get the units and human-readable label for each feature; we include this as
     # metadata inside the dataset manifest.
-    features = ["NUC_shape_volume_lcc", "NUC_position_depth_lcc"]
-    featureLabels = []
-    featureMetadata = []
-    formattedUnits = {
+    feature_labels = []
+    feature_metadata = []
+    formatted_units = {
         "($\mu m$)": "μm",
         "($\mu m^3$)": "μm³",
         "($\mu m^3$/hr)": "μm³/hr",
         "(min)": "min",
         "($\mu m^{-1}$)": "μm⁻¹",
     }
-    for i in range(len(features)):
-        (scale_factor, label, unit) = get_plot_labels_for_metric(features[i])
-        featureLabels.append(label.capitalize())
-        featureMetadata.append({"units": formattedUnits[unit]})
+    for i in range(len(FEATURE_COLUMNS)):
+        (scale_factor, label, unit) = get_plot_labels_for_metric(FEATURE_COLUMNS[i])
+        feature_labels.append(label.capitalize())
+        feature_metadata.append({"units": formatted_units[unit]})
 
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
-    make_features(full_dataset, features, writer)
+    make_features(full_dataset, FEATURE_COLUMNS, writer)
     if do_frames:
         make_frames(grouped_frames, scale, writer)
-    writer.write_manifest(nframes, featureLabels, featureMetadata)
+    writer.write_manifest(nframes, feature_labels, feature_metadata)
 
 
 parser = argparse.ArgumentParser()
