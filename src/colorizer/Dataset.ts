@@ -131,7 +131,7 @@ export default class Dataset {
   }
 
   public getFeatureUnits(name: string): string {
-    return this.features[name].units || "";
+    return this.features[name]?.units || "";
   }
 
   /**

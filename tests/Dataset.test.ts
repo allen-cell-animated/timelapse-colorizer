@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
-import Dataset, { DatasetManifest } from "../src/colorizer/Dataset";
-import { ArraySource, IArrayLoader } from "../src/colorizer";
 import { Texture } from "three";
-import { FeatureDataType, FeatureArrayType, featureTypeSpecs } from "../src/colorizer/types";
+import { describe, expect, it } from "vitest";
+import { ArraySource, IArrayLoader } from "../src/colorizer";
+import Dataset, { DatasetManifest } from "../src/colorizer/Dataset";
+import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
 
 describe("Dataset", () => {
   const defaultDatasetManifest: DatasetManifest = {
@@ -80,7 +80,7 @@ describe("Dataset", () => {
     expect(dataset.featureHasUnits("feature3")).to.be.true;
 
     expect(dataset.getFeatureUnits("feature1")).to.equal("cat");
-    expect(dataset.getFeatureUnits("feature2")).to.be.undefined;
+    expect(dataset.getFeatureUnits("feature2")).to.equal("");
     expect(dataset.getFeatureUnits("feature3")).to.equal("μm/s(1)");
   });
 
@@ -116,6 +116,6 @@ describe("Dataset", () => {
     expect(dataset.getFeatureUnits("feature1 (m)")).to.equal("meters");
     expect(dataset.getFeatureUnits("feature2")).to.equal("sq. meters");
     expect(dataset.getFeatureUnits("feature3 (μm/s(1))")).to.equal("");
-    expect(dataset.getFeatureUnits("feature4 (unit)")).to.be.undefined;
+    expect(dataset.getFeatureUnits("feature4 (unit)")).to.equal("");
   });
 });
