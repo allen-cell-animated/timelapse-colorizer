@@ -9,7 +9,7 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Divider, Input, Slider, notification } from "antd";
+import { Button, Checkbox, Divider, Input, notification, Slider } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
@@ -18,23 +18,23 @@ import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
+import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
-import ColorRampDropdown from "./components/ColorRampDropdown";
-import LabeledDropdown from "./components/LabeledDropdown";
-import LoadDatasetButton from "./components/LoadDatasetButton";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
-import IconButton from "./components/IconButton";
-import SpinBox from "./components/SpinBox";
-import HoverTooltip from "./components/HoverTooltip";
-import Export from "./components/Export";
-import DrawModeDropdown from "./components/DrawModeDropdown";
 import CanvasWrapper from "./components/CanvasWrapper";
+import ColorRampDropdown from "./components/ColorRampDropdown";
+import DrawModeDropdown from "./components/DrawModeDropdown";
+import Export from "./components/Export";
+import HoverTooltip from "./components/HoverTooltip";
+import IconButton from "./components/IconButton";
+import LabeledDropdown from "./components/LabeledDropdown";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
-import PlotWrapper from "./components/PlotWrapper";
+import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
-import { numberToStringDecimal } from "./colorizer/utils/math_utils";
+import PlotWrapper from "./components/PlotWrapper";
+import SpinBox from "./components/SpinBox";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -335,6 +335,8 @@ function App(): ReactElement {
       }
       // Look up feature value from id
       const featureData = dataset.getFeatureData(featureName);
+      // ?? is a nullish coalescing operator; it checks for null + undefined values
+      // (safe for falsy values like 0 or NaN, which are valid feature values)
       const featureValue = featureData?.data[id] ?? -1;
       const unitsLabel = featureData?.units ? ` ${featureData?.units}` : "";
       // Check if int, otherwise return float

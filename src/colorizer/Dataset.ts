@@ -1,8 +1,8 @@
 import { Texture, Vector2 } from "three";
 
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
-import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
+import JsonArrayLoader from "./loaders/JsonArrayLoader";
 
 import FrameCache from "./FrameCache";
 import Track from "./Track";
@@ -21,16 +21,16 @@ export type DatasetManifest = {
   bounds?: string;
 };
 
+export type FeatureMetaData = {
+  units: string | null;
+};
+
 export type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
   max: number;
   units?: string;
-};
-
-export type FeatureMetaData = {
-  units: string | null;
 };
 
 const MAX_CACHED_FRAMES = 60;
