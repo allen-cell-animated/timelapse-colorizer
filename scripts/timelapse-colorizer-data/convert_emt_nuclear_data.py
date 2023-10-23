@@ -2,7 +2,10 @@
 A utility script for converting nuclear segmentation data from the EMT project. Original dataset
 provided by Leigh Harris!
 
-10/23/23 - Peyton Lee - peyton.lee@alleninstitute.org
+To export the default datasets, you can run:
+```
+python timelapse-colorizer-data/convert_emt_nuclear_data.py --scale 1.0 --output_dir=/allen/aics/animated-cell/Dan/fileserver/colorizer/EMT_nuclear
+```
 """
 
 from typing import List
