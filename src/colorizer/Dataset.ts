@@ -211,38 +211,6 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
-  /**
-   * If no units are provided in the metadat, extracts units from the feature name if present
-   * and saves it to the metadata object, changing the feature name if needed.
-   * @param featureName Current feature name.
-   * @param metadata Optional metadata object.
-   * @returns the new feature name, and the updated metadata object.
-   */
-  public extractFeatureUnitsFromName(
-    featureName: string,
-    metadata: Partial<FeatureMetadata> | undefined
-  ): { featureName: string; metadata: Partial<FeatureMetadata> } {
-    const newMetadata: Partial<FeatureMetadata> = {};
-    let newFeatureName = featureName;
-    // Matches the content inside the first set of parentheses at the end of the string
-    const detectedUnits = featureName.trim().match(/\((.+)\)$/);
-    const metadataUnits = metadata?.units;
-
-    if (metadataUnits !== undefined || !detectedUnits) {
-      // Don't change feature name if units are provided in metadata, or if no units
-      // could be found.
-      newMetadata.units = metadataUnits;
-    } else {
-      // Strip the units from the feature name and save to metadata instead
-      newFeatureName = featureName.replace(detectedUnits[0], "").trim();
-      newMetadata.units = detectedUnits[1]; // Inner part (inside parentheses)
-    }
-    return {
-      featureName: newFeatureName,
-      metadata: newMetadata,
-    };
-  }
-
   /** Loads the dataset manifest and features. */
   public async open(manifestLoader = this.fetchJson): Promise<void> {
     if (this.hasOpened) {
@@ -255,19 +223,10 @@ export default class Dataset {
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
 
-    // Pull metadata from the features, renaming them if needed.
-    const newFeaturesToFiles: Record<string, string> = {};
-    const newFeaturesToMetadata: Record<string, Partial<FeatureMetadata>> = {};
-
+    const featuresToMetadata: Record<string, Partial<FeatureMetadata>> = {};
     for (const featureName of Object.keys(this.featureFiles)) {
-      const metadata = manifest.featureMetadata ? manifest.featureMetadata[featureName] : undefined;
-      const result = this.extractFeatureUnitsFromName(featureName, metadata);
-
-      newFeaturesToFiles[result.featureName] = this.featureFiles[featureName];
-      newFeaturesToMetadata[result.featureName] = result.metadata;
+      featuresToMetadata[featureName] = manifest.featureMetadata ? manifest.featureMetadata[featureName] : {};
     }
-
-    this.featureFiles = newFeaturesToFiles;
 
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
@@ -275,7 +234,7 @@ export default class Dataset {
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     const featuresPromises: Promise<void>[] = this.featureNames.map((name) =>
-      this.loadFeature.bind(this)(name, newFeaturesToMetadata[name])
+      this.loadFeature.bind(this)(name, featuresToMetadata[name])
     );
 
     const result = await Promise.all([
