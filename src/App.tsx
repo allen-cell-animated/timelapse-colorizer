@@ -417,7 +417,7 @@ function App(): ReactElement {
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
-  const featureUnits = dataset?.featureHasUnits(featureName) ? dataset.getFeatureUnits(featureName) : "";
+  const featureUnits = dataset?.getFeatureUnits(featureName) || "";
 
   return (
     <AppStyle className={styles.app}>

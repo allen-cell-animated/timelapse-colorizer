@@ -13,7 +13,7 @@ import * as urlUtils from "./utils/url_utils";
 export type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
-  featureMetadata?: Record<string, FeatureMetaData>;
+  featureMetadata?: Record<string, FeatureMetadata>;
   outliers?: string;
   tracks?: string;
   times?: string;
@@ -21,7 +21,7 @@ export type DatasetManifest = {
   bounds?: string;
 };
 
-export type FeatureMetaData = {
+export type FeatureMetadata = {
   units: string | null;
 };
 
@@ -92,7 +92,7 @@ export default class Dataset {
     return await response.json();
   }
 
-  private async loadFeature(name: string, metadata: Partial<FeatureMetaData>): Promise<void> {
+  private async loadFeature(name: string, metadata: Partial<FeatureMetadata>): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
     const source = await this.arrayLoader.load(url);
     this.features[name] = {
@@ -130,8 +130,8 @@ export default class Dataset {
     return this.features[name]?.units !== undefined;
   }
 
-  public getFeatureUnits(name: string): string | undefined {
-    return this.features[name]?.units;
+  public getFeatureUnits(name: string): string {
+    return this.features[name].units || "";
   }
 
   /**
@@ -211,6 +211,38 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
+  /**
+   * If no units are provided in the metadat, extracts units from the feature name if present
+   * and saves it to the metadata object, changing the feature name if needed.
+   * @param featureName Current feature name.
+   * @param metadata Optional metadata object.
+   * @returns the new feature name, and the updated metadata object.
+   */
+  public extractFeatureUnitsFromName(
+    featureName: string,
+    metadata: Partial<FeatureMetadata> | undefined
+  ): { featureName: string; metadata: Partial<FeatureMetadata> } {
+    const newMetadata: Partial<FeatureMetadata> = {};
+    let newFeatureName = featureName;
+    // Matches the content inside the first set of parentheses at the end of the string
+    const detectedUnits = featureName.trim().match(/\((.+)\)$/);
+    const metadataUnits = metadata?.units;
+
+    if (metadataUnits !== undefined || !detectedUnits) {
+      // Don't change feature name if units are provided in metadata, or if no units
+      // could be found.
+      newMetadata.units = metadataUnits;
+    } else {
+      // Strip the units from the feature name and save to metadata instead
+      newFeatureName = featureName.replace(detectedUnits[0], "").trim();
+      newMetadata.units = detectedUnits[1]; // Inner part (inside parentheses)
+    }
+    return {
+      featureName: newFeatureName,
+      metadata: newMetadata,
+    };
+  }
+
   /** Loads the dataset manifest and features. */
   public async open(manifestLoader = this.fetchJson): Promise<void> {
     if (this.hasOpened) {
@@ -223,29 +255,16 @@ export default class Dataset {
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
 
-    // If feature names have units (provided in parentheses at end), strip from the
-    // feature name and save to the units field in the feature metadata unless overrriden.
+    // Pull metadata from the features, renaming them if needed.
     const newFeaturesToFiles: Record<string, string> = {};
-    const featuresToMetadata: Record<string, Partial<FeatureMetaData>> = {};
+    const newFeaturesToMetadata: Record<string, Partial<FeatureMetadata>> = {};
+
     for (const featureName of Object.keys(this.featureFiles)) {
-      const metadata: Partial<FeatureMetaData> = {};
-      let newFeatureName = featureName;
-      // Matches the content inside the first set of parentheses at the end of the string
-      const detectedUnits = featureName.trim().match(/\((.+)\)$/);
-      const metadataUnits = manifest.featureMetadata && manifest.featureMetadata[featureName]?.units;
+      const metadata = manifest.featureMetadata ? manifest.featureMetadata[featureName] : undefined;
+      const result = this.extractFeatureUnitsFromName(featureName, metadata);
 
-      if (metadataUnits !== undefined || !detectedUnits) {
-        // Don't change feature name if units are provided in metadata, or if no units
-        // could be found.
-        metadata.units = metadataUnits;
-      } else {
-        // Strip the units from the feature name and save to metadata instead
-        newFeatureName = featureName.replace(detectedUnits[0], "").trim();
-        metadata.units = detectedUnits[1]; // Inner part (inside parentheses)
-      }
-
-      newFeaturesToFiles[newFeatureName] = this.featureFiles[featureName];
-      featuresToMetadata[newFeatureName] = metadata;
+      newFeaturesToFiles[result.featureName] = this.featureFiles[featureName];
+      newFeaturesToMetadata[result.featureName] = result.metadata;
     }
 
     this.featureFiles = newFeaturesToFiles;
@@ -256,7 +275,7 @@ export default class Dataset {
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     const featuresPromises: Promise<void>[] = this.featureNames.map((name) =>
-      this.loadFeature.bind(this)(name, featuresToMetadata[name])
+      this.loadFeature.bind(this)(name, newFeaturesToMetadata[name])
     );
 
     const result = await Promise.all([
