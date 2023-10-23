@@ -17,6 +17,7 @@ import time
 
 from data_writer_utils import (
     INITIAL_INDEX_COLUMN,
+    RESERVED_INDICES,
     ColorizerDatasetWriter,
     FeatureMetadata,
     configureLogging,
@@ -53,7 +54,10 @@ FEATURE_COLUMNS = [
 ]
 """Columns of feature data to include in the dataset. Each column will be its own feature file."""
 
-FEATURE_COLUMNS_TO_UNITS = {"Area": None}
+FEATURE_COLUMNS_TO_UNITS = {
+    "Mean_Fluor": "AU",  # arbitrary units
+    "Area": "px²",
+}
 FEATURE_COLUMNS_TO_NAMES = {
     "Aspect_Ratio": "Aspect Ratio",
     "Mean_Fluor": "Mean Fluorescence",
@@ -71,6 +75,8 @@ def make_frames(
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
 
+    is_nonzero = lambda n: n != 0
+
     for group_name, frame in grouped_frames:
         start_time = time.time()
 
@@ -81,8 +87,16 @@ def make_frames(
         # Flatten the z-stack to a 2D image.
         zstackpath = row[SEGMENTED_IMAGE_COLUMN]
         zstackpath = zstackpath.strip('"')
-        zstack = AICSImage(zstackpath).get_image_data("YX", S=0, T=0, C=0)
-        seg2d = zstack
+
+        print(zstackpath)
+
+        zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
+        # min but ignore zero values. Doing `min(0, id)` will always return 0 which results
+        # in black images. We use `np.where` to replace all of our zero values with a safe
+        # max value, then replace it later.
+        temp_value = zstack.max() + 1
+        seg2d = np.min(np.where(zstack == 0, temp_value, zstack), axis=0)
+        seg2d[seg2d == temp_value] = 0
 
         # Scale the image and format as integers.
         seg2d = scale_image(seg2d, scale)
@@ -119,10 +133,13 @@ def make_features(
 
     # For now in this dataset there are no outliers. Just generate a list of falses.
     outliers = np.array([False for i in range(len(dataset.index))])
-    tracks = dataset[TRACK_ID_COLUMN].to_numpy()
     times = dataset[TIMES_COLUMN].to_numpy()
     centroids_x = dataset[CENTROIDS_X_COLUMN].to_numpy()
     centroids_y = dataset[CENTROIDS_Y_COLUMN].to_numpy()
+
+    # Generate the track data. This will be a very simple numpy table, where tracks[i] = i.
+    shape = dataset.shape
+    tracks = np.array([*range(shape[0])])
 
     feature_data = []
     for i in range(len(features)):
@@ -156,7 +173,6 @@ def make_dataset(
 
     # Make a reduced dataframe grouped by time (frame number).
     columns = [
-        TRACK_ID_COLUMN,
         TIMES_COLUMN,
         SEGMENTED_IMAGE_COLUMN,
         OBJECT_ID_COLUMN,
@@ -208,7 +224,7 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
             readPath = f"/allen/aics/assay-dev/computational/data/EMT_deliverable_processing/LH_Analysis/Version2_ForPlotting/{condition}.csv"
             data = pd.read_csv(readPath)
             logging.info("Making dataset '" + condition + "'.")
-            make_dataset(data, output_dir, dataset, do_frames, scale)
+            make_dataset(data, output_dir + "/" + condition, dataset, do_frames, scale)
         # write the collection.json file
         with open(output_dir + "/collection.json", "w") as f:
             json.dump(collection, f)
@@ -235,7 +251,7 @@ parser.add_argument(
 parser.add_argument(
     "--scale",
     type=float,
-    default=1.0,
+    default=0.25,
     help="Uniform scale factor that original image dimensions will be scaled by. 1 is original size, 0.5 is half-size in both X and Y.",
 )
 
