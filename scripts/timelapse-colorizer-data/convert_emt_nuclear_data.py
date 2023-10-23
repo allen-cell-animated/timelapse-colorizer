@@ -87,13 +87,10 @@ def make_frames(
         # Flatten the z-stack to a 2D image.
         zstackpath = row[SEGMENTED_IMAGE_COLUMN]
         zstackpath = zstackpath.strip('"')
-
-        print(zstackpath)
-
         zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
         # min but ignore zero values. Doing `min(0, id)` will always return 0 which results
         # in black images. We use `np.where` to replace all of our zero values with a safe
-        # max value, then replace it later.
+        # max value, then replace it with 0 again.
         temp_value = zstack.max() + 1
         seg2d = np.min(np.where(zstack == 0, temp_value, zstack), axis=0)
         seg2d[seg2d == temp_value] = 0
@@ -187,10 +184,10 @@ def make_dataset(
     feature_labels = []
     feature_metadata: List[FeatureMetadata] = []
     for i in range(len(FEATURE_COLUMNS)):
-        (label, unit) = extract_units_from_feature_name(FEATURE_COLUMNS[i])
+        feature_col_name = FEATURE_COLUMNS[i]
+        label = FEATURE_COLUMNS_TO_NAMES.get(feature_col_name, feature_col_name)
+        unit = FEATURE_COLUMNS_TO_UNITS.get(feature_col_name, None)
         feature_labels.append(label[0:1].upper() + label[1:])  # Capitalize first letter
-        if unit is not None:
-            unit = unit.replace("um", "µm")
         feature_metadata.append({"units": unit})
 
     # Make the features, frame data, and manifest.
@@ -251,7 +248,7 @@ parser.add_argument(
 parser.add_argument(
     "--scale",
     type=float,
-    default=0.25,
+    default=1.0,
     help="Uniform scale factor that original image dimensions will be scaled by. 1 is original size, 0.5 is half-size in both X and Y.",
 )
 
