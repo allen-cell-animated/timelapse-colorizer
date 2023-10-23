@@ -1,5 +1,5 @@
-import React, { PropsWithChildren, ReactElement, createContext } from "react";
 import { App, ConfigProvider } from "antd";
+import React, { createContext, PropsWithChildren, ReactElement } from "react";
 import styled from "styled-components";
 
 type AppStyleProps = {
@@ -65,10 +65,13 @@ const theme = {
     },
   },
   font: {
-    // Lato does not provide Greek characters so Carlito (which is derived from Lato
-    // and provides Greek + Latin + Cyrillic) is used as a fallback.
-    family: "Lato, Carlito, sans-serif",
-    resource: "https://fonts.googleapis.com/css2?family=Lato&family=Carlito&display=swap",
+    // LatoExtended font is a custom font family declared in the CssContainer.
+    // It's downloaded from https://www.latofonts.com/, as the Google Fonts version
+    // has limited characters. Here, Google Font's Lato is set as the default
+    // for faster initial load, and LatoExtended is used as a fallback for specific,
+    // non-Latin characters (usually scientific units).
+    family: "Lato, LatoExtended, sans-serif",
+    resource: "https://fonts.googleapis.com/css2?family=Lato&display=swap",
     size: {
       header: 22,
       section: 18,
@@ -89,6 +92,11 @@ export const AppThemeContext = createContext(theme);
 /** Applies theme as CSS variables that affect the rest of the document. */
 const CssContainer = styled.div`
   @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+
+  @font-face {
+    font-family: LatoExtended;
+    src: url(Lato-Regular.ttf);
+  }
 
   /* Text */
   --color-text-primary: ${theme.color.text.primary};
