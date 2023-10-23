@@ -142,7 +142,6 @@ def make_features(
 
     feature_data = []
     for i in range(len(features)):
-        # TODO normalize output range excluding outliers?
         f = dataset[features[i]].to_numpy()
         feature_data.append(f)
 
@@ -200,7 +199,6 @@ def make_dataset(
     writer.write_manifest(nframes, feature_labels, feature_metadata)
 
 
-# TODO: Make top-level function
 # This is stuff scientists are responsible for!!
 def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
     if dataset != "":
