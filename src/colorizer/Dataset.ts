@@ -13,7 +13,7 @@ import * as urlUtils from "./utils/url_utils";
 export type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
-  featureMetadata?: Record<string, FeatureMetadata>;
+  featureMetadata?: Record<string, Partial<FeatureMetadata>>;
   outliers?: string;
   tracks?: string;
   times?: string;
@@ -119,19 +119,16 @@ export default class Dataset {
   }
 
   public getFeatureNameWithUnits(name: string): string {
-    if (this.featureHasUnits(name)) {
-      return `${name} (${this.features[name]!.units})`;
+    const units = this.getFeatureUnits(name);
+    if (units) {
+      return `${name} (${units})`;
     } else {
       return name;
     }
   }
 
-  public featureHasUnits(name: string): boolean {
-    return this.features[name]?.units !== undefined;
-  }
-
-  public getFeatureUnits(name: string): string {
-    return this.features[name]?.units || "";
+  public getFeatureUnits(name: string): string | undefined {
+    return this.features[name]?.units;
   }
 
   /**
