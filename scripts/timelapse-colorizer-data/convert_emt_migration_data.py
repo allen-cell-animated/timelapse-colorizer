@@ -160,8 +160,9 @@ def make_dataset(
     feature_metadata: List[FeatureMetadata] = []
     for i in range(len(FEATURE_COLUMNS)):
         (label, unit) = extract_units_from_feature_name(FEATURE_COLUMNS[i])
-        feature_labels.append(label.capitalize())
-        unit = unit.replace("um", "µm")
+        feature_labels.append(label[0:1].upper() + label[1:])  # Capitalize first letter
+        if unit is not None:
+            unit = unit.replace("um", "µm")
         feature_metadata.append({"units": unit})
 
     # Make the features, frame data, and manifest.
@@ -169,7 +170,7 @@ def make_dataset(
     make_features(full_dataset, FEATURE_COLUMNS, writer)
     if do_frames:
         make_frames(grouped_frames, scale, writer)
-    writer.write_manifest(nframes, FEATURE_COLUMNS)
+    writer.write_manifest(nframes, feature_labels, feature_metadata)
 
 
 # TODO: Make top-level function
