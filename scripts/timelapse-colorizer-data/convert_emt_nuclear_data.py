@@ -89,11 +89,10 @@ def make_frames(
         zstackpath = zstackpath.strip('"')
         zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
         # min but ignore zero values. Doing `min(0, id)` will always return 0 which results
-        # in black images. We use `np.where` to replace all of our zero values with a safe
-        # max value, then replace it with 0 again.
-        temp_value = zstack.max() + 1
-        seg2d = np.min(np.where(zstack == 0, temp_value, zstack), axis=0)
-        seg2d[seg2d == temp_value] = 0
+        # in black images. We use `np.ma.masked_equal` to mask out 0 values and have them be ignored,
+        # then replace masked values with 0 again to get our final projected image.
+        masked = np.ma.masked_equal(zstack, 0, copy=False)
+        seg2d = masked.min(axis=0).filled(0)
 
         # Scale the image and format as integers.
         seg2d = scale_image(seg2d, scale)
