@@ -182,6 +182,10 @@ export default class Dataset {
     return Object.keys(this.featureFiles);
   }
 
+  public get numObjects(): number {
+    return this.times?.length || this.trackIds?.length || this.features[this.featureNames[0]]?.data.length || 0;
+  }
+
   /** Loads a single frame from the dataset */
   public async loadFrame(index: number): Promise<Texture | undefined> {
     if (index < 0 || index >= this.frameFiles.length) {
