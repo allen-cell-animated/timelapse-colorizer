@@ -1,17 +1,24 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, useEffect } from "react";
 import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import { Dataset } from "../colorizer";
-import { Card, List, Select } from "antd";
+import { Card, List, Select, Tooltip } from "antd";
 import styled from "styled-components";
 import { render } from "@testing-library/react";
 import LabeledRangeSlider from "./LabeledRangeSlider";
+import { CloseOutlined } from "@ant-design/icons";
+import IconButton from "./IconButton";
 
 const PanelContainer = styled.div`
-  max-width: calc(100vw - 60px);
+  max-width: calc(min(100vw - 60px, 730px));
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
+`;
+
+const ThresholdsContainer = styled.div`
+  max-height: 400px;
+  overflow-y: auto;
 `;
 
 type FeatureThresholdPanelProps = {
@@ -25,7 +32,11 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {};
 export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
 
-  // Render current filters to a list
+  // Clear thresholds for features that don't exist when the dataset changes.
+  useEffect(() => {
+    const newThresholds = props.featureThresholds.filter((t) => props.dataset?.featureNames.includes(t.featureName));
+    props.onChange(newThresholds);
+  }, [props.dataset]);
 
   const onSelectionsChanged = (selections: string[]) => {
     const newThresholds: FeatureThreshold[] = [];
@@ -50,6 +61,12 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.onChange(newThresholds);
   };
 
+  const onClickedRemove = (index: number) => {
+    const newThresholds = [...props.featureThresholds];
+    newThresholds.splice(index, 1);
+    props.onChange(newThresholds);
+  };
+
   const selectedFeatures = props.featureThresholds.map((t) => t.featureName);
   const featureOptions =
     props.dataset?.featureNames.map((name) => ({ label: props.dataset?.getFeatureNameWithUnits(name), value: name })) ||
@@ -62,10 +79,10 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     }
 
     return (
-      <List.Item>
+      <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
           <h3>{item.featureName}</h3>
-          <div style={{ width: "100%" }}>
+          <div style={{ width: "calc(100% - 10px)" }}>
             <LabeledRangeSlider
               min={item.min}
               max={item.max}
@@ -75,6 +92,11 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
             />
           </div>
         </div>
+        <div style={{ position: "absolute", top: "10px", right: "10px" }}>
+          <IconButton type="text" onClick={() => onClickedRemove(index)}>
+            <CloseOutlined />
+          </IconButton>
+        </div>
       </List.Item>
     );
   };
@@ -83,6 +105,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     <PanelContainer>
       <h2>Filters</h2>
       <h3>Add features</h3>
+
       <Select
         style={{ width: "100%" }}
         mode="multiple"
@@ -91,7 +114,11 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
         value={selectedFeatures}
         options={featureOptions}
       />
-      <List renderItem={renderItem} dataSource={props.featureThresholds} bordered />
+      <Card size="small">
+        <ThresholdsContainer>
+          <List renderItem={renderItem} dataSource={props.featureThresholds} />
+        </ThresholdsContainer>
+      </Card>
     </PanelContainer>
   );
 }
