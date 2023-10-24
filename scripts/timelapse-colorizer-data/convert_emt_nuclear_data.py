@@ -20,13 +20,12 @@ import time
 
 from data_writer_utils import (
     INITIAL_INDEX_COLUMN,
-    RESERVED_INDICES,
     ColorizerDatasetWriter,
     FeatureMetadata,
     configureLogging,
-    extract_units_from_feature_name,
     scale_image,
     remap_segmented_image,
+    update_collection,
 )
 
 # DATASET SPEC: See DATA_FORMAT.md for more details on the dataset format!
@@ -211,20 +210,9 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
         logging.info("Making dataset '" + dataset + "'.")
         make_dataset(data, output_dir, dataset, do_frames, scale)
 
-        # Update the collections file
-        with open(output_dir + "/collection.json", "rw") as f:
-            collection = json.load(f)
-            if collection == None:
-                collection = []
-
-            is_in_collection = False
-            for item in collection:
-                if item["name"] == dataset:
-                    is_in_collection = True
-                    break
-            if not is_in_collection:
-                collection.append({"name": dataset, "path": dataset})
-            json.dump(collection, f)
+        # Update the collections file if it already exists
+        collection_filepath = output_dir + "/collection.json"
+        update_collection(collection_filepath, dataset, dataset)
     else:
         # For every condition, make a dataset.
         conditions = [
