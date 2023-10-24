@@ -91,9 +91,12 @@ def make_frames(
         zstackpath = row[SEGMENTED_IMAGE_COLUMN]
         zstackpath = zstackpath.strip('"')
         zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
-        # min but ignore zero values. Doing `min(0, id)` will always return 0 which results
+        # Do a min projection instead of a max projection to prioritize objects which have lower IDs (which for this dataset,
+        # indicates lower z-indices). This is due to the nature of the data, where lower cell nuclei have greater confidence,
+        # and should be visualized when overlapping instead of higher nuclei.
+        # Do a min operation but ignore zero values. Without this, doing `min(0, id)` will always return 0 which results
         # in black images. We use `np.ma.masked_equal` to mask out 0 values and have them be ignored,
-        # then replace masked values with 0 again to get our final projected image.
+        # then replace masked values with 0 again (`filled(0)`) to get our final projected image.
         masked = np.ma.masked_equal(zstack, 0, copy=False)
         seg2d = masked.min(axis=0).filled(0)
 
@@ -207,11 +210,28 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
         data = pd.read_csv(readPath)
         logging.info("Making dataset '" + dataset + "'.")
         make_dataset(data, output_dir, dataset, do_frames, scale)
+
+        # Update the collections file
+        with open(output_dir + "/collection.json", "rw") as f:
+            collection = json.load(f)
+            if collection == None:
+                collection = []
+
+            is_in_collection = False
+            for item in collection:
+                if item["name"] == dataset:
+                    is_in_collection = True
+                    break
+            if not is_in_collection:
+                collection.append({"name": dataset, "path": dataset})
+            json.dump(collection, f)
     else:
         # For every condition, make a dataset.
         conditions = [
             "LOW_Matrigel_lumenoid",
             "High_Matrigel_lumenoid",
+            "2D_Matrigel",
+            "2D_PLF",
         ]
         collection = []
 
