@@ -232,6 +232,8 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
         conditions = [
             "LOW_Matrigel_lumenoid",
             "High_Matrigel_lumenoid",
+            "2D_Matrigel",
+            "2D_PLF",
         ]
         collection = []
 
