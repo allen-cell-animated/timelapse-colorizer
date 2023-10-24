@@ -1,19 +1,19 @@
 import React, { ReactElement, useEffect } from "react";
 import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import { Dataset } from "../colorizer";
-import { Card, List, Select, Tooltip } from "antd";
+import { Card, List, Select } from "antd";
 import styled from "styled-components";
-import { render } from "@testing-library/react";
 import LabeledRangeSlider from "./LabeledRangeSlider";
 import { CloseOutlined } from "@ant-design/icons";
 import IconButton from "./IconButton";
 
 const PanelContainer = styled.div`
-  max-width: calc(min(100vw - 60px, 730px));
+  max-width: calc(min(100vw - 80px, 730px));
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 0 10px;
 `;
 
 const ThresholdsContainer = styled.div`
@@ -103,9 +103,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   return (
     <PanelContainer>
-      <h2>Filters</h2>
       <h3>Add features</h3>
-
       <Select
         style={{ width: "100%" }}
         mode="multiple"

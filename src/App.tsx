@@ -9,7 +9,7 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Divider, Input, notification, Slider } from "antd";
+import { Button, Checkbox, Divider, Input, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
@@ -627,47 +627,64 @@ function App(): ReactElement {
             </div>
           </div>
 
-          <FeatureThresholdPanel
-            featureThresholds={featureThresholds}
-            onChange={setFeatureThresholds}
-            dataset={dataset}
-          />
-
           <div className={styles.plotPanel}>
-            <Divider orientationMargin={0} />
-            <div>
-              <div className={styles.trackTitleBar}>
-                <h2>Plot</h2>
+            <Tabs
+              type="card"
+              style={{ marginBottom: 0, width: "100%" }}
+              size="large"
+              items={[
+                {
+                  label: "Filters",
+                  key: "filter",
+                  children: (
+                    <FeatureThresholdPanel
+                      featureThresholds={featureThresholds}
+                      onChange={setFeatureThresholds}
+                      dataset={dataset}
+                    />
+                  ),
+                },
+                {
+                  label: "Plot",
+                  key: "plot",
+                  children: (
+                    <div>
+                      <div className={styles.trackTitleBar}>
+                        <h2>Plot</h2>
 
-                <div className={styles.trackSearch}>
-                  <h3>Search</h3>
-                  <Input
-                    type="number"
-                    value={findTrackInput}
-                    size="small"
-                    placeholder="Track ID..."
-                    disabled={disableUi}
-                    onChange={(event) => {
-                      setFindTrackInput(event.target.value);
-                    }}
-                  />
-                  <IconButton
-                    disabled={disableUi}
-                    onClick={async () => {
-                      await findTrack(parseInt(findTrackInput, 10));
-                    }}
-                  >
-                    <SearchOutlined />
-                  </IconButton>
-                </div>
-              </div>
-              <PlotWrapper
-                frame={currentFrame}
-                dataset={dataset}
-                featureName={featureName}
-                selectedTrack={selectedTrack}
-              />
-            </div>
+                        <div className={styles.trackSearch}>
+                          <h3>Search</h3>
+                          <Input
+                            type="number"
+                            value={findTrackInput}
+                            size="small"
+                            placeholder="Track ID..."
+                            disabled={disableUi}
+                            onChange={(event) => {
+                              setFindTrackInput(event.target.value);
+                            }}
+                          />
+                          <IconButton
+                            disabled={disableUi}
+                            onClick={async () => {
+                              await findTrack(parseInt(findTrackInput, 10));
+                            }}
+                          >
+                            <SearchOutlined />
+                          </IconButton>
+                        </div>
+                      </div>
+                      <PlotWrapper
+                        frame={currentFrame}
+                        dataset={dataset}
+                        featureName={featureName}
+                        selectedTrack={selectedTrack}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
+            />
             <Divider orientationMargin={0} />
             <div>
               <h2>Viewer settings</h2>
@@ -699,7 +716,6 @@ function App(): ReactElement {
                 </Checkbox>
               </div>
             </div>
-            F
           </div>
         </div>
       </div>
