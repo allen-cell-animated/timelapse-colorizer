@@ -60,7 +60,7 @@ function App(): ReactElement {
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
   const [outOfRangeDrawSettings, setoutOfRangeDrawSettings] = useState({
-    mode: DrawMode.USE_RAMP,
+    mode: DrawMode.USE_COLOR,
     color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
   });
   const [outlierDrawSettings, setOutlierDrawSettings] = useState({
@@ -87,6 +87,8 @@ function App(): ReactElement {
   // Prevent jarring jumps in the hover tooltip by using the last non-null value
   const [lastHoveredId, setLastHoveredId] = useState<number | null>(null);
   const [showHoveredId, setShowHoveredId] = useState(false);
+
+  canv.setFeatureThresholds([{ featureName: "Height", min: 60, max: 80 }]);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 

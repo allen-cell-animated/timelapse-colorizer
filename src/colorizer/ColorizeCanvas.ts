@@ -384,7 +384,7 @@ export default class ColorizeCanvas {
   }
 
   /**
-   *
+   * TODO: Fill this in
    * @param thresholds
    * @returns
    */
