@@ -1,8 +1,8 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useTransition } from "react";
 import { Color } from "three";
 
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
-import { DrawMode } from "../colorizer/ColorizeCanvas";
+import { DrawMode, FeatureThreshold } from "../colorizer/ColorizeCanvas";
 
 export type DrawSettings = {
   mode: DrawMode;
@@ -24,6 +24,8 @@ type CanvasWrapperProps = {
   colorRampMax: number;
   selectedTrack: Track | null;
 
+  featureThresholds?: FeatureThreshold[];
+
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
   /** Called when the mouse exits the canvas. */
@@ -39,6 +41,7 @@ const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
+  featureThresholds: [],
   maxWidth: 730,
   maxHeight: 500,
 };
@@ -52,6 +55,10 @@ const defaultProps: Partial<CanvasWrapperProps> = {
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
+  // Used to delay updates for operations like updating thresholding!
+  // Transitions are cancellable too, so if is interrupted by a new render
+  // the old work will be discarded.
+  const [_isPending, startTransition] = useTransition();
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
   const isMouseOverCanvas = useRef(false);
@@ -76,10 +83,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const settings = props.outOfRangeDrawSettings;
     canv.setOutOfRangeDrawMode(settings.mode, settings.color);
   }, [props.outOfRangeDrawSettings]);
+
   useMemo(() => {
     const settings = props.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
   }, [props.outlierDrawSettings]);
+
+  useMemo(() => {
+    startTransition(() => {
+      canv.setFeatureThresholds(props.featureThresholds);
+    });
+  }, [props.featureThresholds, props.dataset]);
 
   // Updated track-related settings
   useMemo(() => {

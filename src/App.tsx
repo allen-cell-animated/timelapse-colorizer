@@ -16,7 +16,13 @@ import { Color } from "three";
 import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
+import {
+  BACKGROUND_ID,
+  DrawMode,
+  FeatureThreshold,
+  OUTLIER_COLOR_DEFAULT,
+  OUT_OF_RANGE_COLOR_DEFAULT,
+} from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -35,6 +41,7 @@ import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
+import FeatureThresholdPanel from "./components/FeatureThresholdPanel";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -67,6 +74,9 @@ function App(): ReactElement {
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
+  const [featureThresholds, setFeatureThresholds] = useState<FeatureThreshold[]>([
+    { featureName: "Height", min: 60, max: 80 },
+  ]);
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
@@ -87,8 +97,6 @@ function App(): ReactElement {
   // Prevent jarring jumps in the hover tooltip by using the last non-null value
   const [lastHoveredId, setLastHoveredId] = useState<number | null>(null);
   const [showHoveredId, setShowHoveredId] = useState(false);
-
-  canv.setFeatureThresholds([{ featureName: "Height", min: 60, max: 80 }]);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
@@ -535,6 +543,7 @@ function App(): ReactElement {
                   setFindTrackInput("");
                   setSelectedTrack(track);
                 }}
+                featureThresholds={featureThresholds}
                 onMouseHover={(id: number): void => {
                   const isObject = id !== BACKGROUND_ID;
                   setShowHoveredId(isObject);
@@ -618,6 +627,12 @@ function App(): ReactElement {
             </div>
           </div>
 
+          <FeatureThresholdPanel
+            featureThresholds={featureThresholds}
+            onChange={setFeatureThresholds}
+            dataset={dataset}
+          />
+
           <div className={styles.plotPanel}>
             <Divider orientationMargin={0} />
             <div>
@@ -684,6 +699,7 @@ function App(): ReactElement {
                 </Checkbox>
               </div>
             </div>
+            F
           </div>
         </div>
       </div>

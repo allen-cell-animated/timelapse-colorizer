@@ -257,9 +257,8 @@ export default class ColorizeCanvas {
     }
     // Save frame resolution for later calculation
     this.setUniform("frame", frame);
-    this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     // Resize data
-    this.setFeatureThresholds([]);
+    this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.render();
   }
 
@@ -384,9 +383,10 @@ export default class ColorizeCanvas {
   }
 
   /**
-   * TODO: Fill this in
-   * @param thresholds
-   * @returns
+   * Updates the feature thresholds used to determine what values are in and outside of range.
+   * Note that this is separate from color ramp min/max thresholding.
+   * @param thresholds Array of feature thresholds, which must define the feature name, min, and max.
+   * If a feature name cannot be found in the dataset, it will be ignored.
    */
   setFeatureThresholds(thresholds: FeatureThreshold[]): void {
     if (!this.dataset) {
