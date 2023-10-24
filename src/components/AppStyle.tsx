@@ -95,7 +95,10 @@ const CssContainer = styled.div`
 
   @font-face {
     font-family: LatoExtended;
-    src: url(Lato-Regular.ttf);
+    font-style: normal;
+    font-weight: 400;
+    src: url("/fonts/Lato-Regular.woff2") format("woff2"), url("/fonts/Lato-Regular.woff") format("woff"),
+      url("/fonts/Lato-Regular.ttf") format("truetype"), url("/fonts/Lato-Regular.eot") format("embedded-opentype");
   }
 
   /* Text */

@@ -18,8 +18,9 @@ type LabeledRangeSliderProps = {
   minInputBound?: number;
   /** The upper bound for the numeric input. If undefined, uses MAX_SAFE_INTEGER. */
   maxInputBound?: number;
+  // TODO: Turn on/off integer snapping with a hotkey? (like if shift/control is pressed)
   /** Minimum number of steps for the slider to use if integer steps cannot be used.
-   * Default is 200. */
+   * Default is 25. */
   minSteps?: number;
   // TODO: Add a way to fetch significant figures for each feature. This is a temporary fix
   // and may not work for all features. Use scientific notation maybe?
@@ -33,7 +34,7 @@ const defaultProps: Partial<LabeledRangeSliderProps> = {
   maxInputBound: Number.MAX_SAFE_INTEGER,
   minSliderBound: 0,
   maxSliderBound: 1,
-  minSteps: 200,
+  minSteps: 25,
   maxDecimalsToDisplay: 3,
 };
 
