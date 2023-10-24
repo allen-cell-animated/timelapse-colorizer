@@ -3,6 +3,12 @@ precision highp usampler2D;
 uniform usampler2D frame;
 uniform sampler2D featureData;
 uniform usampler2D outlierData;
+/** A mapping of IDs that are in range after feature thresholding is applied. If
+ * an object's index is `i`, `inRangeIds[i] = 1` if the object
+ * is within the threshold range. This does not account for thresholding
+ * by the current featureMin or featureMax!
+ */
+uniform usampler2D inRangeIds;
 uniform float featureMin;
 uniform float featureMax;
 
@@ -43,6 +49,12 @@ uint getOutlierVal(int index) {
   int width = textureSize(outlierData, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
   return texelFetch(outlierData, featurePos, 0).r;
+}
+
+bool getInRange(int index) {
+  int width = textureSize(inRangeIds, 0).x;
+  ivec2 featurePos = ivec2(index % width, index / width);
+  return texelFetch(inRangeIds, featurePos, 0).r == 1u;
 }
 
 vec4 getColorRamp(float val) {
@@ -104,11 +116,12 @@ void main() {
   // Data buffer starts at 0, non-background segmentation IDs start at 1
   float featureVal = getFeatureVal(int(id) - 1);
   uint outlierVal = getOutlierVal(int(id) - 1);
+  bool isInRange = getInRange(int(id) - 1);
   float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
 
   // Use the selected draw mode to handle out of range and outlier values;
   // otherwise color with the color ramp as usual.
-  bool isOutOfRange = normFeatureVal < 0.0 || normFeatureVal > 1.0;
+  bool isOutOfRange = !isInRange || normFeatureVal < 0.0 || normFeatureVal > 1.0;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
 
   if (isOutlier) {
