@@ -212,6 +212,21 @@ def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
         data = pd.read_csv(readPath)
         logging.info("Making dataset '" + dataset + "'.")
         make_dataset(data, output_dir, dataset, do_frames, scale)
+
+        # Update the collections file
+        with open(output_dir + "/collection.json", "rw") as f:
+            collection = json.load(f)
+            if collection == None:
+                collection = []
+
+            is_in_collection = False
+            for item in collection:
+                if item["name"] == dataset:
+                    is_in_collection = True
+                    break
+            if not is_in_collection:
+                collection.append({"name": dataset, "path": dataset})
+            json.dump(collection, f)
     else:
         # For every condition, make a dataset.
         conditions = [
