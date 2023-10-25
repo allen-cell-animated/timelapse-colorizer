@@ -219,6 +219,7 @@ export default class Dataset {
 
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
+    this.outlierFile = manifest.outliers;
 
     const featuresToMetadata: Record<string, Partial<FeatureMetadata>> = {};
     for (const featureName of Object.keys(this.featureFiles)) {
