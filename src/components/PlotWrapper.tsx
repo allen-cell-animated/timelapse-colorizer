@@ -48,5 +48,5 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
   }, [props.selectedTrack, props.featureName]);
 
-  return <div ref={plotDivRef} style={{ width: "600px", height: "400px" }} />;
+  return <div ref={plotDivRef} style={{ width: "auto", height: "auto" }} />;
 }

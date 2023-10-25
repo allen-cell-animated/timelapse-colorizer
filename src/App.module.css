@@ -130,7 +130,7 @@
   flex: row;
   flex-wrap: wrap;
   gap: 20px;
-  width: auto;
+  width: 100%;
 }
 
 .canvasPanel {
@@ -172,9 +172,12 @@
 
 .sidePanels {
   gap: 10px;
+  flex-grow: 1;
+
   /* TODO: This is copied from CanvasWrapper and should be shared sizing behavior. */
-  max-width: calc(100vw - 75px);
-  width: 730px;
+  max-width: calc(min(100vw - 75px, 730px));
+  width: fit-content;
+  min-width: 100px;
 }
 
 .plotAndFiltersPanel {
