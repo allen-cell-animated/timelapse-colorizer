@@ -45,7 +45,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const items = [
     { key: DrawMode.HIDE.toString(), label: "Hide values" },
     { key: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
-    { key: DrawMode.USE_RAMP.toString(), label: "Use color map" },
+    // { key: DrawMode.USE_RAMP.toString(), label: "Use color map" },
   ];
 
   const defaultPresetColors = [

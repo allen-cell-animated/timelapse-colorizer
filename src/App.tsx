@@ -690,7 +690,7 @@ function App(): ReactElement {
               <h2>Viewer settings</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                 <DrawModeDropdown
-                  label="Values outside of range"
+                  label="Filtered out values"
                   selected={outOfRangeDrawSettings.mode}
                   color={outOfRangeDrawSettings.color}
                   onChange={(mode: DrawMode, color: Color) => {
