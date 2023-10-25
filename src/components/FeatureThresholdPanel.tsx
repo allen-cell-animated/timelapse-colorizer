@@ -8,16 +8,13 @@ import { CloseOutlined } from "@ant-design/icons";
 import IconButton from "./IconButton";
 
 const PanelContainer = styled.div`
-  max-width: calc(min(100vw - 80px, 730px));
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 0 10px;
 `;
 
 const ThresholdsContainer = styled.div`
-  max-height: 400px;
   overflow-y: auto;
 `;
 

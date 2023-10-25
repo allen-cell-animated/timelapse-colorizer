@@ -74,7 +74,7 @@ export default class Plotting {
       title: "track " + track.trackId,
     };
 
-    Plotly.react(this.parentRef, [this.trace], layout);
+    Plotly.react(this.parentRef, [this.trace], layout, { displayModeBar: false });
   }
 
   setTime(t: number): void {

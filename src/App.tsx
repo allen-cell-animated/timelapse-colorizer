@@ -641,66 +641,69 @@ function App(): ReactElement {
               </div>
             </div>
           </div>
+          <div className={styles.sidePanels}>
+            <div className={styles.plotAndFiltersPanel}>
+              <Tabs
+                type="card"
+                style={{ marginBottom: 0, width: "100%" }}
+                size="large"
+                items={[
+                  {
+                    label: "Plot",
+                    key: "plot",
+                    children: (
+                      <div className={styles.tabContent}>
+                        <div className={styles.trackTitleBar}>
+                          <h2 style={{ margin: 0 }}>Plot</h2>
 
-          <div className={styles.plotPanel}>
-            <Tabs
-              type="card"
-              style={{ marginBottom: 0, width: "100%" }}
-              size="large"
-              items={[
-                {
-                  label: "Filters",
-                  key: "filter",
-                  children: (
-                    <FeatureThresholdPanel
-                      featureThresholds={featureThresholds}
-                      onChange={setFeatureThresholds}
-                      dataset={dataset}
-                      disabled={disableUi}
-                    />
-                  ),
-                },
-                {
-                  label: "Plot",
-                  key: "plot",
-                  children: (
-                    <div>
-                      <div className={styles.trackTitleBar}>
-                        <h2>Plot</h2>
-
-                        <div className={styles.trackSearch}>
-                          <h3>Search</h3>
-                          <Input
-                            type="number"
-                            value={findTrackInput}
-                            size="small"
-                            placeholder="Track ID..."
-                            disabled={disableUi}
-                            onChange={(event) => {
-                              setFindTrackInput(event.target.value);
-                            }}
-                          />
-                          <IconButton
-                            disabled={disableUi}
-                            onClick={async () => {
-                              await findTrack(parseInt(findTrackInput, 10));
-                            }}
-                          >
-                            <SearchOutlined />
-                          </IconButton>
+                          <div className={styles.trackSearch}>
+                            <h3>Search</h3>
+                            <Input
+                              type="number"
+                              value={findTrackInput}
+                              size="small"
+                              placeholder="Track ID..."
+                              disabled={disableUi}
+                              onChange={(event) => {
+                                setFindTrackInput(event.target.value);
+                              }}
+                            />
+                            <IconButton
+                              disabled={disableUi}
+                              onClick={async () => {
+                                await findTrack(parseInt(findTrackInput, 10));
+                              }}
+                            >
+                              <SearchOutlined />
+                            </IconButton>
+                          </div>
                         </div>
+                        <PlotWrapper
+                          frame={currentFrame}
+                          dataset={dataset}
+                          featureName={featureName}
+                          selectedTrack={selectedTrack}
+                        />
                       </div>
-                      <PlotWrapper
-                        frame={currentFrame}
-                        dataset={dataset}
-                        featureName={featureName}
-                        selectedTrack={selectedTrack}
-                      />
-                    </div>
-                  ),
-                },
-              ]}
-            />
+                    ),
+                  },
+                  {
+                    label: "Filters",
+                    key: "filter",
+                    children: (
+                      <div className={styles.tabContent}>
+                        <FeatureThresholdPanel
+                          featureThresholds={featureThresholds}
+                          onChange={setFeatureThresholds}
+                          dataset={dataset}
+                          disabled={disableUi}
+                        />
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            </div>
             <Divider orientationMargin={0} />
             <div>
               <h2>Viewer settings</h2>

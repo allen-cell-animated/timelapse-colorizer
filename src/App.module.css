@@ -170,23 +170,55 @@
   width: 100%;
 }
 
-.plotPanel {
-  max-width: calc(100vw - 60px);
-  flex-grow: 1;
+.sidePanels {
+  gap: 10px;
+  /* TODO: This is copied from CanvasWrapper and should be shared sizing behavior. */
+  max-width: calc(100vw - 75px);
+  width: 730px;
 }
 
-.plotPanel > div {
-  width: fit-content;
-  max-width: 100%;
+.plotAndFiltersPanel {
+  display: block;
+  height: 500px;
+  width: 100%;
 }
 
-.plotPanel .trackTitleBar {
+.plotAndFiltersPanel :global(.ant-tabs-nav) {
+  margin: 0 0;
+  background-color: var(--color-background);
+}
+
+/* Passes the width and height attributes down through the layers of ant hierarchy 
+* so we can correctly size the plot/filter content area
+*/
+.plotAndFiltersPanel :global(.ant-tabs-nav) {
+  width: 100%;
+}
+.plotAndFiltersPanel :global(.ant-tabs),
+.plotAndFiltersPanel :global(.ant-tabs-content-holder),
+.plotAndFiltersPanel :global(.ant-tabs-content),
+.plotAndFiltersPanel :global(.ant-tabs-tabpane) {
+  height: 100%;
+}
+
+.plotAndFiltersPanel .tabContent {
+  padding: 10px 20px;
+  border: 1px solid var(--color-dividers);
+  border-top: 0;
+  height: 100%;
+}
+
+.plotAndFiltersPanel .trackTitleBar {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  max-width: 734px;
+}
+
+.plotAndFiltersPanel .tabContent {
+  width: auto;
+  height: calc(100% - 20px);
 }
 
 .trackSearch {
