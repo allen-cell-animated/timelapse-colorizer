@@ -71,6 +71,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
   }, []);
 
+  // These are all useMemo calls because the updates to the canvas must happen in the same render;
+  // if these were useEffects, the canvas will lag behind updates since there is no state update to
+  // trigger a re-render.
+
   // Update canvas color ramp
   useMemo(() => {
     canv.setColorRamp(props.colorRamp);
