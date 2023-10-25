@@ -116,19 +116,22 @@ void main() {
   // Data buffer starts at 0, non-background segmentation IDs start at 1
   float featureVal = getFeatureVal(int(id) - 1);
   uint outlierVal = getOutlierVal(int(id) - 1);
-  bool isInRange = getInRange(int(id) - 1);
   float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
 
   // Use the selected draw mode to handle out of range and outlier values;
   // otherwise color with the color ramp as usual.
-  bool isOutOfRange = !isInRange || normFeatureVal < 0.0 || normFeatureVal > 1.0;
+  bool isInRange = getInRange(int(id) - 1);
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
 
-  if (isOutlier) {
-    gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor, normFeatureVal);
-  } else if (isOutOfRange) {
-    gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor, normFeatureVal);
+  // In-range outliers get custom coloring;
+  // otherwise all out-of-range values are treated the same.
+  if (isInRange) {
+    if (isOutlier) {
+      gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor, normFeatureVal);
+    } else {
+      gOutputColor = getColorRamp(normFeatureVal);
+    }
   } else {
-    gOutputColor = getColorRamp(normFeatureVal);
+    gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor, normFeatureVal);
   }
 }
