@@ -24,10 +24,12 @@ const ThresholdsContainer = styled.div`
 type FeatureThresholdPanelProps = {
   featureThresholds: FeatureThreshold[];
   onChange: (thresholds: FeatureThreshold[]) => void;
-
   dataset: Dataset | null;
+  disabled?: boolean;
 };
-const defaultProps: Partial<FeatureThresholdPanelProps> = {};
+const defaultProps: Partial<FeatureThresholdPanelProps> = {
+  disabled: false,
+};
 
 export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
@@ -81,7 +83,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     return (
       <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
-          <h3>{item.featureName}</h3>
+          <h3>{props.dataset?.getFeatureNameWithUnits(item.featureName)}</h3>
           <div style={{ width: "calc(100% - 10px)" }}>
             <LabeledRangeSlider
               min={item.min}
@@ -111,6 +113,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
         onChange={onSelectionsChanged}
         value={selectedFeatures}
         options={featureOptions}
+        disabled={props.disabled}
       />
       <Card size="small">
         <ThresholdsContainer>

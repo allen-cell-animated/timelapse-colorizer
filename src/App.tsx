@@ -423,8 +423,6 @@ function App(): ReactElement {
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
-  const featureUnits = dataset?.getFeatureUnits(featureName) || "";
-
   return (
     <AppStyle className={styles.app}>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
@@ -482,7 +480,9 @@ function App(): ReactElement {
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
         <div className={styles.topControls}>
-          <h3 style={{ margin: "0" }}>Feature value range {featureUnits ? `(${featureUnits})` : ""}</h3>
+          <h3 style={{ margin: "0" }}>
+            {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
+          </h3>
           <div className={styles.controlsContainer}>
             <LabeledRangeSlider
               min={colorRampMin}
@@ -637,6 +637,7 @@ function App(): ReactElement {
                       featureThresholds={featureThresholds}
                       onChange={setFeatureThresholds}
                       dataset={dataset}
+                      disabled={disableUi}
                     />
                   ),
                 },
