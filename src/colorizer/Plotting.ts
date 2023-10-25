@@ -40,7 +40,7 @@ export default class Plotting {
       height: 400,
     };
 
-    Plotly.newPlot(this.parentRef, [], layout);
+    Plotly.newPlot(this.parentRef, [], layout, { displayModeBar: false });
     this.plot = this.plot.bind(this);
   }
 
@@ -49,6 +49,7 @@ export default class Plotting {
   }
 
   plot(track: Track, feature: string, time: number): void {
+    console.log("plotting " + track.trackId);
     if (!this.dataset) {
       return;
     }
