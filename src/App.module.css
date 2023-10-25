@@ -177,13 +177,14 @@
   /* TODO: This is copied from CanvasWrapper and should be shared sizing behavior. */
   max-width: calc(min(100vw - 75px, 730px));
   width: fit-content;
-  min-width: 100px;
+  min-width: 300px;
 }
 
 .plotAndFiltersPanel {
   display: block;
   height: 500px;
   width: 100%;
+  overflow: hidden;
 }
 
 .plotAndFiltersPanel :global(.ant-tabs-nav) {

@@ -22,7 +22,12 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
 
   // Setup for plot after initial render, since it replaces a DOM element.
   useEffect(() => {
-    const plot = new Plotting(plotDivRef.current!);
+    const layout = { width: 600, height: 400 };
+    if (plotDivRef.current) {
+      layout.width = plotDivRef.current.clientWidth;
+      layout.height = plotDivRef.current.clientHeight;
+    }
+    const plot = new Plotting(plotDivRef.current!, {});
     setPlot(plot);
     plot.removePlot(); // Clear initial plot for consistency
   }, []);
@@ -48,5 +53,24 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
   }, [props.selectedTrack, props.featureName]);
 
-  return <div ref={plotDivRef} style={{ width: "auto", height: "auto" }} />;
+  const updatePlotSize = () => {
+    if (!plotDivRef.current) {
+      return;
+    }
+    const width = plotDivRef.current.clientWidth;
+    const height = plotDivRef.current.clientHeight;
+    console.log(`Resizing (${width}, ${height})`);
+    plot?.setSize(width, height);
+  };
+
+  // Once the plot is set up, update its initial size to match the window.
+  // We rely on the "responsive" behavior of the plot to update its size.
+  // TODO: Troubleshoot using window.addEventListener for resizing.
+  useEffect(() => {
+    updatePlotSize();
+    // window.addEventListener("resize", updatePlotSize);
+    // return () => window.removeEventListener("resize", updatePlotSize);
+  }, [plot, plotDivRef.current]);
+
+  return <div ref={plotDivRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>;
 }
