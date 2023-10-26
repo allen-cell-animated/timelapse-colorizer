@@ -32,7 +32,7 @@ import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
-export const OUT_OF_RANGE_COLOR_DEFAULT = 0xc0c0c0;
+export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 

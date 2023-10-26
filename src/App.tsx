@@ -442,6 +442,19 @@ function App(): ReactElement {
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
+  // Show min + max marks on the color ramp slider if a feature is selected and
+  // is currently being thresholded/filtered on.
+  const getColorMapSliderMarks = (): undefined | number[] => {
+    if (!featureName || featureThresholds.length === 0) {
+      return undefined;
+    }
+    const threshold = featureThresholds.find((value) => value.featureName === featureName);
+    if (!threshold) {
+      return undefined;
+    }
+    return [threshold.min, threshold.max];
+  };
+
   return (
     <AppStyle className={styles.app}>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
@@ -512,6 +525,7 @@ function App(): ReactElement {
                 setColorRampMin(min);
                 setColorRampMax(max);
               }}
+              marks={getColorMapSliderMarks()}
               disabled={disableUi}
             />
             <div>
