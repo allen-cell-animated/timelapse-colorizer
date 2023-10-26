@@ -35,15 +35,20 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {
   disabled: false,
 };
 
+/**
+ * A React component for adding, removing, and editing thresholds on features in a dataset.
+ */
 export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
 
   // Clear thresholds for features that don't exist when the dataset changes.
+  // TODO: Show these thresholds as disabled, rather than removing them.
   useEffect(() => {
     const newThresholds = props.featureThresholds.filter((t) => props.dataset?.featureNames.includes(t.featureName));
     props.onChange(newThresholds);
   }, [props.dataset]);
 
+  /** Handle the user selecting new features. */
   const onSelectionsChanged = (selections: string[]): void => {
     const newThresholds: FeatureThreshold[] = [];
     selections.forEach((featureName) => {
@@ -61,12 +66,14 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.onChange(newThresholds);
   };
 
+  /** Handle the threshold for a feature changing. */
   const onThresholdChanged = (index: number, min: number, max: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds[index] = { ...newThresholds[index], min, max };
     props.onChange(newThresholds);
   };
 
+  /** Handle a threshold getting deleted */
   const onClickedRemove = (index: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds.splice(index, 1);

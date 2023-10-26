@@ -22,12 +22,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
 
   // Setup for plot after initial render, since it replaces a DOM element.
   useEffect(() => {
-    const layout = { width: 600, height: 400 };
-    if (plotDivRef.current) {
-      layout.width = plotDivRef.current.clientWidth;
-      layout.height = plotDivRef.current.clientHeight;
-    }
-    const plot = new Plotting(plotDivRef.current!, {});
+    const plot = new Plotting(plotDivRef.current!);
     setPlot(plot);
     plot.removePlot(); // Clear initial plot for consistency
   }, []);
@@ -65,7 +60,8 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
 
   // Once the plot is set up, update its initial size to match the window.
   // We rely on the "responsive" behavior of the plot to update its size.
-  // TODO: Troubleshoot using window.addEventListener for resizing.
+  // TODO: Troubleshoot using window.addEventListener for resizing, because
+  // the native responsive behavior can be a bit slow.
   useEffect(() => {
     updatePlotSize();
     // window.addEventListener("resize", updatePlotSize);

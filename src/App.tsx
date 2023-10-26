@@ -74,20 +74,19 @@ function App(): ReactElement {
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
-  const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([
-    { featureName: "Height", min: 60, max: 80 },
-  ]);
 
+  const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
   const setFeatureThresholds = useCallback(
+    // Change the current feature min + max on the color ramp if that feature's threshold moved.
     (newThresholds: FeatureThreshold[]): void => {
       // Check if the current feature name is being thresholded on, and if that threshold
       // has changed. If so, snap the current min + max color ramp values so they match the new
       // threshold values.
-      const currentThreshold = featureThresholds.find((t) => t.featureName === featureName);
+      const currThreshold = featureThresholds.find((t) => t.featureName === featureName);
       const newThreshold = newThresholds.find((t) => t.featureName === featureName);
 
-      if (newThreshold && currentThreshold) {
-        if (newThreshold.min !== currentThreshold.min || newThreshold.max !== currentThreshold.max) {
+      if (newThreshold && currThreshold) {
+        if (newThreshold.min !== currThreshold.min || newThreshold.max !== currThreshold.max) {
           setColorRampMin(newThreshold.min);
           setColorRampMax(newThreshold.max);
         }

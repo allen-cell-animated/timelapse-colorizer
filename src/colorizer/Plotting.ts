@@ -29,11 +29,11 @@ export default class Plotting {
   private dataset: Dataset | null;
   private trace: Plotly.Data | null;
 
-  constructor(parentRef: HTMLElement, layout: Partial<Plotly.Layout> = {}) {
+  constructor(parentRef: HTMLElement) {
     this.dataset = null;
     this.trace = null;
     this.parentRef = parentRef;
-    const defaultLayout: Partial<Plotly.Layout> = {
+    const layout: Partial<Plotly.Layout> = {
       xaxis: {
         title: "time index",
       },
@@ -45,7 +45,7 @@ export default class Plotting {
       height: 400,
     };
 
-    Plotly.newPlot(this.parentRef, [], { ...defaultLayout, ...layout }, CONFIG);
+    Plotly.newPlot(this.parentRef, [], layout, CONFIG);
     this.plot = this.plot.bind(this);
   }
 
@@ -54,7 +54,6 @@ export default class Plotting {
   }
 
   plot(track: Track, feature: string, time: number): void {
-    console.log("plotting " + track.trackId);
     if (!this.dataset) {
       return;
     }
