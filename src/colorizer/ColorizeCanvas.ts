@@ -54,8 +54,8 @@ type ColorizeUniformTypes = {
   featureData: Texture;
   outlierData: Texture;
   inRangeIds: Texture;
-  featureMin: number;
-  featureMax: number;
+  featureColorRampMin: number;
+  featureColorRampMax: number;
   colorRamp: Texture;
   backgroundColor: Color;
   outlierColor: Color;
@@ -83,8 +83,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
-    featureMin: new Uniform(0),
-    featureMax: new Uniform(1),
+    featureColorRampMin: new Uniform(0),
+    featureColorRampMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
@@ -361,12 +361,12 @@ export default class ColorizeCanvas {
 
   setColorMapRangeMin(newMin: number): void {
     this.colorMapRangeMin = newMin;
-    this.setUniform("featureMin", this.colorMapRangeMin);
+    this.setUniform("featureColorRampMin", this.colorMapRangeMin);
   }
 
   setColorMapRangeMax(newMax: number): void {
     this.colorMapRangeMax = newMax;
-    this.setUniform("featureMax", this.colorMapRangeMax);
+    this.setUniform("featureColorRampMax", this.colorMapRangeMax);
   }
 
   resetColorMapRange(): void {
@@ -377,8 +377,8 @@ export default class ColorizeCanvas {
     if (featureData) {
       this.colorMapRangeMin = featureData.min;
       this.colorMapRangeMax = featureData.max;
-      this.setUniform("featureMin", this.colorMapRangeMin);
-      this.setUniform("featureMax", this.colorMapRangeMax);
+      this.setUniform("featureColorRampMin", this.colorMapRangeMin);
+      this.setUniform("featureColorRampMax", this.colorMapRangeMax);
     }
   }
 

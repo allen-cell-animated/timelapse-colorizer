@@ -3,14 +3,16 @@ precision highp usampler2D;
 uniform usampler2D frame;
 uniform sampler2D featureData;
 uniform usampler2D outlierData;
-/** A mapping of IDs that are in range after feature thresholding is applied. If
+/** A mapping of IDs that are in range after feature thresholding/filtering is applied. If
  * an object's index is `i`, `inRangeIds[i] = 1` if the object
- * is within the threshold range. This does not account for thresholding
- * by the current featureMin or featureMax!
+ * is within the threshold range. Note that data is packed into a square texture.
  */
 uniform usampler2D inRangeIds;
-uniform float featureMin;
-uniform float featureMax;
+/** Min and max feature values that define the endpoints of the color map. Values
+ * outside the range will be clamped to the nearest endpoint.
+ */
+uniform float featureColorRampMin;
+uniform float featureColorRampMax;
 
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
@@ -116,15 +118,15 @@ void main() {
   // Data buffer starts at 0, non-background segmentation IDs start at 1
   float featureVal = getFeatureVal(int(id) - 1);
   uint outlierVal = getOutlierVal(int(id) - 1);
-  float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
+  float normFeatureVal = (featureVal - featureColorRampMin) / (featureColorRampMax - featureColorRampMin);
 
   // Use the selected draw mode to handle out of range and outlier values;
   // otherwise color with the color ramp as usual.
   bool isInRange = getInRange(int(id) - 1);
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
 
-  // In-range outliers get custom coloring;
-  // otherwise all out-of-range values are treated the same.
+  // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
+  // Features inside the range can either be outliers or standard values, and are colored accordingly.
   if (isInRange) {
     if (isOutlier) {
       gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor, normFeatureVal);
