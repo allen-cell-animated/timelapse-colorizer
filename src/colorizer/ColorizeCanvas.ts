@@ -394,6 +394,7 @@ export default class ColorizeCanvas {
     }
     // Make new binary boolean texture (1/0) representing whether an object is in range of the
     // feature thresholds or not.
+    // TODO: Optimize memory by using a true boolean array? Bit-level manipulation to fit it within Uint8Array?
     const inRangeIds = new Uint8Array(this.dataset.numObjects);
     inRangeIds.fill(1);
 

@@ -18,6 +18,13 @@ const ThresholdsContainer = styled.div`
   overflow-y: auto;
 `;
 
+const CardWithoutVerticalPadding = styled(Card)`
+  & .ant-card-body {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+`;
+
 type FeatureThresholdPanelProps = {
   featureThresholds: FeatureThreshold[];
   onChange: (thresholds: FeatureThreshold[]) => void;
@@ -112,11 +119,11 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
         options={featureOptions}
         disabled={props.disabled}
       />
-      <Card size="small">
+      <CardWithoutVerticalPadding size="small" style={{ paddingTop: 0 }}>
         <ThresholdsContainer>
           <List renderItem={renderItem} dataSource={props.featureThresholds} />
         </ThresholdsContainer>
-      </Card>
+      </CardWithoutVerticalPadding>
     </PanelContainer>
   );
 }
