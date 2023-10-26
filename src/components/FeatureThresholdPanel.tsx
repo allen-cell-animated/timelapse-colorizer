@@ -73,7 +73,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.onChange(newThresholds);
   };
 
-  /** Handle a threshold getting deleted */
+  /** Handle a threshold getting deleted. */
   const onClickedRemove = (index: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds.splice(index, 1);
@@ -85,7 +85,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.dataset?.featureNames.map((name) => ({ label: props.dataset?.getFeatureNameWithUnits(name), value: name })) ||
     [];
 
-  const renderItem = (item: FeatureThreshold, index: number): ReactNode => {
+  const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
     if (!featureData) {
       return <></>;
@@ -127,7 +127,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
       />
       <CardWithoutVerticalPadding size="small" style={{ paddingTop: 0 }}>
         <ThresholdsContainer>
-          <List renderItem={renderItem} dataSource={props.featureThresholds} />
+          <List renderItem={renderListItems} dataSource={props.featureThresholds} />
         </ThresholdsContainer>
       </CardWithoutVerticalPadding>
     </PanelContainer>
