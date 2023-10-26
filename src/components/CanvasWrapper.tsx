@@ -58,7 +58,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Used to delay updates for operations like updating thresholding!
   // Transitions are cancellable too, so if is interrupted by a new render
   // the old work will be discarded.
-  const [_isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
   const isMouseOverCanvas = useRef(false);

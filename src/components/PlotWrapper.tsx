@@ -53,7 +53,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
   }, [props.selectedTrack, props.featureName]);
 
-  const updatePlotSize = () => {
+  const updatePlotSize = (): void => {
     if (!plotDivRef.current) {
       return;
     }

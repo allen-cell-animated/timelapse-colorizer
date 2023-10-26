@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from "react";
+import React, { ReactElement, ReactNode, useEffect } from "react";
 import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import { Dataset } from "../colorizer";
 import { Card, List, Select } from "antd";
@@ -37,7 +37,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.onChange(newThresholds);
   }, [props.dataset]);
 
-  const onSelectionsChanged = (selections: string[]) => {
+  const onSelectionsChanged = (selections: string[]): void => {
     const newThresholds: FeatureThreshold[] = [];
     selections.forEach((featureName) => {
       // Set up default values for any new selected features, otherwise keep old thresholds
@@ -54,13 +54,13 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.onChange(newThresholds);
   };
 
-  const onThresholdChanged = (index: number, min: number, max: number) => {
+  const onThresholdChanged = (index: number, min: number, max: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds[index] = { ...newThresholds[index], min, max };
     props.onChange(newThresholds);
   };
 
-  const onClickedRemove = (index: number) => {
+  const onClickedRemove = (index: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds.splice(index, 1);
     props.onChange(newThresholds);
@@ -71,7 +71,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.dataset?.featureNames.map((name) => ({ label: props.dataset?.getFeatureNameWithUnits(name), value: name })) ||
     [];
 
-  const renderItem = (item: FeatureThreshold, index: number) => {
+  const renderItem = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
     if (!featureData) {
       return <></>;
