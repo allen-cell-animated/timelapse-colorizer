@@ -109,11 +109,10 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   return (
     <PanelContainer>
-      <h3>Add features</h3>
       <Select
         style={{ width: "100%" }}
         mode="multiple"
-        placeholder="Select filters"
+        placeholder="Add features"
         onChange={onSelectionsChanged}
         value={selectedFeatures}
         options={featureOptions}

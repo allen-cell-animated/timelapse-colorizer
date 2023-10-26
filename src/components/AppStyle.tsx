@@ -206,6 +206,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorLink: theme.color.theme,
             colorLinkHover: theme.color.themeDark,
             colorBorder: theme.color.layout.borders,
+            colorBorderSecondary: theme.color.layout.dividers,
             controlHeight: theme.controls.height,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,

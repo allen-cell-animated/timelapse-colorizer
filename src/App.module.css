@@ -209,7 +209,8 @@
   padding: 10px 20px;
   border: 1px solid var(--color-dividers);
   border-top: 0;
-  height: 100%;
+  width: auto;
+  height: calc(100% - 20px);
 }
 
 .plotAndFiltersPanel .trackTitleBar {
@@ -218,11 +219,6 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-}
-
-.plotAndFiltersPanel .tabContent {
-  width: auto;
-  height: calc(100% - 20px);
 }
 
 .trackSearch {
