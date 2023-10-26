@@ -61,7 +61,7 @@ export default class Plotting {
 
     const layout: Partial<Plotly.Layout> = {
       yaxis: {
-        title: feature,
+        title: this.dataset.getFeatureNameWithUnits(feature),
       },
       shapes: [
         {

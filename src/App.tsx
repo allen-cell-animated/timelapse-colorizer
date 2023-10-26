@@ -9,7 +9,7 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Divider, Input, Slider, notification } from "antd";
+import { Button, Checkbox, Divider, Input, notification, Slider } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
@@ -18,22 +18,23 @@ import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
+import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
-import ColorRampDropdown from "./components/ColorRampDropdown";
-import LabeledDropdown from "./components/LabeledDropdown";
-import LoadDatasetButton from "./components/LoadDatasetButton";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
-import IconButton from "./components/IconButton";
-import SpinBox from "./components/SpinBox";
-import HoverTooltip from "./components/HoverTooltip";
-import Export from "./components/Export";
-import DrawModeDropdown from "./components/DrawModeDropdown";
 import CanvasWrapper from "./components/CanvasWrapper";
+import ColorRampDropdown from "./components/ColorRampDropdown";
+import DrawModeDropdown from "./components/DrawModeDropdown";
+import Export from "./components/Export";
+import HoverTooltip from "./components/HoverTooltip";
+import IconButton from "./components/IconButton";
+import LabeledDropdown from "./components/LabeledDropdown";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
-import PlotWrapper from "./components/PlotWrapper";
+import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
+import PlotWrapper from "./components/PlotWrapper";
+import SpinBox from "./components/SpinBox";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -324,12 +325,18 @@ function App(): ReactElement {
   );
 
   const getFeatureValue = useCallback(
-    (id: number): number => {
+    (id: number): string => {
       if (!featureName || !dataset) {
-        return -1;
+        return "";
       }
       // Look up feature value from id
-      return dataset.getFeatureData(featureName)?.data[id] || -1;
+      const featureData = dataset.getFeatureData(featureName);
+      // ?? is a nullish coalescing operator; it checks for null + undefined values
+      // (safe for falsy values like 0 or NaN, which are valid feature values)
+      const featureValue = featureData?.data[id] ?? -1;
+      const unitsLabel = featureData?.units ? ` ${featureData?.units}` : "";
+      // Check if int, otherwise return float
+      return numberToStringDecimal(featureValue, 3) + unitsLabel;
     },
     [featureName, dataset]
   );
@@ -393,8 +400,20 @@ function App(): ReactElement {
     });
   };
 
+  const getFeatureDropdownData = useCallback((): string[] | { key: string; label: string }[] => {
+    if (!dataset) {
+      return [];
+    }
+    // Add units to the dataset feature names if present
+    return dataset.featureNames.map((name) => {
+      return { key: name, label: dataset.getFeatureNameWithUnits(name) };
+    });
+  }, [dataset]);
+
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
+
+  const featureUnits = dataset?.getFeatureUnits(featureName) || "";
 
   return (
     <AppStyle className={styles.app}>
@@ -419,7 +438,7 @@ function App(): ReactElement {
             disabled={disableUi}
             label="Feature"
             selected={featureName}
-            items={dataset?.featureNames || []}
+            items={getFeatureDropdownData()}
             onChange={(value) => {
               if (value !== featureName && dataset) {
                 updateFeature(dataset, value);
@@ -437,9 +456,7 @@ function App(): ReactElement {
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrameAndRender}
-            getCanvas={() => {
-              return canv.domElement;
-            }}
+            getCanvas={() => canv.domElement}
             // Stop playback when exporting
             onClick={() => timeControls.handlePauseButtonClick()}
             currentFrame={currentFrame}
@@ -455,7 +472,7 @@ function App(): ReactElement {
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
         <div className={styles.topControls}>
-          <h3 style={{ margin: "0" }}>Feature value range</h3>
+          <h3 style={{ margin: "0" }}>Feature value range {featureUnits ? `(${featureUnits})` : ""}</h3>
           <div className={styles.controlsContainer}>
             <LabeledRangeSlider
               min={colorRampMin}
@@ -490,7 +507,10 @@ function App(): ReactElement {
               tooltipContent={
                 <>
                   <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
-                  <p>Feature: {lastHoveredId && getFeatureValue(lastHoveredId)}</p>
+                  <p>
+                    {featureName}:{" "}
+                    <span style={{ whiteSpace: "nowrap" }}>{lastHoveredId && getFeatureValue(lastHoveredId)}</span>
+                  </p>
                 </>
               }
               disabled={!showHoveredId}

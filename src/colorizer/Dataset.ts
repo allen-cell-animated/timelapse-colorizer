@@ -1,8 +1,8 @@
 import { Texture, Vector2 } from "three";
 
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
-import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
+import JsonArrayLoader from "./loaders/JsonArrayLoader";
 
 import FrameCache from "./FrameCache";
 import Track from "./Track";
@@ -10,9 +10,10 @@ import Track from "./Track";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 
-type DatasetManifest = {
+export type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
+  featureMetadata?: Record<string, Partial<FeatureMetadata>>;
   outliers?: string;
   tracks?: string;
   times?: string;
@@ -20,11 +21,16 @@ type DatasetManifest = {
   bounds?: string;
 };
 
+export type FeatureMetadata = {
+  units: string | null;
+};
+
 export type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
   max: number;
+  units?: string;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -81,12 +87,12 @@ export default class Dataset {
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
-  private async fetchManifest(): Promise<DatasetManifest> {
-    const response = await urlUtils.fetchWithTimeout(this.manifestUrl, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
+  private async fetchJson(url: string): Promise<DatasetManifest> {
+    const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
   }
 
-  private async loadFeature(name: string): Promise<void> {
+  private async loadFeature(name: string, metadata: Partial<FeatureMetadata>): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
     const source = await this.arrayLoader.load(url);
     this.features[name] = {
@@ -95,6 +101,9 @@ export default class Dataset {
       min: source.getMin(),
       max: source.getMax(),
     };
+    if (metadata && metadata.units !== undefined && metadata.units !== null) {
+      this.features[name].units = metadata.units;
+    }
   }
 
   public hasFeature(name: string): boolean {
@@ -107,6 +116,19 @@ export default class Dataset {
     } else {
       return null;
     }
+  }
+
+  public getFeatureNameWithUnits(name: string): string {
+    const units = this.getFeatureUnits(name);
+    if (units) {
+      return `${name} (${units})`;
+    } else {
+      return name;
+    }
+  }
+
+  public getFeatureUnits(name: string): string | undefined {
+    return this.features[name]?.units;
   }
 
   /**
@@ -186,24 +208,32 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
-  /** Loads the dataset manifest and features */
-  public async open(): Promise<void> {
+  /** Loads the dataset manifest and features. */
+  public async open(manifestLoader = this.fetchJson): Promise<void> {
     if (this.hasOpened) {
       return;
     }
     this.hasOpened = true;
 
-    const manifest = await this.fetchManifest();
+    const manifest = await manifestLoader(this.manifestUrl);
 
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
     this.outlierFile = manifest.outliers;
+
+    const featuresToMetadata: Record<string, Partial<FeatureMetadata>> = {};
+    for (const featureName of Object.keys(this.featureFiles)) {
+      featuresToMetadata[featureName] = manifest.featureMetadata ? manifest.featureMetadata[featureName] : {};
+    }
+
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
-    const featuresPromises: Promise<void>[] = this.featureNames.map(this.loadFeature.bind(this));
+    const featuresPromises: Promise<void>[] = this.featureNames.map((name) =>
+      this.loadFeature.bind(this)(name, featuresToMetadata[name])
+    );
 
     const result = await Promise.all([
       this.loadToTexture(FeatureDataType.U8, this.outlierFile),

@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useContext, useEffect, useRef, useSta
 import { Button, Modal, Input, Radio, Space, RadioChangeEvent, InputNumber, App, Progress, Tooltip, Card } from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import styled from "styled-components";
+import { clamp } from "three/src/math/MathUtils";
 
 import SpinBox from "./SpinBox";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
@@ -82,10 +83,6 @@ const CustomRadioGroup = styled(Radio.Group)`
     flex-direction: row;
   }
 `;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(value, min));
-}
 
 /**
  * A single Export button that opens up an export modal when clicked. Manages starting and stopping

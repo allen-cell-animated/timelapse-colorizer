@@ -1,5 +1,5 @@
-import React, { PropsWithChildren, ReactElement, createContext } from "react";
 import { App, ConfigProvider } from "antd";
+import React, { createContext, PropsWithChildren, ReactElement } from "react";
 import styled from "styled-components";
 
 type AppStyleProps = {
@@ -65,7 +65,12 @@ const theme = {
     },
   },
   font: {
-    family: "Lato",
+    // LatoExtended font is a custom font family declared in the CssContainer.
+    // It's downloaded from https://www.latofonts.com/, as the Google Fonts version
+    // has limited characters. Here, Google Font's Lato is set as the default
+    // for faster initial load, and LatoExtended is used as a fallback for specific,
+    // non-Latin characters (usually scientific units).
+    family: "Lato, LatoExtended, sans-serif",
     resource: "https://fonts.googleapis.com/css2?family=Lato&display=swap",
     size: {
       header: 22,
@@ -87,6 +92,14 @@ export const AppThemeContext = createContext(theme);
 /** Applies theme as CSS variables that affect the rest of the document. */
 const CssContainer = styled.div`
   @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+
+  @font-face {
+    font-family: LatoExtended;
+    font-style: normal;
+    font-weight: 400;
+    src: url("/fonts/Lato-Regular.woff2") format("woff2"), url("/fonts/Lato-Regular.woff") format("woff"),
+      url("/fonts/Lato-Regular.ttf") format("truetype"), url("/fonts/Lato-Regular.eot") format("embedded-opentype");
+  }
 
   /* Text */
   --color-text-primary: ${theme.color.text.primary};
@@ -123,7 +136,7 @@ const CssContainer = styled.div`
   --color-focus-shadow: rgba(137, 98, 211, 0.06);
 
   /* Fonts */
-  --default-font: "${theme.font.family}";
+  --default-font: ${theme.font.family};
   --font-size-header: ${theme.font.size.header}px;
   --font-size-section: ${theme.font.size.section}px;
   --font-size-label: ${theme.font.size.label}px;
