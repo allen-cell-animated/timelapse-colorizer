@@ -66,7 +66,10 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   ///////// Generate dropdown contents
 
   // Only regenerate the gradient canvas URL if the selected ramp changes!
-  const selectedRamp = selectedRampData.colorRamp;
+  let selectedRamp = selectedRampData.colorRamp;
+  if (props.reversed) {
+    selectedRamp = selectedRamp.reverse();
+  }
   const selectedRampColorUrl = useMemo(() => {
     return selectedRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
   }, [props.selected, props.reversed]);
@@ -81,7 +84,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key} trigger={["hover", "focus"]}>
-          <Button key={key} onClick={() => props.onChange(key, props.reversed)} rootClassName={styles.dropdownButton}>
+          <Button key={key} onClick={() => props.onChange(key, false)} rootClassName={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>

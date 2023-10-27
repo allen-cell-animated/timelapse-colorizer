@@ -414,6 +414,10 @@ function App(): ReactElement {
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
+  let colorRamp = colorRampData.get(colorRampKey)?.colorRamp;
+  if (colorRampReversed && colorRamp) {
+    colorRamp = colorRamp.reverse();
+  }
   const featureUnits = dataset?.getFeatureUnits(featureName) || "";
 
   return (
@@ -530,7 +534,7 @@ function App(): ReactElement {
                 showTrackPath={showTrackPath}
                 outOfRangeDrawSettings={outOfRangeDrawSettings}
                 outlierDrawSettings={outlierDrawSettings}
-                colorRamp={colorRampData.get(colorRampKey)?.colorRamp!}
+                colorRamp={colorRamp!}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 selectedTrack={selectedTrack}
