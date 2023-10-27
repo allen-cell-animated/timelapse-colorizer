@@ -4,7 +4,7 @@ import { Dataset } from "../colorizer";
 import { Card, List, Select } from "antd";
 import styled from "styled-components";
 import LabeledRangeSlider from "./LabeledRangeSlider";
-import { CloseOutlined } from "@ant-design/icons";
+import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
 import IconButton from "./IconButton";
 
 const PanelContainer = styled.div`
@@ -15,14 +15,32 @@ const PanelContainer = styled.div`
   height: 100%;
 `;
 
-const CardWithoutVerticalPadding = styled(Card)`
+const FiltersCard = styled(Card)`
   overflow-y: auto;
+  height: 100%;
 
   & .ant-card-body {
     padding-top: 0;
     padding-bottom: 0;
+    height: 100%;
   }
 `;
+const FiltersList = styled(List)`
+  height: 100%;
+
+  & .ant-spin-nested-loading,
+  & .ant-spin-nested-loading div {
+    height: 100%;
+  }
+`;
+
+const EmptyListTextContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
 type FeatureThresholdPanelProps = {
   featureThresholds: FeatureThreshold[];
   onChange: (thresholds: FeatureThreshold[]) => void;
@@ -123,9 +141,22 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
         options={featureOptions}
         disabled={props.disabled}
       />
-      <CardWithoutVerticalPadding size="small" style={{ paddingTop: 0 }}>
-        <List renderItem={renderListItems} dataSource={props.featureThresholds} />
-      </CardWithoutVerticalPadding>
+      <FiltersCard size="small" style={{ paddingTop: 0 }}>
+        <FiltersList
+          renderItem={renderListItems}
+          dataSource={props.featureThresholds}
+          locale={{
+            emptyText: (
+              <EmptyListTextContainer>
+                <span style={{ fontSize: "24px", marginBottom: 0 }}>
+                  <FilterOutlined />
+                </span>
+                <p>No filters</p>
+              </EmptyListTextContainer>
+            ),
+          }}
+        />
+      </FiltersCard>
     </PanelContainer>
   );
 }
