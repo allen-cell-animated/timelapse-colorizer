@@ -145,8 +145,8 @@ def make_features(
     tracks = np.array([*range(shape[0])])
 
     feature_data = []
-    for i in range(len(features)):
-        f = dataset[features[i]].to_numpy()
+    for feature in features:
+        f = dataset[feature].to_numpy()
         feature_data.append(f)
 
     writer.write_feature_data(
@@ -188,10 +188,9 @@ def make_dataset(
     # metadata inside the dataset manifest.
     feature_labels = []
     feature_metadata: List[FeatureMetadata] = []
-    for i in range(len(FEATURE_COLUMNS)):
-        feature_col_name = FEATURE_COLUMNS[i]
-        label = FEATURE_COLUMNS_TO_NAMES.get(feature_col_name, feature_col_name)
-        unit = FEATURE_COLUMNS_TO_UNITS.get(feature_col_name, None)
+    for feature in FEATURE_COLUMNS:
+        label = FEATURE_COLUMNS_TO_NAMES.get(feature, feature)
+        unit = FEATURE_COLUMNS_TO_UNITS.get(feature, None)
         feature_labels.append(label[0:1].upper() + label[1:])  # Capitalize first letter
         feature_metadata.append({"units": unit})
 
