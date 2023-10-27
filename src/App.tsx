@@ -667,8 +667,6 @@ function App(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <div className={styles.trackTitleBar}>
-                          <h2 style={{ margin: 0 }}>Plot</h2>
-
                           <div className={styles.trackSearch}>
                             <h3>Search</h3>
                             <Input
