@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useTransition } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useRef } from "react";
 import { Color } from "three";
 
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
@@ -58,7 +58,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Used to delay updates for operations like updating thresholding!
   // Transitions are cancellable too, so if is interrupted by a new render
   // the old work will be discarded.
-  const [, startTransition] = useTransition();
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
   const isMouseOverCanvas = useRef(false);
@@ -94,8 +93,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.outlierDrawSettings]);
 
   useMemo(() => {
-    // TODO: Add debouncing for this
-    canv.setFeatureThresholds(props.featureThresholds);
+    // YAGNI: Debouncing for this is possible but no performance issues encountered yet.
+    // Add only if needed.
+    // Async in case of slowdowns to prevent this from halting the UI.
+    const updateThresholds = async (): Promise<void> => {
+      canv.setFeatureThresholds(props.featureThresholds);
+    };
+    updateThresholds();
   }, [props.featureThresholds, props.dataset]);
 
   // Updated track-related settings
