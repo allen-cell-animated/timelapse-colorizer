@@ -2,6 +2,8 @@
 A utility script for converting nuclear segmentation data from the EMT project. Original dataset
 provided by Leigh Harris!
 
+Note that this dataset does not have track IDs, so each unique object ID is treated as its own track.
+
 To export the default datasets, you can run:
 ```
 python timelapse-colorizer-data/convert_emt_nuclear_data.py --scale 1.0 --output_dir=/allen/aics/animated-cell/Dan/fileserver/colorizer/EMT_nuclear
@@ -36,8 +38,7 @@ from data_writer_utils import (
 # relabeled as constants here for clarity/intent of the column name.
 OBJECT_ID_COLUMN = "Label"
 """Column of object IDs (or unique row number)."""
-# TRACK_ID_COLUMN = ""
-"""Column of track ID for each object."""
+# Track ID column purposefully removed here, as it does not exist in this dataset.
 TIMES_COLUMN = "Frame"
 """Column of frame number that the object ID appears in."""
 SEGMENTED_IMAGE_COLUMN = "Filepath"
@@ -138,7 +139,8 @@ def make_features(
     centroids_x = dataset[CENTROIDS_X_COLUMN].to_numpy()
     centroids_y = dataset[CENTROIDS_Y_COLUMN].to_numpy()
 
-    # Generate the track data. This will be a very simple numpy table, where tracks[i] = i.
+    # This dataset does not have tracks, so we just generate a list of indices, one for each
+    # object. This will be a very simple numpy table, where tracks[i] = i.
     shape = dataset.shape
     tracks = np.array([*range(shape[0])])
 
