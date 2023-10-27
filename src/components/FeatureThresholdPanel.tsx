@@ -25,14 +25,6 @@ const FiltersCard = styled(Card)`
     height: 100%;
   }
 `;
-const FiltersList = styled(List)`
-  height: 100%;
-
-  & .ant-spin-nested-loading,
-  & .ant-spin-nested-loading div {
-    height: 100%;
-  }
-`;
 
 const EmptyListTextContainer = styled.div`
   display: flex;
@@ -142,7 +134,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
         disabled={props.disabled}
       />
       <FiltersCard size="small" style={{ paddingTop: 0 }}>
-        <FiltersList
+        <List
           renderItem={renderListItems}
           dataSource={props.featureThresholds}
           locale={{
