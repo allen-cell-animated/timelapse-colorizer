@@ -94,9 +94,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.outlierDrawSettings]);
 
   useMemo(() => {
-    startTransition(() => {
-      canv.setFeatureThresholds(props.featureThresholds);
-    });
+    // TODO: Add debouncing for this
+    canv.setFeatureThresholds(props.featureThresholds);
   }, [props.featureThresholds, props.dataset]);
 
   // Updated track-related settings

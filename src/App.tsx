@@ -281,6 +281,7 @@ function App(): ReactElement {
       setFindTrackInput("");
       setSelectedTrack(null);
       setDatasetOpen(true);
+      console.log("Num Items:" + dataset?.numObjects);
     },
     [dataset, featureName, canv, currentFrame, getUrlParams]
   );

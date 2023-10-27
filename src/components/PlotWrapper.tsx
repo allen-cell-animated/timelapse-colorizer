@@ -51,21 +51,20 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   // TODO: Troubleshoot using window.addEventListener for resizing, because
   // the native responsive behavior can be a bit slow.
   // Some layout issues occurred when using this, so it's disabled for now.
-  // const updatePlotSize = (): void => {
-  //   if (!plotDivRef.current) {
-  //     return;
-  //   }
-  //   const width = plotDivRef.current.clientWidth;
-  //   const height = plotDivRef.current.clientHeight;
-  //   console.log(`Resizing (${width}, ${height})`);
-  //   plot?.setSize(width, height);
-  // };
-  // useEffect(() => {
-  //   updatePlotSize();
-  //   plot?.forceUpdate();
-  //   window.addEventListener("resize", updatePlotSize);
-  //   return () => window.removeEventListener("resize", updatePlotSize);
-  // }, [plot, plotDivRef.current]);
+  const updatePlotSize = (): void => {
+    if (!plotDivRef.current) {
+      return;
+    }
+    const width = plotDivRef.current.clientWidth;
+    const height = plotDivRef.current.clientHeight;
+    console.log(`Resizing (${width}, ${height})`);
+    plot?.setSize(width, height);
+  };
+  useEffect(() => {
+    updatePlotSize();
+    // window.addEventListener("resize", updatePlotSize);
+    // return () => window.removeEventListener("resize", updatePlotSize);
+  }, [plot, plotDivRef.current]);
 
   return <div ref={plotDivRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>;
 }
