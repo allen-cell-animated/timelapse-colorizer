@@ -101,6 +101,37 @@ def remap_segmented_image(
     return (seg_remapped, lut)
 
 
+def update_collection(collection_filepath, dataset_name, dataset_path):
+    """
+    Adds a dataset to a collection file, creating the collection file if it doesn't already exist.
+    If the dataset is already in the collection, the existing dataset path will be updated.
+    """
+    collection = []
+
+    # Read in the existing collection, if it exists
+    if os.path.exists(collection_filepath):
+        try:
+            with open(collection_filepath, "r") as f:
+                collection = json.load(f)
+        except:
+            collection = []
+
+    # Update the collection file and write it out
+    with open(collection_filepath, "w") as f:
+        in_collection = False
+        # Check if the dataset already exists
+        for i in range(len(collection)):
+            dataset_item = collection[i]
+            if dataset_item["name"] == dataset_name:
+                # We found a matching dataset, so update the dataset path and exit
+                collection[i]["path"] = dataset_path
+                json.dump(collection, f)
+                return
+        # No matching dataset was found, so add it to the collection
+        collection.append({"name": dataset_name, "path": dataset_path})
+        json.dump(collection, f)
+
+
 class ColorizerDatasetWriter:
     """
     Writes provided data as Colorizer-compatible dataset files to the configured output directory.
