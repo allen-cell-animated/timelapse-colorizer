@@ -57,6 +57,7 @@ function App(): ReactElement {
 
   const colorRampData = DEFAULT_COLOR_RAMPS;
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
+  const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
   const [outOfRangeDrawSettings, setoutOfRangeDrawSettings] = useState({
@@ -446,7 +447,15 @@ function App(): ReactElement {
             }}
           />
 
-          <ColorRampDropdown selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
+          <ColorRampDropdown
+            selected={colorRampKey}
+            reversed={colorRampReversed}
+            onChange={(name, reversed) => {
+              setColorRampKey(name);
+              setColorRampReversed(reversed);
+            }}
+            disabled={disableUi}
+          />
         </div>
         <div className={styles.headerRight}>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
