@@ -14,9 +14,13 @@ from nuc_morph_analysis.lib.preprocessing.load_data import (
     load_dataset,
     get_dataset_pixel_size,
 )
+from nuc_morph_analysis.lib.visualization.plotting_tools import (
+    get_plot_labels_for_metric,
+)
 from data_writer_utils import (
     INITIAL_INDEX_COLUMN,
     ColorizerDatasetWriter,
+    FeatureMetadata,
     configureLogging,
     scale_image,
     remap_segmented_image,
@@ -68,6 +72,8 @@ CENTROIDS_Y_COLUMN = "centroid_y"
 """Column of Y centroid coordinates, in pixels of original image data."""
 OUTLIERS_COLUMN = "is_outlier"
 """Column of outlier status for each object. (true/false)"""
+FEATURE_COLUMNS = ["NUC_shape_volume_lcc", "NUC_position_depth"]
+"""Columns of feature data to include in the dataset. Each column will be its own feature file."""
 
 
 def make_frames(
@@ -119,7 +125,7 @@ def make_frames(
 
 
 def make_features(
-    dataset: pd.DataFrame, features: List[str], writer: ColorizerDatasetWriter
+    dataset: pd.DataFrame, feature_names: List[str], writer: ColorizerDatasetWriter
 ):
     """
     Generate the outlier, track, time, centroid, and feature data files.
@@ -133,9 +139,10 @@ def make_features(
     centroids_y = dataset[CENTROIDS_Y_COLUMN].to_numpy()
 
     feature_data = []
-    for i in range(len(features)):
-        # TODO normalize output range excluding outliers?
-        f = dataset[features[i]].to_numpy()
+    for feature in feature_names:
+        # Scale feature to use actual units
+        (scale_factor, label, unit) = get_plot_labels_for_metric(feature)
+        f = dataset[feature_names[i]].to_numpy() * scale_factor
         feature_data.append(f)
 
     writer.write_feature_data(
@@ -168,13 +175,28 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     reduced_dataset[INITIAL_INDEX_COLUMN] = reduced_dataset.index.values
     grouped_frames = reduced_dataset.groupby(TIMES_COLUMN)
 
+    # Get the units and human-readable label for each feature; we include this as
+    # metadata inside the dataset manifest.
+    feature_labels = []
+    feature_metadata = []
+    formatted_units = {
+        "($\mu m$)": "µm",
+        "($\mu m^3$)": "µm³",
+        "($\mu m^3$/hr)": "µm³/hr",
+        "(min)": "min",
+        "($\mu m^{-1}$)": "µm⁻¹",
+    }
+    for feature in FEATURE_COLUMNS:
+        (scale_factor, label, unit) = get_plot_labels_for_metric(feature)
+        feature_labels.append(label.capitalize())
+        feature_metadata.append({"units": formatted_units[unit]})
+
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
-    features = ["NUC_shape_volume_lcc", "NUC_position_depth"]
-    make_features(full_dataset, features, writer)
+    make_features(full_dataset, FEATURE_COLUMNS, writer)
     if do_frames:
         make_frames(grouped_frames, scale, writer)
-    writer.write_manifest(nframes, features)
+    writer.write_manifest(nframes, feature_labels, feature_metadata)
 
 
 parser = argparse.ArgumentParser()

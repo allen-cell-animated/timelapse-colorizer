@@ -2,8 +2,9 @@ import json
 import logging
 import os
 import pathlib
+import re
 from PIL import Image
-from typing import List, Union
+from typing import List, TypedDict, Union
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,10 @@ INITIAL_INDEX_COLUMN = "initialIndex"
 RESERVED_INDICES = 1
 """Reserved indices that cannot be used for cell data. 
 0 is reserved for the background."""
+
+
+class FeatureMetadata(TypedDict):
+    units: str
 
 
 class NumpyValuesEncoder(json.JSONEncoder):
@@ -49,6 +54,23 @@ def scale_image(seg2d: np.ndarray, scale: float) -> np.ndarray:
     if scale != 1.0:
         seg2d = skimage.transform.rescale(seg2d, scale, anti_aliasing=False, order=0)
     return seg2d
+
+
+def extract_units_from_feature_name(feature_name: str) -> (str, Union[str, None]):
+    """
+    Extracts units from the parentheses at the end of a feature name string, returning
+    the feature name (without units) and units as a tuple. Returns None for the units
+    if no units are found.
+
+    ex: `"Feature Name (units)" -> ("Feature Name", "units")`
+    """
+    match = re.search(r"\((.+)\)$", feature_name)
+    if match is None:
+        return (feature_name, None)
+    units = match.group()
+    units = units[1:-1]  # Remove parentheses
+    feature_name = feature_name[: match.start()].strip()
+    return (feature_name, units)
 
 
 def remap_segmented_image(
@@ -161,6 +183,7 @@ class ColorizerDatasetWriter:
         self,
         num_frames: int,
         feature_names: List[str],
+        feature_metadata: List[FeatureMetadata] = [],
     ):
         """
         Writes the final manifest file for the dataset in the configured output directory.
@@ -191,9 +214,12 @@ class ColorizerDatasetWriter:
         """
         # write manifest file
         featmap = {}
+        output_json = {}
+
         for i in range(len(feature_names)):
             featmap[feature_names[i]] = "feature_" + str(i) + ".json"
-        js = {
+
+        output_json = {
             "frames": ["frame_" + str(i) + ".png" for i in range(num_frames)],
             "features": featmap,
             "outliers": "outliers.json",
@@ -202,8 +228,21 @@ class ColorizerDatasetWriter:
             "centroids": "centroids.json",
             "bounds": "bounds.json",
         }
+
+        # Merge the feature metadata together and include it in the output if present
+        if feature_metadata:
+            if len(feature_metadata) == len(feature_names):
+                combined_feature_metadata = {}
+                for i in range(len(feature_metadata)):
+                    combined_feature_metadata[feature_names[i]] = feature_metadata[i]
+                output_json["featureMetadata"] = combined_feature_metadata
+            else:
+                logging.warn(
+                    "Feature metadata length does not match number of features. Skipping metadata."
+                )
+
         with open(self.outpath + "/manifest.json", "w") as f:
-            json.dump(js, f)
+            json.dump(output_json, f)
 
         logging.info("Finished writing dataset.")
 
