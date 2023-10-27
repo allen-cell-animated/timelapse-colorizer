@@ -230,7 +230,7 @@ class ColorizerDatasetWriter:
         }
 
         # Merge the feature metadata together and include it in the output if present
-        if len(feature_metadata) != 0:
+        if feature_metadata:
             if len(feature_metadata) == len(feature_names):
                 combined_feature_metadata = {}
                 for i in range(len(feature_metadata)):

@@ -139,9 +139,9 @@ def make_features(
     centroids_y = dataset[CENTROIDS_Y_COLUMN].to_numpy()
 
     feature_data = []
-    for i in range(len(feature_names)):
+    for feature in feature_names:
         # Scale feature to use actual units
-        (scale_factor, label, unit) = get_plot_labels_for_metric(feature_names[i])
+        (scale_factor, label, unit) = get_plot_labels_for_metric(feature)
         f = dataset[feature_names[i]].to_numpy() * scale_factor
         feature_data.append(f)
 
@@ -186,8 +186,8 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
         "(min)": "min",
         "($\mu m^{-1}$)": "µm⁻¹",
     }
-    for i in range(len(FEATURE_COLUMNS)):
-        (scale_factor, label, unit) = get_plot_labels_for_metric(FEATURE_COLUMNS[i])
+    for feature in FEATURE_COLUMNS:
+        (scale_factor, label, unit) = get_plot_labels_for_metric(feature)
         feature_labels.append(label.capitalize())
         feature_metadata.append({"units": formatted_units[unit]})
 

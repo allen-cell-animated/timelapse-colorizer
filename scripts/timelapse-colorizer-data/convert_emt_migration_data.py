@@ -158,8 +158,8 @@ def make_dataset(
     # metadata inside the dataset manifest.
     feature_labels = []
     feature_metadata: List[FeatureMetadata] = []
-    for i in range(len(FEATURE_COLUMNS)):
-        (label, unit) = extract_units_from_feature_name(FEATURE_COLUMNS[i])
+    for feature in FEATURE_COLUMNS:
+        (label, unit) = extract_units_from_feature_name(feature)
         feature_labels.append(label[0:1].upper() + label[1:])  # Capitalize first letter
         if unit is not None:
             unit = unit.replace("um", "µm")
