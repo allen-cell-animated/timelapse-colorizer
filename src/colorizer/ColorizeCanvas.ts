@@ -403,11 +403,11 @@ export default class ColorizeCanvas {
       if (!featureData) {
         continue;
       }
-      inRangeIds.forEach((value, i) => {
-        if (value === 1 && (featureData.data[i] < threshold.min || featureData.data[i] > threshold.max)) {
+      for (let i = 0, n = inRangeIds.length; i < n; i++) {
+        if (inRangeIds[i] === 1 && (featureData.data[i] < threshold.min || featureData.data[i] > threshold.max)) {
           inRangeIds[i] = 0;
         }
-      });
+      }
     }
     // Save the array to a texture and pass it into the shader
     this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeIds), FeatureDataType.U8));
