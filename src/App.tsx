@@ -107,8 +107,10 @@ function App(): ReactElement {
       feature: featureName,
       track: selectedTrack?.trackId,
       time: currentFrame,
+      colorRamp: colorRampKey,
+      colorRampReversed: colorRampReversed,
     });
-  }, [collection, datasetKey, dataset, featureName, selectedTrack, currentFrame]);
+  }, [collection, datasetKey, dataset, featureName, selectedTrack, currentFrame, colorRampKey, colorRampReversed]);
 
   // Update url whenever the viewer settings change
   // (but not while playing/recording for performance reasons)
@@ -152,6 +154,17 @@ function App(): ReactElement {
   const initialUrlParams = useConstructor(() => {
     return urlUtils.loadParamsFromUrl();
   });
+
+  // Load URL parameters into the state that don't require a dataset to be loaded.
+  // This reduces flicker on initial load.
+  useEffect(() => {
+    if (initialUrlParams.colorRamp) {
+      setColorRampKey(initialUrlParams.colorRamp);
+    }
+    if (initialUrlParams.colorRampReversed) {
+      setColorRampReversed(initialUrlParams.colorRampReversed);
+    }
+  }, []);
 
   // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
