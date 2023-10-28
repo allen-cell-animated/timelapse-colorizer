@@ -1,10 +1,11 @@
 import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
+import { Button, Tooltip } from "antd";
+import { RetweetOutlined } from "@ant-design/icons";
+
 import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
-import { Button, Tooltip } from "antd";
 import { AppThemeContext } from "./AppStyle";
 import IconButton from "./IconButton";
-import { RetweetOutlined } from "@ant-design/icons";
 
 type ColorRampSelectorProps = {
   selected: string;

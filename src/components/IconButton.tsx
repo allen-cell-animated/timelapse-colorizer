@@ -1,7 +1,8 @@
 import React, { PropsWithChildren, ReactElement, useContext } from "react";
 import { Button, ConfigProvider } from "antd";
-import { AppThemeContext } from "./AppStyle";
 import styled, { css } from "styled-components";
+
+import { AppThemeContext } from "./AppStyle";
 
 type IconButtonProps = {
   onClick?: () => void;
