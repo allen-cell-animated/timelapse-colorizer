@@ -34,14 +34,19 @@ describe("ColorRampDropdown", () => {
     const elements = screen.getAllByRole("button");
 
     // Expect maps to be ordered according to the color ramp, and skip the first button which is the main selector.
-    for (let i = 1; i < elements.length; i++) {
+    for (let i = 1; i < elements.length - 1; i++) {
+      // Ignore the last button, which is for reversing
       const buttonElement = elements[i];
       fireEvent.click(buttonElement);
     }
 
     // Should be called three times, in order, one time for each element.
     expect(mockCallback.mock.calls.length).to.equal(3);
-    expect(mockCallback.mock.calls).deep.equals([["map1"], ["map2"], ["map3"]]);
+    expect(mockCallback.mock.calls).deep.equals([
+      ["map1", false],
+      ["map2", false],
+      ["map3", false],
+    ]);
   });
 
   it("throws an error when the selected key is invalid", () => {
