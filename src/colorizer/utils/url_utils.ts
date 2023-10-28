@@ -93,7 +93,7 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
   }
   if (colorRamp) {
     if (colorRampReversed) {
-      includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent("!" + colorRamp)}`);
+      includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRamp + "!")}`);
     } else {
       includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRamp)}`);
     }
@@ -177,10 +177,10 @@ export function loadParamsFromUrl(): UrlParams {
   const colorRampRawParam = safeDecodeString(urlParams.get(URL_PARAM_COLOR_RAMP));
   let colorRampParam: string | null = colorRampRawParam;
   let colorRampReversedParam: boolean = false;
-  //  Color ramps are marked as reversed by adding ! to the start of the key
-  if (colorRampRawParam && colorRampRawParam.charAt(0) === "!") {
+  //  Color ramps are marked as reversed by adding ! to the end of the key
+  if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === "!") {
     colorRampReversedParam = true;
-    colorRampParam = colorRampRawParam.slice(1);
+    colorRampParam = colorRampRawParam.slice(0, -1);
   }
 
   return {
