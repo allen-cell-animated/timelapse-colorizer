@@ -1,7 +1,7 @@
-import React, { ReactElement, ReactNode, useContext, useMemo, useRef, useState } from "react";
+import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import { Card, List, Select } from "antd";
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 
@@ -9,8 +9,6 @@ import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import LabeledRangeSlider from "./LabeledRangeSlider";
 import { Dataset } from "../colorizer";
 import IconButton from "./IconButton";
-
-import { AppThemeContext } from "./AppStyle";
 
 const PanelContainer = styled.div`
   flex-grow: 1;
@@ -21,10 +19,12 @@ const PanelContainer = styled.div`
 `;
 
 const SelectContainer = styled.div`
+  // Add some padding to the Select component so item tags line up
   & .ant-select-selector {
     padding: 0 2px;
   }
 
+  // Override what selected items look like
   & .ant-select-item-option-content {
     font-weight: normal;
     color: var(--color-button);
@@ -40,6 +40,18 @@ const FiltersCard = styled(Card)`
     padding-bottom: 0;
     height: 100%;
   }
+`;
+
+const FeatureLabel = styled.h3<{ $disabled?: boolean }>`
+  ${(props) => {
+    if (props.$disabled) {
+      return css`
+        color: var(--color-text-disabled);
+        font-style: italic !important;
+      `;
+    }
+    return;
+  }}
 `;
 
 const EmptyListTextContainer = styled.div`
@@ -64,20 +76,15 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {
  */
 export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
-  const theme = useContext(AppThemeContext);
 
-  const [iconMode, setIconMode] = useState<"default" | "search" | "clear">("default");
+  const [isFocused, setIsFocused] = useState<boolean>(false);
   const selectContainerRef = useRef<HTMLDivElement>(null);
+
   // Save the min/max values of each selected feature in case the user switches to a dataset that no longer has
   // that feature. This allows the user to switch back to the original dataset and keep the same thresholds.
   const featureMinMax = useRef<Map<string, [number, number]>>(new Map());
-
-  // Update the saved min/max bounds of any selected features.
   useMemo(() => {
-    if (!props.dataset) {
-      return;
-    }
-
+    // Update the saved min/max bounds of any selected features.
     for (const threshold of props.featureThresholds) {
       const featureData = props.dataset?.features[threshold.featureName];
       if (featureData) {
@@ -85,6 +92,8 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
       }
     }
   }, [props.dataset, props.featureThresholds]);
+
+  ////// EVENT HANDLERS ///////////////////
 
   /** Handle the user selecting new features. */
   const onSelectionsChanged = (selections: string[]): void => {
@@ -120,6 +129,8 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.onChange(newThresholds);
   };
 
+  ////// RENDERING ///////////////////
+
   const selectedFeatures = props.featureThresholds.map((t) => t.featureName);
   const featureOptions =
     props.dataset?.featureNames.map((name) => ({ label: props.dataset?.getFeatureNameWithUnits(name), value: name })) ||
@@ -127,31 +138,16 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
-    let sliderMin = 0;
-    let sliderMax = 1;
-    let disabled = featureData === undefined;
-
-    let labelText = <>{props.dataset?.getFeatureNameWithUnits(item.featureName)}</>;
-
-    if (!featureData) {
-      // Dataset doesn't contain this feature, so used saved information to render it instead.
-      const savedMinMax = featureMinMax.current.get(item.featureName);
-      sliderMin = savedMinMax ? savedMinMax[0] : 0;
-      sliderMax = savedMinMax ? savedMinMax[1] : 1;
-      labelText = (
-        <span style={{ color: theme.color.text.disabled }}>
-          <i>{item.featureName}</i>
-        </span>
-      );
-    } else {
-      sliderMin = featureData.min;
-      sliderMax = featureData.max;
-    }
+    const disabled = featureData === undefined;
+    const savedMinMax = featureMinMax.current.get(item.featureName) || [0, 1];
+    // If the feature is no longer in the dataset, use the saved min/max bounds.
+    const sliderMin = featureData ? featureData.min : savedMinMax[0];
+    const sliderMax = featureData ? featureData.max : savedMinMax[1];
 
     return (
       <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
-          <h3>{labelText}</h3>
+          <FeatureLabel $disabled={disabled}>{props.dataset?.getFeatureNameWithUnits(item.featureName)}</FeatureLabel>
           <div style={{ width: "calc(100% - 10px)" }}>
             <LabeledRangeSlider
               min={item.min}
@@ -172,13 +168,6 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     );
   };
 
-  let suffixIcon = <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />;
-  if (iconMode === "search") {
-    suffixIcon = <SearchOutlined />;
-  } else if (iconMode === "clear") {
-    suffixIcon = <></>;
-  }
-
   return (
     <PanelContainer>
       <SelectContainer ref={selectContainerRef}>
@@ -193,9 +182,9 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
           disabled={props.disabled}
           onClear={() => props.onChange([])}
           getPopupContainer={() => selectContainerRef.current!}
-          suffixIcon={suffixIcon}
-          onFocus={() => setIconMode("search")}
-          onBlur={() => setIconMode("default")}
+          suffixIcon={isFocused ? <SearchOutlined /> : <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
       </SelectContainer>
       <FiltersCard size="small" style={{ paddingTop: 0 }}>
