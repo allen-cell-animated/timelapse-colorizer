@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useEffect } from "react";
+import React, { ReactElement, ReactNode, useMemo, useRef } from "react";
 import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import { Dataset } from "../colorizer";
 import { Card, List, Select } from "antd";
@@ -49,12 +49,23 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {
 export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
 
-  // Clear thresholds for features that don't exist when the dataset changes.
-  // TODO: Show these thresholds as disabled, rather than removing them.
-  useEffect(() => {
-    const newThresholds = props.featureThresholds.filter((t) => props.dataset?.featureNames.includes(t.featureName));
-    props.onChange(newThresholds);
-  }, [props.dataset]);
+  // Save the min/max values of each selected feature in case the user switches to a dataset that no longer has
+  // that feature. This allows the user to switch back to the original dataset and keep the same thresholds.
+  const featureMinMax = useRef<Map<string, [number, number]>>(new Map());
+
+  // Update the saved min/max bounds of any selected features.
+  useMemo(() => {
+    if (!props.dataset) {
+      return;
+    }
+
+    for (const threshold of props.featureThresholds) {
+      const featureData = props.dataset?.features[threshold.featureName];
+      if (featureData) {
+        featureMinMax.current.set(threshold.featureName, [featureData.min, featureData.max]);
+      }
+    }
+  }, [props.dataset, props.featureThresholds]);
 
   /** Handle the user selecting new features. */
   const onSelectionsChanged = (selections: string[]): void => {
@@ -85,6 +96,8 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const onClickedRemove = (index: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds.splice(index, 1);
+    // Delete our saved min/max bounds for this feature when it's removed.
+    featureMinMax.current.delete(props.featureThresholds[index].featureName);
     props.onChange(newThresholds);
   };
 
@@ -95,8 +108,16 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
+    let sliderMin = 0,
+      sliderMax = 1;
     if (!featureData) {
-      return <></>;
+      // Dataset doesn't contain this feature, so used saved information to render it instead.
+      const savedMinMax = featureMinMax.current.get(item.featureName);
+      sliderMin = savedMinMax ? savedMinMax[0] : 0;
+      sliderMax = savedMinMax ? savedMinMax[1] : 1;
+    } else {
+      sliderMin = featureData.min;
+      sliderMax = featureData.max;
     }
 
     return (
@@ -107,8 +128,8 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
             <LabeledRangeSlider
               min={item.min}
               max={item.max}
-              minSliderBound={featureData.min}
-              maxSliderBound={featureData.max}
+              minSliderBound={sliderMin}
+              maxSliderBound={sliderMax}
               onChange={(min, max) => onThresholdChanged(index, min, max)}
             />
           </div>
