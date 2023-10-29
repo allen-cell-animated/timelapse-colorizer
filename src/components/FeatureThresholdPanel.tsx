@@ -22,10 +22,15 @@ const SelectContainer = styled.div`
   // Add some padding to the Select component so item tags line up
   & .ant-select-selector {
     padding: 0 2px;
+    font-weight: normal;
+  }
+
+  & .rc-virtual-list-holder-inner {
+    gap: 2px;
   }
 
   // Override what selected items look like
-  & .ant-select-item-option-content {
+  & .ant-select-item-option-selected > .ant-select-item-option-content {
     font-weight: normal;
     color: var(--color-button);
   }
@@ -125,7 +130,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const onClickedRemove = (index: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds.splice(index, 1);
-    // Delete our saved min/max bounds for this feature when it's removed.
+    // Delete saved min/max bounds for this feature when it's removed.
     featureMinMax.current.delete(props.featureThresholds[index].featureName);
     props.onChange(newThresholds);
   };
@@ -183,6 +188,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
           options={featureOptions}
           disabled={props.disabled}
           onClear={() => props.onChange([])}
+          // Allows the selection dropdown to be selected and styled
           getPopupContainer={() => selectContainerRef.current!}
           suffixIcon={isFocused ? <SearchOutlined /> : <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />}
           onFocus={() => setIsFocused(true)}
