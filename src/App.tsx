@@ -134,8 +134,9 @@ function App(): ReactElement {
       feature: featureName,
       track: selectedTrack?.trackId,
       time: currentFrame,
+      thresholds: featureThresholds,
     });
-  }, [collection, datasetKey, dataset, featureName, selectedTrack, currentFrame]);
+  }, [collection, datasetKey, dataset, featureName, selectedTrack, currentFrame, featureThresholds]);
 
   // Update url whenever the viewer settings change
   // (but not while playing/recording for performance reasons)

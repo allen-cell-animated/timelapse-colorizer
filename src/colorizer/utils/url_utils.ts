@@ -2,12 +2,16 @@
 /* global RequestInit */
 
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../../constants";
+import { FeatureThreshold } from "../ColorizeCanvas";
+import { numberToStringDecimal } from "./math_utils";
 
 const URL_PARAM_TRACK = "track";
 const URL_PARAM_DATASET = "dataset";
 const URL_PARAM_FEATURE = "feature";
 const URL_PARAM_TIME = "t";
 const URL_PARAM_COLLECTION = "collection";
+// TODO: Make thresholds/filters language consistent. Requires talking with users/UX!
+const URL_PARAM_THRESHOLDS = "thresholds";
 
 export type UrlParams = {
   collection: string | null;
@@ -15,6 +19,8 @@ export type UrlParams = {
   feature: string | null;
   track: number;
   time: number;
+  // TODO: bad code smell for url params to be aware of this type
+  thresholds: FeatureThreshold[];
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -65,7 +71,7 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
 
   // Get parameters, ignoring null/empty values
   const includedParameters: string[] = [];
-  const { collection, dataset, feature, track, time } = state;
+  const { collection, dataset, feature, track, time, thresholds } = state;
 
   // Don't include collection parameter in URL if it matches the default.
   if (
@@ -87,6 +93,19 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
   if (time && time > 0) {
     // time = 0 is ignored because it's the default frame.
     includedParameters.push(`${URL_PARAM_TIME}=${time}`);
+  }
+  if (thresholds && thresholds.length > 0) {
+    // featureName is encoded in case it contains special characters (":" or ",")
+    // TODO: Is there a better character separator I can use here? ":" and "," are reserved characters in URLs.
+    const thresholdsString = thresholds
+      .map((threshold) => {
+        const featureName = encodeURIComponent(threshold.featureName);
+        const min = numberToStringDecimal(threshold.min, 3);
+        const max = numberToStringDecimal(threshold.max, 3);
+        return `${featureName}:${min}:${max}`;
+      })
+      .join(",");
+    includedParameters.push(`${URL_PARAM_THRESHOLDS}=${encodeURIComponent(thresholdsString)}`);
   }
 
   // If parameters present, join with URL syntax and push into the URL
@@ -164,11 +183,25 @@ export function loadParamsFromUrl(): UrlParams {
   // This assumes there are no negative timestamps in the dataset
   const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1", base10Radix);
 
+  // Parse and validate thresholds
+  let thresholdsParam: FeatureThreshold[] = [];
+  const rawThresholdParam = safeDecodeString(urlParams.get(URL_PARAM_THRESHOLDS));
+  if (rawThresholdParam) {
+    // Thresholds are separated by commas, and are structured as:
+    // {name (encoded)}:{min}:{max}
+    const rawThresholds = rawThresholdParam.split(",");
+    thresholdsParam = rawThresholds.map((rawThreshold) => {
+      const [rawFeatureName, min, max] = rawThreshold.split(":");
+      return { featureName: decodeURIComponent(rawFeatureName), min: parseFloat(min), max: parseFloat(max) };
+    });
+  }
+
   return {
     collection: collectionParam,
     dataset: datasetParam,
     feature: featureParam,
     track: trackParam,
     time: timeParam,
+    thresholds: thresholdsParam,
   };
 }
