@@ -135,12 +135,13 @@ function App(): ReactElement {
     if (dataset && featureData) {
       rangeIsDefault = featureData.min === colorRampMin && featureData.max === colorRampMax;
     }
-    return urlUtils.stateToUrlParamString({
-      collection: collection?.url,
+    return urlUtils.stateToUrlQueryString({
+      collection: collection?.url ?? undefined,
       dataset: datasetParam,
       feature: featureName,
       track: selectedTrack?.trackId,
-      time: currentFrame,
+      // Ignore time=0
+      time: currentFrame !== 0 ? currentFrame : undefined,
       thresholds: featureThresholds,
       range: rangeIsDefault ? undefined : [colorRampMin, colorRampMax],
     });
@@ -249,12 +250,12 @@ function App(): ReactElement {
         setColorRampMin(initialUrlParams.range[0]);
         setColorRampMax(initialUrlParams.range[1]);
       }
-      if (initialUrlParams.track >= 0) {
+      if (initialUrlParams.track && initialUrlParams.track >= 0) {
         // Highlight the track. Seek to start of frame only if time is not defined.
-        findTrack(initialUrlParams.track, initialUrlParams.time < 0);
+        findTrack(initialUrlParams.track, (initialUrlParams.time ?? 0) < 0);
       }
       let newTime = currentFrame;
-      if (initialUrlParams.time >= 0) {
+      if (initialUrlParams.time && initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
         newTime = initialUrlParams.time;
         await canv.setFrame(newTime);

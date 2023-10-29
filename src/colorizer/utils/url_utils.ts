@@ -15,14 +15,14 @@ const URL_PARAM_THRESHOLDS = "thresholds";
 const URL_PARAM_RANGE = "range";
 
 export type UrlParams = {
-  collection: string | null;
-  dataset: string | null;
-  feature: string | null;
+  collection: string;
+  dataset: string;
+  feature: string;
   track: number;
   time: number;
   // TODO: bad code smell for url params to be aware of this type
   thresholds: FeatureThreshold[];
-  range: [number, number] | null;
+  range: [number, number];
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -61,16 +61,16 @@ export function fetchWithTimeout(
  * - `collection`: string path to the collection. Ignores paths matching the default collection address.
  * - `dataset`: string name or URL of the dataset.
  * - `feature`: string name of the feature.
- * - `track`: integer track number. Ignores values where `track < 0`.
- * - `time`: integer frame number. Ignores values where `time <= 0`.
- * - `thresholds`: array of feature threshold. Ignores empty arrays.
- * - `range`: array of two numbers, representing the min and max of the color map range. Ignores empty arrays.
+ * - `track`: integer track number.
+ * - `time`: integer frame number.
+ * - `thresholds`: array of feature threshold.
+ * - `range`: array of two numbers, representing the min and max of the color map range.
  *
  * @returns
  * - If no parameters are present or valid, returns an empty string.
  * - Else, returns a string of URL parameters that can be appended to the URL directly (ex: `?collection=<some_url>&time=23`).
  */
-export function stateToUrlParamString(state: Partial<UrlParams>): string {
+export function stateToUrlQueryString(state: Partial<UrlParams>): string {
   // arguments as more data gets stored to the URL.
 
   // Get parameters, ignoring null/empty values
@@ -90,11 +90,10 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
   if (state.feature) {
     includedParameters.push(`${URL_PARAM_FEATURE}=${encodeURIComponent(state.feature)}`);
   }
-  if (state.track && state.track >= 0) {
+  if (state.track !== undefined) {
     includedParameters.push(`${URL_PARAM_TRACK}=${state.track}`);
   }
-  if (state.time && state.time > 0) {
-    // time = 0 is ignored because it's the default frame.
+  if (state.time !== undefined) {
     includedParameters.push(`${URL_PARAM_TIME}=${state.time}`);
   }
   if (state.thresholds && state.thresholds.length > 0) {
@@ -144,7 +143,7 @@ export function isUrl(input: string | null): boolean {
 /**
  * Decodes strings using `decodeURIComponent`, handling null inputs.
  */
-function safeDecodeString(input: string | null): string | null {
+function decodePossiblyNullString(input: string | null): string | null {
   return input === null ? null : decodeURIComponent(input);
 }
 
@@ -173,26 +172,42 @@ export function formatPath(input: string): string {
 /**
  * Loads parameters from the current window URL.
  * @returns An object with a dataset, feature, track, and time parameters.
- * The dataset and feature parameters are null if no parameter was found in the URL, and the
- * track and time will have negative values (-1) if no parameter (or an invalid parameter) was found.
+ * The parameters are undefined if no parameter was found in the URL, or if
+ * it could not be parsed.
  */
-export function loadParamsFromUrl(): UrlParams {
-  // TODO: Write unit tests for this method.
+export function loadParamsFromUrl(): Partial<UrlParams> {
   // Get params from URL and load, with default fallbacks.
   const queryString = window.location.search;
+  return loadParamsFromUrlQueryString(queryString);
+}
+
+function removeUndefinedProperties<T>(object: T): Partial<T> {
+  const ret: Partial<T> = {};
+  for (const key in object) {
+    if (object[key] !== undefined) {
+      ret[key] = object[key];
+    }
+  }
+  return ret;
+}
+
+export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlParams> {
+  // NOTE: URLSearchParams automatically applies one level of URI decoding.
   const urlParams = new URLSearchParams(queryString);
 
   const base10Radix = 10; // required for parseInt
-  const collectionParam = safeDecodeString(urlParams.get(URL_PARAM_COLLECTION));
-  const datasetParam = safeDecodeString(urlParams.get(URL_PARAM_DATASET));
-  const featureParam = safeDecodeString(urlParams.get(URL_PARAM_FEATURE));
-  const trackParam = parseInt(urlParams.get(URL_PARAM_TRACK) || "-1", base10Radix);
+  const collectionParam = urlParams.get(URL_PARAM_COLLECTION) ?? undefined;
+  const datasetParam = urlParams.get(URL_PARAM_DATASET) ?? undefined;
+  const featureParam = urlParams.get(URL_PARAM_FEATURE) ?? undefined;
+  const trackParam = urlParams.get(URL_PARAM_TRACK)
+    ? parseInt(urlParams.get(URL_PARAM_TRACK)!, base10Radix)
+    : undefined;
   // This assumes there are no negative timestamps in the dataset
-  const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1", base10Radix);
+  const timeParam = urlParams.get(URL_PARAM_TIME) ? parseInt(urlParams.get(URL_PARAM_TIME)!, base10Radix) : undefined;
 
   // Parse and validate thresholds
   let thresholdsParam: FeatureThreshold[] = [];
-  const rawThresholdParam = safeDecodeString(urlParams.get(URL_PARAM_THRESHOLDS));
+  const rawThresholdParam = urlParams.get(URL_PARAM_THRESHOLDS);
   if (rawThresholdParam) {
     // Thresholds are separated by commas, and are structured as:
     // {name (encoded)}:{min}:{max}
@@ -203,20 +218,21 @@ export function loadParamsFromUrl(): UrlParams {
     });
   }
 
-  let rangeParam: [number, number] | null = null;
-  const rawRangeParam = safeDecodeString(urlParams.get(URL_PARAM_RANGE));
+  let rangeParam: [number, number] | undefined = undefined;
+  const rawRangeParam = decodePossiblyNullString(urlParams.get(URL_PARAM_RANGE));
   if (rawRangeParam) {
     const [min, max] = rawRangeParam.split(",");
     rangeParam = [parseFloat(min), parseFloat(max)];
   }
 
-  return {
-    collection: collectionParam,
-    dataset: datasetParam,
-    feature: featureParam,
+  // Remove undefined entries from the object for a cleaner return value
+  return removeUndefinedProperties({
+    collection: collectionParam ?? undefined,
+    dataset: datasetParam ?? undefined,
+    feature: featureParam ?? undefined,
     track: trackParam,
     time: timeParam,
-    thresholds: thresholdsParam,
+    thresholds: thresholdsParam.length > 0 ? thresholdsParam : undefined,
     range: rangeParam,
-  };
+  });
 }
