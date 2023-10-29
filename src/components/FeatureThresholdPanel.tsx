@@ -1,7 +1,7 @@
 import React, { ReactElement, ReactNode, useContext, useMemo, useRef } from "react";
 import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import { Dataset } from "../colorizer";
-import { Card, List, Select, Tooltip } from "antd";
+import { Button, Card, List, Select, Tooltip } from "antd";
 import styled from "styled-components";
 import LabeledRangeSlider from "./LabeledRangeSlider";
 import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
@@ -14,6 +14,17 @@ const PanelContainer = styled.div`
   flex-direction: column;
   gap: 6px;
   height: 100%;
+`;
+
+const SelectContainer = styled.div`
+  & .ant-select-selector {
+    padding: 0 2px;
+  }
+
+  & .ant-select-item-option-content {
+    font-weight: normal;
+    color: var(--color-button);
+  }
 `;
 
 const FiltersCard = styled(Card)`
@@ -51,6 +62,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
   const theme = useContext(AppThemeContext);
 
+  const selectContainerRef = useRef<HTMLDivElement>(null);
   // Save the min/max values of each selected feature in case the user switches to a dataset that no longer has
   // that feature. This allows the user to switch back to the original dataset and keep the same thresholds.
   const featureMinMax = useRef<Map<string, [number, number]>>(new Map());
@@ -157,15 +169,20 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   return (
     <PanelContainer>
-      <Select
-        style={{ width: "100%" }}
-        mode="multiple"
-        placeholder="Add features"
-        onChange={onSelectionsChanged}
-        value={selectedFeatures}
-        options={featureOptions}
-        disabled={props.disabled}
-      />
+      <SelectContainer ref={selectContainerRef}>
+        <Select
+          style={{ width: "100%" }}
+          allowClear
+          mode="multiple"
+          placeholder="Add features"
+          onChange={onSelectionsChanged}
+          value={selectedFeatures}
+          options={featureOptions}
+          disabled={props.disabled}
+          onClear={() => props.onChange([])}
+          getPopupContainer={() => selectContainerRef.current!}
+        />
+      </SelectContainer>
       <FiltersCard size="small" style={{ paddingTop: 0 }}>
         <List
           renderItem={renderListItems}
