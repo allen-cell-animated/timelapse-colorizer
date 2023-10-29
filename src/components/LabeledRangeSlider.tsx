@@ -1,7 +1,7 @@
 import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react";
 import { InputNumber, Slider } from "antd";
 import { clamp } from "three/src/math/MathUtils";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { setMaxDecimalPrecision, numberToStringDecimal } from "../colorizer/utils/math_utils";
 
 type LabeledRangeSliderProps = {
@@ -72,10 +72,19 @@ const SliderContainer = styled.div`
   }
 `;
 
-const SliderLabel = styled.p`
+const SliderLabel = styled.p<{ $disabled?: boolean }>`
   position: absolute;
   bottom: var(--label-position);
   z-index: 0;
+
+  ${(props) => {
+    if (props.$disabled) {
+      return css`
+        color: var(--color-text-disabled);
+      `;
+    }
+    return;
+  }}
 
   &:not(:last-child) {
     // Bit of a hack to override font size by increasing specificity
@@ -175,8 +184,12 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
           // TODO: Is this better than showing the precise value?
           tooltip={{ formatter: (value) => numberToStringDecimal(value, props.maxDecimalsToDisplay) }}
         />
-        <SliderLabel>{numberToStringDecimal(props.minSliderBound, props.maxDecimalsToDisplay)}</SliderLabel>
-        <SliderLabel>{numberToStringDecimal(props.maxSliderBound, props.maxDecimalsToDisplay)}</SliderLabel>
+        <SliderLabel $disabled={props.disabled}>
+          {numberToStringDecimal(props.minSliderBound, props.maxDecimalsToDisplay)}
+        </SliderLabel>
+        <SliderLabel $disabled={props.disabled}>
+          {numberToStringDecimal(props.maxSliderBound, props.maxDecimalsToDisplay)}
+        </SliderLabel>
       </SliderContainer>
       <InputNumber
         ref={maxInput}
