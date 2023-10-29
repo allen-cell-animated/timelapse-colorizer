@@ -1,11 +1,15 @@
-import React, { ReactElement, ReactNode, useContext, useMemo, useRef } from "react";
-import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
-import { Dataset } from "../colorizer";
-import { Button, Card, List, Select, Tooltip } from "antd";
+import React, { ReactElement, ReactNode, useContext, useMemo, useRef, useState } from "react";
+import { Card, List, Select } from "antd";
+import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
 import styled from "styled-components";
+
+import DropdownSVG from "../assets/dropdown-arrow.svg?react";
+
+import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import LabeledRangeSlider from "./LabeledRangeSlider";
-import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
+import { Dataset } from "../colorizer";
 import IconButton from "./IconButton";
+
 import { AppThemeContext } from "./AppStyle";
 
 const PanelContainer = styled.div`
@@ -62,6 +66,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
   const theme = useContext(AppThemeContext);
 
+  const [iconMode, setIconMode] = useState<"default" | "search" | "clear">("default");
   const selectContainerRef = useRef<HTMLDivElement>(null);
   // Save the min/max values of each selected feature in case the user switches to a dataset that no longer has
   // that feature. This allows the user to switch back to the original dataset and keep the same thresholds.
@@ -167,6 +172,13 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     );
   };
 
+  let suffixIcon = <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />;
+  if (iconMode === "search") {
+    suffixIcon = <SearchOutlined />;
+  } else if (iconMode === "clear") {
+    suffixIcon = <></>;
+  }
+
   return (
     <PanelContainer>
       <SelectContainer ref={selectContainerRef}>
@@ -181,6 +193,9 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
           disabled={props.disabled}
           onClear={() => props.onChange([])}
           getPopupContainer={() => selectContainerRef.current!}
+          suffixIcon={suffixIcon}
+          onFocus={() => setIconMode("search")}
+          onBlur={() => setIconMode("default")}
         />
       </SelectContainer>
       <FiltersCard size="small" style={{ paddingTop: 0 }}>
