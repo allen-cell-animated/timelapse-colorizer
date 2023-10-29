@@ -1,11 +1,12 @@
-import React, { ReactElement, ReactNode, useMemo, useRef } from "react";
+import React, { ReactElement, ReactNode, useContext, useMemo, useRef } from "react";
 import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import { Dataset } from "../colorizer";
-import { Card, List, Select } from "antd";
+import { Card, List, Select, Tooltip } from "antd";
 import styled from "styled-components";
 import LabeledRangeSlider from "./LabeledRangeSlider";
 import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
 import IconButton from "./IconButton";
+import { AppThemeContext } from "./AppStyle";
 
 const PanelContainer = styled.div`
   flex-grow: 1;
@@ -48,6 +49,7 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {
  */
 export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
+  const theme = useContext(AppThemeContext);
 
   // Save the min/max values of each selected feature in case the user switches to a dataset that no longer has
   // that feature. This allows the user to switch back to the original dataset and keep the same thresholds.
@@ -108,13 +110,22 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
-    let sliderMin = 0,
-      sliderMax = 1;
+    let sliderMin = 0;
+    let sliderMax = 1;
+    let disabled = featureData === undefined;
+
+    let labelText = <>{props.dataset?.getFeatureNameWithUnits(item.featureName)}</>;
+
     if (!featureData) {
       // Dataset doesn't contain this feature, so used saved information to render it instead.
       const savedMinMax = featureMinMax.current.get(item.featureName);
       sliderMin = savedMinMax ? savedMinMax[0] : 0;
       sliderMax = savedMinMax ? savedMinMax[1] : 1;
+      labelText = (
+        <span style={{ color: theme.color.text.disabled }}>
+          <i>{item.featureName}</i>
+        </span>
+      );
     } else {
       sliderMin = featureData.min;
       sliderMax = featureData.max;
@@ -123,7 +134,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     return (
       <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
-          <h3>{props.dataset?.getFeatureNameWithUnits(item.featureName)}</h3>
+          <h3>{labelText}</h3>
           <div style={{ width: "calc(100% - 10px)" }}>
             <LabeledRangeSlider
               min={item.min}
@@ -131,6 +142,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
               minSliderBound={sliderMin}
               maxSliderBound={sliderMax}
               onChange={(min, max) => onThresholdChanged(index, min, max)}
+              disabled={disabled}
             />
           </div>
         </div>
