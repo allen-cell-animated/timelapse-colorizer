@@ -219,6 +219,9 @@ function App(): ReactElement {
       return;
     }
     const setupInitialParameters = async (): Promise<void> => {
+      if (initialUrlParams.thresholds) {
+        setFeatureThresholds(initialUrlParams.thresholds);
+      }
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
         await updateFeature(dataset, initialUrlParams.feature);
