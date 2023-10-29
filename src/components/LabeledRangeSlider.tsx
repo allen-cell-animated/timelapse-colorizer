@@ -182,7 +182,10 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
           step={stepSize}
           // Show formatted decimals in tooltip
           // TODO: Is this better than showing the precise value?
-          tooltip={{ formatter: (value) => numberToStringDecimal(value, props.maxDecimalsToDisplay) }}
+          tooltip={{
+            formatter: (value) => numberToStringDecimal(value, props.maxDecimalsToDisplay),
+            open: props.disabled ? false : undefined, // Hide tooltip when disabled
+          }}
         />
         <SliderLabel $disabled={props.disabled}>
           {numberToStringDecimal(props.minSliderBound, props.maxDecimalsToDisplay)}
