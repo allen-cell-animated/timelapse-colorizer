@@ -131,7 +131,8 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   };
 
   ////// RENDERING ///////////////////
-
+  // TODO: Possible bug where selected features with the same name but different units across datasets will use the same filter values.
+  // This is unlikely to be a problem because collections are expected to have similar datasets.
   const selectedFeatures = props.featureThresholds.map((t) => t.featureName);
   const featureOptions =
     props.dataset?.featureNames.map((name) => ({ label: props.dataset?.getFeatureNameWithUnits(name), value: name })) ||
