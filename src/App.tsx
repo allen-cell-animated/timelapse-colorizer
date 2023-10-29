@@ -128,6 +128,13 @@ function App(): ReactElement {
       // The collection has no source file; use the dataset URL instead
       datasetParam = dataset?.manifestUrl;
     }
+    // check if current color map range matches the default feature range; if so, don't include
+    // it in the URL parameters.
+    let rangeIsDefault = false;
+    const featureData = dataset?.getFeatureData(featureName);
+    if (dataset && featureData) {
+      rangeIsDefault = featureData.min === colorRampMin && featureData.max === colorRampMax;
+    }
     return urlUtils.stateToUrlParamString({
       collection: collection?.url,
       dataset: datasetParam,
@@ -135,8 +142,19 @@ function App(): ReactElement {
       track: selectedTrack?.trackId,
       time: currentFrame,
       thresholds: featureThresholds,
+      range: rangeIsDefault ? undefined : [colorRampMin, colorRampMax],
     });
-  }, [collection, datasetKey, dataset, featureName, selectedTrack, currentFrame, featureThresholds]);
+  }, [
+    collection,
+    datasetKey,
+    dataset,
+    featureName,
+    selectedTrack,
+    currentFrame,
+    featureThresholds,
+    colorRampMin,
+    colorRampMax,
+  ]);
 
   // Update url whenever the viewer settings change
   // (but not while playing/recording for performance reasons)
@@ -212,8 +230,8 @@ function App(): ReactElement {
     loadInitialDatabase();
   }, []);
 
-  // Load additional properties from the URL, including the time, track, and feature, once the first
-  // dataset has been loaded. Runs only once.
+  // Load additional properties from the URL, including the time, track, and feature.
+  // Run only once after the first dataset has been loaded.
   useEffect(() => {
     if (!isInitialDatasetLoaded) {
       return;
@@ -226,9 +244,14 @@ function App(): ReactElement {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
         await updateFeature(dataset, initialUrlParams.feature);
       }
+      // Range, track, and time setting must be done after the dataset and feature is set.
+      if (initialUrlParams.range) {
+        setColorRampMin(initialUrlParams.range[0]);
+        setColorRampMax(initialUrlParams.range[1]);
+      }
       if (initialUrlParams.track >= 0) {
         // Highlight the track. Seek to start of frame only if time is not defined.
-        await findTrack(initialUrlParams.track, initialUrlParams.time < 0);
+        findTrack(initialUrlParams.track, initialUrlParams.time < 0);
       }
       let newTime = currentFrame;
       if (initialUrlParams.time >= 0) {

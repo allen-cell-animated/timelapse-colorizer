@@ -12,6 +12,7 @@ const URL_PARAM_TIME = "t";
 const URL_PARAM_COLLECTION = "collection";
 // TODO: Make thresholds/filters language consistent. Requires talking with users/UX!
 const URL_PARAM_THRESHOLDS = "thresholds";
+const URL_PARAM_RANGE = "range";
 
 export type UrlParams = {
   collection: string | null;
@@ -21,6 +22,7 @@ export type UrlParams = {
   time: number;
   // TODO: bad code smell for url params to be aware of this type
   thresholds: FeatureThreshold[];
+  range: [number, number] | null;
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -61,6 +63,8 @@ export function fetchWithTimeout(
  * - `feature`: string name of the feature.
  * - `track`: integer track number. Ignores values where `track < 0`.
  * - `time`: integer frame number. Ignores values where `time <= 0`.
+ * - `thresholds`: array of feature threshold. Ignores empty arrays.
+ * - `range`: array of two numbers, representing the min and max of the color map range. Ignores empty arrays.
  *
  * @returns
  * - If no parameters are present or valid, returns an empty string.
@@ -71,33 +75,32 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
 
   // Get parameters, ignoring null/empty values
   const includedParameters: string[] = [];
-  const { collection, dataset, feature, track, time, thresholds } = state;
 
   // Don't include collection parameter in URL if it matches the default.
   if (
-    collection &&
-    collection !== DEFAULT_COLLECTION_PATH &&
-    collection !== DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
+    state.collection &&
+    state.collection !== DEFAULT_COLLECTION_PATH &&
+    state.collection !== DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
   ) {
-    includedParameters.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(collection)}`);
+    includedParameters.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(state.collection)}`);
   }
-  if (dataset) {
-    includedParameters.push(`${URL_PARAM_DATASET}=${encodeURIComponent(dataset)}`);
+  if (state.dataset) {
+    includedParameters.push(`${URL_PARAM_DATASET}=${encodeURIComponent(state.dataset)}`);
   }
-  if (feature) {
-    includedParameters.push(`${URL_PARAM_FEATURE}=${encodeURIComponent(feature)}`);
+  if (state.feature) {
+    includedParameters.push(`${URL_PARAM_FEATURE}=${encodeURIComponent(state.feature)}`);
   }
-  if (track && track >= 0) {
-    includedParameters.push(`${URL_PARAM_TRACK}=${track}`);
+  if (state.track && state.track >= 0) {
+    includedParameters.push(`${URL_PARAM_TRACK}=${state.track}`);
   }
-  if (time && time > 0) {
+  if (state.time && state.time > 0) {
     // time = 0 is ignored because it's the default frame.
-    includedParameters.push(`${URL_PARAM_TIME}=${time}`);
+    includedParameters.push(`${URL_PARAM_TIME}=${state.time}`);
   }
-  if (thresholds && thresholds.length > 0) {
+  if (state.thresholds && state.thresholds.length > 0) {
     // featureName is encoded in case it contains special characters (":" or ",")
     // TODO: Is there a better character separator I can use here? ":" and "," are reserved characters in URLs.
-    const thresholdsString = thresholds
+    const thresholdsString = state.thresholds
       .map((threshold) => {
         const featureName = encodeURIComponent(threshold.featureName);
         const min = numberToStringDecimal(threshold.min, 3);
@@ -106,6 +109,10 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
       })
       .join(",");
     includedParameters.push(`${URL_PARAM_THRESHOLDS}=${encodeURIComponent(thresholdsString)}`);
+  }
+  if (state.range && state.range.length === 2) {
+    const rangeString = numberToStringDecimal(state.range[0], 3) + "," + numberToStringDecimal(state.range[1], 3);
+    includedParameters.push(`${URL_PARAM_RANGE}=${encodeURIComponent(rangeString)}`);
   }
 
   // If parameters present, join with URL syntax and push into the URL
@@ -196,6 +203,13 @@ export function loadParamsFromUrl(): UrlParams {
     });
   }
 
+  let rangeParam: [number, number] | null = null;
+  const rawRangeParam = safeDecodeString(urlParams.get(URL_PARAM_RANGE));
+  if (rawRangeParam) {
+    const [min, max] = rawRangeParam.split(",");
+    rangeParam = [parseFloat(min), parseFloat(max)];
+  }
+
   return {
     collection: collectionParam,
     dataset: datasetParam,
@@ -203,5 +217,6 @@ export function loadParamsFromUrl(): UrlParams {
     track: trackParam,
     time: timeParam,
     thresholds: thresholdsParam,
+    range: rangeParam,
   };
 }
