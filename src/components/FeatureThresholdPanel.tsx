@@ -81,7 +81,8 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const selectContainerRef = useRef<HTMLDivElement>(null);
 
   // Save the min/max values of each selected feature in case the user switches to a dataset that no longer has
-  // that feature. This allows the user to switch back to the original dataset and keep the same thresholds.
+  // that feature. This allows the sliders to be rendered with the same bounds as before until the user switches
+  // back to a dataset that has the feature.
   const featureMinMax = useRef<Map<string, [number, number]>>(new Map());
   useMemo(() => {
     // Update the saved min/max bounds of any selected features.
@@ -138,11 +139,11 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
-    const disabled = featureData === undefined;
     const savedMinMax = featureMinMax.current.get(item.featureName) || [0, 1];
     // If the feature is no longer in the dataset, use the saved min/max bounds.
     const sliderMin = featureData ? featureData.min : savedMinMax[0];
     const sliderMax = featureData ? featureData.max : savedMinMax[1];
+    const disabled = featureData === undefined;
 
     return (
       <List.Item style={{ position: "relative" }}>
