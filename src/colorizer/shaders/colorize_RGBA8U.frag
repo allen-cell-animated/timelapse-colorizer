@@ -20,8 +20,7 @@ uniform vec3 backgroundColor;
 
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
-const uint DRAW_MODE_RAMP = 1u;
-const uint DRAW_MODE_COLOR = 2u;
+const uint DRAW_MODE_COLOR = 1u;
 
 uniform vec3 outlierColor;
 uniform uint outlierDrawMode;
@@ -79,13 +78,11 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
   return (R != highlightedId || L != highlightedId || T != highlightedId || B != highlightedId);
 }
 
-vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor, float normFeatureVal) {
+vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
   if (drawMode == DRAW_MODE_HIDE) {
     return vec4(backgroundColor, 1.0);
-  } else if (drawMode == DRAW_MODE_COLOR) {
-    return vec4(defaultColor, 1.0);
   } else {
-    return getColorRamp(normFeatureVal);
+    return vec4(defaultColor, 1.0);
   }
 }
 
@@ -129,11 +126,11 @@ void main() {
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
   if (isInRange) {
     if (isOutlier) {
-      gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor, normFeatureVal);
+      gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor);
     } else {
       gOutputColor = getColorRamp(normFeatureVal);
     }
   } else {
-    gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor, normFeatureVal);
+    gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
   }
 }
