@@ -269,7 +269,7 @@ function App(): ReactElement {
       }
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
         // Highlight the track. Seek to start of frame only if time is not defined.
-        findTrack(initialUrlParams.track, (initialUrlParams.time ?? 0) < 0);
+        findTrack(initialUrlParams.track, initialUrlParams.time !== undefined);
       }
       let newTime = currentFrame;
       if (initialUrlParams.time && initialUrlParams.time >= 0) {
