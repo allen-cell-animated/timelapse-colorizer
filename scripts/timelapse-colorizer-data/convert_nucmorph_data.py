@@ -27,9 +27,9 @@ from data_writer_utils import (
 )
 
 # Example Commands:
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear --scale 0.25
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear --scale 0.25
-# python timelapse-colorizer-data/generate_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks --scale 0.25
+# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear --scale 0.25 --noframes
+# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear --scale 0.25 --noframes
+# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks --scale 0.25 --noframes
 
 # DATASET SPEC: See DATA_FORMAT.md for more details on the dataset format!
 # You can find the most updated version on GitHub here:
@@ -72,7 +72,7 @@ CENTROIDS_Y_COLUMN = "centroid_y"
 """Column of Y centroid coordinates, in pixels of original image data."""
 OUTLIERS_COLUMN = "is_outlier"
 """Column of outlier status for each object. (true/false)"""
-FEATURE_COLUMNS = ["NUC_shape_volume_lcc", "NUC_position_depth"]
+FEATURE_COLUMNS = ["NUC_shape_volume_lcc", "NUC_position_depth_lcc"]
 """Columns of feature data to include in the dataset. Each column will be its own feature file."""
 
 
@@ -142,7 +142,7 @@ def make_features(
     for feature in feature_names:
         # Scale feature to use actual units
         (scale_factor, label, unit) = get_plot_labels_for_metric(feature)
-        f = dataset[feature_names[i]].to_numpy() * scale_factor
+        f = dataset[feature].to_numpy() * scale_factor
         feature_data.append(f)
 
     writer.write_feature_data(
@@ -180,6 +180,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     feature_labels = []
     feature_metadata = []
     formatted_units = {
+        "": None,
         "($\mu m$)": "µm",
         "($\mu m^3$)": "µm³",
         "($\mu m^3$/hr)": "µm³/hr",
