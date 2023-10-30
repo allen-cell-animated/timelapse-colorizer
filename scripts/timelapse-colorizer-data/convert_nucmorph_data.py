@@ -180,7 +180,6 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     feature_labels = []
     feature_metadata = []
     formatted_units = {
-        "": None,
         "($\mu m$)": "µm",
         "($\mu m^3$)": "µm³",
         "($\mu m^3$/hr)": "µm³/hr",
@@ -190,7 +189,9 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
     for feature in FEATURE_COLUMNS:
         (scale_factor, label, unit) = get_plot_labels_for_metric(feature)
         feature_labels.append(label.capitalize())
-        feature_metadata.append({"units": formatted_units[unit]})
+        unit = formatted_units.get(unit)
+        if unit:
+            feature_metadata.append({"units": unit})
 
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
