@@ -195,6 +195,7 @@ function removeUndefinedProperties<T>(object: T): Partial<T> {
  * Loads parameters from the query string of a URL.
  * @param queryString A URL query string, as from `window.location.search`.
  * @returns A partial UrlParams object with values loaded from the queryString.
+ * Enforces min/max ordering for thresholds and range.
  */
 export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlParams> {
   // NOTE: URLSearchParams automatically applies one level of URI decoding.
@@ -219,7 +220,12 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     const rawThresholds = rawThresholdParam.split(",");
     thresholdsParam = rawThresholds.map((rawThreshold) => {
       const [rawFeatureName, min, max] = rawThreshold.split(":");
-      return { featureName: decodeURIComponent(rawFeatureName), min: parseFloat(min), max: parseFloat(max) };
+      let threshold = { featureName: decodeURIComponent(rawFeatureName), min: parseFloat(min), max: parseFloat(max) };
+      // Enforce min/max ordering
+      if (threshold.min > threshold.max) {
+        threshold = { featureName: threshold.featureName, min: threshold.max, max: threshold.min };
+      }
+      return threshold;
     });
   }
 
@@ -228,6 +234,10 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
   if (rawRangeParam) {
     const [min, max] = rawRangeParam.split(",");
     rangeParam = [parseFloat(min), parseFloat(max)];
+    // Enforce min/max ordering
+    if (rangeParam[0] > rangeParam[1]) {
+      rangeParam.reverse();
+    }
   }
 
   // Remove undefined entries from the object for a cleaner return value
