@@ -7,7 +7,6 @@ import {
   loadParamsFromUrlQueryString,
   UrlParams,
 } from "../src/colorizer/utils/url_utils";
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../src/constants/url";
 
 describe("isUrl", () => {
   it("Can differentiate URLs", () => {
