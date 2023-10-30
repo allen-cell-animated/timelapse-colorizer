@@ -193,11 +193,6 @@ export default function FeatureThresholdPanel(
     );
   };
 
-  // TODO: Using Select here can cause layout issues. If many features are selected (such that the Select bar is full)
-  // and the user is using a narrower window, switching to/from the Plot panel can cause the whole panel to jump because
-  // Select prevents this panel from changing width.
-  // Using a custom dropdown component instead of Select would fix this, but we lose some of the nice functionality
-  // (search, clear all, etc.) that Select provides.
   return (
     <PanelContainer>
       <SelectContainer ref={selectContainerRef}>
@@ -213,6 +208,7 @@ export default function FeatureThresholdPanel(
           onClear={() => props.onChange([])}
           // Allows the selection dropdown to be selected and styled
           getPopupContainer={() => selectContainerRef.current!}
+          maxTagCount={"responsive"}
           suffixIcon={
             isFocused ? (
               <SearchOutlined />
