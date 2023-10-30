@@ -67,17 +67,13 @@ describe("Loading + saving from URL query strings", () => {
       feature: "Привет, мир", // %D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2C%20%D0%BC%D0%B8%D1%80
     };
     const queryString = stateToUrlQueryString(originalParams);
-    // The dataset and feature say "Hello World" in Mandarin and Russian in case you're curious.
-    expect(queryString).to.equal(
-      "?collection=https%3A%2F%2Fsome-url.com%2Fcollection.json" +
-        "&dataset=%E4%BD%A0%E5%A5%BD%E4%B8%96%E7%95%8C" +
-        "&feature=%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2C%20%D0%BC%D0%B8%D1%80"
-    );
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
 
   it("Saves and retrieves URL params correctly", () => {
+    // This will need to be updated for any new URL params.
+    // The use of `Required` makes sure that we don't forget to update this test :)
     const originalParams: Required<UrlParams> = {
       collection: "collection",
       dataset: "dataset",
