@@ -27,9 +27,9 @@ from data_writer_utils import (
 )
 
 # Example Commands:
-# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear --scale 0.25 --noframes
-# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear --scale 0.25 --noframes
-# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks --scale 0.25 --noframes
+# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset mama_bear --scale 0.25
+# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset baby_bear --scale 0.25
+# python timelapse-colorizer-data/convert_nucmorph_data.py --output_dir /allen/aics/animated-cell/Dan/fileserver/colorizer/data --dataset goldilocks --scale 0.25
 
 # DATASET SPEC: See DATA_FORMAT.md for more details on the dataset format!
 # You can find the most updated version on GitHub here:
