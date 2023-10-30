@@ -140,8 +140,8 @@ function App(): ReactElement {
     // If the collection is the default collection path, don't include it in the URL.
     if (
       collectionParam &&
-      collectionParam !== DEFAULT_COLLECTION_PATH &&
-      collectionParam !== DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
+      (collectionParam === DEFAULT_COLLECTION_PATH ||
+        collectionParam === DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME)
     ) {
       collectionParam = undefined;
     }
