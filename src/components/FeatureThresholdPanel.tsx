@@ -1,6 +1,16 @@
-import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
+import React, {
+  ReactElement,
+  ReactNode,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Card, List, Select } from "antd";
-import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  CloseOutlined,
+  FilterOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import styled, { css } from "styled-components";
 
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
@@ -19,7 +29,8 @@ const PanelContainer = styled.div`
 `;
 
 const SelectContainer = styled.div`
-  // Add some padding to the Select component so item tags line up
+  // Add some padding to the Select component so item tags have even spacing
+  // above/below and left/right
   & .ant-select-selector {
     padding: 0 2px;
     font-weight: normal;
@@ -29,7 +40,8 @@ const SelectContainer = styled.div`
     gap: 2px;
   }
 
-  // Override what selected items look like
+  // Override what selected items look like to match the style of
+  // the dropdowns
   & .ant-select-item-option-selected > .ant-select-item-option-content {
     font-weight: normal;
     color: var(--color-button);
@@ -79,8 +91,13 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {
 /**
  * A React component for adding, removing, and editing thresholds on features in a dataset.
  */
-export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
+export default function FeatureThresholdPanel(
+  inputProps: FeatureThresholdPanelProps
+): ReactElement {
+  const props = {
+    ...defaultProps,
+    ...inputProps,
+  } as Required<FeatureThresholdPanelProps>;
 
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const selectContainerRef = useRef<HTMLDivElement>(null);
@@ -94,7 +111,10 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     for (const threshold of props.featureThresholds) {
       const featureData = props.dataset?.features[threshold.featureName];
       if (featureData) {
-        featureMinMax.current.set(threshold.featureName, [featureData.min, featureData.max]);
+        featureMinMax.current.set(threshold.featureName, [
+          featureData.min,
+          featureData.max,
+        ]);
       }
     }
   }, [props.dataset, props.featureThresholds]);
@@ -106,13 +126,19 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     const newThresholds: FeatureThreshold[] = [];
     selections.forEach((featureName) => {
       // Set up default values for any new selected features, otherwise keep old thresholds
-      const existingThreshold = props.featureThresholds.find((t) => t.featureName === featureName);
+      const existingThreshold = props.featureThresholds.find(
+        (t) => t.featureName === featureName
+      );
       if (existingThreshold) {
         newThresholds.push(existingThreshold);
       } else {
         const featureData = props.dataset?.features[featureName];
         if (featureData) {
-          newThresholds.push({ featureName, min: featureData.min, max: featureData.max });
+          newThresholds.push({
+            featureName,
+            min: featureData.min,
+            max: featureData.max,
+          });
         }
       }
     });
@@ -120,7 +146,11 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   };
 
   /** Handle the threshold for a feature changing. */
-  const onThresholdChanged = (index: number, min: number, max: number): void => {
+  const onThresholdChanged = (
+    index: number,
+    min: number,
+    max: number
+  ): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds[index] = { ...newThresholds[index], min, max };
     props.onChange(newThresholds);
@@ -136,14 +166,22 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   };
 
   ////// RENDERING ///////////////////
-  // TODO: Possible bug where selected features with the same name but different units across datasets will use the same filter values.
-  // This is unlikely to be a problem because collections are expected to have similar datasets.
+  // TODO: Possible bug where selected features with the same name but different units/scaling across
+  // datasets will use the same filter values.
+  // Might not be a problem if collections have similarly-structured datasets...?
+  // The alternative is to use the feature name + units as the key, but that may cause unexpected behavior
+  // for users (such as if one dataset does not have units for a feature but another does)
   const selectedFeatures = props.featureThresholds.map((t) => t.featureName);
   const featureOptions =
-    props.dataset?.featureNames.map((name) => ({ label: props.dataset?.getFeatureNameWithUnits(name), value: name })) ||
-    [];
+    props.dataset?.featureNames.map((name) => ({
+      label: props.dataset?.getFeatureNameWithUnits(name),
+      value: name,
+    })) || [];
 
-  const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
+  const renderListItems = (
+    item: FeatureThreshold,
+    index: number
+  ): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
     const savedMinMax = featureMinMax.current.get(item.featureName) || [0, 1];
     // If the feature is no longer in the dataset, use the saved min/max bounds.
@@ -154,7 +192,9 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     return (
       <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
-          <FeatureLabel $disabled={disabled}>{props.dataset?.getFeatureNameWithUnits(item.featureName)}</FeatureLabel>
+          <FeatureLabel $disabled={disabled}>
+            {props.dataset?.getFeatureNameWithUnits(item.featureName)}
+          </FeatureLabel>
           <div style={{ width: "calc(100% - 10px)" }}>
             <LabeledRangeSlider
               min={item.min}
@@ -190,7 +230,13 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
           onClear={() => props.onChange([])}
           // Allows the selection dropdown to be selected and styled
           getPopupContainer={() => selectContainerRef.current!}
-          suffixIcon={isFocused ? <SearchOutlined /> : <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />}
+          suffixIcon={
+            isFocused ? (
+              <SearchOutlined />
+            ) : (
+              <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />
+            )
+          }
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
