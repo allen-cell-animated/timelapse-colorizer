@@ -38,16 +38,6 @@ describe("stateToUrlQueryString", () => {
     expect(result).to.be.empty;
   });
 
-  it("Ignores default collections", () => {
-    let result = stateToUrlQueryString({ collection: DEFAULT_COLLECTION_PATH });
-    expect(result).to.be.empty;
-
-    result = stateToUrlQueryString({
-      collection: DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME,
-    });
-    expect(result).to.be.empty;
-  });
-
   it("Encodes URI components", () => {
     const result = stateToUrlQueryString({
       collection: "https://some-url.com/collection.json", // https%3A%2F%2Fsome-url.com%2Fcollection.json

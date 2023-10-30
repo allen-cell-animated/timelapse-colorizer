@@ -1,7 +1,6 @@
 // Typescript doesn't recognize RequestInit
 /* global RequestInit */
 
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../../constants";
 import { FeatureThreshold } from "../ColorizeCanvas";
 import { numberToStringDecimal } from "./math_utils";
 
@@ -20,7 +19,6 @@ export type UrlParams = {
   feature: string;
   track: number;
   time: number;
-  // TODO: bad code smell for url params to be aware of this type
   thresholds: FeatureThreshold[];
   range: [number, number];
 };
@@ -77,11 +75,7 @@ export function stateToUrlQueryString(state: Partial<UrlParams>): string {
   const includedParameters: string[] = [];
 
   // Don't include collection parameter in URL if it matches the default.
-  if (
-    state.collection &&
-    state.collection !== DEFAULT_COLLECTION_PATH &&
-    state.collection !== DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
-  ) {
+  if (state.collection) {
     includedParameters.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(state.collection)}`);
   }
   if (state.dataset) {

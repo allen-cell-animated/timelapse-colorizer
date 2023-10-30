@@ -40,7 +40,13 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
+import {
+  DEFAULT_COLLECTION_FILENAME,
+  DEFAULT_COLLECTION_PATH,
+  DEFAULT_COLOR_RAMPS,
+  DEFAULT_COLOR_RAMP_ID,
+  DEFAULT_PLAYBACK_FPS,
+} from "./constants";
 import FeatureThresholdPanel from "./components/FeatureThresholdPanel";
 
 function App(): ReactElement {
@@ -119,28 +125,39 @@ function App(): ReactElement {
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
   /**
-   * Get a set of URL parameters that represent the current collection, dataset, feature, track,
-   * and frame information. (Convenience wrapper for `urlUtils.getUrlParams`.)
+   * Get a URL query string representing the current collection, dataset, feature, track,
+   * and frame information.
    */
   const getUrlParams = useCallback((): string => {
     let datasetParam: string | undefined = datasetKey;
-    if (!collection?.url) {
-      // The collection has no source file; use the dataset URL instead
+    let collectionParam = collection?.url;
+    // If there is no collection loaded (e.g. a single dataset URL was loaded),
+    // use the dataset URL instead.
+    if (collectionParam === null) {
       datasetParam = dataset?.manifestUrl;
+      collectionParam = undefined;
+    }
+    // If the collection is the default collection path, don't include it in the URL.
+    if (
+      collectionParam &&
+      collectionParam !== DEFAULT_COLLECTION_PATH &&
+      collectionParam !== DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME
+    ) {
+      collectionParam = undefined;
     }
     // check if current color map range matches the default feature range; if so, don't include
-    // it in the URL parameters.
+    // it in the URL parameter to reduce clutter.
     let rangeIsDefault = false;
     const featureData = dataset?.getFeatureData(featureName);
     if (dataset && featureData) {
       rangeIsDefault = featureData.min === colorRampMin && featureData.max === colorRampMax;
     }
     return urlUtils.stateToUrlQueryString({
-      collection: collection?.url ?? undefined,
+      collection: collectionParam,
       dataset: datasetParam,
       feature: featureName,
       track: selectedTrack?.trackId,
-      // Ignore time=0
+      // Ignore time=0 to reduce clutter
       time: currentFrame !== 0 ? currentFrame : undefined,
       thresholds: featureThresholds,
       range: rangeIsDefault ? undefined : [colorRampMin, colorRampMax],
