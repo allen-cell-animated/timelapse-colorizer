@@ -97,8 +97,10 @@ export function stateToUrlQueryString(state: Partial<UrlParams>): string {
     includedParameters.push(`${URL_PARAM_TIME}=${state.time}`);
   }
   if (state.thresholds && state.thresholds.length > 0) {
+    // Thresholds are saved as a comma-separated list of featureName:min:max.
     // featureName is encoded in case it contains special characters (":" or ",")
-    // TODO: Is there a better character separator I can use here? ":" and "," are reserved characters in URLs.
+    // TODO: Are there better characters I can be using here? ":" and "," take up
+    // more space in the URL.
     const thresholdsString = state.thresholds
       .map((threshold) => {
         const featureName = encodeURIComponent(threshold.featureName);
@@ -110,7 +112,7 @@ export function stateToUrlQueryString(state: Partial<UrlParams>): string {
     includedParameters.push(`${URL_PARAM_THRESHOLDS}=${encodeURIComponent(thresholdsString)}`);
   }
   if (state.range && state.range.length === 2) {
-    const rangeString = numberToStringDecimal(state.range[0], 3) + "," + numberToStringDecimal(state.range[1], 3);
+    const rangeString = `${numberToStringDecimal(state.range[0], 3)},${numberToStringDecimal(state.range[1], 3)}`;
     includedParameters.push(`${URL_PARAM_RANGE}=${encodeURIComponent(rangeString)}`);
   }
 
@@ -172,7 +174,7 @@ export function formatPath(input: string): string {
 /**
  * Loads parameters from the current window URL.
  * @returns An object with a dataset, feature, track, and time parameters.
- * The parameters are undefined if no parameter was found in the URL, or if
+ * A parameter is `undefined` if it was not found in the URL, or if
  * it could not be parsed.
  */
 export function loadParamsFromUrl(): Partial<UrlParams> {
@@ -181,6 +183,10 @@ export function loadParamsFromUrl(): Partial<UrlParams> {
   return loadParamsFromUrlQueryString(queryString);
 }
 
+/**
+ * Returns a copy of an object where any properties with a value of `undefined`
+ * are not included.
+ */
 function removeUndefinedProperties<T>(object: T): Partial<T> {
   const ret: Partial<T> = {};
   for (const key in object) {
@@ -191,6 +197,11 @@ function removeUndefinedProperties<T>(object: T): Partial<T> {
   return ret;
 }
 
+/**
+ * Loads parameters from the query string of a URL.
+ * @param queryString A URL query string, as from `window.location.search`.
+ * @returns A partial UrlParams object with values loaded from the queryString.
+ */
 export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlParams> {
   // NOTE: URLSearchParams automatically applies one level of URI decoding.
   const urlParams = new URLSearchParams(queryString);
@@ -227,9 +238,9 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
 
   // Remove undefined entries from the object for a cleaner return value
   return removeUndefinedProperties({
-    collection: collectionParam ?? undefined,
-    dataset: datasetParam ?? undefined,
-    feature: featureParam ?? undefined,
+    collection: collectionParam,
+    dataset: datasetParam,
+    feature: featureParam,
     track: trackParam,
     time: timeParam,
     thresholds: thresholdsParam.length > 0 ? thresholdsParam : undefined,
