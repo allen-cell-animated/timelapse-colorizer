@@ -1,16 +1,6 @@
-import React, {
-  ReactElement,
-  ReactNode,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import { Card, List, Select } from "antd";
-import {
-  CloseOutlined,
-  FilterOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
 import styled, { css } from "styled-components";
 
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
@@ -111,10 +101,7 @@ export default function FeatureThresholdPanel(
     for (const threshold of props.featureThresholds) {
       const featureData = props.dataset?.features[threshold.featureName];
       if (featureData) {
-        featureMinMax.current.set(threshold.featureName, [
-          featureData.min,
-          featureData.max,
-        ]);
+        featureMinMax.current.set(threshold.featureName, [featureData.min, featureData.max]);
       }
     }
   }, [props.dataset, props.featureThresholds]);
@@ -126,9 +113,7 @@ export default function FeatureThresholdPanel(
     const newThresholds: FeatureThreshold[] = [];
     selections.forEach((featureName) => {
       // Set up default values for any new selected features, otherwise keep old thresholds
-      const existingThreshold = props.featureThresholds.find(
-        (t) => t.featureName === featureName
-      );
+      const existingThreshold = props.featureThresholds.find((t) => t.featureName === featureName);
       if (existingThreshold) {
         newThresholds.push(existingThreshold);
       } else {
@@ -146,11 +131,7 @@ export default function FeatureThresholdPanel(
   };
 
   /** Handle the threshold for a feature changing. */
-  const onThresholdChanged = (
-    index: number,
-    min: number,
-    max: number
-  ): void => {
+  const onThresholdChanged = (index: number, min: number, max: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds[index] = { ...newThresholds[index], min, max };
     props.onChange(newThresholds);
@@ -178,10 +159,7 @@ export default function FeatureThresholdPanel(
       value: name,
     })) || [];
 
-  const renderListItems = (
-    item: FeatureThreshold,
-    index: number
-  ): ReactNode => {
+  const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
     const savedMinMax = featureMinMax.current.get(item.featureName) || [0, 1];
     // If the feature is no longer in the dataset, use the saved min/max bounds.
