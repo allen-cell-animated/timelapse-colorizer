@@ -192,7 +192,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     // If the feature is no longer in the dataset, use the saved min/max bounds.
     const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [0, 1];
     const sliderMin = disabled ? savedMinMax[0] : featureData.min;
-    const sliderMax = disabled ? savedMinMax[1] : featureData!.max;
+    const sliderMax = disabled ? savedMinMax[1] : featureData.max;
 
     const featureLabel = item.unit ? `${item.featureName} (${item.unit})` : item.featureName;
 
