@@ -98,6 +98,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
 
 export type FeatureThreshold = {
   featureName: string;
+  unit: string | undefined;
   min: number;
   max: number;
 };

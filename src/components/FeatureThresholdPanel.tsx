@@ -74,6 +74,7 @@ type FeatureThresholdPanelProps = {
   dataset: Dataset | null;
   disabled?: boolean;
 };
+
 const defaultProps: Partial<FeatureThresholdPanelProps> = {
   disabled: false,
 };
@@ -90,41 +91,62 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const selectContainerRef = useRef<HTMLDivElement>(null);
 
-  // Save the min/max values of each selected feature in case the user switches to a dataset that no longer has
-  // that feature. This allows the sliders to be rendered with the same bounds as before until the user switches
-  // back to a dataset that has the feature.
+  /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature name and unit. */
+  const thresholdToKey = (threshold: FeatureThreshold): string => {
+    return `${encodeURIComponent(threshold.featureName)}:${threshold.unit ? encodeURIComponent(threshold.unit) : ""}`;
+  };
+  // Save the min/max values of each threshold in case the user switches to a dataset that no longer has the threshold's
+  // feature (no match for name + unit). This allows the sliders to be rendered with the same bounds as before until the user switches
+  // back to a dataset that has the thresholded feature.
   const featureMinMax = useRef<Map<string, [number, number]>>(new Map());
+
   useMemo(() => {
     // Update the saved min/max bounds of any selected features.
+    // This is done as a useMemo and not when the feature is added, in case we switch to another dataset
+    // that has the same feature/unit but different min/max values. That way, our saved min/max bounds
+    // reflect the last known good values.
     for (const threshold of props.featureThresholds) {
       const featureData = props.dataset?.features[threshold.featureName];
-      if (featureData) {
-        featureMinMax.current.set(threshold.featureName, [featureData.min, featureData.max]);
+      if (featureData && featureData.units === threshold.unit) {
+        featureMinMax.current.set(thresholdToKey(threshold), [featureData.min, featureData.max]);
       }
     }
   }, [props.dataset, props.featureThresholds]);
 
   ////// EVENT HANDLERS ///////////////////
 
-  /** Handle the user selecting new features. */
-  const onSelectionsChanged = (selections: string[]): void => {
-    const newThresholds: FeatureThreshold[] = [];
-    selections.forEach((featureName) => {
-      // Set up default values for any new selected features, otherwise keep old thresholds
-      const existingThreshold = props.featureThresholds.find((t) => t.featureName === featureName);
-      if (existingThreshold) {
-        newThresholds.push(existingThreshold);
-      } else {
-        const featureData = props.dataset?.features[featureName];
-        if (featureData) {
-          newThresholds.unshift({
-            featureName,
-            min: featureData.min,
-            max: featureData.max,
-          });
-        }
+  /** Handle the user selecting new features from the Select dropdown. */
+  const onSelect = (featureName: string): void => {
+    const featureData = props.dataset?.features[featureName];
+    const newThresholds = [...props.featureThresholds];
+    if (featureData) {
+      // Add a new threshold for the selected value if valid
+      newThresholds.push({
+        featureName: featureName,
+        unit: props.dataset?.getFeatureUnits(featureName),
+        min: featureData.min,
+        max: featureData.max,
+      });
+    }
+    props.onChange(newThresholds);
+  };
+
+  /** Handle the user removing features from the Select dropdown. */
+  const onDeselect = (featureName: string): void => {
+    // Find the exact match for the threshold and remove it
+    const featureData = props.dataset?.features[featureName];
+    const newThresholds = [...props.featureThresholds];
+    if (featureData) {
+      const index = props.featureThresholds.findIndex(
+        (t) => t.featureName === featureName && t.unit === featureData.units
+      );
+      if (index !== -1) {
+        // Delete saved min/max bounds for this feature
+        const thresholdToRemove = props.featureThresholds[index];
+        featureMinMax.current.delete(thresholdToKey(thresholdToRemove));
+        newThresholds.splice(index, 1);
       }
-    });
+    }
     props.onChange(newThresholds);
   };
 
@@ -135,40 +157,50 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     props.onChange(newThresholds);
   };
 
-  /** Handle a threshold getting deleted. */
+  /** Handle a threshold getting deleted via the UI buttons. */
   const onClickedRemove = (index: number): void => {
     const newThresholds = [...props.featureThresholds];
     newThresholds.splice(index, 1);
     // Delete saved min/max bounds for this feature when it's removed.
-    featureMinMax.current.delete(props.featureThresholds[index].featureName);
+    const thresholdToDelete = props.featureThresholds[index];
+    featureMinMax.current.delete(thresholdToKey(thresholdToDelete));
     props.onChange(newThresholds);
   };
 
   ////// RENDERING ///////////////////
-  // TODO: Possible bug where selected features with the same name but different units/scaling across
-  // datasets will use the same filter values.
-  // Might not be a problem if collections have similarly-structured datasets...?
-  // The alternative is to use the feature name + units as the key, but that may cause unexpected behavior
-  // for users (such as if one dataset does not have units for a feature but another does)
-  const selectedFeatures = props.featureThresholds.map((t) => t.featureName);
+  // The Select dropdown should ONLY show features that are currently present in the dataset.
   const featureOptions =
     props.dataset?.featureNames.map((name) => ({
       label: props.dataset?.getFeatureNameWithUnits(name),
       value: name,
     })) || [];
+  // Filter out thresholds that no longer match the dataset (feature and/or unit), so we only
+  // show selections that are actually valid.
+  const thresholdsInDataset = props.featureThresholds.reduce((acc, t) => {
+    const featureData = props.dataset?.features[t.featureName];
+    if (featureData && featureData.units === t.unit) {
+      acc.push(t);
+    }
+    return acc;
+  }, [] as FeatureThreshold[]);
+  const selectedFeatures = thresholdsInDataset.map((t) => t.featureName);
 
   const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
+    // Thresholds are matched on both feature names and units; a threshold must match
+    // both in the current dataset to be valid.
     const featureData = props.dataset?.features[item.featureName];
-    const savedMinMax = featureMinMax.current.get(item.featureName) || [0, 1];
+    const disabled = featureData === undefined || featureData.units !== item.unit;
     // If the feature is no longer in the dataset, use the saved min/max bounds.
-    const sliderMin = featureData ? featureData.min : savedMinMax[0];
-    const sliderMax = featureData ? featureData.max : savedMinMax[1];
-    const disabled = featureData === undefined;
+    const savedMinMax = featureMinMax.current.get(thresholdToKey(item)) || [0, 1];
+    const sliderMin = disabled ? savedMinMax[0] : featureData.min;
+    const sliderMax = disabled ? savedMinMax[1] : featureData!.max;
+
+    const featureLabel = item.unit ? `${item.featureName} (${item.unit})` : item.featureName;
 
     return (
       <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
-          <FeatureLabel $disabled={disabled}>{props.dataset?.getFeatureNameWithUnits(item.featureName)}</FeatureLabel>
+          <FeatureLabel $disabled={disabled}>{featureLabel}</FeatureLabel>
           <div style={{ width: "calc(100% - 10px)" }}>
             <LabeledRangeSlider
               min={item.min}
@@ -197,7 +229,8 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
           allowClear
           mode="multiple"
           placeholder="Add features"
-          onChange={onSelectionsChanged}
+          onSelect={onSelect}
+          onDeselect={onDeselect}
           value={selectedFeatures}
           options={featureOptions}
           disabled={props.disabled}
