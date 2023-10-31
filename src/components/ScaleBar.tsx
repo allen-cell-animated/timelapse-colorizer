@@ -4,6 +4,7 @@ import styled from "styled-components";
 type ScaleBarProps = {
   style?: React.CSSProperties;
   units?: string;
+  /** Conversion between on-screen pixels to the designated units. */
   canvasPixelsToUnits: number;
   canvasWidth?: number;
   // Get by multiplying canvas to frame scale, frame width in pixels, and conversion factor from frame pixels to units
