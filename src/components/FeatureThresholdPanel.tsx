@@ -97,9 +97,10 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   };
   // Save the FEATURE min/max bounds (not the selected range of the threshold) for each threshold. We do
   // this in case the user switches to a dataset that no longer has the threshold's feature
-  // (no match for name + unit), which means there would be no way to get the feature's min/max bounds.
+  // (no match for name + unit), which means there would be no way to get the feature's min/max bounds for the
+  // slider.
   // Doing this allows the sliders be rendered with the same bounds as before and prevents weird UI behavior.
-  const featureMinMax = useRef<Map<string, [number, number]>>(new Map());
+  const featureMinMaxBoundsFallback = useRef<Map<string, [number, number]>>(new Map());
 
   useMemo(() => {
     // Update the saved min/max bounds of any selected features.
@@ -109,7 +110,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     for (const threshold of props.featureThresholds) {
       const featureData = props.dataset?.features[threshold.featureName];
       if (featureData && featureData.units === threshold.unit) {
-        featureMinMax.current.set(thresholdToKey(threshold), [featureData.min, featureData.max]);
+        featureMinMaxBoundsFallback.current.set(thresholdToKey(threshold), [featureData.min, featureData.max]);
       }
     }
   }, [props.dataset, props.featureThresholds]);
@@ -144,7 +145,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
       if (index !== -1) {
         // Delete saved min/max bounds for this feature
         const thresholdToRemove = props.featureThresholds[index];
-        featureMinMax.current.delete(thresholdToKey(thresholdToRemove));
+        featureMinMaxBoundsFallback.current.delete(thresholdToKey(thresholdToRemove));
         newThresholds.splice(index, 1);
       }
     }
@@ -164,7 +165,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     newThresholds.splice(index, 1);
     // Delete saved min/max bounds for this feature when it's removed.
     const thresholdToDelete = props.featureThresholds[index];
-    featureMinMax.current.delete(thresholdToKey(thresholdToDelete));
+    featureMinMaxBoundsFallback.current.delete(thresholdToKey(thresholdToDelete));
     props.onChange(newThresholds);
   };
 
@@ -189,7 +190,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     const featureData = props.dataset?.features[item.featureName];
     const disabled = featureData === undefined || featureData.units !== item.unit;
     // If the feature is no longer in the dataset, use the saved min/max bounds.
-    const savedMinMax = featureMinMax.current.get(thresholdToKey(item)) || [0, 1];
+    const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [0, 1];
     const sliderMin = disabled ? savedMinMax[0] : featureData.min;
     const sliderMax = disabled ? savedMinMax[1] : featureData!.max;
 
