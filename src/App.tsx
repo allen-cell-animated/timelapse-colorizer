@@ -329,6 +329,7 @@ function App(): ReactElement {
       }
 
       setCollection(newCollection);
+      setFeatureThresholds([]); // Clear when switching collections
       await replaceDataset(loadResult.dataset, newDatasetKey);
     },
     [replaceDataset]
