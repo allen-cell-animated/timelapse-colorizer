@@ -95,9 +95,10 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const thresholdToKey = (threshold: FeatureThreshold): string => {
     return `${encodeURIComponent(threshold.featureName)}:${threshold.unit ? encodeURIComponent(threshold.unit) : ""}`;
   };
-  // Save the min/max values of each threshold in case the user switches to a dataset that no longer has the threshold's
-  // feature (no match for name + unit). This allows the sliders to be rendered with the same bounds as before until the user switches
-  // back to a dataset that has the thresholded feature.
+  // Save the FEATURE min/max bounds (not the selected range of the threshold) for each threshold. We do
+  // this in case the user switches to a dataset that no longer has the threshold's feature
+  // (no match for name + unit), which means there would be no way to get the feature's min/max bounds.
+  // Doing this allows the sliders be rendered with the same bounds as before and prevents weird UI behavior.
   const featureMinMax = useRef<Map<string, [number, number]>>(new Map());
 
   useMemo(() => {
