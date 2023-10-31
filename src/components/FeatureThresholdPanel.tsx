@@ -176,13 +176,10 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     })) || [];
   // Filter out thresholds that no longer match the dataset (feature and/or unit), so we only
   // show selections that are actually valid.
-  const thresholdsInDataset = props.featureThresholds.reduce((acc, t) => {
+  const thresholdsInDataset = props.featureThresholds.filter((t) => {
     const featureData = props.dataset?.features[t.featureName];
-    if (featureData && featureData.units === t.unit) {
-      acc.push(t);
-    }
-    return acc;
-  }, [] as FeatureThreshold[]);
+    return featureData && featureData.units === t.unit;
+  });
   const selectedFeatures = thresholdsInDataset.map((t) => t.featureName);
 
   const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
