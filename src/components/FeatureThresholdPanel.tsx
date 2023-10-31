@@ -81,9 +81,7 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {
 /**
  * A React component for adding, removing, and editing thresholds on features in a dataset.
  */
-export default function FeatureThresholdPanel(
-  inputProps: FeatureThresholdPanelProps
-): ReactElement {
+export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = {
     ...defaultProps,
     ...inputProps,
@@ -170,9 +168,7 @@ export default function FeatureThresholdPanel(
     return (
       <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
-          <FeatureLabel $disabled={disabled}>
-            {props.dataset?.getFeatureNameWithUnits(item.featureName)}
-          </FeatureLabel>
+          <FeatureLabel $disabled={disabled}>{props.dataset?.getFeatureNameWithUnits(item.featureName)}</FeatureLabel>
           <div style={{ width: "calc(100% - 10px)" }}>
             <LabeledRangeSlider
               min={item.min}
@@ -209,13 +205,7 @@ export default function FeatureThresholdPanel(
           // Allows the selection dropdown to be selected and styled
           getPopupContainer={() => selectContainerRef.current!}
           maxTagCount={"responsive"}
-          suffixIcon={
-            isFocused ? (
-              <SearchOutlined />
-            ) : (
-              <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />
-            )
-          }
+          suffixIcon={isFocused ? <SearchOutlined /> : <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
