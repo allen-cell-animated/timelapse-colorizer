@@ -125,7 +125,7 @@ def make_frames(
 
 
 def make_features(
-    dataset: pd.DataFrame, feature_names: List[str], writer: ColorizerDatasetWriter
+    dataset: pd.DataFrame, feature_names: List[str], dataset_name: str, writer: ColorizerDatasetWriter
 ):
     """
     Generate the outlier, track, time, centroid, and feature data files.
@@ -141,7 +141,7 @@ def make_features(
     feature_data = []
     for feature in feature_names:
         # Scale feature to use actual units
-        (scale_factor, label, unit) = get_plot_labels_for_metric(feature)
+        (scale_factor, label, unit) = get_plot_labels_for_metric(feature, dataset=dataset_name)
         f = dataset[feature].to_numpy() * scale_factor
         feature_data.append(f)
 
@@ -198,7 +198,7 @@ def make_dataset(output_dir="./data/", dataset="baby_bear", do_frames=True, scal
 
     # Make the features, frame data, and manifest.
     nframes = len(grouped_frames)
-    make_features(full_dataset, FEATURE_COLUMNS, writer)
+    make_features(full_dataset, FEATURE_COLUMNS, dataset, writer)
     if do_frames:
         make_frames(grouped_frames, scale, writer)
     writer.write_manifest(nframes, feature_labels, feature_metadata)
