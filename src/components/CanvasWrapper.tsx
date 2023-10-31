@@ -1,8 +1,11 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Color } from "three";
 
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
+import ScaleBar from "./ScaleBar";
+import LabeledRangeSlider from "./LabeledRangeSlider";
+import { Slider } from "antd";
 
 export type DrawSettings = {
   mode: DrawMode;
@@ -182,6 +185,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
+  const [canvasPixelsToUnits, setCanvasPixelsToUnits] = useState(1);
+
   canv.render();
-  return <div ref={canvasRef}></div>;
+  return (
+    <div style={{ position: "relative" }}>
+      <div ref={canvasRef}></div>
+      <Slider min={0} max={0.001} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.00001} />
+      <Slider min={0.001} max={0.01} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.0001} />
+      <Slider min={0.01} max={0.1} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.001} />
+      <Slider min={0.1} max={1} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.01} />
+      <Slider min={1} max={10} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.1} />
+      <Slider min={10} max={100} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={1} />
+      <Slider min={100} max={1000} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={10} />
+      <ScaleBar
+        canvasPixelsToUnits={canvasPixelsToUnits}
+        style={{ position: "absolute", right: "10px", bottom: "10px" }}
+      />
+    </div>
+  );
 }
