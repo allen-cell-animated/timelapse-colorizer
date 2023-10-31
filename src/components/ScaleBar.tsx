@@ -42,27 +42,25 @@ const ScaleBarLabel = styled.div`
 export default function ScaleBar(inputProps: ScaleBarProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ScaleBarProps>;
 
-  // Determine a good size to show the scale bar at!
   const minWidthPx = 80;
-  let scaleBarWidthInUnits = 0;
-
-  const decimalPlaces = Math.ceil(Math.log10(props.canvasPixelsToUnits)) + 1;
-  console.log(decimalPlaces);
 
   const minWidthUnits = minWidthPx * props.canvasPixelsToUnits;
-  const unitsToNearestTen = Math.ceil(minWidthUnits / 10 ** decimalPlaces) * 10 ** decimalPlaces;
+  // Here we get the power of the most significant digit (MSD) of the minimum width in units.
+  const msdPower = Math.ceil(Math.log10(minWidthUnits));
 
-  scaleBarWidthInUnits = unitsToNearestTen;
-
-  // But we might have to handle cases where units can only be shown as decimals
-
-  // TODO: Handle canvasPixelsToUnits = 0
+  // Get the nearest value in the place of the MSD that is greater than the minimum width.
+  // This means that the displayed unit in the scale bar only changes at its MSD.
+  // 0.1, 0.2, 0.3, ...
+  // 1, 2, 3, ...
+  // 10, 20, 30, ...
+  const scaleBarWidthInUnits = Math.ceil(minWidthUnits / 10 ** (msdPower - 1)) * 10 ** (msdPower - 1);
 
   return (
     <ScaleBarContainer style={{ ...props.style, width: scaleBarWidthInUnits / props.canvasPixelsToUnits }}>
       <ScaleBarLine>
         <ScaleBarLabel>
-          {scaleBarWidthInUnits}
+          {/** Fixes float error for unrepresentable values (0.3 => 0.30000000000004) */}
+          {scaleBarWidthInUnits < 1 ? scaleBarWidthInUnits.toPrecision(1) : scaleBarWidthInUnits.toFixed(0)}
           {props.units}
         </ScaleBarLabel>
       </ScaleBarLine>
