@@ -117,7 +117,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
       } else {
         const featureData = props.dataset?.features[featureName];
         if (featureData) {
-          newThresholds.push({
+          newThresholds.unshift({
             featureName,
             min: featureData.min,
             max: featureData.max,
