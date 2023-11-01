@@ -344,8 +344,16 @@ function App(): ReactElement {
 
       const featureData = newDataset.getFeatureData(newFeatureName);
       if (!isColorRampRangeLocked && featureData) {
-        setColorRampMin(featureData.min);
-        setColorRampMax(featureData.max);
+        // Use min/max from threshold if there is a matching one, otherwise use feature min/max
+        // TODO: Update this with units later
+        const threshold = featureThresholds.find((t) => t.featureName === newFeatureName);
+        if (threshold) {
+          setColorRampMin(threshold.min);
+          setColorRampMax(threshold.max);
+        } else {
+          setColorRampMin(featureData.min);
+          setColorRampMax(featureData.max);
+        }
       }
 
       canv.setFeature(newFeatureName);
