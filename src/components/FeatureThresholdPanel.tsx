@@ -49,13 +49,6 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {
 export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
 
-  // Clear thresholds for features that don't exist when the dataset changes.
-  // TODO: Show these thresholds as disabled, rather than removing them.
-  useEffect(() => {
-    const newThresholds = props.featureThresholds.filter((t) => props.dataset?.featureNames.includes(t.featureName));
-    props.onChange(newThresholds);
-  }, [props.dataset]);
-
   /** Handle the user selecting new features. */
   const onSelectionsChanged = (selections: string[]): void => {
     const newThresholds: FeatureThreshold[] = [];
@@ -96,7 +89,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
     if (!featureData) {
-      return <></>;
+      return null;
     }
 
     return (
