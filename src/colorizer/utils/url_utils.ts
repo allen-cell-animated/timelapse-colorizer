@@ -9,7 +9,6 @@ const URL_PARAM_DATASET = "dataset";
 const URL_PARAM_FEATURE = "feature";
 const URL_PARAM_TIME = "t";
 const URL_PARAM_COLLECTION = "collection";
-// TODO: Make thresholds/filters language consistent. Requires talking with users/UX!
 const URL_PARAM_THRESHOLDS = "filters";
 const URL_PARAM_RANGE = "range";
 
@@ -74,7 +73,6 @@ export function stateToUrlQueryString(state: Partial<UrlParams>): string {
   // Get parameters, ignoring null/empty values
   const includedParameters: string[] = [];
 
-  // Don't include collection parameter in URL if it matches the default.
   if (state.collection) {
     includedParameters.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(state.collection)}`);
   }
