@@ -9,6 +9,7 @@ const URL_PARAM_FEATURE = "feature";
 const URL_PARAM_TIME = "t";
 const URL_PARAM_COLLECTION = "collection";
 const URL_PARAM_COLOR_RAMP = "color";
+const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 
 export type UrlParams = {
   collection: string | null;
@@ -93,7 +94,9 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
   }
   if (colorRamp) {
     if (colorRampReversed) {
-      includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRamp + "!")}`);
+      includedParameters.push(
+        `${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRamp + URL_COLOR_RAMP_REVERSED_SUFFIX)}`
+      );
     } else {
       includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRamp)}`);
     }
@@ -178,7 +181,7 @@ export function loadParamsFromUrl(): UrlParams {
   let colorRampParam: string | null = colorRampRawParam;
   let colorRampReversedParam: boolean = false;
   //  Color ramps are marked as reversed by adding ! to the end of the key
-  if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === "!") {
+  if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === URL_COLOR_RAMP_REVERSED_SUFFIX) {
     colorRampReversedParam = true;
     colorRampParam = colorRampRawParam.slice(0, -1);
   }
