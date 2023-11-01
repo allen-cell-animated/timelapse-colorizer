@@ -41,10 +41,8 @@ export const BACKGROUND_ID = -1;
 export enum DrawMode {
   /** Hide this object type. */
   HIDE = 0,
-  /** Use the color ramp/map to color the object. */
-  USE_RAMP = 1,
   /** Use a solid color for this object type. */
-  USE_COLOR = 2,
+  USE_COLOR = 1,
 }
 
 type ColorizeUniformTypes = {

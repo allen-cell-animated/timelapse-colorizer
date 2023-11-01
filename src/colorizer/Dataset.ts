@@ -183,7 +183,7 @@ export default class Dataset {
   }
 
   public get numObjects(): number {
-    return this.times?.length || this.trackIds?.length || this.features[this.featureNames[0]]?.data.length || 0;
+    return this.features[this.featureNames[0]].data.length;
   }
 
   /** Loads a single frame from the dataset */
