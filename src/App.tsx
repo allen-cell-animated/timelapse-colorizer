@@ -40,13 +40,7 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
-import {
-  DEFAULT_COLLECTION_FILENAME,
-  DEFAULT_COLLECTION_PATH,
-  DEFAULT_COLOR_RAMPS,
-  DEFAULT_COLOR_RAMP_ID,
-  DEFAULT_PLAYBACK_FPS,
-} from "./constants";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import FeatureThresholdPanel from "./components/FeatureThresholdPanel";
 
 function App(): ReactElement {
