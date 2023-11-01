@@ -51,17 +51,17 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   /** Handle the user selecting new features. */
   const onSelectionsChanged = (selections: string[]): void => {
-    const newThresholds: FeatureThreshold[] = [];
-    selections.forEach((featureName) => {
+    const newThresholds: FeatureThreshold[] = selections.map((featureName) => {
       // Set up default values for any new selected features, otherwise keep old thresholds
       const existingThreshold = props.featureThresholds.find((t) => t.featureName === featureName);
       if (existingThreshold) {
-        newThresholds.push(existingThreshold);
+        return existingThreshold;
       } else {
         const featureData = props.dataset?.features[featureName];
         if (featureData) {
-          newThresholds.push({ featureName, min: featureData.min, max: featureData.max });
+          return { featureName, min: featureData.min, max: featureData.max };
         }
+        throw new Error("Attempted to add a threshold for a feature that doesn't exist in the current dataset.");
       }
     });
     props.onChange(newThresholds);
