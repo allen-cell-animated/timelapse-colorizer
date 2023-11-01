@@ -137,14 +137,6 @@ function App(): ReactElement {
       datasetParam = dataset?.manifestUrl;
       collectionParam = undefined;
     }
-    // If the collection is the default collection path, don't include it in the URL.
-    if (
-      collectionParam &&
-      (collectionParam === DEFAULT_COLLECTION_PATH ||
-        collectionParam === DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME)
-    ) {
-      collectionParam = undefined;
-    }
     // check if current color map range matches the default feature range; if so, don't include
     // it in the URL parameter to reduce clutter.
     let rangeIsDefault = false;
