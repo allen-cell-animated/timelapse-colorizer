@@ -10,7 +10,7 @@ const URL_PARAM_FEATURE = "feature";
 const URL_PARAM_TIME = "t";
 const URL_PARAM_COLLECTION = "collection";
 // TODO: Make thresholds/filters language consistent. Requires talking with users/UX!
-const URL_PARAM_THRESHOLDS = "thresholds";
+const URL_PARAM_THRESHOLDS = "filters";
 const URL_PARAM_RANGE = "range";
 
 export type UrlParams = {
