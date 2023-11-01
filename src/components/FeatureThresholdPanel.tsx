@@ -9,6 +9,7 @@ import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import LabeledRangeSlider from "./LabeledRangeSlider";
 import { Dataset } from "../colorizer";
 import IconButton from "./IconButton";
+import { thresholdMatchFinder } from "../colorizer/utils/data_utils";
 
 const PanelContainer = styled.div`
   flex-grow: 1;
@@ -139,9 +140,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     const featureData = props.dataset?.features[featureName];
     const newThresholds = [...props.featureThresholds];
     if (featureData) {
-      const index = props.featureThresholds.findIndex(
-        (t) => t.featureName === featureName && t.unit === featureData.units
-      );
+      const index = props.featureThresholds.findIndex(thresholdMatchFinder(featureName, featureData.units));
       if (index !== -1) {
         // Delete saved min/max bounds for this feature
         const thresholdToRemove = props.featureThresholds[index];
