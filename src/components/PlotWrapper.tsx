@@ -48,5 +48,23 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
   }, [props.selectedTrack, props.featureName]);
 
-  return <div ref={plotDivRef} style={{ width: "600px", height: "400px" }} />;
+  const updatePlotSize = (): void => {
+    if (!plotDivRef.current) {
+      return;
+    }
+    const width = plotDivRef.current.clientWidth;
+    const height = plotDivRef.current.clientHeight;
+    console.log(`Resizing (${width}, ${height})`);
+    plot?.setSize(width, height);
+  };
+  useEffect(() => {
+    updatePlotSize();
+    // TODO: Troubleshoot using window.addEventListener for resizing, because
+    // the native responsive behavior can be a bit slow.
+    // Some layout issues occurred when using this, so it's disabled for now.
+    // window.addEventListener("resize", updatePlotSize);
+    // return () => window.removeEventListener("resize", updatePlotSize);
+  }, [plot, plotDivRef.current]);
+
+  return <div ref={plotDivRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>;
 }
