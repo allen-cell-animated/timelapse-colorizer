@@ -682,8 +682,8 @@ function App(): ReactElement {
                             />
                             <IconButton
                               disabled={disableUi}
-                              onClick={async () => {
-                                await findTrack(parseInt(findTrackInput, 10));
+                              onClick={() => {
+                                findTrack(parseInt(findTrackInput, 10));
                               }}
                             >
                               <SearchOutlined />
