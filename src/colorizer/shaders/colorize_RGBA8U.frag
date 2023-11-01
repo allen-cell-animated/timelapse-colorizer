@@ -40,13 +40,13 @@ uint combineColor(uvec4 color) {
   return (color.b << 16u) | (color.g << 8u) | color.r;
 }
 
-uvec4 fetchIndexFrom2DUnsignedTexture(usampler2D tex, int index) {
+uvec4 getUintFromTex(usampler2D tex, int index) {
   int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
   return texelFetch(tex, featurePos, 0);
 }
 
-vec4 fetchIndexFrom2DSignedTexture(sampler2D tex, int index) {
+vec4 getFloatFromTex(sampler2D tex, int index) {
   int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
   return texelFetch(tex, featurePos, 0);
@@ -107,13 +107,13 @@ void main() {
   }
 
   // Data buffer starts at 0, non-background segmentation IDs start at 1
-  float featureVal = fetchIndexFrom2DSignedTexture(featureData, int(id) - 1).r;
-  uint outlierVal = fetchIndexFrom2DUnsignedTexture(outlierData, int(id) - 1).r;
+  float featureVal = getFloatFromTex(featureData, int(id) - 1).r;
+  uint outlierVal = getUintFromTex(outlierData, int(id) - 1).r;
   float normFeatureVal = (featureVal - featureColorRampMin) / (featureColorRampMax - featureColorRampMin);
 
   // Use the selected draw mode to handle out of range and outlier values;
   // otherwise color with the color ramp as usual.
-  bool isInRange = fetchIndexFrom2DUnsignedTexture(inRangeIds, int(id) - 1).r == 1u;
+  bool isInRange = getUintFromTex(inRangeIds, int(id) - 1).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
 
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
