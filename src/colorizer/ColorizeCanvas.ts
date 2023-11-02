@@ -29,6 +29,7 @@ import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
+import CanvasOverlay from "./CanvasOverlay";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -108,6 +109,10 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  private canvasOverlay: CanvasOverlay;
+  private framePixelsToUnits?: number;
+  private frameUnits?: string;
+
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
   private showTrackPath: boolean;
@@ -183,12 +188,34 @@ export default class ColorizeCanvas {
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
 
+    this.canvasOverlay = new CanvasOverlay();
+    this.canvasOverlay.setScaleBarVisibility(true);
+    this.canvasOverlay.updateScaleBar(1, "px");
+    this.canvasOverlay.setSize(200, 400);
+
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
     this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
   }
 
-  get domElement(): HTMLCanvasElement {
+  get mountableDomElement(): HTMLElement {
+    // Set up the canvas overlay
+    // TODO: This should only be calculated once, and div should be returned
+    // after.
+    const div = document.createElement("div");
+    div.appendChild(this.renderer.domElement);
+    div.appendChild(this.canvasOverlay.domElement);
+    div.style.position = "relative";
+    this.canvasOverlay.domElement.style.position = "absolute";
+    this.canvasOverlay.domElement.style.left = "0";
+    this.canvasOverlay.domElement.style.top = "0";
+    // Disable pointer events on the canvas overlay so that the
+    // canvas can be clicked.
+    this.canvasOverlay.domElement.style.pointerEvents = "none";
+    return div;
+  }
+
+  get canvasElement(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
 
@@ -202,6 +229,7 @@ export default class ColorizeCanvas {
     this.checkPixelRatio();
 
     this.renderer.setSize(width, height);
+    this.canvasOverlay.setSize(width, height);
     // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
     // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
@@ -209,6 +237,16 @@ export default class ColorizeCanvas {
     this.canvasResolution = new Vector2(width, height);
     if (this.dataset) {
       this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    }
+  }
+
+  setDatasetUnitScale(framePixelsToUnits: number, frameUnits: string) {
+    this.framePixelsToUnits = framePixelsToUnits;
+    this.frameUnits = frameUnits;
+    if (this.dataset) {
+      this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    } else {
+      this.canvasOverlay.setScaleBarVisibility(false);
     }
   }
 
@@ -235,6 +273,11 @@ export default class ColorizeCanvas {
     this.setUniform("canvasToFrameScale", canvasToFrameScale);
     // Scale the line mesh so the vertices line up correctly even when the canvas changes
     this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
+
+    // Update the scale bar units
+    if (this.framePixelsToUnits && this.frameUnits) {
+      this.canvasOverlay.updateScaleBar(this.framePixelsToUnits * frameToCanvasScale.x, this.frameUnits);
+    }
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -256,6 +299,7 @@ export default class ColorizeCanvas {
     // Save frame resolution for later calculation
     this.setUniform("frame", frame);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    this.canvasOverlay.render();
     this.render();
   }
 

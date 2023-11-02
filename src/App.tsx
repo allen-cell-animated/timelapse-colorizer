@@ -504,7 +504,7 @@ function App(): ReactElement {
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrameAndRender}
-            getCanvas={() => canv.domElement}
+            getCanvas={() => canv.canvasElement}
             // Stop playback when exporting
             onClick={() => timeControls.handlePauseButtonClick()}
             currentFrame={currentFrame}
