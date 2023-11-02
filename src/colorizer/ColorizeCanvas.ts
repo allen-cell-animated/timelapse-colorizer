@@ -277,14 +277,11 @@ export default class ColorizeCanvas {
 
     // Update the scale bar units
     console.log("updating scaling");
-    if (this.unitsPerFramePixel) {
-      // TODO: This reflects the aspect ratio and not the actual pixel scaling I think?
-      // TODO: This is REAllY important and should be unit tested.
+    if (this.unitsPerFramePixel !== undefined) {
+      // We only consider X scaling here because the scale bar is always horizontal.
       const frameWidthInUnits = this.unitsPerFramePixel * frameResolution.x;
       const canvasWidthInUnits = frameWidthInUnits * frameToCanvasScale.x;
-      console.log("Canvas width in units: " + canvasWidthInUnits);
       const unitsPerScreenPixel = canvasWidthInUnits / canvasResolution.x;
-      console.log("units per screen pixel: " + unitsPerScreenPixel);
       this.canvasOverlay.updateScaleBar(unitsPerScreenPixel, this.frameUnits || "");
       this.canvasOverlay.render();
     }

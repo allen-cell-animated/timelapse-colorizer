@@ -29,6 +29,10 @@ export default class CanvasOverlay {
   }
 
   private renderScaleBar(): void {
+    if (this.unitsPerScreenPixel === 0 || Number.isNaN(this.unitsPerScreenPixel) || !this.scaleBarVisible) {
+      return;
+    }
+
     const minWidthUnits = MIN_SCALE_BAR_WIDTH_PX * this.unitsPerScreenPixel;
     // Here we get the power of the most significant digit (MSD) of the minimum width in units.
     const msdPower = Math.ceil(Math.log10(minWidthUnits));
@@ -48,7 +52,9 @@ export default class CanvasOverlay {
 
     // Fixes float error for unrepresentable values (0.30000000000004 => 0.3)
     const displayUnits =
-      scaleBarWidthInUnits < 1 ? scaleBarWidthInUnits.toPrecision(1) : scaleBarWidthInUnits.toFixed(0);
+      scaleBarWidthInUnits < 1 || scaleBarWidthInUnits >= 1000
+        ? scaleBarWidthInUnits.toPrecision(1)
+        : scaleBarWidthInUnits.toFixed(0);
     const textContent = `${displayUnits} ${this.scaleBarUnit}`;
 
     const ctx = this.canvas.getContext("2d");
