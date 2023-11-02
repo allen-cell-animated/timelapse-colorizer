@@ -15,7 +15,8 @@ export default class CanvasOverlay {
   private scaleBarObject: CSS2DObject;
 
   constructor() {
-    this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    // Adjust camera position so top/bottom positioning works as expected
+    this.camera = new OrthographicCamera(0, 2, 0, -2, 0, 1);
     this.scene = new Scene();
     this.renderer = new CSS2DRenderer();
 
@@ -32,8 +33,8 @@ export default class CanvasOverlay {
     this.renderer.setSize(width, height);
   }
 
-  updateScaleBar(screenPixelsToUnits: number, unit: string): void {
-    const minWidthUnits = MIN_SCALE_BAR_WIDTH_PX * screenPixelsToUnits;
+  updateScaleBar(unitsPerScreenPixel: number, unit: string): void {
+    const minWidthUnits = MIN_SCALE_BAR_WIDTH_PX * unitsPerScreenPixel;
     // Here we get the power of the most significant digit (MSD) of the minimum width in units.
     const msdPower = Math.ceil(Math.log10(minWidthUnits));
 
@@ -43,7 +44,7 @@ export default class CanvasOverlay {
     // 1, 2, 3, ...
     // 10, 20, 30, ...
     const scaleBarWidthInUnits = Math.ceil(minWidthUnits / 10 ** (msdPower - 1)) * 10 ** (msdPower - 1);
-    this.scaleBar.style.width = `${scaleBarWidthInUnits / screenPixelsToUnits}px`;
+    this.scaleBar.style.width = `${scaleBarWidthInUnits / unitsPerScreenPixel}px`;
 
     // Fixes float error for unrepresentable values (0.30000000000004 => 0.3)
     const displayUnits =

@@ -110,7 +110,7 @@ export default class ColorizeCanvas {
   private pickMesh: Mesh;
 
   private canvasOverlay: CanvasOverlay;
-  private framePixelsToUnits?: number;
+  private unitsPerFramePixel?: number;
   private frameUnits?: string;
 
   // Rendered track line that shows the trajectory of a cell.
@@ -196,6 +196,7 @@ export default class ColorizeCanvas {
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
     this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
+    this.updateScaling = this.updateScaling.bind(this);
   }
 
   get mountableDomElement(): HTMLElement {
@@ -209,6 +210,7 @@ export default class ColorizeCanvas {
     this.canvasOverlay.domElement.style.position = "absolute";
     this.canvasOverlay.domElement.style.left = "0";
     this.canvasOverlay.domElement.style.top = "0";
+    this.canvasOverlay.domElement.style.margin = "1px";
     // Disable pointer events on the canvas overlay so that the
     // canvas can be clicked.
     this.canvasOverlay.domElement.style.pointerEvents = "none";
@@ -240,13 +242,13 @@ export default class ColorizeCanvas {
     }
   }
 
-  setDatasetUnitScale(framePixelsToUnits: number, frameUnits: string) {
-    this.framePixelsToUnits = framePixelsToUnits;
+  setDatasetUnitScale(unitsPerFramePixel: number, frameUnits: string) {
+    this.unitsPerFramePixel = unitsPerFramePixel;
+    console.log(this.unitsPerFramePixel);
     this.frameUnits = frameUnits;
     if (this.dataset) {
+      this.canvasOverlay.setScaleBarVisibility(true);
       this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
-    } else {
-      this.canvasOverlay.setScaleBarVisibility(false);
     }
   }
 
@@ -275,8 +277,17 @@ export default class ColorizeCanvas {
     this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
 
     // Update the scale bar units
-    if (this.framePixelsToUnits && this.frameUnits) {
-      this.canvasOverlay.updateScaleBar(this.framePixelsToUnits * frameToCanvasScale.x, this.frameUnits);
+    console.log("updating scaling");
+    if (this.unitsPerFramePixel) {
+      // TODO: This reflects the aspect ratio and not the actual pixel scaling I think?
+      // TODO: This is REAllY important and should be unit tested.
+      const frameWidthInUnits = this.unitsPerFramePixel * frameResolution.x;
+      const canvasWidthInUnits = frameWidthInUnits * frameToCanvasScale.x;
+      console.log("Canvas width in units: " + canvasWidthInUnits);
+      const unitsPerScreenPixel = canvasWidthInUnits / canvasResolution.x;
+      console.log("units per screen pixel: " + unitsPerScreenPixel);
+      this.canvasOverlay.updateScaleBar(unitsPerScreenPixel, this.frameUnits || "");
+      this.canvasOverlay.render();
     }
   }
 
@@ -502,6 +513,7 @@ export default class ColorizeCanvas {
     this.updateHighlightedId();
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
+    this.canvasOverlay.render();
   }
 
   dispose(): void {

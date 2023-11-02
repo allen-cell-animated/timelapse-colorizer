@@ -195,26 +195,29 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
-  const [canvasPixelsToUnits, _setCanvasPixelsToUnits] = useState(1);
-  const setCanvasPixelsToUnits = (value: number): void => {
+  const [unitsPerFramePixel, _setUnitsPerFramePixel] = useState(1);
+  const setUnitsPerFramePixel = (value: number): void => {
     canv.setDatasetUnitScale(value, "um");
     canv.render();
-    _setCanvasPixelsToUnits(value);
+    _setUnitsPerFramePixel(value);
   };
+  useEffect(() => {
+    setUnitsPerFramePixel(1);
+  }, []);
 
   canv.render();
   return (
     <div style={{ position: "relative" }}>
       <div ref={canvasRef}></div>
-      <Slider min={0} max={0.001} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.00001} />
-      <Slider min={0.001} max={0.01} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.0001} />
-      <Slider min={0.01} max={0.1} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.001} />
-      <Slider min={0.1} max={1} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.01} />
-      <Slider min={1} max={10} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={0.1} />
-      <Slider min={10} max={100} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={1} />
-      <Slider min={100} max={1000} value={canvasPixelsToUnits} onChange={setCanvasPixelsToUnits} step={10} />
+      <Slider min={0} max={0.001} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.00001} />
+      <Slider min={0.001} max={0.01} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.0001} />
+      <Slider min={0.01} max={0.1} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.001} />
+      <Slider min={0.1} max={1} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.01} />
+      <Slider min={1} max={10} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.1} />
+      <Slider min={10} max={100} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={1} />
+      <Slider min={100} max={1000} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={10} />
       <ScaleBar
-        canvasPixelsToUnits={canvasPixelsToUnits}
+        canvasPixelsToUnits={unitsPerFramePixel}
         style={{ position: "absolute", right: "10px", bottom: "10px" }}
       />
     </div>
