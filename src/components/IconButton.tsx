@@ -6,7 +6,7 @@ import styled, { css } from "styled-components";
 type IconButtonProps = {
   onClick?: () => void;
   disabled?: boolean;
-  type?: "outlined" | "primary";
+  type?: "outlined" | "primary" | "text";
 };
 
 // Button styling varies based on the type (outlined vs. primary)
@@ -35,6 +35,13 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
             color: var(--color-text-disabled);
             fill: var(--color-text-disabled);
           }
+        `;
+      case "text":
+        return css`
+          border: 1px solid transparent;
+          background-color: transparent;
+          color: var(--color-text-hint);
+          fill: var(--color-text-hint);
         `;
       case "primary":
       default:

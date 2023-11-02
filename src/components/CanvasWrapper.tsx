@@ -2,9 +2,8 @@ import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useState 
 import { Color } from "three";
 
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
-import { DrawMode } from "../colorizer/ColorizeCanvas";
+import { DrawMode, FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import ScaleBar from "./ScaleBar";
-import LabeledRangeSlider from "./LabeledRangeSlider";
 import { Slider } from "antd";
 
 export type DrawSettings = {
@@ -27,6 +26,8 @@ type CanvasWrapperProps = {
   colorRampMax: number;
   selectedTrack: Track | null;
 
+  featureThresholds?: FeatureThreshold[];
+
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
   /** Called when the mouse exits the canvas. */
@@ -42,6 +43,7 @@ const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
+  featureThresholds: [],
   maxWidth: 730,
   maxHeight: 500,
 };
@@ -83,10 +85,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const settings = props.outOfRangeDrawSettings;
     canv.setOutOfRangeDrawMode(settings.mode, settings.color);
   }, [props.outOfRangeDrawSettings]);
+
   useMemo(() => {
     const settings = props.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
   }, [props.outlierDrawSettings]);
+
+  useMemo(() => {
+    // YAGNI: Debouncing for this is possible but no performance issues encountered yet.
+    // Add only if needed.
+    // Timeout in case of slowdowns to prevent this from halting the UI.
+    setTimeout(() => canv.setFeatureThresholds(props.featureThresholds), 0);
+  }, [props.featureThresholds, props.dataset]);
 
   // Updated track-related settings
   useMemo(() => {

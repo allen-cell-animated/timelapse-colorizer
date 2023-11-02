@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactEventHandler, useRef } from "react";
+import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react";
 import { InputNumber, Slider } from "antd";
 import { clamp } from "three/src/math/MathUtils";
 import styled from "styled-components";
@@ -22,6 +22,8 @@ type LabeledRangeSliderProps = {
   /** Minimum number of steps for the slider to use if integer steps cannot be used.
    * Default is 25. */
   minSteps?: number;
+  /** Marks to draw on the range slider. */
+  marks?: number[] | undefined;
   // TODO: Add a way to fetch significant figures for each feature. This is a temporary fix
   // and may not work for all features. Use scientific notation maybe?
   maxDecimalsToDisplay?: number;
@@ -36,6 +38,7 @@ const defaultProps: Partial<LabeledRangeSliderProps> = {
   maxSliderBound: 1,
   minSteps: 25,
   maxDecimalsToDisplay: 3,
+  marks: undefined,
 };
 
 // STYLING /////////////////////////////////////////////////////////////////
@@ -60,6 +63,13 @@ const SliderContainer = styled.div`
   color: var(--color-text-secondary);
   --label-position: calc(-1 * var(--font-size-label-small));
   z-index: 1;
+
+  // Override antd layout change for sliders with marks applied.
+  // The margin is normally made larger to accommodate the mark text,
+  // but in this case we only show the marks and no label text.
+  & .ant-slider-with-marks {
+    margin: 9.625px 4.375px;
+  }
 `;
 
 const SliderLabel = styled.p`
@@ -129,6 +139,17 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
   stepSize = clamp(stepSize, 0, 1);
   stepSize = setMaxDecimalPrecision(stepSize, 3);
 
+  let marks: undefined | Record<number, ReactNode> = undefined;
+  if (props.marks) {
+    marks = {};
+    // Set the mark values to empty fragments so Antd still renders the marks
+    // but without any text labels. This cannot be null/undefined or else Antd
+    // ignores the marks altogether.
+    props.marks.forEach((value) => {
+      marks![value] = <></>;
+    });
+  }
+
   return (
     <ComponentContainer>
       <InputNumber
@@ -151,6 +172,7 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
           onChange={(value: [number, number]) => {
             handleValueChange(value[0], value[1]);
           }}
+          marks={marks}
           step={stepSize}
           // Show formatted decimals in tooltip
           // TODO: Is this better than showing the precise value?

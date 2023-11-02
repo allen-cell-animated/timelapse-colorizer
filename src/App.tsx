@@ -9,14 +9,20 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Divider, Input, notification, Slider } from "antd";
+import { Button, Checkbox, Divider, Input, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
 import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
+import {
+  BACKGROUND_ID,
+  DrawMode,
+  FeatureThreshold,
+  OUTLIER_COLOR_DEFAULT,
+  OUT_OF_RANGE_COLOR_DEFAULT,
+} from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -35,6 +41,7 @@ import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
+import FeatureThresholdPanel from "./components/FeatureThresholdPanel";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -60,15 +67,36 @@ function App(): ReactElement {
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
   const [outOfRangeDrawSettings, setoutOfRangeDrawSettings] = useState({
-    mode: DrawMode.USE_RAMP,
+    mode: DrawMode.USE_COLOR,
     color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
   });
   const [outlierDrawSettings, setOutlierDrawSettings] = useState({
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
-  const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
+  const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
+  const setFeatureThresholds = useCallback(
+    // Change the current feature min + max on the color ramp if that feature's threshold moved.
+    (newThresholds: FeatureThreshold[]): void => {
+      // Check if the current feature name is being thresholded on, and if that threshold
+      // has changed. If so, snap the current min + max color ramp values so they match the new
+      // threshold values.
+      const currThreshold = featureThresholds.find((t) => t.featureName === featureName);
+      const newThreshold = newThresholds.find((t) => t.featureName === featureName);
+
+      if (newThreshold && currThreshold) {
+        if (newThreshold.min !== currThreshold.min || newThreshold.max !== currThreshold.max) {
+          setColorRampMin(newThreshold.min);
+          setColorRampMax(newThreshold.max);
+        }
+      }
+      _setFeatureThresholds(newThresholds);
+    },
+    [featureThresholds, featureName]
+  );
+
+  const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
 
@@ -253,6 +281,7 @@ function App(): ReactElement {
       setFindTrackInput("");
       setSelectedTrack(null);
       setDatasetOpen(true);
+      console.log("Num Items:" + dataset?.numObjects);
     },
     [dataset, featureName, canv, currentFrame, getUrlParams]
   );
@@ -315,8 +344,16 @@ function App(): ReactElement {
 
       const featureData = newDataset.getFeatureData(newFeatureName);
       if (!isColorRampRangeLocked && featureData) {
-        setColorRampMin(featureData.min);
-        setColorRampMax(featureData.max);
+        // Use min/max from threshold if there is a matching one, otherwise use feature min/max
+        // TODO: Update this with units later
+        const threshold = featureThresholds.find((t) => t.featureName === newFeatureName);
+        if (threshold) {
+          setColorRampMin(threshold.min);
+          setColorRampMax(threshold.max);
+        } else {
+          setColorRampMin(featureData.min);
+          setColorRampMax(featureData.max);
+        }
       }
 
       canv.setFeature(newFeatureName);
@@ -413,7 +450,18 @@ function App(): ReactElement {
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
-  const featureUnits = dataset?.getFeatureUnits(featureName) || "";
+  // Show min + max marks on the color ramp slider if a feature is selected and
+  // is currently being thresholded/filtered on.
+  const getColorMapSliderMarks = (): undefined | number[] => {
+    if (!featureName || featureThresholds.length === 0) {
+      return undefined;
+    }
+    const threshold = featureThresholds.find((value) => value.featureName === featureName);
+    if (!threshold) {
+      return undefined;
+    }
+    return [threshold.min, threshold.max];
+  };
 
   return (
     <AppStyle className={styles.app}>
@@ -472,7 +520,9 @@ function App(): ReactElement {
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
         <div className={styles.topControls}>
-          <h3 style={{ margin: "0" }}>Feature value range {featureUnits ? `(${featureUnits})` : ""}</h3>
+          <h3 style={{ margin: "0" }}>
+            {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
+          </h3>
           <div className={styles.controlsContainer}>
             <LabeledRangeSlider
               min={colorRampMin}
@@ -483,6 +533,7 @@ function App(): ReactElement {
                 setColorRampMin(min);
                 setColorRampMax(max);
               }}
+              marks={getColorMapSliderMarks()}
               disabled={disableUi}
             />
             <div>
@@ -529,6 +580,7 @@ function App(): ReactElement {
                   setFindTrackInput("");
                   setSelectedTrack(track);
                 }}
+                featureThresholds={featureThresholds}
                 onMouseHover={(id: number): void => {
                   const isObject = id !== BACKGROUND_ID;
                   setShowHoveredId(isObject);
@@ -611,40 +663,65 @@ function App(): ReactElement {
               </div>
             </div>
           </div>
-
-          <div className={styles.plotPanel}>
-            <Divider orientationMargin={0} />
-            <div>
-              <div className={styles.trackTitleBar}>
-                <h2>Plot</h2>
-
-                <div className={styles.trackSearch}>
-                  <h3>Search</h3>
-                  <Input
-                    type="number"
-                    value={findTrackInput}
-                    size="small"
-                    placeholder="Track ID..."
-                    disabled={disableUi}
-                    onChange={(event) => {
-                      setFindTrackInput(event.target.value);
-                    }}
-                  />
-                  <IconButton
-                    disabled={disableUi}
-                    onClick={async () => {
-                      await findTrack(parseInt(findTrackInput, 10));
-                    }}
-                  >
-                    <SearchOutlined />
-                  </IconButton>
-                </div>
-              </div>
-              <PlotWrapper
-                frame={currentFrame}
-                dataset={dataset}
-                featureName={featureName}
-                selectedTrack={selectedTrack}
+          <div className={styles.sidePanels}>
+            <div className={styles.plotAndFiltersPanel}>
+              <Tabs
+                type="card"
+                style={{ marginBottom: 0, width: "100%" }}
+                size="large"
+                items={[
+                  {
+                    label: "Plot",
+                    key: "plot",
+                    children: (
+                      <div className={styles.tabContent}>
+                        <div className={styles.trackTitleBar}>
+                          <div className={styles.trackSearch}>
+                            <h3>Search</h3>
+                            <Input
+                              type="number"
+                              value={findTrackInput}
+                              size="small"
+                              placeholder="Track ID..."
+                              disabled={disableUi}
+                              onChange={(event) => {
+                                setFindTrackInput(event.target.value);
+                              }}
+                            />
+                            <IconButton
+                              disabled={disableUi}
+                              onClick={() => {
+                                findTrack(parseInt(findTrackInput, 10));
+                              }}
+                            >
+                              <SearchOutlined />
+                            </IconButton>
+                          </div>
+                        </div>
+                        <PlotWrapper
+                          frame={currentFrame}
+                          dataset={dataset}
+                          featureName={featureName}
+                          selectedTrack={selectedTrack}
+                        />
+                      </div>
+                    ),
+                  },
+                  {
+                    label: "Filters",
+                    key: "filter",
+                    children: (
+                      <div className={styles.tabContent}>
+                        <FeatureThresholdPanel
+                          featureThresholds={featureThresholds}
+                          onChange={setFeatureThresholds}
+                          dataset={dataset}
+                          disabled={disableUi}
+                        />
+                      </div>
+                    ),
+                  },
+                ]}
               />
             </div>
             <Divider orientationMargin={0} />
@@ -652,7 +729,7 @@ function App(): ReactElement {
               <h2>Viewer settings</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                 <DrawModeDropdown
-                  label="Values outside of range"
+                  label="Filtered out values"
                   selected={outOfRangeDrawSettings.mode}
                   color={outOfRangeDrawSettings.color}
                   onChange={(mode: DrawMode, color: Color) => {

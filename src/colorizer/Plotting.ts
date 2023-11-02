@@ -19,6 +19,11 @@ const LINE_SPEC: Partial<Plotly.Shape> = {
   },
 };
 
+const CONFIG: Partial<Plotly.Config> = {
+  displayModeBar: false,
+  responsive: true,
+};
+
 export default class Plotting {
   private parentRef: HTMLElement;
   private dataset: Dataset | null;
@@ -40,7 +45,7 @@ export default class Plotting {
       height: 400,
     };
 
-    Plotly.newPlot(this.parentRef, [], layout);
+    Plotly.newPlot(this.parentRef, [], layout, CONFIG);
     this.plot = this.plot.bind(this);
   }
 
@@ -73,7 +78,7 @@ export default class Plotting {
       title: "track " + track.trackId,
     };
 
-    Plotly.react(this.parentRef, [this.trace], layout);
+    Plotly.react(this.parentRef, [this.trace], layout, CONFIG);
   }
 
   setTime(t: number): void {
@@ -88,6 +93,14 @@ export default class Plotting {
     };
     Plotly.relayout(this.parentRef, layout);
     //Plotly.react(this.parentDivId, this.trace ? [this.trace] : [], layout);
+  }
+
+  setSize(x: number, y: number): void {
+    const layout: Partial<Plotly.Layout> = {
+      width: x,
+      height: y,
+    };
+    Plotly.relayout(this.parentRef, layout);
   }
 
   removePlot(): void {

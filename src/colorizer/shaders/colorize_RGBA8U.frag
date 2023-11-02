@@ -3,8 +3,16 @@ precision highp usampler2D;
 uniform usampler2D frame;
 uniform sampler2D featureData;
 uniform usampler2D outlierData;
-uniform float featureMin;
-uniform float featureMax;
+/** A mapping of IDs that are in range after feature thresholding/filtering is applied. If
+ * an object's index is `i`, `inRangeIds[i] = 1` if the object
+ * is within the threshold range. Note that data is packed into a square texture.
+ */
+uniform usampler2D inRangeIds;
+/** Min and max feature values that define the endpoints of the color map. Values
+ * outside the range will be clamped to the nearest endpoint.
+ */
+uniform float featureColorRampMin;
+uniform float featureColorRampMax;
 
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
@@ -12,8 +20,7 @@ uniform vec3 backgroundColor;
 
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
-const uint DRAW_MODE_RAMP = 1u;
-const uint DRAW_MODE_COLOR = 2u;
+const uint DRAW_MODE_COLOR = 1u;
 
 uniform vec3 outlierColor;
 uniform uint outlierDrawMode;
@@ -33,16 +40,16 @@ uint combineColor(uvec4 color) {
   return (color.b << 16u) | (color.g << 8u) | color.r;
 }
 
-float getFeatureVal(int index) {
-  int width = textureSize(featureData, 0).x;
+uvec4 getUintFromTex(usampler2D tex, int index) {
+  int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
-  return texelFetch(featureData, featurePos, 0).r;
+  return texelFetch(tex, featurePos, 0);
 }
 
-uint getOutlierVal(int index) {
-  int width = textureSize(outlierData, 0).x;
+vec4 getFloatFromTex(sampler2D tex, int index) {
+  int width = textureSize(tex, 0).x;
   ivec2 featurePos = ivec2(index % width, index / width);
-  return texelFetch(outlierData, featurePos, 0).r;
+  return texelFetch(tex, featurePos, 0);
 }
 
 vec4 getColorRamp(float val) {
@@ -65,13 +72,11 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
   return (R != highlightedId || L != highlightedId || T != highlightedId || B != highlightedId);
 }
 
-vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor, float normFeatureVal) {
+vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
   if (drawMode == DRAW_MODE_HIDE) {
     return vec4(backgroundColor, 1.0);
-  } else if (drawMode == DRAW_MODE_COLOR) {
-    return vec4(defaultColor, 1.0);
   } else {
-    return getColorRamp(normFeatureVal);
+    return vec4(defaultColor, 1.0);
   }
 }
 
@@ -102,20 +107,24 @@ void main() {
   }
 
   // Data buffer starts at 0, non-background segmentation IDs start at 1
-  float featureVal = getFeatureVal(int(id) - 1);
-  uint outlierVal = getOutlierVal(int(id) - 1);
-  float normFeatureVal = (featureVal - featureMin) / (featureMax - featureMin);
+  float featureVal = getFloatFromTex(featureData, int(id) - 1).r;
+  uint outlierVal = getUintFromTex(outlierData, int(id) - 1).r;
+  float normFeatureVal = (featureVal - featureColorRampMin) / (featureColorRampMax - featureColorRampMin);
 
   // Use the selected draw mode to handle out of range and outlier values;
   // otherwise color with the color ramp as usual.
-  bool isOutOfRange = normFeatureVal < 0.0 || normFeatureVal > 1.0;
+  bool isInRange = getUintFromTex(inRangeIds, int(id) - 1).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
 
-  if (isOutlier) {
-    gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor, normFeatureVal);
-  } else if (isOutOfRange) {
-    gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor, normFeatureVal);
+  // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
+  // Features inside the range can either be outliers or standard values, and are colored accordingly.
+  if (isInRange) {
+    if (isOutlier) {
+      gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor);
+    } else {
+      gOutputColor = getColorRamp(normFeatureVal);
+    }
   } else {
-    gOutputColor = getColorRamp(normFeatureVal);
+    gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
   }
 }
