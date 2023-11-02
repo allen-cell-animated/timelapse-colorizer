@@ -1,6 +1,8 @@
 // TODO: This is different from the way the documentation imports it (via addons rather than examples)
 // https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer
 
+import { numberToSciNotation } from "./utils/math_utils";
+
 const MIN_SCALE_BAR_WIDTH_PX = 80;
 
 export default class CanvasOverlay {
@@ -28,6 +30,17 @@ export default class CanvasOverlay {
     this.scaleBarVisible = visible;
   }
 
+  private formatScaleBarValue(value: number): string {
+    if (value < 0.01 || value >= 10_000) {
+      return numberToSciNotation(value, 0);
+    } else if (value < 1) {
+      // Fixes float error for unrepresentable values (0.30000000000004 => 0.3)
+      return value.toPrecision(1);
+    } else {
+      return value.toFixed(0);
+    }
+  }
+
   private renderScaleBar(): void {
     if (this.unitsPerScreenPixel === 0 || Number.isNaN(this.unitsPerScreenPixel) || !this.scaleBarVisible) {
       return;
@@ -48,13 +61,10 @@ export default class CanvasOverlay {
     const nextIncrement = allowedIncrements.find((inc) => inc > msdDigit) || 10;
     const scaleBarWidthInUnits = nextIncrement * 10 ** (msdPower - 1);
     // Convert back into pixels for rendering.
-    const scaleBarWidthInPixels = scaleBarWidthInUnits / this.unitsPerScreenPixel;
+    // Cheat very slightly by rounding to the nearest pixel for cleaner rendering.
+    const scaleBarWidthInPixels = Math.round(scaleBarWidthInUnits / this.unitsPerScreenPixel);
 
-    // Fixes float error for unrepresentable values (0.30000000000004 => 0.3)
-    const displayUnits =
-      scaleBarWidthInUnits < 1 || scaleBarWidthInUnits >= 1000
-        ? scaleBarWidthInUnits.toPrecision(1)
-        : scaleBarWidthInUnits.toFixed(0);
+    const displayUnits = this.formatScaleBarValue(scaleBarWidthInUnits);
     const textContent = `${displayUnits} ${this.scaleBarUnit}`;
 
     const ctx = this.canvas.getContext("2d");
@@ -78,6 +88,7 @@ export default class CanvasOverlay {
     ctx.lineTo(scaleBarX - scaleBarWidthInPixels, scaleBarY - scaleBarHeight);
     ctx.stroke();
 
+    // TODO: This looks bad at high magnification.
     const fontHeight = 14; // TODO: Get from theme?
     const margin = 20 + 6;
     ctx.font = `${fontHeight}px Lato`;
