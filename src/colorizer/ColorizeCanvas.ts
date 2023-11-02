@@ -210,7 +210,6 @@ export default class ColorizeCanvas {
     this.canvasOverlay.domElement.style.position = "absolute";
     this.canvasOverlay.domElement.style.left = "0";
     this.canvasOverlay.domElement.style.top = "0";
-    this.canvasOverlay.domElement.style.margin = "1px";
     // Disable pointer events on the canvas overlay so that the
     // canvas can be clicked.
     this.canvasOverlay.domElement.style.pointerEvents = "none";

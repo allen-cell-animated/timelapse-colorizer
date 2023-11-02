@@ -216,10 +216,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       <Slider min={1} max={10} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.1} />
       <Slider min={10} max={100} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={1} />
       <Slider min={100} max={1000} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={10} />
-      <ScaleBar
-        canvasPixelsToUnits={unitsPerFramePixel}
-        style={{ position: "absolute", right: "10px", bottom: "10px" }}
-      />
     </div>
   );
 }

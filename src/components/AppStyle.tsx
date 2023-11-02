@@ -87,6 +87,7 @@ const theme = {
   },
 };
 
+export const AppTheme = theme;
 export const AppThemeContext = createContext(theme);
 
 /** Applies theme as CSS variables that affect the rest of the document. */
