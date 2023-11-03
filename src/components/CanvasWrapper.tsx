@@ -55,9 +55,6 @@ const defaultProps: Partial<CanvasWrapperProps> = {
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
-  // Used to delay updates for operations like updating thresholding!
-  // Transitions are cancellable too, so if is interrupted by a new render
-  // the old work will be discarded.
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
   const isMouseOverCanvas = useRef(false);
@@ -95,11 +92,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useMemo(() => {
     // YAGNI: Debouncing for this is possible but no performance issues encountered yet.
     // Add only if needed.
-    // Async in case of slowdowns to prevent this from halting the UI.
-    const updateThresholds = async (): Promise<void> => {
-      canv.setFeatureThresholds(props.featureThresholds);
-    };
-    updateThresholds();
+    // Timeout in case of slowdowns to prevent this from halting the UI.
+    setTimeout(() => canv.setFeatureThresholds(props.featureThresholds), 0);
   }, [props.featureThresholds, props.dataset]);
 
   // Updated track-related settings

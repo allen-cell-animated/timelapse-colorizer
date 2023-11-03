@@ -1,3 +1,15 @@
+"""
+A utility script for converting nuclear segmentation data from the EMT project. Original dataset
+provided by Leigh Harris!
+
+Note that this dataset does not have track IDs, so each unique object ID is treated as its own track.
+
+To export the default datasets, you can run:
+```
+python timelapse-colorizer-data/convert_emt_nuclear_data.py --scale 1.0 --output_dir=/allen/aics/animated-cell/Dan/fileserver/colorizer/EMT_nuclear
+```
+"""
+
 from typing import List
 from aicsimageio import AICSImage
 import argparse
@@ -13,9 +25,9 @@ from data_writer_utils import (
     ColorizerDatasetWriter,
     FeatureMetadata,
     configureLogging,
-    extract_units_from_feature_name,
     scale_image,
     remap_segmented_image,
+    update_collection,
 )
 
 # DATASET SPEC: See DATA_FORMAT.md for more details on the dataset format!
@@ -24,28 +36,35 @@ from data_writer_utils import (
 
 # OVERWRITE THESE!! These values should change based on your dataset. These are
 # relabeled as constants here for clarity/intent of the column name.
-OBJECT_ID_COLUMN = "R0Nuclei_Number_Object_Number"
+OBJECT_ID_COLUMN = "Label"
 """Column of object IDs (or unique row number)."""
-TRACK_ID_COLUMN = "R0Nuclei_TrackObjects_Label_75"
-"""Column of track ID for each object."""
-TIMES_COLUMN = "Image_Metadata_Timepoint"
+# Track ID column purposefully removed here, as it does not exist in this dataset.
+TIMES_COLUMN = "Frame"
 """Column of frame number that the object ID appears in."""
-SEGMENTED_IMAGE_COLUMN = "OutputMask (CAAX)"
+SEGMENTED_IMAGE_COLUMN = "Filepath"
 """Column of path to the segmented image data or z stack for the frame."""
-CENTROIDS_X_COLUMN = "R0Nuclei_AreaShape_Center_X"
+CENTROIDS_X_COLUMN = "x"
 """Column of X centroid coordinates, in pixels of original image data."""
-CENTROIDS_Y_COLUMN = "R0Nuclei_AreaShape_Center_Y"
+CENTROIDS_Y_COLUMN = "y"
 """Column of Y centroid coordinates, in pixels of original image data."""
 FEATURE_COLUMNS = [
-    "mean migration speed per track (um/min)",
-    "Integrated Distance (um)",
-    "Displacement (um)",
-    "Average colony overlap per track",
-    "migration velocity (um/min)",
-    "R0Cell_Neighbors_NumberOfNeighbors_Adjacent",
-    "R0Cell_Neighbors_PercentTouching_Adjacent",
+    "Slice",
+    "Area",
+    "Orientation",
+    "Aspect_Ratio",
+    "Circularity",
+    "Mean_Fluor",
 ]
 """Columns of feature data to include in the dataset. Each column will be its own feature file."""
+
+FEATURE_COLUMNS_TO_UNITS = {
+    "Mean_Fluor": "AU",  # arbitrary units
+    "Area": "px²",
+}
+FEATURE_COLUMNS_TO_NAMES = {
+    "Aspect_Ratio": "Aspect Ratio",
+    "Mean_Fluor": "Mean Fluorescence",
+}
 
 
 def make_frames(
@@ -59,6 +78,8 @@ def make_frames(
     nframes = len(grouped_frames)
     logging.info("Making {} frames...".format(nframes))
 
+    is_nonzero = lambda n: n != 0
+
     for group_name, frame in grouped_frames:
         start_time = time.time()
 
@@ -69,8 +90,15 @@ def make_frames(
         # Flatten the z-stack to a 2D image.
         zstackpath = row[SEGMENTED_IMAGE_COLUMN]
         zstackpath = zstackpath.strip('"')
-        zstack = AICSImage(zstackpath).get_image_data("YX", S=0, T=0, C=0)
-        seg2d = zstack
+        zstack = AICSImage(zstackpath).get_image_data("ZYX", S=0, T=0, C=0)
+        # Do a min projection instead of a max projection to prioritize objects which have lower IDs (which for this dataset,
+        # indicates lower z-indices). This is due to the nature of the data, where lower cell nuclei have greater confidence,
+        # and should be visualized when overlapping instead of higher nuclei.
+        # Do a min operation but ignore zero values. Without this, doing `min(0, id)` will always return 0 which results
+        # in black images. We use `np.ma.masked_equal` to mask out 0 values and have them be ignored,
+        # then replace masked values with 0 again (`filled(0)`) to get our final projected image.
+        masked = np.ma.masked_equal(zstack, 0, copy=False)
+        seg2d = masked.min(axis=0).filled(0)
 
         # Scale the image and format as integers.
         seg2d = scale_image(seg2d, scale)
@@ -107,15 +135,18 @@ def make_features(
 
     # For now in this dataset there are no outliers. Just generate a list of falses.
     outliers = np.array([False for i in range(len(dataset.index))])
-    tracks = dataset[TRACK_ID_COLUMN].to_numpy()
     times = dataset[TIMES_COLUMN].to_numpy()
     centroids_x = dataset[CENTROIDS_X_COLUMN].to_numpy()
     centroids_y = dataset[CENTROIDS_Y_COLUMN].to_numpy()
 
+    # This dataset does not have tracks, so we just generate a list of indices, one for each
+    # object. This will be a very simple numpy table, where tracks[i] = i.
+    shape = dataset.shape
+    tracks = np.array([*range(shape[0])])
+
     feature_data = []
-    for i in range(len(features)):
-        # TODO normalize output range excluding outliers?
-        f = dataset[features[i]].to_numpy()
+    for feature in features:
+        f = dataset[feature].to_numpy()
         feature_data.append(f)
 
     writer.write_feature_data(
@@ -144,7 +175,6 @@ def make_dataset(
 
     # Make a reduced dataframe grouped by time (frame number).
     columns = [
-        TRACK_ID_COLUMN,
         TIMES_COLUMN,
         SEGMENTED_IMAGE_COLUMN,
         OBJECT_ID_COLUMN,
@@ -159,10 +189,9 @@ def make_dataset(
     feature_labels = []
     feature_metadata: List[FeatureMetadata] = []
     for feature in FEATURE_COLUMNS:
-        (label, unit) = extract_units_from_feature_name(feature)
+        label = FEATURE_COLUMNS_TO_NAMES.get(feature, feature)
+        unit = FEATURE_COLUMNS_TO_UNITS.get(feature, None)
         feature_labels.append(label[0:1].upper() + label[1:])  # Capitalize first letter
-        if unit is not None:
-            unit = unit.replace("um", "µm")
         feature_metadata.append({"units": unit})
 
     # Make the features, frame data, and manifest.
@@ -173,34 +202,35 @@ def make_dataset(
     writer.write_manifest(nframes, feature_labels, feature_metadata)
 
 
-# TODO: Make top-level function
 # This is stuff scientists are responsible for!!
 def make_collection(output_dir="./data/", do_frames=True, scale=1, dataset=""):
-    # example dataset name : 3500005820_3
-    # use pandas to load data
-    # a is the full collection!
-    a = pd.read_csv(
-        "//allen/aics/microscopy/EMTImmunostainingResults/EMTTimelapse_7-25-23/Output_CAAX/MigratoryTracksTable_AvgColonyOverlapLessThan0.9_AllPaths.csv"
-    )
-
     if dataset != "":
         # convert just the described dataset.
-        plate = dataset.split("_")[0]
-        position = dataset.split("_")[1]
-        c = a.loc[a["Image_Metadata_Plate"] == int(plate)]
-        c = c.loc[c["Image_Metadata_Position"] == int(position)]
-        make_dataset(c, output_dir, dataset, do_frames, scale)
+        readPath = f"/allen/aics/assay-dev/computational/data/EMT_deliverable_processing/LH_Analysis/Version2_ForPlotting/{dataset}.csv"
+        data = pd.read_csv(readPath)
+        logging.info("Making dataset '" + dataset + "'.")
+        make_dataset(data, output_dir, dataset, do_frames, scale)
+
+        # Update the collections file if it already exists
+        collection_filepath = output_dir + "/collection.json"
+        update_collection(collection_filepath, dataset, dataset)
     else:
-        # for every combination of plate and position, make a dataset
-        b = a.groupby(["Image_Metadata_Plate", "Image_Metadata_Position"])
+        # For every condition, make a dataset.
+        conditions = [
+            "LOW_Matrigel_lumenoid",
+            "High_Matrigel_lumenoid",
+            "2D_Matrigel",
+            "2D_PLF",
+        ]
         collection = []
-        for name, group in b:
-            dataset = str(name[0]) + "_" + str(name[1])
-            logging.info("Making dataset '" + dataset + "'.")
-            collection.append({"name": dataset, "path": dataset})
-            c = a.loc[a["Image_Metadata_Plate"] == name[0]]
-            c = c.loc[c["Image_Metadata_Position"] == name[1]]
-            make_dataset(c, output_dir, dataset, do_frames, scale)
+
+        for condition in conditions:
+            # Read in each of the conditions as a dataset
+            collection.append({"name": condition, "path": condition})
+            readPath = f"/allen/aics/assay-dev/computational/data/EMT_deliverable_processing/LH_Analysis/Version2_ForPlotting/{condition}.csv"
+            data = pd.read_csv(readPath)
+            logging.info("Making dataset '" + condition + "'.")
+            make_dataset(data, output_dir + "/" + condition, dataset, do_frames, scale)
         # write the collection.json file
         with open(output_dir + "/collection.json", "w") as f:
             json.dump(collection, f)

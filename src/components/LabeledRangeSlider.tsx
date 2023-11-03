@@ -142,6 +142,9 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
   let marks: undefined | Record<number, ReactNode> = undefined;
   if (props.marks) {
     marks = {};
+    // Set the mark values to empty fragments so Antd still renders the marks
+    // but without any text labels. This cannot be null/undefined or else Antd
+    // ignores the marks altogether.
     props.marks.forEach((value) => {
       marks![value] = <></>;
     });

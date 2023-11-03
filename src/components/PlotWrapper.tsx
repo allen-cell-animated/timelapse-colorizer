@@ -48,9 +48,6 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
   }, [props.selectedTrack, props.featureName]);
 
-  // TODO: Troubleshoot using window.addEventListener for resizing, because
-  // the native responsive behavior can be a bit slow.
-  // Some layout issues occurred when using this, so it's disabled for now.
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {
       return;
@@ -62,6 +59,9 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   };
   useEffect(() => {
     updatePlotSize();
+    // TODO: Troubleshoot using window.addEventListener for resizing, because
+    // the native responsive behavior can be a bit slow.
+    // Some layout issues occurred when using this, so it's disabled for now.
     // window.addEventListener("resize", updatePlotSize);
     // return () => window.removeEventListener("resize", updatePlotSize);
   }, [plot, plotDivRef.current]);

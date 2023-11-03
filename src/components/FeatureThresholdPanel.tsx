@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useEffect } from "react";
+import React, { ReactElement, ReactNode } from "react";
 import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
 import { Dataset } from "../colorizer";
 import { Card, List, Select } from "antd";
@@ -49,26 +49,19 @@ const defaultProps: Partial<FeatureThresholdPanelProps> = {
 export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<FeatureThresholdPanelProps>;
 
-  // Clear thresholds for features that don't exist when the dataset changes.
-  // TODO: Show these thresholds as disabled, rather than removing them.
-  useEffect(() => {
-    const newThresholds = props.featureThresholds.filter((t) => props.dataset?.featureNames.includes(t.featureName));
-    props.onChange(newThresholds);
-  }, [props.dataset]);
-
   /** Handle the user selecting new features. */
   const onSelectionsChanged = (selections: string[]): void => {
-    const newThresholds: FeatureThreshold[] = [];
-    selections.forEach((featureName) => {
+    const newThresholds: FeatureThreshold[] = selections.map((featureName) => {
       // Set up default values for any new selected features, otherwise keep old thresholds
       const existingThreshold = props.featureThresholds.find((t) => t.featureName === featureName);
       if (existingThreshold) {
-        newThresholds.push(existingThreshold);
+        return existingThreshold;
       } else {
         const featureData = props.dataset?.features[featureName];
         if (featureData) {
-          newThresholds.push({ featureName, min: featureData.min, max: featureData.max });
+          return { featureName, min: featureData.min, max: featureData.max };
         }
+        throw new Error("Attempted to add a threshold for a feature that doesn't exist in the current dataset.");
       }
     });
     props.onChange(newThresholds);
@@ -96,7 +89,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.features[item.featureName];
     if (!featureData) {
-      return <></>;
+      return null;
     }
 
     return (
