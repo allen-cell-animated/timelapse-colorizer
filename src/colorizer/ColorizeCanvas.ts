@@ -96,6 +96,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
 
 export type FeatureThreshold = {
   featureName: string;
+  unit: string | undefined;
   min: number;
   max: number;
 };
@@ -398,7 +399,8 @@ export default class ColorizeCanvas {
 
     for (const threshold of thresholds) {
       const featureData = this.dataset.getFeatureData(threshold.featureName);
-      if (!featureData) {
+      // Ignore thresholds with features that don't exist in this dataset or whose units don't match
+      if (!featureData || featureData.units !== threshold.unit) {
         continue;
       }
       for (let i = 0, n = inRangeIds.length; i < n; i++) {

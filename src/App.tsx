@@ -42,6 +42,7 @@ import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import FeatureThresholdPanel from "./components/FeatureThresholdPanel";
+import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -79,14 +80,15 @@ function App(): ReactElement {
   const setFeatureThresholds = useCallback(
     // Change the current feature min + max on the color ramp if that feature's threshold moved.
     (newThresholds: FeatureThreshold[]): void => {
-      // Check if the current feature name is being thresholded on, and if that threshold
+      // Check if the current feature is being thresholded on, and if that threshold
       // has changed. If so, snap the current min + max color ramp values so they match the new
       // threshold values.
-      const currThreshold = featureThresholds.find((t) => t.featureName === featureName);
-      const newThreshold = newThresholds.find((t) => t.featureName === featureName);
+      const featureData = dataset?.getFeatureData(featureName);
+      if (featureData) {
+        const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
+        const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
 
-      if (newThreshold && currThreshold) {
-        if (newThreshold.min !== currThreshold.min || newThreshold.max !== currThreshold.max) {
+        if (newThreshold && oldThreshold) {
           setColorRampMin(newThreshold.min);
           setColorRampMax(newThreshold.max);
         }
@@ -360,6 +362,7 @@ function App(): ReactElement {
       }
 
       setCollection(newCollection);
+      setFeatureThresholds([]); // Clear when switching collections
       await replaceDataset(loadResult.dataset, newDatasetKey);
     },
     [replaceDataset]
@@ -377,7 +380,7 @@ function App(): ReactElement {
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         // TODO: Update this with units later
-        const threshold = featureThresholds.find((t) => t.featureName === newFeatureName);
+        const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
         if (threshold) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
@@ -484,10 +487,11 @@ function App(): ReactElement {
   // Show min + max marks on the color ramp slider if a feature is selected and
   // is currently being thresholded/filtered on.
   const getColorMapSliderMarks = (): undefined | number[] => {
-    if (!featureName || featureThresholds.length === 0) {
+    const featureData = dataset?.getFeatureData(featureName);
+    if (!featureData || featureThresholds.length === 0) {
       return undefined;
     }
-    const threshold = featureThresholds.find((value) => value.featureName === featureName);
+    const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
     if (!threshold) {
       return undefined;
     }
