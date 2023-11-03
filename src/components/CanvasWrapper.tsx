@@ -62,6 +62,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
 
+  const [unitsPerFramePixel, _setUnitsPerFramePixel] = useState(1);
+  const setUnitsPerFramePixel = (value: number): void => {
+    _setUnitsPerFramePixel(value);
+    canv.setCanvasUnitScaling(value, "um");
+    canv.render();
+  };
+  // TODO: Remove this
+  useEffect(() => {
+    setUnitsPerFramePixel(1);
+  }, []);
+
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
   // Mount the canvas to the wrapper's location in the document.
@@ -194,16 +205,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [canv]);
 
   // RENDERING /////////////////////////////////////////////////
-
-  const [unitsPerFramePixel, _setUnitsPerFramePixel] = useState(1);
-  const setUnitsPerFramePixel = (value: number): void => {
-    canv.setDatasetUnitScale(value, "um");
-    canv.render();
-    _setUnitsPerFramePixel(value);
-  };
-  useEffect(() => {
-    setUnitsPerFramePixel(1);
-  }, []);
 
   canv.render();
   return (

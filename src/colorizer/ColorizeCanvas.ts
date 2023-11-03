@@ -190,7 +190,7 @@ export default class ColorizeCanvas {
 
     this.canvasOverlay = new CanvasOverlay();
     this.canvasOverlay.setScaleBarVisibility(true);
-    this.canvasOverlay.updateScaleBar(1, "px");
+    this.canvasOverlay.setScaleBarProperties(1, "px");
     this.canvasOverlay.setSize(200, 400);
 
     this.render = this.render.bind(this);
@@ -210,9 +210,7 @@ export default class ColorizeCanvas {
     this.canvasOverlay.domElement.style.position = "absolute";
     this.canvasOverlay.domElement.style.left = "0";
     this.canvasOverlay.domElement.style.top = "0";
-    // Disable pointer events on the canvas overlay so that the
-    // canvas can be clicked.
-    this.canvasOverlay.domElement.style.pointerEvents = "none";
+
     return div;
   }
 
@@ -241,7 +239,13 @@ export default class ColorizeCanvas {
     }
   }
 
-  setDatasetUnitScale(unitsPerFramePixel: number, frameUnits: string) {
+  /**
+   * Set the scale of the frames in units, for use in the scale bar.
+   * @param unitsPerFramePixel The (horizontal) dimension of a pixel in the dataset frame image.
+   * This information should be provided in the dataset metadata.
+   * @param frameUnits The string unit label to display on the scale bar.
+   */
+  setCanvasUnitScaling(unitsPerFramePixel: number, frameUnits: string): void {
     this.unitsPerFramePixel = unitsPerFramePixel;
     console.log(this.unitsPerFramePixel);
     this.frameUnits = frameUnits;
@@ -249,6 +253,10 @@ export default class ColorizeCanvas {
       this.canvasOverlay.setScaleBarVisibility(true);
       this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     }
+  }
+
+  setScaleBarVisibility(visible: boolean): void {
+    this.canvasOverlay.setScaleBarVisibility(visible);
   }
 
   updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
@@ -276,13 +284,12 @@ export default class ColorizeCanvas {
     this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
 
     // Update the scale bar units
-    console.log("updating scaling");
     if (this.unitsPerFramePixel !== undefined) {
       // We only consider X scaling here because the scale bar is always horizontal.
       const frameWidthInUnits = this.unitsPerFramePixel * frameResolution.x;
       const canvasWidthInUnits = frameWidthInUnits * frameToCanvasScale.x;
       const unitsPerScreenPixel = canvasWidthInUnits / canvasResolution.x;
-      this.canvasOverlay.updateScaleBar(unitsPerScreenPixel, this.frameUnits || "");
+      this.canvasOverlay.setScaleBarProperties(unitsPerScreenPixel, this.frameUnits || "");
       this.canvasOverlay.render();
     }
   }

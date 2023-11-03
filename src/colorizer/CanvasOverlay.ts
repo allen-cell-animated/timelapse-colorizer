@@ -1,10 +1,15 @@
-// TODO: This is different from the way the documentation imports it (via addons rather than examples)
+// NOTE: This is different from the way the documentation imports it (via addons rather than examples).
+// This may need to update if we change three.js verisons.
 // https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer
 
 import { numberToSciNotation } from "./utils/math_utils";
 
 const MIN_SCALE_BAR_WIDTH_PX = 80;
 
+/**
+ * A canvas used for drawing UI overlays over another screen region.
+ * Currently draws a scale bar.
+ */
 export default class CanvasOverlay {
   private canvas: HTMLCanvasElement;
 
@@ -14,14 +19,26 @@ export default class CanvasOverlay {
 
   constructor() {
     this.canvas = document.createElement("canvas");
+    // Disable pointer events on the canvas overlay so that the
+    // canvas can be clicked.
+    this.canvas.style.pointerEvents = "none";
   }
 
+  /**
+   * Set the size of the canvas overlay.
+   */
   setSize(width: number, height: number) {
     this.canvas.width = width;
     this.canvas.height = height;
   }
 
-  updateScaleBar(unitsPerScreenPixel: number, unit: string): void {
+  /**
+   * Update the scaling of the scale bar and the displayed units.
+   * @param unitsPerScreenPixel The number of units each pixel on the screen represents
+   * (assuming 100% magnification).
+   * @param unit The unit to display in the scale bar.
+   */
+  setScaleBarProperties(unitsPerScreenPixel: number, unit: string): void {
     this.unitsPerScreenPixel = unitsPerScreenPixel;
     this.scaleBarUnit = unit;
   }
@@ -30,6 +47,10 @@ export default class CanvasOverlay {
     this.scaleBarVisible = visible;
   }
 
+  /**
+   * Formats a number to be displayed in the scale bar to a reasonable number of significant digits,
+   * also handling float errors.
+   */
   private formatScaleBarValue(value: number): string {
     if (value < 0.01 || value >= 10_000) {
       return numberToSciNotation(value, 0);
@@ -88,6 +109,7 @@ export default class CanvasOverlay {
     ctx.lineTo(scaleBarX - scaleBarWidthInPixels, scaleBarY - scaleBarHeight);
     ctx.stroke();
 
+    // Draw the scale bar text label
     // TODO: This looks bad at high magnification.
     const fontHeight = 14; // TODO: Get from theme?
     const margin = 20 + 6;
