@@ -62,17 +62,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
 
-  const [unitsPerFramePixel, _setUnitsPerFramePixel] = useState(1);
-  const setUnitsPerFramePixel = (value: number): void => {
-    _setUnitsPerFramePixel(value);
-    canv.setCanvasUnitScaling(value, "um");
-    canv.render();
-  };
-  // TODO: Remove this
-  useEffect(() => {
-    setUnitsPerFramePixel(1);
-  }, []);
-
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
   // Mount the canvas to the wrapper's location in the document.
@@ -215,15 +204,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   return (
     <div style={{ position: "relative" }}>
       <div ref={canvasRef}></div>
-      <Slider min={0} max={0.00001} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.000001} />
-      <Slider min={0.00001} max={0.0001} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.000001} />
-      <Slider min={0.0001} max={0.001} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.00001} />
-      <Slider min={0.001} max={0.01} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.0001} />
-      <Slider min={0.01} max={0.1} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.001} />
-      <Slider min={0.1} max={1} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.01} />
-      <Slider min={1} max={10} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={0.1} />
-      <Slider min={10} max={100} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={1} />
-      <Slider min={100} max={1000} value={unitsPerFramePixel} onChange={setUnitsPerFramePixel} step={10} />
     </div>
   );
 }
