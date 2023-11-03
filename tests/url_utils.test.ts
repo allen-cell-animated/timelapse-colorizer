@@ -144,7 +144,6 @@ describe("Loading + saving from URL query strings", () => {
       thresholds: [{ featureName: "feature", unit: "", min: 0, max: 0 }],
     };
     const queryString = stateToUrlQueryString(originalParams);
-    console.log(queryString);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
