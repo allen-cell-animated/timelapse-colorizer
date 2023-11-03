@@ -103,6 +103,8 @@ export type FeatureThreshold = {
 
 // TODO: Change into a component?
 export default class ColorizeCanvas {
+  private canvasContainer?: HTMLDivElement;
+
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;
@@ -114,6 +116,12 @@ export default class ColorizeCanvas {
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
   private showTrackPath: boolean;
+
+  // Saved as a copy of CanvasOverlay's scale bar visibility. Tracked
+  // so we can temporarily disable the scale bar when the dataset doesn't
+  // have frame dimensions + units defined.
+  private showScaleBar: boolean;
+  private frameToCanvasScale: Vector4;
 
   private scene: Scene;
   private pickScene: Scene;
@@ -187,8 +195,8 @@ export default class ColorizeCanvas {
     this.currentFrame = 0;
 
     this.canvasOverlay = new CanvasOverlay();
-    this.canvasOverlay.setScaleBarVisibility(true);
-    this.canvasOverlay.setScaleBarProperties(1, "px");
+    this.showScaleBar = false;
+    this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
     this.canvasOverlay.setSize(200, 400);
 
     this.render = this.render.bind(this);
@@ -197,19 +205,20 @@ export default class ColorizeCanvas {
     this.updateScaling = this.updateScaling.bind(this);
   }
 
-  get mountableDomElement(): HTMLElement {
-    // Set up the canvas overlay
-    // TODO: This should only be calculated once, and div should be returned
-    // after.
-    const div = document.createElement("div");
-    div.appendChild(this.renderer.domElement);
-    div.appendChild(this.canvasOverlay.domElement);
-    div.style.position = "relative";
-    this.canvasOverlay.domElement.style.position = "absolute";
-    this.canvasOverlay.domElement.style.left = "0";
-    this.canvasOverlay.domElement.style.top = "0";
+  get mountableDomElement(): HTMLDivElement {
+    if (!this.canvasContainer) {
+      // Set up the canvas overlay as a sibling in the DOM layout
+      // by creating a dummy parent container.
+      this.canvasContainer = document.createElement("div");
+      this.canvasContainer.appendChild(this.renderer.domElement);
+      this.canvasContainer.appendChild(this.canvasOverlay.domElement);
+      this.canvasContainer.style.position = "relative";
+      this.canvasOverlay.domElement.style.position = "absolute";
+      this.canvasOverlay.domElement.style.left = "0";
+      this.canvasOverlay.domElement.style.top = "0";
+    }
 
-    return div;
+    return this.canvasContainer;
   }
 
   get canvasElement(): HTMLCanvasElement {
@@ -237,8 +246,27 @@ export default class ColorizeCanvas {
     }
   }
 
+  private updateScaleBar(): void {
+    // Update the scale bar units
+    const frameDims = this.dataset?.metadata?.frameDims;
+    if (this.showScaleBar && frameDims !== undefined && this.canvasResolution !== null) {
+      // `frameDims` are already in the provided unit scaling, so we figure out the current
+      // size of the frame relative to the canvas to determine the canvas' width in units.
+      // We only consider X scaling here because the scale bar is always horizontal.
+      const canvasWidthInUnits = frameDims.width * this.frameToCanvasScale.x;
+      const unitsPerScreenPixel = canvasWidthInUnits / this.canvasResolution.x;
+      this.canvasOverlay.setScaleBarProperties(unitsPerScreenPixel, frameDims.units);
+      this.canvasOverlay.setScaleBarVisibility(true);
+      this.canvasOverlay.render();
+    } else {
+      this.canvasOverlay.setScaleBarVisibility(false);
+      this.canvasOverlay.render();
+    }
+  }
+
   setScaleBarVisibility(visible: boolean): void {
-    this.canvasOverlay.setScaleBarVisibility(visible);
+    this.showScaleBar = visible;
+    this.updateScaleBar();
   }
 
   updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
@@ -265,17 +293,7 @@ export default class ColorizeCanvas {
     // Scale the line mesh so the vertices line up correctly even when the canvas changes
     this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
 
-    // Update the scale bar units
-    const frameDims = this.dataset?.metadata?.frameDims;
-    if (frameDims !== undefined) {
-      // `frameDims` are already in the provided unit scaling, so we figure out the current
-      // size of the frame relative to the canvas to determine the canvas' width in units.
-      // We only consider X scaling here because the scale bar is always horizontal.
-      const canvasWidthInUnits = frameDims.width * frameToCanvasScale.x;
-      const unitsPerScreenPixel = canvasWidthInUnits / canvasResolution.x;
-      this.canvasOverlay.setScaleBarProperties(unitsPerScreenPixel, frameDims.units);
-      this.canvasOverlay.render();
-    }
+    this.updateScaleBar();
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -297,7 +315,6 @@ export default class ColorizeCanvas {
     // Save frame resolution for later calculation
     this.setUniform("frame", frame);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
-    this.canvasOverlay.render();
     this.render();
   }
 
