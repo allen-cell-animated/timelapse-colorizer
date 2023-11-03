@@ -99,6 +99,7 @@ function App(): ReactElement {
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
+  const [showScaleBar, setShowScaleBar] = useState(true);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -589,6 +590,7 @@ function App(): ReactElement {
                   }
                 }}
                 onMouseLeave={() => setShowHoveredId(false)}
+                showScaleBar={showScaleBar}
               />
             </HoverTooltip>
 
@@ -752,6 +754,15 @@ function App(): ReactElement {
                   }}
                 >
                   Show track path
+                </Checkbox>
+                <Checkbox
+                  type="checkbox"
+                  checked={showScaleBar}
+                  onChange={() => {
+                    setShowScaleBar(!showScaleBar);
+                  }}
+                >
+                  Show scale bar
                 </Checkbox>
               </div>
             </div>

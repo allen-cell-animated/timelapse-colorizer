@@ -3,7 +3,6 @@ import { Color } from "three";
 
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
 import { DrawMode, FeatureThreshold } from "../colorizer/ColorizeCanvas";
-import ScaleBar from "./ScaleBar";
 import { Slider } from "antd";
 
 export type DrawSettings = {
@@ -19,6 +18,7 @@ type CanvasWrapperProps = {
    */
   dataset: Dataset | null;
   showTrackPath: boolean;
+  showScaleBar: boolean;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   colorRamp: ColorRamp;
@@ -114,6 +114,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setSelectedTrack(props.selectedTrack);
     canv.setShowTrackPath(props.showTrackPath);
   }, [props.selectedTrack, props.showTrackPath]);
+
+  // Update overlay settings
+  useMemo(() => {
+    canv.setScaleBarVisibility(props.showScaleBar);
+  }, [props.showScaleBar]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
 
