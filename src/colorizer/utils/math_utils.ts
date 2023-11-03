@@ -37,19 +37,34 @@ function numberToUnicodeSuperscript(input: number): string {
   return prefix + digits.map((digit) => digitToUnicodeSupercript(parseInt(digit, 10))).join("");
 }
 
-export function numberToSciNotation(input: number, precision: number): string {
+/**
+ * Converts a number to scientific notation to the specified number of significant digits,
+ * handling negative numbers and rounding.
+ * @param input The number to convert.
+ * @param sigDigits the number of signficant digits. Must be >= 1.
+ * @returns a string, formatted as a number in scientific notation.
+ * @example
+ * ```
+ * numberToSciNotation(1, 3) // "1.00×10⁰"
+ * numberToSciNotation(0.99, 2) // "9.9×10⁻¹"
+ * numberToSciNotation(0.999, 2) // "1.0×10⁰"
+ * numberToSciNotation(-0.05, 1) // "-5×10⁻²"
+ * numberToSciNotation(1400, 3) // "1.40×10³"
+ * ```
+ */
+export function numberToSciNotation(input: number, sigDigits: number): string {
   // TODO: Notate differences in precision between scientific notation and js precision
-  precision = Math.max(precision, 1);
+  sigDigits = Math.max(sigDigits, 1);
   const prefix = input < 0 ? "-" : "";
   // Round to the precision + 1 in case the input increments
   // For example, if input = 0.99 and precision = 1, we want to round to 1.
   // If we round later, we'll get 10×10⁻¹ instead of 1×10⁰.
   input = Math.abs(input);
-  input = Number.parseFloat(input.toPrecision(Math.max(precision, 1)));
+  input = Number.parseFloat(input.toPrecision(sigDigits));
   if (input === 0) {
     return "0×10⁰";
   }
   const exponent = Math.floor(Math.log10(input));
   const coefficient = input / 10 ** exponent;
-  return `${prefix}${coefficient.toFixed(precision - 1)}×10${numberToUnicodeSuperscript(exponent)}`;
+  return `${prefix}${coefficient.toFixed(sigDigits - 1)}×10${numberToUnicodeSuperscript(exponent)}`;
 }
