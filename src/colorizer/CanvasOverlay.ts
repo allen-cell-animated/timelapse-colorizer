@@ -27,7 +27,7 @@ export default class CanvasOverlay {
   /**
    * Set the size of the canvas overlay.
    */
-  setSize(width: number, height: number) {
+  setSize(width: number, height: number): void {
     this.canvas.width = width;
     this.canvas.height = height;
   }
@@ -120,7 +120,7 @@ export default class CanvasOverlay {
     ctx.fillText(textContent, this.canvas.width - textWidth - margin, this.canvas.height - margin);
   }
 
-  render() {
+  render(): void {
     const ctx = this.canvas.getContext("2d");
     if (ctx === null) {
       console.error("Could not get canvas context");

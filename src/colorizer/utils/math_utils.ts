@@ -32,9 +32,9 @@ function digitToUnicodeSupercript(n: number): string {
 }
 
 function numberToUnicodeSuperscript(input: number): string {
-  let prefix = input < 0 ? "⁻" : "";
+  const prefix = input < 0 ? "⁻" : "";
   const digits = Math.abs(input).toString().split("");
-  return prefix + digits.map((digit) => digitToUnicodeSupercript(parseInt(digit))).join("");
+  return prefix + digits.map((digit) => digitToUnicodeSupercript(parseInt(digit, 10))).join("");
 }
 
 export function numberToSciNotation(input: number, precision: number): string {
