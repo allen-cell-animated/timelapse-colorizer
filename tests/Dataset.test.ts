@@ -62,6 +62,6 @@ describe("Dataset", () => {
     expect(dataset.getFeatureUnits("feature1")).to.equal("meters");
     expect(dataset.getFeatureUnits("feature2")).to.equal("(m)");
     expect(dataset.getFeatureUnits("feature3")).to.equal("μm/s");
-    expect(dataset.getFeatureUnits("feature4")).to.be.undefined;
+    expect(dataset.getFeatureUnits("feature4")).to.equal("");
   });
 });

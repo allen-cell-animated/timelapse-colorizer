@@ -13,7 +13,7 @@ import { FeatureThreshold } from "../ColorizeCanvas";
  */
 export function thresholdMatchFinder(
   featureName: string,
-  unit: string | undefined
+  units: string | undefined
 ): (threshold: FeatureThreshold) => boolean {
-  return (threshold: FeatureThreshold) => threshold.featureName === featureName && threshold.unit === unit;
+  return (threshold: FeatureThreshold) => threshold.featureName === featureName && threshold.units === units;
 }

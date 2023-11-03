@@ -12,8 +12,6 @@ const URL_PARAM_COLLECTION = "collection";
 const URL_PARAM_THRESHOLDS = "filters";
 const URL_PARAM_RANGE = "range";
 
-const THRESHOLD_UNIT_UNDEFINED = "!";
-
 export type UrlParams = {
   collection: string;
   dataset: string;
@@ -100,8 +98,7 @@ export function stateToUrlQueryString(state: Partial<UrlParams>): string {
         const featureName = encodeURIComponent(threshold.featureName);
         // Note that THRESHOLD_UNIT_UNDEFINED (="!") is not encoded here, so that it won't conflict
         // with normal feature units names. (Users should not be using "!" as a unit anyway, but just in case.)
-        const featureUnit =
-          threshold.unit !== undefined ? encodeURIComponent(threshold.unit) : THRESHOLD_UNIT_UNDEFINED;
+        const featureUnit = encodeURIComponent(threshold.units);
         const min = numberToStringDecimal(threshold.min, 3);
         const max = numberToStringDecimal(threshold.max, 3);
         return `${featureName}:${featureUnit}:${min}:${max}`;
@@ -226,7 +223,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
       const [rawFeatureName, rawFeatureUnit, min, max] = rawThreshold.split(":");
       let threshold = {
         featureName: decodeURIComponent(rawFeatureName),
-        unit: rawFeatureUnit !== THRESHOLD_UNIT_UNDEFINED ? decodeURIComponent(rawFeatureUnit) : undefined,
+        units: decodeURIComponent(rawFeatureUnit),
         min: parseFloat(min),
         max: parseFloat(max),
       };
