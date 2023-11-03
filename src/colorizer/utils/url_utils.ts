@@ -12,6 +12,8 @@ const URL_PARAM_COLLECTION = "collection";
 const URL_PARAM_THRESHOLDS = "filters";
 const URL_PARAM_RANGE = "range";
 
+const THRESHOLD_UNIT_UNDEFINED = "!";
+
 export type UrlParams = {
   collection: string;
   dataset: string;
@@ -89,16 +91,20 @@ export function stateToUrlQueryString(state: Partial<UrlParams>): string {
     includedParameters.push(`${URL_PARAM_TIME}=${state.time}`);
   }
   if (state.thresholds && state.thresholds.length > 0) {
-    // Thresholds are saved as a comma-separated list of featureName:min:max.
+    // Thresholds are saved as a comma-separated list of `featureName:unit:min:max`
     // featureName is encoded in case it contains special characters (":" or ",")
     // TODO: Are there better characters I can be using here? ":" and "," take up
     // more space in the URL.
     const thresholdsString = state.thresholds
       .map((threshold) => {
         const featureName = encodeURIComponent(threshold.featureName);
+        // Note that THRESHOLD_UNIT_UNDEFINED (="!") is not encoded here, so that it won't conflict
+        // with normal feature units names. (Users should not be using "!" as a unit anyway, but just in case.)
+        const featureUnit =
+          threshold.unit !== undefined ? encodeURIComponent(threshold.unit) : THRESHOLD_UNIT_UNDEFINED;
         const min = numberToStringDecimal(threshold.min, 3);
         const max = numberToStringDecimal(threshold.max, 3);
-        return `${featureName}:${min}:${max}`;
+        return `${featureName}:${featureUnit}:${min}:${max}`;
       })
       .join(",");
     includedParameters.push(`${URL_PARAM_THRESHOLDS}=${encodeURIComponent(thresholdsString)}`);
@@ -214,14 +220,19 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
   const rawThresholdParam = urlParams.get(URL_PARAM_THRESHOLDS);
   if (rawThresholdParam) {
     // Thresholds are separated by commas, and are structured as:
-    // {name (encoded)}:{min}:{max}
+    // {name (encoded)}:{unit (encoded)}:{min}:{max}
     const rawThresholds = rawThresholdParam.split(",");
     thresholdsParam = rawThresholds.map((rawThreshold) => {
-      const [rawFeatureName, min, max] = rawThreshold.split(":");
-      let threshold = { featureName: decodeURIComponent(rawFeatureName), min: parseFloat(min), max: parseFloat(max) };
+      const [rawFeatureName, rawFeatureUnit, min, max] = rawThreshold.split(":");
+      let threshold = {
+        featureName: decodeURIComponent(rawFeatureName),
+        unit: rawFeatureUnit !== THRESHOLD_UNIT_UNDEFINED ? decodeURIComponent(rawFeatureUnit) : undefined,
+        min: parseFloat(min),
+        max: parseFloat(max),
+      };
       // Enforce min/max ordering
       if (threshold.min > threshold.max) {
-        threshold = { featureName: threshold.featureName, min: threshold.max, max: threshold.min };
+        threshold = { ...threshold, min: threshold.max, max: threshold.min };
       }
       return threshold;
     });
