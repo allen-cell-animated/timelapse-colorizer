@@ -1,9 +1,9 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { Color } from "three";
 
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
 import { DrawMode, FeatureThreshold } from "../colorizer/ColorizeCanvas";
-import { Slider } from "antd";
+import { AppThemeContext } from "./AppStyle";
 
 export type DrawSettings = {
   mode: DrawMode;
@@ -61,8 +61,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const canvasRef = useRef<HTMLDivElement>(null);
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
+  const theme = useContext(AppThemeContext);
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
+
+  useMemo(() => {
+    canv.setTheme(theme);
+  }, [theme]);
 
   // Mount the canvas to the wrapper's location in the document.
   useEffect(() => {

@@ -30,6 +30,7 @@ import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 import CanvasOverlay from "./CanvasOverlay";
+import { AppTheme } from "../components/AppStyle";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -244,6 +245,10 @@ export default class ColorizeCanvas {
     if (this.dataset) {
       this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     }
+  }
+
+  setTheme(theme: AppTheme): void {
+    this.canvasOverlay.setTheme(theme);
   }
 
   private updateScaleBar(): void {

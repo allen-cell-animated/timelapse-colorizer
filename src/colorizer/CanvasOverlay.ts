@@ -2,13 +2,14 @@
 // This may need to update if we change three.js verisons.
 // https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer
 
+import { AppTheme } from "../components/AppStyle";
 import { numberToSciNotation } from "./utils/math_utils";
 
 const MIN_SCALE_BAR_WIDTH_PX = 80;
 
 /**
- * A canvas used for drawing UI overlays over another screen region.
- * Currently draws a scale bar.
+ * A canvas used for drawing UI overlays over another screen region. (intended for use
+ * with `ColorizeCanvas`.)
  */
 export default class CanvasOverlay {
   private canvas: HTMLCanvasElement;
@@ -17,11 +18,16 @@ export default class CanvasOverlay {
   private unitsPerScreenPixel: number = 1;
   private scaleBarUnit: string = "";
 
+  private theme?: AppTheme;
+
   constructor() {
     this.canvas = document.createElement("canvas");
-    // Disable pointer events on the canvas overlay so that the
-    // canvas can be clicked.
+    // Disable pointer events on the canvas overlay so it doesn't block mouse events on the main canvas.
     this.canvas.style.pointerEvents = "none";
+  }
+
+  setTheme(theme: AppTheme): void {
+    this.theme = theme;
   }
 
   /**
@@ -58,12 +64,19 @@ export default class CanvasOverlay {
       // Fixes float error for unrepresentable values (0.30000000000004 => 0.3)
       return value.toPrecision(1);
     } else {
+      // Format integers
       return value.toFixed(0);
     }
   }
 
   private renderScaleBar(): void {
     if (this.unitsPerScreenPixel === 0 || Number.isNaN(this.unitsPerScreenPixel) || !this.scaleBarVisible) {
+      return;
+    }
+
+    const ctx = this.canvas.getContext("2d");
+    if (ctx === null) {
+      console.error("Could not get canvas context");
       return;
     }
 
@@ -87,22 +100,18 @@ export default class CanvasOverlay {
 
     const displayUnits = this.formatScaleBarValue(scaleBarWidthInUnits);
     const textContent = `${displayUnits} ${this.scaleBarUnit}`;
-
-    const ctx = this.canvas.getContext("2d");
-    if (ctx === null) {
-      console.error("Could not get canvas context");
-      return;
-    }
+    const textColor = this.theme?.color.text.primary || "black";
+    const fontSize = this.theme?.font.size.content || 14;
 
     // Draw the scale bar line
     const scaleBarMargin = 20;
     const scaleBarHeight = 10;
-    // Nudge by 0.5 pixels so scale bar can render sharply as 1px wide
+    // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
     const scaleBarX = this.canvas.width - scaleBarMargin + 0.5;
     const scaleBarY = this.canvas.height - scaleBarMargin + 0.5;
     ctx.beginPath();
-    ctx.strokeStyle = "black";
-    ctx.strokeStyle = "1px solid black";
+    ctx.strokeStyle = textColor;
+    ctx.lineWidth = 1;
     ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
     ctx.lineTo(scaleBarX, scaleBarY);
     ctx.lineTo(scaleBarX - scaleBarWidthInPixels, scaleBarY);
@@ -111,10 +120,9 @@ export default class CanvasOverlay {
 
     // Draw the scale bar text label
     // TODO: This looks bad at high magnification.
-    const fontHeight = 14; // TODO: Get from theme?
-    const margin = 20 + 6;
-    ctx.font = `${fontHeight}px Lato`;
-    ctx.fillStyle = "black";
+    const margin = scaleBarMargin + 6;
+    ctx.font = `${fontSize}px ${this.theme?.font.family || "Lato"}`;
+    ctx.fillStyle = textColor;
     const textWidth = ctx.measureText(textContent).width;
     console.log(textWidth);
     ctx.fillText(textContent, this.canvas.width - textWidth - margin, this.canvas.height - margin);
