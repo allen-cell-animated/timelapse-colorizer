@@ -2,10 +2,27 @@
 // This may need to update if we change three.js verisons.
 // https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer
 
-import { AppTheme } from "../components/AppStyle";
 import { numberToSciNotation } from "./utils/math_utils";
 
-const MIN_SCALE_BAR_WIDTH_PX = 80;
+export type ScaleBarOptions = {
+  minWidthPx: number;
+  fontSizePx: number;
+  fontFamily: string;
+  fontColor: string;
+  visible: boolean;
+  unitsPerScreenPixel: number;
+  units: string;
+};
+
+const defaultScaleBarOptions: ScaleBarOptions = {
+  minWidthPx: 80,
+  fontSizePx: 14,
+  fontFamily: "Lato",
+  fontColor: "black",
+  visible: false,
+  unitsPerScreenPixel: 1,
+  units: "",
+};
 
 /**
  * A canvas used for drawing UI overlays over another screen region. (intended for use
@@ -13,21 +30,13 @@ const MIN_SCALE_BAR_WIDTH_PX = 80;
  */
 export default class CanvasOverlay {
   private canvas: HTMLCanvasElement;
+  private scaleBarOptions: ScaleBarOptions;
 
-  private scaleBarVisible = false;
-  private unitsPerScreenPixel: number = 1;
-  private scaleBarUnit: string = "";
-
-  private theme?: AppTheme;
-
-  constructor() {
+  constructor(scaleBarOptions: ScaleBarOptions = defaultScaleBarOptions) {
     this.canvas = document.createElement("canvas");
     // Disable pointer events on the canvas overlay so it doesn't block mouse events on the main canvas.
     this.canvas.style.pointerEvents = "none";
-  }
-
-  setTheme(theme: AppTheme): void {
-    this.theme = theme;
+    this.scaleBarOptions = scaleBarOptions;
   }
 
   /**
@@ -38,19 +47,8 @@ export default class CanvasOverlay {
     this.canvas.height = height;
   }
 
-  /**
-   * Update the scaling of the scale bar and the displayed units.
-   * @param unitsPerScreenPixel The number of units each pixel on the screen represents
-   * (assuming 100% magnification).
-   * @param unit The unit to display in the scale bar.
-   */
-  setScaleBarProperties(unitsPerScreenPixel: number, unit: string): void {
-    this.unitsPerScreenPixel = unitsPerScreenPixel;
-    this.scaleBarUnit = unit;
-  }
-
-  setScaleBarVisibility(visible: boolean): void {
-    this.scaleBarVisible = visible;
+  updateScaleBarOptions(options: Partial<ScaleBarOptions>): void {
+    this.scaleBarOptions = { ...this.scaleBarOptions, ...options };
   }
 
   /**
@@ -70,7 +68,7 @@ export default class CanvasOverlay {
   }
 
   private renderScaleBar(): void {
-    if (this.unitsPerScreenPixel === 0 || Number.isNaN(this.unitsPerScreenPixel) || !this.scaleBarVisible) {
+    if (!this.scaleBarOptions.unitsPerScreenPixel || !this.scaleBarOptions.visible) {
       return;
     }
 
@@ -80,7 +78,7 @@ export default class CanvasOverlay {
       return;
     }
 
-    const minWidthUnits = MIN_SCALE_BAR_WIDTH_PX * this.unitsPerScreenPixel;
+    const minWidthUnits = this.scaleBarOptions.minWidthPx * this.scaleBarOptions.unitsPerScreenPixel;
     // Here we get the power of the most significant digit (MSD) of the minimum width in units.
     const msdPower = Math.ceil(Math.log10(minWidthUnits));
 
@@ -96,12 +94,10 @@ export default class CanvasOverlay {
     const scaleBarWidthInUnits = nextIncrement * 10 ** (msdPower - 1);
     // Convert back into pixels for rendering.
     // Cheat very slightly by rounding to the nearest pixel for cleaner rendering.
-    const scaleBarWidthInPixels = Math.round(scaleBarWidthInUnits / this.unitsPerScreenPixel);
+    const scaleBarWidthInPixels = Math.round(scaleBarWidthInUnits / this.scaleBarOptions.unitsPerScreenPixel);
 
     const displayUnits = this.formatScaleBarValue(scaleBarWidthInUnits);
-    const textContent = `${displayUnits} ${this.scaleBarUnit}`;
-    const textColor = this.theme?.color.text.primary || "black";
-    const fontSize = this.theme?.font.size.content || 14;
+    const textContent = `${displayUnits} ${this.scaleBarOptions.units}`;
 
     // Draw the scale bar line
     const scaleBarMargin = 20;
@@ -110,7 +106,7 @@ export default class CanvasOverlay {
     const scaleBarX = this.canvas.width - scaleBarMargin + 0.5;
     const scaleBarY = this.canvas.height - scaleBarMargin + 0.5;
     ctx.beginPath();
-    ctx.strokeStyle = textColor;
+    ctx.strokeStyle = this.scaleBarOptions.fontColor;
     ctx.lineWidth = 1;
     ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
     ctx.lineTo(scaleBarX, scaleBarY);
@@ -121,8 +117,8 @@ export default class CanvasOverlay {
     // Draw the scale bar text label
     // TODO: This looks bad at high magnification.
     const margin = scaleBarMargin + 6;
-    ctx.font = `${fontSize}px ${this.theme?.font.family || "Lato"}`;
-    ctx.fillStyle = textColor;
+    ctx.font = `${this.scaleBarOptions.fontSizePx}px ${this.scaleBarOptions.fontFamily}`;
+    ctx.fillStyle = this.scaleBarOptions.fontColor;
     const textWidth = ctx.measureText(textContent).width;
     console.log(textWidth);
     ctx.fillText(textContent, this.canvas.width - textWidth - margin, this.canvas.height - margin);

@@ -65,10 +65,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
-  useMemo(() => {
-    canv.setTheme(theme);
-  }, [theme]);
-
   // Mount the canvas to the wrapper's location in the document.
   useEffect(() => {
     canvasRef.current?.parentNode?.replaceChild(canv.mountableDomElement, canvasRef.current);
@@ -77,6 +73,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // These are all useMemo calls because the updates to the canvas must happen in the same render;
   // if these were useEffects, the canvas will lag behind updates since there is no state update to
   // trigger a re-render.
+
+  // Update the theming of the canvas overlay as needed.
+  useMemo(() => {
+    canv.overlay.updateScaleBarOptions({
+      fontSizePx: theme.font.size.label,
+      fontColor: theme.color.text.primary,
+      fontFamily: theme.font.family,
+    });
+  }, [theme]);
 
   // Update canvas color ramp
   useMemo(() => {

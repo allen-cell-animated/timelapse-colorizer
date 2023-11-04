@@ -112,7 +112,7 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
-  private canvasOverlay: CanvasOverlay;
+  public overlay: CanvasOverlay;
 
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
@@ -195,10 +195,9 @@ export default class ColorizeCanvas {
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
 
-    this.canvasOverlay = new CanvasOverlay();
+    this.overlay = new CanvasOverlay();
     this.showScaleBar = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
-    this.canvasOverlay.setSize(200, 400);
 
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
@@ -212,11 +211,11 @@ export default class ColorizeCanvas {
       // by creating a dummy parent container.
       this.canvasContainer = document.createElement("div");
       this.canvasContainer.appendChild(this.renderer.domElement);
-      this.canvasContainer.appendChild(this.canvasOverlay.domElement);
+      this.canvasContainer.appendChild(this.overlay.domElement);
       this.canvasContainer.style.position = "relative";
-      this.canvasOverlay.domElement.style.position = "absolute";
-      this.canvasOverlay.domElement.style.left = "0";
-      this.canvasOverlay.domElement.style.top = "0";
+      this.overlay.domElement.style.position = "absolute";
+      this.overlay.domElement.style.left = "0";
+      this.overlay.domElement.style.top = "0";
     }
 
     return this.canvasContainer;
@@ -236,7 +235,7 @@ export default class ColorizeCanvas {
     this.checkPixelRatio();
 
     this.renderer.setSize(width, height);
-    this.canvasOverlay.setSize(width, height);
+    this.overlay.setSize(width, height);
     // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
     // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
@@ -245,10 +244,6 @@ export default class ColorizeCanvas {
     if (this.dataset) {
       this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     }
-  }
-
-  setTheme(theme: AppTheme): void {
-    this.canvasOverlay.setTheme(theme);
   }
 
   private updateScaleBar(): void {
@@ -260,12 +255,11 @@ export default class ColorizeCanvas {
       // We only consider X scaling here because the scale bar is always horizontal.
       const canvasWidthInUnits = frameDims.width * this.frameToCanvasScale.x;
       const unitsPerScreenPixel = canvasWidthInUnits / this.canvasResolution.x;
-      this.canvasOverlay.setScaleBarProperties(unitsPerScreenPixel, frameDims.units);
-      this.canvasOverlay.setScaleBarVisibility(true);
-      this.canvasOverlay.render();
+      this.overlay.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
+      this.overlay.render();
     } else {
-      this.canvasOverlay.setScaleBarVisibility(false);
-      this.canvasOverlay.render();
+      this.overlay.updateScaleBarOptions({ visible: false });
+      this.overlay.render();
     }
   }
 
@@ -522,7 +516,7 @@ export default class ColorizeCanvas {
     this.updateHighlightedId();
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
-    this.canvasOverlay.render();
+    this.overlay.render();
   }
 
   dispose(): void {
