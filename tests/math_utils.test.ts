@@ -21,7 +21,7 @@ describe("numberToSciNotation", () => {
     expect(numberToSciNotation(78, 1)).to.equal("8×10¹");
   });
 
-  it("Handle significant digits", () => {
+  it("Handle significant figures input", () => {
     expect(numberToSciNotation(-12.34, 1)).to.equal("-1×10¹");
     expect(numberToSciNotation(-12.34, 2)).to.equal("-1.2×10¹");
     expect(numberToSciNotation(-12.34, 3)).to.equal("-1.23×10¹");
@@ -30,7 +30,7 @@ describe("numberToSciNotation", () => {
     expect(numberToSciNotation(-12.34, 6)).to.equal("-1.23400×10¹");
   });
 
-  it("Handles bad significant digits input", () => {
+  it("Handles bad significant figures input", () => {
     expect(numberToSciNotation(123.4, 0)).to.equal("1×10²");
     expect(numberToSciNotation(123.4, -5)).to.equal("1×10²");
   });
