@@ -8,7 +8,7 @@ describe("numberToSciNotation", () => {
 
   it("Handles negative values", () => {
     expect(numberToSciNotation(-1, 1)).to.equal("-1×10⁰");
-    expect(numberToSciNotation(-20000, 2)).to.equal("-2.0×10⁴");
+    expect(numberToSciNotation(-20_000, 2)).to.equal("-2.0×10⁴");
     expect(numberToSciNotation(-0.5, 1)).to.equal("-5×10⁻¹");
   });
 

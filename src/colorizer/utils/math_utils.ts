@@ -38,8 +38,8 @@ function numberToUnicodeSuperscript(input: number): string {
 }
 
 /**
- * Converts a number to scientific notation to the specified number of significant digits,
- * handling negative numbers and rounding.
+ * Converts a number to scientific notation with the specified number of significant
+ * figures, handling negative numbers and rounding.
  * @param input The number to convert.
  * @param significantFigures the number of signficant figures/digits. Must be >= 1.
  * @returns a string, formatted as a number in scientific notation.

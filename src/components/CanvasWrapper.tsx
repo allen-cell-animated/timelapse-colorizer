@@ -74,7 +74,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // if these were useEffects, the canvas will lag behind updates since there is no state update to
   // trigger a re-render.
 
-  // Update the theming of the canvas overlay as needed.
+  // Update the themeing of the canvas overlay.
   useMemo(() => {
     canv.overlay.updateScaleBarOptions({
       fontSizePx: theme.font.size.label,
@@ -211,9 +211,5 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // RENDERING /////////////////////////////////////////////////
 
   canv.render();
-  return (
-    <div style={{ position: "relative" }}>
-      <div ref={canvasRef}></div>
-    </div>
-  );
+  return <div ref={canvasRef}></div>;
 }
