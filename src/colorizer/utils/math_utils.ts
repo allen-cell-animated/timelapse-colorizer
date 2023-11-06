@@ -53,10 +53,11 @@ function numberToUnicodeSuperscript(input: number): string {
 export function numberToSciNotation(input: number, significantFigures: number): string {
   significantFigures = Math.max(significantFigures, 1);
   const prefix = input < 0 ? "-" : "";
-  // Round to the precision + 1 in case the input increments
-  // For example, if input = 0.99 and precision = 1, we want to round to 1.
-  // If we round later, we'll get 10×10⁻¹ instead of 1×10⁰.
   input = Math.abs(input);
+  // Apply precision in case it causes input to round up to the next power of 10.
+  // For example, if input = 0.99 and significantFigures = 1, we want to round to 1 now.
+  // Otherwise we'd get `exponent = -1` and 10×10⁻¹ instead of 1×10⁰.
+  // See unit tests for validation.
   input = Number.parseFloat(input.toPrecision(significantFigures));
   if (input === 0) {
     return "0×10⁰";
