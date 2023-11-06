@@ -116,27 +116,47 @@ function App(): ReactElement {
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
   /**
+   * Formats the dataset and collection parameters for use in a URL.
+   */
+  const getDatasetAndCollectionParam = useCallback((): {
+    datasetParam?: string;
+    collectionParam?: string;
+  } => {
+    if (collection?.url === null) {
+      // A single dataset was loaded, so there's no collection URL. Use the dataset URL instead.
+      return { datasetParam: dataset?.manifestUrl, collectionParam: undefined };
+    } else {
+      return { datasetParam: datasetKey, collectionParam: collection?.url };
+    }
+  }, [datasetKey, dataset, collection]);
+
+  /**
+   * Get the optional color map feature range parameter for the URL. If the range
+   * is the full range of the feature's values (default), return undefined.
+   */
+  const getRangeParam = useCallback((): [number, number] | undefined => {
+    if (!dataset) {
+      return undefined;
+    }
+    // check if current selected feature range matches the default feature range; if so, don't provide
+    // a range parameter..
+    const featureData = dataset.getFeatureData(featureName);
+    if (featureData) {
+      if (featureData.min === colorRampMin && featureData.max === colorRampMax) {
+        return undefined;
+      }
+    }
+    return [colorRampMin, colorRampMax];
+  }, [colorRampMin, colorRampMax, featureName, dataset]);
+
+  /**
    * Get a URL query string representing the current collection, dataset, feature, track,
    * and frame information.
    */
   const getUrlParams = useCallback((): string => {
-    if (!dataset) {
-      return "";
-    }
-    let datasetParam: string | undefined = datasetKey;
-    let collectionParam = collection?.url;
-    // If there is no collection loaded (e.g. a single dataset URL was loaded),
-    // use the dataset URL instead.
-    if (collectionParam === null) {
-      datasetParam = dataset?.manifestUrl;
-      collectionParam = undefined;
-    }
-    // check if current selected feature range matches the default feature range; if so, don't include.
-    let rangeIsDefault = false;
-    const featureData = dataset.getFeatureData(featureName);
-    if (featureData) {
-      rangeIsDefault = featureData.min === colorRampMin && featureData.max === colorRampMax;
-    }
+    const { datasetParam, collectionParam } = getDatasetAndCollectionParam();
+    const rangeParam = getRangeParam();
+
     return urlUtils.paramsToUrlQueryString({
       collection: collectionParam,
       dataset: datasetParam,
@@ -145,19 +165,9 @@ function App(): ReactElement {
       // Ignore time=0 to reduce clutter
       time: currentFrame !== 0 ? currentFrame : undefined,
       thresholds: featureThresholds,
-      range: rangeIsDefault ? undefined : [colorRampMin, colorRampMax],
+      range: rangeParam,
     });
-  }, [
-    collection,
-    datasetKey,
-    dataset,
-    featureName,
-    selectedTrack,
-    currentFrame,
-    featureThresholds,
-    colorRampMin,
-    colorRampMax,
-  ]);
+  }, [getDatasetAndCollectionParam, getRangeParam, featureName, selectedTrack, currentFrame, featureThresholds]);
 
   // Update url whenever the viewer settings change
   // (but not while playing/recording for performance reasons)
