@@ -3,7 +3,7 @@ import { FeatureThreshold } from "../ColorizeCanvas";
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
  * @param featureName String feature name to match on.
- * @param unit String unit to match on. If undefined, will match on thresholds with undefined units only.
+ * @param unit String unit to match on.
  * @returns a lambda function that can be passed into `Array.find` for an array of FeatureThreshold.
  * @example
  * ```
@@ -11,9 +11,6 @@ import { FeatureThreshold } from "../ColorizeCanvas";
  * const matchThreshold = featureThresholds.find(thresholdMatchFinder("Temperature", "°C"));
  * ```
  */
-export function thresholdMatchFinder(
-  featureName: string,
-  units: string | undefined
-): (threshold: FeatureThreshold) => boolean {
+export function thresholdMatchFinder(featureName: string, units: string): (threshold: FeatureThreshold) => boolean {
   return (threshold: FeatureThreshold) => threshold.featureName === featureName && threshold.units === units;
 }
