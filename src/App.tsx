@@ -16,13 +16,8 @@ import { Color } from "three";
 import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import {
-  BACKGROUND_ID,
-  DrawMode,
-  FeatureThreshold,
-  OUTLIER_COLOR_DEFAULT,
-  OUT_OF_RANGE_COLOR_DEFAULT,
-} from "./colorizer/ColorizeCanvas";
+import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
+import { FeatureThreshold } from "./constants/types";
 import TimeControls from "./colorizer/TimeControls";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
