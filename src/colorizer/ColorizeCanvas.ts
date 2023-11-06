@@ -32,7 +32,7 @@ import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
-export const OUT_OF_RANGE_COLOR_DEFAULT = 0xc0c0c0;
+export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 
@@ -41,10 +41,8 @@ export const BACKGROUND_ID = -1;
 export enum DrawMode {
   /** Hide this object type. */
   HIDE = 0,
-  /** Use the color ramp/map to color the object. */
-  USE_RAMP = 1,
   /** Use a solid color for this object type. */
-  USE_COLOR = 2,
+  USE_COLOR = 1,
 }
 
 type ColorizeUniformTypes = {
@@ -53,8 +51,9 @@ type ColorizeUniformTypes = {
   frame: Texture;
   featureData: Texture;
   outlierData: Texture;
-  featureMin: number;
-  featureMax: number;
+  inRangeIds: Texture;
+  featureColorRampMin: number;
+  featureColorRampMax: number;
   colorRamp: Texture;
   backgroundColor: Color;
   outlierColor: Color;
@@ -73,6 +72,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   emptyFrame.needsUpdate = true;
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
+  const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
 
   return {
@@ -80,8 +80,9 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
-    featureMin: new Uniform(0),
-    featureMax: new Uniform(1),
+    inRangeIds: new Uniform(emptyInRangeIds),
+    featureColorRampMin: new Uniform(0),
+    featureColorRampMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
@@ -91,6 +92,13 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
   };
+};
+
+export type FeatureThreshold = {
+  featureName: string;
+  unit: string | undefined;
+  min: number;
+  max: number;
 };
 
 // TODO: Change into a component?
@@ -351,12 +359,12 @@ export default class ColorizeCanvas {
 
   setColorMapRangeMin(newMin: number): void {
     this.colorMapRangeMin = newMin;
-    this.setUniform("featureMin", this.colorMapRangeMin);
+    this.setUniform("featureColorRampMin", this.colorMapRangeMin);
   }
 
   setColorMapRangeMax(newMax: number): void {
     this.colorMapRangeMax = newMax;
-    this.setUniform("featureMax", this.colorMapRangeMax);
+    this.setUniform("featureColorRampMax", this.colorMapRangeMax);
   }
 
   resetColorMapRange(): void {
@@ -367,9 +375,42 @@ export default class ColorizeCanvas {
     if (featureData) {
       this.colorMapRangeMin = featureData.min;
       this.colorMapRangeMax = featureData.max;
-      this.setUniform("featureMin", this.colorMapRangeMin);
-      this.setUniform("featureMax", this.colorMapRangeMax);
+      this.setUniform("featureColorRampMin", this.colorMapRangeMin);
+      this.setUniform("featureColorRampMax", this.colorMapRangeMax);
     }
+  }
+
+  /**
+   * Updates the feature thresholds used to determine what values are in and outside of range.
+   * Note that this is separate from the color ramp min/max, which just controls how colors are applied.
+   * @param thresholds Array of feature thresholds, which must define the feature name, min, and max.
+   * If a feature name cannot be found in the dataset, it will be ignored.
+   */
+  setFeatureThresholds(thresholds: FeatureThreshold[]): void {
+    if (!this.dataset) {
+      return;
+    }
+    // Make new binary boolean texture (1/0) representing whether an object is in range of the
+    // feature thresholds or not.
+    // TODO: Optimize memory by using a true boolean array? Bit-level manipulation to fit it within Uint8Array?
+    // TODO: If optimizing, use fuse operation via shader.
+    const inRangeIds = new Uint8Array(this.dataset.numObjects);
+    inRangeIds.fill(1);
+
+    for (const threshold of thresholds) {
+      const featureData = this.dataset.getFeatureData(threshold.featureName);
+      // Ignore thresholds with features that don't exist in this dataset or whose units don't match
+      if (!featureData || featureData.units !== threshold.unit) {
+        continue;
+      }
+      for (let i = 0, n = inRangeIds.length; i < n; i++) {
+        if (inRangeIds[i] === 1 && (featureData.data[i] < threshold.min || featureData.data[i] > threshold.max)) {
+          inRangeIds[i] = 0;
+        }
+      }
+    }
+    // Save the array to a texture and pass it into the shader
+    this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeIds), FeatureDataType.U8));
   }
 
   getColorMapRangeMin(): number {
