@@ -117,9 +117,6 @@ export default class ColorizeCanvas {
   private line: Line;
   private showTrackPath: boolean;
 
-  // Saved as a copy of CanvasOverlay's scale bar visibility. Tracked
-  // so we can temporarily disable the scale bar when the dataset doesn't
-  // have frame dimensions + units defined.
   private showScaleBar: boolean;
   private frameToCanvasScale: Vector4;
 
@@ -204,7 +201,10 @@ export default class ColorizeCanvas {
     this.updateScaling = this.updateScaling.bind(this);
   }
 
-  get mountableDomElement(): HTMLDivElement {
+  /**
+   * The DOM element containing the canvas and its overlay.
+   */
+  get domElement(): HTMLDivElement {
     if (!this.canvasContainer) {
       // Set up the canvas overlay as a sibling in the DOM layout
       // by creating a dummy parent container.

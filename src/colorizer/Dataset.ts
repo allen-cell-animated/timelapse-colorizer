@@ -23,7 +23,7 @@ export type FeatureMetadata = {
 };
 
 export type DatasetMetadata = {
-  /** Dimensions of the frame, in any scale units. */
+  /** Dimensions of the frame, in scale units. */
   frameDims: {
     width: number;
     height: number;

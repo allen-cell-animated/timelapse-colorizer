@@ -1,7 +1,3 @@
-// NOTE: This is different from the way the documentation imports it (via addons rather than examples).
-// This may need to update if we change three.js verisons.
-// https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer
-
 import { numberToSciNotation } from "./utils/math_utils";
 
 export type ScaleBarOptions = {
@@ -79,7 +75,7 @@ export default class CanvasOverlay {
     }
 
     const minWidthUnits = this.scaleBarOptions.minWidthPx * this.scaleBarOptions.unitsPerScreenPixel;
-    // Here we get the power of the most significant digit (MSD) of the minimum width in units.
+    // Here we get the power of the most significant digit (MSD) of the minimum width converted to units.
     const msdPower = Math.ceil(Math.log10(minWidthUnits));
 
     // Only show increments of 1, 2, and 5, because they're easier to read and reason about.
