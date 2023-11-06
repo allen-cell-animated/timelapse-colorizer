@@ -42,7 +42,7 @@ import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import FeatureThresholdPanel from "./components/FeatureThresholdPanel";
-import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
+import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -188,7 +188,8 @@ function App(): ReactElement {
   // Load URL parameters into the state that don't require a dataset to be loaded.
   // This reduces flicker on initial load.
   useEffect(() => {
-    if (initialUrlParams.colorRampKey) {
+    // Load the currently selected color ramp info from the URL, if it exists.
+    if (initialUrlParams.colorRampKey && colorRampData.has(initialUrlParams.colorRampKey)) {
       setColorRampKey(initialUrlParams.colorRampKey);
     }
     if (initialUrlParams.colorRampReversed) {
@@ -467,10 +468,6 @@ function App(): ReactElement {
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
-  let colorRamp = colorRampData.get(colorRampKey)?.colorRamp;
-  if (colorRampReversed && colorRamp) {
-    colorRamp = colorRamp.reverse();
-  }
   // Show min + max marks on the color ramp slider if a feature is selected and
   // is currently being thresholded/filtered on.
   const getColorMapSliderMarks = (): undefined | number[] => {
@@ -602,7 +599,7 @@ function App(): ReactElement {
                 showTrackPath={showTrackPath}
                 outOfRangeDrawSettings={outOfRangeDrawSettings}
                 outlierDrawSettings={outlierDrawSettings}
-                colorRamp={colorRamp!}
+                colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 selectedTrack={selectedTrack}

@@ -1,3 +1,5 @@
+import { ColorRampData } from "../../constants";
+import ColorRamp from "../ColorRamp";
 import { FeatureThreshold } from "../ColorizeCanvas";
 
 /**
@@ -16,4 +18,15 @@ export function thresholdMatchFinder(
   unit: string | undefined
 ): (threshold: FeatureThreshold) => boolean {
   return (threshold: FeatureThreshold) => threshold.featureName === featureName && threshold.unit === unit;
+}
+
+/**
+ * Convenience method for getting a single ramp from a map of strings to ramps, optionally reversing it.
+ */
+export function getColorMap(colorRampData: Map<string, ColorRampData>, key: string, reversed = false): ColorRamp {
+  const colorRamp = colorRampData.get(key)?.colorRamp;
+  if (!colorRamp) {
+    throw new Error("Could not find data for color ramp '" + key + "'");
+  }
+  return colorRamp && reversed ? colorRamp.reverse() : colorRamp;
 }
