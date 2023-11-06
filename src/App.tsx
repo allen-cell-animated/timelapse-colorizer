@@ -37,7 +37,7 @@ import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import FeatureThresholdPanel from "./components/FeatureThresholdPanel";
-import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
+import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -60,6 +60,7 @@ function App(): ReactElement {
 
   const colorRampData = DEFAULT_COLOR_RAMPS;
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
+  const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
   const [outOfRangeDrawSettings, setoutOfRangeDrawSettings] = useState({
@@ -166,8 +167,19 @@ function App(): ReactElement {
       time: currentFrame !== 0 ? currentFrame : undefined,
       thresholds: featureThresholds,
       range: rangeParam,
+      colorRampKey: colorRampKey,
+      colorRampReversed: colorRampReversed,
     });
-  }, [getDatasetAndCollectionParam, getRangeParam, featureName, selectedTrack, currentFrame, featureThresholds]);
+  }, [
+    getDatasetAndCollectionParam,
+    getRangeParam,
+    featureName,
+    selectedTrack,
+    currentFrame,
+    featureThresholds,
+    colorRampKey,
+    colorRampReversed,
+  ]);
 
   // Update url whenever the viewer settings change
   // (but not while playing/recording for performance reasons)
@@ -211,6 +223,18 @@ function App(): ReactElement {
   const initialUrlParams = useConstructor(() => {
     return urlUtils.loadParamsFromUrl();
   });
+
+  // Load URL parameters into the state that don't require a dataset to be loaded.
+  // This reduces flicker on initial load.
+  useEffect(() => {
+    // Load the currently selected color ramp info from the URL, if it exists.
+    if (initialUrlParams.colorRampKey && colorRampData.has(initialUrlParams.colorRampKey)) {
+      setColorRampKey(initialUrlParams.colorRampKey);
+    }
+    if (initialUrlParams.colorRampReversed) {
+      setColorRampReversed(initialUrlParams.colorRampReversed);
+    }
+  }, []);
 
   // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
@@ -536,7 +560,15 @@ function App(): ReactElement {
             }}
           />
 
-          <ColorRampDropdown selected={colorRampKey} onChange={(name) => setColorRampKey(name)} disabled={disableUi} />
+          <ColorRampDropdown
+            selected={colorRampKey}
+            reversed={colorRampReversed}
+            onChange={(name, reversed) => {
+              setColorRampKey(name);
+              setColorRampReversed(reversed);
+            }}
+            disabled={disableUi}
+          />
         </div>
         <div className={styles.headerRight}>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
@@ -614,7 +646,7 @@ function App(): ReactElement {
                 showTrackPath={showTrackPath}
                 outOfRangeDrawSettings={outOfRangeDrawSettings}
                 outlierDrawSettings={outlierDrawSettings}
-                colorRamp={colorRampData.get(colorRampKey)?.colorRamp!}
+                colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 selectedTrack={selectedTrack}

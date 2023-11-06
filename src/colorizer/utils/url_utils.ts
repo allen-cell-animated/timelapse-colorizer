@@ -11,6 +11,8 @@ const URL_PARAM_TIME = "t";
 const URL_PARAM_COLLECTION = "collection";
 const URL_PARAM_THRESHOLDS = "filters";
 const URL_PARAM_RANGE = "range";
+const URL_PARAM_COLOR_RAMP = "color";
+const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 
 export type UrlParams = {
   collection: string;
@@ -20,6 +22,8 @@ export type UrlParams = {
   time: number;
   thresholds: FeatureThreshold[];
   range: [number, number];
+  colorRampKey: string | null;
+  colorRampReversed: boolean | null;
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -107,6 +111,15 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
   if (state.range && state.range.length === 2) {
     const rangeString = `${numberToStringDecimal(state.range[0], 3)},${numberToStringDecimal(state.range[1], 3)}`;
     includedParameters.push(`${URL_PARAM_RANGE}=${encodeURIComponent(rangeString)}`);
+  }
+  if (state.colorRampKey) {
+    if (state.colorRampReversed) {
+      includedParameters.push(
+        `${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + URL_COLOR_RAMP_REVERSED_SUFFIX)}`
+      );
+    } else {
+      includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
+    }
   }
 
   // If parameters present, join with URL syntax and push into the URL
@@ -244,6 +257,15 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     }
   }
 
+  const colorRampRawParam = urlParams.get(URL_PARAM_COLOR_RAMP);
+  let colorRampParam: string | null = colorRampRawParam;
+  let colorRampReversedParam: boolean = false;
+  //  Color ramps are marked as reversed by adding ! to the end of the key
+  if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === URL_COLOR_RAMP_REVERSED_SUFFIX) {
+    colorRampReversedParam = true;
+    colorRampParam = colorRampRawParam.slice(0, -1);
+  }
+
   // Remove undefined entries from the object for a cleaner return value
   return removeUndefinedProperties({
     collection: collectionParam,
@@ -253,5 +275,8 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     time: timeParam,
     thresholds: thresholdsParam.length > 0 ? thresholdsParam : undefined,
     range: rangeParam,
+
+    colorRampKey: colorRampParam,
+    colorRampReversed: colorRampReversedParam,
   });
 }
