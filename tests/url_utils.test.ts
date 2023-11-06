@@ -7,6 +7,7 @@ import {
   loadParamsFromUrlQueryString,
   UrlParams,
 } from "../src/colorizer/utils/url_utils";
+import { DEFAULT_COLOR_RAMPS } from "../src/constants";
 
 const stateWithNonLatinCharacters: [Partial<UrlParams>, string] = [
   {
@@ -148,5 +149,19 @@ describe("Loading + saving from URL query strings", () => {
     const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
+  });
+
+  it("Handles all color map names", () => {
+    // Test all color ramp names to make sure they can be safely sent through the URL.
+    for (const key of DEFAULT_COLOR_RAMPS.keys()) {
+      const params: Partial<UrlParams> = { colorRampKey: key };
+      let parsedParams = loadParamsFromUrlQueryString(paramsToUrlQueryString(params));
+      expect(parsedParams).deep.equals(params);
+
+      // Reversed
+      params.colorRampReversed = true;
+      parsedParams = loadParamsFromUrlQueryString(paramsToUrlQueryString(params));
+      expect(parsedParams).deep.equals(params);
+    }
   });
 });
