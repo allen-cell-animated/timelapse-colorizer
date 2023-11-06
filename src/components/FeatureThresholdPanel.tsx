@@ -5,7 +5,7 @@ import styled, { css } from "styled-components";
 
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 
-import { FeatureThreshold } from "../colorizer/ColorizeCanvas";
+import { FeatureThreshold } from "../colorizer/types";
 import LabeledRangeSlider from "./LabeledRangeSlider";
 import { Dataset } from "../colorizer";
 import IconButton from "./IconButton";
@@ -94,7 +94,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
 
   /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature name and unit. */
   const thresholdToKey = (threshold: FeatureThreshold): string => {
-    return `${encodeURIComponent(threshold.featureName)}:${threshold.unit ? encodeURIComponent(threshold.unit) : ""}`;
+    return `${encodeURIComponent(threshold.featureName)}:${threshold.units ? encodeURIComponent(threshold.units) : ""}`;
   };
   // Save the FEATURE min/max bounds (not the selected range of the threshold) for each threshold. We do
   // this in case the user switches to a dataset that no longer has the threshold's feature
@@ -110,7 +110,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     // reflect the last known good values.
     for (const threshold of props.featureThresholds) {
       const featureData = props.dataset?.features[threshold.featureName];
-      if (featureData && featureData.units === threshold.unit) {
+      if (featureData && featureData.units === threshold.units) {
         featureMinMaxBoundsFallback.current.set(thresholdToKey(threshold), [featureData.min, featureData.max]);
       }
     }
@@ -126,7 +126,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
       // Add a new threshold for the selected value if valid
       newThresholds.push({
         featureName: featureName,
-        unit: props.dataset?.getFeatureUnits(featureName),
+        units: props.dataset!.getFeatureUnits(featureName),
         min: featureData.min,
         max: featureData.max,
       });
@@ -179,7 +179,7 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
   // show selections that are actually valid.
   const thresholdsInDataset = props.featureThresholds.filter((t) => {
     const featureData = props.dataset?.features[t.featureName];
-    return featureData && featureData.units === t.unit;
+    return featureData && featureData.units === t.units;
   });
   const selectedFeatures = thresholdsInDataset.map((t) => t.featureName);
 
@@ -187,13 +187,13 @@ export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelP
     // Thresholds are matched on both feature names and units; a threshold must match
     // both in the current dataset to be valid.
     const featureData = props.dataset?.features[item.featureName];
-    const disabled = featureData === undefined || featureData.units !== item.unit;
+    const disabled = featureData === undefined || featureData.units !== item.units;
     // If the feature is no longer in the dataset, use the saved min/max bounds.
     const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [0, 1];
     const sliderMin = disabled ? savedMinMax[0] : featureData.min;
     const sliderMax = disabled ? savedMinMax[1] : featureData.max;
 
-    const featureLabel = item.unit ? `${item.featureName} (${item.unit})` : item.featureName;
+    const featureLabel = item.units ? `${item.featureName} (${item.units})` : item.featureName;
 
     return (
       <List.Item style={{ position: "relative" }}>

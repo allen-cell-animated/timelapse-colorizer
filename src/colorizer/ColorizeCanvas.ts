@@ -29,6 +29,7 @@ import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
+import { FeatureThreshold } from "./types";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -92,13 +93,6 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
   };
-};
-
-export type FeatureThreshold = {
-  featureName: string;
-  unit: string | undefined;
-  min: number;
-  max: number;
 };
 
 // TODO: Change into a component?
@@ -400,7 +394,7 @@ export default class ColorizeCanvas {
     for (const threshold of thresholds) {
       const featureData = this.dataset.getFeatureData(threshold.featureName);
       // Ignore thresholds with features that don't exist in this dataset or whose units don't match
-      if (!featureData || featureData.units !== threshold.unit) {
+      if (!featureData || featureData.units !== threshold.units) {
         continue;
       }
       for (let i = 0, n = inRangeIds.length; i < n; i++) {

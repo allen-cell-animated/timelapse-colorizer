@@ -73,3 +73,10 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
     internalFormat: "R8UI",
   },
 };
+
+export type FeatureThreshold = {
+  featureName: string;
+  units: string;
+  min: number;
+  max: number;
+};
