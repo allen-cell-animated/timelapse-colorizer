@@ -87,6 +87,8 @@ describe("Loading + saving from URL query strings", () => {
         { featureName: "f4", units: "mm", min: 0.501, max: 1000.485 },
       ],
       range: [21.433, 89.4],
+      colorRampKey: "myMap-1",
+      colorRampReversed: true,
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);

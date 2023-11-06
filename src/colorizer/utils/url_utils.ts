@@ -258,8 +258,8 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
   }
 
   const colorRampRawParam = urlParams.get(URL_PARAM_COLOR_RAMP);
-  let colorRampParam: string | null = colorRampRawParam;
-  let colorRampReversedParam: boolean = false;
+  let colorRampParam: string | undefined = colorRampRawParam || undefined;
+  let colorRampReversedParam: boolean | undefined = undefined;
   //  Color ramps are marked as reversed by adding ! to the end of the key
   if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === URL_COLOR_RAMP_REVERSED_SUFFIX) {
     colorRampReversedParam = true;
