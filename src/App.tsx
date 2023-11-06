@@ -137,7 +137,7 @@ function App(): ReactElement {
       feature: featureName,
       track: selectedTrack?.trackId,
       time: currentFrame,
-      colorRamp: colorRampKey,
+      colorRampKey: colorRampKey,
       colorRampReversed: colorRampReversed,
     });
   }, [collection, datasetKey, dataset, featureName, selectedTrack, currentFrame, colorRampKey, colorRampReversed]);
@@ -188,8 +188,8 @@ function App(): ReactElement {
   // Load URL parameters into the state that don't require a dataset to be loaded.
   // This reduces flicker on initial load.
   useEffect(() => {
-    if (initialUrlParams.colorRamp) {
-      setColorRampKey(initialUrlParams.colorRamp);
+    if (initialUrlParams.colorRampKey) {
+      setColorRampKey(initialUrlParams.colorRampKey);
     }
     if (initialUrlParams.colorRampReversed) {
       setColorRampReversed(initialUrlParams.colorRampReversed);

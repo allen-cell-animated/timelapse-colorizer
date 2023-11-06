@@ -17,7 +17,7 @@ export type UrlParams = {
   feature: string | null;
   track: number;
   time: number;
-  colorRamp: string | null;
+  colorRampKey: string | null;
   colorRampReversed: boolean | null;
 };
 
@@ -69,7 +69,7 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
 
   // Get parameters, ignoring null/empty values
   const includedParameters: string[] = [];
-  const { collection, dataset, feature, track, time, colorRamp, colorRampReversed } = state;
+  const { collection, dataset, feature, track, time, colorRampKey, colorRampReversed } = state;
 
   // Don't include collection parameter in URL if it matches the default.
   if (
@@ -92,13 +92,13 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
     // time = 0 is ignored because it's the default frame.
     includedParameters.push(`${URL_PARAM_TIME}=${time}`);
   }
-  if (colorRamp) {
+  if (colorRampKey) {
     if (colorRampReversed) {
       includedParameters.push(
-        `${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRamp + URL_COLOR_RAMP_REVERSED_SUFFIX)}`
+        `${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRampKey + URL_COLOR_RAMP_REVERSED_SUFFIX)}`
       );
     } else {
-      includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRamp)}`);
+      includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRampKey)}`);
     }
   }
 
@@ -192,7 +192,7 @@ export function loadParamsFromUrl(): UrlParams {
     feature: featureParam,
     track: trackParam,
     time: timeParam,
-    colorRamp: colorRampParam,
+    colorRampKey: colorRampParam,
     colorRampReversed: colorRampReversedParam,
   };
 }
