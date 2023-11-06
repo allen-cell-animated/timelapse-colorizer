@@ -125,6 +125,9 @@ function App(): ReactElement {
    * and frame information.
    */
   const getUrlParams = useCallback((): string => {
+    if (!dataset) {
+      return "";
+    }
     let datasetParam: string | undefined = datasetKey;
     let collectionParam = collection?.url;
     // If there is no collection loaded (e.g. a single dataset URL was loaded),
@@ -133,11 +136,10 @@ function App(): ReactElement {
       datasetParam = dataset?.manifestUrl;
       collectionParam = undefined;
     }
-    // check if current color map range matches the default feature range; if so, don't include
-    // it in the URL parameter to reduce clutter.
+    // check if current selected feature range matches the default feature range; if so, don't include.
     let rangeIsDefault = false;
-    const featureData = dataset?.getFeatureData(featureName);
-    if (dataset && featureData) {
+    const featureData = dataset.getFeatureData(featureName);
+    if (featureData) {
       rangeIsDefault = featureData.min === colorRampMin && featureData.max === colorRampMax;
     }
     return urlUtils.stateToUrlQueryString({
