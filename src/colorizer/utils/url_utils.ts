@@ -52,7 +52,7 @@ export function fetchWithTimeout(
 }
 
 /**
- * Creates a string of parameters that can be appended onto the base URL as metadata.
+ * Creates a url query string from parameters that can be appended onto the base URL.
  *
  * @param state: An object matching any of the properties of `UrlParams`.
  * - `collection`: string path to the collection. Ignores paths matching the default collection address.
@@ -67,9 +67,7 @@ export function fetchWithTimeout(
  * - If no parameters are present or valid, returns an empty string.
  * - Else, returns a string of URL parameters that can be appended to the URL directly (ex: `?collection=<some_url>&time=23`).
  */
-export function stateToUrlQueryString(state: Partial<UrlParams>): string {
-  // arguments as more data gets stored to the URL.
-
+export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
   // Get parameters, ignoring null/empty values
   const includedParameters: string[] = [];
 

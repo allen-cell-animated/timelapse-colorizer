@@ -137,7 +137,7 @@ function App(): ReactElement {
     if (featureData) {
       rangeIsDefault = featureData.min === colorRampMin && featureData.max === colorRampMax;
     }
-    return urlUtils.stateToUrlQueryString({
+    return urlUtils.paramsToUrlQueryString({
       collection: collectionParam,
       dataset: datasetParam,
       feature: featureName,

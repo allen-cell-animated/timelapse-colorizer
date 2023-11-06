@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isUrl,
   isJson,
-  stateToUrlQueryString,
+  paramsToUrlQueryString,
   loadParamsFromUrlQueryString,
   UrlParams,
 } from "../src/colorizer/utils/url_utils";
@@ -43,14 +43,14 @@ describe("isJson", () => {
   });
 });
 
-describe("stateToUrlQueryString", () => {
+describe("paramsToUrlQueryString", () => {
   it("Handles null/undefined values", () => {
-    const result = stateToUrlQueryString({});
+    const result = paramsToUrlQueryString({});
     expect(result).to.be.empty;
   });
 
   it("Encodes URI components", () => {
-    const result = stateToUrlQueryString(stateWithNonLatinCharacters[0]);
+    const result = paramsToUrlQueryString(stateWithNonLatinCharacters[0]);
     // The dataset and feature say "Hello World" in Mandarin and Russian in case you're curious.
     expect(result).to.equal(stateWithNonLatinCharacters[1]);
   });
@@ -66,7 +66,7 @@ describe("loadParamsFromUrlQueryString", () => {
 describe("Loading + saving from URL query strings", () => {
   it("Encodes + Decodes URL strings", () => {
     const originalParams = stateWithNonLatinCharacters[0];
-    const queryString = stateToUrlQueryString(originalParams);
+    const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
@@ -88,7 +88,7 @@ describe("Loading + saving from URL query strings", () => {
       ],
       range: [21.433, 89.4],
     };
-    const queryString = stateToUrlQueryString(originalParams);
+    const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
@@ -102,7 +102,7 @@ describe("Loading + saving from URL query strings", () => {
         { featureName: "0.0%", units: "m&m's", min: 0.0, max: 1 },
       ],
     };
-    const queryString = stateToUrlQueryString(originalParams);
+    const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
@@ -116,7 +116,7 @@ describe("Loading + saving from URL query strings", () => {
       ],
       range: [1, 0],
     };
-    const queryString = stateToUrlQueryString(originalParams);
+    const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
 
     expect(parsedParams.thresholds).deep.equals([
@@ -131,7 +131,7 @@ describe("Loading + saving from URL query strings", () => {
     const originalParams: Partial<UrlParams> = {
       thresholds: [{ featureName: "feature1", units: "", min: 0, max: 1 }],
     };
-    const queryString = stateToUrlQueryString(originalParams);
+    const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams.thresholds).deep.equals(originalParams.thresholds);
   });
@@ -143,7 +143,7 @@ describe("Loading + saving from URL query strings", () => {
       range: [0, 0],
       thresholds: [{ featureName: "feature", units: "", min: 0, max: 0 }],
     };
-    const queryString = stateToUrlQueryString(originalParams);
+    const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
