@@ -5,7 +5,7 @@ import styled, { css } from "styled-components";
 
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 
-import { FeatureThreshold } from "../constants/types";
+import { FeatureThreshold } from "../colorizer/types";
 import LabeledRangeSlider from "./LabeledRangeSlider";
 import { Dataset } from "../colorizer";
 import IconButton from "./IconButton";

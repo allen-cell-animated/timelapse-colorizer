@@ -1,7 +1,7 @@
 // Typescript doesn't recognize RequestInit
 /* global RequestInit */
 
-import { FeatureThreshold } from "../../constants/types";
+import { FeatureThreshold } from "../types";
 import { numberToStringDecimal } from "./math_utils";
 
 const URL_PARAM_TRACK = "track";

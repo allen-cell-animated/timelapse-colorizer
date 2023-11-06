@@ -3,7 +3,7 @@ import { Color } from "three";
 
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
-import { FeatureThreshold } from "../constants/types";
+import { FeatureThreshold } from "../colorizer/types";
 
 export type DrawSettings = {
   mode: DrawMode;

@@ -1,4 +1,4 @@
-import { FeatureThreshold } from "../../constants/types";
+import { FeatureThreshold } from "../types";
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
