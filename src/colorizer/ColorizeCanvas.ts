@@ -102,7 +102,6 @@ export type FeatureThreshold = {
   max: number;
 };
 
-// TODO: Change into a component?
 export default class ColorizeCanvas {
   private canvasContainer?: HTMLDivElement;
 

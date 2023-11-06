@@ -349,7 +349,6 @@ function App(): ReactElement {
       const featureData = newDataset.getFeatureData(newFeatureName);
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
-        // TODO: Update this with units later
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
         if (threshold) {
           setColorRampMin(threshold.min);

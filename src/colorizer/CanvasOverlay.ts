@@ -90,14 +90,13 @@ export default class CanvasOverlay {
     const allowedIncrements = [1, 2, 5, 10];
     const msdDigit = minWidthUnits / 10 ** (msdPower - 1);
     // Find the next greatest allowed increment to the MSD digit
-    const nextIncrement = allowedIncrements.find((inc) => inc > msdDigit) || 10;
+    const nextIncrement = allowedIncrements.find((inc) => inc >= msdDigit) || 10;
     const scaleBarWidthInUnits = nextIncrement * 10 ** (msdPower - 1);
     // Convert back into pixels for rendering.
     // Cheat very slightly by rounding to the nearest pixel for cleaner rendering.
     const scaleBarWidthInPixels = Math.round(scaleBarWidthInUnits / this.scaleBarOptions.unitsPerScreenPixel);
 
-    const displayUnits = this.formatScaleBarValue(scaleBarWidthInUnits);
-    const textContent = `${displayUnits} ${this.scaleBarOptions.units}`;
+    const textContent = `${this.formatScaleBarValue(scaleBarWidthInUnits)} ${this.scaleBarOptions.units}`;
 
     // Draw the scale bar line
     const scaleBarMargin = 20;
@@ -115,7 +114,9 @@ export default class CanvasOverlay {
     ctx.stroke();
 
     // Draw the scale bar text label
-    // TODO: This looks bad at high magnification.
+    // TODO: This looks bad at high magnification. A workaround would be to use CSS2DRenderer to
+    // render the text normally and then hotswap it for a regular canvas when recording occurs.
+    // (but most likely a non-issue.)
     const margin = scaleBarMargin + 6;
     ctx.font = `${this.scaleBarOptions.fontSizePx}px ${this.scaleBarOptions.fontFamily}`;
     ctx.fillStyle = this.scaleBarOptions.fontColor;

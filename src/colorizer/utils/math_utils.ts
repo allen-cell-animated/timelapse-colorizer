@@ -1,5 +1,3 @@
-// TODO: Add a formatter for significant digits/scientific notation
-
 /**
  * Formats a number as a string decimal with a defined number of digits
  * after the decimal place. Optionally ignores integers and returns them as-is.
