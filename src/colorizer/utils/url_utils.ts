@@ -8,6 +8,8 @@ const URL_PARAM_DATASET = "dataset";
 const URL_PARAM_FEATURE = "feature";
 const URL_PARAM_TIME = "t";
 const URL_PARAM_COLLECTION = "collection";
+const URL_PARAM_COLOR_RAMP = "color";
+const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 
 export type UrlParams = {
   collection: string | null;
@@ -15,6 +17,8 @@ export type UrlParams = {
   feature: string | null;
   track: number;
   time: number;
+  colorRampKey: string | null;
+  colorRampReversed: boolean | null;
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -65,7 +69,7 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
 
   // Get parameters, ignoring null/empty values
   const includedParameters: string[] = [];
-  const { collection, dataset, feature, track, time } = state;
+  const { collection, dataset, feature, track, time, colorRampKey, colorRampReversed } = state;
 
   // Don't include collection parameter in URL if it matches the default.
   if (
@@ -87,6 +91,15 @@ export function stateToUrlParamString(state: Partial<UrlParams>): string {
   if (time && time > 0) {
     // time = 0 is ignored because it's the default frame.
     includedParameters.push(`${URL_PARAM_TIME}=${time}`);
+  }
+  if (colorRampKey) {
+    if (colorRampReversed) {
+      includedParameters.push(
+        `${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRampKey + URL_COLOR_RAMP_REVERSED_SUFFIX)}`
+      );
+    } else {
+      includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(colorRampKey)}`);
+    }
   }
 
   // If parameters present, join with URL syntax and push into the URL
@@ -164,11 +177,22 @@ export function loadParamsFromUrl(): UrlParams {
   // This assumes there are no negative timestamps in the dataset
   const timeParam = parseInt(urlParams.get(URL_PARAM_TIME) || "-1", base10Radix);
 
+  const colorRampRawParam = safeDecodeString(urlParams.get(URL_PARAM_COLOR_RAMP));
+  let colorRampParam: string | null = colorRampRawParam;
+  let colorRampReversedParam: boolean = false;
+  //  Color ramps are marked as reversed by adding ! to the end of the key
+  if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === URL_COLOR_RAMP_REVERSED_SUFFIX) {
+    colorRampReversedParam = true;
+    colorRampParam = colorRampRawParam.slice(0, -1);
+  }
+
   return {
     collection: collectionParam,
     dataset: datasetParam,
     feature: featureParam,
     track: trackParam,
     time: timeParam,
+    colorRampKey: colorRampParam,
+    colorRampReversed: colorRampReversedParam,
   };
 }

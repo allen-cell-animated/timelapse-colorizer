@@ -1,14 +1,18 @@
 import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
+import { Button, Tooltip } from "antd";
+import { RetweetOutlined } from "@ant-design/icons";
+
 import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
-import { Button, Tooltip } from "antd";
 import { AppThemeContext } from "./AppStyle";
+import IconButton from "./IconButton";
 
 type ColorRampSelectorProps = {
   selected: string;
-  onChange: (colorRampKey: string) => void;
+  onChange: (colorRampKey: string, reversed: boolean) => void;
   colorRamps?: typeof DEFAULT_COLOR_RAMPS;
   disabled?: boolean;
+  reversed?: boolean;
 };
 
 const defaultProps: Partial<ColorRampSelectorProps> = {
@@ -63,10 +67,13 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   ///////// Generate dropdown contents
 
   // Only regenerate the gradient canvas URL if the selected ramp changes!
-  const selectedRamp = selectedRampData.colorRamp;
+  let selectedRamp = selectedRampData.colorRamp;
+  if (props.reversed) {
+    selectedRamp = selectedRamp.reverse();
+  }
   const selectedRampColorUrl = useMemo(() => {
     return selectedRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
-  }, [props.selected]);
+  }, [props.selected, props.reversed]);
 
   // Memoize to avoid recalculating dropdown contents
   const dropdownContents: ReactElement[] = useMemo(() => {
@@ -78,7 +85,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key} trigger={["hover", "focus"]}>
-          <Button key={key} onClick={() => props.onChange(key)} rootClassName={styles.dropdownButton}>
+          <Button key={key} onClick={() => props.onChange(key, false)} rootClassName={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>
@@ -95,7 +102,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   return (
     <div className={styles.colorRampSelector} ref={componentContainerRef}>
       <h3>Color map</h3>
-      <div className={buttonDivClassName}>
+      <div className={buttonDivClassName} style={{ marginLeft: "6px" }}>
         <Tooltip
           // Force the tooltip to be hidden (open=false) when disabled
           open={props.disabled ? false : undefined}
@@ -109,6 +116,16 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
         </Tooltip>
         <div className={dropdownContainerClassName}>{dropdownContents}</div>
       </div>
+      <IconButton
+        style={{ marginLeft: "2px" }}
+        type="link"
+        disabled={props.disabled}
+        onClick={() => {
+          props.onChange(props.selected, !props.reversed);
+        }}
+      >
+        <RetweetOutlined />
+      </IconButton>
     </div>
   );
 };
