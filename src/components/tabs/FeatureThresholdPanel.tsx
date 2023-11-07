@@ -5,11 +5,11 @@ import styled, { css } from "styled-components";
 
 import DropdownSVG from "../assets/dropdown-arrow.svg?react";
 
-import { FeatureThreshold } from "../colorizer/types";
-import LabeledRangeSlider from "./LabeledRangeSlider";
-import { Dataset } from "../colorizer";
-import IconButton from "./IconButton";
-import { thresholdMatchFinder } from "../colorizer/utils/data_utils";
+import { FeatureThreshold } from "../../colorizer/types";
+import LabeledRangeSlider from "../LabeledRangeSlider";
+import { Dataset } from "../../colorizer";
+import IconButton from "../IconButton";
+import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
 
 const PanelContainer = styled.div`
   flex-grow: 1;

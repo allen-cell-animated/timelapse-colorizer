@@ -36,7 +36,7 @@ import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
-import FeatureThresholdTab from "./components/FeatureThresholdPanel";
+import FeatureThresholdTab from "./components/tabs/FeatureThresholdPanel";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import SettingsTab from "./components/tabs/SettingsTab";
 
