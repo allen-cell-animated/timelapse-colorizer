@@ -32,33 +32,25 @@ const FlexDiv = styled.div<{ $gap?: number }>`
 `;
 
 /**
- * Equivalent to:
- * ```
- * <div style={{display: "flex", flexDirection: "column", gap: `${$gap}px`}}>
- * ```
+ * A flexbox container that lays out children in a column.
+ * @param $gap: The gap, in pixels, between each child element. 0 by default.
  */
 export const FlexColumn = styled(FlexDiv)`
   flex-direction: column;
 `;
 
 /**
- * Equivalent to:
- * ```
- * <div style={{display: "flex", flexDirection: "row", gap: `${$gap}px`}}>
- * ```
+ * A flexbox container that lays out children in a row.
+ * @param $gap: The gap, in pixels, between each child element. 0 by default.
  */
 export const FlexRow = styled(FlexDiv)`
   flex-direction: row;
 `;
 
 /**
- * Equivalent to:
- * ```
- * <div style={{display: "flex", flexDirection: "row", alignItems: "center",
- *          gap: `${$gap}px`
- *      }}
- * >
- * ```
+ * A flexbox container that lays out children in a row, and centers all items
+ * vertically.
+ * @param $gap: The gap, in pixels, between each child element. 0 by default.
  */
 export const FlexRowCentered = styled(FlexRow)`
   align-items: center;
