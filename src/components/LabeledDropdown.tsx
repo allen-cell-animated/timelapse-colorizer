@@ -24,6 +24,8 @@ type LabeledDropdownProps = {
    * The callback will be passed the `key` of the selected item. */
   onChange: (key: string) => void;
   showTooltip?: boolean;
+  /** Width of the dropdown. Overrides the default sizing behavior if set. */
+  width?: string | undefined;
 };
 
 const defaultProps = {
@@ -102,6 +104,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     <Button
       id={styles.dropdownButton}
       disabled={props.disabled}
+      style={props.width ? { width: props.width } : undefined}
       type={props.buttonType}
       className={forceOpen ? styles.forceOpen : ""}
       // Open the button when clicked for accessibility
@@ -147,6 +150,10 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
     borderRadius: token.borderRadiusLG,
     boxShadow: token.boxShadowSecondary,
   };
+
+  if (props.width) {
+    dropdownStyle.width = props.width;
+  }
 
   return (
     <div className={styles.labeledDropdown} ref={componentContainerRef}>

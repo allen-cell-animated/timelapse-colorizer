@@ -2,16 +2,25 @@ import { Slider } from "antd";
 import React, { ReactElement } from "react";
 
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
+import LabeledDropdown from "./LabeledDropdown";
 
 type PlaybackSpeedControlProps = {
   fps: number;
   onChange: (fps: number) => void;
   baselineFps?: number;
   disabled?: boolean;
+  style?: React.CSSProperties;
+  min?: number;
+  max?: number;
+  step?: number;
 };
 const defaultProps: Partial<PlaybackSpeedControlProps> = {
   baselineFps: DEFAULT_PLAYBACK_FPS,
   disabled: false,
+  style: {},
+  min: 0.25,
+  max: 2.5,
+  step: 0.25,
 };
 
 export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlProps): ReactElement {
@@ -22,25 +31,24 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
     props.onChange(fps);
   };
 
+  // Generate values for the dropdown
+  const dropdownItems = [];
+  for (let i = props.min; i < props.max; i += props.step) {
+    dropdownItems.push({ key: i.toFixed(2), label: i.toFixed(2) + "x" });
+  }
+
   // Convert from raw fps to slider values
   const sliderValue = props.fps / props.baselineFps;
 
   return (
-    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px" }}>
-      <h3>Speed:</h3>
-      <div style={{ width: "100%", marginRight: "6px" }}>
-        <Slider
-          value={sliderValue}
-          disabled={props.disabled}
-          onChange={onSliderChange}
-          min={0.25}
-          max={2.5}
-          step={0.25}
-          tooltip={{
-            formatter: (value) => value?.toFixed(2) + "x",
-          }}
-        />
-      </div>
+    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px", ...props.style }}>
+      <LabeledDropdown
+        width="80px"
+        label={"Speed:"}
+        selected={sliderValue.toFixed(2)}
+        items={dropdownItems}
+        onChange={(key: string) => onSliderChange(parseFloat(key))}
+      ></LabeledDropdown>
     </div>
   );
 }
