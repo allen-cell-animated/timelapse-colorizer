@@ -5,11 +5,10 @@ import {
   CheckCircleOutlined,
   LinkOutlined,
   PauseOutlined,
-  SearchOutlined,
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Input, notification, Slider, Tabs } from "antd";
+import { Button, Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
@@ -23,9 +22,8 @@ import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
-import CanvasWrapper, { DrawSettings } from "./components/CanvasWrapper";
+import CanvasWrapper from "./components/CanvasWrapper";
 import ColorRampDropdown from "./components/ColorRampDropdown";
-import DrawModeDropdown from "./components/DrawModeDropdown";
 import Export from "./components/Export";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
@@ -33,12 +31,12 @@ import LabeledDropdown from "./components/LabeledDropdown";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
-import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import SettingsTab from "./components/tabs/SettingsTab";
+import PlotTab from "./components/tabs/PlotTab";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -759,31 +757,11 @@ function App(): ReactElement {
                     key: "plot",
                     children: (
                       <div className={styles.tabContent}>
-                        <div className={styles.trackTitleBar}>
-                          <div className={styles.trackSearch}>
-                            <h3>Search</h3>
-                            <Input
-                              type="number"
-                              value={findTrackInput}
-                              size="small"
-                              placeholder="Track ID..."
-                              disabled={disableUi}
-                              onChange={(event) => {
-                                setFindTrackInput(event.target.value);
-                              }}
-                            />
-                            <IconButton
-                              disabled={disableUi}
-                              onClick={() => {
-                                findTrack(parseInt(findTrackInput, 10));
-                              }}
-                            >
-                              <SearchOutlined />
-                            </IconButton>
-                          </div>
-                        </div>
-                        <PlotWrapper
-                          frame={currentFrame}
+                        <PlotTab
+                          findTrackInputText={findTrackInput}
+                          setFindTrackInputText={setFindTrackInput}
+                          findTrack={findTrack}
+                          currentFrame={currentFrame}
                           dataset={dataset}
                           featureName={featureName}
                           selectedTrack={selectedTrack}

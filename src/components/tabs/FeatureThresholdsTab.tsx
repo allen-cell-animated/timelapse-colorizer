@@ -3,7 +3,7 @@ import { Card, List, Select } from "antd";
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
 import styled, { css } from "styled-components";
 
-import DropdownSVG from "../assets/dropdown-arrow.svg?react";
+import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 
 import { FeatureThreshold } from "../../colorizer/types";
 import LabeledRangeSlider from "../LabeledRangeSlider";
