@@ -10,11 +10,10 @@ import LabeledRangeSlider from "../LabeledRangeSlider";
 import { Dataset } from "../../colorizer";
 import IconButton from "../IconButton";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
+import { FlexColumn } from "../../styles/utils";
 
-const PanelContainer = styled.div`
+const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
-  display: flex;
-  flex-direction: column;
   gap: 6px;
   height: 100%;
 `;

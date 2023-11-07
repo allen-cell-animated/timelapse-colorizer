@@ -37,6 +37,7 @@ import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import SettingsTab from "./components/tabs/SettingsTab";
 import PlotTab from "./components/tabs/PlotTab";
+import { FlexRowCentered } from "./styles/utils";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -730,7 +731,7 @@ function App(): ReactElement {
                 disabled={disableTimeControlsUi}
                 wrapIncrement={true}
               />
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+              <FlexRowCentered>
                 <span className={styles.verticalDivider} style={{ height: "24px", margin: "0 8px" }}></span>
                 <div style={{ width: "200px", maxWidth: "60vw" }}>
                   <PlaybackSpeedControl
@@ -742,7 +743,7 @@ function App(): ReactElement {
                     disabled={disableTimeControlsUi}
                   />
                 </div>
-              </div>
+              </FlexRowCentered>
             </div>
           </div>
           <div className={styles.sidePanels}>

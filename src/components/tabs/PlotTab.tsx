@@ -6,22 +6,14 @@ import { SearchOutlined } from "@ant-design/icons";
 import IconButton from "../IconButton";
 import PlotWrapper from "../PlotWrapper";
 import styled from "styled-components";
-import { NoSpinnerContainer } from "../../styles/utils";
+import { FlexRowCentered, NoSpinnerContainer } from "../../styles/utils";
 
-const TrackTitleBar = styled.div`
-  display: flex;
-  flex-direction: row;
+const TrackTitleBar = styled(FlexRowCentered)`
   justify-content: end;
-  align-items: center;
   flex-wrap: wrap;
 `;
 
-const TrackSearch = styled(NoSpinnerContainer)`
-  display: flex;
-  flex-direction: row;
-  gap: 6px;
-  align-items: center;
-
+const TrackSearch = styled(FlexRowCentered)`
   & input {
     max-width: 80px;
   }
@@ -51,27 +43,29 @@ export default function PlotTab(inputProps: PlotTabProps): ReactElement {
   return (
     <>
       <TrackTitleBar>
-        <TrackSearch>
-          <h3>Search</h3>
-          <Input
-            type="number"
-            value={props.findTrackInputText}
-            size="small"
-            placeholder="Track ID..."
-            disabled={props.disabled}
-            onChange={(event) => {
-              props.setFindTrackInputText(event.target.value);
-            }}
-          />
-          <IconButton
-            disabled={props.disabled}
-            onClick={() => {
-              props.findTrack(parseInt(props.findTrackInputText, 10));
-            }}
-          >
-            <SearchOutlined />
-          </IconButton>
-        </TrackSearch>
+        <NoSpinnerContainer>
+          <TrackSearch $gap={6}>
+            <h3>Search</h3>
+            <Input
+              type="number"
+              value={props.findTrackInputText}
+              size="small"
+              placeholder="Track ID..."
+              disabled={props.disabled}
+              onChange={(event) => {
+                props.setFindTrackInputText(event.target.value);
+              }}
+            />
+            <IconButton
+              disabled={props.disabled}
+              onClick={() => {
+                props.findTrack(parseInt(props.findTrackInputText, 10));
+              }}
+            >
+              <SearchOutlined />
+            </IconButton>
+          </TrackSearch>
+        </NoSpinnerContainer>
       </TrackTitleBar>
       <PlotWrapper
         frame={props.currentFrame}
