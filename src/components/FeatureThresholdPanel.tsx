@@ -69,25 +69,25 @@ const EmptyListTextContainer = styled.div`
   justify-content: center;
 `;
 
-type FeatureThresholdPanelProps = {
+type FeatureThresholdTabProps = {
   featureThresholds: FeatureThreshold[];
   onChange: (thresholds: FeatureThreshold[]) => void;
   dataset: Dataset | null;
   disabled?: boolean;
 };
 
-const defaultProps: Partial<FeatureThresholdPanelProps> = {
+const defaultProps: Partial<FeatureThresholdTabProps> = {
   disabled: false,
 };
 
 /**
  * A React component for adding, removing, and editing thresholds on features in a dataset.
  */
-export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
+export default function FeatureThresholdTab(inputProps: FeatureThresholdTabProps): ReactElement {
   const props = {
     ...defaultProps,
     ...inputProps,
-  } as Required<FeatureThresholdPanelProps>;
+  } as Required<FeatureThresholdTabProps>;
 
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const selectContainerRef = useRef<HTMLDivElement>(null);

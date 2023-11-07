@@ -23,7 +23,7 @@ import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
-import CanvasWrapper from "./components/CanvasWrapper";
+import CanvasWrapper, { DrawSettings } from "./components/CanvasWrapper";
 import ColorRampDropdown from "./components/ColorRampDropdown";
 import DrawModeDropdown from "./components/DrawModeDropdown";
 import Export from "./components/Export";
@@ -36,8 +36,9 @@ import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import PlotWrapper from "./components/PlotWrapper";
 import SpinBox from "./components/SpinBox";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
-import FeatureThresholdPanel from "./components/FeatureThresholdPanel";
+import FeatureThresholdTab from "./components/FeatureThresholdPanel";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
+import SettingsTab from "./components/tabs/SettingsTab";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -63,7 +64,7 @@ function App(): ReactElement {
   const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
-  const [outOfRangeDrawSettings, setoutOfRangeDrawSettings] = useState({
+  const [outOfRangeDrawSettings, setOutOfRangeDrawSettings] = useState({
     mode: DrawMode.USE_COLOR,
     color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
   });
@@ -795,7 +796,7 @@ function App(): ReactElement {
                     key: "filter",
                     children: (
                       <div className={styles.tabContent}>
-                        <FeatureThresholdPanel
+                        <FeatureThresholdTab
                           featureThresholds={featureThresholds}
                           onChange={setFeatureThresholds}
                           dataset={dataset}
@@ -809,24 +810,12 @@ function App(): ReactElement {
                     key: "settings",
                     children: (
                       <div className={styles.tabContent}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                          <DrawModeDropdown
-                            label="Filtered out values"
-                            selected={outOfRangeDrawSettings.mode}
-                            color={outOfRangeDrawSettings.color}
-                            onChange={(mode: DrawMode, color: Color) => {
-                              setoutOfRangeDrawSettings({ mode, color });
-                            }}
-                          />
-                          <DrawModeDropdown
-                            label="Outliers"
-                            selected={outlierDrawSettings.mode}
-                            color={outlierDrawSettings.color}
-                            onChange={(mode: DrawMode, color: Color) => {
-                              setOutlierDrawSettings({ mode, color });
-                            }}
-                          />
-                        </div>
+                        <SettingsTab
+                          outOfRangeDrawSettings={outOfRangeDrawSettings}
+                          outlierDrawSettings={outlierDrawSettings}
+                          setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
+                          setOutlierDrawSettings={setOutlierDrawSettings}
+                        />
                       </div>
                     ),
                   },
