@@ -1,7 +1,7 @@
 import styled, { css } from "styled-components";
 
 /**
- * Blocks inputs inside this container from having visible spinner handles.
+ * Blocks `input` elements inside this container from having visible spinner handles.
  */
 export const NoSpinnerContainer = styled.div`
   /* Chrome, Safari, Edge, Opera */
