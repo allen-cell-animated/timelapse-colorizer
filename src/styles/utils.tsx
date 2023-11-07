@@ -14,5 +14,6 @@ export const NoSpinnerContainer = styled.div`
   /* Firefox */
   & input[type="number"] {
     -moz-appearance: textfield;
+    appearance: textfield;
   }
 `;
