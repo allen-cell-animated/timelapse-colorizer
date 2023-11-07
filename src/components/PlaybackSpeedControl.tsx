@@ -8,7 +8,6 @@ type PlaybackSpeedControlProps = {
   onChange: (fps: number) => void;
   baselineFps?: number;
   disabled?: boolean;
-  style?: React.CSSProperties;
   min?: number;
   max?: number;
   step?: number;
@@ -16,7 +15,6 @@ type PlaybackSpeedControlProps = {
 const defaultProps: Partial<PlaybackSpeedControlProps> = {
   baselineFps: DEFAULT_PLAYBACK_FPS,
   disabled: false,
-  style: {},
   min: 0.25,
   max: 2.5,
   step: 0.25,
@@ -40,14 +38,12 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
   const sliderValue = props.fps / props.baselineFps;
 
   return (
-    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px", ...props.style }}>
-      <LabeledDropdown
-        width="80px"
-        label={"Speed:"}
-        selected={sliderValue.toFixed(2)}
-        items={dropdownItems}
-        onChange={(key: string) => onSliderChange(parseFloat(key))}
-      ></LabeledDropdown>
-    </div>
+    <LabeledDropdown
+      width="80px"
+      label={"Speed:"}
+      selected={sliderValue.toFixed(2)}
+      items={dropdownItems}
+      onChange={(key: string) => onSliderChange(parseFloat(key))}
+    ></LabeledDropdown>
   );
 }
