@@ -1,4 +1,3 @@
-import { Slider } from "antd";
 import React, { ReactElement } from "react";
 
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
