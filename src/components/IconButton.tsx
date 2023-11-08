@@ -1,12 +1,14 @@
 import React, { PropsWithChildren, ReactElement, useContext } from "react";
 import { Button, ConfigProvider } from "antd";
-import { AppThemeContext } from "./AppStyle";
 import styled, { css } from "styled-components";
+
+import { AppThemeContext } from "./AppStyle";
 
 type IconButtonProps = {
   onClick?: () => void;
   disabled?: boolean;
-  type?: "outlined" | "primary" | "text";
+  style?: React.CSSProperties;
+  type?: "outlined" | "primary" | "link" | "text";
 };
 
 // Button styling varies based on the type (outlined vs. primary)
@@ -32,6 +34,20 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
           &:disabled {
             border: 1px solid var(--color-borders);
             background-color: var(--color-button-disabled);
+            color: var(--color-text-disabled);
+            fill: var(--color-text-disabled);
+          }
+        `;
+      case "link":
+        return css`
+          border: 0;
+          background-color: transparent;
+          color: var(--color-button);
+          fill: var(--color-button);
+
+          &:disabled {
+            border: 0;
+            background-color: transparent;
             color: var(--color-text-disabled);
             fill: var(--color-text-disabled);
           }
@@ -93,7 +109,13 @@ export default function IconButton(props: PropsWithChildren<IconButtonProps>): R
 
   return (
     <ConfigProvider theme={{ components: { Button: { colorPrimaryActive: themeContext.color.button.hover } } }}>
-      <StyledButton type="primary" $type={props.type || "primary"} disabled={props.disabled} onClick={props.onClick}>
+      <StyledButton
+        type="primary"
+        $type={props.type || "primary"}
+        disabled={props.disabled}
+        onClick={props.onClick}
+        style={props.style}
+      >
         {props.children}
       </StyledButton>
     </ConfigProvider>

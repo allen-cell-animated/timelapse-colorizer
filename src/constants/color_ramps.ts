@@ -14,6 +14,7 @@ export type ColorRampData = RawColorRampData & {
 };
 
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
+// NOTE: All color ramps must not have the suffix "!". This is reserved for the reversed color ramp URL parameter.
 const rawColorRampData: RawColorRampData[] = [
   { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
   { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },

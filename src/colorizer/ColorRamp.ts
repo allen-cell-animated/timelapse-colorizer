@@ -67,4 +67,12 @@ export default class ColorRamp {
     const maxColor = new Color(this.colorStops[maxIndex]);
     return minColor.lerp(maxColor, tNormalized);
   }
+
+  /**
+   * Returns a new ColorRamp object with a reversed gradient.
+   */
+  public reverse(): ColorRamp {
+    const newColorStops = [...this.colorStops].reverse();
+    return new ColorRamp(newColorStops);
+  }
 }

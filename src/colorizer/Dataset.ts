@@ -15,7 +15,7 @@ export type FeatureData = {
   tex: Texture;
   min: number;
   max: number;
-  units?: string;
+  units: string;
 };
 
 export type FeatureMetadata = {
@@ -112,10 +112,8 @@ export default class Dataset {
       data: source.getBuffer(FeatureDataType.F32),
       min: source.getMin(),
       max: source.getMax(),
+      units: metadata?.units || "",
     };
-    if (metadata && metadata.units !== undefined && metadata.units !== null) {
-      this.features[name].units = metadata.units;
-    }
   }
 
   public hasFeature(name: string): boolean {
@@ -139,8 +137,8 @@ export default class Dataset {
     }
   }
 
-  public getFeatureUnits(name: string): string | undefined {
-    return this.features[name]?.units;
+  public getFeatureUnits(name: string): string {
+    return this.features[name].units;
   }
 
   /**

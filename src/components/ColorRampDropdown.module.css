@@ -3,7 +3,6 @@
   --height: var(--button-height);
   height: var(--height);
   flex-direction: row;
-  gap: 6px;
   align-items: center;
 }
 
