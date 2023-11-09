@@ -1,14 +1,26 @@
-import React, { ReactElement, ReactNode, useCallback, useContext, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useRef, useState } from "react";
 import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd";
 import { AppThemeContext } from "./AppStyle";
 import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
-import { DropdownSVG } from "../assets";
-import LabeledDropdown from "./LabeledDropdown";
+import styled from "styled-components";
 
 /** Key for local storage to read/write recently opened datasets */
 const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
 const MAX_RECENT_DATASETS = 10;
+
+const DropdownContentContainer = styled.div`
+  background-color: var(--color-background);
+  border-radius: var(--radius-control-small);
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+
+  padding-top: 6px;
+
+  & > ul.ant-dropdown-menu {
+    box-shadow: transparent 0 0 !important;
+    background-color: transparent;
+  }
+`;
 
 type LoadDatasetButtonProps = {
   /**
@@ -29,18 +41,15 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   props = { ...defaultProps, ...props };
 
   const theme = useContext(AppThemeContext);
-  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const modalContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
 
+  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+
+  const [showRecentDropdown, setShowRecentDropdown] = useState(false);
   const [urlInput, _setUrlInput] = useState("");
   const setUrlInput = useCallback((newUrl: string) => {
-    if (newUrl === "") {
-      setForceHideModal(false);
-    } else {
-      // Hide if any input is given
-      setForceHideModal(true);
-    }
+    setShowRecentDropdown(false);
     _setUrlInput(newUrl);
   }, []);
 
@@ -49,7 +58,16 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [recentDatasets, setRecentDatasets] = useLocalStorage<string[]>(RECENT_DATASETS_STORAGE_KEY, [
     DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME,
   ]);
-  const [forceHideRecentDropdown, setForceHideModal] = useState(false);
+
+  // The dropdown should be shown whenever the user clicks on the input field, and hidden if the user starts
+  // typing or clicks off of the input (including clicking options).
+  useClickAnyWhere((event) => {
+    if (event.target === inputRef.current?.input) {
+      setShowRecentDropdown(true);
+    } else {
+      setShowRecentDropdown(false);
+    }
+  });
 
   const handleLoadClicked = useCallback(async (): Promise<void> => {
     if (urlInput === "") {
@@ -68,7 +86,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     setIsLoading(true);
     props.onRequestLoad(urlInput).then(
       () => {
-        // success
         // Add a slight delay before closing and resetting the modal for a smoother experience
         setTimeout(() => {
           setIsLoadModalOpen(false);
@@ -127,18 +144,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     items: datasetsDropdownItems,
   };
 
-  // Requested dropdown behavior:
-  // - Dropdown should open whenever you click on the input field, even if there is currently content inside it.
-  // - If the user starts typing or pastes in content, the dropdown should disappear.
-  // - If the user clicks on an option in the dropdown, the dropdown should disappear and the text
-  //   of the clicked option should appear in the input box.
-  // - The dropdown should disappear if Load is clicked.
-
-  // Implementation notes: We need to add a click listener and close the Dropdown if something other than it is clicked.
-  useClickAnyWhere(() => {
-    setForceHideModal(false);
-  });
-
   return (
     <div ref={modalContextRef}>
       <Button type="primary" onClick={() => setIsLoadModalOpen(true)}>
@@ -163,8 +168,14 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   trigger={["click"]}
                   menu={datasetsDropdownProps}
                   placement="bottomLeft"
-                  // Force the dropdown to be hidden (open=false) if disabled; otherwise allow default behavior.
-                  open={forceHideRecentDropdown ? false : undefined}
+                  open={showRecentDropdown}
+                  getPopupContainer={modalContextRef.current ? () => modalContextRef.current! : undefined}
+                  dropdownRender={(menu) => (
+                    <DropdownContentContainer>
+                      <span style={{ paddingLeft: "16px", color: theme.color.text.hint }}>Recent datasets:</span>
+                      {menu}
+                    </DropdownContentContainer>
+                  )}
                 >
                   <Input
                     placeholder="https://example.com/collection.json"
