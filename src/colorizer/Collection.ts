@@ -284,7 +284,7 @@ export default class Collection {
       console.log("URL resource could not be parsed as a collection; attempting to make a single-database collection.");
     }
 
-    // Could not load as a collection, attempt to load as a daataset.
+    // Could not load as a collection, attempt to load as a dataset.
     return await Collection.makeCollectionFromSingleDataset(url);
   }
 }
