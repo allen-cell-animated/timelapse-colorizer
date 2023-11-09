@@ -369,13 +369,13 @@ function App(): ReactElement {
   /**
    * Attempt to load an ambiguous URL as either a dataset or a collection.
    * @param url the url to load.
-   * @returns a LoadResult, which includes a `result` boolean flag (true if successful, false if not)
-   * and an optional `errorMessage`.
+   * @returns the resource URL if it was loaded correctly, either an absolute collection
+   * path or an absolute dataset path.
    */
   const handleLoadRequest = useCallback(
-    async (url: string): Promise<void> => {
+    async (url: string): Promise<string> => {
       console.log("Loading '" + url + "'.");
-      const newCollection = await Collection.loadFromAmbiguousUrl(url);
+      const newCollection = await Collection.loadFromAmbiguousUrl(url, urlUtils.fetchWithTimeout);
       const newDatasetKey = newCollection.getDefaultDatasetKey();
       const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
       if (!loadResult.loaded) {
@@ -395,6 +395,7 @@ function App(): ReactElement {
       setCollection(newCollection);
       setFeatureThresholds([]); // Clear when switching collections
       await replaceDataset(loadResult.dataset, newDatasetKey);
+      return newCollection.url || newCollection.getDefaultDatasetKey();
     },
     [replaceDataset]
   );

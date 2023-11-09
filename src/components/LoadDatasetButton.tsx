@@ -1,6 +1,14 @@
-import React, { ReactElement, useCallback, useContext, useRef, useState } from "react";
-import { Button, Input, InputRef, Modal } from "antd";
+import React, { ReactElement, ReactNode, useCallback, useContext, useRef, useState } from "react";
+import { Button, Dropdown, Input, InputRef, MenuProps, Modal } from "antd";
 import { AppThemeContext } from "./AppStyle";
+import { useLocalStorage } from "usehooks-ts";
+import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
+import { DropdownSVG } from "../assets";
+import LabeledDropdown from "./LabeledDropdown";
+
+/** Key for local storage to read/write recently opened datasets */
+const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
+const MAX_RECENT_DATASETS = 5;
 
 type LoadDatasetButtonProps = {
   /**
@@ -12,7 +20,7 @@ type LoadDatasetButtonProps = {
    * - The promise should resolve when the load has completed, which will cause the
    * modal to dismiss.
    */
-  onRequestLoad: (url: string) => Promise<void>;
+  onRequestLoad: (url: string) => Promise<string>;
 };
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
@@ -27,6 +35,9 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [urlInput, setUrlInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string>("");
+  const [recentDatasets, setRecentDatasets] = useLocalStorage<string[]>(RECENT_DATASETS_STORAGE_KEY, [
+    DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME,
+  ]);
 
   const handleLoadClicked = useCallback(async (): Promise<void> => {
     if (urlInput === "") {
@@ -50,6 +61,21 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         setUrlInput("");
         setIsLoadModalOpen(false);
         setIsLoading(false);
+        // Add to recent datasets
+        // Note: Use the url input rather than the absolute resource path here. This makes it
+        // easier for users to find previous inputs, rather than obfuscating it with the full path.
+        const datasetIndex = recentDatasets.indexOf(urlInput);
+        if (datasetIndex === -1) {
+          // New dataset, add to front while maintaining max length
+          setRecentDatasets([urlInput, ...recentDatasets.slice(0, MAX_RECENT_DATASETS - 1)]);
+        } else {
+          // Move to front
+          setRecentDatasets([
+            urlInput,
+            ...recentDatasets.slice(0, datasetIndex),
+            ...recentDatasets.slice(datasetIndex + 1),
+          ]);
+        }
         return;
       },
       (reason) => {
@@ -69,6 +95,21 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     setIsLoadModalOpen(false);
   }, []);
 
+  // RENDERING ////////////////////////////////////////////////////////
+  const datasetsDropdownItems = recentDatasets.map((datasetUrl) => {
+    return {
+      key: datasetUrl,
+      label: datasetUrl,
+    };
+  });
+
+  const datasetsDropdownProps: MenuProps = {
+    onClick: (info) => {
+      setUrlInput(info.key);
+    },
+    items: datasetsDropdownItems,
+  };
+
   return (
     <div ref={modalContextRef}>
       <Button type="primary" onClick={() => setIsLoadModalOpen(true)}>
@@ -87,12 +128,23 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <p>Load a collection of datasets or a single dataset by providing its URL.</p>
-          <Input
-            placeholder="https://example.com/collection.json"
-            value={urlInput}
-            ref={inputRef}
-            onChange={(event) => setUrlInput(event.target.value)}
-          />
+          <div>
+            <Dropdown trigger={["click"]} menu={datasetsDropdownProps} placement="bottomLeft">
+              <Input
+                placeholder="https://example.com/collection.json"
+                value={urlInput}
+                ref={inputRef}
+                onChange={(event) => setUrlInput(event.target.value)}
+                allowClear
+              />
+            </Dropdown>
+            <p>
+              <i>
+                <span style={{ color: theme.color.text.hint }}>Click for recent datasets</span>
+              </i>
+            </p>
+          </div>
+          {/** TODO: Mount the popups here */}
           {errorText && (
             <p>
               <span style={{ color: theme.color.text.error }}>{errorText}</span>
