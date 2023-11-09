@@ -375,7 +375,7 @@ function App(): ReactElement {
   const handleLoadRequest = useCallback(
     async (url: string): Promise<string> => {
       console.log("Loading '" + url + "'.");
-      const newCollection = await Collection.loadFromAmbiguousUrl(url, urlUtils.fetchWithTimeout);
+      const newCollection = await Collection.loadFromAmbiguousUrl(url);
       const newDatasetKey = newCollection.getDefaultDatasetKey();
       const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
       if (!loadResult.loaded) {
