@@ -1,14 +1,35 @@
-import React, { ReactElement, useCallback, useContext, useRef, useState } from "react";
 import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd";
-import { AppThemeContext } from "./AppStyle";
-import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
+import React, { ReactElement, useCallback, useContext, useRef, useState } from "react";
 import styled from "styled-components";
+import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
+
+import { AppThemeContext } from "./AppStyle";
+import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
 
 /** Key for local storage to read/write recently opened datasets */
 const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
 const MAX_RECENT_DATASETS = 10;
 
+type RecentDataset = {
+  absoluteUrl: string;
+  label: string;
+};
+
+type LoadDatasetButtonProps = {
+  /**
+   * Callback for when a URL is requested to be loaded.
+   * @param url The string URL, as typed into the URL input field.
+   * @returns a Promise object resolving to the absolute path of the resource.
+   */
+  onRequestLoad: (url: string) => Promise<string>;
+};
+
+const defaultProps: Partial<LoadDatasetButtonProps> = {};
+
+/** Mocks the styling of a Dropdown menu, because Ant Dropdown does not let us directly
+ * insert elements into the menu. We have to create a wrapper element to make it look
+ * like a single dropdown.
+ */
 const DropdownContentContainer = styled.div`
   background-color: var(--color-background);
   border-radius: var(--radius-control-small);
@@ -22,21 +43,6 @@ const DropdownContentContainer = styled.div`
   }
 `;
 
-type LoadDatasetButtonProps = {
-  /**
-   * Callback for when a URL is requested to be loaded.
-   * @param url The string URL, as typed into the URL input field.
-   * @returns a Promise object repreesenting the status of the request.
-   * - The promise should reject if the load fails for any reason. If it provides
-   * a reason, the reason will be shown in the modal.
-   * - The promise should resolve when the load has completed, which will cause the
-   * modal to dismiss.
-   */
-  onRequestLoad: (url: string) => Promise<string>;
-};
-
-const defaultProps: Partial<LoadDatasetButtonProps> = {};
-
 export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactElement {
   props = { ...defaultProps, ...props };
 
@@ -44,12 +50,13 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const modalContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
 
-  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
-
+  // Directly control the visibility of the recent datasets dropdown because
+  // Ant's default behavior has some bugs (the menu will appear and disappear
+  // suddenly) if trying to temporarily disable visibility.
   const [showRecentDropdown, setShowRecentDropdown] = useState(false);
   const [urlInput, _setUrlInput] = useState("");
   const setUrlInput = useCallback((newUrl: string) => {
-    setShowRecentDropdown(false);
+    setShowRecentDropdown(false); // Clear the dropdown when user starts typing
     _setUrlInput(newUrl);
   }, []);
 
@@ -58,6 +65,16 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [recentDatasets, setRecentDatasets] = useLocalStorage<string[]>(RECENT_DATASETS_STORAGE_KEY, [
     DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME,
   ]);
+
+  const [isLoadModalOpen, _setIsLoadModalOpen] = useState(false);
+  const setIsLoadModalOpen = useCallback((open: boolean) => {
+    if (open) {
+      // Clear error text/loading state when opening
+      setIsLoading(false);
+      setErrorText("");
+    }
+    _setIsLoadModalOpen(open);
+  }, []);
 
   // The dropdown should be shown whenever the user clicks on the input field, and hidden if the user starts
   // typing or clicks off of the input (including clicking options).
@@ -111,13 +128,15 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       (reason) => {
         // failed
         if (reason && reason.toString().includes("AbortError")) {
-          setErrorText("Timeout: The dataset(s) took too long to load. Please try again.");
-          return;
+          setErrorText(
+            "Timeout: The server took too long to respond. Please check if the file server is online and try again."
+          );
+        } else {
+          setErrorText(
+            reason.toString() ||
+              "The dataset(s) could not be loaded with the URL provided. Please check it and try again."
+          );
         }
-        setErrorText(
-          reason.toString() ||
-            "The dataset(s) could not be loaded with the URL provided. Please check it and try again."
-        );
         setIsLoading(false);
       }
     );
@@ -125,6 +144,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   const handleCancel = useCallback(() => {
     // should this cancel dataset loading mid-load?
+    setIsLoading(false);
     setErrorText("");
     setIsLoadModalOpen(false);
   }, []);

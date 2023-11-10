@@ -367,10 +367,8 @@ function App(): ReactElement {
   );
 
   /**
-   * Attempt to load an ambiguous URL as either a dataset or a collection.
-   * @param url the url to load.
-   * @returns the resource URL if it was loaded correctly, either an absolute collection
-   * path or an absolute dataset path.
+   * Attempt to load a URL provided in the Load button/modal.
+   * The URL may either be a collection or a dataset, so handle it as an ambiguous URL.
    */
   const handleLoadRequest = useCallback(
     async (url: string): Promise<string> => {
