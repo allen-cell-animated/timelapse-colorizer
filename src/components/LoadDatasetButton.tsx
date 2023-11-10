@@ -77,7 +77,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   // suddenly) if trying to temporarily disable visibility.
   const [showRecentDropdown, setShowRecentDropdown] = useState(false);
   const [urlInput, _setUrlInput] = useState("");
-  // Clear the dropdown when user starts typing
+  // Wrap `setUrlInput` so we clear the dropdown when user starts typing
   const setUrlInput = useCallback((newUrl: string) => {
     setShowRecentDropdown(false);
     _setUrlInput(newUrl);
@@ -109,7 +109,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   }, [isLoadModalOpen]);
 
   // The dropdown should be shown whenever the user clicks on the input field, and hidden if the user starts
-  // typing or clicks off of the input (including clicking options).
+  // typing or clicks off of the input (including selecting options in the dropdown).
+  // TODO: It's not currently possible to open the dropdown with tab navigation. Pending further discussion with UX team.
   useClickAnyWhere((event) => {
     if (event.target === inputRef.current?.input) {
       setShowRecentDropdown(true);
@@ -202,7 +203,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   });
 
   const renderDropdown = (menu: ReactNode): React.JSX.Element => (
-    // Add a fake container around this so we can include a text label
+    // Add a fake container around this so we can include a text label ("Recent datasets")
     <DropdownContentContainer>
       <span style={{ paddingLeft: "16px", color: theme.color.text.hint }}>Recent datasets:</span>
       {menu}
