@@ -53,8 +53,6 @@ const DropdownContentContainer = styled.div`
   & .ant-dropdown-menu-item {
     width: 100%;
     overflow: hidden;
-
-    overflow-wrap: break-word;
   }
 
   & .ant-dropdown-menu-item:not(:last-child) {
@@ -202,6 +200,21 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     };
   });
 
+  // Get the URLs (keys) of any recent datasets that match the currently selected urlInput.
+  const matchingKeys = recentDatasets.filter(({ label }) => label === urlInput).map(({ url }) => url);
+  const datasetsDropdownProps: MenuProps = {
+    onClick: (info) => {
+      // Set the URL input to the label of the selected dataset
+      const dataset = recentDatasets.find(({ url }) => url === info.key);
+      if (dataset) {
+        setUrlInput(dataset.label);
+      }
+    },
+    items: datasetsDropdownItems,
+    selectable: true,
+    selectedKeys: matchingKeys,
+  };
+
   const renderDropdown = (menu: ReactNode): React.JSX.Element => (
     // Add a fake container around this so we can include a text label ("Recent datasets")
     <DropdownContentContainer>
@@ -209,15 +222,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       {menu}
     </DropdownContentContainer>
   );
-
-  const datasetsDropdownProps: MenuProps = {
-    onClick: (info) => {
-      setUrlInput(info.key);
-    },
-    items: datasetsDropdownItems,
-    selectable: true,
-    selectedKeys: [urlInput],
-  };
 
   return (
     <div ref={modalContextRef}>
