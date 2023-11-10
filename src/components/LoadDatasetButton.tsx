@@ -1,10 +1,12 @@
-import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd";
+import { Button, Dropdown, Input, InputRef, MenuItemProps, MenuProps, Modal, Space } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
 
 import { AppThemeContext } from "./AppStyle";
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
+import { MenuItemType } from "antd/es/menu/hooks/useItems";
+import { FolderOpenOutlined } from "@ant-design/icons";
 
 /** Key for local storage to read/write recently opened datasets */
 const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
@@ -22,6 +24,8 @@ type LoadDatasetButtonProps = {
    * @returns a Promise object resolving to the absolute path of the resource.
    */
   onRequestLoad: (url: string) => Promise<string>;
+  /** The URL of the currently loaded resource, used to indicate it on the recent datasets dropdown. */
+  currentResourceUrl: string;
 };
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
@@ -32,6 +36,8 @@ const defaultProps: Partial<LoadDatasetButtonProps> = {};
  */
 const DropdownContentContainer = styled.div`
   position: absolute;
+  width: max-content;
+  max-width: 80vw;
   background-color: var(--color-background);
   border-radius: var(--radius-control-small);
   box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
@@ -42,6 +48,17 @@ const DropdownContentContainer = styled.div`
     // Disable the real dropdown's styling
     box-shadow: transparent 0 0 !important;
     background-color: transparent;
+  }
+
+  & .ant-dropdown-menu-item {
+    width: 100%;
+    overflow: hidden;
+
+    overflow-wrap: break-word;
+  }
+
+  & .ant-dropdown-menu-item:not(:last-child) {
+    margin-bottom: 4px;
   }
 `;
 
@@ -173,10 +190,14 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   // RENDERING ////////////////////////////////////////////////////////
 
-  const datasetsDropdownItems = recentDatasets.map(({ url, label }) => {
+  const datasetsDropdownItems: MenuItemType[] = recentDatasets.map(({ url, label }) => {
+    const isCurrentUrl = props.currentResourceUrl === url;
     return {
       key: url,
       label: label,
+      // Disable if dataset is currently open
+      disabled: isCurrentUrl,
+      icon: isCurrentUrl ? <FolderOpenOutlined /> : undefined,
     };
   });
 
@@ -193,6 +214,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       setUrlInput(info.key);
     },
     items: datasetsDropdownItems,
+    selectable: true,
+    selectedKeys: [urlInput],
   };
 
   return (

@@ -587,7 +587,7 @@ function App(): ReactElement {
             disabled={dataset === null}
             setIsRecording={setIsRecording}
           />
-          <LoadDatasetButton onRequestLoad={handleLoadRequest} />
+          <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
         </div>
       </div>
 
