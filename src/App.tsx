@@ -824,6 +824,15 @@ function App(): ReactElement {
                               setOutlierDrawSettings({ mode, color });
                             }}
                           />
+                          <Checkbox
+                            type="checkbox"
+                            checked={showScaleBar}
+                            onChange={() => {
+                              setShowScaleBar(!showScaleBar);
+                            }}
+                          >
+                            Show scale bar
+                          </Checkbox>
                         </div>
                       </div>
                     ),
