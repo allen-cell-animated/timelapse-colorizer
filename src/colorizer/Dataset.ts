@@ -29,6 +29,7 @@ export type DatasetMetadata = {
     height: number;
     units: string;
   };
+  frameDurationSeconds: number;
 };
 
 export type DatasetManifest = {
