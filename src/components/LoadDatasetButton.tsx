@@ -31,6 +31,7 @@ const defaultProps: Partial<LoadDatasetButtonProps> = {};
  * like a single dropdown.
  */
 const DropdownContentContainer = styled.div`
+  position: absolute;
   background-color: var(--color-background);
   border-radius: var(--radius-control-small);
   box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
@@ -49,6 +50,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   const theme = useContext(AppThemeContext);
   const modalContextRef = useRef<HTMLDivElement>(null);
+  const dropdownContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
 
   // STATE ////////////////////////////////////////////////////////////
@@ -166,6 +168,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     setIsLoading(false);
     setErrorText("");
     setIsLoadModalOpen(false);
+    setShowRecentDropdown(false);
   }, []);
 
   // RENDERING ////////////////////////////////////////////////////////
@@ -210,7 +213,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
             Load a collection of datasets or a single dataset by providing its URL.
           </p>
 
-          <div>
+          <div ref={dropdownContextRef} style={{ position: "relative" }}>
             <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
               <Space.Compact style={{ width: "100%" }}>
                 <Dropdown
@@ -218,7 +221,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   menu={datasetsDropdownProps}
                   placement="bottomLeft"
                   open={showRecentDropdown}
-                  getPopupContainer={modalContextRef.current ? () => modalContextRef.current! : undefined}
+                  getPopupContainer={dropdownContextRef.current ? () => dropdownContextRef.current! : undefined}
                   dropdownRender={renderDropdown}
                 >
                   <Input
