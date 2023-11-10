@@ -731,18 +731,15 @@ function App(): ReactElement {
                 disabled={disableTimeControlsUi}
                 wrapIncrement={true}
               />
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                <span className={styles.verticalDivider} style={{ height: "24px", margin: "0 8px" }}></span>
-                <div style={{ width: "200px", maxWidth: "60vw" }}>
-                  <PlaybackSpeedControl
-                    fps={playbackFps}
-                    onChange={(fps) => {
-                      setPlaybackFps(fps);
-                      timeControls.setPlaybackFps(fps);
-                    }}
-                    disabled={disableTimeControlsUi}
-                  />
-                </div>
+              <div style={{ display: "flex", flexDirection: "row", flexGrow: 1, justifyContent: "flex-end" }}>
+                <PlaybackSpeedControl
+                  fps={playbackFps}
+                  onChange={(fps) => {
+                    setPlaybackFps(fps);
+                    timeControls.setPlaybackFps(fps);
+                  }}
+                  disabled={disableTimeControlsUi}
+                />
               </div>
             </div>
           </div>
