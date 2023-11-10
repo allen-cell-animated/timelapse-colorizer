@@ -9,7 +9,7 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Divider, Input, notification, Slider, Tabs } from "antd";
+import { Button, Checkbox, Input, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
@@ -620,6 +620,15 @@ function App(): ReactElement {
               >
                 Keep range between datasets
               </Checkbox>
+              <Checkbox
+                type="checkbox"
+                checked={showTrackPath}
+                onChange={() => {
+                  setShowTrackPath(!showTrackPath);
+                }}
+              >
+                Show track path
+              </Checkbox>
             </div>
           </div>
         </div>
@@ -795,39 +804,34 @@ function App(): ReactElement {
                       </div>
                     ),
                   },
+                  {
+                    label: "Settings",
+                    key: "settings",
+                    children: (
+                      <div className={styles.tabContent}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                          <DrawModeDropdown
+                            label="Filtered out values"
+                            selected={outOfRangeDrawSettings.mode}
+                            color={outOfRangeDrawSettings.color}
+                            onChange={(mode: DrawMode, color: Color) => {
+                              setoutOfRangeDrawSettings({ mode, color });
+                            }}
+                          />
+                          <DrawModeDropdown
+                            label="Outliers"
+                            selected={outlierDrawSettings.mode}
+                            color={outlierDrawSettings.color}
+                            onChange={(mode: DrawMode, color: Color) => {
+                              setOutlierDrawSettings({ mode, color });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ),
+                  },
                 ]}
               />
-            </div>
-            <Divider orientationMargin={0} />
-            <div>
-              <h2>Viewer settings</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                <DrawModeDropdown
-                  label="Filtered out values"
-                  selected={outOfRangeDrawSettings.mode}
-                  color={outOfRangeDrawSettings.color}
-                  onChange={(mode: DrawMode, color: Color) => {
-                    setoutOfRangeDrawSettings({ mode, color });
-                  }}
-                />
-                <DrawModeDropdown
-                  label="Outliers"
-                  selected={outlierDrawSettings.mode}
-                  color={outlierDrawSettings.color}
-                  onChange={(mode: DrawMode, color: Color) => {
-                    setOutlierDrawSettings({ mode, color });
-                  }}
-                />
-                <Checkbox
-                  type="checkbox"
-                  checked={showTrackPath}
-                  onChange={() => {
-                    setShowTrackPath(!showTrackPath);
-                  }}
-                >
-                  Show track path
-                </Checkbox>
-              </div>
             </div>
           </div>
         </div>
