@@ -34,7 +34,8 @@
 }
 
 .dropdownContainer {
-  z-index: 10;
+  /* Ant makes all of its dropdowns z-index 1050. */
+  z-index: 1051;
   position: absolute;
   top: calc(--height + 1px);
   display: flex;

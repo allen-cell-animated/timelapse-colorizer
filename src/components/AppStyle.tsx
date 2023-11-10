@@ -244,6 +244,11 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             Divider: {
               marginLG: 0,
             },
+            Modal: {
+              // Set z-index to 2000 here because Ant sets popups to 1050 by default, and modals to 1000.
+              zIndexBase: 2000,
+              zIndexPopupBase: 2000,
+            },
           },
         }}
       >
