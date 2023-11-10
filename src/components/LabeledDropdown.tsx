@@ -25,7 +25,7 @@ type LabeledDropdownProps = {
   onChange: (key: string) => void;
   showTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
-  width?: string | undefined;
+  width?: string | null;
 };
 
 const defaultProps = {
@@ -33,6 +33,7 @@ const defaultProps = {
   disabled: false,
   buttonType: "default",
   showTooltip: true,
+  width: null,
 };
 
 /**
