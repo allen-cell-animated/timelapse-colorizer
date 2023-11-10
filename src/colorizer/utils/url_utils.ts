@@ -150,7 +150,7 @@ export function isAllenPath(input: string): boolean {
 }
 
 /**
- * Attempst to convert an Allen path to an HTTPS resource path.
+ * Attempts to convert an Allen path to an HTTPS resource path.
  * @returns Returns null if the path was not recognized or could not be converted,
  * otherwise, returns an HTTPS resource path.
  */
