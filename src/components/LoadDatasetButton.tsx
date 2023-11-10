@@ -1,5 +1,5 @@
 import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd";
-import React, { ReactElement, useCallback, useContext, useRef, useState } from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useRef, useState } from "react";
 import styled from "styled-components";
 import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
 
@@ -11,7 +11,7 @@ const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
 const MAX_RECENT_DATASETS = 10;
 
 type RecentDataset = {
-  absoluteUrl: string;
+  url: string;
   label: string;
 };
 
@@ -62,8 +62,13 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string>("");
-  const [recentDatasets, setRecentDatasets] = useLocalStorage<string[]>(RECENT_DATASETS_STORAGE_KEY, [
-    DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME,
+
+  const defaultDataset = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
+  const [recentDatasets, setRecentDatasets] = useLocalStorage<RecentDataset[]>(RECENT_DATASETS_STORAGE_KEY, [
+    {
+      url: defaultDataset,
+      label: defaultDataset,
+    },
   ]);
 
   const [isLoadModalOpen, _setIsLoadModalOpen] = useState(false);
@@ -102,20 +107,26 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     }
     setIsLoading(true);
     props.onRequestLoad(urlInput).then(
-      () => {
+      (loadedUrl) => {
         // Add a slight delay before closing and resetting the modal for a smoother experience
         setTimeout(() => {
           setIsLoadModalOpen(false);
           setIsLoading(false);
           // Add to recent datasets
-          const datasetIndex = recentDatasets.indexOf(urlInput);
+          // Check if we have this dataset already in our recent datasets. Match with the resource URL
+          // because there is some ambiguity in user input, since we accept both filenames and directories.
+          const newRecentDataset: RecentDataset = {
+            url: loadedUrl,
+            label: urlInput,
+          };
+          const datasetIndex = recentDatasets.findIndex(({ url }) => url === loadedUrl);
           if (datasetIndex === -1) {
             // New dataset, add to front while maintaining max length
-            setRecentDatasets([urlInput, ...recentDatasets.slice(0, MAX_RECENT_DATASETS - 1)]);
+            setRecentDatasets([newRecentDataset, ...recentDatasets.slice(0, MAX_RECENT_DATASETS - 1)]);
           } else {
-            // Move to front
+            // Move to front; this also updates the label if it changed.
             setRecentDatasets([
-              urlInput,
+              newRecentDataset,
               ...recentDatasets.slice(0, datasetIndex),
               ...recentDatasets.slice(datasetIndex + 1),
             ]);
@@ -150,12 +161,20 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   }, []);
 
   // RENDERING ////////////////////////////////////////////////////////
-  const datasetsDropdownItems = recentDatasets.map((datasetUrl) => {
+  const datasetsDropdownItems = recentDatasets.map(({ url, label }) => {
     return {
-      key: datasetUrl,
-      label: datasetUrl,
+      key: url,
+      label: label,
     };
   });
+
+  const renderDropdown = (menu: ReactNode): React.JSX.Element => (
+    // Add a fake container around this so we can include a text label
+    <DropdownContentContainer>
+      <span style={{ paddingLeft: "16px", color: theme.color.text.hint }}>Recent datasets:</span>
+      {menu}
+    </DropdownContentContainer>
+  );
 
   const datasetsDropdownProps: MenuProps = {
     onClick: (info) => {
@@ -190,12 +209,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   placement="bottomLeft"
                   open={showRecentDropdown}
                   getPopupContainer={modalContextRef.current ? () => modalContextRef.current! : undefined}
-                  dropdownRender={(menu) => (
-                    <DropdownContentContainer>
-                      <span style={{ paddingLeft: "16px", color: theme.color.text.hint }}>Recent datasets:</span>
-                      {menu}
-                    </DropdownContentContainer>
-                  )}
+                  dropdownRender={renderDropdown}
                 >
                   <Input
                     placeholder="https://example.com/collection.json"
@@ -218,7 +232,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
             </p>
           </div>
 
-          {/** TODO: Mount the popups here */}
           {errorText && (
             <p>
               <span style={{ color: theme.color.text.error }}>{errorText}</span>
