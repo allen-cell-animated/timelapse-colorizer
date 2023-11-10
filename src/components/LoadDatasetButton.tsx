@@ -131,7 +131,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       const convertedUrl = convertAllenPathToHttps(formattedUrlInput);
       if (!convertedUrl) {
         setErrorText(
-          "This directory can't be loaded directly. Contact danielt@alleninstitute.org or peyton.lee@alleninstitute.org for more details."
+          "The provided filestore path cannot be loaded directly. Please check that the path is correct! Alternatively, move your dataset so it is served over HTTPS."
         );
         return;
       }
