@@ -13,7 +13,9 @@ const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
 const MAX_RECENT_DATASETS = 10;
 
 type RecentDataset = {
+  /** The absolute URL path of the dataset resource. */
   url: string;
+  /** The user input for the dataset resource. */
   label: string;
 };
 
