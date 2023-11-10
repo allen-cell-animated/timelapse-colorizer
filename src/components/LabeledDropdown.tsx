@@ -8,8 +8,6 @@ import { DropdownSVG } from "../assets";
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
-  /** Text label inside the dropdown button. If null, uses the currently selected item. */
-  placeholder?: string | null;
   /** The key of the item that is currently selected. */
   selected: string;
   /** An array of ItemType that describes the item properties (`{key, label}`),
@@ -30,7 +28,6 @@ type LabeledDropdownProps = {
 
 const defaultProps = {
   label: null,
-  placeholder: null,
   disabled: false,
   buttonType: "default",
   showTooltip: true,
@@ -111,7 +108,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
       onClick={() => setForceOpen(!forceOpen)}
     >
       <div className={styles.buttonContents}>
-        <div className={styles.buttonText}>{props.placeholder ? props.placeholder : selectedLabel}</div>
+        <div className={styles.buttonText}>{selectedLabel}</div>
         <DropdownSVG className={`${styles.buttonIcon} ${styles[props.buttonType || "default"]}`} />
       </div>
     </Button>

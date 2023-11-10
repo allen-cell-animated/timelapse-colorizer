@@ -367,8 +367,10 @@ function App(): ReactElement {
   );
 
   /**
-   * Attempt to load a URL provided in the Load button/modal.
+   * Attempt to load a URL provided in the Load menu.
    * The URL may either be a collection or a dataset, so handle it as an ambiguous URL.
+   * @throws an error if the URL could not be loaded.
+   * @returns the absolute path of the URL resource that was loaded.
    */
   const handleLoadRequest = useCallback(
     async (url: string): Promise<string> => {

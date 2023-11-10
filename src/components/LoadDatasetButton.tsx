@@ -1,5 +1,5 @@
 import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd";
-import React, { ReactElement, ReactNode, useCallback, useContext, useRef, useState } from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
 
@@ -38,6 +38,7 @@ const DropdownContentContainer = styled.div`
   padding-top: 6px;
 
   & > ul.ant-dropdown-menu {
+    // Disable the real dropdown's styling
     box-shadow: transparent 0 0 !important;
     background-color: transparent;
   }
@@ -50,18 +51,18 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const modalContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
 
+  // STATE ////////////////////////////////////////////////////////////
+
   // Directly control the visibility of the recent datasets dropdown because
   // Ant's default behavior has some bugs (the menu will appear and disappear
   // suddenly) if trying to temporarily disable visibility.
   const [showRecentDropdown, setShowRecentDropdown] = useState(false);
   const [urlInput, _setUrlInput] = useState("");
+  // Clear the dropdown when user starts typing
   const setUrlInput = useCallback((newUrl: string) => {
-    setShowRecentDropdown(false); // Clear the dropdown when user starts typing
+    setShowRecentDropdown(false);
     _setUrlInput(newUrl);
   }, []);
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorText, setErrorText] = useState<string>("");
 
   const defaultDataset = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
   const [recentDatasets, setRecentDatasets] = useLocalStorage<RecentDataset[]>(RECENT_DATASETS_STORAGE_KEY, [
@@ -71,15 +72,22 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     },
   ]);
 
-  const [isLoadModalOpen, _setIsLoadModalOpen] = useState(false);
-  const setIsLoadModalOpen = useCallback((open: boolean) => {
-    if (open) {
-      // Clear error text/loading state when opening
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorText, setErrorText] = useState<string>("");
+
+  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+
+  // BEHAVIOR ////////////////////////////////////////////////////////////
+
+  useEffect(() => {
+    if (isLoadModalOpen) {
+      // Clear modal when opening
+      // TODO: This does not actually stop the underlying load operation. Could cause the interface to act
+      // unexpectedly, but maybe not a huge problem because there's a ~4s timeout on the load operation anyways.
       setIsLoading(false);
       setErrorText("");
     }
-    _setIsLoadModalOpen(open);
-  }, []);
+  }, [isLoadModalOpen]);
 
   // The dropdown should be shown whenever the user clicks on the input field, and hidden if the user starts
   // typing or clicks off of the input (including clicking options).
@@ -161,6 +169,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   }, []);
 
   // RENDERING ////////////////////////////////////////////////////////
+
   const datasetsDropdownItems = recentDatasets.map(({ url, label }) => {
     return {
       key: url,
@@ -200,6 +209,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           <p style={{ marginBottom: "10px" }}>
             Load a collection of datasets or a single dataset by providing its URL.
           </p>
+
           <div>
             <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
               <Space.Compact style={{ width: "100%" }}>
