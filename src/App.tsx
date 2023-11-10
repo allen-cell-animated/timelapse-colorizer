@@ -37,7 +37,6 @@ import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import SettingsTab from "./components/tabs/SettingsTab";
 import PlotTab from "./components/tabs/PlotTab";
-import { FlexRowCentered } from "./styles/utils";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
