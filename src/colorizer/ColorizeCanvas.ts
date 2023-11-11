@@ -266,6 +266,8 @@ export default class ColorizeCanvas {
   private updateTimestamp(): void {
     // Calculate the current time stamp based on the current frame and the frame duration provided
     // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
+    // Pass along to the overlay as parameters.
+    // TODO: Call updateTimeStamp everywhere we call updateScaleBar. (or merge them?)
     // TODO: Move calls to overlay.render() so they're not all triggered at once?
   }
 
