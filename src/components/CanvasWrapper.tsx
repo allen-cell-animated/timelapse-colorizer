@@ -20,6 +20,7 @@ type CanvasWrapperProps = {
   dataset: Dataset | null;
   showTrackPath: boolean;
   showScaleBar: boolean;
+  showTimestamp: boolean;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   colorRamp: ColorRamp;

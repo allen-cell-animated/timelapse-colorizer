@@ -98,6 +98,7 @@ function App(): ReactElement {
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
   const [showScaleBar, setShowScaleBar] = useState(true);
+  const [showTimestamp, setShowTimestamp] = useState(true);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -673,6 +674,7 @@ function App(): ReactElement {
                 }}
                 onMouseLeave={() => setShowHoveredId(false)}
                 showScaleBar={showScaleBar}
+                showTimestamp={showTimestamp}
               />
             </HoverTooltip>
 
@@ -832,6 +834,15 @@ function App(): ReactElement {
                             }}
                           >
                             Show scale bar
+                          </Checkbox>
+                          <Checkbox
+                            type="checkbox"
+                            checked={showTimestamp}
+                            onChange={() => {
+                              setShowTimestamp(!showTimestamp);
+                            }}
+                          >
+                            Show timestamp
                           </Checkbox>
                         </div>
                       </div>

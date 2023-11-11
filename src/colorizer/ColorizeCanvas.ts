@@ -111,6 +111,7 @@ export default class ColorizeCanvas {
   private line: Line;
   private showTrackPath: boolean;
 
+  private showTimestamp: boolean;
   private showScaleBar: boolean;
   private frameToCanvasScale: Vector4;
 
@@ -187,6 +188,7 @@ export default class ColorizeCanvas {
 
     this.overlay = new CanvasOverlay();
     this.showScaleBar = false;
+    this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
 
     this.render = this.render.bind(this);
@@ -259,6 +261,16 @@ export default class ColorizeCanvas {
   setScaleBarVisibility(visible: boolean): void {
     this.showScaleBar = visible;
     this.updateScaleBar();
+  }
+
+  private updateTimestamp(): void {
+    // Calculate the current time stamp based on the current frame and the frame duration provided
+    // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
+    // TODO: Move calls to overlay.render() so they're not all triggered at once?
+  }
+
+  private setTimestampVisibility(visible: boolean): void {
+    this.showTimestamp = visible;
   }
 
   updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
