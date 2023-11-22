@@ -9,7 +9,7 @@ export function numberToStringDecimal(
   decimalPlaces: number,
   skipIntegers: boolean = true
 ): string {
-  if (input === undefined) {
+  if (input === undefined || input === null) {
     return "NaN";
   }
   if (Number.isInteger(input) && skipIntegers) {
