@@ -5,7 +5,7 @@
  * after the decimal place. Optionally ignores integers and returns them as-is.
  */
 export function numberToStringDecimal(
-  input: number | undefined,
+  input: number | undefined | null,
   decimalPlaces: number,
   skipIntegers: boolean = true
 ): string {
