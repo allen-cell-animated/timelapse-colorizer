@@ -6,6 +6,7 @@ import {
   paramsToUrlQueryString,
   loadParamsFromUrlQueryString,
   UrlParams,
+  isAllenPath,
 } from "../src/colorizer/utils/url_utils";
 import { DEFAULT_COLOR_RAMPS } from "../src/constants";
 
@@ -61,6 +62,27 @@ describe("loadParamsFromUrlQueryString", () => {
   it("Handles empty query strings", () => {
     const result = loadParamsFromUrlQueryString("");
     expect(result).to.deep.equal({});
+  });
+});
+
+describe("isAllenPath", () => {
+  it("Detects allen paths correctly", () => {
+    expect(isAllenPath("/allen/some/resource")).to.be.true;
+    expect(isAllenPath("/allen/another/resource")).to.be.true;
+    expect(isAllenPath("/not-allen/")).to.be.false;
+    expect(isAllenPath("/some-other-resource/allen/")).to.be.false;
+  });
+
+  it("Ignores URLs", () => {
+    expect(isAllenPath("https://some-website.com/allen/another/resource")).to.be.false;
+    expect(isAllenPath("http://allen/some-website.com")).to.be.false;
+  });
+
+  it("Normalizes slashes", () => {
+    expect(isAllenPath("\\allen\\some-resource\\path.json")).to.be.true;
+    expect(isAllenPath("\\\\allen\\\\some-resource\\\\path.json")).to.be.true;
+    expect(isAllenPath("/allen//some-resource////path.json")).to.be.true;
+    expect(isAllenPath("//allen//some-resource////path.json")).to.be.true;
   });
 });
 

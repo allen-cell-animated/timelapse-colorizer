@@ -7,6 +7,7 @@ import { AppThemeContext } from "./AppStyle";
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import { FolderOpenOutlined } from "@ant-design/icons";
+import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 
 /** Key for local storage to read/write recently opened datasets */
 const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
@@ -124,7 +125,20 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       setErrorText("Please enter a URL!");
       return;
     }
-    if (window.location.protocol === "https:" && urlInput.trim().startsWith("http:")) {
+    let formattedUrlInput = urlInput.trim();
+    // Check if the URL is an allen resource. If so, attempt to convert it.
+    if (isAllenPath(formattedUrlInput)) {
+      const convertedUrl = convertAllenPathToHttps(formattedUrlInput);
+      if (!convertedUrl) {
+        setErrorText(
+          "The provided filestore path cannot be loaded directly. Please check that the path is correct! Alternatively, move your dataset so it is served over HTTPS."
+        );
+        return;
+      }
+      formattedUrlInput = convertedUrl;
+    }
+
+    if (window.location.protocol === "https:" && formattedUrlInput.startsWith("http:")) {
       setErrorText(
         "Cannot load a HTTP resource from an HTTPS site. Please move your dataset so it is served over HTTPS, or install and run this project locally."
       );
@@ -134,7 +148,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       return;
     }
     setIsLoading(true);
-    props.onRequestLoad(urlInput).then(
+    props.onRequestLoad(formattedUrlInput).then(
       (loadedUrl) => {
         // Add a slight delay before closing and resetting the modal for a smoother experience
         setTimeout(() => {
@@ -145,7 +159,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           // because there is some ambiguity in user input, since we accept both filenames and directories.
           const newRecentDataset: RecentDataset = {
             url: loadedUrl,
-            label: urlInput,
+            label: urlInput, // Use raw url input for the label
           };
           const datasetIndex = recentDatasets.findIndex(({ url }) => url === loadedUrl);
           if (datasetIndex === -1) {

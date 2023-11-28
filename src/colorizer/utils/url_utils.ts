@@ -14,6 +14,12 @@ const URL_PARAM_RANGE = "range";
 const URL_PARAM_COLOR_RAMP = "color";
 const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 
+const ALLEN_FILE_PREFIX = "/allen/";
+const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
+  "/allen/aics/assay-dev": "https://dev-aics-dtp-001.int.allencell.org/assay-dev",
+  "/allen/aics/microscopy": "https://dev-aics-dtp-001.int.allencell.org/microscopy",
+};
+
 export type UrlParams = {
   collection: string;
   dataset: string;
@@ -135,6 +141,41 @@ export function updateUrl(urlParams: string): void {
 export function isUrl(input: string | null): boolean {
   // Check for strings that start with http(s):// or a double-slash (//).
   return input !== null && (/^http(s)*:\/\//.test(input) || /^\/\//.test(input));
+}
+
+/**
+ * Normalizes a file path to use only single forward slashes. Replaces
+ * backwards slashes with forward slashes, and removes double slashes.
+ */
+function normalizeFilePathSlashes(input: string): string {
+  // Replace all backslashes with forward slashes
+  input = input.replaceAll("\\", "/");
+  // Replace double slashes with single
+  input = input.replaceAll("//", "/");
+  return input;
+}
+
+/**
+ * Returns whether the input string is a path to an Allen file server resource.
+ * Matches any path that starts with `/allen/`, normalizing for backwards and double slashes.
+ */
+export function isAllenPath(input: string): boolean {
+  return normalizeFilePathSlashes(input).startsWith(ALLEN_FILE_PREFIX);
+}
+
+/**
+ * Attempts to convert an Allen path to an HTTPS resource path.
+ * @returns Returns null if the path was not recognized or could not be converted,
+ * otherwise, returns an HTTPS resource path.
+ */
+export function convertAllenPathToHttps(input: string): string | null {
+  input = normalizeFilePathSlashes(input);
+  for (const prefix of Object.keys(ALLEN_PREFIX_TO_HTTPS)) {
+    if (input.startsWith(prefix)) {
+      return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS[prefix]);
+    }
+  }
+  return null;
 }
 
 /**
