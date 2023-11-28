@@ -6,14 +6,14 @@ import { SearchOutlined } from "@ant-design/icons";
 import IconButton from "../IconButton";
 import PlotWrapper from "../PlotWrapper";
 import styled from "styled-components";
-import { FlexRowCentered, NoSpinnerContainer } from "../../styles/utils";
+import { FlexRowAlignCenter, NoSpinnerContainer } from "../../styles/utils";
 
-const TrackTitleBar = styled(FlexRowCentered)`
+const TrackTitleBar = styled(FlexRowAlignCenter)`
   justify-content: end;
   flex-wrap: wrap;
 `;
 
-const TrackSearch = styled(FlexRowCentered)`
+const TrackSearch = styled(FlexRowAlignCenter)`
   & input {
     max-width: 80px;
   }

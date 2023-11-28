@@ -48,10 +48,10 @@ export const FlexRow = styled(FlexDiv)`
 `;
 
 /**
- * A flexbox container that lays out children in a row, and centers all items
- * vertically.
+ * A flexbox container that lays out children in a row, and aligns all items
+ * to the vertical center.
  * @param $gap: The gap, in pixels, between each child element. 0 by default.
  */
-export const FlexRowCentered = styled(FlexRow)`
+export const FlexRowAlignCenter = styled(FlexRow)`
   align-items: center;
 `;
