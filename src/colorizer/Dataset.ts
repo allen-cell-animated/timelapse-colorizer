@@ -232,6 +232,7 @@ export default class Dataset {
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
+    this.boundsFile = manifest.bounds;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     const featuresPromises: Promise<void>[] = this.featureNames.map((name) =>

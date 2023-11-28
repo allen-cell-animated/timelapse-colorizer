@@ -106,6 +106,7 @@ export default class ColorizeCanvas {
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
   private showTrackPath: boolean;
+  private bounds: Line;
 
   private scene: Scene;
   private pickScene: Scene;
@@ -162,6 +163,15 @@ export default class ColorizeCanvas {
 
     this.line = new Line(lineGeometry, lineMaterial);
     this.scene.add(this.line);
+
+    const boundsGeometry = new BufferGeometry();
+    boundsGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
+    const boundsMaterial = new LineBasicMaterial({
+      color: SELECTED_COLOR_DEFAULT,
+      linewidth: 1.0,
+    });
+    this.bounds = new Line(boundsGeometry, boundsMaterial);
+    this.scene.add(this.bounds);
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
@@ -230,6 +240,7 @@ export default class ColorizeCanvas {
     this.setUniform("canvasToFrameScale", canvasToFrameScale);
     // Scale the line mesh so the vertices line up correctly even when the canvas changes
     this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
+    this.bounds.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -448,6 +459,29 @@ export default class ColorizeCanvas {
       return;
     }
     this.setUniform("frame", frame);
+
+    // Get the bounds data for this frame and update the bounds line to render it.
+    if (this.track) {
+      const objectId = this.track.getIdAtTime(index) + 1;
+      if (!this.dataset?.bounds) {
+        console.log("no bounds");
+        return;
+      }
+      console.log(this.dataset.bounds);
+      const bounds = this.dataset.bounds.slice(4 * objectId, 4 * (objectId + 1));
+
+      let [xmin, ymin, xmax, ymax] = bounds;
+      xmin = (xmin / this.dataset.frameResolution.x) * 2.0 - 1.0;
+      ymin = -((ymin / this.dataset.frameResolution.y) * 2.0 - 1.0);
+      xmax = (xmax / this.dataset.frameResolution.x) * 2.0 - 1.0;
+      ymax = -((ymax / this.dataset.frameResolution.y) * 2.0 - 1.0);
+      console.log("bounds: ");
+      console.log(bounds);
+      const points = new Float32Array([xmin, ymin, 0, xmax, ymin, 0, xmax, ymax, 0, xmin, ymax, 0, xmin, ymin, 0]);
+      console.log(points);
+      this.bounds.geometry.setAttribute("position", new BufferAttribute(points, 3));
+      this.bounds.geometry.getAttribute("position").needsUpdate = true;
+    }
   }
 
   render(): void {
