@@ -97,7 +97,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
 };
 
 export default class ColorizeCanvas {
-  private canvasContainer?: HTMLDivElement;
+  private canvasContainer: HTMLDivElement;
 
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
@@ -193,24 +193,22 @@ export default class ColorizeCanvas {
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
     this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
+
+    // Set up the canvas overlay as a sibling in the DOM layout
+    // by creating a dummy parent container.
+    this.canvasContainer = document.createElement("div");
+    this.canvasContainer.appendChild(this.renderer.domElement);
+    this.canvasContainer.appendChild(this.overlay.domElement);
+    this.canvasContainer.style.position = "relative";
+    this.overlay.domElement.style.position = "absolute";
+    this.overlay.domElement.style.left = "0";
+    this.overlay.domElement.style.top = "0";
   }
 
   /**
    * The DOM element containing the canvas and its overlay.
    */
   get domElement(): HTMLDivElement {
-    if (!this.canvasContainer) {
-      // Set up the canvas overlay as a sibling in the DOM layout
-      // by creating a dummy parent container.
-      this.canvasContainer = document.createElement("div");
-      this.canvasContainer.appendChild(this.renderer.domElement);
-      this.canvasContainer.appendChild(this.overlay.domElement);
-      this.canvasContainer.style.position = "relative";
-      this.overlay.domElement.style.position = "absolute";
-      this.overlay.domElement.style.left = "0";
-      this.overlay.domElement.style.top = "0";
-    }
-
     return this.canvasContainer;
   }
 
