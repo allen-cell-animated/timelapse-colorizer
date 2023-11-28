@@ -72,6 +72,28 @@ export default class CanvasOverlay {
     this.scaleBarOptions = { ...this.scaleBarOptions, ...options };
   }
 
+  updateTimestampOptions(options: Partial<TimestampOptions>): void {
+    this.timestampOptions = { ...this.timestampOptions, ...options };
+  }
+
+  private renderRightAlignedText(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    bottomOffsetPx: number,
+    horizontalMarginPx: number,
+    verticalMarginPx: number,
+    options: StyleOptions
+  ): void {
+    ctx.font = `${options.fontSizePx}px ${options.fontFamily}`;
+    ctx.fillStyle = options.fontColor;
+    const textWidth = ctx.measureText(text).width;
+    ctx.fillText(
+      text,
+      this.canvas.width - textWidth - horizontalMarginPx,
+      this.canvas.height - verticalMarginPx - bottomOffsetPx
+    );
+  }
+
   /**
    * Formats a number to be displayed in the scale bar to a reasonable number of significant digits,
    * also handling float errors.
@@ -120,50 +142,83 @@ export default class CanvasOverlay {
     const scaleBarWidthInUnits = nextIncrement * 10 ** (msdPower - 1);
     // Convert back into pixels for rendering.
     // Cheat very slightly by rounding to the nearest pixel for cleaner rendering.
-    const scaleBarWidthInPixels = Math.round(scaleBarWidthInUnits / this.scaleBarOptions.unitsPerScreenPixel);
+    const scaleBarWidthPx = Math.round(scaleBarWidthInUnits / this.scaleBarOptions.unitsPerScreenPixel);
 
     const textContent = `${this.formatScaleBarValue(scaleBarWidthInUnits)} ${this.scaleBarOptions.units}`;
 
     // Draw the scale bar line
-    const scaleBarMargin = 20; // L/R and T/B margin
+    const scaleBarMarginPx = { v: 0, h: 20 }; // L/R margin
     const scaleBarHeight = 10;
     // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
-    const scaleBarX = this.canvas.width - scaleBarMargin - yOffsetPx + 0.5;
-    const scaleBarY = this.canvas.height - scaleBarMargin - yOffsetPx + 0.5;
+    const scaleBarX = this.canvas.width - scaleBarMarginPx.h + 0.5;
+    const scaleBarY = this.canvas.height - yOffsetPx + 0.5;
     ctx.beginPath();
     ctx.strokeStyle = this.scaleBarOptions.fontColor;
     ctx.lineWidth = 1;
     ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
     ctx.lineTo(scaleBarX, scaleBarY);
-    ctx.lineTo(scaleBarX - scaleBarWidthInPixels, scaleBarY);
-    ctx.lineTo(scaleBarX - scaleBarWidthInPixels, scaleBarY - scaleBarHeight);
+    ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY);
+    ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY - scaleBarHeight);
     ctx.stroke();
 
     // Draw the scale bar text label
     // TODO: This looks bad at high magnification. A workaround would be to use CSS2DRenderer to
     // render the text normally and then hotswap it for a regular canvas when recording occurs.
     // (but most likely a non-issue.)
-    const margin = scaleBarMargin + 6;
-    ctx.font = `${this.scaleBarOptions.fontSizePx}px ${this.scaleBarOptions.fontFamily}`;
-    ctx.fillStyle = this.scaleBarOptions.fontColor;
-    const textWidth = ctx.measureText(textContent).width;
-    console.log(textWidth);
-    ctx.fillText(textContent, this.canvas.width - textWidth - margin, this.canvas.height - margin);
+    const marginPx = { v: 6, h: scaleBarMarginPx.h + 6 };
+    this.renderRightAlignedText(ctx, textContent, yOffsetPx, marginPx.h, marginPx.v, this.scaleBarOptions);
 
-    // TODO: Validate this height calculation.
-    return 2 * margin + scaleBarHeight + this.scaleBarOptions.fontSizePx;
+    return 2 * scaleBarMarginPx.v + this.scaleBarOptions.fontSizePx + 10;
   }
 
-  private renderTimestamp(yOffset: number): number {
-    // TODO: Nice formatting for the timestamp here :)
+  private renderTimestamp(yOffsetPx: number): number {
+    this.timestampOptions = {
+      ...this.timestampOptions,
+      visible: true,
+      currentTimestampSeconds: 54.344,
+      maxTimestampSeconds: 100,
+    };
+
+    if (!this.timestampOptions.visible) {
+      return 0;
+    }
+
+    const ctx = this.canvas.getContext("2d");
+    if (ctx === null) {
+      console.error("Could not get canvas context");
+      return 0;
+    }
+
     // Determine maximum units (hours, minutes, or seconds) that the timestamp should display, using the
     // max timestamp parameter.
-
     // Then, format the resulting timestamp based on that format (Ideally close to HH:mm:ss`s`), with extra
     // precision if only using seconds/minutes (mm:ss.ss`s` or ss.ss`s`).
+    const useMinutes = this.timestampOptions.maxTimestampSeconds >= 60;
+    const useHours = this.timestampOptions.maxTimestampSeconds >= 60 * 60;
+    const useHighPrecisionSeconds = !useHours;
+
+    const seconds = this.timestampOptions.currentTimestampSeconds % 60; // Ignore minutes/hours
+    let timestampFormatted = "";
+    if (useHighPrecisionSeconds) {
+      timestampFormatted = seconds.toFixed(2).padStart(5, "0") + "s";
+    } else {
+      timestampFormatted = seconds.toFixed(0).padStart(2, "0") + "s";
+    }
+    if (useMinutes) {
+      const minutes = Math.floor(this.timestampOptions.currentTimestampSeconds / 60) % 60;
+      timestampFormatted = `${minutes.toString().padStart(2, "0")}:${timestampFormatted}`;
+    }
+    if (useHours) {
+      const hours = Math.floor(this.timestampOptions.currentTimestampSeconds / (60 * 60));
+      timestampFormatted = `${hours.toString().padStart(2, "0")}:${timestampFormatted}`;
+    }
+    console.log(timestampFormatted);
 
     // Render the resulting timestamp in the bottom left corner of the canvas.
-    return 0;
+    const marginPx = { v: 0, h: 20 };
+    this.renderRightAlignedText(ctx, timestampFormatted, yOffsetPx, marginPx.h, marginPx.v, this.scaleBarOptions);
+
+    return marginPx.v * 2 + this.timestampOptions.fontSizePx;
   }
 
   render(): void {
@@ -176,7 +231,7 @@ export default class CanvasOverlay {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Draw scale bar and timestamp
-    let yOffset = 0;
+    let yOffset = 20;
     yOffset += this.renderScaleBar(yOffset);
     yOffset += this.renderTimestamp(yOffset);
   }
