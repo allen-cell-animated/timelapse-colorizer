@@ -186,6 +186,8 @@ export default class CanvasOverlay {
     // max timestamp parameter.
     // Then, format the resulting timestamp based on that format (Ideally close to HH:mm:ss`s`), with extra
     // precision if only using seconds/minutes (mm:ss.ss`s` or ss.ss`s`).
+    // TODO: Handle timestamps where only hours/minutes are used. This would require the
+    // frame duration to be passed in.
     const useMinutes = this.timestampOptions.maxTimestampSeconds >= 60;
     const useHours = this.timestampOptions.maxTimestampSeconds >= 60 * 60;
     const useHighPrecisionSeconds = !useHours;
