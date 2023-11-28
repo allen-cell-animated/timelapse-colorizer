@@ -78,11 +78,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update the theming of the canvas overlay.
   useMemo(() => {
-    canv.overlay.updateScaleBarOptions({
+    const defaultTheme = {
       fontSizePx: theme.font.size.label,
       fontColor: theme.color.text.primary,
       fontFamily: theme.font.family,
-    });
+    };
+    canv.overlay.updateScaleBarOptions(defaultTheme);
+    canv.overlay.updateTimestampOptions(defaultTheme);
   }, [theme]);
 
   // Update canvas color ramp
@@ -120,6 +122,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useMemo(() => {
     canv.setScaleBarVisibility(props.showScaleBar);
   }, [props.showScaleBar]);
+
+  useMemo(() => {
+    canv.setTimestampVisibility(props.showTimestamp);
+  }, [props.showTimestamp]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
 

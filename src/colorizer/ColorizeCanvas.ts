@@ -269,10 +269,24 @@ export default class ColorizeCanvas {
     // Pass along to the overlay as parameters.
     // TODO: Call updateTimeStamp everywhere we call updateScaleBar. (or merge them?)
     // TODO: Move calls to overlay.render() so they're not all triggered at once?
+    const frameDurationSeconds = this.dataset?.metadata?.frameDurationSeconds || 60;
+    const numberOfFrames = this.dataset?.numberOfFrames;
+
+    if (this.showTimestamp && frameDurationSeconds && numberOfFrames) {
+      const maxTimestampSeconds = numberOfFrames * frameDurationSeconds;
+      const currentTimestampSeconds = this.currentFrame * frameDurationSeconds;
+      this.overlay.updateTimestampOptions({ visible: true, currentTimestampSeconds, maxTimestampSeconds });
+      this.overlay.render();
+    } else {
+      // Hide the scale bar if the frame duration is not provided.
+      this.overlay.updateScaleBarOptions({ visible: false });
+      this.overlay.render();
+    }
   }
 
-  private setTimestampVisibility(visible: boolean): void {
+  setTimestampVisibility(visible: boolean): void {
     this.showTimestamp = visible;
+    this.updateTimestamp();
   }
 
   updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
@@ -518,6 +532,7 @@ export default class ColorizeCanvas {
       return;
     }
     this.setUniform("frame", frame);
+    this.updateTimestamp();
   }
 
   render(): void {

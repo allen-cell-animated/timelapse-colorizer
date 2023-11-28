@@ -172,13 +172,6 @@ export default class CanvasOverlay {
   }
 
   private renderTimestamp(yOffsetPx: number): number {
-    this.timestampOptions = {
-      ...this.timestampOptions,
-      visible: true,
-      currentTimestampSeconds: 54.344,
-      maxTimestampSeconds: 100,
-    };
-
     if (!this.timestampOptions.visible) {
       return 0;
     }
