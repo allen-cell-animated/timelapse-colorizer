@@ -190,22 +190,32 @@ export default class CanvasOverlay {
     // max timestamp parameter.
     // Then, format the resulting timestamp based on that format (Ideally close to HH:mm:ss`s`), with extra
     // precision if only using seconds/minutes (mm:ss.ss`s` or ss.ss`s`).
-    // TODO: Handle timestamps where only hours/minutes are used. This would require the
-    // frame duration to be passed in.
+    // TODO: Cleanup this code.
     const useMinutes = this.timestampOptions.maxTimestampSeconds >= 60;
     const useHours = this.timestampOptions.maxTimestampSeconds >= 60 * 60;
+    const useSeconds =
+      this.timestampOptions.frameDurationSeconds % 60 === 0 && this.timestampOptions.startTimeSeconds % 60 === 0;
     const useHighPrecisionSeconds = !useHours;
 
     const seconds = this.timestampOptions.currentTimestampSeconds % 60; // Ignore minutes/hours
     let timestampFormatted = "";
-    if (useHighPrecisionSeconds) {
-      timestampFormatted = seconds.toFixed(2).padStart(5, "0") + "s";
-    } else {
-      timestampFormatted = seconds.toFixed(0).padStart(2, "0") + "s";
+    if (useSeconds) {
+      if (useHighPrecisionSeconds) {
+        timestampFormatted = seconds.toFixed(2).padStart(5, "0") + "s";
+      } else {
+        timestampFormatted = seconds.toFixed(0).padStart(2, "0") + "s";
+      }
+      if (useMinutes) {
+        timestampFormatted = `:${timestampFormatted}`;
+      }
     }
     if (useMinutes) {
       const minutes = Math.floor(this.timestampOptions.currentTimestampSeconds / 60) % 60;
-      timestampFormatted = `${minutes.toString().padStart(2, "0")}:${timestampFormatted}`;
+      timestampFormatted = `${minutes.toString().padStart(2, "0")}${timestampFormatted}`;
+      // TODO: Is this the best way to label this?
+      if (useMinutes && !useSeconds) {
+        timestampFormatted = `${timestampFormatted} h:m`;
+      }
     }
     if (useHours) {
       const hours = Math.floor(this.timestampOptions.currentTimestampSeconds / (60 * 60));
