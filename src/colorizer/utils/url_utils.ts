@@ -144,10 +144,23 @@ export function isUrl(input: string | null): boolean {
 }
 
 /**
+ * Normalizes a file path to use only single forward slashes. Replaces
+ * backwards slashes with forward slashes, and removes double slashes.
+ */
+function normalizeFilePathSlashes(input: string): string {
+  // Replace all backslashes with forward slashes
+  input = input.replaceAll("\\", "/");
+  // Replace double slashes with single
+  input = input.replaceAll("//", "/");
+  return input;
+}
+
+/**
  * Returns whether the input string is a path to an Allen file server resource.
+ * Matches any path that starts with `/allen/`, normalizing for backwards and double slashes.
  */
 export function isAllenPath(input: string): boolean {
-  return input.startsWith(ALLEN_FILE_PREFIX);
+  return normalizeFilePathSlashes(input).startsWith(ALLEN_FILE_PREFIX);
 }
 
 /**
@@ -156,6 +169,7 @@ export function isAllenPath(input: string): boolean {
  * otherwise, returns an HTTPS resource path.
  */
 export function convertAllenPathToHttps(input: string): string | null {
+  input = normalizeFilePathSlashes(input);
   for (const prefix of Object.keys(ALLEN_PREFIX_TO_HTTPS)) {
     if (input.startsWith(prefix)) {
       return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS[prefix]);
