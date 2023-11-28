@@ -30,6 +30,8 @@ export type DatasetMetadata = {
     units: string;
   };
   frameDurationSeconds: number;
+  /* Optional offset for the timestamp. */
+  startTimeSeconds: number;
 };
 
 export type DatasetManifest = {

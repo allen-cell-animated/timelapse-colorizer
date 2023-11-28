@@ -249,16 +249,15 @@ export default class ColorizeCanvas {
       const canvasWidthInUnits = frameDims.width * this.frameToCanvasScale.x;
       const unitsPerScreenPixel = canvasWidthInUnits / this.canvasResolution.x;
       this.overlay.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
-      this.overlay.render();
     } else {
       this.overlay.updateScaleBarOptions({ visible: false });
-      this.overlay.render();
     }
   }
 
   setScaleBarVisibility(visible: boolean): void {
     this.showScaleBar = visible;
     this.updateScaleBar();
+    this.overlay.render();
   }
 
   private updateTimestamp(): void {
@@ -266,28 +265,28 @@ export default class ColorizeCanvas {
     // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
     // Pass along to the overlay as parameters.
     // TODO: Call updateTimeStamp everywhere we call updateScaleBar. (or merge them?)
-    // TODO: Move calls to overlay.render() so they're not all triggered at once?
-    const frameDurationSeconds = this.dataset?.metadata?.frameDurationSeconds || 60;
-    const numberOfFrames = this.dataset?.numberOfFrames;
-
-    if (this.showTimestamp && frameDurationSeconds && numberOfFrames) {
-      const maxTimestampSeconds = numberOfFrames * frameDurationSeconds;
-      const currentTimestampSeconds = this.currentFrame * frameDurationSeconds;
-      this.overlay.updateTimestampOptions({ visible: true, currentTimestampSeconds, maxTimestampSeconds });
-      this.overlay.render();
-    } else {
-      // Hide the scale bar if the frame duration is not provided.
-      this.overlay.updateScaleBarOptions({ visible: false });
-      this.overlay.render();
+    if (this.showTimestamp && this.dataset) {
+      const frameDurationSeconds = this.dataset.metadata?.frameDurationSeconds;
+      const numberOfFrames = this.dataset.numberOfFrames;
+      if (frameDurationSeconds) {
+        const maxTimestampSeconds = numberOfFrames * frameDurationSeconds;
+        const currentTimestampSeconds = this.currentFrame * frameDurationSeconds;
+        this.overlay.updateTimestampOptions({ visible: true, currentTimestampSeconds, maxTimestampSeconds });
+        return;
+      }
     }
+
+    // Hide the scale bar
+    this.overlay.updateTimestampOptions({ visible: false });
   }
 
   setTimestampVisibility(visible: boolean): void {
     this.showTimestamp = visible;
     this.updateTimestamp();
+    this.overlay.render();
   }
 
-  updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
+  private updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
     if (!frameResolution || !canvasResolution) {
       return;
     }
@@ -537,6 +536,8 @@ export default class ColorizeCanvas {
     this.updateHighlightedId();
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
+    this.updateScaleBar();
+    this.updateTimestamp();
     this.overlay.render();
   }
 

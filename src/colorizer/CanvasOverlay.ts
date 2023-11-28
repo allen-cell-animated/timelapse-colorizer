@@ -17,6 +17,8 @@ export type TimestampOptions = StyleOptions & {
   visible: boolean;
   maxTimestampSeconds: number;
   currentTimestampSeconds: number;
+  frameDurationSeconds: number;
+  startTimeSeconds: number;
 };
 
 const defaultStyleOptions: StyleOptions = {
@@ -36,6 +38,8 @@ const defaultScaleBarOptions: ScaleBarOptions = {
 const defaultTimestampOptions: TimestampOptions = {
   ...defaultStyleOptions,
   visible: false,
+  frameDurationSeconds: 1,
+  startTimeSeconds: 0,
   maxTimestampSeconds: 1,
   currentTimestampSeconds: 0,
 };
