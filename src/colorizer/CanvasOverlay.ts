@@ -117,7 +117,6 @@ export default class CanvasOverlay {
     ctx.font = `${this.scaleBarOptions.fontSizePx}px ${this.scaleBarOptions.fontFamily}`;
     ctx.fillStyle = this.scaleBarOptions.fontColor;
     const textWidth = ctx.measureText(textContent).width;
-    console.log(textWidth);
     ctx.fillText(textContent, this.canvas.width - textWidth - margin, this.canvas.height - margin);
   }
 
