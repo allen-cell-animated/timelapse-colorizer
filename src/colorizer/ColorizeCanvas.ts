@@ -239,8 +239,10 @@ export default class ColorizeCanvas {
 
   private updateScaleBar(): void {
     // Update the scale bar units
-    const frameDims = this.dataset?.metadata?.frameDims;
-    if (this.showScaleBar && frameDims !== undefined && this.canvasResolution !== null) {
+    const frameDims = this.dataset?.metadata.frameDims;
+    // Ignore cases where dimensions have size 0
+    const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
+    if (this.showScaleBar && hasFrameDims && this.canvasResolution !== null) {
       // `frameDims` are already in the provided unit scaling, so we figure out the current
       // size of the frame relative to the canvas to determine the canvas' width in units.
       // We only consider X scaling here because the scale bar is always horizontal.
