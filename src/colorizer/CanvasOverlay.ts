@@ -190,38 +190,38 @@ export default class CanvasOverlay {
     // max timestamp parameter.
     // Then, format the resulting timestamp based on that format (Ideally close to HH:mm:ss`s`), with extra
     // precision if only using seconds/minutes (mm:ss.ss`s` or ss.ss`s`).
-    // TODO: Cleanup this code.
+    // TODO: Does this need to show milliseconds ever?
+
     const useMinutes = this.timestampOptions.maxTimestampSeconds >= 60;
     const useHours = this.timestampOptions.maxTimestampSeconds >= 60 * 60;
-    const useSeconds =
-      this.timestampOptions.frameDurationSeconds % 60 === 0 && this.timestampOptions.startTimeSeconds % 60 === 0;
-    const useHighPrecisionSeconds = !useHours;
+    // Ignore seconds if the frame duration is in minute increments AND the start time is also in minute increments.
+    const useSeconds = !(
+      this.timestampOptions.frameDurationSeconds % 60 === 0 && this.timestampOptions.startTimeSeconds % 60 === 0
+    );
 
-    const seconds = this.timestampOptions.currentTimestampSeconds % 60; // Ignore minutes/hours
-    let timestampFormatted = "";
+    let timestampDigits: string[] = [];
+    let timestampUnits: string[] = [];
+
     if (useSeconds) {
-      if (useHighPrecisionSeconds) {
-        timestampFormatted = seconds.toFixed(2).padStart(5, "0") + "s";
+      const seconds = this.timestampOptions.currentTimestampSeconds % 60; // Ignore minutes/hours
+      if (!useHours && this.timestampOptions.frameDurationSeconds % 1.0 !== 0) {
+        timestampDigits.unshift(seconds.toFixed(2).padStart(5, "0"));
       } else {
-        timestampFormatted = seconds.toFixed(0).padStart(2, "0") + "s";
+        timestampDigits.unshift(seconds.toFixed(0).padStart(2, "0"));
       }
-      if (useMinutes) {
-        timestampFormatted = `:${timestampFormatted}`;
-      }
+      timestampUnits.unshift("s");
     }
     if (useMinutes) {
       const minutes = Math.floor(this.timestampOptions.currentTimestampSeconds / 60) % 60;
-      timestampFormatted = `${minutes.toString().padStart(2, "0")}${timestampFormatted}`;
-      // TODO: Is this the best way to label this?
-      if (useMinutes && !useSeconds) {
-        timestampFormatted = `${timestampFormatted} h:m`;
-      }
+      timestampDigits.unshift(minutes.toString().padStart(2, "0"));
+      timestampUnits.unshift("m");
     }
     if (useHours) {
       const hours = Math.floor(this.timestampOptions.currentTimestampSeconds / (60 * 60));
-      timestampFormatted = `${hours.toString().padStart(2, "0")}:${timestampFormatted}`;
+      timestampDigits.unshift(hours.toString().padStart(2, "0"));
+      timestampUnits.unshift("h");
     }
-    console.log(timestampFormatted);
+    const timestampFormatted = timestampDigits.join(":") + " " + timestampUnits.join(":");
 
     // Render the resulting timestamp in the bottom left corner of the canvas.
     const marginPx = { v: 0, h: 20 };

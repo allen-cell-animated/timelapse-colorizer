@@ -266,12 +266,17 @@ export default class ColorizeCanvas {
     // Pass along to the overlay as parameters.
     // TODO: Call updateTimeStamp everywhere we call updateScaleBar. (or merge them?)
     if (this.showTimestamp && this.dataset) {
-      const frameDurationSeconds = this.dataset.metadata?.frameDurationSeconds;
+      const frameDurationSeconds = this.dataset.metadata?.frameDurationSeconds || 1.0;
       const numberOfFrames = this.dataset.numberOfFrames;
       if (frameDurationSeconds) {
         const maxTimestampSeconds = numberOfFrames * frameDurationSeconds;
         const currentTimestampSeconds = this.currentFrame * frameDurationSeconds;
-        this.overlay.updateTimestampOptions({ visible: true, currentTimestampSeconds, maxTimestampSeconds });
+        this.overlay.updateTimestampOptions({
+          visible: true,
+          currentTimestampSeconds,
+          maxTimestampSeconds,
+          frameDurationSeconds,
+        });
         return;
       }
     }
