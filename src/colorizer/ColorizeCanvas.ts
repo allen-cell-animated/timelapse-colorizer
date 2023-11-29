@@ -266,18 +266,23 @@ export default class ColorizeCanvas {
     // Calculate the current time stamp based on the current frame and the frame duration provided
     // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
     // Pass along to the overlay as parameters.
-    // TODO: Call updateTimeStamp everywhere we call updateScaleBar. (or merge them?)
     if (this.showTimestamp && this.dataset) {
-      const frameDurationSeconds = this.dataset.metadata?.frameDurationSeconds || 1.0;
-      const numberOfFrames = this.dataset.numberOfFrames;
+      // TODO: Remove the || conditional, it's just for testing. Call me out if I forget to remove this >:(
+      const frameDurationSeconds = this.dataset.metadata.frameDurationSeconds || 51.25;
       if (frameDurationSeconds) {
-        const maxTimestampSeconds = numberOfFrames * frameDurationSeconds;
-        const currentTimestampSeconds = this.currentFrame * frameDurationSeconds;
+        const startTimeSec = this.dataset.metadata.startTimeSeconds;
+        const maxTimestampSec = this.dataset.numberOfFrames * frameDurationSeconds + startTimeSec;
+        const currentTimestampSec = this.currentFrame * frameDurationSeconds + startTimeSec;
+        // Note: there's some semi-redundant information here, since the current timestamp and max timestamp
+        // could be calculated from the frame duration if we passed in the current + max frames instead.
+        // For now, we're keeping those calculations here in ColorizeCanvas so the overlay doesn't need to
+        // know frame numbers. The duration + start time are needed for time display calculations though.
         this.overlay.updateTimestampOptions({
           visible: true,
-          currentTimestampSeconds,
-          maxTimestampSeconds,
+          currentTimestampSeconds: currentTimestampSec,
+          maxTimestampSeconds: maxTimestampSec,
           frameDurationSeconds,
+          startTimeSeconds: startTimeSec,
         });
         return;
       }

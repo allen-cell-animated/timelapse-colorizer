@@ -40,6 +40,8 @@ const defaultMetadata: DatasetMetadata = {
     height: 0,
     units: "",
   },
+  frameDurationSeconds: 0,
+  startTimeSeconds: 0,
 };
 
 export type DatasetManifest = {
