@@ -97,6 +97,7 @@ function App(): ReactElement {
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
+  const [showScaleBar, setShowScaleBar] = useState(true);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -411,7 +412,6 @@ function App(): ReactElement {
       const featureData = newDataset.getFeatureData(newFeatureName);
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
-        // TODO: Update this with units later
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
         if (threshold) {
           setColorRampMin(threshold.min);
@@ -579,7 +579,7 @@ function App(): ReactElement {
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrameAndRender}
-            getCanvas={() => canv.domElement}
+            getCanvas={() => canv.canvasElement}
             // Stop playback when exporting
             onClick={() => timeControls.handlePauseButtonClick()}
             currentFrame={currentFrame}
@@ -673,6 +673,7 @@ function App(): ReactElement {
                   }
                 }}
                 onMouseLeave={() => setShowHoveredId(false)}
+                showScaleBar={showScaleBar}
               />
             </HoverTooltip>
 
@@ -824,6 +825,15 @@ function App(): ReactElement {
                               setOutlierDrawSettings({ mode, color });
                             }}
                           />
+                          <Checkbox
+                            type="checkbox"
+                            checked={showScaleBar}
+                            onChange={() => {
+                              setShowScaleBar(!showScaleBar);
+                            }}
+                          >
+                            Show scale bar
+                          </Checkbox>
                         </div>
                       </div>
                     ),

@@ -1,7 +1,8 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { Color } from "three";
 
 import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
+import { AppThemeContext } from "./AppStyle";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
 import { FeatureThreshold } from "../colorizer/types";
 
@@ -18,6 +19,7 @@ type CanvasWrapperProps = {
    */
   dataset: Dataset | null;
   showTrackPath: boolean;
+  showScaleBar: boolean;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   colorRamp: ColorRamp;
@@ -60,6 +62,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const canvasRef = useRef<HTMLDivElement>(null);
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
+  const theme = useContext(AppThemeContext);
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
@@ -71,6 +74,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // These are all useMemo calls because the updates to the canvas must happen in the same render;
   // if these were useEffects, the canvas will lag behind updates since there is no state update to
   // trigger a re-render.
+
+  // Update the theming of the canvas overlay.
+  useMemo(() => {
+    canv.overlay.updateScaleBarOptions({
+      fontSizePx: theme.font.size.label,
+      fontColor: theme.color.text.primary,
+      fontFamily: theme.font.family,
+    });
+  }, [theme]);
 
   // Update canvas color ramp
   useMemo(() => {
@@ -103,6 +115,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setShowTrackPath(props.showTrackPath);
   }, [props.selectedTrack, props.showTrackPath]);
 
+  // Update overlay settings
+  useMemo(() => {
+    canv.setScaleBarVisibility(props.showScaleBar);
+  }, [props.showScaleBar]);
+
   // CANVAS ACTIONS /////////////////////////////////////////////////
 
   /** Report clicked tracks via the passed callback. */
@@ -122,9 +139,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
 
   useEffect(() => {
-    canv.domElement.addEventListener("click", handleCanvasClick);
+    canv.canvasElement.addEventListener("click", handleCanvasClick);
     return () => {
-      canv.domElement.removeEventListener("click", handleCanvasClick);
+      canv.canvasElement.removeEventListener("click", handleCanvasClick);
     };
   }, [handleCanvasClick]);
 
@@ -144,8 +161,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    * hovered value wwhen the canvas frame updates.
    */
   useEffect(() => {
-    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
-    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
+    canv.canvasElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
+    canv.canvasElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
   });
 
   /** Update hovered id when the canvas updates the current frame */
@@ -161,11 +178,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       lastMousePositionPx.current = [event.offsetX, event.offsetY];
     };
 
-    canv.domElement.addEventListener("mousemove", onMouseMove);
-    canv.domElement.addEventListener("mouseleave", props.onMouseLeave);
+    canv.canvasElement.addEventListener("mousemove", onMouseMove);
+    canv.canvasElement.addEventListener("mouseleave", props.onMouseLeave);
     return () => {
-      canv.domElement.removeEventListener("mousemove", onMouseMove);
-      canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
+      canv.canvasElement.removeEventListener("mousemove", onMouseMove);
+      canv.canvasElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
   }, [props.dataset, canv]);
 

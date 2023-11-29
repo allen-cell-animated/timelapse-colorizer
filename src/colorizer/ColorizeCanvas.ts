@@ -29,6 +29,7 @@ import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
+import CanvasOverlay from "./CanvasOverlay";
 import { FeatureThreshold } from "./types";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
@@ -95,17 +96,23 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-// TODO: Change into a component?
 export default class ColorizeCanvas {
+  private canvasContainer: HTMLDivElement;
+
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  public overlay: CanvasOverlay;
+
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
   private showTrackPath: boolean;
+
+  private showScaleBar: boolean;
+  private frameToCanvasScale: Vector4;
 
   private scene: Scene;
   private pickScene: Scene;
@@ -178,12 +185,34 @@ export default class ColorizeCanvas {
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
 
+    this.overlay = new CanvasOverlay();
+    this.showScaleBar = false;
+    this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
+
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
     this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
+    this.updateScaling = this.updateScaling.bind(this);
+
+    // Set up the canvas overlay as a sibling in the DOM layout
+    // by creating a dummy parent container.
+    this.canvasContainer = document.createElement("div");
+    this.canvasContainer.appendChild(this.renderer.domElement);
+    this.canvasContainer.appendChild(this.overlay.domElement);
+    this.canvasContainer.style.position = "relative";
+    this.overlay.domElement.style.position = "absolute";
+    this.overlay.domElement.style.left = "0";
+    this.overlay.domElement.style.top = "0";
   }
 
-  get domElement(): HTMLCanvasElement {
+  /**
+   * The DOM element containing the canvas and its overlay.
+   */
+  get domElement(): HTMLDivElement {
+    return this.canvasContainer;
+  }
+
+  get canvasElement(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
 
@@ -197,6 +226,7 @@ export default class ColorizeCanvas {
     this.checkPixelRatio();
 
     this.renderer.setSize(width, height);
+    this.overlay.setSize(width, height);
     // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
     // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
@@ -205,6 +235,30 @@ export default class ColorizeCanvas {
     if (this.dataset) {
       this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     }
+  }
+
+  private updateScaleBar(): void {
+    // Update the scale bar units
+    const frameDims = this.dataset?.metadata.frameDims;
+    // Ignore cases where dimensions have size 0
+    const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
+    if (this.showScaleBar && hasFrameDims && this.canvasResolution !== null) {
+      // `frameDims` are already in the provided unit scaling, so we figure out the current
+      // size of the frame relative to the canvas to determine the canvas' width in units.
+      // We only consider X scaling here because the scale bar is always horizontal.
+      const canvasWidthInUnits = frameDims.width * this.frameToCanvasScale.x;
+      const unitsPerScreenPixel = canvasWidthInUnits / this.canvasResolution.x;
+      this.overlay.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
+      this.overlay.render();
+    } else {
+      this.overlay.updateScaleBarOptions({ visible: false });
+      this.overlay.render();
+    }
+  }
+
+  setScaleBarVisibility(visible: boolean): void {
+    this.showScaleBar = visible;
+    this.updateScaleBar();
   }
 
   updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
@@ -230,6 +284,8 @@ export default class ColorizeCanvas {
     this.setUniform("canvasToFrameScale", canvasToFrameScale);
     // Scale the line mesh so the vertices line up correctly even when the canvas changes
     this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
+
+    this.updateScaleBar();
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -454,6 +510,7 @@ export default class ColorizeCanvas {
     this.updateHighlightedId();
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
+    this.overlay.render();
   }
 
   dispose(): void {
