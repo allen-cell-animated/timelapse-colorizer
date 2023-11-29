@@ -1,3 +1,4 @@
+import { Vector2 } from "three";
 import { numberToSciNotation } from "./utils/math_utils";
 
 export type StyleOptions = {
@@ -205,7 +206,8 @@ export default class CanvasOverlay {
     if (useSeconds) {
       const seconds = this.timestampOptions.currentTimestampSeconds % 60; // Ignore minutes/hours
       if (!useHours && this.timestampOptions.frameDurationSeconds % 1.0 !== 0) {
-        timestampDigits.unshift(seconds.toFixed(2).padStart(5, "0"));
+        // Duration increment is smaller than a second and we're not using hours, so show milliseconds.
+        timestampDigits.unshift(seconds.toFixed(3).padStart(6, "0"));
       } else {
         timestampDigits.unshift(seconds.toFixed(0).padStart(2, "0"));
       }
@@ -221,7 +223,7 @@ export default class CanvasOverlay {
       timestampDigits.unshift(hours.toString().padStart(2, "0"));
       timestampUnits.unshift("h");
     }
-    const timestampFormatted = timestampDigits.join(":") + " " + timestampUnits.join(":");
+    const timestampFormatted = timestampDigits.join(":") + " (" + timestampUnits.join(", ") + ")";
 
     // Render the resulting timestamp in the bottom left corner of the canvas.
     const marginPx = { v: 0, h: 20 };
