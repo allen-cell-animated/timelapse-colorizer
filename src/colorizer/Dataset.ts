@@ -23,7 +23,7 @@ export type FeatureMetadata = {
 };
 
 export type DatasetMetadata = {
-  /** Dimensions of the frame, in scale units. */
+  /** Dimensions of the frame, in scale units. Default width and height are 0. */
   frameDims: {
     width: number;
     height: number;
@@ -32,6 +32,14 @@ export type DatasetMetadata = {
   frameDurationSeconds: number;
   /* Optional offset for the timestamp. */
   startTimeSeconds: number;
+};
+
+const defaultMetadata: DatasetMetadata = {
+  frameDims: {
+    width: 0,
+    height: 0,
+    units: "",
+  },
 };
 
 export type DatasetManifest = {
@@ -72,7 +80,7 @@ export default class Dataset {
   public boundsFile?: string;
   public bounds?: Uint16Array | null;
 
-  public metadata?: Partial<DatasetMetadata>;
+  public metadata: DatasetMetadata;
 
   public baseUrl: string;
   public manifestUrl: string;
@@ -98,6 +106,7 @@ export default class Dataset {
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.featureFiles = {};
     this.features = {};
+    this.metadata = defaultMetadata;
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
@@ -237,7 +246,7 @@ export default class Dataset {
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
     this.outlierFile = manifest.outliers;
-    this.metadata = manifest.metadata;
+    this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
     const featuresToMetadata: Record<string, Partial<FeatureMetadata>> = {};
     for (const featureName of Object.keys(this.featureFiles)) {
