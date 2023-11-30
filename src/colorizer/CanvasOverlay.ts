@@ -26,8 +26,8 @@ export type TimestampOptions = StyleOptions & {
 export type BackgroundOptions = {
   fill: string;
   stroke: string;
-  padding: Vector2;
-  margin: Vector2;
+  paddingPx: Vector2;
+  marginPx: Vector2;
   radiusPx: number;
 };
 
@@ -58,8 +58,8 @@ const defaultTimestampOptions: TimestampOptions = {
 const defaultBackgroundOptions: BackgroundOptions = {
   fill: "rgba(255, 255, 255, 0.8)",
   stroke: "rgba(0, 0, 0, 0.2)",
-  padding: new Vector2(10, 10),
-  margin: new Vector2(20, 20),
+  paddingPx: new Vector2(10, 10),
+  marginPx: new Vector2(20, 20),
   radiusPx: 4,
 };
 
@@ -305,7 +305,7 @@ export default class CanvasOverlay {
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
   private renderTimestamp(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
-    if (!this.timestampOptions.visible || this.timestampOptions.frameDurationSec === 0) {
+    if (!this.timestampOptions.visible) {
       return { sizePx: new Vector2(0, 0), render: () => {} };
     }
 
@@ -340,8 +340,8 @@ export default class CanvasOverlay {
     ctx.strokeStyle = options.stroke;
     ctx.beginPath();
     ctx.roundRect(
-      Math.round(ctx.canvas.width - size.x - options.margin.x) + 0.5,
-      Math.round(ctx.canvas.height - size.y - options.margin.y) + 0.5,
+      Math.round(ctx.canvas.width - size.x - options.marginPx.x) + 0.5,
+      Math.round(ctx.canvas.height - size.y - options.marginPx.y) + 0.5,
       Math.round(size.x),
       Math.round(size.y),
       options.radiusPx
@@ -366,7 +366,7 @@ export default class CanvasOverlay {
 
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
-    const origin = this.backgroundOptions.margin.clone().add(this.backgroundOptions.padding);
+    const origin = this.backgroundOptions.marginPx.clone().add(this.backgroundOptions.paddingPx);
     const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
     origin.y += scaleBarDimensions.y;
     const { sizePx: timestampDimensions, render: renderTimestamp } = this.renderTimestamp(ctx, origin);
@@ -381,7 +381,7 @@ export default class CanvasOverlay {
       Math.max(scaleBarDimensions.x, timestampDimensions.x),
       scaleBarDimensions.y + timestampDimensions.y
     );
-    const boxSize = contentSize.clone().add(this.backgroundOptions.padding.clone().multiplyScalar(2.0));
+    const boxSize = contentSize.clone().add(this.backgroundOptions.paddingPx.clone().multiplyScalar(2.0));
     CanvasOverlay.renderBackground(ctx, boxSize, this.backgroundOptions);
 
     // Draw elements over the background

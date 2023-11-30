@@ -267,27 +267,26 @@ export default class ColorizeCanvas {
     // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
     // Pass along to the overlay as parameters.
     if (this.showTimestamp && this.dataset) {
-      const frameDurationSeconds = this.dataset.metadata.frameDurationSeconds;
-      if (frameDurationSeconds) {
+      const frameDurationSec = this.dataset.metadata.frameDurationSeconds;
+      if (frameDurationSec) {
         const startTimeSec = this.dataset.metadata.startTimeSeconds;
-        const maxTimestampSec = this.dataset.numberOfFrames * frameDurationSeconds + startTimeSec;
-        const currentTimestampSec = this.currentFrame * frameDurationSeconds + startTimeSec;
-        // Note: there's some semi-redundant information here, since the current timestamp and max timestamp
-        // could be calculated from the frame duration if we passed in the current + max frames instead.
-        // For now, we're keeping those calculations here in ColorizeCanvas so the overlay doesn't need to
-        // know frame numbers. The duration + start time are needed for time display calculations though.
+        // Note: there's some semi-redundant information here, since the current timestamp and max
+        // timestamp could be calculated from the frame duration if we passed in the current + max
+        // frames instead. For now, it's ok to keep those calculations here in ColorizeCanvas so the
+        // overlay doesn't need to know frame numbers. The duration + start time are needed for
+        // time display calculations, however.
         this.overlay.updateTimestampOptions({
           visible: true,
-          currTimeSec: currentTimestampSec,
-          maxTimeSec: maxTimestampSec,
-          frameDurationSec: frameDurationSeconds,
-          startTimeSec: startTimeSec,
+          frameDurationSec,
+          startTimeSec,
+          currTimeSec: this.currentFrame * frameDurationSec + startTimeSec,
+          maxTimeSec: this.dataset.numberOfFrames * frameDurationSec + startTimeSec,
         });
         return;
       }
     }
 
-    // Hide the scale bar
+    // Hide the timestamp if configuration is invalid or it's disabled.
     this.overlay.updateTimestampOptions({ visible: false });
   }
 
@@ -540,7 +539,6 @@ export default class ColorizeCanvas {
       return;
     }
     this.setUniform("frame", frame);
-    this.updateTimestamp();
   }
 
   render(): void {
