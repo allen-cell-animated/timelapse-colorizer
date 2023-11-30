@@ -213,28 +213,3 @@
   height: calc(100% - 20px);
   overflow: hidden;
 }
-
-.plotAndFiltersPanel .trackTitleBar {
-  display: flex;
-  flex-direction: row;
-  justify-content: end;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.trackSearch {
-  display: flex;
-  flex-direction: row;
-  gap: 6px;
-  align-items: center;
-
-  composes: nospinner from "./styles/utils.module.css";
-}
-
-.trackSearch input {
-  max-width: 80px;
-}
-
-.trackSearch h3 {
-  margin: 0;
-}

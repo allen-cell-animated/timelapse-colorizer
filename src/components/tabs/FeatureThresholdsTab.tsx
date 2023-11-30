@@ -3,18 +3,17 @@ import { Card, List, Select } from "antd";
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
 import styled, { css } from "styled-components";
 
-import DropdownSVG from "../assets/dropdown-arrow.svg?react";
+import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 
-import { FeatureThreshold } from "../colorizer/types";
-import LabeledRangeSlider from "./LabeledRangeSlider";
-import { Dataset } from "../colorizer";
-import IconButton from "./IconButton";
-import { thresholdMatchFinder } from "../colorizer/utils/data_utils";
+import { FeatureThreshold } from "../../colorizer/types";
+import LabeledRangeSlider from "../LabeledRangeSlider";
+import { Dataset } from "../../colorizer";
+import IconButton from "../IconButton";
+import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
+import { FlexColumn } from "../../styles/utils";
 
-const PanelContainer = styled.div`
+const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
-  display: flex;
-  flex-direction: column;
   gap: 6px;
   height: 100%;
 `;
@@ -69,25 +68,25 @@ const EmptyListTextContainer = styled.div`
   justify-content: center;
 `;
 
-type FeatureThresholdPanelProps = {
+type FeatureThresholdsTabProps = {
   featureThresholds: FeatureThreshold[];
   onChange: (thresholds: FeatureThreshold[]) => void;
   dataset: Dataset | null;
   disabled?: boolean;
 };
 
-const defaultProps: Partial<FeatureThresholdPanelProps> = {
+const defaultProps: Partial<FeatureThresholdsTabProps> = {
   disabled: false,
 };
 
 /**
  * A React component for adding, removing, and editing thresholds on features in a dataset.
  */
-export default function FeatureThresholdPanel(inputProps: FeatureThresholdPanelProps): ReactElement {
+export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabProps): ReactElement {
   const props = {
     ...defaultProps,
     ...inputProps,
-  } as Required<FeatureThresholdPanelProps>;
+  } as Required<FeatureThresholdsTabProps>;
 
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const selectContainerRef = useRef<HTMLDivElement>(null);
