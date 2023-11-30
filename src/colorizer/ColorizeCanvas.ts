@@ -268,7 +268,7 @@ export default class ColorizeCanvas {
     // Pass along to the overlay as parameters.
     if (this.showTimestamp && this.dataset) {
       // TODO: Remove the || conditional, it's just for testing. Call me out if I forget to remove this >:(
-      const frameDurationSeconds = this.dataset.metadata.frameDurationSeconds || 51.25;
+      const frameDurationSeconds = this.dataset.metadata.frameDurationSeconds || 1;
       if (frameDurationSeconds) {
         const startTimeSec = this.dataset.metadata.startTimeSeconds;
         const maxTimestampSec = this.dataset.numberOfFrames * frameDurationSeconds + startTimeSec;
@@ -279,10 +279,10 @@ export default class ColorizeCanvas {
         // know frame numbers. The duration + start time are needed for time display calculations though.
         this.overlay.updateTimestampOptions({
           visible: true,
-          currentTimestampSeconds: currentTimestampSec,
-          maxTimestampSeconds: maxTimestampSec,
-          frameDurationSeconds,
-          startTimeSeconds: startTimeSec,
+          currTimeSec: currentTimestampSec,
+          maxTimeSec: maxTimestampSec,
+          frameDurationSec: frameDurationSeconds,
+          startTimeSec: startTimeSec,
         });
         return;
       }

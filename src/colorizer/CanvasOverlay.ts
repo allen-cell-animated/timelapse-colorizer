@@ -16,10 +16,10 @@ export type ScaleBarOptions = StyleOptions & {
 
 export type TimestampOptions = StyleOptions & {
   visible: boolean;
-  maxTimestampSeconds: number;
-  currentTimestampSeconds: number;
-  frameDurationSeconds: number;
-  startTimeSeconds: number;
+  maxTimeSec: number;
+  currTimeSec: number;
+  frameDurationSec: number;
+  startTimeSec: number;
 };
 
 const defaultStyleOptions: StyleOptions = {
@@ -39,10 +39,15 @@ const defaultScaleBarOptions: ScaleBarOptions = {
 const defaultTimestampOptions: TimestampOptions = {
   ...defaultStyleOptions,
   visible: false,
-  frameDurationSeconds: 1,
-  startTimeSeconds: 0,
-  maxTimestampSeconds: 1,
-  currentTimestampSeconds: 0,
+  frameDurationSec: 1,
+  startTimeSec: 0,
+  maxTimeSec: 1,
+  currTimeSec: 0,
+};
+
+type SizeAndRender = {
+  size: Vector2;
+  render: () => void;
 };
 
 /**
@@ -81,22 +86,32 @@ export default class CanvasOverlay {
     this.timestampOptions = { ...this.timestampOptions, ...options };
   }
 
-  private renderRightAlignedText(
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    bottomOffsetPx: number,
-    horizontalMarginPx: number,
-    verticalMarginPx: number,
-    options: StyleOptions
-  ): void {
+  private getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: StyleOptions): Vector2 {
     ctx.font = `${options.fontSizePx}px ${options.fontFamily}`;
     ctx.fillStyle = options.fontColor;
     const textWidth = ctx.measureText(text).width;
-    ctx.fillText(
-      text,
-      this.canvas.width - textWidth - horizontalMarginPx,
-      this.canvas.height - verticalMarginPx - bottomOffsetPx
-    );
+    return new Vector2(textWidth, options.fontSizePx);
+  }
+
+  /**
+   * Renders text on the canvas
+   * @param ctx the canvas context to render to.
+   * @param text the text to render.
+   * @param originPx the origin of the text, from the lower right corner, in pixels.
+   * @param options style options for the text.
+   * @returns the width and height of the text, as a Vector2.
+   */
+  private renderRightAlignedText(
+    ctx: CanvasRenderingContext2D,
+    originPx: Vector2,
+    text: string,
+    options: StyleOptions
+  ): Vector2 {
+    ctx.font = `${options.fontSizePx}px ${options.fontFamily}`;
+    ctx.fillStyle = options.fontColor;
+    const textWidth = ctx.measureText(text).width;
+    ctx.fillText(text, this.canvas.width - textWidth - originPx.x, this.canvas.height - originPx.y);
+    return new Vector2(textWidth, options.fontSizePx);
   }
 
   /**
@@ -115,22 +130,23 @@ export default class CanvasOverlay {
     }
   }
 
+  // NOTE: Rendering of the scale bar and timestamp is deferred here, since we need to draw a background behind them
+  // with an appropriate size. These methods return a callback that renders the scale bar or timestamp to the canvas,
+  // and provide the dimensions of the rendered element.
+
   /**
-   * Renders the scale bar, if enabled.
-   * @param yOffsetPx The y offset above the bottom of the canvas to render the scale bar from, in pixels.
-   * @returns The height taken up by the scale bar, in pixels.
+   * Gets the size of the scale bar and a callback to render it to the canvas.
+   * @param originPx The origin of the scale bar, from the lower right corner, in pixels.
+   * @returns an object with two properties:
+   *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
+   *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private renderScaleBar(yOffsetPx: number): number {
+  private getScaleBarRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): SizeAndRender {
     if (!this.scaleBarOptions.unitsPerScreenPixel || !this.scaleBarOptions.visible) {
-      return 0;
+      return { size: new Vector2(0, 0), render: () => {} };
     }
 
-    const ctx = this.canvas.getContext("2d");
-    if (ctx === null) {
-      console.error("Could not get canvas context");
-      return 0;
-    }
-
+    ///////// Determine the scale bar width and label /////////
     const minWidthUnits = this.scaleBarOptions.minWidthPx * this.scaleBarOptions.unitsPerScreenPixel;
     // Here we get the power of the most significant digit (MSD) of the minimum width converted to units.
     const msdPower = Math.ceil(Math.log10(minWidthUnits));
@@ -151,85 +167,104 @@ export default class CanvasOverlay {
 
     const textContent = `${this.formatScaleBarValue(scaleBarWidthInUnits)} ${this.scaleBarOptions.units}`;
 
-    // Draw the scale bar line
-    const scaleBarMarginPx = { v: 0, h: 20 }; // L/R margin
+    ///////// Calculate the padding and origins for drawing and size /////////
     const scaleBarHeight = 10;
     // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
-    const scaleBarX = this.canvas.width - scaleBarMarginPx.h + 0.5;
-    const scaleBarY = this.canvas.height - yOffsetPx + 0.5;
-    ctx.beginPath();
-    ctx.strokeStyle = this.scaleBarOptions.fontColor;
-    ctx.lineWidth = 1;
-    ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
-    ctx.lineTo(scaleBarX, scaleBarY);
-    ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY);
-    ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY - scaleBarHeight);
-    ctx.stroke();
+    const scaleBarX = this.canvas.width - originPx.x + 0.5;
+    const scaleBarY = this.canvas.height - originPx.y + 0.5;
 
-    // Draw the scale bar text label
+    const renderScaleBar = () => {
+      // Render the scale bar
+      ctx.beginPath();
+      ctx.strokeStyle = this.scaleBarOptions.fontColor;
+      ctx.lineWidth = 1;
+      ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
+      ctx.lineTo(scaleBarX, scaleBarY);
+      ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY);
+      ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY - scaleBarHeight);
+      ctx.stroke();
+    };
+
     // TODO: This looks bad at high magnification. A workaround would be to use CSS2DRenderer to
     // render the text normally and then hotswap it for a regular canvas when recording occurs.
-    // (but most likely a non-issue.)
-    const marginPx = { v: 6, h: scaleBarMarginPx.h + 6 };
-    this.renderRightAlignedText(ctx, textContent, yOffsetPx, marginPx.h, marginPx.v, this.scaleBarOptions);
+    // (but most likely a non-issue?)
+    const textPaddingPx = new Vector2(6, 6);
+    const textOriginPx = new Vector2(originPx.x + textPaddingPx.x, originPx.y + textPaddingPx.y);
+    const renderScaleBarText = () => {
+      this.renderRightAlignedText(ctx, textOriginPx, textContent, this.scaleBarOptions);
+    };
 
-    return 2 * scaleBarMarginPx.v + this.scaleBarOptions.fontSizePx + 10;
+    return {
+      size: new Vector2(scaleBarWidthPx, this.scaleBarOptions.fontSizePx + textPaddingPx.y * 2),
+      render: () => {
+        renderScaleBar();
+        renderScaleBarText();
+      },
+    };
   }
 
-  private renderTimestamp(yOffsetPx: number): number {
+  /**
+   * Draws the timestamp, if visible, and returns the rendered height and width.
+   * @param originPx The origin of the timestamp, from the lower right corner, in pixels.
+   * @returns A vector representing the width and height of the rendered timestamp, in pixels.
+   */
+  private renderTimestamp(ctx: CanvasRenderingContext2D, originPx: Vector2): SizeAndRender {
     if (!this.timestampOptions.visible) {
-      return 0;
+      return { size: new Vector2(0, 0), render: () => {} };
     }
 
-    const ctx = this.canvas.getContext("2d");
-    if (ctx === null) {
-      console.error("Could not get canvas context");
-      return 0;
-    }
-
+    ////////////////// Format timestamp as text //////////////////
     // Determine maximum units (hours, minutes, or seconds) that the timestamp should display, using the
     // max timestamp parameter.
     // Then, format the resulting timestamp based on that format (Ideally close to HH:mm:ss`s`), with extra
     // precision if only using seconds/minutes (mm:ss.ss`s` or ss.ss`s`).
-    // TODO: Does this need to show milliseconds ever?
 
-    const useMinutes = this.timestampOptions.maxTimestampSeconds >= 60;
-    const useHours = this.timestampOptions.maxTimestampSeconds >= 60 * 60;
+    const useMinutes = this.timestampOptions.maxTimeSec >= 60;
+    const useHours = this.timestampOptions.maxTimeSec >= 60 * 60;
     // Ignore seconds if the frame duration is in minute increments AND the start time is also in minute increments.
     const useSeconds = !(
-      this.timestampOptions.frameDurationSeconds % 60 === 0 && this.timestampOptions.startTimeSeconds % 60 === 0
+      this.timestampOptions.frameDurationSec % 60 === 0 && this.timestampOptions.startTimeSec % 60 === 0
     );
 
     let timestampDigits: string[] = [];
     let timestampUnits: string[] = [];
 
-    if (useSeconds) {
-      const seconds = this.timestampOptions.currentTimestampSeconds % 60; // Ignore minutes/hours
-      if (!useHours && this.timestampOptions.frameDurationSeconds % 1.0 !== 0) {
-        // Duration increment is smaller than a second and we're not using hours, so show milliseconds.
-        timestampDigits.unshift(seconds.toFixed(3).padStart(6, "0"));
-      } else {
-        timestampDigits.unshift(seconds.toFixed(0).padStart(2, "0"));
-      }
-      timestampUnits.unshift("s");
+    if (useHours) {
+      const hours = Math.floor(this.timestampOptions.currTimeSec / (60 * 60));
+      timestampDigits.push(hours.toString().padStart(2, "0"));
+      timestampUnits.push("h");
     }
     if (useMinutes) {
-      const minutes = Math.floor(this.timestampOptions.currentTimestampSeconds / 60) % 60;
-      timestampDigits.unshift(minutes.toString().padStart(2, "0"));
-      timestampUnits.unshift("m");
+      const minutes = Math.floor(this.timestampOptions.currTimeSec / 60) % 60;
+      timestampDigits.push(minutes.toString().padStart(2, "0"));
+      timestampUnits.push("m");
     }
-    if (useHours) {
-      const hours = Math.floor(this.timestampOptions.currentTimestampSeconds / (60 * 60));
-      timestampDigits.unshift(hours.toString().padStart(2, "0"));
-      timestampUnits.unshift("h");
+    if (useSeconds) {
+      const seconds = this.timestampOptions.currTimeSec % 60;
+      if (!useHours && this.timestampOptions.frameDurationSec % 1.0 !== 0) {
+        // Duration increment is smaller than a second and we're not showing hours, so show milliseconds.
+        timestampDigits.push(seconds.toFixed(3).padStart(6, "0"));
+      } else {
+        timestampDigits.push(seconds.toFixed(0).padStart(2, "0"));
+      }
+      timestampUnits.push("s");
     }
     const timestampFormatted = timestampDigits.join(":") + " (" + timestampUnits.join(", ") + ")";
 
-    // Render the resulting timestamp in the bottom left corner of the canvas.
-    const marginPx = { v: 0, h: 20 };
-    this.renderRightAlignedText(ctx, timestampFormatted, yOffsetPx, marginPx.h, marginPx.v, this.scaleBarOptions);
+    const timestampPaddingPx = new Vector2(2, 2);
+    const timestampOriginPx = new Vector2(originPx.x + timestampPaddingPx.x, originPx.y + timestampPaddingPx.y);
+    // Save the render function for later.
+    const render = () => {
+      this.renderRightAlignedText(ctx, timestampOriginPx, timestampFormatted, this.scaleBarOptions);
+    };
 
-    return marginPx.v * 2 + this.timestampOptions.fontSizePx;
+    return {
+      size: new Vector2(
+        this.getTextDimensions(ctx, timestampFormatted, this.timestampOptions).x,
+        timestampPaddingPx.x * 2 + this.timestampOptions.fontSizePx
+      ),
+      render,
+    };
   }
 
   render(): void {
@@ -242,9 +277,39 @@ export default class CanvasOverlay {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Draw scale bar and timestamp
-    let yOffset = 20;
-    yOffset += this.renderScaleBar(yOffset);
-    yOffset += this.renderTimestamp(yOffset);
+    const boxMargin = new Vector2(20, 20);
+    const boxPadding = new Vector2(10, 10);
+    let origin = boxMargin.clone().add(boxPadding);
+    console.log("origin:");
+    console.log(origin);
+
+    // Get dimensions of the components
+    const { size: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
+    origin.y += scaleBarDimensions.y;
+    const { size: timestampDimensions, render: renderTimestamp } = this.renderTimestamp(ctx, origin);
+    console.log(scaleBarDimensions);
+    console.log(timestampDimensions);
+
+    const contentSize = new Vector2(
+      Math.max(scaleBarDimensions.x, timestampDimensions.x),
+      scaleBarDimensions.y + timestampDimensions.y
+    );
+    console.log(contentSize);
+    const boxSize = contentSize.clone().add(boxPadding.clone().multiplyScalar(2.0));
+    console.log(boxSize);
+
+    // Draw background box around the components
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillRect(
+      this.canvas.width - boxSize.x - boxMargin.x,
+      this.canvas.height - boxSize.y - boxMargin.y,
+      boxSize.x,
+      boxSize.y
+    );
+
+    // Draw components over the box
+    renderScaleBar();
+    renderTimestamp();
   }
 
   get domElement(): HTMLElement {
