@@ -267,8 +267,7 @@ export default class ColorizeCanvas {
     // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
     // Pass along to the overlay as parameters.
     if (this.showTimestamp && this.dataset) {
-      // TODO: Remove the || conditional, it's just for testing. Call me out if I forget to remove this >:(
-      const frameDurationSeconds = this.dataset.metadata.frameDurationSeconds || 1;
+      const frameDurationSeconds = this.dataset.metadata.frameDurationSeconds;
       if (frameDurationSeconds) {
         const startTimeSec = this.dataset.metadata.startTimeSeconds;
         const maxTimestampSec = this.dataset.numberOfFrames * frameDurationSeconds + startTimeSec;
