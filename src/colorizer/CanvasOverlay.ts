@@ -121,7 +121,7 @@ export default class CanvasOverlay {
   }
 
   /**
-   * Renders text on the canvas
+   * Renders text on the canvas, using its bottom right corner as the origin.
    * @param ctx the canvas context to render to.
    * @param text the text to render.
    * @param originPx the origin of the text, from the lower right corner, in pixels.
@@ -137,7 +137,7 @@ export default class CanvasOverlay {
     ctx.font = `${options.fontStyle} ${options.fontSizePx}px ${options.fontFamily}`;
     ctx.fillStyle = options.fontColor;
     const textWidth = ctx.measureText(text).width;
-    // Throw in a magic number to nudge the text up a bit so it looks vertically centered.
+    // Magic number to nudge text up a bit so it looks vertically centered.
     const textOffset = Math.round(options.fontSizePx * 0.1);
     ctx.fillText(text, this.canvas.width - textWidth - originPx.x, this.canvas.height - originPx.y - textOffset);
     return new Vector2(textWidth, options.fontSizePx);
