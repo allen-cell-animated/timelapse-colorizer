@@ -107,7 +107,7 @@ export default class CanvasOverlay {
     this.timestampOptions = { ...this.timestampOptions, ...options };
   }
 
-  updateOverlayOptions(options: Partial<BackgroundOptions>): void {
+  updateBackgroundOptions(options: Partial<BackgroundOptions>): void {
     this.backgroundOptions = { ...this.backgroundOptions, ...options };
   }
 
@@ -135,7 +135,9 @@ export default class CanvasOverlay {
     ctx.font = `${options.fontStyle} ${options.fontSizePx}px ${options.fontFamily}`;
     ctx.fillStyle = options.fontColor;
     const textWidth = ctx.measureText(text).width;
-    ctx.fillText(text, this.canvas.width - textWidth - originPx.x, this.canvas.height - originPx.y);
+    // Throw in a magic number to nudge the text up a bit so it looks vertically centered.
+    const textOffset = Math.round(options.fontSizePx * 0.1);
+    ctx.fillText(text, this.canvas.width - textWidth - originPx.x, this.canvas.height - originPx.y - textOffset);
     return new Vector2(textWidth, options.fontSizePx);
   }
 
@@ -229,7 +231,7 @@ export default class CanvasOverlay {
     // TODO: This looks bad at high magnification. A workaround would be to use CSS2DRenderer to
     // render the text normally and then hotswap it for a regular canvas when recording occurs.
     // (but most likely a non-issue?)
-    const textPaddingPx = new Vector2(6, 6);
+    const textPaddingPx = new Vector2(6, 4);
     const textOriginPx = new Vector2(originPx.x + textPaddingPx.x, originPx.y + textPaddingPx.y);
     const renderScaleBarText = () => {
       this.renderRightAlignedText(ctx, textOriginPx, textContent, this.scaleBarOptions);
@@ -310,9 +312,7 @@ export default class CanvasOverlay {
 
     // TODO: Would be nice to configure top/bottom/left/right padding separately.
     const timestampPaddingPx = new Vector2(6, 2);
-    // Nudge by 2 pixels up due to text rendering alignment weirdness
-    // (Otherwise the vertical padding above the text is larger than below)
-    const timestampOriginPx = new Vector2(originPx.x + timestampPaddingPx.x, originPx.y + timestampPaddingPx.y + 2);
+    const timestampOriginPx = new Vector2(originPx.x + timestampPaddingPx.x, originPx.y + timestampPaddingPx.y);
     // Save the render function for later.
     const render = () => {
       this.renderRightAlignedText(ctx, timestampOriginPx, timestampFormatted, this.scaleBarOptions);

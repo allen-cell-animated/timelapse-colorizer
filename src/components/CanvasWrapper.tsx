@@ -85,6 +85,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
     canv.overlay.updateScaleBarOptions(defaultTheme);
     canv.overlay.updateTimestampOptions(defaultTheme);
+    canv.overlay.updateBackgroundOptions({ stroke: theme.color.layout.borders });
   }, [theme]);
 
   // Update canvas color ramp
