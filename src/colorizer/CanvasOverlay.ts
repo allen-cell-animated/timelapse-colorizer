@@ -23,7 +23,7 @@ export type TimestampOptions = StyleOptions & {
   startTimeSec: number;
 };
 
-export type OverlayOptions = {
+export type BackgroundOptions = {
   fill: string;
   stroke: string;
   padding: Vector2;
@@ -55,7 +55,7 @@ const defaultTimestampOptions: TimestampOptions = {
   currTimeSec: 0,
 };
 
-const defaultOverlayOptions: OverlayOptions = {
+const defaultBackgroundOptions: BackgroundOptions = {
   fill: "rgba(255, 255, 255, 0.8)",
   stroke: "rgba(0, 0, 0, 0.2)",
   padding: new Vector2(10, 10),
@@ -76,19 +76,19 @@ export default class CanvasOverlay {
   private canvas: HTMLCanvasElement;
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
-  private overlayOptions: OverlayOptions;
+  private backgroundOptions: BackgroundOptions;
 
   constructor(
     scaleBarOptions: ScaleBarOptions = defaultScaleBarOptions,
     timestampOptions: TimestampOptions = defaultTimestampOptions,
-    overlayOptions: OverlayOptions = defaultOverlayOptions
+    overlayOptions: BackgroundOptions = defaultBackgroundOptions
   ) {
     this.canvas = document.createElement("canvas");
     // Disable pointer events on the canvas overlay so it doesn't block mouse events on the main canvas.
     this.canvas.style.pointerEvents = "none";
     this.scaleBarOptions = scaleBarOptions;
     this.timestampOptions = timestampOptions;
-    this.overlayOptions = overlayOptions;
+    this.backgroundOptions = overlayOptions;
   }
 
   /**
@@ -107,8 +107,8 @@ export default class CanvasOverlay {
     this.timestampOptions = { ...this.timestampOptions, ...options };
   }
 
-  updateOverlayOptions(options: Partial<OverlayOptions>): void {
-    this.overlayOptions = { ...this.overlayOptions, ...options };
+  updateOverlayOptions(options: Partial<BackgroundOptions>): void {
+    this.backgroundOptions = { ...this.backgroundOptions, ...options };
   }
 
   private getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: StyleOptions): Vector2 {
@@ -157,7 +157,8 @@ export default class CanvasOverlay {
 
   // NOTE: Rendering of the scale bar and timestamp is deferred here, since we need to draw a background behind them
   // with an appropriate size. These methods return a callback that renders the scale bar or timestamp to the canvas,
-  // and provide the dimensions of the rendered element.
+  // and provide the dimensions of the rendered element. The dimensions are used to draw a background
+  // box, and then the elements are rendered on top using the callbacks.
 
   /**
    * Determine a reasonable width for the scale bar, in units, and the corresponding width in pixels.
@@ -332,7 +333,7 @@ export default class CanvasOverlay {
    * @param size Size of the background overlay.
    * @param options Configuration for the background overlay.
    */
-  private static renderBackgroundOverlay(ctx: CanvasRenderingContext2D, size: Vector2, options: OverlayOptions): void {
+  private static renderBackground(ctx: CanvasRenderingContext2D, size: Vector2, options: BackgroundOptions): void {
     ctx.fillStyle = options.fill;
     ctx.strokeStyle = options.stroke;
     ctx.beginPath();
@@ -362,7 +363,7 @@ export default class CanvasOverlay {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Setup
-    let origin = this.overlayOptions.margin.clone().add(this.overlayOptions.padding);
+    let origin = this.backgroundOptions.margin.clone().add(this.backgroundOptions.padding);
 
     // Get dimensions of the components
     const { size: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
@@ -374,13 +375,13 @@ export default class CanvasOverlay {
       return;
     }
 
-    // Draw background box around the components
+    // Draw background box behind the components
     const contentSize = new Vector2(
       Math.max(scaleBarDimensions.x, timestampDimensions.x),
       scaleBarDimensions.y + timestampDimensions.y
     );
-    const boxSize = contentSize.clone().add(this.overlayOptions.padding.clone().multiplyScalar(2.0));
-    CanvasOverlay.renderBackgroundOverlay(ctx, boxSize, this.overlayOptions);
+    const boxSize = contentSize.clone().add(this.backgroundOptions.padding.clone().multiplyScalar(2.0));
+    CanvasOverlay.renderBackground(ctx, boxSize, this.backgroundOptions);
 
     // Draw components over the box
     renderScaleBar();
