@@ -96,6 +96,7 @@ function App(): ReactElement {
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [showTrackPath, setShowTrackPath] = useState(false);
+  const [showScaleBar, setShowScaleBar] = useState(true);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -366,13 +367,13 @@ function App(): ReactElement {
   );
 
   /**
-   * Attempt to load an ambiguous URL as either a dataset or a collection.
-   * @param url the url to load.
-   * @returns a LoadResult, which includes a `result` boolean flag (true if successful, false if not)
-   * and an optional `errorMessage`.
+   * Attempt to load a URL provided in the Load menu.
+   * The URL may either be a collection or a dataset, so handle it as an ambiguous URL.
+   * @throws an error if the URL could not be loaded.
+   * @returns the absolute path of the URL resource that was loaded.
    */
   const handleLoadRequest = useCallback(
-    async (url: string): Promise<void> => {
+    async (url: string): Promise<string> => {
       console.log("Loading '" + url + "'.");
       const newCollection = await Collection.loadFromAmbiguousUrl(url);
       const newDatasetKey = newCollection.getDefaultDatasetKey();
@@ -394,6 +395,7 @@ function App(): ReactElement {
       setCollection(newCollection);
       setFeatureThresholds([]); // Clear when switching collections
       await replaceDataset(loadResult.dataset, newDatasetKey);
+      return newCollection.url || newCollection.getDefaultDatasetKey();
     },
     [replaceDataset]
   );
@@ -409,7 +411,6 @@ function App(): ReactElement {
       const featureData = newDataset.getFeatureData(newFeatureName);
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
-        // TODO: Update this with units later
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
         if (threshold) {
           setColorRampMin(threshold.min);
@@ -577,7 +578,7 @@ function App(): ReactElement {
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrameAndRender}
-            getCanvas={() => canv.domElement}
+            getCanvas={() => canv.canvasElement}
             // Stop playback when exporting
             onClick={() => timeControls.handlePauseButtonClick()}
             currentFrame={currentFrame}
@@ -585,7 +586,7 @@ function App(): ReactElement {
             disabled={dataset === null}
             setIsRecording={setIsRecording}
           />
-          <LoadDatasetButton onRequestLoad={handleLoadRequest} />
+          <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
         </div>
       </div>
 
@@ -671,6 +672,7 @@ function App(): ReactElement {
                   }
                 }}
                 onMouseLeave={() => setShowHoveredId(false)}
+                showScaleBar={showScaleBar}
               />
             </HoverTooltip>
 
@@ -788,8 +790,10 @@ function App(): ReactElement {
                         <SettingsTab
                           outOfRangeDrawSettings={outOfRangeDrawSettings}
                           outlierDrawSettings={outlierDrawSettings}
+                          showScaleBar={showScaleBar}
                           setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
                           setOutlierDrawSettings={setOutlierDrawSettings}
+                          setShowScaleBar={setShowScaleBar}
                         />
                       </div>
                     ),

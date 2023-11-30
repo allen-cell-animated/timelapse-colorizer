@@ -10,6 +10,35 @@ import Track from "./Track";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 
+export type FeatureData = {
+  data: Float32Array;
+  tex: Texture;
+  min: number;
+  max: number;
+  units: string;
+};
+
+export type FeatureMetadata = {
+  units: string | null;
+};
+
+export type DatasetMetadata = {
+  /** Dimensions of the frame, in scale units. Default width and height are 0. */
+  frameDims: {
+    width: number;
+    height: number;
+    units: string;
+  };
+};
+
+const defaultMetadata: DatasetMetadata = {
+  frameDims: {
+    width: 0,
+    height: 0,
+    units: "",
+  },
+};
+
 export type DatasetManifest = {
   frames: string[];
   features: Record<string, string>;
@@ -19,19 +48,7 @@ export type DatasetManifest = {
   times?: string;
   centroids?: string;
   bounds?: string;
-};
-
-export type FeatureMetadata = {
-  units: string | null;
-};
-
-export type FeatureData = {
-  data: Float32Array;
-  tex: Texture;
-  min: number;
-  max: number;
-  /** Defaults to empty string ("") if no units are provided. */
-  units: string;
+  metadata?: Partial<DatasetMetadata>;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -60,6 +77,8 @@ export default class Dataset {
   public boundsFile?: string;
   public bounds?: Uint16Array | null;
 
+  public metadata: DatasetMetadata;
+
   public baseUrl: string;
   public manifestUrl: string;
   private hasOpened: boolean;
@@ -84,6 +103,7 @@ export default class Dataset {
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.featureFiles = {};
     this.features = {};
+    this.metadata = defaultMetadata;
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
@@ -223,6 +243,7 @@ export default class Dataset {
     this.frameFiles = manifest.frames;
     this.featureFiles = manifest.features;
     this.outlierFile = manifest.outliers;
+    this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
     const featuresToMetadata: Record<string, Partial<FeatureMetadata>> = {};
     for (const featureName of Object.keys(this.featureFiles)) {
