@@ -63,8 +63,10 @@ const defaultBackgroundOptions: BackgroundOptions = {
   radiusPx: 4,
 };
 
-type SizeAndRender = {
-  size: Vector2;
+type RenderInfo = {
+  /** Size of the element, in pixels. */
+  sizePx: Vector2;
+  /** Callback to render the element. */
   render: () => void;
 };
 
@@ -200,9 +202,9 @@ export default class CanvasOverlay {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getScaleBarRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): SizeAndRender {
+  private getScaleBarRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
     if (!this.scaleBarOptions.unitsPerScreenPixel || !this.scaleBarOptions.visible) {
-      return { size: new Vector2(0, 0), render: () => {} };
+      return { sizePx: new Vector2(0, 0), render: () => {} };
     }
 
     ///////// Get scale bar width and unit label /////////
@@ -238,7 +240,7 @@ export default class CanvasOverlay {
     };
 
     return {
-      size: new Vector2(scaleBarWidthPx, this.scaleBarOptions.fontSizePx + textPaddingPx.y * 2),
+      sizePx: new Vector2(scaleBarWidthPx, this.scaleBarOptions.fontSizePx + textPaddingPx.y * 2),
       render: () => {
         renderScaleBar();
         renderScaleBarText();
@@ -302,9 +304,9 @@ export default class CanvasOverlay {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private renderTimestamp(ctx: CanvasRenderingContext2D, originPx: Vector2): SizeAndRender {
+  private renderTimestamp(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
     if (!this.timestampOptions.visible || this.timestampOptions.frameDurationSec === 0) {
-      return { size: new Vector2(0, 0), render: () => {} };
+      return { sizePx: new Vector2(0, 0), render: () => {} };
     }
 
     ////////////////// Format timestamp as text //////////////////
@@ -319,7 +321,7 @@ export default class CanvasOverlay {
     };
 
     return {
-      size: new Vector2(
+      sizePx: new Vector2(
         timestampPaddingPx.x * 2 + this.getTextDimensions(ctx, timestampFormatted, this.timestampOptions).x,
         timestampPaddingPx.y * 2 + this.timestampOptions.fontSizePx
       ),
@@ -365,9 +367,9 @@ export default class CanvasOverlay {
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
     const origin = this.backgroundOptions.margin.clone().add(this.backgroundOptions.padding);
-    const { size: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
+    const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
     origin.y += scaleBarDimensions.y;
-    const { size: timestampDimensions, render: renderTimestamp } = this.renderTimestamp(ctx, origin);
+    const { sizePx: timestampDimensions, render: renderTimestamp } = this.renderTimestamp(ctx, origin);
 
     // If both elements are invisible, don't render the background.
     if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
