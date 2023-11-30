@@ -15,10 +15,8 @@ type SettingsTabProps = {
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
   setShowScaleBar: (show: boolean) => void;
 };
-const defaultProps: Partial<SettingsTabProps> = {};
 
-export default function SettingsTab(inputProps: SettingsTabProps): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as Required<SettingsTabProps>;
+export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <DrawModeDropdown
