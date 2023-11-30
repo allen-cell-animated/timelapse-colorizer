@@ -307,8 +307,11 @@ export default class CanvasOverlay {
     ////////////////// Format timestamp as text //////////////////
     const timestampFormatted = CanvasOverlay.getTimestampLabel(this.timestampOptions);
 
+    // TODO: Would be nice to configure top/bottom/left/right padding separately.
     const timestampPaddingPx = new Vector2(6, 2);
-    const timestampOriginPx = new Vector2(originPx.x + timestampPaddingPx.x, originPx.y + timestampPaddingPx.y);
+    // Nudge by 2 pixels up due to text rendering alignment weirdness
+    // (Otherwise the vertical padding above the text is larger than below)
+    const timestampOriginPx = new Vector2(originPx.x + timestampPaddingPx.x, originPx.y + timestampPaddingPx.y + 2);
     // Save the render function for later.
     const render = () => {
       this.renderRightAlignedText(ctx, timestampOriginPx, timestampFormatted, this.scaleBarOptions);
@@ -323,12 +326,27 @@ export default class CanvasOverlay {
     };
   }
 
-  private renderBackgroundOverlay(
-    ctx: CanvasRenderingContext2D,
-    originPx: Vector2,
-    size: Vector2,
-    styleOptions: StyleOptions
-  ): void {}
+  /**
+   * Draws the background overlay in the bottom right corner of the canvas.
+   * @param ctx Canvas context to render to.
+   * @param size Size of the background overlay.
+   * @param options Configuration for the background overlay.
+   */
+  private static renderBackgroundOverlay(ctx: CanvasRenderingContext2D, size: Vector2, options: OverlayOptions): void {
+    ctx.fillStyle = options.fill;
+    ctx.strokeStyle = options.stroke;
+    ctx.beginPath();
+    ctx.roundRect(
+      Math.round(ctx.canvas.width - size.x - options.margin.x) + 0.5,
+      Math.round(ctx.canvas.height - size.y - options.margin.y) + 0.5,
+      Math.round(size.x),
+      Math.round(size.y),
+      options.radiusPx
+    );
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+  }
 
   /**
    * Render the overlay to the canvas.
@@ -339,6 +357,7 @@ export default class CanvasOverlay {
       console.error("Could not get canvas context");
       return;
     }
+
     //Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -349,9 +368,6 @@ export default class CanvasOverlay {
     const { size: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
     origin.y += scaleBarDimensions.y;
     const { size: timestampDimensions, render: renderTimestamp } = this.renderTimestamp(ctx, origin);
-    console.log("Scale Bar Dims:");
-    console.log(scaleBarDimensions);
-    console.log(timestampDimensions);
 
     // If both components are invisible, don't render anything.
     if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
@@ -364,20 +380,7 @@ export default class CanvasOverlay {
       scaleBarDimensions.y + timestampDimensions.y
     );
     const boxSize = contentSize.clone().add(this.overlayOptions.padding.clone().multiplyScalar(2.0));
-
-    ctx.fillStyle = this.overlayOptions.fill;
-    ctx.strokeStyle = this.overlayOptions.stroke;
-    ctx.beginPath();
-    ctx.roundRect(
-      Math.round(this.canvas.width - boxSize.x - this.overlayOptions.margin.x) + 0.5,
-      Math.round(this.canvas.height - boxSize.y - this.overlayOptions.margin.y) + 0.5,
-      Math.round(boxSize.x),
-      Math.round(boxSize.y),
-      this.overlayOptions.radiusPx
-    );
-    ctx.fill();
-    ctx.stroke();
-    ctx.closePath();
+    CanvasOverlay.renderBackgroundOverlay(ctx, boxSize, this.overlayOptions);
 
     // Draw components over the box
     renderScaleBar();
