@@ -215,7 +215,7 @@ export default class CanvasOverlay {
     const scaleBarX = this.canvas.width - originPx.x + 0.5;
     const scaleBarY = this.canvas.height - originPx.y + 0.5;
 
-    const renderScaleBar = () => {
+    const renderScaleBar = (): void => {
       // Render the scale bar
       ctx.beginPath();
       ctx.strokeStyle = this.scaleBarOptions.fontColor;
@@ -233,7 +233,7 @@ export default class CanvasOverlay {
     // (but most likely a non-issue?)
     const textPaddingPx = new Vector2(6, 4);
     const textOriginPx = new Vector2(originPx.x + textPaddingPx.x, originPx.y + textPaddingPx.y);
-    const renderScaleBarText = () => {
+    const renderScaleBarText = (): void => {
       this.renderRightAlignedText(ctx, textOriginPx, textContent, this.scaleBarOptions);
     };
 
@@ -268,8 +268,8 @@ export default class CanvasOverlay {
     // Ignore seconds if the frame duration is in minute increments AND the start time is also in minute increments.
     const useSeconds = !(timestampOptions.frameDurationSec % 60 === 0 && timestampOptions.startTimeSec % 60 === 0);
 
-    let timestampDigits: string[] = [];
-    let timestampUnits: string[] = [];
+    const timestampDigits: string[] = [];
+    const timestampUnits: string[] = [];
 
     if (useHours) {
       const hours = Math.floor(timestampOptions.currTimeSec / (60 * 60));
@@ -303,7 +303,7 @@ export default class CanvasOverlay {
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
   private renderTimestamp(ctx: CanvasRenderingContext2D, originPx: Vector2): SizeAndRender {
-    if (!this.timestampOptions.visible) {
+    if (!this.timestampOptions.visible || this.timestampOptions.frameDurationSec === 0) {
       return { size: new Vector2(0, 0), render: () => {} };
     }
 
@@ -314,7 +314,7 @@ export default class CanvasOverlay {
     const timestampPaddingPx = new Vector2(6, 2);
     const timestampOriginPx = new Vector2(originPx.x + timestampPaddingPx.x, originPx.y + timestampPaddingPx.y);
     // Save the render function for later.
-    const render = () => {
+    const render = (): void => {
       this.renderRightAlignedText(ctx, timestampOriginPx, timestampFormatted, this.scaleBarOptions);
     };
 
@@ -362,20 +362,19 @@ export default class CanvasOverlay {
     //Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Setup
-    let origin = this.backgroundOptions.margin.clone().add(this.backgroundOptions.padding);
-
-    // Get dimensions of the components
+    // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
+    // behind them.
+    const origin = this.backgroundOptions.margin.clone().add(this.backgroundOptions.padding);
     const { size: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
     origin.y += scaleBarDimensions.y;
     const { size: timestampDimensions, render: renderTimestamp } = this.renderTimestamp(ctx, origin);
 
-    // If both components are invisible, don't render anything.
+    // If both elements are invisible, don't render the background.
     if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
       return;
     }
 
-    // Draw background box behind the components
+    // Draw background box behind the elements
     const contentSize = new Vector2(
       Math.max(scaleBarDimensions.x, timestampDimensions.x),
       scaleBarDimensions.y + timestampDimensions.y
@@ -383,7 +382,7 @@ export default class CanvasOverlay {
     const boxSize = contentSize.clone().add(this.backgroundOptions.padding.clone().multiplyScalar(2.0));
     CanvasOverlay.renderBackground(ctx, boxSize, this.backgroundOptions);
 
-    // Draw components over the box
+    // Draw elements over the background
     renderScaleBar();
     renderTimestamp();
   }
