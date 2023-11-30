@@ -26,20 +26,15 @@ const TrackSearch = styled(FlexRowAlignCenter)`
 type PlotTabProps = {
   findTrackInputText: string;
   setFindTrackInputText: (text: string) => void;
-  disabled?: boolean;
   findTrack: (trackId: number, seekToFrame?: boolean) => void;
   currentFrame: number;
   dataset: Dataset | null;
   featureName: string;
   selectedTrack: Track | null;
+  disabled: boolean;
 };
 
-const defaultProps: Partial<PlotTabProps> = {
-  disabled: false,
-};
-
-export default function PlotTab(inputProps: PlotTabProps): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as Required<PlotTabProps>;
+export default function PlotTab(props: PlotTabProps): ReactElement {
   return (
     <>
       <TrackTitleBar>

@@ -764,6 +764,7 @@ function App(): ReactElement {
                           dataset={dataset}
                           featureName={featureName}
                           selectedTrack={selectedTrack}
+                          disabled={disableUi}
                         />
                       </div>
                     ),
