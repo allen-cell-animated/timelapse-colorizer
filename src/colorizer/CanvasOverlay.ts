@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
 import { numberToSciNotation } from "./utils/math_utils";
 
-export type StyleOptions = {
+type StyleOptions = {
   fontSizePx: number;
   fontFamily: string;
   fontColor: string;
