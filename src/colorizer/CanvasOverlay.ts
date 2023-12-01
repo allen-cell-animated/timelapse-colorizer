@@ -159,11 +159,6 @@ export default class CanvasOverlay {
     }
   }
 
-  // NOTE: Rendering of the scale bar and timestamp is deferred here, since we need to draw a background behind them
-  // with an appropriate size. These methods return a callback that renders the scale bar or timestamp to the canvas,
-  // and provide the dimensions of the rendered element. The dimensions are used to draw a background
-  // box, and then the elements are rendered on top using the callbacks.
-
   /**
    * Determine a reasonable width for the scale bar, in units, and the corresponding width in pixels.
    * Unit widths will always have values `nx10^m`, where `n` is 1, 2, or 5, and `m` is an integer. Pixel widths
@@ -304,7 +299,7 @@ export default class CanvasOverlay {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private renderTimestamp(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getTimestampRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
     if (!this.timestampOptions.visible) {
       return { sizePx: new Vector2(0, 0), render: () => {} };
     }
@@ -369,7 +364,7 @@ export default class CanvasOverlay {
     const origin = this.backgroundOptions.marginPx.clone().add(this.backgroundOptions.paddingPx);
     const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
     origin.y += scaleBarDimensions.y;
-    const { sizePx: timestampDimensions, render: renderTimestamp } = this.renderTimestamp(ctx, origin);
+    const { sizePx: timestampDimensions, render: renderTimestamp } = this.getTimestampRenderer(ctx, origin);
 
     // If both elements are invisible, don't render the background.
     if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
