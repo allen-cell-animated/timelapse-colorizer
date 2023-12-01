@@ -8,14 +8,14 @@ type StyleOptions = {
   fontStyle: string;
 };
 
-export type ScaleBarOptions = StyleOptions & {
+type ScaleBarOptions = StyleOptions & {
   minWidthPx: number;
   visible: boolean;
   unitsPerScreenPixel: number;
   units: string;
 };
 
-export type TimestampOptions = StyleOptions & {
+type TimestampOptions = StyleOptions & {
   visible: boolean;
   maxTimeSec: number;
   currTimeSec: number;
@@ -23,7 +23,7 @@ export type TimestampOptions = StyleOptions & {
   startTimeSec: number;
 };
 
-export type BackgroundOptions = {
+type BackgroundOptions = {
   fill: string;
   stroke: string;
   paddingPx: Vector2;
