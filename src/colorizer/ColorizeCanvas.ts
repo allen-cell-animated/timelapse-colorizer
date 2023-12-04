@@ -462,7 +462,7 @@ export default class ColorizeCanvas {
 
     // Get the bounds data for this frame and update the bounds line to render it.
     if (this.track) {
-      const objectId = this.track.getIdAtTime(index) + 1;
+      const objectId = this.track.getIdAtTime(index);
       if (!this.dataset?.bounds) {
         console.log("no bounds");
         return;
