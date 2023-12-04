@@ -14,7 +14,6 @@ import { MAX_FEATURE_CATEGORIES } from "../constants";
 export enum FeatureType {
   CONTINUOUS = "continuous",
   DISCRETE = "discrete",
-  /** Feature has up to 12 categories. */
   CATEGORICAL = "categorical",
 }
 
@@ -28,6 +27,7 @@ export type FeatureData = {
   categories: string[] | null;
 };
 
+/** Raw metadata loaded from JSON. */
 type FeatureMetadata = {
   units: string | null;
   type: string | null;
@@ -132,24 +132,31 @@ export default class Dataset {
 
   private getFeatureTypeFromString(inputType: string, defaultType: FeatureType = FeatureType.CONTINUOUS): FeatureType {
     const type = inputType.toLowerCase();
-    if (type === "discrete") {
-      return FeatureType.DISCRETE;
-    } else if (type === "categorical") {
-      return FeatureType.CATEGORICAL;
-    } else if (type === "continuous") {
-      return FeatureType.CONTINUOUS;
+    switch (type) {
+      case "discrete":
+        return FeatureType.DISCRETE;
+      case "categorical":
+        return FeatureType.CATEGORICAL;
+      case "continuous":
+        return FeatureType.CONTINUOUS;
+      default:
+        return defaultType;
     }
-    return defaultType;
   }
 
   private async loadFeature(name: string, metadata: Partial<FeatureMetadata>): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
     const source = await this.arrayLoader.load(url);
-    if (metadata?.type === "categorical" && !metadata?.categories) {
+    const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
+    const featureCategories = metadata?.categories || null;
+    // Validation
+    if (featureType === FeatureType.CATEGORICAL && !metadata?.categories) {
       throw new Error(`Feature ${name} is categorical but no categories were provided.`);
     }
-    if (metadata?.categories && metadata.categories.length > MAX_FEATURE_CATEGORIES) {
-      throw new Error(`Feature ${name} has too many categories (max ${MAX_FEATURE_CATEGORIES}).`);
+    if (featureCategories && featureCategories.length > MAX_FEATURE_CATEGORIES) {
+      throw new Error(
+        `Feature ${name} has too many categories (${featureCategories.length} > max ${MAX_FEATURE_CATEGORIES}).`
+      );
     }
 
     this.features[name] = {
@@ -158,8 +165,8 @@ export default class Dataset {
       min: source.getMin(),
       max: source.getMax(),
       units: metadata?.units || "",
-      type: this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS),
-      categories: metadata?.categories || null,
+      type: featureType,
+      categories: featureCategories,
     };
   }
 
