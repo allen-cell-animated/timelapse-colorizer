@@ -4,6 +4,7 @@ import { ArraySource, IArrayLoader } from "../src/colorizer";
 import Dataset, { DatasetManifest, FeatureType } from "../src/colorizer/Dataset";
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
 import { ANY_ERROR } from "./test_utils";
+import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 
 describe("Dataset", () => {
   const defaultDatasetManifest: DatasetManifest = {
@@ -110,6 +111,25 @@ describe("Dataset", () => {
       },
       featureMetadata: {
         feature1: { type: "categorical" },
+      },
+    };
+    const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
+    const mockFetch = makeMockFetchMethod(defaultPath, badManifest);
+    await expect(dataset.open(mockFetch)).rejects.toThrowError(ANY_ERROR);
+  });
+
+  it("throws an error if the number of categories exceeds the max", async () => {
+    const categories = [...Array(MAX_FEATURE_CATEGORIES + 1).keys()].map((i) => i.toString());
+    const badManifest = {
+      frames: ["frame0.json"],
+      features: {
+        feature1: "feature1.json",
+      },
+      featureMetadata: {
+        feature1: {
+          type: "categorical",
+          categories: categories,
+        },
       },
     };
     const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());

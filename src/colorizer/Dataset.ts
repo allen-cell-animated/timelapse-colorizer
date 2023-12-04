@@ -9,6 +9,7 @@ import Track from "./Track";
 
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
+import { MAX_FEATURE_CATEGORIES } from "../constants";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -129,15 +130,16 @@ export default class Dataset {
     return await response.json();
   }
 
-  private getFeatureTypeFromString(inputType: string): FeatureType {
+  private getFeatureTypeFromString(inputType: string, defaultType: FeatureType = FeatureType.CONTINUOUS): FeatureType {
     const type = inputType.toLowerCase();
     if (type === "discrete") {
       return FeatureType.DISCRETE;
     } else if (type === "categorical") {
       return FeatureType.CATEGORICAL;
-    } else {
+    } else if (type === "continuous") {
       return FeatureType.CONTINUOUS;
     }
+    return defaultType;
   }
 
   private async loadFeature(name: string, metadata: Partial<FeatureMetadata>): Promise<void> {
@@ -146,6 +148,9 @@ export default class Dataset {
     if (metadata?.type === "categorical" && !metadata?.categories) {
       throw new Error(`Feature ${name} is categorical but no categories were provided.`);
     }
+    if (metadata?.categories && metadata.categories.length > MAX_FEATURE_CATEGORIES) {
+      throw new Error(`Feature ${name} has too many categories (max ${MAX_FEATURE_CATEGORIES}).`);
+    }
 
     this.features[name] = {
       tex: source.getTexture(FeatureDataType.F32),
@@ -153,7 +158,7 @@ export default class Dataset {
       min: source.getMin(),
       max: source.getMax(),
       units: metadata?.units || "",
-      type: this.getFeatureTypeFromString(metadata?.type || ""),
+      type: this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS),
       categories: metadata?.categories || null,
     };
   }
