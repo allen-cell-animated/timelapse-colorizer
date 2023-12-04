@@ -1,8 +1,9 @@
 import { Texture } from "three";
 import { describe, expect, it } from "vitest";
 import { ArraySource, IArrayLoader } from "../src/colorizer";
-import Dataset, { DatasetManifest } from "../src/colorizer/Dataset";
+import Dataset, { DatasetManifest, FeatureType } from "../src/colorizer/Dataset";
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
+import { ANY_ERROR } from "./test_utils";
 
 describe("Dataset", () => {
   const defaultDatasetManifest: DatasetManifest = {
@@ -12,11 +13,14 @@ describe("Dataset", () => {
       feature2: "feature2.json",
       feature3: "feature3.json",
       feature4: "feature4.json",
+      feature5: "feature4.json",
     },
     featureMetadata: {
-      feature1: { units: "meters" },
-      feature2: { units: "(m)" },
-      feature3: { units: "μm/s" },
+      feature1: { units: "meters", type: "continuous" },
+      feature2: { units: "(m)", type: "discrete" },
+      feature3: { units: "μm/s", type: "bad-type" },
+      // No metadata for feature4
+      feature5: { type: "categorical", categories: ["small", "medium", "large"] },
     },
   };
 
@@ -54,7 +58,7 @@ describe("Dataset", () => {
     }
   }
 
-  it("retrieves feature metadata", async () => {
+  it("retrieves feature units", async () => {
     const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
     const mockFetch = makeMockFetchMethod(defaultPath, defaultDatasetManifest);
     await dataset.open(mockFetch);
@@ -63,5 +67,53 @@ describe("Dataset", () => {
     expect(dataset.getFeatureUnits("feature2")).to.equal("(m)");
     expect(dataset.getFeatureUnits("feature3")).to.equal("μm/s");
     expect(dataset.getFeatureUnits("feature4")).to.equal("");
+    expect(dataset.getFeatureUnits("feature5")).to.equal("");
+  });
+
+  it("retrieves feature types", async () => {
+    const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
+    const mockFetch = makeMockFetchMethod(defaultPath, defaultDatasetManifest);
+    await dataset.open(mockFetch);
+
+    expect(dataset.getFeatureType("feature1")).to.equal(FeatureType.CONTINUOUS);
+    expect(dataset.getFeatureType("feature2")).to.equal(FeatureType.DISCRETE);
+    expect(dataset.getFeatureType("feature5")).to.equal(FeatureType.CATEGORICAL);
+  });
+
+  it("defaults type to continuous if no type or bad type provided", async () => {
+    const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
+    const mockFetch = makeMockFetchMethod(defaultPath, defaultDatasetManifest);
+    await dataset.open(mockFetch);
+
+    expect(dataset.getFeatureType("feature3")).to.equal(FeatureType.CONTINUOUS);
+    expect(dataset.getFeatureType("feature4")).to.equal(FeatureType.CONTINUOUS);
+  });
+
+  it("gets feature categories", async () => {
+    const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
+    const mockFetch = makeMockFetchMethod(defaultPath, defaultDatasetManifest);
+    await dataset.open(mockFetch);
+
+    expect(dataset.isFeatureCategorical("feature1")).to.be.false;
+    expect(dataset.isFeatureCategorical("feature2")).to.be.false;
+    expect(dataset.isFeatureCategorical("feature3")).to.be.false;
+    expect(dataset.isFeatureCategorical("feature4")).to.be.false;
+    expect(dataset.isFeatureCategorical("feature5")).to.be.true;
+    expect(dataset.getFeatureCategories("feature5")).to.deep.equal(["small", "medium", "large"]);
+  });
+
+  it("throws an error if categorical data is missing categories", async () => {
+    const badManifest = {
+      frames: ["frame0.json"],
+      features: {
+        feature1: "feature1.json",
+      },
+      featureMetadata: {
+        feature1: { type: "categorical" },
+      },
+    };
+    const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
+    const mockFetch = makeMockFetchMethod(defaultPath, badManifest);
+    await expect(dataset.open(mockFetch)).rejects.toThrowError(ANY_ERROR);
   });
 });

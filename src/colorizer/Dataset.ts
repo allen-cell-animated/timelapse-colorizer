@@ -10,16 +10,27 @@ import Track from "./Track";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 
+export enum FeatureType {
+  CONTINUOUS = "continuous",
+  DISCRETE = "discrete",
+  /** Feature has up to 12 categories. */
+  CATEGORICAL = "categorical",
+}
+
 export type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
   max: number;
   units: string;
+  type: FeatureType;
+  categories: string[] | null;
 };
 
-export type FeatureMetadata = {
+type FeatureMetadata = {
   units: string | null;
+  type: string | null;
+  categories: string[] | null;
 };
 
 export type DatasetMetadata = {
@@ -118,15 +129,32 @@ export default class Dataset {
     return await response.json();
   }
 
+  private getFeatureTypeFromString(inputType: string): FeatureType {
+    const type = inputType.toLowerCase();
+    if (type === "discrete") {
+      return FeatureType.DISCRETE;
+    } else if (type === "categorical") {
+      return FeatureType.CATEGORICAL;
+    } else {
+      return FeatureType.CONTINUOUS;
+    }
+  }
+
   private async loadFeature(name: string, metadata: Partial<FeatureMetadata>): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
     const source = await this.arrayLoader.load(url);
+    if (metadata?.type === "categorical" && !metadata?.categories) {
+      throw new Error(`Feature ${name} is categorical but no categories were provided.`);
+    }
+
     this.features[name] = {
       tex: source.getTexture(FeatureDataType.F32),
       data: source.getBuffer(FeatureDataType.F32),
       min: source.getMin(),
       max: source.getMax(),
       units: metadata?.units || "",
+      type: this.getFeatureTypeFromString(metadata?.type || ""),
+      categories: metadata?.categories || null,
     };
   }
 
@@ -153,6 +181,21 @@ export default class Dataset {
 
   public getFeatureUnits(name: string): string {
     return this.features[name].units;
+  }
+
+  public getFeatureType(name: string): FeatureType {
+    return this.features[name].type;
+  }
+
+  public getFeatureCategories(name: string): string[] | null {
+    if (this.features[name].type === FeatureType.CATEGORICAL) {
+      return this.features[name].categories;
+    }
+    return null;
+  }
+
+  public isFeatureCategorical(name: string): boolean {
+    return this.features[name].type === FeatureType.CATEGORICAL;
   }
 
   /**
