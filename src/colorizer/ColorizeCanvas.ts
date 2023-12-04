@@ -111,6 +111,7 @@ export default class ColorizeCanvas {
   private line: Line;
   private showTrackPath: boolean;
 
+  private showTimestamp: boolean;
   private showScaleBar: boolean;
   private frameToCanvasScale: Vector4;
 
@@ -187,6 +188,7 @@ export default class ColorizeCanvas {
 
     this.overlay = new CanvasOverlay();
     this.showScaleBar = false;
+    this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
 
     this.render = this.render.bind(this);
@@ -249,19 +251,52 @@ export default class ColorizeCanvas {
       const canvasWidthInUnits = frameDims.width * this.frameToCanvasScale.x;
       const unitsPerScreenPixel = canvasWidthInUnits / this.canvasResolution.x;
       this.overlay.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
-      this.overlay.render();
     } else {
       this.overlay.updateScaleBarOptions({ visible: false });
-      this.overlay.render();
     }
   }
 
   setScaleBarVisibility(visible: boolean): void {
     this.showScaleBar = visible;
     this.updateScaleBar();
+    this.overlay.render();
   }
 
-  updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
+  private updateTimestamp(): void {
+    // Calculate the current time stamp based on the current frame and the frame duration provided
+    // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
+    // Pass along to the overlay as parameters.
+    if (this.showTimestamp && this.dataset) {
+      const frameDurationSec = this.dataset.metadata.frameDurationSeconds;
+      if (frameDurationSec) {
+        const startTimeSec = this.dataset.metadata.startTimeSeconds;
+        // Note: there's some semi-redundant information here, since the current timestamp and max
+        // timestamp could be calculated from the frame duration if we passed in the current + max
+        // frames instead. For now, it's ok to keep those calculations here in ColorizeCanvas so the
+        // overlay doesn't need to know frame numbers. The duration + start time are needed for
+        // time display calculations, however.
+        this.overlay.updateTimestampOptions({
+          visible: true,
+          frameDurationSec,
+          startTimeSec,
+          currTimeSec: this.currentFrame * frameDurationSec + startTimeSec,
+          maxTimeSec: this.dataset.numberOfFrames * frameDurationSec + startTimeSec,
+        });
+        return;
+      }
+    }
+
+    // Hide the timestamp if configuration is invalid or it's disabled.
+    this.overlay.updateTimestampOptions({ visible: false });
+  }
+
+  setTimestampVisibility(visible: boolean): void {
+    this.showTimestamp = visible;
+    this.updateTimestamp();
+    this.overlay.render();
+  }
+
+  private updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
     if (!frameResolution || !canvasResolution) {
       return;
     }
@@ -510,6 +545,8 @@ export default class ColorizeCanvas {
     this.updateHighlightedId();
     this.updateTrackRange();
     this.renderer.render(this.scene, this.camera);
+    this.updateScaleBar();
+    this.updateTimestamp();
     this.overlay.render();
   }
 

@@ -11,9 +11,11 @@ type SettingsTabProps = {
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   showScaleBar: boolean;
+  showTimestamp: boolean;
   setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
   setShowScaleBar: (show: boolean) => void;
+  setShowTimestamp: (show: boolean) => void;
 };
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
@@ -43,6 +45,15 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         }}
       >
         Show scale bar
+      </Checkbox>
+      <Checkbox
+        type="checkbox"
+        checked={props.showTimestamp}
+        onChange={() => {
+          props.setShowTimestamp(!props.showTimestamp);
+        }}
+      >
+        Show timestamp
       </Checkbox>
     </FlexColumn>
   );

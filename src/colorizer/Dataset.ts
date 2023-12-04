@@ -29,6 +29,9 @@ export type DatasetMetadata = {
     height: number;
     units: string;
   };
+  frameDurationSeconds: number;
+  /* Optional offset for the timestamp. */
+  startTimeSeconds: number;
 };
 
 const defaultMetadata: DatasetMetadata = {
@@ -37,6 +40,8 @@ const defaultMetadata: DatasetMetadata = {
     height: 0,
     units: "",
   },
+  frameDurationSeconds: 0,
+  startTimeSeconds: 0,
 };
 
 export type DatasetManifest = {
