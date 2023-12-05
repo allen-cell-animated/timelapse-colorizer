@@ -31,7 +31,20 @@
     },
     "Categorical Feature (12)": {
       "type": "categorical",
-      "categories": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
+      "categories": [
+        "AAAAAAAAAAAA",
+        "BBBBBBBBBBBB",
+        "CCCCCCCCCCCC",
+        "DDDDDDDDDDDD",
+        "EEEEEEEEEEEE",
+        "FFFFFFFFFFFF",
+        "GGGGGGGGGGGG",
+        "HHHHHHHHHHHH",
+        "IIIIIIIIIIII",
+        "JJJJJJJJJJJJ",
+        "KKKKKKKKKKKK",
+        "LLLLLLLLLLLL"
+      ]
     }
   }
 }
