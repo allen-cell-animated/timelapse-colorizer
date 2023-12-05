@@ -32,6 +32,35 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
 };
 
 /**
+ * Returns a style object with a hard-stop linear gradient background, consisting
+ * of the colors in the provided array.
+ * @param colors Array of Color objects, in order, from left to right.
+ * @returns A style object with a linear gradient background.
+ *
+ * @example
+ * ```
+ * const colors = [new Color(0xffffff), new Color(0xcccccc), new Color(0x000000)];
+ * const style = getColorPaletteStyling(colors);
+ * // style = {background : linear-gradient(to right, #ffffff 0.00%, #ffffff 33.33%, #cccccc 33.33%, #cccccc 66.67%, #000000 66.67%, #000000 100.00%}
+ * ```
+ */
+function getColorPaletteStyling(colors: Color[]): { background: string } {
+  let gradient = "linear-gradient(to right,";
+  for (let i = 0; i < colors.length; i++) {
+    const startPercent = (100 * (i / colors.length)).toFixed(2) + "%,";
+    const endPercent = (100 * ((i + 1) / colors.length)).toFixed(2) + "%,";
+    gradient += ` ${colors[i].getStyle()} ${startPercent}`;
+    gradient += ` ${colors[i].getStyle()} ${endPercent}`;
+  }
+  gradient = gradient.slice(0, -1);
+  gradient += ")";
+
+  return {
+    background: gradient,
+  };
+}
+
+/**
  * A dropdown selector for color ramp gradients.
  */
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
@@ -87,7 +116,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   }, [props.selectedRamp, props.reversed]);
 
   // Memoize to avoid recalculating dropdown contents
-  const dropdownContents: ReactElement[] = useMemo(() => {
+  const rampDropdownContents: ReactElement[] = useMemo(() => {
     const contents: ReactElement[] = [];
     const colorRampEntries = Array.from(props.colorRamps!.entries());
     // Make a button for every color ramp
@@ -105,11 +134,39 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     return contents;
   }, [props.colorRamps]);
 
+  const paletteDropdownContents: ReactElement[] = useMemo(() => {
+    const contents: ReactElement[] = [];
+    // Make a button for every palette
+    const paletteEntries = Array.from(props.categoricalPalettes.entries());
+    console.log(paletteEntries);
+    for (let i = 0; i < props.categoricalPalettes.size; i++) {
+      // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
+      const [key, paletteData] = paletteEntries[i];
+      const visibleColors = paletteData.colors.slice(0, props.numCategories);
+
+      contents.push(
+        <Tooltip title={paletteData.name} placement="right" key={key} trigger={["hover", "focus"]}>
+          <Button
+            key={key}
+            // Changes all colors, not just the visible ones, to the palette
+            onClick={() => props.onChangePalette(paletteData.colors)}
+            rootClassName={styles.dropdownButton}
+          >
+            <div className={styles.categoricalColor} style={getColorPaletteStyling(visibleColors)}></div>
+          </Button>
+        </Tooltip>
+      );
+    }
+    return contents;
+  }, [props.categoricalPalettes, props.numCategories]);
+
   /// Rendering
 
   const buttonDivClassName = styles.buttonContainer + (props.disabled ? ` ${styles.disabled}` : "");
-  const dropdownContainerClassName = styles.dropdownContainer + (forceOpen ? ` ${styles.forceOpen}` : "");
+  let dropdownContainerClassName = styles.dropdownContainer;
+  dropdownContainerClassName += forceOpen ? ` ${styles.forceOpen}` : "";
 
+  console.log(getColorPaletteStyling(props.selectedPalette.slice(0, props.numCategories)));
   return (
     <div className={styles.colorRampSelector} ref={componentContainerRef}>
       <h3>Color map</h3>
@@ -122,15 +179,29 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
           trigger={["focus", "hover"]}
         >
           <Button id={styles.selectorButton} disabled={props.disabled} onClick={() => setForceOpen(!forceOpen)}>
-            <img src={selectedRampColorUrl} />
+            {
+              // Switch between categorical palette and color map as needed
+              props.useCategoricalPalettes ? (
+                <div
+                  className={styles.categoricalColor}
+                  style={getColorPaletteStyling(props.selectedPalette.slice(0, props.numCategories))}
+                ></div>
+              ) : (
+                <img src={selectedRampColorUrl} />
+              )
+            }
           </Button>
         </Tooltip>
-        <div className={dropdownContainerClassName}>{dropdownContents}</div>
+        {props.useCategoricalPalettes ? (
+          <div className={dropdownContainerClassName + " " + styles.categorical}>{paletteDropdownContents} </div>
+        ) : (
+          <div className={dropdownContainerClassName}>{rampDropdownContents}</div>
+        )}
       </div>
       <IconButton
         style={{ marginLeft: "2px" }}
         type="link"
-        disabled={props.disabled}
+        disabled={props.disabled || props.useCategoricalPalettes}
         onClick={() => {
           props.onChangeRamp(props.selectedRamp, !props.reversed);
         }}

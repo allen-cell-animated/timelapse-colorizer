@@ -583,9 +583,7 @@ function App(): ReactElement {
             useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
             numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
             selectedPalette={categoricalPalette}
-            onChangePalette={function (newPalette: Color[]): void {
-              throw new Error("Function not implemented.");
-            }}
+            onChangePalette={setCategoricalPalette}
           />
         </div>
         <div className={styles.headerRight}>
