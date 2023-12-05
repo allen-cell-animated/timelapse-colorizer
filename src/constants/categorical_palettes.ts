@@ -1,8 +1,11 @@
+import { Color } from "three";
 import { RawColorData } from "./color_ramps";
 
-export type PaletteData = RawColorData;
+export type PaletteData = RawColorData & {
+  colors: Color[];
+};
 
-const rawPaletteData: PaletteData[] = [
+const rawPaletteData: RawColorData[] = [
   {
     key: "matplotlib-accent",
     name: "Accent",
@@ -224,9 +227,10 @@ const rawPaletteData: PaletteData[] = [
 
 // Format the array so it can be read as a map
 const keyedPaletteData: [string, PaletteData][] = rawPaletteData.map((value) => {
-  return [value.key, value];
+  const colors = value.colorStops.map((color) => new Color(color));
+  return [value.key, { colors, ...value }];
 });
-const paletteMap = new Map(keyedPaletteData);
+const paletteMap: Map<string, PaletteData> = new Map(keyedPaletteData);
 
 export const DEFAULT_CATEGORICAL_PALETTES = paletteMap;
 export const DEFAULT_CATEGORICAL_PALETTE_ID = "matplotlib-paired";

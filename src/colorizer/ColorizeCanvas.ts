@@ -32,6 +32,7 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 import CanvasOverlay from "./CanvasOverlay";
 import { FeatureThreshold } from "./types";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID } from "../constants";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -79,22 +80,9 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
-  // TODO: Replace this when categorical palettes are implemented! :)
-  const defaultCategoricalColors = [
-    new Color("#9CD2B8"),
-    new Color("#AAF1D9"),
-    new Color("#89BAA9"),
-    new Color("#7CD7D5"),
-    new Color("#5ECDE9"),
-    new Color("#99C2EC"),
-    new Color("#9EC991"),
-    new Color("#C4B7EA"),
-    new Color("#D3C998"),
-    new Color("#D6EDB5"),
-    new Color("#E8B297"),
-    new Color("#EAACCD"),
-  ];
-  const colorsAsVec3 = defaultCategoricalColors.map((c) => new Vector3(c.r, c.g, c.b));
+
+  const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
+  const defaultPaletteVec3 = defaultPalette.colors.map((c) => new Vector3(c.r, c.g, c.b));
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -112,7 +100,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
-    categoricalColors: new Uniform(colorsAsVec3),
+    categoricalColors: new Uniform(defaultPaletteVec3),
     useCategories: new Uniform(true),
   };
 };
