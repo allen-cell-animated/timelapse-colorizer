@@ -1,9 +1,27 @@
 {
   "frames": ["frame_0.png", "frame_1.png", "frame_2.png", "frame_3.png", "frame_4.png"],
-  "features": { "feature_0": "feature_0.json", "feature_1": "feature_1.json" },
+  "features": {
+    "Continuous Feature": "feature_0.json",
+    "Discrete Feature": "feature_1.json",
+    "Categorical Feature": "feature_2.json"
+  },
   "bounds": "bounds.json",
   "times": "times.json",
   "tracks": "tracks.json",
   "centroids": "centroids.json",
-  "outliers": "outliers.json"
+  "outliers": "outliers.json",
+  "featureMetadata": {
+    "Continuous Feature": {
+      "units": "°F",
+      "type": "continuous"
+    },
+    "Discrete Feature": {
+      "units": "nodes",
+      "type": "discrete"
+    },
+    "Categorical Feature": {
+      "type": "categorical",
+      "categories": ["Spicy", "Sour", "Bitter", "Sweet", "Dry"]
+    }
+  }
 }
