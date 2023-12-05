@@ -230,7 +230,3 @@ const paletteMap = new Map(keyedPaletteData);
 
 export const DEFAULT_CATEGORICAL_PALETTES = paletteMap;
 export const DEFAULT_CATEGORICAL_PALETTE_ID = "matplotlib-paired";
-
-// TODO: Add a unit test to ensure all of these are properly formatted and can
-// be interpreted as Colors
-// + update url tests with these too
