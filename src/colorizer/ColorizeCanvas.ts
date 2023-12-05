@@ -363,6 +363,13 @@ export default class ColorizeCanvas {
     this.setUniform("colorRamp", ramp.texture);
   }
 
+  setCategoricalColors(colors: Color[]): void {
+    this.setUniform(
+      "categoricalColors",
+      colors.map((c) => new Vector3(c.r, c.g, c.b))
+    );
+  }
+
   setBackgroundColor(color: Color): void {
     this.setUniform("backgroundColor", color);
   }

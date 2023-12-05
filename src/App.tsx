@@ -32,7 +32,14 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
+import {
+  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_CATEGORICAL_PALETTE_ID,
+  DEFAULT_COLLECTION_PATH,
+  DEFAULT_COLOR_RAMPS,
+  DEFAULT_COLOR_RAMP_ID,
+  DEFAULT_PLAYBACK_FPS,
+} from "./constants";
 import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import SettingsTab from "./components/tabs/SettingsTab";
@@ -70,6 +77,10 @@ function App(): ReactElement {
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
+
+  const [categoricalPalette, setCategoricalPalette] = useState(
+    DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
+  );
 
   const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
   const setFeatureThresholds = useCallback(
@@ -562,13 +573,19 @@ function App(): ReactElement {
           />
 
           <ColorRampDropdown
-            selected={colorRampKey}
+            selectedRamp={colorRampKey}
             reversed={colorRampReversed}
-            onChange={(name, reversed) => {
+            onChangeRamp={(name, reversed) => {
               setColorRampKey(name);
               setColorRampReversed(reversed);
             }}
             disabled={disableUi}
+            useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
+            numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
+            selectedPalette={categoricalPalette}
+            onChangePalette={function (newPalette: Color[]): void {
+              throw new Error("Function not implemented.");
+            }}
           />
         </div>
         <div className={styles.headerRight}>
@@ -659,6 +676,7 @@ function App(): ReactElement {
                 colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
+                categoricalColors={categoricalPalette}
                 selectedTrack={selectedTrack}
                 onTrackClicked={(track) => {
                   setFindTrackInput("");

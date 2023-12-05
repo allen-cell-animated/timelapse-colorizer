@@ -6,11 +6,20 @@ import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { AppThemeContext } from "./AppStyle";
 import IconButton from "./IconButton";
+import { DEFAULT_CATEGORICAL_PALETTES } from "../constants";
+import { Color } from "three";
 
 type ColorRampSelectorProps = {
-  selected: string;
-  onChange: (colorRampKey: string, reversed: boolean) => void;
+  selectedRamp: string;
+  onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
   colorRamps?: typeof DEFAULT_COLOR_RAMPS;
+
+  useCategoricalPalettes?: boolean;
+  categoricalPalettes?: typeof DEFAULT_CATEGORICAL_PALETTES;
+  numCategories: number;
+  selectedPalette: Color[];
+  onChangePalette: (newPalette: Color[]) => void;
+
   disabled?: boolean;
   reversed?: boolean;
 };
@@ -18,6 +27,8 @@ type ColorRampSelectorProps = {
 const defaultProps: Partial<ColorRampSelectorProps> = {
   colorRamps: DEFAULT_COLOR_RAMPS,
   disabled: false,
+  useCategoricalPalettes: false,
+  categoricalPalettes: DEFAULT_CATEGORICAL_PALETTES,
 };
 
 /**
@@ -58,10 +69,10 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     };
   }, [forceOpen]);
 
-  const selectedRampData = props.colorRamps.get(props.selected);
+  const selectedRampData = props.colorRamps.get(props.selectedRamp);
 
   if (!selectedRampData || !selectedRampData.colorRamp) {
-    throw new Error(`Selected color ramp name '${props.selected}' is invalid.`);
+    throw new Error(`Selected color ramp name '${props.selectedRamp}' is invalid.`);
   }
 
   ///////// Generate dropdown contents
@@ -73,7 +84,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   }
   const selectedRampColorUrl = useMemo(() => {
     return selectedRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
-  }, [props.selected, props.reversed]);
+  }, [props.selectedRamp, props.reversed]);
 
   // Memoize to avoid recalculating dropdown contents
   const dropdownContents: ReactElement[] = useMemo(() => {
@@ -85,7 +96,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key} trigger={["hover", "focus"]}>
-          <Button key={key} onClick={() => props.onChange(key, false)} rootClassName={styles.dropdownButton}>
+          <Button key={key} onClick={() => props.onChangeRamp(key, false)} rootClassName={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>
@@ -121,7 +132,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
         type="link"
         disabled={props.disabled}
         onClick={() => {
-          props.onChange(props.selected, !props.reversed);
+          props.onChangeRamp(props.selectedRamp, !props.reversed);
         }}
       >
         <RetweetOutlined />

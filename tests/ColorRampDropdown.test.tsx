@@ -19,7 +19,9 @@ describe("ColorRampDropdown", () => {
   );
 
   it("can render with correct label", async () => {
-    render(<ColorRampDropdown selected={"map1"} colorRamps={customColorRamps} onChange={(_value: string) => {}} />);
+    render(
+      <ColorRampDropdown selectedRamp={"map1"} colorRamps={customColorRamps} onChangeRamp={(_value: string) => {}} />
+    );
     const element = screen.getByText(/Color map/);
     expect(element).toBeInTheDocument();
   });
@@ -30,7 +32,7 @@ describe("ColorRampDropdown", () => {
     };
     const mockCallback = vi.fn(callback);
 
-    render(<ColorRampDropdown selected={"map1"} colorRamps={customColorRamps} onChange={mockCallback} />);
+    render(<ColorRampDropdown selectedRamp={"map1"} colorRamps={customColorRamps} onChangeRamp={mockCallback} />);
     const elements = screen.getAllByRole("button");
 
     // Expect maps to be ordered according to the color ramp, and skip the first button which is the main selector.
@@ -53,7 +55,13 @@ describe("ColorRampDropdown", () => {
     console.error = vi.fn(); // hide error output
 
     expect(() =>
-      render(<ColorRampDropdown selected={"bad-key"} colorRamps={customColorRamps} onChange={(_value: string) => {}} />)
+      render(
+        <ColorRampDropdown
+          selectedRamp={"bad-key"}
+          colorRamps={customColorRamps}
+          onChangeRamp={(_value: string) => {}}
+        />
+      )
     ).toThrow(ANY_ERROR);
   });
 });
