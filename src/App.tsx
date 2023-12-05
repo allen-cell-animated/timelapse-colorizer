@@ -44,6 +44,7 @@ import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import SettingsTab from "./components/tabs/SettingsTab";
 import PlotTab from "./components/tabs/PlotTab";
+import CategoricalColorPicker from "./components/CategoricalColorPicker";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -614,6 +615,12 @@ function App(): ReactElement {
             {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
           </h3>
           <div className={styles.controlsContainer}>
+            <CategoricalColorPicker
+              dataset={dataset}
+              featureName={featureName}
+              selectedPalette={categoricalPalette}
+              onChangePalette={setCategoricalPalette}
+            />
             <LabeledRangeSlider
               min={colorRampMin}
               max={colorRampMax}
