@@ -1,7 +1,7 @@
 import { ColorRamp } from "./../colorizer";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
-export type RawColorRampData = {
+export type RawColorData = {
   /** Internal key name, to be stored in the URL. CHANGING THIS WILL BREAK COMPATIBILITY. */
   key: string;
   /** Display name. */
@@ -9,13 +9,13 @@ export type RawColorRampData = {
   colorStops: `#${string}`[];
 };
 
-export type ColorRampData = RawColorRampData & {
+export type ColorRampData = RawColorData & {
   colorRamp: ColorRamp;
 };
 
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
 // NOTE: All color ramps must not have the suffix "!". This is reserved for the reversed color ramp URL parameter.
-const rawColorRampData: RawColorRampData[] = [
+const rawColorRampData: RawColorData[] = [
   { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
   { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
   {
