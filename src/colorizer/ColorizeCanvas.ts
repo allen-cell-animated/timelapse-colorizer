@@ -16,6 +16,7 @@ import {
   Uniform,
   UnsignedByteType,
   Vector2,
+  Vector3,
   Vector4,
   WebGLRenderTarget,
   WebGLRenderer,
@@ -64,6 +65,8 @@ type ColorizeUniformTypes = {
   hideOutOfRange: boolean;
   outlierDrawMode: number;
   outOfRangeDrawMode: number;
+  useCategories: boolean;
+  categoricalColors: Vector3[];
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -76,6 +79,22 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
+  // TODO: Replace this when categorical palettes are implemented! :)
+  const defaultCategoricalColors = [
+    new Color("#9CD2B8"),
+    new Color("#AAF1D9"),
+    new Color("#89BAA9"),
+    new Color("#7CD7D5"),
+    new Color("#5ECDE9"),
+    new Color("#99C2EC"),
+    new Color("#9EC991"),
+    new Color("#C4B7EA"),
+    new Color("#D3C998"),
+    new Color("#D6EDB5"),
+    new Color("#E8B297"),
+    new Color("#EAACCD"),
+  ];
+  const colorsAsVec3 = defaultCategoricalColors.map((c) => new Vector3(c.r, c.g, c.b));
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -93,6 +112,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
+    categoricalColors: new Uniform(colorsAsVec3),
+    useCategories: new Uniform(true),
   };
 };
 
