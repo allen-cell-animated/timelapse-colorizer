@@ -23,7 +23,7 @@ import {
 } from "three";
 
 import ColorRamp from "./ColorRamp";
-import Dataset from "./Dataset";
+import Dataset, { FeatureType } from "./Dataset";
 import { FeatureDataType } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
@@ -101,7 +101,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
     categoricalColors: new Uniform(defaultPaletteVec3),
-    useCategories: new Uniform(true),
+    useCategories: new Uniform(false),
   };
 };
 
@@ -448,6 +448,7 @@ export default class ColorizeCanvas {
     const featureData = this.dataset.getFeatureData(name)!;
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);
+    this.setUniform("useCategories", featureData.type === FeatureType.CATEGORICAL);
     this.render(); // re-render necessary because map range may have changed
   }
 
