@@ -542,6 +542,17 @@ function App(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
+  let hoveredFeatureValue = "";
+  if (lastHoveredId !== null && dataset) {
+    const featureVal = getFeatureValue(lastHoveredId);
+    const categories = dataset.getFeatureCategories(featureName);
+    if (categories !== null) {
+      hoveredFeatureValue = categories[Number.parseInt(featureVal, 10)];
+    } else {
+      hoveredFeatureValue = featureVal;
+    }
+  }
+
   return (
     <AppStyle className={styles.app}>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
@@ -672,8 +683,7 @@ function App(): ReactElement {
                 <>
                   <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
                   <p>
-                    {featureName}:{" "}
-                    <span style={{ whiteSpace: "nowrap" }}>{lastHoveredId && getFeatureValue(lastHoveredId)}</span>
+                    {featureName}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
                   </p>
                 </>
               }

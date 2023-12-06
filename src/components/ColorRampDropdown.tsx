@@ -166,7 +166,6 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   let dropdownContainerClassName = styles.dropdownContainer;
   dropdownContainerClassName += forceOpen ? ` ${styles.forceOpen}` : "";
 
-  console.log(getColorPaletteStyling(props.selectedPalette.slice(0, props.numCategories)));
   return (
     <div className={styles.colorRampSelector} ref={componentContainerRef}>
       <h3>Color map</h3>
