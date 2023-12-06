@@ -190,7 +190,7 @@ export default class Dataset {
   }
 
   private async loadFeature(name: string, data: FeatureMetadata): Promise<void> {
-    const url = this.resolveUrl(this.featureFiles[name]);
+    const url = this.resolveUrl(data.data);
     const source = await this.arrayLoader.load(url);
     const featureType = this.getFeatureTypeFromString(data?.type || "", FeatureType.CONTINUOUS);
     const featureCategories = data?.categories;
@@ -349,11 +349,6 @@ export default class Dataset {
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
-    const featuresToMetadata: Record<string, Partial<DeprecatedFeatureMetadata>> = {};
-    for (const featureName of Object.keys(this.featureFiles)) {
-      featuresToMetadata[featureName] = manifest.featureMetadata ? manifest.featureMetadata[featureName] : {};
-    }
-
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
@@ -361,12 +356,16 @@ export default class Dataset {
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
     let featuresPromises: Promise<void>[] = [];
 
+    // Load feature data -> switch between deprecated (old) and new feature type loading.
     if (this.isFeatureDeprecated(manifest.features)) {
       this.featureFiles = manifest.features as Record<string, string>;
+      const featuresToMetadata: Record<string, Partial<DeprecatedFeatureMetadata>> = {};
+      for (const featureName of Object.keys(this.featureFiles)) {
+        featuresToMetadata[featureName] = manifest.featureMetadata ? manifest.featureMetadata[featureName] : {};
+      }
       featuresPromises = this.featureNames.map((name) =>
         this.loadFeatureDeprecated.bind(this)(name, featuresToMetadata[name])
       );
-      console.log(this.featureFiles);
     } else {
       const featureNameToPath: Record<string, string> = {};
       for (const featureName of Object.keys(manifest.features)) {
@@ -375,7 +374,6 @@ export default class Dataset {
         featuresPromises.push(this.loadFeature.bind(this)(featureName, metadata));
       }
       this.featureFiles = featureNameToPath;
-      console.log(this.featureFiles);
     }
 
     const result = await Promise.all([
