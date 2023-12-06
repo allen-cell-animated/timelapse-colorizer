@@ -1,3 +1,6 @@
+// Defines types for working with dataset manifests, and methods for
+// updating manifests from one version to another.
+
 export type ManifestFileMetadata = {
   /** Dimensions of the frame, in scale units. Default width and height are 0. */
   frameDims: {

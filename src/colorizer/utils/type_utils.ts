@@ -5,7 +5,7 @@
  * @example:
  * ```
  * type MyRecord = Record<string, number>;
- * type MyRecordValue = GetRecordValue<MyRecord>; // number
+ * type MyRecordValue = RecordValue<MyRecord>; // number
  * ```
  */
-export type GetRecordValue<T> = T extends Record<string, infer U> ? U : never;
+export type RecordValue<T extends Record<any, any>> = T extends Record<string, infer U> ? U : never;

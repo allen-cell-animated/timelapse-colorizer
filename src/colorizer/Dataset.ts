@@ -11,7 +11,7 @@ import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, update_manifest_version } from "./utils/dataset_utils";
-import { GetRecordValue } from "./utils/type_utils";
+import { RecordValue } from "./utils/type_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -122,7 +122,7 @@ export default class Dataset {
   /**
    * Loads a feature from the dataset, fetching its data from the provided url.
    */
-  private async loadFeature(name: string, metadata: GetRecordValue<ManifestFile["features"]>): Promise<void> {
+  private async loadFeature(name: string, metadata: RecordValue<ManifestFile["features"]>): Promise<void> {
     const url = this.resolveUrl(metadata.data);
     const source = await this.arrayLoader.load(url);
     const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
