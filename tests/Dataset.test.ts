@@ -1,7 +1,7 @@
 import { Texture } from "three";
 import { describe, expect, it } from "vitest";
 import { ArraySource, IArrayLoader } from "../src/colorizer";
-import Dataset, { DatasetManifest, FeatureType } from "../src/colorizer/Dataset";
+import Dataset, { ManifestFile, FeatureType } from "../src/colorizer/Dataset";
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
 import { ANY_ERROR } from "./test_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
@@ -9,11 +9,8 @@ import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 describe("Dataset", () => {
   const defaultPath = "https://some-path.json";
 
-  const makeMockFetchMethod = (
-    url: string,
-    manifestJson: DatasetManifest
-  ): ((url: string) => Promise<DatasetManifest>) => {
-    return async (inputUrl: string): Promise<DatasetManifest> => {
+  const makeMockFetchMethod = (url: string, manifestJson: ManifestFile): ((url: string) => Promise<ManifestFile>) => {
+    return async (inputUrl: string): Promise<ManifestFile> => {
       if (inputUrl !== url) {
         throw new Error(`Input url '${inputUrl}' does not match expected url '${url}'.`);
       }
@@ -42,7 +39,7 @@ describe("Dataset", () => {
     }
   }
 
-  const defaultManifest: DatasetManifest = {
+  const defaultManifest: ManifestFile = {
     frames: ["frame0.json"],
     features: {
       feature1: { data: "feature1.json", units: "meters", type: "continuous" },
@@ -53,7 +50,7 @@ describe("Dataset", () => {
     },
   };
 
-  const deprecatedManifest: DatasetManifest = {
+  const deprecatedManifest: ManifestFile = {
     frames: ["frame0.json"],
     features: {
       feature1: "feature1.json",
@@ -71,7 +68,7 @@ describe("Dataset", () => {
     },
   };
 
-  const manifestsToTest: [string, DatasetManifest][] = [
+  const manifestsToTest: [string, ManifestFile][] = [
     ["Default Manifest", defaultManifest],
     ["Deprecated Manifest", deprecatedManifest],
   ];

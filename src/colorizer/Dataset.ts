@@ -17,7 +17,7 @@ export enum FeatureType {
   CATEGORICAL = "categorical",
 }
 
-export type FeatureData = {
+type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
@@ -28,25 +28,25 @@ export type FeatureData = {
 };
 
 /**
- * JSON metadata for dataset features
+ * JSON metadata for dataset features.
  * This is the deprecated version, where feature metadata
  * was stored separately from the feature file path declaration.
  */
-type DeprecatedFeatureMetadata = {
+type DeprecatedManifestFileFeatureData = {
   units?: string | null;
   type?: string | null;
   categories?: string[] | null;
 };
 
 /** JSON metadata for dataset features. */
-type FeatureMetadata = {
+type ManifestFileFeatureData = {
   data: string;
   units?: string;
   type?: string;
   categories?: string[];
 };
 
-export type DatasetMetadata = {
+type ManifestFileMetadata = {
   /** Dimensions of the frame, in scale units. Default width and height are 0. */
   frameDims: {
     width: number;
@@ -58,7 +58,7 @@ export type DatasetMetadata = {
   startTimeSeconds: number;
 };
 
-const defaultMetadata: DatasetMetadata = {
+const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
     width: 0,
     height: 0,
@@ -69,21 +69,21 @@ const defaultMetadata: DatasetMetadata = {
 };
 
 /** Maps from the feature label to its metadata, including relative filepath, type, and units. */
-type FeatureMap = Record<string, FeatureMetadata>;
+type FeatureMap = Record<string, ManifestFileFeatureData>;
 /** Maps from the feature label to its relative filepath only. */
 type DeprecatedFeatureMap = Record<string, string>;
 
-export type DatasetManifest = {
+export type ManifestFile = {
   frames: string[];
   features: FeatureMap | DeprecatedFeatureMap;
   /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
-  featureMetadata?: Record<string, Partial<DeprecatedFeatureMetadata>>;
+  featureMetadata?: Record<string, Partial<DeprecatedManifestFileFeatureData>>;
   outliers?: string;
   tracks?: string;
   times?: string;
   centroids?: string;
   bounds?: string;
-  metadata?: Partial<DatasetMetadata>;
+  metadata?: Partial<ManifestFileMetadata>;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -111,7 +111,7 @@ export default class Dataset {
   public boundsFile?: string;
   public bounds?: Uint16Array | null;
 
-  public metadata: DatasetMetadata;
+  public metadata: ManifestFileMetadata;
 
   public baseUrl: string;
   public manifestUrl: string;
@@ -141,7 +141,7 @@ export default class Dataset {
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
-  private async fetchJson(url: string): Promise<DatasetManifest> {
+  private async fetchJson(url: string): Promise<ManifestFile> {
     const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
   }
@@ -177,7 +177,7 @@ export default class Dataset {
   /**
    * Loads a feature from the dataset, fetching its data from the provided url.
    */
-  private async loadFeature(name: string, metadata: FeatureMetadata): Promise<void> {
+  private async loadFeature(name: string, metadata: ManifestFileFeatureData): Promise<void> {
     const url = this.resolveUrl(metadata.data);
     const source = await this.arrayLoader.load(url);
     const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
@@ -358,7 +358,7 @@ export default class Dataset {
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
 
     // Load feature data -> switch between deprecated and new feature type loading.
-    let featuresToMetadata: Record<string, FeatureMetadata> = {};
+    let featuresToMetadata: Record<string, ManifestFileFeatureData> = {};
     if (this.isFeatureDeprecated(manifest.features)) {
       // Parse metadata from deprecated manifest format, and add missing properties
       // to make it compatible with the new FeatureMetadata.
