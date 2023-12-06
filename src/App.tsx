@@ -634,6 +634,7 @@ function App(): ReactElement {
                   featureName={featureName}
                   selectedPalette={categoricalPalette}
                   onChangePalette={setCategoricalPalette}
+                  disabled={disableUi}
                 />
               ) : (
                 <LabeledRangeSlider

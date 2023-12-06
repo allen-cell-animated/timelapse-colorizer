@@ -61,6 +61,21 @@ function getColorPaletteStyling(colors: Color[]): { background: string } {
 }
 
 /**
+ * Returns whether if the two arrays are equal, where arr1[i] === arr2[i] for all i.
+ */
+function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  for (let i = 0; i < arr2.length; i++) {
+    if (arr1[i] !== arr2[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * A dropdown selector for color ramp gradients.
  */
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
@@ -134,6 +149,15 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     return contents;
   }, [props.colorRamps]);
 
+  // Determine if we're currently using a preset palette; otherwise show the "Custom" tooltip.
+  let selectedPaletteName = "Custom";
+  for (const [_key, paletteData] of props.categoricalPalettes) {
+    if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
+      selectedPaletteName = paletteData.name;
+      break;
+    }
+  }
+
   const paletteDropdownContents: ReactElement[] = useMemo(() => {
     const contents: ReactElement[] = [];
     // Make a button for every palette
@@ -171,9 +195,9 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       <h3>Color map</h3>
       <div className={buttonDivClassName} style={{ marginLeft: "6px" }}>
         <Tooltip
-          // Force the tooltip to be hidden (open=false) when disabled
+          // Force the tooltip to be hidden (open=false) when disabled or when categories are used
           open={props.disabled ? false : undefined}
-          title={selectedRampData.name}
+          title={props.useCategoricalPalettes ? selectedPaletteName : selectedRampData.name}
           placement="right"
           trigger={["focus", "hover"]}
         >
