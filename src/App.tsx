@@ -615,24 +615,31 @@ function App(): ReactElement {
             {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
           </h3>
           <div className={styles.controlsContainer}>
-            <CategoricalColorPicker
-              dataset={dataset}
-              featureName={featureName}
-              selectedPalette={categoricalPalette}
-              onChangePalette={setCategoricalPalette}
-            />
-            <LabeledRangeSlider
-              min={colorRampMin}
-              max={colorRampMax}
-              minSliderBound={dataset?.getFeatureData(featureName)?.min}
-              maxSliderBound={dataset?.getFeatureData(featureName)?.max}
-              onChange={function (min: number, max: number): void {
-                setColorRampMin(min);
-                setColorRampMax(max);
-              }}
-              marks={getColorMapSliderMarks()}
-              disabled={disableUi}
-            />
+            {
+              // Render either a categorical color picker or a range slider depending on the feature type
+              dataset?.isFeatureCategorical(featureName) ? (
+                <CategoricalColorPicker
+                  dataset={dataset}
+                  featureName={featureName}
+                  selectedPalette={categoricalPalette}
+                  onChangePalette={setCategoricalPalette}
+                />
+              ) : (
+                <LabeledRangeSlider
+                  min={colorRampMin}
+                  max={colorRampMax}
+                  minSliderBound={dataset?.getFeatureData(featureName)?.min}
+                  maxSliderBound={dataset?.getFeatureData(featureName)?.max}
+                  onChange={function (min: number, max: number): void {
+                    setColorRampMin(min);
+                    setColorRampMax(max);
+                  }}
+                  marks={getColorMapSliderMarks()}
+                  disabled={disableUi}
+                />
+              )
+            }
+            {/** Additional top bar settings */}
             <div>
               <Checkbox
                 checked={isColorRampRangeLocked}

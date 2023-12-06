@@ -28,8 +28,7 @@ const ColorPickerContainer = styled(FlexRowAlignCenter)<{
   flex-wrap: wrap;
   margin-right: ${(props) => props.$itemGap};
   max-width: calc(
-    ${(props) => props.$itemWidth} * ${(props) => props.$maxItemsPerRow} + ${(props) => props.$itemGap} *
-      (${(props) => props.$maxItemsPerRow} - 1)
+    ${(props) => `${props.$itemWidth} * ${props.$maxItemsPerRow} + ${props.$itemGap} * (${props.$maxItemsPerRow} - 1)`}
   );
 
   & > div {
