@@ -27,7 +27,8 @@ export type FeatureData = {
   categories: string[] | null;
 };
 
-/** Raw metadata loaded from JSON.
+/**
+ * JSON metadata for dataset features
  * This is the deprecated version, where feature metadata
  * was stored separately from the feature file path declaration.
  */
@@ -37,7 +38,7 @@ type DeprecatedFeatureMetadata = {
   categories: string[] | null;
 };
 
-/** Raw metadata loaded from JSON. */
+/** JSON metadata for dataset features. */
 type FeatureMetadata = {
   data: string;
   units?: string;
@@ -67,10 +68,15 @@ const defaultMetadata: DatasetMetadata = {
   startTimeSeconds: 0,
 };
 
+/** Maps from the feature label to its metadata, including relative filepath and units. */
+type FeatureMap = Record<string, FeatureMetadata>;
+/** Maps from the feature label to its relative filepath. */
+type DeprecatedFeatureMap = Record<string, string>;
+
 export type DatasetManifest = {
   frames: string[];
-  features: Record<string, string> | Record<string, FeatureMetadata>;
-  /** Deprecated; avoid using in new datasets. */
+  features: FeatureMap | DeprecatedFeatureMap;
+  /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
   featureMetadata?: Record<string, Partial<DeprecatedFeatureMetadata>>;
   outliers?: string;
   tracks?: string;
@@ -89,7 +95,6 @@ export default class Dataset {
   private frameDimensions: Vector2 | null;
 
   private arrayLoader: IArrayLoader;
-  private featureFiles: Record<string, string>;
   public features: Record<string, FeatureData>;
 
   private outlierFile?: string;
@@ -130,7 +135,6 @@ export default class Dataset {
     this.frameDimensions = null;
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
-    this.featureFiles = {};
     this.features = {};
     this.metadata = defaultMetadata;
   }
@@ -142,6 +146,11 @@ export default class Dataset {
     return await response.json();
   }
 
+  /**
+   * Parses a feature's `type` string and returns a FeatureType enum.
+   * @param inputType The `type` string to parse.
+   * @param defaultType Default value to return if `inputType` is not recognized.
+   */
   private getFeatureTypeFromString(inputType: string, defaultType: FeatureType = FeatureType.CONTINUOUS): FeatureType {
     const type = inputType.toLowerCase();
     switch (type) {
@@ -156,11 +165,22 @@ export default class Dataset {
     }
   }
 
-  private async loadFeatureDeprecated(name: string, metadata?: Partial<DeprecatedFeatureMetadata>): Promise<void> {
-    const url = this.resolveUrl(this.featureFiles[name]);
+  /**
+   * Returns true if the dataset is using the older, deprecated manifest format, where feature metadata
+   * was stored in a separate object from the feature file path declaration.
+   */
+  private isFeatureDeprecated(features: FeatureMap | DeprecatedFeatureMap): boolean {
+    return typeof Object.values(features)[0] === "string";
+  }
+
+  /**
+   * Loads a feature from the dataset, fetching its data from the provided url.
+   */
+  private async loadFeature(name: string, metadata: FeatureMetadata): Promise<void> {
+    const url = this.resolveUrl(metadata.data);
     const source = await this.arrayLoader.load(url);
     const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
-    const featureCategories = metadata?.categories || null;
+    const featureCategories = metadata?.categories;
     // Validation
     if (featureType === FeatureType.CATEGORICAL && !metadata?.categories) {
       throw new Error(`Feature ${name} is categorical but no categories were provided.`);
@@ -177,39 +197,6 @@ export default class Dataset {
       min: source.getMin(),
       max: source.getMax(),
       units: metadata?.units || "",
-      type: featureType,
-      categories: featureCategories,
-    };
-  }
-
-  /**
-   * Returns true if the dataset is using the older, deprecated manifest format.
-   */
-  private isFeatureDeprecated(feature: Record<string, string> | Record<string, FeatureMetadata>): boolean {
-    return typeof Object.values(feature)[0] === "string";
-  }
-
-  private async loadFeature(name: string, data: FeatureMetadata): Promise<void> {
-    const url = this.resolveUrl(data.data);
-    const source = await this.arrayLoader.load(url);
-    const featureType = this.getFeatureTypeFromString(data?.type || "", FeatureType.CONTINUOUS);
-    const featureCategories = data?.categories;
-    // Validation
-    if (featureType === FeatureType.CATEGORICAL && !data?.categories) {
-      throw new Error(`Feature ${name} is categorical but no categories were provided.`);
-    }
-    if (featureCategories && featureCategories.length > MAX_FEATURE_CATEGORIES) {
-      throw new Error(
-        `Feature ${name} has too many categories (${featureCategories.length} > max ${MAX_FEATURE_CATEGORIES}).`
-      );
-    }
-
-    this.features[name] = {
-      tex: source.getTexture(FeatureDataType.F32),
-      data: source.getBuffer(FeatureDataType.F32),
-      min: source.getMin(),
-      max: source.getMax(),
-      units: data?.units || "",
       type: featureType,
       categories: featureCategories || null,
     };
@@ -303,7 +290,7 @@ export default class Dataset {
   }
 
   public get featureNames(): string[] {
-    return Object.keys(this.featureFiles);
+    return Object.keys(this.features);
   }
 
   public get numObjects(): number {
@@ -354,27 +341,31 @@ export default class Dataset {
     this.centroidsFile = manifest.centroids;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
-    let featuresPromises: Promise<void>[] = [];
 
-    // Load feature data -> switch between deprecated (old) and new feature type loading.
+    // Load feature data -> switch between deprecated and new feature type loading.
+    let featuresPromises: Promise<void>[] = [];
+    let featuresToMetadata: Record<string, FeatureMetadata> = {};
     if (this.isFeatureDeprecated(manifest.features)) {
-      this.featureFiles = manifest.features as Record<string, string>;
-      const featuresToMetadata: Record<string, Partial<DeprecatedFeatureMetadata>> = {};
-      for (const featureName of Object.keys(this.featureFiles)) {
-        featuresToMetadata[featureName] = manifest.featureMetadata ? manifest.featureMetadata[featureName] : {};
-      }
-      featuresPromises = this.featureNames.map((name) =>
-        this.loadFeatureDeprecated.bind(this)(name, featuresToMetadata[name])
-      );
+      // Parse metadata from deprecated manifest format, and add missing properties
+      // to make it compatible with the new FeatureMetadata.
+      featuresToMetadata = Object.keys(manifest.features).reduce((result, name) => {
+        const featurePath = (manifest.features as DeprecatedFeatureMap)[name];
+        const featureMetadata = (manifest.featureMetadata || {})[name] || {};
+        result[name] = {
+          data: featurePath,
+          units: featureMetadata.units || undefined,
+          type: featureMetadata.type || undefined,
+          categories: featureMetadata.categories || undefined,
+        };
+        return result;
+      }, {} as FeatureMap);
     } else {
-      const featureNameToPath: Record<string, string> = {};
-      for (const featureName of Object.keys(manifest.features)) {
-        const metadata = (manifest.features as Record<string, FeatureMetadata>)[featureName];
-        featureNameToPath[featureName] = metadata.data;
-        featuresPromises.push(this.loadFeature.bind(this)(featureName, metadata));
-      }
-      this.featureFiles = featureNameToPath;
+      featuresToMetadata = manifest.features as FeatureMap;
     }
+
+    featuresPromises = Object.keys(featuresToMetadata).map((name) =>
+      this.loadFeature.bind(this)(name, featuresToMetadata[name])
+    );
 
     const result = await Promise.all([
       this.loadToTexture(FeatureDataType.U8, this.outlierFile),
