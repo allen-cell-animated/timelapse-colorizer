@@ -151,7 +151,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   // Determine if we're currently using a preset palette; otherwise show the "Custom" tooltip.
   let selectedPaletteName = "Custom";
-  for (const [_key, paletteData] of props.categoricalPalettes) {
+  for (const [, paletteData] of props.categoricalPalettes) {
     if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
       selectedPaletteName = paletteData.name;
       break;

@@ -56,7 +56,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
   for (let i = 0; i < numCategories; i++) {
     const color = props.selectedPalette[i];
     const label = categories[i];
-    const onChange = (_value: AntColor, hex: string) => {
+    const onChange = (_value: AntColor, hex: string): void => {
       const newPalette = [...props.selectedPalette];
       newPalette[i] = new Color(hex as ColorRepresentation);
       props.onChangePalette(newPalette);
