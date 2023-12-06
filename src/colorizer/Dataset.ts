@@ -27,11 +27,22 @@ export type FeatureData = {
   categories: string[] | null;
 };
 
-/** Raw metadata loaded from JSON. */
-type FeatureMetadata = {
+/** Raw metadata loaded from JSON.
+ * This is the deprecated version, where feature metadata
+ * was stored separately from the feature file path declaration.
+ */
+type DeprecatedFeatureMetadata = {
   units: string | null;
   type: string | null;
   categories: string[] | null;
+};
+
+/** Raw metadata loaded from JSON. */
+type FeatureMetadata = {
+  data: string;
+  units?: string;
+  type?: string;
+  categories?: string[];
 };
 
 export type DatasetMetadata = {
@@ -58,8 +69,9 @@ const defaultMetadata: DatasetMetadata = {
 
 export type DatasetManifest = {
   frames: string[];
-  features: Record<string, string>;
-  featureMetadata?: Record<string, Partial<FeatureMetadata>>;
+  features: Record<string, string> | Record<string, FeatureMetadata>;
+  /** Deprecated; avoid using in new datasets. */
+  featureMetadata?: Record<string, Partial<DeprecatedFeatureMetadata>>;
   outliers?: string;
   tracks?: string;
   times?: string;
@@ -144,7 +156,7 @@ export default class Dataset {
     }
   }
 
-  private async loadFeature(name: string, metadata: Partial<FeatureMetadata>): Promise<void> {
+  private async loadFeatureDeprecated(name: string, metadata?: Partial<DeprecatedFeatureMetadata>): Promise<void> {
     const url = this.resolveUrl(this.featureFiles[name]);
     const source = await this.arrayLoader.load(url);
     const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
@@ -167,6 +179,39 @@ export default class Dataset {
       units: metadata?.units || "",
       type: featureType,
       categories: featureCategories,
+    };
+  }
+
+  /**
+   * Returns true if the dataset is using the older, deprecated manifest format.
+   */
+  private isFeatureDeprecated(feature: Record<string, string> | Record<string, FeatureMetadata>): boolean {
+    return typeof Object.values(feature)[0] === "string";
+  }
+
+  private async loadFeature(name: string, data: FeatureMetadata): Promise<void> {
+    const url = this.resolveUrl(this.featureFiles[name]);
+    const source = await this.arrayLoader.load(url);
+    const featureType = this.getFeatureTypeFromString(data?.type || "", FeatureType.CONTINUOUS);
+    const featureCategories = data?.categories;
+    // Validation
+    if (featureType === FeatureType.CATEGORICAL && !data?.categories) {
+      throw new Error(`Feature ${name} is categorical but no categories were provided.`);
+    }
+    if (featureCategories && featureCategories.length > MAX_FEATURE_CATEGORIES) {
+      throw new Error(
+        `Feature ${name} has too many categories (${featureCategories.length} > max ${MAX_FEATURE_CATEGORIES}).`
+      );
+    }
+
+    this.features[name] = {
+      tex: source.getTexture(FeatureDataType.F32),
+      data: source.getBuffer(FeatureDataType.F32),
+      min: source.getMin(),
+      max: source.getMax(),
+      units: data?.units || "",
+      type: featureType,
+      categories: featureCategories || null,
     };
   }
 
@@ -301,11 +346,10 @@ export default class Dataset {
     const manifest = await manifestLoader(this.manifestUrl);
 
     this.frameFiles = manifest.frames;
-    this.featureFiles = manifest.features;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
-    const featuresToMetadata: Record<string, Partial<FeatureMetadata>> = {};
+    const featuresToMetadata: Record<string, Partial<DeprecatedFeatureMetadata>> = {};
     for (const featureName of Object.keys(this.featureFiles)) {
       featuresToMetadata[featureName] = manifest.featureMetadata ? manifest.featureMetadata[featureName] : {};
     }
@@ -315,9 +359,24 @@ export default class Dataset {
     this.centroidsFile = manifest.centroids;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
-    const featuresPromises: Promise<void>[] = this.featureNames.map((name) =>
-      this.loadFeature.bind(this)(name, featuresToMetadata[name])
-    );
+    let featuresPromises: Promise<void>[] = [];
+
+    if (this.isFeatureDeprecated(manifest.features)) {
+      this.featureFiles = manifest.features as Record<string, string>;
+      featuresPromises = this.featureNames.map((name) =>
+        this.loadFeatureDeprecated.bind(this)(name, featuresToMetadata[name])
+      );
+      console.log(this.featureFiles);
+    } else {
+      const featureNameToPath: Record<string, string> = {};
+      for (const featureName of Object.keys(manifest.features)) {
+        const metadata = (manifest.features as Record<string, FeatureMetadata>)[featureName];
+        featureNameToPath[featureName] = metadata.data;
+        featuresPromises.push(this.loadFeature.bind(this)(featureName, metadata));
+      }
+      this.featureFiles = featureNameToPath;
+      console.log(this.featureFiles);
+    }
 
     const result = await Promise.all([
       this.loadToTexture(FeatureDataType.U8, this.outlierFile),
