@@ -10,6 +10,8 @@ import Track from "./Track";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { AnyManifestFile, ManifestFile, ManifestFileMetadata, update_manifest_version } from "./utils/dataset_utils";
+import { GetRecordValue } from "./utils/type_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -27,37 +29,6 @@ type FeatureData = {
   categories: string[] | null;
 };
 
-/**
- * JSON metadata for dataset features.
- * This is the deprecated version, where feature metadata
- * was stored separately from the feature file path declaration.
- */
-type DeprecatedManifestFileFeatureData = {
-  units?: string | null;
-  type?: string | null;
-  categories?: string[] | null;
-};
-
-/** JSON metadata for dataset features. */
-type ManifestFileFeatureData = {
-  data: string;
-  units?: string;
-  type?: string;
-  categories?: string[];
-};
-
-type ManifestFileMetadata = {
-  /** Dimensions of the frame, in scale units. Default width and height are 0. */
-  frameDims: {
-    width: number;
-    height: number;
-    units: string;
-  };
-  frameDurationSeconds: number;
-  /* Optional offset for the timestamp. */
-  startTimeSeconds: number;
-};
-
 const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
     width: 0,
@@ -66,24 +37,6 @@ const defaultMetadata: ManifestFileMetadata = {
   },
   frameDurationSeconds: 0,
   startTimeSeconds: 0,
-};
-
-/** Maps from the feature label to its metadata, including relative filepath, type, and units. */
-type FeatureMap = Record<string, ManifestFileFeatureData>;
-/** Maps from the feature label to its relative filepath only. */
-type DeprecatedFeatureMap = Record<string, string>;
-
-export type ManifestFile = {
-  frames: string[];
-  features: FeatureMap | DeprecatedFeatureMap;
-  /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
-  featureMetadata?: Record<string, Partial<DeprecatedManifestFileFeatureData>>;
-  outliers?: string;
-  tracks?: string;
-  times?: string;
-  centroids?: string;
-  bounds?: string;
-  metadata?: Partial<ManifestFileMetadata>;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -141,7 +94,7 @@ export default class Dataset {
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
-  private async fetchJson(url: string): Promise<ManifestFile> {
+  private async fetchJson(url: string): Promise<AnyManifestFile> {
     const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
   }
@@ -167,17 +120,9 @@ export default class Dataset {
   }
 
   /**
-   * Returns whether the dataset is using the older, deprecated manifest format, where feature metadata
-   * was stored in a separate object from the `feature` file path declaration.
-   */
-  private isFeatureDeprecated(features: FeatureMap | DeprecatedFeatureMap): boolean {
-    return typeof Object.values(features)[0] === "string";
-  }
-
-  /**
    * Loads a feature from the dataset, fetching its data from the provided url.
    */
-  private async loadFeature(name: string, metadata: ManifestFileFeatureData): Promise<void> {
+  private async loadFeature(name: string, metadata: GetRecordValue<ManifestFile["features"]>): Promise<void> {
     const url = this.resolveUrl(metadata.data);
     const source = await this.arrayLoader.load(url);
     const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
@@ -345,7 +290,7 @@ export default class Dataset {
     }
     this.hasOpened = true;
 
-    const manifest = await manifestLoader(this.manifestUrl);
+    const manifest = update_manifest_version(await manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
@@ -357,28 +302,9 @@ export default class Dataset {
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
 
-    // Load feature data -> switch between deprecated and new feature type loading.
-    let featuresToMetadata: Record<string, ManifestFileFeatureData> = {};
-    if (this.isFeatureDeprecated(manifest.features)) {
-      // Parse metadata from deprecated manifest format, and add missing properties
-      // to make it compatible with the new FeatureMetadata.
-      featuresToMetadata = Object.keys(manifest.features).reduce((result, name) => {
-        const featurePath = (manifest.features as DeprecatedFeatureMap)[name];
-        const featureMetadata = (manifest.featureMetadata || {})[name] || {};
-        result[name] = {
-          data: featurePath,
-          units: featureMetadata.units || undefined,
-          type: featureMetadata.type || undefined,
-          categories: featureMetadata.categories || undefined,
-        };
-        return result;
-      }, {} as FeatureMap);
-    } else {
-      featuresToMetadata = manifest.features as FeatureMap;
-    }
-
-    const featuresPromises: Promise<void>[] = Object.keys(featuresToMetadata).map((name) =>
-      this.loadFeature.bind(this)(name, featuresToMetadata[name])
+    // Load feature data
+    const featuresPromises: Promise<void>[] = Object.keys(manifest.features).map((name) =>
+      this.loadFeature.bind(this)(name, manifest.features[name])
     );
 
     const result = await Promise.all([

@@ -1,16 +1,17 @@
 import { Texture } from "three";
 import { describe, expect, it } from "vitest";
 import { ArraySource, IArrayLoader } from "../src/colorizer";
-import Dataset, { ManifestFile, FeatureType } from "../src/colorizer/Dataset";
+import Dataset, { FeatureType } from "../src/colorizer/Dataset";
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
 import { ANY_ERROR } from "./test_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
+import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 
 describe("Dataset", () => {
   const defaultPath = "https://some-path.json";
 
-  const makeMockFetchMethod = (url: string, manifestJson: ManifestFile): ((url: string) => Promise<ManifestFile>) => {
-    return async (inputUrl: string): Promise<ManifestFile> => {
+  const makeMockFetchMethod = <T>(url: string, manifestJson: T): ((url: string) => Promise<T>) => {
+    return async (inputUrl: string): Promise<T> => {
       if (inputUrl !== url) {
         throw new Error(`Input url '${inputUrl}' does not match expected url '${url}'.`);
       }
@@ -50,7 +51,7 @@ describe("Dataset", () => {
     },
   };
 
-  const deprecatedManifest: ManifestFile = {
+  const deprecatedManifest: AnyManifestFile = {
     frames: ["frame0.json"],
     features: {
       feature1: "feature1.json",
@@ -68,7 +69,7 @@ describe("Dataset", () => {
     },
   };
 
-  const manifestsToTest: [string, ManifestFile][] = [
+  const manifestsToTest: [string, AnyManifestFile][] = [
     ["Default Manifest", defaultManifest],
     ["Deprecated Manifest", deprecatedManifest],
   ];
