@@ -75,22 +75,26 @@ type RenderInfo = {
  * with `ColorizeCanvas`.)
  */
 export default class CanvasOverlay {
-  private canvas: HTMLCanvasElement;
+  private canvas: OffscreenCanvas;
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
   private backgroundOptions: BackgroundOptions;
 
   constructor(
+    width: number = 256,
+    height: number = 256,
     scaleBarOptions: ScaleBarOptions = defaultScaleBarOptions,
     timestampOptions: TimestampOptions = defaultTimestampOptions,
     overlayOptions: BackgroundOptions = defaultBackgroundOptions
   ) {
-    this.canvas = document.createElement("canvas");
-    // Disable pointer events on the canvas overlay so it doesn't block mouse events on the main canvas.
-    this.canvas.style.pointerEvents = "none";
+    this.canvas = new OffscreenCanvas(width, height);
     this.scaleBarOptions = scaleBarOptions;
     this.timestampOptions = timestampOptions;
     this.backgroundOptions = overlayOptions;
+  }
+
+  get offscreenCanvas(): OffscreenCanvas {
+    return this.canvas;
   }
 
   /**
@@ -113,7 +117,7 @@ export default class CanvasOverlay {
     this.backgroundOptions = { ...this.backgroundOptions, ...options };
   }
 
-  private getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: StyleOptions): Vector2 {
+  private getTextDimensions(ctx: OffscreenCanvasRenderingContext2D, text: string, options: StyleOptions): Vector2 {
     ctx.font = `${options.fontSizePx}px ${options.fontFamily}`;
     ctx.fillStyle = options.fontColor;
     const textWidth = ctx.measureText(text).width;
@@ -129,7 +133,7 @@ export default class CanvasOverlay {
    * @returns the width and height of the text, as a Vector2.
    */
   private renderRightAlignedText(
-    ctx: CanvasRenderingContext2D,
+    ctx: OffscreenCanvasRenderingContext2D,
     originPx: Vector2,
     text: string,
     options: StyleOptions
@@ -197,7 +201,7 @@ export default class CanvasOverlay {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getScaleBarRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getScaleBarRenderer(ctx: OffscreenCanvasRenderingContext2D, originPx: Vector2): RenderInfo {
     if (!this.scaleBarOptions.unitsPerScreenPixel || !this.scaleBarOptions.visible) {
       return { sizePx: new Vector2(0, 0), render: () => {} };
     }
@@ -299,7 +303,7 @@ export default class CanvasOverlay {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getTimestampRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getTimestampRenderer(ctx: OffscreenCanvasRenderingContext2D, originPx: Vector2): RenderInfo {
     if (!this.timestampOptions.visible) {
       return { sizePx: new Vector2(0, 0), render: () => {} };
     }
@@ -330,7 +334,11 @@ export default class CanvasOverlay {
    * @param size Size of the background overlay.
    * @param options Configuration for the background overlay.
    */
-  private static renderBackground(ctx: CanvasRenderingContext2D, size: Vector2, options: BackgroundOptions): void {
+  private static renderBackground(
+    ctx: OffscreenCanvasRenderingContext2D,
+    size: Vector2,
+    options: BackgroundOptions
+  ): void {
     ctx.fillStyle = options.fill;
     ctx.strokeStyle = options.stroke;
     ctx.beginPath();
@@ -348,6 +356,7 @@ export default class CanvasOverlay {
 
   /**
    * Render the overlay to the canvas.
+   * @returns an ImageBitmap of the rendered overlay, or null if the overlay cannot be drawn or is empty.
    */
   render(): void {
     const ctx = this.canvas.getContext("2d");
@@ -382,9 +391,5 @@ export default class CanvasOverlay {
     // Draw elements over the background
     renderScaleBar();
     renderTimestamp();
-  }
-
-  get domElement(): HTMLElement {
-    return this.canvas;
   }
 }
