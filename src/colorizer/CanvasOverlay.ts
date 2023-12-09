@@ -75,7 +75,7 @@ type RenderInfo = {
  * with `ColorizeCanvas`.)
  */
 export default class CanvasOverlay {
-  public canvas: OffscreenCanvas;
+  public readonly canvas: OffscreenCanvas;
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
   private backgroundOptions: BackgroundOptions;
