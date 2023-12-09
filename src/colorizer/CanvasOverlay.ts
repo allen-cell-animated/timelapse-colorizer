@@ -352,7 +352,7 @@ export default class CanvasOverlay {
    * Render the overlay to the canvas.
    */
   render(): void {
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d") as OffscreenCanvasRenderingContext2D | null;
     if (ctx === null) {
       console.error("Could not get canvas context");
       return;
