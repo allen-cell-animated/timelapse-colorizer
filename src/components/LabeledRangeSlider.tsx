@@ -159,6 +159,14 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
     });
   }
 
+  // Use a placeholder ("---") if the min/max bounds are undefined
+  const minSliderLabel = Number.isNaN(props.minSliderBound)
+    ? "--"
+    : numberToStringDecimal(props.minSliderBound, props.maxDecimalsToDisplay);
+  const maxSliderLabel = Number.isNaN(props.maxSliderBound)
+    ? "--"
+    : numberToStringDecimal(props.maxSliderBound, props.maxDecimalsToDisplay);
+
   return (
     <ComponentContainer>
       <InputNumber
@@ -190,12 +198,8 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
             open: props.disabled ? false : undefined, // Hide tooltip when disabled
           }}
         />
-        <SliderLabel $disabled={props.disabled}>
-          {numberToStringDecimal(props.minSliderBound, props.maxDecimalsToDisplay)}
-        </SliderLabel>
-        <SliderLabel $disabled={props.disabled}>
-          {numberToStringDecimal(props.maxSliderBound, props.maxDecimalsToDisplay)}
-        </SliderLabel>
+        <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
+        <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
       <InputNumber
         ref={maxInput}
