@@ -81,6 +81,12 @@ vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
   }
 }
 
+vec4 alphaBlend(vec4 a, vec4 b) {
+  // Implements a over b operation. See https://en.wikipedia.org/wiki/Alpha_compositing
+  float alpha = a.a + b.a * (1.0 - a.a);
+  return vec4((a.rgb * a.a + b.rgb * b.a * (1.0 - a.a)) / alpha, alpha);
+}
+
 vec4 getMainPixelColor() {
 
   // Scale uv to compensate for the aspect of the frame
@@ -135,7 +141,6 @@ void main() {
   // Add overlay texture
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
-  float overlayAlpha = float(overlayColor.a);
-
-  gOutputColor = mix(mainColor, overlayColor, overlayAlpha);
+  gOutputColor = alphaBlend(overlayColor, mainColor);
+  // gOutputColor = vec4(overlayAlpha, overlayAlpha, overlayAlpha, 1.0);
 }
