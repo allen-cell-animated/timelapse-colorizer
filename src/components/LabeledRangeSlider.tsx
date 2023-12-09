@@ -159,7 +159,7 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
     });
   }
 
-  // Use a placeholder ("---") if the min/max bounds are undefined
+  // Use a placeholder if the min/max bounds are undefined
   const minSliderLabel = Number.isNaN(props.minSliderBound)
     ? "--"
     : numberToStringDecimal(props.minSliderBound, props.maxDecimalsToDisplay);
