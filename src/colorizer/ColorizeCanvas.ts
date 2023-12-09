@@ -199,13 +199,6 @@ export default class ColorizeCanvas {
     this.updateScaling = this.updateScaling.bind(this);
   }
 
-  /**
-   * The DOM element containing the canvas and its overlay.
-   */
-  get domElement(): HTMLCanvasElement {
-    return this.renderer.domElement;
-  }
-
   get canvasElement(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
@@ -540,11 +533,9 @@ export default class ColorizeCanvas {
     this.updateScaleBar();
     this.updateTimestamp();
 
+    // Draw the overlay, and pass the resulting image as a texture to the shader.
     this.overlay.render();
-    // Draw the overlay over the canvas
-    const overlayTexture = new CanvasTexture(this.overlay.offscreenCanvas);
-    console.log("Render!");
-    console.log(overlayTexture);
+    const overlayTexture = new CanvasTexture(this.overlay.canvas);
     this.setUniform("overlay", overlayTexture);
 
     this.renderer.render(this.scene, this.camera);

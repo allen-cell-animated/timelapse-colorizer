@@ -75,26 +75,20 @@ type RenderInfo = {
  * with `ColorizeCanvas`.)
  */
 export default class CanvasOverlay {
-  private canvas: OffscreenCanvas;
+  public canvas: OffscreenCanvas;
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
   private backgroundOptions: BackgroundOptions;
 
   constructor(
-    width: number = 256,
-    height: number = 256,
     scaleBarOptions: ScaleBarOptions = defaultScaleBarOptions,
     timestampOptions: TimestampOptions = defaultTimestampOptions,
     overlayOptions: BackgroundOptions = defaultBackgroundOptions
   ) {
-    this.canvas = new OffscreenCanvas(width, height);
+    this.canvas = new OffscreenCanvas(1, 1);
     this.scaleBarOptions = scaleBarOptions;
     this.timestampOptions = timestampOptions;
     this.backgroundOptions = overlayOptions;
-  }
-
-  get offscreenCanvas(): OffscreenCanvas {
-    return this.canvas;
   }
 
   /**
@@ -356,7 +350,6 @@ export default class CanvasOverlay {
 
   /**
    * Render the overlay to the canvas.
-   * @returns an ImageBitmap of the rendered overlay, or null if the overlay cannot be drawn or is empty.
    */
   render(): void {
     const ctx = this.canvas.getContext("2d");

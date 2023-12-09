@@ -135,12 +135,9 @@ vec4 getMainPixelColor() {
 }
 
 void main() {
-
   vec4 mainColor = getMainPixelColor();
-
   // Add overlay texture
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
   gOutputColor = alphaBlend(overlayColor, mainColor);
-  // gOutputColor = vec4(overlayAlpha, overlayAlpha, overlayAlpha, 1.0);
 }

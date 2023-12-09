@@ -69,7 +69,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Mount the canvas to the wrapper's location in the document.
   useEffect(() => {
-    canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
+    canvasRef.current?.parentNode?.replaceChild(canv.canvasElement, canvasRef.current);
   }, []);
 
   // These are all useMemo calls because the updates to the canvas must happen in the same render;
