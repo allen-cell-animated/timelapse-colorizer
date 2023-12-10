@@ -330,7 +330,6 @@ export default class Dataset {
     this.bounds = bounds;
 
     // Keep original sorting order of features by inserting in promise order.
-    // Map is ordered by insertion.
     featureResults.forEach(([name, data]) => {
       this.features.set(name, data);
     });
