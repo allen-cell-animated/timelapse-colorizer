@@ -17,7 +17,12 @@ uniform float featureColorRampMax;
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
+
 uniform sampler2D overlay;
+uniform sampler2D backdrop;
+uniform float backdropOpacity;
+
+const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
@@ -103,9 +108,11 @@ vec4 getMainPixelColor() {
 
   // A segmentation id of 0 represents background
   if (id == 0u) {
-    return vec4(backgroundColor, 1.0);
-  } else if (int(id) - 1 == highlightedId) {
-    // do an outline around highlighted object
+    return TRANSPARENT;
+  }
+
+  // do an outline around highlighted object
+  if (int(id) - 1 == highlightedId) {
     if (isEdge(sUv, frameDims)) {
       return vec4(1.0, 0.0, 1.0, 1.0);
     }
@@ -135,9 +142,19 @@ vec4 getMainPixelColor() {
 }
 
 void main() {
+  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
+
+  // vec4 backdropColor = texture(backdrop, sUv).rgba;
+  // backdropColor.a *= backdropOpacity;
+  vec4 backdropColor = vec4(1.0, 0.0, 0.0, 1.0);
+  backdropColor.a *= 0.5;
+
   vec4 mainColor = getMainPixelColor();
-  // Add overlay texture
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
-  gOutputColor = alphaBlend(overlayColor, mainColor);
+  // TODO: should backdrop color be able to render above overlay?
+  gOutputColor = vec4(backgroundColor, 1.0);
+  gOutputColor = alphaBlend(mainColor, gOutputColor);
+  gOutputColor = alphaBlend(backdropColor, gOutputColor);
+  gOutputColor = alphaBlend(overlayColor, gOutputColor);
 }

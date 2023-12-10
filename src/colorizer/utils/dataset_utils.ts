@@ -45,6 +45,8 @@ type ManifestFileV2 = Omit<ManifestFileV1, "features" | "featureMetadata"> & {
       categories?: string[];
     }
   >;
+  /** Optional list of background/overlay images. */
+  images?: { name: string; frames: string[] }[];
 };
 
 export type ManifestFile = ManifestFileV2;
