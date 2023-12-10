@@ -15,6 +15,7 @@ export type ManifestFileMetadata = {
 
 type ManifestFileV1 = {
   frames: string[];
+  /** Map from feature name to relative path */
   features: Record<string, string>;
   /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
   featureMetadata?: Record<
@@ -47,9 +48,20 @@ type ManifestFileV2 = Omit<ManifestFileV1, "features" | "featureMetadata"> & {
   >;
 };
 
-export type ManifestFile = ManifestFileV2;
+// V3 replaces the feature map with an array to enforce feature ordering.
+type ManifestFileV3 = Omit<ManifestFileV2, "features"> & {
+  features: {
+    name: string;
+    data: string;
+    units?: string;
+    type?: string;
+    categories?: string[];
+  }[];
+};
+
+export type ManifestFile = ManifestFileV3;
 /** Any manifest version, including deprecated manifests. Call `update_manifest_version` to transform to an up-to-date version. */
-export type AnyManifestFile = ManifestFileV1 | ManifestFileV2;
+export type AnyManifestFile = ManifestFileV1 | ManifestFileV2 | ManifestFileV3;
 
 ///////////// Conversion functions /////////////////////
 
@@ -57,8 +69,12 @@ export type AnyManifestFile = ManifestFileV1 | ManifestFileV2;
  * Returns whether the dataset is using the older, deprecated manifest format, where feature metadata
  * was stored in a separate object from the `feature` file path declaration.
  */
-function isFeatureDeprecated(features: ManifestFileV1["features"] | ManifestFileV2["features"]): boolean {
-  return typeof Object.values(features)[0] === "string";
+function isV1(manifest: AnyManifestFile): boolean {
+  return typeof Object.values(manifest.features)[0] === "string";
+}
+
+function isV2(manifest: AnyManifestFile): boolean {
+  return !Array.isArray(manifest.features) && typeof Object.values(manifest.features)[0] === "object";
 }
 
 /**
@@ -67,24 +83,34 @@ function isFeatureDeprecated(features: ManifestFileV1["features"] | ManifestFile
  * @returns An object with fields reflecting the most recent ManifestFile spec.
  */
 export const update_manifest_version = (manifest: AnyManifestFile): ManifestFile => {
-  if (isFeatureDeprecated(manifest.features)) {
+  if (isV1(manifest)) {
     // Parse feature metadata into the new features format
     const manifestV1 = manifest as ManifestFileV1;
 
-    const features: ManifestFileV2["features"] = {};
+    const features: ManifestFile["features"] = [];
     for (const [featureName, featurePath] of Object.entries(manifestV1.features)) {
       const featureMetadata = manifestV1.featureMetadata?.[featureName];
-      features[featureName] = {
+      features.push({
+        name: featureName,
         data: featurePath,
         units: featureMetadata?.units || undefined,
         type: featureMetadata?.type || undefined,
         categories: featureMetadata?.categories || undefined,
-      };
+      });
     }
 
     return {
       ...manifest,
       features,
+    };
+  } else if (isV2(manifest)) {
+    const manifestV2 = manifest as ManifestFileV2;
+    const newFeatures = Object.entries(manifestV2.features).map(([key, value]) => {
+      return { name: key, ...value };
+    });
+    return {
+      ...manifest,
+      features: newFeatures,
     };
   }
   return manifest as ManifestFile;
