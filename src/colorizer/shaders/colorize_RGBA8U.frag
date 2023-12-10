@@ -17,6 +17,7 @@ uniform float featureColorRampMax;
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
+uniform sampler2D overlay;
 
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
@@ -80,15 +81,21 @@ vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
   }
 }
 
-void main() {
+vec4 alphaBlend(vec4 a, vec4 b) {
+  // Implements a over b operation. See https://en.wikipedia.org/wiki/Alpha_compositing
+  float alpha = a.a + b.a * (1.0 - a.a);
+  return vec4((a.rgb * a.a + b.rgb * b.a * (1.0 - a.a)) / alpha, alpha);
+}
+
+vec4 getMainPixelColor() {
+
   // Scale uv to compensate for the aspect of the frame
   ivec2 frameDims = textureSize(frame, 0);
   vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
   // This pixel is background if, after scaling uv, it is outside the frame
   if (sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0) {
-    gOutputColor = vec4(backgroundColor, 1.0);
-    return;
+    return vec4(backgroundColor, 1.0);
   }
 
   // Get the segmentation id at this pixel
@@ -96,13 +103,11 @@ void main() {
 
   // A segmentation id of 0 represents background
   if (id == 0u) {
-    gOutputColor = vec4(backgroundColor, 1.0);
-    return;
+    return vec4(backgroundColor, 1.0);
   } else if (int(id) - 1 == highlightedId) {
     // do an outline around highlighted object
     if (isEdge(sUv, frameDims)) {
-      gOutputColor = vec4(1.0, 0.0, 1.0, 1.0);
-      return;
+      return vec4(1.0, 0.0, 1.0, 1.0);
     }
   }
 
@@ -120,11 +125,19 @@ void main() {
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
   if (isInRange) {
     if (isOutlier) {
-      gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor);
+      return getColorFromDrawMode(outlierDrawMode, outlierColor);
     } else {
-      gOutputColor = getColorRamp(normFeatureVal);
+      return getColorRamp(normFeatureVal);
     }
   } else {
-    gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
+    return getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
   }
+}
+
+void main() {
+  vec4 mainColor = getMainPixelColor();
+  // Add overlay texture
+  vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
+
+  gOutputColor = alphaBlend(overlayColor, mainColor);
 }
