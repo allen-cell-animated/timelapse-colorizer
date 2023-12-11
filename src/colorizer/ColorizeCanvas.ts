@@ -4,12 +4,14 @@ import {
   CanvasTexture,
   Color,
   DataTexture,
+  FloatType,
   GLSL3,
   Line,
   LineBasicMaterial,
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
+  RGBAFormat,
   RGBAIntegerFormat,
   Scene,
   ShaderMaterial,
@@ -80,8 +82,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
-  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
-  const emptyBackdrop = new DataTexture(new Uint8Array([250, 0, 0, 255]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
+  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
+  const emptyBackdrop = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -534,7 +536,16 @@ export default class ColorizeCanvas {
     if (!frame) {
       return;
     }
-    overlay && this.setUniform("backdrop", overlay);
+    // TODO: Clear overlay
+    if (overlay) {
+      this.setUniform("backdrop", overlay);
+    } else {
+      console.log("Resetting overlay");
+      // this.setUniform(
+      //   "backdrop",
+      //   new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType)
+      // );
+    }
     this.setUniform("frame", frame);
   }
 

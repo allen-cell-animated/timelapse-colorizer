@@ -19,7 +19,7 @@ uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
 
 uniform sampler2D overlay;
-uniform usampler2D backdrop;
+uniform sampler2D backdrop;
 uniform float backdropOpacity;
 
 const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
@@ -144,9 +144,10 @@ vec4 getMainPixelColor() {
 void main() {
   vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
-  uvec4 backdropColorUint = texture(backdrop, sUv).rgba;
-  vec4 backdropColor = vec4(float(backdropColorUint.r) / 255.0, float(backdropColorUint.g) / 255.0, float(backdropColorUint.b) / 255.0, float(backdropColorUint.a) / 255.0);
-  backdropColor.a *= backdropOpacity;
+  // uvec4 backdropColorUint = texture(backdrop, sUv).rgba;
+  vec4 backdropColor = texture(backdrop, sUv).rgba;
+  // TODO: Handle transparent backdrops?
+  backdropColor.a = backdropOpacity;
   // vec4 backdropColor = vec4(1.0, 0.0, 0.0, 1.0);
   // backdropColor.a *= 0.5;
 
