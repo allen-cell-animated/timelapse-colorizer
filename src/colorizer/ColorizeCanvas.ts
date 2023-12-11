@@ -199,7 +199,7 @@ export default class ColorizeCanvas {
     this.updateScaling = this.updateScaling.bind(this);
   }
 
-  get canvasElement(): HTMLCanvasElement {
+  get domElement(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
 
