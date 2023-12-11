@@ -64,7 +64,7 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
 
     // Make the color picker component
     colorPickers.push(
-      <FlexRowAlignCenter>
+      <FlexRowAlignCenter key={i}>
         <ColorPicker value={color.getHexString()} onChange={onChange} size={"small"} disabledAlpha={true} />
         <span>{label}</span>
       </FlexRowAlignCenter>
