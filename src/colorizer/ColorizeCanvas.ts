@@ -22,7 +22,7 @@ import {
 } from "three";
 
 import ColorRamp from "./ColorRamp";
-import Dataset, { FeatureType } from "./Dataset";
+import Dataset from "./Dataset";
 import { FeatureDataType } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
@@ -31,7 +31,7 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 import CanvasOverlay from "./CanvasOverlay";
 import { FeatureThreshold } from "./types";
-import { DEFAULT_CATEGORICAL_PALETTES, MAX_FEATURE_CATEGORIES } from "../constants";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, PaletteData } from "../constants";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -128,8 +128,10 @@ export default class ColorizeCanvas {
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
+  private colorRamp: ColorRamp;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
+  private categoricalPalette: PaletteData;
   private currentFrame: number;
 
   constructor() {
@@ -181,6 +183,8 @@ export default class ColorizeCanvas {
     this.dataset = null;
     this.canvasResolution = null;
     this.featureName = null;
+    this.colorRamp = DEFAULT_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_ID)!.colorRamp;
+    this.categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get("adobe-bold")!;
     this.track = null;
     this.showTrackPath = false;
     this.colorMapRangeMin = 0;
@@ -351,8 +355,15 @@ export default class ColorizeCanvas {
     this.pickMaterial.uniforms[name].value = value;
   }
 
+  /** Sets the current color ramp. Used when a continuous or discrete feature is selected. */
   setColorRamp(ramp: ColorRamp): void {
-    this.setUniform("colorRamp", ramp.texture);
+    // this.setUniform("colorRamp", ramp.texture);
+    this.colorRamp = ramp;
+  }
+
+  /** Sets the current categorical palette. Used when a categorical feature is selected. */
+  setCategoricalPalette(palette: PaletteData): void {
+    this.categoricalPalette = palette;
   }
 
   setBackgroundColor(color: Color): void {
@@ -440,16 +451,6 @@ export default class ColorizeCanvas {
     const featureData = this.dataset.getFeatureData(name)!;
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);
-
-    if (featureData.type === FeatureType.CATEGORICAL) {
-      // TODO: Allow switching to/from regular color ramp. This is a placeholder for example!
-      // Construct a color ramp from the feature's categories
-      const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get("adobe-bold")!;
-      const colorRamp = new ColorRamp(defaultPalette.colorStops);
-      this.setColorRamp(colorRamp);
-      this.setColorMapRangeMin(0);
-      this.setColorMapRangeMax(MAX_FEATURE_CATEGORIES - 1);
-    }
     this.render(); // re-render necessary because map range may have changed
   }
 
@@ -552,9 +553,27 @@ export default class ColorizeCanvas {
     this.setUniform("frame", frame);
   }
 
+  /** Switches the coloring between the categorical and color ramps depending on the currently
+   * selected feature.
+   */
+  updateRamp(): void {
+    if (this.featureName && this.dataset?.isFeatureCategorical(this.featureName)) {
+      const palette = this.categoricalPalette;
+      const colorRamp = new ColorRamp(palette.colorStops);
+      this.setUniform("colorRamp", colorRamp.texture);
+      this.setUniform("featureColorRampMin", 0);
+      this.setUniform("featureColorRampMax", palette.colorStops.length - 1);
+    } else {
+      this.setUniform("colorRamp", this.colorRamp.texture);
+      this.setUniform("featureColorRampMin", this.colorMapRangeMin);
+      this.setUniform("featureColorRampMax", this.colorMapRangeMax);
+    }
+  }
+
   render(): void {
     this.updateHighlightedId();
     this.updateTrackRange();
+    this.updateRamp();
     this.renderer.render(this.scene, this.camera);
     this.updateScaleBar();
     this.updateTimestamp();
