@@ -207,6 +207,24 @@ const rawPaletteData: RawColorData[] = [
       "#E8B297",
     ],
   },
+  {
+    key: "matplotlib-paired",
+    name: "Paired",
+    colorStops: [
+      "#A8CEE2",
+      "#2678B0",
+      "#B4DF92",
+      "#3C9F3C",
+      "#F99C9B",
+      "#E02626",
+      "#FCC079",
+      "#FC822A",
+      "#C9B3D4",
+      "#693E96",
+      "#CC967B",
+      "#AF5B31",
+    ],
+  },
 ];
 
 // Format the array so it can be read as a map
