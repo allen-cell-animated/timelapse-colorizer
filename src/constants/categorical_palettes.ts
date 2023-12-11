@@ -46,6 +46,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://medialab.github.io/iwanthue/
+    // TODO: Potentially remove or rename
     key: "iwanthue-set2",
     name: "Random - Tea Party",
     colorStops: [
@@ -65,6 +66,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://medialab.github.io/iwanthue/
+    // TODO: Potentially remove or rename
     key: "iwanthue-set3",
     name: "Random - Chiclets",
     colorStops: [
