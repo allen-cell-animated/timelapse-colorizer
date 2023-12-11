@@ -170,7 +170,6 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       contents.push(
         <Tooltip title={paletteData.name} placement="right" key={key} trigger={["hover", "focus"]}>
           <Button
-            key={key}
             // Changes all colors, not just the visible ones, to the palette
             onClick={() => props.onChangePalette(paletteData.colors)}
             rootClassName={styles.dropdownButton}
@@ -194,7 +193,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       <h3>Color map</h3>
       <div className={buttonDivClassName} style={{ marginLeft: "6px" }}>
         <Tooltip
-          // Force the tooltip to be hidden (open=false) when disabled or when categories are used
+          // Force the tooltip to be hidden (open=false) when disabled
           open={props.disabled ? false : undefined}
           title={props.useCategoricalPalettes ? selectedPaletteName : selectedRampData.name}
           placement="right"
@@ -220,6 +219,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
           <div className={dropdownContainerClassName}>{rampDropdownContents}</div>
         )}
       </div>
+      {/** Reverse map button */}
       <IconButton
         style={{ marginLeft: "2px" }}
         type="link"
