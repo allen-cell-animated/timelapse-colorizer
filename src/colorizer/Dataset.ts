@@ -11,7 +11,6 @@ import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, update_manifest_version } from "./utils/dataset_utils";
-import { RecordValue } from "./utils/type_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -48,7 +47,8 @@ export default class Dataset {
   private frameDimensions: Vector2 | null;
 
   private arrayLoader: IArrayLoader;
-  public features: Record<string, FeatureData>;
+  // Use map to enforce ordering
+  private features: Map<string, FeatureData>;
 
   private outlierFile?: string;
   public outliers?: Texture | null;
@@ -88,7 +88,7 @@ export default class Dataset {
     this.frameDimensions = null;
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
-    this.features = {};
+    this.features = new Map();
     this.metadata = defaultMetadata;
   }
 
@@ -121,8 +121,10 @@ export default class Dataset {
 
   /**
    * Loads a feature from the dataset, fetching its data from the provided url.
+   * @returns A promise of an array tuple containing the feature name and its FeatureData.
    */
-  private async loadFeature(name: string, metadata: RecordValue<ManifestFile["features"]>): Promise<void> {
+  private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
+    const name = metadata.name;
     const url = this.resolveUrl(metadata.data);
     const source = await this.arrayLoader.load(url);
     const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
@@ -137,27 +139,26 @@ export default class Dataset {
       );
     }
 
-    this.features[name] = {
-      tex: source.getTexture(FeatureDataType.F32),
-      data: source.getBuffer(FeatureDataType.F32),
-      min: source.getMin(),
-      max: source.getMax(),
-      units: metadata?.units || "",
-      type: featureType,
-      categories: featureCategories || null,
-    };
+    return [
+      name,
+      {
+        tex: source.getTexture(FeatureDataType.F32),
+        data: source.getBuffer(FeatureDataType.F32),
+        min: source.getMin(),
+        max: source.getMax(),
+        units: metadata?.units || "",
+        type: featureType,
+        categories: featureCategories || null,
+      },
+    ];
   }
 
   public hasFeature(name: string): boolean {
     return this.featureNames.includes(name);
   }
 
-  public getFeatureData(name: string): FeatureData | null {
-    if (Object.keys(this.features).includes(name)) {
-      return this.features[name];
-    } else {
-      return null;
-    }
+  public getFeatureData(name: string): FeatureData | undefined {
+    return this.features.get(name);
   }
 
   public getFeatureNameWithUnits(name: string): string {
@@ -169,20 +170,25 @@ export default class Dataset {
     }
   }
 
+  /**
+   * Gets the feature's units if it exists; otherwise returns an empty string.
+   */
   public getFeatureUnits(name: string): string {
-    return this.features[name].units;
+    return this.features.get(name)?.units || "";
   }
 
   /**
    * Returns the FeatureType of the given feature, if it exists.
    * @param name Feature name to retrieve
+   * @throws An error if the feature does not exist.
    * @returns The FeatureType of the given feature (categorical, continuous, or discrete)
    */
   public getFeatureType(name: string): FeatureType {
-    if (this.features[name] === undefined) {
+    const featureData = this.features.get(name);
+    if (!featureData) {
       throw new Error(`Feature ${name} does not exist.`);
     }
-    return this.features[name].type;
+    return featureData.type;
   }
 
   /**
@@ -191,15 +197,16 @@ export default class Dataset {
    * @returns The array of string categories for the given feature, or null if the feature is not categorical.
    */
   public getFeatureCategories(name: string): string[] | null {
-    if (this.features[name] && this.features[name].type === FeatureType.CATEGORICAL) {
-      return this.features[name].categories;
+    const featureData = this.features.get(name);
+    if (featureData && featureData.type === FeatureType.CATEGORICAL) {
+      return featureData.categories;
     }
     return null;
   }
 
   /** Returns whether the given feature represents categorical data. */
   public isFeatureCategorical(name: string): boolean {
-    return this.features[name].type === FeatureType.CATEGORICAL;
+    return this.features.get(name)?.type === FeatureType.CATEGORICAL;
   }
 
   /**
@@ -250,11 +257,12 @@ export default class Dataset {
   }
 
   public get featureNames(): string[] {
-    return Object.keys(this.features);
+    return Array.from(this.features.keys());
   }
 
   public get numObjects(): number {
-    return this.features[this.featureNames[0]].data.length;
+    // TODO: This is potentially unsafe if the first feature failed to load.
+    return this.features.get(this.featureNames[0])?.data.length || 0;
   }
 
   /** Loads a single frame from the dataset */
@@ -303,9 +311,7 @@ export default class Dataset {
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
 
     // Load feature data
-    const featuresPromises: Promise<void>[] = Object.keys(manifest.features).map((name) =>
-      this.loadFeature.bind(this)(name, manifest.features[name])
-    );
+    const featuresPromises: Promise<[string, FeatureData]>[] = manifest.features.map((data) => this.loadFeature(data));
 
     const result = await Promise.all([
       this.loadToTexture(FeatureDataType.U8, this.outlierFile),
@@ -315,13 +321,18 @@ export default class Dataset {
       this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds] = result;
+    const [outliers, tracks, times, centroids, bounds, ...featureResults] = result;
 
     this.outliers = outliers;
     this.trackIds = tracks;
     this.times = times;
     this.centroids = centroids;
     this.bounds = bounds;
+
+    // Keep original sorting order of features by inserting in promise order.
+    featureResults.forEach(([name, data]) => {
+      this.features.set(name, data);
+    });
 
     // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
@@ -380,7 +391,7 @@ export default class Dataset {
   // get the times and values of a track for a given feature
   // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
   public buildTrackFeaturePlot(track: Track, feature: string): { domain: number[]; range: number[] } {
-    const range = track.ids.map((i) => this.features[feature].data[i]);
+    const range = track.ids.map((i) => this.features.get(feature)?.data[i] || -1);
     const domain = track.times;
     return { domain, range };
   }

@@ -14,10 +14,6 @@ uniform usampler2D inRangeIds;
 uniform float featureColorRampMin;
 uniform float featureColorRampMax;
 
-const int MAX_FEATURE_CATEGORIES = 12;
-uniform bool useCategories;
-uniform vec3 categoricalColors[MAX_FEATURE_CATEGORIES];
-
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
@@ -61,11 +57,6 @@ vec4 getColorRamp(float val) {
   float range = (width - 1.0) / width;
   float adjustedVal = (0.5 / width) + (val * range);
   return texture(colorRamp, vec2(adjustedVal, 0.5));
-}
-
-vec4 getCategoricalColor(float val) {
-  int index = int(val) % MAX_FEATURE_CATEGORIES;
-  return vec4(categoricalColors[index], 1.0);
 }
 
 bool isEdge(vec2 uv, ivec2 frameDims) {
@@ -131,12 +122,7 @@ void main() {
     if (isOutlier) {
       gOutputColor = getColorFromDrawMode(outlierDrawMode, outlierColor);
     } else {
-      // Switch between categorical and regular coloring
-      if (useCategories) {
-        gOutputColor = getCategoricalColor(featureVal);
-      } else {
-        gOutputColor = getColorRamp(normFeatureVal);
-      }
+      gOutputColor = getColorRamp(normFeatureVal);
     }
   } else {
     gOutputColor = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);

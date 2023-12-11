@@ -25,4 +25,14 @@ describe("Categorical Palettes", () => {
   it("has the default ID as a key for categorical palettes", () => {
     expect(DEFAULT_CATEGORICAL_PALETTES.has(DEFAULT_CATEGORICAL_PALETTE_ID)).to.be.true;
   });
+
+  it("does not have duplicated color stops", () => {
+    for (const palette of DEFAULT_CATEGORICAL_PALETTES.values()) {
+      const uniqueStops = new Set(palette.colorStops);
+      if (palette.colorStops.length !== uniqueStops.size) {
+        console.error(palette.key + " has duplicated color stops!");
+      }
+      expect(palette.colorStops.length).to.equal(uniqueStops.size);
+    }
+  });
 });
