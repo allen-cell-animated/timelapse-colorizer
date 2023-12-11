@@ -91,7 +91,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     inRangeIds: new Uniform(emptyInRangeIds),
     overlay: new Uniform(emptyOverlay),
     backdrop: new Uniform(emptyBackdrop),
-    backdropOpacity: new Uniform(1.0),
+    backdropOpacity: new Uniform(0.5),
     featureColorRampMin: new Uniform(0),
     featureColorRampMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
@@ -324,13 +324,9 @@ export default class ColorizeCanvas {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
 
-    // Force load of frame data (clear cached frame data)
-    const frame = await this.dataset?.loadFrame(this.currentFrame);
-    if (!frame) {
-      return;
-    }
-    // Save frame resolution for later calculation
-    this.setUniform("frame", frame);
+    const frame = this.currentFrame;
+    this.currentFrame = -1;
+    await this.setFrame(frame);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.render();
   }
@@ -525,10 +521,20 @@ export default class ColorizeCanvas {
     }
     // New frame, so load the frame data.
     this.currentFrame = index;
-    const frame = await this.dataset?.loadFrame(index);
+    // Force load of frame data (clear cached frame data)
+    let overlayPromise = undefined;
+    let overlayNames = this.dataset?.getOverlayNames();
+    if (overlayNames && overlayNames.length > 0) {
+      overlayPromise = await this.dataset?.loadOverlay(overlayNames[0], this.currentFrame);
+    }
+    const framePromise = await this.dataset?.loadFrame(this.currentFrame);
+    const result = await Promise.all([framePromise, overlayPromise]);
+    const [frame, overlay] = result;
+
     if (!frame) {
       return;
     }
+    overlay && this.setUniform("backdrop", overlay);
     this.setUniform("frame", frame);
   }
 

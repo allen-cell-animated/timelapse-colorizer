@@ -47,6 +47,11 @@ export default class Dataset {
   private frames: FrameCache | null;
   private frameDimensions: Vector2 | null;
 
+  private overlayLoader: IFrameLoader;
+  private overlayFiles: Map<string, string[]>;
+  // TODO: Implement caching for overlays-- extend FrameCache to allow multiple frames per index -> string name?
+  private overlays: Map<string, FrameCache | null>;
+
   private arrayLoader: IArrayLoader;
   public features: Record<string, FeatureData>;
 
@@ -86,6 +91,10 @@ export default class Dataset {
     this.frameFiles = [];
     this.frames = null;
     this.frameDimensions = null;
+
+    this.overlayLoader = frameLoader || new ImageFrameLoader();
+    this.overlayFiles = new Map();
+    this.overlays = new Map();
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.features = {};
@@ -275,6 +284,22 @@ export default class Dataset {
     return loadedFrame;
   }
 
+  public getOverlayNames(): string[] {
+    return Array.from(this.overlayFiles.keys());
+  }
+
+  public async loadOverlay(name: string, index: number): Promise<Texture | undefined> {
+    // TODO: Implement caching
+    const files = this.overlayFiles.get(name);
+    if (!files || index < 0 || index >= files.length) {
+      return undefined;
+    }
+    console.log("Overlay frame " + index);
+    const fullUrl = this.resolveUrl(files[index]);
+    const loadedFrame = await this.overlayLoader.load(fullUrl);
+    return loadedFrame;
+  }
+
   /**
    * Gets the resolution of the last loaded frame.
    * If no frame has been loaded yet, returns (1,1)
@@ -299,6 +324,21 @@ export default class Dataset {
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
+
+    if (manifest.overlays) {
+      for (const { name, frames } of manifest.overlays) {
+        this.overlayFiles.set(name, frames);
+        // TODO: Warning if number of frames does not match number of overlays?
+        console.log(manifest.overlays);
+        console.log(name);
+        console.log(frames);
+        if (frames.length !== this.frameFiles.length || 0) {
+          console.warn(
+            `Number of frames (${this.frameFiles.length}) does not match number of overlays (${frames.length}) for overlay ${name}.`
+          );
+        }
+      }
+    }
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
 
