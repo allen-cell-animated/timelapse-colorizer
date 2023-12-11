@@ -49,6 +49,7 @@ describe("Dataset", () => {
       { name: "feature4", data: "feature4.json" },
       { name: "feature5", data: "feature4.json", type: "categorical", categories: ["small", "medium", "large"] },
     ],
+    version: "2.0.0",
   };
 
   const manifestV1: AnyManifestFile = {
@@ -108,7 +109,7 @@ describe("Dataset", () => {
         expect(dataset.getFeatureType("feature4")).to.equal(FeatureType.CONTINUOUS);
       });
 
-      it("gets feature categories", async () => {
+      it("gets whether features are categorical", async () => {
         const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
         const mockFetch = makeMockFetchMethod(defaultPath, manifest);
         await dataset.open(mockFetch);
@@ -118,6 +119,17 @@ describe("Dataset", () => {
         expect(dataset.isFeatureCategorical("feature3")).to.be.false;
         expect(dataset.isFeatureCategorical("feature4")).to.be.false;
         expect(dataset.isFeatureCategorical("feature5")).to.be.true;
+      });
+
+      it("gets feature categories", async () => {
+        const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
+        const mockFetch = makeMockFetchMethod(defaultPath, manifest);
+        await dataset.open(mockFetch);
+
+        expect(dataset.getFeatureCategories("feature1")).to.deep.equal(null);
+        expect(dataset.getFeatureCategories("feature2")).to.deep.equal(null);
+        expect(dataset.getFeatureCategories("feature3")).to.deep.equal(null);
+        expect(dataset.getFeatureCategories("feature4")).to.deep.equal(null);
         expect(dataset.getFeatureCategories("feature5")).to.deep.equal(["small", "medium", "large"]);
       });
 
