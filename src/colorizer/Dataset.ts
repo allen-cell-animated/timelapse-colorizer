@@ -99,13 +99,13 @@ export default class Dataset {
     return await response.json();
   }
 
-  private isFeatureType(inputType: string): inputType is FeatureType {
-    return Object.values(FeatureType).includes(inputType as FeatureType);
-  }
-
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
+    const isFeatureType = (inputType: string): inputType is FeatureType => {
+      return Object.values(FeatureType).includes(inputType as FeatureType);
+    };
+
     inputType = inputType?.toLowerCase() || "";
-    return this.isFeatureType(inputType) ? inputType : defaultType;
+    return isFeatureType(inputType) ? inputType : defaultType;
   }
 
   /**
@@ -116,7 +116,6 @@ export default class Dataset {
     const name = metadata.name;
     const url = this.resolveUrl(metadata.data);
     const source = await this.arrayLoader.load(url);
-
     const featureType = this.parseFeatureType(metadata.type);
 
     const featureCategories = metadata?.categories;
