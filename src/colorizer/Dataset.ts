@@ -99,24 +99,13 @@ export default class Dataset {
     return await response.json();
   }
 
-  /**
-   * Parses a feature's `type` string and returns a FeatureType enum.
-   * @param inputType The `type` string to parse.
-   * @param defaultType Default value to return if `inputType` is not recognized.
-   * @returns The parsed FeatureType.
-   */
-  private getFeatureTypeFromString(inputType: string, defaultType: FeatureType = FeatureType.CONTINUOUS): FeatureType {
-    const type = inputType.toLowerCase();
-    switch (type) {
-      case "discrete":
-        return FeatureType.DISCRETE;
-      case "categorical":
-        return FeatureType.CATEGORICAL;
-      case "continuous":
-        return FeatureType.CONTINUOUS;
-      default:
-        return defaultType;
-    }
+  private isFeatureType(inputType: string): inputType is FeatureType {
+    return Object.values(FeatureType).includes(inputType as FeatureType);
+  }
+
+  private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
+    inputType = inputType?.toLowerCase() || "";
+    return this.isFeatureType(inputType) ? inputType : defaultType;
   }
 
   /**
@@ -127,7 +116,9 @@ export default class Dataset {
     const name = metadata.name;
     const url = this.resolveUrl(metadata.data);
     const source = await this.arrayLoader.load(url);
-    const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
+
+    const featureType = this.parseFeatureType(metadata.type);
+
     const featureCategories = metadata?.categories;
     // Validation
     if (featureType === FeatureType.CATEGORICAL && !metadata?.categories) {
