@@ -3,6 +3,7 @@ import { InputNumber, Slider } from "antd";
 import { clamp } from "three/src/math/MathUtils";
 import styled, { css } from "styled-components";
 import { setMaxDecimalPrecision, numberToStringDecimal } from "../colorizer/utils/math_utils";
+import { excludeUndefinedValues } from "../colorizer/utils/react_utils";
 
 type LabeledRangeSliderProps = {
   disabled?: boolean;
@@ -10,9 +11,9 @@ type LabeledRangeSliderProps = {
   min: number;
   /** Currently selected max range value.*/
   max: number;
-  /** The lower bound for the slider. */
+  /** The lower bound for the slider. If undefined, uses Number.NaN. */
   minSliderBound?: number;
-  /** The upper bound for the slider. */
+  /** The upper bound for the slider. If undefined, uses Number.NaN. */
   maxSliderBound?: number;
   /** The lower bound for the numeric input. If undefined, uses MIN_SAFE_INTEGER. */
   minInputBound?: number;
@@ -34,8 +35,8 @@ type LabeledRangeSliderProps = {
 const defaultProps: Partial<LabeledRangeSliderProps> = {
   minInputBound: Number.MIN_SAFE_INTEGER,
   maxInputBound: Number.MAX_SAFE_INTEGER,
-  minSliderBound: 0,
-  maxSliderBound: 1,
+  minSliderBound: Number.NaN,
+  maxSliderBound: Number.NaN,
   minSteps: 25,
   maxDecimalsToDisplay: 3,
   marks: undefined,
@@ -105,7 +106,7 @@ const SliderLabel = styled.p<{ $disabled?: boolean }>`
  * separately from the min and max value bounds and acts as a suggested range.
  */
 export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as Required<LabeledRangeSliderProps>;
+  const props = { ...defaultProps, ...excludeUndefinedValues(inputProps) } as Required<LabeledRangeSliderProps>;
 
   // TODO: Could add a controlled/uncontrolled mode to this component, maybe with
   // a custom hook? (e.g., use state if min/max are undefined, otherwise use props)

@@ -60,3 +60,14 @@ export function useConstructor<T>(constructor: () => T): T {
   }
   return value.current;
 }
+
+/** Returns a shallow copy of an object, excluding all entries where the value is undefined. */
+export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
+  const ret = {} as Partial<T>;
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      ret[key] = obj[key];
+    }
+  }
+  return ret;
+}
