@@ -184,7 +184,8 @@ export default class ColorizeCanvas {
     this.canvasResolution = null;
     this.featureName = null;
     this.colorRamp = DEFAULT_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_ID)!.colorRamp;
-    this.categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get("adobe-bold")!;
+    // TODO: Replace with default ID
+    this.categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get("adobe")!;
     this.track = null;
     this.showTrackPath = false;
     this.colorMapRangeMin = 0;
