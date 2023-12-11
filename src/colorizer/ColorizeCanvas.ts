@@ -32,7 +32,7 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 import CanvasOverlay from "./CanvasOverlay";
 import { FeatureThreshold } from "./types";
-import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID } from "../constants";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, MAX_FEATURE_CATEGORIES } from "../constants";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -66,8 +66,6 @@ type ColorizeUniformTypes = {
   hideOutOfRange: boolean;
   outlierDrawMode: number;
   outOfRangeDrawMode: number;
-  useCategories: boolean;
-  categoricalColors: Vector3[];
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -80,9 +78,6 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
-
-  const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
-  const defaultPaletteVec3 = defaultPalette.colors.map((c) => new Vector3(c.r, c.g, c.b));
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -100,8 +95,6 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
-    categoricalColors: new Uniform(defaultPaletteVec3),
-    useCategories: new Uniform(false),
   };
 };
 
@@ -448,7 +441,16 @@ export default class ColorizeCanvas {
     const featureData = this.dataset.getFeatureData(name)!;
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);
-    this.setUniform("useCategories", featureData.type === FeatureType.CATEGORICAL);
+
+    if (featureData.type === FeatureType.CATEGORICAL) {
+      // TODO: Allow switching to/from regular color ramp. This is a placeholder for example!
+      // Construct a color ramp from the feature's categories
+      const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get("adobe-bold")!;
+      const colorRamp = new ColorRamp(defaultPalette.colorStops);
+      this.setColorRamp(colorRamp);
+      this.setColorMapRangeMin(0);
+      this.setColorMapRangeMax(MAX_FEATURE_CATEGORIES - 1);
+    }
     this.render(); // re-render necessary because map range may have changed
   }
 
