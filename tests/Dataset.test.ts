@@ -42,16 +42,16 @@ describe("Dataset", () => {
 
   const defaultManifest: ManifestFile = {
     frames: ["frame0.json"],
-    features: {
-      feature1: { data: "feature1.json", units: "meters", type: "continuous" },
-      feature2: { data: "feature2.json", units: "(m)", type: "discrete" },
-      feature3: { data: "feature3.json", units: "μm/s", type: "bad-type" },
-      feature4: { data: "feature4.json" },
-      feature5: { data: "feature4.json", type: "categorical", categories: ["small", "medium", "large"] },
-    },
+    features: [
+      { name: "feature1", data: "feature1.json", units: "meters", type: "continuous" },
+      { name: "feature2", data: "feature2.json", units: "(m)", type: "discrete" },
+      { name: "feature3", data: "feature3.json", units: "μm/s", type: "bad-type" },
+      { name: "feature4", data: "feature4.json" },
+      { name: "feature5", data: "feature4.json", type: "categorical", categories: ["small", "medium", "large"] },
+    ],
   };
 
-  const deprecatedManifest: AnyManifestFile = {
+  const manifestV1: AnyManifestFile = {
     frames: ["frame0.json"],
     features: {
       feature1: "feature1.json",
@@ -71,7 +71,7 @@ describe("Dataset", () => {
 
   const manifestsToTest: [string, AnyManifestFile][] = [
     ["Default Manifest", defaultManifest],
-    ["Deprecated Manifest", deprecatedManifest],
+    ["Deprecated Manifest V1", manifestV1],
   ];
 
   // Test both normal and deprecated manifests
