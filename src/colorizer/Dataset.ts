@@ -9,32 +9,26 @@ import Track from "./Track";
 
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
+import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 
-export type FeatureData = {
+export enum FeatureType {
+  CONTINUOUS = "continuous",
+  DISCRETE = "discrete",
+  CATEGORICAL = "categorical",
+}
+
+type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
   max: number;
   units: string;
+  type: FeatureType;
+  categories: string[] | null;
 };
 
-export type FeatureMetadata = {
-  units: string | null;
-};
-
-export type DatasetMetadata = {
-  /** Dimensions of the frame, in scale units. Default width and height are 0. */
-  frameDims: {
-    width: number;
-    height: number;
-    units: string;
-  };
-  frameDurationSeconds: number;
-  /* Optional offset for the timestamp. */
-  startTimeSeconds: number;
-};
-
-const defaultMetadata: DatasetMetadata = {
+const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
     width: 0,
     height: 0,
@@ -42,18 +36,6 @@ const defaultMetadata: DatasetMetadata = {
   },
   frameDurationSeconds: 0,
   startTimeSeconds: 0,
-};
-
-export type DatasetManifest = {
-  frames: string[];
-  features: Record<string, string>;
-  featureMetadata?: Record<string, Partial<FeatureMetadata>>;
-  outliers?: string;
-  tracks?: string;
-  times?: string;
-  centroids?: string;
-  bounds?: string;
-  metadata?: Partial<DatasetMetadata>;
 };
 
 const MAX_CACHED_FRAMES = 60;
@@ -65,8 +47,8 @@ export default class Dataset {
   private frameDimensions: Vector2 | null;
 
   private arrayLoader: IArrayLoader;
-  private featureFiles: Record<string, string>;
-  public features: Record<string, FeatureData>;
+  // Use map to enforce ordering
+  private features: Map<string, FeatureData>;
 
   private outlierFile?: string;
   public outliers?: Texture | null;
@@ -82,7 +64,7 @@ export default class Dataset {
   public boundsFile?: string;
   public bounds?: Uint16Array | null;
 
-  public metadata: DatasetMetadata;
+  public metadata: ManifestFileMetadata;
 
   public baseUrl: string;
   public manifestUrl: string;
@@ -106,40 +88,71 @@ export default class Dataset {
     this.frameDimensions = null;
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
-    this.featureFiles = {};
-    this.features = {};
+    this.features = new Map();
     this.metadata = defaultMetadata;
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
-  private async fetchJson(url: string): Promise<DatasetManifest> {
+  private async fetchJson(url: string): Promise<AnyManifestFile> {
     const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
   }
 
-  private async loadFeature(name: string, metadata: Partial<FeatureMetadata>): Promise<void> {
-    const url = this.resolveUrl(this.featureFiles[name]);
-    const source = await this.arrayLoader.load(url);
-    this.features[name] = {
-      tex: source.getTexture(FeatureDataType.F32),
-      data: source.getBuffer(FeatureDataType.F32),
-      min: source.getMin(),
-      max: source.getMax(),
-      units: metadata?.units || "",
+  private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
+    const isFeatureType = (inputType: string): inputType is FeatureType => {
+      return Object.values(FeatureType).includes(inputType as FeatureType);
     };
+
+    inputType = inputType?.toLowerCase() || "";
+    return isFeatureType(inputType) ? inputType : defaultType;
+  }
+
+  /**
+   * Loads a feature from the dataset, fetching its data from the provided url.
+   * @returns A promise of an array tuple containing the feature name and its FeatureData.
+   */
+  private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
+    const name = metadata.name;
+    const url = this.resolveUrl(metadata.data);
+    const source = await this.arrayLoader.load(url);
+    const featureType = this.parseFeatureType(metadata.type);
+
+    const featureCategories = metadata?.categories;
+    // Validation
+    if (featureType === FeatureType.CATEGORICAL && !metadata?.categories) {
+      throw new Error(`Feature ${name} is categorical but no categories were provided.`);
+    }
+    if (featureCategories && featureCategories.length > MAX_FEATURE_CATEGORIES) {
+      throw new Error(
+        `Feature ${name} has too many categories (${featureCategories.length} > max ${MAX_FEATURE_CATEGORIES}).`
+      );
+    }
+
+    return [
+      name,
+      {
+        tex: source.getTexture(FeatureDataType.F32),
+        data: source.getBuffer(FeatureDataType.F32),
+        min: source.getMin(),
+        max: source.getMax(),
+        units: metadata?.units || "",
+        type: featureType,
+        categories: featureCategories || null,
+      },
+    ];
   }
 
   public hasFeature(name: string): boolean {
     return this.featureNames.includes(name);
   }
 
-  public getFeatureData(name: string): FeatureData | null {
-    if (Object.keys(this.features).includes(name)) {
-      return this.features[name];
-    } else {
-      return null;
+  public getFeatureData(name: string): FeatureData {
+    const featureData = this.features.get(name);
+    if (!featureData) {
+      throw new Error(`getFeatureData: Feature ${name} does not exist.`);
     }
+    return featureData;
   }
 
   public getFeatureNameWithUnits(name: string): string {
@@ -151,8 +164,40 @@ export default class Dataset {
     }
   }
 
+  /**
+   * Gets the feature's units if it exists; otherwise returns an empty string.
+   */
   public getFeatureUnits(name: string): string {
-    return this.features[name].units;
+    return this.getFeatureData(name).units || "";
+  }
+
+  /**
+   * Returns the FeatureType of the given feature, if it exists.
+   * @param name Feature name to retrieve
+   * @throws An error if the feature does not exist.
+   * @returns The FeatureType of the given feature (categorical, continuous, or discrete)
+   */
+  public getFeatureType(name: string): FeatureType {
+    const featureData = this.getFeatureData(name);
+    return featureData.type;
+  }
+
+  /**
+   * Returns the array of string categories for the given feature, if it exists and is categorical.
+   * @param name Feature name to retrieve.
+   * @returns The array of string categories for the given feature, or null if the feature is not categorical.
+   */
+  public getFeatureCategories(name: string): string[] | null {
+    const featureData = this.getFeatureData(name);
+    if (featureData.type === FeatureType.CATEGORICAL) {
+      return featureData.categories;
+    }
+    return null;
+  }
+
+  /** Returns whether the given feature represents categorical data. */
+  public isFeatureCategorical(name: string): boolean {
+    return this.getFeatureData(name).type === FeatureType.CATEGORICAL;
   }
 
   /**
@@ -203,11 +248,11 @@ export default class Dataset {
   }
 
   public get featureNames(): string[] {
-    return Object.keys(this.featureFiles);
+    return Array.from(this.features.keys());
   }
 
   public get numObjects(): number {
-    return this.features[this.featureNames[0]].data.length;
+    return this.getFeatureData(this.featureNames[0]).data.length;
   }
 
   /** Loads a single frame from the dataset */
@@ -243,26 +288,20 @@ export default class Dataset {
     }
     this.hasOpened = true;
 
-    const manifest = await manifestLoader(this.manifestUrl);
+    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
-    this.featureFiles = manifest.features;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
-
-    const featuresToMetadata: Record<string, Partial<FeatureMetadata>> = {};
-    for (const featureName of Object.keys(this.featureFiles)) {
-      featuresToMetadata[featureName] = manifest.featureMetadata ? manifest.featureMetadata[featureName] : {};
-    }
 
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
-    const featuresPromises: Promise<void>[] = this.featureNames.map((name) =>
-      this.loadFeature.bind(this)(name, featuresToMetadata[name])
-    );
+
+    // Load feature data
+    const featuresPromises: Promise<[string, FeatureData]>[] = manifest.features.map((data) => this.loadFeature(data));
 
     const result = await Promise.all([
       this.loadToTexture(FeatureDataType.U8, this.outlierFile),
@@ -272,13 +311,18 @@ export default class Dataset {
       this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds] = result;
+    const [outliers, tracks, times, centroids, bounds, ...featureResults] = result;
 
     this.outliers = outliers;
     this.trackIds = tracks;
     this.times = times;
     this.centroids = centroids;
     this.bounds = bounds;
+
+    // Keep original sorting order of features by inserting in promise order.
+    featureResults.forEach(([name, data]) => {
+      this.features.set(name, data);
+    });
 
     // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
@@ -337,7 +381,7 @@ export default class Dataset {
   // get the times and values of a track for a given feature
   // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
   public buildTrackFeaturePlot(track: Track, feature: string): { domain: number[]; range: number[] } {
-    const range = track.ids.map((i) => this.features[feature].data[i]);
+    const range = track.ids.map((i) => this.getFeatureData(feature).data[i]);
     const domain = track.times;
     return { domain, range };
   }
