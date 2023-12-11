@@ -357,7 +357,6 @@ export default class ColorizeCanvas {
 
   /** Sets the current color ramp. Used when a continuous or discrete feature is selected. */
   setColorRamp(ramp: ColorRamp): void {
-    // this.setUniform("colorRamp", ramp.texture);
     this.colorRamp = ramp;
   }
 
@@ -456,12 +455,10 @@ export default class ColorizeCanvas {
 
   setColorMapRangeMin(newMin: number): void {
     this.colorMapRangeMin = newMin;
-    this.setUniform("featureColorRampMin", this.colorMapRangeMin);
   }
 
   setColorMapRangeMax(newMax: number): void {
     this.colorMapRangeMax = newMax;
-    this.setUniform("featureColorRampMax", this.colorMapRangeMax);
   }
 
   resetColorMapRange(): void {
