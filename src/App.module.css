@@ -111,14 +111,16 @@
 }
 
 .mainContent .topControls {
-  margin: 10px 0;
+  margin: 10px 0 5px 0;
+  /* Max height with two rows of categories.*/
+  min-height: 90px;
 }
 
 .mainContent .controlsContainer {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: center;
+  gap: 10px;
 }
 
 .mainContent {
