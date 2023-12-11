@@ -10,7 +10,7 @@ import Track from "./Track";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { AnyManifestFile, ManifestFile, ManifestFileMetadata, update_manifest_version } from "./utils/dataset_utils";
+import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -298,7 +298,7 @@ export default class Dataset {
     }
     this.hasOpened = true;
 
-    const manifest = update_manifest_version(await manifestLoader(this.manifestUrl));
+    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
