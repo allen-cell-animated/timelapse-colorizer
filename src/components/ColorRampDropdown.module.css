@@ -43,10 +43,7 @@
 }
 
 .dropdownContainer .categoricalColor {
-  width: calc(100% - 2px);
-  height: calc(100% - 2px);
   border-radius: 0;
-  margin: auto;
 }
 
 .dropdownContainer {
@@ -76,8 +73,11 @@
   transition: all ease-in 0.2s 0.25s, gap 0s;
 }
 
+/** Overrides for when the categorical dropdown is being used, instead of
+ * the normal color ramp version. Apply an extra border to each element,
+ * making it thicker when hovered.
+ */
 .dropdownContainer.categorical {
-  --border-width: 1px;
   --outline-width-unselected: 1px;
   --outline-width-selected: 2px;
   gap: 1px;
@@ -120,7 +120,7 @@
 .dropdownButton:last-child {
   border-radius: 0 0 var(--button-radius) var(--button-radius);
 }
-
+.dropdownButton:focus,
 .dropdownButton:hover {
   /* Required override, as default button has different border behavior */
   outline: var(--outline-width-selected) solid var(--color-text-button) !important;

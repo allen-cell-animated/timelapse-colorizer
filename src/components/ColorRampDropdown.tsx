@@ -162,7 +162,6 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     const contents: ReactElement[] = [];
     // Make a button for every palette
     const paletteEntries = Array.from(props.categoricalPalettes.entries());
-    console.log(paletteEntries);
     for (let i = 0; i < props.categoricalPalettes.size; i++) {
       // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
       const [key, paletteData] = paletteEntries[i];

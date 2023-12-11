@@ -32,12 +32,14 @@ const ColorPickerContainer = styled(FlexRowAlignCenter)<{
   );
 
   & > div {
+    // Container for both the color picker and the text label.
     gap: 12px;
     width: ${(props) => props.$itemWidth};
     max-width: ${(props) => props.$itemWidth};
   }
 
   & > div > span {
+    // Text label, hide overflow as ellipsis
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
