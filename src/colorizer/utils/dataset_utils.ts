@@ -44,6 +44,7 @@ type ManifestFileV2 = Omit<ManifestFileV1, "features" | "featureMetadata"> & {
     type?: string;
     categories?: string[];
   }[];
+  version: "2.0.0";
 };
 
 /** Type definition for the dataset manifest JSON file. */
@@ -86,6 +87,7 @@ export const update_manifest_version = (manifest: AnyManifestFile): ManifestFile
     return {
       ...manifest,
       features,
+      version: "2.0.0",
     };
   }
   return manifest as ManifestFile;
