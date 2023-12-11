@@ -7,8 +7,9 @@ export type PaletteData = RawColorData & {
 
 const rawPaletteData: RawColorData[] = [
   {
-    key: "adobe-bold",
-    name: "Bold",
+    // https://spectrum.adobe.com/page/color-for-data-visualization/
+    key: "adobe",
+    name: "Adobe Categorical",
     colorStops: [
       "#27B4AE",
       "#4047C4",
@@ -25,8 +26,9 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
-    key: "adobe-bold-light",
-    name: "Bold Light",
+    // https://spectrum.adobe.com/page/color-for-data-visualization/
+    key: "adobe-light",
+    name: "Adobe Categorical 50%",
     colorStops: [
       "#93D9D7",
       "#8DBCF6",
@@ -61,52 +63,56 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
+    // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib-accent",
     name: "Accent",
     colorStops: [
-      "#F25FA4",
-      "#7598C5",
-      "#E8E895",
-      "#AC8FD2",
-      "#A8D9AA",
-      "#BD5D26",
+      "#7FC97F",
       "#BEAED2",
-      "#5D5D6A",
+      "#FDC086",
       "#FFFFA4",
       "#3A6CAC",
+      "#5D5D6A",
+      "#BD5D26",
       "#ED1B7D",
-      "#83C885",
+      "#9467BD",
+      "#F25FA4",
+      "#7598C5",
+      "#A8D9AA",
     ],
   },
   {
+    // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib-tab10",
-    name: "Set 1",
+    name: "Matplotlib - Tab 10",
     colorStops: [
       "#2677B0",
       "#FC822E",
       "#369F3C",
-      "#E179BF",
-      "#8B574D",
       "#9368B9",
+      "#8B574D",
+      "#E179BF",
       "#8A0115",
-      "#BCBD40",
       "#64637C",
+      "#BCBD40",
       "#2CBDCD",
       "#FF8964",
       "#862CCD",
     ],
   },
   {
+    // https://medialab.github.io/iwanthue/
+    // TODO: Potentially remove or rename
     key: "iwanthue-set2",
-    name: "Set 2",
+    name: "Random - Tea Party",
     colorStops: [
       "#E085FB",
       "#8BE56C",
       "#D12983",
       "#03BD7D",
       "#F16741",
-      "#0047AA",
       "#FCCE6F",
+      "#0047AA",
       "#8A0115",
       "#64E9CB",
       "#DC9F1C",
@@ -115,21 +121,23 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
+    // https://medialab.github.io/iwanthue/
+    // TODO: Potentially remove or rename
     key: "iwanthue-set3",
-    name: "Set 3",
+    name: "Random - Chiclets",
     colorStops: [
-      "#767800",
-      "#FF6B76",
-      "#7E0046",
-      "#9BE5AB",
-      "#FFC140",
-      "#0080EA",
       "#F769CD",
+      "#FFC140",
+      "#FF6B76",
+      "#0080EA",
       "#007631",
+      "#6CBA3A",
+      "#7E0046",
       "#832093",
-      "#2FEBE5",
+      "#4BADCA",
+      "#8CA252",
       "#990004",
-      "#73ED84",
+      "#00B69C",
     ],
   },
   {
@@ -151,6 +159,7 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
+    // https://medialab.github.io/iwanthue/
     key: "iwanthue-dark",
     name: "Dark",
     colorStops: [
@@ -169,6 +178,7 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
+    // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib-pastel1",
     name: "Pastel 1",
     colorStops: [
@@ -187,6 +197,7 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
+    // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib-pastel2",
     name: "Pastel 2",
     colorStops: [
@@ -205,6 +216,7 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
+    // https://medialab.github.io/iwanthue/
     key: "iwanthue-pastel_3",
     name: "Pastel 3",
     colorStops: [
@@ -223,6 +235,7 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
+    // https://matplotlib.org/stable/gallery/color/colormap_reference.html
     key: "matplotlib-paired",
     name: "Paired",
     colorStops: [
@@ -250,4 +263,4 @@ const keyedPaletteData: [string, PaletteData][] = rawPaletteData.map((value) => 
 const paletteMap: Map<string, PaletteData> = new Map(keyedPaletteData);
 
 export const DEFAULT_CATEGORICAL_PALETTES = paletteMap;
-export const DEFAULT_CATEGORICAL_PALETTE_ID = "matplotlib-paired";
+export const DEFAULT_CATEGORICAL_PALETTE_ID = "adobe";
