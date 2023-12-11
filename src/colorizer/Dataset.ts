@@ -157,8 +157,12 @@ export default class Dataset {
     return this.featureNames.includes(name);
   }
 
-  public getFeatureData(name: string): FeatureData | undefined {
-    return this.features.get(name);
+  public getFeatureData(name: string): FeatureData {
+    const featureData = this.features.get(name);
+    if (!featureData) {
+      throw new Error(`getFeatureData: Feature ${name} does not exist.`);
+    }
+    return featureData;
   }
 
   public getFeatureNameWithUnits(name: string): string {
@@ -174,7 +178,7 @@ export default class Dataset {
    * Gets the feature's units if it exists; otherwise returns an empty string.
    */
   public getFeatureUnits(name: string): string {
-    return this.features.get(name)?.units || "";
+    return this.getFeatureData(name).units || "";
   }
 
   /**
@@ -184,10 +188,7 @@ export default class Dataset {
    * @returns The FeatureType of the given feature (categorical, continuous, or discrete)
    */
   public getFeatureType(name: string): FeatureType {
-    const featureData = this.features.get(name);
-    if (!featureData) {
-      throw new Error(`Feature ${name} does not exist.`);
-    }
+    const featureData = this.getFeatureData(name);
     return featureData.type;
   }
 
@@ -197,8 +198,8 @@ export default class Dataset {
    * @returns The array of string categories for the given feature, or null if the feature is not categorical.
    */
   public getFeatureCategories(name: string): string[] | null {
-    const featureData = this.features.get(name);
-    if (featureData && featureData.type === FeatureType.CATEGORICAL) {
+    const featureData = this.getFeatureData(name);
+    if (featureData.type === FeatureType.CATEGORICAL) {
       return featureData.categories;
     }
     return null;
@@ -206,7 +207,7 @@ export default class Dataset {
 
   /** Returns whether the given feature represents categorical data. */
   public isFeatureCategorical(name: string): boolean {
-    return this.features.get(name)?.type === FeatureType.CATEGORICAL;
+    return this.getFeatureData(name).type === FeatureType.CATEGORICAL;
   }
 
   /**
@@ -261,8 +262,7 @@ export default class Dataset {
   }
 
   public get numObjects(): number {
-    // TODO: This is potentially unsafe if the first feature failed to load.
-    return this.features.get(this.featureNames[0])?.data.length || 0;
+    return this.getFeatureData(this.featureNames[0]).data.length;
   }
 
   /** Loads a single frame from the dataset */
@@ -391,7 +391,7 @@ export default class Dataset {
   // get the times and values of a track for a given feature
   // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
   public buildTrackFeaturePlot(track: Track, feature: string): { domain: number[]; range: number[] } {
-    const range = track.ids.map((i) => this.features.get(feature)?.data[i] || -1);
+    const range = track.ids.map((i) => this.getFeatureData(feature).data[i]);
     const domain = track.times;
     return { domain, range };
   }
