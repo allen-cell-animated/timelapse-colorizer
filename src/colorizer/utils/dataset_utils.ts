@@ -34,22 +34,9 @@ type ManifestFileV1 = {
   metadata?: Partial<ManifestFileMetadata>;
 };
 
-// V2 removes the featureMetadata field, and instead stores the feature metadata
-// in features.
+// V2 removes the featureMetadata field, replaces the features map with an ordered
+// array of metadata objects.
 type ManifestFileV2 = Omit<ManifestFileV1, "features" | "featureMetadata"> & {
-  features: Record<
-    string,
-    {
-      data: string;
-      units?: string;
-      type?: string;
-      categories?: string[];
-    }
-  >;
-};
-
-// V3 replaces the feature map with an array to enforce feature ordering.
-type ManifestFileV3 = Omit<ManifestFileV2, "features"> & {
   features: {
     name: string;
     data: string;
@@ -59,9 +46,10 @@ type ManifestFileV3 = Omit<ManifestFileV2, "features"> & {
   }[];
 };
 
-export type ManifestFile = ManifestFileV3;
+/** Type definition for the dataset manifest JSON file. */
+export type ManifestFile = ManifestFileV2;
 /** Any manifest version, including deprecated manifests. Call `update_manifest_version` to transform to an up-to-date version. */
-export type AnyManifestFile = ManifestFileV1 | ManifestFileV2 | ManifestFileV3;
+export type AnyManifestFile = ManifestFileV1 | ManifestFileV2;
 
 ///////////// Conversion functions /////////////////////
 
@@ -71,10 +59,6 @@ export type AnyManifestFile = ManifestFileV1 | ManifestFileV2 | ManifestFileV3;
  */
 function isV1(manifest: AnyManifestFile): boolean {
   return typeof Object.values(manifest.features)[0] === "string";
-}
-
-function isV2(manifest: AnyManifestFile): boolean {
-  return !Array.isArray(manifest.features) && typeof Object.values(manifest.features)[0] === "object";
 }
 
 /**
@@ -102,15 +86,6 @@ export const update_manifest_version = (manifest: AnyManifestFile): ManifestFile
     return {
       ...manifest,
       features,
-    };
-  } else if (isV2(manifest)) {
-    const manifestV2 = manifest as ManifestFileV2;
-    const newFeatures = Object.entries(manifestV2.features).map(([key, value]) => {
-      return { name: key, ...value };
-    });
-    return {
-      ...manifest,
-      features: newFeatures,
     };
   }
   return manifest as ManifestFile;

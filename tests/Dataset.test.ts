@@ -51,17 +51,6 @@ describe("Dataset", () => {
     ],
   };
 
-  const manifestV2: AnyManifestFile = {
-    frames: ["frame0.json"],
-    features: {
-      feature1: { data: "feature1.json", units: "meters", type: "continuous" },
-      feature2: { data: "feature2.json", units: "(m)", type: "discrete" },
-      feature3: { data: "feature3.json", units: "μm/s", type: "bad-type" },
-      feature4: { data: "feature4.json" },
-      feature5: { data: "feature4.json", type: "categorical", categories: ["small", "medium", "large"] },
-    },
-  };
-
   const manifestV1: AnyManifestFile = {
     frames: ["frame0.json"],
     features: {
@@ -82,7 +71,6 @@ describe("Dataset", () => {
 
   const manifestsToTest: [string, AnyManifestFile][] = [
     ["Default Manifest", defaultManifest],
-    ["Deprecated Manifest V2", manifestV2],
     ["Deprecated Manifest V1", manifestV1],
   ];
 
