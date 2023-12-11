@@ -16,7 +16,6 @@ import {
   Uniform,
   UnsignedByteType,
   Vector2,
-  Vector3,
   Vector4,
   WebGLRenderTarget,
   WebGLRenderer,
@@ -32,7 +31,7 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 import CanvasOverlay from "./CanvasOverlay";
 import { FeatureThreshold } from "./types";
-import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, MAX_FEATURE_CATEGORIES } from "../constants";
+import { DEFAULT_CATEGORICAL_PALETTES, MAX_FEATURE_CATEGORIES } from "../constants";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
