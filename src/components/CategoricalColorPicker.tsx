@@ -5,7 +5,7 @@ import { Color, ColorRepresentation } from "three";
 
 import { Color as AntColor } from "antd/es/color-picker/color";
 import styled from "styled-components";
-import { FlexRowAlignCenter } from "../styles/utils";
+import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
 
 type CategoricalColorPickerProps = {
   dataset: Dataset | null;
@@ -19,13 +19,15 @@ const defaultProps: Partial<CategoricalColorPickerProps> = {
   disabled: false,
 };
 
-const ColorPickerContainer = styled(FlexRowAlignCenter)<{
+const ColorPickerContainer = styled(FlexRow)<{
   $itemGap: string;
   $itemWidth: string;
   $maxItemsPerRow: string;
 }>`
   gap: ${(props) => props.$itemGap};
   flex-wrap: wrap;
+  margin-top: 8px;
+  margin-bottom: 8px;
   margin-right: ${(props) => props.$itemGap};
   max-width: calc(
     ${(props) => `${props.$itemWidth} * ${props.$maxItemsPerRow} + ${props.$itemGap} * (${props.$maxItemsPerRow} - 1)`}
@@ -36,6 +38,7 @@ const ColorPickerContainer = styled(FlexRowAlignCenter)<{
     gap: 12px;
     width: ${(props) => props.$itemWidth};
     max-width: ${(props) => props.$itemWidth};
+    height: fit-content;
   }
 
   & > div > span {

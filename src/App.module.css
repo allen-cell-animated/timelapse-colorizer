@@ -112,8 +112,6 @@
 
 .mainContent .topControls {
   margin: 10px 0 5px 0;
-  /* Max height with two rows of categories.*/
-  min-height: 90px;
 }
 
 .mainContent .controlsContainer {
