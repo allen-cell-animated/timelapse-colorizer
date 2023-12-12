@@ -193,6 +193,7 @@ export default class ColorizeCanvas {
     this.categoricalPalette = new ColorRamp(
       DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colorStops
     );
+
     this.track = null;
     this.showTrackPath = false;
     this.colorMapRangeMin = 0;
