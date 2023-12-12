@@ -47,10 +47,10 @@ export default class Dataset {
   private frames: FrameCache | null;
   private frameDimensions: Vector2 | null;
 
-  private overlayLoader: IFrameLoader;
-  private overlayFiles: Map<string, string[]>;
+  private backdropLoader: IFrameLoader;
+  private backdropFiles: Map<string, string[]>;
   // TODO: Implement caching for overlays-- extend FrameCache to allow multiple frames per index -> string name?
-  private overlays: Map<string, FrameCache | null>;
+  // private backdrops: Map<string, FrameCache | null>;
 
   private arrayLoader: IArrayLoader;
   public features: Record<string, FeatureData>;
@@ -92,9 +92,9 @@ export default class Dataset {
     this.frames = null;
     this.frameDimensions = null;
 
-    this.overlayLoader = frameLoader || new ImageFrameLoader();
-    this.overlayFiles = new Map();
-    this.overlays = new Map();
+    this.backdropLoader = frameLoader || new ImageFrameLoader();
+    this.backdropFiles = new Map();
+    // this.backdrops = new Map();
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.features = {};
@@ -285,18 +285,18 @@ export default class Dataset {
   }
 
   public getOverlayNames(): string[] {
-    return Array.from(this.overlayFiles.keys());
+    return Array.from(this.backdropFiles.keys());
   }
 
   public async loadOverlay(name: string, index: number): Promise<Texture | undefined> {
     // TODO: Implement caching
-    const files = this.overlayFiles.get(name);
+    const files = this.backdropFiles.get(name);
     if (!files || index < 0 || index >= files.length) {
       return undefined;
     }
     console.log("Overlay frame " + index);
     const fullUrl = this.resolveUrl(files[index]);
-    const loadedFrame = await this.overlayLoader.load(fullUrl);
+    const loadedFrame = await this.backdropLoader.load(fullUrl);
     return loadedFrame;
   }
 
@@ -325,11 +325,11 @@ export default class Dataset {
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
 
-    if (manifest.overlays) {
-      for (const { name, frames } of manifest.overlays) {
-        this.overlayFiles.set(name, frames);
+    if (manifest.backdrops) {
+      for (const { name, frames } of manifest.backdrops) {
+        this.backdropFiles.set(name, frames);
         // TODO: Warning if number of frames does not match number of overlays?
-        console.log(manifest.overlays);
+        console.log(manifest.backdrops);
         console.log(name);
         console.log(frames);
         if (frames.length !== this.frameFiles.length || 0) {

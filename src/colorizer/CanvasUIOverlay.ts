@@ -23,7 +23,7 @@ type TimestampOptions = StyleOptions & {
   startTimeSec: number;
 };
 
-type BackgroundOptions = {
+type OverlayBackgroundOptions = {
   fill: string;
   stroke: string;
   paddingPx: Vector2;
@@ -55,7 +55,7 @@ const defaultTimestampOptions: TimestampOptions = {
   currTimeSec: 0,
 };
 
-const defaultBackgroundOptions: BackgroundOptions = {
+const defaultBackgroundOptions: OverlayBackgroundOptions = {
   fill: "rgba(255, 255, 255, 0.8)",
   stroke: "rgba(0, 0, 0, 0.2)",
   paddingPx: new Vector2(10, 10),
@@ -78,12 +78,12 @@ export default class CanvasOverlay {
   public readonly canvas: OffscreenCanvas;
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
-  private backgroundOptions: BackgroundOptions;
+  private backgroundOptions: OverlayBackgroundOptions;
 
   constructor(
     scaleBarOptions: ScaleBarOptions = defaultScaleBarOptions,
     timestampOptions: TimestampOptions = defaultTimestampOptions,
-    overlayOptions: BackgroundOptions = defaultBackgroundOptions
+    overlayOptions: OverlayBackgroundOptions = defaultBackgroundOptions
   ) {
     this.canvas = new OffscreenCanvas(1, 1);
     this.scaleBarOptions = scaleBarOptions;
@@ -107,7 +107,7 @@ export default class CanvasOverlay {
     this.timestampOptions = { ...this.timestampOptions, ...options };
   }
 
-  updateBackgroundOptions(options: Partial<BackgroundOptions>): void {
+  updateBackgroundOptions(options: Partial<OverlayBackgroundOptions>): void {
     this.backgroundOptions = { ...this.backgroundOptions, ...options };
   }
 
@@ -331,7 +331,7 @@ export default class CanvasOverlay {
   private static renderBackground(
     ctx: OffscreenCanvasRenderingContext2D,
     size: Vector2,
-    options: BackgroundOptions
+    options: OverlayBackgroundOptions
   ): void {
     ctx.fillStyle = options.fill;
     ctx.strokeStyle = options.stroke;

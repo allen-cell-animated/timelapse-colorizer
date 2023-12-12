@@ -6,7 +6,7 @@ import styled from "styled-components";
 import { DrawSettings } from "../CanvasWrapper";
 import DrawModeDropdown from "../DrawModeDropdown";
 import { DrawMode } from "../../colorizer/ColorizeCanvas";
-import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
 import LabeledDropdown from "../LabeledDropdown";
 import { Dataset } from "../../colorizer";
 
@@ -16,14 +16,14 @@ type SettingsTabProps = {
   showScaleBar: boolean;
   showTimestamp: boolean;
   dataset: Dataset | null;
-  overlayOpacity: number;
-  overlayName: string;
+  backdropOpacity: number;
+  backdropName: string;
   setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
   setShowScaleBar: (show: boolean) => void;
   setShowTimestamp: (show: boolean) => void;
-  setOverlayOpacity: (opacity: number) => void;
-  setOverlayName: (name: string) => void;
+  setBackdropOpacity: (opacity: number) => void;
+  setBackdropName: (name: string) => void;
 };
 
 const SectionHeaderText = styled.h2`
@@ -38,9 +38,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       <LabeledDropdown
         // TODO: Add a None option? Or an option to clear?
         label={"Overlay images"}
-        selected={props.overlayName}
+        selected={props.backdropName}
         items={props.dataset?.getOverlayNames() ?? []}
-        onChange={props.setOverlayName}
+        onChange={props.setBackdropName}
       />
       <FlexRowAlignCenter $gap={6}>
         <h3>Opacity</h3>
@@ -48,18 +48,10 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           style={{ maxWidth: "200px", width: "100%" }}
           min={0}
           max={100}
-          value={props.overlayOpacity}
-          onChange={props.setOverlayOpacity}
+          value={props.backdropOpacity}
+          onChange={props.setBackdropOpacity}
         />
       </FlexRowAlignCenter>
-      <LabeledDropdown
-        label={"Ordering"}
-        selected={"Behind"}
-        items={["Front", "Behind"]}
-        onChange={function (key: string): void {
-          throw new Error("Function not implemented.");
-        }}
-      />
 
       <Divider />
 

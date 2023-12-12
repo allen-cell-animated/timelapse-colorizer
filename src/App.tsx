@@ -54,8 +54,8 @@ function App(): ReactElement {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
 
-  const [overlayName, setOverlayName] = useState<string>("");
-  const [overlayOpacity, setOverlayOpacity] = useState<number>(50);
+  const [backdropName, setOverlayName] = useState<string>("");
+  const [backdropOpacity, setOverlayOpacity] = useState<number>(50);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
@@ -799,14 +799,14 @@ function App(): ReactElement {
                           showScaleBar={showScaleBar}
                           showTimestamp={showTimestamp}
                           dataset={dataset}
-                          overlayOpacity={overlayOpacity}
-                          overlayName={overlayName}
+                          backdropOpacity={backdropOpacity}
+                          backdropName={backdropName}
                           setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
                           setOutlierDrawSettings={setOutlierDrawSettings}
                           setShowScaleBar={setShowScaleBar}
                           setShowTimestamp={setShowTimestamp}
-                          setOverlayOpacity={setOverlayOpacity}
-                          setOverlayName={setOverlayName}
+                          setBackdropOpacity={setOverlayOpacity}
+                          setBackdropName={setOverlayName}
                         />
                       </div>
                     ),

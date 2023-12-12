@@ -9,7 +9,7 @@
       "categories": ["Spicy", "Sour", "Bitter", "Sweet", "Dry"]
     }
   },
-  "overlays": [
+  "backdrops": [
     {
       "name": "Backdrop Dark",
       "frames": [
