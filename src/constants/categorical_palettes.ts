@@ -245,4 +245,4 @@ const keyedPaletteData: [string, PaletteData][] = rawPaletteData.map((value) => 
 const paletteMap: Map<string, PaletteData> = new Map(keyedPaletteData);
 
 export const DEFAULT_CATEGORICAL_PALETTES = paletteMap;
-export const DEFAULT_CATEGORICAL_PALETTE_ID = "matplotlib-paired";
+export const DEFAULT_CATEGORICAL_PALETTE_ID = "adobe";

@@ -31,7 +31,13 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 import CanvasOverlay from "./CanvasOverlay";
 import { FeatureThreshold } from "./types";
-import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, PaletteData } from "../constants";
+import {
+  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_CATEGORICAL_PALETTE_ID,
+  DEFAULT_COLOR_RAMPS,
+  DEFAULT_COLOR_RAMP_ID,
+  PaletteData,
+} from "../constants";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -184,8 +190,7 @@ export default class ColorizeCanvas {
     this.canvasResolution = null;
     this.featureName = null;
     this.colorRamp = DEFAULT_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_ID)!.colorRamp;
-    // TODO: Replace with default ID
-    this.categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get("adobe")!;
+    this.categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
     this.track = null;
     this.showTrackPath = false;
     this.colorMapRangeMin = 0;
