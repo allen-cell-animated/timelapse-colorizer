@@ -7,6 +7,19 @@
   align-items: center;
 }
 
+.colorRampSelector img {
+  /* 
+   * Copied from https://stackoverflow.com/questions/7615009/disable-interpolation-when-scaling-a-canvas.
+   * Prevents color ramps (especially hard-stop categorical ones) from being pixelated when scaled.
+   */
+  image-rendering: optimizeSpeed; /* Older versions of FF          */
+  image-rendering: -moz-crisp-edges; /* FF 6.0+                       */
+  image-rendering: -webkit-optimize-contrast; /* Safari                        */
+  image-rendering: -o-crisp-edges; /* OS X & Windows Opera (12.02+) */
+  image-rendering: pixelated; /* Awesome future-browsers       */
+  -ms-interpolation-mode: nearest-neighbor; /* IE     */
+}
+
 .buttonContainer {
   position: relative;
   height: var(--height);
@@ -35,15 +48,12 @@
   filter: grayscale(100%);
 }
 
-.categoricalColor {
-  width: calc(100% - 2px);
-  height: calc(100% - 2px);
-  border-radius: 4px;
-  margin: auto;
-}
-
-.dropdownContainer .categoricalColor {
-  border-radius: 0;
+#selectorButton.categorical {
+  /* Styles for when the dropdown button shows a categorical palette.
+  Specifically, apply the outline styling and turn off transitions.*/
+  outline: 1px solid var(--color-text-button);
+  outline-offset: -2px;
+  transition: outline 0s;
 }
 
 .dropdownContainer {

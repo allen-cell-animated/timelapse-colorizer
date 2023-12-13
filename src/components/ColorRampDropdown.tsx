@@ -2,12 +2,13 @@ import React, { ReactElement, useContext, useEffect, useMemo, useState } from "r
 import { Button, Tooltip } from "antd";
 import { RetweetOutlined } from "@ant-design/icons";
 
-import styles from "./ColorRampDropdown.module.css";
 import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { AppThemeContext } from "./AppStyle";
 import IconButton from "./IconButton";
 import { DEFAULT_CATEGORICAL_PALETTES } from "../constants";
 import { Color } from "three";
+import { ColorRamp } from "../colorizer";
+import styles from "./ColorRampDropdown.module.css";
 
 type ColorRampSelectorProps = {
   selectedRamp: string;
@@ -30,35 +31,6 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
   useCategoricalPalettes: false,
   categoricalPalettes: DEFAULT_CATEGORICAL_PALETTES,
 };
-
-/**
- * Returns a CSS style object with a hard-stop linear gradient background, consisting
- * of the colors in the provided array.
- * @param colors Array of Color objects, in order, from left to right.
- * @returns A style object with a linear gradient background.
- *
- * @example
- * ```
- * const colors = [new Color(0xffffff), new Color(0xcccccc), new Color(0x000000)];
- * const style = getColorPaletteStyling(colors);
- * // style = {background : linear-gradient(to right, #ffffff 0.00%, #ffffff 33.33%, #cccccc 33.33%, #cccccc 66.67%, #000000 66.67%, #000000 100.00%}
- * ```
- */
-function createCSSGradientFromPalette(colors: Color[]): { background: string } {
-  let gradient = "linear-gradient(to right,";
-  for (let i = 0; i < colors.length; i++) {
-    const startPercent = (100 * (i / colors.length)).toFixed(2) + "%,";
-    const endPercent = (100 * ((i + 1) / colors.length)).toFixed(2) + "%,";
-    gradient += ` ${colors[i].getStyle()} ${startPercent}`;
-    gradient += ` ${colors[i].getStyle()} ${endPercent}`;
-  }
-  gradient = gradient.slice(0, -1);
-  gradient += ")";
-
-  return {
-    background: gradient,
-  };
-}
 
 /**
  * Returns whether if the two arrays are equal, where arr1[i] === arr2[i] for all i.
@@ -119,16 +91,31 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     throw new Error(`Selected color ramp name '${props.selectedRamp}' is invalid.`);
   }
 
-  ///////// Generate dropdown contents
-
   // Only regenerate the gradient canvas URL if the selected ramp changes!
-  let selectedRamp = selectedRampData.colorRamp;
-  if (props.reversed) {
-    selectedRamp = selectedRamp.reverse();
-  }
-  const selectedRampColorUrl = useMemo(() => {
+  const rampImgSrc = useMemo(() => {
+    let selectedRamp = selectedRampData.colorRamp;
+    if (props.reversed) {
+      selectedRamp = selectedRamp.reverse();
+    }
     return selectedRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
   }, [props.selectedRamp, props.reversed]);
+
+  const paletteImgSrc = useMemo(() => {
+    const visibleColors = props.selectedPalette.slice(0, props.numCategories);
+    const colorRamp = new ColorRamp(visibleColors, true);
+    return colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
+  }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
+
+  // Determine if we're currently using a preset palette; otherwise show the "Custom" tooltip.
+  let selectedPaletteName = "Custom";
+  for (const [, paletteData] of props.categoricalPalettes) {
+    if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
+      selectedPaletteName = paletteData.name;
+      break;
+    }
+  }
+
+  ///////// Generate dropdown contents
 
   // Memoize to avoid recalculating dropdown contents
   const rampDropdownContents: ReactElement[] = useMemo(() => {
@@ -140,7 +127,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       const [key, colorRampData] = colorRampEntries[i];
       contents.push(
         <Tooltip title={colorRampData.name} placement="right" key={key} trigger={["hover", "focus"]}>
-          <Button key={key} onClick={() => props.onChangeRamp(key, false)} rootClassName={styles.dropdownButton}>
+          <Button onClick={() => props.onChangeRamp(key, false)} rootClassName={styles.dropdownButton}>
             <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>
@@ -148,15 +135,6 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     }
     return contents;
   }, [props.colorRamps]);
-
-  // Determine if we're currently using a preset palette; otherwise show the "Custom" tooltip.
-  let selectedPaletteName = "Custom";
-  for (const [, paletteData] of props.categoricalPalettes) {
-    if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
-      selectedPaletteName = paletteData.name;
-      break;
-    }
-  }
 
   const paletteDropdownContents: ReactElement[] = useMemo(() => {
     const contents: ReactElement[] = [];
@@ -166,6 +144,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
       const [key, paletteData] = paletteEntries[i];
       const visibleColors = paletteData.colors.slice(0, props.numCategories);
+      const colorRamp = new ColorRamp(visibleColors, true);
 
       contents.push(
         <Tooltip title={paletteData.name} placement="right" key={key} trigger={["hover", "focus"]}>
@@ -174,7 +153,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
             onClick={() => props.onChangePalette(paletteData.colors)}
             rootClassName={styles.dropdownButton}
           >
-            <div className={styles.categoricalColor} style={createCSSGradientFromPalette(visibleColors)}></div>
+            <img src={colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>
       );
@@ -183,6 +162,9 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   }, [props.categoricalPalettes, props.numCategories]);
 
   /// Rendering
+
+  // Swap between two image sources as needed
+  const dropdownButtonImgSrc = props.useCategoricalPalettes ? paletteImgSrc : rampImgSrc;
 
   const buttonDivClassName = styles.buttonContainer + (props.disabled ? ` ${styles.disabled}` : "");
   let dropdownContainerClassName = styles.dropdownContainer;
@@ -199,18 +181,13 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
           placement="right"
           trigger={["focus", "hover"]}
         >
-          <Button id={styles.selectorButton} disabled={props.disabled} onClick={() => setForceOpen(!forceOpen)}>
-            {
-              // Switch between categorical palette and color map as needed
-              props.useCategoricalPalettes ? (
-                <div
-                  className={styles.categoricalColor}
-                  style={createCSSGradientFromPalette(props.selectedPalette.slice(0, props.numCategories))}
-                ></div>
-              ) : (
-                <img src={selectedRampColorUrl} />
-              )
-            }
+          <Button
+            id={styles.selectorButton}
+            className={props.useCategoricalPalettes ? styles.categorical : ""}
+            disabled={props.disabled}
+            onClick={() => setForceOpen(!forceOpen)}
+          >
+            <img src={dropdownButtonImgSrc} />
           </Button>
         </Tooltip>
         {props.useCategoricalPalettes ? (
