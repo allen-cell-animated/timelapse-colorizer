@@ -301,7 +301,9 @@ export default class Dataset {
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
 
     // Load feature data
-    const featuresPromises: Promise<[string, FeatureData]>[] = manifest.features.map((data) => this.loadFeature(data));
+    const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
+      this.loadFeature(data)
+    );
 
     const result = await Promise.all([
       this.loadToTexture(FeatureDataType.U8, this.outlierFile),
@@ -323,6 +325,10 @@ export default class Dataset {
     featureResults.forEach(([name, data]) => {
       this.features.set(name, data);
     });
+
+    if (this.features.size === 0) {
+      throw new Error("No features found in dataset. Is the dataset manifest file valid?");
+    }
 
     // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
