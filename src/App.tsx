@@ -630,8 +630,7 @@ function App(): ReactElement {
               // Render either a categorical color picker or a range slider depending on the feature type
               dataset?.isFeatureCategorical(featureName) ? (
                 <CategoricalColorPicker
-                  dataset={dataset}
-                  featureName={featureName}
+                  categories={dataset.getFeatureCategories(featureName) || []}
                   selectedPalette={categoricalPalette}
                   onChangePalette={setCategoricalPalette}
                   disabled={disableUi}

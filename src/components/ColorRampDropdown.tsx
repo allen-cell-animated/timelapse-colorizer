@@ -32,7 +32,7 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
 };
 
 /**
- * Returns a style object with a hard-stop linear gradient background, consisting
+ * Returns a CSS style object with a hard-stop linear gradient background, consisting
  * of the colors in the provided array.
  * @param colors Array of Color objects, in order, from left to right.
  * @returns A style object with a linear gradient background.
@@ -44,7 +44,7 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
  * // style = {background : linear-gradient(to right, #ffffff 0.00%, #ffffff 33.33%, #cccccc 33.33%, #cccccc 66.67%, #000000 66.67%, #000000 100.00%}
  * ```
  */
-function getColorPaletteStyling(colors: Color[]): { background: string } {
+function createCSSGradientFromPalette(colors: Color[]): { background: string } {
   let gradient = "linear-gradient(to right,";
   for (let i = 0; i < colors.length; i++) {
     const startPercent = (100 * (i / colors.length)).toFixed(2) + "%,";
@@ -174,7 +174,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
             onClick={() => props.onChangePalette(paletteData.colors)}
             rootClassName={styles.dropdownButton}
           >
-            <div className={styles.categoricalColor} style={getColorPaletteStyling(visibleColors)}></div>
+            <div className={styles.categoricalColor} style={createCSSGradientFromPalette(visibleColors)}></div>
           </Button>
         </Tooltip>
       );
@@ -205,7 +205,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
               props.useCategoricalPalettes ? (
                 <div
                   className={styles.categoricalColor}
-                  style={getColorPaletteStyling(props.selectedPalette.slice(0, props.numCategories))}
+                  style={createCSSGradientFromPalette(props.selectedPalette.slice(0, props.numCategories))}
                 ></div>
               ) : (
                 <img src={selectedRampColorUrl} />
