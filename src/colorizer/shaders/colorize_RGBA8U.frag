@@ -144,17 +144,12 @@ vec4 getMainPixelColor() {
 void main() {
   vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
-  // uvec4 backdropColorUint = texture(backdrop, sUv).rgba;
   vec4 backdropColor = texture(backdrop, sUv).rgba;
-  // TODO: Handle transparent backdrops?
-  backdropColor.a = backdropOpacity;
-  // vec4 backdropColor = vec4(1.0, 0.0, 0.0, 1.0);
-  // backdropColor.a *= 0.5;
+  backdropColor.a *= backdropOpacity;
 
   vec4 mainColor = getMainPixelColor();
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
-  // TODO: should backdrop color be able to render above overlay?
   gOutputColor = vec4(backgroundColor, 1.0);
   gOutputColor = alphaBlend(backdropColor, gOutputColor);
   gOutputColor = alphaBlend(mainColor, gOutputColor);

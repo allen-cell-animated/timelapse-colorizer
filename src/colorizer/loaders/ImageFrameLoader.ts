@@ -43,26 +43,17 @@ export default class ImageFrameLoader implements IFrameLoader {
     this.pixelFormat = pixelFormat;
   }
 
-  private textureEncodingToInternalFormat(encoding: PixelFormat): PixelFormatGPU {
-    switch (encoding) {
-      case RGBAIntegerFormat:
-        return "RGBA8UI";
-      case RGBAFormat:
-        return "RGBA8I";
-      default:
-        throw new Error("Unsupported texture encoding");
-    }
-  }
-
   async load(url: string): Promise<Texture> {
     const img = await loadImageElement(url);
     let tex: Texture;
     tex = new Texture(img, undefined, undefined, undefined, NearestFilter, NearestFilter, this.pixelFormat);
     tex.generateMipmaps = false;
     tex.unpackAlignment = 1;
+
     if (this.pixelFormat === RGBAIntegerFormat) {
-      tex.internalFormat = this.textureEncodingToInternalFormat(this.pixelFormat);
+      tex.internalFormat = "RGBA8UI";
     }
+
     tex.needsUpdate = true;
     return tex;
   }

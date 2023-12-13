@@ -4,7 +4,6 @@ import {
   CanvasTexture,
   Color,
   DataTexture,
-  FloatType,
   GLSL3,
   Line,
   LineBasicMaterial,
@@ -93,7 +92,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     inRangeIds: new Uniform(emptyInRangeIds),
     overlay: new Uniform(emptyOverlay),
     backdrop: new Uniform(emptyBackdrop),
-    backdropOpacity: new Uniform(0.0),
+    backdropOpacity: new Uniform(0.75),
     featureColorRampMin: new Uniform(0),
     featureColorRampMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
@@ -541,14 +540,9 @@ export default class ColorizeCanvas {
     // TODO: Clear overlay
     if (overlay) {
       this.setUniform("backdrop", overlay);
-      this.setUniform("backdropOpacity", 1.0);
     } else {
       console.log("Resetting overlay");
-      this.setUniform(
-        "backdrop",
-        new DataTexture(new Uint8Array([1.0, 0, 0, 1.0]), 1, 1, RGBAFormat, UnsignedByteType)
-      );
-      this.setUniform("backdropOpacity", 0.0);
+      this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
     this.setUniform("frame", frame);
   }
