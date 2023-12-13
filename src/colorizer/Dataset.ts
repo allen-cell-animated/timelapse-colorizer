@@ -293,13 +293,11 @@ export default class Dataset {
   }
 
   public async loadBackdrop(name: string, index: number): Promise<Texture | undefined> {
-    console.log(name);
     // TODO: Implement caching
     const files = this.backdropFiles.get(name);
     if (!files || index < 0 || index >= files.length) {
       return undefined;
     }
-    console.log("Backdrop frame " + index);
     const fullUrl = this.resolveUrl(files[index]);
     const loadedFrame = await this.backdropLoader.load(fullUrl);
     return loadedFrame;
@@ -334,9 +332,6 @@ export default class Dataset {
       for (const { name, frames } of manifest.backdrops) {
         this.backdropFiles.set(name, frames);
         // TODO: Warning if number of frames does not match number of overlays?
-        console.log(manifest.backdrops);
-        console.log(name);
-        console.log(frames);
         if (frames.length !== this.frameFiles.length || 0) {
           console.warn(
             `Number of frames (${this.frameFiles.length}) does not match number of overlays (${frames.length}) for overlay ${name}.`

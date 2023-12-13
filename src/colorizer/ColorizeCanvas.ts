@@ -540,14 +540,11 @@ export default class ColorizeCanvas {
     // Force load of frame data (clear cached frame data)
     let backdropPromise = undefined;
     if (this.backdropName && this.dataset?.hasBackdrop(this.backdropName)) {
-      console.log("Loading backdrop");
       backdropPromise = await this.dataset?.loadBackdrop(this.backdropName, this.currentFrame);
     }
     const framePromise = await this.dataset?.loadFrame(this.currentFrame);
     const result = await Promise.all([framePromise, backdropPromise]);
     const [frame, overlay] = result;
-
-    console.log(overlay);
 
     if (!frame) {
       return;
@@ -556,7 +553,6 @@ export default class ColorizeCanvas {
     if (overlay) {
       this.setUniform("backdrop", overlay);
     } else {
-      console.log("Resetting overlay");
       this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
     this.setUniform("frame", frame);

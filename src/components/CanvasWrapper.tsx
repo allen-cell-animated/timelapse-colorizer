@@ -101,7 +101,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    console.log(props.backdropName);
     canv.setBackdrop(props.backdropName);
     canv.setBackdropOpacity(props.backdropOpacity);
   }, [props.backdropName, props.backdropOpacity]);
