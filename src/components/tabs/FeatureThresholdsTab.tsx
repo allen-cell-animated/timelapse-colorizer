@@ -188,7 +188,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     const featureData = props.dataset?.getFeatureData(item.featureName);
     const disabled = featureData === undefined || featureData.units !== item.units;
     // If the feature is no longer in the dataset, use the saved min/max bounds.
-    const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [0, 1];
+    const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [Number.NaN, Number.NaN];
     const sliderMin = disabled ? savedMinMax[0] : featureData.min;
     const sliderMax = disabled ? savedMinMax[1] : featureData.max;
 
