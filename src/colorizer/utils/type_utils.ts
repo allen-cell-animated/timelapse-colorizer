@@ -8,4 +8,4 @@
  * type MyRecordValue = RecordValue<MyRecord>; // number
  * ```
  */
-export type RecordValue<T extends Record<any, any>> = T extends Record<string, infer U> ? U : never;
+export type RecordValue<T extends Record<any, any>> = T extends Record<any, infer U> ? U : never;

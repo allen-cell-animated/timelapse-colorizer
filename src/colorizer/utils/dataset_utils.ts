@@ -20,11 +20,11 @@ type ManifestFileV1 = {
   /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
   featureMetadata?: Record<
     string,
-    Partial<{
+    {
       units?: string | null;
       type?: string | null;
       categories?: string[] | null;
-    }>
+    }
   >;
   outliers?: string;
   tracks?: string;
@@ -44,6 +44,7 @@ type ManifestFileV2 = Omit<ManifestFileV1, "features" | "featureMetadata"> & {
     type?: string;
     categories?: string[];
   }[];
+  version: "2.0.0";
 };
 
 /** Type definition for the dataset manifest JSON file. */
@@ -57,7 +58,7 @@ export type AnyManifestFile = ManifestFileV1 | ManifestFileV2;
  * Returns whether the dataset is using the older, deprecated manifest format, where feature metadata
  * was stored in a separate object from the `feature` file path declaration.
  */
-function isV1(manifest: AnyManifestFile): boolean {
+function isV1(manifest: AnyManifestFile): manifest is ManifestFileV1 {
   return typeof Object.values(manifest.features)[0] === "string";
 }
 
@@ -66,14 +67,12 @@ function isV1(manifest: AnyManifestFile): boolean {
  * @param manifest Manifest object, as parsed from a JSON file.
  * @returns An object with fields reflecting the most recent ManifestFile spec.
  */
-export const update_manifest_version = (manifest: AnyManifestFile): ManifestFile => {
+export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile => {
   if (isV1(manifest)) {
     // Parse feature metadata into the new features format
-    const manifestV1 = manifest as ManifestFileV1;
-
     const features: ManifestFile["features"] = [];
-    for (const [featureName, featurePath] of Object.entries(manifestV1.features)) {
-      const featureMetadata = manifestV1.featureMetadata?.[featureName];
+    for (const [featureName, featurePath] of Object.entries(manifest.features)) {
+      const featureMetadata = manifest.featureMetadata?.[featureName];
       features.push({
         name: featureName,
         data: featurePath,
@@ -86,7 +85,8 @@ export const update_manifest_version = (manifest: AnyManifestFile): ManifestFile
     return {
       ...manifest,
       features,
+      version: "2.0.0",
     };
   }
-  return manifest as ManifestFile;
+  return manifest;
 };
