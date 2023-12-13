@@ -1,6 +1,7 @@
 import {
   BufferAttribute,
   BufferGeometry,
+  CanvasTexture,
   Color,
   DataTexture,
   GLSL3,
@@ -56,6 +57,7 @@ type ColorizeUniformTypes = {
   inRangeIds: Texture;
   featureColorRampMin: number;
   featureColorRampMax: number;
+  overlay: Texture;
   colorRamp: Texture;
   backgroundColor: Color;
   outlierColor: Color;
@@ -76,6 +78,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
+  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -83,6 +86,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
+    overlay: new Uniform(emptyOverlay),
     featureColorRampMin: new Uniform(0),
     featureColorRampMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
@@ -97,8 +101,6 @@ const getDefaultUniforms = (): ColorizeUniforms => {
 };
 
 export default class ColorizeCanvas {
-  private canvasContainer: HTMLDivElement;
-
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;
@@ -195,26 +197,9 @@ export default class ColorizeCanvas {
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
     this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
-
-    // Set up the canvas overlay as a sibling in the DOM layout
-    // by creating a dummy parent container.
-    this.canvasContainer = document.createElement("div");
-    this.canvasContainer.appendChild(this.renderer.domElement);
-    this.canvasContainer.appendChild(this.overlay.domElement);
-    this.canvasContainer.style.position = "relative";
-    this.overlay.domElement.style.position = "absolute";
-    this.overlay.domElement.style.left = "0";
-    this.overlay.domElement.style.top = "0";
   }
 
-  /**
-   * The DOM element containing the canvas and its overlay.
-   */
-  get domElement(): HTMLDivElement {
-    return this.canvasContainer;
-  }
-
-  get canvasElement(): HTMLCanvasElement {
+  get domElement(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
 
@@ -544,10 +529,16 @@ export default class ColorizeCanvas {
   render(): void {
     this.updateHighlightedId();
     this.updateTrackRange();
-    this.renderer.render(this.scene, this.camera);
+
     this.updateScaleBar();
     this.updateTimestamp();
+
+    // Draw the overlay, and pass the resulting image as a texture to the shader.
     this.overlay.render();
+    const overlayTexture = new CanvasTexture(this.overlay.canvas);
+    this.setUniform("overlay", overlayTexture);
+
+    this.renderer.render(this.scene, this.camera);
   }
 
   dispose(): void {
