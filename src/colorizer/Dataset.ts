@@ -10,7 +10,7 @@ import Track from "./Track";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import * as urlUtils from "./utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { AnyManifestFile, ManifestFile, ManifestFileMetadata, update_manifest_version } from "./utils/dataset_utils";
+import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -99,24 +99,13 @@ export default class Dataset {
     return await response.json();
   }
 
-  /**
-   * Parses a feature's `type` string and returns a FeatureType enum.
-   * @param inputType The `type` string to parse.
-   * @param defaultType Default value to return if `inputType` is not recognized.
-   * @returns The parsed FeatureType.
-   */
-  private getFeatureTypeFromString(inputType: string, defaultType: FeatureType = FeatureType.CONTINUOUS): FeatureType {
-    const type = inputType.toLowerCase();
-    switch (type) {
-      case "discrete":
-        return FeatureType.DISCRETE;
-      case "categorical":
-        return FeatureType.CATEGORICAL;
-      case "continuous":
-        return FeatureType.CONTINUOUS;
-      default:
-        return defaultType;
-    }
+  private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
+    const isFeatureType = (inputType: string): inputType is FeatureType => {
+      return Object.values(FeatureType).includes(inputType as FeatureType);
+    };
+
+    inputType = inputType?.toLowerCase() || "";
+    return isFeatureType(inputType) ? inputType : defaultType;
   }
 
   /**
@@ -127,7 +116,8 @@ export default class Dataset {
     const name = metadata.name;
     const url = this.resolveUrl(metadata.data);
     const source = await this.arrayLoader.load(url);
-    const featureType = this.getFeatureTypeFromString(metadata?.type || "", FeatureType.CONTINUOUS);
+    const featureType = this.parseFeatureType(metadata.type);
+
     const featureCategories = metadata?.categories;
     // Validation
     if (featureType === FeatureType.CATEGORICAL && !metadata?.categories) {
@@ -157,8 +147,12 @@ export default class Dataset {
     return this.featureNames.includes(name);
   }
 
-  public getFeatureData(name: string): FeatureData | undefined {
-    return this.features.get(name);
+  public getFeatureData(name: string): FeatureData {
+    const featureData = this.features.get(name);
+    if (!featureData) {
+      throw new Error(`getFeatureData: Feature ${name} does not exist.`);
+    }
+    return featureData;
   }
 
   public getFeatureNameWithUnits(name: string): string {
@@ -174,7 +168,7 @@ export default class Dataset {
    * Gets the feature's units if it exists; otherwise returns an empty string.
    */
   public getFeatureUnits(name: string): string {
-    return this.features.get(name)?.units || "";
+    return this.getFeatureData(name).units || "";
   }
 
   /**
@@ -184,10 +178,7 @@ export default class Dataset {
    * @returns The FeatureType of the given feature (categorical, continuous, or discrete)
    */
   public getFeatureType(name: string): FeatureType {
-    const featureData = this.features.get(name);
-    if (!featureData) {
-      throw new Error(`Feature ${name} does not exist.`);
-    }
+    const featureData = this.getFeatureData(name);
     return featureData.type;
   }
 
@@ -197,8 +188,8 @@ export default class Dataset {
    * @returns The array of string categories for the given feature, or null if the feature is not categorical.
    */
   public getFeatureCategories(name: string): string[] | null {
-    const featureData = this.features.get(name);
-    if (featureData && featureData.type === FeatureType.CATEGORICAL) {
+    const featureData = this.getFeatureData(name);
+    if (featureData.type === FeatureType.CATEGORICAL) {
       return featureData.categories;
     }
     return null;
@@ -206,7 +197,7 @@ export default class Dataset {
 
   /** Returns whether the given feature represents categorical data. */
   public isFeatureCategorical(name: string): boolean {
-    return this.features.get(name)?.type === FeatureType.CATEGORICAL;
+    return this.getFeatureData(name).type === FeatureType.CATEGORICAL;
   }
 
   /**
@@ -261,8 +252,7 @@ export default class Dataset {
   }
 
   public get numObjects(): number {
-    // TODO: This is potentially unsafe if the first feature failed to load.
-    return this.features.get(this.featureNames[0])?.data.length || 0;
+    return this.getFeatureData(this.featureNames[0]).data.length;
   }
 
   /** Loads a single frame from the dataset */
@@ -298,7 +288,7 @@ export default class Dataset {
     }
     this.hasOpened = true;
 
-    const manifest = update_manifest_version(await manifestLoader(this.manifestUrl));
+    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
@@ -391,7 +381,7 @@ export default class Dataset {
   // get the times and values of a track for a given feature
   // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
   public buildTrackFeaturePlot(track: Track, feature: string): { domain: number[]; range: number[] } {
-    const range = track.ids.map((i) => this.features.get(feature)?.data[i] || -1);
+    const range = track.ids.map((i) => this.getFeatureData(feature).data[i]);
     const domain = track.times;
     return { domain, range };
   }
