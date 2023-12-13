@@ -30,7 +30,7 @@ uniform uint outOfRangeDrawMode;
 
 uniform int highlightedId;
 
-uniform bool hideOutOfRange;  // bool
+uniform bool hideOutOfRange;
 
 in vec2 vUv;
 
