@@ -1,6 +1,6 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, useMemo } from "react";
 import { Dataset } from "../colorizer";
-import { ColorPicker } from "antd";
+import { ColorPicker, Tooltip } from "antd";
 import { Color, ColorRepresentation } from "three";
 
 import { Color as AntColor } from "antd/es/color-picker/color";
@@ -57,24 +57,29 @@ export default function CategoricalColorPicker(inputProps: CategoricalColorPicke
   }
   const numCategories = categories.length;
 
-  const colorPickers = [];
-  for (let i = 0; i < numCategories; i++) {
-    const color = props.selectedPalette[i];
-    const label = categories[i];
-    const onChange = (_value: AntColor, hex: string): void => {
-      const newPalette = [...props.selectedPalette];
-      newPalette[i] = new Color(hex as ColorRepresentation);
-      props.onChangePalette(newPalette);
-    };
+  const colorPickers = useMemo(() => {
+    const elements = [];
+    for (let i = 0; i < numCategories; i++) {
+      const color = props.selectedPalette[i];
+      const label = categories[i];
+      const onChange = (_value: AntColor, hex: string): void => {
+        const newPalette = [...props.selectedPalette];
+        newPalette[i] = new Color(hex as ColorRepresentation);
+        props.onChangePalette(newPalette);
+      };
 
-    // Make the color picker component
-    colorPickers.push(
-      <FlexRowAlignCenter key={i}>
-        <ColorPicker value={color.getHexString()} onChange={onChange} size={"small"} disabledAlpha={true} />
-        <span>{label}</span>
-      </FlexRowAlignCenter>
-    );
-  }
+      // Make the color picker component
+      elements.push(
+        <FlexRowAlignCenter key={i}>
+          <ColorPicker value={color.getHexString()} onChange={onChange} size={"small"} disabledAlpha={true} />
+          <Tooltip title={label} placement="top">
+            <span>{label}</span>
+          </Tooltip>
+        </FlexRowAlignCenter>
+      );
+    }
+    return elements;
+  }, [props]);
 
   return (
     <ColorPickerContainer $itemGap="8px" $maxItemsPerRow="6" $itemWidth="110px">
