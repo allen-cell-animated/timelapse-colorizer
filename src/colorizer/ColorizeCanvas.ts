@@ -83,7 +83,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
   const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptyBackdrop = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
+  const emptyBackdrop = new DataTexture(new Uint8Array([1, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -93,7 +93,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     inRangeIds: new Uniform(emptyInRangeIds),
     overlay: new Uniform(emptyOverlay),
     backdrop: new Uniform(emptyBackdrop),
-    backdropOpacity: new Uniform(0.5),
+    backdropOpacity: new Uniform(0.0),
     featureColorRampMin: new Uniform(0),
     featureColorRampMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
@@ -533,18 +533,22 @@ export default class ColorizeCanvas {
     const result = await Promise.all([framePromise, overlayPromise]);
     const [frame, overlay] = result;
 
+    console.log(overlay);
+
     if (!frame) {
       return;
     }
     // TODO: Clear overlay
     if (overlay) {
       this.setUniform("backdrop", overlay);
+      this.setUniform("backdropOpacity", 1.0);
     } else {
       console.log("Resetting overlay");
-      // this.setUniform(
-      //   "backdrop",
-      //   new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType)
-      // );
+      this.setUniform(
+        "backdrop",
+        new DataTexture(new Uint8Array([1.0, 0, 0, 1.0]), 1, 1, RGBAFormat, UnsignedByteType)
+      );
+      this.setUniform("backdropOpacity", 0.0);
     }
     this.setUniform("frame", frame);
   }
@@ -559,6 +563,7 @@ export default class ColorizeCanvas {
     // Draw the overlay, and pass the resulting image as a texture to the shader.
     this.overlay.render();
     const overlayTexture = new CanvasTexture(this.overlay.canvas);
+    console.log(overlayTexture);
     this.setUniform("overlay", overlayTexture);
 
     this.renderer.render(this.scene, this.camera);

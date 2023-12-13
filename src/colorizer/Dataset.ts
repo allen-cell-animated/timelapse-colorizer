@@ -1,4 +1,4 @@
-import { Texture, Vector2 } from "three";
+import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
@@ -87,12 +87,12 @@ export default class Dataset {
     this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
     this.hasOpened = false;
 
-    this.frameLoader = frameLoader || new ImageFrameLoader();
+    this.frameLoader = frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
     this.frameFiles = [];
     this.frames = null;
     this.frameDimensions = null;
 
-    this.backdropLoader = frameLoader || new ImageFrameLoader();
+    this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropFiles = new Map();
     // this.backdrops = new Map();
 

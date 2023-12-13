@@ -1,4 +1,12 @@
-import { NearestFilter, RGBAIntegerFormat, Texture } from "three";
+import {
+  NearestFilter,
+  PixelFormat,
+  PixelFormatGPU,
+  RGBAFormat,
+  RGBAIntegerFormat,
+  Texture,
+  TextureEncoding,
+} from "three";
 import { IFrameLoader } from "./ILoader";
 
 /** Promise-ifies image loading */
@@ -29,12 +37,32 @@ async function loadImageElement(url: string): Promise<HTMLImageElement> {
 }
 
 export default class ImageFrameLoader implements IFrameLoader {
+  private pixelFormat: PixelFormat;
+
+  constructor(pixelFormat: PixelFormat = RGBAIntegerFormat) {
+    this.pixelFormat = pixelFormat;
+  }
+
+  private textureEncodingToInternalFormat(encoding: PixelFormat): PixelFormatGPU {
+    switch (encoding) {
+      case RGBAIntegerFormat:
+        return "RGBA8UI";
+      case RGBAFormat:
+        return "RGBA8I";
+      default:
+        throw new Error("Unsupported texture encoding");
+    }
+  }
+
   async load(url: string): Promise<Texture> {
     const img = await loadImageElement(url);
-    const tex = new Texture(img, undefined, undefined, undefined, NearestFilter, NearestFilter, RGBAIntegerFormat);
+    let tex: Texture;
+    tex = new Texture(img, undefined, undefined, undefined, NearestFilter, NearestFilter, this.pixelFormat);
     tex.generateMipmaps = false;
     tex.unpackAlignment = 1;
-    tex.internalFormat = "RGBA8UI";
+    if (this.pixelFormat === RGBAIntegerFormat) {
+      tex.internalFormat = this.textureEncodingToInternalFormat(this.pixelFormat);
+    }
     tex.needsUpdate = true;
     return tex;
   }
