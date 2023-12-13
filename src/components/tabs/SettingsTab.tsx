@@ -17,13 +17,13 @@ type SettingsTabProps = {
   showTimestamp: boolean;
   dataset: Dataset | null;
   backdropOpacity: number;
-  backdropName: string;
+  backdropName: string | null;
   setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
   setShowScaleBar: (show: boolean) => void;
   setShowTimestamp: (show: boolean) => void;
   setBackdropOpacity: (opacity: number) => void;
-  setBackdropName: (name: string) => void;
+  setBackdropName: (name: string | null) => void;
 };
 
 const SectionHeaderText = styled.h2`
@@ -32,14 +32,17 @@ const SectionHeaderText = styled.h2`
 `;
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
+  const backdropOptions = props.dataset?.getBackdropNames() ?? [];
+  backdropOptions.unshift("(None)");
+
   return (
     <FlexColumn $gap={5}>
-      <SectionHeaderText>Overlay</SectionHeaderText>
+      <SectionHeaderText>Backdrop</SectionHeaderText>
       <LabeledDropdown
         // TODO: Add a None option? Or an option to clear?
-        label={"Overlay images"}
-        selected={props.backdropName}
-        items={props.dataset?.getOverlayNames() ?? []}
+        label={"Backdrop images"}
+        selected={props.backdropName || "(None)"}
+        items={backdropOptions}
         onChange={props.setBackdropName}
       />
       <FlexRowAlignCenter $gap={6}>

@@ -284,17 +284,22 @@ export default class Dataset {
     return loadedFrame;
   }
 
-  public getOverlayNames(): string[] {
+  public hasBackdrop(name: string): boolean {
+    return this.backdropFiles.has(name);
+  }
+
+  public getBackdropNames(): string[] {
     return Array.from(this.backdropFiles.keys());
   }
 
-  public async loadOverlay(name: string, index: number): Promise<Texture | undefined> {
+  public async loadBackdrop(name: string, index: number): Promise<Texture | undefined> {
+    console.log(name);
     // TODO: Implement caching
     const files = this.backdropFiles.get(name);
     if (!files || index < 0 || index >= files.length) {
       return undefined;
     }
-    console.log("Overlay frame " + index);
+    console.log("Backdrop frame " + index);
     const fullUrl = this.resolveUrl(files[index]);
     const loadedFrame = await this.backdropLoader.load(fullUrl);
     return loadedFrame;

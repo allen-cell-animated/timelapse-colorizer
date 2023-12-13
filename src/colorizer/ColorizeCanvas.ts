@@ -135,6 +135,7 @@ export default class ColorizeCanvas {
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
+  private backdropName: string | null;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
   private currentFrame: number;
@@ -188,6 +189,7 @@ export default class ColorizeCanvas {
     this.dataset = null;
     this.canvasResolution = null;
     this.featureName = null;
+    this.backdropName = null;
     this.track = null;
     this.showTrackPath = false;
     this.colorMapRangeMin = 0;
@@ -510,26 +512,39 @@ export default class ColorizeCanvas {
     return index >= 0 && index < this.getTotalFrames();
   }
 
+  public setBackdropOpacity(opacity: number): void {
+    this.setUniform("backdropOpacity", opacity / 100);
+  }
+
+  public setBackdrop(backdropName: string | null): void {
+    this.backdropName = backdropName;
+    this.setFrame(this.currentFrame, true).then(() => {
+      this.render();
+    });
+  }
+
   /**
    * Sets the current frame of the canvas, loading the new frame data if the
    * frame number changes.
    * @param index Index of the new frame.
+   * @param forceUpdate Force a reload of the frame data, even if the frame
+   * is already loaded.
    */
-  async setFrame(index: number): Promise<void> {
+  async setFrame(index: number, forceUpdate: boolean = false): Promise<void> {
     // Ignore same or bad frame indices
-    if (this.currentFrame === index || !this.isValidFrame(index)) {
+    if ((!forceUpdate && this.currentFrame === index) || !this.isValidFrame(index)) {
       return;
     }
     // New frame, so load the frame data.
     this.currentFrame = index;
     // Force load of frame data (clear cached frame data)
-    let overlayPromise = undefined;
-    let overlayNames = this.dataset?.getOverlayNames();
-    if (overlayNames && overlayNames.length > 0) {
-      overlayPromise = await this.dataset?.loadOverlay(overlayNames[0], this.currentFrame);
+    let backdropPromise = undefined;
+    if (this.backdropName && this.dataset?.hasBackdrop(this.backdropName)) {
+      console.log("Loading backdrop");
+      backdropPromise = await this.dataset?.loadBackdrop(this.backdropName, this.currentFrame);
     }
     const framePromise = await this.dataset?.loadFrame(this.currentFrame);
-    const result = await Promise.all([framePromise, overlayPromise]);
+    const result = await Promise.all([framePromise, backdropPromise]);
     const [frame, overlay] = result;
 
     console.log(overlay);
@@ -557,7 +572,6 @@ export default class ColorizeCanvas {
     // Draw the overlay, and pass the resulting image as a texture to the shader.
     this.overlay.render();
     const overlayTexture = new CanvasTexture(this.overlay.canvas);
-    console.log(overlayTexture);
     this.setUniform("overlay", overlayTexture);
 
     this.renderer.render(this.scene, this.camera);
