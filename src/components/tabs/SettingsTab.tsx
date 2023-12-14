@@ -1,14 +1,19 @@
-import React, { ReactElement } from "react";
 import { Checkbox, Divider, Slider } from "antd";
-import { Color } from "three";
+import React, { ReactElement } from "react";
 import styled from "styled-components";
+import { Color } from "three";
 
-import { DrawSettings } from "../CanvasWrapper";
-import DrawModeDropdown from "../DrawModeDropdown";
+import { Dataset } from "../../colorizer";
 import { DrawMode } from "../../colorizer/ColorizeCanvas";
 import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
+import { DrawSettings } from "../CanvasWrapper";
+import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
-import { Dataset } from "../../colorizer";
+
+const NO_BACKDROP = {
+  key: "",
+  label: "(None)",
+};
 
 type SettingsTabProps = {
   outOfRangeDrawSettings: DrawSettings;
@@ -32,8 +37,11 @@ const SectionHeaderText = styled.h2`
 `;
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
-  const backdropOptions = props.dataset?.getBackdropNames() ?? [];
-  backdropOptions.unshift("(None)");
+  const backdropOptions =
+    props.dataset?.getBackdropNames().map((value) => {
+      return { key: value, label: value };
+    }) ?? [];
+  backdropOptions.unshift(NO_BACKDROP);
 
   return (
     <FlexColumn $gap={5}>
@@ -41,9 +49,10 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       <LabeledDropdown
         // TODO: Add a None option? Or an option to clear?
         label={"Backdrop images"}
-        selected={props.backdropName || "(None)"}
+        selected={props.backdropName || NO_BACKDROP.key}
         items={backdropOptions}
         onChange={props.setBackdropName}
+        disabled={backdropOptions.length === 1}
       />
       <FlexRowAlignCenter $gap={6}>
         <h3>Opacity</h3>
