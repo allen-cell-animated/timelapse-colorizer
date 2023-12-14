@@ -1,13 +1,13 @@
+import { FolderOpenOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd";
+import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
 
-import { AppThemeContext } from "./AppStyle";
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
-import { MenuItemType } from "antd/es/menu/hooks/useItems";
-import { FolderOpenOutlined } from "@ant-design/icons";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
+import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
+import { AppThemeContext } from "./AppStyle";
 
 /** Key for local storage to read/write recently opened datasets */
 const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";

@@ -1,11 +1,11 @@
+import { Checkbox } from "antd";
 import React, { ReactElement } from "react";
 import { Color } from "three";
 
-import { DrawSettings } from "../CanvasWrapper";
-import DrawModeDropdown from "../DrawModeDropdown";
 import { DrawMode } from "../../colorizer/ColorizeCanvas";
 import { FlexColumn } from "../../styles/utils";
-import { Checkbox } from "antd";
+import { DrawSettings } from "../CanvasWrapper";
+import DrawModeDropdown from "../DrawModeDropdown";
 
 type SettingsTabProps = {
   outOfRangeDrawSettings: DrawSettings;

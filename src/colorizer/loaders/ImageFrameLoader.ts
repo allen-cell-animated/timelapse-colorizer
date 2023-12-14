@@ -1,4 +1,5 @@
 import { NearestFilter, RGBAIntegerFormat, Texture } from "three";
+
 import { IFrameLoader } from "./ILoader";
 
 /** Promise-ifies image loading */

@@ -1,10 +1,10 @@
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { Color } from "three";
 
-import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
-import { AppThemeContext } from "./AppStyle";
+import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
 import { FeatureThreshold } from "../colorizer/types";
+import { AppThemeContext } from "./AppStyle";
 
 export type DrawSettings = {
   mode: DrawMode;

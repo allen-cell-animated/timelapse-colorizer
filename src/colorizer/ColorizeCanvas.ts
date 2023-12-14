@@ -18,27 +18,27 @@ import {
   UnsignedByteType,
   Vector2,
   Vector4,
-  WebGLRenderTarget,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from "three";
 
-import ColorRamp from "./ColorRamp";
-import Dataset from "./Dataset";
-import { FeatureDataType } from "./types";
-import { packDataTexture } from "./utils/texture_utils";
-import vertexShader from "./shaders/colorize.vert";
-import fragmentShader from "./shaders/colorize_RGBA8U.frag";
-import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
-import Track from "./Track";
-import CanvasOverlay from "./CanvasOverlay";
-import { FeatureThreshold } from "./types";
 import {
-  DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_CATEGORICAL_PALETTE_ID,
-  DEFAULT_COLOR_RAMPS,
+  DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_COLOR_RAMP_ID,
+  DEFAULT_COLOR_RAMPS,
   PaletteData,
 } from "../constants";
+import CanvasOverlay from "./CanvasOverlay";
+import ColorRamp from "./ColorRamp";
+import Dataset from "./Dataset";
+import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
+import vertexShader from "./shaders/colorize.vert";
+import fragmentShader from "./shaders/colorize_RGBA8U.frag";
+import Track from "./Track";
+import { FeatureDataType } from "./types";
+import { FeatureThreshold } from "./types";
+import { packDataTexture } from "./utils/texture_utils";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;

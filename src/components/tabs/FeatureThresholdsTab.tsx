@@ -1,16 +1,15 @@
-import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
-import { Card, List, Select } from "antd";
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
+import { Card, List, Select } from "antd";
+import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
 import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
-
-import { FeatureThreshold } from "../../colorizer/types";
-import LabeledRangeSlider from "../LabeledRangeSlider";
 import { Dataset } from "../../colorizer";
-import IconButton from "../IconButton";
+import { FeatureThreshold } from "../../colorizer/types";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
 import { FlexColumn } from "../../styles/utils";
+import IconButton from "../IconButton";
+import LabeledRangeSlider from "../LabeledRangeSlider";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;

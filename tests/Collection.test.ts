@@ -1,7 +1,8 @@
+import { describe, expect, it } from "vitest";
+
 import Collection from "../src/colorizer/Collection";
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../src/constants";
 import { ANY_ERROR, makeMockFetchMethod } from "./test_utils";
-import { describe, expect, it } from "vitest";
 
 const collectionData = new Map([
   ["d1", { path: "https://some-path.json", name: "dataset1" }],

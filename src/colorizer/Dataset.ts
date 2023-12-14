@@ -1,16 +1,14 @@
 import { Texture, Vector2 } from "three";
 
+import { MAX_FEATURE_CATEGORIES } from "../constants";
+import FrameCache from "./FrameCache";
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
-
-import FrameCache from "./FrameCache";
 import Track from "./Track";
-
 import { FeatureArrayType, FeatureDataType } from "./types";
-import * as urlUtils from "./utils/url_utils";
-import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import * as urlUtils from "./utils/url_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",

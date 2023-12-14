@@ -1,4 +1,4 @@
-import { DataTexture, Color, ColorRepresentation, RGBAFormat, FloatType, LinearFilter } from "three";
+import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter,RGBAFormat } from "three";
 
 export default class ColorRamp {
   private colorStops: Color[];

@@ -1,4 +1,5 @@
 import { Color } from "three";
+
 import { RawColorData } from "./color_ramps";
 
 export type PaletteData = RawColorData & {

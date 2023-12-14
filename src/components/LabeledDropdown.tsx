@@ -1,9 +1,10 @@
-import React, { ReactElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import styles from "./LabeledDropdown.module.css";
-import { Dropdown, Button, Tooltip } from "antd";
+import { Button, Dropdown, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import useToken from "antd/es/theme/useToken";
+import React, { ReactElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+
 import { DropdownSVG } from "../assets";
+import styles from "./LabeledDropdown.module.css";
 
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
