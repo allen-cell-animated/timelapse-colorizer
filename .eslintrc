@@ -15,7 +15,7 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "simple-import-sort"],
   "rules": {
     "comma-style": [1, "last"],
     "curly": [1, "multi-line"],
@@ -36,7 +36,8 @@
     "react/prop-types": 0, // This relies specifically on React PropTypes and ignores other typing methods
     "semi": 2,
     // TODO: Sort all project imports
-    // "sort-imports": 1,
+    "simple-import-sort/imports": "warn",
+    "simple-import-sort/exports": "warn",
     "space-before-blocks": [1, "always"]
   }
 }
