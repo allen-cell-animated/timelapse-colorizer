@@ -1,15 +1,13 @@
 import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
 import { Button, Tooltip } from "antd";
 import { RetweetOutlined } from "@ant-design/icons";
-
-import { ColorRampData, DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
-import { AppThemeContext } from "./AppStyle";
-import IconButton from "./IconButton";
-import { DEFAULT_CATEGORICAL_PALETTES } from "../constants";
 import { Color } from "three";
-import { ColorRamp } from "../colorizer";
+
+import { AppThemeContext } from "./AppStyle";
+import { ColorRampData, DEFAULT_COLOR_RAMPS, DEFAULT_CATEGORICAL_PALETTES } from "../constants";
+import IconButton from "./IconButton";
+import { ColorRamp, ColorRampType } from "../colorizer";
 import styles from "./ColorRampDropdown.module.css";
-import { ColorRampType } from "../colorizer/ColorRamp";
 
 type ColorRampSelectorProps = {
   selectedRamp: string;

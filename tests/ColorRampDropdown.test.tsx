@@ -1,11 +1,12 @@
+import React from "react";
+import { Color } from "three";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
 import ColorRampDropdown from "../src/components/ColorRampDropdown";
-import React from "react";
 import { ColorRamp } from "../src/colorizer";
-import { ANY_ERROR } from "./test_utils";
 import { RawColorData } from "../src/constants";
-import { Color } from "three";
+import { ANY_ERROR } from "./test_utils";
 
 describe("ColorRampDropdown", () => {
   const defaultPalette = [new Color("#000000"), new Color("#ffffff")];
