@@ -140,6 +140,8 @@ export default class ColorizeCanvas {
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
   private currentFrame: number;
+  /** The frame data that is currently loaded and visible. */
+  private loadedFrame: number;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -196,6 +198,7 @@ export default class ColorizeCanvas {
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
+    this.loadedFrame = 0;
 
     this.overlay = new CanvasOverlay();
     this.showScaleBar = false;
@@ -556,6 +559,11 @@ export default class ColorizeCanvas {
     if (!frame) {
       return;
     }
+    // This load request has been superceded by another request, which has already loaded in image data.
+    // Do nothing.
+    if (this.loadedFrame === this.currentFrame && this.currentFrame !== index) {
+      return;
+    }
     // TODO: Clear overlay
     if (overlay) {
       this.setUniform("backdrop", overlay);
@@ -563,6 +571,9 @@ export default class ColorizeCanvas {
       this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
     this.setUniform("frame", frame);
+    console.log("ColorizeCanvas: Set frame " + index);
+    this.loadedFrame = index;
+    this.render();
   }
 
   render(): void {

@@ -8,34 +8,28 @@ const DEFAULT_TIMER_ID = -1;
 export default class TimeControls {
   // TODO: Change to be React state?
   private timerId: number;
-  private setFrameFn?: (frame: number) => void;
+  private setFrameFn?: (frame: number) => Promise<void>;
+  private currentlyPlaying: boolean;
   private playbackFps: number;
 
   private canvas: ColorizeCanvas;
-  private isDisabled: boolean;
 
   private pauseCallbacks: (() => void)[];
 
   constructor(canvas: ColorizeCanvas, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
     this.canvas = canvas;
     this.timerId = DEFAULT_TIMER_ID;
-    this.isDisabled = false;
     this.pauseCallbacks = [];
     this.playbackFps = playbackFps;
+    this.currentlyPlaying = false;
   }
 
-  public setFrameCallback(fn: (frame: number) => void): void {
+  public setFrameCallback(fn: (frame: number) => Promise<void>): void {
     this.setFrameFn = fn;
   }
 
   public setPlaybackFps(fps: number): void {
     this.playbackFps = fps;
-    if (this.timerId !== DEFAULT_TIMER_ID) {
-      // restart playback with new fps
-      clearInterval(this.timerId);
-      this.pauseCallbacks.forEach((callback) => callback());
-      this.playTimeSeries(() => {});
-    }
   }
 
   private wrapFrame(index: number): number {
@@ -44,24 +38,42 @@ export default class TimeControls {
   }
 
   private playTimeSeries(onNewFrameCallback: () => void): void {
-    clearInterval(this.timerId);
+    console.log("playTimeSeries");
+    if (this.currentlyPlaying) {
+      console.log("Exiting early");
+      return;
+    }
+
+    this.currentlyPlaying = true;
 
     // TODO: Fix this function so that it doesn't stop the
     // slider from also operating
-    const loadNextFrame = async (): Promise<void> => {
-      if (this.isDisabled) {
-        // stop render loop if time controls have been disabled.
+    // Provide a last frame number to prevent a possible race condition with the canvas'
+    // current frame value
+    const loadNextFrame = async (lastFrameNum: number): Promise<void> => {
+      if (!this.currentlyPlaying) {
+        console.log("playTimeSeries: Stopping inside loop");
         return;
       }
-      const nextFrame = this.wrapFrame(this.canvas.getCurrentFrame() + 1);
 
-      // do the necessary update
+      const startTime = Date.now();
+      const nextFrame = this.wrapFrame(lastFrameNum + 1);
+      console.log(`TimeControls: Currently on frame ${lastFrameNum}; loading ${nextFrame}`);
+      // do the update
       if (this.setFrameFn) {
-        this.setFrameFn(nextFrame);
+        await this.setFrameFn(nextFrame);
       }
+      const endTime = Date.now();
+      const timeElapsed = endTime - startTime;
+      // TODO: Add some sort of smoothing here
       onNewFrameCallback();
+
+      // Add additional delay, if needed, to maintain playback fps.
+      const delayMs = Math.max(0, 1000 / this.playbackFps - timeElapsed);
+      this.timerId = window.setTimeout(() => loadNextFrame(nextFrame), delayMs);
+      console.log(this.timerId);
     };
-    this.timerId = window.setInterval(loadNextFrame, 1000 / this.playbackFps);
+    loadNextFrame(this.canvas.getCurrentFrame());
   }
 
   public async handlePlayButtonClick(): Promise<void> {
@@ -72,28 +84,23 @@ export default class TimeControls {
   }
 
   public handlePauseButtonClick(): void {
-    clearInterval(this.timerId);
-    this.timerId = DEFAULT_TIMER_ID;
+    if (this.timerId !== DEFAULT_TIMER_ID) {
+      clearTimeout(this.timerId);
+      this.timerId = DEFAULT_TIMER_ID;
+    }
+    console.log("Stopping");
+    this.currentlyPlaying = false;
     this.pauseCallbacks.forEach((callback) => callback());
   }
 
   public async handleFrameAdvance(delta: number = 1): Promise<void> {
     if (this.setFrameFn) {
-      this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
-    }
-  }
-
-  public setIsDisabled(disabled: boolean): void {
-    this.isDisabled = disabled;
-    // Disable and clean up playback interval timer
-    if (disabled) {
-      clearInterval(this.timerId);
-      this.timerId = DEFAULT_TIMER_ID;
+      await this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
     }
   }
 
   public isPlaying(): boolean {
-    return this.timerId !== -1;
+    return this.currentlyPlaying;
   }
 
   public addPauseListener(callback: () => void): void {
