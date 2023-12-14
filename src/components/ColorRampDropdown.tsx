@@ -2,13 +2,14 @@ import React, { ReactElement, useContext, useEffect, useMemo, useState } from "r
 import { Button, Tooltip } from "antd";
 import { RetweetOutlined } from "@ant-design/icons";
 
-import { DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
+import { ColorRampData, DEFAULT_COLOR_RAMPS } from "../constants/color_ramps";
 import { AppThemeContext } from "./AppStyle";
 import IconButton from "./IconButton";
 import { DEFAULT_CATEGORICAL_PALETTES } from "../constants";
 import { Color } from "three";
 import { ColorRamp } from "../colorizer";
 import styles from "./ColorRampDropdown.module.css";
+import { ColorRampType } from "../colorizer/ColorRamp";
 
 type ColorRampSelectorProps = {
   selectedRamp: string;
@@ -102,7 +103,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   const paletteImgSrc = useMemo(() => {
     const visibleColors = props.selectedPalette.slice(0, Math.max(1, props.numCategories));
-    const colorRamp = new ColorRamp(visibleColors, true);
+    const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
     return colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
   }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
 
@@ -117,48 +118,47 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   ///////// Generate dropdown contents
 
-  // Memoize to avoid recalculating dropdown contents
-  const rampDropdownContents: ReactElement[] = useMemo(() => {
+  const makeRampButtonList = (
+    colorRampData: ColorRampData[],
+    onClick: (rampData: ColorRampData) => void
+  ): ReactElement[] => {
     const contents: ReactElement[] = [];
-    const colorRampEntries = Array.from(props.colorRamps!.entries());
-    // Make a button for every color ramp
-    for (let i = 0; i < props.colorRamps.size; i++) {
-      // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
-      const [key, colorRampData] = colorRampEntries[i];
+    for (let i = 0; i < colorRampData.length; i++) {
       contents.push(
-        <Tooltip title={colorRampData.name} placement="right" key={key} trigger={["hover", "focus"]}>
-          <Button onClick={() => props.onChangeRamp(key, false)} rootClassName={styles.dropdownButton}>
-            <img src={colorRampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
+        <Tooltip title={colorRampData[i].name} placement="right" key={i} trigger={["hover", "focus"]}>
+          <Button onClick={() => onClick(colorRampData[i])} rootClassName={styles.dropdownButton}>
+            <img src={colorRampData[i].colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
           </Button>
         </Tooltip>
       );
     }
     return contents;
+  };
+
+  // Memoize to avoid recalculating dropdown contents
+  const rampDropdownContents: ReactElement[] = useMemo(() => {
+    return makeRampButtonList(Array.from(props.colorRamps.values()), (rampData) => {
+      props.onChangeRamp(rampData.key, false);
+    });
   }, [props.colorRamps]);
 
   const paletteDropdownContents: ReactElement[] = useMemo(() => {
-    const contents: ReactElement[] = [];
-    // Make a button for every palette
-    const paletteEntries = Array.from(props.categoricalPalettes.entries());
-    for (let i = 0; i < props.categoricalPalettes.size; i++) {
-      // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
-      const [key, paletteData] = paletteEntries[i];
-      const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
-      const colorRamp = new ColorRamp(visibleColors, true);
+    const onClick = (paletteData: ColorRampData): void => {
+      const colors = props.categoricalPalettes.get(paletteData.key)?.colors;
+      if (colors) {
+        props.onChangePalette(colors);
+      }
+    };
 
-      contents.push(
-        <Tooltip title={paletteData.name} placement="right" key={key} trigger={["hover", "focus"]}>
-          <Button
-            // Changes all colors, not just the visible ones, to the palette
-            onClick={() => props.onChangePalette(paletteData.colors)}
-            rootClassName={styles.dropdownButton}
-          >
-            <img src={colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
-          </Button>
-        </Tooltip>
-      );
-    }
-    return contents;
+    // Generate color ramps from the palettes.
+    const paletteData = Array.from(props.categoricalPalettes.values());
+    // Append in the missing ColorRamp
+    const colorRampData = paletteData.map((data) => {
+      const visibleColors = data.colors.slice(0, Math.max(1, props.numCategories));
+      return { ...data, colorRamp: new ColorRamp(visibleColors, ColorRampType.HARD_STOP) };
+    });
+
+    return makeRampButtonList(colorRampData, onClick);
   }, [props.categoricalPalettes, props.numCategories]);
 
   /// Rendering
