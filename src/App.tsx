@@ -16,8 +16,9 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
-import { FeatureThreshold } from "./colorizer/types";
 import TimeControls from "./colorizer/TimeControls";
+import { FeatureThreshold } from "./colorizer/types";
+import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -32,11 +33,10 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
-import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
-import SettingsTab from "./components/tabs/SettingsTab";
 import PlotTab from "./components/tabs/PlotTab";
+import SettingsTab from "./components/tabs/SettingsTab";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -55,7 +55,8 @@ function App(): ReactElement {
   const [currentFrame, setCurrentFrame] = useState<number>(0);
 
   const [backdropName, setBackdropName] = useState<string | null>(null);
-  const [backdropOpacity, setBackdropOpacity] = useState<number>(50);
+  const [backdropOpacity, setBackdropOpacity] = useState<number>(100);
+  const [objectOpacity, setObjectOpacity] = useState(100);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
@@ -680,6 +681,7 @@ function App(): ReactElement {
                 onMouseLeave={() => setShowHoveredId(false)}
                 showScaleBar={showScaleBar}
                 showTimestamp={showTimestamp}
+                objectOpacity={objectOpacity}
               />
             </HoverTooltip>
 
@@ -796,6 +798,7 @@ function App(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <SettingsTab
+                          // TODO: Refactor all of this into a settings or configuration object
                           outOfRangeDrawSettings={outOfRangeDrawSettings}
                           outlierDrawSettings={outlierDrawSettings}
                           showScaleBar={showScaleBar}
@@ -809,6 +812,8 @@ function App(): ReactElement {
                           setShowTimestamp={setShowTimestamp}
                           setBackdropOpacity={setBackdropOpacity}
                           setBackdropName={setBackdropName}
+                          objectOpacity={objectOpacity}
+                          setObjectOpacity={setObjectOpacity}
                         />
                       </div>
                     ),

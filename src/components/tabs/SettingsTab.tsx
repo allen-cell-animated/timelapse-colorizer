@@ -23,12 +23,14 @@ type SettingsTabProps = {
   dataset: Dataset | null;
   backdropOpacity: number;
   backdropName: string | null;
+  objectOpacity: number;
   setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
   setShowScaleBar: (show: boolean) => void;
   setShowTimestamp: (show: boolean) => void;
   setBackdropOpacity: (opacity: number) => void;
   setBackdropName: (name: string | null) => void;
+  setObjectOpacity: (opacity: number) => void;
 };
 
 const SectionHeaderText = styled.h2`
@@ -64,10 +66,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           onChange={props.setBackdropOpacity}
         />
       </FlexRowAlignCenter>
-
       <Divider />
-
-      <SectionHeaderText>Viewport</SectionHeaderText>
+      <SectionHeaderText>Objects</SectionHeaderText>
       <DrawModeDropdown
         label="Filtered out values"
         selected={props.outOfRangeDrawSettings.mode}
@@ -83,7 +83,17 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         onChange={(mode: DrawMode, color: Color) => {
           props.setOutlierDrawSettings({ mode, color });
         }}
-      />
+      />{" "}
+      <FlexRowAlignCenter $gap={6}>
+        <h3>Opacity</h3>
+        <Slider
+          style={{ maxWidth: "200px", width: "100%" }}
+          min={0}
+          max={100}
+          value={props.objectOpacity}
+          onChange={props.setObjectOpacity}
+        />
+      </FlexRowAlignCenter>
       <Checkbox
         type="checkbox"
         checked={props.showScaleBar}

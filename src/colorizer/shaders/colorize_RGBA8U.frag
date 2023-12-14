@@ -21,6 +21,7 @@ uniform vec3 backgroundColor;
 uniform sampler2D overlay;
 uniform sampler2D backdrop;
 uniform float backdropOpacity;
+uniform float objectOpacity;
 
 const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 
@@ -80,7 +81,7 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
 
 vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
   if (drawMode == DRAW_MODE_HIDE) {
-    return vec4(backgroundColor, 1.0);
+    return vec4(backgroundColor, 0.0);
   } else {
     return vec4(defaultColor, 1.0);
   }
@@ -148,6 +149,8 @@ void main() {
   backdropColor.a *= backdropOpacity;
 
   vec4 mainColor = getMainPixelColor();
+  mainColor.a *= objectOpacity;
+
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
   gOutputColor = vec4(backgroundColor, 1.0);

@@ -1,10 +1,10 @@
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { Color } from "three";
 
-import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
-import { AppThemeContext } from "./AppStyle";
+import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
 import { FeatureThreshold } from "../colorizer/types";
+import { AppThemeContext } from "./AppStyle";
 
 export type DrawSettings = {
   mode: DrawMode;
@@ -30,6 +30,7 @@ type CanvasWrapperProps = {
   colorRamp: ColorRamp;
   colorRampMin: number;
   colorRampMax: number;
+  objectOpacity: number;
   selectedTrack: Track | null;
 
   featureThresholds?: FeatureThreshold[];
@@ -115,6 +116,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const settings = props.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
   }, [props.outlierDrawSettings]);
+
+  useMemo(() => {
+    canv.setObjectOpacity(props.objectOpacity);
+  }, [props.objectOpacity]);
 
   useMemo(() => {
     // YAGNI: Debouncing for this is possible but no performance issues encountered yet.

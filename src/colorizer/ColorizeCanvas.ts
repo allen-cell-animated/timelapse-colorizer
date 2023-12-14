@@ -19,20 +19,19 @@ import {
   UnsignedByteType,
   Vector2,
   Vector4,
-  WebGLRenderTarget,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from "three";
 
+import CanvasOverlay from "./CanvasUIOverlay";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { FeatureDataType } from "./types";
-import { packDataTexture } from "./utils/texture_utils";
+import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
-import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
-import CanvasOverlay from "./CanvasUIOverlay";
-import { FeatureThreshold } from "./types";
+import { FeatureDataType, FeatureThreshold } from "./types";
+import { packDataTexture } from "./utils/texture_utils";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -59,6 +58,7 @@ type ColorizeUniformTypes = {
   featureColorRampMin: number;
   featureColorRampMax: number;
   overlay: Texture;
+  objectOpacity: number;
   backdrop: Texture;
   backdropOpacity: number;
   colorRamp: Texture;
@@ -91,6 +91,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
     overlay: new Uniform(emptyOverlay),
+    objectOpacity: new Uniform(1.0),
     backdrop: new Uniform(emptyBackdrop),
     backdropOpacity: new Uniform(0.75),
     featureColorRampMin: new Uniform(0),
@@ -512,8 +513,14 @@ export default class ColorizeCanvas {
     return index >= 0 && index < this.getTotalFrames();
   }
 
-  public setBackdropOpacity(opacity: number): void {
-    this.setUniform("backdropOpacity", opacity / 100);
+  setObjectOpacity(percentOpacity: number): void {
+    percentOpacity = Math.max(0, Math.min(100, percentOpacity));
+    this.setUniform("objectOpacity", percentOpacity / 100);
+  }
+
+  public setBackdropOpacity(percentOpacity: number): void {
+    percentOpacity = Math.max(0, Math.min(100, percentOpacity));
+    this.setUniform("backdropOpacity", percentOpacity / 100);
   }
 
   public setBackdrop(backdropName: string | null): void {
