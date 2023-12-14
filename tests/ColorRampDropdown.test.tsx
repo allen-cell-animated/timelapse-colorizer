@@ -5,8 +5,10 @@ import React from "react";
 import { ColorRamp } from "../src/colorizer";
 import { ANY_ERROR } from "./test_utils";
 import { RawColorData } from "../src/constants";
+import { Color } from "three";
 
 describe("ColorRampDropdown", () => {
+  const defaultPalette = [new Color("#000000"), new Color("#ffffff")];
   const colorRamps: [string, RawColorData][] = [
     ["map1", { key: "map1", name: "Map 1", colorStops: ["#ffffff", "#000000"] }],
     ["map2", { key: "map2", name: "Map 2", colorStops: ["#ffffff", "#000000"] }],
@@ -27,7 +29,7 @@ describe("ColorRampDropdown", () => {
           onChangeRamp={(_value: string) => {}}
           useCategoricalPalettes={false}
           numCategories={0}
-          selectedPalette={[]}
+          selectedPalette={defaultPalette}
           onChangePalette={(): void => {}}
         />
       );
@@ -48,7 +50,7 @@ describe("ColorRampDropdown", () => {
           onChangeRamp={mockCallback}
           useCategoricalPalettes={false}
           numCategories={0}
-          selectedPalette={[]}
+          selectedPalette={defaultPalette}
           onChangePalette={(): void => {}}
         />
       );

@@ -101,7 +101,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   }, [props.selectedRamp, props.reversed]);
 
   const paletteImgSrc = useMemo(() => {
-    const visibleColors = props.selectedPalette.slice(0, props.numCategories);
+    const visibleColors = props.selectedPalette.slice(0, Math.max(1, props.numCategories));
     const colorRamp = new ColorRamp(visibleColors, true);
     return colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
   }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
@@ -143,7 +143,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     for (let i = 0; i < props.categoricalPalettes.size; i++) {
       // Show the name of the color ramp in the tooltip, but use its internal key for callbacks.
       const [key, paletteData] = paletteEntries[i];
-      const visibleColors = paletteData.colors.slice(0, props.numCategories);
+      const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
       const colorRamp = new ColorRamp(visibleColors, true);
 
       contents.push(
