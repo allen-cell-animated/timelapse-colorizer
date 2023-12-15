@@ -348,6 +348,7 @@ function App(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
+      setBackdropName(null);
       setSelectedTrack(null);
       setDatasetOpen(true);
       console.log("Num Items:" + dataset?.numObjects);

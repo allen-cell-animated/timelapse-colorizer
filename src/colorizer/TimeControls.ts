@@ -38,9 +38,7 @@ export default class TimeControls {
   }
 
   private playTimeSeries(onNewFrameCallback: () => void): void {
-    console.log("playTimeSeries");
     if (this.currentlyPlaying) {
-      console.log("Exiting early");
       return;
     }
 
@@ -52,13 +50,19 @@ export default class TimeControls {
     // current frame value
     const loadNextFrame = async (lastFrameNum: number): Promise<void> => {
       if (!this.currentlyPlaying) {
-        console.log("playTimeSeries: Stopping inside loop");
         return;
       }
 
       const startTime = Date.now();
       const nextFrame = this.wrapFrame(lastFrameNum + 1);
-      console.log(`TimeControls: Currently on frame ${lastFrameNum}; loading ${nextFrame}`);
+
+      if (nextFrame === lastFrameNum) {
+        // Stop playing for single-frame datasets.
+        // TODO: The UI should probably be responsible for handling this.
+        this.currentlyPlaying = false;
+        return;
+      }
+
       // do the update
       if (this.setFrameFn) {
         await this.setFrameFn(nextFrame);
@@ -88,7 +92,6 @@ export default class TimeControls {
       clearTimeout(this.timerId);
       this.timerId = DEFAULT_TIMER_ID;
     }
-    console.log("Stopping");
     this.currentlyPlaying = false;
     this.pauseCallbacks.forEach((callback) => callback());
   }
