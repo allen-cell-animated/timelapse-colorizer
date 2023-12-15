@@ -101,7 +101,7 @@ vec4 getMainPixelColor() {
 
   // This pixel is background if, after scaling uv, it is outside the frame
   if (sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0) {
-    return vec4(backgroundColor, 1.0);
+    return TRANSPARENT;
   }
 
   // Get the segmentation id at this pixel
