@@ -1,16 +1,17 @@
-import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
-import { Card, List, Select } from "antd";
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
+import { Card, Checkbox, List, Select } from "antd";
+import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
 import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 
-import { FeatureThreshold } from "../../colorizer/types";
-import LabeledRangeSlider from "../LabeledRangeSlider";
 import { Dataset } from "../../colorizer";
-import IconButton from "../IconButton";
+import { CategoricalFeatureThreshold, FeatureThreshold, NumericFeatureThreshold } from "../../colorizer/types";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
+import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
+import IconButton from "../IconButton";
+import LabeledRangeSlider from "../LabeledRangeSlider";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
@@ -121,13 +122,22 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const onSelect = (featureName: string): void => {
     const featureData = props.dataset?.getFeatureData(featureName);
     const newThresholds = [...props.featureThresholds];
-    if (featureData) {
-      // Add a new threshold for the selected value if valid
+    if (featureData && !props.dataset?.isFeatureCategorical(featureName)) {
+      // Continuous/discrete feature
       newThresholds.push({
+        isCategorical: false,
         featureName: featureName,
         units: props.dataset!.getFeatureUnits(featureName),
         min: featureData.min,
         max: featureData.max,
+      });
+    } else {
+      // Categorical feature
+      newThresholds.push({
+        isCategorical: true,
+        featureName: featureName,
+        units: props.dataset!.getFeatureUnits(featureName),
+        enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
       });
     }
     props.onChange(newThresholds);
@@ -151,9 +161,23 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   };
 
   /** Handle the threshold for a feature changing. */
-  const onThresholdChanged = (index: number, min: number, max: number): void => {
+  const onCategoricalThresholdChanged = (index: number, enabled_categories: boolean[]): void => {
     const newThresholds = [...props.featureThresholds];
-    newThresholds[index] = { ...newThresholds[index], min, max };
+    const threshold = newThresholds[index];
+    if (threshold.isCategorical) {
+      threshold.enabledCategories = enabled_categories;
+    }
+    props.onChange(newThresholds);
+  };
+
+  /** Handle the threshold for a feature changing. */
+  const onNumericThresholdChanged = (index: number, min: number, max: number): void => {
+    const newThresholds = [...props.featureThresholds];
+    const threshold = newThresholds[index];
+    if (!threshold.isCategorical) {
+      threshold.min = min;
+      threshold.max = max;
+    }
     props.onChange(newThresholds);
   };
 
@@ -182,9 +206,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   });
   const selectedFeatures = thresholdsInDataset.map((t) => t.featureName);
 
-  const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
-    // Thresholds are matched on both feature names and units; a threshold must match
-    // both in the current dataset to be valid.
+  const renderNumericItem = (item: NumericFeatureThreshold, index: number): ReactNode => {
     const featureData = props.dataset?.getFeatureData(item.featureName);
     const disabled = featureData === undefined || featureData.units !== item.units;
     // If the feature is no longer in the dataset, use the saved min/max bounds.
@@ -192,22 +214,59 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     const sliderMin = disabled ? savedMinMax[0] : featureData.min;
     const sliderMax = disabled ? savedMinMax[1] : featureData.max;
 
+    return (
+      <div style={{ width: "calc(100% - 10px)" }}>
+        <LabeledRangeSlider
+          min={item.min}
+          max={item.max}
+          minSliderBound={sliderMin}
+          maxSliderBound={sliderMax}
+          onChange={(min, max) => onNumericThresholdChanged(index, min, max)}
+          disabled={disabled}
+        />
+      </div>
+    );
+  };
+
+  const renderCategoricalItem = (item: CategoricalFeatureThreshold, index: number): ReactNode => {
+    const featureData = props.dataset?.getFeatureData(item.featureName);
+    const disabled = featureData === undefined || featureData.units !== item.units;
+
+    const categories = featureData?.categories || [];
+    const enabledCategories = item.enabledCategories;
+
+    const onChange = (categoryIndex: number) => {
+      const newEnabledCategories = [...enabledCategories];
+      newEnabledCategories[categoryIndex] = !enabledCategories[categoryIndex];
+      onCategoricalThresholdChanged(index, newEnabledCategories);
+    };
+
+    return (
+      <div style={{ width: "calc(100% - 10px)" }}>
+        {categories.map((category, categoryIndex) => {
+          return (
+            <Checkbox disabled={disabled} onChange={() => onChange(categoryIndex)}>
+              {category}
+            </Checkbox>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
+    // Thresholds are matched on both feature names and units; a threshold must match
+    // both in the current dataset to be valid.
+    const featureData = props.dataset?.getFeatureData(item.featureName);
+    const disabled = featureData === undefined || featureData.units !== item.units;
     const featureLabel = item.units ? `${item.featureName} (${item.units})` : item.featureName;
 
     return (
       <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
           <FeatureLabel $disabled={disabled}>{featureLabel}</FeatureLabel>
-          <div style={{ width: "calc(100% - 10px)" }}>
-            <LabeledRangeSlider
-              min={item.min}
-              max={item.max}
-              minSliderBound={sliderMin}
-              maxSliderBound={sliderMax}
-              onChange={(min, max) => onThresholdChanged(index, min, max)}
-              disabled={disabled}
-            />
-          </div>
+
+          {item.isCategorical ? renderCategoricalItem(item, index) : renderNumericItem(item, index)}
         </div>
         <div style={{ position: "absolute", top: "10px", right: "10px" }}>
           <IconButton type="text" onClick={() => onClickedRemove(index)}>

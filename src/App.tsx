@@ -16,13 +16,15 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
-import { FeatureThreshold } from "./colorizer/types";
 import TimeControls from "./colorizer/TimeControls";
+import { FeatureThreshold } from "./colorizer/types";
+import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import CanvasWrapper from "./components/CanvasWrapper";
+import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/ColorRampDropdown";
 import Export from "./components/Export";
 import HoverTooltip from "./components/HoverTooltip";
@@ -32,6 +34,9 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
+import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
+import PlotTab from "./components/tabs/PlotTab";
+import SettingsTab from "./components/tabs/SettingsTab";
 import {
   DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_CATEGORICAL_PALETTE_ID,
@@ -40,11 +45,6 @@ import {
   DEFAULT_COLOR_RAMP_ID,
   DEFAULT_PLAYBACK_FPS,
 } from "./constants";
-import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
-import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
-import SettingsTab from "./components/tabs/SettingsTab";
-import PlotTab from "./components/tabs/PlotTab";
-import CategoricalColorPicker from "./components/CategoricalColorPicker";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -95,7 +95,7 @@ function App(): ReactElement {
         const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
         const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
 
-        if (newThreshold && oldThreshold) {
+        if (newThreshold && oldThreshold && !newThreshold.isCategorical) {
           setColorRampMin(newThreshold.min);
           setColorRampMax(newThreshold.max);
         }
@@ -425,7 +425,7 @@ function App(): ReactElement {
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
-        if (threshold) {
+        if (threshold && !threshold.isCategorical) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
         } else {
@@ -536,7 +536,7 @@ function App(): ReactElement {
       return undefined;
     }
     const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
-    if (!threshold) {
+    if (!threshold || threshold.isCategorical) {
       return undefined;
     }
     return [threshold.min, threshold.max];

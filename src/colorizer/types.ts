@@ -74,9 +74,23 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
   },
 };
 
-export type FeatureThreshold = {
+type BaseFeatureData = {
+  // TODO: Replace with key string
+  // featureKey: string;
   featureName: string;
   units: string;
+  isCategorical: boolean;
+};
+
+export type NumericFeatureThreshold = BaseFeatureData & {
+  isCategorical: false;
   min: number;
   max: number;
 };
+
+export type CategoricalFeatureThreshold = BaseFeatureData & {
+  isCategorical: true;
+  enabledCategories: boolean[];
+};
+
+export type FeatureThreshold = NumericFeatureThreshold | CategoricalFeatureThreshold;

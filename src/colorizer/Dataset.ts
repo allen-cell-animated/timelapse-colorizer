@@ -7,10 +7,10 @@ import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import FrameCache from "./FrameCache";
 import Track from "./Track";
 
-import { FeatureArrayType, FeatureDataType } from "./types";
-import * as urlUtils from "./utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import * as urlUtils from "./utils/url_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -18,7 +18,7 @@ export enum FeatureType {
   CATEGORICAL = "categorical",
 }
 
-type FeatureData = {
+export type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
