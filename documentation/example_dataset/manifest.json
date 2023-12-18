@@ -14,7 +14,7 @@
     {
       "name": "Backdrop Dark",
       "frames": [
-        "backdrop-dark/image_1.png",
+        "backdrop-dark/image_0.png",
         "backdrop-dark/image_1.png",
         "backdrop-dark/image_2.png",
         "backdrop-dark/image_3.png",
@@ -24,7 +24,7 @@
     {
       "name": "Backdrop Light",
       "frames": [
-        "backdrop-light/image_1.png",
+        "backdrop-light/image_0.png",
         "backdrop-light/image_1.png",
         "backdrop-light/image_2.png",
         "backdrop-light/image_3.png",
