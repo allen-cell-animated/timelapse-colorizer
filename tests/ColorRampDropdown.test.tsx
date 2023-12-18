@@ -4,10 +4,10 @@ import ColorRampDropdown from "../src/components/ColorRampDropdown";
 import React from "react";
 import { ColorRamp } from "../src/colorizer";
 import { ANY_ERROR } from "./test_utils";
-import { RawColorRampData } from "../src/constants";
+import { RawColorData } from "../src/constants";
 
 describe("ColorRampDropdown", () => {
-  const colorRamps: [string, RawColorRampData][] = [
+  const colorRamps: [string, RawColorData][] = [
     ["map1", { key: "map1", name: "Map 1", colorStops: ["#ffffff", "#000000"] }],
     ["map2", { key: "map2", name: "Map 2", colorStops: ["#ffffff", "#000000"] }],
     ["map3", { key: "map3", name: "Map 3", colorStops: ["#ffffff", "#000000"] }],

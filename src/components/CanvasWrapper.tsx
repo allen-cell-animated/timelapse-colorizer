@@ -74,7 +74,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Mount the canvas to the wrapper's location in the document.
   useEffect(() => {
-    canvasRef.current?.parentNode?.replaceChild(canv.canvasElement, canvasRef.current);
+    canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
   }, []);
 
   // These are all useMemo calls because the updates to the canvas must happen in the same render;
@@ -162,9 +162,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
 
   useEffect(() => {
-    canv.canvasElement.addEventListener("click", handleCanvasClick);
+    canv.domElement.addEventListener("click", handleCanvasClick);
     return () => {
-      canv.canvasElement.removeEventListener("click", handleCanvasClick);
+      canv.domElement.removeEventListener("click", handleCanvasClick);
     };
   }, [handleCanvasClick]);
 
@@ -184,8 +184,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    * hovered value wwhen the canvas frame updates.
    */
   useEffect(() => {
-    canv.canvasElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
-    canv.canvasElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
+    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
+    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
   });
 
   /** Update hovered id when the canvas updates the current frame */
@@ -201,11 +201,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       lastMousePositionPx.current = [event.offsetX, event.offsetY];
     };
 
-    canv.canvasElement.addEventListener("mousemove", onMouseMove);
-    canv.canvasElement.addEventListener("mouseleave", props.onMouseLeave);
+    canv.domElement.addEventListener("mousemove", onMouseMove);
+    canv.domElement.addEventListener("mouseleave", props.onMouseLeave);
     return () => {
-      canv.canvasElement.removeEventListener("mousemove", onMouseMove);
-      canv.canvasElement.removeEventListener("mouseleave", props.onMouseLeave);
+      canv.domElement.removeEventListener("mousemove", onMouseMove);
+      canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
   }, [props.dataset, canv]);
 

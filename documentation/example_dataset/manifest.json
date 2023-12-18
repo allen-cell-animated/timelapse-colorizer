@@ -1,14 +1,15 @@
 {
   "frames": ["frame_0.png", "frame_1.png", "frame_2.png", "frame_3.png", "frame_4.png"],
-  "features": {
-    "Continuous Feature": { "data": "feature_0.json", "units": "°F", "type": "continuous" },
-    "Discrete Feature": { "data": "feature_1.json", "units": "nodes", "type": "discrete" },
-    "Categorical Feature": {
+  "features": [
+    { "name": "Continuous Feature", "data": "feature_0.json", "units": "°F", "type": "continuous" },
+    { "name": "Discrete Feature", "data": "feature_1.json", "units": "nodes", "type": "discrete" },
+    {
+      "name": "Categorical Feature",
       "data": "feature_2.json",
       "type": "categorical",
       "categories": ["Spicy", "Sour", "Bitter", "Sweet", "Dry"]
     }
-  },
+  ],
   "backdrops": [
     {
       "name": "Backdrop Dark",

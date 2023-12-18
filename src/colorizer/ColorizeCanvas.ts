@@ -23,6 +23,13 @@ import {
   WebGLRenderTarget,
 } from "three";
 
+import {
+  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_CATEGORICAL_PALETTE_ID,
+  DEFAULT_COLOR_RAMPS,
+  DEFAULT_COLOR_RAMP_ID,
+  PaletteData,
+} from "../constants";
 import CanvasOverlay from "./CanvasUIOverlay";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
@@ -137,8 +144,10 @@ export default class ColorizeCanvas {
 
   private featureName: string | null;
   private backdropName: string | null;
+  private colorRamp: ColorRamp;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
+  private categoricalPalette: PaletteData;
   private currentFrame: number;
 
   constructor() {
@@ -191,6 +200,8 @@ export default class ColorizeCanvas {
     this.canvasResolution = null;
     this.featureName = null;
     this.backdropName = null;
+    this.colorRamp = DEFAULT_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_ID)!.colorRamp;
+    this.categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
     this.track = null;
     this.showTrackPath = false;
     this.colorMapRangeMin = 0;
@@ -208,7 +219,7 @@ export default class ColorizeCanvas {
     this.updateScaling = this.updateScaling.bind(this);
   }
 
-  get canvasElement(): HTMLCanvasElement {
+  get domElement(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
 
@@ -340,8 +351,14 @@ export default class ColorizeCanvas {
     this.pickMaterial.uniforms[name].value = value;
   }
 
+  /** Sets the current color ramp. Used when a continuous or discrete feature is selected. */
   setColorRamp(ramp: ColorRamp): void {
-    this.setUniform("colorRamp", ramp.texture);
+    this.colorRamp = ramp;
+  }
+
+  /** Sets the current categorical palette. Used when a categorical feature is selected. */
+  setCategoricalPalette(palette: PaletteData): void {
+    this.categoricalPalette = palette;
   }
 
   setBackgroundColor(color: Color): void {
@@ -434,12 +451,10 @@ export default class ColorizeCanvas {
 
   setColorMapRangeMin(newMin: number): void {
     this.colorMapRangeMin = newMin;
-    this.setUniform("featureColorRampMin", this.colorMapRangeMin);
   }
 
   setColorMapRangeMax(newMax: number): void {
     this.colorMapRangeMax = newMax;
-    this.setUniform("featureColorRampMax", this.colorMapRangeMax);
   }
 
   resetColorMapRange(): void {
@@ -570,10 +585,29 @@ export default class ColorizeCanvas {
     this.setUniform("frame", frame);
   }
 
+  /** Switches the coloring between the categorical and color ramps depending on the currently
+   * selected feature.
+   */
+  updateRamp(): void {
+    if (this.featureName && this.dataset?.isFeatureCategorical(this.featureName)) {
+      const palette = this.categoricalPalette;
+      const colorRamp = new ColorRamp(palette.colorStops);
+      this.setUniform("colorRamp", colorRamp.texture);
+      this.setUniform("featureColorRampMin", 0);
+      this.setUniform("featureColorRampMax", palette.colorStops.length - 1);
+    } else {
+      this.setUniform("colorRamp", this.colorRamp.texture);
+      this.setUniform("featureColorRampMin", this.colorMapRangeMin);
+      this.setUniform("featureColorRampMax", this.colorMapRangeMax);
+    }
+  }
+
   render(): void {
     this.updateHighlightedId();
     this.updateTrackRange();
+    this.updateRamp();
 
+    // Overlay updates
     this.updateScaleBar();
     this.updateTimestamp();
 

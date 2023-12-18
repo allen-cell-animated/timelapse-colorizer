@@ -42,16 +42,17 @@ describe("Dataset", () => {
 
   const defaultManifest: ManifestFile = {
     frames: ["frame0.json"],
-    features: {
-      feature1: { data: "feature1.json", units: "meters", type: "continuous" },
-      feature2: { data: "feature2.json", units: "(m)", type: "discrete" },
-      feature3: { data: "feature3.json", units: "μm/s", type: "bad-type" },
-      feature4: { data: "feature4.json" },
-      feature5: { data: "feature4.json", type: "categorical", categories: ["small", "medium", "large"] },
-    },
+    features: [
+      { name: "feature1", data: "feature1.json", units: "meters", type: "continuous" },
+      { name: "feature2", data: "feature2.json", units: "(m)", type: "discrete" },
+      { name: "feature3", data: "feature3.json", units: "μm/s", type: "bad-type" },
+      { name: "feature4", data: "feature4.json" },
+      { name: "feature5", data: "feature4.json", type: "categorical", categories: ["small", "medium", "large"] },
+    ],
+    version: "2.0.0",
   };
 
-  const deprecatedManifest: AnyManifestFile = {
+  const manifestV1: AnyManifestFile = {
     frames: ["frame0.json"],
     features: {
       feature1: "feature1.json",
@@ -71,7 +72,7 @@ describe("Dataset", () => {
 
   const manifestsToTest: [string, AnyManifestFile][] = [
     ["Default Manifest", defaultManifest],
-    ["Deprecated Manifest", deprecatedManifest],
+    ["Deprecated Manifest V1", manifestV1],
   ];
 
   // Test both normal and deprecated manifests
@@ -108,7 +109,7 @@ describe("Dataset", () => {
         expect(dataset.getFeatureType("feature4")).to.equal(FeatureType.CONTINUOUS);
       });
 
-      it("gets feature categories", async () => {
+      it("gets whether features are categorical", async () => {
         const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
         const mockFetch = makeMockFetchMethod(defaultPath, manifest);
         await dataset.open(mockFetch);
@@ -118,6 +119,17 @@ describe("Dataset", () => {
         expect(dataset.isFeatureCategorical("feature3")).to.be.false;
         expect(dataset.isFeatureCategorical("feature4")).to.be.false;
         expect(dataset.isFeatureCategorical("feature5")).to.be.true;
+      });
+
+      it("gets feature categories", async () => {
+        const dataset = new Dataset(defaultPath, undefined, new MockArrayLoader());
+        const mockFetch = makeMockFetchMethod(defaultPath, manifest);
+        await dataset.open(mockFetch);
+
+        expect(dataset.getFeatureCategories("feature1")).to.deep.equal(null);
+        expect(dataset.getFeatureCategories("feature2")).to.deep.equal(null);
+        expect(dataset.getFeatureCategories("feature3")).to.deep.equal(null);
+        expect(dataset.getFeatureCategories("feature4")).to.deep.equal(null);
         expect(dataset.getFeatureCategories("feature5")).to.deep.equal(["small", "medium", "large"]);
       });
 
