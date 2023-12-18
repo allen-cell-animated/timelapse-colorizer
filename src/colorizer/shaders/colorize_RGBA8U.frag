@@ -46,34 +46,34 @@ layout (location = 0) out vec4 gOutputColor;
 // Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
 vec3 hslToRgb(vec3 c) {
   vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-
   return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
 }
 
-// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
-vec3 rgbToHsl(vec3 c) {
-  float h = 0.0;
-  float s = 0.0;
-  float l = 0.0;
-  float r = c.r;
-  float g = c.g;
-  float b = c.b;
-  float cMin = min(r, min(g, b));
-  float cMax = max(r, max(g, b));
+// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar and https://en.wikipedia.org/wiki/HSL_and_HSV.
+vec3 rgbToHsl(vec3 rgbColor) {
+  float h = 0.0; // hue
+  float s = 0.0; // saturation
+  float l = 0.0; // lightness
+  float r = rgbColor.r;
+  float g = rgbColor.g;
+  float b = rgbColor.b;
 
-  l = (cMax + cMin) / 2.0;
-  if (cMax > cMin) {
-    float cDelta = cMax - cMin;
+  // Calculate chroma
+  float min = min(r, min(g, b));
+  float max = max(r, max(g, b));
+  float c = max - min;  // chroma
+  l = (max + min) / 2.0;
 
-        //s = l < .05 ? cDelta / ( cMax + cMin ) : cDelta / ( 2.0 - ( cMax + cMin ) ); Original
-    s = l < .0 ? cDelta / (cMax + cMin) : cDelta / (2.0 - (cMax + cMin));
-
-    if (r == cMax) {
-      h = (g - b) / cDelta;
-    } else if (g == cMax) {
-      h = 2.0 + (b - r) / cDelta;
+  // For grayscale values (c=0), skip hue calculation because hue is undefined.
+  if (c > 0.0) {
+    // Calculate hue
+    s = l < .0 ? c / (max + min) : c / (2.0 - (max + min));
+    if (r == max) {
+      h = (g - b) / c;
+    } else if (g == max) {
+      h = 2.0 + (b - r) / c;
     } else {
-      h = 4.0 + (r - g) / cDelta;
+      h = 4.0 + (r - g) / c;
     }
 
     if (h < 0.0) {
