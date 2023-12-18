@@ -22,6 +22,7 @@ type SettingsTabProps = {
   showTimestamp: boolean;
   dataset: Dataset | null;
   backdropOpacity: number;
+  backdropSaturation: number;
   backdropName: string | null;
   objectOpacity: number;
   setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
@@ -29,6 +30,7 @@ type SettingsTabProps = {
   setShowScaleBar: (show: boolean) => void;
   setShowTimestamp: (show: boolean) => void;
   setBackdropOpacity: (opacity: number) => void;
+  setBackdropSaturation: (saturation: number) => void;
   setBackdropName: (name: string | null) => void;
   setObjectOpacity: (opacity: number) => void;
 };
@@ -64,6 +66,18 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           max={100}
           value={props.backdropOpacity}
           onChange={props.setBackdropOpacity}
+          tooltip={{ formatter: (value) => `${value}%` }}
+        />
+      </FlexRowAlignCenter>
+      <FlexRowAlignCenter $gap={6}>
+        <h3>Saturation</h3>
+        <Slider
+          style={{ maxWidth: "200px", width: "100%" }}
+          min={0}
+          max={100}
+          value={props.backdropSaturation}
+          onChange={props.setBackdropSaturation}
+          tooltip={{ formatter: (value) => `${value}%` }}
         />
       </FlexRowAlignCenter>
       <Divider />

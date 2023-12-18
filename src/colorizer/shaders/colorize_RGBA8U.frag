@@ -17,6 +17,7 @@ uniform float featureColorRampMax;
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
 uniform vec3 backgroundColor;
+uniform float backdropSaturation;
 
 uniform sampler2D overlay;
 uniform sampler2D backdrop;
@@ -101,7 +102,11 @@ vec4 getBackgroundColor(vec2 sUv) {
   if (isOutsideBounds(sUv)) {
     return TRANSPARENT;
   }
-  return texture(backdrop, sUv).rgba;
+  vec4 backdropColor = texture(backdrop, sUv).rgba;
+  // Shader fn adapted from @av01d on GitHub. See https://gist.github.com/Volcanoscar/4a9500d240497d3c0228f663593d167a
+  // and https://en.wikipedia.org/wiki/Grayscale.
+  float greyColor = backdropColor.r * 0.21 + backdropColor.g * 0.72 + backdropColor.b * 0.07;
+  return vec4(backdropColor.rgb * (backdropSaturation) + greyColor * (1.0 - backdropSaturation), backdropColor.a);
 }
 
 vec4 getObjectColor(vec2 sUv) {

@@ -27,6 +27,8 @@ type CanvasWrapperProps = {
   backdropName: string | null;
   /** Opacity, as a number percentage. */
   backdropOpacity: number;
+  /** Saturation, as a number percentage. */
+  backdropSaturation: number;
   colorRamp: ColorRamp;
   colorRampMin: number;
   colorRampMax: number;
@@ -104,7 +106,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useMemo(() => {
     canv.setBackdrop(props.backdropName);
     canv.setBackdropOpacity(props.backdropOpacity);
-  }, [props.backdropName, props.backdropOpacity]);
+    canv.setBackdropSaturation(props.backdropSaturation);
+  }, [props.backdropName, props.backdropOpacity, props.backdropSaturation]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {

@@ -56,6 +56,7 @@ function App(): ReactElement {
 
   const [backdropName, setBackdropName] = useState<string | null>(null);
   const [backdropOpacity, setBackdropOpacity] = useState<number>(100);
+  const [backdropSaturation, setBackdropSaturation] = useState<number>(100);
   const [objectOpacity, setObjectOpacity] = useState(100);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
@@ -667,6 +668,7 @@ function App(): ReactElement {
                 selectedTrack={selectedTrack}
                 backdropName={backdropName}
                 backdropOpacity={backdropOpacity}
+                backdropSaturation={backdropSaturation}
                 onTrackClicked={(track) => {
                   setFindTrackInput("");
                   setSelectedTrack(track);
@@ -806,12 +808,14 @@ function App(): ReactElement {
                           showTimestamp={showTimestamp}
                           dataset={dataset}
                           backdropOpacity={backdropOpacity}
+                          backdropSaturation={backdropSaturation}
                           backdropName={backdropName}
                           setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
                           setOutlierDrawSettings={setOutlierDrawSettings}
                           setShowScaleBar={setShowScaleBar}
                           setShowTimestamp={setShowTimestamp}
                           setBackdropOpacity={setBackdropOpacity}
+                          setBackdropSaturation={setBackdropSaturation}
                           setBackdropName={setBackdropName}
                           objectOpacity={objectOpacity}
                           setObjectOpacity={setObjectOpacity}
