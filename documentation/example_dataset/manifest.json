@@ -13,6 +13,7 @@
   "backdrops": [
     {
       "name": "Backdrop Dark",
+      "key": "dark",
       "frames": [
         "backdrop-dark/image_0.png",
         "backdrop-dark/image_1.png",
@@ -23,6 +24,7 @@
     },
     {
       "name": "Backdrop Light",
+      "key": "light",
       "frames": [
         "backdrop-light/image_0.png",
         "backdrop-light/image_1.png",

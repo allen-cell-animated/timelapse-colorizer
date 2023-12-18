@@ -145,7 +145,7 @@ export default class ColorizeCanvas {
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
-  private backdropName: string | null;
+  private backdropKey: string | null;
   private colorRamp: ColorRamp;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
@@ -201,7 +201,7 @@ export default class ColorizeCanvas {
     this.dataset = null;
     this.canvasResolution = null;
     this.featureName = null;
-    this.backdropName = null;
+    this.backdropKey = null;
     this.colorRamp = DEFAULT_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_ID)!.colorRamp;
     this.categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
     this.track = null;
@@ -545,8 +545,8 @@ export default class ColorizeCanvas {
     this.setUniform("backdropOpacity", percentOpacity / 100);
   }
 
-  public setBackdrop(backdropName: string | null): void {
-    this.backdropName = backdropName;
+  public setBackdropKey(backdropKey: string | null): void {
+    this.backdropKey = backdropKey;
     this.setFrame(this.currentFrame, true).then(() => {
       this.render();
     });
@@ -567,8 +567,8 @@ export default class ColorizeCanvas {
     // New frame, so load the frame data.
     this.currentFrame = index;
     let backdropPromise = undefined;
-    if (this.backdropName && this.dataset?.hasBackdrop(this.backdropName)) {
-      backdropPromise = await this.dataset?.loadBackdrop(this.backdropName, index);
+    if (this.backdropKey && this.dataset?.hasBackdrop(this.backdropKey)) {
+      backdropPromise = await this.dataset?.loadBackdrop(this.backdropKey, index);
     }
     const framePromise = await this.dataset?.loadFrame(index);
     const result = await Promise.all([framePromise, backdropPromise]);

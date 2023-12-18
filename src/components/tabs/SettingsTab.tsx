@@ -23,7 +23,7 @@ type SettingsTabProps = {
   dataset: Dataset | null;
   backdropOpacity: number;
   backdropSaturation: number;
-  backdropName: string | null;
+  backdropKey: string | null;
   objectOpacity: number;
   setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
@@ -31,7 +31,7 @@ type SettingsTabProps = {
   setShowTimestamp: (show: boolean) => void;
   setBackdropOpacity: (opacity: number) => void;
   setBackdropSaturation: (saturation: number) => void;
-  setBackdropName: (name: string | null) => void;
+  setBackdropKey: (name: string | null) => void;
   setObjectOpacity: (opacity: number) => void;
 };
 
@@ -41,10 +41,11 @@ const SectionHeaderText = styled.h2`
 `;
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
-  const backdropOptions =
-    props.dataset?.getBackdropNames().map((value) => {
-      return { key: value, label: value };
-    }) ?? [];
+  const backdropOptions = props.dataset
+    ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
+        return { key, label: data.name };
+      })
+    : [];
   backdropOptions.unshift(NO_BACKDROP);
 
   return (
@@ -53,9 +54,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       <LabeledDropdown
         // TODO: Add a None option? Or an option to clear?
         label={"Backdrop images"}
-        selected={props.backdropName || NO_BACKDROP.key}
+        selected={props.backdropKey || NO_BACKDROP.key}
         items={backdropOptions}
-        onChange={props.setBackdropName}
+        onChange={props.setBackdropKey}
         disabled={backdropOptions.length === 1}
       />
       <FlexRowAlignCenter $gap={6}>

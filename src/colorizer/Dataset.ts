@@ -28,6 +28,11 @@ type FeatureData = {
   categories: string[] | null;
 };
 
+type BackdropData = {
+  name: string;
+  frames: string[];
+};
+
 const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
     width: 0,
@@ -47,7 +52,7 @@ export default class Dataset {
   private frameDimensions: Vector2 | null;
 
   private backdropLoader: IFrameLoader;
-  private backdropFiles: Map<string, string[]>;
+  private backdropData: Map<string, BackdropData>;
   // TODO: Implement caching for overlays-- extend FrameCache to allow multiple frames per index -> string name?
   // private backdrops: Map<string, FrameCache | null>;
 
@@ -93,7 +98,7 @@ export default class Dataset {
     this.frameDimensions = null;
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
-    this.backdropFiles = new Map();
+    this.backdropData = new Map();
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.features = new Map();
@@ -281,21 +286,25 @@ export default class Dataset {
     return loadedFrame;
   }
 
-  public hasBackdrop(name: string): boolean {
-    return this.backdropFiles.has(name);
+  public hasBackdrop(key: string): boolean {
+    return this.backdropData.has(key);
   }
 
-  public getBackdropNames(): string[] {
-    return Array.from(this.backdropFiles.keys());
+  /**
+   * Returns a map from backdrop keys to data.
+   */
+  public getBackdropData(): Map<string, BackdropData> {
+    return new Map(this.backdropData);
   }
 
-  public async loadBackdrop(name: string, index: number): Promise<Texture | undefined> {
+  public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
     // TODO: Implement caching
-    const files = this.backdropFiles.get(name);
-    if (!files || index < 0 || index >= files.length) {
+    const frames = this.backdropData.get(key)?.frames;
+    // TODO: Wrapping or clamping?
+    if (!frames || index < 0 || index >= frames.length) {
       return undefined;
     }
-    const fullUrl = this.resolveUrl(files[index]);
+    const fullUrl = this.resolveUrl(frames[index]);
     const loadedFrame = await this.backdropLoader.load(fullUrl);
     return loadedFrame;
   }
@@ -326,11 +335,11 @@ export default class Dataset {
     this.centroidsFile = manifest.centroids;
 
     if (manifest.backdrops) {
-      for (const { name, frames } of manifest.backdrops) {
-        this.backdropFiles.set(name, frames);
+      for (const { name, key, frames } of manifest.backdrops) {
+        this.backdropData.set(key, { name, frames });
         if (frames.length !== this.frameFiles.length || 0) {
           console.warn(
-            `Number of frames (${this.frameFiles.length}) does not match number of overlays (${frames.length}) for overlay ${name}.`
+            `Number of frames (${this.frameFiles.length}) does not match number of overlays (${frames.length}) for overlay ${key}.`
           );
         }
       }

@@ -24,7 +24,7 @@ type CanvasWrapperProps = {
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   /** Null means that no backdrop is currently selected; clear the backdrop. */
-  backdropName: string | null;
+  backdropKey: string | null;
   /** Opacity, as a number percentage. */
   backdropOpacity: number;
   /** Saturation, as a number percentage. */
@@ -104,10 +104,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    canv.setBackdrop(props.backdropName);
+    canv.setBackdropKey(props.backdropKey);
     canv.setBackdropOpacity(props.backdropOpacity);
     canv.setBackdropSaturation(props.backdropSaturation);
-  }, [props.backdropName, props.backdropOpacity, props.backdropSaturation]);
+  }, [props.backdropKey, props.backdropOpacity, props.backdropSaturation]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
