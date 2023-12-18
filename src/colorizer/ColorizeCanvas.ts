@@ -566,7 +566,6 @@ export default class ColorizeCanvas {
     }
     // New frame, so load the frame data.
     this.currentFrame = index;
-    // Force load of frame data (clear cached frame data)
     let backdropPromise = undefined;
     if (this.backdropName && this.dataset?.hasBackdrop(this.backdropName)) {
       backdropPromise = await this.dataset?.loadBackdrop(this.backdropName, index);
@@ -578,12 +577,11 @@ export default class ColorizeCanvas {
     if (!frame) {
       return;
     }
-    // This load request has been superceded by another request, which has already loaded in image data.
-    // Do nothing.
     if (this.currentFrame !== index) {
+      // This load request has been superceded by a request for another frame, which has already loaded in image data.
+      // Drop this request.
       return;
     }
-    // TODO: Clear overlay
     if (overlay) {
       this.setUniform("backdrop", overlay);
     } else {

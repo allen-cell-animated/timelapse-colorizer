@@ -44,10 +44,10 @@ export default class TimeControls {
 
     this.currentlyPlaying = true;
 
-    // TODO: Fix this function so that it doesn't stop the
-    // slider from also operating
-    // Provide a last frame number to prevent a possible race condition with the canvas'
-    // current frame value
+    // TODO: Fix this function so that it doesn't stop the slider from also operating?
+
+    // `lastFrameNum` is a parameter here because relying on `ColorizeCanvas.getCurrentFrame()` can
+    // lead to race conditions that lead to frames getting loaded more than once.
     const loadNextFrame = async (lastFrameNum: number): Promise<void> => {
       if (!this.currentlyPlaying) {
         return;
@@ -58,7 +58,7 @@ export default class TimeControls {
 
       if (nextFrame === lastFrameNum) {
         // Stop playing for single-frame datasets.
-        // TODO: The UI should probably be responsible for handling this.
+        // TODO: Disable time bar on the UI for datasets with only one frame.
         this.currentlyPlaying = false;
         return;
       }
@@ -69,9 +69,9 @@ export default class TimeControls {
       }
       const endTime = Date.now();
       const timeElapsed = endTime - startTime;
-      // TODO: Add some sort of smoothing here
       onNewFrameCallback();
 
+      // TODO: Could add some sort of smoothing here to make the playback more consistent.
       // Add additional delay, if needed, to maintain playback fps.
       const delayMs = Math.max(0, 1000 / this.playbackFps - timeElapsed);
       this.timerId = window.setTimeout(() => loadNextFrame(nextFrame), delayMs);

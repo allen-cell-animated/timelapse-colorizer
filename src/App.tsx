@@ -669,6 +669,7 @@ function App(): ReactElement {
                 backdropName={backdropName}
                 backdropOpacity={backdropOpacity}
                 backdropSaturation={backdropSaturation}
+                objectOpacity={objectOpacity}
                 onTrackClicked={(track) => {
                   setFindTrackInput("");
                   setSelectedTrack(track);
@@ -684,7 +685,6 @@ function App(): ReactElement {
                 onMouseLeave={() => setShowHoveredId(false)}
                 showScaleBar={showScaleBar}
                 showTimestamp={showTimestamp}
-                objectOpacity={objectOpacity}
               />
             </HoverTooltip>
 

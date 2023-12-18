@@ -7,10 +7,10 @@ import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import FrameCache from "./FrameCache";
 import Track from "./Track";
 
-import { FeatureArrayType, FeatureDataType } from "./types";
-import * as urlUtils from "./utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import * as urlUtils from "./utils/url_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -94,7 +94,6 @@ export default class Dataset {
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropFiles = new Map();
-    // this.backdrops = new Map();
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.features = new Map();
@@ -329,7 +328,6 @@ export default class Dataset {
     if (manifest.backdrops) {
       for (const { name, frames } of manifest.backdrops) {
         this.backdropFiles.set(name, frames);
-        // TODO: Warning if number of frames does not match number of overlays?
         if (frames.length !== this.frameFiles.length || 0) {
           console.warn(
             `Number of frames (${this.frameFiles.length}) does not match number of overlays (${frames.length}) for overlay ${name}.`
