@@ -16,13 +16,13 @@ uniform float featureColorRampMax;
 
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
-uniform vec3 backgroundColor;
-uniform float backdropSaturation;
-
 uniform sampler2D overlay;
 uniform sampler2D backdrop;
-uniform float backdropOpacity;
+uniform float backdropSaturation;
+uniform float backdropBrightness;
 uniform float objectOpacity;
+
+uniform vec3 backgroundColor;
 
 const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 
@@ -42,6 +42,47 @@ uniform bool hideOutOfRange;
 in vec2 vUv;
 
 layout (location = 0) out vec4 gOutputColor;
+
+// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
+vec3 hslToRgb(vec3 c) {
+  vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+
+  return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
+}
+
+// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
+vec3 rgbToHsl(vec3 c) {
+  float h = 0.0;
+  float s = 0.0;
+  float l = 0.0;
+  float r = c.r;
+  float g = c.g;
+  float b = c.b;
+  float cMin = min(r, min(g, b));
+  float cMax = max(r, max(g, b));
+
+  l = (cMax + cMin) / 2.0;
+  if (cMax > cMin) {
+    float cDelta = cMax - cMin;
+
+        //s = l < .05 ? cDelta / ( cMax + cMin ) : cDelta / ( 2.0 - ( cMax + cMin ) ); Original
+    s = l < .0 ? cDelta / (cMax + cMin) : cDelta / (2.0 - (cMax + cMin));
+
+    if (r == cMax) {
+      h = (g - b) / cDelta;
+    } else if (g == cMax) {
+      h = 2.0 + (b - r) / cDelta;
+    } else {
+      h = 4.0 + (r - g) / cDelta;
+    }
+
+    if (h < 0.0) {
+      h += 6.0;
+    }
+    h = h / 6.0;
+  }
+  return vec3(h, s, l);
+}
 
 // Combine non-alpha color channels into one 24-bit value
 uint combineColor(uvec4 color) {
@@ -100,15 +141,18 @@ bool isOutsideBounds(vec2 sUv) {
   return sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0;
 }
 
-vec4 getBackgroundColor(vec2 sUv) {
+vec4 getBackdropColor(vec2 sUv) {
   if (isOutsideBounds(sUv)) {
     return TRANSPARENT;
   }
   vec4 backdropColor = texture(backdrop, sUv).rgba;
   // Shader fn adapted from @av01d on GitHub. See https://gist.github.com/Volcanoscar/4a9500d240497d3c0228f663593d167a
   // and https://en.wikipedia.org/wiki/Grayscale.
-  float greyColor = backdropColor.r * 0.21 + backdropColor.g * 0.72 + backdropColor.b * 0.07;
-  return vec4(backdropColor.rgb * (backdropSaturation) + greyColor * (1.0 - backdropSaturation), backdropColor.a);
+  vec3 backdropHsl = rgbToHsl(backdropColor.rgb);
+  backdropHsl.y *= backdropSaturation;
+  backdropHsl.z *= (backdropBrightness);
+
+  return vec4(hslToRgb(backdropHsl), backdropColor.a);
 }
 
 vec4 getObjectColor(vec2 sUv) {
@@ -162,8 +206,7 @@ vec4 getObjectColor(vec2 sUv) {
 void main() {
   vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
-  vec4 backdropColor = getBackgroundColor(sUv);
-  backdropColor.a *= backdropOpacity;
+  vec4 backdropColor = getBackdropColor(sUv);
 
   vec4 mainColor = getObjectColor(sUv);
   mainColor.a *= objectOpacity;

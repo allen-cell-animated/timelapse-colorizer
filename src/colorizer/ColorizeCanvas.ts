@@ -67,7 +67,7 @@ type ColorizeUniformTypes = {
   overlay: Texture;
   objectOpacity: number;
   backdrop: Texture;
-  backdropOpacity: number;
+  backdropBrightness: number;
   backdropSaturation: number;
   colorRamp: Texture;
   backgroundColor: Color;
@@ -101,7 +101,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     overlay: new Uniform(emptyOverlay),
     objectOpacity: new Uniform(1.0),
     backdrop: new Uniform(emptyBackdrop),
-    backdropOpacity: new Uniform(0.75),
+    backdropBrightness: new Uniform(0.75),
     backdropSaturation: new Uniform(1.0),
     featureColorRampMin: new Uniform(0),
     featureColorRampMax: new Uniform(1),
@@ -540,9 +540,9 @@ export default class ColorizeCanvas {
     this.setUniform("backdropSaturation", percentSaturation / 100);
   }
 
-  public setBackdropOpacity(percentOpacity: number): void {
-    percentOpacity = Math.max(0, Math.min(100, percentOpacity));
-    this.setUniform("backdropOpacity", percentOpacity / 100);
+  public setBackdropBrightness(percentBrightness: number): void {
+    percentBrightness = Math.max(0, Math.min(200, percentBrightness));
+    this.setUniform("backdropBrightness", percentBrightness / 100);
   }
 
   public setBackdropKey(backdropKey: string | null): void {

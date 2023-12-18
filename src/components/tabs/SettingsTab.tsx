@@ -21,7 +21,7 @@ type SettingsTabProps = {
   showScaleBar: boolean;
   showTimestamp: boolean;
   dataset: Dataset | null;
-  backdropOpacity: number;
+  backdropBrightness: number;
   backdropSaturation: number;
   backdropKey: string | null;
   objectOpacity: number;
@@ -29,8 +29,8 @@ type SettingsTabProps = {
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
   setShowScaleBar: (show: boolean) => void;
   setShowTimestamp: (show: boolean) => void;
-  setBackdropOpacity: (opacity: number) => void;
-  setBackdropSaturation: (saturation: number) => void;
+  setBackdropBrightness: (percent: number) => void;
+  setBackdropSaturation: (percent: number) => void;
   setBackdropKey: (name: string | null) => void;
   setObjectOpacity: (opacity: number) => void;
 };
@@ -60,14 +60,15 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         disabled={backdropOptions.length === 1}
       />
       <FlexRowAlignCenter $gap={6}>
-        <h3>Opacity</h3>
+        <h3>Brightness</h3>
         <Slider
           style={{ maxWidth: "200px", width: "100%" }}
-          min={0}
-          max={100}
-          value={props.backdropOpacity}
-          onChange={props.setBackdropOpacity}
-          tooltip={{ formatter: (value) => `${value}%` }}
+          min={50}
+          max={150}
+          step={10}
+          value={props.backdropBrightness}
+          onChange={props.setBackdropBrightness}
+          tooltip={{ formatter: (value) => `${value && value > 0 ? "+" : ""}${value}%` }}
         />
       </FlexRowAlignCenter>
       <FlexRowAlignCenter $gap={6}>
@@ -76,6 +77,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           style={{ maxWidth: "200px", width: "100%" }}
           min={0}
           max={100}
+          step={10}
           value={props.backdropSaturation}
           onChange={props.setBackdropSaturation}
           tooltip={{ formatter: (value) => `${value}%` }}

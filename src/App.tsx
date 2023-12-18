@@ -55,7 +55,7 @@ function App(): ReactElement {
   const [currentFrame, setCurrentFrame] = useState<number>(0);
 
   const [backdropKey, setBackdropKey] = useState<string | null>(null);
-  const [backdropOpacity, setBackdropOpacity] = useState<number>(100);
+  const [backdropBrightness, setBackdropBrightness] = useState<number>(100);
   const [backdropSaturation, setBackdropSaturation] = useState<number>(100);
   const [objectOpacity, setObjectOpacity] = useState(100);
 
@@ -667,7 +667,7 @@ function App(): ReactElement {
                 colorRampMax={colorRampMax}
                 selectedTrack={selectedTrack}
                 backdropKey={backdropKey}
-                backdropOpacity={backdropOpacity}
+                backdropBrightness={backdropBrightness}
                 backdropSaturation={backdropSaturation}
                 objectOpacity={objectOpacity}
                 onTrackClicked={(track) => {
@@ -807,14 +807,14 @@ function App(): ReactElement {
                           showScaleBar={showScaleBar}
                           showTimestamp={showTimestamp}
                           dataset={dataset}
-                          backdropOpacity={backdropOpacity}
+                          backdropBrightness={backdropBrightness}
                           backdropSaturation={backdropSaturation}
                           backdropKey={backdropKey}
                           setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
                           setOutlierDrawSettings={setOutlierDrawSettings}
                           setShowScaleBar={setShowScaleBar}
                           setShowTimestamp={setShowTimestamp}
-                          setBackdropOpacity={setBackdropOpacity}
+                          setBackdropBrightness={setBackdropBrightness}
                           setBackdropSaturation={setBackdropSaturation}
                           setBackdropKey={setBackdropKey}
                           objectOpacity={objectOpacity}
