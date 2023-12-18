@@ -93,14 +93,24 @@ vec4 alphaBlend(vec4 a, vec4 b) {
   return vec4((a.rgb * a.a + b.rgb * b.a * (1.0 - a.a)) / alpha, alpha);
 }
 
-vec4 getMainPixelColor() {
+bool isOutsideBounds(vec2 sUv) {
+  return sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0;
+}
+
+vec4 getBackgroundColor(vec2 sUv) {
+  if (isOutsideBounds(sUv)) {
+    return TRANSPARENT;
+  }
+  return texture(backdrop, sUv).rgba;
+}
+
+vec4 getObjectColor(vec2 sUv) {
 
   // Scale uv to compensate for the aspect of the frame
   ivec2 frameDims = textureSize(frame, 0);
-  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
   // This pixel is background if, after scaling uv, it is outside the frame
-  if (sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0) {
+  if (isOutsideBounds(sUv)) {
     return TRANSPARENT;
   }
 
@@ -145,10 +155,10 @@ vec4 getMainPixelColor() {
 void main() {
   vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
-  vec4 backdropColor = texture(backdrop, sUv).rgba;
+  vec4 backdropColor = getBackgroundColor(sUv);
   backdropColor.a *= backdropOpacity;
 
-  vec4 mainColor = getMainPixelColor();
+  vec4 mainColor = getObjectColor(sUv);
   mainColor.a *= objectOpacity;
 
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
