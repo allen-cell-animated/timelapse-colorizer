@@ -205,7 +205,7 @@ export default class Dataset {
 
   /** Returns whether the given feature represents categorical data. */
   public isFeatureCategorical(name: string): boolean {
-    return this.getFeatureData(name).type === FeatureType.CATEGORICAL;
+    return this.hasFeature(name) && this.getFeatureData(name).type === FeatureType.CATEGORICAL;
   }
 
   /**
