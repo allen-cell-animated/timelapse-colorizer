@@ -1,5 +1,5 @@
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
-import { Card, Checkbox, List, Select } from "antd";
+import { Checkbox, List, Select } from "antd";
 import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
@@ -39,18 +39,31 @@ const SelectContainer = styled.div`
   }
 `;
 
-const FiltersCard = styled(Card)`
+const FiltersCard = styled.div`
   overflow-y: auto;
   height: 100%;
+  padding: 0 10px;
 
-  & .ant-card-body {
-    padding-top: 0;
-    padding-bottom: 0;
-    height: 100%;
-  }
+  background:
+    /* Shadow covers */ linear-gradient(white 30%, rgba(255, 255, 255, 0)),
+    linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
+    /* Shadows */ radial-gradient(50% 0, farthest-side, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)),
+    radial-gradient(50% 100%, farthest-side, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) 0 100%;
+  background:
+    /* Shadow covers */ linear-gradient(white 30%, rgba(255, 255, 255, 0)),
+    linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
+    /* Shadows */ radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)),
+    radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) 0 100%;
+  background-repeat: no-repeat;
+  background-color: white;
+  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+
+  /* Opera doesn't support this in the shorthand */
+  background-attachment: local, local, scroll, scroll;
 `;
 
 const FeatureLabel = styled.h3<{ $disabled?: boolean }>`
+  padding-bottom: 2px;
   ${(props) => {
     if (props.$disabled) {
       return css`
@@ -71,13 +84,16 @@ const CategoricalThresholdContainer = styled.div`
   align-content: flex-start;
 
   & label {
+    min-width: 0;
     width: 30%;
     max-width: 190px;
   }
 
   & > label > span:not(.ant-checkbox) {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 `;
 
@@ -323,7 +339,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
           onBlur={() => setIsFocused(false)}
         />
       </SelectContainer>
-      <FiltersCard size="small" style={{ paddingTop: 0 }}>
+      <FiltersCard style={{ paddingTop: 0 }}>
         <List
           renderItem={renderListItems}
           dataSource={props.featureThresholds}

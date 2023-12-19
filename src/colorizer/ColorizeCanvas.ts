@@ -23,7 +23,7 @@ import {
 } from "three";
 
 import ColorRamp from "./ColorRamp";
-import Dataset, { FeatureType } from "./Dataset";
+import Dataset from "./Dataset";
 import { FeatureDataType } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
