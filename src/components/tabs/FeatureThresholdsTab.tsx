@@ -62,6 +62,25 @@ const FeatureLabel = styled.h3<{ $disabled?: boolean }>`
   }}
 `;
 
+const CategoricalThresholdContainer = styled.div`
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  max-height: calc(24px * 4);
+  align-content: flex-start;
+
+  & label {
+    width: 30%;
+    max-width: 190px;
+  }
+
+  & > label > span:not(.ant-checkbox) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+`;
+
 const EmptyListTextContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -242,7 +261,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     };
 
     return (
-      <div style={{ width: "calc(100% - 10px)" }}>
+      <CategoricalThresholdContainer>
         {categories.map((category, categoryIndex) => {
           return (
             <Checkbox disabled={disabled} onChange={() => onChange(categoryIndex)}>
@@ -250,7 +269,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
             </Checkbox>
           );
         })}
-      </div>
+      </CategoricalThresholdContainer>
     );
   };
 
