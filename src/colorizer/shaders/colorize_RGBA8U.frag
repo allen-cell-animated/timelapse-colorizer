@@ -150,7 +150,7 @@ vec4 getBackdropColor(vec2 sUv) {
   // and https://en.wikipedia.org/wiki/Grayscale.
   vec3 backdropHsl = rgbToHsl(backdropColor.rgb);
   backdropHsl.y *= backdropSaturation;
-  backdropHsl.z *= (backdropBrightness);
+  backdropHsl.z += (backdropBrightness - 1.0);
 
   return vec4(hslToRgb(backdropHsl), backdropColor.a);
 }
