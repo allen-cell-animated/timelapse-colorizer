@@ -490,7 +490,7 @@ export default class ColorizeCanvas {
       if (!featureData || featureData.units !== threshold.units) {
         continue;
       }
-      if (!threshold.isCategorical) {
+      if (!threshold.categorical) {
         for (let i = 0, n = inRangeIds.length; i < n; i++) {
           if (inRangeIds[i] === 1 && (featureData.data[i] < threshold.min || featureData.data[i] > threshold.max)) {
             inRangeIds[i] = 0;

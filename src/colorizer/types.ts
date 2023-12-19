@@ -79,17 +79,18 @@ type BaseFeatureData = {
   // featureKey: string;
   featureName: string;
   units: string;
-  isCategorical: boolean;
+  // TODO replace with type?
+  categorical: boolean;
 };
 
 export type NumericFeatureThreshold = BaseFeatureData & {
-  isCategorical: false;
+  categorical?: false;
   min: number;
   max: number;
 };
 
 export type CategoricalFeatureThreshold = BaseFeatureData & {
-  isCategorical: true;
+  categorical: true;
   enabledCategories: boolean[];
 };
 

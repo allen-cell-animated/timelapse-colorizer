@@ -95,7 +95,7 @@ function App(): ReactElement {
         const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
         const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
 
-        if (newThreshold && oldThreshold && !newThreshold.isCategorical) {
+        if (newThreshold && oldThreshold && !newThreshold.categorical) {
           setColorRampMin(newThreshold.min);
           setColorRampMax(newThreshold.max);
         }
@@ -425,7 +425,7 @@ function App(): ReactElement {
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
-        if (threshold && !threshold.isCategorical) {
+        if (threshold && !threshold.categorical) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
         } else {
@@ -536,7 +536,7 @@ function App(): ReactElement {
       return undefined;
     }
     const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
-    if (!threshold || threshold.isCategorical) {
+    if (!threshold || threshold.categorical) {
       return undefined;
     }
     return [threshold.min, threshold.max];

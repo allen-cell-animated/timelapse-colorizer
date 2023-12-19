@@ -104,7 +104,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
         // TODO: remove once feature keys are implemented.
         const featureName = encodeURIComponent(threshold.featureName);
         const featureUnit = encodeURIComponent(threshold.units);
-        if (threshold.isCategorical) {
+        if (threshold.categorical) {
           // Interpret the selected categories as binary digits, then convert to a hex string.
           let selectedBinary = 0;
           for (let i = 0; i < threshold.enabledCategories.length; i++) {
@@ -292,7 +292,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
         threshold = {
           featureName: decodeURIComponent(rawFeatureName),
           units: decodeURIComponent(rawFeatureUnit),
-          isCategorical: true,
+          categorical: true,
           enabledCategories,
         };
       } else if (selection.length === 2) {
@@ -300,7 +300,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
         threshold = {
           featureName: decodeURIComponent(rawFeatureName),
           units: decodeURIComponent(rawFeatureUnit),
-          isCategorical: false,
+          categorical: false,
           min: parseFloat(selection[0]),
           max: parseFloat(selection[1]),
         };
@@ -314,7 +314,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
         threshold = {
           featureName: decodeURIComponent(rawFeatureName),
           units: decodeURIComponent(rawFeatureUnit),
-          isCategorical: false,
+          categorical: false,
           min: NaN,
           max: NaN,
         };
