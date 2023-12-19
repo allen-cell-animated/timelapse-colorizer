@@ -62,13 +62,14 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       <FlexRowAlignCenter $gap={6}>
         <h3>Brightness</h3>
         <Slider
+          // TODO: Add a mark at the 100% position
           style={{ maxWidth: "200px", width: "100%" }}
           min={50}
           max={150}
           step={10}
           value={props.backdropBrightness}
           onChange={props.setBackdropBrightness}
-          tooltip={{ formatter: (value) => `${value && value > 0 ? "+" : ""}${value}%` }}
+          tooltip={{ formatter: (value) => `${value}%` }}
         />
       </FlexRowAlignCenter>
       <FlexRowAlignCenter $gap={6}>
