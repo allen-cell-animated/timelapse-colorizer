@@ -567,8 +567,6 @@ export default class ColorizeCanvas {
   }
 
   render(): void {
-    console.log("ColorizeCanvas: render");
-    console.trace();
     this.updateHighlightedId();
     this.updateTrackRange();
     this.updateRamp();
