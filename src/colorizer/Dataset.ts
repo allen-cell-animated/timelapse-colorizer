@@ -147,7 +147,15 @@ export default class Dataset {
     return this.featureNames.includes(name);
   }
 
-  public getFeatureData(name: string): FeatureData {
+  /**
+   * Attempts to get the feature data from this dataset for the given feature name.
+   * Returns `undefined` if feature is not in the dataset.
+   */
+  public tryGetFeatureData(name: string): FeatureData | undefined {
+    return this.features.get(name);
+  }
+
+  private getFeatureData(name: string): FeatureData {
     const featureData = this.features.get(name);
     if (!featureData) {
       throw new Error(`getFeatureData: Feature ${name} does not exist.`);

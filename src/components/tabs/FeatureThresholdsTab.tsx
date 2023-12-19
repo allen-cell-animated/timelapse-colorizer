@@ -12,6 +12,7 @@ import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
 import IconButton from "../IconButton";
 import LabeledRangeSlider from "../LabeledRangeSlider";
+import { FeatureType } from "../../colorizer/Dataset";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
@@ -144,18 +145,59 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     // that has the same feature/unit but different min/max values. That way, our saved min/max bounds
     // reflect the last known good values.
     for (const threshold of props.featureThresholds) {
-      const featureData = props.dataset?.getFeatureData(threshold.featureName);
-      if (featureData && featureData.units === threshold.units) {
+      const featureData = props.dataset?.tryGetFeatureData(threshold.featureName);
+      if (featureData && featureData.units === threshold.units && featureData.type !== FeatureType.CATEGORICAL) {
         featureMinMaxBoundsFallback.current.set(thresholdToKey(threshold), [featureData.min, featureData.max]);
       }
     }
   }, [props.dataset, props.featureThresholds]);
 
+  useMemo(() => {
+    // Validate feature data for each threshold. If the threshold is the wrong type, update it.
+    // Do this in a useMemo so we interrupt the render
+    const newThresholds: FeatureThreshold[] = [];
+    let hasChangedThreshold = false;
+
+    for (const threshold of props.featureThresholds) {
+      const featureData = props.dataset?.tryGetFeatureData(threshold.featureName);
+      const isInDataset = featureData && featureData.units === threshold.units;
+
+      if (isInDataset && featureData.type === FeatureType.CATEGORICAL && !threshold.categorical) {
+        // Threshold is not categorical but the feature is.
+        // Convert the threshold to categorical.
+        newThresholds.push({
+          featureName: threshold.featureName,
+          units: threshold.units,
+          categorical: true,
+          enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
+        });
+        hasChangedThreshold = true;
+      } else if (isInDataset && featureData.type !== FeatureType.CATEGORICAL && threshold.categorical) {
+        // Threshold is categorical but the feature is not.
+        // Convert to numeric threshold instead.
+        newThresholds.push({
+          featureName: threshold.featureName,
+          units: threshold.units,
+          categorical: false,
+          min: featureData.min,
+          max: featureData.max,
+        });
+        hasChangedThreshold = true;
+      } else {
+        // Keep existing threshold
+        newThresholds.push(threshold);
+      }
+    }
+    if (hasChangedThreshold) {
+      props.onChange(newThresholds);
+    }
+  }, [props.featureThresholds, props.dataset, props.onChange]);
+
   ////// EVENT HANDLERS ///////////////////
 
   /** Handle the user selecting new features from the Select dropdown. */
   const onSelect = (featureName: string): void => {
-    const featureData = props.dataset?.getFeatureData(featureName);
+    const featureData = props.dataset?.tryGetFeatureData(featureName);
     const newThresholds = [...props.featureThresholds];
     if (featureData && !props.dataset?.isFeatureCategorical(featureName)) {
       // Continuous/discrete feature
@@ -181,7 +223,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   /** Handle the user removing features from the Select dropdown. */
   const onDeselect = (featureName: string): void => {
     // Find the exact match for the threshold and remove it
-    const featureData = props.dataset?.getFeatureData(featureName);
+    const featureData = props.dataset?.tryGetFeatureData(featureName);
     const newThresholds = [...props.featureThresholds];
     if (featureData) {
       const index = props.featureThresholds.findIndex(thresholdMatchFinder(featureName, featureData.units));
@@ -236,13 +278,13 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   // Filter out thresholds that no longer match the dataset (feature and/or unit), so we only
   // show selections that are actually valid.
   const thresholdsInDataset = props.featureThresholds.filter((t) => {
-    const featureData = props.dataset?.getFeatureData(t.featureName);
+    const featureData = props.dataset?.tryGetFeatureData(t.featureName);
     return featureData && featureData.units === t.units;
   });
   const selectedFeatures = thresholdsInDataset.map((t) => t.featureName);
 
   const renderNumericItem = (item: NumericFeatureThreshold, index: number): ReactNode => {
-    const featureData = props.dataset?.getFeatureData(item.featureName);
+    const featureData = props.dataset?.tryGetFeatureData(item.featureName);
     const disabled = featureData === undefined || featureData.units !== item.units;
     // If the feature is no longer in the dataset, use the saved min/max bounds.
     const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [Number.NaN, Number.NaN];
@@ -264,7 +306,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   };
 
   const renderCategoricalItem = (item: CategoricalFeatureThreshold, index: number): ReactNode => {
-    const featureData = props.dataset?.getFeatureData(item.featureName);
+    const featureData = props.dataset?.tryGetFeatureData(item.featureName);
     const disabled = featureData === undefined || featureData.units !== item.units;
 
     const categories = featureData?.categories || [];
@@ -294,19 +336,19 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     );
   };
 
-  const renderListItems = (item: FeatureThreshold, index: number): ReactNode => {
+  const renderListItems = (threshold: FeatureThreshold, index: number): ReactNode => {
     // Thresholds are matched on both feature names and units; a threshold must match
-    // both in the current dataset to be valid.
-    const featureData = props.dataset?.getFeatureData(item.featureName);
-    const disabled = featureData === undefined || featureData.units !== item.units;
-    const featureLabel = item.units ? `${item.featureName} (${item.units})` : item.featureName;
+    // both in the current dataset to be enabled and editable.
+    const featureData = props.dataset?.tryGetFeatureData(threshold.featureName);
+    const disabled = featureData === undefined || featureData.units !== threshold.units;
+    const featureLabel = threshold.units ? `${threshold.featureName} (${threshold.units})` : threshold.featureName;
 
     return (
       <List.Item style={{ position: "relative" }}>
         <div style={{ width: "100%" }}>
           <FeatureLabel $disabled={disabled}>{featureLabel}</FeatureLabel>
 
-          {item.categorical ? renderCategoricalItem(item, index) : renderNumericItem(item, index)}
+          {threshold.categorical ? renderCategoricalItem(threshold, index) : renderNumericItem(threshold, index)}
         </div>
         <div style={{ position: "absolute", top: "10px", right: "10px" }}>
           <IconButton type="text" onClick={() => onClickedRemove(index)}>
