@@ -1,6 +1,7 @@
 // Typescript doesn't recognize RequestInit
 /* global RequestInit */
 
+import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FeatureThreshold } from "../types";
 import { numberToStringDecimal } from "./math_utils";
 
@@ -86,19 +87,36 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
     includedParameters.push(`${URL_PARAM_TIME}=${state.time}`);
   }
   if (state.thresholds && state.thresholds.length > 0) {
-    // Thresholds are saved as a comma-separated list of `featureName:unit:min:max`
-    // featureName is encoded in case it contains special characters (":" or ",")
+    // Thresholds are saved as a comma-separated list of `featureName:unit:min:max` for numeric features,
+    // and `featureName:unit:selected_hex` for categorical features.
+
+    // `selected_hex` is the hex equivalent of a binary number representing what categories are selected.
+    // The i-th place of the binary number is `1` if the i-th category in the feature's category list is enabled.
+    // ex: If we have four categories and the first and third categories are enabled,
+    // then `threshold.enabledCategories=[true, false, true, false]`.
+    // The binary representation is 0101, which is 0x5 in hex.
+
     // TODO: Are there better characters I can be using here? ":" and "," take up
-    // more space in the URL.
+    // more space in the URL. -> once features are converted to use keys, use "-" as a separator here
     const thresholdsString = state.thresholds
       .map((threshold) => {
+        // featureName + units are encoded in case it contains special characters (":" or ",").
+        // TODO: remove once feature keys are implemented.
         const featureName = encodeURIComponent(threshold.featureName);
-        // Note that THRESHOLD_UNIT_UNDEFINED (="!") is not encoded here, so that it won't conflict
-        // with normal feature units names. (Users should not be using "!" as a unit anyway, but just in case.)
         const featureUnit = encodeURIComponent(threshold.units);
-        const min = numberToStringDecimal(threshold.min, 3);
-        const max = numberToStringDecimal(threshold.max, 3);
-        return `${featureName}:${featureUnit}:${min}:${max}`;
+        if (threshold.isCategorical) {
+          // Interpret the selected categories as binary digits, then convert to a hex string.
+          let selectedBinary = 0;
+          for (let i = 0; i < threshold.enabledCategories.length; i++) {
+            selectedBinary |= (threshold.enabledCategories[i] ? 1 : 0) << i;
+          }
+          const selectedHex = selectedBinary.toString(16);
+          return `${featureName}:${featureUnit}:${selectedHex}`;
+        } else {
+          const min = numberToStringDecimal(threshold.min, 3);
+          const max = numberToStringDecimal(threshold.max, 3);
+          return `${featureName}:${featureUnit}:${min}:${max}`;
+        }
       })
       .join(",");
     includedParameters.push(`${URL_PARAM_THRESHOLDS}=${encodeURIComponent(thresholdsString)}`);
@@ -261,16 +279,45 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     // {name (encoded)}:{unit (encoded)}:{min}:{max}
     const rawThresholds = rawThresholdParam.split(",");
     thresholdsParam = rawThresholds.map((rawThreshold) => {
-      const [rawFeatureName, rawFeatureUnit, min, max] = rawThreshold.split(":");
-      let threshold = {
-        featureName: decodeURIComponent(rawFeatureName),
-        units: decodeURIComponent(rawFeatureUnit),
-        min: parseFloat(min),
-        max: parseFloat(max),
-      };
-      // Enforce min/max ordering
-      if (threshold.min > threshold.max) {
-        threshold = { ...threshold, min: threshold.max, max: threshold.min };
+      const [rawFeatureName, rawFeatureUnit, ...selection] = rawThreshold.split(":");
+      let threshold: FeatureThreshold;
+      if (selection.length === 1) {
+        // Feature is a category
+        const enabledCategories = [];
+        const selectedHex = selection[0];
+        const selectedBinary = parseInt(selectedHex, 16);
+        for (let i = 0; i < MAX_FEATURE_CATEGORIES; i++) {
+          enabledCategories.push((selectedBinary & (1 << i)) !== 0);
+        }
+        threshold = {
+          featureName: decodeURIComponent(rawFeatureName),
+          units: decodeURIComponent(rawFeatureUnit),
+          isCategorical: true,
+          enabledCategories,
+        };
+      } else if (selection.length === 2) {
+        // Feature is a range
+        threshold = {
+          featureName: decodeURIComponent(rawFeatureName),
+          units: decodeURIComponent(rawFeatureUnit),
+          isCategorical: false,
+          min: parseFloat(selection[0]),
+          max: parseFloat(selection[1]),
+        };
+        // Enforce min/max ordering
+        if (threshold.min > threshold.max) {
+          threshold = { ...threshold, min: threshold.max, max: threshold.min };
+        }
+      } else {
+        // Unknown parameters; make a dummy threshold
+        console.warn("url_utils: loadParamsFromQueryString: invalid threshold");
+        threshold = {
+          featureName: decodeURIComponent(rawFeatureName),
+          units: decodeURIComponent(rawFeatureUnit),
+          isCategorical: false,
+          min: NaN,
+          max: NaN,
+        };
       }
       return threshold;
     });
