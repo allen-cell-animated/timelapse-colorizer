@@ -198,12 +198,38 @@ describe("Loading + saving from URL query strings", () => {
     expect(parsedParams).deep.equals(originalParams);
   });
 
-  it("Handles less than the maximum expected thresholds", () => {
-    throw new Error("Test not implemented");
+  it("Handles less than the maximum expected categories", () => {
+    const originalParams: Partial<UrlParams> = {
+      thresholds: [{ featureName: "feature", units: "", categorical: true, enabledCategories: [true] }],
+    };
+    const queryString = paramsToUrlQueryString(originalParams);
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    expect(parsedParams.thresholds).deep.equals([
+      {
+        featureName: "feature",
+        units: "",
+        categorical: true,
+        enabledCategories: padCategories([true]),
+      },
+    ]);
   });
 
-  it("Handles more than the maximum expected thresholds", () => {
-    throw new Error("Test not implemented");
+  it("Handles more than the maximum expected categories", () => {
+    const thresholds = padCategories([true, true]);
+    thresholds.push(true); // Add an extra threshold. This should be ignored
+    const originalParams: Partial<UrlParams> = {
+      thresholds: [{ featureName: "feature", units: "", categorical: true, enabledCategories: thresholds }],
+    };
+    const queryString = paramsToUrlQueryString(originalParams);
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    expect(parsedParams.thresholds).deep.equals([
+      {
+        featureName: "feature",
+        units: "",
+        categorical: true,
+        enabledCategories: padCategories([true, true]),
+      },
+    ]);
   });
 
   it("Handles all color map names", () => {
