@@ -1,11 +1,11 @@
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { Color } from "three";
-import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { ColorRamp, ColorRampType } from "../src/colorizer";
 import ColorRampDropdown from "../src/components/ColorRampDropdown";
-import { ColorRamp } from "../src/colorizer";
-import { RawColorData } from "../src/constants";
+import type { ColorRampData, RawColorData } from "../src/constants";
 import { ANY_ERROR } from "./test_utils";
 
 describe("ColorRampDropdown", () => {
@@ -15,9 +15,9 @@ describe("ColorRampDropdown", () => {
     ["map2", { key: "map2", name: "Map 2", colorStops: ["#ffffff", "#000000"] }],
     ["map3", { key: "map3", name: "Map 3", colorStops: ["#ffffff", "#000000"] }],
   ];
-  const customColorRamps = new Map(
+  const customColorRamps: Map<string, ColorRampData> = new Map(
     colorRamps.map(([key, data]) => {
-      return [key, { ...data, colorRamp: new ColorRamp(data.colorStops) }];
+      return [key, { ...data, colorRamp: new ColorRamp(data.colorStops, ColorRampType.LINEAR) }];
     })
   );
 

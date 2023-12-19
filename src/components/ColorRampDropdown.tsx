@@ -1,13 +1,13 @@
-import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
-import { Button, Tooltip } from "antd";
 import { RetweetOutlined } from "@ant-design/icons";
+import { Button, Tooltip } from "antd";
+import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
 import { Color } from "three";
 
-import { AppThemeContext } from "./AppStyle";
-import { ColorRampData, DEFAULT_COLOR_RAMPS, DEFAULT_CATEGORICAL_PALETTES } from "../constants";
-import IconButton from "./IconButton";
 import { ColorRamp, ColorRampType } from "../colorizer";
+import { ColorRampData, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../constants";
+import { AppThemeContext } from "./AppStyle";
 import styles from "./ColorRampDropdown.module.css";
+import IconButton from "./IconButton";
 
 type ColorRampSelectorProps = {
   selectedRamp: string;
@@ -116,6 +116,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   ///////// Generate dropdown contents
 
+  /** Generates a list of tooltip-wrapped buttons containing color ramp gradients. */
   const makeRampButtonList = (
     colorRampData: ColorRampData[],
     onClick: (rampData: ColorRampData) => void
@@ -133,31 +134,31 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     return contents;
   };
 
-  // Memoize to avoid recalculating dropdown contents
-  const rampDropdownContents: ReactElement[] = useMemo(() => {
-    return makeRampButtonList(Array.from(props.colorRamps.values()), (rampData) => {
-      props.onChangeRamp(rampData.key, false);
-    });
-  }, [props.colorRamps]);
-
-  const paletteDropdownContents: ReactElement[] = useMemo(() => {
-    const onClick = (paletteData: ColorRampData): void => {
-      const colors = props.categoricalPalettes.get(paletteData.key)?.colors;
-      if (colors) {
-        props.onChangePalette(colors);
-      }
-    };
-
-    // Generate color ramps from the palettes.
-    const paletteData = Array.from(props.categoricalPalettes.values());
-    // Append in the missing ColorRamp
-    const colorRampData = paletteData.map((data) => {
-      const visibleColors = data.colors.slice(0, Math.max(1, props.numCategories));
-      return { ...data, colorRamp: new ColorRamp(visibleColors, ColorRampType.HARD_STOP) };
-    });
-
-    return makeRampButtonList(colorRampData, onClick);
-  }, [props.categoricalPalettes, props.numCategories]);
+  /** The contents of the dropdown that appears when you hover over the button */
+  const dropdownContents = useMemo(() => {
+    if (props.useCategoricalPalettes) {
+      // Make categorical palettes by converting them into color ramps.
+      const onClick = (paletteData: ColorRampData): void => {
+        const colors = props.categoricalPalettes.get(paletteData.key)?.colors;
+        if (colors) {
+          props.onChangePalette(colors);
+        }
+      };
+      // Generate color ramps from the palettes.
+      const paletteData = Array.from(props.categoricalPalettes.values());
+      // Append the missing ColorRamp into the palette data so it can be handled as a ColorRampData.
+      const colorRampData = paletteData.map((data) => {
+        const visibleColors = data.colors.slice(0, Math.max(1, props.numCategories));
+        return { ...data, colorRamp: new ColorRamp(visibleColors, ColorRampType.HARD_STOP) };
+      });
+      return makeRampButtonList(colorRampData, onClick);
+    } else {
+      // Make gradient ramps instead
+      return makeRampButtonList(Array.from(props.colorRamps.values()), (rampData) => {
+        props.onChangeRamp(rampData.key, false);
+      });
+    }
+  }, [props.colorRamps, props.useCategoricalPalettes, props.categoricalPalettes, props.numCategories]);
 
   /// Rendering
 
@@ -165,8 +166,11 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   const dropdownButtonImgSrc = props.useCategoricalPalettes ? paletteImgSrc : rampImgSrc;
 
   const buttonDivClassName = styles.buttonContainer + (props.disabled ? ` ${styles.disabled}` : "");
-  let dropdownContainerClassName = styles.dropdownContainer;
-  dropdownContainerClassName += forceOpen ? ` ${styles.forceOpen}` : "";
+
+  const dropdownClassNames = [styles.dropdownContainer];
+  props.useCategoricalPalettes && dropdownClassNames.push(styles.categorical);
+  forceOpen && dropdownClassNames.push(styles.forceOpen);
+  const dropdownContainerClassName = dropdownClassNames.join(" ");
 
   return (
     <div className={styles.colorRampSelector} ref={componentContainerRef}>
@@ -188,11 +192,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
             <img src={dropdownButtonImgSrc} />
           </Button>
         </Tooltip>
-        {props.useCategoricalPalettes ? (
-          <div className={dropdownContainerClassName + " " + styles.categorical}>{paletteDropdownContents} </div>
-        ) : (
-          <div className={dropdownContainerClassName}>{rampDropdownContents}</div>
-        )}
+        <div className={dropdownContainerClassName}>{dropdownContents}</div>
       </div>
       {/** Reverse map button */}
       <IconButton
