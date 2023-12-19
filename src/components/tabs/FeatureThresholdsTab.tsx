@@ -264,7 +264,11 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
       <CategoricalThresholdContainer>
         {categories.map((category, categoryIndex) => {
           return (
-            <Checkbox disabled={disabled} onChange={() => onChange(categoryIndex)}>
+            <Checkbox
+              disabled={disabled}
+              onChange={() => onChange(categoryIndex)}
+              checked={enabledCategories[categoryIndex]}
+            >
               {category}
             </Checkbox>
           );

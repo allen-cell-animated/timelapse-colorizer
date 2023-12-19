@@ -116,7 +116,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // YAGNI: Debouncing for this is possible but no performance issues encountered yet.
     // Add only if needed.
     // Timeout in case of slowdowns to prevent this from halting the UI.
-    setTimeout(() => canv.setFeatureThresholds(props.featureThresholds), 0);
+    setTimeout(() => {
+      canv.setFeatureThresholds(props.featureThresholds);
+      canv.render();
+    }, 0);
   }, [props.featureThresholds, props.dataset]);
 
   // Updated track-related settings
