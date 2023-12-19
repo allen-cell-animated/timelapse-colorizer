@@ -128,10 +128,17 @@
 .contentPanels {
   display: flex;
   flex: row;
-  flex-wrap: wrap;
   gap: 20px;
   /* Allow the content panels to take up all available space */
   width: 100%;
+  --content-width: calc(min(100vw - 75px, 732px));
+}
+
+@media screen and (max-width: 1200px) {
+  .contentPanels {
+    flex-direction: column;
+    max-width: var(--content-width);
+  }
 }
 
 .canvasPanel {
@@ -174,11 +181,8 @@
 .sidePanels {
   gap: 10px;
   flex-grow: 1;
-
-  /* TODO: This is copied from CanvasWrapper and should be shared sizing behavior. */
-  max-width: calc(min(100vw - 75px, 730px));
-  width: fit-content;
   min-width: 300px;
+  max-width: var(--content-width);
 }
 
 .plotAndFiltersPanel {
