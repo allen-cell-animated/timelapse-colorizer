@@ -86,7 +86,28 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
  *
  * @example
  * ```
+ * function MyComponent() {
+ *   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollWithShadow();
  *
+ *   return (
+ *   <div style={{maxHeight: "50px", position: "relative"}}>
+ *     <div
+ *       ref={scrollRef}
+ *       style={{overflow-y: "auto", height: "100%"}}
+ *       onScroll={onScrollHandler}
+ *     >
+ *       <p>Some content</p>
+ *       <p>Some more content</p>
+ *       <p>Some more content</p>
+ *     </div>
+ *     <div style={{
+ *       width: "100%",
+ *       height: "100%",
+ *       position: "absolute",
+ *       ...scrollShadowStyle
+ *     }} />
+ *   </div>
+ * }
  * ```
  */
 export function useScrollWithShadow(cssColor: string = "rgb(200 200 200 / 1)"): {
