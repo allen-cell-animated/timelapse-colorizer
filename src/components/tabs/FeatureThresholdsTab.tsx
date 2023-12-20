@@ -14,6 +14,7 @@ import IconButton from "../IconButton";
 import LabeledRangeSlider from "../LabeledRangeSlider";
 import { FeatureType } from "../../colorizer/Dataset";
 import { Color } from "three";
+import { useScrollWithShadow } from "../../colorizer/utils/react_utils";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
@@ -41,27 +42,29 @@ const SelectContainer = styled.div`
   }
 `;
 
+const FiltersCardContainer = styled.div`
+  position: relative;
+  overflow: auto;
+  height: 100%;
+`;
+
 const FiltersCard = styled.div`
   overflow-y: auto;
   height: 100%;
   padding: 0 10px;
+  position: relative;
+`;
 
-  background:
-    /* Shadow covers */ linear-gradient(white 30%, rgba(255, 255, 255, 0)),
-    linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
-    /* Shadows */ radial-gradient(50% 0, farthest-side, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)),
-    radial-gradient(50% 100%, farthest-side, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) 0 100%;
-  background:
-    /* Shadow covers */ linear-gradient(white 30%, rgba(255, 255, 255, 0)),
-    linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
-    /* Shadows */ radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)),
-    radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) 0 100%;
-  background-repeat: no-repeat;
-  background-color: white;
-  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
-
-  /* Opera doesn't support this in the shorthand */
-  background-attachment: local, local, scroll, scroll;
+const ScrollShadowBox = styled.div`
+  position: absolute;
+  pointer-events: none;
+  // Fill the box completely so we can overlay the shadow effects above the
+  // content.
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: background-color 0.2s ease-in-out;
 `;
 
 const FeatureLabel = styled.h3<{ $disabled?: boolean }>`
@@ -128,6 +131,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   } as Required<FeatureThresholdsTabProps>;
 
   const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [scrollShadowStyle, onScrollHandler] = useScrollWithShadow();
   const selectContainerRef = useRef<HTMLDivElement>(null);
 
   /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature name and unit. */
@@ -351,22 +355,25 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
           onBlur={() => setIsFocused(false)}
         />
       </SelectContainer>
-      <FiltersCard style={{ paddingTop: 0 }}>
-        <List
-          renderItem={renderListItems}
-          dataSource={props.featureThresholds}
-          locale={{
-            emptyText: (
-              <EmptyListTextContainer>
-                <span style={{ fontSize: "24px", marginBottom: 0 }}>
-                  <FilterOutlined />
-                </span>
-                <p>No filters</p>
-              </EmptyListTextContainer>
-            ),
-          }}
-        />
-      </FiltersCard>
+      <FiltersCardContainer>
+        <FiltersCard style={{ paddingTop: 0 }} onScroll={onScrollHandler} onResize={onScrollHandler}>
+          <List
+            renderItem={renderListItems}
+            dataSource={props.featureThresholds}
+            locale={{
+              emptyText: (
+                <EmptyListTextContainer>
+                  <span style={{ fontSize: "24px", marginBottom: 0 }}>
+                    <FilterOutlined />
+                  </span>
+                  <p>No filters</p>
+                </EmptyListTextContainer>
+              ),
+            }}
+          />
+        </FiltersCard>
+        <ScrollShadowBox style={scrollShadowStyle}></ScrollShadowBox>
+      </FiltersCardContainer>
     </PanelContainer>
   );
 }

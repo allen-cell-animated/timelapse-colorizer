@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { EventHandler, useEffect, useRef, useState } from "react";
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -70,4 +70,40 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
     }
   }
   return ret;
+}
+
+export function useScrollWithShadow(
+  cssColor: string = "rgb(200 200 200 / 1)"
+): [React.CSSProperties, EventHandler<any>] {
+  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollHeight, setScrollHeight] = useState(0);
+  const [clientHeight, setClientHeight] = useState(0);
+
+  const onScrollHandler: EventHandler<any> = (event) => {
+    console.log("Updating scroll values");
+    setScrollTop(event.target.scrollTop);
+    setScrollHeight(event.target.scrollHeight);
+    setClientHeight(event.target.clientHeight);
+  };
+
+  function getBoxShadow() {
+    const isBottom = clientHeight === scrollHeight - scrollTop;
+    const isTop = scrollTop === 0;
+    const isBetween = scrollTop > 0 && clientHeight < scrollHeight - scrollTop;
+
+    let boxShadow = "none";
+    const top = `inset 0 8px 5px -5px ${cssColor}`;
+    const bottom = `inset 0 -8px 5px -5px ${cssColor}`;
+
+    if (isTop) {
+      boxShadow = bottom;
+    } else if (isBetween) {
+      boxShadow = `${top}, ${bottom}`;
+    } else if (isBottom) {
+      boxShadow = top;
+    }
+    return boxShadow;
+  }
+
+  return [{ boxShadow: getBoxShadow() }, onScrollHandler];
 }
