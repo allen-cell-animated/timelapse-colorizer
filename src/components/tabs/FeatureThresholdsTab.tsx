@@ -64,7 +64,7 @@ const ScrollShadowBox = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  transition: background-color 0.2s ease-in-out;
+  transition: box-shadow 0.1s ease-in;
 `;
 
 const FeatureLabel = styled.h3<{ $disabled?: boolean }>`
@@ -131,7 +131,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   } as Required<FeatureThresholdsTabProps>;
 
   const [isFocused, setIsFocused] = useState<boolean>(false);
-  const [scrollShadowStyle, onScrollHandler] = useScrollWithShadow();
+  const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollWithShadow();
   const selectContainerRef = useRef<HTMLDivElement>(null);
 
   /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature name and unit. */
@@ -318,7 +318,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     const featureLabel = threshold.units ? `${threshold.featureName} (${threshold.units})` : threshold.featureName;
 
     return (
-      <List.Item style={{ position: "relative" }}>
+      <List.Item style={{ position: "relative" }} key={index}>
         <div style={{ width: "100%" }}>
           <FeatureLabel $disabled={disabled}>{featureLabel}</FeatureLabel>
 
@@ -356,7 +356,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
         />
       </SelectContainer>
       <FiltersCardContainer>
-        <FiltersCard style={{ paddingTop: 0 }} onScroll={onScrollHandler} onResize={onScrollHandler}>
+        <FiltersCard style={{ paddingTop: 0 }} ref={scrollRef} onScroll={onScrollHandler}>
           <List
             renderItem={renderListItems}
             dataSource={props.featureThresholds}

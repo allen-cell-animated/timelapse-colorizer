@@ -72,38 +72,63 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
   return ret;
 }
 
-export function useScrollWithShadow(
-  cssColor: string = "rgb(200 200 200 / 1)"
-): [React.CSSProperties, EventHandler<any>] {
+/**
+ * Hook for adding scroll shadows to an element.
+ *
+ * Adapted with edits from https://medium.com/dfind-consulting/react-scroll-hook-with-shadows-9ba2d47ae32,
+ * adding typing and fixes for initial load and scroll disabling behavior.
+ * @param cssColor a CSS-interpretable string representing a color.
+ * @returns an object with three properties:
+ * - scrollShadowStyle: a CSSProperties object that can be applied to the element to add a shadow. This does
+ * not have to be the scrolling element.
+ * - onScrollHandler: an event handler that should be attached to the scrolling element's onScroll event.
+ * - scrollRef: a ref that should be attached to the scrolling element.
+ *
+ * @example
+ * ```
+ *
+ * ```
+ */
+export function useScrollWithShadow(cssColor: string = "rgb(200 200 200 / 1)"): {
+  scrollShadowStyle: React.CSSProperties;
+  onScrollHandler: EventHandler<any>;
+  scrollRef: React.RefObject<HTMLDivElement>;
+} {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const [scrollTop, setScrollTop] = useState(0);
   const [scrollHeight, setScrollHeight] = useState(0);
   const [clientHeight, setClientHeight] = useState(0);
 
   const onScrollHandler: EventHandler<any> = (event) => {
-    console.log("Updating scroll values");
     setScrollTop(event.target.scrollTop);
     setScrollHeight(event.target.scrollHeight);
     setClientHeight(event.target.clientHeight);
   };
 
-  function getBoxShadow() {
-    const isBottom = clientHeight === scrollHeight - scrollTop;
-    const isTop = scrollTop === 0;
-    const isBetween = scrollTop > 0 && clientHeight < scrollHeight - scrollTop;
-
-    let boxShadow = "none";
-    const top = `inset 0 8px 5px -5px ${cssColor}`;
-    const bottom = `inset 0 -8px 5px -5px ${cssColor}`;
-
-    if (isTop) {
-      boxShadow = bottom;
-    } else if (isBetween) {
-      boxShadow = `${top}, ${bottom}`;
-    } else if (isBottom) {
-      boxShadow = top;
+  useEffect(() => {
+    if (scrollRef.current) {
+      setScrollTop(scrollRef.current.scrollTop);
+      setScrollHeight(scrollRef.current.scrollHeight);
+      setClientHeight(scrollRef.current.clientHeight);
     }
-    return boxShadow;
+  });
+
+  function getBoxShadow() {
+    const scrolledToBottom = clientHeight === scrollHeight - scrollTop;
+    const scrolledToTop = scrollTop === 0;
+    const scrolledBetween = scrollTop > 0 && clientHeight < scrollHeight - scrollTop;
+
+    const showBottom = (scrolledToTop && !scrolledToBottom) || scrolledBetween;
+    const showTop = (scrolledToBottom && !scrolledToTop) || scrolledBetween;
+    const topShadowOffset = showTop ? "8px" : "0px";
+    const bottomShadowOffset = showBottom ? "-8px" : "0px";
+
+    let top = `inset 0 ${topShadowOffset} 5px -5px ${cssColor}`;
+    let bottom = `inset 0 ${bottomShadowOffset} 5px -5px ${cssColor}`;
+
+    return `${top}, ${bottom}`;
   }
 
-  return [{ boxShadow: getBoxShadow() }, onScrollHandler];
+  return { scrollShadowStyle: { boxShadow: getBoxShadow() }, onScrollHandler, scrollRef };
 }
