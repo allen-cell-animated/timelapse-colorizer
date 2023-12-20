@@ -10,7 +10,7 @@ import {
 } from "../src/colorizer/utils/url_utils";
 import { DEFAULT_COLOR_RAMPS, MAX_FEATURE_CATEGORIES } from "../src/constants";
 
-function padCategories(categories: boolean[]) {
+function padCategories(categories: boolean[]): boolean[] {
   const result = [...categories];
   while (result.length < MAX_FEATURE_CATEGORIES) {
     result.push(false);

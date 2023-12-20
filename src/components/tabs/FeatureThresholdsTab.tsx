@@ -277,7 +277,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     const categories = featureData?.categories || [];
     const enabledCategories = item.enabledCategories;
 
-    const onChange = (categoryIndex: number) => {
+    const onChange = (categoryIndex: number): void => {
       const newEnabledCategories = [...enabledCategories];
       newEnabledCategories[categoryIndex] = !enabledCategories[categoryIndex];
       onCategoricalThresholdChanged(index, newEnabledCategories);
@@ -294,6 +294,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
                     props.categoricalPalette[categoryIndex % props.categoricalPalette.length].getHexString(),
                 },
               }}
+              key={categoryIndex}
             >
               <Checkbox
                 key={categoryIndex}

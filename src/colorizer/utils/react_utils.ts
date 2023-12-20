@@ -1,4 +1,4 @@
-import { EventHandler, useEffect, useRef, useState } from "react";
+import React, { EventHandler, useEffect, useRef, useState } from "react";
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -135,7 +135,7 @@ export function useScrollWithShadow(cssColor: string = "rgb(200 200 200 / 1)"): 
     }
   });
 
-  function getBoxShadow() {
+  function getBoxShadow(): string {
     const scrolledToBottom = clientHeight === scrollHeight - scrollTop;
     const scrolledToTop = scrollTop === 0;
     const scrolledBetween = scrollTop > 0 && clientHeight < scrollHeight - scrollTop;
@@ -145,8 +145,8 @@ export function useScrollWithShadow(cssColor: string = "rgb(200 200 200 / 1)"): 
     const topShadowOffset = showTop ? "8px" : "0px";
     const bottomShadowOffset = showBottom ? "-8px" : "0px";
 
-    let top = `inset 0 ${topShadowOffset} 5px -5px ${cssColor}`;
-    let bottom = `inset 0 ${bottomShadowOffset} 5px -5px ${cssColor}`;
+    const top = `inset 0 ${topShadowOffset} 5px -5px ${cssColor}`;
+    const bottom = `inset 0 ${bottomShadowOffset} 5px -5px ${cssColor}`;
 
     return `${top}, ${bottom}`;
   }
