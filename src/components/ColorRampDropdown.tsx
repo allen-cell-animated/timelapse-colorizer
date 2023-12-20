@@ -32,7 +32,7 @@ const defaultProps: Partial<ColorRampSelectorProps> = {
 };
 
 /**
- * Returns whether if the two arrays are equal, where arr1[i] === arr2[i] for all i.
+ * Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i.
  */
 function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
   if (arr1.length !== arr2.length) {
@@ -168,8 +168,12 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   const buttonDivClassName = styles.buttonContainer + (props.disabled ? ` ${styles.disabled}` : "");
 
   const dropdownClassNames = [styles.dropdownContainer];
-  props.useCategoricalPalettes && dropdownClassNames.push(styles.categorical);
-  forceOpen && dropdownClassNames.push(styles.forceOpen);
+  if (props.useCategoricalPalettes) {
+    dropdownClassNames.push(styles.categorical);
+  }
+  if (forceOpen) {
+    dropdownClassNames.push(styles.forceOpen);
+  }
   const dropdownContainerClassName = dropdownClassNames.join(" ");
 
   return (
