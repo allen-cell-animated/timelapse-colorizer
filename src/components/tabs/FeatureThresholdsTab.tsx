@@ -152,47 +152,6 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     }
   }, [props.dataset, props.featureThresholds]);
 
-  useMemo(() => {
-    // Validate feature data for each threshold. If the threshold is the wrong type, update it.
-    // Do this in a useMemo so we interrupt the render
-    const newThresholds: FeatureThreshold[] = [];
-    let hasChangedThreshold = false;
-
-    for (const threshold of props.featureThresholds) {
-      const featureData = props.dataset?.tryGetFeatureData(threshold.featureName);
-      const isInDataset = featureData && featureData.units === threshold.units;
-
-      if (isInDataset && featureData.type === FeatureType.CATEGORICAL && !threshold.categorical) {
-        // Threshold is not categorical but the feature is.
-        // Convert the threshold to categorical.
-        newThresholds.push({
-          featureName: threshold.featureName,
-          units: threshold.units,
-          categorical: true,
-          enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
-        });
-        hasChangedThreshold = true;
-      } else if (isInDataset && featureData.type !== FeatureType.CATEGORICAL && threshold.categorical) {
-        // Threshold is categorical but the feature is not.
-        // Convert to numeric threshold instead.
-        newThresholds.push({
-          featureName: threshold.featureName,
-          units: threshold.units,
-          categorical: false,
-          min: featureData.min,
-          max: featureData.max,
-        });
-        hasChangedThreshold = true;
-      } else {
-        // Keep existing threshold
-        newThresholds.push(threshold);
-      }
-    }
-    if (hasChangedThreshold) {
-      props.onChange(newThresholds);
-    }
-  }, [props.featureThresholds, props.dataset, props.onChange]);
-
   ////// EVENT HANDLERS ///////////////////
 
   /** Handle the user selecting new features from the Select dropdown. */

@@ -18,7 +18,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import { FeatureThreshold } from "./colorizer/types";
-import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
+import { getColorMap, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -288,7 +288,11 @@ function App(): ReactElement {
     }
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.thresholds) {
-        setFeatureThresholds(initialUrlParams.thresholds);
+        if (dataset) {
+          setFeatureThresholds(validateThresholds(dataset, initialUrlParams.thresholds));
+        } else {
+          setFeatureThresholds(initialUrlParams.thresholds);
+        }
       }
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
@@ -358,6 +362,7 @@ function App(): ReactElement {
       setFindTrackInput("");
       setSelectedTrack(null);
       setDatasetOpen(true);
+      setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
       console.log("Num Items:" + dataset?.numObjects);
     },
     [dataset, featureName, canv, currentFrame, getUrlParams]

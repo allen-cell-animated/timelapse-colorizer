@@ -1,5 +1,6 @@
-import { ColorRampData } from "../../constants";
+import { ColorRampData, MAX_FEATURE_CATEGORIES } from "../../constants";
 import ColorRamp from "../ColorRamp";
+import Dataset, { FeatureType } from "../Dataset";
 import { FeatureThreshold } from "../types";
 
 /**
@@ -26,4 +27,46 @@ export function getColorMap(colorRampData: Map<string, ColorRampData>, key: stri
     throw new Error("Could not find data for color ramp '" + key + "'");
   }
   return colorRamp && reversed ? colorRamp.reverse() : colorRamp;
+}
+
+/**
+ * Validates the thresholds against the dataset. If the threshold's feature is present but the wrong type, it is updated.
+ * @param dataset The dataset to validate thresholds against.
+ * @param thresholds An array of `FeatureThresholds` to validate.
+ * @returns a new array of thresholds, with any categorical thresholds converted to numeric thresholds if the feature is numeric
+ * and vice-versa.
+ */
+export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshold[]): FeatureThreshold[] {
+  // Validate feature data for each threshold. If the threshold is the wrong type, update it.
+  const newThresholds: FeatureThreshold[] = [];
+
+  for (const threshold of thresholds) {
+    const featureData = dataset.tryGetFeatureData(threshold.featureName);
+    const isInDataset = featureData && featureData.units === threshold.units;
+
+    if (isInDataset && featureData.type === FeatureType.CATEGORICAL && !threshold.categorical) {
+      // Threshold is not categorical but the feature is.
+      // Convert the threshold to categorical.
+      newThresholds.push({
+        featureName: threshold.featureName,
+        units: threshold.units,
+        categorical: true,
+        enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
+      });
+    } else if (isInDataset && featureData.type !== FeatureType.CATEGORICAL && threshold.categorical) {
+      // Threshold is categorical but the feature is not.
+      // Convert to numeric threshold instead.
+      newThresholds.push({
+        featureName: threshold.featureName,
+        units: threshold.units,
+        categorical: false,
+        min: featureData.min,
+        max: featureData.max,
+      });
+    } else {
+      // Keep existing threshold
+      newThresholds.push(threshold);
+    }
+  }
+  return newThresholds;
 }
