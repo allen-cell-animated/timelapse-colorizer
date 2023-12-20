@@ -351,10 +351,15 @@ export default class ColorizeCanvas {
 
   /** Sets the current color ramp. Used when a continuous or discrete feature is selected. */
   setColorRamp(ramp: ColorRamp): void {
+    if (this.colorRamp !== ramp) {
+      // Dispose of existing ramp
+      this.colorRamp.dispose();
+    }
     this.colorRamp = ramp;
   }
 
   setCategoricalColors(colors: Color[]): void {
+    this.categoricalPalette.dispose();
     this.categoricalPalette = new ColorRamp(colors);
   }
 
