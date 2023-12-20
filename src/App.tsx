@@ -828,6 +828,7 @@ function App(): ReactElement {
                           onChange={setFeatureThresholds}
                           dataset={dataset}
                           disabled={disableUi}
+                          categoricalPalette={categoricalPalette}
                         />
                       </div>
                     ),

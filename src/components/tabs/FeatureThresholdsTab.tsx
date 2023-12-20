@@ -1,5 +1,5 @@
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
-import { Checkbox, List, Select } from "antd";
+import { Checkbox, ConfigProvider, List, Select } from "antd";
 import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
@@ -13,6 +13,7 @@ import { FlexColumn } from "../../styles/utils";
 import IconButton from "../IconButton";
 import LabeledRangeSlider from "../LabeledRangeSlider";
 import { FeatureType } from "../../colorizer/Dataset";
+import { Color } from "three";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
@@ -110,6 +111,7 @@ type FeatureThresholdsTabProps = {
   onChange: (thresholds: FeatureThreshold[]) => void;
   dataset: Dataset | null;
   disabled?: boolean;
+  categoricalPalette: Color[];
 };
 
 const defaultProps: Partial<FeatureThresholdsTabProps> = {
@@ -281,14 +283,23 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
       <CategoricalThresholdContainer>
         {categories.map((category, categoryIndex) => {
           return (
-            <Checkbox
-              key={categoryIndex}
-              disabled={disabled}
-              onChange={() => onChange(categoryIndex)}
-              checked={enabledCategories[categoryIndex]}
+            <ConfigProvider
+              theme={{
+                token: {
+                  colorPrimary:
+                    props.categoricalPalette[categoryIndex % props.categoricalPalette.length].getHexString(),
+                },
+              }}
             >
-              {category}
-            </Checkbox>
+              <Checkbox
+                key={categoryIndex}
+                disabled={disabled}
+                onChange={() => onChange(categoryIndex)}
+                checked={enabledCategories[categoryIndex]}
+              >
+                {category}
+              </Checkbox>
+            </ConfigProvider>
           );
         })}
       </CategoricalThresholdContainer>
