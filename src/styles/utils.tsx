@@ -55,3 +55,38 @@ export const FlexRow = styled(FlexDiv)`
 export const FlexRowAlignCenter = styled(FlexRow)`
   align-items: center;
 `;
+
+/**
+ * A flexbox container that aligns settings by labels and input.
+ * A settings object should consist of a `label` containing a `span` label text
+ * element.
+ *
+ * @example
+ * ```
+ * <SettingsContainer>
+ *   <label>
+ *     <span>Label for a setting</span>
+ *     <input type="text" />  // can be any element
+ *   </label>
+ * </SettingsContainer>
+ * ```
+ */
+export const SettingsContainer = styled.div`
+  display: flex;
+  gap: 6px;
+  flex-direction: column;
+
+  & > label {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    align-items: baseline;
+  }
+
+  & > label > span:first-of-type {
+    display: inline-block;
+    text-align: right;
+    min-width: 30%;
+    max-width: 30%;
+  }
+`;

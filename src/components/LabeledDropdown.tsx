@@ -45,7 +45,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Support tab navigation by forcing the dropdown to stay open when clicked.
   const [forceOpen, setForceOpen] = useState(false);
-  const componentContainerRef = useRef<HTMLDivElement>(null);
+  const componentContainerRef = useRef<HTMLLabelElement>(null);
 
   // If open, close the dropdown when focus is lost.
   // Note that the focus out event will fire even if the newly focused element is also
@@ -157,9 +157,12 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   }
 
   return (
-    <div className={styles.labeledDropdown} ref={componentContainerRef}>
-      {props.label && <h3>{props.label}</h3>}
-      <></>
+    <label className={styles.labeledDropdown} ref={componentContainerRef}>
+      {props.label && (
+        <span>
+          <h3>{props.label}</h3>
+        </span>
+      )}
       <Dropdown
         menu={{}}
         disabled={props.disabled}
@@ -184,6 +187,6 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
           {dropdownButton}
         </Tooltip>
       </Dropdown>
-    </div>
+    </label>
   );
 }
