@@ -71,10 +71,11 @@ export const FlexRowAlignCenter = styled(FlexRow)`
  * </SettingsContainer>
  * ```
  */
-export const SettingsContainer = styled.div`
+export const SettingsContainer = styled.div<{ $spanWidth?: string }>`
   display: flex;
   gap: 6px;
   flex-direction: column;
+  width: 100%;
 
   & > label {
     display: flex;
@@ -86,7 +87,17 @@ export const SettingsContainer = styled.div`
   & > label > span:first-of-type {
     display: inline-block;
     text-align: right;
-    min-width: 30%;
-    max-width: 30%;
+    ${(props) => {
+      if (props.$spanWidth) {
+        return css`
+          min-width: ${props.$spanWidth};
+          max-width: ${props.$spanWidth};
+        `;
+      }
+      return css`
+        min-width: 30%;
+        max-width: 30%;
+      `;
+    }}
   }
 `;
