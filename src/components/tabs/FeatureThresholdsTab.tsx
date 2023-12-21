@@ -2,10 +2,12 @@ import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons
 import { Checkbox, ConfigProvider, List, Select } from "antd";
 import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
+import { Color } from "three";
 
 import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 
 import { Dataset } from "../../colorizer";
+import { FeatureType } from "../../colorizer/Dataset";
 import {
   CategoricalFeatureThreshold,
   FeatureThreshold,
@@ -15,13 +17,11 @@ import {
   isThresholdNumeric,
 } from "../../colorizer/types";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
+import { useScrollShadow } from "../../colorizer/utils/react_utils";
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
 import IconButton from "../IconButton";
 import LabeledRangeSlider from "../LabeledRangeSlider";
-import { FeatureType } from "../../colorizer/Dataset";
-import { Color } from "three";
-import { useScrollWithShadow } from "../../colorizer/utils/react_utils";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
@@ -49,24 +49,24 @@ const SelectContainer = styled.div`
   }
 `;
 
-const FiltersCardContainer = styled.div`
+const FiltersContainer = styled.div`
   position: relative;
   overflow: auto;
   height: 100%;
 `;
 
-const FiltersCard = styled.div`
+const FiltersContent = styled.div`
   overflow-y: auto;
   height: 100%;
   padding: 0 10px;
   position: relative;
 `;
 
-const ScrollShadowBox = styled.div`
+const FiltersShadow = styled.div`
   position: absolute;
   pointer-events: none;
-  // Fill the box completely so we can overlay the shadow effects above the
-  // content.
+  // Fill the parent (FiltersCardContainer) completely so we can overlay the
+  // shadow effects above the content (FiltersCard).
   top: 0;
   left: 0;
   width: 100%;
@@ -138,7 +138,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   } as Required<FeatureThresholdsTabProps>;
 
   const [isFocused, setIsFocused] = useState<boolean>(false);
-  const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollWithShadow();
+  const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
   const selectContainerRef = useRef<HTMLDivElement>(null);
 
   /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature name and unit. */
@@ -365,8 +365,8 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
           onBlur={() => setIsFocused(false)}
         />
       </SelectContainer>
-      <FiltersCardContainer>
-        <FiltersCard style={{ paddingTop: 0 }} ref={scrollRef} onScroll={onScrollHandler}>
+      <FiltersContainer>
+        <FiltersContent style={{ paddingTop: 0 }} ref={scrollRef} onScroll={onScrollHandler}>
           <List
             renderItem={renderListItems}
             dataSource={props.featureThresholds}
@@ -381,9 +381,9 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
               ),
             }}
           />
-        </FiltersCard>
-        <ScrollShadowBox style={scrollShadowStyle}></ScrollShadowBox>
-      </FiltersCardContainer>
+        </FiltersContent>
+        <FiltersShadow style={scrollShadowStyle}></FiltersShadow>
+      </FiltersContainer>
     </PanelContainer>
   );
 }

@@ -357,7 +357,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
   const timeParam = urlParams.get(URL_PARAM_TIME) ? parseInt(urlParams.get(URL_PARAM_TIME)!, base10Radix) : undefined;
 
   // Parse and validate thresholds
-  const thresholdsParam: FeatureThreshold[] | undefined = deserializeThresholds(urlParams.get(URL_PARAM_THRESHOLDS));
+  const thresholdsParam = deserializeThresholds(urlParams.get(URL_PARAM_THRESHOLDS));
 
   let rangeParam: [number, number] | undefined = undefined;
   const rawRangeParam = decodePossiblyNullString(urlParams.get(URL_PARAM_RANGE));

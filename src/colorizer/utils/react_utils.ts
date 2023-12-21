@@ -75,14 +75,15 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
 /**
  * Hook for adding scroll shadows to an element.
  *
- * Adapted with edits from https://medium.com/dfind-consulting/react-scroll-hook-with-shadows-9ba2d47ae32,
- * adding typing and fixes for initial load and scroll disabling behavior.
- * @param cssColor a CSS-interpretable string representing a color.
+ * Adapted with edits from https://medium.com/dfind-consulting/react-scroll-hook-with-shadows-9ba2d47ae32.
+ * Adds typing and fixes a bug where shadows would not appear before users interacted with the element, and
+ * another where shadows would not disappear when the element was not scrollable.
+ * @param shadowColor a CSS-interpretable string representing a color.
  * @returns an object with three properties:
- * - scrollShadowStyle: a CSSProperties object that can be applied to the element to add a shadow. This does
- * not have to be the scrolling element.
- * - onScrollHandler: an event handler that should be attached to the scrolling element's onScroll event.
- * - scrollRef: a ref that should be attached to the scrolling element.
+ * - scrollShadowStyle: a CSSProperties object that can be applied to the element to add a shadow. NOTE:
+ * This does not have to be the scrolling element; see the example for an overlay shadow.
+ * - onScrollHandler: an event handler to attach to the scrolling element's `onScroll` event.
+ * - scrollRef: a ref to attach to the scrolling element.
  *
  * @example
  * ```
@@ -93,8 +94,8 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
  *   <div style={{maxHeight: "50px", position: "relative"}}>
  *     <div
  *       ref={scrollRef}
- *       style={{overflow-y: "auto", height: "100%"}}
  *       onScroll={onScrollHandler}
+ *       style={{overflow-y: "auto", height: "100%"}}
  *     >
  *       <p>Some content</p>
  *       <p>Some more content</p>
@@ -105,6 +106,7 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
  *       width: "100%",
  *       height: "100%",
  *       position: "absolute",
+ *       top: 0,
  *       pointerEvents: "none",
  *       ...scrollShadowStyle
  *     }} />
@@ -112,7 +114,7 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
  * }
  * ```
  */
-export function useScrollWithShadow(cssColor: string = "#00000030"): {
+export function useScrollShadow(shadowColor: string = "#00000030"): {
   scrollShadowStyle: React.CSSProperties;
   onScrollHandler: EventHandler<any>;
   scrollRef: React.RefObject<HTMLDivElement>;
@@ -130,6 +132,9 @@ export function useScrollWithShadow(cssColor: string = "#00000030"): {
   };
 
   useEffect(() => {
+    // Duplicates above handler to hide shadows even if the
+    // element stops being scrollable, or before first scroll
+    // interaction.
     if (scrollRef.current) {
       setScrollTop(scrollRef.current.scrollTop);
       setScrollHeight(scrollRef.current.scrollHeight);
@@ -147,8 +152,8 @@ export function useScrollWithShadow(cssColor: string = "#00000030"): {
     const topShadowOffset = showTop ? "8px" : "0px";
     const bottomShadowOffset = showBottom ? "-8px" : "0px";
 
-    const top = `inset 0 ${topShadowOffset} 5px -5px ${cssColor}`;
-    const bottom = `inset 0 ${bottomShadowOffset} 5px -5px ${cssColor}`;
+    const top = `inset 0 ${topShadowOffset} 5px -5px ${shadowColor}`;
+    const bottom = `inset 0 ${bottomShadowOffset} 5px -5px ${shadowColor}`;
     return `${top}, ${bottom}`;
   }
 

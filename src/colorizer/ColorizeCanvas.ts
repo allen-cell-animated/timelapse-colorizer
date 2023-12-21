@@ -472,7 +472,7 @@ export default class ColorizeCanvas {
     }
   }
 
-  /** Returns whether a feature value is outside the range of a threshold. */
+  /** Returns whether a feature value is inside the range of a threshold. */
   private isValueWithinThreshold(value: number, threshold: FeatureThreshold): boolean {
     if (isThresholdNumeric(threshold)) {
       return value >= threshold.min && value <= threshold.max;
