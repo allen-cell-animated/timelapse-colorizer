@@ -472,6 +472,15 @@ export default class ColorizeCanvas {
     }
   }
 
+  /** Returns whether a feature value is outside the range of a threshold. */
+  private isValueWithinThreshold(value: number, threshold: FeatureThreshold): boolean {
+    if (isThresholdNumeric(threshold)) {
+      return value >= threshold.min && value <= threshold.max;
+    } else {
+      return threshold.enabledCategories[value];
+    }
+  }
+
   /**
    * Updates the feature thresholds used to determine what values are in and outside of range.
    * Note that this is separate from the color ramp min/max, which just controls how colors are applied.
@@ -486,29 +495,25 @@ export default class ColorizeCanvas {
     // feature thresholds or not.
     // TODO: Optimize memory by using a true boolean array? Bit-level manipulation to fit it within Uint8Array?
     // TODO: If optimizing, use fuse operation via shader.
-    const inRangeIds = new Uint8Array(this.dataset.numObjects);
-    inRangeIds.fill(1);
+    let inRangeIds = new Uint8Array(this.dataset.numObjects);
 
-    for (const threshold of thresholds) {
-      const featureData = this.dataset.tryGetFeatureData(threshold.featureName);
-      // Ignore thresholds with features that don't exist in this dataset or whose units don't match
-      if (!featureData || featureData.units !== threshold.units) {
-        continue;
-      }
-      if (isThresholdNumeric(threshold)) {
-        for (let i = 0, n = inRangeIds.length; i < n; i++) {
-          if (inRangeIds[i] === 1 && (featureData.data[i] < threshold.min || featureData.data[i] > threshold.max)) {
-            inRangeIds[i] = 0;
-          }
-        }
-      } else {
-        for (let i = 0, n = inRangeIds.length; i < n; i++) {
-          if (inRangeIds[i] === 1 && !threshold.enabledCategories[featureData.data[i]]) {
-            inRangeIds[i] = 0;
-          }
+    // Ignore thresholds with features that don't exist in this dataset or whose units don't match
+    const validThresholds = thresholds.filter((threshold) => {
+      const featureData = this.dataset?.tryGetFeatureData(threshold.featureName);
+      return featureData && featureData.units === threshold.units;
+    });
+
+    inRangeIds.forEach((_value, id, arr) => {
+      for (const threshold of validThresholds) {
+        const featureData = this.dataset?.tryGetFeatureData(threshold.featureName);
+        if (featureData && !this.isValueWithinThreshold(featureData.data[id], threshold)) {
+          arr[id] = 0;
+          return;
         }
       }
-    }
+      arr[id] = 1;
+    });
+
     // Save the array to a texture and pass it into the shader
     this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeIds), FeatureDataType.U8));
   }
