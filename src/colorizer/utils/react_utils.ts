@@ -101,9 +101,11 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
  *       <p>Some more content</p>
  *     </div>
  *     <div style={{
+ *       // This div applies the shadow and exists above the scrolling element.
  *       width: "100%",
  *       height: "100%",
  *       position: "absolute",
+ *       pointerEvents: "none",
  *       ...scrollShadowStyle
  *     }} />
  *   </div>
@@ -147,7 +149,6 @@ export function useScrollWithShadow(cssColor: string = "#00000030"): {
 
     const top = `inset 0 ${topShadowOffset} 5px -5px ${cssColor}`;
     const bottom = `inset 0 ${bottomShadowOffset} 5px -5px ${cssColor}`;
-
     return `${top}, ${bottom}`;
   }
 

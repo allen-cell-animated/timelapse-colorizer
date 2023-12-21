@@ -17,7 +17,7 @@ import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric } from "./colorizer/types";
+import { FeatureThreshold, isThresholdNumeric } from "./colorizer/types";
 import { getColorMap, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -543,7 +543,7 @@ function App(): ReactElement {
       return undefined;
     }
     const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
-    if (!threshold || isThresholdCategorical(threshold)) {
+    if (!threshold || !isThresholdNumeric(threshold)) {
       return undefined;
     }
     return [threshold.min, threshold.max];
