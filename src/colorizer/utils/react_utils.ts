@@ -110,7 +110,7 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
  * }
  * ```
  */
-export function useScrollWithShadow(cssColor: string = "rgb(200 200 200 / 1)"): {
+export function useScrollWithShadow(cssColor: string = "#00000030"): {
   scrollShadowStyle: React.CSSProperties;
   onScrollHandler: EventHandler<any>;
   scrollRef: React.RefObject<HTMLDivElement>;
