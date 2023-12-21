@@ -1,7 +1,7 @@
 import { ColorRampData, MAX_FEATURE_CATEGORIES } from "../../constants";
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
-import { FeatureThreshold } from "../types";
+import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric } from "../types";
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
@@ -44,22 +44,22 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
     const featureData = dataset.tryGetFeatureData(threshold.featureName);
     const isInDataset = featureData && featureData.units === threshold.units;
 
-    if (isInDataset && featureData.type === FeatureType.CATEGORICAL && !threshold.categorical) {
+    if (isInDataset && featureData.type === FeatureType.CATEGORICAL && isThresholdNumeric(threshold)) {
       // Threshold is not categorical but the feature is.
       // Convert the threshold to categorical.
       newThresholds.push({
         featureName: threshold.featureName,
         units: threshold.units,
-        categorical: true,
+        type: FeatureType.CATEGORICAL,
         enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
       });
-    } else if (isInDataset && featureData.type !== FeatureType.CATEGORICAL && threshold.categorical) {
+    } else if (isInDataset && featureData.type !== FeatureType.CATEGORICAL && isThresholdCategorical(threshold)) {
       // Threshold is categorical but the feature is not.
       // Convert to numeric threshold instead.
       newThresholds.push({
         featureName: threshold.featureName,
         units: threshold.units,
-        categorical: false,
+        type: FeatureType.CONTINUOUS,
         min: featureData.min,
         max: featureData.max,
       });

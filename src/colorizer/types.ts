@@ -9,6 +9,7 @@ import {
   UnsignedByteType,
   UnsignedIntType,
 } from "three";
+import { FeatureType } from "./Dataset";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
 
@@ -74,24 +75,30 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
   },
 };
 
-type BaseFeatureData = {
+type BaseFeatureThreshold = {
   // TODO: Replace with key string
   // featureKey: string;
   featureName: string;
   units: string;
-  // TODO replace with type?
-  categorical: boolean;
 };
 
-export type NumericFeatureThreshold = BaseFeatureData & {
-  categorical?: false;
+export type NumericFeatureThreshold = BaseFeatureThreshold & {
+  type: FeatureType.CONTINUOUS | FeatureType.DISCRETE;
   min: number;
   max: number;
 };
 
-export type CategoricalFeatureThreshold = BaseFeatureData & {
-  categorical: true;
+export type CategoricalFeatureThreshold = BaseFeatureThreshold & {
+  type: FeatureType.CATEGORICAL;
   enabledCategories: boolean[];
 };
 
 export type FeatureThreshold = NumericFeatureThreshold | CategoricalFeatureThreshold;
+
+export const isThresholdCategorical = (threshold: FeatureThreshold): threshold is CategoricalFeatureThreshold => {
+  return threshold.type === FeatureType.CATEGORICAL;
+};
+
+export const isThresholdNumeric = (threshold: FeatureThreshold): threshold is NumericFeatureThreshold => {
+  return threshold.type === FeatureType.CONTINUOUS || threshold.type === FeatureType.DISCRETE;
+};

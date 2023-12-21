@@ -17,7 +17,7 @@ import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { FeatureThreshold } from "./colorizer/types";
+import { FeatureThreshold, isThresholdCategorical } from "./colorizer/types";
 import { getColorMap, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -45,6 +45,7 @@ import {
   DEFAULT_COLOR_RAMP_ID,
   DEFAULT_PLAYBACK_FPS,
 } from "./constants";
+import { FeatureType } from "./colorizer/Dataset";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -95,7 +96,7 @@ function App(): ReactElement {
         const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
         const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
 
-        if (newThreshold && oldThreshold && !newThreshold.categorical) {
+        if (newThreshold && oldThreshold && newThreshold.type !== FeatureType.CATEGORICAL) {
           setColorRampMin(newThreshold.min);
           setColorRampMax(newThreshold.max);
         }
@@ -273,8 +274,10 @@ function App(): ReactElement {
       const datasetResult = await newCollection.tryLoadDataset(datasetKey);
 
       // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
-      await replaceDataset(datasetResult.dataset, datasetKey);
-      setIsInitialDatasetLoaded(true);
+      if (!isInitialDatasetLoaded) {
+        await replaceDataset(datasetResult.dataset, datasetKey);
+        setIsInitialDatasetLoaded(true);
+      }
       return;
     };
     loadInitialDatabase();
@@ -432,7 +435,7 @@ function App(): ReactElement {
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
-        if (threshold && !threshold.categorical) {
+        if (threshold && threshold.type !== FeatureType.CATEGORICAL) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
         } else {
@@ -543,7 +546,7 @@ function App(): ReactElement {
       return undefined;
     }
     const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
-    if (!threshold || threshold.categorical) {
+    if (!threshold || isThresholdCategorical(threshold)) {
       return undefined;
     }
     return [threshold.min, threshold.max];

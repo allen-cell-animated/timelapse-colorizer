@@ -167,7 +167,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     if (featureData && !props.dataset?.isFeatureCategorical(featureName)) {
       // Continuous/discrete feature
       newThresholds.push({
-        categorical: false,
+        isCategorical: false,
         featureName: featureName,
         units: props.dataset!.getFeatureUnits(featureName),
         min: featureData.min,
@@ -176,7 +176,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     } else {
       // Categorical feature
       newThresholds.push({
-        categorical: true,
+        isCategorical: true,
         featureName: featureName,
         units: props.dataset!.getFeatureUnits(featureName),
         enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
@@ -206,7 +206,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const onCategoricalThresholdChanged = (index: number, enabled_categories: boolean[]): void => {
     const newThresholds = [...props.featureThresholds];
     const threshold = newThresholds[index];
-    if (threshold.categorical) {
+    if (threshold.type === FeatureType.CATEGORICAL) {
       threshold.enabledCategories = enabled_categories;
     }
     props.onChange(newThresholds);
@@ -216,7 +216,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const onNumericThresholdChanged = (index: number, min: number, max: number): void => {
     const newThresholds = [...props.featureThresholds];
     const threshold = newThresholds[index];
-    if (!threshold.categorical) {
+    if (!threshold.type === FeatureType.CATEGORICAL) {
       threshold.min = min;
       threshold.max = max;
     }
@@ -323,7 +323,9 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
         <div style={{ width: "100%" }}>
           <FeatureLabel $disabled={disabled}>{featureLabel}</FeatureLabel>
 
-          {threshold.categorical ? renderCategoricalItem(threshold, index) : renderNumericItem(threshold, index)}
+          {threshold.type === FeatureType.CATEGORICAL
+            ? renderCategoricalItem(threshold, index)
+            : renderNumericItem(threshold, index)}
         </div>
         <div style={{ position: "absolute", top: "10px", right: "10px" }}>
           <IconButton type="text" onClick={() => onClickedRemove(index)}>

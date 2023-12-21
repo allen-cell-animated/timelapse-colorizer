@@ -24,7 +24,7 @@ import {
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { FeatureDataType } from "./types";
+import { FeatureDataType, isThresholdNumeric } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
@@ -495,7 +495,7 @@ export default class ColorizeCanvas {
       if (!featureData || featureData.units !== threshold.units) {
         continue;
       }
-      if (!threshold.categorical) {
+      if (isThresholdNumeric(threshold)) {
         for (let i = 0, n = inRangeIds.length; i < n; i++) {
           if (inRangeIds[i] === 1 && (featureData.data[i] < threshold.min || featureData.data[i] > threshold.max)) {
             inRangeIds[i] = 0;

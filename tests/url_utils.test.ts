@@ -9,6 +9,7 @@ import {
   isAllenPath,
 } from "../src/colorizer/utils/url_utils";
 import { DEFAULT_COLOR_RAMPS, MAX_FEATURE_CATEGORIES } from "../src/constants";
+import { FeatureType } from "../src/colorizer/Dataset";
 
 function padCategories(categories: boolean[]): boolean[] {
   const result = [...categories];
@@ -112,20 +113,20 @@ describe("Loading + saving from URL query strings", () => {
       track: 25,
       time: 14,
       thresholds: [
-        { featureName: "f1", units: "m", categorical: false, min: 0, max: 0 },
-        { featureName: "f2", units: "um", categorical: false, min: NaN, max: NaN },
-        { featureName: "f3", units: "km", categorical: false, min: 0, max: 1 },
-        { featureName: "f4", units: "mm", categorical: false, min: 0.501, max: 1000.485 },
+        { featureName: "f1", units: "m", type: FeatureType.CONTINUOUS, min: 0, max: 0 },
+        { featureName: "f2", units: "um", type: FeatureType.CONTINUOUS, min: NaN, max: NaN },
+        { featureName: "f3", units: "km", type: FeatureType.CONTINUOUS, min: 0, max: 1 },
+        { featureName: "f4", units: "mm", type: FeatureType.CONTINUOUS, min: 0.501, max: 1000.485 },
         {
           featureName: "f5",
           units: "",
-          categorical: true,
+          type: FeatureType.CATEGORICAL,
           enabledCategories: [true, true, true, true, true, true, true, true, true, true, true, true],
         },
         {
           featureName: "f6",
           units: "",
-          categorical: true,
+          type: FeatureType.CATEGORICAL,
           enabledCategories: [true, false, false, false, true, false, false, false, false, false, false, false],
         },
       ],
@@ -141,13 +142,13 @@ describe("Loading + saving from URL query strings", () => {
   it("Handles feature threshold names with potentially illegal characters", () => {
     const originalParams: Partial<UrlParams> = {
       thresholds: [
-        { featureName: "feature,,,", units: ",m,", categorical: false, min: 0, max: 1 },
-        { featureName: "(feature)", units: "(m)", categorical: false, min: 0, max: 1 },
-        { featureName: "feat:ure", units: ":m", categorical: false, min: 0, max: 1 },
+        { featureName: "feature,,,", units: ",m,", type: FeatureType.CONTINUOUS, min: 0, max: 1 },
+        { featureName: "(feature)", units: "(m)", type: FeatureType.CONTINUOUS, min: 0, max: 1 },
+        { featureName: "feat:ure", units: ":m", type: FeatureType.CONTINUOUS, min: 0, max: 1 },
         {
           featureName: "0.0%",
           units: "m&m's",
-          categorical: true,
+          type: FeatureType.CATEGORICAL,
           enabledCategories: padCategories([true, false, false]),
         },
       ],
@@ -160,9 +161,9 @@ describe("Loading + saving from URL query strings", () => {
   it("Enforces min/max on range and thresholds", () => {
     const originalParams: Partial<UrlParams> = {
       thresholds: [
-        { featureName: "feature1", units: "m", categorical: false, min: 1, max: 0 },
-        { featureName: "feature2", units: "m", categorical: false, min: 12, max: -34 },
-        { featureName: "feature3", units: "m", categorical: false, min: 0.5, max: 0.25 },
+        { featureName: "feature1", units: "m", type: FeatureType.CONTINUOUS, min: 1, max: 0 },
+        { featureName: "feature2", units: "m", type: FeatureType.CONTINUOUS, min: 12, max: -34 },
+        { featureName: "feature3", units: "m", type: FeatureType.CONTINUOUS, min: 0.5, max: 0.25 },
       ],
       range: [1, 0],
     };
@@ -170,16 +171,16 @@ describe("Loading + saving from URL query strings", () => {
     const parsedParams = loadParamsFromUrlQueryString(queryString);
 
     expect(parsedParams.thresholds).deep.equals([
-      { featureName: "feature1", units: "m", categorical: false, min: 0, max: 1 },
-      { featureName: "feature2", units: "m", categorical: false, min: -34, max: 12 },
-      { featureName: "feature3", units: "m", categorical: false, min: 0.25, max: 0.5 },
+      { featureName: "feature1", units: "m", type: FeatureType.CONTINUOUS, min: 0, max: 1 },
+      { featureName: "feature2", units: "m", type: FeatureType.CONTINUOUS, min: -34, max: 12 },
+      { featureName: "feature3", units: "m", type: FeatureType.CONTINUOUS, min: 0.25, max: 0.5 },
     ]);
     expect(parsedParams.range).deep.equals([0, 1]);
   });
 
   it("Handles empty feature thresholds", () => {
     const originalParams: Partial<UrlParams> = {
-      thresholds: [{ featureName: "feature1", units: "", categorical: false, min: 0, max: 1 }],
+      thresholds: [{ featureName: "feature1", units: "", type: FeatureType.CONTINUOUS, min: 0, max: 1 }],
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -191,7 +192,7 @@ describe("Loading + saving from URL query strings", () => {
       time: 0,
       track: 0,
       range: [0, 0],
-      thresholds: [{ featureName: "feature", units: "", categorical: false, min: 0, max: 0 }],
+      thresholds: [{ featureName: "feature", units: "", type: FeatureType.CONTINUOUS, min: 0, max: 0 }],
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -200,7 +201,7 @@ describe("Loading + saving from URL query strings", () => {
 
   it("Handles less than the maximum expected categories", () => {
     const originalParams: Partial<UrlParams> = {
-      thresholds: [{ featureName: "feature", units: "", categorical: true, enabledCategories: [true] }],
+      thresholds: [{ featureName: "feature", units: "", type: FeatureType.CATEGORICAL, enabledCategories: [true] }],
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -208,7 +209,7 @@ describe("Loading + saving from URL query strings", () => {
       {
         featureName: "feature",
         units: "",
-        categorical: true,
+        type: FeatureType.CATEGORICAL,
         enabledCategories: padCategories([true]),
       },
     ]);
@@ -218,7 +219,7 @@ describe("Loading + saving from URL query strings", () => {
     const thresholds = padCategories([true, true]);
     thresholds.push(true); // Add an extra threshold. This should be ignored
     const originalParams: Partial<UrlParams> = {
-      thresholds: [{ featureName: "feature", units: "", categorical: true, enabledCategories: thresholds }],
+      thresholds: [{ featureName: "feature", units: "", type: FeatureType.CATEGORICAL, enabledCategories: thresholds }],
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -226,7 +227,7 @@ describe("Loading + saving from URL query strings", () => {
       {
         featureName: "feature",
         units: "",
-        categorical: true,
+        type: FeatureType.CATEGORICAL,
         enabledCategories: padCategories([true, true]),
       },
     ]);
