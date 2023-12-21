@@ -17,7 +17,7 @@ import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { FeatureThreshold, isThresholdCategorical } from "./colorizer/types";
+import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric } from "./colorizer/types";
 import { getColorMap, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -45,7 +45,6 @@ import {
   DEFAULT_COLOR_RAMP_ID,
   DEFAULT_PLAYBACK_FPS,
 } from "./constants";
-import { FeatureType } from "./colorizer/Dataset";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -96,7 +95,7 @@ function App(): ReactElement {
         const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
         const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
 
-        if (newThreshold && oldThreshold && newThreshold.type !== FeatureType.CATEGORICAL) {
+        if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold)) {
           setColorRampMin(newThreshold.min);
           setColorRampMax(newThreshold.max);
         }
@@ -423,8 +422,6 @@ function App(): ReactElement {
 
   const updateFeature = useCallback(
     async (newDataset: Dataset, newFeatureName: string): Promise<void> => {
-      console.log("App:updateFeature: " + newFeatureName);
-      console.trace();
       if (!newDataset?.hasFeature(newFeatureName)) {
         console.warn("Dataset does not have feature '" + newFeatureName + "'.");
         return;
@@ -435,7 +432,7 @@ function App(): ReactElement {
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
-        if (threshold && threshold.type !== FeatureType.CATEGORICAL) {
+        if (threshold && isThresholdNumeric(threshold)) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
         } else {

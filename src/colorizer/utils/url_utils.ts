@@ -2,8 +2,7 @@
 /* global RequestInit */
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { FeatureType } from "../Dataset";
-import { FeatureThreshold } from "../types";
+import { FeatureThreshold, ThresholdType, isThresholdCategorical } from "../types";
 import { numberToStringDecimal } from "./math_utils";
 
 const URL_PARAM_TRACK = "track";
@@ -105,7 +104,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
         // TODO: remove once feature keys are implemented.
         const featureName = encodeURIComponent(threshold.featureName);
         const featureUnit = encodeURIComponent(threshold.units);
-        if (threshold.type === FeatureType.CATEGORICAL) {
+        if (isThresholdCategorical(threshold)) {
           // Interpret the selected categories as binary digits, then convert to a hex string.
           let selectedBinary = 0;
           for (let i = 0; i < threshold.enabledCategories.length; i++) {
@@ -293,7 +292,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
         threshold = {
           featureName: decodeURIComponent(rawFeatureName),
           units: decodeURIComponent(rawFeatureUnit),
-          type: FeatureType.CATEGORICAL,
+          type: ThresholdType.CATEGORICAL,
           enabledCategories,
         };
       } else if (selection.length === 2) {
@@ -301,9 +300,8 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
         threshold = {
           featureName: decodeURIComponent(rawFeatureName),
           units: decodeURIComponent(rawFeatureUnit),
-          // NOTE: Discrete feature typing is not preserved. This shouldn't cause any problems, but it's worth
-          // noting that this is lossy.
-          type: FeatureType.CONTINUOUS,
+          // NOTE: Discrete vs. continuous feature typing is not preserved.
+          type: ThresholdType.NUMERIC,
           min: parseFloat(selection[0]),
           max: parseFloat(selection[1]),
         };
@@ -317,7 +315,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
         threshold = {
           featureName: decodeURIComponent(rawFeatureName),
           units: decodeURIComponent(rawFeatureUnit),
-          type: FeatureType.CONTINUOUS,
+          type: ThresholdType.NUMERIC,
           min: NaN,
           max: NaN,
         };

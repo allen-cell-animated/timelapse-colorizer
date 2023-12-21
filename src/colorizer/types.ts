@@ -9,7 +9,6 @@ import {
   UnsignedByteType,
   UnsignedIntType,
 } from "three";
-import { FeatureType } from "./Dataset";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
 
@@ -75,30 +74,39 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
   },
 };
 
+// Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
+// to numeric data. Thresholds do not track if their source feature is integer
+// (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
+export enum ThresholdType {
+  NUMERIC = "numeric",
+  CATEGORICAL = "categorical",
+}
+
 type BaseFeatureThreshold = {
   // TODO: Replace with key string
   // featureKey: string;
   featureName: string;
   units: string;
+  type: ThresholdType;
 };
 
 export type NumericFeatureThreshold = BaseFeatureThreshold & {
-  type: FeatureType.CONTINUOUS | FeatureType.DISCRETE;
+  type: ThresholdType.NUMERIC;
   min: number;
   max: number;
 };
 
 export type CategoricalFeatureThreshold = BaseFeatureThreshold & {
-  type: FeatureType.CATEGORICAL;
+  type: ThresholdType.CATEGORICAL;
   enabledCategories: boolean[];
 };
 
 export type FeatureThreshold = NumericFeatureThreshold | CategoricalFeatureThreshold;
 
 export const isThresholdCategorical = (threshold: FeatureThreshold): threshold is CategoricalFeatureThreshold => {
-  return threshold.type === FeatureType.CATEGORICAL;
+  return threshold.type === ThresholdType.CATEGORICAL;
 };
 
 export const isThresholdNumeric = (threshold: FeatureThreshold): threshold is NumericFeatureThreshold => {
-  return threshold.type === FeatureType.CONTINUOUS || threshold.type === FeatureType.DISCRETE;
+  return threshold.type === ThresholdType.NUMERIC;
 };

@@ -1,7 +1,7 @@
 import { ColorRampData, MAX_FEATURE_CATEGORIES } from "../../constants";
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
-import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric } from "../types";
+import { FeatureThreshold, ThresholdType, isThresholdCategorical, isThresholdNumeric } from "../types";
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
@@ -50,7 +50,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
       newThresholds.push({
         featureName: threshold.featureName,
         units: threshold.units,
-        type: FeatureType.CATEGORICAL,
+        type: ThresholdType.CATEGORICAL,
         enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
       });
     } else if (isInDataset && featureData.type !== FeatureType.CATEGORICAL && isThresholdCategorical(threshold)) {
@@ -59,7 +59,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
       newThresholds.push({
         featureName: threshold.featureName,
         units: threshold.units,
-        type: FeatureType.CONTINUOUS,
+        type: ThresholdType.NUMERIC,
         min: featureData.min,
         max: featureData.max,
       });

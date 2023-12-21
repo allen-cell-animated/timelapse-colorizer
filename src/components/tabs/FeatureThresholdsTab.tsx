@@ -6,7 +6,14 @@ import styled, { css } from "styled-components";
 import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 
 import { Dataset } from "../../colorizer";
-import { CategoricalFeatureThreshold, FeatureThreshold, NumericFeatureThreshold } from "../../colorizer/types";
+import {
+  CategoricalFeatureThreshold,
+  FeatureThreshold,
+  NumericFeatureThreshold,
+  ThresholdType,
+  isThresholdCategorical,
+  isThresholdNumeric,
+} from "../../colorizer/types";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
@@ -167,7 +174,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     if (featureData && !props.dataset?.isFeatureCategorical(featureName)) {
       // Continuous/discrete feature
       newThresholds.push({
-        isCategorical: false,
+        type: ThresholdType.NUMERIC,
         featureName: featureName,
         units: props.dataset!.getFeatureUnits(featureName),
         min: featureData.min,
@@ -176,7 +183,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     } else {
       // Categorical feature
       newThresholds.push({
-        isCategorical: true,
+        type: ThresholdType.CATEGORICAL,
         featureName: featureName,
         units: props.dataset!.getFeatureUnits(featureName),
         enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
@@ -206,7 +213,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const onCategoricalThresholdChanged = (index: number, enabled_categories: boolean[]): void => {
     const newThresholds = [...props.featureThresholds];
     const threshold = newThresholds[index];
-    if (threshold.type === FeatureType.CATEGORICAL) {
+    if (isThresholdCategorical(threshold)) {
       threshold.enabledCategories = enabled_categories;
     }
     props.onChange(newThresholds);
@@ -216,7 +223,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const onNumericThresholdChanged = (index: number, min: number, max: number): void => {
     const newThresholds = [...props.featureThresholds];
     const threshold = newThresholds[index];
-    if (!threshold.type === FeatureType.CATEGORICAL) {
+    if (isThresholdNumeric(threshold)) {
       threshold.min = min;
       threshold.max = max;
     }
@@ -323,7 +330,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
         <div style={{ width: "100%" }}>
           <FeatureLabel $disabled={disabled}>{featureLabel}</FeatureLabel>
 
-          {threshold.type === FeatureType.CATEGORICAL
+          {isThresholdCategorical(threshold)
             ? renderCategoricalItem(threshold, index)
             : renderNumericItem(threshold, index)}
         </div>
