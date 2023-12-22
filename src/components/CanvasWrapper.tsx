@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRe
 import { Color } from "three";
 
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
-import { DrawSettings, FeatureThreshold } from "../colorizer/types";
+import { ViewerConfig, FeatureThreshold } from "../colorizer/types";
 import { AppThemeContext } from "./AppStyle";
 
 type CanvasWrapperProps = {
@@ -12,21 +12,14 @@ type CanvasWrapperProps = {
    * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
-  showTrackPath: boolean;
-  showScaleBar: boolean;
-  showTimestamp: boolean;
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
-  /** Null means that no backdrop is currently selected; clear the backdrop. */
+  config: ViewerConfig;
+
   backdropKey: string | null;
-  /** Opacity, as a number percentage. */
-  backdropBrightness: number;
-  /** Saturation, as a number percentage. */
-  backdropSaturation: number;
+
   colorRamp: ColorRamp;
   colorRampMin: number;
   colorRampMax: number;
-  objectOpacity: number;
+
   selectedTrack: Track | null;
   categoricalColors: Color[];
 
@@ -100,9 +93,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Update backdrops
   useMemo(() => {
     canv.setBackdropKey(props.backdropKey);
-    canv.setBackdropBrightness(props.backdropBrightness);
-    canv.setBackdropSaturation(props.backdropSaturation);
-  }, [props.backdropKey, props.backdropBrightness, props.backdropSaturation]);
+    canv.setBackdropBrightness(props.config.backdropBrightness);
+    canv.setBackdropSaturation(props.config.backdropSaturation);
+  }, [props.backdropKey, props.config.backdropBrightness, props.config.backdropSaturation]);
 
   // Update categorical colors
   useMemo(() => {
@@ -111,18 +104,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
-    const settings = props.outOfRangeDrawSettings;
+    const settings = props.config.outOfRangeDrawSettings;
     canv.setOutOfRangeDrawMode(settings.mode, settings.color);
-  }, [props.outOfRangeDrawSettings]);
+  }, [props.config.outOfRangeDrawSettings]);
 
   useMemo(() => {
-    const settings = props.outlierDrawSettings;
+    const settings = props.config.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
-  }, [props.outlierDrawSettings]);
+  }, [props.config.outlierDrawSettings]);
 
   useMemo(() => {
-    canv.setObjectOpacity(props.objectOpacity);
-  }, [props.objectOpacity]);
+    canv.setObjectOpacity(props.config.objectOpacity);
+  }, [props.config.objectOpacity]);
 
   useMemo(() => {
     // YAGNI: Debouncing for this is possible but no performance issues encountered yet.
@@ -134,17 +127,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Updated track-related settings
   useMemo(() => {
     canv.setSelectedTrack(props.selectedTrack);
-    canv.setShowTrackPath(props.showTrackPath);
-  }, [props.selectedTrack, props.showTrackPath]);
+    canv.setShowTrackPath(props.config.showTrackPath);
+  }, [props.selectedTrack, props.config.showTrackPath]);
 
   // Update overlay settings
   useMemo(() => {
-    canv.setScaleBarVisibility(props.showScaleBar);
-  }, [props.showScaleBar]);
+    canv.setScaleBarVisibility(props.config.showScaleBar);
+  }, [props.config.showScaleBar]);
 
   useMemo(() => {
-    canv.setTimestampVisibility(props.showTimestamp);
-  }, [props.showTimestamp]);
+    canv.setTimestampVisibility(props.config.showTimestamp);
+  }, [props.config.showTimestamp]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
 

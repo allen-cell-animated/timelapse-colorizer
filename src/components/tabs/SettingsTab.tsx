@@ -3,12 +3,11 @@ import React, { ReactElement } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode } from "../../colorizer/ColorizeCanvas";
 import { FlexColumn, SettingsContainer } from "../../styles/utils";
-import { DrawSettings } from "../CanvasWrapper";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
 import CustomCollapse from "../CustomCollapse";
+import { ViewerConfig, DrawMode } from "../../colorizer/types";
 
 const NO_BACKDROP = {
   key: "",
@@ -16,23 +15,13 @@ const NO_BACKDROP = {
 };
 
 type SettingsTabProps = {
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
-  showScaleBar: boolean;
-  showTimestamp: boolean;
-  dataset: Dataset | null;
-  backdropBrightness: number;
-  backdropSaturation: number;
+  config: ViewerConfig;
+  updateConfig(settings: Partial<ViewerConfig>): void;
+
   backdropKey: string | null;
-  objectOpacity: number;
-  setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
-  setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
-  setShowScaleBar: (show: boolean) => void;
-  setShowTimestamp: (show: boolean) => void;
-  setBackdropBrightness: (percent: number) => void;
-  setBackdropSaturation: (percent: number) => void;
-  setBackdropKey: (name: string | null) => void;
-  setObjectOpacity: (opacity: number) => void;
+  setBackdropKey: (key: string | null) => void;
+
+  dataset: Dataset | null;
 };
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
@@ -64,8 +53,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               min={50}
               max={150}
               step={10}
-              value={props.backdropBrightness}
-              onChange={props.setBackdropBrightness}
+              value={props.config.backdropBrightness}
+              onChange={(newBrightness: number) => props.updateConfig({ backdropBrightness: newBrightness })}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </label>
@@ -78,8 +67,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               min={0}
               max={100}
               step={10}
-              value={props.backdropSaturation}
-              onChange={props.setBackdropSaturation}
+              value={props.config.backdropSaturation}
+              onChange={(saturation) => props.updateConfig({ backdropSaturation: saturation })}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </label>
@@ -89,18 +78,18 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         <SettingsContainer>
           <DrawModeDropdown
             label="Filtered object color:"
-            selected={props.outOfRangeDrawSettings.mode}
-            color={props.outOfRangeDrawSettings.color}
+            selected={props.config.outOfRangeDrawSettings.mode}
+            color={props.config.outOfRangeDrawSettings.color}
             onChange={(mode: DrawMode, color: Color) => {
-              props.setOutOfRangeDrawSettings({ mode, color });
+              props.updateConfig({ outOfRangeDrawSettings: { mode, color } });
             }}
           />
           <DrawModeDropdown
             label="Outlier object color:"
-            selected={props.outlierDrawSettings.mode}
-            color={props.outlierDrawSettings.color}
+            selected={props.config.outlierDrawSettings.mode}
+            color={props.config.outlierDrawSettings.color}
             onChange={(mode: DrawMode, color: Color) => {
-              props.setOutlierDrawSettings({ mode, color });
+              props.updateConfig({ outlierDrawSettings: { mode, color } });
             }}
           />{" "}
           <label>
@@ -111,17 +100,17 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}
-              value={props.objectOpacity}
-              onChange={props.setObjectOpacity}
+              value={props.config.objectOpacity}
+              onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
             />
           </label>
           <label>
             <span></span>
             <Checkbox
               type="checkbox"
-              checked={props.showScaleBar}
-              onChange={() => {
-                props.setShowScaleBar(!props.showScaleBar);
+              checked={props.config.showScaleBar}
+              onChange={(event) => {
+                props.updateConfig({ showScaleBar: event.target.checked });
               }}
             >
               Show scale bar
@@ -131,9 +120,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <span></span>
             <Checkbox
               type="checkbox"
-              checked={props.showTimestamp}
-              onChange={() => {
-                props.setShowTimestamp(!props.showTimestamp);
+              checked={props.config.showTimestamp}
+              onChange={(event) => {
+                props.updateConfig({ showTimestamp: event.target.checked });
               }}
             >
               Show timestamp

@@ -98,13 +98,14 @@ export type DrawSettings = {
 };
 
 /**
- * Configuration for the canvas viewer.
+ * Configuration for the viewer. These are high-level settings
+ * that are not specific to a particular dataset.
  */
-export type CanvasViewerSettings = {
+export type ViewerConfig = {
   showTrackPath: boolean;
   showScaleBar: boolean;
   showTimestamp: boolean;
-  backdropKey: string | null;
+  keepRangeBetweenDatasets: boolean;
   backdropBrightness: number;
   backdropSaturation: number;
   objectOpacity: number;
@@ -112,13 +113,16 @@ export type CanvasViewerSettings = {
   outlierDrawSettings: DrawSettings;
 };
 
-export const defaultViewerSettings: CanvasViewerSettings = {
+export const defaultViewerConfig: ViewerConfig = {
   showTrackPath: true,
   showScaleBar: true,
   showTimestamp: true,
-  backdropKey: null,
+  keepRangeBetweenDatasets: true,
+  /** Opacity, as a number percentage. */
   backdropBrightness: 100,
+  /** Saturation, as a number percentage. */
   backdropSaturation: 100,
+  /** Opacity, as a number percentage. */
   objectOpacity: 100,
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },

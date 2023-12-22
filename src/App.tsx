@@ -25,7 +25,7 @@ import {
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { DrawMode, FeatureThreshold } from "./colorizer/types";
+import { ViewerConfig, DrawMode, FeatureThreshold, defaultViewerConfig } from "./colorizer/types";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -62,11 +62,13 @@ function App(): ReactElement {
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
-
   const [backdropKey, setBackdropKey] = useState<string | null>(null);
-  const [backdropBrightness, setBackdropBrightness] = useState<number>(100);
-  const [backdropSaturation, setBackdropSaturation] = useState<number>(100);
-  const [objectOpacity, setObjectOpacity] = useState(100);
+
+  // TODO: Save these settings in local storage
+  const [canvasSettings, setCanvasSettings] = useState(defaultViewerConfig);
+  const updateSettings = useCallback((newSettings: Partial<ViewerConfig>): void => {
+    setCanvasSettings({ ...canvasSettings, ...newSettings });
+  }, []);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
@@ -701,18 +703,13 @@ function App(): ReactElement {
               <CanvasWrapper
                 canv={canv}
                 dataset={dataset}
-                showTrackPath={showTrackPath}
-                outOfRangeDrawSettings={outOfRangeDrawSettings}
-                outlierDrawSettings={outlierDrawSettings}
+                backdropKey={backdropKey}
                 colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 categoricalColors={categoricalPalette}
                 selectedTrack={selectedTrack}
-                backdropKey={backdropKey}
-                backdropBrightness={backdropBrightness}
-                backdropSaturation={backdropSaturation}
-                objectOpacity={objectOpacity}
+                config={canvasSettings}
                 onTrackClicked={(track) => {
                   setFindTrackInput("");
                   setSelectedTrack(track);
@@ -726,8 +723,6 @@ function App(): ReactElement {
                   }
                 }}
                 onMouseLeave={() => setShowHoveredId(false)}
-                showScaleBar={showScaleBar}
-                showTimestamp={showTimestamp}
               />
             </HoverTooltip>
 
@@ -844,24 +839,12 @@ function App(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <SettingsTab
-                          // TODO: Refactor all of this into a settings or configuration object
-                          outOfRangeDrawSettings={outOfRangeDrawSettings}
-                          outlierDrawSettings={outlierDrawSettings}
-                          showScaleBar={showScaleBar}
-                          showTimestamp={showTimestamp}
+                          config={canvasSettings}
+                          updateConfig={updateSettings}
                           dataset={dataset}
-                          backdropBrightness={backdropBrightness}
-                          backdropSaturation={backdropSaturation}
+                          // TODO: This could be part of a dataset-specific settings object
                           backdropKey={backdropKey}
-                          setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
-                          setOutlierDrawSettings={setOutlierDrawSettings}
-                          setShowScaleBar={setShowScaleBar}
-                          setShowTimestamp={setShowTimestamp}
-                          setBackdropBrightness={setBackdropBrightness}
-                          setBackdropSaturation={setBackdropSaturation}
                           setBackdropKey={setBackdropKey}
-                          objectOpacity={objectOpacity}
-                          setObjectOpacity={setObjectOpacity}
                         />
                       </div>
                     ),
