@@ -87,6 +87,7 @@ export const SettingsContainer = styled.div<{ $spanWidth?: string }>`
   & > label > span:first-of-type {
     display: inline-block;
     text-align: right;
+    vertical-align: middle;
     ${(props) => {
       if (props.$spanWidth) {
         return css`

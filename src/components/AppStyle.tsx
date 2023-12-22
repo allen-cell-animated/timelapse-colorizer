@@ -210,7 +210,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             controlHeight: theme.controls.height,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
-            borderRadiusLG: 4,
+            borderRadiusLG: 6,
             colorText: theme.color.text.primary,
             colorTextPlaceholder: theme.color.text.hint,
           },

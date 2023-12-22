@@ -45,7 +45,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
   const items = [
-    { key: DrawMode.HIDE.toString(), label: "Hide values" },
+    { key: DrawMode.HIDE.toString(), label: "Hide" },
     { key: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
   ];
 
