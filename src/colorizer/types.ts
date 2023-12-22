@@ -1,4 +1,5 @@
 import {
+  Color,
   FloatType,
   IntType,
   PixelFormat,
@@ -9,6 +10,7 @@ import {
   UnsignedByteType,
   UnsignedIntType,
 } from "three";
+import { OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./ColorizeCanvas";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
 
@@ -74,9 +76,50 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
   },
 };
 
+// MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
+/** Draw options for object types. */
+export enum DrawMode {
+  /** Hide this object type. */
+  HIDE = 0,
+  /** Use a solid color for this object type. */
+  USE_COLOR = 1,
+}
+
 export type FeatureThreshold = {
   featureName: string;
   units: string;
   min: number;
   max: number;
+};
+
+export type DrawSettings = {
+  mode: DrawMode;
+  color: Color;
+};
+
+/**
+ * Configuration for the canvas viewer.
+ */
+export type CanvasViewerSettings = {
+  showTrackPath: boolean;
+  showScaleBar: boolean;
+  showTimestamp: boolean;
+  backdropKey: string | null;
+  backdropBrightness: number;
+  backdropSaturation: number;
+  objectOpacity: number;
+  outOfRangeDrawSettings: DrawSettings;
+  outlierDrawSettings: DrawSettings;
+};
+
+export const defaultViewerSettings: CanvasViewerSettings = {
+  showTrackPath: true,
+  showScaleBar: true,
+  showTimestamp: true,
+  backdropKey: null,
+  backdropBrightness: 100,
+  backdropSaturation: 100,
+  objectOpacity: 100,
+  outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
+  outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
 };

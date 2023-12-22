@@ -25,7 +25,7 @@ import {
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { FeatureDataType } from "./types";
+import { DrawMode, FeatureDataType } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
@@ -40,15 +40,6 @@ export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
-
-// MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
-/** Draw options for object types. */
-export enum DrawMode {
-  /** Hide this object type. */
-  HIDE = 0,
-  /** Use a solid color for this object type. */
-  USE_COLOR = 1,
-}
 
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */

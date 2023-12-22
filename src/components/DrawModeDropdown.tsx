@@ -1,12 +1,13 @@
+import { Color as AntdColor } from "@rc-component/color-picker";
+import { ColorPicker } from "antd";
+import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-import LabeledDropdown from "./LabeledDropdown";
-import { DrawMode } from "../colorizer/ColorizeCanvas";
-import { Color as ThreeColor, ColorRepresentation } from "three";
-import { ColorPicker } from "antd";
-import { Color as AntdColor } from "@rc-component/color-picker";
-import { PresetsItem } from "antd/es/color-picker/interface";
+
+import { ColorRepresentation, Color as ThreeColor } from "three";
+import { DrawMode } from "../colorizer/types";
 import { FlexRowAlignCenter } from "../styles/utils";
+import LabeledDropdown from "./LabeledDropdown";
 
 type DrawModeSelectorProps = {
   label: string;

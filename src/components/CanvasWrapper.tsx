@@ -2,14 +2,8 @@ import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRe
 import { Color } from "three";
 
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
-import { DrawMode } from "../colorizer/ColorizeCanvas";
-import { FeatureThreshold } from "../colorizer/types";
+import { DrawSettings, FeatureThreshold } from "../colorizer/types";
 import { AppThemeContext } from "./AppStyle";
-
-export type DrawSettings = {
-  mode: DrawMode;
-  color: Color;
-};
 
 type CanvasWrapperProps = {
   canv: ColorizeCanvas;

@@ -23,9 +23,9 @@ import {
   Track,
 } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
+import { BACKGROUND_ID, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { FeatureThreshold } from "./colorizer/types";
+import { DrawMode, FeatureThreshold } from "./colorizer/types";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
