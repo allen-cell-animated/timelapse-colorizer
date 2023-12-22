@@ -111,14 +111,14 @@
 }
 
 .mainContent .topControls {
-  margin: 10px 0;
+  margin: 10px 0 5px 0;
 }
 
 .mainContent .controlsContainer {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: center;
+  gap: 10px;
 }
 
 .mainContent {

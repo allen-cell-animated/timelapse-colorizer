@@ -1,15 +1,27 @@
-import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter,RGBAFormat } from "three";
+import { DataTexture, Color, ColorRepresentation, RGBAFormat, FloatType, LinearFilter, NearestFilter } from "three";
+
+export enum ColorRampType {
+  LINEAR,
+  HARD_STOP,
+}
 
 export default class ColorRamp {
   private colorStops: Color[];
   public readonly texture: DataTexture;
+  private type: ColorRampType;
 
-  constructor(colorStops: ColorRepresentation[]) {
+  constructor(colorStops: ColorRepresentation[], type: ColorRampType = ColorRampType.LINEAR) {
     this.colorStops = colorStops.map((color) => new Color(color));
     const dataArr = this.colorStops.flatMap((col) => [col.r, col.g, col.b, 1]);
     this.texture = new DataTexture(new Float32Array(dataArr), this.colorStops.length, 1, RGBAFormat, FloatType);
-    this.texture.minFilter = LinearFilter;
-    this.texture.magFilter = LinearFilter;
+    this.type = type;
+    if (this.type === ColorRampType.HARD_STOP) {
+      this.texture.minFilter = NearestFilter;
+      this.texture.magFilter = NearestFilter;
+    } else {
+      this.texture.minFilter = LinearFilter;
+      this.texture.magFilter = LinearFilter;
+    }
     this.texture.internalFormat = "RGBA32F";
     this.texture.needsUpdate = true;
   }
@@ -23,16 +35,24 @@ export default class ColorRamp {
 
     if (this.colorStops.length < 2) {
       ctx.fillStyle = `#${this.colorStops[0].getHexString()}`;
-    } else {
+      ctx.fillRect(0, 0, width, height);
+    } else if (this.type === ColorRampType.LINEAR) {
       const gradient = ctx.createLinearGradient(0, 0, vertical ? 0 : width, vertical ? height : 0);
       const step = 1 / (this.colorStops.length - 1);
       this.colorStops.forEach((color, idx) => {
         gradient.addColorStop(step * idx, `#${color.getHexString()}`);
       });
       ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      // Draw as hard stop gradients
+      const step = width / this.colorStops.length;
+      this.colorStops.forEach((color, idx) => {
+        ctx.fillStyle = `#${color.getHexString()}`;
+        ctx.fillRect(Math.floor(step * idx), 0, Math.ceil(step), height);
+      });
     }
 
-    ctx.fillRect(0, 0, width, height);
     return canvas;
   }
 
