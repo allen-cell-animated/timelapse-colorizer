@@ -1,8 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import "vitest-canvas-mock";
-
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
+import "vitest-canvas-mock";
 
 // Fix for the following error:
 // `TypeError: The "obj" argument must be an instance of Blob. Received an instance of Blob`

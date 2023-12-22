@@ -1,7 +1,7 @@
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, MAX_FEATURE_CATEGORIES } from "../src/constants";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, MAX_FEATURE_CATEGORIES } from "../src/constants";
 
 describe("Categorical Palettes", () => {
   it("has expected length", () => {

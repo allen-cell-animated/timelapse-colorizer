@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  UrlParams,
   isAllenPath,
   isJson,
   isUrl,
   loadParamsFromUrlQueryString,
   paramsToUrlQueryString,
-  UrlParams,
 } from "../src/colorizer/utils/url_utils";
 import { DEFAULT_COLOR_RAMPS } from "../src/constants";
 
