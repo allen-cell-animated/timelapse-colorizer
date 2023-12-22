@@ -1,4 +1,4 @@
-import { ColorRamp } from "./../colorizer";
+import ColorRamp from "../ColorRamp";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorData = {

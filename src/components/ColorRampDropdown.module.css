@@ -1,9 +1,23 @@
 .colorRampSelector {
   display: flex;
   --height: var(--button-height);
+  --width: 120px;
   height: var(--height);
   flex-direction: row;
   align-items: center;
+}
+
+.colorRampSelector img {
+  /* 
+   * Copied from https://stackoverflow.com/questions/7615009/disable-interpolation-when-scaling-a-canvas.
+   * Prevents color ramps (especially hard-stop categorical ones) from being pixelated when scaled.
+   */
+  image-rendering: optimizeSpeed; /* Older versions of FF          */
+  image-rendering: -moz-crisp-edges; /* FF 6.0+                       */
+  image-rendering: -webkit-optimize-contrast; /* Safari                        */
+  image-rendering: -o-crisp-edges; /* OS X & Windows Opera (12.02+) */
+  image-rendering: pixelated; /* Awesome future-browsers       */
+  -ms-interpolation-mode: nearest-neighbor; /* IE     */
 }
 
 .buttonContainer {
@@ -13,6 +27,7 @@
 }
 
 #selectorButton {
+  width: var(--width);
   padding: 0;
   margin: 0;
   overflow: hidden;
@@ -33,6 +48,14 @@
   filter: grayscale(100%);
 }
 
+#selectorButton.categorical {
+  /* Styles for when the dropdown button shows a categorical palette.
+  Specifically, apply the outline styling and turn off transitions.*/
+  outline: 1px solid var(--color-text-button);
+  outline-offset: -2px;
+  transition: outline 0s;
+}
+
 .dropdownContainer {
   /* Ant makes all of its dropdowns z-index 1050. */
   z-index: 1051;
@@ -42,20 +65,32 @@
   flex-direction: column;
   background-color: var(--color-button);
 
-  --outline-width: 1px;
+  --border-width: 1px;
+  --outline-width-selected: 1px;
+  --outline-width-unselected: 0px;
   --radius: 6px;
-  padding: var(--outline-width) var(--outline-width);
-  gap: var(--outline-width);
+  padding: var(--border-width) var(--border-width);
+  gap: var(--border-width);
   border-radius: var(--radius);
 
-  --button-radius: calc(var(--radius) - var(--outline-width));
+  --button-radius: calc(var(--radius) - var(--border-width));
 
   transform-origin: top;
   visibility: hidden;
   transform: scaleY(0.9);
   opacity: 0;
 
-  transition: all ease-in 0.2s 0.25s;
+  transition: all ease-in 0.2s 0.25s, gap 0s;
+}
+
+/** Overrides for when the categorical dropdown is being used, instead of
+ * the normal color ramp version. Apply an extra border to each element,
+ * making it thicker when hovered.
+ */
+.dropdownContainer.categorical {
+  --outline-width-unselected: 1px;
+  --outline-width-selected: 2px;
+  gap: 1px;
 }
 
 /** 
@@ -73,7 +108,7 @@
 }
 
 .dropdownButton {
-  width: 100%;
+  width: var(--width);
   border-radius: 0;
   box-shadow: none;
   margin: 0;
@@ -81,10 +116,11 @@
   border-width: 0;
   /* Required override, as default button has different border behavior */
   border: 0px solid transparent !important;
-  outline: 0px solid var(--color-text-button);
+  outline: var(--outline-width-unselected) solid var(--color-text-button);
   outline-offset: -1px;
   transition: outline 0s ease 0s;
   overflow: hidden;
+  display: flex;
 }
 
 .dropdownButton:first-child {
@@ -94,10 +130,9 @@
 .dropdownButton:last-child {
   border-radius: 0 0 var(--button-radius) var(--button-radius);
 }
-
-.dropdownButton:hover,
-.dropdownButton:focus {
+.dropdownButton:focus,
+.dropdownButton:hover {
   /* Required override, as default button has different border behavior */
-  outline: 1px solid var(--color-text-button) !important;
-  outline-offset: -1px !important;
+  outline: var(--outline-width-selected) solid var(--color-text-button) !important;
+  outline-offset: calc(0px - var(--outline-width-selected)) !important;
 }
