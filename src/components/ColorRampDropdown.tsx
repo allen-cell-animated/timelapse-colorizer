@@ -31,9 +31,9 @@ type ColorRampSelectorProps = {
 };
 
 const defaultProps: Partial<ColorRampSelectorProps> = {
+  colorRamps: DEFAULT_COLOR_RAMPS,
   disabled: false,
   useCategoricalPalettes: false,
-  colorRamps: DEFAULT_COLOR_RAMPS,
   categoricalPalettes: DEFAULT_CATEGORICAL_PALETTES,
 };
 
