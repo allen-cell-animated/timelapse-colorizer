@@ -48,7 +48,6 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       <CustomCollapse label="Backdrop">
         <SettingsContainer>
           <LabeledDropdown
-            // TODO: Add a None option? Or an option to clear?
             label={"Backdrop images:"}
             selected={props.backdropKey || NO_BACKDROP.key}
             items={backdropOptions}
