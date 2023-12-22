@@ -34,6 +34,7 @@ type CanvasWrapperProps = {
   colorRampMax: number;
   objectOpacity: number;
   selectedTrack: Track | null;
+  categoricalColors: Color[];
 
   featureThresholds?: FeatureThreshold[];
 
@@ -108,6 +109,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setBackdropBrightness(props.backdropBrightness);
     canv.setBackdropSaturation(props.backdropSaturation);
   }, [props.backdropKey, props.backdropBrightness, props.backdropSaturation]);
+
+  // Update categorical colors
+  useMemo(() => {
+    canv.setCategoricalColors(props.categoricalColors);
+  }, [props.categoricalColors]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
