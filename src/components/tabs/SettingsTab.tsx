@@ -52,7 +52,6 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
     <FlexColumn $gap={5}>
       <SectionHeaderText>Backdrop</SectionHeaderText>
       <LabeledDropdown
-        // TODO: Add a None option? Or an option to clear?
         label={"Backdrop images"}
         selected={props.backdropKey || NO_BACKDROP.key}
         items={backdropOptions}
