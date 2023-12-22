@@ -10,7 +10,6 @@ import {
 } from "@ant-design/icons";
 import { Button, Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
-import { Color } from "three";
 
 import styles from "./App.module.css";
 import {
@@ -23,9 +22,9 @@ import {
   Track,
 } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { ViewerConfig, DrawMode, FeatureThreshold, defaultViewerConfig } from "./colorizer/types";
+import { ViewerConfig, FeatureThreshold, defaultViewerConfig } from "./colorizer/types";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -65,9 +64,9 @@ function App(): ReactElement {
   const [backdropKey, setBackdropKey] = useState<string | null>(null);
 
   // TODO: Save these settings in local storage
-  const [canvasSettings, setCanvasSettings] = useState(defaultViewerConfig);
-  const updateSettings = useCallback((newSettings: Partial<ViewerConfig>): void => {
-    setCanvasSettings({ ...canvasSettings, ...newSettings });
+  const [config, setConfig] = useState(defaultViewerConfig);
+  const updateConfig = useCallback((newSettings: Partial<ViewerConfig>): void => {
+    setConfig({ ...config, ...newSettings });
   }, []);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
@@ -78,14 +77,6 @@ function App(): ReactElement {
   const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
-  const [outOfRangeDrawSettings, setOutOfRangeDrawSettings] = useState({
-    mode: DrawMode.USE_COLOR,
-    color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
-  });
-  const [outlierDrawSettings, setOutlierDrawSettings] = useState({
-    mode: DrawMode.USE_COLOR,
-    color: new Color(OUTLIER_COLOR_DEFAULT),
-  });
 
   const [categoricalPalette, setCategoricalPalette] = useState(
     DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
@@ -114,10 +105,6 @@ function App(): ReactElement {
   );
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
-  const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
-  const [showTrackPath, setShowTrackPath] = useState(false);
-  const [showScaleBar, setShowScaleBar] = useState(true);
-  const [showTimestamp, setShowTimestamp] = useState(true);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -431,7 +418,7 @@ function App(): ReactElement {
       setFeatureName(newFeatureName);
 
       const featureData = newDataset.getFeatureData(newFeatureName);
-      if (!isColorRampRangeLocked && featureData) {
+      if (!config.keepRangeBetweenDatasets && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
         if (threshold) {
@@ -445,7 +432,7 @@ function App(): ReactElement {
 
       canv.setFeature(newFeatureName);
     },
-    [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
+    [config.keepRangeBetweenDatasets, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
 
   const getFeatureValue = useCallback(
@@ -664,19 +651,19 @@ function App(): ReactElement {
             {/** Additional top bar settings */}
             <div>
               <Checkbox
-                checked={isColorRampRangeLocked}
+                checked={config.keepRangeBetweenDatasets}
                 onChange={() => {
                   // Invert lock on range
-                  setIsColorRampRangeLocked(!isColorRampRangeLocked);
+                  updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
                 }}
               >
                 Keep range between datasets
               </Checkbox>
               <Checkbox
                 type="checkbox"
-                checked={showTrackPath}
+                checked={config.showTrackPath}
                 onChange={() => {
-                  setShowTrackPath(!showTrackPath);
+                  updateConfig({ showTrackPath: !config.showTrackPath });
                 }}
               >
                 Show track path
@@ -709,7 +696,7 @@ function App(): ReactElement {
                 colorRampMax={colorRampMax}
                 categoricalColors={categoricalPalette}
                 selectedTrack={selectedTrack}
-                config={canvasSettings}
+                config={config}
                 onTrackClicked={(track) => {
                   setFindTrackInput("");
                   setSelectedTrack(track);
@@ -839,8 +826,8 @@ function App(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <SettingsTab
-                          config={canvasSettings}
-                          updateConfig={updateSettings}
+                          config={config}
+                          updateConfig={updateConfig}
                           dataset={dataset}
                           // TODO: This could be part of a dataset-specific settings object
                           backdropKey={backdropKey}
