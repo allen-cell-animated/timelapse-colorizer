@@ -117,7 +117,6 @@ const CssContainer = styled.div`
   --color-modal-overlay: ${theme.color.layout.modalOverlay};
 
   /* Controls */
-  --color-focus-shadow: ${theme.color.button.focusShadow}
   /* TODO: Possible issue with hover/active colors because the UI design
   styling has the same active and hover colors (just with different outlines).
   Would dark/light theme be more descriptive? 
