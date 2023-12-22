@@ -1,6 +1,5 @@
-import { Checkbox, Collapse, Divider, Slider } from "antd";
+import { Checkbox, Slider } from "antd";
 import React, { ReactElement } from "react";
-import styled from "styled-components";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
@@ -35,12 +34,6 @@ type SettingsTabProps = {
   setBackdropKey: (name: string | null) => void;
   setObjectOpacity: (opacity: number) => void;
 };
-
-const SectionHeaderText = styled.h2`
-  margin: 10px 0 0 0;
-  padding: 0;
-  grid-column: section;
-`;
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
