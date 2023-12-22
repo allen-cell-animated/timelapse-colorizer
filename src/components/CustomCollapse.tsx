@@ -11,6 +11,35 @@ const CustomCollapseElement = styled(Collapse)`
     display: flex;
     flex-direction: row;
     align-items: center !important;
+    outline: 1px solid transparent;
+    border-radius: 6px !important;
+    transition: outline 0s !important;
+  }
+
+  & .ant-collapse-header:focus:not(:focus-visible) {
+    // Override "outline: none" which causes brief flicker
+    outline: 1px solid transparent !important;
+  }
+
+  & .ant-collapse-header:focus-visible {
+    // Tab selection
+    outline: 4px solid var(--color-focus-shadow) !important;
+  }
+
+  & .ant-collapse-header:hover:not(:active) {
+    h3,
+    svg {
+      color: var(--color-collapse-hover);
+      fill: var(--color-collapse-hover);
+    }
+  }
+
+  & .ant-collapse-header:active {
+    h3,
+    svg {
+      color: var(--color-collapse-active);
+      fill: var(--color-collapse-active);
+    }
   }
 `;
 
@@ -19,6 +48,8 @@ const CustomCollapseElement = styled(Collapse)`
  */
 export default function CustomCollapse(props: PropsWithChildren<CustomCollapseProps>): ReactElement {
   return (
+    // TODO: This doesn't respond to tab + space bar input, which is an accessibility issue.
+    // Not sure if this can be added without rewriting the Collapse component.
     <CustomCollapseElement
       size="small"
       ghost

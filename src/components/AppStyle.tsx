@@ -54,7 +54,7 @@ const theme = {
       outlineActive: palette.themeDark,
       hover: palette.themeLight,
       active: palette.themeDark,
-      focusShadow: "rgba(137, 98, 211, 0.06)",
+      focusShadow: "#f2ebfa",
     },
     dropdown: {
       backgroundHover: palette.gray5,
@@ -117,6 +117,7 @@ const CssContainer = styled.div`
   --color-modal-overlay: ${theme.color.layout.modalOverlay};
 
   /* Controls */
+  --color-focus-shadow: ${theme.color.button.focusShadow}
   /* TODO: Possible issue with hover/active colors because the UI design
   styling has the same active and hover colors (just with different outlines).
   Would dark/light theme be more descriptive? 
@@ -132,6 +133,9 @@ const CssContainer = styled.div`
 
   --color-dropdown-hover: ${theme.color.dropdown.backgroundHover};
   --color-dropdown-selected: ${theme.color.dropdown.backgroundSelected};
+
+  --color-collapse-hover: ${theme.color.theme};
+  --color-collapse-active: ${theme.color.themeDark};
 
   --color-focus-shadow: rgba(137, 98, 211, 0.06);
 
