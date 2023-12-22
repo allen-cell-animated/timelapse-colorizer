@@ -45,6 +45,7 @@ import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils"
 import SettingsTab from "./components/tabs/SettingsTab";
 import PlotTab from "./components/tabs/PlotTab";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
+import ScatterPlotTab from "./components/tabs/ScatterPlotTab";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -807,6 +808,21 @@ function App(): ReactElement {
                           featureName={featureName}
                           selectedTrack={selectedTrack}
                           disabled={disableUi}
+                        />
+                      </div>
+                    ),
+                  },
+                  {
+                    label: "Scatter Plot",
+                    key: "scatter_plot",
+                    children: (
+                      <div className={styles.tabContent}>
+                        <ScatterPlotTab
+                          dataset={dataset}
+                          colorRampData={colorRampData.get(colorRampKey)!}
+                          colorRampFeature={featureName}
+                          colorRampFeatureMin={colorRampMin}
+                          colorRampFeatureMax={colorRampMax}
                         />
                       </div>
                     ),
