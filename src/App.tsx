@@ -6,7 +6,7 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Slider, Tabs, notification } from "antd";
+import { Button, Checkbox, notification,Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Color } from "three";
@@ -14,7 +14,7 @@ import { Color } from "three";
 import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
+import { BACKGROUND_ID, DrawMode, OUT_OF_RANGE_COLOR_DEFAULT,OUTLIER_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import { FeatureThreshold } from "./colorizer/types";
 import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
@@ -37,11 +37,11 @@ import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import PlotTab from "./components/tabs/PlotTab";
 import SettingsTab from "./components/tabs/SettingsTab";
 import {
-  DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_CATEGORICAL_PALETTE_ID,
+  DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_COLLECTION_PATH,
-  DEFAULT_COLOR_RAMPS,
   DEFAULT_COLOR_RAMP_ID,
+  DEFAULT_COLOR_RAMPS,
   DEFAULT_PLAYBACK_FPS,
 } from "./constants";
 
