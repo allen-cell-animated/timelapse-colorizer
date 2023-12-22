@@ -54,7 +54,7 @@ const theme = {
       outlineActive: palette.themeDark,
       hover: palette.themeLight,
       active: palette.themeDark,
-      focusShadow: "#f2ebfa",
+      focusShadow: "rgba(137, 98, 211, 0.06)",
     },
     dropdown: {
       backgroundHover: palette.gray5,
