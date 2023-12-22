@@ -1,6 +1,6 @@
 import { FeatureThreshold } from "../types";
 import ColorRamp from "../ColorRamp";
-import { ColorRampMap } from "../colors/color_ramps";
+import { ColorRampData } from "../colors/color_ramps";
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
@@ -20,7 +20,7 @@ export function thresholdMatchFinder(featureName: string, units: string): (thres
 /**
  * Convenience method for getting a single ramp from a map of strings to ramps, optionally reversing it.
  */
-export function getColorMap(colorRampData: ColorRampMap, key: string, reversed = false): ColorRamp {
+export function getColorMap(colorRampData: Map<string, ColorRampData>, key: string, reversed = false): ColorRamp {
   const colorRamp = colorRampData.get(key)?.colorRamp;
   if (!colorRamp) {
     throw new Error("Could not find data for color ramp '" + key + "'");

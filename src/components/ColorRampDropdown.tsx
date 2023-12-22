@@ -4,13 +4,12 @@ import React, { ReactElement, useContext, useEffect, useMemo, useState } from "r
 import { Color } from "three";
 
 import {
-  CategoricalPaletteMap,
   ColorRamp,
   ColorRampData,
-  ColorRampMap,
   ColorRampType,
   DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_COLOR_RAMPS,
+  PaletteData,
 } from "../colorizer";
 import { AppThemeContext } from "./AppStyle";
 import styles from "./ColorRampDropdown.module.css";
@@ -19,10 +18,10 @@ import IconButton from "./IconButton";
 type ColorRampSelectorProps = {
   selectedRamp: string;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
-  colorRamps?: ColorRampMap;
+  colorRamps?: Map<string, ColorRampData>;
 
   useCategoricalPalettes?: boolean;
-  categoricalPalettes?: CategoricalPaletteMap;
+  categoricalPalettes?: Map<string, PaletteData>;
   numCategories: number;
   selectedPalette: Color[];
   onChangePalette: (newPalette: Color[]) => void;

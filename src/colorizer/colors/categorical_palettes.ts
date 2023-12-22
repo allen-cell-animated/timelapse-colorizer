@@ -262,6 +262,5 @@ const keyedPaletteData: [string, PaletteData][] = rawPaletteData.map((value) => 
 });
 const paletteMap: Map<string, PaletteData> = new Map(keyedPaletteData);
 
-export type CategoricalPaletteMap = Map<string, PaletteData>;
 export const DEFAULT_CATEGORICAL_PALETTES = paletteMap;
 export const DEFAULT_CATEGORICAL_PALETTE_ID = "adobe";

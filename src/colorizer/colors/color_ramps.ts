@@ -124,6 +124,5 @@ const keyedColorRampData: [string, ColorRampData][] = colorRampData.map((value) 
 });
 const colorRampMap = new Map(keyedColorRampData);
 
-export type ColorRampMap = Map<string, ColorRampData>;
 export const DEFAULT_COLOR_RAMPS = colorRampMap;
 export const DEFAULT_COLOR_RAMP_ID = Array.from(colorRampMap.keys())[0];
