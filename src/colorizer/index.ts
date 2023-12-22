@@ -9,3 +9,6 @@ import Track from "./Track";
 import Plotting from "./Plotting";
 
 export { ColorizeCanvas, Plotting, Dataset, Track, ColorRamp, ColorRampType, ImageFrameLoader, JsonArrayLoader };
+
+export * from "./colors/color_ramps";
+export * from "./colors/categorical_palettes";

@@ -1,6 +1,4 @@
-// TODO: Because this file depends on ColorRamp, it should probably be moved into
-// the colorizer module. (It's not a pure constants file.)
-import ColorRamp from "./../colorizer/ColorRamp";
+import ColorRamp from "../ColorRamp";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorData = {
@@ -126,5 +124,6 @@ const keyedColorRampData: [string, ColorRampData][] = colorRampData.map((value) 
 });
 const colorRampMap = new Map(keyedColorRampData);
 
+export type ColorRampMap = Map<string, ColorRampData>;
 export const DEFAULT_COLOR_RAMPS = colorRampMap;
 export const DEFAULT_COLOR_RAMP_ID = Array.from(colorRampMap.keys())[0];
