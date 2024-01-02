@@ -495,7 +495,7 @@ export default class ColorizeCanvas {
     // feature thresholds or not.
     // TODO: Optimize memory by using a true boolean array? Bit-level manipulation to fit it within Uint8Array?
     // TODO: If optimizing, use fuse operation via shader.
-    let inRangeIds = new Uint8Array(this.dataset.numObjects);
+    const inRangeIds = new Uint8Array(this.dataset.numObjects);
 
     // Ignore thresholds with features that don't exist in this dataset or whose units don't match
     const validThresholds = thresholds.filter((threshold) => {

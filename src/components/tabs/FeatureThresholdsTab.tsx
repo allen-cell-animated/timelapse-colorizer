@@ -1,5 +1,5 @@
 import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons";
-import { Checkbox, ConfigProvider, List, Select } from "antd";
+import { Checkbox, List, Select } from "antd";
 import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 import { Color } from "three";
@@ -294,24 +294,14 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
       <CategoricalThresholdContainer>
         {categories.map((category, categoryIndex) => {
           return (
-            <ConfigProvider
-              theme={{
-                token: {
-                  colorPrimary:
-                    props.categoricalPalette[categoryIndex % props.categoricalPalette.length].getHexString(),
-                },
-              }}
+            <Checkbox
               key={categoryIndex}
+              disabled={disabled}
+              onChange={() => onChange(categoryIndex)}
+              checked={enabledCategories[categoryIndex]}
             >
-              <Checkbox
-                key={categoryIndex}
-                disabled={disabled}
-                onChange={() => onChange(categoryIndex)}
-                checked={enabledCategories[categoryIndex]}
-              >
-                {category}
-              </Checkbox>
-            </ConfigProvider>
+              {category}
+            </Checkbox>
           );
         })}
       </CategoricalThresholdContainer>
