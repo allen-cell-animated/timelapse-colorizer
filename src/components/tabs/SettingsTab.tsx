@@ -35,6 +35,25 @@ type SettingsTabProps = {
   setObjectOpacity: (opacity: number) => void;
 };
 
+const HiddenMarksSlider = styled(Slider)`
+  &.ant-slider-with-marks {
+    /** Override ant default styling which adds margin for mark text */
+    margin-bottom: 9.625px;
+  }
+  & .ant-slider-mark {
+    /** Hide mark text */
+    display: none;
+    height: 0;
+  }
+`;
+
+const makeMarks = (marks: number[]) => {
+  return marks.reduce((acc, mark) => {
+    acc[mark] = mark.toString();
+    return acc;
+  }, {} as { [key: number]: string });
+};
+
 const SectionHeaderText = styled.h2`
   margin: 10px 0 0 0;
   padding: 0;
@@ -60,11 +79,12 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       />
       <FlexRowAlignCenter $gap={6}>
         <h3>Brightness</h3>
-        <Slider
+        <HiddenMarksSlider
           // TODO: Add a mark at the 100% position
           style={{ maxWidth: "200px", width: "100%" }}
           min={50}
           max={150}
+          marks={makeMarks([50, 100, 150])}
           step={10}
           value={props.backdropBrightness}
           onChange={props.setBackdropBrightness}
@@ -73,11 +93,12 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       </FlexRowAlignCenter>
       <FlexRowAlignCenter $gap={6}>
         <h3>Saturation</h3>
-        <Slider
+        <HiddenMarksSlider
           style={{ maxWidth: "200px", width: "100%" }}
           min={0}
           max={100}
           step={10}
+          marks={makeMarks([0, 50, 100])}
           value={props.backdropSaturation}
           onChange={props.setBackdropSaturation}
           tooltip={{ formatter: (value) => `${value}%` }}
@@ -103,10 +124,11 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       />{" "}
       <FlexRowAlignCenter $gap={6}>
         <h3>Opacity</h3>
-        <Slider
+        <HiddenMarksSlider
           style={{ maxWidth: "200px", width: "100%" }}
           min={0}
           max={100}
+          marks={makeMarks([0, 50, 100])}
           value={props.objectOpacity}
           onChange={props.setObjectOpacity}
         />
