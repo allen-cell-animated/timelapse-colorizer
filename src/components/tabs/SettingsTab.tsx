@@ -47,7 +47,7 @@ const HiddenMarksSlider = styled(Slider)`
   }
 `;
 
-const makeMarks = (marks: number[]) => {
+const makeMarks = (marks: number[]): { [key: number]: string } => {
   return marks.reduce((acc, mark) => {
     acc[mark] = mark.toString();
     return acc;
