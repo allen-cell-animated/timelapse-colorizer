@@ -18,9 +18,8 @@ jobs:
         with:
           node-version: "18"
 
-        # Must override default vite build base so that assets can still be accessed when not placed in the root directory of gh-pages branch.
       - name: Install and Build
-        run: npm ci && npx vite build --base=https://allen-cell-animated.github.io/nucmorph-colorizer/public/
+        run: npm ci && npx vite build --base=https://allen-cell-animated.github.io/nucmorph-colorizer/
 
       - name: Run Linter
         run: npm run lint
@@ -35,4 +34,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+          publish_dir: .
