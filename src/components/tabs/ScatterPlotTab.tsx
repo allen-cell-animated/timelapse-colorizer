@@ -141,7 +141,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
                 y: yData || [],
                 type: "scattergl",
                 mode: "markers",
-                marker: { ...colorConfig },
+                marker: { ...colorConfig, size: 4 },
               },
             ]}
             layout={{
