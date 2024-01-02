@@ -47,7 +47,7 @@ const HiddenMarksSlider = styled(Slider)`
   }
 `;
 
-const makeMarks = (marks: number[]): { [key: number]: string } => {
+const makeAntSliderMarks = (marks: number[]): { [key: number]: string } => {
   return marks.reduce((acc, mark) => {
     acc[mark] = mark.toString();
     return acc;
@@ -84,7 +84,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           style={{ maxWidth: "200px", width: "100%" }}
           min={50}
           max={150}
-          marks={makeMarks([50, 100, 150])}
+          marks={makeAntSliderMarks([50, 100, 150])}
           step={10}
           value={props.backdropBrightness}
           onChange={props.setBackdropBrightness}
@@ -98,7 +98,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           min={0}
           max={100}
           step={10}
-          marks={makeMarks([0, 50, 100])}
+          marks={makeAntSliderMarks([0, 50, 100])}
           value={props.backdropSaturation}
           onChange={props.setBackdropSaturation}
           tooltip={{ formatter: (value) => `${value}%` }}
@@ -128,7 +128,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           style={{ maxWidth: "200px", width: "100%" }}
           min={0}
           max={100}
-          marks={makeMarks([0, 50, 100])}
+          marks={makeAntSliderMarks([0, 50, 100])}
           value={props.objectOpacity}
           onChange={props.setObjectOpacity}
         />
