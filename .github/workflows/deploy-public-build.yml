@@ -6,10 +6,10 @@ on:
     branches:
       - main
 
-concurrency: deploy-public-build-${{ github.ref }}
+concurrency: pages-build-deployment-${{ github.ref }}
 
 jobs:
-  deploy-public-build:
+  pages-build-deployment:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
