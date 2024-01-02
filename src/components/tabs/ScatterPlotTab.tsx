@@ -31,6 +31,27 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   const colorRampFeatureMin = useDeferredValue<number>(useDebounce(props.colorRampFeatureMin, 500));
   const colorRampFeatureMax = useDeferredValue<number>(useDebounce(props.colorRampFeatureMax, 500));
 
+  // const [dataset, setDataset] = useState<Dataset | null>(null);
+  // const [colorRampData, setColorRampData] = useState<ColorRampData>(props.colorRampData);
+  // const [colorRampFeature, setColorRampFeature] = useState<string | null>(props.colorRampFeature);
+  // const [colorRampFeatureMin, setColorRampFeatureMin] = useState<number>(props.colorRampFeatureMin);
+  // const [colorRampFeatureMax, setColorRampFeatureMax] = useState<number>(props.colorRampFeatureMax);
+
+  // useMemo(() => {
+  //   startTransition(() => {
+  //     setDataset(props.dataset);
+  //   });
+  // }, [props.dataset]);
+
+  // useMemo(() => {
+  //   startTransition(() => {
+  //     setColorRampFeature(props.colorRampFeature);
+  //     setColorRampData(props.colorRampData);
+  //     setColorRampFeatureMin(props.colorRampFeatureMin);
+  //     setColorRampFeatureMax(props.colorRampFeatureMax);
+  //   });
+  // }, [props.colorRampData, props.colorRampFeature, props.colorRampFeatureMin, props.colorRampFeatureMax]);
+
   const [xAxisFeatureName, _setXAxisFeatureName] = useState<string | null>(null);
   const setXAxisFeatureName = (featureName: string | null) => {
     startTransition(() => {
@@ -65,20 +86,23 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   const colorStopsToColorScale = (colorStops: string[]): [number, string][] => {
     const colorScale: [number, string][] = [];
     for (let i = 0; i < colorStops.length; i++) {
-      colorScale.push([i / (colorStops.length - 1), colorStops[i] + "80"]);
+      // Transparency is set to 50% (alpha = 0x80)
+      colorScale.push([i / (colorStops.length - 1), colorStops[i] + "40"]);
     }
     return colorScale;
   };
 
   const coloredFeatureData = useMemo(() => getData(colorRampFeature, dataset), [colorRampFeature, dataset]);
-  const colorConfig: Partial<PlotMarker> = {
-    color: coloredFeatureData || [0],
-    cmin: colorRampFeatureMin,
-    cmax: colorRampFeatureMax,
-    colorscale: colorStopsToColorScale(colorRampData.colorStops),
-  };
 
-  // TODO: memoize to avoid re-rendering
+  const colorConfig: Partial<PlotMarker> = useMemo(() => {
+    return {
+      color: Array.from(coloredFeatureData || [0]),
+      cmin: colorRampFeatureMin,
+      cmax: colorRampFeatureMax,
+      colorscale: colorStopsToColorScale(colorRampData.colorStops),
+    };
+  }, [coloredFeatureData, colorRampFeatureMin, colorRampFeatureMax, colorRampData]);
+
   const xData = useMemo(() => getData(xAxisFeatureName, dataset), [xAxisFeatureName, dataset]);
   const yData = useMemo(() => getData(yAxisFeatureName, dataset), [yAxisFeatureName, dataset]);
 
