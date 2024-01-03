@@ -57,48 +57,63 @@ export const FlexRowAlignCenter = styled(FlexRow)`
 `;
 
 /**
- * A flexbox container that aligns settings by labels and input.
- * A settings object should consist of a `label` containing a `span` label text
- * element.
+ * A grid container that aligns settings by labels and input.
+ *
+ * A settings object should be a `label` containing ONLY two child elements;
+ * a `span` text element first, and any other element second.
+ *
+ * If no `$spanWidth` is provided, the `span` label will be up to 30% of the container width.
+ *
+ * @param spanWidth CSS string used to set the width of the label's `span` column. Defaults to `"fit-content(30%)"`.
+ * If you do not want the `span` column to be sized automatically, set this to a fixed width or percentage (ex: `"30%"` or `"100px"`).
+ * @param gapPx The gap, in pixels, between each row and column. 6 by default.
  *
  * @example
  * ```
  * <SettingsContainer>
  *   <label>
  *     <span>Label for a setting</span>
- *     <input type="text" />  // can be any element
+ *     <input type="text" />  // can be any SINGLE element (including divs). Multiple elements will break the layout.
  *   </label>
  * </SettingsContainer>
  * ```
  */
-export const SettingsContainer = styled.div<{ $spanWidth?: string }>`
-  display: flex;
-  gap: 6px;
-  flex-direction: column;
-  width: 100%;
+export const SettingsContainer = styled.div<{ $spanWidth?: string; $gapPx?: number }>`
+  display: grid;
+
+  ${(props) => {
+    let width = props.$spanWidth ? props.$spanWidth : "fit-content(30%)";
+    let gap = props.$gapPx ? props.$gapPx : 6;
+
+    return css`
+      grid-template-columns: ${width} auto;
+      gap: ${gap}px;
+    `;
+  }}
 
   & > label {
-    display: flex;
-    gap: 6px;
-    width: 100%;
-    align-items: baseline;
+    grid-column: 1 / 3; // Labels span both columns
+    display: grid;
+    grid-template-columns: subgrid;
+    ${(props) => {
+      // Apply same gap between elements as between rows
+      return css`
+        gap: ${props.$gapPx ? props.$gapPx : 6}px;
+      `;
+    }}
   }
 
   & > label > span:first-of-type {
-    display: inline-block;
+    display: grid;
+    grid-column: 1;
+    align-items: center;
     text-align: right;
-    vertical-align: middle;
-    ${(props) => {
-      if (props.$spanWidth) {
-        return css`
-          min-width: ${props.$spanWidth};
-          max-width: ${props.$spanWidth};
-        `;
-      }
-      return css`
-        min-width: 30%;
-        max-width: 30%;
-      `;
-    }}
+  }
+
+  & > label > :not(span:first-of-type) {
+    grid-column: 2;
+    // Lines up the bottom of the input with the bottom of the label,
+    // where the colon separator is.
+    align-items: end;
   }
 `;
