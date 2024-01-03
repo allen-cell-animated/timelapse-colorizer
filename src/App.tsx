@@ -33,10 +33,12 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID } from "./constants";
 import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import PlotTab from "./components/tabs/PlotTab";
 import SettingsTab from "./components/tabs/SettingsTab";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
+import CategoricalColorPicker from "./components/CategoricalColorPicker";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -75,6 +77,10 @@ function App(): ReactElement {
     mode: DrawMode.USE_COLOR,
     color: new Color(OUTLIER_COLOR_DEFAULT),
   });
+
+  const [categoricalPalette, setCategoricalPalette] = useState(
+    DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
+  );
 
   const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
   const setFeatureThresholds = useCallback(
@@ -536,6 +542,17 @@ function App(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
+  let hoveredFeatureValue = "";
+  if (lastHoveredId !== null && dataset) {
+    const featureVal = getFeatureValue(lastHoveredId);
+    const categories = dataset.getFeatureCategories(featureName);
+    if (categories !== null) {
+      hoveredFeatureValue = categories[Number.parseInt(featureVal, 10)];
+    } else {
+      hoveredFeatureValue = featureVal;
+    }
+  }
+
   return (
     <AppStyle className={styles.app}>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
@@ -568,13 +585,17 @@ function App(): ReactElement {
           />
 
           <ColorRampDropdown
-            selected={colorRampKey}
+            selectedRamp={colorRampKey}
             reversed={colorRampReversed}
-            onChange={(name, reversed) => {
+            onChangeRamp={(name, reversed) => {
               setColorRampKey(name);
               setColorRampReversed(reversed);
             }}
             disabled={disableUi}
+            useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
+            numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
+            selectedPalette={categoricalPalette}
+            onChangePalette={setCategoricalPalette}
           />
         </div>
         <div className={styles.headerRight}>
@@ -605,18 +626,31 @@ function App(): ReactElement {
             {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
           </h3>
           <div className={styles.controlsContainer}>
-            <LabeledRangeSlider
-              min={colorRampMin}
-              max={colorRampMax}
-              minSliderBound={dataset?.getFeatureData(featureName)?.min}
-              maxSliderBound={dataset?.getFeatureData(featureName)?.max}
-              onChange={function (min: number, max: number): void {
-                setColorRampMin(min);
-                setColorRampMax(max);
-              }}
-              marks={getColorMapSliderMarks()}
-              disabled={disableUi}
-            />
+            {
+              // Render either a categorical color picker or a range slider depending on the feature type
+              dataset?.isFeatureCategorical(featureName) ? (
+                <CategoricalColorPicker
+                  categories={dataset.getFeatureCategories(featureName) || []}
+                  selectedPalette={categoricalPalette}
+                  onChangePalette={setCategoricalPalette}
+                  disabled={disableUi}
+                />
+              ) : (
+                <LabeledRangeSlider
+                  min={colorRampMin}
+                  max={colorRampMax}
+                  minSliderBound={dataset?.getFeatureData(featureName)?.min}
+                  maxSliderBound={dataset?.getFeatureData(featureName)?.max}
+                  onChange={function (min: number, max: number): void {
+                    setColorRampMin(min);
+                    setColorRampMax(max);
+                  }}
+                  marks={getColorMapSliderMarks()}
+                  disabled={disableUi}
+                />
+              )
+            }
+            {/** Additional top bar settings */}
             <div>
               <Checkbox
                 checked={isColorRampRangeLocked}
@@ -649,8 +683,7 @@ function App(): ReactElement {
                 <>
                   <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
                   <p>
-                    {featureName}:{" "}
-                    <span style={{ whiteSpace: "nowrap" }}>{lastHoveredId && getFeatureValue(lastHoveredId)}</span>
+                    {featureName}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
                   </p>
                 </>
               }
@@ -665,6 +698,7 @@ function App(): ReactElement {
                 colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
+                categoricalColors={categoricalPalette}
                 selectedTrack={selectedTrack}
                 backdropKey={backdropKey}
                 backdropBrightness={backdropBrightness}

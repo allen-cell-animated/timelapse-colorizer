@@ -49,6 +49,25 @@ vec3 hslToRgb(vec3 c) {
   return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
 }
 
+// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
+vec3 hsvToRgb(vec3 c) {
+  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
+vec3 rgbToHsv(vec3 c) {
+  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+  float d = q.x - min(q.w, q.y);
+  float e = 1.0e-10;
+  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+
+}
+
 // Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar and https://en.wikipedia.org/wiki/HSL_and_HSV.
 vec3 rgbToHsl(vec3 rgbColor) {
   float h = 0.0; // hue
@@ -146,13 +165,24 @@ vec4 getBackdropColor(vec2 sUv) {
     return TRANSPARENT;
   }
   vec4 backdropColor = texture(backdrop, sUv).rgba;
-  // Shader fn adapted from @av01d on GitHub. See https://gist.github.com/Volcanoscar/4a9500d240497d3c0228f663593d167a
-  // and https://en.wikipedia.org/wiki/Grayscale.
-  vec3 backdropHsl = rgbToHsl(backdropColor.rgb);
-  backdropHsl.y *= backdropSaturation;
-  backdropHsl.z += (backdropBrightness - 1.0);
+  // Switch between HSV and HSL color adjustments based on whether we are increasing or
+  // decreasing brightness. HSL is better for increasing brightness, since it does not increase
+  // perceptual saturation when lightness increases (the way HSV does when value increases).
+  // HSV is better than HSL for decreasing brightness for similar reasons.
+  if (backdropBrightness >= 1.0) {
+    // Increasing brightness so use HSL
+    vec3 backdropHsl = rgbToHsl(backdropColor.rgb);
+    backdropHsl.y *= backdropSaturation;
+    backdropHsl.z += backdropBrightness - 1.0;
+    return vec4(hslToRgb(backdropHsl), backdropColor.a);
+  } else {
+    // Decreasing brightness so use HSV
+    vec3 backdropHsv = rgbToHsv(backdropColor.rgb);
+    backdropHsv.y *= backdropSaturation;
+    backdropHsv.z *= backdropBrightness;
+    return vec4(hsvToRgb(backdropHsv), backdropColor.a);
+  }
 
-  return vec4(hslToRgb(backdropHsl), backdropColor.a);
 }
 
 vec4 getObjectColor(vec2 sUv) {

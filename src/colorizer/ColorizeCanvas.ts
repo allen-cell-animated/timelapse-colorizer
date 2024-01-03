@@ -28,7 +28,7 @@ import {
   DEFAULT_CATEGORICAL_PALETTE_ID,
   DEFAULT_COLOR_RAMPS,
   DEFAULT_COLOR_RAMP_ID,
-  PaletteData,
+  MAX_FEATURE_CATEGORIES,
 } from "../constants";
 import CanvasOverlay from "./CanvasUIOverlay";
 import ColorRamp from "./ColorRamp";
@@ -149,7 +149,7 @@ export default class ColorizeCanvas {
   private colorRamp: ColorRamp;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
-  private categoricalPalette: PaletteData;
+  private categoricalPalette: ColorRamp;
   private currentFrame: number;
 
   constructor() {
@@ -203,7 +203,10 @@ export default class ColorizeCanvas {
     this.featureName = null;
     this.backdropKey = null;
     this.colorRamp = DEFAULT_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_ID)!.colorRamp;
-    this.categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
+    this.categoricalPalette = new ColorRamp(
+      DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colorStops
+    );
+
     this.track = null;
     this.showTrackPath = false;
     this.colorMapRangeMin = 0;
@@ -355,12 +358,16 @@ export default class ColorizeCanvas {
 
   /** Sets the current color ramp. Used when a continuous or discrete feature is selected. */
   setColorRamp(ramp: ColorRamp): void {
+    if (this.colorRamp !== ramp) {
+      // Dispose of existing ramp
+      this.colorRamp.dispose();
+    }
     this.colorRamp = ramp;
   }
 
-  /** Sets the current categorical palette. Used when a categorical feature is selected. */
-  setCategoricalPalette(palette: PaletteData): void {
-    this.categoricalPalette = palette;
+  setCategoricalColors(colors: Color[]): void {
+    this.categoricalPalette.dispose();
+    this.categoricalPalette = new ColorRamp(colors);
   }
 
   setBackgroundColor(color: Color): void {
@@ -595,11 +602,9 @@ export default class ColorizeCanvas {
    */
   updateRamp(): void {
     if (this.featureName && this.dataset?.isFeatureCategorical(this.featureName)) {
-      const palette = this.categoricalPalette;
-      const colorRamp = new ColorRamp(palette.colorStops);
-      this.setUniform("colorRamp", colorRamp.texture);
+      this.setUniform("colorRamp", this.categoricalPalette.texture);
       this.setUniform("featureColorRampMin", 0);
-      this.setUniform("featureColorRampMax", palette.colorStops.length - 1);
+      this.setUniform("featureColorRampMax", MAX_FEATURE_CATEGORIES - 1);
     } else {
       this.setUniform("colorRamp", this.colorRamp.texture);
       this.setUniform("featureColorRampMin", this.colorMapRangeMin);

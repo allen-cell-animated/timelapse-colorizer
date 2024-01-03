@@ -4,10 +4,35 @@
     { "name": "Continuous Feature", "data": "feature_0.json", "units": "°F", "type": "continuous" },
     { "name": "Discrete Feature", "data": "feature_1.json", "units": "nodes", "type": "discrete" },
     {
-      "name": "Categorical Feature",
+      "name": "Categorical Feature (5)",
       "data": "feature_2.json",
       "type": "categorical",
       "categories": ["Spicy", "Sour", "Bitter", "Sweet", "Dry"]
+    },
+    {
+      "name": "Categorical Feature (9)",
+      "data": "feature_2.json",
+      "type": "categorical",
+      "categories": ["Spicy", "Sour", "Bitter", "Sweet", "Dry", "Chewy", "Umami", "Salty", "Crispy"]
+    },
+    {
+      "name": "Categorical Feature (12)",
+      "data": "feature_2.json",
+      "type": "categorical",
+      "categories": [
+        "AAAAAAAAAAAA",
+        "BBBBBBBBBBBB",
+        "CCCCCCCCCCCC",
+        "DDDDDDDDDDDD",
+        "EEEEEEEEEEEE",
+        "FFFFFFFFFFFF",
+        "GGGGGGGGGGGG",
+        "HHHHHHHHHHHH",
+        "IIIIIIIIIIII",
+        "JJJJJJJJJJJJ",
+        "KKKKKKKKKKKK",
+        "LLLLLLLLLLLL"
+      ]
     }
   ],
   "backdrops": [

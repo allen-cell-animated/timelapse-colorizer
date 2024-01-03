@@ -9,6 +9,7 @@ import { DrawSettings } from "../CanvasWrapper";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
 import CustomCollapse from "../CustomCollapse";
+import styled from "styled-components";
 
 const NO_BACKDROP = {
   key: "",
@@ -37,6 +38,25 @@ type SettingsTabProps = {
   setObjectOpacity: (opacity: number) => void;
 };
 
+const HiddenMarksSlider = styled(Slider)`
+  &.ant-slider-with-marks {
+    /** Override ant default styling which adds margin for mark text */
+    margin-bottom: 9.625px;
+  }
+  & .ant-slider-mark {
+    /** Hide mark text */
+    display: none;
+    height: 0;
+  }
+`;
+
+const makeAntSliderMarks = (marks: number[]): { [key: number]: string } => {
+  return marks.reduce((acc, mark) => {
+    acc[mark] = mark.toString();
+    return acc;
+  }, {} as { [key: number]: string });
+};
+
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
     ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
@@ -60,12 +80,13 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <span>
               <h3>Brightness:</h3>
             </span>
-            <Slider
+            <HiddenMarksSlider
               // TODO: Add a mark at the 100% position
               style={{ maxWidth: "200px", width: "100%" }}
               min={50}
               max={150}
               step={10}
+              marks={makeAntSliderMarks([50, 100, 150])}
               value={props.backdropBrightness}
               onChange={props.setBackdropBrightness}
               tooltip={{ formatter: (value) => `${value}%` }}
@@ -75,11 +96,12 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <span>
               <h3>Saturation:</h3>
             </span>
-            <Slider
+            <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}
               step={10}
+              marks={makeAntSliderMarks([0, 50, 100])}
               value={props.backdropSaturation}
               onChange={props.setBackdropSaturation}
               tooltip={{ formatter: (value) => `${value}%` }}
@@ -109,7 +131,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <span>
               <h3>Opacity:</h3>
             </span>
-            <Slider
+            <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}
