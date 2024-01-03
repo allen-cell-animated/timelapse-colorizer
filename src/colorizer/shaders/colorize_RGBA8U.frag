@@ -146,8 +146,6 @@ vec4 getBackdropColor(vec2 sUv) {
     return TRANSPARENT;
   }
   vec4 backdropColor = texture(backdrop, sUv).rgba;
-  // Shader fn adapted from @av01d on GitHub. See https://gist.github.com/Volcanoscar/4a9500d240497d3c0228f663593d167a
-  // and https://en.wikipedia.org/wiki/Grayscale.
   vec3 backdropHsl = rgbToHsl(backdropColor.rgb);
   backdropHsl.y *= backdropSaturation;
   backdropHsl.z += (backdropBrightness - 1.0);
