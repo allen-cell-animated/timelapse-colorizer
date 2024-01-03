@@ -15,6 +15,8 @@ const NO_BACKDROP = {
   label: "(None)",
 };
 
+const INDENT_PX = 24;
+
 type SettingsTabProps = {
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
@@ -46,7 +48,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer>
+        <SettingsContainer $indentPx={INDENT_PX}>
           <LabeledDropdown
             label={"Backdrop images:"}
             selected={props.backdropKey || NO_BACKDROP.key}
@@ -86,7 +88,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         </SettingsContainer>
       </CustomCollapse>
       <CustomCollapse label="Objects">
-        <SettingsContainer>
+        <SettingsContainer $indentPx={INDENT_PX}>
           <DrawModeDropdown
             label="Filtered object color:"
             selected={props.outOfRangeDrawSettings.mode}
