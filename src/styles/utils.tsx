@@ -67,6 +67,7 @@ export const FlexRowAlignCenter = styled(FlexRow)`
  * @param spanWidth CSS string used to set the width of the label's `span` column. Defaults to `"fit-content(30%)"`.
  * If you do not want the `span` column to be sized automatically, set this to a fixed width or percentage (ex: `"30%"` or `"100px"`).
  * @param gapPx The gap, in pixels, between each row and column. 6 by default.
+ * @param indentPx The indent, in pixels, of the entire container. 10 by default.
  *
  * @example
  * ```
@@ -82,12 +83,12 @@ export const SettingsContainer = styled.div<{ $spanWidth?: string; $gapPx?: numb
   display: grid;
 
   ${(props) => {
-    const width = props.$spanWidth ? props.$spanWidth : "fit-content(30%)";
+    const spanWidth = props.$spanWidth ? props.$spanWidth : "fit-content(30%)";
     const gap = props.$gapPx ? props.$gapPx : 6;
     const indent = props.$indentPx ? props.$indentPx : 10;
 
     return css`
-      grid-template-columns: ${width} auto;
+      grid-template-columns: ${spanWidth} auto;
       gap: ${gap}px;
       padding-left: ${indent}px;
     `;
