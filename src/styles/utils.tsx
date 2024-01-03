@@ -82,9 +82,9 @@ export const SettingsContainer = styled.div<{ $spanWidth?: string; $gapPx?: numb
   display: grid;
 
   ${(props) => {
-    let width = props.$spanWidth ? props.$spanWidth : "fit-content(30%)";
-    let gap = props.$gapPx ? props.$gapPx : 6;
-    let indent = props.$indentPx ? props.$indentPx : 10;
+    const width = props.$spanWidth ? props.$spanWidth : "fit-content(30%)";
+    const gap = props.$gapPx ? props.$gapPx : 6;
+    const indent = props.$indentPx ? props.$indentPx : 10;
 
     return css`
       grid-template-columns: ${width} auto;
