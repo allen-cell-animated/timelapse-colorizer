@@ -500,7 +500,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
                 {rangeMode === RangeMode.CUSTOM ? (
                   // Render the custom range input in the radio list if selected
-                  <SettingsContainer $spanWidth="30%" style={{ paddingLeft: "10px", width: "100%" }}>
+                  <SettingsContainer $indentPx={28}>
                     <label>
                       <span>Range:</span>
                       <HorizontalDiv>
