@@ -128,9 +128,11 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           style={{ maxWidth: "200px", width: "100%" }}
           min={0}
           max={100}
+          step={10}
           marks={makeAntSliderMarks([0, 50, 100])}
           value={props.objectOpacity}
           onChange={props.setObjectOpacity}
+          tooltip={{ formatter: (value) => `${value}%` }}
         />
       </FlexRowAlignCenter>
       <Checkbox
