@@ -1,4 +1,4 @@
-import React, { ReactElement, memo, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import React, { ReactElement, memo, useDeferredValue, useMemo, useState, useTransition } from "react";
 import Plot from "react-plotly.js";
 import { Dataset } from "../../colorizer";
 import LabeledDropdown from "../LabeledDropdown";
@@ -8,6 +8,8 @@ import { FlexRowAlignCenter } from "../../styles/utils";
 import { ColorRampData } from "../../constants";
 import { PlotMarker } from "plotly.js-dist-min";
 import { useDebounce } from "../../colorizer/utils/react_utils";
+import { Button } from "antd";
+import styled from "styled-components";
 
 const FRAME_FEATURE = { key: "frame", name: "Frame" };
 
@@ -19,6 +21,12 @@ type ScatterPlotTabProps = {
   colorRampFeatureMax: number;
 };
 const defaultProps: Partial<ScatterPlotTabProps> = {};
+
+const ScatterPlotContainer = styled.div`
+  & canvas {
+    border: 0px solid transparent !important;
+  }
+`;
 
 export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ScatterPlotTabProps>;
@@ -87,12 +95,16 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     const colorScale: [number, string][] = [];
     for (let i = 0; i < colorStops.length; i++) {
       // Transparency is set to 50% (alpha = 0x80)
-      colorScale.push([i / (colorStops.length - 1), colorStops[i] + "40"]);
+      colorScale.push([i / (colorStops.length - 1), colorStops[i] + "80"]);
     }
     return colorScale;
   };
 
   const coloredFeatureData = useMemo(() => getData(colorRampFeature, dataset), [colorRampFeature, dataset]);
+
+  // TODO: Plotly's performance can be improved by generating traces for colors rather than feeding it the raw
+  // data and asking it to colorize it. This might be better in a worker?
+  // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
 
   const colorConfig: Partial<PlotMarker> = useMemo(() => {
     return {
@@ -129,8 +141,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           items={featureNames}
           onChange={setYAxisFeatureName}
         />
+        <Button style={{ marginLeft: "auto" }}>Sync Coloring</Button>
       </FlexRowAlignCenter>
-      <div>
+      <ScatterPlotContainer style={{ marginTop: "10px", width: "100%" }}>
         {isPending ? (
           <p>Loading...</p>
         ) : (
@@ -145,14 +158,15 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
               },
             ]}
             layout={{
+              autosize: true,
               xaxis: { title: xAxisFeatureName || "" },
               yaxis: { title: yAxisFeatureName || "" },
-              width: 640,
-              height: 400,
             }}
+            useResizeHandler
+            config={{ responsive: true }}
           ></Plot>
         )}
-      </div>
+      </ScatterPlotContainer>
     </>
   );
 });
