@@ -56,7 +56,7 @@ function App(): ReactElement {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
 
-  const [backdropKey, setBackdropKey] = useState<string | null>(null);
+  const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
   const [backdropBrightness, setBackdropBrightness] = useState<number>(100);
   const [backdropSaturation, setBackdropSaturation] = useState<number>(100);
   const [objectOpacity, setObjectOpacity] = useState(100);
@@ -355,7 +355,7 @@ function App(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      setBackdropKey(null);
+      setSelectedBackdropKey(null);
       setSelectedTrack(null);
       setDatasetOpen(true);
       console.log("Num Items:" + dataset?.numObjects);
@@ -700,7 +700,7 @@ function App(): ReactElement {
                 colorRampMax={colorRampMax}
                 categoricalColors={categoricalPalette}
                 selectedTrack={selectedTrack}
-                backdropKey={backdropKey}
+                selectedBackdropKey={selectedBackdropKey}
                 backdropBrightness={backdropBrightness}
                 backdropSaturation={backdropSaturation}
                 objectOpacity={objectOpacity}
@@ -843,14 +843,14 @@ function App(): ReactElement {
                           dataset={dataset}
                           backdropBrightness={backdropBrightness}
                           backdropSaturation={backdropSaturation}
-                          backdropKey={backdropKey}
+                          selectedBackdropKey={selectedBackdropKey}
                           setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
                           setOutlierDrawSettings={setOutlierDrawSettings}
                           setShowScaleBar={setShowScaleBar}
                           setShowTimestamp={setShowTimestamp}
                           setBackdropBrightness={setBackdropBrightness}
                           setBackdropSaturation={setBackdropSaturation}
-                          setBackdropKey={setBackdropKey}
+                          setBackdropKey={setSelectedBackdropKey}
                           objectOpacity={objectOpacity}
                           setObjectOpacity={setObjectOpacity}
                         />

@@ -23,7 +23,7 @@ type SettingsTabProps = {
   dataset: Dataset | null;
   backdropBrightness: number;
   backdropSaturation: number;
-  backdropKey: string | null;
+  selectedBackdropKey: string | null;
   objectOpacity: number;
   setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
@@ -72,7 +72,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       <SectionHeaderText>Backdrop</SectionHeaderText>
       <LabeledDropdown
         label={"Backdrop images"}
-        selected={props.backdropKey || NO_BACKDROP.key}
+        selected={props.selectedBackdropKey || NO_BACKDROP.key}
         items={backdropOptions}
         onChange={props.setBackdropKey}
         disabled={backdropOptions.length === 1}
