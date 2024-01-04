@@ -1,15 +1,24 @@
-import React, { ReactElement, memo, useDeferredValue, useMemo, useState, useTransition } from "react";
-import Plot from "react-plotly.js";
+import React, {
+  ReactElement,
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { Dataset } from "../../colorizer";
 import LabeledDropdown from "../LabeledDropdown";
 import IconButton from "../IconButton";
-import { RetweetOutlined } from "@ant-design/icons";
+import { RetweetOutlined, SwapOutlined } from "@ant-design/icons";
 import { FlexRowAlignCenter } from "../../styles/utils";
 import { ColorRampData } from "../../constants";
 import { PlotMarker } from "plotly.js-dist-min";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { Button } from "antd";
 import styled from "styled-components";
+import Plotly from "plotly.js-dist-min";
 
 const FRAME_FEATURE = { key: "frame", name: "Frame" };
 
@@ -28,10 +37,30 @@ const ScatterPlotContainer = styled.div`
   }
 `;
 
+const CONFIG: Partial<Plotly.Config> = {
+  displayModeBar: true,
+  responsive: true,
+};
+
 export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ScatterPlotTabProps>;
 
   const [isPending, startTransition] = useTransition();
+  const plotDivRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Mount the plot to the DOM
+    Plotly.newPlot(
+      plotDivRef.current!,
+      [],
+      {
+        autosize: true,
+        xaxis: { title: xAxisFeatureName || "" },
+        yaxis: { title: yAxisFeatureName || "" },
+      },
+      CONFIG
+    );
+  }, [plotDivRef.current]);
 
   const dataset = useDeferredValue<Dataset | null>(useDebounce(props.dataset, 500));
   const colorRampData = useDeferredValue<ColorRampData>(useDebounce(props.colorRampData, 500));
@@ -73,23 +102,43 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     });
   };
 
+  const getData = useCallback(
+    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | null | undefined => {
+      if (featureName === null || dataset === null) {
+        return undefined;
+      }
+      if (featureName === FRAME_FEATURE.name) {
+        return dataset.times;
+      } else {
+        return dataset.getFeatureData(featureName).data;
+      }
+    },
+    []
+  );
+
+  // Update layout
+  useEffect(() => {
+    const xData = getData(xAxisFeatureName, dataset);
+    const yData = getData(yAxisFeatureName, dataset);
+    if (!plotDivRef.current || !xData || !yData) {
+      return;
+    }
+
+    Plotly.react(
+      plotDivRef.current,
+      [{ x: xData, y: yData, type: "scattergl", mode: "markers" }],
+      {
+        autosize: true,
+        xaxis: { title: xAxisFeatureName || "" },
+        yaxis: { title: yAxisFeatureName || "" },
+      },
+      CONFIG
+    );
+  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName]);
+
   // TODO: Replace w/ keys
   const featureNames = dataset?.featureNames || [];
   featureNames.push(FRAME_FEATURE.name);
-
-  const getData = (
-    featureName: string | null,
-    dataset: Dataset | null
-  ): Uint32Array | Float32Array | null | undefined => {
-    if (featureName === null || dataset === null) {
-      return undefined;
-    }
-    if (featureName === FRAME_FEATURE.name) {
-      return dataset.times;
-    } else {
-      return dataset.getFeatureData(featureName).data;
-    }
-  };
 
   const colorStopsToColorScale = (colorStops: string[]): [number, string][] => {
     const colorScale: [number, string][] = [];
@@ -115,12 +164,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     };
   }, [coloredFeatureData, colorRampFeatureMin, colorRampFeatureMax, colorRampData]);
 
-  const xData = useMemo(() => getData(xAxisFeatureName, dataset), [xAxisFeatureName, dataset]);
-  const yData = useMemo(() => getData(yAxisFeatureName, dataset), [yAxisFeatureName, dataset]);
-
   return (
     <>
-      <FlexRowAlignCenter $gap={6}>
+      <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
         <LabeledDropdown
           label={"X:"}
           selected={xAxisFeatureName || ""}
@@ -132,8 +178,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
             setXAxisFeatureName(yAxisFeatureName);
             setYAxisFeatureName(xAxisFeatureName);
           }}
+          type="link"
         >
-          <RetweetOutlined />
+          <SwapOutlined />
         </IconButton>
         <LabeledDropdown
           label={"Y:"}
@@ -143,30 +190,11 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         />
         <Button style={{ marginLeft: "auto" }}>Sync Coloring</Button>
       </FlexRowAlignCenter>
-      <ScatterPlotContainer style={{ marginTop: "10px", width: "100%" }}>
-        {isPending ? (
-          <p>Loading...</p>
-        ) : (
-          <Plot
-            data={[
-              {
-                x: xData || [],
-                y: yData || [],
-                type: "scattergl",
-                mode: "markers",
-                marker: { ...colorConfig, size: 4 },
-              },
-            ]}
-            layout={{
-              autosize: true,
-              xaxis: { title: xAxisFeatureName || "" },
-              yaxis: { title: yAxisFeatureName || "" },
-            }}
-            useResizeHandler
-            config={{ responsive: true }}
-          ></Plot>
-        )}
-      </ScatterPlotContainer>
+      {isPending ? <p>Loading...</p> : <></>}
+      <ScatterPlotContainer
+        style={{ marginTop: "10px", width: "100%", height: "100%", padding: "5px" }}
+        ref={plotDivRef}
+      ></ScatterPlotContainer>
     </>
   );
 });
