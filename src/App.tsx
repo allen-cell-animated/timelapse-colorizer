@@ -747,7 +747,7 @@ function App(): ReactElement {
                 <Slider
                   min={0}
                   max={dataset ? dataset.numberOfFrames - 1 : 0}
-                  disabled={disableTimeControlsUi}
+                  disabled={disableTimeControlsUi || timeControls.isPlaying()}
                   value={frameInput}
                   onChange={(value) => {
                     setFrameInput(value);
