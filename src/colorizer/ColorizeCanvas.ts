@@ -128,6 +128,7 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  /** UI overlay for scale bars, timestamps, and other information. */
   public overlay: CanvasOverlay;
 
   // Rendered track line that shows the trajectory of a cell.
@@ -580,11 +581,11 @@ export default class ColorizeCanvas {
     this.currentFrame = index;
     let backdropPromise = undefined;
     if (this.selectedBackdropKey && this.dataset?.hasBackdrop(this.selectedBackdropKey)) {
-      backdropPromise = await this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
+      backdropPromise = this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
     }
-    const framePromise = await this.dataset?.loadFrame(index);
+    const framePromise = this.dataset?.loadFrame(index);
     const result = await Promise.all([framePromise, backdropPromise]);
-    const [frame, overlay] = result;
+    const [frame, backdrop] = result;
 
     if (!frame) {
       return;
@@ -594,8 +595,8 @@ export default class ColorizeCanvas {
       // Drop this request.
       return;
     }
-    if (overlay) {
-      this.setUniform("backdrop", overlay);
+    if (backdrop) {
+      this.setUniform("backdrop", backdrop);
     } else {
       this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
