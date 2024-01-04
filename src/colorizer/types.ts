@@ -75,7 +75,7 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
 };
 
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
-// to numeric data. Thresholds do not track if their source feature is integer
+// to numeric data. Numeric thresholds do not track if their source feature is integer
 // (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
 export enum ThresholdType {
   NUMERIC = "numeric",
