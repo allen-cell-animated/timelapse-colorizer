@@ -113,6 +113,10 @@ function App(): ReactElement {
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
+  const notificationConfig: NotificationConfig = {
+    getContainer: () => notificationContainer.current as HTMLElement,
+  };
+  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -251,7 +255,7 @@ function App(): ReactElement {
   // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
   useEffect(() => {
-    const loadInitialDatabase = async (): Promise<void> => {
+    const loadInitialDataset = async (): Promise<void> => {
       let newCollection: Collection;
       const collectionUrlParam = initialUrlParams.collection;
       const datasetParam = initialUrlParams.dataset;
@@ -271,12 +275,23 @@ function App(): ReactElement {
       setCollection(newCollection);
       const datasetResult = await newCollection.tryLoadDataset(datasetKey);
 
+      if (!datasetResult.loaded) {
+        console.error(datasetResult.errorMessage);
+        notificationApi["error"]({
+          message: "Error loading dataset: ",
+          description: datasetResult.errorMessage,
+          placement: "bottomLeft",
+          duration: 4,
+        });
+        return;
+      }
+
       // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
       await replaceDataset(datasetResult.dataset, datasetKey);
       setIsInitialDatasetLoaded(true);
       return;
     };
-    loadInitialDatabase();
+    loadInitialDataset();
   }, []);
 
   // Load additional properties from the URL, including the time, track, and feature.
@@ -373,6 +388,12 @@ function App(): ReactElement {
         } else {
           // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
           console.error(result.errorMessage);
+          notificationApi["error"]({
+            message: "Error loading dataset:",
+            description: result.errorMessage,
+            placement: "bottomLeft",
+            duration: 4,
+          });
         }
       }
     },
@@ -501,10 +522,6 @@ function App(): ReactElement {
 
   // RENDERING /////////////////////////////////////////////////////////////
 
-  const notificationConfig: NotificationConfig = {
-    getContainer: () => notificationContainer.current as HTMLElement,
-  };
-  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
   const openCopyNotification = (): void => {
     navigator.clipboard.writeText(document.URL);
     notificationApi["success"]({
