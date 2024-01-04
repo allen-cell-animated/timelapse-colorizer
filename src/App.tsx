@@ -116,6 +116,18 @@ function App(): ReactElement {
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
+  // TODO: Move all logic for the time slider into its own component.
+  // Flag used to indicate that playback was occurring before the slider was moved,
+  // and that it should resume after the slider is released.
+  const [isPlaybackPausedTemporarily, setIsPlaybackPausedTemporarily] = useState(false);
+  // Flag used to indicate that the slider is currently being dragged.
+  const [clickedOnSlider, setClickedOnSlider] = useState(false);
+
+  useEffect(() => {
+    if (timeControls.isPlaying()) {
+      setIsPlaybackPausedTemporarily(false);
+    }
+  }, [timeControls.isPlaying()]);
 
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
@@ -484,6 +496,25 @@ function App(): ReactElement {
     setFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
 
+  useEffect(() => {
+    const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
+      if (clickedOnSlider) {
+        // Update the frame and unpause playback when the slider is released.
+        setClickedOnSlider(false);
+        await setFrame(frameInput);
+        if (isPlaybackPausedTemporarily) {
+          setIsPlaybackPausedTemporarily(false);
+          timeControls.handlePlayButtonClick();
+        }
+      }
+    };
+
+    document.addEventListener("pointerup", checkIfPlaybackShouldUnpause);
+    return () => {
+      document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
+    };
+  });
+
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
   // Update the callback for TimeControls and RecordingControls if it changes.
@@ -724,32 +755,49 @@ function App(): ReactElement {
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() ? (
+              {timeControls.isPlaying() || isPlaybackPausedTemporarily ? (
                 // Swap between play and pause button
                 <IconButton
                   type="outlined"
                   disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handlePauseButtonClick()}
+                  onClick={() => {
+                    timeControls.handlePauseButtonClick();
+                    setIsPlaybackPausedTemporarily(false);
+                  }}
                 >
                   <PauseOutlined />
                 </IconButton>
               ) : (
                 <IconButton
                   disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handlePlayButtonClick()}
+                  onClick={() => {
+                    timeControls.handlePlayButtonClick();
+                    setIsPlaybackPausedTemporarily(false);
+                  }}
                   type="outlined"
                 >
                   <CaretRightOutlined />
                 </IconButton>
               )}
 
-              <div className={styles.timeSliderContainer}>
+              <div
+                className={styles.timeSliderContainer}
+                onPointerDownCapture={() => {
+                  setClickedOnSlider(true);
+                }}
+              >
                 <Slider
                   min={0}
                   max={dataset ? dataset.numberOfFrames - 1 : 0}
-                  disabled={disableTimeControlsUi || timeControls.isPlaying()}
+                  disabled={disableTimeControlsUi}
                   value={frameInput}
                   onChange={(value) => {
+                    if (timeControls.isPlaying()) {
+                      timeControls.handlePauseButtonClick();
+                      // Mark that playback was occurring and that we will resume
+                      // playback after the slider is released.
+                      setIsPlaybackPausedTemporarily(true);
+                    }
                     setFrameInput(value);
                   }}
                 />
