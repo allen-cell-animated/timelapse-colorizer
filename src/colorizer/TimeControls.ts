@@ -4,9 +4,9 @@ import ColorizeCanvas from "./ColorizeCanvas";
 // TODO: Remove class?
 
 // time / playback controls
-const DEFAULT_TIMER_ID = -1;
+const NO_TIMER_ID = -1;
+
 export default class TimeControls {
-  // TODO: Change to be React state?
   private timerId: number;
   private setFrameFn?: (frame: number) => Promise<void>;
   private currentlyPlaying: boolean;
@@ -18,7 +18,7 @@ export default class TimeControls {
 
   constructor(canvas: ColorizeCanvas, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
     this.canvas = canvas;
-    this.timerId = DEFAULT_TIMER_ID;
+    this.timerId = NO_TIMER_ID;
     this.pauseCallbacks = [];
     this.playbackFps = playbackFps;
     this.currentlyPlaying = false;
@@ -75,7 +75,6 @@ export default class TimeControls {
       // Add additional delay, if needed, to maintain playback fps.
       const delayMs = Math.max(0, 1000 / this.playbackFps - timeElapsed);
       this.timerId = window.setTimeout(() => loadNextFrame(nextFrame), delayMs);
-      console.log(this.timerId);
     };
     loadNextFrame(this.canvas.getCurrentFrame());
   }
@@ -88,9 +87,9 @@ export default class TimeControls {
   }
 
   public handlePauseButtonClick(): void {
-    if (this.timerId !== DEFAULT_TIMER_ID) {
+    if (this.timerId !== NO_TIMER_ID) {
       clearTimeout(this.timerId);
-      this.timerId = DEFAULT_TIMER_ID;
+      this.timerId = NO_TIMER_ID;
     }
     this.currentlyPlaying = false;
     this.pauseCallbacks.forEach((callback) => callback());
