@@ -62,23 +62,25 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     );
   }, [plotDivRef.current]);
 
-  const dataset = useDeferredValue<Dataset | null>(useDebounce(props.dataset, 500));
+  // Note: This does not actually prevent the dataset from blocking the UI thread, it just
+  // delays the update slightly until after the dataset loads in so the block is not as noticeable.
+  const [dataset, setDataset] = useState<Dataset | null>(null);
+  const propDataset = useDeferredValue<Dataset | null>(useDebounce(props.dataset, 500));
+  useMemo(() => {
+    startTransition(() => {
+      setDataset(propDataset);
+    });
+  }, [propDataset]);
+
   const colorRampData = useDeferredValue<ColorRampData>(useDebounce(props.colorRampData, 500));
   const colorRampFeature = useDeferredValue<string | null>(useDebounce(props.colorRampFeature, 500));
   const colorRampFeatureMin = useDeferredValue<number>(useDebounce(props.colorRampFeatureMin, 500));
   const colorRampFeatureMax = useDeferredValue<number>(useDebounce(props.colorRampFeatureMax, 500));
 
-  // const [dataset, setDataset] = useState<Dataset | null>(null);
   // const [colorRampData, setColorRampData] = useState<ColorRampData>(props.colorRampData);
   // const [colorRampFeature, setColorRampFeature] = useState<string | null>(props.colorRampFeature);
   // const [colorRampFeatureMin, setColorRampFeatureMin] = useState<number>(props.colorRampFeatureMin);
   // const [colorRampFeatureMax, setColorRampFeatureMax] = useState<number>(props.colorRampFeatureMax);
-
-  // useMemo(() => {
-  //   startTransition(() => {
-  //     setDataset(props.dataset);
-  //   });
-  // }, [props.dataset]);
 
   // useMemo(() => {
   //   startTransition(() => {
@@ -120,13 +122,23 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   useEffect(() => {
     const xData = getData(xAxisFeatureName, dataset);
     const yData = getData(yAxisFeatureName, dataset);
-    if (!plotDivRef.current || !xData || !yData) {
+    if (plotDivRef.current === null) {
       return;
     }
 
+    if (!xData || !yData) {
+      Plotly.react(plotDivRef.current!, [], {}, CONFIG);
+      return;
+    }
+
+    const markerConfig: Partial<PlotMarker> = {
+      color: "rgba(0, 0, 0, 0.25)",
+      size: 4,
+    };
+
     Plotly.react(
       plotDivRef.current,
-      [{ x: xData, y: yData, type: "scattergl", mode: "markers" }],
+      [{ x: xData, y: yData, type: "scattergl", mode: "markers", marker: markerConfig }],
       {
         autosize: true,
         xaxis: { title: xAxisFeatureName || "" },
@@ -188,7 +200,15 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           items={featureNames}
           onChange={setYAxisFeatureName}
         />
-        <Button style={{ marginLeft: "auto" }}>Sync Coloring</Button>
+        <Button
+          style={{ marginLeft: "auto" }}
+          onClick={() => {
+            setXAxisFeatureName(null);
+            setYAxisFeatureName(null);
+          }}
+        >
+          Clear
+        </Button>
       </FlexRowAlignCenter>
       {isPending ? <p>Loading...</p> : <></>}
       <ScatterPlotContainer
