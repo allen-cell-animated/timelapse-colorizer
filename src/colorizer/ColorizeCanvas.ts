@@ -503,16 +503,17 @@ export default class ColorizeCanvas {
       return featureData && featureData.units === threshold.units;
     });
 
-    inRangeIds.forEach((_value, id, arr) => {
-      for (const threshold of validThresholds) {
+    for (let id = 0; id < this.dataset.numObjects; id++) {
+      inRangeIds[id] = 1;
+      for (let thresholdIdx = 0; thresholdIdx < validThresholds.length; thresholdIdx++) {
+        const threshold = validThresholds[thresholdIdx];
         const featureData = this.dataset?.tryGetFeatureData(threshold.featureName);
         if (featureData && !this.isValueWithinThreshold(featureData.data[id], threshold)) {
-          arr[id] = 0;
-          return;
+          inRangeIds[id] = 0;
+          break;
         }
       }
-      arr[id] = 1;
-    });
+    }
 
     // Save the array to a texture and pass it into the shader
     this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeIds), FeatureDataType.U8));
