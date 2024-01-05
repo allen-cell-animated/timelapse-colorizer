@@ -1,4 +1,5 @@
-# Adapted from https://github.com/marketplace/actions/deploy-pr-preview.
+# Adapted from https://github.com/marketplace/actions/deploy-pr-preview and
+# https://github.com/sitek94/vite-deploy-demo
 name: Deploy Public Build
 
 on:
