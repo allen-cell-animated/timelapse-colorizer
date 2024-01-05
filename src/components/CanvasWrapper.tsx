@@ -136,7 +136,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // Timeout in case of slowdowns to prevent this from halting the UI.
     setTimeout(() => {
       canv.setFeatureThresholds(props.featureThresholds);
-      canv.render();
     }, 0);
   }, [props.featureThresholds, props.dataset]);
 
