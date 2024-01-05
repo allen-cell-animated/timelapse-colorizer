@@ -121,15 +121,12 @@ function App(): ReactElement {
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
   // TODO: Move all logic for the time slider into its own component!
-  // Flag used to indicate that playback was occurring before the slider was moved,
-  // and that it should resume after the slider is released.
-  const [isPlaybackPausedTemporarily, setIsPlaybackPausedTemporarily] = useState(false);
-  // Flag used to indicate that the slider is currently being dragged.
-  const [isDraggingTimeSlider, setIsDraggingTimeSlider] = useState(false);
+  // Flag used to indicate that the slider is currently being dragged while playback is occurring.
+  const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
-      setIsPlaybackPausedTemporarily(false);
+      setIsTimeSliderDraggedDuringPlayback(false);
     }
   }, [timeControls.isPlaying()]);
 
@@ -495,9 +492,9 @@ function App(): ReactElement {
   const handleKeyDown = useCallback(
     ({ key }: KeyboardEvent): void => {
       if (key === "ArrowLeft" || key === "Left") {
-        timeControls.offsetFrame(-1);
+        timeControls.advanceFrame(-1);
       } else if (key === "ArrowRight" || key === "Right") {
-        timeControls.offsetFrame(1);
+        timeControls.advanceFrame(1);
       }
     },
     [timeControls]
@@ -522,14 +519,11 @@ function App(): ReactElement {
   // if the user releases the pointer outside of the slider.
   useEffect(() => {
     const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
-      if (isDraggingTimeSlider) {
+      setFrame(frameInput);
+      if (isTimeSliderDraggedDuringPlayback) {
         // Update the frame and optionally unpause playback when the slider is released.
-        setIsDraggingTimeSlider(false);
-        await setFrame(frameInput);
-        if (isPlaybackPausedTemporarily) {
-          setIsPlaybackPausedTemporarily(false);
-          timeControls.play(); // resume playing
-        }
+        setIsTimeSliderDraggedDuringPlayback(false);
+        timeControls.play(); // resume playing
       }
     };
 
@@ -775,7 +769,7 @@ function App(): ReactElement {
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() || isPlaybackPausedTemporarily ? (
+              {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
                 // Swap between play and pause button
                 <IconButton type="outlined" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
                   <PauseOutlined />
@@ -789,7 +783,11 @@ function App(): ReactElement {
               <div
                 className={styles.timeSliderContainer}
                 onPointerDownCapture={() => {
-                  setIsDraggingTimeSlider(true);
+                  if (timeControls.isPlaying()) {
+                    // If the slider is dragged while playing, pause playback.
+                    timeControls.pause();
+                    setIsTimeSliderDraggedDuringPlayback(true);
+                  }
                 }}
               >
                 <Slider
@@ -798,21 +796,19 @@ function App(): ReactElement {
                   disabled={disableTimeControlsUi}
                   value={frameInput}
                   onChange={(value) => {
-                    if (timeControls.isPlaying()) {
-                      timeControls.pause();
-                      // Mark that playback was occurring and that we will resume
-                      // playback after the slider is released.
-                      setIsPlaybackPausedTemporarily(true);
-                    }
                     setFrameInput(value);
                   }}
                 />
               </div>
 
-              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.offsetFrame(-1)} type="outlined">
+              <IconButton
+                disabled={disableTimeControlsUi}
+                onClick={() => timeControls.advanceFrame(-1)}
+                type="outlined"
+              >
                 <StepBackwardFilled />
               </IconButton>
-              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.offsetFrame(1)} type="outlined">
+              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.advanceFrame(1)} type="outlined">
                 <StepForwardFilled />
               </IconButton>
 

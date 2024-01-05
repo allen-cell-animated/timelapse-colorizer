@@ -113,7 +113,7 @@ export default class TimeControls {
   /**
    * Increment or decrement the time series by the given number of frames.
    */
-  public async offsetFrame(delta: number = 1): Promise<void> {
+  public async advanceFrame(delta: number = 1): Promise<void> {
     if (this.setFrameFn) {
       await this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
     }
