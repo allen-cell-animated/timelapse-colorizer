@@ -11,12 +11,12 @@ import React, {
 import { Dataset } from "../../colorizer";
 import LabeledDropdown from "../LabeledDropdown";
 import IconButton from "../IconButton";
-import { RetweetOutlined, SwapOutlined } from "@ant-design/icons";
+import { SwapOutlined } from "@ant-design/icons";
 import { FlexRowAlignCenter } from "../../styles/utils";
 import { ColorRampData } from "../../constants";
 import { PlotMarker } from "plotly.js-dist-min";
 import { useDebounce } from "../../colorizer/utils/react_utils";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import styled from "styled-components";
 import Plotly from "plotly.js-dist-min";
 
@@ -185,15 +185,17 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           items={featureNames}
           onChange={setXAxisFeatureName}
         />
-        <IconButton
-          onClick={() => {
-            setXAxisFeatureName(yAxisFeatureName);
-            setYAxisFeatureName(xAxisFeatureName);
-          }}
-          type="link"
-        >
-          <SwapOutlined />
-        </IconButton>
+        <Tooltip title="Swap axes">
+          <IconButton
+            onClick={() => {
+              setXAxisFeatureName(yAxisFeatureName);
+              setYAxisFeatureName(xAxisFeatureName);
+            }}
+            type="link"
+          >
+            <SwapOutlined />
+          </IconButton>
+        </Tooltip>
         <LabeledDropdown
           label={"Y:"}
           selected={yAxisFeatureName || ""}

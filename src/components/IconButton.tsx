@@ -107,6 +107,9 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
 export default function IconButton(props: PropsWithChildren<IconButtonProps>): ReactElement {
   const themeContext = useContext(AppThemeContext);
 
+  // Ant provides extra props that we need to pass to the Button in order for Tooltip to work correctly.
+  const { onClick, disabled, style, type, children, ...otherProps } = props;
+
   return (
     <ConfigProvider theme={{ components: { Button: { colorPrimaryActive: themeContext.color.button.hover } } }}>
       <StyledButton
@@ -115,6 +118,7 @@ export default function IconButton(props: PropsWithChildren<IconButtonProps>): R
         disabled={props.disabled}
         onClick={props.onClick}
         style={props.style}
+        {...otherProps}
       >
         {props.children}
       </StyledButton>
