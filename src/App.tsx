@@ -116,12 +116,12 @@ function App(): ReactElement {
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
-  // TODO: Move all logic for the time slider into its own component.
+  // TODO: Move all logic for the time slider into its own component!
   // Flag used to indicate that playback was occurring before the slider was moved,
   // and that it should resume after the slider is released.
   const [isPlaybackPausedTemporarily, setIsPlaybackPausedTemporarily] = useState(false);
   // Flag used to indicate that the slider is currently being dragged.
-  const [clickedOnSlider, setClickedOnSlider] = useState(false);
+  const [isDraggingTimeSlider, setIsDraggingTimeSlider] = useState(false);
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
@@ -501,9 +501,9 @@ function App(): ReactElement {
   // if the user releases the pointer outside of the slider.
   useEffect(() => {
     const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
-      if (clickedOnSlider) {
+      if (isDraggingTimeSlider) {
         // Update the frame and optionally unpause playback when the slider is released.
-        setClickedOnSlider(false);
+        setIsDraggingTimeSlider(false);
         await setFrame(frameInput);
         if (isPlaybackPausedTemporarily) {
           setIsPlaybackPausedTemporarily(false);
@@ -780,7 +780,7 @@ function App(): ReactElement {
               <div
                 className={styles.timeSliderContainer}
                 onPointerDownCapture={() => {
-                  setClickedOnSlider(true);
+                  setIsDraggingTimeSlider(true);
                 }}
               >
                 <Slider
