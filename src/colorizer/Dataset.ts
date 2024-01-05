@@ -338,8 +338,9 @@ export default class Dataset {
       for (const { name, key, frames } of manifest.backdrops) {
         this.backdropData.set(key, { name, frames });
         if (frames.length !== this.frameFiles.length || 0) {
-          console.warn(
-            `Number of frames (${this.frameFiles.length}) does not match number of overlays (${frames.length}) for overlay ${key}.`
+          // TODO: Show error message in the UI when this happens.
+          throw new Error(
+            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'.`
           );
         }
       }

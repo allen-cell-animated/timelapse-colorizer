@@ -26,7 +26,7 @@ type SettingsTabProps = {
   dataset: Dataset | null;
   backdropBrightness: number;
   backdropSaturation: number;
-  backdropKey: string | null;
+  selectedBackdropKey: string | null;
   objectOpacity: number;
   setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
   setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
@@ -71,7 +71,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         <SettingsContainer $indentPx={INDENT_PX}>
           <LabeledDropdown
             label={"Backdrop images:"}
-            selected={props.backdropKey || NO_BACKDROP.key}
+            selected={props.selectedBackdropKey || NO_BACKDROP.key}
             items={backdropOptions}
             onChange={props.setBackdropKey}
             disabled={backdropOptions.length === 1}
@@ -81,7 +81,6 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               <h3>Brightness:</h3>
             </span>
             <HiddenMarksSlider
-              // TODO: Add a mark at the 100% position
               style={{ maxWidth: "200px", width: "100%" }}
               min={50}
               max={150}
