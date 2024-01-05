@@ -445,7 +445,7 @@ export default class ColorizeCanvas {
     if (!this.dataset?.hasFeature(name)) {
       return;
     }
-    const featureData = this.dataset.tryGetFeatureData(name)!;
+    const featureData = this.dataset.getFeatureData(name)!;
     this.featureName = name;
     this.setUniform("featureData", featureData.tex);
     this.render(); // re-render necessary because map range may have changed
@@ -463,7 +463,7 @@ export default class ColorizeCanvas {
     if (!this.featureName) {
       return;
     }
-    const featureData = this.dataset?.tryGetFeatureData(this.featureName);
+    const featureData = this.dataset?.getFeatureData(this.featureName);
     if (featureData) {
       this.colorMapRangeMin = featureData.min;
       this.colorMapRangeMax = featureData.max;
@@ -499,7 +499,7 @@ export default class ColorizeCanvas {
 
     // Ignore thresholds with features that don't exist in this dataset or whose units don't match
     const validThresholds = thresholds.filter((threshold) => {
-      const featureData = this.dataset?.tryGetFeatureData(threshold.featureName);
+      const featureData = this.dataset?.getFeatureData(threshold.featureName);
       return featureData && featureData.units === threshold.units;
     });
 
@@ -507,7 +507,7 @@ export default class ColorizeCanvas {
       inRangeIds[id] = 1;
       for (let thresholdIdx = 0; thresholdIdx < validThresholds.length; thresholdIdx++) {
         const threshold = validThresholds[thresholdIdx];
-        const featureData = this.dataset?.tryGetFeatureData(threshold.featureName);
+        const featureData = this.dataset?.getFeatureData(threshold.featureName);
         if (featureData && !this.isValueWithinThreshold(featureData.data[id], threshold)) {
           inRangeIds[id] = 0;
           break;

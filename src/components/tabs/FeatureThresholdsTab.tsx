@@ -158,7 +158,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     // that has the same feature/unit but different min/max values. That way, our saved min/max bounds
     // reflect the last known good values.
     for (const threshold of props.featureThresholds) {
-      const featureData = props.dataset?.tryGetFeatureData(threshold.featureName);
+      const featureData = props.dataset?.getFeatureData(threshold.featureName);
       if (featureData && featureData.units === threshold.units && featureData.type !== FeatureType.CATEGORICAL) {
         featureMinMaxBoundsFallback.current.set(thresholdToKey(threshold), [featureData.min, featureData.max]);
       }
@@ -169,7 +169,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
 
   /** Handle the user selecting new features from the Select dropdown. */
   const onSelect = (featureName: string): void => {
-    const featureData = props.dataset?.tryGetFeatureData(featureName);
+    const featureData = props.dataset?.getFeatureData(featureName);
     const newThresholds = [...props.featureThresholds];
     if (featureData && !props.dataset?.isFeatureCategorical(featureName)) {
       // Continuous/discrete feature
@@ -195,7 +195,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   /** Handle the user removing features from the Select dropdown. */
   const onDeselect = (featureName: string): void => {
     // Find the exact match for the threshold and remove it
-    const featureData = props.dataset?.tryGetFeatureData(featureName);
+    const featureData = props.dataset?.getFeatureData(featureName);
     const newThresholds = [...props.featureThresholds];
     if (featureData) {
       const index = props.featureThresholds.findIndex(thresholdMatchFinder(featureName, featureData.units));
@@ -250,13 +250,13 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   // Filter out thresholds that no longer match the dataset (feature and/or unit), so we only
   // show selections that are actually valid.
   const thresholdsInDataset = props.featureThresholds.filter((t) => {
-    const featureData = props.dataset?.tryGetFeatureData(t.featureName);
+    const featureData = props.dataset?.getFeatureData(t.featureName);
     return featureData && featureData.units === t.units;
   });
   const selectedFeatures = thresholdsInDataset.map((t) => t.featureName);
 
   const renderNumericItem = (item: NumericFeatureThreshold, index: number): ReactNode => {
-    const featureData = props.dataset?.tryGetFeatureData(item.featureName);
+    const featureData = props.dataset?.getFeatureData(item.featureName);
     const disabled = featureData === undefined || featureData.units !== item.units;
     // If the feature is no longer in the dataset, use the saved min/max bounds.
     const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [Number.NaN, Number.NaN];
@@ -278,7 +278,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   };
 
   const renderCategoricalItem = (item: CategoricalFeatureThreshold, index: number): ReactNode => {
-    const featureData = props.dataset?.tryGetFeatureData(item.featureName);
+    const featureData = props.dataset?.getFeatureData(item.featureName);
     const disabled = featureData === undefined || featureData.units !== item.units;
 
     const categories = featureData?.categories || [];
@@ -311,7 +311,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const renderListItems = (threshold: FeatureThreshold, index: number): ReactNode => {
     // Thresholds are matched on both feature names and units; a threshold must match
     // both in the current dataset to be enabled and editable.
-    const featureData = props.dataset?.tryGetFeatureData(threshold.featureName);
+    const featureData = props.dataset?.getFeatureData(threshold.featureName);
     const disabled = featureData === undefined || featureData.units !== threshold.units;
     const featureLabel = threshold.units ? `${threshold.featureName} (${threshold.units})` : threshold.featureName;
 

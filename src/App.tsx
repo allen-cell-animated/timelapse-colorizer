@@ -90,7 +90,7 @@ function App(): ReactElement {
       // Check if the current feature is being thresholded on, and if that threshold
       // has changed. If so, snap the current min + max color ramp values so they match the new
       // threshold values.
-      const featureData = dataset?.tryGetFeatureData(featureName);
+      const featureData = dataset?.getFeatureData(featureName);
       if (featureData) {
         const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
         const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
@@ -154,7 +154,7 @@ function App(): ReactElement {
     }
     // check if current selected feature range matches the default feature range; if so, don't provide
     // a range parameter..
-    const featureData = dataset.tryGetFeatureData(featureName);
+    const featureData = dataset.getFeatureData(featureName);
     if (featureData) {
       if (featureData.min === colorRampMin && featureData.max === colorRampMax) {
         return undefined;
@@ -428,7 +428,7 @@ function App(): ReactElement {
       }
       setFeatureName(newFeatureName);
 
-      const featureData = newDataset.tryGetFeatureData(newFeatureName);
+      const featureData = newDataset.getFeatureData(newFeatureName);
       if (!isColorRampRangeLocked && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
@@ -452,7 +452,7 @@ function App(): ReactElement {
         return "";
       }
       // Look up feature value from id
-      const featureData = dataset.tryGetFeatureData(featureName);
+      const featureData = dataset.getFeatureData(featureName);
       // ?? is a nullish coalescing operator; it checks for null + undefined values
       // (safe for falsy values like 0 or NaN, which are valid feature values)
       const featureValue = featureData?.data[id] ?? -1;
@@ -538,7 +538,7 @@ function App(): ReactElement {
   // Show min + max marks on the color ramp slider if a feature is selected and
   // is currently being thresholded/filtered on.
   const getColorMapSliderMarks = (): undefined | number[] => {
-    const featureData = dataset?.tryGetFeatureData(featureName);
+    const featureData = dataset?.getFeatureData(featureName);
     if (!featureData || featureThresholds.length === 0) {
       return undefined;
     }
@@ -646,8 +646,8 @@ function App(): ReactElement {
                 <LabeledRangeSlider
                   min={colorRampMin}
                   max={colorRampMax}
-                  minSliderBound={dataset?.tryGetFeatureData(featureName)?.min}
-                  maxSliderBound={dataset?.tryGetFeatureData(featureName)?.max}
+                  minSliderBound={dataset?.getFeatureData(featureName)?.min}
+                  maxSliderBound={dataset?.getFeatureData(featureName)?.max}
                   onChange={function (min: number, max: number): void {
                     setColorRampMin(min);
                     setColorRampMax(max);
