@@ -34,17 +34,11 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID } from "./constants";
 import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import PlotTab from "./components/tabs/PlotTab";
 import SettingsTab from "./components/tabs/SettingsTab";
-import {
-  DEFAULT_CATEGORICAL_PALETTES,
-  DEFAULT_CATEGORICAL_PALETTE_ID,
-  DEFAULT_COLLECTION_PATH,
-  DEFAULT_COLOR_RAMPS,
-  DEFAULT_COLOR_RAMP_ID,
-  DEFAULT_PLAYBACK_FPS,
-} from "./constants";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -61,6 +55,11 @@ function App(): ReactElement {
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+
+  const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+  const [backdropBrightness, setBackdropBrightness] = useState<number>(100);
+  const [backdropSaturation, setBackdropSaturation] = useState<number>(100);
+  const [objectOpacity, setObjectOpacity] = useState(100);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
@@ -114,6 +113,10 @@ function App(): ReactElement {
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
+  const notificationConfig: NotificationConfig = {
+    getContainer: () => notificationContainer.current as HTMLElement,
+  };
+  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -252,7 +255,7 @@ function App(): ReactElement {
   // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
   useEffect(() => {
-    const loadInitialDatabase = async (): Promise<void> => {
+    const loadInitialDataset = async (): Promise<void> => {
       let newCollection: Collection;
       const collectionUrlParam = initialUrlParams.collection;
       const datasetParam = initialUrlParams.dataset;
@@ -272,6 +275,17 @@ function App(): ReactElement {
       setCollection(newCollection);
       const datasetResult = await newCollection.tryLoadDataset(datasetKey);
 
+      if (!datasetResult.loaded) {
+        console.error(datasetResult.errorMessage);
+        notificationApi["error"]({
+          message: "Error loading dataset: ",
+          description: datasetResult.errorMessage,
+          placement: "bottomLeft",
+          duration: 4,
+        });
+        return;
+      }
+
       // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
       if (!isInitialDatasetLoaded) {
         await replaceDataset(datasetResult.dataset, datasetKey);
@@ -279,7 +293,7 @@ function App(): ReactElement {
       }
       return;
     };
-    loadInitialDatabase();
+    loadInitialDataset();
   }, []);
 
   // Load additional properties from the URL, including the time, track, and feature.
@@ -362,6 +376,7 @@ function App(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
+      setSelectedBackdropKey(null);
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
@@ -380,6 +395,12 @@ function App(): ReactElement {
         } else {
           // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
           console.error(result.errorMessage);
+          notificationApi["error"]({
+            message: "Error loading dataset:",
+            description: result.errorMessage,
+            placement: "bottomLeft",
+            duration: 4,
+          });
         }
       }
     },
@@ -508,10 +529,6 @@ function App(): ReactElement {
 
   // RENDERING /////////////////////////////////////////////////////////////
 
-  const notificationConfig: NotificationConfig = {
-    getContainer: () => notificationContainer.current as HTMLElement,
-  };
-  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
   const openCopyNotification = (): void => {
     navigator.clipboard.writeText(document.URL);
     notificationApi["success"]({
@@ -707,6 +724,10 @@ function App(): ReactElement {
                 colorRampMax={colorRampMax}
                 categoricalColors={categoricalPalette}
                 selectedTrack={selectedTrack}
+                selectedBackdropKey={selectedBackdropKey}
+                backdropBrightness={backdropBrightness}
+                backdropSaturation={backdropSaturation}
+                objectOpacity={objectOpacity}
                 onTrackClicked={(track) => {
                   setFindTrackInput("");
                   setSelectedTrack(track);
@@ -750,7 +771,7 @@ function App(): ReactElement {
                 <Slider
                   min={0}
                   max={dataset ? dataset.numberOfFrames - 1 : 0}
-                  disabled={disableTimeControlsUi}
+                  disabled={disableTimeControlsUi || timeControls.isPlaying()}
                   value={frameInput}
                   onChange={(value) => {
                     setFrameInput(value);
@@ -839,14 +860,24 @@ function App(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <SettingsTab
+                          // TODO: Refactor all of this into a settings or configuration object
                           outOfRangeDrawSettings={outOfRangeDrawSettings}
                           outlierDrawSettings={outlierDrawSettings}
                           showScaleBar={showScaleBar}
                           showTimestamp={showTimestamp}
+                          dataset={dataset}
+                          backdropBrightness={backdropBrightness}
+                          backdropSaturation={backdropSaturation}
+                          selectedBackdropKey={selectedBackdropKey}
                           setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
                           setOutlierDrawSettings={setOutlierDrawSettings}
                           setShowScaleBar={setShowScaleBar}
                           setShowTimestamp={setShowTimestamp}
+                          setBackdropBrightness={setBackdropBrightness}
+                          setBackdropSaturation={setBackdropSaturation}
+                          setBackdropKey={setSelectedBackdropKey}
+                          objectOpacity={objectOpacity}
+                          setObjectOpacity={setObjectOpacity}
                         />
                       </div>
                     ),

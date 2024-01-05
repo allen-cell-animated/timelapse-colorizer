@@ -1,10 +1,10 @@
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { Color } from "three";
 
-import { ColorRamp, ColorizeCanvas, Dataset, Track } from "../colorizer";
-import { AppThemeContext } from "./AppStyle";
+import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { DrawMode } from "../colorizer/ColorizeCanvas";
 import { FeatureThreshold } from "../colorizer/types";
+import { AppThemeContext } from "./AppStyle";
 
 export type DrawSettings = {
   mode: DrawMode;
@@ -23,9 +23,16 @@ type CanvasWrapperProps = {
   showTimestamp: boolean;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
+  /** Null means that no backdrop is currently selected; clear the backdrop. */
+  selectedBackdropKey: string | null;
+  /** Opacity, as a number percentage. */
+  backdropBrightness: number;
+  /** Saturation, as a number percentage. */
+  backdropSaturation: number;
   colorRamp: ColorRamp;
   colorRampMin: number;
   colorRampMax: number;
+  objectOpacity: number;
   selectedTrack: Track | null;
   categoricalColors: Color[];
 
@@ -96,6 +103,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setColorMapRangeMax(props.colorRampMax);
   }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
 
+  // Update backdrops
+  useMemo(() => {
+    canv.setBackdropKey(props.selectedBackdropKey);
+    canv.setBackdropBrightness(props.backdropBrightness);
+    canv.setBackdropSaturation(props.backdropSaturation);
+  }, [props.selectedBackdropKey, props.backdropBrightness, props.backdropSaturation]);
+
   // Update categorical colors
   useMemo(() => {
     canv.setCategoricalColors(props.categoricalColors);
@@ -111,6 +125,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const settings = props.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
   }, [props.outlierDrawSettings]);
+
+  useMemo(() => {
+    canv.setObjectOpacity(props.objectOpacity);
+  }, [props.objectOpacity]);
 
   useMemo(() => {
     // YAGNI: Debouncing for this is possible but no performance issues encountered yet.

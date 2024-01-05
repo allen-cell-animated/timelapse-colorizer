@@ -140,6 +140,7 @@ export default class Collection {
       return { loaded: true, dataset: dataset };
     } catch (e) {
       console.timeEnd("loadDataset");
+      console.error(e);
       if (e instanceof Error) {
         return {
           loaded: false,

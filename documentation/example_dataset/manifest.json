@@ -35,6 +35,30 @@
       ]
     }
   ],
+  "backdrops": [
+    {
+      "name": "Backdrop Dark",
+      "key": "dark",
+      "frames": [
+        "backdrop-dark/image_0.png",
+        "backdrop-dark/image_1.png",
+        "backdrop-dark/image_2.png",
+        "backdrop-dark/image_3.png",
+        "backdrop-dark/image_4.png"
+      ]
+    },
+    {
+      "name": "Backdrop Light",
+      "key": "light",
+      "frames": [
+        "backdrop-light/image_0.png",
+        "backdrop-light/image_1.png",
+        "backdrop-light/image_2.png",
+        "backdrop-light/image_3.png",
+        "backdrop-light/image_4.png"
+      ]
+    }
+  ],
   "bounds": "bounds.json",
   "times": "times.json",
   "tracks": "tracks.json",

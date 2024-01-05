@@ -10,6 +10,7 @@ import {
   Mesh,
   OrthographicCamera,
   PlaneGeometry,
+  RGBAFormat,
   RGBAIntegerFormat,
   Scene,
   ShaderMaterial,
@@ -18,20 +19,10 @@ import {
   UnsignedByteType,
   Vector2,
   Vector4,
-  WebGLRenderTarget,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from "three";
 
-import ColorRamp from "./ColorRamp";
-import Dataset from "./Dataset";
-import { FeatureDataType, isThresholdNumeric } from "./types";
-import { packDataTexture } from "./utils/texture_utils";
-import vertexShader from "./shaders/colorize.vert";
-import fragmentShader from "./shaders/colorize_RGBA8U.frag";
-import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
-import Track from "./Track";
-import CanvasOverlay from "./CanvasOverlay";
-import { FeatureThreshold } from "./types";
 import {
   DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_CATEGORICAL_PALETTE_ID,
@@ -39,6 +30,15 @@ import {
   DEFAULT_COLOR_RAMP_ID,
   MAX_FEATURE_CATEGORIES,
 } from "../constants";
+import CanvasOverlay from "./CanvasUIOverlay";
+import ColorRamp from "./ColorRamp";
+import Dataset from "./Dataset";
+import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
+import vertexShader from "./shaders/colorize.vert";
+import fragmentShader from "./shaders/colorize_RGBA8U.frag";
+import Track from "./Track";
+import { FeatureDataType, FeatureThreshold, isThresholdNumeric } from "./types";
+import { packDataTexture } from "./utils/texture_utils";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -58,13 +58,21 @@ export enum DrawMode {
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
   canvasToFrameScale: Vector2;
+  /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
+  objectOpacity: number;
+  /** The feature value of each object ID. */
   featureData: Texture;
   outlierData: Texture;
   inRangeIds: Texture;
   featureColorRampMin: number;
   featureColorRampMax: number;
+  /** UI overlay for scale bars and timestamps. */
   overlay: Texture;
+  /** Image backdrop, rendered behind the main frame object data. */
+  backdrop: Texture;
+  backdropBrightness: number;
+  backdropSaturation: number;
   colorRamp: Texture;
   backgroundColor: Color;
   outlierColor: Color;
@@ -78,14 +86,16 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
+  const emptyBackdrop = new DataTexture(new Uint8Array([1, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
   const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
+  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
+
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
-  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -94,6 +104,10 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
     overlay: new Uniform(emptyOverlay),
+    objectOpacity: new Uniform(1.0),
+    backdrop: new Uniform(emptyBackdrop),
+    backdropBrightness: new Uniform(0.75),
+    backdropSaturation: new Uniform(1.0),
     featureColorRampMin: new Uniform(0),
     featureColorRampMax: new Uniform(1),
     colorRamp: new Uniform(emptyColorRamp),
@@ -114,6 +128,7 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  /** UI overlay for scale bars, timestamps, and other information. */
   public overlay: CanvasOverlay;
 
   // Rendered track line that shows the trajectory of a cell.
@@ -136,6 +151,7 @@ export default class ColorizeCanvas {
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
+  private selectedBackdropKey: string | null;
   private colorRamp: ColorRamp;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
@@ -191,6 +207,7 @@ export default class ColorizeCanvas {
     this.dataset = null;
     this.canvasResolution = null;
     this.featureName = null;
+    this.selectedBackdropKey = null;
     this.colorRamp = DEFAULT_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_ID)!.colorRamp;
     this.categoricalPalette = new ColorRamp(
       DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colorStops
@@ -333,13 +350,9 @@ export default class ColorizeCanvas {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
 
-    // Force load of frame data (clear cached frame data)
-    const frame = await this.dataset?.loadFrame(this.currentFrame);
-    if (!frame) {
-      return;
-    }
-    // Save frame resolution for later calculation
-    this.setUniform("frame", frame);
+    const frame = this.currentFrame;
+    this.currentFrame = -1;
+    await this.setFrame(frame);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.render();
   }
@@ -517,6 +530,7 @@ export default class ColorizeCanvas {
 
     // Save the array to a texture and pass it into the shader
     this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeIds), FeatureDataType.U8));
+    this.render();
   }
 
   getColorMapRangeMin(): number {
@@ -543,21 +557,62 @@ export default class ColorizeCanvas {
     return index >= 0 && index < this.getTotalFrames();
   }
 
+  public setObjectOpacity(percentOpacity: number): void {
+    percentOpacity = Math.max(0, Math.min(100, percentOpacity));
+    this.setUniform("objectOpacity", percentOpacity / 100);
+  }
+
+  public setBackdropSaturation(percentSaturation: number): void {
+    percentSaturation = Math.max(0, Math.min(100, percentSaturation));
+    this.setUniform("backdropSaturation", percentSaturation / 100);
+  }
+
+  public setBackdropBrightness(percentBrightness: number): void {
+    percentBrightness = Math.max(0, Math.min(200, percentBrightness));
+    this.setUniform("backdropBrightness", percentBrightness / 100);
+  }
+
+  public setBackdropKey(key: string | null): void {
+    this.selectedBackdropKey = key;
+    this.setFrame(this.currentFrame, true).then(() => {
+      this.render();
+    });
+  }
+
   /**
    * Sets the current frame of the canvas, loading the new frame data if the
    * frame number changes.
    * @param index Index of the new frame.
+   * @param forceUpdate Force a reload of the frame data, even if the frame
+   * is already loaded.
    */
-  async setFrame(index: number): Promise<void> {
+  async setFrame(index: number, forceUpdate: boolean = false): Promise<void> {
     // Ignore same or bad frame indices
-    if (this.currentFrame === index || !this.isValidFrame(index)) {
+    if ((!forceUpdate && this.currentFrame === index) || !this.isValidFrame(index)) {
       return;
     }
     // New frame, so load the frame data.
     this.currentFrame = index;
-    const frame = await this.dataset?.loadFrame(index);
+    let backdropPromise = undefined;
+    if (this.selectedBackdropKey && this.dataset?.hasBackdrop(this.selectedBackdropKey)) {
+      backdropPromise = this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
+    }
+    const framePromise = this.dataset?.loadFrame(index);
+    const result = await Promise.all([framePromise, backdropPromise]);
+    const [frame, backdrop] = result;
+
     if (!frame) {
       return;
+    }
+    if (this.currentFrame !== index) {
+      // This load request has been superceded by a request for another frame, which has already loaded in image data.
+      // Drop this request.
+      return;
+    }
+    if (backdrop) {
+      this.setUniform("backdrop", backdrop);
+    } else {
+      this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
     this.setUniform("frame", frame);
   }
