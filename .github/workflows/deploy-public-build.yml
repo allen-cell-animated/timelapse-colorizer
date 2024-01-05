@@ -25,19 +25,19 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: production-files
-          path: ./public
+          path: ./dist
 
   pages-deploy:
     needs: pages-build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
           name: production-files
-          path: ./public
+          path: ./dist
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
