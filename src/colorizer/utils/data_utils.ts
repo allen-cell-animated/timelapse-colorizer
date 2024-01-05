@@ -31,6 +31,8 @@ export function getColorMap(colorRampData: Map<string, ColorRampData>, key: stri
 
 /**
  * Validates the thresholds against the dataset. If the threshold's feature is present but the wrong type, it is updated.
+ * This is most likely to happen when datasets have different types for the same feature name, or if thresholds are loaded from
+ * an outdated URL.
  * @param dataset The dataset to validate thresholds against.
  * @param thresholds An array of `FeatureThresholds` to validate.
  * @returns a new array of thresholds, with any categorical thresholds converted to numeric thresholds if the feature is numeric
@@ -41,12 +43,15 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
   const newThresholds: FeatureThreshold[] = [];
 
   for (const threshold of thresholds) {
-    const featureData = dataset.tryGetFeatureData(threshold.featureName);
+    const featureData = dataset.getFeatureData(threshold.featureName);
     const isInDataset = featureData && featureData.units === threshold.units;
 
     if (isInDataset && featureData.type === FeatureType.CATEGORICAL && isThresholdNumeric(threshold)) {
       // Threshold is not categorical but the feature is.
       // Convert the threshold to categorical.
+
+      // This is important for historical reasons, because older versions of the app used to only store features as numeric
+      // thresholds. This would cause categorical features loaded from the URL to be incorrectly shown on the UI.
       newThresholds.push({
         featureName: threshold.featureName,
         units: threshold.units,

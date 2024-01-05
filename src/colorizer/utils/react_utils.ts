@@ -76,19 +76,20 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
  * Hook for adding scroll shadows to an element.
  *
  * Adapted with edits from https://medium.com/dfind-consulting/react-scroll-hook-with-shadows-9ba2d47ae32.
- * Adds typing and fixes a bug where shadows would not appear before users interacted with the element, and
+ * Added typing and fixed a bug where shadows would not appear before users interacted with the element, and
  * another where shadows would not disappear when the element was not scrollable.
+ *
  * @param shadowColor a CSS-interpretable string representing a color.
  * @returns an object with three properties:
- * - scrollShadowStyle: a CSSProperties object that can be applied to the element to add a shadow. NOTE:
+ * - `scrollShadowStyle`: a CSSProperties object that can be applied to the element to add a shadow. NOTE:
  * This does not have to be the scrolling element; see the example for an overlay shadow.
- * - onScrollHandler: an event handler to attach to the scrolling element's `onScroll` event.
- * - scrollRef: a ref to attach to the scrolling element.
+ * - `onScrollHandler`: an event handler to attach to the scrolling element's `onScroll` event.
+ * - `scrollRef`: a ref to attach to the scrolling element.
  *
  * @example
  * ```
  * function MyComponent() {
- *   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollWithShadow();
+ *   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
  *
  *   return (
  *   <div style={{maxHeight: "50px", position: "relative"}}>
