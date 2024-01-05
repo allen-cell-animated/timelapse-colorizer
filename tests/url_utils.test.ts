@@ -99,6 +99,8 @@ describe("Loading + saving from URL query strings", () => {
   it("Encodes + Decodes URL strings", () => {
     const originalParams = stateWithNonLatinCharacters[0];
     const queryString = paramsToUrlQueryString(originalParams);
+    expect(queryString).equals(stateWithNonLatinCharacters[1]);
+
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
@@ -135,11 +137,15 @@ describe("Loading + saving from URL query strings", () => {
       colorRampReversed: true,
     };
     const queryString = paramsToUrlQueryString(originalParams);
+    const expectedQueryString =
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!";
+    expect(queryString).equals(expectedQueryString);
+
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
 
-  it("Handles feature threshold names with potentially illegal characters", () => {
+  it("Handles feature threshold names with nonstandard characters", () => {
     const originalParams: Partial<UrlParams> = {
       thresholds: [
         { featureName: "feature,,,", units: ",m,", type: ThresholdType.NUMERIC, min: 0, max: 1 },
@@ -154,6 +160,10 @@ describe("Loading + saving from URL query strings", () => {
       ],
     };
     const queryString = paramsToUrlQueryString(originalParams);
+    const expectedQueryString =
+      "?filters=feature%252C%252C%252C%3A%252Cm%252C%3A0%3A1%2C(feature)%3A(m)%3A0%3A1%2Cfeat%253Aure%3A%253Am%3A0%3A1%2C0.0%2525%3Am%2526m's%3A1";
+    expect(queryString).equals(expectedQueryString);
+
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
@@ -168,6 +178,10 @@ describe("Loading + saving from URL query strings", () => {
       range: [1, 0],
     };
     const queryString = paramsToUrlQueryString(originalParams);
+    const expectedQueryString =
+      "?filters=feature1%3Am%3A1%3A0%2Cfeature2%3Am%3A12%3A-34%2Cfeature3%3Am%3A0.500%3A0.250&range=1%2C0";
+    expect(queryString).equals(expectedQueryString);
+
     const parsedParams = loadParamsFromUrlQueryString(queryString);
 
     expect(parsedParams.thresholds).deep.equals([
@@ -183,6 +197,9 @@ describe("Loading + saving from URL query strings", () => {
       thresholds: [{ featureName: "feature1", units: "", type: ThresholdType.NUMERIC, min: 0, max: 1 }],
     };
     const queryString = paramsToUrlQueryString(originalParams);
+    const expectedQueryString = "?filters=feature1%3A%3A0%3A1";
+    expect(queryString).equals(expectedQueryString);
+
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams.thresholds).deep.equals(originalParams.thresholds);
   });
@@ -195,6 +212,9 @@ describe("Loading + saving from URL query strings", () => {
       thresholds: [{ featureName: "feature", units: "", type: ThresholdType.NUMERIC, min: 0, max: 0 }],
     };
     const queryString = paramsToUrlQueryString(originalParams);
+    const expectedQueryString = "?track=0&t=0&filters=feature%3A%3A0%3A0&range=0%2C0";
+    expect(queryString).equals(expectedQueryString);
+
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(originalParams);
   });
@@ -204,6 +224,9 @@ describe("Loading + saving from URL query strings", () => {
       thresholds: [{ featureName: "feature", units: "", type: ThresholdType.CATEGORICAL, enabledCategories: [true] }],
     };
     const queryString = paramsToUrlQueryString(originalParams);
+    const expectedQueryString = "?filters=feature%3A%3A1";
+    expect(queryString).equals(expectedQueryString);
+
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams.thresholds).deep.equals([
       {
@@ -224,6 +247,9 @@ describe("Loading + saving from URL query strings", () => {
       ],
     };
     const queryString = paramsToUrlQueryString(originalParams);
+    const expectedQueryString = "?filters=feature%3A%3A1003";
+    expect(queryString).equals(expectedQueryString);
+
     const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams.thresholds).deep.equals([
       {
