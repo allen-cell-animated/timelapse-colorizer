@@ -1,0 +1,115 @@
+.spinBox {
+  composes: nospinner from "../styles/utils.module.css";
+  --border-width: 1px;
+  --border-radius: 6px;
+
+  position: relative;
+  height: calc(var(--button-height-small) - 2px);
+  width: 80px;
+  min-width: 80px;
+
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+
+  padding: 0;
+  transition: all 0.2s linear;
+  border-radius: var(--border-radius);
+  border: solid 1px var(--color-borders);
+  overflow: clip;
+}
+
+.spinBox.disabled {
+  color: var(--color-text-disabled);
+  background-color: var(--color-button-disabled);
+  cursor: not-allowed;
+}
+
+.spinBox.disabled * {
+  cursor: not-allowed;
+}
+
+.spinBox:not(.disabled):hover {
+  border: solid 1px var(--color-button-hover);
+}
+
+.spinBox:focus-within {
+  border: solid 1px var(--color-button-hover);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(137, 98, 211, 0.06);
+  border-inline-end-width: 1px;
+}
+
+.spinBox input {
+  font-family: var(--default-font);
+  font-size: 14px;
+  height: calc(var(--button-height) - 4px);
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 0;
+  text-align: right;
+  background-color: transparent;
+}
+
+.spinBox input:disabled {
+  color: var(--color-text-disabled);
+}
+
+/* Prevent the input from changing its styling when focused, since the
+ * parent spinbox has styling for this already.
+ */
+.spinBox input:focus,
+.spinBox input:focus-visible,
+.spinBox input:active {
+  border: none;
+  outline: none;
+}
+
+.spinButtons {
+  display: flex;
+  flex-direction: column;
+  right: var(--border-width);
+  bottom: var(--border-width);
+  height: 100%;
+  min-width: calc(var(--button-height) * 0.6);
+
+  overflow: hidden;
+}
+
+.spinButtons:hover {
+  background-color: var(--color-button);
+}
+
+.spinButtons.disabled:hover {
+  background-color: transparent;
+}
+
+.spinButtons button {
+  color: var(--color-button);
+  fill: var(--color-button);
+  border: none;
+  background-color: transparent;
+  margin: 0;
+  height: calc(50%);
+  width: 100%;
+  text-align: center;
+  padding: 0 3px;
+  transition: all 0.2s linear;
+}
+
+.spinButtons:hover button {
+  fill: var(--color-text-button);
+}
+
+.spinButtons button:disabled {
+  fill: var(--color-text-disabled);
+}
+
+.spinButtons button:not(:disabled):hover {
+  background-color: var(--color-button-hover);
+}
+
+.spinButtons button:not(:disabled):active {
+  background-color: var(--color-button-active);
+}

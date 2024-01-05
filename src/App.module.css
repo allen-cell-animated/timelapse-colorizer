@@ -1,0 +1,215 @@
+.app {
+  font-family: var(--default-font);
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.app h1 {
+  font-size: var(--font-size-header);
+  font-style: normal;
+  font-weight: 400;
+  margin: 5px 0;
+}
+
+.app h2 {
+  font-size: var(--font-size-section);
+  font-style: normal;
+  font-weight: 400;
+}
+
+.app h3 {
+  font-size: var(--font-size-label);
+  font-style: normal;
+  font-weight: 400;
+  margin: 0;
+}
+
+.app p {
+  font-family: var(--default-font);
+  font-size: var(--font-size-content);
+  font-style: normal;
+  font-weight: 400;
+  margin: 2px;
+}
+
+.app label {
+  font-family: var(--default-font);
+  font-size: var(--font-size-content);
+  font-style: normal;
+  font-weight: 400;
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
+
+.app .ant-btn:active {
+  border: 1px solid var(--color-button);
+}
+
+.app .ant-btn-default:not(:disabled):hover {
+  background-color: var(--color-button-hover);
+  color: var(--color-text-button);
+  fill: var(--color-text-button);
+}
+
+.app .ant-btn-default:not(:disabled):active {
+  border: 1px solid var(--color-button);
+  color: var(--color-text-button);
+  fill: var(--color-text-button);
+}
+
+.header {
+  --header-content-height: 24px;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  width: auto;
+  height: fit-content;
+  min-height: var(--header-content-height);
+  padding: 18px 30px;
+  border-bottom: 1px solid var(--color-borders);
+  gap: 10px;
+}
+
+.header > div {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.headerLeft {
+  gap: 20px;
+}
+
+.headerRight {
+  height: 100%;
+  gap: 10px;
+}
+
+.copyUrlButton {
+  padding-left: 0;
+  padding-right: 6px;
+}
+
+.header h2 {
+  margin: 0;
+  line-height: normal;
+}
+
+.verticalDivider {
+  height: var(--header-content-height);
+  width: 1px;
+  background-color: var(--color-dividers);
+  display: inline-block;
+}
+
+.mainContent .topControls {
+  margin: 10px 0 5px 0;
+}
+
+.mainContent .controlsContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.mainContent {
+  margin: 8px 30px;
+}
+
+.contentPanels {
+  display: flex;
+  flex: row;
+  flex-wrap: wrap;
+  gap: 20px;
+  /* Allow the content panels to take up all available space */
+  width: 100%;
+}
+
+.canvasPanel {
+  flex-grow: 0;
+}
+
+.canvasPanel .bottomControls {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  width: 100%;
+}
+
+.app canvas {
+  border: 1px solid var(--color-dividers);
+}
+
+.canvasPanel .timeControls {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  max-width: calc(100vw - 60px);
+  margin-top: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.timeSliderContainer {
+  width: calc(min(50vw, 300px));
+  margin: 0 4px;
+  height: var(--button-height);
+  display: flex;
+  align-items: center;
+}
+
+.timeSliderContainer > div {
+  width: 100%;
+}
+
+.sidePanels {
+  gap: 10px;
+  flex-grow: 1;
+
+  /* TODO: This is copied from CanvasWrapper and should be shared sizing behavior. */
+  max-width: calc(min(100vw - 75px, 730px));
+  width: fit-content;
+  min-width: 300px;
+}
+
+.plotAndFiltersPanel {
+  display: block;
+  height: 500px;
+  width: 100%;
+}
+
+/* Remove the margins from the tabs so they line up with the edges of the content box */
+.plotAndFiltersPanel :global(.ant-tabs-nav) {
+  margin: 0;
+}
+
+/* Passes the width and height attributes down through the layers of ant hierarchy 
+* so we can correctly size the plot/filter content area
+*/
+.plotAndFiltersPanel :global(.ant-tabs-nav) {
+  width: 100%;
+}
+.plotAndFiltersPanel :global(.ant-tabs),
+.plotAndFiltersPanel :global(.ant-tabs-content-holder),
+.plotAndFiltersPanel :global(.ant-tabs-content),
+.plotAndFiltersPanel :global(.ant-tabs-tabpane) {
+  height: 100%;
+}
+
+.plotAndFiltersPanel .tabContent {
+  padding: 10px 20px;
+  border: 1px solid var(--color-dividers);
+  border-top: 0;
+  width: auto;
+  height: calc(100% - 20px);
+  overflow: hidden;
+}
