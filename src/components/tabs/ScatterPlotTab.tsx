@@ -51,9 +51,12 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   const theme = useContext(AppThemeContext);
 
   const [isPending, startTransition] = useTransition();
+  // This might seem redundant with `isPending`, but `useTransition` only works within React's
+  // update cycle. Plotly's rendering is async and does not stop the state update, so we need to track
+  // completion with a separate flag.
   const [isRendering, setIsRendering] = useState(false);
-  const plotDivRef = React.useRef<HTMLDivElement>(null);
 
+  const plotDivRef = React.useRef<HTMLDivElement>(null);
   useEffect(() => {
     // Mount the plot to the DOM
     Plotly.newPlot(
@@ -78,16 +81,15 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     });
   }, [propDataset]);
 
-  const colorRampData = useDeferredValue<ColorRampData>(useDebounce(props.colorRampData, 500));
-  const colorRampFeature = useDeferredValue<string | null>(useDebounce(props.colorRampFeature, 500));
-  const colorRampFeatureMin = useDeferredValue<number>(useDebounce(props.colorRampFeatureMin, 500));
-  const colorRampFeatureMax = useDeferredValue<number>(useDebounce(props.colorRampFeatureMax, 500));
+  // TODO: Implement color ramps in a worker thread. This was originally removed for performance issues.
+  // Plotly's performance can be improved by generating traces for colors rather than feeding it the raw
+  // data and asking it to colorize it. This might be better in a worker?
+  // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
 
   // const [colorRampData, setColorRampData] = useState<ColorRampData>(props.colorRampData);
   // const [colorRampFeature, setColorRampFeature] = useState<string | null>(props.colorRampFeature);
   // const [colorRampFeatureMin, setColorRampFeatureMin] = useState<number>(props.colorRampFeatureMin);
   // const [colorRampFeatureMax, setColorRampFeatureMax] = useState<number>(props.colorRampFeatureMax);
-
   // useMemo(() => {
   //   startTransition(() => {
   //     setColorRampFeature(props.colorRampFeature);
@@ -129,7 +131,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     []
   );
 
-  // Update layout
+  // Update plot layout
   useEffect(() => {
     let xData = getData(xAxisFeatureName, dataset);
     let yData = getData(yAxisFeatureName, dataset);
@@ -146,12 +148,14 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     }
 
     const markerConfig: Partial<PlotMarker> = {
-      color: theme.color.theme + "40",
+      color: theme.color.themeDark + "40",
       size: 4,
     };
+
     const markerTrace: Partial<PlotData> = {
       x: xData,
       y: yData,
+      name: "",
       type: "scattergl",
       mode: "markers",
       marker: markerConfig,
@@ -193,30 +197,6 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // TODO: Replace w/ keys
   const featureNames = dataset?.featureNames || [];
   featureNames.push(FRAME_FEATURE.name);
-
-  const colorStopsToColorScale = (colorStops: string[]): [number, string][] => {
-    const colorScale: [number, string][] = [];
-    for (let i = 0; i < colorStops.length; i++) {
-      // Transparency is set to 50% (alpha = 0x80)
-      colorScale.push([i / (colorStops.length - 1), colorStops[i] + "80"]);
-    }
-    return colorScale;
-  };
-
-  const coloredFeatureData = useMemo(() => getData(colorRampFeature, dataset), [colorRampFeature, dataset]);
-
-  // TODO: Plotly's performance can be improved by generating traces for colors rather than feeding it the raw
-  // data and asking it to colorize it. This might be better in a worker?
-  // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
-
-  const colorConfig: Partial<PlotMarker> = useMemo(() => {
-    return {
-      color: Array.from(coloredFeatureData || [0]),
-      cmin: colorRampFeatureMin,
-      cmax: colorRampFeatureMax,
-      colorscale: colorStopsToColorScale(colorRampData.colorStops),
-    };
-  }, [coloredFeatureData, colorRampFeatureMin, colorRampFeatureMax, colorRampData]);
 
   return (
     <>
