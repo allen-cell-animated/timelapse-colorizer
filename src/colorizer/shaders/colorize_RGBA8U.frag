@@ -16,8 +16,15 @@ uniform float featureColorRampMax;
 
 uniform vec2 canvasToFrameScale;
 uniform sampler2D colorRamp;
-uniform vec3 backgroundColor;
 uniform sampler2D overlay;
+uniform sampler2D backdrop;
+uniform float backdropSaturation;
+uniform float backdropBrightness;
+uniform float objectOpacity;
+
+uniform vec3 backgroundColor;
+
+const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
@@ -35,6 +42,24 @@ uniform bool hideOutOfRange;
 in vec2 vUv;
 
 layout (location = 0) out vec4 gOutputColor;
+
+// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
+vec3 hsvToRgb(vec3 c) {
+  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
+vec3 rgbToHsv(vec3 c) {
+  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+  float d = q.x - min(q.w, q.y);
+  float e = 1.0e-10;
+  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
 
 // Combine non-alpha color channels into one 24-bit value
 uint combineColor(uvec4 color) {
@@ -64,7 +89,9 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
   float thickness = 2.0;
   float wStep = 1.0 / float(frameDims.x);
   float hStep = 1.0 / float(frameDims.y);        
-    // sample around the pixel to see if we are on an edge
+  // sample around the pixel to see if we are on an edge
+  // TODO: Fix this so it samples using canvas pixel offsets instead of frame pixel offsets.
+  // Currently, the edge detection is sparser when loading high-resolution frames.
   int R = int(combineColor(texture(frame, uv + vec2(thickness * wStep, 0)))) - 1;
   int L = int(combineColor(texture(frame, uv + vec2(-thickness * wStep, 0)))) - 1;
   int T = int(combineColor(texture(frame, uv + vec2(0, thickness * hStep)))) - 1;
@@ -75,7 +102,7 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
 
 vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
   if (drawMode == DRAW_MODE_HIDE) {
-    return vec4(backgroundColor, 1.0);
+    return vec4(backgroundColor, 0.0);
   } else {
     return vec4(defaultColor, 1.0);
   }
@@ -87,15 +114,40 @@ vec4 alphaBlend(vec4 a, vec4 b) {
   return vec4((a.rgb * a.a + b.rgb * b.a * (1.0 - a.a)) / alpha, alpha);
 }
 
-vec4 getMainPixelColor() {
+bool isOutsideBounds(vec2 sUv) {
+  return sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0;
+}
+
+vec4 getBackdropColor(vec2 sUv) {
+  if (isOutsideBounds(sUv)) {
+    return TRANSPARENT;
+  }
+  vec4 backdropColor = texture(backdrop, sUv).rgba;
+  vec3 backdropHsv = rgbToHsv(backdropColor.rgb);
+  backdropHsv.y *= backdropSaturation;
+  vec3 backdropRgb = hsvToRgb(backdropHsv);
+
+  // Apply brightness adjustment
+  float normalizedBrightness = backdropBrightness - 1.0;
+  if (normalizedBrightness < 0.0) {
+    // Decrease brightness
+    backdropRgb *= (1.0 + normalizedBrightness);
+  } else {
+    // Increase brightness
+    backdropRgb += (1.0 - backdropRgb) * normalizedBrightness;
+  }
+
+  return vec4(backdropRgb, backdropColor.a);
+}
+
+vec4 getObjectColor(vec2 sUv) {
 
   // Scale uv to compensate for the aspect of the frame
   ivec2 frameDims = textureSize(frame, 0);
-  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
   // This pixel is background if, after scaling uv, it is outside the frame
-  if (sUv.x < 0.0 || sUv.y < 0.0 || sUv.x > 1.0 || sUv.y > 1.0) {
-    return vec4(backgroundColor, 1.0);
+  if (isOutsideBounds(sUv)) {
+    return TRANSPARENT;
   }
 
   // Get the segmentation id at this pixel
@@ -103,9 +155,11 @@ vec4 getMainPixelColor() {
 
   // A segmentation id of 0 represents background
   if (id == 0u) {
-    return vec4(backgroundColor, 1.0);
-  } else if (int(id) - 1 == highlightedId) {
-    // do an outline around highlighted object
+    return TRANSPARENT;
+  }
+
+  // do an outline around highlighted object
+  if (int(id) - 1 == highlightedId) {
     if (isEdge(sUv, frameDims)) {
       return vec4(1.0, 0.0, 1.0, 1.0);
     }
@@ -135,9 +189,17 @@ vec4 getMainPixelColor() {
 }
 
 void main() {
-  vec4 mainColor = getMainPixelColor();
-  // Add overlay texture
+  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
+
+  vec4 backdropColor = getBackdropColor(sUv);
+
+  vec4 mainColor = getObjectColor(sUv);
+  mainColor.a *= objectOpacity;
+
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
-  gOutputColor = alphaBlend(overlayColor, mainColor);
+  gOutputColor = vec4(backgroundColor, 1.0);
+  gOutputColor = alphaBlend(backdropColor, gOutputColor);
+  gOutputColor = alphaBlend(mainColor, gOutputColor);
+  gOutputColor = alphaBlend(overlayColor, gOutputColor);
 }

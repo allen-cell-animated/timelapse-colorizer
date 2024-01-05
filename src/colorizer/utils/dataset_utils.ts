@@ -44,6 +44,8 @@ type ManifestFileV2 = Omit<ManifestFileV1, "features" | "featureMetadata"> & {
     type?: string;
     categories?: string[];
   }[];
+  /** Optional list of backdrop/overlay images. */
+  backdrops?: { name: string; key: string; frames: string[] }[];
   version: "2.0.0";
 };
 
