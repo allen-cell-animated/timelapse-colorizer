@@ -474,9 +474,9 @@ function App(): ReactElement {
   const handleKeyDown = useCallback(
     ({ key }: KeyboardEvent): void => {
       if (key === "ArrowLeft" || key === "Left") {
-        timeControls.advanceFrame(-1);
+        timeControls.offsetFrame(-1);
       } else if (key === "ArrowRight" || key === "Right") {
-        timeControls.advanceFrame(1);
+        timeControls.offsetFrame(1);
       }
     },
     [timeControls]
@@ -792,14 +792,10 @@ function App(): ReactElement {
                 />
               </div>
 
-              <IconButton
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls.advanceFrame(-1)}
-                type="outlined"
-              >
+              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.offsetFrame(-1)} type="outlined">
                 <StepBackwardFilled />
               </IconButton>
-              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.advanceFrame(1)} type="outlined">
+              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.offsetFrame(1)} type="outlined">
                 <StepForwardFilled />
               </IconButton>
 

@@ -111,10 +111,9 @@ export default class TimeControls {
   }
 
   /**
-   * Advances (or rewinds) the time series by the given number of frames.
-   * @param delta The number of frames to advance. Negative values will rewind the time series.
+   * Increment or decrement the time series by the given number of frames.
    */
-  public async advanceFrame(delta: number = 1): Promise<void> {
+  public async offsetFrame(delta: number = 1): Promise<void> {
     if (this.setFrameFn) {
       await this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
     }
