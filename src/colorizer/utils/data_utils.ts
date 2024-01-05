@@ -1,6 +1,6 @@
 import { FeatureThreshold } from "../types";
-import { ColorRampData } from "../../constants";
 import ColorRamp from "../ColorRamp";
+import { ColorRampData } from "../colors/color_ramps";
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.

@@ -8,7 +8,7 @@ import {
   UrlParams,
   isAllenPath,
 } from "../src/colorizer/utils/url_utils";
-import { DEFAULT_COLOR_RAMPS } from "../src/constants";
+import { DEFAULT_COLOR_RAMPS } from "../src/colorizer";
 
 const stateWithNonLatinCharacters: [Partial<UrlParams>, string] = [
   {
