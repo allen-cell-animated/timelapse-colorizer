@@ -1,0 +1,42 @@
+{
+  "extends": ["eslint:recommended", "plugin:react/recommended"],
+  "env": {
+    "es6": true,
+    "browser": true
+  },
+  "ignorePatterns": ["/dist/**"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true,
+      "experimentalObjectRestSpread": true,
+      "impliedStrict": true
+    },
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "comma-style": [1, "last"],
+    "curly": [1, "multi-line"],
+    "eol-last": 1,
+    "eqeqeq": 1,
+    "new-cap": 1,
+    "no-undef": "error",
+    "no-array-constructor": 1,
+    "no-mixed-spaces-and-tabs": 1,
+    "no-new-object": 1,
+    "no-shadow-restricted-names": 1,
+    "@typescript-eslint/no-unused-vars": ["error", { "args": "none" }],
+    "no-unused-vars": 0, // Rely on typescript-eslint rule above
+    "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
+    "@typescript-eslint/typedef": ["error", { "parameters": true }],
+    "prefer-const": 1,
+    "radix": 1,
+    "react/prop-types": 0, // This relies specifically on React PropTypes and ignores other typing methods
+    "semi": 2,
+    // TODO: Sort all project imports
+    // "sort-imports": 1,
+    "space-before-blocks": [1, "always"]
+  }
+}
