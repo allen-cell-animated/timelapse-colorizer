@@ -2,6 +2,7 @@ import React, {
   ReactElement,
   memo,
   useCallback,
+  useContext,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -20,6 +21,7 @@ import { Button, Tooltip } from "antd";
 import styled from "styled-components";
 import Plotly from "plotly.js-dist-min";
 import LoadingSpinner from "../LoadingSpinner";
+import { AppThemeContext } from "../AppStyle";
 
 const FRAME_FEATURE = { key: "frame", name: "Frame" };
 
@@ -46,7 +48,9 @@ const CONFIG: Partial<Plotly.Config> = {
 export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ScatterPlotTabProps>;
 
-  const [_isPending, startTransition] = useTransition();
+  const theme = useContext(AppThemeContext);
+
+  const [isPending, startTransition] = useTransition();
   const [isRendering, setIsRendering] = useState(false);
   const plotDivRef = React.useRef<HTMLDivElement>(null);
 
@@ -142,7 +146,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     }
 
     const markerConfig: Partial<PlotMarker> = {
-      color: "rgba(0, 0, 0, 0.25)",
+      color: theme.color.theme + "40",
       size: 4,
     };
     const markerTrace: Partial<PlotData> = {
@@ -156,14 +160,14 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     var xDensityTrace: Partial<PlotData> = {
       x: xData,
       name: "x density",
-      marker: { color: "rgb(102,0,0)" },
+      marker: { color: theme.color.themeLight },
       yaxis: "y2",
       type: "histogram",
     };
     var yDensityTrace: Partial<PlotData> = {
       y: yData,
       name: "y density",
-      marker: { color: "rgb(102,0,0)" },
+      marker: { color: theme.color.themeLight },
       xaxis: "x2",
       type: "histogram",
     };
@@ -174,10 +178,11 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       {
         autosize: true,
         showlegend: false,
-        xaxis: { title: xAxisFeatureName || "", domain: [0, 0.85], showgrid: false, zeroline: false },
-        yaxis: { title: yAxisFeatureName || "", domain: [0, 0.85], showgrid: false, zeroline: false },
+        xaxis: { title: xAxisFeatureName || "", domain: [0, 0.8], showgrid: false, zeroline: true },
+        yaxis: { title: yAxisFeatureName || "", domain: [0, 0.8], showgrid: false, zeroline: true },
         xaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
         yaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
+        margin: { l: 60, r: 50, b: 50, t: 20, pad: 4 },
       },
       CONFIG
     ).then(() => {
@@ -249,9 +254,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           Clear
         </Button>
       </FlexRowAlignCenter>
-      <LoadingSpinner loading={isRendering} style={{ marginTop: "10px" }}>
+      <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
         <ScatterPlotContainer
-          style={{ width: "100%", height: "100%", padding: "5px" }}
+          style={{ width: "100%", height: "400px", padding: "5px" }}
           ref={plotDivRef}
         ></ScatterPlotContainer>
       </LoadingSpinner>
