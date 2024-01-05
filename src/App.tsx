@@ -496,15 +496,18 @@ function App(): ReactElement {
     setFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
 
+  // When the slider is released, check if playback was occurring and resume it.
+  // We need to attach the pointerup event listener to the document because it will not fire
+  // if the user releases the pointer outside of the slider.
   useEffect(() => {
     const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
       if (clickedOnSlider) {
-        // Update the frame and unpause playback when the slider is released.
+        // Update the frame and optionally unpause playback when the slider is released.
         setClickedOnSlider(false);
         await setFrame(frameInput);
         if (isPlaybackPausedTemporarily) {
           setIsPlaybackPausedTemporarily(false);
-          timeControls.handlePlayButtonClick();
+          timeControls.handlePlayButtonClick(); // resume playing
         }
       }
     };
@@ -760,20 +763,14 @@ function App(): ReactElement {
                 <IconButton
                   type="outlined"
                   disabled={disableTimeControlsUi}
-                  onClick={() => {
-                    timeControls.handlePauseButtonClick();
-                    setIsPlaybackPausedTemporarily(false);
-                  }}
+                  onClick={() => timeControls.handlePauseButtonClick()}
                 >
                   <PauseOutlined />
                 </IconButton>
               ) : (
                 <IconButton
                   disabled={disableTimeControlsUi}
-                  onClick={() => {
-                    timeControls.handlePlayButtonClick();
-                    setIsPlaybackPausedTemporarily(false);
-                  }}
+                  onClick={() => timeControls.handlePlayButtonClick()}
                   type="outlined"
                 >
                   <CaretRightOutlined />
