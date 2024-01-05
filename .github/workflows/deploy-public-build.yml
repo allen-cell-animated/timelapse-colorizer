@@ -19,7 +19,7 @@ jobs:
           node-version: "18"
 
       - name: Install and Build
-        run: npm ci && npx vite build --base=https://allen-cell-animated.github.io/nucmorph-colorizer/
+        run: npm ci && npx vite build
 
       - name: Run Linter
         run: npm run lint
