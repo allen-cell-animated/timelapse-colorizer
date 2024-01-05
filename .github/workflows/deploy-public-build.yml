@@ -9,7 +9,7 @@ on:
 concurrency: pages-build-deployment-${{ github.ref }}
 
 jobs:
-  pages-build-deployment:
+  pages-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,7 +19,25 @@ jobs:
           node-version: "18"
 
       - name: Install and Build
-        run: npm ci && npx vite build --base=https://allen-cell-animated.github.io/nucmorph-colorizer/public/
+        run: npm ci && npx vite build --base=/public/
+
+      - name: Upload build files
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-files
+          path: ./public
+
+  pages-deploy:
+    needs: pages-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: production-files
+          path: ./public
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
