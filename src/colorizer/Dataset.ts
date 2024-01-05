@@ -1,4 +1,4 @@
-import { Texture, Vector2 } from "three";
+import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
@@ -7,10 +7,10 @@ import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import FrameCache from "./FrameCache";
 import Track from "./Track";
 
-import { FeatureArrayType, FeatureDataType } from "./types";
-import * as urlUtils from "./utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import * as urlUtils from "./utils/url_utils";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -26,6 +26,11 @@ type FeatureData = {
   units: string;
   type: FeatureType;
   categories: string[] | null;
+};
+
+type BackdropData = {
+  name: string;
+  frames: string[];
 };
 
 const defaultMetadata: ManifestFileMetadata = {
@@ -45,6 +50,11 @@ export default class Dataset {
   private frameFiles: string[];
   private frames: FrameCache | null;
   private frameDimensions: Vector2 | null;
+
+  private backdropLoader: IFrameLoader;
+  private backdropData: Map<string, BackdropData>;
+  // TODO: Implement caching for overlays-- extend FrameCache to allow multiple frames per index -> string name?
+  // private backdrops: Map<string, FrameCache | null>;
 
   private arrayLoader: IArrayLoader;
   // Use map to enforce ordering
@@ -82,10 +92,13 @@ export default class Dataset {
     this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
     this.hasOpened = false;
 
-    this.frameLoader = frameLoader || new ImageFrameLoader();
+    this.frameLoader = frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
     this.frameFiles = [];
     this.frames = null;
     this.frameDimensions = null;
+
+    this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
+    this.backdropData = new Map();
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.features = new Map();
@@ -273,6 +286,29 @@ export default class Dataset {
     return loadedFrame;
   }
 
+  public hasBackdrop(key: string): boolean {
+    return this.backdropData.has(key);
+  }
+
+  /**
+   * Returns a map from backdrop keys to data.
+   */
+  public getBackdropData(): Map<string, BackdropData> {
+    return new Map(this.backdropData);
+  }
+
+  public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
+    // TODO: Implement caching
+    const frames = this.backdropData.get(key)?.frames;
+    // TODO: Wrapping or clamping?
+    if (!frames || index < 0 || index >= frames.length) {
+      return undefined;
+    }
+    const fullUrl = this.resolveUrl(frames[index]);
+    const loadedFrame = await this.backdropLoader.load(fullUrl);
+    return loadedFrame;
+  }
+
   /**
    * Gets the resolution of the last loaded frame.
    * If no frame has been loaded yet, returns (1,1)
@@ -297,6 +333,18 @@ export default class Dataset {
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
+
+    if (manifest.backdrops) {
+      for (const { name, key, frames } of manifest.backdrops) {
+        this.backdropData.set(key, { name, frames });
+        if (frames.length !== this.frameFiles.length || 0) {
+          // TODO: Show error message in the UI when this happens.
+          throw new Error(
+            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'.`
+          );
+        }
+      }
+    }
 
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
 
