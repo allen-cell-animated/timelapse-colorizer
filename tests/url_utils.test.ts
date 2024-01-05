@@ -8,8 +8,9 @@ import {
   UrlParams,
   isAllenPath,
 } from "../src/colorizer/utils/url_utils";
-import { DEFAULT_COLOR_RAMPS, MAX_FEATURE_CATEGORIES } from "../src/constants";
+import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 import { ThresholdType } from "../src/colorizer/types";
+import { DEFAULT_COLOR_RAMPS } from "../src/colorizer";
 
 function padCategories(categories: boolean[]): boolean[] {
   const result = [...categories];

@@ -23,22 +23,16 @@ import {
   WebGLRenderTarget,
 } from "three";
 
-import {
-  DEFAULT_CATEGORICAL_PALETTES,
-  DEFAULT_CATEGORICAL_PALETTE_ID,
-  DEFAULT_COLOR_RAMPS,
-  DEFAULT_COLOR_RAMP_ID,
-  MAX_FEATURE_CATEGORIES,
-} from "../constants";
-import CanvasOverlay from "./CanvasUIOverlay";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
-import vertexShader from "./shaders/colorize.vert";
-import fragmentShader from "./shaders/colorize_RGBA8U.frag";
-import Track from "./Track";
 import { FeatureDataType, FeatureThreshold, isThresholdNumeric } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
+import vertexShader from "./shaders/colorize.vert";
+import fragmentShader from "./shaders/colorize_RGBA8U.frag";
+import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
+import Track from "./Track";
+import CanvasOverlay from "./CanvasUIOverlay";
+import { MAX_FEATURE_CATEGORIES } from "../constants";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -208,10 +202,8 @@ export default class ColorizeCanvas {
     this.canvasResolution = null;
     this.featureName = null;
     this.selectedBackdropKey = null;
-    this.colorRamp = DEFAULT_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_ID)!.colorRamp;
-    this.categoricalPalette = new ColorRamp(
-      DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colorStops
-    );
+    this.colorRamp = new ColorRamp(["black"]);
+    this.categoricalPalette = new ColorRamp(["black"]);
 
     this.track = null;
     this.showTrackPath = false;

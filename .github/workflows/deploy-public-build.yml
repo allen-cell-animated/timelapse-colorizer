@@ -1,0 +1,37 @@
+# Adapted from https://github.com/marketplace/actions/deploy-pr-preview.
+name: Deploy Public Build
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: pages-build-deployment-${{ github.ref }}
+
+jobs:
+  pages-build-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install and Build
+        run: npm ci && npx vite build
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Typechecker
+        run: npm run typeCheck
+
+      - name: Run Tests
+        run: npx vitest run
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .

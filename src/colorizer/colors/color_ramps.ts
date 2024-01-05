@@ -1,6 +1,4 @@
-// TODO: Because this file depends on ColorRamp, it should probably be moved into
-// the colorizer module. (It's not a pure constants file.)
-import ColorRamp from "./../colorizer/ColorRamp";
+import ColorRamp from "../ColorRamp";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorData = {
