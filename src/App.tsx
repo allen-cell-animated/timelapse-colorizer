@@ -474,9 +474,9 @@ function App(): ReactElement {
   const handleKeyDown = useCallback(
     ({ key }: KeyboardEvent): void => {
       if (key === "ArrowLeft" || key === "Left") {
-        timeControls.handleFrameAdvance(-1);
+        timeControls.advanceFrame(-1);
       } else if (key === "ArrowRight" || key === "Right") {
-        timeControls.handleFrameAdvance(1);
+        timeControls.advanceFrame(1);
       }
     },
     [timeControls]
@@ -507,7 +507,7 @@ function App(): ReactElement {
         await setFrame(frameInput);
         if (isPlaybackPausedTemporarily) {
           setIsPlaybackPausedTemporarily(false);
-          timeControls.handlePlayButtonClick(); // resume playing
+          timeControls.play(); // resume playing
         }
       }
     };
@@ -642,7 +642,7 @@ function App(): ReactElement {
             setFrame={setFrameAndRender}
             getCanvas={() => canv.domElement}
             // Stop playback when exporting
-            onClick={() => timeControls.handlePauseButtonClick()}
+            onClick={() => timeControls.pause()}
             currentFrame={currentFrame}
             defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
@@ -760,19 +760,11 @@ function App(): ReactElement {
             <div className={styles.timeControls}>
               {timeControls.isPlaying() || isPlaybackPausedTemporarily ? (
                 // Swap between play and pause button
-                <IconButton
-                  type="outlined"
-                  disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handlePauseButtonClick()}
-                >
+                <IconButton type="outlined" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
                   <PauseOutlined />
                 </IconButton>
               ) : (
-                <IconButton
-                  disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handlePlayButtonClick()}
-                  type="outlined"
-                >
+                <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.play()} type="outlined">
                   <CaretRightOutlined />
                 </IconButton>
               )}
@@ -790,7 +782,7 @@ function App(): ReactElement {
                   value={frameInput}
                   onChange={(value) => {
                     if (timeControls.isPlaying()) {
-                      timeControls.handlePauseButtonClick();
+                      timeControls.pause();
                       // Mark that playback was occurring and that we will resume
                       // playback after the slider is released.
                       setIsPlaybackPausedTemporarily(true);
@@ -802,16 +794,12 @@ function App(): ReactElement {
 
               <IconButton
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handleFrameAdvance(-1)}
+                onClick={() => timeControls.advanceFrame(-1)}
                 type="outlined"
               >
                 <StepBackwardFilled />
               </IconButton>
-              <IconButton
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handleFrameAdvance(1)}
-                type="outlined"
-              >
+              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.advanceFrame(1)} type="outlined">
                 <StepForwardFilled />
               </IconButton>
 

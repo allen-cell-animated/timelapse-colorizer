@@ -24,6 +24,11 @@ export default class TimeControls {
     this.currentlyPlaying = false;
   }
 
+  /**
+   * Adds a callback that will be called to change the current frame.
+   * @param fn A function that takes a frame number and returns a promise that resolves once the
+   * frame is loaded.
+   */
   public setFrameCallback(fn: (frame: number) => Promise<void>): void {
     this.setFrameFn = fn;
   }
@@ -80,14 +85,23 @@ export default class TimeControls {
     loadNextFrame(this.canvas.getCurrentFrame());
   }
 
-  public async handlePlayButtonClick(): Promise<void> {
+  /**
+   * Begins playback of the time series. If the time series is already playing, this function does
+   * nothing.
+   * @param onNewFrameCallback An optional callback that will be called whenever a new frame is loaded.
+   */
+  public async play(onNewFrameCallback: () => void = () => {}): Promise<void> {
     if (this.canvas.getCurrentFrame() >= this.canvas.getTotalFrames() - 1) {
       await this.canvas.setFrame(0);
     }
-    this.playTimeSeries(() => {});
+    this.playTimeSeries(onNewFrameCallback);
   }
 
-  public handlePauseButtonClick(): void {
+  /**
+   * Pauses the playback of the time series. If any pause listeners have been added, their callbacks
+   * will be triggered.
+   */
+  public pause(): void {
     if (this.timerId !== DEFAULT_TIMER_ID) {
       clearTimeout(this.timerId);
       this.timerId = DEFAULT_TIMER_ID;
@@ -96,7 +110,11 @@ export default class TimeControls {
     this.pauseCallbacks.forEach((callback) => callback());
   }
 
-  public async handleFrameAdvance(delta: number = 1): Promise<void> {
+  /**
+   * Advances (or rewinds) the time series by the given number of frames.
+   * @param delta The number of frames to advance. Negative values will rewind the time series.
+   */
+  public async advanceFrame(delta: number = 1): Promise<void> {
     if (this.setFrameFn) {
       await this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
     }
@@ -106,6 +124,10 @@ export default class TimeControls {
     return this.currentlyPlaying;
   }
 
+  /**
+   * Adds a listener that will be called whenever the playback is paused.
+   * Note: listeners are not cleared between pauses.
+   */
   public addPauseListener(callback: () => void): void {
     this.pauseCallbacks.push(callback);
   }
