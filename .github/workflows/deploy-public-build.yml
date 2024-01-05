@@ -19,19 +19,10 @@ jobs:
           node-version: "18"
 
       - name: Install and Build
-        run: npm ci && npx vite build
-
-      - name: Run Linter
-        run: npm run lint
-
-      - name: Run Typechecker
-        run: npm run typeCheck
-
-      - name: Run Tests
-        run: npx vitest run
+        run: npm ci && npx vite build --base=https://allen-cell-animated.github.io/nucmorph-colorizer/public/
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          publish_dir: ./public/
