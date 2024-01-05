@@ -14,11 +14,12 @@ import IconButton from "../IconButton";
 import { SwapOutlined } from "@ant-design/icons";
 import { FlexRowAlignCenter } from "../../styles/utils";
 import { ColorRampData } from "../../constants";
-import { PlotMarker } from "plotly.js-dist-min";
+import { PlotData, PlotMarker } from "plotly.js-dist-min";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { Button, Tooltip } from "antd";
 import styled from "styled-components";
 import Plotly from "plotly.js-dist-min";
+import LoadingSpinner from "../LoadingSpinner";
 
 const FRAME_FEATURE = { key: "frame", name: "Frame" };
 
@@ -38,14 +39,15 @@ const ScatterPlotContainer = styled.div`
 `;
 
 const CONFIG: Partial<Plotly.Config> = {
-  displayModeBar: true,
+  displayModeBar: false,
   responsive: true,
 };
 
 export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ScatterPlotTabProps>;
 
-  const [isPending, startTransition] = useTransition();
+  const [_isPending, startTransition] = useTransition();
+  const [isRendering, setIsRendering] = useState(false);
   const plotDivRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,12 +97,14 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   const setXAxisFeatureName = (featureName: string | null) => {
     startTransition(() => {
       _setXAxisFeatureName(featureName);
+      setIsRendering(true);
     });
   };
   const [yAxisFeatureName, _setYAxisFeatureName] = useState<string | null>(null);
   const setYAxisFeatureName = (featureName: string | null) => {
     startTransition(() => {
       _setYAxisFeatureName(featureName);
+      setIsRendering(true);
     });
   };
 
@@ -112,6 +116,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       if (featureName === FRAME_FEATURE.name) {
         return dataset.times;
       } else {
+        if (!dataset.hasFeature(featureName)) {
+          return undefined;
+        }
         return dataset.getFeatureData(featureName).data;
       }
     },
@@ -120,13 +127,16 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
   // Update layout
   useEffect(() => {
-    const xData = getData(xAxisFeatureName, dataset);
-    const yData = getData(yAxisFeatureName, dataset);
+    let xData = getData(xAxisFeatureName, dataset);
+    let yData = getData(yAxisFeatureName, dataset);
+
     if (plotDivRef.current === null) {
+      setIsRendering(false);
       return;
     }
 
     if (!xData || !yData) {
+      setIsRendering(false);
       Plotly.react(plotDivRef.current!, [], {}, CONFIG);
       return;
     }
@@ -135,17 +145,44 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       color: "rgba(0, 0, 0, 0.25)",
       size: 4,
     };
+    const markerTrace: Partial<PlotData> = {
+      x: xData,
+      y: yData,
+      type: "scattergl",
+      mode: "markers",
+      marker: markerConfig,
+    };
+
+    var xDensityTrace: Partial<PlotData> = {
+      x: xData,
+      name: "x density",
+      marker: { color: "rgb(102,0,0)" },
+      yaxis: "y2",
+      type: "histogram",
+    };
+    var yDensityTrace: Partial<PlotData> = {
+      y: yData,
+      name: "y density",
+      marker: { color: "rgb(102,0,0)" },
+      xaxis: "x2",
+      type: "histogram",
+    };
 
     Plotly.react(
       plotDivRef.current,
-      [{ x: xData, y: yData, type: "scattergl", mode: "markers", marker: markerConfig }],
+      [markerTrace, xDensityTrace, yDensityTrace],
       {
         autosize: true,
-        xaxis: { title: xAxisFeatureName || "" },
-        yaxis: { title: yAxisFeatureName || "" },
+        showlegend: false,
+        xaxis: { title: xAxisFeatureName || "", domain: [0, 0.85], showgrid: false, zeroline: false },
+        yaxis: { title: yAxisFeatureName || "", domain: [0, 0.85], showgrid: false, zeroline: false },
+        xaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
+        yaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
       },
       CONFIG
-    );
+    ).then(() => {
+      setIsRendering(false);
+    });
   }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName]);
 
   // TODO: Replace w/ keys
@@ -212,11 +249,12 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           Clear
         </Button>
       </FlexRowAlignCenter>
-      {isPending ? <p>Loading...</p> : <></>}
-      <ScatterPlotContainer
-        style={{ marginTop: "10px", width: "100%", height: "100%", padding: "5px" }}
-        ref={plotDivRef}
-      ></ScatterPlotContainer>
+      <LoadingSpinner loading={isRendering} style={{ marginTop: "10px" }}>
+        <ScatterPlotContainer
+          style={{ width: "100%", height: "100%", padding: "5px" }}
+          ref={plotDivRef}
+        ></ScatterPlotContainer>
+      </LoadingSpinner>
     </>
   );
 });

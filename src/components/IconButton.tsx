@@ -9,6 +9,11 @@ type IconButtonProps = {
   disabled?: boolean;
   style?: React.CSSProperties;
   type?: "outlined" | "primary" | "link" | "text";
+  // Adds compatibility with Ant Tooltip
+  onMouseEnter?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  onMouseLeave?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  onPointerEnter?: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onPointerLeave?: (event: React.PointerEvent<HTMLButtonElement>) => void;
 };
 
 // Button styling varies based on the type (outlined vs. primary)
@@ -107,9 +112,6 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
 export default function IconButton(props: PropsWithChildren<IconButtonProps>): ReactElement {
   const themeContext = useContext(AppThemeContext);
 
-  // Ant provides extra props that we need to pass to the Button in order for Tooltip to work correctly.
-  const { onClick, disabled, style, type, children, ...otherProps } = props;
-
   return (
     <ConfigProvider theme={{ components: { Button: { colorPrimaryActive: themeContext.color.button.hover } } }}>
       <StyledButton
@@ -118,7 +120,10 @@ export default function IconButton(props: PropsWithChildren<IconButtonProps>): R
         disabled={props.disabled}
         onClick={props.onClick}
         style={props.style}
-        {...otherProps}
+        onMouseEnter={props.onMouseEnter}
+        onMouseLeave={props.onMouseLeave}
+        onPointerEnter={props.onPointerEnter}
+        onPointerLeave={props.onPointerLeave}
       >
         {props.children}
       </StyledButton>
