@@ -44,12 +44,6 @@ in vec2 vUv;
 layout (location = 0) out vec4 gOutputColor;
 
 // Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
-vec3 hslToRgb(vec3 c) {
-  vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-  return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
-}
-
-// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar
 vec3 hsvToRgb(vec3 c) {
   vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
   vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
@@ -65,42 +59,6 @@ vec3 rgbToHsv(vec3 c) {
   float d = q.x - min(q.w, q.y);
   float e = 1.0e-10;
   return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-
-}
-
-// Adapted from https://www.shadertoy.com/view/XljGzV by anastadunbar and https://en.wikipedia.org/wiki/HSL_and_HSV.
-vec3 rgbToHsl(vec3 rgbColor) {
-  float h = 0.0; // hue
-  float s = 0.0; // saturation
-  float l = 0.0; // lightness
-  float r = rgbColor.r;
-  float g = rgbColor.g;
-  float b = rgbColor.b;
-
-  // Calculate chroma
-  float min = min(r, min(g, b));
-  float max = max(r, max(g, b));
-  float c = max - min;  // chroma
-  l = (max + min) / 2.0;
-
-  // For grayscale values (c=0), skip hue calculation because hue is undefined.
-  if (c > 0.0) {
-    // Calculate hue
-    s = l < .0 ? c / (max + min) : c / (2.0 - (max + min));
-    if (r == max) {
-      h = (g - b) / c;
-    } else if (g == max) {
-      h = 2.0 + (b - r) / c;
-    } else {
-      h = 4.0 + (r - g) / c;
-    }
-
-    if (h < 0.0) {
-      h += 6.0;
-    }
-    h = h / 6.0;
-  }
-  return vec3(h, s, l);
 }
 
 // Combine non-alpha color channels into one 24-bit value
@@ -165,24 +123,21 @@ vec4 getBackdropColor(vec2 sUv) {
     return TRANSPARENT;
   }
   vec4 backdropColor = texture(backdrop, sUv).rgba;
-  // Switch between HSV and HSL color adjustments based on whether we are increasing or
-  // decreasing brightness. HSL is better for increasing brightness, since it does not increase
-  // perceptual saturation when lightness increases (the way HSV does when value increases).
-  // HSV is better than HSL for decreasing brightness for similar reasons.
-  if (backdropBrightness >= 1.0) {
-    // Increasing brightness so use HSL
-    vec3 backdropHsl = rgbToHsl(backdropColor.rgb);
-    backdropHsl.y *= backdropSaturation;
-    backdropHsl.z += backdropBrightness - 1.0;
-    return vec4(hslToRgb(backdropHsl), backdropColor.a);
+  vec3 backdropHsv = rgbToHsv(backdropColor.rgb);
+  backdropHsv.y *= backdropSaturation;
+  vec3 backdropRgb = hsvToRgb(backdropHsv);
+
+  // Apply brightness adjustment
+  float normalizedBrightness = backdropBrightness - 1.0;
+  if (normalizedBrightness < 0.0) {
+    // Decrease brightness
+    backdropRgb *= (1.0 + normalizedBrightness);
   } else {
-    // Decreasing brightness so use HSV
-    vec3 backdropHsv = rgbToHsv(backdropColor.rgb);
-    backdropHsv.y *= backdropSaturation;
-    backdropHsv.z *= backdropBrightness;
-    return vec4(hsvToRgb(backdropHsv), backdropColor.a);
+    // Increase brightness
+    backdropRgb += (1.0 - backdropRgb) * normalizedBrightness;
   }
 
+  return vec4(backdropRgb, backdropColor.a);
 }
 
 vec4 getObjectColor(vec2 sUv) {
