@@ -22,7 +22,7 @@ jobs:
           node-version: "18"
 
       - name: Install and Build
-        run: npm ci && npx vite build --base=/nucmorph-colorizer/main/
+        run: npm ci && npx vite build --base=/nucmorph-colorizer/latest/
 
       - name: Upload build files
         uses: actions/upload-artifact@v3
@@ -47,4 +47,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-          destination_dir: main
+          destination_dir: latest
