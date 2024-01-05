@@ -41,7 +41,7 @@ export default class TimeControls {
   }
 
   private playTimeSeries(onNewFrameCallback: () => void): void {
-    if (this.timerId !== NO_TIMER_ID) {
+    if (this.isPlaying()) {
       return;
     }
 
@@ -50,7 +50,7 @@ export default class TimeControls {
     // `lastFrameNum` is a parameter here because relying on `ColorizeCanvas.getCurrentFrame()` can
     // lead to race conditions that lead to frames getting loaded more than once.
     const loadNextFrame = async (lastFrameNum: number): Promise<void> => {
-      if (this.timerId === NO_TIMER_ID) {
+      if (!this.isPlaying()) {
         return;
       }
 
@@ -72,7 +72,7 @@ export default class TimeControls {
       const timeElapsed = endTime - startTime;
       onNewFrameCallback();
 
-      if (this.timerId === NO_TIMER_ID) {
+      if (!this.isPlaying()) {
         // The timer was stopped while the frame was loading, so stop playback.
         return;
       }
@@ -103,7 +103,7 @@ export default class TimeControls {
    * will be triggered.
    */
   public pause(): void {
-    if (this.timerId !== NO_TIMER_ID) {
+    if (this.isPlaying()) {
       clearTimeout(this.timerId);
     }
     this.timerId = NO_TIMER_ID;
