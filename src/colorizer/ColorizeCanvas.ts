@@ -202,6 +202,7 @@ export default class ColorizeCanvas {
     this.dataset = null;
     this.canvasResolution = null;
     this.featureName = null;
+    this.selectedBackdropKey = null;
     this.colorRamp = new ColorRamp(["black"]);
     this.categoricalPalette = new ColorRamp(["black"]);
 
