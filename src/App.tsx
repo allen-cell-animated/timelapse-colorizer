@@ -40,11 +40,11 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
 import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import PlotTab from "./components/tabs/PlotTab";
-import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import SettingsTab from "./components/tabs/SettingsTab";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
+import CategoricalColorPicker from "./components/CategoricalColorPicker";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////

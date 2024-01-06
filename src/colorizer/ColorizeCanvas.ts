@@ -31,9 +31,9 @@ import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
+import CanvasOverlay from "./CanvasUIOverlay";
 import { FeatureThreshold } from "./types";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import CanvasOverlay from "./CanvasUIOverlay";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
@@ -193,9 +193,9 @@ export default class ColorizeCanvas {
     this.dataset = null;
     this.canvasResolution = null;
     this.featureName = null;
+    this.selectedBackdropKey = null;
     this.colorRamp = new ColorRamp(["black"]);
     this.categoricalPalette = new ColorRamp(["black"]);
-    this.selectedBackdropKey = null;
 
     this.track = null;
     this.showTrackPath = false;
