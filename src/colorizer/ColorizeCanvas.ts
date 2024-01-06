@@ -25,7 +25,8 @@ import {
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { FeatureDataType, FeatureThreshold, isThresholdNumeric } from "./types";
+import { FeatureDataType, FeatureThreshold } from "./types";
+import { isValueWithinThreshold } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
@@ -477,15 +478,6 @@ export default class ColorizeCanvas {
     }
   }
 
-  /** Returns whether a feature value is inside the range of a threshold. */
-  private isValueWithinThreshold(value: number, threshold: FeatureThreshold): boolean {
-    if (isThresholdNumeric(threshold)) {
-      return value >= threshold.min && value <= threshold.max;
-    } else {
-      return threshold.enabledCategories[value];
-    }
-  }
-
   /**
    * Updates the feature thresholds used to determine what values are in and outside of range.
    * Note that this is separate from the color ramp min/max, which just controls how colors are applied.
@@ -513,7 +505,7 @@ export default class ColorizeCanvas {
       for (let thresholdIdx = 0; thresholdIdx < validThresholds.length; thresholdIdx++) {
         const threshold = validThresholds[thresholdIdx];
         const featureData = this.dataset?.getFeatureData(threshold.featureName);
-        if (featureData && !this.isValueWithinThreshold(featureData.data[id], threshold)) {
+        if (featureData && !isValueWithinThreshold(featureData.data[id], threshold)) {
           inRangeIds[id] = 0;
           break;
         }
