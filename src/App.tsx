@@ -61,7 +61,7 @@ function App(): ReactElement {
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
-  const [backdropKey, setBackdropKey] = useState<string | null>(null);
+  const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
 
   // TODO: Save these settings in local storage
   const [config, setConfig] = useState(defaultViewerConfig);
@@ -109,6 +109,10 @@ function App(): ReactElement {
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
+  const notificationConfig: NotificationConfig = {
+    getContainer: () => notificationContainer.current as HTMLElement,
+  };
+  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -247,7 +251,7 @@ function App(): ReactElement {
   // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
   useEffect(() => {
-    const loadInitialDatabase = async (): Promise<void> => {
+    const loadInitialDataset = async (): Promise<void> => {
       let newCollection: Collection;
       const collectionUrlParam = initialUrlParams.collection;
       const datasetParam = initialUrlParams.dataset;
@@ -267,12 +271,23 @@ function App(): ReactElement {
       setCollection(newCollection);
       const datasetResult = await newCollection.tryLoadDataset(datasetKey);
 
+      if (!datasetResult.loaded) {
+        console.error(datasetResult.errorMessage);
+        notificationApi["error"]({
+          message: "Error loading dataset: ",
+          description: datasetResult.errorMessage,
+          placement: "bottomLeft",
+          duration: 4,
+        });
+        return;
+      }
+
       // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
       await replaceDataset(datasetResult.dataset, datasetKey);
       setIsInitialDatasetLoaded(true);
       return;
     };
-    loadInitialDatabase();
+    loadInitialDataset();
   }, []);
 
   // Load additional properties from the URL, including the time, track, and feature.
@@ -351,7 +366,7 @@ function App(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      setBackdropKey(null);
+      setSelectedBackdropKey(null);
       setSelectedTrack(null);
       setDatasetOpen(true);
       console.log("Num Items:" + dataset?.numObjects);
@@ -369,6 +384,12 @@ function App(): ReactElement {
         } else {
           // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
           console.error(result.errorMessage);
+          notificationApi["error"]({
+            message: "Error loading dataset:",
+            description: result.errorMessage,
+            placement: "bottomLeft",
+            duration: 4,
+          });
         }
       }
     },
@@ -497,10 +518,6 @@ function App(): ReactElement {
 
   // RENDERING /////////////////////////////////////////////////////////////
 
-  const notificationConfig: NotificationConfig = {
-    getContainer: () => notificationContainer.current as HTMLElement,
-  };
-  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
   const openCopyNotification = (): void => {
     navigator.clipboard.writeText(document.URL);
     notificationApi["success"]({
@@ -690,7 +707,7 @@ function App(): ReactElement {
               <CanvasWrapper
                 canv={canv}
                 dataset={dataset}
-                backdropKey={backdropKey}
+                selectedBackdropKey={selectedBackdropKey}
                 colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
@@ -738,7 +755,7 @@ function App(): ReactElement {
                 <Slider
                   min={0}
                   max={dataset ? dataset.numberOfFrames - 1 : 0}
-                  disabled={disableTimeControlsUi}
+                  disabled={disableTimeControlsUi || timeControls.isPlaying()}
                   value={frameInput}
                   onChange={(value) => {
                     setFrameInput(value);
@@ -830,8 +847,8 @@ function App(): ReactElement {
                           updateConfig={updateConfig}
                           dataset={dataset}
                           // TODO: This could be part of a dataset-specific settings object
-                          backdropKey={backdropKey}
-                          setBackdropKey={setBackdropKey}
+                          selectedBackdropKey={selectedBackdropKey}
+                          setSelectedBackdropKey={setSelectedBackdropKey}
                         />
                       </div>
                     ),

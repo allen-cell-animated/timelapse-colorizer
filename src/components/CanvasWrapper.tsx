@@ -14,7 +14,7 @@ type CanvasWrapperProps = {
   dataset: Dataset | null;
   config: ViewerConfig;
 
-  backdropKey: string | null;
+  selectedBackdropKey: string | null;
 
   colorRamp: ColorRamp;
   colorRampMin: number;
@@ -92,10 +92,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    canv.setBackdropKey(props.backdropKey);
+    canv.setBackdropKey(props.selectedBackdropKey);
     canv.setBackdropBrightness(props.config.backdropBrightness);
     canv.setBackdropSaturation(props.config.backdropSaturation);
-  }, [props.backdropKey, props.config.backdropBrightness, props.config.backdropSaturation]);
+  }, [props.selectedBackdropKey, props.config.backdropBrightness, props.config.backdropSaturation]);
 
   // Update categorical colors
   useMemo(() => {

@@ -44,14 +44,18 @@ export const BACKGROUND_ID = -1;
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
   canvasToFrameScale: Vector2;
+  /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
+  objectOpacity: number;
+  /** The feature value of each object ID. */
   featureData: Texture;
   outlierData: Texture;
   inRangeIds: Texture;
   featureColorRampMin: number;
   featureColorRampMax: number;
+  /** UI overlay for scale bars and timestamps. */
   overlay: Texture;
-  objectOpacity: number;
+  /** Image backdrop, rendered behind the main frame object data. */
   backdrop: Texture;
   backdropBrightness: number;
   backdropSaturation: number;
@@ -68,15 +72,16 @@ type ColorizeUniformTypes = {
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
 
 const getDefaultUniforms = (): ColorizeUniforms => {
+  const emptyBackdrop = new DataTexture(new Uint8Array([1, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
   const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
+  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
+
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["black"]).texture;
-  const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
-  const emptyBackdrop = new DataTexture(new Uint8Array([1, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -109,6 +114,7 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  /** UI overlay for scale bars, timestamps, and other information. */
   public overlay: CanvasOverlay;
 
   // Rendered track line that shows the trajectory of a cell.
@@ -131,7 +137,7 @@ export default class ColorizeCanvas {
   private canvasResolution: Vector2 | null;
 
   private featureName: string | null;
-  private backdropKey: string | null;
+  private selectedBackdropKey: string | null;
   private colorRamp: ColorRamp;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
@@ -189,6 +195,7 @@ export default class ColorizeCanvas {
     this.featureName = null;
     this.colorRamp = new ColorRamp(["black"]);
     this.categoricalPalette = new ColorRamp(["black"]);
+    this.selectedBackdropKey = null;
 
     this.track = null;
     this.showTrackPath = false;
@@ -196,7 +203,6 @@ export default class ColorizeCanvas {
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
 
-    this.backdropKey = null;
     this.overlay = new CanvasOverlay();
     this.showScaleBar = false;
     this.showTimestamp = false;
@@ -536,8 +542,8 @@ export default class ColorizeCanvas {
     this.setUniform("backdropBrightness", percentBrightness / 100);
   }
 
-  public setBackdropKey(backdropKey: string | null): void {
-    this.backdropKey = backdropKey;
+  public setBackdropKey(key: string | null): void {
+    this.selectedBackdropKey = key;
     this.setFrame(this.currentFrame, true).then(() => {
       this.render();
     });
@@ -558,12 +564,12 @@ export default class ColorizeCanvas {
     // New frame, so load the frame data.
     this.currentFrame = index;
     let backdropPromise = undefined;
-    if (this.backdropKey && this.dataset?.hasBackdrop(this.backdropKey)) {
-      backdropPromise = await this.dataset?.loadBackdrop(this.backdropKey, index);
+    if (this.selectedBackdropKey && this.dataset?.hasBackdrop(this.selectedBackdropKey)) {
+      backdropPromise = this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
     }
-    const framePromise = await this.dataset?.loadFrame(index);
+    const framePromise = this.dataset?.loadFrame(index);
     const result = await Promise.all([framePromise, backdropPromise]);
-    const [frame, overlay] = result;
+    const [frame, backdrop] = result;
 
     if (!frame) {
       return;
@@ -573,8 +579,8 @@ export default class ColorizeCanvas {
       // Drop this request.
       return;
     }
-    if (overlay) {
-      this.setUniform("backdrop", overlay);
+    if (backdrop) {
+      this.setUniform("backdrop", backdrop);
     } else {
       this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }

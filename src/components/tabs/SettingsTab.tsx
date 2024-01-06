@@ -8,20 +8,42 @@ import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
 import CustomCollapse from "../CustomCollapse";
 import { ViewerConfig, DrawMode } from "../../colorizer/types";
+import styled from "styled-components";
 
 const NO_BACKDROP = {
   key: "",
   label: "(None)",
 };
 
+const INDENT_PX = 24;
+
 type SettingsTabProps = {
   config: ViewerConfig;
   updateConfig(settings: Partial<ViewerConfig>): void;
 
-  backdropKey: string | null;
-  setBackdropKey: (key: string | null) => void;
+  selectedBackdropKey: string | null;
+  setSelectedBackdropKey: (key: string | null) => void;
 
   dataset: Dataset | null;
+};
+
+const HiddenMarksSlider = styled(Slider)`
+  &.ant-slider-with-marks {
+    /** Override ant default styling which adds margin for mark text */
+    margin-bottom: 9.625px;
+  }
+  & .ant-slider-mark {
+    /** Hide mark text */
+    display: none;
+    height: 0;
+  }
+`;
+
+const makeAntSliderMarks = (marks: number[]): { [key: number]: string } => {
+  return marks.reduce((acc, mark) => {
+    acc[mark] = mark.toString();
+    return acc;
+  }, {} as { [key: number]: string });
 };
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
@@ -35,26 +57,26 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer>
+        <SettingsContainer $indentPx={INDENT_PX}>
           <LabeledDropdown
             label={"Backdrop images:"}
-            selected={props.backdropKey || NO_BACKDROP.key}
+            selected={props.selectedBackdropKey || NO_BACKDROP.key}
             items={backdropOptions}
-            onChange={props.setBackdropKey}
+            onChange={props.setSelectedBackdropKey}
             disabled={backdropOptions.length === 1}
           />
           <label>
             <span>
               <h3>Brightness:</h3>
             </span>
-            <Slider
-              // TODO: Add a mark at the 100% position
+            <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={50}
               max={150}
               step={10}
               value={props.config.backdropBrightness}
               onChange={(newBrightness: number) => props.updateConfig({ backdropBrightness: newBrightness })}
+              marks={makeAntSliderMarks([50, 100, 150])}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </label>
@@ -62,20 +84,21 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <span>
               <h3>Saturation:</h3>
             </span>
-            <Slider
+            <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}
               step={10}
               value={props.config.backdropSaturation}
               onChange={(saturation) => props.updateConfig({ backdropSaturation: saturation })}
+              marks={makeAntSliderMarks([0, 50, 100])}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </label>
         </SettingsContainer>
       </CustomCollapse>
       <CustomCollapse label="Objects">
-        <SettingsContainer>
+        <SettingsContainer $indentPx={INDENT_PX}>
           <DrawModeDropdown
             label="Filtered object color:"
             selected={props.config.outOfRangeDrawSettings.mode}
@@ -96,7 +119,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <span>
               <h3>Opacity:</h3>
             </span>
-            <Slider
+            <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}

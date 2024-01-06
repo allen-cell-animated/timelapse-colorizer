@@ -211,5 +211,5 @@
   border-top: 0;
   width: auto;
   height: calc(100% - 20px);
-  overflow: hidden;
+  overflow-y: auto;
 }
