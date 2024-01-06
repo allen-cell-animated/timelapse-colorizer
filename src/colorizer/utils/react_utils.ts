@@ -126,22 +126,41 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
   const [scrollHeight, setScrollHeight] = useState(0);
   const [clientHeight, setClientHeight] = useState(0);
 
-  const onScrollHandler: EventHandler<any> = (event) => {
-    setScrollTop(event.target.scrollTop);
-    setScrollHeight(event.target.scrollHeight);
-    setClientHeight(event.target.clientHeight);
+  const updateScrollInfo = (div: HTMLDivElement) => {
+    setScrollTop(div.scrollTop);
+    setScrollHeight(div.scrollHeight);
+    setClientHeight(div.clientHeight);
   };
 
+  const mutationObserver = useConstructor(
+    () =>
+      new MutationObserver(() => {
+        if (scrollRef.current) {
+          updateScrollInfo(scrollRef.current);
+        }
+      })
+  );
+
+  const onScrollHandler: EventHandler<any> = (event) => {
+    updateScrollInfo(event.target);
+  };
+
+  // Update shadows before first interaction
   useEffect(() => {
-    // Duplicates above handler to hide shadows even if the
-    // element stops being scrollable, or before first scroll
-    // interaction.
     if (scrollRef.current) {
-      setScrollTop(scrollRef.current.scrollTop);
-      setScrollHeight(scrollRef.current.scrollHeight);
-      setClientHeight(scrollRef.current.clientHeight);
+      updateScrollInfo(scrollRef.current);
+
+      mutationObserver.observe(scrollRef.current, {
+        childList: true,
+        subtree: true,
+      });
+
+      return () => {
+        mutationObserver.disconnect();
+      };
     }
-  });
+    return;
+  }, []);
 
   function getBoxShadow(): string {
     const scrolledToBottom = clientHeight === scrollHeight - scrollTop;
