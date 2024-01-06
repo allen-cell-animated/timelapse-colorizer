@@ -75,8 +75,18 @@ function App(): ReactElement {
   const colorRampData = DEFAULT_COLOR_RAMPS;
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
   const [colorRampReversed, setColorRampReversed] = useState(false);
-  const [colorRampMin, setColorRampMin] = useState(0);
-  const [colorRampMax, setColorRampMax] = useState(0);
+  const [colorRampMin, _setColorRampMin] = useState(0);
+  const setColorRampMin = (value: number) => {
+    console.log("setColorRampMin: " + value);
+    console.trace();
+    _setColorRampMin(value);
+  };
+  const [colorRampMax, _setColorRampMax] = useState(0);
+  const setColorRampMax = (value: number) => {
+    console.log("setColorRampMax: " + value);
+    console.trace();
+    _setColorRampMax(value);
+  };
 
   const [categoricalPalette, setCategoricalPalette] = useState(
     DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
@@ -308,7 +318,12 @@ function App(): ReactElement {
       if (initialUrlParams.range) {
         setColorRampMin(initialUrlParams.range[0]);
         setColorRampMax(initialUrlParams.range[1]);
+      } else {
+        // Load default range from dataset for the current feature
+        setColorRampMin(dataset?.getFeatureData(featureName)?.min || 0);
+        setColorRampMax(dataset?.getFeatureData(featureName)?.max || 0);
       }
+
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
         // Highlight the track. Seek to start of frame only if time is not defined.
         findTrack(initialUrlParams.track, initialUrlParams.time !== undefined);
