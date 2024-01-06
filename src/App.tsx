@@ -75,18 +75,8 @@ function App(): ReactElement {
   const colorRampData = DEFAULT_COLOR_RAMPS;
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
   const [colorRampReversed, setColorRampReversed] = useState(false);
-  const [colorRampMin, _setColorRampMin] = useState(0);
-  const setColorRampMin = (value: number) => {
-    console.log("setColorRampMin: " + value);
-    console.trace();
-    _setColorRampMin(value);
-  };
-  const [colorRampMax, _setColorRampMax] = useState(0);
-  const setColorRampMax = (value: number) => {
-    console.log("setColorRampMax: " + value);
-    console.trace();
-    _setColorRampMax(value);
-  };
+  const [colorRampMin, setColorRampMin] = useState(0);
+  const [colorRampMax, setColorRampMax] = useState(0);
 
   const [categoricalPalette, setCategoricalPalette] = useState(
     DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
