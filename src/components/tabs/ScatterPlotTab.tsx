@@ -115,18 +115,29 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   };
 
   const getData = useCallback(
-    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | null | undefined => {
+    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | string[] | null | undefined => {
       if (featureName === null || dataset === null) {
         return undefined;
       }
+
       if (featureName === FRAME_FEATURE.name) {
         return dataset.times;
-      } else {
-        if (!dataset.hasFeature(featureName)) {
-          return undefined;
-        }
-        return dataset.getFeatureData(featureName).data;
       }
+
+      const featureData = dataset.getFeatureData(featureName);
+      if (!featureData) {
+        return undefined;
+      }
+
+      if (dataset.isFeatureCategorical(featureName)) {
+        // Map feature data to string categories
+        const categories: string[] = dataset.getFeatureCategories(featureName) || [];
+        return Array.from(dataset.getFeatureData(featureName).data).map((value) => {
+          return categories[value];
+        });
+      }
+
+      return dataset.getFeatureData(featureName).data;
     },
     []
   );
@@ -176,17 +187,37 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       type: "histogram",
     };
 
+    const estimateTextWidthPxForCategories = () => {
+      if (yAxisFeatureName === null || !dataset?.isFeatureCategorical(yAxisFeatureName)) {
+        return 0;
+      }
+      const categories = dataset.getFeatureCategories(yAxisFeatureName) || [];
+      return (
+        categories.reduce((_prev, val, acc) => {
+          return Math.max(val.length, acc);
+        }, 0) * 10
+      );
+    };
+    // TODO: Show categories as box and whisker plots?
+
+    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories());
+
     Plotly.react(
       plotDivRef.current,
       [markerTrace, xDensityTrace, yDensityTrace],
       {
         autosize: true,
         showlegend: false,
-        xaxis: { title: xAxisFeatureName || "", domain: [0, 0.8], showgrid: false, zeroline: true },
+        xaxis: {
+          title: xAxisFeatureName || "",
+          domain: [0, 0.8],
+          showgrid: false,
+          zeroline: true,
+        },
         yaxis: { title: yAxisFeatureName || "", domain: [0, 0.8], showgrid: false, zeroline: true },
         xaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
         yaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
-        margin: { l: 60, r: 50, b: 50, t: 20, pad: 4 },
+        margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
       },
       CONFIG
     ).then(() => {
@@ -212,6 +243,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
             onClick={() => {
               setXAxisFeatureName(yAxisFeatureName);
               setYAxisFeatureName(xAxisFeatureName);
+              setIsRendering(true);
             }}
             type="link"
           >
@@ -229,6 +261,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           onClick={() => {
             setXAxisFeatureName(null);
             setYAxisFeatureName(null);
+            setIsRendering(true);
           }}
         >
           Clear
