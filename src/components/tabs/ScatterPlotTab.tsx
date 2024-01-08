@@ -108,24 +108,33 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   });
 
   const [rangeType, _setRangeType] = useState<RangeType>(DEFAULT_RANGE_TYPE);
-  const setRangeType = (rangeType: RangeType) => {
+  const setRangeType = (newRangeType: RangeType) => {
     startTransition(() => {
-      _setRangeType(rangeType);
+      if (newRangeType === rangeType) {
+        return;
+      }
+      _setRangeType(newRangeType);
       setIsRendering(true);
     });
   };
 
   const [xAxisFeatureName, _setXAxisFeatureName] = useState<string | null>(null);
-  const setXAxisFeatureName = (featureName: string | null) => {
+  const setXAxisFeatureName = (newFeatureName: string | null) => {
     startTransition(() => {
-      _setXAxisFeatureName(featureName);
+      if (newFeatureName === xAxisFeatureName) {
+        return;
+      }
+      _setXAxisFeatureName(newFeatureName);
       setIsRendering(true);
     });
   };
   const [yAxisFeatureName, _setYAxisFeatureName] = useState<string | null>(null);
-  const setYAxisFeatureName = (featureName: string | null) => {
+  const setYAxisFeatureName = (newFeatureName: string | null) => {
     startTransition(() => {
-      _setYAxisFeatureName(featureName);
+      if (newFeatureName === yAxisFeatureName) {
+        return;
+      }
+      _setYAxisFeatureName(newFeatureName);
       setIsRendering(true);
     });
   };
