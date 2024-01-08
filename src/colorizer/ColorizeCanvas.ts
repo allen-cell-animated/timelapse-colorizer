@@ -25,14 +25,14 @@ import {
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { DrawMode, FeatureDataType } from "./types";
+import { DrawMode, FeatureThreshold, FeatureDataType } from "./types";
+import { isValueWithinThreshold } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import Track from "./Track";
 import CanvasOverlay from "./CanvasUIOverlay";
-import { FeatureThreshold } from "./types";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
@@ -484,20 +484,25 @@ export default class ColorizeCanvas {
     // TODO: Optimize memory by using a true boolean array? Bit-level manipulation to fit it within Uint8Array?
     // TODO: If optimizing, use fuse operation via shader.
     const inRangeIds = new Uint8Array(this.dataset.numObjects);
-    inRangeIds.fill(1);
 
-    for (const threshold of thresholds) {
-      const featureData = this.dataset.getFeatureData(threshold.featureName);
-      // Ignore thresholds with features that don't exist in this dataset or whose units don't match
-      if (!featureData || featureData.units !== threshold.units) {
-        continue;
-      }
-      for (let i = 0, n = inRangeIds.length; i < n; i++) {
-        if (inRangeIds[i] === 1 && (featureData.data[i] < threshold.min || featureData.data[i] > threshold.max)) {
-          inRangeIds[i] = 0;
+    // Ignore thresholds with features that don't exist in this dataset or whose units don't match
+    const validThresholds = thresholds.filter((threshold) => {
+      const featureData = this.dataset?.getFeatureData(threshold.featureName);
+      return featureData && featureData.units === threshold.units;
+    });
+
+    for (let id = 0; id < this.dataset.numObjects; id++) {
+      inRangeIds[id] = 1;
+      for (let thresholdIdx = 0; thresholdIdx < validThresholds.length; thresholdIdx++) {
+        const threshold = validThresholds[thresholdIdx];
+        const featureData = this.dataset?.getFeatureData(threshold.featureName);
+        if (featureData && !isValueWithinThreshold(featureData.data[id], threshold)) {
+          inRangeIds[id] = 0;
+          break;
         }
       }
     }
+
     // Save the array to a texture and pass it into the shader
     this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeIds), FeatureDataType.U8));
     this.render();

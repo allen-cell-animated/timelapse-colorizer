@@ -24,13 +24,14 @@ import {
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { ViewerConfig, FeatureThreshold, defaultViewerConfig } from "./colorizer/types";
-import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
+import { ViewerConfig, FeatureThreshold, defaultViewerConfig, isThresholdNumeric } from "./colorizer/types";
+import { getColorMap, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import CanvasWrapper from "./components/CanvasWrapper";
+import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/ColorRampDropdown";
 import Export from "./components/Export";
 import HoverTooltip from "./components/HoverTooltip";
@@ -44,7 +45,6 @@ import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import PlotTab from "./components/tabs/PlotTab";
 import SettingsTab from "./components/tabs/SettingsTab";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
-import CategoricalColorPicker from "./components/CategoricalColorPicker";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@ function App(): ReactElement {
         const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
         const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
 
-        if (newThreshold && oldThreshold) {
+        if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold)) {
           setColorRampMin(newThreshold.min);
           setColorRampMax(newThreshold.max);
         }
@@ -283,8 +283,10 @@ function App(): ReactElement {
       }
 
       // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
-      await replaceDataset(datasetResult.dataset, datasetKey);
-      setIsInitialDatasetLoaded(true);
+      if (!isInitialDatasetLoaded) {
+        await replaceDataset(datasetResult.dataset, datasetKey);
+        setIsInitialDatasetLoaded(true);
+      }
       return;
     };
     loadInitialDataset();
@@ -298,7 +300,11 @@ function App(): ReactElement {
     }
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.thresholds) {
-        setFeatureThresholds(initialUrlParams.thresholds);
+        if (dataset) {
+          setFeatureThresholds(validateThresholds(dataset, initialUrlParams.thresholds));
+        } else {
+          setFeatureThresholds(initialUrlParams.thresholds);
+        }
       }
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
@@ -374,6 +380,7 @@ function App(): ReactElement {
       setSelectedBackdropKey(null);
       setSelectedTrack(null);
       setDatasetOpen(true);
+      setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
       console.log("Num Items:" + dataset?.numObjects);
     },
     [dataset, featureName, canv, currentFrame, getUrlParams]
@@ -447,7 +454,7 @@ function App(): ReactElement {
       if (!config.keepRangeBetweenDatasets && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
-        if (threshold) {
+        if (threshold && isThresholdNumeric(threshold)) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
         } else {
@@ -554,7 +561,7 @@ function App(): ReactElement {
       return undefined;
     }
     const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
-    if (!threshold) {
+    if (!threshold || !isThresholdNumeric(threshold)) {
       return undefined;
     }
     return [threshold.min, threshold.max];
@@ -838,6 +845,7 @@ function App(): ReactElement {
                           onChange={setFeatureThresholds}
                           dataset={dataset}
                           disabled={disableUi}
+                          categoricalPalette={categoricalPalette}
                         />
                       </div>
                     ),

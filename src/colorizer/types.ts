@@ -85,11 +85,41 @@ export enum DrawMode {
   USE_COLOR = 1,
 }
 
-export type FeatureThreshold = {
+// Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
+// to numeric data. Numeric thresholds do not track if their source feature is integer
+// (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
+export enum ThresholdType {
+  NUMERIC = "numeric",
+  CATEGORICAL = "categorical",
+}
+
+type BaseFeatureThreshold = {
+  // TODO: Replace with key string
+  // featureKey: string;
   featureName: string;
   units: string;
+  type: ThresholdType;
+};
+
+export type NumericFeatureThreshold = BaseFeatureThreshold & {
+  type: ThresholdType.NUMERIC;
   min: number;
   max: number;
+};
+
+export type CategoricalFeatureThreshold = BaseFeatureThreshold & {
+  type: ThresholdType.CATEGORICAL;
+  enabledCategories: boolean[];
+};
+
+export type FeatureThreshold = NumericFeatureThreshold | CategoricalFeatureThreshold;
+
+export const isThresholdCategorical = (threshold: FeatureThreshold): threshold is CategoricalFeatureThreshold => {
+  return threshold.type === ThresholdType.CATEGORICAL;
+};
+
+export const isThresholdNumeric = (threshold: FeatureThreshold): threshold is NumericFeatureThreshold => {
+  return threshold.type === ThresholdType.NUMERIC;
 };
 
 export type DrawSettings = {
