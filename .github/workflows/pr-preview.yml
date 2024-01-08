@@ -20,7 +20,7 @@ jobs:
 
         # Must override default vite build base so that assets can still be accessed when not placed in the root directory of gh-pages branch.
       - name: Install and Build
-        run: npm ci && npx vite build --base=https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-${PR_NUMBER}/
+        run: npm ci && npx vite build --base=/nucmorph-colorizer/pr-preview/pr-${PR_NUMBER}/
         env:
           PR_NUMBER: ${{ github.event.number }}
 
