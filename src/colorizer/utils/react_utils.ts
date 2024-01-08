@@ -126,7 +126,7 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
   const [scrollHeight, setScrollHeight] = useState(0);
   const [clientHeight, setClientHeight] = useState(0);
 
-  const updateScrollInfo = (div: HTMLDivElement) => {
+  const updateScrollInfo = (div: HTMLDivElement): void => {
     setScrollTop(div.scrollTop);
     setScrollHeight(div.scrollHeight);
     setClientHeight(div.clientHeight);
