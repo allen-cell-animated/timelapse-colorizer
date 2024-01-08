@@ -3,9 +3,8 @@ import React from "react";
 import { Color } from "three";
 import { describe, expect, it, vi } from "vitest";
 
-import { ColorRamp, ColorRampType } from "../src/colorizer";
+import { ColorRamp, ColorRampData, ColorRampType, RawColorData } from "../src/colorizer";
 import ColorRampDropdown from "../src/components/ColorRampDropdown";
-import type { ColorRampData, RawColorData } from "../src/constants";
 import { ANY_ERROR } from "./test_utils";
 
 describe("ColorRampDropdown", () => {

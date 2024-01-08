@@ -3,8 +3,14 @@ import { Button, Tooltip } from "antd";
 import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
 import { Color } from "three";
 
-import { ColorRamp, ColorRampType } from "../colorizer";
-import { ColorRampData, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../constants";
+import {
+  ColorRamp,
+  ColorRampData,
+  ColorRampType,
+  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_COLOR_RAMPS,
+  PaletteData,
+} from "../colorizer";
 import { AppThemeContext } from "./AppStyle";
 import styles from "./ColorRampDropdown.module.css";
 import IconButton from "./IconButton";
@@ -12,10 +18,10 @@ import IconButton from "./IconButton";
 type ColorRampSelectorProps = {
   selectedRamp: string;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
-  colorRamps?: typeof DEFAULT_COLOR_RAMPS;
+  colorRamps?: Map<string, ColorRampData>;
 
   useCategoricalPalettes?: boolean;
-  categoricalPalettes?: typeof DEFAULT_CATEGORICAL_PALETTES;
+  categoricalPalettes?: Map<string, PaletteData>;
   numCategories: number;
   selectedPalette: Color[];
   onChangePalette: (newPalette: Color[]) => void;
