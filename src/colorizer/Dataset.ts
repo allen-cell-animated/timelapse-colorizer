@@ -18,7 +18,7 @@ export enum FeatureType {
   CATEGORICAL = "categorical",
 }
 
-type FeatureData = {
+export type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
@@ -160,12 +160,12 @@ export default class Dataset {
     return this.featureNames.includes(name);
   }
 
-  public getFeatureData(name: string): FeatureData {
-    const featureData = this.features.get(name);
-    if (!featureData) {
-      throw new Error(`getFeatureData: Feature ${name} does not exist.`);
-    }
-    return featureData;
+  /**
+   * Attempts to get the feature data from this dataset for the given feature name.
+   * Returns `undefined` if feature is not in the dataset.
+   */
+  public getFeatureData(name: string): FeatureData | undefined {
+    return this.features.get(name);
   }
 
   public getFeatureNameWithUnits(name: string): string {
@@ -181,7 +181,7 @@ export default class Dataset {
    * Gets the feature's units if it exists; otherwise returns an empty string.
    */
   public getFeatureUnits(name: string): string {
-    return this.getFeatureData(name).units || "";
+    return this.getFeatureData(name)?.units || "";
   }
 
   /**
@@ -192,6 +192,9 @@ export default class Dataset {
    */
   public getFeatureType(name: string): FeatureType {
     const featureData = this.getFeatureData(name);
+    if (featureData === undefined) {
+      throw new Error("Feature '" + name + "' does not exist in dataset.");
+    }
     return featureData.type;
   }
 
@@ -202,6 +205,9 @@ export default class Dataset {
    */
   public getFeatureCategories(name: string): string[] | null {
     const featureData = this.getFeatureData(name);
+    if (featureData === undefined) {
+      throw new Error("Feature '" + name + "' does not exist in dataset.");
+    }
     if (featureData.type === FeatureType.CATEGORICAL) {
       return featureData.categories;
     }
@@ -210,7 +216,8 @@ export default class Dataset {
 
   /** Returns whether the given feature represents categorical data. */
   public isFeatureCategorical(name: string): boolean {
-    return this.hasFeature(name) && this.getFeatureData(name).type === FeatureType.CATEGORICAL;
+    const featureData = this.getFeatureData(name);
+    return featureData !== undefined && featureData.type === FeatureType.CATEGORICAL;
   }
 
   /**
@@ -265,7 +272,11 @@ export default class Dataset {
   }
 
   public get numObjects(): number {
-    return this.getFeatureData(this.featureNames[0]).data.length;
+    const featureData = this.getFeatureData(this.featureNames[0]);
+    if (!featureData) {
+      throw new Error("Dataset.numObjects: The first feature could not be loaded. Is the dataset manifest file valid?");
+    }
+    return featureData.data.length;
   }
 
   /** Loads a single frame from the dataset */
@@ -432,10 +443,16 @@ export default class Dataset {
     return new Track(trackId, times, ids, centroids, bounds);
   }
 
-  // get the times and values of a track for a given feature
-  // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
+  /*
+   * Get the times and values of a track for a given feature
+   * this data is suitable to hand to d3 or plotly as two arrays of domain and range values
+   */
   public buildTrackFeaturePlot(track: Track, feature: string): { domain: number[]; range: number[] } {
-    const range = track.ids.map((i) => this.getFeatureData(feature).data[i]);
+    const featureData = this.getFeatureData(feature);
+    if (!featureData) {
+      throw new Error("Dataset.buildTrackFeaturePlot: Feature '" + feature + "' does not exist in dataset.");
+    }
+    const range = track.ids.map((i) => featureData.data[i]);
     const domain = track.times;
     return { domain, range };
   }
