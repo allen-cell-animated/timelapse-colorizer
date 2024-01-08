@@ -170,6 +170,19 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   //////////////////////////////////
   // Plot Updates
   //////////////////////////////////
+
+  const getMarkerColor = (numMarkers: number, baseColor: string): string => {
+    // Increase marker transparency for any number of markers > 100.
+    // The minimum opacity is 0.25 for very dense plots (>= 400 markers)
+    const strength = Math.min(1.0, Math.max(0.25, 100 / numMarkers));
+    return (
+      baseColor +
+      Math.floor(strength * 255)
+        .toString(16)
+        .padStart(2, "0")
+    );
+  };
+
   useEffect(() => {
     const clearPlotAndStopRender = () => {
       Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
@@ -228,7 +241,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     }
 
     const markerConfig: Partial<PlotMarker> = {
-      color: theme.color.themeDark + "40",
+      color: getMarkerColor(xData.length, theme.color.themeDark),
       size: 4,
     };
 
