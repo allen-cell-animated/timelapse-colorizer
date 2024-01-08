@@ -838,13 +838,7 @@ function App(): ReactElement {
                     key: "scatter_plot",
                     children: (
                       <div className={styles.tabContent}>
-                        <ScatterPlotTab
-                          dataset={dataset}
-                          colorRampData={colorRampData.get(colorRampKey)!}
-                          colorRampFeature={featureName}
-                          colorRampFeatureMin={colorRampMin}
-                          colorRampFeatureMax={colorRampMax}
-                        />
+                        <ScatterPlotTab dataset={dataset} selectedFeature={featureName} />
                       </div>
                     ),
                   },

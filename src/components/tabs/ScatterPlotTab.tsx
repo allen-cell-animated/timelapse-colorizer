@@ -14,7 +14,6 @@ import LabeledDropdown from "../LabeledDropdown";
 import IconButton from "../IconButton";
 import { SwapOutlined } from "@ant-design/icons";
 import { FlexRowAlignCenter } from "../../styles/utils";
-import { ColorRampData } from "../../constants";
 import { PlotData, PlotMarker } from "plotly.js-dist-min";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { Button, Tooltip } from "antd";
@@ -27,10 +26,7 @@ const FRAME_FEATURE = { key: "frame", name: "Frame" };
 
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
-  colorRampData: ColorRampData;
-  colorRampFeature: string | null;
-  colorRampFeatureMin: number;
-  colorRampFeatureMax: number;
+  selectedFeature: string | null;
 };
 const defaultProps: Partial<ScatterPlotTabProps> = {};
 
