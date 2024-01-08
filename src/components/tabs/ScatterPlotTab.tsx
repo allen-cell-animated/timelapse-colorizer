@@ -6,10 +6,11 @@ import React, {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react";
-import { Dataset } from "../../colorizer";
+import { Dataset, Track } from "../../colorizer";
 import LabeledDropdown from "../LabeledDropdown";
 import IconButton from "../IconButton";
 import { SwapOutlined } from "@ant-design/icons";
@@ -24,9 +25,23 @@ import { AppThemeContext } from "../AppStyle";
 
 const FRAME_FEATURE = { key: "frame", name: "Frame" };
 
+const PLOTLY_CONFIG: Partial<Plotly.Config> = {
+  displayModeBar: false,
+  responsive: true,
+};
+
+enum RangeType {
+  ALL_TIME = "All time",
+  CURRENT_TRACK = "Current track",
+  CURRENT_FRAME = "Current frame",
+}
+const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
+
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
   selectedFeature: string | null;
+  currentFrame: number;
+  selectedTrack: Track | null;
 };
 const defaultProps: Partial<ScatterPlotTabProps> = {};
 
@@ -35,11 +50,6 @@ const ScatterPlotContainer = styled.div`
     border: 0px solid transparent !important;
   }
 `;
-
-const CONFIG: Partial<Plotly.Config> = {
-  displayModeBar: false,
-  responsive: true,
-};
 
 export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ScatterPlotTabProps>;
@@ -63,7 +73,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         xaxis: { title: xAxisFeatureName || "" },
         yaxis: { title: yAxisFeatureName || "" },
       },
-      CONFIG
+      PLOTLY_CONFIG
     );
   }, [plotDivRef.current]);
 
@@ -82,18 +92,28 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // data and asking it to colorize it. This might be better in a worker?
   // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
 
-  // const [colorRampData, setColorRampData] = useState<ColorRampData>(props.colorRampData);
-  // const [colorRampFeature, setColorRampFeature] = useState<string | null>(props.colorRampFeature);
-  // const [colorRampFeatureMin, setColorRampFeatureMin] = useState<number>(props.colorRampFeatureMin);
-  // const [colorRampFeatureMax, setColorRampFeatureMax] = useState<number>(props.colorRampFeatureMax);
-  // useMemo(() => {
-  //   startTransition(() => {
-  //     setColorRampFeature(props.colorRampFeature);
-  //     setColorRampData(props.colorRampData);
-  //     setColorRampFeatureMin(props.colorRampFeatureMin);
-  //     setColorRampFeatureMax(props.colorRampFeatureMax);
-  //   });
-  // }, [props.colorRampData, props.colorRampFeature, props.colorRampFeatureMin, props.colorRampFeatureMax]);
+  // Track last rendered props + state to make smart optimizations on re-renders
+
+  type LastRenderedState = {
+    xAxisFeatureName: string | null;
+    yAxisFeatureName: string | null;
+    rangeType: RangeType;
+  } & ScatterPlotTabProps;
+
+  const lastRenderedState = useRef<LastRenderedState>({
+    xAxisFeatureName: null,
+    yAxisFeatureName: null,
+    rangeType: DEFAULT_RANGE_TYPE,
+    ...props,
+  });
+
+  const [rangeType, _setRangeType] = useState<RangeType>(DEFAULT_RANGE_TYPE);
+  const setRangeType = (rangeType: RangeType) => {
+    startTransition(() => {
+      _setRangeType(rangeType);
+      setIsRendering(true);
+    });
+  };
 
   const [xAxisFeatureName, _setXAxisFeatureName] = useState<string | null>(null);
   const setXAxisFeatureName = (featureName: string | null) => {
@@ -128,30 +148,74 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       if (dataset.isFeatureCategorical(featureName)) {
         // Map feature data to string categories
         const categories: string[] = dataset.getFeatureCategories(featureName) || [];
-        return Array.from(dataset.getFeatureData(featureName).data).map((value) => {
+        return Array.from(dataset.getFeatureData(featureName)!.data).map((value) => {
           return categories[value];
         });
       }
 
-      return dataset.getFeatureData(featureName).data;
+      return dataset.getFeatureData(featureName)?.data;
     },
     []
   );
 
-  // Update plot layout
+  //////////////////////////////////
+  // Plot Updates
+  //////////////////////////////////
   useEffect(() => {
-    let xData = getData(xAxisFeatureName, dataset);
-    let yData = getData(yAxisFeatureName, dataset);
+    const clearPlotAndStopRender = () => {
+      Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
+      setIsRendering(false);
+    };
+
+    const lastState = lastRenderedState.current;
+
+    const haveAxesChanged =
+      lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName;
+    const hasRangeChanged = lastState.rangeType !== rangeType;
+    const hasTrackChanged = lastState.selectedTrack !== props.selectedTrack;
+    const hasFrameChanged = lastState.currentFrame !== props.currentFrame;
+    const hasDatasetChanged = lastState.dataset !== dataset;
+
+    if (!haveAxesChanged && !hasRangeChanged && !hasDatasetChanged) {
+      // Ignore changes to the current frame if we are not showing the current frame
+      if (rangeType !== RangeType.CURRENT_FRAME && hasFrameChanged && !hasTrackChanged) {
+        return;
+      }
+      // Ignore changes to track if we are not showing by track
+      if (rangeType !== RangeType.CURRENT_TRACK && hasTrackChanged && !hasFrameChanged) {
+        return;
+      }
+    }
 
     if (plotDivRef.current === null) {
       setIsRendering(false);
       return;
     }
 
+    let xData = getData(xAxisFeatureName, dataset);
+    let yData = getData(yAxisFeatureName, dataset);
+
     if (!xData || !yData) {
-      setIsRendering(false);
-      Plotly.react(plotDivRef.current!, [], {}, CONFIG);
+      clearPlotAndStopRender();
       return;
+    }
+
+    // Filter data by range, if applicable
+    if (rangeType === RangeType.CURRENT_FRAME) {
+      if (!dataset?.times) {
+        clearPlotAndStopRender();
+        return;
+      }
+      xData = xData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
+      yData = yData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
+    } else if (rangeType === RangeType.CURRENT_TRACK) {
+      if (!props.selectedTrack) {
+        clearPlotAndStopRender();
+        return;
+      }
+      const trackIds = new Set(props.selectedTrack.ids);
+      xData = xData.filter((_value, index) => trackIds.has(index));
+      yData = yData.filter((_value, index) => trackIds.has(index));
     }
 
     const markerConfig: Partial<PlotMarker> = {
@@ -194,6 +258,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         }, 0) * 10
       );
     };
+
     // TODO: Show categories as box and whisker plots?
 
     const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories());
@@ -215,11 +280,21 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         yaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
         margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
       },
-      CONFIG
+      PLOTLY_CONFIG
     ).then(() => {
       setIsRendering(false);
+      lastRenderedState.current = {
+        xAxisFeatureName,
+        yAxisFeatureName,
+        rangeType,
+        ...props,
+      };
     });
-  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName]);
+  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName, rangeType, props.currentFrame, props.selectedTrack]);
+
+  //////////////////////////////////
+  // Rendering
+  //////////////////////////////////
 
   // TODO: Replace w/ keys
   const featureNames = dataset?.featureNames || [];
@@ -252,8 +327,19 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           items={featureNames}
           onChange={setYAxisFeatureName}
         />
+
+        <LabeledDropdown
+          label={"Show objects from:"}
+          style={{ marginLeft: "10px" }}
+          selected={rangeType}
+          items={Object.values(RangeType)}
+          width={"120px"}
+          onChange={(value) => setRangeType(value as RangeType)}
+        ></LabeledDropdown>
+      </FlexRowAlignCenter>
+      <div style={{ position: "relative" }}>
         <Button
-          style={{ marginLeft: "auto" }}
+          style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}
           onClick={() => {
             setXAxisFeatureName(null);
             setYAxisFeatureName(null);
@@ -262,13 +348,13 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         >
           Clear
         </Button>
-      </FlexRowAlignCenter>
-      <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
-        <ScatterPlotContainer
-          style={{ width: "100%", height: "400px", padding: "5px" }}
-          ref={plotDivRef}
-        ></ScatterPlotContainer>
-      </LoadingSpinner>
+        <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
+          <ScatterPlotContainer
+            style={{ width: "100%", height: "390px", padding: "5px" }}
+            ref={plotDivRef}
+          ></ScatterPlotContainer>
+        </LoadingSpinner>
+      </div>
     </>
   );
 });
