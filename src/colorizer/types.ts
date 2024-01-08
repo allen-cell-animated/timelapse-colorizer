@@ -147,7 +147,7 @@ export const defaultViewerConfig: ViewerConfig = {
   showTrackPath: true,
   showScaleBar: true,
   showTimestamp: true,
-  keepRangeBetweenDatasets: true,
+  keepRangeBetweenDatasets: false,
   /** Opacity, as a number percentage. */
   backdropBrightness: 100,
   /** Saturation, as a number percentage. */

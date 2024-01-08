@@ -3,8 +3,8 @@ import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-
 import { ColorRepresentation, Color as ThreeColor } from "three";
+
 import { DrawMode } from "../colorizer/types";
 import { FlexRowAlignCenter } from "../styles/utils";
 import LabeledDropdown from "./LabeledDropdown";
