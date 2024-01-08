@@ -13,7 +13,15 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import { Color } from "three";
 
 import styles from "./App.module.css";
-import { ColorizeCanvas, Dataset, Track } from "./colorizer";
+import {
+  ColorizeCanvas,
+  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_CATEGORICAL_PALETTE_ID,
+  DEFAULT_COLOR_RAMPS,
+  DEFAULT_COLOR_RAMP_ID,
+  Dataset,
+  Track,
+} from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
@@ -33,11 +41,10 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID } from "./constants";
 import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
 import PlotTab from "./components/tabs/PlotTab";
 import SettingsTab from "./components/tabs/SettingsTab";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID, DEFAULT_PLAYBACK_FPS } from "./constants";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ScatterPlotTab from "./components/tabs/ScatterPlotTab";
 
@@ -603,6 +610,7 @@ function App(): ReactElement {
           />
 
           <ColorRampDropdown
+            colorRamps={DEFAULT_COLOR_RAMPS}
             selectedRamp={colorRampKey}
             reversed={colorRampReversed}
             onChangeRamp={(name, reversed) => {
@@ -610,6 +618,7 @@ function App(): ReactElement {
               setColorRampReversed(reversed);
             }}
             disabled={disableUi}
+            categoricalPalettes={DEFAULT_CATEGORICAL_PALETTES}
             useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
             numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
             selectedPalette={categoricalPalette}
