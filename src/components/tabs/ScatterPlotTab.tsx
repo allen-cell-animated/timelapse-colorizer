@@ -25,7 +25,7 @@ import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRowAlignCenter } from "../../styles/utils";
 
-const FRAME_FEATURE = { key: "frame", name: "Frame" };
+const FRAME_FEATURE = { key: "time", name: "Time" };
 
 const PLOTLY_CONFIG: Partial<Plotly.Config> = {
   displayModeBar: false,
@@ -43,6 +43,8 @@ type ScatterPlotTabProps = {
   dataset: Dataset | null;
   currentFrame: number;
   selectedTrack: Track | null;
+  findTrack: (trackId: number, seekToFrame: boolean) => void;
+  setFrame: (frame: number) => Promise<void>;
 };
 const defaultProps: Partial<ScatterPlotTabProps> = {};
 
@@ -75,7 +77,33 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         yaxis: { title: yAxisFeatureName || "" },
       },
       PLOTLY_CONFIG
-    );
+    ).then((plot) => {
+      plot.on("plotly_click", (eventData: any) => {
+        // Add event listener
+        if (eventData.points.length === 0) {
+          return;
+        }
+        if (eventData.points[0].pointNumbers.length > 0) {
+          // User clicked on a histogram bar
+          return;
+        }
+        if (!dataset) {
+          return;
+        }
+
+        const point = eventData.points[0];
+        const trackId = parseInt(point.text, 10);
+        const objectId: number = point.pointNumber + 1;
+        const frame = dataset.times ? dataset.times[objectId] : undefined;
+        if (frame !== undefined) {
+          props.findTrack(trackId, false);
+          props.setFrame(frame);
+        } else {
+          // Jump to first frame where the track is valid
+          props.findTrack(trackId, true);
+        }
+      });
+    });
   }, [plotDivRef.current]);
 
   // Note: This does not actually prevent the dataset from blocking the UI thread, it just
@@ -217,31 +245,48 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       return;
     }
 
-    let xData = getData(xAxisFeatureName, dataset);
-    let yData = getData(yAxisFeatureName, dataset);
+    let rawXData = getData(xAxisFeatureName, dataset);
+    let rawYData = getData(yAxisFeatureName, dataset);
+    // Object ID
+    let text: string[] = [];
 
-    if (!xData || !yData) {
+    if (!rawXData || !rawYData || !xAxisFeatureName || !yAxisFeatureName) {
       clearPlotAndStopRender();
       return;
     }
 
     // Filter data by range, if applicable
+    let xData: (number | string)[] = [];
+    let yData: (number | string)[] = [];
+
     if (rangeType === RangeType.CURRENT_FRAME) {
       if (!dataset?.times) {
         clearPlotAndStopRender();
         return;
       }
-      xData = xData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
-      yData = yData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
+      for (let i = 0; i < dataset.times.length; i++) {
+        if (dataset.times[i] === props.currentFrame) {
+          xData.push(rawXData[i]);
+          yData.push(rawYData[i]);
+          text.push(i.toString());
+        }
+      }
     } else if (rangeType === RangeType.CURRENT_TRACK) {
       if (!props.selectedTrack) {
         clearPlotAndStopRender();
         return;
       }
-      // TODO: Optimize by turning this into a for loop over the selected track's id's.
-      const trackIds = new Set(props.selectedTrack.ids);
-      xData = xData.filter((_value, index) => trackIds.has(index));
-      yData = yData.filter((_value, index) => trackIds.has(index));
+      const trackIds = props.selectedTrack.ids;
+      for (let i = 0; i < trackIds.length; i++) {
+        xData.push(rawXData[trackIds[i]]);
+        yData.push(rawYData[trackIds[i]]);
+        text.push(trackIds[i].toString()); // Object ID
+      }
+    } else {
+      // All data
+      xData = Array.isArray(rawXData) ? rawXData : Array.from(rawXData);
+      yData = Array.isArray(rawYData) ? rawYData : Array.from(rawYData);
+      text = [...Array(xData.length).keys()].map((i) => i.toString());
     }
 
     const markerConfig: Partial<PlotMarker> = {
@@ -253,10 +298,15 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     const markerTrace: Partial<PlotData> = {
       x: xData,
       y: yData,
+      text: text,
       name: "",
       type: "scattergl",
       mode: "markers",
       marker: markerConfig,
+      hovertemplate:
+        `${xAxisFeatureName}: %{x} ${dataset?.getFeatureUnits(xAxisFeatureName)}` +
+        `<br>${yAxisFeatureName}: %{y} ${dataset?.getFeatureUnits(yAxisFeatureName)}` +
+        `<extra>Object ID: %{text}</extra>`,
     };
     var xDensityTrace: Partial<PlotData> = {
       x: xData,
