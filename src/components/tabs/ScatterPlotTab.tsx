@@ -110,33 +110,33 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
   const [rangeType, _setRangeType] = useState<RangeType>(DEFAULT_RANGE_TYPE);
   const setRangeType = (newRangeType: RangeType): void => {
+    if (newRangeType === rangeType) {
+      return;
+    }
+    setIsRendering(true);
     startTransition(() => {
-      if (newRangeType === rangeType) {
-        return;
-      }
       _setRangeType(newRangeType);
-      setIsRendering(true);
     });
   };
 
   const [xAxisFeatureName, _setXAxisFeatureName] = useState<string | null>(null);
   const setXAxisFeatureName = (newFeatureName: string | null): void => {
+    if (newFeatureName === xAxisFeatureName) {
+      return;
+    }
+    setIsRendering(true);
     startTransition(() => {
-      if (newFeatureName === xAxisFeatureName) {
-        return;
-      }
       _setXAxisFeatureName(newFeatureName);
-      setIsRendering(true);
     });
   };
   const [yAxisFeatureName, _setYAxisFeatureName] = useState<string | null>(null);
   const setYAxisFeatureName = (newFeatureName: string | null): void => {
+    if (newFeatureName === yAxisFeatureName) {
+      return;
+    }
+    setIsRendering(true);
     startTransition(() => {
-      if (newFeatureName === yAxisFeatureName) {
-        return;
-      }
       _setYAxisFeatureName(newFeatureName);
-      setIsRendering(true);
     });
   };
 
@@ -202,10 +202,12 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     if (!haveAxesChanged && !hasRangeChanged && !hasDatasetChanged) {
       // Ignore changes to the current frame if we are not showing the current frame
       if (rangeType !== RangeType.CURRENT_FRAME && hasFrameChanged && !hasTrackChanged) {
+        setIsRendering(false);
         return;
       }
       // Ignore changes to track if we are not showing by track
       if (rangeType !== RangeType.CURRENT_TRACK && hasTrackChanged && !hasFrameChanged) {
+        setIsRendering(false);
         return;
       }
     }
@@ -236,6 +238,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         clearPlotAndStopRender();
         return;
       }
+      // TODO: Optimize by turning this into a for loop over the selected track's id's.
       const trackIds = new Set(props.selectedTrack.ids);
       xData = xData.filter((_value, index) => trackIds.has(index));
       yData = yData.filter((_value, index) => trackIds.has(index));
@@ -246,6 +249,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       size: 4,
     };
 
+    // Configure traces for Plotly
     const markerTrace: Partial<PlotData> = {
       x: xData,
       y: yData,
@@ -254,7 +258,6 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       mode: "markers",
       marker: markerConfig,
     };
-
     var xDensityTrace: Partial<PlotData> = {
       x: xData,
       name: "x density",
