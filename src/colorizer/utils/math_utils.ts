@@ -36,7 +36,7 @@ function numberToUnicodeSuperscript(input: number): string {
 }
 
 /**
- * Maps from a value from one range to another range.
+ * Remaps a value from one range to another.
  *
  * @param clamp If true (default), clamps the input to the input range.
  */

@@ -1,3 +1,7 @@
+import { Button, Tooltip } from "antd";
+import { MenuItemType } from "antd/es/menu/hooks/useItems";
+import { RetweetOutlined } from "@ant-design/icons";
+import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, {
   ReactElement,
   memo,
@@ -10,20 +14,16 @@ import React, {
   useState,
   useTransition,
 } from "react";
-import { Dataset, Track } from "../../colorizer";
-import LabeledDropdown from "../LabeledDropdown";
-import IconButton from "../IconButton";
-import { SwapOutlined } from "@ant-design/icons";
-import { FlexRowAlignCenter } from "../../styles/utils";
-import { PlotData, PlotMarker } from "plotly.js-dist-min";
-import { useDebounce } from "../../colorizer/utils/react_utils";
-import { Button, Tooltip } from "antd";
 import styled from "styled-components";
-import Plotly from "plotly.js-dist-min";
-import LoadingSpinner from "../LoadingSpinner";
+
 import { AppThemeContext } from "../AppStyle";
-import { MenuItemType } from "antd/es/menu/hooks/useItems";
+import { Dataset, Track } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
+import { useDebounce } from "../../colorizer/utils/react_utils";
+import IconButton from "../IconButton";
+import LabeledDropdown from "../LabeledDropdown";
+import LoadingSpinner from "../LoadingSpinner";
+import { FlexRowAlignCenter } from "../../styles/utils";
 
 const FRAME_FEATURE = { key: "frame", name: "Frame" };
 
@@ -41,7 +41,6 @@ const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
 
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
-  selectedFeature: string | null;
   currentFrame: number;
   selectedTrack: Track | null;
 };
@@ -110,7 +109,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   });
 
   const [rangeType, _setRangeType] = useState<RangeType>(DEFAULT_RANGE_TYPE);
-  const setRangeType = (newRangeType: RangeType) => {
+  const setRangeType = (newRangeType: RangeType): void => {
     startTransition(() => {
       if (newRangeType === rangeType) {
         return;
@@ -121,7 +120,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   };
 
   const [xAxisFeatureName, _setXAxisFeatureName] = useState<string | null>(null);
-  const setXAxisFeatureName = (newFeatureName: string | null) => {
+  const setXAxisFeatureName = (newFeatureName: string | null): void => {
     startTransition(() => {
       if (newFeatureName === xAxisFeatureName) {
         return;
@@ -131,7 +130,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     });
   };
   const [yAxisFeatureName, _setYAxisFeatureName] = useState<string | null>(null);
-  const setYAxisFeatureName = (newFeatureName: string | null) => {
+  const setYAxisFeatureName = (newFeatureName: string | null): void => {
     startTransition(() => {
       if (newFeatureName === yAxisFeatureName) {
         return;
@@ -186,7 +185,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   };
 
   useEffect(() => {
-    const clearPlotAndStopRender = () => {
+    const clearPlotAndStopRender = (): void => {
       Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
       setIsRendering(false);
     };
@@ -271,7 +270,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       type: "histogram",
     };
 
-    const estimateTextWidthPxForCategories = () => {
+    const estimateTextWidthPxForCategories = (): number => {
       if (yAxisFeatureName === null || !dataset?.isFeatureCategorical(yAxisFeatureName)) {
         return 0;
       }
@@ -358,7 +357,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
             }}
             type="link"
           >
-            <SwapOutlined />
+            <RetweetOutlined />
           </IconButton>
         </Tooltip>
         <LabeledDropdown

@@ -854,12 +854,7 @@ function App(): ReactElement {
                     key: "scatter_plot",
                     children: (
                       <div className={styles.tabContent}>
-                        <ScatterPlotTab
-                          dataset={dataset}
-                          selectedFeature={featureName}
-                          currentFrame={currentFrame}
-                          selectedTrack={selectedTrack}
-                        />
+                        <ScatterPlotTab dataset={dataset} currentFrame={currentFrame} selectedTrack={selectedTrack} />
                       </div>
                     ),
                   },
