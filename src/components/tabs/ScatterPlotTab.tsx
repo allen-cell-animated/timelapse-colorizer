@@ -22,6 +22,8 @@ import styled from "styled-components";
 import Plotly from "plotly.js-dist-min";
 import LoadingSpinner from "../LoadingSpinner";
 import { AppThemeContext } from "../AppStyle";
+import { MenuItemType } from "antd/es/menu/hooks/useItems";
+import { remap } from "../../colorizer/utils/math_utils";
 
 const FRAME_FEATURE = { key: "frame", name: "Frame" };
 
@@ -172,12 +174,12 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   //////////////////////////////////
 
   const getMarkerColor = (numMarkers: number, baseColor: string): string => {
-    // Increase marker transparency for any number of markers > 100.
-    // The minimum opacity is 0.25 for very dense plots (>= 400 markers)
-    const strength = Math.min(1.0, Math.max(0.25, 100 / numMarkers));
+    // Increase marker transparency as the number of markers increases.
+    const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
+
     return (
       baseColor +
-      Math.floor(strength * 255)
+      Math.floor(opacity * 255)
         .toString(16)
         .padStart(2, "0")
     );
@@ -292,15 +294,28 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         autosize: true,
         showlegend: false,
         xaxis: {
-          title: xAxisFeatureName || "",
+          title: dataset?.getFeatureNameWithUnits(xAxisFeatureName || ""),
           domain: [0, 0.8],
           showgrid: false,
           zeroline: true,
         },
-        yaxis: { title: yAxisFeatureName || "", domain: [0, 0.8], showgrid: false, zeroline: true },
+        yaxis: {
+          title: dataset?.getFeatureNameWithUnits(yAxisFeatureName || ""),
+          domain: [0, 0.8],
+          showgrid: false,
+          zeroline: true,
+        },
         xaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
         yaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
         margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
+        font: {
+          // Unfortunately using the Lato font family causes the text to render with SEVERE
+          // aliasing. Using the default plotly font family causes the X and Y axes to be
+          // two different fonts, but it's better than using Lato.
+          // Possible workarounds include converting the Lato TTF to an SVG font.
+          // family: theme.font.family,
+          size: 12,
+        },
       },
       PLOTLY_CONFIG
     ).then(() => {
@@ -320,7 +335,10 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
   // TODO: Replace w/ keys
   const featureNames = dataset?.featureNames || [];
-  featureNames.push(FRAME_FEATURE.name);
+  const menuItems: MenuItemType[] = featureNames.map((name) => {
+    return { key: name, label: dataset?.getFeatureNameWithUnits(name) };
+  });
+  menuItems.push({ key: FRAME_FEATURE.name, label: FRAME_FEATURE.name });
 
   return (
     <>
@@ -328,7 +346,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         <LabeledDropdown
           label={"X:"}
           selected={xAxisFeatureName || ""}
-          items={featureNames}
+          items={menuItems}
           onChange={setXAxisFeatureName}
         />
         <Tooltip title="Swap axes">
@@ -346,7 +364,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         <LabeledDropdown
           label={"Y:"}
           selected={yAxisFeatureName || ""}
-          items={featureNames}
+          items={menuItems}
           onChange={setYAxisFeatureName}
         />
 
@@ -372,7 +390,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         </Button>
         <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
           <ScatterPlotContainer
-            style={{ width: "100%", height: "390px", padding: "5px" }}
+            style={{ width: "100%", height: "380px", padding: "5px" }}
             ref={plotDivRef}
           ></ScatterPlotContainer>
         </LoadingSpinner>

@@ -36,6 +36,25 @@ function numberToUnicodeSuperscript(input: number): string {
 }
 
 /**
+ * Maps from a value from one range to another range.
+ *
+ * @param clamp If true (default), clamps the input to the input range.
+ */
+export function remap(
+  input: number,
+  inMin: number,
+  inMax: number,
+  outMin: number,
+  outMax: number,
+  clamp: boolean = true
+): number {
+  if (clamp) {
+    input = Math.min(Math.max(input, inMin), inMax);
+  }
+  return ((input - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
+}
+
+/**
  * Converts a number to scientific notation with the specified number of significant
  * figures, handling negative numbers and rounding.
  * @param input The number to convert.
