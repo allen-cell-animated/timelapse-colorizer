@@ -127,7 +127,12 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // Note: This does not actually prevent the dataset from blocking the UI thread, it just
   // delays the update slightly until after the dataset loads in so the block is not as noticeable.
   const [dataset, setDataset] = useState<Dataset | null>(null);
+  // Show loading spinner as soon as the dataset prop changes, but don't initiate a re-render
+  // until after the debounce has settled.
   const propDataset = useDeferredValue<Dataset | null>(useDebounce(props.dataset, 500));
+  useEffect(() => {
+    setIsRendering(true);
+  }, [props.dataset]);
   useMemo(() => {
     startTransition(() => {
       setDataset(propDataset);
@@ -140,17 +145,16 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
 
   // Track last rendered props + state to make smart optimizations on re-renders
-
   type LastRenderedState = {
+    rangeType: RangeType;
     xAxisFeatureName: string | null;
     yAxisFeatureName: string | null;
-    rangeType: RangeType;
   } & ScatterPlotTabProps;
 
   const lastRenderedState = useRef<LastRenderedState>({
+    rangeType: DEFAULT_RANGE_TYPE,
     xAxisFeatureName: null,
     yAxisFeatureName: null,
-    rangeType: DEFAULT_RANGE_TYPE,
     ...props,
   });
 
@@ -186,6 +190,10 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     });
   };
 
+  /**
+   * Retrieve the feature data for a given feature. For categorical features, also replaces numeric values with the string category names.
+   * Returns undefined if the feature data is not available.
+   */
   const getData = useCallback(
     (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | string[] | null | undefined => {
       if (featureName === null || dataset === null) {
@@ -201,8 +209,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         return undefined;
       }
 
+      // Map feature data to string categories for categorical features
       if (dataset.isFeatureCategorical(featureName)) {
-        // Map feature data to string categories
         const categories: string[] = dataset.getFeatureCategories(featureName) || [];
         return Array.from(dataset.getFeatureData(featureName)!.data).map((value) => {
           return categories[value];
