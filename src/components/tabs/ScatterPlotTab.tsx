@@ -54,6 +54,10 @@ const ScatterPlotContainer = styled.div`
   }
 `;
 
+function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
+  return eventData.points[0].data.type === "histogram";
+}
+
 export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ScatterPlotTabProps>;
 
@@ -71,6 +75,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   const pointNumToObjectId = useRef<number[] | null>();
 
   const plotDivRef = React.useRef<HTMLDivElement>(null);
+  const plotRef = React.useRef<Plotly.PlotlyHTMLElement | null>(null);
   useEffect(() => {
     // Mount the plot to the DOM
     Plotly.newPlot(
@@ -83,44 +88,41 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       },
       PLOTLY_CONFIG
     ).then((plot) => {
-      // TODO: Add onHover event listener to lookup + show object ID and track ID
-
-      plot.on("plotly_click", (eventData: any) => {
-        // Add event listener
-        if (eventData.points.length === 0) {
-          return;
-        }
-        if (eventData.points[0].pointNumbers && eventData.points[0].pointNumbers.length > 0) {
-          // User clicked on a histogram bar
-          return;
-        }
-        if (!dataset) {
-          return;
-        }
-
-        const point = eventData.points[0];
-        let objectId;
-        if (pointNumToObjectId.current === null) {
-          console.log("Point number: " + point.pointNumber + "Object ID: " + point.pointNumber);
-          objectId = point.pointNumber + 1;
-        } else {
-          console.log(
-            "Point number: " + point.pointNumber + " Object ID: " + pointNumToObjectId.current![point.pointNumber] + 1
-          );
-          objectId = pointNumToObjectId.current![point.pointNumber];
-        }
-        const trackId = dataset.getTrackId(objectId);
-        const frame = dataset.times ? dataset.times[objectId] : undefined;
-        if (frame !== undefined) {
-          props.findTrack(trackId, false);
-          props.setFrame(frame);
-        } else {
-          // Jump to first frame where the track is valid
-          props.findTrack(trackId, true);
-        }
-      });
+      plotRef.current = plot;
     });
   }, [plotDivRef.current]);
+
+  // Add click event listeners to the plot
+  useEffect(() => {
+    if (!plotRef.current) {
+      return;
+    }
+    // If a user clicks on a point, find the corresponding track and jump to its frame number.
+    plotRef.current.on("plotly_click", (eventData) => {
+      if (eventData.points.length === 0 || isHistogramEvent(eventData) || !dataset) {
+        // User clicked on nothing or on a histogram
+        return;
+      }
+
+      const point = eventData.points[0];
+      let objectId;
+      if (pointNumToObjectId.current === null) {
+        objectId = point.pointNumber;
+      } else {
+        objectId = pointNumToObjectId.current![point.pointNumber];
+      }
+      console.log("Point number: " + point.pointNumber + " Object ID: " + objectId);
+      const trackId = dataset.getTrackId(objectId);
+      const frame = dataset.times ? dataset.times[objectId] : undefined;
+      if (frame !== undefined) {
+        props.findTrack(trackId, false);
+        props.setFrame(frame);
+      } else {
+        // Jump to first frame where the track is valid
+        props.findTrack(trackId, true);
+      }
+    });
+  }, [plotRef.current]);
 
   // Note: This does not actually prevent the dataset from blocking the UI thread, it just
   // delays the update slightly until after the dataset loads in so the block is not as noticeable.
@@ -315,8 +317,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       hovertemplate:
         `${xAxisFeatureName}: %{x} ${dataset?.getFeatureUnits(xAxisFeatureName)}` +
         `<br>${yAxisFeatureName}: %{y} ${dataset?.getFeatureUnits(yAxisFeatureName)}` +
-        `<extra>Track ID: %{text}` +
-        `<br>Object ID: %{pointNumber}</extra>`,
+        `<extra>Track ID: %{text}<br>Object ID: %{fullData.customdata}</extra>`,
     };
     var xDensityTrace: Partial<PlotData> = {
       x: xData,
