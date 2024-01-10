@@ -65,6 +65,11 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // completion with a separate flag.
   const [isRendering, setIsRendering] = useState(false);
 
+  /** Maps from the point number to an object's ID in the dataset.
+   * Null if the point number maps 1:1 to the dataset object ID.
+   */
+  const pointNumToObjectId = useRef<number[] | null>();
+
   const plotDivRef = React.useRef<HTMLDivElement>(null);
   useEffect(() => {
     // Mount the plot to the DOM
@@ -78,12 +83,14 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       },
       PLOTLY_CONFIG
     ).then((plot) => {
+      // TODO: Add onHover event listener to lookup + show object ID and track ID
+
       plot.on("plotly_click", (eventData: any) => {
         // Add event listener
         if (eventData.points.length === 0) {
           return;
         }
-        if (eventData.points[0].pointNumbers.length > 0) {
+        if (eventData.points[0].pointNumbers && eventData.points[0].pointNumbers.length > 0) {
           // User clicked on a histogram bar
           return;
         }
@@ -92,8 +99,17 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         }
 
         const point = eventData.points[0];
-        const trackId = parseInt(point.text, 10);
-        const objectId: number = point.pointNumber + 1;
+        let objectId;
+        if (pointNumToObjectId.current === null) {
+          console.log("Point number: " + point.pointNumber + "Object ID: " + point.pointNumber);
+          objectId = point.pointNumber + 1;
+        } else {
+          console.log(
+            "Point number: " + point.pointNumber + " Object ID: " + pointNumToObjectId.current![point.pointNumber] + 1
+          );
+          objectId = pointNumToObjectId.current![point.pointNumber];
+        }
+        const trackId = dataset.getTrackId(objectId);
         const frame = dataset.times ? dataset.times[objectId] : undefined;
         if (frame !== undefined) {
           props.findTrack(trackId, false);
@@ -245,48 +261,41 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       return;
     }
 
-    let rawXData = getData(xAxisFeatureName, dataset);
-    let rawYData = getData(yAxisFeatureName, dataset);
-    // Object ID
-    let text: string[] = [];
+    let xData = getData(xAxisFeatureName, dataset);
+    let yData = getData(yAxisFeatureName, dataset);
 
-    if (!rawXData || !rawYData || !xAxisFeatureName || !yAxisFeatureName) {
+    if (!xData || !yData || !xAxisFeatureName || !yAxisFeatureName) {
       clearPlotAndStopRender();
       return;
     }
 
     // Filter data by range, if applicable
-    let xData: (number | string)[] = [];
-    let yData: (number | string)[] = [];
-
     if (rangeType === RangeType.CURRENT_FRAME) {
       if (!dataset?.times) {
         clearPlotAndStopRender();
         return;
       }
+      pointNumToObjectId.current = [];
       for (let i = 0; i < dataset.times.length; i++) {
         if (dataset.times[i] === props.currentFrame) {
-          xData.push(rawXData[i]);
-          yData.push(rawYData[i]);
-          text.push(i.toString());
+          pointNumToObjectId.current.push(i);
         }
       }
+      xData = xData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
+      yData = yData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
     } else if (rangeType === RangeType.CURRENT_TRACK) {
       if (!props.selectedTrack) {
         clearPlotAndStopRender();
         return;
       }
-      const trackIds = props.selectedTrack.ids;
-      for (let i = 0; i < trackIds.length; i++) {
-        xData.push(rawXData[trackIds[i]]);
-        yData.push(rawYData[trackIds[i]]);
-        text.push(trackIds[i].toString()); // Object ID
-      }
+      // TODO: Optimize by turning this into a for loop over the selected track's id's.
+      const trackIds = new Set(props.selectedTrack.ids);
+      xData = xData.filter((_value, index) => trackIds.has(index));
+      yData = yData.filter((_value, index) => trackIds.has(index));
+      pointNumToObjectId.current = Array.from(props.selectedTrack.ids);
     } else {
-      // All data
-      xData = Array.isArray(rawXData) ? rawXData : Array.from(rawXData);
-      yData = Array.isArray(rawYData) ? rawYData : Array.from(rawYData);
-      text = [...Array(xData.length).keys()].map((i) => i.toString());
+      // All time
+      pointNumToObjectId.current = null;
     }
 
     const markerConfig: Partial<PlotMarker> = {
@@ -298,7 +307,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     const markerTrace: Partial<PlotData> = {
       x: xData,
       y: yData,
-      text: text,
+      text: Array.from(dataset?.trackIds || []).map((number) => number.toString()),
       name: "",
       type: "scattergl",
       mode: "markers",
@@ -306,7 +315,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       hovertemplate:
         `${xAxisFeatureName}: %{x} ${dataset?.getFeatureUnits(xAxisFeatureName)}` +
         `<br>${yAxisFeatureName}: %{y} ${dataset?.getFeatureUnits(yAxisFeatureName)}` +
-        `<extra>Object ID: %{text}</extra>`,
+        `<extra>Track ID: %{text}` +
+        `<br>Object ID: %{pointNumber}</extra>`,
     };
     var xDensityTrace: Partial<PlotData> = {
       x: xData,
