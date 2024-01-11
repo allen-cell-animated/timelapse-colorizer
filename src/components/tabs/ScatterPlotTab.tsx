@@ -272,15 +272,17 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       return;
     }
 
-    let xData = getData(xAxisFeatureName, dataset);
-    let yData = getData(yAxisFeatureName, dataset);
+    let allXData = getData(xAxisFeatureName, dataset);
+    let allYData = getData(yAxisFeatureName, dataset);
 
-    if (!xData || !yData || !xAxisFeatureName || !yAxisFeatureName) {
+    if (!allXData || !allYData || !xAxisFeatureName || !yAxisFeatureName) {
       clearPlotAndStopRender();
       return;
     }
 
     // Filter data by range, if applicable
+    let xData: Float32Array | Uint32Array | string[] = [];
+    let yData: Float32Array | Uint32Array | string[] = [];
     if (rangeType === RangeType.CURRENT_FRAME) {
       if (!dataset?.times) {
         clearPlotAndStopRender();
@@ -292,8 +294,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           pointNumToObjectId.current.push(i);
         }
       }
-      xData = xData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
-      yData = yData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
+      xData = allXData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
+      yData = allYData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
     } else if (rangeType === RangeType.CURRENT_TRACK) {
       if (!props.selectedTrack) {
         clearPlotAndStopRender();
@@ -301,16 +303,18 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       }
       // TODO: Optimize by turning this into a for loop over the selected track's id's.
       const trackIds = new Set(props.selectedTrack.ids);
-      xData = xData.filter((_value, index) => trackIds.has(index));
-      yData = yData.filter((_value, index) => trackIds.has(index));
+      xData = allXData.filter((_value, index) => trackIds.has(index));
+      yData = allYData.filter((_value, index) => trackIds.has(index));
       pointNumToObjectId.current = Array.from(props.selectedTrack.ids);
     } else {
       // All time
-      pointNumToObjectId.current = [...Array(xData.length + 1).keys()].slice(1);
+      pointNumToObjectId.current = [...Array(allXData.length + 1).keys()].slice(1);
+      xData = allXData;
+      yData = allYData;
     }
 
     const markerConfig: Partial<PlotMarker> = {
-      color: getMarkerColor(xData.length, theme.color.themeDark),
+      color: getMarkerColor(allXData.length, theme.color.themeDark),
       size: 4,
     };
 
@@ -336,17 +340,19 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     var xDensityTrace: Partial<PlotData> = {
       x: xData,
       name: "x density",
-      marker: { color: theme.color.themeLight },
+      marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
       yaxis: "y2",
       type: "histogram",
     };
     var yDensityTrace: Partial<PlotData> = {
       y: yData,
       name: "y density",
-      marker: { color: theme.color.themeLight },
+      marker: { color: "#ff0000", line: { color: "#aa0000", width: 1 } },
       xaxis: "x2",
       type: "histogram",
     };
+
+    // Configure bins for histograms as needed
 
     const estimateTextWidthPxForCategories = (): number => {
       if (yAxisFeatureName === null || !dataset?.isFeatureCategorical(yAxisFeatureName)) {
@@ -364,26 +370,90 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
     const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories());
 
+    // Format axes
+    let scatterPlotXAxis: Partial<Plotly.LayoutAxis> = {
+      title: dataset?.getFeatureNameWithUnits(xAxisFeatureName || ""),
+      domain: [0, 0.8],
+      showgrid: false,
+      zeroline: true,
+    };
+    let scatterPlotYAxis: Partial<Plotly.LayoutAxis> = {
+      title: dataset?.getFeatureNameWithUnits(yAxisFeatureName || ""),
+      domain: [0, 0.8],
+      showgrid: false,
+      zeroline: true,
+    };
+    let histogramXAxis: Partial<Plotly.LayoutAxis> = {
+      domain: [0.85, 1],
+      showgrid: false,
+      zeroline: true,
+    };
+    let histogramYAxis: Partial<Plotly.LayoutAxis> = {
+      domain: [0.85, 1],
+      showgrid: false,
+      zeroline: true,
+    };
+
+    const formatRange = (
+      featureName: string,
+      allData: Float32Array | Uint32Array | string[],
+      scatterPlotAxis: Partial<Plotly.LayoutAxis>,
+      histogramAxis: Partial<Plotly.LayoutAxis>,
+      densityTrace: Partial<PlotData>
+    ): [Partial<Plotly.LayoutAxis>, Partial<Plotly.LayoutAxis>, Partial<PlotData>] => {
+      if (allData instanceof Float32Array || allData instanceof Uint32Array) {
+        // Numeric data
+        let min = dataset?.getFeatureData(featureName)?.min || 0;
+        let max = dataset?.getFeatureData(featureName)?.max || 0;
+        if (max - min >= 1.0) {
+          // Ceil/floor the min/max to the nearest integer
+          min = Math.floor(min);
+          max = Math.ceil(max);
+        }
+        // Add a little padding to the min/max
+        min -= (max - min) / 16;
+        max += (max - min) / 16;
+        scatterPlotAxis.range = [min, max];
+        // histogramAxis.range = [min, max];
+        // Set up bins for histograms
+        // const binSize = (max - min) / 5;
+        // densityTrace.xbins = { start: min, end: max, size: binSize };
+      } else {
+        // Categorical data
+        scatterPlotAxis.type = "category";
+        histogramAxis.type = "category";
+        scatterPlotAxis.categoryorder = "array";
+        scatterPlotAxis.categoryarray = dataset?.getFeatureCategories(featureName) || [];
+        scatterPlotAxis.range = dataset?.getFeatureCategories(featureName) || [];
+      }
+      return [scatterPlotAxis, histogramAxis, densityTrace];
+    };
+
+    [scatterPlotXAxis, histogramXAxis, xDensityTrace] = formatRange(
+      xAxisFeatureName,
+      allXData,
+      scatterPlotXAxis,
+      histogramXAxis,
+      xDensityTrace
+    );
+    [scatterPlotYAxis, histogramYAxis, yDensityTrace] = formatRange(
+      yAxisFeatureName,
+      allYData,
+      scatterPlotYAxis,
+      histogramYAxis,
+      yDensityTrace
+    );
+
     Plotly.react(
       plotDivRef.current,
       [markerTrace, xDensityTrace, yDensityTrace],
       {
         autosize: true,
         showlegend: false,
-        xaxis: {
-          title: dataset?.getFeatureNameWithUnits(xAxisFeatureName || ""),
-          domain: [0, 0.8],
-          showgrid: false,
-          zeroline: true,
-        },
-        yaxis: {
-          title: dataset?.getFeatureNameWithUnits(yAxisFeatureName || ""),
-          domain: [0, 0.8],
-          showgrid: false,
-          zeroline: true,
-        },
-        xaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
-        yaxis2: { domain: [0.85, 1], showgrid: false, zeroline: true },
+        xaxis: scatterPlotXAxis,
+        yaxis: scatterPlotYAxis,
+        xaxis2: histogramXAxis,
+        yaxis2: histogramYAxis,
         margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
         font: {
           // Unfortunately using the Lato font family causes the text to render with SEVERE
@@ -460,7 +530,6 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           onClick={() => {
             setXAxisFeatureName(null);
             setYAxisFeatureName(null);
-            setIsRendering(true);
           }}
         >
           Clear
