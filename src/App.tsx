@@ -832,8 +832,8 @@ function App(): ReactElement {
                 size="large"
                 items={[
                   {
-                    label: "Plot",
-                    key: "plot",
+                    label: "Track Plot",
+                    key: "track_plot",
                     children: (
                       <div className={styles.tabContent}>
                         <PlotTab
