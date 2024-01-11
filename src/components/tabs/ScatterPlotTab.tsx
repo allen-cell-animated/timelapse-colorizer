@@ -163,7 +163,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
    * Returns undefined if the feature data is not available.
    */
   const getData = useCallback(
-    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | string[] | null | undefined => {
+    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | null | undefined => {
       if (featureName === null || dataset === null) {
         return undefined;
       }
@@ -175,14 +175,6 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       const featureData = dataset.getFeatureData(featureName);
       if (!featureData) {
         return undefined;
-      }
-
-      // Map feature data to string categories for categorical features
-      if (dataset.isFeatureCategorical(featureName)) {
-        const categories: string[] = dataset.getFeatureCategories(featureName) || [];
-        return Array.from(dataset.getFeatureData(featureName)!.data).map((value) => {
-          return categories[value];
-        });
       }
 
       return dataset.getFeatureData(featureName)?.data;
@@ -275,7 +267,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     let allXData = getData(xAxisFeatureName, dataset);
     let allYData = getData(yAxisFeatureName, dataset);
 
-    if (!allXData || !allYData || !xAxisFeatureName || !yAxisFeatureName) {
+    if (!allXData || !allYData || !xAxisFeatureName || !yAxisFeatureName || !dataset) {
       clearPlotAndStopRender();
       return;
     }
@@ -319,7 +311,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     };
 
     const pointInfoText = pointNumToObjectId.current.map((objectId) => {
-      const trackId = dataset?.getTrackId(objectId);
+      const trackId = dataset.getTrackId(objectId);
       return `Track ID: ${trackId}<br>Object ID: ${objectId}`;
     });
 
@@ -333,8 +325,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       mode: "markers",
       marker: markerConfig,
       hovertemplate:
-        `${xAxisFeatureName}: %{x} ${dataset?.getFeatureUnits(xAxisFeatureName)}` +
-        `<br>${yAxisFeatureName}: %{y} ${dataset?.getFeatureUnits(yAxisFeatureName)}` +
+        `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
+        `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
         `<extra>%{text}</extra>`,
     };
     var xDensityTrace: Partial<PlotData> = {
@@ -396,49 +388,54 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
     const formatRange = (
       featureName: string,
-      allData: Float32Array | Uint32Array | string[],
       scatterPlotAxis: Partial<Plotly.LayoutAxis>,
       histogramAxis: Partial<Plotly.LayoutAxis>,
       densityTrace: Partial<PlotData>
     ): [Partial<Plotly.LayoutAxis>, Partial<Plotly.LayoutAxis>, Partial<PlotData>] => {
-      if (allData instanceof Float32Array || allData instanceof Uint32Array) {
-        // Numeric data
-        let min = dataset?.getFeatureData(featureName)?.min || 0;
-        let max = dataset?.getFeatureData(featureName)?.max || 0;
-        if (max - min >= 1.0) {
-          // Ceil/floor the min/max to the nearest integer
-          min = Math.floor(min);
-          max = Math.ceil(max);
-        }
-        // Add a little padding to the min/max
-        min -= (max - min) / 16;
-        max += (max - min) / 16;
-        scatterPlotAxis.range = [min, max];
-        // histogramAxis.range = [min, max];
-        // Set up bins for histograms
-        // const binSize = (max - min) / 5;
-        // densityTrace.xbins = { start: min, end: max, size: binSize };
-      } else {
+      let min = dataset?.getFeatureData(featureName)?.min || 0;
+      let max = dataset?.getFeatureData(featureName)?.max || 0;
+      if (max - min >= 1.0) {
+        // Ceil/floor the min/max to the nearest integer
+        min = Math.floor(min);
+        max = Math.ceil(max);
+      }
+      // Add a little padding to the min/max so points aren't on the edge of the plot
+      min -= (max - min) / 10;
+      max += (max - min) / 10;
+      scatterPlotAxis.range = [min, max];
+
+      // Ignoring the histograms for now, because Plotly's histogram handling is fairly
+      // sophisticated and handles a bunch of edge cases.
+
+      // Set up bins for histograms
+      // const binSize = (max - min) / 5;
+      // densityTrace.xbins = { start: min, end: max, size: binSize };
+
+      if (dataset.isFeatureCategorical(featureName)) {
         // Categorical data
-        scatterPlotAxis.type = "category";
-        histogramAxis.type = "category";
-        scatterPlotAxis.categoryorder = "array";
-        scatterPlotAxis.categoryarray = dataset?.getFeatureCategories(featureName) || [];
-        scatterPlotAxis.range = dataset?.getFeatureCategories(featureName) || [];
+        // Create custom tick marks for the categories
+        const categories = dataset.getFeatureCategories(featureName) || [];
+        scatterPlotAxis = {
+          ...scatterPlotAxis,
+          tickmode: "array",
+          tick0: "0",
+          dtick: "1",
+          tickvals: [...Array(categories.length).keys()],
+          ticktext: categories,
+          zeroline: false,
+        };
       }
       return [scatterPlotAxis, histogramAxis, densityTrace];
     };
 
     [scatterPlotXAxis, histogramXAxis, xDensityTrace] = formatRange(
       xAxisFeatureName,
-      allXData,
       scatterPlotXAxis,
       histogramXAxis,
       xDensityTrace
     );
     [scatterPlotYAxis, histogramYAxis, yDensityTrace] = formatRange(
       yAxisFeatureName,
-      allYData,
       scatterPlotYAxis,
       histogramYAxis,
       yDensityTrace
@@ -501,7 +498,6 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
             onClick={() => {
               setXAxisFeatureName(yAxisFeatureName);
               setYAxisFeatureName(xAxisFeatureName);
-              setIsRendering(true);
             }}
             type="link"
           >
