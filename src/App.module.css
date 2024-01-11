@@ -139,12 +139,13 @@
   /* Switch from row to column layout when the screen width goes below 1200px */
   .contentPanels {
     flex-direction: column;
-    max-width: var(--content-width);
+    max-width: 100%;
   }
 }
 
 .canvasPanel {
   flex-grow: 0;
+  max-width: var(--content-width);
 }
 
 .canvasPanel .bottomControls {
@@ -184,7 +185,7 @@
   gap: 10px;
   flex-grow: 1;
   min-width: 300px;
-  max-width: var(--content-width);
+  max-width: 100%;
 }
 
 .plotAndFiltersPanel {
@@ -212,7 +213,7 @@
 }
 
 .plotAndFiltersPanel .tabContent {
-  padding: 10px 20px;
+  padding: 15px 20px;
   border: 1px solid var(--color-dividers);
   border-top: 0;
   width: auto;

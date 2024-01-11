@@ -14,6 +14,11 @@ const CustomCollapseElement = styled(Collapse)`
     outline: 1px solid transparent;
     border-radius: 6px !important;
     transition: outline 0s !important;
+    padding: 0 !important;
+  }
+
+  & .ant-collapse-expand-icon {
+    margin-left: 0 !important;
   }
 
   & .ant-collapse-header:focus:not(:focus-visible) {
