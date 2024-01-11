@@ -92,38 +92,6 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     });
   }, [plotDivRef.current]);
 
-  // Add click event listeners to the plot
-  useEffect(() => {
-    if (!plotRef.current) {
-      return;
-    }
-    // If a user clicks on a point, find the corresponding track and jump to its frame number.
-    plotRef.current.on("plotly_click", (eventData) => {
-      if (eventData.points.length === 0 || isHistogramEvent(eventData) || !dataset) {
-        // User clicked on nothing or on a histogram
-        return;
-      }
-
-      const point = eventData.points[0];
-      let objectId;
-      if (pointNumToObjectId.current === null) {
-        objectId = point.pointNumber;
-      } else {
-        objectId = pointNumToObjectId.current![point.pointNumber];
-      }
-      console.log("Point number: " + point.pointNumber + " Object ID: " + objectId);
-      const trackId = dataset.getTrackId(objectId);
-      const frame = dataset.times ? dataset.times[objectId] : undefined;
-      if (frame !== undefined) {
-        props.findTrack(trackId, false);
-        props.setFrame(frame);
-      } else {
-        // Jump to first frame where the track is valid
-        props.findTrack(trackId, true);
-      }
-    });
-  }, [plotRef.current]);
-
   // Note: This does not actually prevent the dataset from blocking the UI thread, it just
   // delays the update slightly until after the dataset loads in so the block is not as noticeable.
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -222,6 +190,39 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     []
   );
 
+  // Add click event listeners to the plot
+  const onClickPlot = useCallback(
+    (eventData: Plotly.PlotMouseEvent): void => {
+      console.log("Click");
+      if (eventData.points.length === 0 || isHistogramEvent(eventData) || !dataset) {
+        // User clicked on nothing or on a histogram
+        return;
+      }
+
+      const point = eventData.points[0];
+      const objectId = pointNumToObjectId.current![point.pointNumber];
+      console.log("Point number: " + point.pointNumber + " Object ID: " + objectId);
+      const trackId = dataset.getTrackId(objectId);
+      const frame = dataset.times ? dataset.times[objectId] : undefined;
+      if (frame !== undefined) {
+        props.findTrack(trackId, false);
+        props.setFrame(frame);
+      } else {
+        // Jump to first frame where the track is valid
+        props.findTrack(trackId, true);
+      }
+    },
+    [dataset, pointNumToObjectId.current, props.findTrack, props.setFrame]
+  );
+
+  useEffect(() => {
+    // If a user clicks on a point, find the corresponding track and jump to its frame number.
+    plotRef.current?.on("plotly_click", onClickPlot);
+    return () => {
+      plotRef.current?.removeAllListeners("plotly_click");
+    };
+  }, [plotRef.current, onClickPlot]);
+
   //////////////////////////////////
   // Plot Updates
   //////////////////////////////////
@@ -305,7 +306,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       pointNumToObjectId.current = Array.from(props.selectedTrack.ids);
     } else {
       // All time
-      pointNumToObjectId.current = null;
+      pointNumToObjectId.current = [...Array(xData.length + 1).keys()].slice(1);
     }
 
     const markerConfig: Partial<PlotMarker> = {
@@ -313,11 +314,16 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       size: 4,
     };
 
+    const pointInfoText = pointNumToObjectId.current.map((objectId) => {
+      const trackId = dataset?.getTrackId(objectId);
+      return `Track ID: ${trackId}<br>Object ID: ${objectId}`;
+    });
+
     // Configure traces for Plotly
     const markerTrace: Partial<PlotData> = {
       x: xData,
       y: yData,
-      text: Array.from(dataset?.trackIds || []).map((number) => number.toString()),
+      text: pointInfoText,
       name: "",
       type: "scattergl",
       mode: "markers",
@@ -325,7 +331,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       hovertemplate:
         `${xAxisFeatureName}: %{x} ${dataset?.getFeatureUnits(xAxisFeatureName)}` +
         `<br>${yAxisFeatureName}: %{y} ${dataset?.getFeatureUnits(yAxisFeatureName)}` +
-        `<extra>Track ID: %{text}<br>Object ID: %{fullData.customdata}</extra>`,
+        `<extra>%{text}</extra>`,
     };
     var xDensityTrace: Partial<PlotData> = {
       x: xData,
