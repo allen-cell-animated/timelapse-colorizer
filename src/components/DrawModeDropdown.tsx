@@ -6,6 +6,7 @@ import { Color as ThreeColor, ColorRepresentation } from "three";
 import { ColorPicker } from "antd";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { PresetsItem } from "antd/es/color-picker/interface";
+import { FlexRowAlignCenter } from "../styles/utils";
 
 type DrawModeSelectorProps = {
   label: string;
@@ -19,13 +20,14 @@ const defaultProps: Partial<DrawModeSelectorProps> = {
   disabled: false,
 };
 
-const MainLayout = styled.div`
+const MainLayout = styled.label`
   display: flex;
   flex-direction: column;
   gap: 6px;
 `;
 
-const HorizontalDiv = styled(MainLayout)`
+const HorizontalDiv = styled(FlexRowAlignCenter)`
+  gap: 6px;
   flex-direction: row;
   flex-wrap: wrap;
 `;
@@ -43,7 +45,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
   const items = [
-    { key: DrawMode.HIDE.toString(), label: "Hide values" },
+    { key: DrawMode.HIDE.toString(), label: "Hide" },
     { key: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
   ];
 
@@ -70,7 +72,9 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
 
   return (
     <MainLayout style={{ margin: "5px 0" }}>
-      <h3>{props.label}</h3>
+      <span>
+        <h3>{props.label}</h3>
+      </span>
       <HorizontalDiv ref={colorPickerRef}>
         <LabeledDropdown
           label={null}
