@@ -264,17 +264,15 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       return;
     }
 
-    let allXData = getData(xAxisFeatureName, dataset);
-    let allYData = getData(yAxisFeatureName, dataset);
+    let xData = getData(xAxisFeatureName, dataset);
+    let yData = getData(yAxisFeatureName, dataset);
 
-    if (!allXData || !allYData || !xAxisFeatureName || !yAxisFeatureName || !dataset) {
+    if (!xData || !yData || !xAxisFeatureName || !yAxisFeatureName || !dataset) {
       clearPlotAndStopRender();
       return;
     }
 
     // Filter data by range, if applicable
-    let xData: Float32Array | Uint32Array | string[] = [];
-    let yData: Float32Array | Uint32Array | string[] = [];
     if (rangeType === RangeType.CURRENT_FRAME) {
       if (!dataset?.times) {
         clearPlotAndStopRender();
@@ -286,8 +284,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           pointNumToObjectId.current.push(i);
         }
       }
-      xData = allXData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
-      yData = allYData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
+      xData = xData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
+      yData = yData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
     } else if (rangeType === RangeType.CURRENT_TRACK) {
       if (!props.selectedTrack) {
         clearPlotAndStopRender();
@@ -295,18 +293,18 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       }
       // TODO: Optimize by turning this into a for loop over the selected track's id's.
       const trackIds = new Set(props.selectedTrack.ids);
-      xData = allXData.filter((_value, index) => trackIds.has(index));
-      yData = allYData.filter((_value, index) => trackIds.has(index));
+      xData = xData.filter((_value, index) => trackIds.has(index));
+      yData = yData.filter((_value, index) => trackIds.has(index));
       pointNumToObjectId.current = Array.from(props.selectedTrack.ids);
     } else {
       // All time
-      pointNumToObjectId.current = [...Array(allXData.length + 1).keys()].slice(1);
-      xData = allXData;
-      yData = allYData;
+      pointNumToObjectId.current = [...Array(xData.length + 1).keys()].slice(1);
+      xData = xData;
+      yData = yData;
     }
 
     const markerConfig: Partial<PlotMarker> = {
-      color: getMarkerColor(allXData.length, theme.color.themeDark),
+      color: getMarkerColor(xData.length, theme.color.themeDark),
       size: 4,
     };
 
@@ -329,19 +327,21 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
         `<extra>%{text}</extra>`,
     };
-    var xDensityTrace: Partial<PlotData> = {
+    var xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
       name: "x density",
       marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
       yaxis: "y2",
       type: "histogram",
+      nbinsx: 20,
     };
-    var yDensityTrace: Partial<PlotData> = {
+    var yHistogram: Partial<PlotData> = {
       y: yData,
       name: "y density",
-      marker: { color: "#ff0000", line: { color: "#aa0000", width: 1 } },
+      marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
       xaxis: "x2",
       type: "histogram",
+      nbinsy: 20,
     };
 
     // Configure bins for histograms as needed
@@ -354,7 +354,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       return (
         categories.reduce((_prev, val, acc) => {
           return Math.max(val.length, acc);
-        }, 0) * 10
+        }, 0) * 8
       );
     };
 
@@ -364,14 +364,18 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
     // Format axes
     let scatterPlotXAxis: Partial<Plotly.LayoutAxis> = {
-      title: dataset?.getFeatureNameWithUnits(xAxisFeatureName || ""),
+      title: dataset.getFeatureNameWithUnits(xAxisFeatureName || ""),
       domain: [0, 0.8],
       showgrid: false,
       zeroline: true,
     };
     let scatterPlotYAxis: Partial<Plotly.LayoutAxis> = {
-      title: dataset?.getFeatureNameWithUnits(yAxisFeatureName || ""),
+      // Due to limited space in the Y-axis, hide categorical feature name.
+      title: dataset.isFeatureCategorical(yAxisFeatureName)
+        ? ""
+        : dataset.getFeatureNameWithUnits(yAxisFeatureName || ""),
       domain: [0, 0.8],
+      automargin: true,
       showgrid: false,
       zeroline: true,
     };
@@ -410,6 +414,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       // Set up bins for histograms
       // const binSize = (max - min) / 5;
       // densityTrace.xbins = { start: min, end: max, size: binSize };
+      // densityTrace.ybins = { start: min, end: max, size: binSize };
 
       if (dataset.isFeatureCategorical(featureName)) {
         // Categorical data
@@ -428,22 +433,22 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       return [scatterPlotAxis, histogramAxis, densityTrace];
     };
 
-    [scatterPlotXAxis, histogramXAxis, xDensityTrace] = formatRange(
+    [scatterPlotXAxis, histogramXAxis, xHistogram] = formatRange(
       xAxisFeatureName,
       scatterPlotXAxis,
       histogramXAxis,
-      xDensityTrace
+      xHistogram
     );
-    [scatterPlotYAxis, histogramYAxis, yDensityTrace] = formatRange(
+    [scatterPlotYAxis, histogramYAxis, yHistogram] = formatRange(
       yAxisFeatureName,
       scatterPlotYAxis,
       histogramYAxis,
-      yDensityTrace
+      yHistogram
     );
 
     Plotly.react(
       plotDivRef.current,
-      [markerTrace, xDensityTrace, yDensityTrace],
+      [markerTrace, xHistogram, yHistogram],
       {
         autosize: true,
         showlegend: false,
