@@ -281,7 +281,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       pointNumToObjectId.current = [];
       for (let i = 0; i < dataset.times.length; i++) {
         if (dataset.times[i] === props.currentFrame) {
-          pointNumToObjectId.current.push(i);
+          pointNumToObjectId.current.push(i + 1);
         }
       }
       xData = xData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
@@ -291,14 +291,20 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         clearPlotAndStopRender();
         return;
       }
-      // TODO: Optimize by turning this into a for loop over the selected track's id's.
-      const trackIds = new Set(props.selectedTrack.ids);
-      xData = xData.filter((_value, index) => trackIds.has(index));
-      yData = yData.filter((_value, index) => trackIds.has(index));
+
+      const newXData = [];
+      const newYData = [];
+      for (let i = 0; i < props.selectedTrack.ids.length; i++) {
+        const id = props.selectedTrack.ids[i];
+        newXData.push(xData[id]);
+        newYData.push(yData[id]);
+      }
+      xData = xData instanceof Float32Array ? Float32Array.from(newXData) : Uint32Array.from(newXData);
+      yData = yData instanceof Float32Array ? Float32Array.from(newYData) : Uint32Array.from(newYData);
       pointNumToObjectId.current = Array.from(props.selectedTrack.ids);
     } else {
       // All time
-      pointNumToObjectId.current = [...Array(xData.length + 1).keys()].slice(1);
+      pointNumToObjectId.current = [...Array(xData.length).keys()];
       xData = xData;
       yData = yData;
     }
@@ -384,11 +390,13 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       domain: [0.85, 1],
       showgrid: false,
       zeroline: true,
+      hoverformat: "f",
     };
     let histogramYAxis: Partial<Plotly.LayoutAxis> = {
       domain: [0.85, 1],
       showgrid: false,
       zeroline: true,
+      hoverformat: "f",
     };
 
     const formatRange = (
