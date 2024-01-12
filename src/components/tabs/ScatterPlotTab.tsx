@@ -25,7 +25,7 @@ import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRowAlignCenter } from "../../styles/utils";
 
-const FRAME_FEATURE = { key: "time", name: "Time" };
+const TIME_FEATURE = { key: "time", name: "Time" };
 
 const PLOTLY_CONFIG: Partial<Plotly.Config> = {
   displayModeBar: false,
@@ -168,7 +168,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         return undefined;
       }
 
-      if (featureName === FRAME_FEATURE.name) {
+      if (featureName === TIME_FEATURE.name) {
         return dataset.times;
       }
 
@@ -341,6 +341,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
       xaxis: "x2",
       type: "histogram",
+      // TODO: Make relative to current plot height?
       nbinsy: 20,
     };
 
@@ -399,6 +400,12 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       let min = dataset?.getFeatureData(featureName)?.min || 0;
       let max = dataset?.getFeatureData(featureName)?.max || 0;
 
+      if (featureName === TIME_FEATURE.name) {
+        // Special case for time feature, which isn't in the dataset
+        min = 0;
+        max = dataset.numberOfFrames;
+      }
+
       if (dataset.isFeatureCategorical(featureName)) {
         // Add extra padding for categories so they're nicely centered
         min -= 0.5;
@@ -411,10 +418,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       }
       scatterPlotAxis.range = [min, max];
 
-      // TODO: No range is currently enforced on the histogram, which means that the histogram bar heights will
-      // always be relative to whatever bin has the most points at any given range/time frame. To do this right, we'd
-      // need to traverse all the histograms using whatever the current bin size is and find the max bin height,
-      // but Plotly currently controls the bin sizes. This will be YAGNI until requested.
+      // TODO: Fix histograms during current frame playback so they're relative to the max bin size across
+      // all frames? Currently they are shown relative to the current frame's max bin size, which might be misleading.
 
       // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
       // bin sizes to prevent jumping.
@@ -496,7 +501,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   const menuItems: MenuItemType[] = featureNames.map((name) => {
     return { key: name, label: dataset?.getFeatureNameWithUnits(name) };
   });
-  menuItems.push({ key: FRAME_FEATURE.name, label: FRAME_FEATURE.name });
+  menuItems.push({ key: TIME_FEATURE.name, label: TIME_FEATURE.name });
 
   return (
     <>
@@ -546,7 +551,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         </Button>
         <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
           <ScatterPlotContainer
-            style={{ width: "100%", height: "380px", padding: "5px" }}
+            style={{ width: "100%", height: "450px", padding: "5px" }}
             ref={plotDivRef}
           ></ScatterPlotContainer>
         </LoadingSpinner>
