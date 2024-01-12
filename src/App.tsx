@@ -114,6 +114,7 @@ function App(): ReactElement {
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
+  const [openTab, setOpenTab] = useState("track_plot");
   const [showTrackPath, setShowTrackPath] = useState(false);
   const [showScaleBar, setShowScaleBar] = useState(true);
   const [showTimestamp, setShowTimestamp] = useState(true);
@@ -830,6 +831,8 @@ function App(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
+                activeKey={openTab}
+                onChange={(key) => setOpenTab(key)}
                 items={[
                   {
                     label: "Track Plot",
@@ -860,6 +863,7 @@ function App(): ReactElement {
                           selectedTrack={selectedTrack}
                           findTrack={findTrack}
                           setFrame={setFrameAndRender}
+                          isVisible={openTab === "scatter_plot"}
                         />
                       </div>
                     ),

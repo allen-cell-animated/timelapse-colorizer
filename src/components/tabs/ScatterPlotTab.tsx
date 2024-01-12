@@ -45,19 +45,27 @@ type ScatterPlotTabProps = {
   selectedTrack: Track | null;
   findTrack: (trackId: number, seekToFrame: boolean) => void;
   setFrame: (frame: number) => Promise<void>;
+  isVisible: boolean;
 };
 const defaultProps: Partial<ScatterPlotTabProps> = {};
 
 const ScatterPlotContainer = styled.div`
   & canvas {
+    // Remove Plotly border
     border: 0px solid transparent !important;
   }
 `;
 
+/**
+ * Returns true if the given Plotly mouse event took place over a histogram subplot.
+ */
 function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
   return eventData.points[0].data.type === "histogram";
 }
 
+/**
+ * A tab that displays an interactive scatter plot between two features in the dataset.
+ */
 export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ScatterPlotTabProps>;
 
@@ -237,6 +245,11 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       setIsRendering(false);
     };
 
+    if (!props.isVisible) {
+      setIsRendering(false);
+      return;
+    }
+
     const lastState = lastRenderedState.current;
 
     const haveAxesChanged =
@@ -348,6 +361,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       xaxis: "x2",
       type: "histogram",
       // TODO: Make relative to current plot height?
+      nbinsx: 20,
       nbinsy: 20,
     };
 
@@ -498,7 +512,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         ...props,
       };
     });
-  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName, rangeType, props.currentFrame, props.selectedTrack]);
+  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName, rangeType, props.currentFrame, props.selectedTrack, props.isVisible]);
 
   //////////////////////////////////
   // Rendering
