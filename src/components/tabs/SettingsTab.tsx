@@ -3,7 +3,8 @@ import React, { ReactElement } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
-import { FlexColumn, SettingsContainer } from "../../styles/utils";
+import { FlexColumn } from "../../styles/utils";
+import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
 import CustomCollapse from "../CustomCollapse";
@@ -46,6 +47,10 @@ const makeAntSliderMarks = (marks: number[]): { [key: number]: string } => {
   }, {} as { [key: number]: string });
 };
 
+const h3Wrapper = (label: string | ReactElement): ReactElement => {
+  return <h3>{label}</h3>;
+};
+
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
     ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
@@ -57,18 +62,16 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer $indentPx={INDENT_PX}>
-          <LabeledDropdown
-            label={"Backdrop images:"}
-            selected={props.selectedBackdropKey || NO_BACKDROP.key}
-            items={backdropOptions}
-            onChange={props.setSelectedBackdropKey}
-            disabled={backdropOptions.length === 1}
-          />
-          <label>
-            <span>
-              <h3>Brightness:</h3>
-            </span>
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+          <SettingsItem label="Backdrop images:">
+            <LabeledDropdown
+              selected={props.selectedBackdropKey || NO_BACKDROP.key}
+              items={backdropOptions}
+              onChange={props.setSelectedBackdropKey}
+              disabled={backdropOptions.length === 1}
+            />
+          </SettingsItem>
+          <SettingsItem label="Brightness:">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={50}
@@ -79,11 +82,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               marks={makeAntSliderMarks([50, 100, 150])}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
-          </label>
-          <label>
-            <span>
-              <h3>Saturation:</h3>
-            </span>
+          </SettingsItem>
+
+          <SettingsItem label="Saturation:">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
@@ -94,31 +95,30 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               marks={makeAntSliderMarks([0, 50, 100])}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
-          </label>
+          </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
       <CustomCollapse label="Objects">
-        <SettingsContainer $indentPx={INDENT_PX}>
-          <DrawModeDropdown
-            label="Filtered object color:"
-            selected={props.config.outOfRangeDrawSettings.mode}
-            color={props.config.outOfRangeDrawSettings.color}
-            onChange={(mode: DrawMode, color: Color) => {
-              props.updateConfig({ outOfRangeDrawSettings: { mode, color } });
-            }}
-          />
-          <DrawModeDropdown
-            label="Outlier object color:"
-            selected={props.config.outlierDrawSettings.mode}
-            color={props.config.outlierDrawSettings.color}
-            onChange={(mode: DrawMode, color: Color) => {
-              props.updateConfig({ outlierDrawSettings: { mode, color } });
-            }}
-          />{" "}
-          <label>
-            <span>
-              <h3>Opacity:</h3>
-            </span>
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+          <SettingsItem label="Filtered object color:">
+            <DrawModeDropdown
+              selected={props.config.outOfRangeDrawSettings.mode}
+              color={props.config.outOfRangeDrawSettings.color}
+              onChange={(mode: DrawMode, color: Color) => {
+                props.updateConfig({ outOfRangeDrawSettings: { mode, color } });
+              }}
+            />
+          </SettingsItem>
+          <SettingsItem label="Outlier object color:">
+            <DrawModeDropdown
+              selected={props.config.outlierDrawSettings.mode}
+              color={props.config.outlierDrawSettings.color}
+              onChange={(mode: DrawMode, color: Color) => {
+                props.updateConfig({ outlierDrawSettings: { mode, color } });
+              }}
+            />
+          </SettingsItem>
+          <SettingsItem label="Opacity:">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
@@ -126,9 +126,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               value={props.config.objectOpacity}
               onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
             />
-          </label>
-          <label>
-            <span></span>
+          </SettingsItem>
+          <SettingsItem>
             <Checkbox
               type="checkbox"
               checked={props.config.showScaleBar}
@@ -138,9 +137,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             >
               Show scale bar
             </Checkbox>
-          </label>
-          <label>
-            <span></span>
+          </SettingsItem>
+          <SettingsItem>
             <Checkbox
               type="checkbox"
               checked={props.config.showTimestamp}
@@ -150,7 +148,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             >
               Show timestamp
             </Checkbox>
-          </label>
+          </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
     </FlexColumn>

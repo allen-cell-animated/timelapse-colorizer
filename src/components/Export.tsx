@@ -9,7 +9,8 @@ import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder"
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import { AppThemeContext } from "./AppStyle";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
-import { FlexRow, SettingsContainer } from "../styles/utils";
+import { FlexRow } from "../styles/utils";
+import { SettingsContainer, SettingsItem } from "./SettingsContainer";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -500,9 +501,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
                 {rangeMode === RangeMode.CUSTOM ? (
                   // Render the custom range input in the radio list if selected
-                  <SettingsContainer $indentPx={28}>
-                    <label>
-                      <span>Range:</span>
+                  <SettingsContainer indentPx={28}>
+                    <SettingsItem label="Range:">
                       <HorizontalDiv>
                         <InputNumber
                           style={{ width: 60 }}
@@ -527,9 +527,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                         />
                         <p>of {props.totalFrames - 1}</p>
                       </HorizontalDiv>
-                    </label>
-                    <label>
-                      <span>Frame increment:</span>
+                    </SettingsItem>
+                    <SettingsItem label="Frame increment:">
                       <FlexRow $gap={6}>
                         <SpinBox
                           value={frameIncrement}
@@ -540,7 +539,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                         />
                         <p style={{ color: theme.color.text.hint }}>({customRangeFrames} frames total)</p>
                       </FlexRow>
-                    </label>
+                    </SettingsItem>
                   </SettingsContainer>
                 ) : null}
               </Space>
@@ -550,15 +549,13 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           {recordingMode === RecordingMode.VIDEO_MP4 && (
             <Card size="small" title={<p>Video settings</p>}>
               <SettingsContainer>
-                <label>
-                  <span>Frames per second:</span>
+                <SettingsItem label="Frames per second:">
                   <FlexRow $gap={6}>
                     <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} />
                     <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
                   </FlexRow>
-                </label>
-                <label>
-                  <span>Video quality:</span>
+                </SettingsItem>
+                <SettingsItem label="Video quality:">
                   <FlexRow $gap={6}>
                     <VideoQualityRadioGroup
                       disabled={isRecording}
@@ -569,7 +566,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     />
                     <p style={{ color: theme.color.text.hint }}>(~{getApproximateVideoFilesizeMb()})</p>
                   </FlexRow>
-                </label>
+                </SettingsItem>
               </SettingsContainer>
             </Card>
           )}
