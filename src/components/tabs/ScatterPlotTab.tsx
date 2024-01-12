@@ -394,43 +394,52 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       featureName: string,
       scatterPlotAxis: Partial<Plotly.LayoutAxis>,
       histogramAxis: Partial<Plotly.LayoutAxis>,
-      densityTrace: Partial<PlotData>
+      histogramTrace: Partial<PlotData>
     ): [Partial<Plotly.LayoutAxis>, Partial<Plotly.LayoutAxis>, Partial<PlotData>] => {
       let min = dataset?.getFeatureData(featureName)?.min || 0;
       let max = dataset?.getFeatureData(featureName)?.max || 0;
-      if (max - min >= 1.0) {
-        // Ceil/floor the min/max to the nearest integer
-        min = Math.floor(min);
-        max = Math.ceil(max);
-      }
-      // Add a little padding to the min/max so points aren't on the edge of the plot
-      min -= (max - min) / 10;
-      max += (max - min) / 10;
-      scatterPlotAxis.range = [min, max];
-
-      // Ignoring the histograms for now, because Plotly's histogram handling is fairly
-      // sophisticated and handles a bunch of edge cases.
-
-      // Set up bins for histograms
-      // const binSize = (max - min) / 5;
-      // densityTrace.xbins = { start: min, end: max, size: binSize };
-      // densityTrace.ybins = { start: min, end: max, size: binSize };
 
       if (dataset.isFeatureCategorical(featureName)) {
-        // Categorical data
+        // Add extra padding for categories so they're nicely centered
+        min -= 0.5;
+        max += 0.5;
+      } else {
+        // Add a little padding to the min/max so points aren't on the edge of the plot.
+        // (ideally this would be a pixel padding, but plotly doesn't support that.)
+        min -= (max - min) / 10;
+        max += (max - min) / 10;
+      }
+      scatterPlotAxis.range = [min, max];
+
+      // TODO: No range is currently enforced on the histogram, which means that the histogram bar heights will
+      // always be relative to whatever bin has the most points at any given range/time frame. To do this right, we'd
+      // need to traverse all the histograms using whatever the current bin size is and find the max bin height,
+      // but Plotly currently controls the bin sizes. This will be YAGNI until requested.
+
+      // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
+      // bin sizes to prevent jumping.
+
+      if (dataset.isFeatureCategorical(featureName)) {
         // Create custom tick marks for the categories
         const categories = dataset.getFeatureCategories(featureName) || [];
         scatterPlotAxis = {
           ...scatterPlotAxis,
           tickmode: "array",
-          tick0: "0",
-          dtick: "1",
-          tickvals: [...Array(categories.length).keys()],
+          tick0: "0", // start at 0
+          dtick: "1", // tick increment is 1
+          tickvals: [...Array(categories.length).keys()], // map from category index to category label
           ticktext: categories,
           zeroline: false,
         };
+        // Enforce histogram traces for categorical features. This prevents a bug where the histograms
+        // would suddenly change width if a category wasn't present in the given data range.
+        histogramTrace = {
+          ...histogramTrace,
+          xbins: { start: min, end: max, size: (max - min) / categories.length },
+          ybins: { start: min, end: max, size: (max - min) / categories.length },
+        };
       }
-      return [scatterPlotAxis, histogramAxis, densityTrace];
+      return [scatterPlotAxis, histogramAxis, histogramTrace];
     };
 
     [scatterPlotXAxis, histogramXAxis, xHistogram] = formatRange(
