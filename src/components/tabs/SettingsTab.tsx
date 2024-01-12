@@ -58,6 +58,10 @@ const makeAntSliderMarks = (marks: number[]): { [key: number]: string } => {
   }, {} as { [key: number]: string });
 };
 
+const h3Wrapper = (label: string | ReactElement): ReactElement => {
+  return <h3>{label}</h3>;
+};
+
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
     ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
@@ -69,14 +73,15 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={INDENT_PX}>
-          <LabeledDropdown
-            label={"Backdrop images:"}
-            selected={props.selectedBackdropKey || NO_BACKDROP.key}
-            items={backdropOptions}
-            onChange={props.setBackdropKey}
-            disabled={backdropOptions.length === 1}
-          />
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+          <SettingsItem label="Backdrop images:">
+            <LabeledDropdown
+              selected={props.selectedBackdropKey || NO_BACKDROP.key}
+              items={backdropOptions}
+              onChange={props.setBackdropKey}
+              disabled={backdropOptions.length === 1}
+            />
+          </SettingsItem>
           <SettingsItem label="Brightness:">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
@@ -105,7 +110,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         </SettingsContainer>
       </CustomCollapse>
       <CustomCollapse label="Objects">
-        <SettingsContainer indentPx={INDENT_PX}>
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
           <SettingsItem label="Filtered object color:">
             <DrawModeDropdown
               selected={props.outOfRangeDrawSettings.mode}

@@ -502,7 +502,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 {rangeMode === RangeMode.CUSTOM ? (
                   // Render the custom range input in the radio list if selected
                   <SettingsContainer indentPx={28}>
-                    <SettingsItem label={<span>Range:</span>}>
+                    <SettingsItem label="Range:">
                       <HorizontalDiv>
                         <InputNumber
                           style={{ width: 60 }}
@@ -528,7 +528,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                         <p>of {props.totalFrames - 1}</p>
                       </HorizontalDiv>
                     </SettingsItem>
-                    <SettingsItem label={<span>Frame increment:</span>}>
+                    <SettingsItem label="Frame increment:">
                       <FlexRow $gap={6}>
                         <SpinBox
                           value={frameIncrement}
@@ -549,13 +549,13 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           {recordingMode === RecordingMode.VIDEO_MP4 && (
             <Card size="small" title={<p>Video settings</p>}>
               <SettingsContainer>
-                <SettingsItem label={<span>Frames per second:</span>}>
+                <SettingsItem label="Frames per second:">
                   <FlexRow $gap={6}>
                     <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} />
                     <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
                   </FlexRow>
                 </SettingsItem>
-                <SettingsItem label={<span>Video quality:</span>}>
+                <SettingsItem label="Video quality:">
                   <FlexRow $gap={6}>
                     <VideoQualityRadioGroup
                       disabled={isRecording}
