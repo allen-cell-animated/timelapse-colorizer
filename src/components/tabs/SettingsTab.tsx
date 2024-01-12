@@ -4,7 +4,8 @@ import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
 import { DrawMode } from "../../colorizer/ColorizeCanvas";
-import { FlexColumn, SettingsContainer } from "../../styles/utils";
+import { FlexColumn } from "../../styles/utils";
+import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import { DrawSettings } from "../CanvasWrapper";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
@@ -68,7 +69,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer $indentPx={INDENT_PX}>
+        <SettingsContainer indentPx={INDENT_PX}>
           <LabeledDropdown
             label={"Backdrop images:"}
             selected={props.selectedBackdropKey || NO_BACKDROP.key}
@@ -76,10 +77,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             onChange={props.setBackdropKey}
             disabled={backdropOptions.length === 1}
           />
-          <label>
-            <span>
-              <h3>Brightness:</h3>
-            </span>
+          <SettingsItem label="Brightness:">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={50}
@@ -90,11 +88,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               onChange={props.setBackdropBrightness}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
-          </label>
-          <label>
-            <span>
-              <h3>Saturation:</h3>
-            </span>
+          </SettingsItem>
+
+          <SettingsItem label="Saturation:">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
@@ -105,31 +101,30 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               onChange={props.setBackdropSaturation}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
-          </label>
+          </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
       <CustomCollapse label="Objects">
-        <SettingsContainer $indentPx={INDENT_PX}>
-          <DrawModeDropdown
-            label="Filtered object color:"
-            selected={props.outOfRangeDrawSettings.mode}
-            color={props.outOfRangeDrawSettings.color}
-            onChange={(mode: DrawMode, color: Color) => {
-              props.setOutOfRangeDrawSettings({ mode, color });
-            }}
-          />
-          <DrawModeDropdown
-            label="Outlier object color:"
-            selected={props.outlierDrawSettings.mode}
-            color={props.outlierDrawSettings.color}
-            onChange={(mode: DrawMode, color: Color) => {
-              props.setOutlierDrawSettings({ mode, color });
-            }}
-          />{" "}
-          <label>
-            <span>
-              <h3>Opacity:</h3>
-            </span>
+        <SettingsContainer indentPx={INDENT_PX}>
+          <SettingsItem label="Filtered object color:">
+            <DrawModeDropdown
+              selected={props.outOfRangeDrawSettings.mode}
+              color={props.outOfRangeDrawSettings.color}
+              onChange={(mode: DrawMode, color: Color) => {
+                props.setOutOfRangeDrawSettings({ mode, color });
+              }}
+            />
+          </SettingsItem>
+          <SettingsItem label="Outlier object color:">
+            <DrawModeDropdown
+              selected={props.outlierDrawSettings.mode}
+              color={props.outlierDrawSettings.color}
+              onChange={(mode: DrawMode, color: Color) => {
+                props.setOutlierDrawSettings({ mode, color });
+              }}
+            />
+          </SettingsItem>
+          <SettingsItem label="Opacity:">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
@@ -137,9 +132,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               value={props.objectOpacity}
               onChange={props.setObjectOpacity}
             />
-          </label>
-          <label>
-            <span></span>
+          </SettingsItem>
+          <SettingsItem>
             <Checkbox
               type="checkbox"
               checked={props.showScaleBar}
@@ -149,9 +143,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             >
               Show scale bar
             </Checkbox>
-          </label>
-          <label>
-            <span></span>
+          </SettingsItem>
+          <SettingsItem>
             <Checkbox
               type="checkbox"
               checked={props.showTimestamp}
@@ -161,7 +154,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             >
               Show timestamp
             </Checkbox>
-          </label>
+          </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
     </FlexColumn>
