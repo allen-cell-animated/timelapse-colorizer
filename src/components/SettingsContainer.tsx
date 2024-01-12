@@ -49,13 +49,13 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
  * ```
  * aligns the label text and the element in grid columns.
  */
-const SettingsDivContainer = styled.div<{ labelWidth?: string; gapPx?: number; indentPx?: number }>`
+const SettingsDivContainer = styled.div<{ $labelWidth?: string; $gapPx?: number; $indentPx?: number }>`
   display: grid;
 
   ${(props) => {
-    const spanWidth = props.labelWidth ? props.labelWidth : "fit-content(30%)";
-    const gap = props.gapPx ? props.gapPx : 6;
-    const indent = props.indentPx ? props.indentPx : 10;
+    const spanWidth = props.$labelWidth ? props.$labelWidth : "fit-content(30%)";
+    const gap = props.$gapPx ? props.$gapPx : 6;
+    const indent = props.$indentPx ? props.$indentPx : 10;
 
     return css`
       grid-template-columns: ${spanWidth} auto;
@@ -71,7 +71,7 @@ const SettingsDivContainer = styled.div<{ labelWidth?: string; gapPx?: number; i
     ${(props) => {
       // Apply same gap between elements as between rows
       return css`
-        gap: ${props.gapPx ? props.gapPx : 6}px;
+        gap: ${props.$gapPx ? props.$gapPx : 6}px;
       `;
     }}
   }
@@ -152,7 +152,7 @@ export function SettingsContainer(inputProps: PropsWithChildren<Partial<Settings
   };
 
   return (
-    <SettingsDivContainer gapPx={props.gapPx} indentPx={props.indentPx} labelWidth={props.labelWidth}>
+    <SettingsDivContainer $gapPx={props.gapPx} $indentPx={props.indentPx} $labelWidth={props.labelWidth}>
       {renderChildren(props.children)}
     </SettingsDivContainer>
   );
