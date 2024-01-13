@@ -232,31 +232,44 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     );
   };
 
+  /**
+   * Returns an object with flags indicating which props have changed since the last render.
+   */
+  const getChangeFlags = () => {
+    const lastState = lastRenderedState.current;
+    return {
+      haveAxesChanged:
+        lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName,
+      hasRangeChanged: lastState.rangeType !== rangeType,
+      hasTrackChanged: lastState.selectedTrack !== props.selectedTrack,
+      hasFrameChanged: lastState.currentFrame !== props.currentFrame,
+      hasDatasetChanged: lastState.dataset !== dataset,
+    };
+  };
+
   const shouldRenderUpdate = (): boolean => {
     if (!props.isVisible) {
       return false;
     }
+    const flags = getChangeFlags();
 
-    const lastState = lastRenderedState.current;
-    const haveAxesChanged =
-      lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName;
-    const hasRangeChanged = lastState.rangeType !== rangeType;
-    const hasTrackChanged = lastState.selectedTrack !== props.selectedTrack;
-    const hasFrameChanged = lastState.currentFrame !== props.currentFrame;
-    const hasDatasetChanged = lastState.dataset !== dataset;
-
-    if (haveAxesChanged || hasRangeChanged || hasDatasetChanged) {
+    if (flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged || flags.hasTrackChanged) {
       return true;
     }
     // Ignore changes to the current frame if we are not showing the current frame
-    if (rangeType !== RangeType.CURRENT_FRAME && hasFrameChanged && !hasTrackChanged) {
+    if (rangeType !== RangeType.CURRENT_FRAME && flags.hasFrameChanged && !flags.hasTrackChanged) {
       return false;
     }
     // Ignore changes to track if we are not showing by track
-    if (rangeType !== RangeType.CURRENT_TRACK && hasTrackChanged && !hasFrameChanged) {
+    if (rangeType !== RangeType.CURRENT_TRACK && flags.hasTrackChanged && !flags.hasFrameChanged) {
       return false;
     }
     return true;
+  };
+
+  const shouldPlotUiReset = (): boolean => {
+    const flags = getChangeFlags();
+    // If any flags besides frame and track have changed, reset the plot UI.
   };
 
   const clearPlotAndStopRender = (): void => {
@@ -277,13 +290,14 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
    */
   const filterDataByRange = (
     rawXData: Uint32Array | Float32Array,
-    rawYData: Uint32Array | Float32Array
+    rawYData: Uint32Array | Float32Array,
+    range: RangeType
   ): { xData: number[]; yData: number[]; objectIds: number[] } | undefined => {
     let xData: number[] = [];
     let yData: number[] = [];
     let objectIds: number[] = [];
 
-    if (rangeType === RangeType.CURRENT_FRAME) {
+    if (range === RangeType.CURRENT_FRAME) {
       // Filter data to only show the current frame.
       if (!dataset?.times) {
         return undefined;
@@ -296,7 +310,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           yData.push(rawYData[i]);
         }
       }
-    } else if (rangeType === RangeType.CURRENT_TRACK) {
+    } else if (range === RangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
       if (!props.selectedTrack) {
         return undefined;
@@ -314,6 +328,97 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       yData = Array.from(rawYData);
     }
     return { xData, yData, objectIds };
+  };
+
+  /**
+   * Creates the scatterplot and histogram axes for a given feature. Normalizes for dataset min/max to
+   * prevents axes from jumping during time or track playback.
+   * @param featureName Name of the feature to generate layouts for.
+   * @param histogramTrace Histogram trace. Configures the histogram bins if categorical features are chosen.
+   * @returns
+   */
+  const getAxisLayoutsFromRange = (
+    featureName: string,
+    histogramTrace: Partial<PlotData>
+  ): {
+    scatterPlotAxis: Partial<Plotly.LayoutAxis>;
+    histogramAxis: Partial<Plotly.LayoutAxis>;
+    histogramTrace: Partial<PlotData>;
+  } => {
+    let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
+      // Due to limited space in the Y-axis, hide categorical feature name.
+      domain: [0, 0.8],
+      showgrid: false,
+      zeroline: true,
+    };
+    const histogramAxis: Partial<Plotly.LayoutAxis> = {
+      domain: [0.85, 1],
+      showgrid: false,
+      zeroline: true,
+      hoverformat: "f",
+    };
+
+    let min = dataset?.getFeatureData(featureName)?.min || 0;
+    let max = dataset?.getFeatureData(featureName)?.max || 0;
+
+    // Special case for time feature, which isn't in the dataset
+    if (featureName === TIME_FEATURE.name) {
+      min = 0;
+      max = dataset?.numberOfFrames || 0;
+    }
+
+    if (dataset && dataset.isFeatureCategorical(featureName)) {
+      // Add extra padding for categories so they're nicely centered
+      min -= 0.5;
+      max += 0.5;
+    } else {
+      // Add a little padding to the min/max so points aren't on the edge of the plot.
+      // (ideally this would be a pixel padding, but plotly doesn't support that.)
+      min -= (max - min) / 10;
+      max += (max - min) / 10;
+    }
+    scatterPlotAxis.range = [min, max];
+
+    // TODO: Fix histograms during current frame playback so they're relative to the max bin size across
+    // all frames? Currently they are shown relative to the current frame's max bin size, which might be misleading.
+
+    // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
+    // bin sizes to prevent jumping.
+
+    if (dataset && dataset.isFeatureCategorical(featureName)) {
+      // Create custom tick marks for the categories
+      const categories = dataset.getFeatureCategories(featureName) || [];
+      scatterPlotAxis = {
+        ...scatterPlotAxis,
+        tickmode: "array",
+        tick0: "0", // start at 0
+        dtick: "1", // tick increment is 1
+        tickvals: [...Array(categories.length).keys()], // map from category index to category label
+        ticktext: categories,
+        zeroline: false,
+      };
+      // Enforce histogram traces for categorical features. This prevents a bug where the histograms
+      // would suddenly change width if a category wasn't present in the given data range.
+      histogramTrace.xbins = { start: min, end: max, size: (max - min) / categories.length };
+      // @ts-ignore. TODO: Update once the plotly types are updated.
+      histogramTrace.ybins = { start: min, end: max, size: (max - min) / categories.length };
+    }
+    return { scatterPlotAxis, histogramAxis, histogramTrace };
+  };
+
+  /**
+   * VERY roughly estimate the max width in pixels needed for a categorical feature.
+   */
+  const estimateTextWidthPxForCategories = (featureName: string): number => {
+    if (featureName === null || !dataset?.isFeatureCategorical(featureName)) {
+      return 0;
+    }
+    const categories = dataset.getFeatureCategories(featureName) || [];
+    return (
+      categories.reduce((_prev, val, acc) => {
+        return Math.max(val.length, acc);
+      }, 0) * 8
+    );
   };
 
   //////////////////////////////////
@@ -338,7 +443,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     }
 
     // Filter data by the range type, if applicable
-    const result = filterDataByRange(rawXData, rawYData);
+    const result = filterDataByRange(rawXData, rawYData, rangeType);
     if (!result) {
       clearPlotAndStopRender();
       return;
@@ -371,7 +476,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
         `<br>%{text}`,
     };
-    var xHistogram: Partial<Plotly.PlotData> = {
+    const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
       name: "x density",
       marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
@@ -380,7 +485,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsx: 20,
     };
-    var yHistogram: Partial<PlotData> = {
+    const yHistogram: Partial<PlotData> = {
       y: yData,
       name: "y density",
       marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
@@ -390,127 +495,60 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       nbinsy: 20,
     };
 
-    // Configure bins for histograms as needed
+    const traces = [markerTrace, xHistogram, yHistogram];
 
-    const estimateTextWidthPxForCategories = (): number => {
-      if (yAxisFeatureName === null || !dataset?.isFeatureCategorical(yAxisFeatureName)) {
-        return 0;
+    if (props.selectedTrack && rangeType !== RangeType.CURRENT_TRACK) {
+      // Render current track as an extra trace.
+      const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
+      if (trackData) {
+        const { xData: trackXData, yData: trackYData } = trackData;
+        const trackMarkerTrace: Partial<PlotData> = {
+          x: trackXData,
+          y: trackYData,
+          text: pointInfoText,
+          name: "Current track",
+          type: "scattergl",
+          mode: "markers",
+          marker: {
+            color: theme.color.themeLight,
+            size: 6,
+            line: {
+              color: theme.color.themeDark,
+              width: 1,
+            },
+          },
+          hovertemplate:
+            `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
+            `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
+            `<br>%{text}`,
+        };
+        traces.push(trackMarkerTrace);
       }
-      const categories = dataset.getFeatureCategories(yAxisFeatureName) || [];
-      return (
-        categories.reduce((_prev, val, acc) => {
-          return Math.max(val.length, acc);
-        }, 0) * 8
-      );
-    };
+    }
 
+    // Configure bins for histograms as needed
     // TODO: Show categories as box and whisker plots?
-
-    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories());
+    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureName));
 
     // Format axes
-    let scatterPlotXAxis: Partial<Plotly.LayoutAxis> = {
-      title: dataset.getFeatureNameWithUnits(xAxisFeatureName || ""),
-      domain: [0, 0.8],
-      showgrid: false,
-      zeroline: true,
-    };
-    let scatterPlotYAxis: Partial<Plotly.LayoutAxis> = {
-      // Due to limited space in the Y-axis, hide categorical feature name.
-      title: dataset.isFeatureCategorical(yAxisFeatureName)
-        ? ""
-        : dataset.getFeatureNameWithUnits(yAxisFeatureName || ""),
-      domain: [0, 0.8],
-      automargin: true,
-      showgrid: false,
-      zeroline: true,
-    };
-    let histogramXAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0.85, 1],
-      showgrid: false,
-      zeroline: true,
-      hoverformat: "f",
-    };
-    let histogramYAxis: Partial<Plotly.LayoutAxis> = {
-      domain: [0.85, 1],
-      showgrid: false,
-      zeroline: true,
-      hoverformat: "f",
-    };
-
-    const formatRange = (
-      featureName: string,
-      scatterPlotAxis: Partial<Plotly.LayoutAxis>,
-      histogramAxis: Partial<Plotly.LayoutAxis>,
-      histogramTrace: Partial<PlotData>
-    ): [Partial<Plotly.LayoutAxis>, Partial<Plotly.LayoutAxis>, Partial<PlotData>] => {
-      let min = dataset?.getFeatureData(featureName)?.min || 0;
-      let max = dataset?.getFeatureData(featureName)?.max || 0;
-
-      if (featureName === TIME_FEATURE.name) {
-        // Special case for time feature, which isn't in the dataset
-        min = 0;
-        max = dataset.numberOfFrames;
-      }
-
-      if (dataset.isFeatureCategorical(featureName)) {
-        // Add extra padding for categories so they're nicely centered
-        min -= 0.5;
-        max += 0.5;
-      } else {
-        // Add a little padding to the min/max so points aren't on the edge of the plot.
-        // (ideally this would be a pixel padding, but plotly doesn't support that.)
-        min -= (max - min) / 10;
-        max += (max - min) / 10;
-      }
-      scatterPlotAxis.range = [min, max];
-
-      // TODO: Fix histograms during current frame playback so they're relative to the max bin size across
-      // all frames? Currently they are shown relative to the current frame's max bin size, which might be misleading.
-
-      // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
-      // bin sizes to prevent jumping.
-
-      if (dataset.isFeatureCategorical(featureName)) {
-        // Create custom tick marks for the categories
-        const categories = dataset.getFeatureCategories(featureName) || [];
-        scatterPlotAxis = {
-          ...scatterPlotAxis,
-          tickmode: "array",
-          tick0: "0", // start at 0
-          dtick: "1", // tick increment is 1
-          tickvals: [...Array(categories.length).keys()], // map from category index to category label
-          ticktext: categories,
-          zeroline: false,
-        };
-        // Enforce histogram traces for categorical features. This prevents a bug where the histograms
-        // would suddenly change width if a category wasn't present in the given data range.
-        histogramTrace = {
-          ...histogramTrace,
-          xbins: { start: min, end: max, size: (max - min) / categories.length },
-          // @ts-ignore. TODO: Update once the plotly types are updated.
-          ybins: { start: min, end: max, size: (max - min) / categories.length },
-        };
-      }
-      return [scatterPlotAxis, histogramAxis, histogramTrace];
-    };
-
-    [scatterPlotXAxis, histogramXAxis, xHistogram] = formatRange(
+    const { scatterPlotAxis: scatterPlotXAxis, histogramAxis: histogramXAxis } = getAxisLayoutsFromRange(
       xAxisFeatureName,
-      scatterPlotXAxis,
-      histogramXAxis,
       xHistogram
     );
-    [scatterPlotYAxis, histogramYAxis, yHistogram] = formatRange(
+    const { scatterPlotAxis: scatterPlotYAxis, histogramAxis: histogramYAxis } = getAxisLayoutsFromRange(
       yAxisFeatureName,
-      scatterPlotYAxis,
-      histogramYAxis,
       yHistogram
     );
 
+    scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureName || "");
+    // Due to limited space in the Y-axis, hide categorical feature names.
+    scatterPlotYAxis.title = dataset.isFeatureCategorical(yAxisFeatureName)
+      ? ""
+      : dataset.getFeatureNameWithUnits(yAxisFeatureName || "");
+
     Plotly.react(
       plotDivRef.current,
-      [markerTrace, xHistogram, yHistogram],
+      traces,
       {
         autosize: true,
         showlegend: false,
@@ -591,8 +629,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         <Button
           style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}
           onClick={() => {
-            setXAxisFeatureName(null);
-            setYAxisFeatureName(null);
+            clearPlotAndStopRender();
           }}
         >
           Clear
