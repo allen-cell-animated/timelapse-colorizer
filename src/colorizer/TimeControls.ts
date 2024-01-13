@@ -22,6 +22,11 @@ export default class TimeControls {
     this.playbackFps = playbackFps;
   }
 
+  /**
+   * Adds a callback that will be called to change the current frame.
+   * @param fn A function that takes a frame number and returns a promise that resolves once the
+   * frame is loaded.
+   */
   public setFrameCallback(fn: (frame: number) => Promise<void>): void {
     this.setFrameFn = fn;
   }
@@ -36,7 +41,7 @@ export default class TimeControls {
   }
 
   private playTimeSeries(onNewFrameCallback: () => void): void {
-    if (this.timerId !== NO_TIMER_ID) {
+    if (this.isPlaying()) {
       return;
     }
 
@@ -45,7 +50,7 @@ export default class TimeControls {
     // `lastFrameNum` is a parameter here because relying on `ColorizeCanvas.getCurrentFrame()` can
     // lead to race conditions that lead to frames getting loaded more than once.
     const loadNextFrame = async (lastFrameNum: number): Promise<void> => {
-      if (this.timerId === NO_TIMER_ID) {
+      if (!this.isPlaying()) {
         return;
       }
 
@@ -67,7 +72,7 @@ export default class TimeControls {
       const timeElapsed = endTime - startTime;
       onNewFrameCallback();
 
-      if (this.timerId === NO_TIMER_ID) {
+      if (!this.isPlaying()) {
         // The timer was stopped while the frame was loading, so stop playback.
         return;
       }
@@ -81,22 +86,34 @@ export default class TimeControls {
     this.timerId = window.setTimeout(() => loadNextFrame(this.canvas.getCurrentFrame()), 0);
   }
 
-  public async handlePlayButtonClick(): Promise<void> {
+  /**
+   * Begins playback of the time series. If the time series is already playing, this function does
+   * nothing.
+   * @param onNewFrameCallback An optional callback that will be called whenever a new frame is loaded.
+   */
+  public async play(onNewFrameCallback: () => void = () => {}): Promise<void> {
     if (this.canvas.getCurrentFrame() >= this.canvas.getTotalFrames() - 1) {
       await this.canvas.setFrame(0);
     }
-    this.playTimeSeries(() => {});
+    this.playTimeSeries(onNewFrameCallback);
   }
 
-  public handlePauseButtonClick(): void {
-    if (this.timerId !== NO_TIMER_ID) {
+  /**
+   * Pauses the playback of the time series. If any pause listeners have been added, their callbacks
+   * will be triggered.
+   */
+  public pause(): void {
+    if (this.isPlaying()) {
       clearTimeout(this.timerId);
     }
     this.timerId = NO_TIMER_ID;
     this.pauseCallbacks.forEach((callback) => callback());
   }
 
-  public async handleFrameAdvance(delta: number = 1): Promise<void> {
+  /**
+   * Increment or decrement the time series by the given number of frames.
+   */
+  public async advanceFrame(delta: number = 1): Promise<void> {
     if (this.setFrameFn) {
       await this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
     }
@@ -106,6 +123,10 @@ export default class TimeControls {
     return this.timerId !== NO_TIMER_ID;
   }
 
+  /**
+   * Adds a listener that will be called whenever the playback is paused.
+   * Note: listeners are not cleared between pauses.
+   */
   public addPauseListener(callback: () => void): void {
     this.pauseCallbacks.push(callback);
   }

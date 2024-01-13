@@ -129,6 +129,15 @@ function App(): ReactElement {
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
+  // TODO: Move all logic for the time slider into its own component!
+  // Flag used to indicate that the slider is currently being dragged while playback is occurring.
+  const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
+
+  useEffect(() => {
+    if (timeControls.isPlaying()) {
+      setIsTimeSliderDraggedDuringPlayback(false);
+    }
+  }, [timeControls.isPlaying()]);
 
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
@@ -499,9 +508,9 @@ function App(): ReactElement {
   const handleKeyDown = useCallback(
     ({ key }: KeyboardEvent): void => {
       if (key === "ArrowLeft" || key === "Left") {
-        timeControls.handleFrameAdvance(-1);
+        timeControls.advanceFrame(-1);
       } else if (key === "ArrowRight" || key === "Right") {
-        timeControls.handleFrameAdvance(1);
+        timeControls.advanceFrame(1);
       }
     },
     [timeControls]
@@ -520,6 +529,25 @@ function App(): ReactElement {
   useEffect(() => {
     setFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
+
+  // When the slider is released, check if playback was occurring and resume it.
+  // We need to attach the pointerup event listener to the document because it will not fire
+  // if the user releases the pointer outside of the slider.
+  useEffect(() => {
+    const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
+      setFrame(frameInput);
+      if (isTimeSliderDraggedDuringPlayback) {
+        // Update the frame and optionally unpause playback when the slider is released.
+        setIsTimeSliderDraggedDuringPlayback(false);
+        timeControls.play(); // resume playing
+      }
+    };
+
+    document.addEventListener("pointerup", checkIfPlaybackShouldUnpause);
+    return () => {
+      document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
+    };
+  });
 
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
@@ -643,7 +671,7 @@ function App(): ReactElement {
             setFrame={setFrameAndRender}
             getCanvas={() => canv.domElement}
             // Stop playback when exporting
-            onClick={() => timeControls.handlePauseButtonClick()}
+            onClick={() => timeControls.pause()}
             currentFrame={currentFrame}
             defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
@@ -759,30 +787,31 @@ function App(): ReactElement {
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() ? (
+              {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
                 // Swap between play and pause button
-                <IconButton
-                  type="outlined"
-                  disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handlePauseButtonClick()}
-                >
+                <IconButton type="outlined" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
                   <PauseOutlined />
                 </IconButton>
               ) : (
-                <IconButton
-                  disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handlePlayButtonClick()}
-                  type="outlined"
-                >
+                <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.play()} type="outlined">
                   <CaretRightOutlined />
                 </IconButton>
               )}
 
-              <div className={styles.timeSliderContainer}>
+              <div
+                className={styles.timeSliderContainer}
+                onPointerDownCapture={() => {
+                  if (timeControls.isPlaying()) {
+                    // If the slider is dragged while playing, pause playback.
+                    timeControls.pause();
+                    setIsTimeSliderDraggedDuringPlayback(true);
+                  }
+                }}
+              >
                 <Slider
                   min={0}
                   max={dataset ? dataset.numberOfFrames - 1 : 0}
-                  disabled={disableTimeControlsUi || timeControls.isPlaying()}
+                  disabled={disableTimeControlsUi}
                   value={frameInput}
                   onChange={(value) => {
                     setFrameInput(value);
@@ -792,16 +821,12 @@ function App(): ReactElement {
 
               <IconButton
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handleFrameAdvance(-1)}
+                onClick={() => timeControls.advanceFrame(-1)}
                 type="outlined"
               >
                 <StepBackwardFilled />
               </IconButton>
-              <IconButton
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handleFrameAdvance(1)}
-                type="outlined"
-              >
+              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.advanceFrame(1)} type="outlined">
                 <StepForwardFilled />
               </IconButton>
 
