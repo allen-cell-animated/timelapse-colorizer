@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useReducer, useRef, useState } from "react";
 
 import {
   CaretRightOutlined,
@@ -64,10 +64,11 @@ function App(): ReactElement {
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
 
   // TODO: Save these settings in local storage
-  const [config, setConfig] = useState(defaultViewerConfig);
-  const updateConfig = useCallback((newSettings: Partial<ViewerConfig>): void => {
-    setConfig({ ...config, ...newSettings });
-  }, []);
+  // Use reducer here in case multiple updates happen simultaneously
+  const [config, updateConfig] = useReducer(
+    (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
+    defaultViewerConfig
+  );
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
