@@ -25,7 +25,9 @@ import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRowAlignCenter } from "../../styles/utils";
 
+/** Extra selectable axis feature, representing the frame number. */
 const TIME_FEATURE = { key: "time", name: "Time" };
+// TODO: Translate into seconds for datasets where frame duration is known?
 
 const PLOTLY_CONFIG: Partial<Plotly.Config> = {
   displayModeBar: false,
@@ -99,6 +101,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       plotRef.current = plot;
     });
   }, [plotDivRef.current]);
+
+  /** Incrementing UI revision number. Updated whenever a breaking UI change happens and the view must be reset. */
+  const [uiRevision, setUiRevision] = useState(0);
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
@@ -270,6 +275,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   const shouldPlotUiReset = (): boolean => {
     const flags = getChangeFlags();
     // If any flags besides frame and track have changed, reset the plot UI.
+    return flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged;
   };
 
   const clearPlotAndStopRender = (): void => {
@@ -497,6 +503,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
     const traces = [markerTrace, xHistogram, yHistogram];
 
+    // TODO: Handle track behavior on current frame.
+    // TODO: Handle currently selected object on current frame/track.
+    // TODO: Maybe broken when clicking on track trace.
     if (props.selectedTrack && rangeType !== RangeType.CURRENT_TRACK) {
       // Render current track as an extra trace.
       const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
@@ -546,28 +555,34 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       ? ""
       : dataset.getFeatureNameWithUnits(yAxisFeatureName || "");
 
-    Plotly.react(
-      plotDivRef.current,
-      traces,
-      {
-        autosize: true,
-        showlegend: false,
-        xaxis: scatterPlotXAxis,
-        yaxis: scatterPlotYAxis,
-        xaxis2: histogramXAxis,
-        yaxis2: histogramYAxis,
-        margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
-        font: {
-          // Unfortunately using the Lato font family causes the text to render with SEVERE
-          // aliasing. Using the default plotly font family causes the X and Y axes to be
-          // two different fonts, but it's better than using Lato.
-          // Possible workarounds include converting the Lato TTF to an SVG font.
-          // family: theme.font.family,
-          size: 12,
-        },
+    const layout = {
+      autosize: true,
+      showlegend: false,
+      xaxis: scatterPlotXAxis,
+      yaxis: scatterPlotYAxis,
+      xaxis2: histogramXAxis,
+      yaxis2: histogramYAxis,
+      margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
+      font: {
+        // Unfortunately using the Lato font family causes the text to render with SEVERE
+        // aliasing. Using the default plotly font family causes the X and Y axes to be
+        // two different fonts, but it's better than using Lato.
+        // Possible workarounds include converting the Lato TTF to an SVG font.
+        // family: theme.font.family,
+        size: 12,
       },
-      PLOTLY_CONFIG
-    ).then(() => {
+    };
+
+    if (shouldPlotUiReset()) {
+      setUiRevision(uiRevision + 1);
+      // @ts-ignore. TODO: Update once the plotly types are updated.
+      layout.uirevision = uiRevision + 1;
+    } else {
+      // @ts-ignore. TODO: Update once the plotly types are updated.
+      layout.uirevision = uiRevision;
+    }
+
+    Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
       setIsRendering(false);
       lastRenderedState.current = {
         xAxisFeatureName,
@@ -629,6 +644,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         <Button
           style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}
           onClick={() => {
+            setXAxisFeatureName(null);
+            setYAxisFeatureName(null);
             clearPlotAndStopRender();
           }}
         >
