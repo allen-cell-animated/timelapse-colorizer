@@ -352,6 +352,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
       yaxis: "y2",
       type: "histogram",
+      // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsx: 20,
     };
     var yHistogram: Partial<PlotData> = {
@@ -360,8 +361,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       marker: { color: theme.color.themeLight, line: { color: theme.color.themeDark, width: 1 } },
       xaxis: "x2",
       type: "histogram",
-      // TODO: Make relative to current plot height?
-      nbinsx: 20,
+      // @ts-ignore. TODO: Update once the plotly types are updated.
       nbinsy: 20,
     };
 
@@ -463,6 +463,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         histogramTrace = {
           ...histogramTrace,
           xbins: { start: min, end: max, size: (max - min) / categories.length },
+          // @ts-ignore. TODO: Update once the plotly types are updated.
           ybins: { start: min, end: max, size: (max - min) / categories.length },
         };
       }
