@@ -214,7 +214,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   }, [plotRef.current, onClickPlot]);
 
   //////////////////////////////////
-  // Plot Updates
+  // Helper Methods
   //////////////////////////////////
 
   /**
@@ -264,14 +264,70 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     setIsRendering(false);
   };
 
-  // Handle updates to the plot.
+  /**
+   * Reduces the given data to only show the selected range (frame, track, or all data points).
+   * @param rawXData raw data for the X-axis feature
+   * @param rawYData raw data for the Y-axis feature.
+   * @returns One of the following:
+   *   - `undefined` if the data could not be filtered.
+   *   - An object with the following arrays:
+   *     - `xData`: The filtered x data.
+   *     - `yData`: The filtered y data.
+   *     - `objectIds`: The object IDs corresponding to the index of the filtered data.
+   */
+  const filterDataByRange = (
+    rawXData: Uint32Array | Float32Array,
+    rawYData: Uint32Array | Float32Array
+  ): { xData: number[]; yData: number[]; objectIds: number[] } | undefined => {
+    let xData: number[] = [];
+    let yData: number[] = [];
+    let objectIds: number[] = [];
+
+    if (rangeType === RangeType.CURRENT_FRAME) {
+      // Filter data to only show the current frame.
+      if (!dataset?.times) {
+        return undefined;
+      }
+      pointNumToObjectId.current = [];
+      for (let i = 0; i < dataset.times.length; i++) {
+        if (dataset.times[i] === props.currentFrame) {
+          objectIds.push(i + 1);
+          xData.push(rawXData[i]);
+          yData.push(rawYData[i]);
+        }
+      }
+    } else if (rangeType === RangeType.CURRENT_TRACK) {
+      // Filter data to only show the current track.
+      if (!props.selectedTrack) {
+        return undefined;
+      }
+      for (let i = 0; i < props.selectedTrack.ids.length; i++) {
+        const id = props.selectedTrack.ids[i];
+        xData.push(rawXData[id]);
+        yData.push(rawYData[id]);
+      }
+      objectIds = Array.from(props.selectedTrack.ids);
+    } else {
+      // All time
+      objectIds = [...Array(rawXData.length).keys()];
+      xData = Array.from(rawXData);
+      yData = Array.from(rawYData);
+    }
+    return { xData, yData, objectIds };
+  };
+
+  //////////////////////////////////
+  // Plot Rendering
+  //////////////////////////////////
+
+  /**
+   * Render the plot if the relevant props have changed.
+   */
   useEffect(() => {
     if (!shouldRenderUpdate()) {
       setIsRendering(false);
       return;
     }
-
-    console.log("Rendering");
 
     let rawXData = getData(xAxisFeatureName, dataset);
     let rawYData = getData(yAxisFeatureName, dataset);
@@ -282,53 +338,26 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     }
 
     // Filter data by the range type, if applicable
-    let xData: number[] = [];
-    let yData: number[] = [];
-    if (rangeType === RangeType.CURRENT_FRAME) {
-      // Filter data to only show the current frame.
-      if (!dataset?.times) {
-        clearPlotAndStopRender();
-        return;
-      }
-      pointNumToObjectId.current = [];
-      for (let i = 0; i < dataset.times.length; i++) {
-        if (dataset.times[i] === props.currentFrame) {
-          pointNumToObjectId.current.push(i + 1);
-          xData.push(rawXData[i]);
-          yData.push(rawYData[i]);
-        }
-      }
-    } else if (rangeType === RangeType.CURRENT_TRACK) {
-      // Filter data to only show the current track.
-      if (!props.selectedTrack) {
-        clearPlotAndStopRender();
-        return;
-      }
-
-      for (let i = 0; i < props.selectedTrack.ids.length; i++) {
-        const id = props.selectedTrack.ids[i];
-        xData.push(rawXData[id]);
-        yData.push(rawYData[id]);
-      }
-      pointNumToObjectId.current = Array.from(props.selectedTrack.ids);
-    } else {
-      // All time
-      pointNumToObjectId.current = [...Array(rawXData.length).keys()];
-      xData = Array.from(rawXData);
-      yData = Array.from(rawYData);
+    const result = filterDataByRange(rawXData, rawYData);
+    if (!result) {
+      clearPlotAndStopRender();
+      return;
     }
+    const { xData, yData, objectIds } = result;
+    pointNumToObjectId.current = objectIds;
 
     const markerConfig: Partial<PlotMarker> = {
       color: getMarkerColor(xData.length, theme.color.themeDark),
       size: 4,
     };
 
-    const pointInfoText = pointNumToObjectId.current.map((objectId) => {
+    // Use the text to save the track ID and object ID for each point.
+    const pointInfoText = objectIds.map((objectId) => {
       const trackId = dataset.getTrackId(objectId);
       return `Track ID: ${trackId}<br>Object ID: ${objectId}`;
     });
 
-    // Configure traces for Plotly
+    // Configure traces
     const markerTrace: Partial<PlotData> = {
       x: xData,
       y: yData,
@@ -340,7 +369,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       hovertemplate:
         `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
         `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
-        `<extra>%{text}</extra>`,
+        `<br>%{text}`,
     };
     var xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
