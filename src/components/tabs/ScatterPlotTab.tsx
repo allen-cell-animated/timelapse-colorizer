@@ -73,8 +73,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
   const [isPending, startTransition] = useTransition();
   // This might seem redundant with `isPending`, but `useTransition` only works within React's
-  // update cycle. Plotly's rendering is async and does not stop the state update, so we need to track
-  // completion with a separate flag.
+  // update cycle. Plotly's rendering is synchronous and can freeze the state update render,
+  // so we need to track completion with a separate flag.
   const [isRendering, setIsRendering] = useState(false);
 
   /** Maps from the point number to an object's ID in the dataset.
@@ -100,15 +100,16 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     });
   }, [plotDivRef.current]);
 
-  // Note: This does not actually prevent the dataset from blocking the UI thread, it just
-  // delays the update slightly until after the dataset loads in so the block is not as noticeable.
+  // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
+  // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
   const [dataset, setDataset] = useState<Dataset | null>(null);
-  // Show loading spinner as soon as the dataset prop changes, but don't initiate a re-render
-  // until after the debounce has settled.
+
   const propDataset = useDeferredValue<Dataset | null>(useDebounce(props.dataset, 500));
+  // Show loading spinner
   useEffect(() => {
     setIsRendering(true);
   }, [props.dataset]);
+  // Handle actual dataset
   useMemo(() => {
     startTransition(() => {
       setDataset(propDataset);
@@ -166,25 +167,14 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     });
   };
 
-  /**
-   * Retrieve the feature data for a given feature. For categorical features, also replaces numeric values with the string category names.
-   * Returns undefined if the feature data is not available.
-   */
   const getData = useCallback(
-    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | null | undefined => {
+    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | undefined => {
       if (featureName === null || dataset === null) {
         return undefined;
       }
-
       if (featureName === TIME_FEATURE.name) {
-        return dataset.times;
+        return dataset.times || undefined;
       }
-
-      const featureData = dataset.getFeatureData(featureName);
-      if (!featureData) {
-        return undefined;
-      }
-
       return dataset.getFeatureData(featureName)?.data;
     },
     []
@@ -227,6 +217,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // Plot Updates
   //////////////////////////////////
 
+  /**
+   * Returns a hex color string with increasing transparency as the number of markers increases.
+   */
   const getMarkerColor = (numMarkers: number, baseColor: string): string => {
     // Increase marker transparency as the number of markers increases.
     const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
@@ -239,19 +232,12 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     );
   };
 
-  useEffect(() => {
-    const clearPlotAndStopRender = (): void => {
-      Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
-      setIsRendering(false);
-    };
-
+  const shouldRenderUpdate = (): boolean => {
     if (!props.isVisible) {
-      setIsRendering(false);
-      return;
+      return false;
     }
 
     const lastState = lastRenderedState.current;
-
     const haveAxesChanged =
       lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName;
     const hasRangeChanged = lastState.rangeType !== rangeType;
@@ -259,34 +245,47 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     const hasFrameChanged = lastState.currentFrame !== props.currentFrame;
     const hasDatasetChanged = lastState.dataset !== dataset;
 
-    if (!haveAxesChanged && !hasRangeChanged && !hasDatasetChanged) {
-      // Ignore changes to the current frame if we are not showing the current frame
-      if (rangeType !== RangeType.CURRENT_FRAME && hasFrameChanged && !hasTrackChanged) {
-        setIsRendering(false);
-        return;
-      }
-      // Ignore changes to track if we are not showing by track
-      if (rangeType !== RangeType.CURRENT_TRACK && hasTrackChanged && !hasFrameChanged) {
-        setIsRendering(false);
-        return;
-      }
+    if (haveAxesChanged || hasRangeChanged || hasDatasetChanged) {
+      return true;
     }
+    // Ignore changes to the current frame if we are not showing the current frame
+    if (rangeType !== RangeType.CURRENT_FRAME && hasFrameChanged && !hasTrackChanged) {
+      return false;
+    }
+    // Ignore changes to track if we are not showing by track
+    if (rangeType !== RangeType.CURRENT_TRACK && hasTrackChanged && !hasFrameChanged) {
+      return false;
+    }
+    return true;
+  };
 
-    if (plotDivRef.current === null) {
+  const clearPlotAndStopRender = (): void => {
+    Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
+    setIsRendering(false);
+  };
+
+  // Handle updates to the plot.
+  useEffect(() => {
+    if (!shouldRenderUpdate()) {
       setIsRendering(false);
       return;
     }
 
-    let xData = getData(xAxisFeatureName, dataset);
-    let yData = getData(yAxisFeatureName, dataset);
+    console.log("Rendering");
 
-    if (!xData || !yData || !xAxisFeatureName || !yAxisFeatureName || !dataset) {
+    let rawXData = getData(xAxisFeatureName, dataset);
+    let rawYData = getData(yAxisFeatureName, dataset);
+
+    if (!rawXData || !rawYData || !xAxisFeatureName || !yAxisFeatureName || !dataset || !plotDivRef.current) {
       clearPlotAndStopRender();
       return;
     }
 
-    // Filter data by range, if applicable
+    // Filter data by the range type, if applicable
+    let xData: number[] = [];
+    let yData: number[] = [];
     if (rangeType === RangeType.CURRENT_FRAME) {
+      // Filter data to only show the current frame.
       if (!dataset?.times) {
         clearPlotAndStopRender();
         return;
@@ -295,31 +294,28 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       for (let i = 0; i < dataset.times.length; i++) {
         if (dataset.times[i] === props.currentFrame) {
           pointNumToObjectId.current.push(i + 1);
+          xData.push(rawXData[i]);
+          yData.push(rawYData[i]);
         }
       }
-      xData = xData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
-      yData = yData.filter((_value, index) => dataset?.times && dataset?.times[index] === props.currentFrame);
     } else if (rangeType === RangeType.CURRENT_TRACK) {
+      // Filter data to only show the current track.
       if (!props.selectedTrack) {
         clearPlotAndStopRender();
         return;
       }
 
-      const newXData = [];
-      const newYData = [];
       for (let i = 0; i < props.selectedTrack.ids.length; i++) {
         const id = props.selectedTrack.ids[i];
-        newXData.push(xData[id]);
-        newYData.push(yData[id]);
+        xData.push(rawXData[id]);
+        yData.push(rawYData[id]);
       }
-      xData = xData instanceof Float32Array ? Float32Array.from(newXData) : Uint32Array.from(newXData);
-      yData = yData instanceof Float32Array ? Float32Array.from(newYData) : Uint32Array.from(newYData);
       pointNumToObjectId.current = Array.from(props.selectedTrack.ids);
     } else {
       // All time
-      pointNumToObjectId.current = [...Array(xData.length).keys()];
-      xData = xData;
-      yData = yData;
+      pointNumToObjectId.current = [...Array(rawXData.length).keys()];
+      xData = Array.from(rawXData);
+      yData = Array.from(rawYData);
     }
 
     const markerConfig: Partial<PlotMarker> = {
