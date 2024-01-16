@@ -1,6 +1,6 @@
 import { Button, Tooltip } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
-import { ExpandOutlined, RedoOutlined, RetweetOutlined, RollbackOutlined, UndoOutlined } from "@ant-design/icons";
+import { RetweetOutlined } from "@ant-design/icons";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
@@ -222,7 +222,13 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   /**
    * Returns an object with flags indicating which props have changed since the last render.
    */
-  const getChangeFlags = () => {
+  const getChangeFlags = (): {
+    haveAxesChanged: boolean;
+    hasRangeChanged: boolean;
+    hasTrackChanged: boolean;
+    hasFrameChanged: boolean;
+    hasDatasetChanged: boolean;
+  } => {
     const lastState = lastRenderedState.current;
     return {
       haveAxesChanged:
@@ -424,8 +430,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
    * Render the plot if the relevant props have changed.
    */
   const renderPlot = useCallback(() => {
-    let rawXData = getData(xAxisFeatureName, dataset);
-    let rawYData = getData(yAxisFeatureName, dataset);
+    const rawXData = getData(xAxisFeatureName, dataset);
+    const rawYData = getData(yAxisFeatureName, dataset);
 
     if (!rawXData || !rawYData || !xAxisFeatureName || !yAxisFeatureName || !dataset || !plotDivRef.current) {
       clearPlotAndStopRender();

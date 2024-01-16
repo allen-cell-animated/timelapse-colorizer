@@ -53,7 +53,7 @@ export function useTransitionedDebounce<T>(
   startTransition: React.TransitionStartFunction,
   onChange: () => void = () => {},
   delayMs: number = 500
-) {
+): T {
   const [value, setValue] = useState<T>(inputValue);
   const debouncedValue = useDebounce(inputValue, delayMs);
 
