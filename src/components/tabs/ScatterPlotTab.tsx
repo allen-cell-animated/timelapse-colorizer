@@ -170,10 +170,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // Add click event listeners to the plot
   const onClickPlot = useCallback(
     (eventData: Plotly.PlotMouseEvent): void => {
-      console.log("Click");
       if (eventData.points.length === 0 || isHistogramEvent(eventData) || !dataset) {
         // User clicked on nothing or on a histogram
-        console.log("Clicked nothing");
         props.findTrack(null, false);
         return;
       }
@@ -404,7 +402,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     }
     const categories = dataset.getFeatureCategories(featureName) || [];
     return (
-      categories.reduce((_prev, val, acc) => {
+      categories.reduce((_prev: any, val: string, acc: number) => {
         return Math.max(val.length, acc);
       }, 0) * 8
     );
@@ -618,7 +616,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
   // TODO: Replace w/ keys
   const featureNames = dataset?.featureNames || [];
-  const menuItems: MenuItemType[] = featureNames.map((name) => {
+  const menuItems: MenuItemType[] = featureNames.map((name: string) => {
     return { key: name, label: dataset?.getFeatureNameWithUnits(name) };
   });
   menuItems.push({ key: TIME_FEATURE.name, label: TIME_FEATURE.name });
