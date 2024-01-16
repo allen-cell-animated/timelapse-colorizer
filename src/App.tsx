@@ -42,11 +42,8 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
-import PlotTab from "./components/tabs/PlotTab";
-import SettingsTab from "./components/tabs/SettingsTab";
+import { FeatureThresholdsTab, PlotTab, SettingsTab, ScatterPlotTab, TabType } from "./components/tabs";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
-import ScatterPlotTab from "./components/tabs/ScatterPlotTab";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -114,7 +111,7 @@ function App(): ReactElement {
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
   const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
-  const [openTab, setOpenTab] = useState("track_plot");
+  const [openTab, setOpenTab] = useState(TabType.TRACK_PLOT);
   const [showTrackPath, setShowTrackPath] = useState(false);
   const [showScaleBar, setShowScaleBar] = useState(true);
   const [showTimestamp, setShowTimestamp] = useState(true);
@@ -234,8 +231,7 @@ function App(): ReactElement {
 
   const findTrack = useCallback(
     (trackId: number | null, seekToFrame: boolean = true): void => {
-      if (!trackId) {
-        // Clear
+      if (trackId === null) {
         setSelectedTrack(null);
         return;
       }
@@ -861,11 +857,11 @@ function App(): ReactElement {
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
                 activeKey={openTab}
-                onChange={(key) => setOpenTab(key)}
+                onChange={(key) => setOpenTab(key as TabType)}
                 items={[
                   {
                     label: "Track Plot",
-                    key: "track_plot",
+                    key: TabType.TRACK_PLOT,
                     children: (
                       <div className={styles.tabContent}>
                         <PlotTab
@@ -883,7 +879,7 @@ function App(): ReactElement {
                   },
                   {
                     label: "Scatter Plot",
-                    key: "scatter_plot",
+                    key: TabType.SCATTER_PLOT,
                     children: (
                       <div className={styles.tabContent}>
                         <ScatterPlotTab
@@ -892,7 +888,7 @@ function App(): ReactElement {
                           selectedTrack={selectedTrack}
                           findTrack={findTrack}
                           setFrame={setFrameAndRender}
-                          isVisible={openTab === "scatter_plot"}
+                          isVisible={openTab === TabType.SCATTER_PLOT}
                           isPlaying={timeControls.isPlaying() || isRecording}
                         />
                       </div>
@@ -900,7 +896,7 @@ function App(): ReactElement {
                   },
                   {
                     label: "Filters",
-                    key: "filter",
+                    key: TabType.FILTERS,
                     children: (
                       <div className={styles.tabContent}>
                         <FeatureThresholdsTab
@@ -915,7 +911,7 @@ function App(): ReactElement {
                   },
                   {
                     label: "Settings",
-                    key: "settings",
+                    key: TabType.SETTINGS,
                     children: (
                       <div className={styles.tabContent}>
                         <SettingsTab
