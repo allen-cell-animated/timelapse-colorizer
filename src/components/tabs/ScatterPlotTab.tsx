@@ -1,6 +1,6 @@
 import { Button, Tooltip } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
-import { RetweetOutlined } from "@ant-design/icons";
+import { ExpandOutlined, RedoOutlined, RetweetOutlined, RollbackOutlined, UndoOutlined } from "@ant-design/icons";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
@@ -12,7 +12,7 @@ import { useTransitionedDebounce } from "../../colorizer/utils/react_utils";
 import IconButton from "../IconButton";
 import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
-import { FlexRowAlignCenter } from "../../styles/utils";
+import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 
 /** Extra selectable axis feature, representing the frame number. */
 const TIME_FEATURE = { key: "time", name: "Time" };
@@ -408,14 +408,22 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // Plot Rendering
   //////////////////////////////////
 
+  const plotDependencies = [
+    dataset,
+    xAxisFeatureName,
+    yAxisFeatureName,
+    rangeType,
+    currentFrame,
+    selectedTrack,
+    props.isVisible,
+    isPlaying,
+    plotDivRef.current,
+  ];
+
   /**
    * Render the plot if the relevant props have changed.
    */
-  useEffect(() => {
-    if (shouldDelayUpdate()) {
-      return;
-    }
-
+  const renderPlot = useCallback(() => {
     let rawXData = getData(xAxisFeatureName, dataset);
     let rawYData = getData(yAxisFeatureName, dataset);
 
@@ -589,7 +597,14 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         ...props,
       };
     });
-  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName, rangeType, currentFrame, selectedTrack, props.isVisible, isPlaying]);
+  }, plotDependencies);
+
+  useEffect(() => {
+    if (shouldDelayUpdate()) {
+      return;
+    }
+    renderPlot();
+  }, plotDependencies);
 
   //////////////////////////////////
   // Rendering
@@ -639,16 +654,35 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         ></LabeledDropdown>
       </FlexRowAlignCenter>
       <div style={{ position: "relative" }}>
-        <Button
-          style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}
-          onClick={() => {
-            setXAxisFeatureName(null);
-            setYAxisFeatureName(null);
-            clearPlotAndStopRender();
-          }}
-        >
-          Clear
-        </Button>
+        <FlexRow $gap={6} style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}>
+          {
+            // TODO: Implement axes reset, since plotly's default reset behavior uses autorange.
+            // See https://community.plotly.com/t/double-click-reset-view-button-to-reset-zoom-doesnt-restore-the-graph-to-its-original-axis-range/15668/12
+            /* <Tooltip title="Reset zoom">
+            <IconButton
+              type="outlined"
+              onClick={() => {
+                setIsRendering(true);
+                renderPlot();
+              }}
+            >
+              <ExpandOutlined />
+            </IconButton>
+          </Tooltip> */
+          }
+          <Tooltip title="Clear selected axes">
+            <Button
+              onClick={() => {
+                setXAxisFeatureName(null);
+                setYAxisFeatureName(null);
+                clearPlotAndStopRender();
+              }}
+            >
+              Clear
+            </Button>
+          </Tooltip>
+        </FlexRow>
+
         <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
           <ScatterPlotContainer
             style={{ width: "100%", height: "450px", padding: "5px" }}
