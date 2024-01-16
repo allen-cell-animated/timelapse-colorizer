@@ -34,7 +34,7 @@ type ScatterPlotTabProps = {
   dataset: Dataset | null;
   currentFrame: number;
   selectedTrack: Track | null;
-  findTrack: (trackId: number, seekToFrame: boolean) => void;
+  findTrack: (trackId: number | null, seekToFrame: boolean) => void;
   setFrame: (frame: number) => Promise<void>;
   isVisible: boolean;
   isPlaying: boolean;
@@ -173,6 +173,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       console.log("Click");
       if (eventData.points.length === 0 || isHistogramEvent(eventData) || !dataset) {
         // User clicked on nothing or on a histogram
+        console.log("Clicked nothing");
+        props.findTrack(null, false);
         return;
       }
 
@@ -431,14 +433,17 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     const { xData, yData, objectIds } = result;
     pointNumToObjectId.current = objectIds;
 
+    // Use a light grey for other markers when a track is selected during the "All time" range view.
+    const markerBaseColor = rangeType === RangeType.ALL_TIME && selectedTrack ? "#cccccc" : theme.color.themeDark;
     const markerConfig: Partial<PlotMarker> = {
-      color: getMarkerColor(xData.length, theme.color.themeDark),
+      color: getMarkerColor(xData.length, markerBaseColor),
       size: 4,
     };
     const hoverTemplate =
       `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
       `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
       `<br>%{text}`;
+    const isUsingTime = xAxisFeatureName === TIME_FEATURE.name || yAxisFeatureName === TIME_FEATURE.name;
 
     // Use the text to save the track ID and object ID for each point.
     const generatePointText = (ids: number[]): string[] => {
@@ -492,14 +497,10 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
           y: trackYData,
           text: generatePointText(selectedTrack.ids),
           type: "scattergl",
-          mode: "markers",
+          mode: isUsingTime ? "lines+markers" : "markers",
           marker: {
-            color: theme.color.themeLight,
-            size: 6,
-            line: {
-              color: theme.color.themeDark,
-              width: 1,
-            },
+            color: getMarkerColor(trackXData.length, theme.color.themeDark),
+            size: 5,
           },
           hovertemplate: hoverTemplate,
         };

@@ -233,7 +233,13 @@ function App(): ReactElement {
   );
 
   const findTrack = useCallback(
-    (trackId: number, seekToFrame: boolean = true): void => {
+    (trackId: number | null, seekToFrame: boolean = true): void => {
+      if (!trackId) {
+        // Clear
+        setSelectedTrack(null);
+        return;
+      }
+
       const newTrack = dataset!.buildTrack(trackId);
 
       if (newTrack.length() < 1) {
