@@ -887,6 +887,7 @@ function App(): ReactElement {
                           findTrack={findTrack}
                           setFrame={setFrameAndRender}
                           isVisible={openTab === "scatter_plot"}
+                          isPlaying={timeControls.isPlaying() || isRecording}
                         />
                       </div>
                     ),

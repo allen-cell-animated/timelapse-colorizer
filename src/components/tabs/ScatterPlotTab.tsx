@@ -37,6 +37,7 @@ type ScatterPlotTabProps = {
   findTrack: (trackId: number, seekToFrame: boolean) => void;
   setFrame: (frame: number) => Promise<void>;
   isVisible: boolean;
+  isPlaying: boolean;
 };
 const defaultProps: Partial<ScatterPlotTabProps> = {};
 
@@ -98,6 +99,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
   // TODO: chunk up multiple `useTransition` updates at once?
   const dataset = useTransitionedDebounce(props.dataset, startTransition, () => setIsRendering(true), 500);
+  const isPlaying = useTransitionedDebounce(props.isPlaying, startTransition, () => setIsRendering(true), 5);
   const selectedTrack = useTransitionedDebounce(props.selectedTrack, startTransition, () => setIsRendering(true), 0);
   const currentFrame = useTransitionedDebounce(props.currentFrame, startTransition, () => setIsRendering(true), 0);
 
@@ -206,9 +208,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
    * Returns a hex color string with increasing transparency as the number of markers increases.
    */
   const getMarkerColor = (numMarkers: number, baseColor: string): string => {
-    // Increase marker transparency as the number of markers increases.
     const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
-
     return (
       baseColor +
       Math.floor(opacity * 255)
@@ -232,25 +232,15 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     };
   };
 
-  const shouldRenderUpdate = (): boolean => {
+  const shouldDelayUpdate = (): boolean => {
     if (!props.isVisible) {
-      return false;
-    }
-    const flags = getChangeFlags();
-
-    // Always render if the features, data, or range mode has changed
-    if (flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged || flags.hasTrackChanged) {
       return true;
     }
-    // // Ignore changes to the current frame if we are not showing the current frame
-    // if (rangeType !== RangeType.CURRENT_FRAME && flags.hasFrameChanged && !flags.hasTrackChanged) {
-    //   return false;
-    // }
-    // // Ignore changes to track if we are not showing by track
-    // if (rangeType !== RangeType.CURRENT_TRACK && flags.hasTrackChanged && !flags.hasFrameChanged) {
-    //   return false;
-    // }
-    return true;
+    // Do not render updates during playback, to prevent blocking the UI.
+    if (isPlaying && rangeType === RangeType.ALL_TIME) {
+      return true;
+    }
+    return false;
   };
 
   const shouldPlotUiReset = (): boolean => {
@@ -420,8 +410,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
    * Render the plot if the relevant props have changed.
    */
   useEffect(() => {
-    if (!shouldRenderUpdate()) {
-      setIsRendering(false);
+    if (shouldDelayUpdate()) {
       return;
     }
 
@@ -599,7 +588,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         ...props,
       };
     });
-  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName, rangeType, currentFrame, selectedTrack, props.isVisible]);
+  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName, rangeType, currentFrame, selectedTrack, props.isVisible, isPlaying]);
 
   //////////////////////////////////
   // Rendering

@@ -45,7 +45,7 @@ export function useDebounce<T>(value: T, delayMs?: number): T {
  * to rest.
  * @param inputValue The value to debounce and transition.
  * @param startTransition The startTransition function returned by useTransition.
- * @param onChange An optional callback that triggers immediately when the input value has changed.
+ * @param onChange An optional callback that triggers when the debounced value changes, but before the transition.
  * @param delayMs The delay, in milliseconds. 500 ms by default.
  */
 export function useTransitionedDebounce<T>(
@@ -57,18 +57,12 @@ export function useTransitionedDebounce<T>(
   const [value, setValue] = useState<T>(inputValue);
   const debouncedValue = useDebounce(inputValue, delayMs);
 
-  // Trigger the callback as soon as the value has changed.
-  useMemo(() => {
-    onChange();
-  }, [inputValue]);
-
   // Only update value when the debounced value has changed.
   useEffect(() => {
-    if (debouncedValue !== value) {
-      startTransition(() => {
-        setValue(debouncedValue);
-      });
-    }
+    onChange();
+    startTransition(() => {
+      setValue(debouncedValue);
+    });
   }, [debouncedValue]);
 
   return value;
