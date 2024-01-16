@@ -1,8 +1,6 @@
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
 import ColorizeCanvas from "./ColorizeCanvas";
 
-// TODO: Remove class?
-
 // time / playback controls
 const NO_TIMER_ID = -1;
 

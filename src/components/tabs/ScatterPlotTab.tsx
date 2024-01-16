@@ -27,7 +27,7 @@ import { FlexRowAlignCenter } from "../../styles/utils";
 
 /** Extra selectable axis feature, representing the frame number. */
 const TIME_FEATURE = { key: "time", name: "Time" };
-// TODO: Translate into seconds for datasets where frame duration is known?
+// TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
 
 const PLOTLY_CONFIG: Partial<Plotly.Config> = {
   displayModeBar: false,
@@ -258,23 +258,25 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     }
     const flags = getChangeFlags();
 
+    // Always render if the features, data, or range mode has changed
     if (flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged || flags.hasTrackChanged) {
       return true;
     }
-    // Ignore changes to the current frame if we are not showing the current frame
-    if (rangeType !== RangeType.CURRENT_FRAME && flags.hasFrameChanged && !flags.hasTrackChanged) {
-      return false;
-    }
-    // Ignore changes to track if we are not showing by track
-    if (rangeType !== RangeType.CURRENT_TRACK && flags.hasTrackChanged && !flags.hasFrameChanged) {
-      return false;
-    }
+    // // Ignore changes to the current frame if we are not showing the current frame
+    // if (rangeType !== RangeType.CURRENT_FRAME && flags.hasFrameChanged && !flags.hasTrackChanged) {
+    //   return false;
+    // }
+    // // Ignore changes to track if we are not showing by track
+    // if (rangeType !== RangeType.CURRENT_TRACK && flags.hasTrackChanged && !flags.hasFrameChanged) {
+    //   return false;
+    // }
     return true;
   };
 
   const shouldPlotUiReset = (): boolean => {
     const flags = getChangeFlags();
     // If any flags besides frame and track have changed, reset the plot UI.
+    // This prevents clicking on a new track from resetting the plot view.
     return flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged;
   };
 
@@ -311,7 +313,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       pointNumToObjectId.current = [];
       for (let i = 0; i < dataset.times.length; i++) {
         if (dataset.times[i] === props.currentFrame) {
-          objectIds.push(i + 1);
+          objectIds.push(i);
           xData.push(rawXData[i]);
           yData.push(rawYData[i]);
         }
@@ -384,9 +386,6 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       max += (max - min) / 10;
     }
     scatterPlotAxis.range = [min, max];
-
-    // TODO: Fix histograms during current frame playback so they're relative to the max bin size across
-    // all frames? Currently they are shown relative to the current frame's max bin size, which might be misleading.
 
     // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
     // bin sizes to prevent jumping.
@@ -461,26 +460,29 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       color: getMarkerColor(xData.length, theme.color.themeDark),
       size: 4,
     };
+    const hoverTemplate =
+      `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
+      `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
+      `<br>%{text}`;
 
     // Use the text to save the track ID and object ID for each point.
-    const pointInfoText = objectIds.map((objectId) => {
-      const trackId = dataset.getTrackId(objectId);
-      return `Track ID: ${trackId}<br>Object ID: ${objectId}`;
-    });
+    const generatePointText = (ids: number[]): string[] => {
+      return ids.map((id) => {
+        const trackId = dataset!.getTrackId(id);
+        return `Track ID: ${trackId}<br>Object ID: ${id}`;
+      });
+    };
 
     // Configure traces
     const markerTrace: Partial<PlotData> = {
       x: xData,
       y: yData,
-      text: pointInfoText,
+      text: generatePointText(objectIds),
       name: "",
       type: "scattergl",
       mode: "markers",
       marker: markerConfig,
-      hovertemplate:
-        `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
-        `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
-        `<br>%{text}`,
+      hovertemplate: hoverTemplate,
     };
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
@@ -503,10 +505,9 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
     const traces = [markerTrace, xHistogram, yHistogram];
 
-    // TODO: Handle track behavior on current frame.
     // TODO: Handle currently selected object on current frame/track.
-    // TODO: Maybe broken when clicking on track trace.
-    if (props.selectedTrack && rangeType !== RangeType.CURRENT_TRACK) {
+    // TODO: Maybe broken when clicking on track trace. (only on current frame?)
+    if (props.selectedTrack && rangeType === RangeType.ALL_TIME) {
       // Render current track as an extra trace.
       const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
       if (trackData) {
@@ -514,8 +515,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         const trackMarkerTrace: Partial<PlotData> = {
           x: trackXData,
           y: trackYData,
-          text: pointInfoText,
-          name: "Current track",
+          text: generatePointText(props.selectedTrack.ids),
           type: "scattergl",
           mode: "markers",
           marker: {
@@ -526,13 +526,35 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
               width: 1,
             },
           },
-          hovertemplate:
-            `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
-            `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
-            `<br>%{text}`,
+          hovertemplate: hoverTemplate,
         };
         traces.push(trackMarkerTrace);
       }
+    }
+
+    // Render currently selected object as an extra trace.
+    if (props.selectedTrack) {
+      const currentObjectId = props.selectedTrack.getIdAtTime(props.currentFrame);
+      const currentObjectText = generatePointText([currentObjectId]);
+
+      const currentObjectMarkerTrace: Partial<PlotData> = {
+        x: [rawXData[currentObjectId]],
+        y: [rawYData[currentObjectId]],
+        text: currentObjectText,
+        type: "scattergl",
+        mode: "markers",
+        marker: {
+          color: theme.color.themeLight,
+          size: 10,
+          line: {
+            color: theme.color.text.primary,
+            width: 1,
+          },
+          symbol: "cross-thin",
+        },
+        hovertemplate: hoverTemplate,
+      };
+      traces.push(currentObjectMarkerTrace);
     }
 
     // Configure bins for histograms as needed

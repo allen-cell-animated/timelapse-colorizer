@@ -552,8 +552,6 @@ function App(): ReactElement {
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
   // Update the callback for TimeControls and RecordingControls if it changes.
-  // TODO: TimeControls and RecordingControls should be refactored into components
-  // and receive setFrame as props.
   timeControls.setFrameCallback(setFrame);
 
   const setFrameAndRender = useCallback(
