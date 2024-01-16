@@ -300,9 +300,15 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     rawXData: Uint32Array | Float32Array,
     rawYData: Uint32Array | Float32Array,
     range: RangeType
-  ): { xData: number[]; yData: number[]; objectIds: number[] } | undefined => {
-    let xData: number[] = [];
-    let yData: number[] = [];
+  ):
+    | {
+        xData: number[] | Uint32Array | Float32Array;
+        yData: number[] | Uint32Array | Float32Array;
+        objectIds: number[];
+      }
+    | undefined => {
+    let xData: number[] | Uint32Array | Float32Array = [];
+    let yData: number[] | Uint32Array | Float32Array = [];
     let objectIds: number[] = [];
 
     if (range === RangeType.CURRENT_FRAME) {
@@ -332,8 +338,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     } else {
       // All time
       objectIds = [...Array(rawXData.length).keys()];
-      xData = Array.from(rawXData);
-      yData = Array.from(rawYData);
+      xData = rawXData;
+      yData = rawYData;
     }
     return { xData, yData, objectIds };
   };
