@@ -2,24 +2,13 @@ import { Button, Tooltip } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import { RetweetOutlined } from "@ant-design/icons";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
-import React, {
-  ReactElement,
-  memo,
-  useCallback,
-  useContext,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
 
 import { AppThemeContext } from "../AppStyle";
 import { Dataset, Track } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
-import { useDebounce } from "../../colorizer/utils/react_utils";
+import { useTransitionedDebounce } from "../../colorizer/utils/react_utils";
 import IconButton from "../IconButton";
 import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
@@ -107,19 +96,10 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  const [dataset, setDataset] = useState<Dataset | null>(null);
-
-  const propDataset = useDeferredValue<Dataset | null>(useDebounce(props.dataset, 500));
-  // Show loading spinner
-  useEffect(() => {
-    setIsRendering(true);
-  }, [props.dataset]);
-  // Handle actual dataset
-  useMemo(() => {
-    startTransition(() => {
-      setDataset(propDataset);
-    });
-  }, [propDataset]);
+  // TODO: chunk up multiple `useTransition` updates at once?
+  const dataset = useTransitionedDebounce(props.dataset, startTransition, () => setIsRendering(true), 500);
+  const selectedTrack = useTransitionedDebounce(props.selectedTrack, startTransition, () => setIsRendering(true), 0);
+  const currentFrame = useTransitionedDebounce(props.currentFrame, startTransition, () => setIsRendering(true), 0);
 
   // TODO: Implement color ramps in a worker thread. This was originally removed for performance issues.
   // Plotly's performance can be improved by generating traces for colors rather than feeding it the raw
@@ -246,8 +226,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       haveAxesChanged:
         lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName,
       hasRangeChanged: lastState.rangeType !== rangeType,
-      hasTrackChanged: lastState.selectedTrack !== props.selectedTrack,
-      hasFrameChanged: lastState.currentFrame !== props.currentFrame,
+      hasTrackChanged: lastState.selectedTrack !== selectedTrack,
+      hasFrameChanged: lastState.currentFrame !== currentFrame,
       hasDatasetChanged: lastState.dataset !== dataset,
     };
   };
@@ -318,7 +298,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       }
       pointNumToObjectId.current = [];
       for (let i = 0; i < dataset.times.length; i++) {
-        if (dataset.times[i] === props.currentFrame) {
+        if (dataset.times[i] === currentFrame) {
           objectIds.push(i);
           xData.push(rawXData[i]);
           yData.push(rawYData[i]);
@@ -326,15 +306,15 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
       }
     } else if (range === RangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
-      if (!props.selectedTrack) {
-        return undefined;
+      if (!selectedTrack) {
+        return { xData: [], yData: [], objectIds: [] };
       }
-      for (let i = 0; i < props.selectedTrack.ids.length; i++) {
-        const id = props.selectedTrack.ids[i];
+      for (let i = 0; i < selectedTrack.ids.length; i++) {
+        const id = selectedTrack.ids[i];
         xData.push(rawXData[id]);
         yData.push(rawYData[id]);
       }
-      objectIds = Array.from(props.selectedTrack.ids);
+      objectIds = Array.from(selectedTrack.ids);
     } else {
       // All time
       objectIds = [...Array(rawXData.length).keys()];
@@ -513,7 +493,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
     // TODO: Handle currently selected object on current frame/track.
     // TODO: Maybe broken when clicking on track trace. (only on current frame?)
-    if (props.selectedTrack && rangeType === RangeType.ALL_TIME) {
+    if (selectedTrack && rangeType === RangeType.ALL_TIME) {
       // Render current track as an extra trace.
       const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
       if (trackData) {
@@ -521,7 +501,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         const trackMarkerTrace: Partial<PlotData> = {
           x: trackXData,
           y: trackYData,
-          text: generatePointText(props.selectedTrack.ids),
+          text: generatePointText(selectedTrack.ids),
           type: "scattergl",
           mode: "markers",
           marker: {
@@ -539,8 +519,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     }
 
     // Render currently selected object as an extra trace.
-    if (props.selectedTrack) {
-      const currentObjectId = props.selectedTrack.getIdAtTime(props.currentFrame);
+    if (selectedTrack) {
+      const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
       const currentObjectText = generatePointText([currentObjectId]);
 
       const currentObjectMarkerTrace: Partial<PlotData> = {
@@ -619,7 +599,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         ...props,
       };
     });
-  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName, rangeType, props.currentFrame, props.selectedTrack, props.isVisible]);
+  }, [plotDivRef.current, dataset, xAxisFeatureName, yAxisFeatureName, rangeType, currentFrame, selectedTrack, props.isVisible]);
 
   //////////////////////////////////
   // Rendering

@@ -1,4 +1,4 @@
-import React, { EventHandler, useEffect, useRef, useState } from "react";
+import React, { EventHandler, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -30,7 +30,7 @@ export function useDebounce<T>(value: T, delayMs?: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delayMs || 500);
+    const timer = setTimeout(() => setDebouncedValue(value), delayMs ?? 500);
 
     return () => {
       clearTimeout(timer);
@@ -38,6 +38,40 @@ export function useDebounce<T>(value: T, delayMs?: number): T {
   }, [value, delayMs]);
 
   return debouncedValue;
+}
+
+/**
+ * Combines useTransition and useDebounce. Debounces value and initiates a state transition once the value has come
+ * to rest.
+ * @param inputValue The value to debounce and transition.
+ * @param startTransition The startTransition function returned by useTransition.
+ * @param onChange An optional callback that triggers immediately when the input value has changed.
+ * @param delayMs The delay, in milliseconds. 500 ms by default.
+ */
+export function useTransitionedDebounce<T>(
+  inputValue: T,
+  startTransition: React.TransitionStartFunction,
+  onChange: () => void = () => {},
+  delayMs: number = 500
+) {
+  const [value, setValue] = useState<T>(inputValue);
+  const debouncedValue = useDebounce(inputValue, delayMs);
+
+  // Trigger the callback as soon as the value has changed.
+  useMemo(() => {
+    onChange();
+  }, [inputValue]);
+
+  // Only update value when the debounced value has changed.
+  useEffect(() => {
+    if (debouncedValue !== value) {
+      startTransition(() => {
+        setValue(debouncedValue);
+      });
+    }
+  }, [debouncedValue]);
+
+  return value;
 }
 
 /**
