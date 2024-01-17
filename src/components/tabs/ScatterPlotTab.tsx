@@ -39,7 +39,6 @@ type ScatterPlotTabProps = {
   isVisible: boolean;
   isPlaying: boolean;
 };
-const defaultProps: Partial<ScatterPlotTabProps> = {};
 
 const ScatterPlotContainer = styled.div`
   & canvas {
@@ -49,30 +48,23 @@ const ScatterPlotContainer = styled.div`
 `;
 
 /**
- * Returns true if the given Plotly mouse event took place over a histogram subplot.
- */
-function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
-  return eventData.points[0].data.type === "histogram";
-}
-
-/**
  * A tab that displays an interactive scatter plot between two features in the dataset.
  */
-export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as Required<ScatterPlotTabProps>;
-
+export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactElement {
+  // ^ Memo prevents re-rendering if the props haven't changed.
   const theme = useContext(AppThemeContext);
 
   const [isPending, startTransition] = useTransition();
   // This might seem redundant with `isPending`, but `useTransition` only works within React's
   // update cycle. Plotly's rendering is synchronous and can freeze the state update render,
   // so we need to track completion with a separate flag.
+  // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
 
   /** Maps from the point number to an object's ID in the dataset.
    * Null if the point number maps 1:1 to the dataset object ID.
    */
-  const pointNumToObjectId = useRef<number[] | null>();
+  const pointNumToObjectId = useRef<number[]>([]);
 
   const plotDivRef = React.useRef<HTMLDivElement>(null);
   const plotRef = React.useRef<Plotly.PlotlyHTMLElement | null>(null);
@@ -97,7 +89,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  // TODO: chunk up multiple `useTransition` updates at once?
+  // TODO: React will merge multiple transitions into one, but it's not a long-term intended feature. Merge the transitions?
   const dataset = useTransitionedDebounce(props.dataset, startTransition, () => setIsRendering(true), 500);
   const isPlaying = useTransitionedDebounce(props.isPlaying, startTransition, () => setIsRendering(true), 5);
   const selectedTrack = useTransitionedDebounce(props.selectedTrack, startTransition, () => setIsRendering(true), 0);
@@ -105,22 +97,8 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
 
   // TODO: Implement color ramps in a worker thread. This was originally removed for performance issues.
   // Plotly's performance can be improved by generating traces for colors rather than feeding it the raw
-  // data and asking it to colorize it. This might be better in a worker?
+  // data and asking it to colorize it.
   // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
-
-  // Track last rendered props + state to make smart optimizations on re-renders
-  type LastRenderedState = {
-    rangeType: RangeType;
-    xAxisFeatureName: string | null;
-    yAxisFeatureName: string | null;
-  } & ScatterPlotTabProps;
-
-  const lastRenderedState = useRef<LastRenderedState>({
-    rangeType: DEFAULT_RANGE_TYPE,
-    xAxisFeatureName: null,
-    yAxisFeatureName: null,
-    ...props,
-  });
 
   const [rangeType, _setRangeType] = useState<RangeType>(DEFAULT_RANGE_TYPE);
   const setRangeType = (newRangeType: RangeType): void => {
@@ -154,6 +132,59 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     });
   };
 
+  //////////////////////////////////
+  // Click Handlers
+  //////////////////////////////////
+
+  /**
+   * Returns true if a Plotly mouse event took place over a histogram subplot.
+   */
+  function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
+    return eventData.points[0].data.type === "histogram";
+  }
+
+  // Add click event listeners to the plot. When clicking a point, find the track and jump to
+  // that frame.
+  const onClickPlot = useCallback(
+    (eventData: Plotly.PlotMouseEvent): void => {
+      if (!dataset) {
+        return;
+      }
+      if (eventData.points.length === 0 || isHistogramEvent(eventData)) {
+        // User clicked on nothing or on a histogram
+        props.findTrack(null, false); // clear tracks. TODO: Is this intended behavior?
+        return;
+      }
+
+      const point = eventData.points[0];
+      const objectId = pointNumToObjectId.current[point.pointNumber];
+      console.log("Point number: " + point.pointNumber + " Object ID: " + objectId);
+      const trackId = dataset.getTrackId(objectId);
+      const frame = dataset.times ? dataset.times[objectId] : undefined;
+      if (frame !== undefined) {
+        props.setFrame(frame).then(() => {
+          props.findTrack(trackId, false);
+        });
+      } else {
+        // Jump to first frame where the track is valid
+        props.findTrack(trackId, true);
+      }
+    },
+    [dataset, pointNumToObjectId.current, props.findTrack, props.setFrame]
+  );
+
+  useEffect(() => {
+    plotRef.current?.on("plotly_click", onClickPlot);
+    return () => {
+      plotRef.current?.removeAllListeners("plotly_click");
+    };
+  }, [plotRef.current, onClickPlot]);
+
+  //////////////////////////////////
+  // Helper Methods
+  //////////////////////////////////
+
+  /** Retrieve feature data, if it exists. Accounts for the artificially-added time feature. */
   const getData = useCallback(
     (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | undefined => {
       if (featureName === null || dataset === null) {
@@ -167,43 +198,6 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     []
   );
 
-  // Add click event listeners to the plot
-  const onClickPlot = useCallback(
-    (eventData: Plotly.PlotMouseEvent): void => {
-      if (eventData.points.length === 0 || isHistogramEvent(eventData) || !dataset) {
-        // User clicked on nothing or on a histogram
-        props.findTrack(null, false);
-        return;
-      }
-
-      const point = eventData.points[0];
-      const objectId = pointNumToObjectId.current![point.pointNumber];
-      console.log("Point number: " + point.pointNumber + " Object ID: " + objectId);
-      const trackId = dataset.getTrackId(objectId);
-      const frame = dataset.times ? dataset.times[objectId] : undefined;
-      if (frame !== undefined) {
-        props.findTrack(trackId, false);
-        props.setFrame(frame);
-      } else {
-        // Jump to first frame where the track is valid
-        props.findTrack(trackId, true);
-      }
-    },
-    [dataset, pointNumToObjectId.current, props.findTrack, props.setFrame]
-  );
-
-  useEffect(() => {
-    // If a user clicks on a point, find the corresponding track and jump to its frame number.
-    plotRef.current?.on("plotly_click", onClickPlot);
-    return () => {
-      plotRef.current?.removeAllListeners("plotly_click");
-    };
-  }, [plotRef.current, onClickPlot]);
-
-  //////////////////////////////////
-  // Helper Methods
-  //////////////////////////////////
-
   /**
    * Returns a hex color string with increasing transparency as the number of markers increases.
    */
@@ -216,6 +210,20 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
         .padStart(2, "0")
     );
   };
+
+  // Track last rendered props + state to make smart optimizations on re-renders
+  type LastRenderedState = {
+    rangeType: RangeType;
+    xAxisFeatureName: string | null;
+    yAxisFeatureName: string | null;
+  } & ScatterPlotTabProps;
+
+  const lastRenderedState = useRef<LastRenderedState>({
+    rangeType: DEFAULT_RANGE_TYPE,
+    xAxisFeatureName: null,
+    yAxisFeatureName: null,
+    ...props,
+  });
 
   /**
    * Returns an object with flags indicating which props have changed since the last render.
@@ -238,25 +246,21 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     };
   };
 
-  const shouldDelayUpdate = (): boolean => {
-    if (!props.isVisible) {
-      return true;
-    }
-    // Do not render updates during playback, to prevent blocking the UI.
-    if (isPlaying && rangeType === RangeType.ALL_TIME) {
-      return true;
-    }
-    return false;
-  };
-
   const shouldPlotUiReset = (): boolean => {
-    const flags = getChangeFlags();
     // If any flags besides frame and track have changed, reset the plot UI.
     // This prevents clicking on a new track from resetting the plot view.
+    const flags = getChangeFlags();
     return flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged;
   };
 
+  const shouldDelayUpdate = (): boolean => {
+    // Don't render when not visible.
+    // Also, don't render updates during playback, to prevent blocking the UI.
+    return !props.isVisible || (isPlaying && rangeType === RangeType.ALL_TIME);
+  };
+
   const clearPlotAndStopRender = (): void => {
+    // TODO: Show histograms on default layout
     Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
     setIsRendering(false);
   };
@@ -277,12 +281,12 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     rawYData: Uint32Array | Float32Array,
     range: RangeType
   ):
+    | undefined
     | {
         xData: number[] | Uint32Array | Float32Array;
         yData: number[] | Uint32Array | Float32Array;
         objectIds: number[];
-      }
-    | undefined => {
+      } => {
     let xData: number[] | Uint32Array | Float32Array = [];
     let yData: number[] | Uint32Array | Float32Array = [];
     let objectIds: number[] = [];
@@ -314,6 +318,7 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
     } else {
       // All time
       objectIds = [...Array(rawXData.length).keys()];
+      // Directly assigning the values is faster than `Array.from()`.
       xData = rawXData;
       yData = rawYData;
     }
@@ -325,7 +330,10 @@ export default memo(function ScatterPlotTab(inputProps: ScatterPlotTabProps): Re
    * prevents axes from jumping during time or track playback.
    * @param featureName Name of the feature to generate layouts for.
    * @param histogramTrace Histogram trace. Configures the histogram bins if categorical features are chosen.
-   * @returns
+   * @returns An object with the following keys:
+   *  - `scatterPlotAxis`: Layout for the scatter plot axis.
+   *  - `histogramAxis`: Layout for the histogram axis.
+   *  - `histogramTrace`: Histogram trace with updated bin sizes.
    */
   const getAxisLayoutsFromRange = (
     featureName: string,
