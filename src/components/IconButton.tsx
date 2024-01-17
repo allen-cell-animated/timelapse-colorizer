@@ -14,6 +14,8 @@ type IconButtonProps = {
   onMouseLeave?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   onPointerEnter?: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onPointerLeave?: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onFocus?: (event: React.FocusEvent<HTMLButtonElement>) => void;
+  onBlur?: (event: React.FocusEvent<HTMLButtonElement>) => void;
 };
 
 // Button styling varies based on the type (outlined vs. primary)
@@ -124,6 +126,8 @@ export default function IconButton(props: PropsWithChildren<IconButtonProps>): R
         onMouseLeave={props.onMouseLeave}
         onPointerEnter={props.onPointerEnter}
         onPointerLeave={props.onPointerLeave}
+        onFocus={props.onFocus}
+        onBlur={props.onBlur}
       >
         {props.children}
       </StyledButton>
