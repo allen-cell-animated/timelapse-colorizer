@@ -83,7 +83,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   }, [plotDivRef.current]);
 
   /** Incrementing UI revision number. Updated whenever a breaking UI change happens and the view must be reset. */
-  const [uiRevision, setUiRevision] = useState(0);
+  const uiRevision = useRef(0);
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
@@ -258,7 +258,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged;
   };
 
-  /** Whether to skip the render (but continue to show as pending.) */
+  /** Whether to ignore the render request until later (but continue to show as pending.) */
   const shouldDelayRender = (): boolean => {
     // Don't render when tab is not visible.
     // Also, don't render updates during playback, to prevent blocking the UI.
@@ -439,7 +439,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     plotDivRef.current,
   ];
 
-  const renderPlot = useCallback(() => {
+  const renderPlot = useCallback((forceRelayout: boolean = false) => {
     const rawXData = getData(xAxisFeatureName, dataset);
     const rawYData = getData(yAxisFeatureName, dataset);
 
@@ -593,13 +593,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       },
     };
 
-    if (shouldPlotUiReset()) {
-      setUiRevision(uiRevision + 1);
+    if (forceRelayout || shouldPlotUiReset()) {
+      uiRevision.current += 1;
       // @ts-ignore. TODO: Update once the plotly types are updated.
-      layout.uirevision = uiRevision + 1;
+      layout.uirevision = uiRevision.current;
     } else {
       // @ts-ignore. TODO: Update once the plotly types are updated.
-      layout.uirevision = uiRevision;
+      layout.uirevision = uiRevision.current;
     }
 
     Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
@@ -638,7 +638,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     <>
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
         <LabeledDropdown
-          label={"X:"}
+          label={"X"}
           selected={xAxisFeatureName || ""}
           items={menuItems}
           onChange={setXAxisFeatureName}
@@ -655,14 +655,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           </IconButton>
         </Tooltip>
         <LabeledDropdown
-          label={"Y:"}
+          label={"Y"}
           selected={yAxisFeatureName || ""}
           items={menuItems}
           onChange={setYAxisFeatureName}
         />
 
         <LabeledDropdown
-          label={"Show objects from:"}
+          label={"Show objects from"}
           style={{ marginLeft: "10px" }}
           selected={rangeType}
           items={Object.values(RangeType)}
@@ -671,38 +671,30 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         ></LabeledDropdown>
       </FlexRowAlignCenter>
       <div style={{ position: "relative" }}>
-        <FlexRow $gap={6} style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}>
-          {
-            // TODO: Implement axes reset, since plotly's default reset behavior uses autorange.
-            // See https://community.plotly.com/t/double-click-reset-view-button-to-reset-zoom-doesnt-restore-the-graph-to-its-original-axis-range/15668/12
-            /* <Tooltip title="Reset zoom">
-            <IconButton
-              type="outlined"
-              onClick={() => {
-                setIsRendering(true);
-                renderPlot();
-              }}
-            >
-              <ExpandOutlined />
-            </IconButton>
-          </Tooltip> */
-          }
-          <Tooltip title="Clear selected axes">
+        <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
+          <FlexRow $gap={6} style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}>
             <Button
               onClick={() => {
-                setXAxisFeatureName(null);
-                setYAxisFeatureName(null);
-                clearPlotAndStopRender();
+                setIsRendering(true);
+                props.findTrack(null, false);
+              }}
+              disabled={selectedTrack === null}
+            >
+              Clear Track
+            </Button>
+
+            <Button
+              onClick={() => {
+                setIsRendering(true);
+                setTimeout(() => renderPlot(true), 100);
               }}
             >
-              Clear
+              Reset View
             </Button>
-          </Tooltip>
-        </FlexRow>
+          </FlexRow>
 
-        <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
           <ScatterPlotContainer
-            style={{ width: "100%", height: "450px", padding: "5px" }}
+            style={{ width: "100%", height: "475px", padding: "5px" }}
             ref={plotDivRef}
           ></ScatterPlotContainer>
         </LoadingSpinner>

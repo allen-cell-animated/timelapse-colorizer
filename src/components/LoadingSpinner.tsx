@@ -25,7 +25,7 @@ const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  z-index: 100;
   pointer-events: none;
   background-color: #00000040;
   transition: all 0.2s ease-in-out 0.1s;
