@@ -1,6 +1,5 @@
 import { Button, Tooltip } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
-import { RetweetOutlined } from "@ant-design/icons";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
@@ -13,6 +12,7 @@ import IconButton from "../IconButton";
 import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+import { SwitchIconSVG } from "../../assets";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
@@ -643,7 +643,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           items={menuItems}
           onChange={setXAxisFeatureName}
         />
-        <Tooltip title="Swap axes">
+        <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
               setXAxisFeatureName(yAxisFeatureName);
@@ -651,7 +651,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             }}
             type="link"
           >
-            <RetweetOutlined />
+            <SwitchIconSVG />
           </IconButton>
         </Tooltip>
         <LabeledDropdown
@@ -688,8 +688,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
                 setIsRendering(true);
                 setTimeout(() => renderPlot(true), 100);
               }}
+              type="primary"
             >
-              Reset View
+              Reset Zoom
             </Button>
           </FlexRow>
 
