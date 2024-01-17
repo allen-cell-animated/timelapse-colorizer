@@ -14,8 +14,8 @@ import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 
-/** Extra selectable axis feature, representing the frame number. */
-const TIME_FEATURE = { key: "time", name: "Time" };
+/** Extra feature that's added to the dropdowns representing the frame number. */
+const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
 // TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
 
 const PLOTLY_CONFIG: Partial<Plotly.Config> = {
@@ -61,9 +61,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
 
-  /** Maps from the point number to an object's ID in the dataset.
-   * Null if the point number maps 1:1 to the dataset object ID.
-   */
+  /** Maps from the point number to an object's ID in the dataset. */
   const pointNumToObjectId = useRef<number[]>([]);
 
   const plotDivRef = React.useRef<HTMLDivElement>(null);
@@ -89,7 +87,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  // TODO: React will merge multiple transitions into one, but it's not a long-term intended feature. Merge the transitions?
+  // TODO: React can merge multiple transitions into one, but it's not guaranteed behavior. Can we merge the transitions?
   const dataset = useTransitionedDebounce(props.dataset, startTransition, () => setIsRendering(true), 500);
   const isPlaying = useTransitionedDebounce(props.isPlaying, startTransition, () => setIsRendering(true), 5);
   const selectedTrack = useTransitionedDebounce(props.selectedTrack, startTransition, () => setIsRendering(true), 0);
@@ -100,6 +98,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // data and asking it to colorize it.
   // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
 
+  // Wrap changes to axis and range in a transition to prevent blocking the UI thread.
   const [rangeType, _setRangeType] = useState<RangeType>(DEFAULT_RANGE_TYPE);
   const setRangeType = (newRangeType: RangeType): void => {
     if (newRangeType === rangeType) {
@@ -140,7 +139,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * Returns true if a Plotly mouse event took place over a histogram subplot.
    */
   function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
-    return eventData.points[0].data.type === "histogram";
+    return eventData.points.length > 0 && eventData.points[0].data.type === "histogram";
   }
 
   // Add click event listeners to the plot. When clicking a point, find the track and jump to
@@ -152,7 +151,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
       if (eventData.points.length === 0 || isHistogramEvent(eventData)) {
         // User clicked on nothing or on a histogram
-        props.findTrack(null, false); // clear tracks. TODO: Is this intended behavior?
+        props.findTrack(null, false); // clears tracks. TODO: Is this expected behavior?
         return;
       }
 
@@ -200,8 +199,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   /**
    * Returns a hex color string with increasing transparency as the number of markers increases.
+   * Base color must be a 6-digit hex string.
    */
-  const getMarkerColor = (numMarkers: number, baseColor: string): string => {
+  const applyMarkerTransparency = (numMarkers: number, baseColor: string): string => {
+    if (baseColor.length !== 7) {
+      throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "'must be a 6-digit hex string.");
+    }
+    // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
     const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
     return (
       baseColor +
@@ -211,7 +215,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
   };
 
-  // Track last rendered props + state to make smart optimizations on re-renders
+  // Track last rendered props + state to make optimizations on re-renders
   type LastRenderedState = {
     rangeType: RangeType;
     xAxisFeatureName: string | null;
@@ -246,21 +250,23 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     };
   };
 
+  /** Returns whether the changes would result in a new plot, requiring the zoom and UI to reset. */
   const shouldPlotUiReset = (): boolean => {
-    // If any flags besides frame and track have changed, reset the plot UI.
+    // Only reset the plot if the axes or range have changed, ignoring the track or frame.
     // This prevents clicking on a new track from resetting the plot view.
     const flags = getChangeFlags();
     return flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged;
   };
 
-  const shouldDelayUpdate = (): boolean => {
-    // Don't render when not visible.
+  /** Whether to skip the render (but continue to show as pending.) */
+  const shouldDelayRender = (): boolean => {
+    // Don't render when tab is not visible.
     // Also, don't render updates during playback, to prevent blocking the UI.
     return !props.isVisible || (isPlaying && rangeType === RangeType.ALL_TIME);
   };
 
   const clearPlotAndStopRender = (): void => {
-    // TODO: Show histograms on default layout
+    // TODO: Show histograms on default, cleared layout
     Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
     setIsRendering(false);
   };
@@ -318,7 +324,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     } else {
       // All time
       objectIds = [...Array(rawXData.length).keys()];
-      // Directly assigning the values is faster than `Array.from()`.
+      // Copying the reference is faster than `Array.from()`.
       xData = rawXData;
       yData = rawYData;
     }
@@ -329,11 +335,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * Creates the scatterplot and histogram axes for a given feature. Normalizes for dataset min/max to
    * prevents axes from jumping during time or track playback.
    * @param featureName Name of the feature to generate layouts for.
-   * @param histogramTrace Histogram trace. Configures the histogram bins if categorical features are chosen.
+   * @param histogramTrace The default histogram trace configuration.
    * @returns An object with the following keys:
    *  - `scatterPlotAxis`: Layout for the scatter plot axis.
    *  - `histogramAxis`: Layout for the histogram axis.
-   *  - `histogramTrace`: Histogram trace with updated bin sizes.
+   *  - `histogramTrace`: A copy of the histogram trace, with potentially updated bin sizes.
    */
   const getAxisLayoutsFromRange = (
     featureName: string,
@@ -344,7 +350,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     histogramTrace: Partial<PlotData>;
   } => {
     let scatterPlotAxis: Partial<Plotly.LayoutAxis> = {
-      // Due to limited space in the Y-axis, hide categorical feature name.
       domain: [0, 0.8],
       showgrid: false,
       zeroline: true,
@@ -355,6 +360,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       zeroline: true,
       hoverformat: "f",
     };
+    const newHistogramTrace = { ...histogramTrace };
 
     let min = dataset?.getFeatureData(featureName)?.min || 0;
     let max = dataset?.getFeatureData(featureName)?.max || 0;
@@ -370,13 +376,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       min -= 0.5;
       max += 0.5;
     } else {
-      // Add a little padding to the min/max so points aren't on the edge of the plot.
+      // Add a little padding to the min/max so points aren't cut off by the edge of the plot.
       // (ideally this would be a pixel padding, but plotly doesn't support that.)
       min -= (max - min) / 10;
       max += (max - min) / 10;
     }
     scatterPlotAxis.range = [min, max];
 
+    // TODO: Show categories as box and whisker plots instead of scatterplot?
     // TODO: Add special handling for integer features once implemented, so their histograms use reasonable
     // bin sizes to prevent jumping.
 
@@ -392,13 +399,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         ticktext: categories,
         zeroline: false,
       };
-      // Enforce histogram traces for categorical features. This prevents a bug where the histograms
+      // Enforce bins on histogram traces for categorical features. This prevents a bug where the histograms
       // would suddenly change width if a category wasn't present in the given data range.
-      histogramTrace.xbins = { start: min, end: max, size: (max - min) / categories.length };
+      newHistogramTrace.xbins = { start: min, end: max, size: (max - min) / categories.length };
       // @ts-ignore. TODO: Update once the plotly types are updated.
-      histogramTrace.ybins = { start: min, end: max, size: (max - min) / categories.length };
+      newHistogramTrace.ybins = { start: min, end: max, size: (max - min) / categories.length };
     }
-    return { scatterPlotAxis, histogramAxis, histogramTrace };
+    return { scatterPlotAxis, histogramAxis, histogramTrace: newHistogramTrace };
   };
 
   /**
@@ -432,9 +439,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     plotDivRef.current,
   ];
 
-  /**
-   * Render the plot if the relevant props have changed.
-   */
   const renderPlot = useCallback(() => {
     const rawXData = getData(xAxisFeatureName, dataset);
     const rawYData = getData(yAxisFeatureName, dataset);
@@ -446,26 +450,29 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Filter data by the range type, if applicable
     const result = filterDataByRange(rawXData, rawYData, rangeType);
-    if (!result) {
+    if (result === undefined) {
       clearPlotAndStopRender();
       return;
     }
     const { xData, yData, objectIds } = result;
     pointNumToObjectId.current = objectIds;
 
-    // Use a light grey for other markers when a track is selected during the "All time" range view.
-    const markerBaseColor = rangeType === RangeType.ALL_TIME && selectedTrack ? "#cccccc" : theme.color.themeDark;
+    let markerBaseColor = theme.color.themeDark;
+    if (rangeType === RangeType.ALL_TIME && selectedTrack) {
+      // Use a light grey for other markers when a track is selected.
+      markerBaseColor = "#cccccc";
+    }
     const markerConfig: Partial<PlotMarker> = {
-      color: getMarkerColor(xData.length, markerBaseColor),
+      color: applyMarkerTransparency(xData.length, markerBaseColor),
       size: 4,
     };
+    // Hovertext for points. Shows the X and Y values; the track and object ID are passed in via the `text` attribute.
     const hoverTemplate =
       `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
       `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
       `<br>%{text}`;
     const isUsingTime = xAxisFeatureName === TIME_FEATURE.name || yAxisFeatureName === TIME_FEATURE.name;
 
-    // Use the text to save the track ID and object ID for each point.
     const generatePointText = (ids: number[]): string[] => {
       return ids.map((id) => {
         const trackId = dataset!.getTrackId(id);
@@ -505,8 +512,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     const traces = [markerTrace, xHistogram, yHistogram];
 
-    // TODO: Handle currently selected object on current frame/track.
-    // TODO: Maybe broken when clicking on track trace. (only on current frame?)
     if (selectedTrack && rangeType === RangeType.ALL_TIME) {
       // Render current track as an extra trace.
       const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
@@ -519,7 +524,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           type: "scattergl",
           mode: isUsingTime ? "lines+markers" : "markers",
           marker: {
-            color: getMarkerColor(trackXData.length, theme.color.themeDark),
+            color: applyMarkerTransparency(trackXData.length, theme.color.themeDark),
             size: 5,
           },
           hovertemplate: hoverTemplate,
@@ -528,15 +533,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
     }
 
-    // Render currently selected object as an extra trace.
+    // Render currently selected object as an extra trace. (shown as crosshairs)
     if (selectedTrack) {
       const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
-      const currentObjectText = generatePointText([currentObjectId]);
 
       const currentObjectMarkerTrace: Partial<PlotData> = {
         x: [rawXData[currentObjectId]],
         y: [rawYData[currentObjectId]],
-        text: currentObjectText,
+        text: generatePointText([currentObjectId]),
         type: "scattergl",
         mode: "markers",
         marker: {
@@ -552,10 +556,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       };
       traces.push(currentObjectMarkerTrace);
     }
-
-    // Configure bins for histograms as needed
-    // TODO: Show categories as box and whisker plots?
-    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureName));
 
     // Format axes
     const { scatterPlotAxis: scatterPlotXAxis, histogramAxis: histogramXAxis } = getAxisLayoutsFromRange(
@@ -573,6 +573,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       ? ""
       : dataset.getFeatureNameWithUnits(yAxisFeatureName || "");
 
+    // Add extra margin for categorical feature labels on the Y axis.
+    const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureName));
     const layout = {
       autosize: true,
       showlegend: false,
@@ -611,15 +613,18 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     });
   }, plotDependencies);
 
+  /**
+   * Re-render the plot when the relevant props change.
+   */
   useEffect(() => {
-    if (shouldDelayUpdate()) {
+    if (shouldDelayRender()) {
       return;
     }
     renderPlot();
   }, plotDependencies);
 
   //////////////////////////////////
-  // Rendering
+  // Component Rendering
   //////////////////////////////////
 
   // TODO: Replace w/ keys
