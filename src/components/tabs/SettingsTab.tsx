@@ -74,7 +74,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
-          <SettingsItem label="Backdrop images:">
+          <SettingsItem label="Backdrop images">
             <LabeledDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
               items={backdropOptions}
@@ -82,7 +82,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               disabled={backdropOptions.length === 1}
             />
           </SettingsItem>
-          <SettingsItem label="Brightness:">
+          <SettingsItem label="Brightness">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={50}
@@ -95,7 +95,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             />
           </SettingsItem>
 
-          <SettingsItem label="Saturation:">
+          <SettingsItem label="Saturation">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
@@ -111,7 +111,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       </CustomCollapse>
       <CustomCollapse label="Objects">
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
-          <SettingsItem label="Filtered object color:">
+          <SettingsItem label="Filtered object color">
             <DrawModeDropdown
               selected={props.outOfRangeDrawSettings.mode}
               color={props.outOfRangeDrawSettings.color}
@@ -120,7 +120,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               }}
             />
           </SettingsItem>
-          <SettingsItem label="Outlier object color:">
+          <SettingsItem label="Outlier object color">
             <DrawModeDropdown
               selected={props.outlierDrawSettings.mode}
               color={props.outlierDrawSettings.color}
@@ -129,7 +129,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               }}
             />
           </SettingsItem>
-          <SettingsItem label="Opacity:">
+          <SettingsItem label="Opacity">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
