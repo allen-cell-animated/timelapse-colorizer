@@ -612,15 +612,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Component Rendering
   //////////////////////////////////
 
-  // TODO: Replace w/ keys
-  const featureNames = dataset?.featureNames || [];
-  const menuItems: MenuItemType[] = featureNames.map((name: string) => {
-    return { key: name, label: dataset?.getFeatureNameWithUnits(name) };
-  });
-  menuItems.push({ key: TIME_FEATURE.name, label: TIME_FEATURE.name });
+  const makeControlBar = () => {
+    const featureNames = dataset?.featureNames || [];
+    const menuItems: MenuItemType[] = featureNames.map((name: string) => {
+      return { key: name, label: dataset?.getFeatureNameWithUnits(name) };
+    });
+    menuItems.push({ key: TIME_FEATURE.name, label: TIME_FEATURE.name });
 
-  return (
-    <>
+    return (
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
         <LabeledDropdown
           label={"X"}
@@ -655,30 +654,41 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           onChange={(value) => setRangeType(value as RangeType)}
         ></LabeledDropdown>
       </FlexRowAlignCenter>
+    );
+  };
+
+  const makePlotButtons = () => {
+    return (
+      <FlexRow $gap={6} style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}>
+        <Button
+          onClick={() => {
+            setIsRendering(true);
+            props.findTrack(null, false);
+          }}
+          disabled={selectedTrack === null}
+        >
+          Clear Track
+        </Button>
+
+        <Button
+          onClick={() => {
+            setIsRendering(true);
+            setTimeout(() => renderPlot(true), 100);
+          }}
+          type="primary"
+        >
+          Reset Zoom
+        </Button>
+      </FlexRow>
+    );
+  };
+
+  return (
+    <>
+      {makeControlBar()}
       <div style={{ position: "relative" }}>
         <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
-          <FlexRow $gap={6} style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}>
-            <Button
-              onClick={() => {
-                setIsRendering(true);
-                props.findTrack(null, false);
-              }}
-              disabled={selectedTrack === null}
-            >
-              Clear Track
-            </Button>
-
-            <Button
-              onClick={() => {
-                setIsRendering(true);
-                setTimeout(() => renderPlot(true), 100);
-              }}
-              type="primary"
-            >
-              Reset Zoom
-            </Button>
-          </FlexRow>
-
+          {makePlotButtons()}
           <ScatterPlotContainer
             style={{ width: "100%", height: "475px", padding: "5px" }}
             ref={plotDivRef}
