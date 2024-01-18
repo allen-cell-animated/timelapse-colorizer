@@ -473,10 +473,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       y: yData,
       ids: objectIds.map((id) => id.toString()),
       customdata: trackIds,
-      // text: generatePointText(objectIds),
       name: "",
       type: "scattergl",
-      mode: "markers",
+      // Show line for time feature when only track is visible.
+      mode: isUsingTime && rangeType === RangeType.CURRENT_TRACK ? "lines+markers" : "markers",
       marker: markerConfig,
       hovertemplate: hoverTemplate,
     };
@@ -524,13 +524,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (selectedTrack) {
       const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
 
-      const currentObjectMarkerTrace: Partial<PlotData> = {
+      const crosshair: Partial<PlotData> = {
         x: [rawXData[currentObjectId]],
         y: [rawYData[currentObjectId]],
         type: "scattergl",
         mode: "markers",
         marker: {
-          color: theme.color.themeLight,
           size: 10,
           line: {
             color: theme.color.text.primary,
@@ -539,7 +538,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           symbol: "cross-thin",
         },
       };
-      traces.push(currentObjectMarkerTrace);
+      // Add a transparent white outline around the marker for contrast.
+      const crosshairBg = { ...crosshair };
+      crosshairBg.marker = {
+        ...crosshairBg.marker,
+        line: {
+          color: theme.color.layout.background + "a0",
+          width: 4,
+        },
+      };
+      traces.push(crosshairBg);
+      traces.push(crosshair);
     }
 
     // Format axes
@@ -612,7 +621,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Component Rendering
   //////////////////////////////////
 
-  const makeControlBar = () => {
+  const makeControlBar = (): ReactElement => {
     const featureNames = dataset?.featureNames || [];
     const menuItems: MenuItemType[] = featureNames.map((name: string) => {
       return { key: name, label: dataset?.getFeatureNameWithUnits(name) };
@@ -657,7 +666,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
   };
 
-  const makePlotButtons = () => {
+  const makePlotButtons = (): ReactElement => {
     return (
       <FlexRow $gap={6} style={{ position: "absolute", right: "5px", top: "5px", zIndex: 10 }}>
         <Button
