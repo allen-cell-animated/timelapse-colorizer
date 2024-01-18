@@ -146,12 +146,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // that frame.
   const onClickPlot = useCallback(
     (eventData: Plotly.PlotMouseEvent): void => {
-      if (!dataset) {
-        return;
-      }
-      if (eventData.points.length === 0 || isHistogramEvent(eventData)) {
-        // User clicked on nothing or on a histogram
-        props.findTrack(null, false); // clears tracks. TODO: Is this expected behavior?
+      if (!dataset || eventData.points.length === 0 || isHistogramEvent(eventData)) {
         return;
       }
 
@@ -302,7 +297,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       if (!dataset?.times) {
         return undefined;
       }
-      pointNumToObjectId.current = [];
       for (let i = 0; i < dataset.times.length; i++) {
         if (dataset.times[i] === currentFrame) {
           objectIds.push(i);
