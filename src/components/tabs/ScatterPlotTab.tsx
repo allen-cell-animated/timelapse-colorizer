@@ -61,9 +61,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
 
-  /** Maps from the point number to an object's ID in the dataset. */
-  const pointNumToObjectId = useRef<number[]>([]);
-
   const plotDivRef = React.useRef<HTMLDivElement>(null);
   const plotRef = React.useRef<Plotly.PlotlyHTMLElement | null>(null);
   useEffect(() => {
@@ -151,8 +148,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
 
       const point = eventData.points[0];
-      const objectId = pointNumToObjectId.current[point.pointNumber];
-      console.log("Point number: " + point.pointNumber + " Object ID: " + objectId);
+      const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
       const trackId = dataset.getTrackId(objectId);
       const frame = dataset.times ? dataset.times[objectId] : undefined;
       if (frame !== undefined) {
@@ -164,7 +160,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         props.findTrack(trackId, true);
       }
     },
-    [dataset, pointNumToObjectId.current, props.findTrack, props.setFrame]
+    [dataset, props.findTrack, props.setFrame]
   );
 
   useEffect(() => {
@@ -287,10 +283,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         xData: number[] | Uint32Array | Float32Array;
         yData: number[] | Uint32Array | Float32Array;
         objectIds: number[];
+        trackIds: number[];
       } => {
     let xData: number[] | Uint32Array | Float32Array = [];
     let yData: number[] | Uint32Array | Float32Array = [];
     let objectIds: number[] = [];
+    let trackIds: number[] = [];
 
     if (range === RangeType.CURRENT_FRAME) {
       // Filter data to only show the current frame.
@@ -300,6 +298,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       for (let i = 0; i < dataset.times.length; i++) {
         if (dataset.times[i] === currentFrame) {
           objectIds.push(i);
+          trackIds.push(dataset.getTrackId(i));
           xData.push(rawXData[i]);
           yData.push(rawYData[i]);
         }
@@ -307,7 +306,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     } else if (range === RangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
       if (!selectedTrack) {
-        return { xData: [], yData: [], objectIds: [] };
+        return { xData: [], yData: [], objectIds: [], trackIds: [] };
       }
       for (let i = 0; i < selectedTrack.ids.length; i++) {
         const id = selectedTrack.ids[i];
@@ -315,14 +314,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         yData.push(rawYData[id]);
       }
       objectIds = Array.from(selectedTrack.ids);
+      trackIds = Array(selectedTrack.ids.length).fill(selectedTrack.trackId);
     } else {
       // All time
       objectIds = [...Array(rawXData.length).keys()];
+      trackIds = Array.from(dataset!.trackIds || []);
       // Copying the reference is faster than `Array.from()`.
       xData = rawXData;
       yData = rawYData;
     }
-    return { xData, yData, objectIds };
+    return { xData, yData, objectIds, trackIds };
   };
 
   /**
@@ -448,8 +449,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       clearPlotAndStopRender();
       return;
     }
-    const { xData, yData, objectIds } = result;
-    pointNumToObjectId.current = objectIds;
+    const { xData, yData, objectIds, trackIds } = result;
 
     let markerBaseColor = theme.color.themeDark;
     if (rangeType === RangeType.ALL_TIME && selectedTrack) {
@@ -464,21 +464,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const hoverTemplate =
       `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
       `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
-      `<br>%{text}`;
+      `<br>Track ID: %{customdata}<br>Object ID: %{id}`;
     const isUsingTime = xAxisFeatureName === TIME_FEATURE.name || yAxisFeatureName === TIME_FEATURE.name;
-
-    const generatePointText = (ids: number[]): string[] => {
-      return ids.map((id) => {
-        const trackId = dataset!.getTrackId(id);
-        return `Track ID: ${trackId}<br>Object ID: ${id}`;
-      });
-    };
 
     // Configure traces
     const markerTrace: Partial<PlotData> = {
       x: xData,
       y: yData,
-      text: generatePointText(objectIds),
+      ids: objectIds.map((id) => id.toString()),
+      customdata: trackIds,
+      // text: generatePointText(objectIds),
       name: "",
       type: "scattergl",
       mode: "markers",
@@ -514,14 +509,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         const trackMarkerTrace: Partial<PlotData> = {
           x: trackXData,
           y: trackYData,
-          text: generatePointText(selectedTrack.ids),
           type: "scattergl",
           mode: isUsingTime ? "lines+markers" : "markers",
           marker: {
             color: applyMarkerTransparency(trackXData.length, theme.color.themeDark),
             size: 5,
           },
-          hovertemplate: hoverTemplate,
         };
         traces.push(trackMarkerTrace);
       }
@@ -534,7 +527,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       const currentObjectMarkerTrace: Partial<PlotData> = {
         x: [rawXData[currentObjectId]],
         y: [rawYData[currentObjectId]],
-        text: generatePointText([currentObjectId]),
         type: "scattergl",
         mode: "markers",
         marker: {
@@ -546,7 +538,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           },
           symbol: "cross-thin",
         },
-        hovertemplate: hoverTemplate,
       };
       traces.push(currentObjectMarkerTrace);
     }
