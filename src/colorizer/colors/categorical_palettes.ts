@@ -1,5 +1,6 @@
 import { Color } from "three";
 import { RawColorData } from "./color_ramps";
+import { MAX_FEATURE_CATEGORIES } from "../../constants";
 
 export type PaletteData = RawColorData & {
   colors: Color[];
@@ -261,6 +262,26 @@ const keyedPaletteData: [string, PaletteData][] = rawPaletteData.map((value) => 
   return [value.key, { colors, ...value }];
 });
 const paletteMap: Map<string, PaletteData> = new Map(keyedPaletteData);
+
+/**
+ * Returns the string key of a palette if it matches an existing palette; otherwise, returns null.
+ */
+export const getKeyFromPalette = (palette: Color[]): string | null => {
+  for (const data of paletteMap.values()) {
+    let matches = true;
+    for (let i = 0; i < MAX_FEATURE_CATEGORIES; i++) {
+      const paletteColor = palette[i].getHexString().toLowerCase();
+      if (paletteColor !== data.colorStops[i].toLowerCase().slice(1)) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) {
+      return data.key;
+    }
+  }
+  return null;
+};
 
 export const DEFAULT_CATEGORICAL_PALETTES = paletteMap;
 export const DEFAULT_CATEGORICAL_PALETTE_ID = "adobe";
