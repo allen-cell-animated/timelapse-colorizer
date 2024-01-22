@@ -190,7 +190,7 @@ function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | 
  * - `range`: array of two numbers, representing the min and max of the color map range.
  * - `colorRampKey`: the key of the current color map.
  * - `colorRampReversed`: boolean, whether the color map is reversed.
- * - `palette`: an array of (three.js) Color objects representing the current color palette to use.
+ * - `categoricalPalette`: an array of (three.js) Color objects representing the current color palette to use.
  *
  * @returns
  * - If no parameters are present or valid, returns an empty string.
@@ -236,7 +236,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
     if (key !== null) {
       includedParameters.push(`${URL_PARAM_PALETTE_KEY}=${key}`);
     } else {
-      // Save the hex color stops directly.
+      // Save the hex color stops as a string separated by dashes.
       // TODO: Save only the edited colors to shorten URL.
       const stops = state.categoricalPalette.map((color: Color) => {
         return color.getHexString();
