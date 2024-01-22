@@ -3,12 +3,13 @@ import React, { ReactElement } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
+import { DrawMode } from "../../colorizer/ColorizeCanvas";
 import { FlexColumn } from "../../styles/utils";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+import { DrawSettings } from "../CanvasWrapper";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
 import CustomCollapse from "../CustomCollapse";
-import { ViewerConfig, DrawMode } from "../../colorizer/types";
 import styled from "styled-components";
 
 const NO_BACKDROP = {
@@ -19,13 +20,23 @@ const NO_BACKDROP = {
 const INDENT_PX = 24;
 
 type SettingsTabProps = {
-  config: ViewerConfig;
-  updateConfig(settings: Partial<ViewerConfig>): void;
-
-  selectedBackdropKey: string | null;
-  setSelectedBackdropKey: (key: string | null) => void;
-
+  outOfRangeDrawSettings: DrawSettings;
+  outlierDrawSettings: DrawSettings;
+  showScaleBar: boolean;
+  showTimestamp: boolean;
   dataset: Dataset | null;
+  backdropBrightness: number;
+  backdropSaturation: number;
+  selectedBackdropKey: string | null;
+  objectOpacity: number;
+  setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
+  setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
+  setShowScaleBar: (show: boolean) => void;
+  setShowTimestamp: (show: boolean) => void;
+  setBackdropBrightness: (percent: number) => void;
+  setBackdropSaturation: (percent: number) => void;
+  setBackdropKey: (name: string | null) => void;
+  setObjectOpacity: (opacity: number) => void;
 };
 
 const HiddenMarksSlider = styled(Slider)`
@@ -67,7 +78,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <LabeledDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
               items={backdropOptions}
-              onChange={props.setSelectedBackdropKey}
+              onChange={props.setBackdropKey}
               disabled={backdropOptions.length === 1}
             />
           </SettingsItem>
@@ -77,9 +88,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               min={50}
               max={150}
               step={10}
-              value={props.config.backdropBrightness}
-              onChange={(newBrightness: number) => props.updateConfig({ backdropBrightness: newBrightness })}
               marks={makeAntSliderMarks([50, 100, 150])}
+              value={props.backdropBrightness}
+              onChange={props.setBackdropBrightness}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </SettingsItem>
@@ -90,9 +101,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               min={0}
               max={100}
               step={10}
-              value={props.config.backdropSaturation}
-              onChange={(saturation) => props.updateConfig({ backdropSaturation: saturation })}
               marks={makeAntSliderMarks([0, 50, 100])}
+              value={props.backdropSaturation}
+              onChange={props.setBackdropSaturation}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </SettingsItem>
@@ -102,19 +113,19 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
           <SettingsItem label="Filtered object color">
             <DrawModeDropdown
-              selected={props.config.outOfRangeDrawSettings.mode}
-              color={props.config.outOfRangeDrawSettings.color}
+              selected={props.outOfRangeDrawSettings.mode}
+              color={props.outOfRangeDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
-                props.updateConfig({ outOfRangeDrawSettings: { mode, color } });
+                props.setOutOfRangeDrawSettings({ mode, color });
               }}
             />
           </SettingsItem>
           <SettingsItem label="Outlier object color">
             <DrawModeDropdown
-              selected={props.config.outlierDrawSettings.mode}
-              color={props.config.outlierDrawSettings.color}
+              selected={props.outlierDrawSettings.mode}
+              color={props.outlierDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
-                props.updateConfig({ outlierDrawSettings: { mode, color } });
+                props.setOutlierDrawSettings({ mode, color });
               }}
             />
           </SettingsItem>
@@ -123,16 +134,16 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}
-              value={props.config.objectOpacity}
-              onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
+              value={props.objectOpacity}
+              onChange={props.setObjectOpacity}
             />
           </SettingsItem>
           <SettingsItem>
             <Checkbox
               type="checkbox"
-              checked={props.config.showScaleBar}
-              onChange={(event) => {
-                props.updateConfig({ showScaleBar: event.target.checked });
+              checked={props.showScaleBar}
+              onChange={() => {
+                props.setShowScaleBar(!props.showScaleBar);
               }}
             >
               Show scale bar
@@ -141,9 +152,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           <SettingsItem>
             <Checkbox
               type="checkbox"
-              checked={props.config.showTimestamp}
-              onChange={(event) => {
-                props.updateConfig({ showTimestamp: event.target.checked });
+              checked={props.showTimestamp}
+              onChange={() => {
+                props.setShowTimestamp(!props.showTimestamp);
               }}
             >
               Show timestamp
