@@ -137,7 +137,7 @@ describe("Loading + saving from URL query strings", () => {
       range: [21.433, 89.4],
       colorRampKey: "myMap-1",
       colorRampReversed: true,
-      palette: DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors,
+      categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors,
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
@@ -278,15 +278,16 @@ describe("Loading + saving from URL query strings", () => {
     }
   });
 
-  it("Uses keys for all palettes", () => {
+  it("Accepts keys for all palettes", () => {
     for (const data of DEFAULT_CATEGORICAL_PALETTES.values()) {
-      const params: Partial<UrlParams> = { palette: data.colors };
-      let queryString = paramsToUrlQueryString(params);
+      const params: Partial<UrlParams> = { categoricalPalette: data.colors };
+      const queryString = paramsToUrlQueryString(params);
 
       expect(queryString).to.equal(`?palette-key=${data.key}`);
 
-      let parsedParams = loadParamsFromUrlQueryString(queryString);
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
       expect(parsedParams).deep.equals(params);
+      expect(parsedParams.categoricalPalette).deep.equals(data.colors);
     }
   });
 
@@ -306,12 +307,12 @@ describe("Loading + saving from URL query strings", () => {
       "#0000b0",
     ];
     const colors = hexColors.map((color) => new Color(color));
-    const params: Partial<UrlParams> = { palette: colors };
-    let queryString = paramsToUrlQueryString(params);
+    const params: Partial<UrlParams> = { categoricalPalette: colors };
+    const queryString = paramsToUrlQueryString(params);
     expect(queryString).equals(
       "?palette=000000-000010-000020-000030-000040-000050-000060-000070-000080-000090-0000a0-0000b0"
     );
-    let parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
     expect(parsedParams).deep.equals(params);
   });
 
@@ -319,7 +320,7 @@ describe("Loading + saving from URL query strings", () => {
     const queryString =
       "?palette-key=adobe&palette=000000-ff0000-00ff00-0000ff-000000-ff0000-00ff00-0000ff-000000-ff0000-00ff00-0000ff";
     const expectedParams = {
-      palette: DEFAULT_CATEGORICAL_PALETTES.get("adobe")?.colors,
+      categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get("adobe")?.colors,
     };
     expect(loadParamsFromUrlQueryString(queryString)).deep.equals(expectedParams);
   });
@@ -328,13 +329,13 @@ describe("Loading + saving from URL query strings", () => {
     const hexColors: ColorRepresentation[] = ["#000000", "#000010", "#000020", "#000030"];
     const colors = hexColors.map((color) => new Color(color));
 
-    const params: Partial<UrlParams> = { palette: colors };
-    let queryString = paramsToUrlQueryString(params);
+    const params: Partial<UrlParams> = { categoricalPalette: colors };
+    const queryString = paramsToUrlQueryString(params);
     expect(queryString).equals("?palette=000000-000010-000020-000030");
-    let parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
 
     const defaultColors = DEFAULT_CATEGORICAL_PALETTES.get("adobe")!.colors;
     const expectedColors = [...colors, ...defaultColors.slice(4)];
-    expect(parsedParams).deep.equals({ palette: expectedColors });
+    expect(parsedParams).deep.equals({ categoricalPalette: expectedColors });
   });
 });

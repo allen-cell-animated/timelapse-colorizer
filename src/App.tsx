@@ -201,7 +201,7 @@ function App(): ReactElement {
       range: rangeParam,
       colorRampKey: colorRampKey,
       colorRampReversed: colorRampReversed,
-      palette: categoricalPalette,
+      categoricalPalette: categoricalPalette,
     });
   }, [
     getDatasetAndCollectionParam,
@@ -268,8 +268,8 @@ function App(): ReactElement {
     if (initialUrlParams.colorRampReversed) {
       setColorRampReversed(initialUrlParams.colorRampReversed);
     }
-    if (initialUrlParams.palette) {
-      setCategoricalPalette(initialUrlParams.palette);
+    if (initialUrlParams.categoricalPalette) {
+      setCategoricalPalette(initialUrlParams.categoricalPalette);
     }
   }, []);
 

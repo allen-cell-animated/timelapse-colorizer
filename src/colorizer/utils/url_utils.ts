@@ -39,7 +39,7 @@ export type UrlParams = {
   range: [number, number];
   colorRampKey: string | null;
   colorRampReversed: boolean | null;
-  palette: Color[];
+  categoricalPalette: Color[];
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -231,14 +231,14 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
       includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
     }
   }
-  if (state.palette) {
-    const key = getKeyFromPalette(state.palette);
+  if (state.categoricalPalette) {
+    const key = getKeyFromPalette(state.categoricalPalette);
     if (key !== null) {
       includedParameters.push(`${URL_PARAM_PALETTE_KEY}=${key}`);
     } else {
       // Save the hex color stops directly.
-      // TODO: Change only edited colors...?
-      const stops = state.palette.map((color: Color) => {
+      // TODO: Save only the edited colors to shorten URL.
+      const stops = state.categoricalPalette.map((color: Color) => {
         return color.getHexString();
       });
       includedParameters.push(`${URL_PARAM_PALETTE}=${stops.join("-")}`);
@@ -404,20 +404,25 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     colorRampParam = colorRampRawParam.slice(0, -1);
   }
 
+  // Parse palette data
   const paletteKeyParam = urlParams.get(URL_PARAM_PALETTE_KEY);
-  const paletteParam = urlParams.get(URL_PARAM_PALETTE);
+  const paletteStringParam = urlParams.get(URL_PARAM_PALETTE);
   const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
-  let palette: Color[] | undefined = undefined;
-  if (paletteKeyParam !== null) {
-    palette = DEFAULT_CATEGORICAL_PALETTES.get(paletteKeyParam)?.colors || defaultPalette.colors;
-  } else if (paletteParam) {
+
+  let categoricalPalette: Color[] | undefined = undefined;
+  if (paletteKeyParam) {
+    // Use key if provided
+    categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get(paletteKeyParam)?.colors || defaultPalette.colors;
+  } else if (paletteStringParam) {
     // Parse into color objects
-    const hexColors: ColorRepresentation[] = paletteParam.split("-").map((hex) => "#" + hex) as ColorRepresentation[];
-    while (hexColors.length < MAX_FEATURE_CATEGORIES) {
+    const hexColors: ColorRepresentation[] = paletteStringParam
+      .split("-")
+      .map((hex) => "#" + hex) as ColorRepresentation[];
+    if (hexColors.length < MAX_FEATURE_CATEGORIES) {
       // backfill extra colors to meet max length using default palette
-      hexColors.push(defaultPalette.colorStops[hexColors.length]);
+      hexColors.push(...defaultPalette.colorStops.slice(hexColors.length));
     }
-    palette = hexColors.map((hex) => new Color(hex));
+    categoricalPalette = hexColors.map((hex) => new Color(hex));
   }
 
   // Remove undefined entries from the object for a cleaner return value
@@ -429,9 +434,8 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     time: timeParam,
     thresholds: thresholdsParam,
     range: rangeParam,
-
     colorRampKey: colorRampParam,
     colorRampReversed: colorRampReversedParam,
-    palette,
+    categoricalPalette,
   });
 }
