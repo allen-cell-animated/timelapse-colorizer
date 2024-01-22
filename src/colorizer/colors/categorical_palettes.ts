@@ -28,7 +28,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://spectrum.adobe.com/page/color-for-data-visualization/
-    key: "adobe-light",
+    key: "adobe_light",
     name: "Adobe Categorical 50%",
     colorStops: [
       "#93D9D7",
@@ -46,7 +46,7 @@ const rawPaletteData: RawColorData[] = [
     ],
   },
   {
-    key: "matplotlib-paired",
+    key: "matplotlib_paired",
     name: "Paired",
     colorStops: [
       "#A8CEE2",
@@ -65,7 +65,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
-    key: "matplotlib-accent",
+    key: "matplotlib_accent",
     name: "Accent",
     colorStops: [
       "#7FC97F",
@@ -84,7 +84,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
-    key: "matplotlib-tab10",
+    key: "matplotlib_tab10",
     name: "Matplotlib - Tab 10",
     colorStops: [
       "#2677B0",
@@ -104,7 +104,7 @@ const rawPaletteData: RawColorData[] = [
   {
     // https://medialab.github.io/iwanthue/
     // TODO: Potentially remove or rename
-    key: "iwanthue-set2",
+    key: "iwanthue_set2",
     name: "Random - Tea Party",
     colorStops: [
       "#E085FB",
@@ -124,7 +124,7 @@ const rawPaletteData: RawColorData[] = [
   {
     // https://medialab.github.io/iwanthue/
     // TODO: Potentially remove or rename
-    key: "iwanthue-set3",
+    key: "iwanthue_set3",
     name: "Random - Chiclets",
     colorStops: [
       "#F769CD",
@@ -161,7 +161,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://medialab.github.io/iwanthue/
-    key: "iwanthue-dark",
+    key: "iwanthue_dark",
     name: "Dark",
     colorStops: [
       "#44C098",
@@ -180,7 +180,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
-    key: "matplotlib-pastel1",
+    key: "matplotlib_pastel1",
     name: "Pastel 1",
     colorStops: [
       "#90D3C8",
@@ -199,7 +199,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
-    key: "matplotlib-pastel2",
+    key: "matplotlib_pastel2",
     name: "Pastel 2",
     colorStops: [
       "#F9B5B0",
@@ -218,7 +218,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://medialab.github.io/iwanthue/
-    key: "iwanthue-pastel_3",
+    key: "iwanthue_pastel_3",
     name: "Pastel 3",
     colorStops: [
       "#9CD2B8",
@@ -237,7 +237,7 @@ const rawPaletteData: RawColorData[] = [
   },
   {
     // https://matplotlib.org/stable/gallery/color/colormap_reference.html
-    key: "matplotlib-paired",
+    key: "matplotlib_paired",
     name: "Paired",
     colorStops: [
       "#A8CEE2",
