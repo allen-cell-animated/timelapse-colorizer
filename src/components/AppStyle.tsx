@@ -133,6 +133,9 @@ const CssContainer = styled.div`
   --color-dropdown-hover: ${theme.color.dropdown.backgroundHover};
   --color-dropdown-selected: ${theme.color.dropdown.backgroundSelected};
 
+  --color-collapse-hover: ${theme.color.theme};
+  --color-collapse-active: ${theme.color.themeDark};
+
   --color-focus-shadow: rgba(137, 98, 211, 0.06);
 
   /* Fonts */
@@ -210,7 +213,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             controlHeight: theme.controls.height,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
-            borderRadiusLG: 4,
+            borderRadiusLG: 6,
             colorText: theme.color.text.primary,
             colorTextPlaceholder: theme.color.text.hint,
           },

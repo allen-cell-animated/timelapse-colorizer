@@ -159,7 +159,6 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   return (
     <div className={styles.labeledDropdown} ref={componentContainerRef}>
       {props.label && <h3>{props.label}</h3>}
-      <></>
       <Dropdown
         menu={{}}
         disabled={props.disabled}

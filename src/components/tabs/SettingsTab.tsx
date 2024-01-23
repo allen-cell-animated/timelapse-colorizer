@@ -1,38 +1,31 @@
-import { Checkbox, Divider, Slider } from "antd";
+import { Checkbox, Slider } from "antd";
 import React, { ReactElement } from "react";
-import styled from "styled-components";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode } from "../../colorizer/ColorizeCanvas";
-import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
-import { DrawSettings } from "../CanvasWrapper";
+import { FlexColumn } from "../../styles/utils";
+import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
+import CustomCollapse from "../CustomCollapse";
+import { ViewerConfig, DrawMode } from "../../colorizer/types";
+import styled from "styled-components";
 
 const NO_BACKDROP = {
   key: "",
   label: "(None)",
 };
 
+const INDENT_PX = 24;
+
 type SettingsTabProps = {
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
-  showScaleBar: boolean;
-  showTimestamp: boolean;
-  dataset: Dataset | null;
-  backdropBrightness: number;
-  backdropSaturation: number;
+  config: ViewerConfig;
+  updateConfig(settings: Partial<ViewerConfig>): void;
+
   selectedBackdropKey: string | null;
-  objectOpacity: number;
-  setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
-  setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
-  setShowScaleBar: (show: boolean) => void;
-  setShowTimestamp: (show: boolean) => void;
-  setBackdropBrightness: (percent: number) => void;
-  setBackdropSaturation: (percent: number) => void;
-  setBackdropKey: (name: string | null) => void;
-  setObjectOpacity: (opacity: number) => void;
+  setSelectedBackdropKey: (key: string | null) => void;
+
+  dataset: Dataset | null;
 };
 
 const HiddenMarksSlider = styled(Slider)`
@@ -54,10 +47,9 @@ const makeAntSliderMarks = (marks: number[]): { [key: number]: string } => {
   }, {} as { [key: number]: string });
 };
 
-const SectionHeaderText = styled.h2`
-  margin: 10px 0 0 0;
-  padding: 0;
-`;
+const h3Wrapper = (label: string | ReactElement): ReactElement => {
+  return <h3>{label}</h3>;
+};
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
@@ -69,90 +61,96 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
 
   return (
     <FlexColumn $gap={5}>
-      <SectionHeaderText>Backdrop</SectionHeaderText>
-      <LabeledDropdown
-        label={"Backdrop images"}
-        selected={props.selectedBackdropKey || NO_BACKDROP.key}
-        items={backdropOptions}
-        onChange={props.setBackdropKey}
-        disabled={backdropOptions.length === 1}
-      />
-      <FlexRowAlignCenter $gap={6}>
-        <h3>Brightness</h3>
-        <HiddenMarksSlider
-          // TODO: Add a mark at the 100% position
-          style={{ maxWidth: "200px", width: "100%" }}
-          min={50}
-          max={150}
-          marks={makeAntSliderMarks([50, 100, 150])}
-          step={10}
-          value={props.backdropBrightness}
-          onChange={props.setBackdropBrightness}
-          tooltip={{ formatter: (value) => `${value}%` }}
-        />
-      </FlexRowAlignCenter>
-      <FlexRowAlignCenter $gap={6}>
-        <h3>Saturation</h3>
-        <HiddenMarksSlider
-          style={{ maxWidth: "200px", width: "100%" }}
-          min={0}
-          max={100}
-          step={10}
-          marks={makeAntSliderMarks([0, 50, 100])}
-          value={props.backdropSaturation}
-          onChange={props.setBackdropSaturation}
-          tooltip={{ formatter: (value) => `${value}%` }}
-        />
-      </FlexRowAlignCenter>
-      <Divider />
-      <SectionHeaderText>Objects</SectionHeaderText>
-      <DrawModeDropdown
-        label="Filtered out values"
-        selected={props.outOfRangeDrawSettings.mode}
-        color={props.outOfRangeDrawSettings.color}
-        onChange={(mode: DrawMode, color: Color) => {
-          props.setOutOfRangeDrawSettings({ mode, color });
-        }}
-      />
-      <DrawModeDropdown
-        label="Outliers"
-        selected={props.outlierDrawSettings.mode}
-        color={props.outlierDrawSettings.color}
-        onChange={(mode: DrawMode, color: Color) => {
-          props.setOutlierDrawSettings({ mode, color });
-        }}
-      />{" "}
-      <FlexRowAlignCenter $gap={6}>
-        <h3>Opacity</h3>
-        <HiddenMarksSlider
-          style={{ maxWidth: "200px", width: "100%" }}
-          min={0}
-          max={100}
-          step={10}
-          marks={makeAntSliderMarks([0, 50, 100])}
-          value={props.objectOpacity}
-          onChange={props.setObjectOpacity}
-          tooltip={{ formatter: (value) => `${value}%` }}
-        />
-      </FlexRowAlignCenter>
-      <Checkbox
-        type="checkbox"
-        checked={props.showScaleBar}
-        onChange={() => {
-          props.setShowScaleBar(!props.showScaleBar);
-        }}
-      >
-        Show scale bar
-      </Checkbox>
-      <Checkbox
-        type="checkbox"
-        checked={props.showTimestamp}
-        onChange={() => {
-          props.setShowTimestamp(!props.showTimestamp);
-        }}
-      >
-        Show timestamp
-      </Checkbox>
+      <CustomCollapse label="Backdrop">
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+          <SettingsItem label="Backdrop images">
+            <LabeledDropdown
+              selected={props.selectedBackdropKey || NO_BACKDROP.key}
+              items={backdropOptions}
+              onChange={props.setSelectedBackdropKey}
+              disabled={backdropOptions.length === 1}
+            />
+          </SettingsItem>
+          <SettingsItem label="Brightness">
+            <HiddenMarksSlider
+              style={{ maxWidth: "200px", width: "100%" }}
+              min={50}
+              max={150}
+              step={10}
+              value={props.config.backdropBrightness}
+              onChange={(newBrightness: number) => props.updateConfig({ backdropBrightness: newBrightness })}
+              marks={makeAntSliderMarks([50, 100, 150])}
+              tooltip={{ formatter: (value) => `${value}%` }}
+            />
+          </SettingsItem>
+
+          <SettingsItem label="Saturation">
+            <HiddenMarksSlider
+              style={{ maxWidth: "200px", width: "100%" }}
+              min={0}
+              max={100}
+              step={10}
+              value={props.config.backdropSaturation}
+              onChange={(saturation) => props.updateConfig({ backdropSaturation: saturation })}
+              marks={makeAntSliderMarks([0, 50, 100])}
+              tooltip={{ formatter: (value) => `${value}%` }}
+            />
+          </SettingsItem>
+        </SettingsContainer>
+      </CustomCollapse>
+      <CustomCollapse label="Objects">
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+          <SettingsItem label="Filtered object color">
+            <DrawModeDropdown
+              selected={props.config.outOfRangeDrawSettings.mode}
+              color={props.config.outOfRangeDrawSettings.color}
+              onChange={(mode: DrawMode, color: Color) => {
+                props.updateConfig({ outOfRangeDrawSettings: { mode, color } });
+              }}
+            />
+          </SettingsItem>
+          <SettingsItem label="Outlier object color">
+            <DrawModeDropdown
+              selected={props.config.outlierDrawSettings.mode}
+              color={props.config.outlierDrawSettings.color}
+              onChange={(mode: DrawMode, color: Color) => {
+                props.updateConfig({ outlierDrawSettings: { mode, color } });
+              }}
+            />
+          </SettingsItem>
+          <SettingsItem label="Opacity">
+            <HiddenMarksSlider
+              style={{ maxWidth: "200px", width: "100%" }}
+              min={0}
+              max={100}
+              value={props.config.objectOpacity}
+              onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
+            />
+          </SettingsItem>
+          <SettingsItem>
+            <Checkbox
+              type="checkbox"
+              checked={props.config.showScaleBar}
+              onChange={(event) => {
+                props.updateConfig({ showScaleBar: event.target.checked });
+              }}
+            >
+              Show scale bar
+            </Checkbox>
+          </SettingsItem>
+          <SettingsItem>
+            <Checkbox
+              type="checkbox"
+              checked={props.config.showTimestamp}
+              onChange={(event) => {
+                props.updateConfig({ showTimestamp: event.target.checked });
+              }}
+            >
+              Show timestamp
+            </Checkbox>
+          </SettingsItem>
+        </SettingsContainer>
+      </CustomCollapse>
     </FlexColumn>
   );
 }

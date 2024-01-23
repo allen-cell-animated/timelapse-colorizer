@@ -1,8 +1,9 @@
 .labeledDropdown {
   display: flex;
+  flex-direction: row;
   align-items: center;
   width: max-content;
-  gap: 6px;
+  gap: 6px !important;
 }
 
 /* Make button and dropdown have the same width */
