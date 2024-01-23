@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useReducer, useRef, useState } from "react";
 
 import {
   CaretRightOutlined,
@@ -10,7 +10,6 @@ import {
 } from "@ant-design/icons";
 import { Button, Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
-import { Color } from "three";
 
 import styles from "./App.module.css";
 import {
@@ -23,9 +22,9 @@ import {
   Track,
 } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { FeatureThreshold, isThresholdNumeric } from "./colorizer/types";
+import { ViewerConfig, FeatureThreshold, defaultViewerConfig, isThresholdNumeric } from "./colorizer/types";
 import { getColorMap, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -60,11 +59,14 @@ function App(): ReactElement {
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
-
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
-  const [backdropBrightness, setBackdropBrightness] = useState<number>(100);
-  const [backdropSaturation, setBackdropSaturation] = useState<number>(100);
-  const [objectOpacity, setObjectOpacity] = useState(100);
+
+  // TODO: Save these settings in local storage
+  // Use reducer here in case multiple updates happen simultaneously
+  const [config, updateConfig] = useReducer(
+    (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
+    defaultViewerConfig
+  );
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
@@ -74,14 +76,6 @@ function App(): ReactElement {
   const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
-  const [outOfRangeDrawSettings, setOutOfRangeDrawSettings] = useState({
-    mode: DrawMode.USE_COLOR,
-    color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
-  });
-  const [outlierDrawSettings, setOutlierDrawSettings] = useState({
-    mode: DrawMode.USE_COLOR,
-    color: new Color(OUTLIER_COLOR_DEFAULT),
-  });
 
   const [categoricalPalette, setCategoricalPalette] = useState(
     DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
@@ -110,11 +104,7 @@ function App(): ReactElement {
   );
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
-  const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
   const [openTab, setOpenTab] = useState(TabType.TRACK_PLOT);
-  const [showTrackPath, setShowTrackPath] = useState(false);
-  const [showScaleBar, setShowScaleBar] = useState(true);
-  const [showTimestamp, setShowTimestamp] = useState(true);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -338,7 +328,12 @@ function App(): ReactElement {
       if (initialUrlParams.range) {
         setColorRampMin(initialUrlParams.range[0]);
         setColorRampMax(initialUrlParams.range[1]);
+      } else {
+        // Load default range from dataset for the current feature
+        setColorRampMin(dataset?.getFeatureData(featureName)?.min || 0);
+        setColorRampMax(dataset?.getFeatureData(featureName)?.max || 0);
       }
+
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
         // Highlight the track. Seek to start of frame only if time is not defined.
         findTrack(initialUrlParams.track, initialUrlParams.time !== undefined);
@@ -470,7 +465,7 @@ function App(): ReactElement {
       setFeatureName(newFeatureName);
 
       const featureData = newDataset.getFeatureData(newFeatureName);
-      if (!isColorRampRangeLocked && featureData) {
+      if (!config.keepRangeBetweenDatasets && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
         if (threshold && isThresholdNumeric(threshold)) {
@@ -484,7 +479,7 @@ function App(): ReactElement {
 
       canv.setFeature(newFeatureName);
     },
-    [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
+    [config.keepRangeBetweenDatasets, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
 
   const getFeatureValue = useCallback(
@@ -716,19 +711,19 @@ function App(): ReactElement {
             {/** Additional top bar settings */}
             <div>
               <Checkbox
-                checked={isColorRampRangeLocked}
+                checked={config.keepRangeBetweenDatasets}
                 onChange={() => {
                   // Invert lock on range
-                  setIsColorRampRangeLocked(!isColorRampRangeLocked);
+                  updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
                 }}
               >
                 Keep range between datasets
               </Checkbox>
               <Checkbox
                 type="checkbox"
-                checked={showTrackPath}
+                checked={config.showTrackPath}
                 onChange={() => {
-                  setShowTrackPath(!showTrackPath);
+                  updateConfig({ showTrackPath: !config.showTrackPath });
                 }}
               >
                 Show track path
@@ -755,18 +750,13 @@ function App(): ReactElement {
               <CanvasWrapper
                 canv={canv}
                 dataset={dataset}
-                showTrackPath={showTrackPath}
-                outOfRangeDrawSettings={outOfRangeDrawSettings}
-                outlierDrawSettings={outlierDrawSettings}
+                selectedBackdropKey={selectedBackdropKey}
                 colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 categoricalColors={categoricalPalette}
                 selectedTrack={selectedTrack}
-                selectedBackdropKey={selectedBackdropKey}
-                backdropBrightness={backdropBrightness}
-                backdropSaturation={backdropSaturation}
-                objectOpacity={objectOpacity}
+                config={config}
                 onTrackClicked={(track) => {
                   setFindTrackInput("");
                   setSelectedTrack(track);
@@ -780,8 +770,6 @@ function App(): ReactElement {
                   }
                 }}
                 onMouseLeave={() => setShowHoveredId(false)}
-                showScaleBar={showScaleBar}
-                showTimestamp={showTimestamp}
               />
             </HoverTooltip>
 
@@ -915,24 +903,12 @@ function App(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <SettingsTab
-                          // TODO: Refactor all of this into a settings or configuration object
-                          outOfRangeDrawSettings={outOfRangeDrawSettings}
-                          outlierDrawSettings={outlierDrawSettings}
-                          showScaleBar={showScaleBar}
-                          showTimestamp={showTimestamp}
+                          config={config}
+                          updateConfig={updateConfig}
                           dataset={dataset}
-                          backdropBrightness={backdropBrightness}
-                          backdropSaturation={backdropSaturation}
+                          // TODO: This could be part of a dataset-specific settings object
                           selectedBackdropKey={selectedBackdropKey}
-                          setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
-                          setOutlierDrawSettings={setOutlierDrawSettings}
-                          setShowScaleBar={setShowScaleBar}
-                          setShowTimestamp={setShowTimestamp}
-                          setBackdropBrightness={setBackdropBrightness}
-                          setBackdropSaturation={setBackdropSaturation}
-                          setBackdropKey={setSelectedBackdropKey}
-                          objectOpacity={objectOpacity}
-                          setObjectOpacity={setObjectOpacity}
+                          setSelectedBackdropKey={setSelectedBackdropKey}
                         />
                       </div>
                     ),

@@ -3,13 +3,12 @@ import React, { ReactElement } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode } from "../../colorizer/ColorizeCanvas";
 import { FlexColumn } from "../../styles/utils";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
-import { DrawSettings } from "../CanvasWrapper";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
 import CustomCollapse from "../CustomCollapse";
+import { ViewerConfig, DrawMode } from "../../colorizer/types";
 import styled from "styled-components";
 
 const NO_BACKDROP = {
@@ -20,23 +19,13 @@ const NO_BACKDROP = {
 const INDENT_PX = 24;
 
 type SettingsTabProps = {
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
-  showScaleBar: boolean;
-  showTimestamp: boolean;
-  dataset: Dataset | null;
-  backdropBrightness: number;
-  backdropSaturation: number;
+  config: ViewerConfig;
+  updateConfig(settings: Partial<ViewerConfig>): void;
+
   selectedBackdropKey: string | null;
-  objectOpacity: number;
-  setOutOfRangeDrawSettings: (drawSettings: DrawSettings) => void;
-  setOutlierDrawSettings: (drawSettings: DrawSettings) => void;
-  setShowScaleBar: (show: boolean) => void;
-  setShowTimestamp: (show: boolean) => void;
-  setBackdropBrightness: (percent: number) => void;
-  setBackdropSaturation: (percent: number) => void;
-  setBackdropKey: (name: string | null) => void;
-  setObjectOpacity: (opacity: number) => void;
+  setSelectedBackdropKey: (key: string | null) => void;
+
+  dataset: Dataset | null;
 };
 
 const HiddenMarksSlider = styled(Slider)`
@@ -74,36 +63,36 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
-          <SettingsItem label="Backdrop images:">
+          <SettingsItem label="Backdrop images">
             <LabeledDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
               items={backdropOptions}
-              onChange={props.setBackdropKey}
+              onChange={props.setSelectedBackdropKey}
               disabled={backdropOptions.length === 1}
             />
           </SettingsItem>
-          <SettingsItem label="Brightness:">
+          <SettingsItem label="Brightness">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={50}
               max={150}
               step={10}
+              value={props.config.backdropBrightness}
+              onChange={(newBrightness: number) => props.updateConfig({ backdropBrightness: newBrightness })}
               marks={makeAntSliderMarks([50, 100, 150])}
-              value={props.backdropBrightness}
-              onChange={props.setBackdropBrightness}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </SettingsItem>
 
-          <SettingsItem label="Saturation:">
+          <SettingsItem label="Saturation">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}
               step={10}
+              value={props.config.backdropSaturation}
+              onChange={(saturation) => props.updateConfig({ backdropSaturation: saturation })}
               marks={makeAntSliderMarks([0, 50, 100])}
-              value={props.backdropSaturation}
-              onChange={props.setBackdropSaturation}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </SettingsItem>
@@ -111,39 +100,39 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       </CustomCollapse>
       <CustomCollapse label="Objects">
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
-          <SettingsItem label="Filtered object color:">
+          <SettingsItem label="Filtered object color">
             <DrawModeDropdown
-              selected={props.outOfRangeDrawSettings.mode}
-              color={props.outOfRangeDrawSettings.color}
+              selected={props.config.outOfRangeDrawSettings.mode}
+              color={props.config.outOfRangeDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
-                props.setOutOfRangeDrawSettings({ mode, color });
+                props.updateConfig({ outOfRangeDrawSettings: { mode, color } });
               }}
             />
           </SettingsItem>
-          <SettingsItem label="Outlier object color:">
+          <SettingsItem label="Outlier object color">
             <DrawModeDropdown
-              selected={props.outlierDrawSettings.mode}
-              color={props.outlierDrawSettings.color}
+              selected={props.config.outlierDrawSettings.mode}
+              color={props.config.outlierDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
-                props.setOutlierDrawSettings({ mode, color });
+                props.updateConfig({ outlierDrawSettings: { mode, color } });
               }}
             />
           </SettingsItem>
-          <SettingsItem label="Opacity:">
+          <SettingsItem label="Opacity">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}
-              value={props.objectOpacity}
-              onChange={props.setObjectOpacity}
+              value={props.config.objectOpacity}
+              onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
             />
           </SettingsItem>
           <SettingsItem>
             <Checkbox
               type="checkbox"
-              checked={props.showScaleBar}
-              onChange={() => {
-                props.setShowScaleBar(!props.showScaleBar);
+              checked={props.config.showScaleBar}
+              onChange={(event) => {
+                props.updateConfig({ showScaleBar: event.target.checked });
               }}
             >
               Show scale bar
@@ -152,9 +141,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           <SettingsItem>
             <Checkbox
               type="checkbox"
-              checked={props.showTimestamp}
-              onChange={() => {
-                props.setShowTimestamp(!props.showTimestamp);
+              checked={props.config.showTimestamp}
+              onChange={(event) => {
+                props.updateConfig({ showTimestamp: event.target.checked });
               }}
             >
               Show timestamp
