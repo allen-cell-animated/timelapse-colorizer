@@ -5,7 +5,7 @@ import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, 
 import styled from "styled-components";
 
 import { AppThemeContext } from "../AppStyle";
-import { Dataset, Track } from "../../colorizer";
+import { ColorRampData, Dataset, Track } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 import { useTransitionedDebounce } from "../../colorizer/utils/react_utils";
 import IconButton from "../IconButton";
@@ -13,6 +13,8 @@ import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { SwitchIconSVG } from "../../assets";
+import { Color, ColorRepresentation } from "three";
+import { DrawMode, ViewerConfig } from "../../colorizer/types";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
@@ -30,6 +32,8 @@ enum RangeType {
 }
 const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
 
+type DataArray = Uint32Array | Float32Array | number[];
+
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
   currentFrame: number;
@@ -38,6 +42,14 @@ type ScatterPlotTabProps = {
   setFrame: (frame: number) => Promise<void>;
   isVisible: boolean;
   isPlaying: boolean;
+
+  selectedFeatureName: string | null;
+  colorRampMin: number;
+  colorRampMax: number;
+  colorRamp: ColorRampData;
+  categoricalPalette: Color[];
+
+  viewerConfig: ViewerConfig;
 };
 
 const ScatterPlotContainer = styled.div`
@@ -126,6 +138,23 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     startTransition(() => {
       _setYAxisFeatureName(newFeatureName);
     });
+  };
+
+  // Delay updates to these values unless manually set.
+  const [selectedFeatureName, setSelectedFeatureName] = useState<string | null>(props.selectedFeatureName);
+  const [colorRampMin, setColorRampMin] = useState<number>(props.colorRampMin);
+  const [colorRampMax, setColorRampMax] = useState<number>(props.colorRampMax);
+  const [colorRamp, setColorRamp] = useState<ColorRampData>(props.colorRamp);
+  const [categoricalPalette, setCategoricalPalette] = useState<Color[]>(props.categoricalPalette);
+  const [config, setConfig] = useState(props.viewerConfig);
+
+  const updateColorRamp = () => {
+    setSelectedFeatureName(props.selectedFeatureName);
+    setColorRampMin(props.colorRampMin);
+    setColorRampMax(props.colorRampMax);
+    setColorRamp(props.colorRamp);
+    setCategoricalPalette(props.categoricalPalette);
+    setConfig(props.viewerConfig);
   };
 
   //////////////////////////////////
@@ -280,13 +309,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   ):
     | undefined
     | {
-        xData: number[] | Uint32Array | Float32Array;
-        yData: number[] | Uint32Array | Float32Array;
+        xData: DataArray;
+        yData: DataArray;
         objectIds: number[];
         trackIds: number[];
       } => {
-    let xData: number[] | Uint32Array | Float32Array = [];
-    let yData: number[] | Uint32Array | Float32Array = [];
+    let xData: DataArray = [];
+    let yData: DataArray = [];
     let objectIds: number[] = [];
     let trackIds: number[] = [];
 
@@ -418,6 +447,144 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
   };
 
+  const subsampleColorRamp = (colorRamp: ColorRampData, numColors: number): Color[] => {
+    const colors: Color[] = [];
+    for (let i = 0; i < numColors; i++) {
+      colors.push(colorRamp.colorRamp.sample(i / (numColors - 1)));
+    }
+    return colors;
+  };
+
+  /**
+   * Returns the index of a bucket that a value should be sorted into, based on a provided range.
+   * @param value
+   * @param minValue Min value, inclusive.
+   * @param maxValue Max value, inclusive.
+   * @param numBuckets Number of buckets in the range between min and max values.
+   * @returns The index of the bucket that the value should be sorted into, from 0 to `numBuckets - 1`.
+   *  Returns -1 if the value is out of bounds for the given range.
+   */
+  const getBucketIndex = (value: number, minValue: number, maxValue: number, numBuckets: number): number => {
+    if (value < minValue || value > maxValue) {
+      return -1;
+    }
+    return Math.round(remap(value, minValue, maxValue, 0, numBuckets - 1));
+  };
+
+  type TraceData = {
+    x: number[];
+    y: number[];
+    objectIds: number[];
+    trackIds: number[];
+    color: Color;
+  };
+
+  /**
+   *
+   * @param xData
+   * @param yData
+   * @param objectIds
+   * @param trackIds
+   */
+  const colorizeScatterplotPoints = (
+    xData: DataArray,
+    yData: DataArray,
+    objectIds: number[],
+    trackIds: number[]
+  ): Partial<PlotData>[] => {
+    if (selectedFeatureName === null || dataset === null || !xAxisFeatureName || !yAxisFeatureName) {
+      return [];
+    }
+
+    // Hovertext for points. Shows the X and Y values; the track and object ID are passed in via the `text` attribute.
+    const hoverTemplate =
+      `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
+      `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
+      `<br>Track ID: %{customdata}<br>Object ID: %{id}`;
+    const isUsingTime = xAxisFeatureName === TIME_FEATURE.name || yAxisFeatureName === TIME_FEATURE.name;
+
+    const featureData = dataset.getFeatureData(selectedFeatureName);
+
+    if (!featureData) {
+      let markerBaseColor = theme.color.themeDark;
+      if (rangeType === RangeType.ALL_TIME && selectedTrack) {
+        // Use a light grey for other markers when a track is selected.
+        markerBaseColor = "#cccccc";
+      }
+      const markerConfig: Partial<PlotMarker> = {
+        color: applyMarkerTransparency(xData.length, markerBaseColor),
+        size: 4,
+      };
+      // Return default coloring?
+      return [
+        {
+          x: xData,
+          y: yData,
+          ids: objectIds.map((id) => id.toString()),
+          customdata: trackIds,
+          name: "",
+          type: "scattergl",
+          // Show line for time feature when only track is visible.
+          mode: isUsingTime && rangeType === RangeType.CURRENT_TRACK ? "lines+markers" : "markers",
+          marker: markerConfig,
+          hovertemplate: hoverTemplate,
+        },
+      ];
+    }
+
+    // Generate colors
+    const NUM_RANGE_COLORS = 100; // TBD if this is a good number?
+    const isCategory = dataset.isFeatureCategorical(selectedFeatureName);
+    const colors = isCategory ? categoricalPalette : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
+
+    // Reserve two extra colors for out of bounds and outliers.
+    const outOfBoundsColor =
+      config.outOfRangeDrawSettings.mode !== DrawMode.HIDE
+        ? config.outOfRangeDrawSettings.color
+        : new Color("#00000000");
+
+    // Make a bucket group for each color and for the out-of-range and outliers.
+    const traceDataBucket: TraceData[] = [];
+    for (let i = 0; i < colors.length + 1; i++) {
+      const color = i === 0 ? outOfBoundsColor : colors[i - 1];
+      traceDataBucket.push({ x: [], y: [], objectIds: [], trackIds: [], color: color });
+    }
+
+    // Sort data into buckets
+    for (let i = 0; i < xData.length; i++) {
+      // Add one to bucketIndex to adjust for the out of bounds bucket.
+      const bucketIndex = getBucketIndex(featureData.data[i], colorRampMin, colorRampMax, colors.length) + 1;
+      // const isOutlier = dataset.outliers[objectIds[i]];
+      // TODO: handle outliers
+
+      const data = traceDataBucket[bucketIndex];
+      data.x.push(xData[i]);
+      data.y.push(yData[i]);
+      data.objectIds.push(objectIds[i]);
+      data.trackIds.push(trackIds[i]);
+    }
+
+    // Transform buckets into traces
+    const traces: Partial<PlotData>[] = traceDataBucket.map((bucket) => {
+      return {
+        x: bucket.x,
+        y: bucket.y,
+        ids: bucket.objectIds.map((id) => id.toString()),
+        customdata: bucket.trackIds,
+        name: "",
+        type: "scattergl",
+        mode: "markers",
+        marker: {
+          color: applyMarkerTransparency(xData.length, "#" + bucket.color.getHexString()),
+          size: 4,
+        },
+        hovertemplate: hoverTemplate,
+      };
+    });
+
+    return traces;
+  };
+
   //////////////////////////////////
   // Plot Rendering
   //////////////////////////////////
@@ -432,6 +599,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     props.isVisible,
     isPlaying,
     plotDivRef.current,
+    config,
+    selectedFeatureName,
+    colorRampMin,
+    colorRampMax,
+    colorRamp,
+    categoricalPalette,
   ];
 
   const renderPlot = useCallback((forceRelayout: boolean = false) => {
@@ -468,18 +641,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const isUsingTime = xAxisFeatureName === TIME_FEATURE.name || yAxisFeatureName === TIME_FEATURE.name;
 
     // Configure traces
-    const markerTrace: Partial<PlotData> = {
-      x: xData,
-      y: yData,
-      ids: objectIds.map((id) => id.toString()),
-      customdata: trackIds,
-      name: "",
-      type: "scattergl",
-      // Show line for time feature when only track is visible.
-      mode: isUsingTime && rangeType === RangeType.CURRENT_TRACK ? "lines+markers" : "markers",
-      marker: markerConfig,
-      hovertemplate: hoverTemplate,
-    };
+    const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds);
+    // const markerTrace: Partial<PlotData> = {
+    //   x: xData,
+    //   y: yData,
+    //   ids: objectIds.map((id) => id.toString()),
+    //   customdata: trackIds,
+    //   name: "",
+    //   type: "scattergl",
+    //   // Show line for time feature when only track is visible.
+    //   mode: isUsingTime && rangeType === RangeType.CURRENT_TRACK ? "lines+markers" : "markers",
+    //   marker: markerConfig,
+    //   hovertemplate: hoverTemplate,
+    // };
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
       name: "x density",
@@ -499,7 +673,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       nbinsy: 20,
     };
 
-    const traces = [markerTrace, xHistogram, yHistogram];
+    traces.push(xHistogram);
+    traces.push(yHistogram);
 
     if (selectedTrack && rangeType === RangeType.ALL_TIME) {
       // Render current track as an extra trace.
@@ -704,6 +879,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           ></ScatterPlotContainer>
         </LoadingSpinner>
       </div>
+      <Button
+        onClick={() => {
+          updateColorRamp();
+        }}
+      >
+        Sync
+      </Button>
     </>
   );
 });

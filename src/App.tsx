@@ -878,6 +878,12 @@ function App(): ReactElement {
                           setFrame={setFrameAndRender}
                           isVisible={openTab === TabType.SCATTER_PLOT}
                           isPlaying={timeControls.isPlaying() || isRecording}
+                          selectedFeatureName={featureName}
+                          colorRampMin={colorRampMin}
+                          colorRampMax={colorRampMax}
+                          colorRamp={colorRampData.get(colorRampKey)!}
+                          categoricalPalette={categoricalPalette}
+                          viewerConfig={config}
                         />
                       </div>
                     ),
