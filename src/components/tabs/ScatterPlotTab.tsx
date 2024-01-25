@@ -13,7 +13,7 @@ import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { SwitchIconSVG } from "../../assets";
-import { Color, ColorRepresentation } from "three";
+import { Color } from "three";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
@@ -462,7 +462,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    * @param maxValue Max value, inclusive.
    * @param numBuckets Number of buckets in the range between min and max values.
    * @returns The index of the bucket that the value should be sorted into, from 0 to `numBuckets - 1`.
-   *  Returns -1 if the value is out of bounds for the given range.
+   * Returns -1 if the value is out of bounds for the given range, or -2 if the value is in range but
+   * an outlier.
    */
   const getBucketIndex = (value: number, minValue: number, maxValue: number, numBuckets: number): number => {
     if (value < minValue || value > maxValue) {
@@ -533,54 +534,65 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Generate colors
-    const NUM_RANGE_COLORS = 100; // TBD if this is a good number?
+    const NUM_RANGE_COLORS = 50; // TBD if this is a good number?
     const isCategory = dataset.isFeatureCategorical(selectedFeatureName);
     const colors = isCategory ? categoricalPalette : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
 
     // Reserve two extra colors for out of bounds and outliers.
-    const outOfBoundsColor =
-      config.outOfRangeDrawSettings.mode !== DrawMode.HIDE
-        ? config.outOfRangeDrawSettings.color
-        : new Color("#00000000");
+    const outlierColor = config.outlierDrawSettings.color;
+    const outOfBoundsColor = config.outOfRangeDrawSettings.color;
 
     // Make a bucket group for each color and for the out-of-range and outliers.
-    const traceDataBucket: TraceData[] = [];
-    for (let i = 0; i < colors.length + 1; i++) {
-      const color = i === 0 ? outOfBoundsColor : colors[i - 1];
-      traceDataBucket.push({ x: [], y: [], objectIds: [], trackIds: [], color: color });
+    let traceDataBuckets: TraceData[] = [];
+    for (let i = 0; i < colors.length + 2; i++) {
+      let color;
+      if (i === 0) {
+        color = outlierColor;
+      } else if (i === 1) {
+        color = outOfBoundsColor;
+      } else {
+        color = colors[i - 2];
+      }
+      traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color: color });
     }
 
     // Sort data into buckets
     for (let i = 0; i < xData.length; i++) {
       // Add one to bucketIndex to adjust for the out of bounds bucket.
+      // const isOutlier = dataset.outliers.
       const bucketIndex = getBucketIndex(featureData.data[i], colorRampMin, colorRampMax, colors.length) + 1;
-      // const isOutlier = dataset.outliers[objectIds[i]];
-      // TODO: handle outliers
 
-      const data = traceDataBucket[bucketIndex];
-      data.x.push(xData[i]);
-      data.y.push(yData[i]);
-      data.objectIds.push(objectIds[i]);
-      data.trackIds.push(trackIds[i]);
+      const bucket = traceDataBuckets[bucketIndex];
+      bucket.x.push(xData[i]);
+      bucket.y.push(yData[i]);
+      bucket.objectIds.push(objectIds[i]);
+      bucket.trackIds.push(trackIds[i]);
+    }
+
+    if (config.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
+      // Delete the out of bounds bucket
+      traceDataBuckets.shift();
     }
 
     // Transform buckets into traces
-    const traces: Partial<PlotData>[] = traceDataBucket.map((bucket) => {
-      return {
-        x: bucket.x,
-        y: bucket.y,
-        ids: bucket.objectIds.map((id) => id.toString()),
-        customdata: bucket.trackIds,
-        name: "",
-        type: "scattergl",
-        mode: "markers",
-        marker: {
-          color: applyMarkerTransparency(xData.length, "#" + bucket.color.getHexString()),
-          size: 4,
-        },
-        hovertemplate: hoverTemplate,
-      };
-    });
+    const traces: Partial<PlotData>[] = traceDataBuckets
+      .filter((bucket) => bucket.x.length > 0) // Remove empty buckets
+      .map((bucket) => {
+        return {
+          x: bucket.x,
+          y: bucket.y,
+          ids: bucket.objectIds.map((id) => id.toString()),
+          customdata: bucket.trackIds,
+          name: "",
+          type: "scattergl",
+          mode: "markers",
+          marker: {
+            color: applyMarkerTransparency(xData.length, "#" + bucket.color.getHexString()),
+            size: 4,
+          },
+          hovertemplate: hoverTemplate,
+        };
+      });
 
     return traces;
   };
