@@ -1,6 +1,9 @@
+import { PlotData } from "plotly.js-dist-min";
 import { ColorRampData } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 import { Color } from "three";
+
+export type DataArray = Uint32Array | Float32Array | number[];
 
 export type TraceData = {
   x: number[];
@@ -58,4 +61,48 @@ export function splitTraceData(traceData: TraceData, maxPoints: number): TraceDa
     traces.push(trace);
   }
   return traces;
+}
+
+/** Draws a simple line graph over the data points. */
+export function makeLineTrace(xData: DataArray, yData: DataArray): Partial<Plotly.PlotData> {
+  return {
+    x: xData,
+    y: yData,
+    name: "",
+    type: "scattergl",
+    mode: "lines",
+    line: {
+      color: "#aaaaaa",
+    },
+  };
+}
+
+/**
+ * Returns an array of Plotly traces that render a crosshair at the X,Y coordinates.
+ */
+export function drawCrosshair(x: number, y: number): Partial<PlotData>[] {
+  const crosshair: Partial<PlotData> = {
+    x: [x],
+    y: [y],
+    type: "scattergl",
+    mode: "markers",
+    marker: {
+      size: 10,
+      line: {
+        color: "#000",
+        width: 1,
+      },
+      symbol: "cross-thin",
+    },
+  };
+  // Add a transparent white outline around the marker for contrast.
+  const crosshairBg = { ...crosshair };
+  crosshairBg.marker = {
+    ...crosshairBg.marker,
+    line: {
+      color: "#ffffffa0",
+      width: 4,
+    },
+  };
+  return [crosshairBg, crosshair];
 }

@@ -15,7 +15,15 @@ import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { SwitchIconSVG } from "../../assets";
 import { Color } from "three";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
-import { TraceData, getBucketIndex, splitTraceData, subsampleColorRamp } from "./scatter_plot_data_utils";
+import {
+  DataArray,
+  TraceData,
+  drawCrosshair,
+  getBucketIndex,
+  makeLineTrace,
+  splitTraceData,
+  subsampleColorRamp,
+} from "./scatter_plot_data_utils";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
@@ -34,8 +42,6 @@ enum RangeType {
   CURRENT_FRAME = "Current frame",
 }
 const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
-
-type DataArray = Uint32Array | Float32Array | number[];
 
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
@@ -452,9 +458,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   /**
    *
-   * Applies colorization to points in a scatterplot! Does this by splitting the data into multiple traces with a solid
+   * Applies colorization to point traces in a scatterplot. Does this by splitting the data into multiple traces each with a solid
    * color, which is much faster than using Plotly's native color ramping. Also enforces a maximum number of points
-   * per trace.
+   * per trace, which also seems to speed up Plotly renders.
    *
    * @param xData
    * @param yData
@@ -565,79 +571,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return traces;
   };
 
-  const makeLineTrace = (
-    xData: DataArray,
-    yData: DataArray,
-    objectIds: number[],
-    trackIds: number[]
-  ): Partial<Plotly.PlotData> => {
-    // Use feature values to colorize the line, and rely on Plotly's native color ramping (icky!! slow!!!)
-    // TODO: Sort values by time?
-    // const featureData = dataset?.getFeatureData(selectedFeatureName || "");
-    // if (!featureData) {
-    //   return {};
-    // }
-
-    // const normalizedRampValues = objectIds.map((id) => {
-    //   const featureValue = featureData.data[id];
-    //   return remap(featureValue, colorRampMin, colorRampMax, 0, 1, true); // no clamping
-    // });
-    // let colorScale;
-
-    // if (dataset && dataset.isFeatureCategorical(selectedFeatureName || "")) {
-    //   colorScale = categoricalPalette.map((color, index) => {
-    //     const stop = remap(index, 0, categoricalPalette.length - 1, 0, 1, false);
-    //     return [stop, "#" + color.getHexString()];
-    //   });
-    // } else {
-    //   colorScale = colorRamp.colorStops.map((color, index) => {
-    //     const stop = remap(index, 0, colorRamp.colorStops.length - 1, 0, 1, false);
-    //     return [stop, color];
-    //   });
-    // }
-
-    // console.log(normalizedRampValues);
-    // console.log(colorScale);
-
-    return {
-      x: xData,
-      y: yData,
-      name: "",
-      type: "scattergl",
-      mode: "lines",
-      line: {
-        color: "#aaaaaa",
-      },
-    };
-  };
-
-  const drawCrosshair = (x: number, y: number): Partial<PlotData>[] => {
-    const crosshair: Partial<PlotData> = {
-      x: [x],
-      y: [y],
-      type: "scattergl",
-      mode: "markers",
-      marker: {
-        size: 10,
-        line: {
-          color: theme.color.text.primary,
-          width: 1,
-        },
-        symbol: "cross-thin",
-      },
-    };
-    // Add a transparent white outline around the marker for contrast.
-    const crosshairBg = { ...crosshair };
-    crosshairBg.marker = {
-      ...crosshairBg.marker,
-      line: {
-        color: theme.color.layout.background + "a0",
-        width: 4,
-      },
-    };
-    return [crosshairBg, crosshair];
-  };
-
   //////////////////////////////////
   // Plot Rendering
   //////////////////////////////////
@@ -715,7 +648,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (trackData) {
       // Render an extra trace for lines connecting the points in the current track when time is a feature.
       if (isUsingTime) {
-        traces.push(makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds));
+        traces.push(makeLineTrace(trackData.xData, trackData.yData));
       }
       // Render track only
       const trackTraces = colorizeScatterplotPoints(
