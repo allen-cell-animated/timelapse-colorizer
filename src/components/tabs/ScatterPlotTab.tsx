@@ -15,6 +15,7 @@ import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { SwitchIconSVG } from "../../assets";
 import { Color } from "three";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
+import { TraceData, getBucketIndex, splitTraceData, subsampleColorRamp } from "./scatter_plot_data_utils";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
@@ -24,6 +25,8 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
   displayModeBar: false,
   responsive: true,
 };
+
+const MAX_POINTS_PER_TRACE = 1_000;
 
 enum RangeType {
   ALL_TIME = "All time",
@@ -447,39 +450,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
   };
 
-  const subsampleColorRamp = (colorRamp: ColorRampData, numColors: number): Color[] => {
-    const colors: Color[] = [];
-    for (let i = 0; i < numColors; i++) {
-      colors.push(colorRamp.colorRamp.sample(i / (numColors - 1)));
-    }
-    return colors;
-  };
-
-  /**
-   * Returns the index of a bucket that a value should be sorted into, based on a provided range.
-   * @param value
-   * @param minValue Min value, inclusive.
-   * @param maxValue Max value, inclusive.
-   * @param numBuckets Number of buckets in the range between min and max values.
-   * @returns The index of the bucket that the value should be sorted into, from 0 to `numBuckets - 1`.
-   * Returns -1 if the value is out of bounds for the given range, or -2 if the value is in range but
-   * an outlier.
-   */
-  const getBucketIndex = (value: number, minValue: number, maxValue: number, numBuckets: number): number => {
-    if (value < minValue || value > maxValue) {
-      return -1;
-    }
-    return Math.round(remap(value, minValue, maxValue, 0, numBuckets - 1));
-  };
-
-  type TraceData = {
-    x: number[];
-    y: number[];
-    objectIds: number[];
-    trackIds: number[];
-    color: Color;
-  };
-
   /**
    *
    * @param xData
@@ -534,7 +504,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Generate colors
-    const NUM_RANGE_COLORS = 50; // TBD if this is a good number?
+    const NUM_RANGE_COLORS = 100; // TBD if this is a good number?
     const isCategory = dataset.isFeatureCategorical(selectedFeatureName);
     const colors = isCategory ? categoricalPalette : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
 
@@ -577,6 +547,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // Transform buckets into traces
     const traces: Partial<PlotData>[] = traceDataBuckets
       .filter((bucket) => bucket.x.length > 0) // Remove empty buckets
+      .reduce((acc: TraceData[], bucket: TraceData) => {
+        // Split the traces into smaller chunks to prevent plotly from freezing.
+        acc.push(...splitTraceData(bucket, MAX_POINTS_PER_TRACE));
+        return acc;
+      }, [])
       .map((bucket) => {
         return {
           x: bucket.x,
@@ -594,6 +569,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         };
       });
 
+    console.log(traces);
     return traces;
   };
 
