@@ -61,7 +61,7 @@ export default class Dataset {
   private features: Map<string, FeatureData>;
 
   private outlierFile?: string;
-  public outliers?: Texture | null;
+  public outliers?: Uint8Array | null;
 
   private tracksFile?: string;
   private timesFile?: string;
@@ -227,18 +227,18 @@ export default class Dataset {
    * @throws An error if fileUrl is not undefined and the data cannot be loaded from the file.
    * @returns Promise of a texture loaded from the file. If `fileUrl` is undefined, returns null.
    */
-  private async loadToTexture(dataType: FeatureDataType, fileUrl?: string): Promise<Texture | null> {
-    if (!fileUrl) {
-      return null;
-    }
-    try {
-      const url = this.resolveUrl(fileUrl);
-      const source = await this.arrayLoader.load(url);
-      return source.getTexture(dataType);
-    } catch (e) {
-      return null;
-    }
-  }
+  // private async loadToTexture(dataType: FeatureDataType, fileUrl?: string): Promise<Texture | null> {
+  //   if (!fileUrl) {
+  //     return null;
+  //   }
+  //   try {
+  //     const url = this.resolveUrl(fileUrl);
+  //     const source = await this.arrayLoader.load(url);
+  //     return source.getTexture(dataType);
+  //   } catch (e) {
+  //     return null;
+  //   }
+  // }
 
   /**
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
@@ -365,7 +365,7 @@ export default class Dataset {
     );
 
     const result = await Promise.all([
-      this.loadToTexture(FeatureDataType.U8, this.outlierFile),
+      this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
       this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
       this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
