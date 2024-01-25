@@ -190,11 +190,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   /**
    * Returns a hex color string with increasing transparency as the number of markers increases.
-   * Base color must be a 6-digit hex string.
+   * Base color must be a 7-character RGB hex string (e.g. `#000000`).
    */
   const applyMarkerTransparency = (numMarkers: number, baseColor: string): string => {
     if (baseColor.length !== 7) {
-      throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "'must be a 6-digit hex string.");
+      throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
     }
     // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
     const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
