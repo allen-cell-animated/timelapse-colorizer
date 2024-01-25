@@ -452,7 +452,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   /**
    *
-   * Applies colorization to points in a scatterplot
+   * Applies colorization to points in a scatterplot! Does this by splitting the data into multiple traces with a solid
+   * color, which is much faster than using Plotly's native color ramping. Also enforces a maximum number of points
+   * per trace.
    *
    * @param xData
    * @param yData
@@ -563,6 +565,79 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return traces;
   };
 
+  const makeLineTrace = (
+    xData: DataArray,
+    yData: DataArray,
+    objectIds: number[],
+    trackIds: number[]
+  ): Partial<Plotly.PlotData> => {
+    // Use feature values to colorize the line, and rely on Plotly's native color ramping (icky!! slow!!!)
+    // TODO: Sort values by time?
+    // const featureData = dataset?.getFeatureData(selectedFeatureName || "");
+    // if (!featureData) {
+    //   return {};
+    // }
+
+    // const normalizedRampValues = objectIds.map((id) => {
+    //   const featureValue = featureData.data[id];
+    //   return remap(featureValue, colorRampMin, colorRampMax, 0, 1, true); // no clamping
+    // });
+    // let colorScale;
+
+    // if (dataset && dataset.isFeatureCategorical(selectedFeatureName || "")) {
+    //   colorScale = categoricalPalette.map((color, index) => {
+    //     const stop = remap(index, 0, categoricalPalette.length - 1, 0, 1, false);
+    //     return [stop, "#" + color.getHexString()];
+    //   });
+    // } else {
+    //   colorScale = colorRamp.colorStops.map((color, index) => {
+    //     const stop = remap(index, 0, colorRamp.colorStops.length - 1, 0, 1, false);
+    //     return [stop, color];
+    //   });
+    // }
+
+    // console.log(normalizedRampValues);
+    // console.log(colorScale);
+
+    return {
+      x: xData,
+      y: yData,
+      name: "",
+      type: "scattergl",
+      mode: "lines",
+      line: {
+        color: "#aaaaaa",
+      },
+    };
+  };
+
+  const drawCrosshair = (x: number, y: number): Partial<PlotData>[] => {
+    const crosshair: Partial<PlotData> = {
+      x: [x],
+      y: [y],
+      type: "scattergl",
+      mode: "markers",
+      marker: {
+        size: 10,
+        line: {
+          color: theme.color.text.primary,
+          width: 1,
+        },
+        symbol: "cross-thin",
+      },
+    };
+    // Add a transparent white outline around the marker for contrast.
+    const crosshairBg = { ...crosshair };
+    crosshairBg.marker = {
+      ...crosshairBg.marker,
+      line: {
+        color: theme.color.layout.background + "a0",
+        width: 4,
+      },
+    };
+    return [crosshairBg, crosshair];
+  };
+
   //////////////////////////////////
   // Plot Rendering
   //////////////////////////////////
@@ -612,18 +687,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Configure traces
     const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds, {}, markerBaseColor);
-    // const markerTrace: Partial<PlotData> = {
-    //   x: xData,
-    //   y: yData,
-    //   ids: objectIds.map((id) => id.toString()),
-    //   customdata: trackIds,
-    //   name: "",
-    //   type: "scattergl",
-    //   // Show line for time feature when only track is visible.
-    //   mode: isUsingTime && rangeType === RangeType.CURRENT_TRACK ? "lines+markers" : "markers",
-    //   marker: markerConfig,
-    //   hovertemplate: hoverTemplate,
-    // };
+
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
       name: "x density",
@@ -646,48 +710,30 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     traces.push(xHistogram);
     traces.push(yHistogram);
 
-    if (selectedTrack && rangeType === RangeType.ALL_TIME) {
-      // Render current track as an extra trace.
-      const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
-      if (trackData) {
-        const { xData: trackXData, yData: trackYData } = trackData;
-        traces.push(
-          ...colorizeScatterplotPoints(trackXData, trackYData, trackData.objectIds, trackData.trackIds, { size: 5 })
-        );
+    // Render current track as an extra trace.
+    const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
+    if (trackData) {
+      // Render an extra trace for lines connecting the points in the current track when time is a feature.
+      if (isUsingTime) {
+        traces.push(makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds));
       }
+      // Render track only
+      const trackTraces = colorizeScatterplotPoints(
+        trackData.xData,
+        trackData.yData,
+        trackData.objectIds,
+        trackData.trackIds,
+        {
+          size: 5,
+        }
+      );
+      traces.push(...trackTraces);
     }
-
-    // Render an extra trace for lines connecting the points in the current track when time is a feature.
 
     // Render currently selected object as an extra crosshair trace.
     if (selectedTrack) {
       const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
-
-      const crosshair: Partial<PlotData> = {
-        x: [rawXData[currentObjectId]],
-        y: [rawYData[currentObjectId]],
-        type: "scattergl",
-        mode: "markers",
-        marker: {
-          size: 10,
-          line: {
-            color: theme.color.text.primary,
-            width: 1,
-          },
-          symbol: "cross-thin",
-        },
-      };
-      // Add a transparent white outline around the marker for contrast.
-      const crosshairBg = { ...crosshair };
-      crosshairBg.marker = {
-        ...crosshairBg.marker,
-        line: {
-          color: theme.color.layout.background + "a0",
-          width: 4,
-        },
-      };
-      traces.push(crosshairBg);
-      traces.push(crosshair);
+      traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
     }
 
     // Format axes
