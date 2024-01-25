@@ -452,16 +452,24 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   /**
    *
+   * Applies colorization to points in a scatterplot
+   *
    * @param xData
    * @param yData
    * @param objectIds
    * @param trackIds
+   * @param markerConfig Additional marker configuration to apply to all points. By default,
+   * markers are size 4.
+   * @param {Color | undefined} overrideColor When defined, uses a base color for all points, instead of
+   * calculating based on the color ramp or palette.
    */
   const colorizeScatterplotPoints = (
     xData: DataArray,
     yData: DataArray,
     objectIds: number[],
-    trackIds: number[]
+    trackIds: number[],
+    markerConfig: Partial<PlotMarker> = {},
+    overrideColor?: Color
   ): Partial<PlotData>[] => {
     if (selectedFeatureName === null || dataset === null || !xAxisFeatureName || !yAxisFeatureName) {
       return [];
@@ -472,76 +480,57 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
       `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
       `<br>Track ID: %{customdata}<br>Object ID: %{id}`;
-    const isUsingTime = xAxisFeatureName === TIME_FEATURE.name || yAxisFeatureName === TIME_FEATURE.name;
-
     const featureData = dataset.getFeatureData(selectedFeatureName);
 
-    if (!featureData) {
-      let markerBaseColor = theme.color.themeDark;
-      if (rangeType === RangeType.ALL_TIME && selectedTrack) {
-        // Use a light grey for other markers when a track is selected.
-        markerBaseColor = "#cccccc";
-      }
-      const markerConfig: Partial<PlotMarker> = {
-        color: applyMarkerTransparency(xData.length, markerBaseColor),
-        size: 4,
-      };
-      // Return default coloring?
-      return [
-        {
-          x: xData,
-          y: yData,
-          ids: objectIds.map((id) => id.toString()),
-          customdata: trackIds,
-          name: "",
-          type: "scattergl",
-          // Show line for time feature when only track is visible.
-          mode: isUsingTime && rangeType === RangeType.CURRENT_TRACK ? "lines+markers" : "markers",
-          marker: markerConfig,
-          hovertemplate: hoverTemplate,
-        },
-      ];
-    }
-
-    // Generate colors
-    const NUM_RANGE_COLORS = 100; // TBD if this is a good number?
-    const isCategory = dataset.isFeatureCategorical(selectedFeatureName);
-    const colors = isCategory ? categoricalPalette : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
-
-    // Reserve two extra colors for out of bounds and outliers.
-    const outlierColor = config.outlierDrawSettings.color;
-    const outOfBoundsColor = config.outOfRangeDrawSettings.color;
-
-    // Make a bucket group for each color and for the out-of-range and outliers.
     let traceDataBuckets: TraceData[] = [];
-    for (let i = 0; i < colors.length + 2; i++) {
-      let color;
-      if (i === 0) {
-        color = outlierColor;
-      } else if (i === 1) {
-        color = outOfBoundsColor;
-      } else {
-        color = colors[i - 2];
+    if (!featureData || markerConfig.color || overrideColor) {
+      // Do no coloring! Keep all points in the same bucket.
+      traceDataBuckets.push({
+        x: Array.from(xData),
+        y: Array.from(yData),
+        objectIds: objectIds,
+        trackIds: trackIds,
+        color: overrideColor || new Color(),
+      });
+    } else {
+      // Generate colors
+      const NUM_RANGE_COLORS = 100; // TBD if this is a good number?
+      const isCategory = dataset.isFeatureCategorical(selectedFeatureName);
+      const colors = isCategory ? categoricalPalette : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
+
+      // Reserve two extra colors for out of bounds and outliers.
+      const outlierColor = config.outlierDrawSettings.color;
+      const outOfBoundsColor = config.outOfRangeDrawSettings.color;
+
+      // Make a bucket group for each color and for the out-of-range and outliers.
+      for (let i = 0; i < colors.length + 2; i++) {
+        let color;
+        if (i === 0) {
+          color = outlierColor;
+        } else if (i === 1) {
+          color = outOfBoundsColor;
+        } else {
+          color = colors[i - 2];
+        }
+        traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color: color });
       }
-      traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color: color });
-    }
 
-    // Sort data into buckets
-    for (let i = 0; i < xData.length; i++) {
-      // Add one to bucketIndex to adjust for the out of bounds bucket.
-      // const isOutlier = dataset.outliers.
-      const bucketIndex = getBucketIndex(featureData.data[i], colorRampMin, colorRampMax, colors.length) + 1;
+      // Sort data into buckets
+      for (let i = 0; i < xData.length; i++) {
+        // Add one to bucketIndex to adjust for the out of bounds bucket.
+        // const isOutlier = dataset.outliers. // TODO: Handle Outliers!!!!
+        const bucketIndex = getBucketIndex(featureData.data[i], colorRampMin, colorRampMax, colors.length) + 1;
+        const bucket = traceDataBuckets[bucketIndex];
+        bucket.x.push(xData[i]);
+        bucket.y.push(yData[i]);
+        bucket.objectIds.push(objectIds[i]);
+        bucket.trackIds.push(trackIds[i]);
+      }
 
-      const bucket = traceDataBuckets[bucketIndex];
-      bucket.x.push(xData[i]);
-      bucket.y.push(yData[i]);
-      bucket.objectIds.push(objectIds[i]);
-      bucket.trackIds.push(trackIds[i]);
-    }
-
-    if (config.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
-      // Delete the out of bounds bucket
-      traceDataBuckets.shift();
+      if (config.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
+        // Delete the out of bounds bucket
+        traceDataBuckets.shift();
+      }
     }
 
     // Transform buckets into traces
@@ -564,6 +553,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           marker: {
             color: applyMarkerTransparency(xData.length, "#" + bucket.color.getHexString()),
             size: 4,
+            ...markerConfig,
           },
           hovertemplate: hoverTemplate,
         };
@@ -612,24 +602,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
     const { xData, yData, objectIds, trackIds } = result;
 
-    let markerBaseColor = theme.color.themeDark;
+    let markerBaseColor = undefined;
     if (rangeType === RangeType.ALL_TIME && selectedTrack) {
       // Use a light grey for other markers when a track is selected.
-      markerBaseColor = "#cccccc";
+      markerBaseColor = new Color("#dddddd");
     }
-    const markerConfig: Partial<PlotMarker> = {
-      color: applyMarkerTransparency(xData.length, markerBaseColor),
-      size: 4,
-    };
-    // Hovertext for points. Shows the X and Y values; the track and object ID are passed in via the `text` attribute.
-    const hoverTemplate =
-      `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
-      `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
-      `<br>Track ID: %{customdata}<br>Object ID: %{id}`;
+
     const isUsingTime = xAxisFeatureName === TIME_FEATURE.name || yAxisFeatureName === TIME_FEATURE.name;
 
     // Configure traces
-    const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds);
+    const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds, {}, markerBaseColor);
     // const markerTrace: Partial<PlotData> = {
     //   x: xData,
     //   y: yData,
@@ -669,21 +651,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
       if (trackData) {
         const { xData: trackXData, yData: trackYData } = trackData;
-        const trackMarkerTrace: Partial<PlotData> = {
-          x: trackXData,
-          y: trackYData,
-          type: "scattergl",
-          mode: isUsingTime ? "lines+markers" : "markers",
-          marker: {
-            color: applyMarkerTransparency(trackXData.length, theme.color.themeDark),
-            size: 5,
-          },
-        };
-        traces.push(trackMarkerTrace);
+        traces.push(
+          ...colorizeScatterplotPoints(trackXData, trackYData, trackData.objectIds, trackData.trackIds, { size: 5 })
+        );
       }
     }
 
-    // Render currently selected object as an extra trace. (shown as crosshairs)
+    // Render an extra trace for lines connecting the points in the current track when time is a feature.
+
+    // Render currently selected object as an extra crosshair trace.
     if (selectedTrack) {
       const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
 
