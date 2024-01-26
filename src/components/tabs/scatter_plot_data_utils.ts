@@ -1,5 +1,5 @@
 import { PlotData } from "plotly.js-dist-min";
-import { ColorRampData } from "../../colorizer";
+import { ColorRamp } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 import { Color } from "three";
 
@@ -13,28 +13,32 @@ export type TraceData = {
   color: Color;
 };
 
-export function subsampleColorRamp(colorRamp: ColorRampData, numColors: number): Color[] {
+/**
+ * Sample a color ramp at evenly-spaced points, returning an array of colors.
+ * @param {ColorRampData} colorRamp The gradient to sample.
+ * @param {number} numColors The number of colors to sample.
+ * @returns {Color[]} An array of length `numColors` containing the sampled colors.
+ */
+export function subsampleColorRamp(colorRamp: ColorRamp, numColors: number): Color[] {
   const colors: Color[] = [];
   for (let i = 0; i < numColors; i++) {
-    colors.push(colorRamp.colorRamp.sample(i / (numColors - 1)));
+    colors.push(colorRamp.sample(i / (numColors - 1)));
   }
   return colors;
 }
 
 /**
- * Returns the index of a bucket that a value should be sorted into, based on a provided range.
+ * Returns the index of a bucket that a value should be sorted into, based on a provided range and number of buckets.
+ * Assumes that each bucket is evenly spaced.
  * @param value
  * @param minValue Min value, inclusive.
  * @param maxValue Max value, inclusive.
  * @param numBuckets Number of buckets in the range between min and max values.
- * @returns The index of the bucket that the value should be sorted into, from 0 to `numBuckets - 1`.
- * Returns -1 if the value is out of bounds for the given range.
+ * @returns The index of the nearest bucket that the value should be sorted into, from 0 to `numBuckets - 1`. Clamps the value
+ * to the min/max values if it is outside the range.
  */
 export function getBucketIndex(value: number, minValue: number, maxValue: number, numBuckets: number): number {
-  if (value < minValue || value > maxValue) {
-    return -1;
-  }
-  return Math.round(remap(value, minValue, maxValue, 0, numBuckets - 1));
+  return Math.round(remap(value, minValue, maxValue, 0, numBuckets - 1, true));
 }
 
 /**

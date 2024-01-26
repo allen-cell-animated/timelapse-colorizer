@@ -34,7 +34,7 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
   responsive: true,
 };
 
-const MAX_POINTS_PER_TRACE = 1_000;
+const MAX_POINTS_PER_TRACE = 1024;
 
 enum RangeType {
   ALL_TIME = "All time",
@@ -496,8 +496,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     } else {
       // Generate colors
       const NUM_RANGE_COLORS = 100; // TBD if this is a good number?
-      const isCategory = dataset.isFeatureCategorical(selectedFeatureName);
-      const colors = isCategory ? categoricalPalette : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
+      const categories = dataset.getFeatureCategories(selectedFeatureName) || [];
+      const colors =
+        categories !== null
+          ? categoricalPalette.slice(0, categories.length)
+          : subsampleColorRamp(colorRamp.colorRamp, NUM_RANGE_COLORS);
 
       // Reserve two extra colors for out of bounds and outliers.
       const outlierColor = viewerConfig.outlierDrawSettings.color;
@@ -520,7 +523,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       for (let i = 0; i < xData.length; i++) {
         // Add one to bucketIndex to adjust for the out of bounds bucket.
         // const isOutlier = dataset.outliers. // TODO: Handle Outliers!!!!
-        const bucketIndex = getBucketIndex(featureData.data[i], colorRampMin, colorRampMax, colors.length) + 1;
+        const bucketIndex = getBucketIndex(featureData.data[i], colorRampMin, colorRampMax, colors.length) + 2;
         const bucket = traceDataBuckets[bucketIndex];
         bucket.x.push(xData[i]);
         bucket.y.push(yData[i]);
