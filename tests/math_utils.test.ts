@@ -50,9 +50,12 @@ describe("remap", () => {
     expect(remap(0.5, 0, 1, 0, 10)).to.equal(5);
   });
 
-  it("Can flip input range to match output", () => {
+  it("Handles flipped input/output ranges", () => {
     expect(remap(7, 0, 10, 10, 0)).to.equal(3);
+    expect(remap(3, 10, 0, 0, 10)).to.equal(7);
+
     expect(remap(-15, -30, 0, 0, 30)).to.equal(15);
+    expect(remap(15, 0, 30, -30, 0)).to.equal(-15);
   });
 
   it("Does nothing if the input and output ranges are the same", () => {
@@ -60,13 +63,13 @@ describe("remap", () => {
     expect(remap(0.125, -5, 5, -5, 5)).to.equal(0.125);
   });
 
-  it("Handles zero-range inputs", () => {
+  it("Handles input bounds with a range of zero", () => {
     expect(remap(0, 0.5, 0.5, 0, 1)).to.equal(0);
     expect(remap(0.5, 0.5, 0.5, 0, 1)).to.equal(0);
     expect(remap(1, 0.5, 0.5, 0, 1)).to.equal(0);
   });
 
-  it("Handles zero-range outputs", () => {
+  it("Handles output bounds with a range of zero", () => {
     expect(remap(0, 0, 1, 10, 10)).to.equal(10);
     expect(remap(-1, 0, 1, 10, 10)).to.equal(10);
   });
@@ -76,7 +79,7 @@ describe("remap", () => {
     expect(remap(1000, 0, 1, -1, 1)).to.equal(1);
   });
 
-  it("Handles values outside of input min/max", () => {
+  it("Handles values outside of input min/max when clamping is disabled", () => {
     expect(remap(-1, 0, 1, 0, 10, false)).to.equal(-10);
     expect(remap(2, 0, 1, 0, 10, false)).to.equal(20);
   });
