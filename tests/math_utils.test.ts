@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { numberToSciNotation } from "../src/colorizer/utils/math_utils";
+import { numberToSciNotation, remap } from "../src/colorizer/utils/math_utils";
 
 describe("numberToSciNotation", () => {
   it("Handles zero", () => {
@@ -41,5 +41,43 @@ describe("numberToSciNotation", () => {
     expect(numberToSciNotation(0.999, 2)).to.equal("1.0×10⁰");
     expect(numberToSciNotation(-0.05, 1)).to.equal("-5×10⁻²");
     expect(numberToSciNotation(1400, 3)).to.equal("1.40×10³");
+  });
+});
+
+describe("remap", () => {
+  it("Remaps values from one range to another", () => {
+    expect(remap(5, 0, 10, 0, 1)).to.equal(0.5);
+    expect(remap(0.5, 0, 1, 0, 10)).to.equal(5);
+  });
+
+  it("Can flip input range to match output", () => {
+    expect(remap(7, 0, 10, 10, 0)).to.equal(3);
+    expect(remap(-15, -30, 0, 0, 30)).to.equal(15);
+  });
+
+  it("Does nothing if the input and output ranges are the same", () => {
+    expect(remap(0, 0, 1, 0, 1)).to.equal(0);
+    expect(remap(0.125, -5, 5, -5, 5)).to.equal(0.125);
+  });
+
+  it("Handles zero-range inputs", () => {
+    expect(remap(0, 0.5, 0.5, 0, 1)).to.equal(0);
+    expect(remap(0.5, 0.5, 0.5, 0, 1)).to.equal(0);
+    expect(remap(1, 0.5, 0.5, 0, 1)).to.equal(0);
+  });
+
+  it("Handles zero-range outputs", () => {
+    expect(remap(0, 0, 1, 10, 10)).to.equal(10);
+    expect(remap(-1, 0, 1, 10, 10)).to.equal(10);
+  });
+
+  it("Enforces range clamping", () => {
+    expect(remap(-1000, 0, 1, -1, 1)).to.equal(-1);
+    expect(remap(1000, 0, 1, -1, 1)).to.equal(1);
+  });
+
+  it("Handles values outside of input min/max", () => {
+    expect(remap(-1, 0, 1, 0, 10, false)).to.equal(-10);
+    expect(remap(2, 0, 1, 0, 10, false)).to.equal(20);
   });
 });
