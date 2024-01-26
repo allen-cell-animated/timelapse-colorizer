@@ -51,6 +51,9 @@ export function remap(
   if (clamp) {
     input = Math.min(Math.max(input, inMin), inMax);
   }
+  if (inMin === inMax) {
+    return outMin;
+  }
   return ((input - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
 }
 
