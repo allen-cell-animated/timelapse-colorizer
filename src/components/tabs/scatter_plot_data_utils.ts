@@ -1,4 +1,4 @@
-import { PlotData } from "plotly.js-dist-min";
+import Plotly, { PlotData } from "plotly.js-dist-min";
 import { ColorRamp } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 import { Color } from "three";

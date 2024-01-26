@@ -512,7 +512,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
       // Sort data into buckets
       for (let i = 0; i < xData.length; i++) {
-        const isOutOfRange = false;
+        const isOutOfRange = false; // TODO: Implement out of range filtering
         const isOutlier = dataset.outliers ? dataset.outliers[objectIds[i]] : false;
         const objectId = objectIds[i];
 
