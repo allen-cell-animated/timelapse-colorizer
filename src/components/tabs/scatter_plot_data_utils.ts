@@ -14,9 +14,9 @@ export type TraceData = {
 };
 
 /**
- * Sample a color ramp at evenly-spaced points, returning an array of colors.
+ * Sample a color ramp at evenly-spaced points, returning the resulting array of colors.
  * @param {ColorRampData} colorRamp The gradient to sample.
- * @param {number} numColors The number of colors to sample.
+ * @param {number} numColors The number of colors to sample. Must be >= 2.
  * @returns {Color[]} An array of length `numColors` containing the sampled colors.
  */
 export function subsampleColorRamp(colorRamp: ColorRamp, numColors: number): Color[] {

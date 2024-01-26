@@ -5,7 +5,7 @@ import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, 
 import styled from "styled-components";
 
 import { AppThemeContext } from "../AppStyle";
-import { ColorRampData, Dataset, Track } from "../../colorizer";
+import { ColorRamp, ColorRampData, Dataset, Track } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import IconButton from "../IconButton";
@@ -55,7 +55,7 @@ type ScatterPlotTabProps = {
   selectedFeatureName: string | null;
   colorRampMin: number;
   colorRampMax: number;
-  colorRamp: ColorRampData;
+  colorRamp: ColorRamp;
   categoricalPalette: Color[];
 
   viewerConfig: ViewerConfig;
@@ -494,7 +494,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       const colors =
         categories !== null
           ? categoricalPalette.slice(0, categories.length)
-          : subsampleColorRamp(colorRamp.colorRamp, NUM_RANGE_COLORS);
+          : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
 
       // Reserve two extra colors for out of bounds and outliers.
       const outlierColor = viewerConfig.outlierDrawSettings.color;
@@ -648,10 +648,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         trackData.xData,
         trackData.yData,
         trackData.objectIds,
-        trackData.trackIds,
-        {
-          size: 5,
-        }
+        trackData.trackIds
       );
       traces.push(...trackTraces);
     }

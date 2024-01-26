@@ -881,7 +881,7 @@ function App(): ReactElement {
                           selectedFeatureName={featureName}
                           colorRampMin={colorRampMin}
                           colorRampMax={colorRampMax}
-                          colorRamp={colorRampData.get(colorRampKey)!}
+                          colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                           categoricalPalette={categoricalPalette}
                           viewerConfig={config}
                         />
