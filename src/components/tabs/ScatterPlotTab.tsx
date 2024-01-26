@@ -7,7 +7,7 @@ import styled from "styled-components";
 import { AppThemeContext } from "../AppStyle";
 import { ColorRampData, Dataset, Track } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
-import { useTransitionedDebounce } from "../../colorizer/utils/react_utils";
+import { useDebounce } from "../../colorizer/utils/react_utils";
 import IconButton from "../IconButton";
 import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
@@ -105,11 +105,21 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  // TODO: React can merge multiple transitions into one, but it's not guaranteed behavior. Can we merge the transitions?
-  const dataset = useTransitionedDebounce(props.dataset, startTransition, () => setIsRendering(true), 500);
-  const isPlaying = useTransitionedDebounce(props.isPlaying, startTransition, () => setIsRendering(true), 5);
-  const selectedTrack = useTransitionedDebounce(props.selectedTrack, startTransition, () => setIsRendering(true), 0);
-  const currentFrame = useTransitionedDebounce(props.currentFrame, startTransition, () => setIsRendering(true), 0);
+  const { selectedTrack, currentFrame, colorRamp, categoricalPalette, selectedFeatureName, isPlaying, viewerConfig } =
+    props;
+  const dataset = useDebounce(props.dataset, 500);
+  const colorRampMin = useDebounce(props.colorRampMin, 100);
+  const colorRampMax = useDebounce(props.colorRampMax, 100);
+
+  const isDebouncePending =
+    dataset !== props.dataset || colorRampMin !== props.colorRampMin || colorRampMax !== props.colorRampMax;
+
+  // Signal that the plot is stalled when playback starts.
+  useEffect(() => {
+    if (isPlaying) {
+      setIsRendering(true);
+    }
+  }, [isPlaying]);
 
   // TODO: Implement color ramps in a worker thread. This was originally removed for performance issues.
   // Plotly's performance can be improved by generating traces for colors rather than feeding it the raw
@@ -147,23 +157,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     startTransition(() => {
       _setYAxisFeatureName(newFeatureName);
     });
-  };
-
-  // Delay updates to these values unless manually set.
-  const [selectedFeatureName, setSelectedFeatureName] = useState<string | null>(props.selectedFeatureName);
-  const [colorRampMin, setColorRampMin] = useState<number>(props.colorRampMin);
-  const [colorRampMax, setColorRampMax] = useState<number>(props.colorRampMax);
-  const [colorRamp, setColorRamp] = useState<ColorRampData>(props.colorRamp);
-  const [categoricalPalette, setCategoricalPalette] = useState<Color[]>(props.categoricalPalette);
-  const [config, setConfig] = useState(props.viewerConfig);
-
-  const updateColorRamp = () => {
-    setSelectedFeatureName(props.selectedFeatureName);
-    setColorRampMin(props.colorRampMin);
-    setColorRampMax(props.colorRampMax);
-    setColorRamp(props.colorRamp);
-    setCategoricalPalette(props.categoricalPalette);
-    setConfig(props.viewerConfig);
   };
 
   //////////////////////////////////
@@ -507,8 +500,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       const colors = isCategory ? categoricalPalette : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
 
       // Reserve two extra colors for out of bounds and outliers.
-      const outlierColor = config.outlierDrawSettings.color;
-      const outOfBoundsColor = config.outOfRangeDrawSettings.color;
+      const outlierColor = viewerConfig.outlierDrawSettings.color;
+      const outOfBoundsColor = viewerConfig.outOfRangeDrawSettings.color;
 
       // Make a bucket group for each color and for the out-of-range and outliers.
       for (let i = 0; i < colors.length + 2; i++) {
@@ -535,7 +528,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         bucket.trackIds.push(trackIds[i]);
       }
 
-      if (config.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
+      if (viewerConfig.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
         // Delete the out of bounds bucket
         traceDataBuckets.shift();
       }
@@ -585,7 +578,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     props.isVisible,
     isPlaying,
     plotDivRef.current,
-    config,
+    viewerConfig,
     selectedFeatureName,
     colorRampMin,
     colorRampMax,
@@ -645,7 +638,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Render current track as an extra trace.
     const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
-    if (trackData) {
+    if (trackData && rangeType !== RangeType.CURRENT_FRAME) {
       // Render an extra trace for lines connecting the points in the current track when time is a feature.
       if (isUsingTime) {
         traces.push(makeLineTrace(trackData.xData, trackData.yData));
@@ -814,7 +807,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     <>
       {makeControlBar()}
       <div style={{ position: "relative" }}>
-        <LoadingSpinner loading={isPending || isRendering} style={{ marginTop: "10px" }}>
+        <LoadingSpinner loading={isPending || isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
             style={{ width: "100%", height: "475px", padding: "5px" }}
@@ -822,13 +815,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           ></ScatterPlotContainer>
         </LoadingSpinner>
       </div>
-      <Button
-        onClick={() => {
-          updateColorRamp();
-        }}
-      >
-        Sync
-      </Button>
     </>
   );
 });

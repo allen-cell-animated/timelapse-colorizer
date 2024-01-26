@@ -41,34 +41,6 @@ export function useDebounce<T>(value: T, delayMs?: number): T {
 }
 
 /**
- * Combines useTransition and useDebounce. Debounces value and initiates a state transition once the value has come
- * to rest.
- * @param inputValue The value to debounce and transition.
- * @param startTransition The startTransition function returned by useTransition.
- * @param onChange An optional callback that triggers when the debounced value changes, but before the transition.
- * @param delayMs The delay, in milliseconds. 500 ms by default.
- */
-export function useTransitionedDebounce<T>(
-  inputValue: T,
-  startTransition: React.TransitionStartFunction,
-  onChange: () => void = () => {},
-  delayMs: number = 500
-): T {
-  const [value, setValue] = useState<T>(inputValue);
-  const debouncedValue = useDebounce(inputValue, delayMs);
-
-  // Only update value when the debounced value has changed.
-  useEffect(() => {
-    onChange();
-    startTransition(() => {
-      setValue(debouncedValue);
-    });
-  }, [debouncedValue]);
-
-  return value;
-}
-
-/**
  * Returns a reference to a constructed value that will not be re-computed between renders.
  *
  * Functionally, this is a wrapper around useRef and allows it to be used in a type-safe way.
