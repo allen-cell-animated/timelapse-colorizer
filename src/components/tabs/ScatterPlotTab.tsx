@@ -5,7 +5,7 @@ import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, 
 import styled from "styled-components";
 
 import { AppThemeContext } from "../AppStyle";
-import { ColorRamp, ColorRampData, Dataset, Track } from "../../colorizer";
+import { ColorRamp, Dataset, Track } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import IconButton from "../IconButton";
@@ -477,7 +477,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     const featureData = dataset.getFeatureData(selectedFeatureName);
 
-    let traceDataBuckets: TraceData[] = [];
+    const traceDataBuckets: TraceData[] = [];
     if (!featureData || markerConfig.color || overrideColor) {
       // Do no coloring! Keep all points in the same bucket.
       traceDataBuckets.push({
@@ -496,17 +496,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           ? categoricalPalette.slice(0, categories.length)
           : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
 
-      // Reserve two extra colors for out of bounds and outliers.
-      const outlierColor = viewerConfig.outlierDrawSettings.color;
-      const outOfBoundsColor = viewerConfig.outOfRangeDrawSettings.color;
-
-      // Make a bucket group for each color and for the out-of-range and outliers.
+      // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
+      // index 0 = out of filter range, index 1 = outliers.
       for (let i = 0; i < colors.length + 2; i++) {
         let color;
         if (i === 0) {
-          color = outlierColor;
+          color = viewerConfig.outOfRangeDrawSettings.color;
         } else if (i === 1) {
-          color = outOfBoundsColor;
+          color = viewerConfig.outlierDrawSettings.color;
         } else {
           color = colors[i - 2];
         }
@@ -515,10 +512,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
       // Sort data into buckets
       for (let i = 0; i < xData.length; i++) {
-        // Add one to bucketIndex to adjust for the out of bounds bucket.
-        // const isOutlier = dataset.outliers. // TODO: Handle Outliers!!!!
+        const isOutOfRange = false;
+        const isOutlier = dataset.outliers ? dataset.outliers[objectIds[i]] : false;
         const objectId = objectIds[i];
-        const bucketIndex = getBucketIndex(featureData.data[objectId], colorRampMin, colorRampMax, colors.length) + 2;
+
+        let bucketIndex;
+        if (isOutOfRange) {
+          bucketIndex = 0;
+        } else if (isOutlier) {
+          bucketIndex = 1;
+        } else {
+          bucketIndex = getBucketIndex(featureData.data[objectId], colorRampMin, colorRampMax, colors.length) + 2;
+        }
+
         const bucket = traceDataBuckets[bucketIndex];
         bucket.x.push(xData[i]);
         bucket.y.push(yData[i]);
@@ -526,9 +532,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         bucket.trackIds.push(trackIds[i]);
       }
 
+      // Optionally delete the outlier and out of range buckets to hide the values.
+      if (viewerConfig.outlierDrawSettings.mode === DrawMode.HIDE) {
+        traceDataBuckets.splice(1, 1);
+      }
       if (viewerConfig.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
-        // Delete the out of bounds bucket
-        traceDataBuckets.shift();
+        traceDataBuckets.splice(0, 1);
       }
     }
 
