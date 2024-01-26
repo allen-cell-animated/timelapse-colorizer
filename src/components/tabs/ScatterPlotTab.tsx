@@ -450,8 +450,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   };
 
   /**
-   *
-   * Applies colorization to point traces in a scatterplot. Does this by splitting the data into multiple traces each with a solid
+   * Applies coloring to point traces in a scatterplot. Does this by splitting the data into multiple traces each with a solid
    * color, which is much faster than using Plotly's native color ramping. Also enforces a maximum number of points
    * per trace, which also seems to speed up Plotly renders.
    *
@@ -476,11 +475,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       return [];
     }
 
-    // Hovertext for points. Shows the X and Y values; the track and object ID are passed in via the `text` attribute.
-    const hoverTemplate =
-      `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
-      `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
-      `<br>Track ID: %{customdata}<br>Object ID: %{id}`;
     const featureData = dataset.getFeatureData(selectedFeatureName);
 
     let traceDataBuckets: TraceData[] = [];
@@ -496,7 +490,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     } else {
       // Generate colors
       const NUM_RANGE_COLORS = 100; // TBD if this is a good number?
-      const categories = dataset.getFeatureCategories(selectedFeatureName) || [];
+      const categories = dataset.getFeatureCategories(selectedFeatureName);
       const colors =
         categories !== null
           ? categoricalPalette.slice(0, categories.length)
@@ -523,7 +517,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       for (let i = 0; i < xData.length; i++) {
         // Add one to bucketIndex to adjust for the out of bounds bucket.
         // const isOutlier = dataset.outliers. // TODO: Handle Outliers!!!!
-        const bucketIndex = getBucketIndex(featureData.data[i], colorRampMin, colorRampMax, colors.length) + 2;
+        const objectId = objectIds[i];
+        const bucketIndex = getBucketIndex(featureData.data[objectId], colorRampMin, colorRampMax, colors.length) + 2;
         const bucket = traceDataBuckets[bucketIndex];
         bucket.x.push(xData[i]);
         bucket.y.push(yData[i]);
@@ -559,11 +554,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             size: 4,
             ...markerConfig,
           },
-          hovertemplate: hoverTemplate,
+          hovertemplate:
+            `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
+            `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
+            `<br>Track ID: %{customdata}<br>Object ID: %{id}`,
         };
       });
 
-    console.log(traces);
     return traces;
   };
 
