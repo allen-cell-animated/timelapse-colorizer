@@ -373,7 +373,7 @@ export default class Dataset {
       this.loadFrame(0), // load first frame to set frame dimensions
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, _loadFrame, ...featureResults] = result;
+    const [outliers, tracks, times, centroids, bounds, , ...featureResults] = result;
 
     this.outliers = outliers;
     this.trackIds = tracks;
