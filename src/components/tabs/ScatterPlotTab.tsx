@@ -44,8 +44,6 @@ enum RangeType {
 }
 const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
 
-type DataArray = Uint32Array | Float32Array | number[];
-
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
   currentFrame: number;
