@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
-import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
+import React, { ReactElement, memo, useContext, useEffect, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
 
 import { AppThemeContext } from "../AppStyle";
@@ -46,6 +46,31 @@ const ScatterPlotContainer = styled.div`
     border: 0px solid transparent !important;
   }
 `;
+
+/**
+ * Returns true if a Plotly mouse event took place over a histogram subplot.
+ */
+function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
+  return eventData.points.length > 0 && eventData.points[0].data.type === "histogram";
+}
+
+/**
+ * Returns a hex color string with increasing transparency as the number of markers increases.
+ * Base color must be a 7-character RGB hex string (e.g. `#000000`).
+ */
+const applyMarkerTransparency = (numMarkers: number, baseColor: string): string => {
+  if (baseColor.length !== 7) {
+    throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
+  }
+  // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
+  const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
+  return (
+    baseColor +
+    Math.floor(opacity * 255)
+      .toString(16)
+      .padStart(2, "0")
+  );
+};
 
 /**
  * A tab that displays an interactive scatter plot between two features in the dataset.
@@ -132,17 +157,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Click Handlers
   //////////////////////////////////
 
-  /**
-   * Returns true if a Plotly mouse event took place over a histogram subplot.
-   */
-  function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
-    return eventData.points.length > 0 && eventData.points[0].data.type === "histogram";
-  }
-
   // Add click event listeners to the plot. When clicking a point, find the track and jump to
   // that frame.
-  const onClickPlot = useCallback(
-    (eventData: Plotly.PlotMouseEvent): void => {
+  useEffect(() => {
+    const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
       if (!dataset || eventData.points.length === 0 || isHistogramEvent(eventData)) {
         return;
       }
@@ -159,51 +177,27 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // Jump to first frame where the track is valid
         props.findTrack(trackId, true);
       }
-    },
-    [dataset, props.findTrack, props.setFrame]
-  );
+    };
 
-  useEffect(() => {
     plotRef.current?.on("plotly_click", onClickPlot);
     return () => {
       plotRef.current?.removeAllListeners("plotly_click");
     };
-  }, [plotRef.current, onClickPlot]);
+  }, [plotRef.current, dataset, props.findTrack, props.setFrame]);
 
   //////////////////////////////////
   // Helper Methods
   //////////////////////////////////
 
   /** Retrieve feature data, if it exists. Accounts for the artificially-added time feature. */
-  const getData = useCallback(
-    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | undefined => {
-      if (featureName === null || dataset === null) {
-        return undefined;
-      }
-      if (featureName === TIME_FEATURE.name) {
-        return dataset.times || undefined;
-      }
-      return dataset.getFeatureData(featureName)?.data;
-    },
-    []
-  );
-
-  /**
-   * Returns a hex color string with increasing transparency as the number of markers increases.
-   * Base color must be a 7-character RGB hex string (e.g. `#000000`).
-   */
-  const applyMarkerTransparency = (numMarkers: number, baseColor: string): string => {
-    if (baseColor.length !== 7) {
-      throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
+  const getData = (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | undefined => {
+    if (featureName === null || dataset === null) {
+      return undefined;
     }
-    // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
-    const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
-    return (
-      baseColor +
-      Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0")
-    );
+    if (featureName === TIME_FEATURE.name) {
+      return dataset.times || undefined;
+    }
+    return dataset.getFeatureData(featureName)?.data;
   };
 
   // Track last rendered props + state to make optimizations on re-renders
@@ -434,7 +428,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     plotDivRef.current,
   ];
 
-  const renderPlot = useCallback((forceRelayout: boolean = false) => {
+  const renderPlot = (forceRelayout: boolean = false) => {
     const rawXData = getData(xAxisFeatureName, dataset);
     const rawYData = getData(yAxisFeatureName, dataset);
 
@@ -605,7 +599,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         ...props,
       };
     });
-  }, plotDependencies);
+  };
 
   /**
    * Re-render the plot when the relevant props change.
