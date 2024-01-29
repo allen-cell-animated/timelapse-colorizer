@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
-import React, { ReactElement, memo, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
+import React, { ReactElement, memo, useContext, useEffect, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
 
 import { AppThemeContext } from "../AppStyle";
@@ -44,6 +44,8 @@ enum RangeType {
 }
 const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
 
+type DataArray = Uint32Array | Float32Array | number[];
+
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
   currentFrame: number;
@@ -68,6 +70,31 @@ const ScatterPlotContainer = styled.div`
     border: 0px solid transparent !important;
   }
 `;
+
+/**
+ * Returns true if a Plotly mouse event took place over a histogram subplot.
+ */
+function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
+  return eventData.points.length > 0 && eventData.points[0].data.type === "histogram";
+}
+
+/**
+ * Returns a hex color string with increasing transparency as the number of markers increases.
+ * Base color must be a 7-character RGB hex string (e.g. `#000000`).
+ */
+const applyMarkerTransparency = (numMarkers: number, baseColor: string): string => {
+  if (baseColor.length !== 7) {
+    throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
+  }
+  // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
+  const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
+  return (
+    baseColor +
+    Math.floor(opacity * 255)
+      .toString(16)
+      .padStart(2, "0")
+  );
+};
 
 /**
  * A tab that displays an interactive scatter plot between two features in the dataset.
@@ -127,54 +154,36 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // data and asking it to colorize it.
   // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
 
-  // Wrap changes to axis and range in a transition to prevent blocking the UI thread.
-  const [rangeType, _setRangeType] = useState<RangeType>(DEFAULT_RANGE_TYPE);
-  const setRangeType = (newRangeType: RangeType): void => {
-    if (newRangeType === rangeType) {
-      return;
-    }
-    setIsRendering(true);
-    startTransition(() => {
-      _setRangeType(newRangeType);
-    });
+  /**
+   * Wrapper around useState that signals the render spinner whenever the values are set, and
+   * uses useTransition to deprioritize the state update.
+   */
+  const useRenderTriggeringState = <T extends any>(initialValue: T): [T, (value: T) => void] => {
+    const [value, _setValue] = useState(initialValue);
+    const setState = (newValue: T): void => {
+      if (newValue === value) {
+        return;
+      }
+      setIsRendering(true);
+      startTransition(() => {
+        _setValue(newValue);
+      });
+    };
+    return [value, setState];
   };
 
-  const [xAxisFeatureName, _setXAxisFeatureName] = useState<string | null>(null);
-  const setXAxisFeatureName = (newFeatureName: string | null): void => {
-    if (newFeatureName === xAxisFeatureName) {
-      return;
-    }
-    setIsRendering(true);
-    startTransition(() => {
-      _setXAxisFeatureName(newFeatureName);
-    });
-  };
-  const [yAxisFeatureName, _setYAxisFeatureName] = useState<string | null>(null);
-  const setYAxisFeatureName = (newFeatureName: string | null): void => {
-    if (newFeatureName === yAxisFeatureName) {
-      return;
-    }
-    setIsRendering(true);
-    startTransition(() => {
-      _setYAxisFeatureName(newFeatureName);
-    });
-  };
+  const [rangeType, setRangeType] = useRenderTriggeringState<RangeType>(DEFAULT_RANGE_TYPE);
+  const [xAxisFeatureName, setXAxisFeatureName] = useRenderTriggeringState<string | null>(null);
+  const [yAxisFeatureName, setYAxisFeatureName] = useRenderTriggeringState<string | null>(null);
 
   //////////////////////////////////
   // Click Handlers
   //////////////////////////////////
 
-  /**
-   * Returns true if a Plotly mouse event took place over a histogram subplot.
-   */
-  function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
-    return eventData.points.length > 0 && eventData.points[0].data.type === "histogram";
-  }
-
   // Add click event listeners to the plot. When clicking a point, find the track and jump to
   // that frame.
-  const onClickPlot = useCallback(
-    (eventData: Plotly.PlotMouseEvent): void => {
+  useEffect(() => {
+    const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
       if (!dataset || eventData.points.length === 0 || isHistogramEvent(eventData)) {
         return;
       }
@@ -191,51 +200,27 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         // Jump to first frame where the track is valid
         props.findTrack(trackId, true);
       }
-    },
-    [dataset, props.findTrack, props.setFrame]
-  );
+    };
 
-  useEffect(() => {
     plotRef.current?.on("plotly_click", onClickPlot);
     return () => {
       plotRef.current?.removeAllListeners("plotly_click");
     };
-  }, [plotRef.current, onClickPlot]);
+  }, [plotRef.current, dataset, props.findTrack, props.setFrame]);
 
   //////////////////////////////////
   // Helper Methods
   //////////////////////////////////
 
   /** Retrieve feature data, if it exists. Accounts for the artificially-added time feature. */
-  const getData = useCallback(
-    (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | undefined => {
-      if (featureName === null || dataset === null) {
-        return undefined;
-      }
-      if (featureName === TIME_FEATURE.name) {
-        return dataset.times || undefined;
-      }
-      return dataset.getFeatureData(featureName)?.data;
-    },
-    []
-  );
-
-  /**
-   * Returns a hex color string with increasing transparency as the number of markers increases.
-   * Base color must be a 7-character RGB hex string (e.g. `#000000`).
-   */
-  const applyMarkerTransparency = (numMarkers: number, baseColor: string): string => {
-    if (baseColor.length !== 7) {
-      throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
+  const getData = (featureName: string | null, dataset: Dataset | null): Uint32Array | Float32Array | undefined => {
+    if (featureName === null || dataset === null) {
+      return undefined;
     }
-    // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
-    const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
-    return (
-      baseColor +
-      Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0")
-    );
+    if (featureName === TIME_FEATURE.name) {
+      return dataset.times || undefined;
+    }
+    return dataset.getFeatureData(featureName)?.data;
   };
 
   // Track last rendered props + state to make optimizations on re-renders
@@ -252,33 +237,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     ...props,
   });
 
-  /**
-   * Returns an object with flags indicating which props have changed since the last render.
-   */
-  const getChangeFlags = (): {
-    haveAxesChanged: boolean;
-    hasRangeChanged: boolean;
-    hasTrackChanged: boolean;
-    hasFrameChanged: boolean;
-    hasDatasetChanged: boolean;
-  } => {
-    const lastState = lastRenderedState.current;
-    return {
-      haveAxesChanged:
-        lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName,
-      hasRangeChanged: lastState.rangeType !== rangeType,
-      hasTrackChanged: lastState.selectedTrack !== selectedTrack,
-      hasFrameChanged: lastState.currentFrame !== currentFrame,
-      hasDatasetChanged: lastState.dataset !== dataset,
-    };
-  };
-
   /** Returns whether the changes would result in a new plot, requiring the zoom and UI to reset. */
   const shouldPlotUiReset = (): boolean => {
     // Only reset the plot if the axes or range have changed, ignoring the track or frame.
     // This prevents clicking on a new track from resetting the plot view.
-    const flags = getChangeFlags();
-    return flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged;
+    const lastState = lastRenderedState.current;
+    const haveAxesChanged =
+      lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName;
+    const hasRangeChanged = lastState.rangeType !== rangeType;
+    const hasDatasetChanged = lastState.dataset !== dataset;
+    return haveAxesChanged || hasRangeChanged || hasDatasetChanged;
   };
 
   /** Whether to ignore the render request until later (but continue to show as pending.) */
@@ -306,8 +274,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    *     - `objectIds`: The object IDs corresponding to the index of the filtered data.
    */
   const filterDataByRange = (
-    rawXData: Uint32Array | Float32Array,
-    rawYData: Uint32Array | Float32Array,
+    rawXData: DataArray,
+    rawYData: DataArray,
     range: RangeType
   ):
     | undefined
@@ -349,7 +317,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       trackIds = Array(selectedTrack.ids.length).fill(selectedTrack.trackId);
     } else {
       // All time
-      objectIds = [...Array(rawXData.length).keys()];
+      objectIds = [...rawXData.keys()];
       trackIds = Array.from(dataset!.trackIds || []);
       // Copying the reference is faster than `Array.from()`.
       xData = rawXData;
@@ -422,7 +390,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         tickmode: "array",
         tick0: "0", // start at 0
         dtick: "1", // tick increment is 1
-        tickvals: [...Array(categories.length).keys()], // map from category index to category label
+        tickvals: [...categories.keys()], // map from category index to category label
         ticktext: categories,
         zeroline: false,
       };
@@ -595,7 +563,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     categoricalPalette,
   ];
 
-  const renderPlot = useCallback((forceRelayout: boolean = false) => {
+  const renderPlot = (forceRelayout: boolean = false): void => {
     const rawXData = getData(xAxisFeatureName, dataset);
     const rawYData = getData(yAxisFeatureName, dataset);
 
@@ -722,7 +690,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         ...props,
       };
     });
-  }, plotDependencies);
+  };
 
   /**
    * Re-render the plot when the relevant props change.
