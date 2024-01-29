@@ -85,3 +85,37 @@ export function isValueWithinThreshold(value: number, threshold: FeatureThreshol
     return threshold.enabledCategories[value];
   }
 }
+
+/**
+ * Returns an array of Uint8 values representing whether the object ID at that index is in range of
+ * the thresholds.
+ * @param {Dataset} dataset A valid Dataset object.
+ * @param {FeatureThreshold[]} thresholds Array of feature thresholds, which must define the feature name, min, and max.
+ * If a feature name cannot be found in the dataset, it will be ignored.
+ * @returns A Uint8Array, with a length equal to the number of objects in the dataset.
+ * For each object ID `i`, `inRangeIds[i]` will be 1 if the object is in range and 0 if it is not.
+ */
+export function getInRangeIds(dataset: Dataset, thresholds: FeatureThreshold[]): Uint8Array {
+  // TODO: Optimize memory by using a true boolean array?
+  // TODO: If optimizing, use fuse operation via shader.
+  const inRangeIds = new Uint8Array(dataset.numObjects);
+
+  // Ignore thresholds with features that don't exist in this dataset or whose units don't match
+  const validThresholds = thresholds.filter((threshold) => {
+    const featureData = dataset.getFeatureData(threshold.featureName);
+    return featureData && featureData.units === threshold.units;
+  });
+
+  for (let id = 0; id < dataset.numObjects; id++) {
+    inRangeIds[id] = 1;
+    for (let thresholdIdx = 0; thresholdIdx < validThresholds.length; thresholdIdx++) {
+      const threshold = validThresholds[thresholdIdx];
+      const featureData = dataset.getFeatureData(threshold.featureName);
+      if (featureData && !isValueWithinThreshold(featureData.data[id], threshold)) {
+        inRangeIds[id] = 0;
+        break;
+      }
+    }
+  }
+  return inRangeIds;
+}

@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRe
 import { Color } from "three";
 
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
-import { ViewerConfig, FeatureThreshold } from "../colorizer/types";
+import { ViewerConfig } from "../colorizer/types";
 import { AppThemeContext } from "./AppStyle";
 
 type CanvasWrapperProps = {
@@ -23,7 +23,7 @@ type CanvasWrapperProps = {
   selectedTrack: Track | null;
   categoricalColors: Color[];
 
-  featureThresholds?: FeatureThreshold[];
+  inRangeIds?: Uint8Array;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
@@ -40,7 +40,7 @@ const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
-  featureThresholds: [],
+  inRangeIds: new Uint8Array(0),
   maxWidth: 730,
   maxHeight: 500,
 };
@@ -122,9 +122,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // Add only if needed.
     // Timeout in case of slowdowns to prevent this from halting the UI.
     setTimeout(() => {
-      canv.setFeatureThresholds(props.featureThresholds);
+      canv.setInRangeIds(props.inRangeIds);
     }, 0);
-  }, [props.featureThresholds, props.dataset]);
+  }, [props.inRangeIds, props.dataset]);
 
   // Updated track-related settings
   useMemo(() => {

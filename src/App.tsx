@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useReducer, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import {
   CaretRightOutlined,
@@ -25,7 +25,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import { ViewerConfig, FeatureThreshold, defaultViewerConfig, isThresholdNumeric } from "./colorizer/types";
-import { getColorMap, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
+import { getColorMap, getInRangeIds, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -102,6 +102,12 @@ function App(): ReactElement {
     },
     [featureThresholds, featureName]
   );
+  const inRangeIds = useMemo(() => {
+    if (!dataset) {
+      return new Uint8Array(0);
+    }
+    return getInRangeIds(dataset, featureThresholds);
+  }, [dataset, featureThresholds]);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
   const [openTab, setOpenTab] = useState(TabType.TRACK_PLOT);
@@ -761,7 +767,7 @@ function App(): ReactElement {
                   setFindTrackInput("");
                   setSelectedTrack(track);
                 }}
-                featureThresholds={featureThresholds}
+                inRangeIds={inRangeIds}
                 onMouseHover={(id: number): void => {
                   const isObject = id !== BACKGROUND_ID;
                   setShowHoveredId(isObject);
