@@ -35,6 +35,7 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
 };
 
 const MAX_POINTS_PER_TRACE = 1024;
+const COLOR_RAMP_SUBSAMPLES = 100;
 
 enum RangeType {
   ALL_TIME = "All time",
@@ -452,7 +453,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   /**
    * Applies coloring to point traces in a scatterplot. Does this by splitting the data into multiple traces each with a solid
    * color, which is much faster than using Plotly's native color ramping. Also enforces a maximum number of points
-   * per trace, which also seems to speed up Plotly renders.
+   * per trace, which significantly speeds up Plotly renders.
    *
    * @param xData
    * @param yData
@@ -489,12 +490,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       });
     } else {
       // Generate colors
-      const NUM_RANGE_COLORS = 100; // TBD if this is a good number?
       const categories = dataset.getFeatureCategories(selectedFeatureName);
       const colors =
         categories !== null
           ? categoricalPalette.slice(0, categories.length)
-          : subsampleColorRamp(colorRamp, NUM_RANGE_COLORS);
+          : subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
 
       // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
       // index 0 = out of filter range, index 1 = outliers.
