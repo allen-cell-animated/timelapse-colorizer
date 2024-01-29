@@ -25,7 +25,6 @@ import {
   splitTraceData,
   subsampleColorRamp,
 } from "./scatter_plot_data_utils";
-import { clamp } from "three/src/math/MathUtils";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
@@ -597,7 +596,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       if (isUsingTime) {
         traces.push(makeLineTrace(trackData.xData, trackData.yData));
       }
-      // Render track only
+      // Render track points
       const trackTraces = colorizeScatterplotPoints(
         trackData.xData,
         trackData.yData,
