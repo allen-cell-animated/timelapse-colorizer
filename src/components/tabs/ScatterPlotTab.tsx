@@ -30,6 +30,8 @@ enum RangeType {
 }
 const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
 
+type DataArray = Uint32Array | Float32Array | number[];
+
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
   currentFrame: number;
@@ -214,33 +216,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     ...props,
   });
 
-  /**
-   * Returns an object with flags indicating which props have changed since the last render.
-   */
-  const getChangeFlags = (): {
-    haveAxesChanged: boolean;
-    hasRangeChanged: boolean;
-    hasTrackChanged: boolean;
-    hasFrameChanged: boolean;
-    hasDatasetChanged: boolean;
-  } => {
-    const lastState = lastRenderedState.current;
-    return {
-      haveAxesChanged:
-        lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName,
-      hasRangeChanged: lastState.rangeType !== rangeType,
-      hasTrackChanged: lastState.selectedTrack !== selectedTrack,
-      hasFrameChanged: lastState.currentFrame !== currentFrame,
-      hasDatasetChanged: lastState.dataset !== dataset,
-    };
-  };
-
   /** Returns whether the changes would result in a new plot, requiring the zoom and UI to reset. */
   const shouldPlotUiReset = (): boolean => {
     // Only reset the plot if the axes or range have changed, ignoring the track or frame.
     // This prevents clicking on a new track from resetting the plot view.
-    const flags = getChangeFlags();
-    return flags.haveAxesChanged || flags.hasRangeChanged || flags.hasDatasetChanged;
+    const lastState = lastRenderedState.current;
+    const haveAxesChanged =
+      lastState.xAxisFeatureName !== xAxisFeatureName || lastState.yAxisFeatureName !== yAxisFeatureName;
+    const hasRangeChanged = lastState.rangeType !== rangeType;
+    const hasDatasetChanged = lastState.dataset !== dataset;
+    return haveAxesChanged || hasRangeChanged || hasDatasetChanged;
   };
 
   /** Whether to ignore the render request until later (but continue to show as pending.) */
@@ -268,19 +253,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
    *     - `objectIds`: The object IDs corresponding to the index of the filtered data.
    */
   const filterDataByRange = (
-    rawXData: Uint32Array | Float32Array,
-    rawYData: Uint32Array | Float32Array,
+    rawXData: DataArray,
+    rawYData: DataArray,
     range: RangeType
   ):
     | undefined
     | {
-        xData: number[] | Uint32Array | Float32Array;
-        yData: number[] | Uint32Array | Float32Array;
+        xData: DataArray;
+        yData: DataArray;
         objectIds: number[];
         trackIds: number[];
       } => {
-    let xData: number[] | Uint32Array | Float32Array = [];
-    let yData: number[] | Uint32Array | Float32Array = [];
+    let xData: DataArray = [];
+    let yData: DataArray = [];
     let objectIds: number[] = [];
     let trackIds: number[] = [];
 
@@ -311,7 +296,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       trackIds = Array(selectedTrack.ids.length).fill(selectedTrack.trackId);
     } else {
       // All time
-      objectIds = [...Array(rawXData.length).keys()];
+      objectIds = [...rawXData.keys()];
       trackIds = Array.from(dataset!.trackIds || []);
       // Copying the reference is faster than `Array.from()`.
       xData = rawXData;
@@ -384,7 +369,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         tickmode: "array",
         tick0: "0", // start at 0
         dtick: "1", // tick increment is 1
-        tickvals: [...Array(categories.length).keys()], // map from category index to category label
+        tickvals: [...categories.keys()], // map from category index to category label
         ticktext: categories,
         zeroline: false,
       };
