@@ -221,26 +221,6 @@ export default class Dataset {
   }
 
   /**
-   * Fetches and loads a data file as an array and returns its data as a Texture using the provided dataType.
-   * @param dataType The expected format of the data.
-   * @param fileUrl String url of the file to be loaded.
-   * @throws An error if fileUrl is not undefined and the data cannot be loaded from the file.
-   * @returns Promise of a texture loaded from the file. If `fileUrl` is undefined, returns null.
-   */
-  // private async loadToTexture(dataType: FeatureDataType, fileUrl?: string): Promise<Texture | null> {
-  //   if (!fileUrl) {
-  //     return null;
-  //   }
-  //   try {
-  //     const url = this.resolveUrl(fileUrl);
-  //     const source = await this.arrayLoader.load(url);
-  //     return source.getTexture(dataType);
-  //   } catch (e) {
-  //     return null;
-  //   }
-  // }
-
-  /**
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
    * @param dataType The expected format of the data.
    * @param fileUrl String url of the file to be loaded.
