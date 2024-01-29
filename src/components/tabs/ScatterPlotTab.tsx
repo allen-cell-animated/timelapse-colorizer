@@ -59,6 +59,7 @@ type ScatterPlotTabProps = {
   colorRampMax: number;
   colorRamp: ColorRamp;
   categoricalPalette: Color[];
+  inRangeIds: Uint8Array;
 
   viewerConfig: ViewerConfig;
 };
@@ -107,8 +108,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  const { selectedTrack, currentFrame, colorRamp, categoricalPalette, selectedFeatureName, isPlaying, viewerConfig } =
-    props;
+  const {
+    selectedTrack,
+    currentFrame,
+    colorRamp,
+    categoricalPalette,
+    selectedFeatureName,
+    isPlaying,
+    isVisible,
+    inRangeIds,
+    viewerConfig,
+  } = props;
   const dataset = useDebounce(props.dataset, 500);
   const colorRampMin = useDebounce(props.colorRampMin, 100);
   const colorRampMax = useDebounce(props.colorRampMax, 100);
@@ -456,9 +466,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
       // Sort data into buckets
       for (let i = 0; i < xData.length; i++) {
-        const isOutOfRange = false; // TODO: Implement out of range filtering
-        const isOutlier = dataset.outliers ? dataset.outliers[objectIds[i]] : false;
         const objectId = objectIds[i];
+        const isOutlier = dataset.outliers ? dataset.outliers[objectId] : false;
+        const isOutOfRange = inRangeIds[objectId] === 0;
 
         let bucketIndex;
         if (isOutOfRange) {
@@ -528,7 +538,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     rangeType,
     currentFrame,
     selectedTrack,
-    props.isVisible,
+    isVisible,
     isPlaying,
     plotDivRef.current,
     viewerConfig,
@@ -536,6 +546,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     colorRampMin,
     colorRampMax,
     colorRamp,
+    inRangeIds,
     categoricalPalette,
   ];
 

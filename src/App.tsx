@@ -889,6 +889,7 @@ function App(): ReactElement {
                           colorRampMax={colorRampMax}
                           colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                           categoricalPalette={categoricalPalette}
+                          inRangeIds={inRangeIds}
                           viewerConfig={config}
                         />
                       </div>
