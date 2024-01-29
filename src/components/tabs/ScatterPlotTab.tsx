@@ -122,38 +122,27 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // data and asking it to colorize it.
   // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
 
-  // Wrap changes to axis and range in a transition to prevent blocking the UI thread.
-  const [rangeType, _setRangeType] = useState<RangeType>(DEFAULT_RANGE_TYPE);
-  const setRangeType = (newRangeType: RangeType): void => {
-    if (newRangeType === rangeType) {
-      return;
-    }
-    setIsRendering(true);
-    startTransition(() => {
-      _setRangeType(newRangeType);
-    });
+  /**
+   * Wrapper around useState that signals the render spinner whenever the values are set, and
+   * uses useTransition to deprioritize the state update.
+   */
+  const useRenderTriggeringState = <T extends any>(initialValue: T): [T, (value: T) => void] => {
+    const [value, _setValue] = useState(initialValue);
+    const setState = (newValue: T): void => {
+      if (newValue === value) {
+        return;
+      }
+      setIsRendering(true);
+      startTransition(() => {
+        _setValue(newValue);
+      });
+    };
+    return [value, setState];
   };
 
-  const [xAxisFeatureName, _setXAxisFeatureName] = useState<string | null>(null);
-  const setXAxisFeatureName = (newFeatureName: string | null): void => {
-    if (newFeatureName === xAxisFeatureName) {
-      return;
-    }
-    setIsRendering(true);
-    startTransition(() => {
-      _setXAxisFeatureName(newFeatureName);
-    });
-  };
-  const [yAxisFeatureName, _setYAxisFeatureName] = useState<string | null>(null);
-  const setYAxisFeatureName = (newFeatureName: string | null): void => {
-    if (newFeatureName === yAxisFeatureName) {
-      return;
-    }
-    setIsRendering(true);
-    startTransition(() => {
-      _setYAxisFeatureName(newFeatureName);
-    });
-  };
+  const [rangeType, setRangeType] = useRenderTriggeringState<RangeType>(DEFAULT_RANGE_TYPE);
+  const [xAxisFeatureName, setXAxisFeatureName] = useRenderTriggeringState<string | null>(null);
+  const [yAxisFeatureName, setYAxisFeatureName] = useRenderTriggeringState<string | null>(null);
 
   //////////////////////////////////
   // Click Handlers
@@ -413,7 +402,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     plotDivRef.current,
   ];
 
-  const renderPlot = (forceRelayout: boolean = false) => {
+  const renderPlot = (forceRelayout: boolean = false): void => {
     const rawXData = getData(xAxisFeatureName, dataset);
     const rawYData = getData(yAxisFeatureName, dataset);
 
