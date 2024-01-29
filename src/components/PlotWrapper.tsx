@@ -54,9 +54,9 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
     const width = plotDivRef.current.clientWidth;
     const height = plotDivRef.current.clientHeight;
-    console.log(`Resizing (${width}, ${height})`);
     plot?.setSize(width, height);
   };
+
   useEffect(() => {
     updatePlotSize();
     // TODO: Troubleshoot using window.addEventListener for resizing, because

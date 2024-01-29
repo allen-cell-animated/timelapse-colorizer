@@ -9,6 +9,13 @@ type IconButtonProps = {
   disabled?: boolean;
   style?: React.CSSProperties;
   type?: "outlined" | "primary" | "link" | "text";
+  // Adds compatibility with Ant Tooltip
+  onMouseEnter?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  onMouseLeave?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  onPointerEnter?: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onPointerLeave?: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onFocus?: (event: React.FocusEvent<HTMLButtonElement>) => void;
+  onBlur?: (event: React.FocusEvent<HTMLButtonElement>) => void;
 };
 
 // Button styling varies based on the type (outlined vs. primary)
@@ -115,6 +122,12 @@ export default function IconButton(props: PropsWithChildren<IconButtonProps>): R
         disabled={props.disabled}
         onClick={props.onClick}
         style={props.style}
+        onMouseEnter={props.onMouseEnter}
+        onMouseLeave={props.onMouseLeave}
+        onPointerEnter={props.onPointerEnter}
+        onPointerLeave={props.onPointerLeave}
+        onFocus={props.onFocus}
+        onBlur={props.onBlur}
       >
         {props.children}
       </StyledButton>

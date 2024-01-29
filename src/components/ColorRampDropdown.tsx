@@ -205,16 +205,18 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
         <div className={dropdownContainerClassName}>{dropdownContents}</div>
       </div>
       {/** Reverse map button */}
-      <IconButton
-        style={{ marginLeft: "2px" }}
-        type="link"
-        disabled={props.disabled || props.useCategoricalPalettes}
-        onClick={() => {
-          props.onChangeRamp(props.selectedRamp, !props.reversed);
-        }}
-      >
-        <RetweetOutlined />
-      </IconButton>
+      <Tooltip title="Reverse color map" open={props.disabled || props.useCategoricalPalettes ? false : undefined}>
+        <IconButton
+          style={{ marginLeft: "2px" }}
+          type="link"
+          disabled={props.disabled || props.useCategoricalPalettes}
+          onClick={() => {
+            props.onChangeRamp(props.selectedRamp, !props.reversed);
+          }}
+        >
+          <RetweetOutlined />
+        </IconButton>
+      </Tooltip>
     </div>
   );
 };
