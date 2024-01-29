@@ -24,6 +24,7 @@ import {
   splitTraceData,
   subsampleColorRamp,
 } from "./scatter_plot_data_utils";
+import { clamp } from "three/src/math/MathUtils";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
@@ -457,10 +458,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     } else {
       // Generate colors
       const categories = dataset.getFeatureCategories(selectedFeatureName);
-      const colors =
-        categories !== null
-          ? categoricalPalette.slice(0, categories.length)
-          : subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
+      const isCategorical = categories !== null;
+      const colors = isCategorical
+        ? categoricalPalette.slice(0, categories.length)
+        : subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
 
       // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
       // index 0 = out of filter range, index 1 = outliers.
@@ -487,6 +488,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           bucketIndex = 0;
         } else if (isOutlier) {
           bucketIndex = 1;
+        } else if (isCategorical) {
+          // Clamp handles case where an unexpected NaN appears
+          bucketIndex = clamp(featureData.data[objectId], 0, colors.length - 1) + 2;
         } else {
           bucketIndex = getBucketIndex(featureData.data[objectId], colorRampMin, colorRampMax, colors.length) + 2;
         }
