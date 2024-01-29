@@ -23,7 +23,7 @@ type CanvasWrapperProps = {
   selectedTrack: Track | null;
   categoricalColors: Color[];
 
-  inRangeIds?: Uint8Array;
+  inRangeLUT?: Uint8Array;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
@@ -40,7 +40,7 @@ const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
-  inRangeIds: new Uint8Array(0),
+  inRangeLUT: new Uint8Array(0),
   maxWidth: 730,
   maxHeight: 500,
 };
@@ -121,10 +121,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // YAGNI: Debouncing for this is possible but no performance issues encountered yet.
     // Add only if needed.
     // Timeout in case of slowdowns to prevent this from halting the UI.
-    setTimeout(() => {
-      canv.setInRangeIds(props.inRangeIds);
-    }, 0);
-  }, [props.inRangeIds, props.dataset]);
+    canv.setInRangeLUT(props.inRangeLUT);
+  }, [props.inRangeLUT]);
 
   // Updated track-related settings
   useMemo(() => {

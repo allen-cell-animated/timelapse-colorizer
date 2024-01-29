@@ -25,7 +25,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import { ViewerConfig, FeatureThreshold, defaultViewerConfig, isThresholdNumeric } from "./colorizer/types";
-import { getColorMap, getInRangeIds, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
+import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -102,11 +102,12 @@ function App(): ReactElement {
     },
     [featureThresholds, featureName]
   );
-  const inRangeIds = useMemo(() => {
+  /** A look-up-table from object ID to whether it is in range (=1) or not (=0) */
+  const inRangeLUT = useMemo(() => {
     if (!dataset) {
       return new Uint8Array(0);
     }
-    return getInRangeIds(dataset, featureThresholds);
+    return getInRangeLUT(dataset, featureThresholds);
   }, [dataset, featureThresholds]);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
@@ -767,7 +768,7 @@ function App(): ReactElement {
                   setFindTrackInput("");
                   setSelectedTrack(track);
                 }}
-                inRangeIds={inRangeIds}
+                inRangeLUT={inRangeLUT}
                 onMouseHover={(id: number): void => {
                   const isObject = id !== BACKGROUND_ID;
                   setShowHoveredId(isObject);
@@ -889,7 +890,7 @@ function App(): ReactElement {
                           colorRampMax={colorRampMax}
                           colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                           categoricalPalette={categoricalPalette}
-                          inRangeIds={inRangeIds}
+                          inRangeIds={inRangeLUT}
                           viewerConfig={config}
                         />
                       </div>

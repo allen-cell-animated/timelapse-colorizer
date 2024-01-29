@@ -87,15 +87,15 @@ export function isValueWithinThreshold(value: number, threshold: FeatureThreshol
 }
 
 /**
- * Returns an array of Uint8 values representing whether the object ID at that index is in range of
- * the thresholds.
+ * Returns a Uint8 look-up table of whether the object ID at that index is in range of
+ * the thresholds (=1) or not (=0).
  * @param {Dataset} dataset A valid Dataset object.
  * @param {FeatureThreshold[]} thresholds Array of feature thresholds, which must define the feature name, min, and max.
  * If a feature name cannot be found in the dataset, it will be ignored.
  * @returns A Uint8Array, with a length equal to the number of objects in the dataset.
  * For each object ID `i`, `inRangeIds[i]` will be 1 if the object is in range and 0 if it is not.
  */
-export function getInRangeIds(dataset: Dataset, thresholds: FeatureThreshold[]): Uint8Array {
+export function getInRangeLUT(dataset: Dataset, thresholds: FeatureThreshold[]): Uint8Array {
   // TODO: Optimize memory by using a true boolean array?
   // TODO: If optimizing, use fuse operation via shader.
   const inRangeIds = new Uint8Array(dataset.numObjects);

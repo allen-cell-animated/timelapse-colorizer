@@ -468,9 +468,9 @@ export default class ColorizeCanvas {
     }
   }
 
-  setInRangeIds(inRangeIds: Uint8Array): void {
+  setInRangeLUT(inRangeLUT: Uint8Array): void {
     // Save the array to a texture and pass it into the shader
-    this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeIds), FeatureDataType.U8));
+    this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeLUT), FeatureDataType.U8));
     this.render();
   }
 
