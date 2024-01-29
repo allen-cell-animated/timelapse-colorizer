@@ -6,7 +6,6 @@ import styled from "styled-components";
 
 import { AppThemeContext } from "../AppStyle";
 import { ColorRamp, Dataset, Track } from "../../colorizer";
-import { remap } from "../../colorizer/utils/math_utils";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import IconButton from "../IconButton";
 import LabeledDropdown from "../LabeledDropdown";
@@ -18,8 +17,10 @@ import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import {
   DataArray,
   TraceData,
+  applyMarkerTransparency,
   drawCrosshair,
   getBucketIndex,
+  isHistogramEvent,
   makeLineTrace,
   splitTraceData,
   subsampleColorRamp,
@@ -69,31 +70,6 @@ const ScatterPlotContainer = styled.div`
     border: 0px solid transparent !important;
   }
 `;
-
-/**
- * Returns true if a Plotly mouse event took place over a histogram subplot.
- */
-function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
-  return eventData.points.length > 0 && eventData.points[0].data.type === "histogram";
-}
-
-/**
- * Returns a hex color string with increasing transparency as the number of markers increases.
- * Base color must be a 7-character RGB hex string (e.g. `#000000`).
- */
-const applyMarkerTransparency = (numMarkers: number, baseColor: string): string => {
-  if (baseColor.length !== 7) {
-    throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
-  }
-  // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
-  const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
-  return (
-    baseColor +
-    Math.floor(opacity * 255)
-      .toString(16)
-      .padStart(2, "0")
-  );
-};
 
 /**
  * A tab that displays an interactive scatter plot between two features in the dataset.
@@ -462,6 +438,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       const colors = isCategorical
         ? categoricalPalette.slice(0, categories.length)
         : subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
+      const colorMinValue = isCategorical ? 0 : colorRampMin;
+      const colorMaxValue = isCategorical ? categories.length - 1 : colorRampMax;
 
       // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
       // index 0 = out of filter range, index 1 = outliers.
@@ -488,11 +466,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           bucketIndex = 0;
         } else if (isOutlier) {
           bucketIndex = 1;
-        } else if (isCategorical) {
-          // Clamp handles case where an unexpected NaN appears
-          bucketIndex = clamp(featureData.data[objectId], 0, colors.length - 1) + 2;
         } else {
-          bucketIndex = getBucketIndex(featureData.data[objectId], colorRampMin, colorRampMax, colors.length) + 2;
+          bucketIndex = getBucketIndex(featureData.data[objectId], colorMinValue, colorMaxValue, colors.length) + 2;
         }
 
         const bucket = traceDataBuckets[bucketIndex];

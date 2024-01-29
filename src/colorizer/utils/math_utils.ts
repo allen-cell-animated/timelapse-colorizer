@@ -36,7 +36,9 @@ function numberToUnicodeSuperscript(input: number): string {
 }
 
 /**
- * Remaps a value from one range to another.
+ * Remaps a value from one range to another, optionally clamping the input value to the input range.
+ *
+ * Handles reversed ranges (e.g. `inMin > inMax` or `outMin > outMax`). If `inMin === inMax`, returns `outMin`.
  *
  * @param clamp If true (default), clamps the input to the input range.
  */
