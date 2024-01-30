@@ -192,6 +192,7 @@ describe("Dataset", () => {
       it("Loads the first frame and retrieves frame dimensions on open", async () => {
         const mockFetch = makeMockFetchMethod(defaultPath, manifest);
         const dimensionTests = [
+          [0, 0],
           [1, 1],
           [2, 3],
           [1, 3],
