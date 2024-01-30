@@ -77,7 +77,8 @@ describe("splitTraceData", () => {
       y: [],
       objectIds: [],
       trackIds: [],
-      color: new Color("#ff00ff"),
+      color: "#ff00ff",
+      marker: {},
     };
     for (let i = 0; i < numPoints; i++) {
       traceData.x.push(i);

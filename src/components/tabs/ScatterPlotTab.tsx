@@ -133,11 +133,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
   }, [isPlaying]);
 
-  // TODO: Implement color ramps in a worker thread. This was originally removed for performance issues.
-  // Plotly's performance can be improved by generating traces for colors rather than feeding it the raw
-  // data and asking it to colorize it.
-  // https://www.somesolvedproblems.com/2020/03/improving-plotly-performance-coloring.html
-
   /**
    * Wrapper around useState that signals the render spinner whenever the values are set, and
    * uses useTransition to deprioritize the state update.
