@@ -429,11 +429,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const categories = dataset.getFeatureCategories(selectedFeatureName);
     const isCategorical = categories !== null;
     const usingOverrideColor = !featureData || markerConfig.color || overrideColor;
+    overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
 
     let colors: Color[];
     if (usingOverrideColor) {
       // Use a single color bucket
-      colors = [overrideColor || new Color(markerConfig.color as ColorRepresentation)];
+      colors = [overrideColor];
     } else if (isCategorical) {
       colors = categoricalPalette.slice(0, categories.length);
     } else {
@@ -458,6 +459,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       } else {
         color = `#${colors[i - 2].getHexString()}`;
         marker = markerConfig;
+      }
+      if (usingOverrideColor) {
+        color = `#${overrideColor.getHexString()}`;
       }
       traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color, marker });
     }
@@ -491,9 +495,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Apply transparency to the colors
+    const totalPoints = xData.length;
     const numOutOfRange = traceDataBuckets[0].x.length;
     const numOutliers = traceDataBuckets[1].x.length;
-    const totalPoints = xData.length;
     const numInRange = totalPoints - numOutOfRange - numOutliers;
     // Use total number to calculate transparency for the out of range and outlier buckets, so they do not appear
     // unusually opaque if there are only a small number of them.
@@ -624,6 +628,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         traces.push(makeLineTrace(trackData.xData, trackData.yData));
       }
       // Render track points
+      const outOfRangeOutlineColor = viewerConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
       const trackTraces = colorizeScatterplotPoints(
         trackData.xData,
         trackData.yData,
@@ -632,7 +637,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         {
           outOfRange: {
             color: theme.color.layout.background,
-            line: { width: 1, color: "#99999940" }, // TODO: make this the filter color but a shade darker
+            line: { width: 1, color: "#" + outOfRangeOutlineColor.getHexString() + "40" },
           },
         }
       );
@@ -643,17 +648,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (selectedTrack) {
       const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
       if (currentObjectId !== -1) {
+        traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
         traces.push(
           ...colorizeScatterplotPoints(
             [rawXData[currentObjectId]],
             [rawYData[currentObjectId]],
             [currentObjectId],
             [selectedTrack.trackId],
-            { size: 10 }
+            { size: 4 }
           )
         );
       }
-      traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
     }
 
     // Format axes
