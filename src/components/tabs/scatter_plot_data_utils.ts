@@ -1,5 +1,5 @@
 import Plotly, { PlotData } from "plotly.js-dist-min";
-import { ColorRamp } from "../../colorizer";
+import { ColorRamp, Dataset } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 import { Color, HexColorString } from "three";
 
@@ -92,8 +92,26 @@ export function applyMarkerTransparency(numMarkers: number, baseColor: HexColorS
   return (baseColor + opacityString) as HexColorString;
 }
 
+/**
+ * Returns a Plotly hovertemplate string for a scatter plot trace.
+ * The trace must include the `id` (object ID) and `customdata` (track ID) fields.
+ */
+export function getHoverTemplate(dataset: Dataset, xAxisFeatureName: string, yAxisFeatureName: string): string {
+  return (
+    `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
+    `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
+    `<br>Track ID: %{customdata}<br>Object ID: %{id}<extra></extra>`
+  );
+}
+
 /** Draws a simple line graph with the provided data points. */
-export function makeLineTrace(xData: DataArray, yData: DataArray): Partial<Plotly.PlotData> {
+export function makeLineTrace(
+  xData: DataArray,
+  yData: DataArray,
+  objectIds: number[],
+  trackIds: number[],
+  hovertemplate?: string
+): Partial<Plotly.PlotData> {
   return {
     x: xData,
     y: yData,
@@ -102,6 +120,9 @@ export function makeLineTrace(xData: DataArray, yData: DataArray): Partial<Plotl
     line: {
       color: "#aaaaaa",
     },
+    ids: objectIds.map((id) => id.toString()),
+    customdata: trackIds.map((id) => id.toString()),
+    hovertemplate,
   };
 }
 

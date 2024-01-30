@@ -20,6 +20,7 @@ import {
   applyMarkerTransparency,
   drawCrosshair,
   getBucketIndex,
+  getHoverTemplate,
   isHistogramEvent,
   makeLineTrace,
   splitTraceData,
@@ -537,10 +538,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             size: 4,
             ...bucket.marker,
           },
-          hovertemplate:
-            `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
-            `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
-            `<br>Track ID: %{customdata}<br>Object ID: %{id}`,
+          hovertemplate: getHoverTemplate(dataset, xAxisFeatureName, yAxisFeatureName),
         };
       });
 
@@ -625,7 +623,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (trackData && rangeType !== RangeType.CURRENT_FRAME) {
       // Render an extra trace for lines connecting the points in the current track when time is a feature.
       if (isUsingTime) {
-        traces.push(makeLineTrace(trackData.xData, trackData.yData));
+        const hovertemplate = getHoverTemplate(dataset, xAxisFeatureName, yAxisFeatureName);
+        traces.push(
+          makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds, hovertemplate)
+        );
       }
       // Render track points
       const outOfRangeOutlineColor = viewerConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
