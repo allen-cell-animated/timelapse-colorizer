@@ -80,7 +80,7 @@ export function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
 /**
  * Appends alpha opacity information to a hex color string, making it less opaque as the number of markers increases.
  */
-export function scaleMarkerOpacityByCount(numMarkers: number, baseColor: HexColorString): HexColorString {
+export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: HexColorString): HexColorString {
   if (baseColor.length !== 7) {
     throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
   }
