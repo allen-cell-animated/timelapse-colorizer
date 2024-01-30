@@ -11,6 +11,7 @@ export type TraceData = {
   objectIds: number[];
   trackIds: number[];
   color: Color;
+  marker: Partial<Plotly.PlotMarker>;
 };
 
 /**
@@ -62,6 +63,7 @@ export function splitTraceData(traceData: TraceData, maxPoints: number): TraceDa
       objectIds: traceData.objectIds.slice(i, end),
       trackIds: traceData.trackIds.slice(i, end),
       color: traceData.color,
+      marker: traceData.marker,
     };
     traces.push(trace);
   }

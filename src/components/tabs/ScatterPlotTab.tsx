@@ -12,7 +12,7 @@ import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { SwitchIconSVG } from "../../assets";
-import { Color } from "three";
+import { Color, ColorRepresentation } from "three";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import {
   DataArray,
@@ -431,68 +431,74 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const featureData = dataset.getFeatureData(selectedFeatureName);
 
     const traceDataBuckets: TraceData[] = [];
+
     if (!featureData || markerConfig.color || overrideColor) {
       // Do no coloring! Keep all points in the same bucket.
-      traceDataBuckets.push({
-        x: Array.from(xData),
-        y: Array.from(yData),
-        objectIds: objectIds,
-        trackIds: trackIds,
-        color: overrideColor || new Color(),
-      });
+    }
+
+    // Generate colors
+    const categories = dataset.getFeatureCategories(selectedFeatureName);
+    const isCategorical = categories !== null;
+    const usingOverrideColor = !featureData || markerConfig.color || overrideColor;
+
+    let colors: Color[];
+    if (usingOverrideColor) {
+      // Use a single color bucket
+      colors = [overrideColor || new Color(markerConfig.color as ColorRepresentation)];
+    } else if (isCategorical) {
+      colors = categoricalPalette.slice(0, categories.length);
     } else {
-      // Generate colors
-      const categories = dataset.getFeatureCategories(selectedFeatureName);
-      const isCategorical = categories !== null;
-      const colors = isCategorical
-        ? categoricalPalette.slice(0, categories.length)
-        : subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
-      const colorMinValue = isCategorical ? 0 : colorRampMin;
-      const colorMaxValue = isCategorical ? categories.length - 1 : colorRampMax;
+      colors = subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
+    }
 
-      // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
-      // index 0 = out of filter range, index 1 = outliers.
-      for (let i = 0; i < colors.length + 2; i++) {
-        let color;
-        if (i === 0) {
-          color = viewerConfig.outOfRangeDrawSettings.color;
-        } else if (i === 1) {
-          color = viewerConfig.outlierDrawSettings.color;
-        } else {
-          color = colors[i - 2];
-        }
-        traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color: color });
+    const colorMinValue = isCategorical ? 0 : colorRampMin;
+    const colorMaxValue = isCategorical ? categories.length - 1 : colorRampMax;
+
+    // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
+    // index 0 = out of filter range, index 1 = outliers.
+    for (let i = 0; i < colors.length + 2; i++) {
+      let color;
+      let marker = markerConfig;
+      if (i === 0) {
+        color = viewerConfig.outOfRangeDrawSettings.color;
+      } else if (i === 1) {
+        color = viewerConfig.outlierDrawSettings.color;
+      } else {
+        color = colors[i - 2];
+      }
+      traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color, marker });
+    }
+
+    // Sort data into buckets
+    for (let i = 0; i < xData.length; i++) {
+      const objectId = objectIds[i];
+      const isOutlier = dataset.outliers ? dataset.outliers[objectId] : false;
+      const isOutOfRange = inRangeIds[objectId] === 0;
+
+      let bucketIndex;
+      if (isOutOfRange) {
+        bucketIndex = 0;
+      } else if (isOutlier) {
+        bucketIndex = 1;
+      } else if (usingOverrideColor) {
+        bucketIndex = 2;
+      } else {
+        bucketIndex = getBucketIndex(featureData.data[objectId], colorMinValue, colorMaxValue, colors.length) + 2;
       }
 
-      // Sort data into buckets
-      for (let i = 0; i < xData.length; i++) {
-        const objectId = objectIds[i];
-        const isOutlier = dataset.outliers ? dataset.outliers[objectId] : false;
-        const isOutOfRange = inRangeIds[objectId] === 0;
+      const bucket = traceDataBuckets[bucketIndex];
+      bucket.x.push(xData[i]);
+      bucket.y.push(yData[i]);
+      bucket.objectIds.push(objectIds[i]);
+      bucket.trackIds.push(trackIds[i]);
+    }
 
-        let bucketIndex;
-        if (isOutOfRange) {
-          bucketIndex = 0;
-        } else if (isOutlier) {
-          bucketIndex = 1;
-        } else {
-          bucketIndex = getBucketIndex(featureData.data[objectId], colorMinValue, colorMaxValue, colors.length) + 2;
-        }
-
-        const bucket = traceDataBuckets[bucketIndex];
-        bucket.x.push(xData[i]);
-        bucket.y.push(yData[i]);
-        bucket.objectIds.push(objectIds[i]);
-        bucket.trackIds.push(trackIds[i]);
-      }
-
-      // Optionally delete the outlier and out of range buckets to hide the values.
-      if (viewerConfig.outlierDrawSettings.mode === DrawMode.HIDE) {
-        traceDataBuckets.splice(1, 1);
-      }
-      if (viewerConfig.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
-        traceDataBuckets.splice(0, 1);
-      }
+    // Optionally delete the outlier and out of range buckets to hide the values.
+    if (viewerConfig.outlierDrawSettings.mode === DrawMode.HIDE) {
+      traceDataBuckets.splice(1, 1);
+    }
+    if (viewerConfig.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
+      traceDataBuckets.splice(0, 1);
     }
 
     // Transform buckets into traces
