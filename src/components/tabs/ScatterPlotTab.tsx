@@ -421,7 +421,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     yData: DataArray,
     objectIds: number[],
     trackIds: number[],
-    markerConfig: Partial<PlotMarker> = {},
+    markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
     overrideColor?: Color
   ): Partial<PlotData>[] => {
     if (selectedFeatureName === null || dataset === null || !xAxisFeatureName || !yAxisFeatureName) {
@@ -458,13 +458,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // index 0 = out of filter range, index 1 = outliers.
     for (let i = 0; i < colors.length + 2; i++) {
       let color;
-      let marker = markerConfig;
+      let marker;
       if (i === 0) {
         color = viewerConfig.outOfRangeDrawSettings.color;
+        marker = { ...markerConfig, ...markerConfig.outOfRange };
       } else if (i === 1) {
         color = viewerConfig.outlierDrawSettings.color;
+        marker = { ...markerConfig, ...markerConfig.outliers };
       } else {
         color = colors[i - 2];
+        marker = markerConfig;
       }
       traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color, marker });
     }
@@ -494,10 +497,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Optionally delete the outlier and out of range buckets to hide the values.
-    if (viewerConfig.outlierDrawSettings.mode === DrawMode.HIDE) {
+    if (viewerConfig.outlierDrawSettings.mode === DrawMode.HIDE && !markerConfig.outliers) {
       traceDataBuckets.splice(1, 1);
     }
-    if (viewerConfig.outOfRangeDrawSettings.mode === DrawMode.HIDE) {
+    if (viewerConfig.outOfRangeDrawSettings.mode === DrawMode.HIDE && !markerConfig.outOfRange) {
       traceDataBuckets.splice(0, 1);
     }
 
@@ -521,7 +524,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           marker: {
             color: applyMarkerTransparency(xData.length, "#" + bucket.color.getHexString()),
             size: 4,
-            ...markerConfig,
+            ...bucket.marker,
           },
           hovertemplate:
             `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
@@ -618,7 +621,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         trackData.xData,
         trackData.yData,
         trackData.objectIds,
-        trackData.trackIds
+        trackData.trackIds,
+        {
+          outOfRange: {
+            color: theme.color.layout.background,
+            line: { width: 1, color: "#99999940" }, // TODO: make this the filter color but a shade darker
+          },
+        }
       );
       traces.push(...trackTraces);
     }
