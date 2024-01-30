@@ -500,7 +500,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     traceDataBuckets[0].color = applyMarkerTransparency(totalPoints, traceDataBuckets[0].color);
     traceDataBuckets[1].color = applyMarkerTransparency(totalPoints, traceDataBuckets[1].color);
     traceDataBuckets.slice(2).forEach((bucket) => {
-      applyMarkerTransparency(numInRange, bucket.color);
+      bucket.color = applyMarkerTransparency(numInRange, bucket.color);
     });
 
     // Optionally delete the outlier and out of range buckets to hide the values.
