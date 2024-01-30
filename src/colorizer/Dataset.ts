@@ -370,9 +370,10 @@ export default class Dataset {
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
       this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
       this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
+      this.loadFrame(0), // load first frame to set frame dimensions
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, ...featureResults] = result;
+    const [outliers, tracks, times, centroids, bounds, , ...featureResults] = result;
 
     this.outliers = outliers;
     this.trackIds = tracks;
