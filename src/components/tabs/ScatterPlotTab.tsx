@@ -430,12 +430,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     const featureData = dataset.getFeatureData(selectedFeatureName);
 
-    const traceDataBuckets: TraceData[] = [];
-
-    if (!featureData || markerConfig.color || overrideColor) {
-      // Do no coloring! Keep all points in the same bucket.
-    }
-
     // Generate colors
     const categories = dataset.getFeatureCategories(selectedFeatureName);
     const isCategorical = categories !== null;
@@ -456,17 +450,18 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
     // index 0 = out of filter range, index 1 = outliers.
+    const traceDataBuckets: TraceData[] = [];
     for (let i = 0; i < colors.length + 2; i++) {
-      let color;
-      let marker;
+      let color: TraceData["color"];
+      let marker: TraceData["marker"];
       if (i === 0) {
-        color = viewerConfig.outOfRangeDrawSettings.color;
+        color = `#${viewerConfig.outOfRangeDrawSettings.color.getHexString()}`;
         marker = { ...markerConfig, ...markerConfig.outOfRange };
       } else if (i === 1) {
-        color = viewerConfig.outlierDrawSettings.color;
+        color = `#${viewerConfig.outlierDrawSettings.color.getHexString()}`;
         marker = { ...markerConfig, ...markerConfig.outliers };
       } else {
-        color = colors[i - 2];
+        color = `#${colors[i - 2].getHexString()}`;
         marker = markerConfig;
       }
       traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color, marker });
@@ -477,6 +472,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       const objectId = objectIds[i];
       const isOutlier = dataset.outliers ? dataset.outliers[objectId] : false;
       const isOutOfRange = inRangeIds[objectId] === 0;
+
+      if (Number.isNaN(objectId) || objectId === undefined || objectId <= 0) {
+        continue;
+      }
 
       let bucketIndex;
       if (isOutOfRange) {
@@ -495,6 +494,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       bucket.objectIds.push(objectIds[i]);
       bucket.trackIds.push(trackIds[i]);
     }
+
+    // Apply transparency to the colors
+    const numOutOfRange = traceDataBuckets[0].x.length;
+    const numOutliers = traceDataBuckets[1].x.length;
+    const totalPoints = xData.length;
+    const numInRange = totalPoints - numOutOfRange - numOutliers;
+    // Use total number to calculate transparency for the out of range and outlier buckets, so they do not appear
+    // unusually opaque if there are only a small number of them.
+    traceDataBuckets[0].color = applyMarkerTransparency(totalPoints, traceDataBuckets[0].color);
+    traceDataBuckets[1].color = applyMarkerTransparency(totalPoints, traceDataBuckets[1].color);
+    traceDataBuckets.slice(2).forEach((bucket) => {
+      applyMarkerTransparency(numInRange, bucket.color);
+    });
 
     // Optionally delete the outlier and out of range buckets to hide the values.
     if (viewerConfig.outlierDrawSettings.mode === DrawMode.HIDE && !markerConfig.outliers) {
@@ -522,7 +534,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           type: "scattergl",
           mode: "markers",
           marker: {
-            color: applyMarkerTransparency(xData.length, "#" + bucket.color.getHexString()),
+            color: bucket.color,
             size: 4,
             ...bucket.marker,
           },
@@ -635,6 +647,17 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // Render currently selected object as an extra crosshair trace.
     if (selectedTrack) {
       const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
+      if (currentObjectId !== -1) {
+        traces.push(
+          ...colorizeScatterplotPoints(
+            [rawXData[currentObjectId]],
+            [rawYData[currentObjectId]],
+            [currentObjectId],
+            [selectedTrack.trackId],
+            { size: 10 }
+          )
+        );
+      }
       traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
     }
 

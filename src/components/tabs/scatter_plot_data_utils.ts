@@ -1,7 +1,7 @@
 import Plotly, { PlotData } from "plotly.js-dist-min";
 import { ColorRamp } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
-import { Color } from "three";
+import { Color, HexColorString } from "three";
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -10,7 +10,7 @@ export type TraceData = {
   y: number[];
   objectIds: number[];
   trackIds: number[];
-  color: Color;
+  color: HexColorString;
   marker: Partial<Plotly.PlotMarker>;
 };
 
@@ -79,20 +79,17 @@ export function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
 
 /**
  * Returns a hex color string with increasing transparency as the number of markers increases.
- * Base color must be a 7-character RGB hex string (e.g. `#000000`).
  */
-export function applyMarkerTransparency(numMarkers: number, baseColor: string): string {
+export function applyMarkerTransparency(numMarkers: number, baseColor: HexColorString): HexColorString {
   if (baseColor.length !== 7) {
     throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
   }
   // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
   const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
-  return (
-    baseColor +
-    Math.floor(opacity * 255)
-      .toString(16)
-      .padStart(2, "0")
-  );
+  const opacityString = Math.floor(opacity * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return (baseColor + opacityString) as HexColorString;
 }
 
 /** Draws a simple line graph with the provided data points. */
