@@ -10,7 +10,8 @@ import {
 } from "../src/colorizer/utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 import { ThresholdType } from "../src/colorizer/types";
-import { DEFAULT_COLOR_RAMPS } from "../src/colorizer";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
+import { Color, ColorRepresentation } from "three";
 
 function padCategories(categories: boolean[]): boolean[] {
   const result = [...categories];
@@ -136,10 +137,11 @@ describe("Loading + saving from URL query strings", () => {
       range: [21.433, 89.4],
       colorRampKey: "myMap-1",
       colorRampReversed: true,
+      categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors,
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
-      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!";
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe";
     expect(queryString).equals(expectedQueryString);
 
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -274,5 +276,66 @@ describe("Loading + saving from URL query strings", () => {
       parsedParams = loadParamsFromUrlQueryString(paramsToUrlQueryString(params));
       expect(parsedParams).deep.equals(params);
     }
+  });
+
+  it("Accepts keys for all palettes", () => {
+    for (const data of DEFAULT_CATEGORICAL_PALETTES.values()) {
+      const params: Partial<UrlParams> = { categoricalPalette: data.colors };
+      const queryString = paramsToUrlQueryString(params);
+
+      expect(queryString).to.equal(`?palette-key=${data.key}`);
+
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals(params);
+      expect(parsedParams.categoricalPalette).deep.equals(data.colors);
+    }
+  });
+
+  it("Handles palette colors", () => {
+    const hexColors: ColorRepresentation[] = [
+      "#000000",
+      "#000010",
+      "#000020",
+      "#000030",
+      "#000040",
+      "#000050",
+      "#000060",
+      "#000070",
+      "#000080",
+      "#000090",
+      "#0000a0",
+      "#0000b0",
+    ];
+    const colors = hexColors.map((color) => new Color(color));
+    const params: Partial<UrlParams> = { categoricalPalette: colors };
+    const queryString = paramsToUrlQueryString(params);
+    expect(queryString).equals(
+      "?palette=000000-000010-000020-000030-000040-000050-000060-000070-000080-000090-0000a0-0000b0"
+    );
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    expect(parsedParams).deep.equals(params);
+  });
+
+  it("Uses palette key instead of palette array when both are provided", () => {
+    const queryString =
+      "?palette-key=adobe&palette=000000-ff0000-00ff00-0000ff-000000-ff0000-00ff00-0000ff-000000-ff0000-00ff00-0000ff";
+    const expectedParams = {
+      categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get("adobe")?.colors,
+    };
+    expect(loadParamsFromUrlQueryString(queryString)).deep.equals(expectedParams);
+  });
+
+  it("Backfills missing palette colors", () => {
+    const hexColors: ColorRepresentation[] = ["#000000", "#000010", "#000020", "#000030"];
+    const colors = hexColors.map((color) => new Color(color));
+
+    const params: Partial<UrlParams> = { categoricalPalette: colors };
+    const queryString = paramsToUrlQueryString(params);
+    expect(queryString).equals("?palette=000000-000010-000020-000030");
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
+
+    const defaultColors = DEFAULT_CATEGORICAL_PALETTES.get("adobe")!.colors;
+    const expectedColors = [...colors, ...defaultColors.slice(4)];
+    expect(parsedParams).deep.equals({ categoricalPalette: expectedColors });
   });
 });
