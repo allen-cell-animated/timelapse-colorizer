@@ -17,7 +17,7 @@ import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import {
   DataArray,
   TraceData,
-  applyMarkerTransparency,
+  scaleMarkerOpacityByCount,
   drawCrosshair,
   getBucketIndex,
   getHoverTemplate,
@@ -504,10 +504,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const numInRange = totalPoints - numOutOfRange - numOutliers;
     // Use total number to calculate transparency for the out of range and outlier buckets, so they do not appear
     // unusually opaque if there are only a small number of points.
-    traceDataBuckets[0].color = applyMarkerTransparency(totalPoints, traceDataBuckets[0].color);
-    traceDataBuckets[1].color = applyMarkerTransparency(totalPoints, traceDataBuckets[1].color);
+    traceDataBuckets[0].color = scaleMarkerOpacityByCount(totalPoints, traceDataBuckets[0].color);
+    traceDataBuckets[1].color = scaleMarkerOpacityByCount(totalPoints, traceDataBuckets[1].color);
     traceDataBuckets.slice(2).forEach((bucket) => {
-      bucket.color = applyMarkerTransparency(numInRange, bucket.color);
+      bucket.color = scaleMarkerOpacityByCount(numInRange, bucket.color);
     });
 
     // Optionally delete the outlier and out of range buckets to hide the values.
