@@ -423,13 +423,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (selectedFeatureName === null || dataset === null || !xAxisFeatureName || !yAxisFeatureName) {
       return [];
     }
-
     const featureData = dataset.getFeatureData(selectedFeatureName);
+    if (!featureData) {
+      return [];
+    }
 
     // Generate colors
     const categories = dataset.getFeatureCategories(selectedFeatureName);
     const isCategorical = categories !== null;
-    const usingOverrideColor = !featureData || markerConfig.color || overrideColor;
+    const usingOverrideColor = markerConfig.color || overrideColor;
     overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
 
     let colors: Color[];
@@ -501,7 +503,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const numOutliers = traceDataBuckets[1].x.length;
     const numInRange = totalPoints - numOutOfRange - numOutliers;
     // Use total number to calculate transparency for the out of range and outlier buckets, so they do not appear
-    // unusually opaque if there are only a small number of them.
+    // unusually opaque if there are only a small number of points.
     traceDataBuckets[0].color = applyMarkerTransparency(totalPoints, traceDataBuckets[0].color);
     traceDataBuckets[1].color = applyMarkerTransparency(totalPoints, traceDataBuckets[1].color);
     traceDataBuckets.slice(2).forEach((bucket) => {

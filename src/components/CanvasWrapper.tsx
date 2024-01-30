@@ -118,9 +118,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.objectOpacity]);
 
   useMemo(() => {
-    // YAGNI: Debouncing for this is possible but no performance issues encountered yet.
-    // Add only if needed.
-    // Timeout in case of slowdowns to prevent this from halting the UI.
     canv.setInRangeLUT(props.inRangeLUT);
   }, [props.inRangeLUT]);
 
