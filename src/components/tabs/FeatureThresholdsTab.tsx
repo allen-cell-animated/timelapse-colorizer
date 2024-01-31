@@ -219,12 +219,17 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   };
 
   const onNumericThresholdChanged = (index: number, min: number, max: number): void => {
-    const newThresholds = [...props.featureThresholds];
-    const threshold = newThresholds[index];
-    if (isThresholdNumeric(threshold)) {
-      threshold.min = min;
-      threshold.max = max;
+    // Make a copy of the threshold and the threshold array to avoid mutating state directly.
+    const newThreshold = { ...props.featureThresholds[index] };
+    if (isThresholdNumeric(newThreshold)) {
+      newThreshold.min = min;
+      newThreshold.max = max;
     }
+    const newThresholds = [
+      ...props.featureThresholds.slice(0, index),
+      newThreshold,
+      ...props.featureThresholds.slice(index + 1),
+    ];
     props.onChange(newThresholds);
   };
 
