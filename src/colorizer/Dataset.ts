@@ -221,26 +221,6 @@ export default class Dataset {
   }
 
   /**
-   * Fetches and loads a data file as an array and returns its data as a Texture using the provided dataType.
-   * @param dataType The expected format of the data.
-   * @param fileUrl String url of the file to be loaded.
-   * @throws An error if fileUrl is not undefined and the data cannot be loaded from the file.
-   * @returns Promise of a texture loaded from the file. If `fileUrl` is undefined, returns null.
-   */
-  // private async loadToTexture(dataType: FeatureDataType, fileUrl?: string): Promise<Texture | null> {
-  //   if (!fileUrl) {
-  //     return null;
-  //   }
-  //   try {
-  //     const url = this.resolveUrl(fileUrl);
-  //     const source = await this.arrayLoader.load(url);
-  //     return source.getTexture(dataType);
-  //   } catch (e) {
-  //     return null;
-  //   }
-  // }
-
-  /**
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
    * @param dataType The expected format of the data.
    * @param fileUrl String url of the file to be loaded.
@@ -370,10 +350,11 @@ export default class Dataset {
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
       this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
       this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
-      this.loadFrame(0), // load first frame to set frame dimensions
+      this.loadFrame(0), // load first frame to set frame dimensions. Load result will be discarded
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, , ...featureResults] = result;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [outliers, tracks, times, centroids, bounds, _loaded_frame, ...featureResults] = result;
 
     this.outliers = outliers;
     this.trackIds = tracks;
