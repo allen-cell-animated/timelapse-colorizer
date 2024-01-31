@@ -93,14 +93,16 @@ function App(): ReactElement {
         const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
         const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
 
-        if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold)) {
-          setColorRampMin(newThreshold.min);
-          setColorRampMax(newThreshold.max);
+        if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold) && isThresholdNumeric(oldThreshold)) {
+          if (newThreshold.min !== oldThreshold.min || newThreshold.max !== oldThreshold.max) {
+            setColorRampMin(newThreshold.min);
+            setColorRampMax(newThreshold.max);
+          }
         }
       }
       _setFeatureThresholds(newThresholds);
     },
-    [featureThresholds, featureName]
+    [featureName, dataset, featureThresholds]
   );
   /** A look-up-table from object ID to whether it is in range (=1) or not (=0) */
   const inRangeLUT = useMemo(() => {
