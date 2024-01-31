@@ -12,7 +12,7 @@ import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { SwitchIconSVG } from "../../assets";
-import { Color, ColorRepresentation } from "three";
+import { Color, ColorRepresentation, HexColorString } from "three";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import {
   DataArray,
@@ -25,6 +25,7 @@ import {
   makeLineTrace,
   splitTraceData,
   subsampleColorRamp,
+  makeEmptyTraceData,
 } from "./scatter_plot_data_utils";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
@@ -38,6 +39,9 @@ const PLOTLY_CONFIG: Partial<Plotly.Config> = {
 
 const MAX_POINTS_PER_TRACE = 1024;
 const COLOR_RAMP_SUBSAMPLES = 100;
+const NUM_RESERVED_BUCKETS = 2;
+const BUCKET_INDEX_OUTOFRANGE = 0;
+const BUCKET_INDEX_OUTLIERS = 1;
 
 enum RangeType {
   ALL_TIME = "All time",
@@ -448,25 +452,28 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const colorMaxValue = isCategorical ? categories.length - 1 : colorRampMax;
 
     // Make a bucket group for each ramp/palette color and for the out-of-range and outliers.
-    // index 0 = out of filter range, index 1 = outliers.
     const traceDataBuckets: TraceData[] = [];
-    for (let i = 0; i < colors.length + 2; i++) {
-      let color: TraceData["color"];
-      let marker: TraceData["marker"];
-      if (i === 0) {
-        color = `#${viewerConfig.outOfRangeDrawSettings.color.getHexString()}`;
-        marker = { ...markerConfig, ...markerConfig.outOfRange };
-      } else if (i === 1) {
-        color = `#${viewerConfig.outlierDrawSettings.color.getHexString()}`;
-        marker = { ...markerConfig, ...markerConfig.outliers };
-      } else {
-        color = `#${colors[i - 2].getHexString()}`;
-        marker = markerConfig;
-      }
+    const overrideColorHex: HexColorString = `#${overrideColor.getHexString()}`;
+
+    let outOfRangeColor: HexColorString = `#${viewerConfig.outOfRangeDrawSettings.color.getHexString()}`;
+    let outlierColor: HexColorString = `#${viewerConfig.outlierDrawSettings.color.getHexString()}`;
+    const outOfRangeMarker = { ...markerConfig, ...markerConfig.outOfRange };
+    const outlierMarker = { ...markerConfig, ...markerConfig.outliers };
+    if (usingOverrideColor) {
+      outlierColor = overrideColorHex;
+      outOfRangeColor = overrideColorHex;
+    }
+
+    traceDataBuckets.push(makeEmptyTraceData(outOfRangeColor, outOfRangeMarker)); // 0 = out of range
+    traceDataBuckets.push(makeEmptyTraceData(outlierColor, outlierMarker)); // 1 = outliers
+
+    for (let i = NUM_RESERVED_BUCKETS; i < colors.length + NUM_RESERVED_BUCKETS; i++) {
+      let color: HexColorString = `#${colors[i - NUM_RESERVED_BUCKETS].getHexString()}`;
+      const marker = markerConfig;
       if (usingOverrideColor) {
-        color = `#${overrideColor.getHexString()}`;
+        color = overrideColorHex;
       }
-      traceDataBuckets.push({ x: [], y: [], objectIds: [], trackIds: [], color, marker });
+      traceDataBuckets.push(makeEmptyTraceData(color, marker));
     }
 
     // Sort data into buckets
@@ -481,13 +488,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
       let bucketIndex;
       if (isOutOfRange) {
-        bucketIndex = 0;
+        bucketIndex = BUCKET_INDEX_OUTOFRANGE;
       } else if (isOutlier) {
-        bucketIndex = 1;
+        bucketIndex = BUCKET_INDEX_OUTLIERS;
       } else if (usingOverrideColor) {
-        bucketIndex = 2;
+        bucketIndex = NUM_RESERVED_BUCKETS;
       } else {
-        bucketIndex = getBucketIndex(featureData.data[objectId], colorMinValue, colorMaxValue, colors.length) + 2;
+        bucketIndex =
+          getBucketIndex(featureData.data[objectId], colorMinValue, colorMaxValue, colors.length) +
+          NUM_RESERVED_BUCKETS;
       }
 
       const bucket = traceDataBuckets[bucketIndex];
@@ -499,13 +508,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     // Apply transparency to the colors
     const totalPoints = xData.length;
-    const numOutOfRange = traceDataBuckets[0].x.length;
-    const numOutliers = traceDataBuckets[1].x.length;
+    const numOutOfRange = traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].x.length;
+    const numOutliers = traceDataBuckets[BUCKET_INDEX_OUTLIERS].x.length;
     const numInRange = totalPoints - numOutOfRange - numOutliers;
     // Use total number to calculate transparency for the out of range and outlier buckets, so they do not appear
     // unusually opaque if there are only a small number of points.
-    traceDataBuckets[0].color = scaleColorOpacityByMarkerCount(totalPoints, traceDataBuckets[0].color);
-    traceDataBuckets[1].color = scaleColorOpacityByMarkerCount(totalPoints, traceDataBuckets[1].color);
+    traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color = scaleColorOpacityByMarkerCount(
+      totalPoints,
+      traceDataBuckets[BUCKET_INDEX_OUTOFRANGE].color
+    );
+    traceDataBuckets[BUCKET_INDEX_OUTLIERS].color = scaleColorOpacityByMarkerCount(
+      totalPoints,
+      traceDataBuckets[BUCKET_INDEX_OUTLIERS].color
+    );
     traceDataBuckets.slice(2).forEach((bucket) => {
       bucket.color = scaleColorOpacityByMarkerCount(numInRange, bucket.color);
     });

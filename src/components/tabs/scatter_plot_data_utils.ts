@@ -42,6 +42,18 @@ export function getBucketIndex(value: number, minValue: number, maxValue: number
   return Math.round(remap(value, minValue, maxValue, 0, numBuckets - 1, true));
 }
 
+/** Returns a TraceData object with empty data arrays, and the specified color and marker data.*/
+export function makeEmptyTraceData(color: HexColorString, marker: Partial<Plotly.PlotMarker>): TraceData {
+  return {
+    x: [],
+    y: [],
+    objectIds: [],
+    trackIds: [],
+    color,
+    marker,
+  };
+}
+
 /**
  * Splits a trace into one or more smaller subtraces so that all the subtraces have at
  * most `maxPoints` data points.
