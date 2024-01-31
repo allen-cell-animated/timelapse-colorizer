@@ -210,11 +210,10 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   };
 
   const onCategoricalThresholdChanged = (index: number, enabled_categories: boolean[]): void => {
+    const newThreshold = { ...props.featureThresholds[index], enabled_categories };
     const newThresholds = [...props.featureThresholds];
-    const threshold = newThresholds[index];
-    if (isThresholdCategorical(threshold)) {
-      threshold.enabledCategories = enabled_categories;
-    }
+    newThresholds[index] = newThreshold;
+
     props.onChange(newThresholds);
   };
 
@@ -225,11 +224,9 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
       newThreshold.min = min;
       newThreshold.max = max;
     }
-    const newThresholds = [
-      ...props.featureThresholds.slice(0, index),
-      newThreshold,
-      ...props.featureThresholds.slice(index + 1),
-    ];
+    const newThresholds = [...props.featureThresholds];
+    newThresholds[index] = newThreshold;
+
     props.onChange(newThresholds);
   };
 
