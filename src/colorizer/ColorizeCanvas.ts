@@ -329,7 +329,7 @@ export default class ColorizeCanvas {
     }
     this.dataset = dataset;
     if (this.dataset.outliers) {
-      this.setUniform("outlierData", this.dataset.outliers);
+      this.setUniform("outlierData", packDataTexture(Array.from(this.dataset.outliers), FeatureDataType.U8));
     } else {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
