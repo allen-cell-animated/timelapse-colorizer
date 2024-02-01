@@ -334,9 +334,10 @@ function App(): ReactElement {
           setFeatureThresholds(initialUrlParams.thresholds);
         }
       }
+      let newFeatureName = featureName;
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        await updateFeature(dataset, initialUrlParams.feature);
+        newFeatureName = await updateFeature(dataset, initialUrlParams.feature);
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {
@@ -344,8 +345,8 @@ function App(): ReactElement {
         setColorRampMax(initialUrlParams.range[1]);
       } else {
         // Load default range from dataset for the current feature
-        setColorRampMin(dataset?.getFeatureData(featureName)?.min || 0);
-        setColorRampMax(dataset?.getFeatureData(featureName)?.max || 0);
+        setColorRampMin(dataset?.getFeatureData(newFeatureName)?.min || 0);
+        setColorRampMax(dataset?.getFeatureData(newFeatureName)?.max || 0);
       }
 
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
@@ -471,10 +472,10 @@ function App(): ReactElement {
   );
 
   const updateFeature = useCallback(
-    async (newDataset: Dataset, newFeatureName: string): Promise<void> => {
+    async (newDataset: Dataset, newFeatureName: string): Promise<string> => {
       if (!newDataset?.hasFeature(newFeatureName)) {
         console.warn("Dataset does not have feature '" + newFeatureName + "'.");
-        return;
+        return featureName;
       }
       setFeatureName(newFeatureName);
 
@@ -492,6 +493,7 @@ function App(): ReactElement {
       }
 
       canv.setFeature(newFeatureName);
+      return newFeatureName;
     },
     [config.keepRangeBetweenDatasets, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
