@@ -209,11 +209,11 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     props.onChange(newThresholds);
   };
 
-  const onCategoricalThresholdChanged = (index: number, enabled_categories: boolean[]): void => {
-    const newThreshold = { ...props.featureThresholds[index], enabled_categories };
+  const onCategoricalThresholdChanged = (index: number, enabledCategories: boolean[]): void => {
+    const newThreshold = { ...props.featureThresholds[index], enabledCategories };
     const newThresholds = [...props.featureThresholds];
     newThresholds[index] = newThreshold;
-
+    console.log(newThreshold);
     props.onChange(newThresholds);
   };
 
