@@ -210,19 +210,27 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   };
 
   const onCategoricalThresholdChanged = (index: number, enabledCategories: boolean[]): void => {
-    const newThreshold = { ...props.featureThresholds[index], enabledCategories };
+    const oldThreshold = props.featureThresholds[index];
+    if (!isThresholdCategorical(oldThreshold)) {
+      return;
+    }
+    const newThreshold: FeatureThreshold = { ...oldThreshold, enabledCategories };
     const newThresholds = [...props.featureThresholds];
     newThresholds[index] = newThreshold;
     props.onChange(newThresholds);
   };
 
   const onNumericThresholdChanged = (index: number, min: number, max: number): void => {
-    // Make a copy of the threshold and the threshold array to avoid mutating state directly.
-    const newThreshold = { ...props.featureThresholds[index] };
-    if (isThresholdNumeric(newThreshold)) {
-      newThreshold.min = min;
-      newThreshold.max = max;
+    const oldThreshold = props.featureThresholds[index];
+    if (!isThresholdNumeric(oldThreshold)) {
+      return;
     }
+    // Make a copy of the threshold and the threshold array to avoid mutating state directly.
+    const newThreshold: FeatureThreshold = { ...oldThreshold };
+
+    newThreshold.min = min;
+    newThreshold.max = max;
+
     const newThresholds = [...props.featureThresholds];
     newThresholds[index] = newThreshold;
 
