@@ -214,7 +214,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     if (!isThresholdCategorical(oldThreshold)) {
       return;
     }
-    const newThreshold: FeatureThreshold = { ...oldThreshold, enabledCategories };
+    const newThreshold: CategoricalFeatureThreshold = { ...oldThreshold, enabledCategories };
     const newThresholds = [...props.featureThresholds];
     newThresholds[index] = newThreshold;
     props.onChange(newThresholds);
@@ -226,7 +226,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
       return;
     }
     // Make a copy of the threshold and the threshold array to avoid mutating state directly.
-    const newThreshold: FeatureThreshold = { ...oldThreshold };
+    const newThreshold: NumericFeatureThreshold = { ...oldThreshold };
 
     newThreshold.min = min;
     newThreshold.max = max;
