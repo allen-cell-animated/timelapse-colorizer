@@ -325,7 +325,7 @@ function App(): ReactElement {
       let newFeatureName = featureName;
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        newFeatureName = await updateFeature(dataset, initialUrlParams.feature);
+        newFeatureName = updateFeature(dataset, initialUrlParams.feature);
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {
@@ -459,8 +459,13 @@ function App(): ReactElement {
     [replaceDataset]
   );
 
+  /** Attempts to update the current feature. Also updates the color ramp min/max if the feature has changed.
+   * @param newDataset the dataset to pull feature data from.
+   * @param newFeatureName the name of the new feature to select.
+   * @returns the new feature name if it was successfully found and loaded. Otherwise, returns the old feature name.
+   */
   const updateFeature = useCallback(
-    async (newDataset: Dataset, newFeatureName: string): Promise<string> => {
+    (newDataset: Dataset, newFeatureName: string): string => {
       if (!newDataset?.hasFeature(newFeatureName)) {
         console.warn("Dataset does not have feature '" + newFeatureName + "'.");
         return featureName;
