@@ -16,6 +16,40 @@
     "sourceType": "module"
   },
   "plugins": ["@typescript-eslint"],
+  "overrides": [
+    // Override for enforcing naming conventions
+    {
+      "files": ["*.ts", "*.tsx"],
+      "excludedFiles": ["*.test.ts", "*.test.tsx"],
+
+      "rules": {
+        "@typescript-eslint/naming-convention": [
+          "warn",
+          { "selector": "default", "format": ["camelCase"], "leadingUnderscore": "allow" },
+          {
+            "selector": ["enumMember"],
+            "format": ["camelCase", "UPPER_CASE"],
+            "leadingUnderscore": "allow"
+          },
+          // Allow function components to use PascalCase
+          { "selector": "function", "format": ["camelCase", "PascalCase"] },
+          // Allow const variables to use PascalCase (specifically for styled-components)
+          {
+            "selector": ["variable"],
+            "modifiers": ["const"],
+            "format": ["camelCase", "UPPER_CASE", "PascalCase"],
+            "leadingUnderscore": "allow"
+          },
+          { "selector": "objectLiteralProperty", "format": ["camelCase", "PascalCase"] },
+          { "selector": "typeLike", "format": ["PascalCase"] }
+        ]
+      },
+
+      "parserOptions": {
+        "project": ["./tsconfig.json"]
+      }
+    }
+  ],
   "rules": {
     "comma-style": [1, "last"],
     "curly": [1, "multi-line"],
