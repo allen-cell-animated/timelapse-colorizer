@@ -116,13 +116,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const isDebouncePending =
     dataset !== props.dataset || colorRampMin !== props.colorRampMin || colorRampMax !== props.colorRampMax;
 
-  // Signal that the plot is stalled when playback starts.
-  useEffect(() => {
-    if (isPlaying) {
-      setIsRendering(true);
-    }
-  }, [isPlaying]);
-
   // TODO: Implement color ramps in a worker thread. This was originally removed for performance issues.
   // Plotly's performance can be improved by generating traces for colors rather than feeding it the raw
   // data and asking it to colorize it.
@@ -422,7 +415,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     const traceDataBuckets: TraceData[] = [];
     if (!featureData || markerConfig.color || overrideColor) {
-      // Do no coloring! Keep all points in the same bucket.
+      // Do no coloring! Keep all points in the same bucket, which will still be split up later.
       traceDataBuckets.push({
         x: Array.from(xData),
         y: Array.from(yData),
@@ -757,7 +750,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     <>
       {makeControlBar()}
       <div style={{ position: "relative" }}>
-        <LoadingSpinner loading={isPending || isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
+        <LoadingSpinner
+          loading={isPending || isRendering || isDebouncePending || isPlaying}
+          style={{ marginTop: "10px" }}
+        >
           {makePlotButtons()}
           <ScatterPlotContainer
             style={{ width: "100%", height: "475px", padding: "5px" }}
