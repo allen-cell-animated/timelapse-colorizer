@@ -260,7 +260,7 @@ function App(): ReactElement {
       canv.setFeature(newFeatureName);
       return newFeatureName;
     },
-    [canv]
+    [canv, featureName]
   );
 
   /**
