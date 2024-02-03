@@ -325,7 +325,7 @@ function App(): ReactElement {
       let newFeatureName = featureName;
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        newFeatureName = updateFeature(dataset, initialUrlParams.feature);
+        newFeatureName = replaceFeatureAndUpdateColorRamp(dataset, initialUrlParams.feature);
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {
@@ -383,7 +383,7 @@ function App(): ReactElement {
       if (!newDataset.hasFeature(newFeatureName)) {
         newFeatureName = newDataset.featureNames[0];
       }
-      updateFeature(newDataset, newFeatureName);
+      replaceFeatureAndUpdateColorRamp(newDataset, newFeatureName);
       setFeatureName(newFeatureName);
 
       await canv.setDataset(newDataset);
@@ -459,12 +459,14 @@ function App(): ReactElement {
     [replaceDataset]
   );
 
-  /** Attempts to update the current feature. Also updates the color ramp min/max if the feature has changed.
+  /**
+   * Attempts to replace the current feature with a new feature from a dataset, optionally updating
+   * the color ramp bounds. If the feature cannot be loaded, returns the old feature name and does nothing.
    * @param newDataset the dataset to pull feature data from.
    * @param newFeatureName the name of the new feature to select.
    * @returns the new feature name if it was successfully found and loaded. Otherwise, returns the old feature name.
    */
-  const updateFeature = useCallback(
+  const replaceFeatureAndUpdateColorRamp = useCallback(
     (newDataset: Dataset, newFeatureName: string): string => {
       if (!newDataset?.hasFeature(newFeatureName)) {
         console.warn("Dataset does not have feature '" + newFeatureName + "'.");
@@ -644,7 +646,7 @@ function App(): ReactElement {
             items={getFeatureDropdownData()}
             onChange={(value) => {
               if (value !== featureName && dataset) {
-                updateFeature(dataset, value);
+                replaceFeatureAndUpdateColorRamp(dataset, value);
               }
             }}
           />
