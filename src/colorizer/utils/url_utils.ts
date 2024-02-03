@@ -17,7 +17,9 @@ const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   "/allen/aics/assay-dev": "https://dev-aics-dtp-001.int.allencell.org/assay-dev",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   "/allen/aics/microscopy": "https://dev-aics-dtp-001.int.allencell.org/microscopy",
 };
 
