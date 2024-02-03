@@ -264,14 +264,14 @@ function App(): ReactElement {
   );
 
   /**
-   * Updates the color ramp to default min and max values based on a feature and dataset.
-   *
-   * Does nothing if the viewer is configured to keep the range between datasets.
+   * Resets the color ramp to a default min and max value based on the feature and dataset.
    *
    * If the feature is thresholded, the color ramp will be set to the threshold's min and max.
    * Otherwise, the color ramp will be set to the feature's min and max.
+   *
+   * (Does nothing if the viewer is configured to keep the range between datasets.)
    */
-  const resetColorRampToDefaults = useCallback(
+  const resetColorRampRangeToDefaults = useCallback(
     (featureDataset: Dataset, featureName: string): void => {
       const featureData = featureDataset.getFeatureData(featureName);
       if (!config.keepRangeBetweenDatasets && featureData) {
@@ -379,7 +379,7 @@ function App(): ReactElement {
         setColorRampMax(initialUrlParams.range[1]);
       } else {
         // Load default range from dataset for the current feature
-        dataset && resetColorRampToDefaults(dataset, newFeatureName);
+        dataset && resetColorRampRangeToDefaults(dataset, newFeatureName);
       }
 
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
@@ -429,7 +429,7 @@ function App(): ReactElement {
         newFeatureName = newDataset.featureNames[0];
       }
       replaceFeature(newDataset, newFeatureName);
-      resetColorRampToDefaults(newDataset, newFeatureName);
+      resetColorRampRangeToDefaults(newDataset, newFeatureName);
       setFeatureName(newFeatureName);
 
       await canv.setDataset(newDataset);
@@ -453,7 +453,7 @@ function App(): ReactElement {
       currentFrame,
       getUrlParams,
       replaceFeature,
-      resetColorRampToDefaults,
+      resetColorRampRangeToDefaults,
       featureThresholds,
     ]
   );
@@ -668,7 +668,7 @@ function App(): ReactElement {
             onChange={(value) => {
               if (value !== featureName && dataset) {
                 replaceFeature(dataset, value);
-                resetColorRampToDefaults(dataset, value);
+                resetColorRampRangeToDefaults(dataset, value);
               }
             }}
           />
