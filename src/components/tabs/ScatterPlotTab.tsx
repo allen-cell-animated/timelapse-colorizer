@@ -131,13 +131,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const isDebouncePending =
     dataset !== props.dataset || colorRampMin !== props.colorRampMin || colorRampMax !== props.colorRampMax;
 
-  // Signal that the plot is stalled when playback starts.
-  useEffect(() => {
-    if (isPlaying) {
-      setIsRendering(true);
-    }
-  }, [isPlaying]);
-
   /**
    * Wrapper around useState that signals the render spinner whenever the values are set, and
    * uses useTransition to deprioritize the state update.
@@ -440,7 +433,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     let colors: Color[];
     if (usingOverrideColor) {
-      // Use a single color bucket
+      // Do no coloring! Keep all points in the same bucket, which will still be split up later.
       colors = [overrideColor];
     } else if (isCategorical) {
       colors = categoricalPalette.slice(0, categories.length);
@@ -824,7 +817,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     <>
       {makeControlBar()}
       <div style={{ position: "relative" }}>
-        <LoadingSpinner loading={isPending || isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
+        <LoadingSpinner
+          loading={isPending || isRendering || isDebouncePending || isPlaying}
+          style={{ marginTop: "10px" }}
+        >
           {makePlotButtons()}
           <ScatterPlotContainer
             style={{ width: "100%", height: "475px", padding: "5px" }}

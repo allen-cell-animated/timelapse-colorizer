@@ -30,13 +30,26 @@ export function subsampleColorRamp(colorRamp: ColorRamp, numColors: number): Col
 
 /**
  * Returns the index of a bucket that a value should be sorted into, based on a provided range and number of buckets.
- * Assumes that each bucket is evenly spaced.
+ * Buckets are evenly spaced and the first and last buckets center on the min and max values.
+ *
  * @param value
  * @param minValue Min value, inclusive.
  * @param maxValue Max value, inclusive.
  * @param numBuckets Number of buckets in the range between min and max values.
  * @returns The index of the nearest bucket that the value should be sorted into, from 0 to `numBuckets - 1`. Clamps the value
  * to the min/max values if it is outside the range.
+ *
+ * Note: Buckets at the endpoints of the value range are half-sized, as they are centered on `minValue` and `maxValue`
+ * and the values out of range are clipped. This matches color ramp gradient behavior.
+ * @example
+ * ```
+ * getBucketIndex(i, 0, 1, 2) = 0 for i < 0.5
+ * .                          = 1 for 0.5 <= i
+ *
+ * getBucketIndex(i, 0, 1, 3) = 0 for i < 0.25
+ * .                          = 1 for 0.25 <= i < 0.75
+ * .                          = 2 for 0.75 <= i
+ * ```
  */
 export function getBucketIndex(value: number, minValue: number, maxValue: number, numBuckets: number): number {
   return Math.round(remap(value, minValue, maxValue, 0, numBuckets - 1, true));
