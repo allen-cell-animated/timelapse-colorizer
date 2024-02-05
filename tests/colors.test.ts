@@ -36,4 +36,10 @@ describe("Categorical Palettes", () => {
       expect(palette.colorStops.length).to.equal(uniqueStops.size);
     }
   });
+
+  it("has sanitized keys", () => {
+    for (const palette of DEFAULT_CATEGORICAL_PALETTES.values()) {
+      expect(/^[a-z0-9_]+$/g.test(palette.key)).to.be.true;
+    }
+  });
 });
