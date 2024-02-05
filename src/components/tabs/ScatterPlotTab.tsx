@@ -128,6 +128,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const colorRampMin = useDebounce(props.colorRampMin, 100);
   const colorRampMax = useDebounce(props.colorRampMax, 100);
 
+  // Trigger render spinner when playback starts, but only if the render is being delayed.
+  // If a render is allowed to happen (such as in the current-track- or current-frame-only
+  // range types), `isRendering` will be set to false immediately and the spinner will be hidden again.
+  useEffect(() => {
+    if (isPlaying) {
+      setIsRendering(true);
+    }
+  }, [isPlaying]);
+
   const isDebouncePending =
     dataset !== props.dataset || colorRampMin !== props.colorRampMin || colorRampMax !== props.colorRampMax;
 
@@ -817,10 +826,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     <>
       {makeControlBar()}
       <div style={{ position: "relative" }}>
-        <LoadingSpinner
-          loading={isPending || isRendering || isDebouncePending || isPlaying}
-          style={{ marginTop: "10px" }}
-        >
+        <LoadingSpinner loading={isPending || isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
             style={{ width: "100%", height: "475px", padding: "5px" }}
