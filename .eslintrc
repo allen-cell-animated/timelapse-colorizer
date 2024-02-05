@@ -17,11 +17,9 @@
   },
   "plugins": ["@typescript-eslint"],
   "overrides": [
-    // Override for enforcing naming conventions
     {
+      // Use TypeScript-specific rules for TypeScript files
       "files": ["*.ts", "*.tsx"],
-      "excludedFiles": ["*.test.ts", "*.test.tsx"],
-
       "rules": {
         "@typescript-eslint/naming-convention": [
           "warn",
