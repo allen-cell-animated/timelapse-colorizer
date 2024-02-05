@@ -1,9 +1,15 @@
 // Typescript doesn't recognize RequestInit
 /* global RequestInit */
 
+import { Color, ColorRepresentation } from "three";
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FeatureThreshold, ThresholdType, isThresholdCategorical } from "../types";
 import { numberToStringDecimal } from "./math_utils";
+import {
+  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_CATEGORICAL_PALETTE_ID,
+  getKeyFromPalette,
+} from "../colors/categorical_palettes";
 
 const URL_PARAM_TRACK = "track";
 const URL_PARAM_DATASET = "dataset";
@@ -14,6 +20,8 @@ const URL_PARAM_THRESHOLDS = "filters";
 const URL_PARAM_RANGE = "range";
 const URL_PARAM_COLOR_RAMP = "color";
 const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
+const URL_PARAM_PALETTE = "palette";
+const URL_PARAM_PALETTE_KEY = "palette-key";
 
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
@@ -31,6 +39,7 @@ export type UrlParams = {
   range: [number, number];
   colorRampKey: string | null;
   colorRampReversed: boolean | null;
+  categoricalPalette: Color[];
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -179,6 +188,9 @@ function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | 
  * - `time`: integer frame number.
  * - `thresholds`: array of feature threshold.
  * - `range`: array of two numbers, representing the min and max of the color map range.
+ * - `colorRampKey`: the key of the current color map.
+ * - `colorRampReversed`: boolean, whether the color map is reversed.
+ * - `categoricalPalette`: an array of (three.js) Color objects representing the current color palette to use.
  *
  * @returns
  * - If no parameters are present or valid, returns an empty string.
@@ -217,6 +229,19 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
       );
     } else {
       includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
+    }
+  }
+  if (state.categoricalPalette) {
+    const key = getKeyFromPalette(state.categoricalPalette);
+    if (key !== null) {
+      includedParameters.push(`${URL_PARAM_PALETTE_KEY}=${key}`);
+    } else {
+      // Save the hex color stops as a string separated by dashes.
+      // TODO: Save only the edited colors to shorten URL.
+      const stops = state.categoricalPalette.map((color: Color) => {
+        return color.getHexString();
+      });
+      includedParameters.push(`${URL_PARAM_PALETTE}=${stops.join("-")}`);
     }
   }
 
@@ -379,6 +404,27 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     colorRampParam = colorRampRawParam.slice(0, -1);
   }
 
+  // Parse palette data
+  const paletteKeyParam = urlParams.get(URL_PARAM_PALETTE_KEY);
+  const paletteStringParam = urlParams.get(URL_PARAM_PALETTE);
+  const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
+
+  let categoricalPalette: Color[] | undefined = undefined;
+  if (paletteKeyParam) {
+    // Use key if provided
+    categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get(paletteKeyParam)?.colors || defaultPalette.colors;
+  } else if (paletteStringParam) {
+    // Parse into color objects
+    const hexColors: ColorRepresentation[] = paletteStringParam
+      .split("-")
+      .map((hex) => "#" + hex) as ColorRepresentation[];
+    if (hexColors.length < MAX_FEATURE_CATEGORIES) {
+      // backfill extra colors to meet max length using default palette
+      hexColors.push(...defaultPalette.colorStops.slice(hexColors.length));
+    }
+    categoricalPalette = hexColors.map((hex) => new Color(hex));
+  }
+
   // Remove undefined entries from the object for a cleaner return value
   return removeUndefinedProperties({
     collection: collectionParam,
@@ -388,8 +434,8 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     time: timeParam,
     thresholds: thresholdsParam,
     range: rangeParam,
-
     colorRampKey: colorRampParam,
     colorRampReversed: colorRampReversedParam,
+    categoricalPalette,
   });
 }
