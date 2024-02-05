@@ -1,7 +1,7 @@
 import Plotly, { PlotData } from "plotly.js-dist-min";
-import { ColorRamp } from "../../colorizer";
+import { ColorRamp, Dataset } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
-import { Color } from "three";
+import { Color, HexColorString } from "three";
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -10,7 +10,8 @@ export type TraceData = {
   y: number[];
   objectIds: number[];
   trackIds: number[];
-  color: Color;
+  color: HexColorString;
+  marker: Partial<Plotly.PlotMarker>;
 };
 
 /**
@@ -54,6 +55,18 @@ export function getBucketIndex(value: number, minValue: number, maxValue: number
   return Math.round(remap(value, minValue, maxValue, 0, numBuckets - 1, true));
 }
 
+/** Returns a TraceData object with empty data arrays, and the specified color and marker data.*/
+export function makeEmptyTraceData(color: HexColorString, marker: Partial<Plotly.PlotMarker>): TraceData {
+  return {
+    x: [],
+    y: [],
+    objectIds: [],
+    trackIds: [],
+    color,
+    marker,
+  };
+}
+
 /**
  * Splits a trace into one or more smaller subtraces so that all the subtraces have at
  * most `maxPoints` data points.
@@ -75,6 +88,7 @@ export function splitTraceData(traceData: TraceData, maxPoints: number): TraceDa
       objectIds: traceData.objectIds.slice(i, end),
       trackIds: traceData.trackIds.slice(i, end),
       color: traceData.color,
+      marker: traceData.marker,
     };
     traces.push(trace);
   }
@@ -89,25 +103,40 @@ export function isHistogramEvent(eventData: Plotly.PlotMouseEvent): boolean {
 }
 
 /**
- * Returns a hex color string with increasing transparency as the number of markers increases.
- * Base color must be a 7-character RGB hex string (e.g. `#000000`).
+ * Appends alpha opacity information to a hex color string, making it less opaque as the number of markers increases.
  */
-export function applyMarkerTransparency(numMarkers: number, baseColor: string): string {
+export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: HexColorString): HexColorString {
   if (baseColor.length !== 7) {
     throw new Error("ScatterPlotTab.getMarkerColor: Base color '" + baseColor + "' must be 7-character hex string.");
   }
   // Interpolate linearly between 80% and 25% transparency from 0 up to a max of 1000 markers.
   const opacity = remap(numMarkers, 0, 1000, 0.8, 0.25);
+  const opacityString = Math.floor(opacity * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return (baseColor + opacityString) as HexColorString;
+}
+
+/**
+ * Returns a Plotly hovertemplate string for a scatter plot trace.
+ * The trace must include the `id` (object ID) and `customdata` (track ID) fields.
+ */
+export function getHoverTemplate(dataset: Dataset, xAxisFeatureName: string, yAxisFeatureName: string): string {
   return (
-    baseColor +
-    Math.floor(opacity * 255)
-      .toString(16)
-      .padStart(2, "0")
+    `${xAxisFeatureName}: %{x} ${dataset.getFeatureUnits(xAxisFeatureName)}` +
+    `<br>${yAxisFeatureName}: %{y} ${dataset.getFeatureUnits(yAxisFeatureName)}` +
+    `<br>Track ID: %{customdata}<br>Object ID: %{id}<extra></extra>`
   );
 }
 
 /** Draws a simple line graph with the provided data points. */
-export function makeLineTrace(xData: DataArray, yData: DataArray): Partial<Plotly.PlotData> {
+export function makeLineTrace(
+  xData: DataArray,
+  yData: DataArray,
+  objectIds: number[],
+  trackIds: number[],
+  hovertemplate?: string
+): Partial<Plotly.PlotData> {
   return {
     x: xData,
     y: yData,
@@ -116,6 +145,9 @@ export function makeLineTrace(xData: DataArray, yData: DataArray): Partial<Plotl
     line: {
       color: "#aaaaaa",
     },
+    ids: objectIds.map((id) => id.toString()),
+    customdata: trackIds.map((id) => id.toString()),
+    hovertemplate,
   };
 }
 
