@@ -56,10 +56,33 @@ describe("getBucketIndex", () => {
     expect(sorter(Number.POSITIVE_INFINITY)).to.equal(9);
   });
 
-  it("Uses rounding to determine bucket index", () => {
-    const sorter = bucketSorterFactory(0, 1, 2);
+  it("Uses evenly-spaced buckets to determine bucket index", () => {
+    // See note on getBucketIndex for expected behavior.
+    // Buckets at the endpoints of the value range are half-sized.
+    let sorter = bucketSorterFactory(0, 1, 2);
     expect(sorter(0.499999)).to.equal(0);
     expect(sorter(0.5)).to.equal(1);
+
+    sorter = bucketSorterFactory(0, 1, 3);
+    expect(sorter(0.249999)).to.equal(0);
+    expect(sorter(0.25)).to.equal(1);
+    expect(sorter(0.749999)).to.equal(1);
+    expect(sorter(0.75)).to.equal(2);
+    expect(sorter(1)).to.equal(2);
+
+    sorter = bucketSorterFactory(0, 1, 6);
+    expect(sorter(0)).to.equal(0);
+    expect(sorter(0.099999)).to.equal(0);
+    expect(sorter(0.1)).to.equal(1);
+    expect(sorter(0.2999)).to.equal(1);
+    expect(sorter(0.3)).to.equal(2);
+    expect(sorter(0.4999)).to.equal(2);
+    expect(sorter(0.5)).to.equal(3);
+    expect(sorter(0.6999)).to.equal(3);
+    expect(sorter(0.7)).to.equal(4);
+    expect(sorter(0.8999)).to.equal(4);
+    expect(sorter(0.9)).to.equal(5);
+    expect(sorter(1.0)).to.equal(5);
   });
 
   it("Handles a single bucket", () => {
