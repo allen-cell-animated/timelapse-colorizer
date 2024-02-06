@@ -8,7 +8,9 @@ import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasR
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
 import { FlexRow } from "../styles/utils";
+import { AppThemeContext } from "./AppStyle";
 import { SettingsContainer, SettingsItem } from "./SettingsContainer";
+import SpinBox from "./SpinBox";
 
 type ExportButtonProps = {
   totalFrames: number;

@@ -1,5 +1,6 @@
 import { DataTexture, RGBAFormat, Texture, UnsignedByteType, Vector2 } from "three";
 import { describe, expect, it } from "vitest";
+
 import { ArraySource, IArrayLoader, IFrameLoader } from "../src/colorizer";
 import Dataset, { FeatureType } from "../src/colorizer/Dataset";
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";

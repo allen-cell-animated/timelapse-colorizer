@@ -6,7 +6,7 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, Slider, Tabs, notification } from "antd";
+import { Button, Checkbox, notification,Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
@@ -14,10 +14,10 @@ import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import { DEFAULT_CATEGORICAL_PALETTE_ID,DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
+import { DEFAULT_COLOR_RAMP_ID,DEFAULT_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
 import TimeControls from "./colorizer/TimeControls";
-import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID } from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./colorizer/colors/color_ramps";
-import { FeatureThreshold, ViewerConfig, defaultViewerConfig, isThresholdNumeric } from "./colorizer/types";
+import { defaultViewerConfig, FeatureThreshold, isThresholdNumeric,ViewerConfig } from "./colorizer/types";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";

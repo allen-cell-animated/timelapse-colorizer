@@ -10,6 +10,7 @@ import {
   UnsignedByteType,
   UnsignedIntType,
 } from "three";
+
 import { OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./ColorizeCanvas";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.

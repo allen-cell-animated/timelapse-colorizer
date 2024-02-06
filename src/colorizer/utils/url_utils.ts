@@ -2,14 +2,15 @@
 /* global RequestInit */
 
 import { Color, ColorRepresentation } from "three";
+
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { FeatureThreshold, ThresholdType, isThresholdCategorical } from "../types";
-import { numberToStringDecimal } from "./math_utils";
 import {
-  DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_CATEGORICAL_PALETTE_ID,
+  DEFAULT_CATEGORICAL_PALETTES,
   getKeyFromPalette,
 } from "../colors/categorical_palettes";
+import { FeatureThreshold, isThresholdCategorical,ThresholdType } from "../types";
+import { numberToStringDecimal } from "./math_utils";
 
 const URL_PARAM_TRACK = "track";
 const URL_PARAM_DATASET = "dataset";
