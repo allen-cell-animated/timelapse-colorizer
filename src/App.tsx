@@ -239,7 +239,7 @@ function App(): ReactElement {
 
       const newTrack = dataset!.buildTrack(trackId);
 
-      if (newTrack.length() < 1) {
+      if (newTrack.ids.length < 1) {
         // Check track validity
         return;
       }
