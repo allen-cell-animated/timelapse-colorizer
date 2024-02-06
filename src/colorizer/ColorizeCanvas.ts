@@ -31,12 +31,10 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 import Track from "./Track";
-import { DrawMode, FeatureDataType } from "./types";
+import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
-export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
-export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 
