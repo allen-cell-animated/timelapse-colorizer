@@ -1,4 +1,4 @@
-import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, NearestFilter,RGBAFormat } from "three";
+import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, NearestFilter, RGBAFormat } from "three";
 
 export enum ColorRampType {
   LINEAR,
