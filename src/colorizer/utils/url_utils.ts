@@ -1,8 +1,15 @@
 // Typescript doesn't recognize RequestInit
 /* global RequestInit */
 
-import { FeatureThreshold } from "../types";
+import { Color, ColorRepresentation } from "three";
+import { MAX_FEATURE_CATEGORIES } from "../../constants";
+import { FeatureThreshold, ThresholdType, isThresholdCategorical } from "../types";
 import { numberToStringDecimal } from "./math_utils";
+import {
+  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_CATEGORICAL_PALETTE_ID,
+  getKeyFromPalette,
+} from "../colors/categorical_palettes";
 
 const URL_PARAM_TRACK = "track";
 const URL_PARAM_DATASET = "dataset";
@@ -13,6 +20,8 @@ const URL_PARAM_THRESHOLDS = "filters";
 const URL_PARAM_RANGE = "range";
 const URL_PARAM_COLOR_RAMP = "color";
 const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
+const URL_PARAM_PALETTE = "palette";
+const URL_PARAM_PALETTE_KEY = "palette-key";
 
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
@@ -30,6 +39,7 @@ export type UrlParams = {
   range: [number, number];
   colorRampKey: string | null;
   colorRampReversed: boolean | null;
+  categoricalPalette: Color[];
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -51,6 +61,123 @@ export function fetchWithTimeout(
 }
 
 /**
+ * Serializes the threshold into a string that can be used as a URL parameter.
+ *
+ * @param threshold FeatureThreshold to serialize.
+ * @returns A string representing the threshold.
+ * - For numeric features, the threshold is serialized as `featureName:unit:min:max`.
+ * - For categorical features, the threshold is serialized as `featureName:unit:selected_hex`,
+ * where `selected_hex` is the hex form of a binary number representing what categories are selected.
+ *
+ * The i-th place of the binary number is `1` if the i-th category in the feature's category list is enabled.
+ *
+ * ex: If there are five categories and the first and third categories are enabled,
+ * then `threshold.enabledCategories=[true, false, true, false, false]`.
+ * The binary representation is `00101`, which is `0x05` in hex.
+ */
+function serializeThreshold(threshold: FeatureThreshold): string {
+  // featureName + units are encoded in case it contains special characters (":" or ",").
+  // TODO: remove once feature keys are implemented.
+  const featureName = encodeURIComponent(threshold.featureName);
+  const featureUnit = encodeURIComponent(threshold.units);
+
+  // TODO: Are there better characters I can be using here? ":" and "," take up
+  // more space in the URL. -> once features are converted to use keys, use "-" as a separator here? "|"?
+  if (isThresholdCategorical(threshold)) {
+    // Interpret the selected categories as binary digits, then convert to a hex string.
+    let selectedBinary = 0;
+    for (let i = 0; i < threshold.enabledCategories.length; i++) {
+      selectedBinary |= (threshold.enabledCategories[i] ? 1 : 0) << i;
+    }
+    const selectedHex = selectedBinary.toString(16);
+    return `${featureName}:${featureUnit}:${selectedHex}`;
+  } else {
+    // Numeric feature
+    const min = numberToStringDecimal(threshold.min, 3);
+    const max = numberToStringDecimal(threshold.max, 3);
+    return `${featureName}:${featureUnit}:${min}:${max}`;
+  }
+}
+
+/**
+ * Deserializes a single threshold string into a FeatureThreshold object.
+ * @param thresholdString Threshold string to parse.
+ * @returns
+ * - A FeatureThreshold object if the string was successfully parsed.
+ * - `undefined` if the string could not be parsed.
+ */
+function deserializeThreshold(thresholdString: string): FeatureThreshold | undefined {
+  const [featureName, featureUnit, ...selection] = thresholdString.split(":");
+  if (featureName === undefined || featureUnit === undefined) {
+    console.warn(
+      "url_utils.deserializeThreshold: Could not parse threshold string: '" +
+        thresholdString +
+        "'; feature name and/or units missing."
+    );
+    return undefined;
+  }
+  let threshold: FeatureThreshold;
+  if (selection.length === 1) {
+    // Feature is a category
+    const enabledCategories = [];
+    const selectedHex = selection[0];
+    const selectedBinary = parseInt(selectedHex, 16);
+    for (let i = 0; i < MAX_FEATURE_CATEGORIES; i++) {
+      enabledCategories.push((selectedBinary & (1 << i)) !== 0);
+    }
+    threshold = {
+      featureName: decodeURIComponent(featureName),
+      units: decodeURIComponent(featureUnit),
+      type: ThresholdType.CATEGORICAL,
+      enabledCategories,
+    };
+  } else if (selection.length === 2) {
+    // Feature is numeric and a range.
+    threshold = {
+      featureName: decodeURIComponent(featureName),
+      units: decodeURIComponent(featureUnit),
+      type: ThresholdType.NUMERIC,
+      min: parseFloat(selection[0]),
+      max: parseFloat(selection[1]),
+    };
+    // Enforce min/max ordering
+    if (threshold.min > threshold.max) {
+      threshold = { ...threshold, min: threshold.max, max: threshold.min };
+    }
+  } else {
+    // Unknown parameters but we can still make a dummy threshold with the name + unit
+    console.warn(
+      `url_utils.deserializeThreshold: invalid threshold '${thresholdString}' has too many or too few parameters.`
+    );
+    threshold = {
+      featureName: decodeURIComponent(featureName),
+      units: decodeURIComponent(featureUnit),
+      type: ThresholdType.NUMERIC,
+      min: NaN,
+      max: NaN,
+    };
+  }
+  return threshold;
+}
+
+function serializeThresholds(thresholds: FeatureThreshold[]): string {
+  return thresholds.map(serializeThreshold).join(",");
+}
+
+function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | undefined {
+  if (!thresholds) {
+    return undefined;
+  }
+  return thresholds.split(",").reduce((acc, thresholdString) => {
+    const thresholdOrUndefined = deserializeThreshold(thresholdString);
+    if (thresholdOrUndefined) {
+      acc.push(thresholdOrUndefined);
+    }
+    return acc;
+  }, [] as FeatureThreshold[]);
+}
+
+/**
  * Creates a url query string from parameters that can be appended onto the base URL.
  *
  * @param state: An object matching any of the properties of `UrlParams`.
@@ -61,6 +188,9 @@ export function fetchWithTimeout(
  * - `time`: integer frame number.
  * - `thresholds`: array of feature threshold.
  * - `range`: array of two numbers, representing the min and max of the color map range.
+ * - `colorRampKey`: the key of the current color map.
+ * - `colorRampReversed`: boolean, whether the color map is reversed.
+ * - `categoricalPalette`: an array of (three.js) Color objects representing the current color palette to use.
  *
  * @returns
  * - If no parameters are present or valid, returns an empty string.
@@ -86,22 +216,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
     includedParameters.push(`${URL_PARAM_TIME}=${state.time}`);
   }
   if (state.thresholds && state.thresholds.length > 0) {
-    // Thresholds are saved as a comma-separated list of `featureName:unit:min:max`
-    // featureName is encoded in case it contains special characters (":" or ",")
-    // TODO: Are there better characters I can be using here? ":" and "," take up
-    // more space in the URL.
-    const thresholdsString = state.thresholds
-      .map((threshold) => {
-        const featureName = encodeURIComponent(threshold.featureName);
-        // Note that THRESHOLD_UNIT_UNDEFINED (="!") is not encoded here, so that it won't conflict
-        // with normal feature units names. (Users should not be using "!" as a unit anyway, but just in case.)
-        const featureUnit = encodeURIComponent(threshold.units);
-        const min = numberToStringDecimal(threshold.min, 3);
-        const max = numberToStringDecimal(threshold.max, 3);
-        return `${featureName}:${featureUnit}:${min}:${max}`;
-      })
-      .join(",");
-    includedParameters.push(`${URL_PARAM_THRESHOLDS}=${encodeURIComponent(thresholdsString)}`);
+    includedParameters.push(`${URL_PARAM_THRESHOLDS}=${encodeURIComponent(serializeThresholds(state.thresholds))}`);
   }
   if (state.range && state.range.length === 2) {
     const rangeString = `${numberToStringDecimal(state.range[0], 3)},${numberToStringDecimal(state.range[1], 3)}`;
@@ -114,6 +229,19 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
       );
     } else {
       includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
+    }
+  }
+  if (state.categoricalPalette) {
+    const key = getKeyFromPalette(state.categoricalPalette);
+    if (key !== null) {
+      includedParameters.push(`${URL_PARAM_PALETTE_KEY}=${key}`);
+    } else {
+      // Save the hex color stops as a string separated by dashes.
+      // TODO: Save only the edited colors to shorten URL.
+      const stops = state.categoricalPalette.map((color: Color) => {
+        return color.getHexString();
+      });
+      includedParameters.push(`${URL_PARAM_PALETTE}=${stops.join("-")}`);
     }
   }
 
@@ -254,27 +382,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
   const timeParam = urlParams.get(URL_PARAM_TIME) ? parseInt(urlParams.get(URL_PARAM_TIME)!, base10Radix) : undefined;
 
   // Parse and validate thresholds
-  let thresholdsParam: FeatureThreshold[] = [];
-  const rawThresholdParam = urlParams.get(URL_PARAM_THRESHOLDS);
-  if (rawThresholdParam) {
-    // Thresholds are separated by commas, and are structured as:
-    // {name (encoded)}:{unit (encoded)}:{min}:{max}
-    const rawThresholds = rawThresholdParam.split(",");
-    thresholdsParam = rawThresholds.map((rawThreshold) => {
-      const [rawFeatureName, rawFeatureUnit, min, max] = rawThreshold.split(":");
-      let threshold = {
-        featureName: decodeURIComponent(rawFeatureName),
-        units: decodeURIComponent(rawFeatureUnit),
-        min: parseFloat(min),
-        max: parseFloat(max),
-      };
-      // Enforce min/max ordering
-      if (threshold.min > threshold.max) {
-        threshold = { ...threshold, min: threshold.max, max: threshold.min };
-      }
-      return threshold;
-    });
-  }
+  const thresholdsParam = deserializeThresholds(urlParams.get(URL_PARAM_THRESHOLDS));
 
   let rangeParam: [number, number] | undefined = undefined;
   const rawRangeParam = decodePossiblyNullString(urlParams.get(URL_PARAM_RANGE));
@@ -296,6 +404,27 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     colorRampParam = colorRampRawParam.slice(0, -1);
   }
 
+  // Parse palette data
+  const paletteKeyParam = urlParams.get(URL_PARAM_PALETTE_KEY);
+  const paletteStringParam = urlParams.get(URL_PARAM_PALETTE);
+  const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
+
+  let categoricalPalette: Color[] | undefined = undefined;
+  if (paletteKeyParam) {
+    // Use key if provided
+    categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get(paletteKeyParam)?.colors || defaultPalette.colors;
+  } else if (paletteStringParam) {
+    // Parse into color objects
+    const hexColors: ColorRepresentation[] = paletteStringParam
+      .split("-")
+      .map((hex) => "#" + hex) as ColorRepresentation[];
+    if (hexColors.length < MAX_FEATURE_CATEGORIES) {
+      // backfill extra colors to meet max length using default palette
+      hexColors.push(...defaultPalette.colorStops.slice(hexColors.length));
+    }
+    categoricalPalette = hexColors.map((hex) => new Color(hex));
+  }
+
   // Remove undefined entries from the object for a cleaner return value
   return removeUndefinedProperties({
     collection: collectionParam,
@@ -303,10 +432,10 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     feature: featureParam,
     track: trackParam,
     time: timeParam,
-    thresholds: thresholdsParam.length > 0 ? thresholdsParam : undefined,
+    thresholds: thresholdsParam,
     range: rangeParam,
-
     colorRampKey: colorRampParam,
     colorRampReversed: colorRampReversedParam,
+    categoricalPalette,
   });
 }

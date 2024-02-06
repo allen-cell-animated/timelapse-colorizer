@@ -1,5 +1,5 @@
 import { CheckCircleOutlined } from "@ant-design/icons";
-import { App, Button, Card,Input, InputNumber, Modal, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
+import { App, Button, Card, Input, InputNumber, Modal, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
@@ -7,8 +7,8 @@ import { clamp } from "three/src/math/MathUtils";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
-import { AppThemeContext } from "./AppStyle";
-import SpinBox from "./SpinBox";
+import { FlexRow } from "../styles/utils";
+import { SettingsContainer, SettingsItem } from "./SettingsContainer";
 
 type ExportButtonProps = {
   totalFrames: number;
@@ -43,13 +43,6 @@ const VerticalDiv = styled.div`
   gap: 10px;
 `;
 
-const CustomRangeDiv = styled(HorizontalDiv)`
-  & input {
-    width: 70px;
-    text-align: right;
-  }
-`;
-
 const CustomRadio = styled(Radio)`
   & span {
     // Clip text when the radio is too narrow
@@ -77,7 +70,16 @@ const ExportModeRadioGroup = styled(Radio.Group)`
   }
 `;
 
-const CustomRadioGroup = styled(Radio.Group)`
+/** Overrides Ant's styling so contents can take up full width */
+const MaxWidthRadioGroup = styled(Radio.Group)`
+  width: 100%;
+
+  & .ant-space {
+    width: 100%;
+  }
+`;
+
+const VideoQualityRadioGroup = styled(Radio.Group)`
   & {
     display: flex;
     flex-direction: row;
@@ -474,7 +476,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
           {/* Range options (All/Current Frame/Custom) */}
           <Card size="small">
-            <Radio.Group
+            <MaxWidthRadioGroup
               value={rangeMode}
               onChange={(e: RadioChangeEvent) => {
                 setRangeMode(e.target.value);
@@ -497,67 +499,73 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
                 {rangeMode === RangeMode.CUSTOM ? (
                   // Render the custom range input in the radio list if selected
-                  <VerticalDiv style={{ paddingLeft: "25px" }}>
-                    <CustomRangeDiv>
-                      <p>Range:</p>
-                      <InputNumber
-                        aria-label="min frame"
-                        controls={false}
-                        min={0}
-                        max={props.totalFrames - 1}
-                        value={customMin}
-                        onChange={(value) => value && setCustomMin(value)}
-                        disabled={isRecording}
-                      />
-                      <p>-</p>
-                      <InputNumber
-                        aria-label="max frame"
-                        controls={false}
-                        min={customMin}
-                        max={props.totalFrames - 1}
-                        value={customMax}
-                        onChange={(value) => value && setCustomMax(value)}
-                        disabled={isRecording}
-                      />
-                      <p>of {props.totalFrames - 1}</p>
-                    </CustomRangeDiv>
-                    <HorizontalDiv>
-                      <p>Frame increment:</p>
-                      <SpinBox
-                        value={frameIncrement}
-                        onChange={setFrameIncrement}
-                        min={1}
-                        max={props.totalFrames - 1}
-                        disabled={isRecording}
-                      />
-                      <p style={{ color: theme.color.text.hint }}>({customRangeFrames} frames total)</p>
-                    </HorizontalDiv>
-                  </VerticalDiv>
+                  <SettingsContainer indentPx={28}>
+                    <SettingsItem label="Range">
+                      <HorizontalDiv>
+                        <InputNumber
+                          style={{ width: 60 }}
+                          aria-label="min frame"
+                          controls={false}
+                          min={0}
+                          max={props.totalFrames - 1}
+                          value={customMin}
+                          onChange={(value) => value && setCustomMin(value)}
+                          disabled={isRecording}
+                        />
+                        <p>-</p>
+                        <InputNumber
+                          style={{ width: 60 }}
+                          aria-label="max frame"
+                          controls={false}
+                          min={customMin}
+                          max={props.totalFrames - 1}
+                          value={customMax}
+                          onChange={(value) => value && setCustomMax(value)}
+                          disabled={isRecording}
+                        />
+                        <p>of {props.totalFrames - 1}</p>
+                      </HorizontalDiv>
+                    </SettingsItem>
+                    <SettingsItem label="Frame increment">
+                      <FlexRow $gap={6}>
+                        <SpinBox
+                          value={frameIncrement}
+                          onChange={setFrameIncrement}
+                          min={1}
+                          max={props.totalFrames - 1}
+                          disabled={isRecording}
+                        />
+                        <p style={{ color: theme.color.text.hint }}>({customRangeFrames} frames total)</p>
+                      </FlexRow>
+                    </SettingsItem>
+                  </SettingsContainer>
                 ) : null}
               </Space>
-            </Radio.Group>
+            </MaxWidthRadioGroup>
           </Card>
 
           {recordingMode === RecordingMode.VIDEO_MP4 && (
             <Card size="small" title={<p>Video settings</p>}>
-              <VerticalDiv>
-                <HorizontalDiv>
-                  <p>Frames per second:</p>
-                  <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} />
-                  <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
-                </HorizontalDiv>
-                <HorizontalDiv>
-                  <p>Video quality:</p>
-                  <CustomRadioGroup
-                    disabled={isRecording}
-                    options={videoQualityOptions}
-                    optionType="button"
-                    value={videoBitsPerSecond}
-                    onChange={(e) => setVideoBitsPerSecond(e.target.value)}
-                  />
-                  <p style={{ color: theme.color.text.hint }}>(~{getApproximateVideoFilesizeMb()})</p>
-                </HorizontalDiv>
-              </VerticalDiv>
+              <SettingsContainer>
+                <SettingsItem label="Frames per second">
+                  <FlexRow $gap={6}>
+                    <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} />
+                    <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
+                  </FlexRow>
+                </SettingsItem>
+                <SettingsItem label="Video quality">
+                  <FlexRow $gap={6}>
+                    <VideoQualityRadioGroup
+                      disabled={isRecording}
+                      options={videoQualityOptions}
+                      optionType="button"
+                      value={videoBitsPerSecond}
+                      onChange={(e) => setVideoBitsPerSecond(e.target.value)}
+                    />
+                    <p style={{ color: theme.color.text.hint }}>(~{getApproximateVideoFilesizeMb()})</p>
+                  </FlexRow>
+                </SettingsItem>
+              </SettingsContainer>
             </Card>
           )}
 

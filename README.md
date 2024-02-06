@@ -11,7 +11,11 @@ This project originated from the [Allen Institute for Cell Science (AICS)](https
 project and is being updated to support broader use cases. View our [Issues page](https://github.com/allen-cell-animated/nucmorph-colorizer/issues)
 for more details about potential future features!
 
-**[Access our current stable build here!](https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html)**
+### Builds:
+
+**Stable build: [https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html](https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html)**
+
+**Latest (`main` branch): [https://allen-cell-animated.github.io/nucmorph-colorizer/main/](https://allen-cell-animated.github.io/nucmorph-colorizer/main/)**
 
 ![image](https://github.com/allen-cell-animated/nucmorph-colorizer/assets/30200665/81130299-7e75-4fc2-a344-19aba7aae8a5)
 

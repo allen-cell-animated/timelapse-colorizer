@@ -27,6 +27,7 @@ type LabeledDropdownProps = {
   showTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
+  style?: React.CSSProperties;
 };
 
 const defaultProps = {
@@ -35,6 +36,7 @@ const defaultProps = {
   buttonType: "default",
   showTooltip: true,
   width: null,
+  style: {},
 };
 
 /**
@@ -158,9 +160,8 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   }
 
   return (
-    <div className={styles.labeledDropdown} ref={componentContainerRef}>
+    <div className={styles.labeledDropdown} ref={componentContainerRef} style={props.style}>
       {props.label && <h3>{props.label}</h3>}
-      <></>
       <Dropdown
         menu={{}}
         disabled={props.disabled}

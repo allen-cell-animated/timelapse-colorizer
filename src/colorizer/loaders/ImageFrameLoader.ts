@@ -1,5 +1,4 @@
-import { NearestFilter, RGBAIntegerFormat, Texture } from "three";
-
+import { NearestFilter, PixelFormat, RGBAIntegerFormat, Texture } from "three";
 import { IFrameLoader } from "./ILoader";
 
 /** Promise-ifies image loading */
@@ -30,12 +29,22 @@ async function loadImageElement(url: string): Promise<HTMLImageElement> {
 }
 
 export default class ImageFrameLoader implements IFrameLoader {
+  private pixelFormat: PixelFormat;
+
+  constructor(pixelFormat: PixelFormat = RGBAIntegerFormat) {
+    this.pixelFormat = pixelFormat;
+  }
+
   async load(url: string): Promise<Texture> {
     const img = await loadImageElement(url);
-    const tex = new Texture(img, undefined, undefined, undefined, NearestFilter, NearestFilter, RGBAIntegerFormat);
+    const tex = new Texture(img, undefined, undefined, undefined, NearestFilter, NearestFilter, this.pixelFormat);
     tex.generateMipmaps = false;
     tex.unpackAlignment = 1;
-    tex.internalFormat = "RGBA8UI";
+
+    if (this.pixelFormat === RGBAIntegerFormat) {
+      tex.internalFormat = "RGBA8UI";
+    }
+
     tex.needsUpdate = true;
     return tex;
   }

@@ -1,7 +1,7 @@
-import { Color } from "three";
 import { describe, expect, it } from "vitest";
-
-import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, MAX_FEATURE_CATEGORIES } from "../src/constants";
+import { MAX_FEATURE_CATEGORIES } from "../src/constants";
+import { Color } from "three";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID } from "../src/colorizer";
 
 describe("Categorical Palettes", () => {
   it("has expected length", () => {
@@ -34,6 +34,12 @@ describe("Categorical Palettes", () => {
         console.error(palette.key + " has duplicated color stops!");
       }
       expect(palette.colorStops.length).to.equal(uniqueStops.size);
+    }
+  });
+
+  it("has sanitized keys", () => {
+    for (const palette of DEFAULT_CATEGORICAL_PALETTES.values()) {
+      expect(/^[a-z0-9_]+$/g.test(palette.key)).to.be.true;
     }
   });
 });

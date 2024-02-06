@@ -1,11 +1,11 @@
-import { Texture, Vector2 } from "three";
+import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import FrameCache from "./FrameCache";
+import Track from "./Track";
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
-import Track from "./Track";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
@@ -16,7 +16,7 @@ export enum FeatureType {
   CATEGORICAL = "categorical",
 }
 
-type FeatureData = {
+export type FeatureData = {
   data: Float32Array;
   tex: Texture;
   min: number;
@@ -24,6 +24,11 @@ type FeatureData = {
   units: string;
   type: FeatureType;
   categories: string[] | null;
+};
+
+type BackdropData = {
+  name: string;
+  frames: string[];
 };
 
 const defaultMetadata: ManifestFileMetadata = {
@@ -44,12 +49,17 @@ export default class Dataset {
   private frames: FrameCache | null;
   private frameDimensions: Vector2 | null;
 
+  private backdropLoader: IFrameLoader;
+  private backdropData: Map<string, BackdropData>;
+  // TODO: Implement caching for overlays-- extend FrameCache to allow multiple frames per index -> string name?
+  // private backdrops: Map<string, FrameCache | null>;
+
   private arrayLoader: IArrayLoader;
   // Use map to enforce ordering
   private features: Map<string, FeatureData>;
 
   private outlierFile?: string;
-  public outliers?: Texture | null;
+  public outliers?: Uint8Array | null;
 
   private tracksFile?: string;
   private timesFile?: string;
@@ -80,10 +90,13 @@ export default class Dataset {
     this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
     this.hasOpened = false;
 
-    this.frameLoader = frameLoader || new ImageFrameLoader();
+    this.frameLoader = frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
     this.frameFiles = [];
     this.frames = null;
     this.frameDimensions = null;
+
+    this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
+    this.backdropData = new Map();
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
     this.features = new Map();
@@ -145,12 +158,12 @@ export default class Dataset {
     return this.featureNames.includes(name);
   }
 
-  public getFeatureData(name: string): FeatureData {
-    const featureData = this.features.get(name);
-    if (!featureData) {
-      throw new Error(`getFeatureData: Feature ${name} does not exist.`);
-    }
-    return featureData;
+  /**
+   * Attempts to get the feature data from this dataset for the given feature name.
+   * Returns `undefined` if feature is not in the dataset.
+   */
+  public getFeatureData(name: string): FeatureData | undefined {
+    return this.features.get(name);
   }
 
   public getFeatureNameWithUnits(name: string): string {
@@ -166,7 +179,7 @@ export default class Dataset {
    * Gets the feature's units if it exists; otherwise returns an empty string.
    */
   public getFeatureUnits(name: string): string {
-    return this.getFeatureData(name).units || "";
+    return this.getFeatureData(name)?.units || "";
   }
 
   /**
@@ -177,6 +190,9 @@ export default class Dataset {
    */
   public getFeatureType(name: string): FeatureType {
     const featureData = this.getFeatureData(name);
+    if (featureData === undefined) {
+      throw new Error("Feature '" + name + "' does not exist in dataset.");
+    }
     return featureData.type;
   }
 
@@ -187,6 +203,9 @@ export default class Dataset {
    */
   public getFeatureCategories(name: string): string[] | null {
     const featureData = this.getFeatureData(name);
+    if (featureData === undefined) {
+      throw new Error("Feature '" + name + "' does not exist in dataset.");
+    }
     if (featureData.type === FeatureType.CATEGORICAL) {
       return featureData.categories;
     }
@@ -195,27 +214,8 @@ export default class Dataset {
 
   /** Returns whether the given feature represents categorical data. */
   public isFeatureCategorical(name: string): boolean {
-    return this.hasFeature(name) && this.getFeatureData(name).type === FeatureType.CATEGORICAL;
-  }
-
-  /**
-   * Fetches and loads a data file as an array and returns its data as a Texture using the provided dataType.
-   * @param dataType The expected format of the data.
-   * @param fileUrl String url of the file to be loaded.
-   * @throws An error if fileUrl is not undefined and the data cannot be loaded from the file.
-   * @returns Promise of a texture loaded from the file. If `fileUrl` is undefined, returns null.
-   */
-  private async loadToTexture(dataType: FeatureDataType, fileUrl?: string): Promise<Texture | null> {
-    if (!fileUrl) {
-      return null;
-    }
-    try {
-      const url = this.resolveUrl(fileUrl);
-      const source = await this.arrayLoader.load(url);
-      return source.getTexture(dataType);
-    } catch (e) {
-      return null;
-    }
+    const featureData = this.getFeatureData(name);
+    return featureData !== undefined && featureData.type === FeatureType.CATEGORICAL;
   }
 
   /**
@@ -250,7 +250,11 @@ export default class Dataset {
   }
 
   public get numObjects(): number {
-    return this.getFeatureData(this.featureNames[0]).data.length;
+    const featureData = this.getFeatureData(this.featureNames[0]);
+    if (!featureData) {
+      throw new Error("Dataset.numObjects: The first feature could not be loaded. Is the dataset manifest file valid?");
+    }
+    return featureData.data.length;
   }
 
   /** Loads a single frame from the dataset */
@@ -268,6 +272,29 @@ export default class Dataset {
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     this.frames?.insert(index, loadedFrame);
+    return loadedFrame;
+  }
+
+  public hasBackdrop(key: string): boolean {
+    return this.backdropData.has(key);
+  }
+
+  /**
+   * Returns a map from backdrop keys to data.
+   */
+  public getBackdropData(): Map<string, BackdropData> {
+    return new Map(this.backdropData);
+  }
+
+  public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
+    // TODO: Implement caching
+    const frames = this.backdropData.get(key)?.frames;
+    // TODO: Wrapping or clamping?
+    if (!frames || index < 0 || index >= frames.length) {
+      return undefined;
+    }
+    const fullUrl = this.resolveUrl(frames[index]);
+    const loadedFrame = await this.backdropLoader.load(fullUrl);
     return loadedFrame;
   }
 
@@ -296,6 +323,18 @@ export default class Dataset {
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
 
+    if (manifest.backdrops) {
+      for (const { name, key, frames } of manifest.backdrops) {
+        this.backdropData.set(key, { name, frames });
+        if (frames.length !== this.frameFiles.length || 0) {
+          // TODO: Show error message in the UI when this happens.
+          throw new Error(
+            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'.`
+          );
+        }
+      }
+    }
+
     this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
 
     // Load feature data
@@ -304,14 +343,16 @@ export default class Dataset {
     );
 
     const result = await Promise.all([
-      this.loadToTexture(FeatureDataType.U8, this.outlierFile),
+      this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
       this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
       this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
       this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
+      this.loadFrame(0), // load first frame to set frame dimensions. Load result will be discarded
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, ...featureResults] = result;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [outliers, tracks, times, centroids, bounds, _loaded_frame, ...featureResults] = result;
 
     this.outliers = outliers;
     this.trackIds = tracks;
@@ -382,10 +423,16 @@ export default class Dataset {
     return new Track(trackId, times, ids, centroids, bounds);
   }
 
-  // get the times and values of a track for a given feature
-  // this data is suitable to hand to d3 or plotly as two arrays of domain and range values
+  /*
+   * Get the times and values of a track for a given feature
+   * this data is suitable to hand to d3 or plotly as two arrays of domain and range values
+   */
   public buildTrackFeaturePlot(track: Track, feature: string): { domain: number[]; range: number[] } {
-    const range = track.ids.map((i) => this.getFeatureData(feature).data[i]);
+    const featureData = this.getFeatureData(feature);
+    if (!featureData) {
+      throw new Error("Dataset.buildTrackFeaturePlot: Feature '" + feature + "' does not exist in dataset.");
+    }
+    const range = track.ids.map((i) => featureData.data[i]);
     const domain = track.times;
     return { domain, range };
   }

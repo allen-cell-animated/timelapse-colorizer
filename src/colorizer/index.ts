@@ -8,4 +8,7 @@ import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import Plotting from "./Plotting";
 import Track from "./Track";
 
-export { ColorizeCanvas, ColorRamp, ColorRampType, Dataset, ImageFrameLoader, JsonArrayLoader, Plotting, Track };
+export { ColorizeCanvas, Plotting, Dataset, Track, ColorRamp, ColorRampType, ImageFrameLoader, JsonArrayLoader };
+
+export * from "./colors/color_ramps";
+export * from "./colors/categorical_palettes";

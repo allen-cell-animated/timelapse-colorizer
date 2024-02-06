@@ -2,14 +2,8 @@ import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRe
 import { Color } from "three";
 
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
-import { DrawMode } from "../colorizer/ColorizeCanvas";
-import { FeatureThreshold } from "../colorizer/types";
+import { ViewerConfig } from "../colorizer/types";
 import { AppThemeContext } from "./AppStyle";
-
-export type DrawSettings = {
-  mode: DrawMode;
-  color: Color;
-};
 
 type CanvasWrapperProps = {
   canv: ColorizeCanvas;
@@ -18,18 +12,18 @@ type CanvasWrapperProps = {
    * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
-  showTrackPath: boolean;
-  showScaleBar: boolean;
-  showTimestamp: boolean;
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
+  config: ViewerConfig;
+
+  selectedBackdropKey: string | null;
+
   colorRamp: ColorRamp;
   colorRampMin: number;
   colorRampMax: number;
+
   selectedTrack: Track | null;
   categoricalColors: Color[];
 
-  featureThresholds?: FeatureThreshold[];
+  inRangeLUT?: Uint8Array;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
@@ -46,7 +40,7 @@ const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
-  featureThresholds: [],
+  inRangeLUT: new Uint8Array(0),
   maxWidth: 730,
   maxHeight: 500,
 };
@@ -96,6 +90,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setColorMapRangeMax(props.colorRampMax);
   }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
 
+  // Update backdrops
+  useMemo(() => {
+    canv.setBackdropKey(props.selectedBackdropKey);
+    canv.setBackdropBrightness(props.config.backdropBrightness);
+    canv.setBackdropSaturation(props.config.backdropSaturation);
+  }, [props.selectedBackdropKey, props.config.backdropBrightness, props.config.backdropSaturation]);
+
   // Update categorical colors
   useMemo(() => {
     canv.setCategoricalColors(props.categoricalColors);
@@ -103,36 +104,37 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
-    const settings = props.outOfRangeDrawSettings;
+    const settings = props.config.outOfRangeDrawSettings;
     canv.setOutOfRangeDrawMode(settings.mode, settings.color);
-  }, [props.outOfRangeDrawSettings]);
+  }, [props.config.outOfRangeDrawSettings]);
 
   useMemo(() => {
-    const settings = props.outlierDrawSettings;
+    const settings = props.config.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
-  }, [props.outlierDrawSettings]);
+  }, [props.config.outlierDrawSettings]);
 
   useMemo(() => {
-    // YAGNI: Debouncing for this is possible but no performance issues encountered yet.
-    // Add only if needed.
-    // Timeout in case of slowdowns to prevent this from halting the UI.
-    setTimeout(() => canv.setFeatureThresholds(props.featureThresholds), 0);
-  }, [props.featureThresholds, props.dataset]);
+    canv.setObjectOpacity(props.config.objectOpacity);
+  }, [props.config.objectOpacity]);
+
+  useMemo(() => {
+    canv.setInRangeLUT(props.inRangeLUT);
+  }, [props.inRangeLUT]);
 
   // Updated track-related settings
   useMemo(() => {
     canv.setSelectedTrack(props.selectedTrack);
-    canv.setShowTrackPath(props.showTrackPath);
-  }, [props.selectedTrack, props.showTrackPath]);
+    canv.setShowTrackPath(props.config.showTrackPath);
+  }, [props.selectedTrack, props.config.showTrackPath]);
 
   // Update overlay settings
   useMemo(() => {
-    canv.setScaleBarVisibility(props.showScaleBar);
-  }, [props.showScaleBar]);
+    canv.setScaleBarVisibility(props.config.showScaleBar);
+  }, [props.config.showScaleBar]);
 
   useMemo(() => {
-    canv.setTimestampVisibility(props.showTimestamp);
-  }, [props.showTimestamp]);
+    canv.setTimestampVisibility(props.config.showTimestamp);
+  }, [props.config.showTimestamp]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
 

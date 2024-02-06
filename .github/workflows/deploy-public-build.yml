@@ -1,0 +1,50 @@
+# Adapted from https://github.com/marketplace/actions/deploy-pr-preview and
+# https://github.com/sitek94/vite-deploy-demo
+name: Deploy Public Build
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: pages-build-deployment-${{ github.ref }}
+
+jobs:
+  pages-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install and Build
+        run: npm ci && npx vite build --base=/nucmorph-colorizer/main/
+
+      - name: Upload build files
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-files
+          path: ./dist
+
+  pages-deploy:
+    needs: pages-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: production-files
+          path: ./dist
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: main

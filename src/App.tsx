@@ -8,16 +8,17 @@ import {
 } from "@ant-design/icons";
 import { Button, Checkbox, Slider, Tabs, notification } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Color } from "three";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import styles from "./App.module.css";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID, DrawMode, OUTLIER_COLOR_DEFAULT, OUT_OF_RANGE_COLOR_DEFAULT } from "./colorizer/ColorizeCanvas";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import { FeatureThreshold } from "./colorizer/types";
-import { getColorMap, thresholdMatchFinder } from "./colorizer/utils/data_utils";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID } from "./colorizer/colors/categorical_palettes";
+import { DEFAULT_COLOR_RAMPS, DEFAULT_COLOR_RAMP_ID } from "./colorizer/colors/color_ramps";
+import { FeatureThreshold, ViewerConfig, defaultViewerConfig, isThresholdNumeric } from "./colorizer/types";
+import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -33,17 +34,8 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import FeatureThresholdsTab from "./components/tabs/FeatureThresholdsTab";
-import PlotTab from "./components/tabs/PlotTab";
-import SettingsTab from "./components/tabs/SettingsTab";
-import {
-  DEFAULT_CATEGORICAL_PALETTES,
-  DEFAULT_CATEGORICAL_PALETTE_ID,
-  DEFAULT_COLLECTION_PATH,
-  DEFAULT_COLOR_RAMPS,
-  DEFAULT_COLOR_RAMP_ID,
-  DEFAULT_PLAYBACK_FPS,
-} from "./constants";
+import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/tabs";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -60,6 +52,14 @@ function App(): ReactElement {
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+  const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+
+  // TODO: Save these settings in local storage
+  // Use reducer here in case multiple updates happen simultaneously
+  const [config, updateConfig] = useReducer(
+    (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
+    defaultViewerConfig
+  );
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
@@ -69,14 +69,6 @@ function App(): ReactElement {
   const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
-  const [outOfRangeDrawSettings, setOutOfRangeDrawSettings] = useState({
-    mode: DrawMode.USE_COLOR,
-    color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
-  });
-  const [outlierDrawSettings, setOutlierDrawSettings] = useState({
-    mode: DrawMode.USE_COLOR,
-    color: new Color(OUTLIER_COLOR_DEFAULT),
-  });
 
   const [categoricalPalette, setCategoricalPalette] = useState(
     DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
@@ -94,28 +86,47 @@ function App(): ReactElement {
         const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
         const newThreshold = newThresholds.find(thresholdMatchFinder(featureName, featureData.units));
 
-        if (newThreshold && oldThreshold) {
-          setColorRampMin(newThreshold.min);
-          setColorRampMax(newThreshold.max);
+        if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold) && isThresholdNumeric(oldThreshold)) {
+          if (newThreshold.min !== oldThreshold.min || newThreshold.max !== oldThreshold.max) {
+            setColorRampMin(newThreshold.min);
+            setColorRampMax(newThreshold.max);
+          }
         }
       }
       _setFeatureThresholds(newThresholds);
     },
-    [featureThresholds, featureName]
+    [featureName, dataset, featureThresholds]
   );
+  /** A look-up-table from object ID to whether it is in range (=1) or not (=0) */
+  const inRangeLUT = useMemo(() => {
+    if (!dataset) {
+      return new Uint8Array(0);
+    }
+    return getInRangeLUT(dataset, featureThresholds);
+  }, [dataset, featureThresholds]);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
-  const [isColorRampRangeLocked, setIsColorRampRangeLocked] = useState(false);
-  const [showTrackPath, setShowTrackPath] = useState(false);
-  const [showScaleBar, setShowScaleBar] = useState(true);
-  const [showTimestamp, setShowTimestamp] = useState(true);
+  const [openTab, setOpenTab] = useState(TabType.TRACK_PLOT);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
+  const notificationConfig: NotificationConfig = {
+    getContainer: () => notificationContainer.current as HTMLElement,
+  };
+  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
+  // TODO: Move all logic for the time slider into its own component!
+  // Flag used to indicate that the slider is currently being dragged while playback is occurring.
+  const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
+
+  useEffect(() => {
+    if (timeControls.isPlaying()) {
+      setIsTimeSliderDraggedDuringPlayback(false);
+    }
+  }, [timeControls.isPlaying()]);
 
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
@@ -181,6 +192,7 @@ function App(): ReactElement {
       range: rangeParam,
       colorRampKey: colorRampKey,
       colorRampReversed: colorRampReversed,
+      categoricalPalette: categoricalPalette,
     });
   }, [
     getDatasetAndCollectionParam,
@@ -191,6 +203,7 @@ function App(): ReactElement {
     featureThresholds,
     colorRampKey,
     colorRampReversed,
+    categoricalPalette,
   ]);
 
   // Update url whenever the viewer settings change
@@ -211,7 +224,12 @@ function App(): ReactElement {
   );
 
   const findTrack = useCallback(
-    (trackId: number, seekToFrame: boolean = true): void => {
+    (trackId: number | null, seekToFrame: boolean = true): void => {
+      if (trackId === null) {
+        setSelectedTrack(null);
+        return;
+      }
+
       const newTrack = dataset!.buildTrack(trackId);
 
       if (newTrack.length() < 1) {
@@ -246,12 +264,15 @@ function App(): ReactElement {
     if (initialUrlParams.colorRampReversed) {
       setColorRampReversed(initialUrlParams.colorRampReversed);
     }
+    if (initialUrlParams.categoricalPalette) {
+      setCategoricalPalette(initialUrlParams.categoricalPalette);
+    }
   }, []);
 
   // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
   useEffect(() => {
-    const loadInitialDatabase = async (): Promise<void> => {
+    const loadInitialDataset = async (): Promise<void> => {
       let newCollection: Collection;
       const collectionUrlParam = initialUrlParams.collection;
       const datasetParam = initialUrlParams.dataset;
@@ -271,12 +292,25 @@ function App(): ReactElement {
       setCollection(newCollection);
       const datasetResult = await newCollection.tryLoadDataset(datasetKey);
 
+      if (!datasetResult.loaded) {
+        console.error(datasetResult.errorMessage);
+        notificationApi["error"]({
+          message: "Error loading dataset: ",
+          description: datasetResult.errorMessage,
+          placement: "bottomLeft",
+          duration: 4,
+        });
+        return;
+      }
+
       // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
-      await replaceDataset(datasetResult.dataset, datasetKey);
-      setIsInitialDatasetLoaded(true);
+      if (!isInitialDatasetLoaded) {
+        await replaceDataset(datasetResult.dataset, datasetKey);
+        setIsInitialDatasetLoaded(true);
+      }
       return;
     };
-    loadInitialDatabase();
+    loadInitialDataset();
   }, []);
 
   // Load additional properties from the URL, including the time, track, and feature.
@@ -287,7 +321,11 @@ function App(): ReactElement {
     }
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.thresholds) {
-        setFeatureThresholds(initialUrlParams.thresholds);
+        if (dataset) {
+          setFeatureThresholds(validateThresholds(dataset, initialUrlParams.thresholds));
+        } else {
+          setFeatureThresholds(initialUrlParams.thresholds);
+        }
       }
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
@@ -297,7 +335,12 @@ function App(): ReactElement {
       if (initialUrlParams.range) {
         setColorRampMin(initialUrlParams.range[0]);
         setColorRampMax(initialUrlParams.range[1]);
+      } else {
+        // Load default range from dataset for the current feature
+        setColorRampMin(dataset?.getFeatureData(featureName)?.min || 0);
+        setColorRampMax(dataset?.getFeatureData(featureName)?.max || 0);
       }
+
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
         // Highlight the track. Seek to start of frame only if time is not defined.
         findTrack(initialUrlParams.track, initialUrlParams.time !== undefined);
@@ -355,8 +398,10 @@ function App(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
+      setSelectedBackdropKey(null);
       setSelectedTrack(null);
       setDatasetOpen(true);
+      setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
       console.log("Num Items:" + dataset?.numObjects);
     },
     [dataset, featureName, canv, currentFrame, getUrlParams]
@@ -372,6 +417,12 @@ function App(): ReactElement {
         } else {
           // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
           console.error(result.errorMessage);
+          notificationApi["error"]({
+            message: "Error loading dataset:",
+            description: result.errorMessage,
+            placement: "bottomLeft",
+            duration: 4,
+          });
         }
       }
     },
@@ -421,10 +472,10 @@ function App(): ReactElement {
       setFeatureName(newFeatureName);
 
       const featureData = newDataset.getFeatureData(newFeatureName);
-      if (!isColorRampRangeLocked && featureData) {
+      if (!config.keepRangeBetweenDatasets && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
-        if (threshold) {
+        if (threshold && isThresholdNumeric(threshold)) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
         } else {
@@ -435,7 +486,7 @@ function App(): ReactElement {
 
       canv.setFeature(newFeatureName);
     },
-    [isColorRampRangeLocked, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
+    [config.keepRangeBetweenDatasets, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
 
   const getFeatureValue = useCallback(
@@ -461,9 +512,9 @@ function App(): ReactElement {
   const handleKeyDown = useCallback(
     ({ key }: KeyboardEvent): void => {
       if (key === "ArrowLeft" || key === "Left") {
-        timeControls.handleFrameAdvance(-1);
+        timeControls.advanceFrame(-1);
       } else if (key === "ArrowRight" || key === "Right") {
-        timeControls.handleFrameAdvance(1);
+        timeControls.advanceFrame(1);
       }
     },
     [timeControls]
@@ -483,11 +534,28 @@ function App(): ReactElement {
     setFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
 
+  // When the slider is released, check if playback was occurring and resume it.
+  // We need to attach the pointerup event listener to the document because it will not fire
+  // if the user releases the pointer outside of the slider.
+  useEffect(() => {
+    const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
+      setFrame(frameInput);
+      if (isTimeSliderDraggedDuringPlayback) {
+        // Update the frame and optionally unpause playback when the slider is released.
+        setIsTimeSliderDraggedDuringPlayback(false);
+        timeControls.play(); // resume playing
+      }
+    };
+
+    document.addEventListener("pointerup", checkIfPlaybackShouldUnpause);
+    return () => {
+      document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
+    };
+  });
+
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
   // Update the callback for TimeControls and RecordingControls if it changes.
-  // TODO: TimeControls and RecordingControls should be refactored into components
-  // and receive setFrame as props.
   timeControls.setFrameCallback(setFrame);
 
   const setFrameAndRender = useCallback(
@@ -500,10 +568,6 @@ function App(): ReactElement {
 
   // RENDERING /////////////////////////////////////////////////////////////
 
-  const notificationConfig: NotificationConfig = {
-    getContainer: () => notificationContainer.current as HTMLElement,
-  };
-  const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
   const openCopyNotification = (): void => {
     navigator.clipboard.writeText(document.URL);
     notificationApi["success"]({
@@ -535,7 +599,7 @@ function App(): ReactElement {
       return undefined;
     }
     const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
-    if (!threshold) {
+    if (!threshold || !isThresholdNumeric(threshold)) {
       return undefined;
     }
     return [threshold.min, threshold.max];
@@ -584,6 +648,7 @@ function App(): ReactElement {
           />
 
           <ColorRampDropdown
+            colorRamps={DEFAULT_COLOR_RAMPS}
             selectedRamp={colorRampKey}
             reversed={colorRampReversed}
             onChangeRamp={(name, reversed) => {
@@ -591,6 +656,7 @@ function App(): ReactElement {
               setColorRampReversed(reversed);
             }}
             disabled={disableUi}
+            categoricalPalettes={DEFAULT_CATEGORICAL_PALETTES}
             useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
             numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
             selectedPalette={categoricalPalette}
@@ -607,7 +673,7 @@ function App(): ReactElement {
             setFrame={setFrameAndRender}
             getCanvas={() => canv.domElement}
             // Stop playback when exporting
-            onClick={() => timeControls.handlePauseButtonClick()}
+            onClick={() => timeControls.pause()}
             currentFrame={currentFrame}
             defaultImagePrefix={datasetKey + "-" + featureName}
             disabled={dataset === null}
@@ -652,19 +718,19 @@ function App(): ReactElement {
             {/** Additional top bar settings */}
             <div>
               <Checkbox
-                checked={isColorRampRangeLocked}
+                checked={config.keepRangeBetweenDatasets}
                 onChange={() => {
                   // Invert lock on range
-                  setIsColorRampRangeLocked(!isColorRampRangeLocked);
+                  updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
                 }}
               >
                 Keep range between datasets
               </Checkbox>
               <Checkbox
                 type="checkbox"
-                checked={showTrackPath}
+                checked={config.showTrackPath}
                 onChange={() => {
-                  setShowTrackPath(!showTrackPath);
+                  updateConfig({ showTrackPath: !config.showTrackPath });
                 }}
               >
                 Show track path
@@ -691,19 +757,18 @@ function App(): ReactElement {
               <CanvasWrapper
                 canv={canv}
                 dataset={dataset}
-                showTrackPath={showTrackPath}
-                outOfRangeDrawSettings={outOfRangeDrawSettings}
-                outlierDrawSettings={outlierDrawSettings}
+                selectedBackdropKey={selectedBackdropKey}
                 colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                 colorRampMin={colorRampMin}
                 colorRampMax={colorRampMax}
                 categoricalColors={categoricalPalette}
                 selectedTrack={selectedTrack}
+                config={config}
                 onTrackClicked={(track) => {
                   setFindTrackInput("");
                   setSelectedTrack(track);
                 }}
-                featureThresholds={featureThresholds}
+                inRangeLUT={inRangeLUT}
                 onMouseHover={(id: number): void => {
                   const isObject = id !== BACKGROUND_ID;
                   setShowHoveredId(isObject);
@@ -712,33 +777,32 @@ function App(): ReactElement {
                   }
                 }}
                 onMouseLeave={() => setShowHoveredId(false)}
-                showScaleBar={showScaleBar}
-                showTimestamp={showTimestamp}
               />
             </HoverTooltip>
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() ? (
+              {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
                 // Swap between play and pause button
-                <IconButton
-                  type="outlined"
-                  disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handlePauseButtonClick()}
-                >
+                <IconButton type="outlined" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
                   <PauseOutlined />
                 </IconButton>
               ) : (
-                <IconButton
-                  disabled={disableTimeControlsUi}
-                  onClick={() => timeControls.handlePlayButtonClick()}
-                  type="outlined"
-                >
+                <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.play()} type="outlined">
                   <CaretRightOutlined />
                 </IconButton>
               )}
 
-              <div className={styles.timeSliderContainer}>
+              <div
+                className={styles.timeSliderContainer}
+                onPointerDownCapture={() => {
+                  if (timeControls.isPlaying()) {
+                    // If the slider is dragged while playing, pause playback.
+                    timeControls.pause();
+                    setIsTimeSliderDraggedDuringPlayback(true);
+                  }
+                }}
+              >
                 <Slider
                   min={0}
                   max={dataset ? dataset.numberOfFrames - 1 : 0}
@@ -752,16 +816,12 @@ function App(): ReactElement {
 
               <IconButton
                 disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handleFrameAdvance(-1)}
+                onClick={() => timeControls.advanceFrame(-1)}
                 type="outlined"
               >
                 <StepBackwardFilled />
               </IconButton>
-              <IconButton
-                disabled={disableTimeControlsUi}
-                onClick={() => timeControls.handleFrameAdvance(1)}
-                type="outlined"
-              >
+              <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.advanceFrame(1)} type="outlined">
                 <StepForwardFilled />
               </IconButton>
 
@@ -791,10 +851,12 @@ function App(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
+                activeKey={openTab}
+                onChange={(key) => setOpenTab(key as TabType)}
                 items={[
                   {
-                    label: "Plot",
-                    key: "plot",
+                    label: "Track Plot",
+                    key: TabType.TRACK_PLOT,
                     children: (
                       <div className={styles.tabContent}>
                         <PlotTab
@@ -811,8 +873,32 @@ function App(): ReactElement {
                     ),
                   },
                   {
+                    label: "Scatter Plot",
+                    key: TabType.SCATTER_PLOT,
+                    children: (
+                      <div className={styles.tabContent}>
+                        <ScatterPlotTab
+                          dataset={dataset}
+                          currentFrame={currentFrame}
+                          selectedTrack={selectedTrack}
+                          findTrack={findTrack}
+                          setFrame={setFrameAndRender}
+                          isVisible={openTab === TabType.SCATTER_PLOT}
+                          isPlaying={timeControls.isPlaying() || isRecording}
+                          selectedFeatureName={featureName}
+                          colorRampMin={colorRampMin}
+                          colorRampMax={colorRampMax}
+                          colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
+                          categoricalPalette={categoricalPalette}
+                          inRangeIds={inRangeLUT}
+                          viewerConfig={config}
+                        />
+                      </div>
+                    ),
+                  },
+                  {
                     label: "Filters",
-                    key: "filter",
+                    key: TabType.FILTERS,
                     children: (
                       <div className={styles.tabContent}>
                         <FeatureThresholdsTab
@@ -820,24 +906,23 @@ function App(): ReactElement {
                           onChange={setFeatureThresholds}
                           dataset={dataset}
                           disabled={disableUi}
+                          categoricalPalette={categoricalPalette}
                         />
                       </div>
                     ),
                   },
                   {
                     label: "Settings",
-                    key: "settings",
+                    key: TabType.SETTINGS,
                     children: (
                       <div className={styles.tabContent}>
                         <SettingsTab
-                          outOfRangeDrawSettings={outOfRangeDrawSettings}
-                          outlierDrawSettings={outlierDrawSettings}
-                          showScaleBar={showScaleBar}
-                          showTimestamp={showTimestamp}
-                          setOutOfRangeDrawSettings={setOutOfRangeDrawSettings}
-                          setOutlierDrawSettings={setOutlierDrawSettings}
-                          setShowScaleBar={setShowScaleBar}
-                          setShowTimestamp={setShowTimestamp}
+                          config={config}
+                          updateConfig={updateConfig}
+                          dataset={dataset}
+                          // TODO: This could be part of a dataset-specific settings object
+                          selectedBackdropKey={selectedBackdropKey}
+                          setSelectedBackdropKey={setSelectedBackdropKey}
                         />
                       </div>
                     ),

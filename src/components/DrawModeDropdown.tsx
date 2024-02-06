@@ -3,13 +3,13 @@ import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-import { Color as ThreeColor, ColorRepresentation } from "three";
+import { ColorRepresentation, Color as ThreeColor } from "three";
 
-import { DrawMode } from "../colorizer/ColorizeCanvas";
+import { DrawMode } from "../colorizer/types";
+import { FlexRowAlignCenter } from "../styles/utils";
 import LabeledDropdown from "./LabeledDropdown";
 
 type DrawModeSelectorProps = {
-  label: string;
   selected: DrawMode;
   onChange: (mode: DrawMode, color: ThreeColor) => void;
   color: ThreeColor;
@@ -20,13 +20,8 @@ const defaultProps: Partial<DrawModeSelectorProps> = {
   disabled: false,
 };
 
-const MainLayout = styled.div`
-  display: flex;
-  flex-direction: column;
+const HorizontalDiv = styled(FlexRowAlignCenter)`
   gap: 6px;
-`;
-
-const HorizontalDiv = styled(MainLayout)`
   flex-direction: row;
   flex-wrap: wrap;
 `;
@@ -36,7 +31,6 @@ const HorizontalDiv = styled(MainLayout)`
  * changes are made to selections.
  * - `HIDE`: Hide an object type
  * - `USE_COLOR`: Use a custom, solid color. (When selected, also shows a ColorPicker.)
- * - `USE_RAMP`: Use the color ramp.
  */
 export default function DrawModeSelector(propsInput: DrawModeSelectorProps): ReactElement {
   const props = { ...defaultProps, ...propsInput } as Required<DrawModeSelectorProps>;
@@ -44,7 +38,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
   const items = [
-    { key: DrawMode.HIDE.toString(), label: "Hide values" },
+    { key: DrawMode.HIDE.toString(), label: "Hide" },
     { key: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
   ];
 
@@ -70,36 +64,33 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const showColorPicker = props.selected === DrawMode.USE_COLOR;
 
   return (
-    <MainLayout style={{ margin: "5px 0" }}>
-      <h3>{props.label}</h3>
-      <HorizontalDiv ref={colorPickerRef}>
-        <LabeledDropdown
-          label={null}
-          selected={props.selected.toString()}
-          items={items}
-          showTooltip={false}
-          onChange={(key: string) => {
-            props.onChange(Number.parseInt(key, 10), props.color);
-          }}
-          disabled={props.disabled}
-        ></LabeledDropdown>
+    <HorizontalDiv ref={colorPickerRef}>
+      <LabeledDropdown
+        label={null}
+        selected={props.selected.toString()}
+        items={items}
+        showTooltip={false}
+        onChange={(key: string) => {
+          props.onChange(Number.parseInt(key, 10), props.color);
+        }}
+        disabled={props.disabled}
+      ></LabeledDropdown>
 
-        <ColorPicker
-          // Uses the default 1s transition animation
-          style={{
-            visibility: showColorPicker ? "visible" : "hidden",
-            opacity: showColorPicker ? "1" : "0",
-          }}
-          size="small"
-          disabledAlpha={true}
-          defaultValue={new AntdColor(props.color.getHexString())}
-          color={new AntdColor(props.color.getHexString())}
-          presets={presets}
-          // onChange returns a different color type, so must convert from hex
-          onChange={(_color, hex) => props.onChange(props.selected, new ThreeColor(hex as ColorRepresentation))}
-          disabled={props.disabled}
-        />
-      </HorizontalDiv>
-    </MainLayout>
+      <ColorPicker
+        // Uses the default 1s transition animation
+        style={{
+          visibility: showColorPicker ? "visible" : "hidden",
+          opacity: showColorPicker ? "1" : "0",
+        }}
+        size="small"
+        disabledAlpha={true}
+        defaultValue={new AntdColor(props.color.getHexString())}
+        color={new AntdColor(props.color.getHexString())}
+        presets={presets}
+        // onChange returns a different color type, so must convert from hex
+        onChange={(_color, hex) => props.onChange(props.selected, new ThreeColor(hex as ColorRepresentation))}
+        disabled={props.disabled}
+      />
+    </HorizontalDiv>
   );
 }
