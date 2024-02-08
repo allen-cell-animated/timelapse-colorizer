@@ -43,6 +43,8 @@ import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, SettingsTab, ScatterPlotTab, TabType } from "./components/tabs";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
+import HelpDropdown from "./components/HelpDropdown";
+import { FlexRowAlignCenter } from "./styles/utils";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -670,10 +672,19 @@ function App(): ReactElement {
             onChangePalette={setCategoricalPalette}
           />
         </div>
-        <div className={styles.headerRight}>
-          <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
-            <LinkOutlined />
-            Copy URL
+        <FlexRowAlignCenter className={styles.headerRight}>
+          <HelpDropdown />
+          <span className={styles.verticalDivider} style={{ margin: "0 10px" }}></span>
+          <Button
+            type="link"
+            className={styles.copyUrlButton}
+            onClick={openCopyNotification}
+            style={{ fontSize: theme.font.size.label, marginBottom: "4px" }}
+          >
+            <FlexRowAlignCenter $gap={6}>
+              <LinkOutlined />
+              Copy URL
+            </FlexRowAlignCenter>
           </Button>
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
@@ -687,7 +698,7 @@ function App(): ReactElement {
             setIsRecording={setIsRecording}
           />
           <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
-        </div>
+        </FlexRowAlignCenter>
       </div>
 
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
