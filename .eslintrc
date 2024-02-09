@@ -59,7 +59,13 @@
     "no-mixed-spaces-and-tabs": 1,
     "no-new-object": 1,
     "no-shadow-restricted-names": 1,
-    "@typescript-eslint/no-unused-vars": ["error", { "args": "none" }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
     "no-unused-vars": 0, // Rely on typescript-eslint rule above
     "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
     "@typescript-eslint/typedef": ["error", { "parameters": true }],

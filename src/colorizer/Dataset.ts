@@ -350,10 +350,10 @@ export default class Dataset {
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
       this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
       this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
-      this.loadFrame(0), // load first frame to set frame dimensions. Load result will be discarded (see `, ,` below)
+      this.loadFrame(0),
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, , ...featureResults] = result;
+    const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
     this.outliers = outliers;
     this.trackIds = tracks;
