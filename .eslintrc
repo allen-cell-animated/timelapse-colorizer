@@ -35,6 +35,8 @@
     "radix": 1,
     "react/prop-types": 0, // This relies specifically on React PropTypes and ignores other typing methods
     "semi": 2,
+    "simple-import-sort/imports": "warn",
+    "simple-import-sort/exports": "warn",
     "space-before-blocks": [1, "always"]
   }
 }

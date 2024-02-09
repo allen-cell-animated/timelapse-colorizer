@@ -1,6 +1,6 @@
 // Typescript doesn't recognize RequestInit
-/* global RequestInit */
 
+/* global RequestInit */
 import { Color, ColorRepresentation } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
