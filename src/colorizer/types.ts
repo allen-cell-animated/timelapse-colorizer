@@ -87,6 +87,10 @@ export enum DrawMode {
   USE_COLOR = 1,
 }
 
+export const isDrawMode = (mode: number): mode is DrawMode => {
+  return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
+};
+
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
 // to numeric data. Numeric thresholds do not track if their source feature is integer
 // (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
@@ -139,7 +143,9 @@ export type ViewerConfig = {
   showTimestamp: boolean;
   keepRangeBetweenDatasets: boolean;
   backdropBrightness: number;
+  /** Saturation, as an integer percentage. */
   backdropSaturation: number;
+  /** Opacity, as an integer percentage. */
   objectOpacity: number;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
@@ -150,11 +156,11 @@ export const defaultViewerConfig: ViewerConfig = {
   showScaleBar: true,
   showTimestamp: true,
   keepRangeBetweenDatasets: false,
-  /** Opacity, as a number percentage. */
+  /** Brightness, as an integer percentage. */
   backdropBrightness: 100,
-  /** Saturation, as a number percentage. */
+  /** Saturation, as an integer percentage. */
   backdropSaturation: 100,
-  /** Opacity, as a number percentage. */
+  /** Opacity, as an integer percentage. */
   objectOpacity: 100,
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
