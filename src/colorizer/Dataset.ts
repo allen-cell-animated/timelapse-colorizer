@@ -1,16 +1,15 @@
 import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
-import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
-import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import JsonArrayLoader from "./loaders/JsonArrayLoader";
-
-import FrameCache from "./FrameCache";
-import Track from "./Track";
-
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
+
+import FrameCache from "./FrameCache";
+import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
+import ImageFrameLoader from "./loaders/ImageFrameLoader";
+import JsonArrayLoader from "./loaders/JsonArrayLoader";
+import Track from "./Track";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",

@@ -1,8 +1,8 @@
-import React, { ReactElement, useMemo } from "react";
 import { ColorPicker, Tooltip } from "antd";
-import { Color, ColorRepresentation } from "three";
 import { Color as AntColor } from "antd/es/color-picker/color";
+import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
+import { Color, ColorRepresentation } from "three";
 
 import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
 

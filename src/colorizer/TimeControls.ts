@@ -1,4 +1,5 @@
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
+
 import ColorizeCanvas from "./ColorizeCanvas";
 
 // time / playback controls

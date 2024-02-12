@@ -1,5 +1,6 @@
 import { Texture } from "three";
-import { FeatureDataType, FeatureArrayType } from "../types";
+
+import { FeatureArrayType, FeatureDataType } from "../types";
 
 export interface ArraySource {
   /** Create a `TypedArray` of the specified type from this data source */

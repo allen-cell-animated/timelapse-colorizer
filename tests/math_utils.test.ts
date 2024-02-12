@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { numberToSciNotation, remap } from "../src/colorizer/utils/math_utils";
 
 describe("numberToSciNotation", () => {

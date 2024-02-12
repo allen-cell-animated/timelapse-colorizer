@@ -1,17 +1,17 @@
+import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
+import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
+import { ThresholdType } from "../src/colorizer/types";
 import {
-  isUrl,
-  isJson,
-  paramsToUrlQueryString,
-  loadParamsFromUrlQueryString,
-  UrlParams,
   isAllenPath,
+  isJson,
+  isUrl,
+  loadParamsFromUrlQueryString,
+  paramsToUrlQueryString,
+  UrlParams,
 } from "../src/colorizer/utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
-import { ThresholdType } from "../src/colorizer/types";
-import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
-import { Color, ColorRepresentation } from "three";
 
 function padCategories(categories: boolean[]): boolean[] {
   const result = [...categories];

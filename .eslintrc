@@ -15,7 +15,7 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "simple-import-sort"],
   "rules": {
     "comma-style": [1, "last"],
     "curly": [1, "multi-line"],
@@ -35,8 +35,30 @@
     "radix": 1,
     "react/prop-types": 0, // This relies specifically on React PropTypes and ignores other typing methods
     "semi": 2,
-    // TODO: Sort all project imports
-    // "sort-imports": 1,
+    "simple-import-sort/imports": [
+      "warn",
+      {
+        "groups": [
+          // Side effect imports.
+          ["^\\u0000"],
+          // Node.js builtins prefixed with `node:`.
+          ["^node:"],
+          // Packages.
+          // Things that start with a letter (or digit or underscore), or `@` followed by a letter.
+          ["^@?\\w"],
+          // Absolute imports and other imports such as Vue-style `@/foo`.
+          // Anything not matched in another group.
+          ["^"],
+          // Relative imports - lowercase utilities and submodules
+          ["^[.]+.*/[a-z]+[\\w]*$"],
+          // Relative imports - other classes and components
+          ["^[./].*/[\\w]*$"],
+          // Relative imports - resource files
+          ["^[.].*/[\\w?_\\-]*[.][\\w.?_\\-]*$"]
+        ]
+      }
+    ],
+    "simple-import-sort/exports": "warn",
     "space-before-blocks": [1, "always"]
   }
 }

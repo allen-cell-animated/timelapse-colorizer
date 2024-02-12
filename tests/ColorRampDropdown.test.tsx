@@ -4,8 +4,9 @@ import { Color } from "three";
 import { describe, expect, it, vi } from "vitest";
 
 import { ColorRamp, ColorRampData, ColorRampType, RawColorData } from "../src/colorizer";
-import ColorRampDropdown from "../src/components/ColorRampDropdown";
 import { ANY_ERROR } from "./test_utils";
+
+import ColorRampDropdown from "../src/components/ColorRampDropdown";
 
 describe("ColorRampDropdown", () => {
   const defaultPalette = [new Color("#000000"), new Color("#ffffff")];
