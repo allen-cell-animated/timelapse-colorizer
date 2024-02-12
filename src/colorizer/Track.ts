@@ -25,9 +25,9 @@ export default class Track {
       }, [] as number[]);
     }
     console.log(
-      `Track ${trackId} has ${this.length()} timepoints starting from ${this.times[0]} to ${
-        this.times[this.times.length - 1]
-      }`
+      `Track ${trackId} has ${this.times.length} objects over ${this.duration()} timepoints starting from ${
+        this.times[0]
+      } to ${this.times[this.times.length - 1]}`
     );
     console.log(this.ids);
   }
@@ -41,10 +41,18 @@ export default class Track {
     return this.ids[index];
   }
 
-  length(): number {
-    // tracks may have gaps (missing or elided data) in their list of times.
-    // So since the times are pre-sorted above, the length of the track is the difference between the last time and the first time.
-    // note that a track with only one time in it will report length 0
-    return this.times[this.times.length - 1] - this.times[0];
+  /**
+   * Gets the duration, in frames, that the track exists for. Note that the track
+   * may not have objects for all frames in the duration.
+   *
+   * - A track with only 1 id has a duration of 1.
+   * - A track that exists from frame 1 to frame 10 has a duration of 10.
+   */
+  duration(): number {
+    return this.times[this.times.length - 1] - this.times[0] + 1;
+  }
+
+  startTime(): number {
+    return this.times[0];
   }
 }
