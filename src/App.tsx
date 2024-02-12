@@ -18,7 +18,6 @@ import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } 
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
-import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/tabs";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
 
 import styles from "./App.module.css";
@@ -37,6 +36,7 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
+import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/Tabs";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////

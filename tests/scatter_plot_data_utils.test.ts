@@ -7,7 +7,7 @@ import {
   splitTraceData,
   subsampleColorRamp,
   TraceData,
-} from "../src/components/tabs/scatter_plot_data_utils";
+} from "../src/components/Tabs/scatter_plot_data_utils";
 
 describe("subsampleColorRamp", () => {
   it("Returns endpoints of a color ramp", () => {
