@@ -7,6 +7,7 @@ import { Color as ThreeColor, ColorRepresentation } from "three";
 
 import { DrawMode } from "../colorizer/types";
 import { FlexRowAlignCenter } from "../styles/utils";
+
 import LabeledDropdown from "./LabeledDropdown";
 
 type DrawModeSelectorProps = {

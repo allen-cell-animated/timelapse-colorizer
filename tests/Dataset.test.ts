@@ -2,11 +2,12 @@ import { DataTexture, RGBAFormat, Texture, UnsignedByteType, Vector2 } from "thr
 import { describe, expect, it } from "vitest";
 
 import { ArraySource, IArrayLoader, IFrameLoader } from "../src/colorizer";
-import Dataset, { FeatureType } from "../src/colorizer/Dataset";
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
 import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 import { ANY_ERROR } from "./test_utils";
+
+import Dataset, { FeatureType } from "../src/colorizer/Dataset";
 
 describe("Dataset", () => {
   const defaultPath = "https://some-path.json";

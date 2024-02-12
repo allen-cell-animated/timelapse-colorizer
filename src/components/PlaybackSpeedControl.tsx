@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react";
 
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
+
 import LabeledDropdown from "./LabeledDropdown";
 
 type PlaybackSpeedControlProps = {

@@ -1,8 +1,9 @@
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import ColorRamp from "../ColorRamp";
 import { ColorRampData } from "../colors/color_ramps";
-import Dataset, { FeatureType } from "../Dataset";
 import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric,ThresholdType } from "../types";
+
+import ColorRamp from "../ColorRamp";
+import Dataset, { FeatureType } from "../Dataset";
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.

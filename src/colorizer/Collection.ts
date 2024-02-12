@@ -1,6 +1,7 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
-import Dataset from "./Dataset";
 import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl } from "./utils/url_utils";
+
+import Dataset from "./Dataset";
 
 /**
  * Dataset properties in a collection. Collections are defined as .json files containing an array of objects

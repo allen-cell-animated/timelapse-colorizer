@@ -4,7 +4,7 @@
   "printWidth": 120,
   "trailingComma": "es5",
   "tabWidth": 2,
-  "importOrder": ["^[./]"],
+  "importOrder": ["[.]+.*/[a-z]+[\\w]*$", "^[./]"],
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
   "importOrderCaseInsensitive": true
