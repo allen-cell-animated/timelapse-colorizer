@@ -30,10 +30,11 @@ import { packDataTexture } from "./utils/texture_utils";
 import CanvasOverlay from "./CanvasUIOverlay";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
+import Track from "./Track";
+
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
-import Track from "./Track";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;

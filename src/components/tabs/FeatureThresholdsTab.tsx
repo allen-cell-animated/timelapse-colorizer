@@ -18,10 +18,11 @@ import { useScrollShadow } from "../../colorizer/utils/react_utils";
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
 
-import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 import { FeatureType } from "../../colorizer/Dataset";
 import IconButton from "../IconButton";
 import LabeledRangeSlider from "../LabeledRangeSlider";
+
+import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
