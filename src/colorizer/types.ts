@@ -142,6 +142,7 @@ export type ViewerConfig = {
   showScaleBar: boolean;
   showTimestamp: boolean;
   keepRangeBetweenDatasets: boolean;
+  /** Brightness, as an integer percentage. */
   backdropBrightness: number;
   /** Saturation, as an integer percentage. */
   backdropSaturation: number;

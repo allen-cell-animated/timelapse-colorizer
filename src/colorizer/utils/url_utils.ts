@@ -43,6 +43,7 @@ enum UrlParam {
   SHOW_PATH = "path",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
+  KEEP_RANGE = "keep-range",
 }
 
 const ALLEN_FILE_PREFIX = "/allen/";
@@ -201,6 +202,15 @@ function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | 
   }, [] as FeatureThreshold[]);
 }
 
+/**
+ * If the boolean parameter is defined, serializes it as a string and adds it to the parameters array.
+ */
+function tryAddBooleanParam(parameters: string[], value: boolean | undefined, key: string): void {
+  if (value !== undefined) {
+    parameters.push(`${key}=${value ? "1" : "0"}`);
+  }
+}
+
 function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
   let parameters: string[] = [];
   // Backdrop
@@ -227,9 +237,10 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
   }
 
   // TODO: This won't save if these are hidden
-  config.showScaleBar && parameters.push(`${UrlParam.SHOW_SCALEBAR}`);
-  config.showTrackPath && parameters.push(`${UrlParam.SHOW_PATH}`);
-  config.showTimestamp && parameters.push(`${UrlParam.SHOW_TIMESTAMP}`);
+  tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
+  tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
+  tryAddBooleanParam(parameters, config.showTrackPath, UrlParam.SHOW_PATH);
+  tryAddBooleanParam(parameters, config.keepRangeBetweenDatasets, UrlParam.KEEP_RANGE);
 
   return parameters;
 }
@@ -237,9 +248,16 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
 function parseDrawSettings(color: string | null, mode: string | null, defaultSettings: DrawSettings): DrawSettings {
   const modeInt = parseInt(mode || "-1", 10);
   return {
-    color: color ? new Color(color as ColorRepresentation) : defaultSettings.color,
+    color: color ? new Color(("#" + color) as ColorRepresentation) : defaultSettings.color,
     mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
   };
+}
+
+function getBooleanParam(value: string | null): boolean | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  return value === "1";
 }
 
 function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig> | undefined {
@@ -269,11 +287,14 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
       defaultSettings
     );
   }
-  newConfig.showScaleBar = params.has(UrlParam.SHOW_SCALEBAR);
-  newConfig.showTrackPath = params.has(UrlParam.SHOW_PATH);
-  newConfig.showTimestamp = params.has(UrlParam.SHOW_TIMESTAMP);
 
-  return Object.keys(newConfig).length === 0 ? undefined : newConfig;
+  newConfig.showScaleBar = getBooleanParam(params.get(UrlParam.SHOW_SCALEBAR));
+  newConfig.showTimestamp = getBooleanParam(params.get(UrlParam.SHOW_TIMESTAMP));
+  newConfig.showTrackPath = getBooleanParam(params.get(UrlParam.SHOW_PATH));
+  newConfig.keepRangeBetweenDatasets = getBooleanParam(params.get(UrlParam.KEEP_RANGE));
+
+  const finalConfig = removeUndefinedProperties(newConfig);
+  return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
 }
 
 /**

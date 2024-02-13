@@ -1,15 +1,15 @@
 import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
-import { ThresholdType } from "../src/colorizer/types";
+import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
+import { DrawMode, DrawSettings, ThresholdType, ViewerConfig } from "../src/colorizer/types";
 import {
+  UrlParams,
   isAllenPath,
   isJson,
   isUrl,
   loadParamsFromUrlQueryString,
   paramsToUrlQueryString,
-  UrlParams,
 } from "../src/colorizer/utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 
@@ -138,10 +138,22 @@ describe("Loading + saving from URL query strings", () => {
       colorRampKey: "myMap-1",
       colorRampReversed: true,
       categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors,
+      config: {
+        showTrackPath: true,
+        showScaleBar: true,
+        showTimestamp: false,
+        keepRangeBetweenDatasets: true,
+        backdropBrightness: 75,
+        backdropSaturation: 50,
+        objectOpacity: 25,
+        outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
+        outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
+      } as Required<ViewerConfig>,
+      selectedBackdropKey: "some_backdrop",
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
-      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe";
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop";
     expect(queryString).equals(expectedQueryString);
 
     const parsedParams = loadParamsFromUrlQueryString(queryString);
