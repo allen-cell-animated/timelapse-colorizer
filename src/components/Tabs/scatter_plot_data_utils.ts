@@ -1,7 +1,8 @@
 import Plotly, { PlotData } from "plotly.js-dist-min";
+import { Color, HexColorString } from "three";
+
 import { ColorRamp, Dataset } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
-import { Color, HexColorString } from "three";
 
 export type DataArray = Uint32Array | Float32Array | number[];
 

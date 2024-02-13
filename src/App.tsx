@@ -1,5 +1,3 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-
 import {
   CaretRightOutlined,
   CheckCircleOutlined,
@@ -10,25 +8,21 @@ import {
 } from "@ant-design/icons";
 import { Button, Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
-import styles from "./App.module.css";
-import {
-  ColorizeCanvas,
-  DEFAULT_CATEGORICAL_PALETTES,
-  DEFAULT_CATEGORICAL_PALETTE_ID,
-  DEFAULT_COLOR_RAMPS,
-  DEFAULT_COLOR_RAMP_ID,
-  Dataset,
-  Track,
-} from "./colorizer";
-import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-import TimeControls from "./colorizer/TimeControls";
-import { ViewerConfig, FeatureThreshold, defaultViewerConfig, isThresholdNumeric } from "./colorizer/types";
+import { ColorizeCanvas, Dataset, Track } from "./colorizer";
+import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
+import { DEFAULT_COLOR_RAMP_ID, DEFAULT_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
+import { defaultViewerConfig, FeatureThreshold, isThresholdNumeric, ViewerConfig } from "./colorizer/types";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
+
+import Collection from "./colorizer/Collection";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import TimeControls from "./colorizer/TimeControls";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
@@ -41,8 +35,9 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { FeatureThresholdsTab, PlotTab, SettingsTab, ScatterPlotTab, TabType } from "./components/tabs";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
+import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/Tabs";
+
+import styles from "./App.module.css";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////

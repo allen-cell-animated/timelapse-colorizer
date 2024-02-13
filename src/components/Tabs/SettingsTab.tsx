@@ -1,15 +1,16 @@
 import { Checkbox, Slider } from "antd";
 import React, { ReactElement } from "react";
+import styled from "styled-components";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
+import { DrawMode,ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
-import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+
+import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";
-import CustomCollapse from "../CustomCollapse";
-import { ViewerConfig, DrawMode } from "../../colorizer/types";
-import styled from "styled-components";
+import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 
 const NO_BACKDROP = {
   key: "",

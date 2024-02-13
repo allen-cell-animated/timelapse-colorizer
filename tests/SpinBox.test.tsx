@@ -1,8 +1,8 @@
-import { assert, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
+import React from "react";
+import { assert, describe, expect, it, vi } from "vitest";
 
 import SpinBox from "../src/components/SpinBox";
-import React from "react";
 
 describe("SpinBox", () => {
   it("calls onChange when blurred", async () => {

@@ -1,4 +1,5 @@
 import { Vector2 } from "three";
+
 import { numberToSciNotation } from "./utils/math_utils";
 
 type StyleOptions = {
