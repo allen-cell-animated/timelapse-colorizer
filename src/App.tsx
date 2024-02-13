@@ -239,7 +239,7 @@ function App(): ReactElement {
 
       const newTrack = dataset!.buildTrack(trackId);
 
-      if (newTrack.length() < 1) {
+      if (newTrack.ids.length < 1) {
         // Check track validity
         return;
       }
@@ -250,6 +250,52 @@ function App(): ReactElement {
       setFindTrackInput("" + trackId);
     },
     [canv, dataset, featureName, currentFrame]
+  );
+
+  /**
+   * Attempts to replace the current feature with a new feature from a dataset.
+   * If the feature cannot be loaded, returns the old feature name and does nothing.
+   * @param newDataset the dataset to pull feature data from.
+   * @param newFeatureName the name of the new feature to select.
+   * @returns the new feature name if it was successfully found and loaded. Otherwise, returns the old feature name.
+   */
+  const replaceFeature = useCallback(
+    (featureDataset: Dataset, newFeatureName: string): string => {
+      if (!featureDataset?.hasFeature(newFeatureName)) {
+        console.warn("Dataset does not have feature '" + newFeatureName + "'.");
+        return featureName;
+      }
+      setFeatureName(newFeatureName);
+      canv.setFeature(newFeatureName);
+      return newFeatureName;
+    },
+    [canv, featureName]
+  );
+
+  /**
+   * Resets the color ramp to a default min and max value based on the feature and dataset.
+   *
+   * If the feature is thresholded, the color ramp will be set to the threshold's min and max.
+   * Otherwise, the color ramp will be set to the feature's min and max.
+   *
+   * (Does nothing if the viewer is configured to keep the range between datasets.)
+   */
+  const resetColorRampRangeToDefaults = useCallback(
+    (featureDataset: Dataset, featureName: string): void => {
+      const featureData = featureDataset.getFeatureData(featureName);
+      if (!config.keepRangeBetweenDatasets && featureData) {
+        // Use min/max from threshold if there is a matching one, otherwise use feature min/max
+        const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
+        if (threshold && isThresholdNumeric(threshold)) {
+          setColorRampMin(threshold.min);
+          setColorRampMax(threshold.max);
+        } else {
+          setColorRampMin(featureData.min);
+          setColorRampMax(featureData.max);
+        }
+      }
+    },
+    [featureThresholds, config.keepRangeBetweenDatasets]
   );
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
@@ -334,9 +380,10 @@ function App(): ReactElement {
           setFeatureThresholds(initialUrlParams.thresholds);
         }
       }
+      let newFeatureName = featureName;
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        await updateFeature(dataset, initialUrlParams.feature);
+        newFeatureName = replaceFeature(dataset, initialUrlParams.feature);
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {
@@ -344,8 +391,7 @@ function App(): ReactElement {
         setColorRampMax(initialUrlParams.range[1]);
       } else {
         // Load default range from dataset for the current feature
-        setColorRampMin(dataset?.getFeatureData(featureName)?.min || 0);
-        setColorRampMax(dataset?.getFeatureData(featureName)?.max || 0);
+        dataset && resetColorRampRangeToDefaults(dataset, newFeatureName);
       }
 
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
@@ -394,7 +440,8 @@ function App(): ReactElement {
       if (!newDataset.hasFeature(newFeatureName)) {
         newFeatureName = newDataset.featureNames[0];
       }
-      updateFeature(newDataset, newFeatureName);
+      replaceFeature(newDataset, newFeatureName);
+      resetColorRampRangeToDefaults(newDataset, newFeatureName);
       setFeatureName(newFeatureName);
 
       await canv.setDataset(newDataset);
@@ -411,7 +458,16 @@ function App(): ReactElement {
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
       console.log("Num Items:" + dataset?.numObjects);
     },
-    [dataset, featureName, canv, currentFrame, getUrlParams]
+    [
+      dataset,
+      featureName,
+      canv,
+      currentFrame,
+      getUrlParams,
+      replaceFeature,
+      resetColorRampRangeToDefaults,
+      featureThresholds,
+    ]
   );
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
@@ -468,32 +524,6 @@ function App(): ReactElement {
       return newCollection.url || newCollection.getDefaultDatasetKey();
     },
     [replaceDataset]
-  );
-
-  const updateFeature = useCallback(
-    async (newDataset: Dataset, newFeatureName: string): Promise<void> => {
-      if (!newDataset?.hasFeature(newFeatureName)) {
-        console.warn("Dataset does not have feature '" + newFeatureName + "'.");
-        return;
-      }
-      setFeatureName(newFeatureName);
-
-      const featureData = newDataset.getFeatureData(newFeatureName);
-      if (!config.keepRangeBetweenDatasets && featureData) {
-        // Use min/max from threshold if there is a matching one, otherwise use feature min/max
-        const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
-        if (threshold && isThresholdNumeric(threshold)) {
-          setColorRampMin(threshold.min);
-          setColorRampMax(threshold.max);
-        } else {
-          setColorRampMin(featureData.min);
-          setColorRampMax(featureData.max);
-        }
-      }
-
-      canv.setFeature(newFeatureName);
-    },
-    [config.keepRangeBetweenDatasets, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
 
   const getFeatureValue = useCallback(
@@ -649,7 +679,8 @@ function App(): ReactElement {
             items={getFeatureDropdownData()}
             onChange={(value) => {
               if (value !== featureName && dataset) {
-                updateFeature(dataset, value);
+                replaceFeature(dataset, value);
+                resetColorRampRangeToDefaults(dataset, value);
               }
             }}
           />
