@@ -1,7 +1,7 @@
 // Typescript doesn't recognize RequestInit
 
 /* global RequestInit */
-import { Color, ColorRepresentation } from "three";
+import { Color, ColorRepresentation, HexColorString } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import {
@@ -245,10 +245,16 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
   return parameters;
 }
 
+function isHexColor(value: string | null): value is HexColorString {
+  const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
+  return value !== null && hexRegex.test(value);
+}
+
 function parseDrawSettings(color: string | null, mode: string | null, defaultSettings: DrawSettings): DrawSettings {
   const modeInt = parseInt(mode || "-1", 10);
+  const hexColor = "#" + color;
   return {
-    color: color ? new Color(("#" + color) as ColorRepresentation) : defaultSettings.color,
+    color: isHexColor(hexColor) ? new Color(hexColor) : defaultSettings.color,
     mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
   };
 }

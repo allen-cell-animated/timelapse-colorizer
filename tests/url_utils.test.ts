@@ -1,8 +1,9 @@
+import { parse } from "path";
 import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
-import { DrawMode, DrawSettings, ThresholdType, ViewerConfig } from "../src/colorizer/types";
+import { DrawMode, DrawSettings, ThresholdType, ViewerConfig, defaultViewerConfig } from "../src/colorizer/types";
 import {
   UrlParams,
   isAllenPath,
@@ -349,5 +350,35 @@ describe("Loading + saving from URL query strings", () => {
     const defaultColors = DEFAULT_CATEGORICAL_PALETTES.get("adobe")!.colors;
     const expectedColors = [...colors, ...defaultColors.slice(4)];
     expect(parsedParams).deep.equals({ categoricalPalette: expectedColors });
+  });
+
+  it("Returns partial configs if values are undefined", () => {
+    const params: Partial<UrlParams> = {
+      config: {
+        showTrackPath: true,
+        showScaleBar: false,
+      },
+    };
+    const queryString = paramsToUrlQueryString(params);
+    expect(queryString).equals("?scalebar=0&path=1");
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    expect(parsedParams).deep.equals(params);
+  });
+
+  it("Uses default DrawSettings colors for malformed or missing color strings", () => {
+    const queryString = "?outlier-mode=0&outlier-color=a8d8c8d9&filter-mode=1";
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    expect(parsedParams).deep.equals({
+      config: {
+        outlierDrawSettings: {
+          mode: DrawMode.HIDE,
+          color: defaultViewerConfig.outlierDrawSettings.color,
+        },
+        outOfRangeDrawSettings: {
+          mode: DrawMode.USE_COLOR,
+          color: defaultViewerConfig.outOfRangeDrawSettings.color,
+        },
+      },
+    });
   });
 });
