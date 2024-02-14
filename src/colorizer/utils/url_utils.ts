@@ -236,7 +236,6 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
     parameters.push(`${UrlParam.FILTERED_MODE}=${config.outOfRangeDrawSettings.mode}`);
   }
 
-  // TODO: This won't save if these are hidden
   tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
   tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
   tryAddBooleanParam(parameters, config.showTrackPath, UrlParam.SHOW_PATH);
@@ -245,7 +244,7 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
   return parameters;
 }
 
-function isHexColor(value: string | null): value is HexColorString {
+export function isHexColor(value: string | null): value is HexColorString {
   const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
   return value !== null && hexRegex.test(value);
 }

@@ -2,15 +2,16 @@ import { parse } from "path";
 import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CATEGORICAL_PALETTES, DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
-import { DrawMode, DrawSettings, ThresholdType, ViewerConfig, defaultViewerConfig } from "../src/colorizer/types";
+import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
+import { defaultViewerConfig, DrawMode, DrawSettings, ThresholdType, ViewerConfig } from "../src/colorizer/types";
 import {
-  UrlParams,
   isAllenPath,
+  isHexColor,
   isJson,
   isUrl,
   loadParamsFromUrlQueryString,
   paramsToUrlQueryString,
+  UrlParams,
 } from "../src/colorizer/utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 
@@ -379,6 +380,31 @@ describe("Loading + saving from URL query strings", () => {
           color: defaultViewerConfig.outOfRangeDrawSettings.color,
         },
       },
+    });
+  });
+
+  describe("isHexColor", () => {
+    it("Handles 3 character hex strings", () => {
+      expect(isHexColor("#000")).to.be.true;
+      expect(isHexColor("#fff")).to.be.true;
+      expect(isHexColor("#ccc")).to.be.true;
+    });
+
+    it("Handles 6-character hex strings", () => {
+      expect(isHexColor("#000000")).to.be.true;
+      expect(isHexColor("#ffffff")).to.be.true;
+      expect(isHexColor("#a0c8b0")).to.be.true;
+    });
+
+    it("Catches non-hex values", () => {
+      expect(isHexColor("000000")).to.be.false;
+      expect(isHexColor("gggggg")).to.be.false;
+      expect(isHexColor("#44")).to.be.false;
+      expect(isHexColor("some-bad-value")).to.be.false;
+    });
+
+    it("Ignores hex values with alpha", () => {
+      expect(isHexColor("#aabbccdd")).to.be.false;
     });
   });
 });
