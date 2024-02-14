@@ -208,6 +208,8 @@ function App(): ReactElement {
     colorRampKey,
     colorRampReversed,
     categoricalPalette,
+    selectedBackdropKey,
+    config,
   ]);
 
   // Update url whenever the viewer settings change
@@ -403,6 +405,15 @@ function App(): ReactElement {
         setCurrentFrame(newTime); // Force render
         setFrameInput(newTime);
       }
+      if (initialUrlParams.selectedBackdropKey) {
+        const key = initialUrlParams.selectedBackdropKey;
+        if (dataset?.hasBackdrop(key)) {
+          setSelectedBackdropKey(initialUrlParams.selectedBackdropKey);
+        }
+      }
+      if (initialUrlParams.config) {
+        updateConfig(initialUrlParams.config);
+      }
     };
 
     setupInitialParameters();
@@ -449,7 +460,9 @@ function App(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      setSelectedBackdropKey(null);
+      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
+        setSelectedBackdropKey(null);
+      }
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
