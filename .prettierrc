@@ -4,7 +4,8 @@
   "printWidth": 120,
   "trailingComma": "es5",
   "tabWidth": 2,
-  "importOrder": ["^@core/(.*)$", "^@server/(.*)$", "^@ui/(.*)$", "^[./]"],
+  "importOrder": ["^[./]+.*/[a-z]+[\\w]*$", "^[./].*/[\\w]*$", "^[./].*/[\\w_\\-?]*[.][\\w._\\-?]*$"],
   "importOrderSeparation": true,
-  "importOrderSortSpecifiers": true
+  "importOrderSortSpecifiers": true,
+  "importOrderCaseInsensitive": true
 }

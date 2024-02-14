@@ -10,10 +10,6 @@ import { ColorRamp, Dataset, Track } from "../../colorizer";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
-import { AppThemeContext } from "../AppStyle";
-import IconButton from "../IconButton";
-import LabeledDropdown from "../LabeledDropdown";
-import LoadingSpinner from "../LoadingSpinner";
 import {
   DataArray,
   drawCrosshair,
@@ -27,6 +23,11 @@ import {
   subsampleColorRamp,
   TraceData,
 } from "./scatter_plot_data_utils";
+
+import { AppThemeContext } from "../AppStyle";
+import IconButton from "../IconButton";
+import LabeledDropdown from "../LabeledDropdown";
+import LoadingSpinner from "../LoadingSpinner";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };

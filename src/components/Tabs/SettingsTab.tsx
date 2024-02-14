@@ -6,6 +6,7 @@ import { Color } from "three";
 import { Dataset } from "../../colorizer";
 import { DrawMode,ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
+
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../DrawModeDropdown";
 import LabeledDropdown from "../LabeledDropdown";

@@ -5,6 +5,7 @@ import styled from "styled-components";
 
 import { Dataset, Track } from "../../colorizer";
 import { FlexRowAlignCenter, NoSpinnerContainer } from "../../styles/utils";
+
 import IconButton from "../IconButton";
 import PlotWrapper from "../PlotWrapper";
 

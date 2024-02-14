@@ -5,18 +5,18 @@ import { Color, ColorRepresentation, HexColorString } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import {
-  DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_CATEGORICAL_PALETTE_ID,
+  DEFAULT_CATEGORICAL_PALETTES,
   getKeyFromPalette,
 } from "../colors/categorical_palettes";
 import {
+  defaultViewerConfig,
   DrawSettings,
   FeatureThreshold,
-  ThresholdType,
-  ViewerConfig,
-  defaultViewerConfig,
   isDrawMode,
   isThresholdCategorical,
+  ThresholdType,
+  ViewerConfig,
 } from "../types";
 import { numberToStringDecimal } from "./math_utils";
 

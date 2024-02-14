@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "deploy": "vite build --base=/nucmorph-colorizer/ && gh-pages -d dist",
     "lint": "eslint --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
-    "lint-fix": "eslint --rule \"simple-import-sort/imports: warn\" --rule \"simple-import-sort/exports: warn\" --fix --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
+    "lint-fix": "eslint --fix --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

@@ -24,15 +24,17 @@ import {
 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./types";
+import { packDataTexture } from "./utils/texture_utils";
+
 import CanvasOverlay from "./CanvasUIOverlay";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
+import Track from "./Track";
+
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
-import Track from "./Track";
-import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./types";
-import { packDataTexture } from "./utils/texture_utils";
 
 const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
@@ -385,12 +387,24 @@ export default class ColorizeCanvas {
     }
     // Make a new array of the centroid positions in pixel coordinates.
     // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
-    this.points = new Float32Array(track.length() * 3);
+    this.points = new Float32Array(track.duration() * 3);
 
-    for (let i = 0; i < track.length(); i++) {
+    // Tracks may be missing objects for some timepoints, so use the last known good value as a fallback
+    let lastTrackIndex = 0;
+    for (let i = 0; i < track.duration(); i++) {
+      const absTime = i + track.startTime();
+
+      let trackIndex = track.times.findIndex((t) => t === absTime);
+      if (trackIndex === -1) {
+        // Track has no object for this time, use fallback
+        trackIndex = lastTrackIndex;
+      } else {
+        lastTrackIndex = trackIndex;
+      }
+
       // Normalize from pixel coordinates to canvas space [-1, 1]
-      this.points[3 * i + 0] = (track.centroids[2 * i] / this.dataset.frameResolution.x) * 2.0 - 1.0;
-      this.points[3 * i + 1] = -((track.centroids[2 * i + 1] / this.dataset.frameResolution.y) * 2.0 - 1.0);
+      this.points[3 * i + 0] = (track.centroids[2 * trackIndex] / this.dataset.frameResolution.x) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((track.centroids[2 * trackIndex + 1] / this.dataset.frameResolution.y) * 2.0 - 1.0);
       this.points[3 * i + 2] = 0;
     }
     // Assign new BufferAttribute because the old array has been discarded.
@@ -415,10 +429,9 @@ export default class ColorizeCanvas {
     }
 
     // Show path up to current frame
-    const trackFirstFrame = this.track.times[0];
-    let range = this.currentFrame - trackFirstFrame;
+    let range = this.currentFrame - this.track.startTime() + 1;
 
-    if (range > this.track.length() || range < 0) {
+    if (range > this.track.duration() || range < 0) {
       // Hide track if we are outside the track range
       range = 0;
     }
