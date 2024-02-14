@@ -218,7 +218,7 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
     parameters.push(`${UrlParam.BACKDROP_SATURATION}=${config.backdropSaturation}`);
   }
   if (config.backdropBrightness !== undefined) {
-    config.backdropBrightness && parameters.push(`${UrlParam.BACKDROP_BRIGHTNESS}=${config.backdropBrightness}`);
+    parameters.push(`${UrlParam.BACKDROP_BRIGHTNESS}=${config.backdropBrightness}`);
   }
 
   // Foreground
@@ -277,19 +277,17 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
     newConfig.objectOpacity = parseInt(params.get(UrlParam.FOREGROUND_ALPHA)!, 10);
   }
   if (params.get(UrlParam.OUTLIER_COLOR) || params.get(UrlParam.OUTLIER_MODE)) {
-    const defaultSettings = defaultViewerConfig.outlierDrawSettings;
     newConfig.outlierDrawSettings = parseDrawSettings(
       params.get(UrlParam.OUTLIER_COLOR),
       params.get(UrlParam.OUTLIER_MODE),
-      defaultSettings
+      defaultViewerConfig.outlierDrawSettings
     );
   }
   if (params.get(UrlParam.FILTERED_COLOR) || params.get(UrlParam.FILTERED_MODE)) {
-    const defaultSettings = defaultViewerConfig.outOfRangeDrawSettings;
     newConfig.outOfRangeDrawSettings = parseDrawSettings(
       params.get(UrlParam.FILTERED_COLOR),
       params.get(UrlParam.FILTERED_MODE),
-      defaultSettings
+      defaultViewerConfig.outOfRangeDrawSettings
     );
   }
 
