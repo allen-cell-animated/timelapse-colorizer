@@ -212,7 +212,7 @@ function tryAddBooleanParam(parameters: string[], value: boolean | undefined, ke
 }
 
 function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
-  let parameters: string[] = [];
+  const parameters: string[] = [];
   // Backdrop
   if (config.backdropSaturation !== undefined) {
     parameters.push(`${UrlParam.BACKDROP_SATURATION}=${config.backdropSaturation}`);

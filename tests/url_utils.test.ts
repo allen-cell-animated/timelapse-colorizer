@@ -1,4 +1,3 @@
-import { parse } from "path";
 import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
