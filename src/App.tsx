@@ -405,10 +405,11 @@ function App(): ReactElement {
         setCurrentFrame(newTime); // Force render
         setFrameInput(newTime);
       }
-      if (initialUrlParams.selectedBackdropKey) {
-        const key = initialUrlParams.selectedBackdropKey;
-        if (dataset?.hasBackdrop(key)) {
-          setSelectedBackdropKey(initialUrlParams.selectedBackdropKey);
+
+      const backdropKey = initialUrlParams.selectedBackdropKey;
+      if (backdropKey) {
+        if (dataset?.hasBackdrop(backdropKey)) {
+          setSelectedBackdropKey(backdropKey);
         }
       }
       if (initialUrlParams.config) {
