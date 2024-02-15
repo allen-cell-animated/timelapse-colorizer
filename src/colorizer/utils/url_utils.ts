@@ -12,17 +12,19 @@ import {
 import { FeatureThreshold, isThresholdCategorical, ThresholdType } from "../types";
 import { numberToStringDecimal } from "./math_utils";
 
-const URL_PARAM_TRACK = "track";
-const URL_PARAM_DATASET = "dataset";
-const URL_PARAM_FEATURE = "feature";
-const URL_PARAM_TIME = "t";
-const URL_PARAM_COLLECTION = "collection";
-const URL_PARAM_THRESHOLDS = "filters";
-const URL_PARAM_RANGE = "range";
-const URL_PARAM_COLOR_RAMP = "color";
-const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
-const URL_PARAM_PALETTE = "palette";
-const URL_PARAM_PALETTE_KEY = "palette-key";
+enum UrlParam {
+  TRACK = "track",
+  DATASET = "dataset",
+  FEATURE = "feature",
+  TIME = "t",
+  COLLECTION = "collection",
+  THRESHOLDS = "filters",
+  RANGE = "range",
+  COLOR_RAMP = "color",
+  COLOR_RAMP_REVERSED_SUFFIX = "!",
+  PALETTE = "palette",
+  PALETTE_KEY = "palette-key",
+}
 
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
@@ -202,47 +204,47 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
   const includedParameters: string[] = [];
 
   if (state.collection) {
-    includedParameters.push(`${URL_PARAM_COLLECTION}=${encodeURIComponent(state.collection)}`);
+    includedParameters.push(`${UrlParam.COLLECTION}=${encodeURIComponent(state.collection)}`);
   }
   if (state.dataset) {
-    includedParameters.push(`${URL_PARAM_DATASET}=${encodeURIComponent(state.dataset)}`);
+    includedParameters.push(`${UrlParam.DATASET}=${encodeURIComponent(state.dataset)}`);
   }
   if (state.feature) {
-    includedParameters.push(`${URL_PARAM_FEATURE}=${encodeURIComponent(state.feature)}`);
+    includedParameters.push(`${UrlParam.FEATURE}=${encodeURIComponent(state.feature)}`);
   }
   if (state.track !== undefined) {
-    includedParameters.push(`${URL_PARAM_TRACK}=${state.track}`);
+    includedParameters.push(`${UrlParam.TRACK}=${state.track}`);
   }
   if (state.time !== undefined) {
-    includedParameters.push(`${URL_PARAM_TIME}=${state.time}`);
+    includedParameters.push(`${UrlParam.TIME}=${state.time}`);
   }
   if (state.thresholds && state.thresholds.length > 0) {
-    includedParameters.push(`${URL_PARAM_THRESHOLDS}=${encodeURIComponent(serializeThresholds(state.thresholds))}`);
+    includedParameters.push(`${UrlParam.THRESHOLDS}=${encodeURIComponent(serializeThresholds(state.thresholds))}`);
   }
   if (state.range && state.range.length === 2) {
     const rangeString = `${numberToStringDecimal(state.range[0], 3)},${numberToStringDecimal(state.range[1], 3)}`;
-    includedParameters.push(`${URL_PARAM_RANGE}=${encodeURIComponent(rangeString)}`);
+    includedParameters.push(`${UrlParam.RANGE}=${encodeURIComponent(rangeString)}`);
   }
   if (state.colorRampKey) {
     if (state.colorRampReversed) {
       includedParameters.push(
-        `${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + URL_COLOR_RAMP_REVERSED_SUFFIX)}`
+        `${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + UrlParam.COLOR_RAMP_REVERSED_SUFFIX)}`
       );
     } else {
-      includedParameters.push(`${URL_PARAM_COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
+      includedParameters.push(`${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
     }
   }
   if (state.categoricalPalette) {
     const key = getKeyFromPalette(state.categoricalPalette);
     if (key !== null) {
-      includedParameters.push(`${URL_PARAM_PALETTE_KEY}=${key}`);
+      includedParameters.push(`${UrlParam.PALETTE_KEY}=${key}`);
     } else {
       // Save the hex color stops as a string separated by dashes.
       // TODO: Save only the edited colors to shorten URL.
       const stops = state.categoricalPalette.map((color: Color) => {
         return color.getHexString();
       });
-      includedParameters.push(`${URL_PARAM_PALETTE}=${stops.join("-")}`);
+      includedParameters.push(`${UrlParam.PALETTE}=${stops.join("-")}`);
     }
   }
 
@@ -373,20 +375,18 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
   const urlParams = new URLSearchParams(queryString);
 
   const base10Radix = 10; // required for parseInt
-  const collectionParam = urlParams.get(URL_PARAM_COLLECTION) ?? undefined;
-  const datasetParam = urlParams.get(URL_PARAM_DATASET) ?? undefined;
-  const featureParam = urlParams.get(URL_PARAM_FEATURE) ?? undefined;
-  const trackParam = urlParams.get(URL_PARAM_TRACK)
-    ? parseInt(urlParams.get(URL_PARAM_TRACK)!, base10Radix)
-    : undefined;
+  const collectionParam = urlParams.get(UrlParam.COLLECTION) ?? undefined;
+  const datasetParam = urlParams.get(UrlParam.DATASET) ?? undefined;
+  const featureParam = urlParams.get(UrlParam.FEATURE) ?? undefined;
+  const trackParam = urlParams.get(UrlParam.TRACK) ? parseInt(urlParams.get(UrlParam.TRACK)!, base10Radix) : undefined;
   // This assumes there are no negative timestamps in the dataset
-  const timeParam = urlParams.get(URL_PARAM_TIME) ? parseInt(urlParams.get(URL_PARAM_TIME)!, base10Radix) : undefined;
+  const timeParam = urlParams.get(UrlParam.TIME) ? parseInt(urlParams.get(UrlParam.TIME)!, base10Radix) : undefined;
 
   // Parse and validate thresholds
-  const thresholdsParam = deserializeThresholds(urlParams.get(URL_PARAM_THRESHOLDS));
+  const thresholdsParam = deserializeThresholds(urlParams.get(UrlParam.THRESHOLDS));
 
   let rangeParam: [number, number] | undefined = undefined;
-  const rawRangeParam = decodePossiblyNullString(urlParams.get(URL_PARAM_RANGE));
+  const rawRangeParam = decodePossiblyNullString(urlParams.get(UrlParam.RANGE));
   if (rawRangeParam) {
     const [min, max] = rawRangeParam.split(",");
     rangeParam = [parseFloat(min), parseFloat(max)];
@@ -396,18 +396,21 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     }
   }
 
-  const colorRampRawParam = urlParams.get(URL_PARAM_COLOR_RAMP);
+  const colorRampRawParam = urlParams.get(UrlParam.COLOR_RAMP);
   let colorRampParam: string | undefined = colorRampRawParam || undefined;
   let colorRampReversedParam: boolean | undefined = undefined;
   //  Color ramps are marked as reversed by adding ! to the end of the key
-  if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === URL_COLOR_RAMP_REVERSED_SUFFIX) {
+  if (
+    colorRampRawParam &&
+    colorRampRawParam.charAt(colorRampRawParam.length - 1) === UrlParam.COLOR_RAMP_REVERSED_SUFFIX
+  ) {
     colorRampReversedParam = true;
     colorRampParam = colorRampRawParam.slice(0, -1);
   }
 
   // Parse palette data
-  const paletteKeyParam = urlParams.get(URL_PARAM_PALETTE_KEY);
-  const paletteStringParam = urlParams.get(URL_PARAM_PALETTE);
+  const paletteKeyParam = urlParams.get(UrlParam.PALETTE_KEY);
+  const paletteStringParam = urlParams.get(UrlParam.PALETTE);
   const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
 
   let categoricalPalette: Color[] | undefined = undefined;
