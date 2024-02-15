@@ -25,10 +25,12 @@ const URL_PARAM_PALETTE = "palette";
 const URL_PARAM_PALETTE_KEY = "palette-key";
 
 const ALLEN_FILE_PREFIX = "/allen/";
-const ALLEN_PREFIX_TO_HTTPS: Map<string, string> = new Map([
-  ["/allen/aics/assay-dev", "https://dev-aics-dtp-001.int.allencell.org/assay-dev"],
-  ["/allen/aics/microscopy", "https://dev-aics-dtp-001.int.allencell.org/microscopy"],
-]);
+const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  "/allen/aics/assay-dev": "https://dev-aics-dtp-001.int.allencell.org/assay-dev",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  "/allen/aics/microscopy": "https://dev-aics-dtp-001.int.allencell.org/microscopy",
+};
 
 export type UrlParams = {
   collection: string;
@@ -299,9 +301,9 @@ export function isAllenPath(input: string): boolean {
  */
 export function convertAllenPathToHttps(input: string): string | null {
   input = normalizeFilePathSlashes(input);
-  for (const prefix of ALLEN_PREFIX_TO_HTTPS.keys()) {
+  for (const prefix of Object.keys(ALLEN_PREFIX_TO_HTTPS)) {
     if (input.startsWith(prefix)) {
-      return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS.get(prefix)!);
+      return input.replace(prefix, ALLEN_PREFIX_TO_HTTPS[prefix]);
     }
   }
   return null;
