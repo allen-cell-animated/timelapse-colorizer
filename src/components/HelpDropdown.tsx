@@ -1,20 +1,13 @@
-import { ArrowRightOutlined } from "@ant-design/icons";
-import { Dropdown, MenuProps, Space } from "antd";
-import React, { ReactElement, useContext, useRef } from "react";
 import { DropdownSVG } from "../assets";
-import { FlexRowAlignCenter } from "../styles/utils";
+import { FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 import { AppThemeContext } from "./AppStyle";
+import { ArrowRightOutlined } from "@ant-design/icons";
+import { Button, Dropdown, MenuProps, Space } from "antd";
+import React, { ReactElement, useContext, useRef } from "react";
 import styled from "styled-components";
 
-const UnstyledButton = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-  /* outline: inherit; */
-  color: inherit;
-  text-align: left;
+const HelpButton = styled(Button)`
+  padding-top: 0;
 `;
 
 export default function HelpDropdown(): ReactElement {
@@ -31,7 +24,10 @@ export default function HelpDropdown(): ReactElement {
           href="https://github.com/allen-cell-animated/nucmorph-colorizer/issues"
         >
           <Space>
-            Report an issue
+            <p>
+              Report an issue
+              <VisuallyHidden>(opens in new tab)</VisuallyHidden>
+            </p>
             <ArrowRightOutlined />
           </Space>
         </a>
@@ -46,14 +42,14 @@ export default function HelpDropdown(): ReactElement {
         getPopupContainer={dropdownContainer.current ? () => dropdownContainer.current! : undefined}
         trigger={["click", "hover"]}
       >
-        <UnstyledButton>
+        <HelpButton type="default" style={{}}>
           <a onClick={(e) => e.preventDefault()} style={{ fontSize: theme.font.size.label }} role="tab">
             <FlexRowAlignCenter $gap={6}>
               Help
               <DropdownSVG style={{ marginTop: "2px" }} />
             </FlexRowAlignCenter>
           </a>
-        </UnstyledButton>
+        </HelpButton>
       </Dropdown>
     </div>
   );

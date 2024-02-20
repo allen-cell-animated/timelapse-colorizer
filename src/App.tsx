@@ -699,8 +699,6 @@ function App(): ReactElement {
           />
         </div>
         <FlexRowAlignCenter className={styles.headerRight}>
-          <HelpDropdown />
-          <span className={styles.verticalDivider} style={{ margin: "0 10px" }}></span>
           <Button
             type="link"
             className={styles.copyUrlButton}
@@ -724,6 +722,7 @@ function App(): ReactElement {
             setIsRecording={setIsRecording}
           />
           <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+          <HelpDropdown />
         </FlexRowAlignCenter>
       </div>
 
