@@ -10,7 +10,9 @@ import {
   UnsignedByteType,
   UnsignedIntType,
 } from "three";
-import { OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./ColorizeCanvas";
+
+export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
+export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
 
@@ -36,6 +38,7 @@ export type FeatureArrayType = {
 
 type FeatureTypeSpec<T extends FeatureDataType> = {
   /** The constructor for a `TypedArray` of this numeric type */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   ArrayConstructor: { new (arr: number[]): FeatureArrayType[T] };
   format: PixelFormat;
   dataType: TextureDataType;

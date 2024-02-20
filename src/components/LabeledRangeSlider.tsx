@@ -1,8 +1,9 @@
-import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react";
 import { InputNumber, Slider } from "antd";
-import { clamp } from "three/src/math/MathUtils";
+import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react";
 import styled, { css } from "styled-components";
-import { setMaxDecimalPrecision, numberToStringDecimal } from "../colorizer/utils/math_utils";
+import { clamp } from "three/src/math/MathUtils";
+
+import { numberToStringDecimal, setMaxDecimalPrecision } from "../colorizer/utils/math_utils";
 import { excludeUndefinedValues } from "../colorizer/utils/react_utils";
 
 type LabeledRangeSliderProps = {

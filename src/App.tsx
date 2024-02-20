@@ -1,5 +1,3 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-
 import {
   CaretRightOutlined,
   CheckCircleOutlined,
@@ -10,30 +8,28 @@ import {
 } from "@ant-design/icons";
 import { Button, Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
-import styles from "./App.module.css";
-import {
-  ColorizeCanvas,
-  DEFAULT_CATEGORICAL_PALETTES,
-  DEFAULT_CATEGORICAL_PALETTE_ID,
-  DEFAULT_COLOR_RAMPS,
-  DEFAULT_COLOR_RAMP_ID,
-  Dataset,
-  Track,
-} from "./colorizer";
-import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
-import TimeControls from "./colorizer/TimeControls";
-import { ViewerConfig, FeatureThreshold, defaultViewerConfig, isThresholdNumeric } from "./colorizer/types";
+import { ColorizeCanvas, Dataset, Track } from "./colorizer";
+import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
+import { DEFAULT_COLOR_RAMP_ID, DEFAULT_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
+import { defaultViewerConfig, FeatureThreshold, isThresholdNumeric, ViewerConfig } from "./colorizer/types";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
+import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
+import { FlexRowAlignCenter } from "./styles/utils";
+
+import Collection from "./colorizer/Collection";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import TimeControls from "./colorizer/TimeControls";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/ColorRampDropdown";
 import Export from "./components/Export";
+import HelpDropdown from "./components/HelpDropdown";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledDropdown from "./components/LabeledDropdown";
@@ -41,10 +37,9 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { FeatureThresholdsTab, PlotTab, SettingsTab, ScatterPlotTab, TabType } from "./components/tabs";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
-import HelpDropdown from "./components/HelpDropdown";
-import { FlexRowAlignCenter } from "./styles/utils";
+import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/Tabs";
+
+import styles from "./App.module.css";
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -241,7 +236,7 @@ function App(): ReactElement {
 
       const newTrack = dataset!.buildTrack(trackId);
 
-      if (newTrack.length() < 1) {
+      if (newTrack.ids.length < 1) {
         // Check track validity
         return;
       }
@@ -252,6 +247,52 @@ function App(): ReactElement {
       setFindTrackInput("" + trackId);
     },
     [canv, dataset, featureName, currentFrame]
+  );
+
+  /**
+   * Attempts to replace the current feature with a new feature from a dataset.
+   * If the feature cannot be loaded, returns the old feature name and does nothing.
+   * @param newDataset the dataset to pull feature data from.
+   * @param newFeatureName the name of the new feature to select.
+   * @returns the new feature name if it was successfully found and loaded. Otherwise, returns the old feature name.
+   */
+  const replaceFeature = useCallback(
+    (featureDataset: Dataset, newFeatureName: string): string => {
+      if (!featureDataset?.hasFeature(newFeatureName)) {
+        console.warn("Dataset does not have feature '" + newFeatureName + "'.");
+        return featureName;
+      }
+      setFeatureName(newFeatureName);
+      canv.setFeature(newFeatureName);
+      return newFeatureName;
+    },
+    [canv, featureName]
+  );
+
+  /**
+   * Resets the color ramp to a default min and max value based on the feature and dataset.
+   *
+   * If the feature is thresholded, the color ramp will be set to the threshold's min and max.
+   * Otherwise, the color ramp will be set to the feature's min and max.
+   *
+   * (Does nothing if the viewer is configured to keep the range between datasets.)
+   */
+  const resetColorRampRangeToDefaults = useCallback(
+    (featureDataset: Dataset, featureName: string): void => {
+      const featureData = featureDataset.getFeatureData(featureName);
+      if (!config.keepRangeBetweenDatasets && featureData) {
+        // Use min/max from threshold if there is a matching one, otherwise use feature min/max
+        const threshold = featureThresholds.find(thresholdMatchFinder(featureName, featureData.units));
+        if (threshold && isThresholdNumeric(threshold)) {
+          setColorRampMin(threshold.min);
+          setColorRampMax(threshold.max);
+        } else {
+          setColorRampMin(featureData.min);
+          setColorRampMax(featureData.max);
+        }
+      }
+    },
+    [featureThresholds, config.keepRangeBetweenDatasets]
   );
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
@@ -336,9 +377,10 @@ function App(): ReactElement {
           setFeatureThresholds(initialUrlParams.thresholds);
         }
       }
+      let newFeatureName = featureName;
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        await updateFeature(dataset, initialUrlParams.feature);
+        newFeatureName = replaceFeature(dataset, initialUrlParams.feature);
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {
@@ -346,8 +388,7 @@ function App(): ReactElement {
         setColorRampMax(initialUrlParams.range[1]);
       } else {
         // Load default range from dataset for the current feature
-        setColorRampMin(dataset?.getFeatureData(featureName)?.min || 0);
-        setColorRampMax(dataset?.getFeatureData(featureName)?.max || 0);
+        dataset && resetColorRampRangeToDefaults(dataset, newFeatureName);
       }
 
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
@@ -396,7 +437,8 @@ function App(): ReactElement {
       if (!newDataset.hasFeature(newFeatureName)) {
         newFeatureName = newDataset.featureNames[0];
       }
-      updateFeature(newDataset, newFeatureName);
+      replaceFeature(newDataset, newFeatureName);
+      resetColorRampRangeToDefaults(newDataset, newFeatureName);
       setFeatureName(newFeatureName);
 
       await canv.setDataset(newDataset);
@@ -413,7 +455,16 @@ function App(): ReactElement {
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
       console.log("Num Items:" + dataset?.numObjects);
     },
-    [dataset, featureName, canv, currentFrame, getUrlParams]
+    [
+      dataset,
+      featureName,
+      canv,
+      currentFrame,
+      getUrlParams,
+      replaceFeature,
+      resetColorRampRangeToDefaults,
+      featureThresholds,
+    ]
   );
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
@@ -470,32 +521,6 @@ function App(): ReactElement {
       return newCollection.url || newCollection.getDefaultDatasetKey();
     },
     [replaceDataset]
-  );
-
-  const updateFeature = useCallback(
-    async (newDataset: Dataset, newFeatureName: string): Promise<void> => {
-      if (!newDataset?.hasFeature(newFeatureName)) {
-        console.warn("Dataset does not have feature '" + newFeatureName + "'.");
-        return;
-      }
-      setFeatureName(newFeatureName);
-
-      const featureData = newDataset.getFeatureData(newFeatureName);
-      if (!config.keepRangeBetweenDatasets && featureData) {
-        // Use min/max from threshold if there is a matching one, otherwise use feature min/max
-        const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureName, featureData.units));
-        if (threshold && isThresholdNumeric(threshold)) {
-          setColorRampMin(threshold.min);
-          setColorRampMax(threshold.max);
-        } else {
-          setColorRampMin(featureData.min);
-          setColorRampMax(featureData.max);
-        }
-      }
-
-      canv.setFeature(newFeatureName);
-    },
-    [config.keepRangeBetweenDatasets, colorRampMin, colorRampMax, canv, selectedTrack, currentFrame]
   );
 
   const getFeatureValue = useCallback(
@@ -651,7 +676,8 @@ function App(): ReactElement {
             items={getFeatureDropdownData()}
             onChange={(value) => {
               if (value !== featureName && dataset) {
-                updateFeature(dataset, value);
+                replaceFeature(dataset, value);
+                resetColorRampRangeToDefaults(dataset, value);
               }
             }}
           />

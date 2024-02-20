@@ -1,12 +1,13 @@
+import { SearchOutlined } from "@ant-design/icons";
+import { Input } from "antd";
 import React, { ReactElement } from "react";
+import styled from "styled-components";
 
 import { Dataset, Track } from "../../colorizer";
-import { Input } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { FlexRowAlignCenter, NoSpinnerContainer } from "../../styles/utils";
+
 import IconButton from "../IconButton";
 import PlotWrapper from "../PlotWrapper";
-import styled from "styled-components";
-import { FlexRowAlignCenter, NoSpinnerContainer } from "../../styles/utils";
 
 const TrackTitleBar = styled(FlexRowAlignCenter)`
   justify-content: end;

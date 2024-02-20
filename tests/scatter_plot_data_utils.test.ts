@@ -1,12 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { ColorRamp } from "../src/colorizer";
 import { Color } from "three";
+import { describe, expect, it } from "vitest";
+
+import { ColorRamp } from "../src/colorizer";
 import {
-  TraceData,
   getBucketIndex,
   splitTraceData,
   subsampleColorRamp,
-} from "../src/components/tabs/scatter_plot_data_utils";
+  TraceData,
+} from "../src/components/Tabs/scatter_plot_data_utils";
 
 describe("subsampleColorRamp", () => {
   it("Returns endpoints of a color ramp", () => {

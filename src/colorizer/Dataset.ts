@@ -1,16 +1,15 @@
 import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
-import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
-import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import JsonArrayLoader from "./loaders/JsonArrayLoader";
-
-import FrameCache from "./FrameCache";
-import Track from "./Track";
-
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
+
+import FrameCache from "./FrameCache";
+import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
+import ImageFrameLoader from "./loaders/ImageFrameLoader";
+import JsonArrayLoader from "./loaders/JsonArrayLoader";
+import Track from "./Track";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -350,11 +349,10 @@ export default class Dataset {
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
       this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
       this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
-      this.loadFrame(0), // load first frame to set frame dimensions. Load result will be discarded
+      this.loadFrame(0),
       ...featuresPromises,
     ]);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [outliers, tracks, times, centroids, bounds, _loaded_frame, ...featureResults] = result;
+    const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
     this.outliers = outliers;
     this.trackIds = tracks;

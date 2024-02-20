@@ -1,7 +1,9 @@
-import { ArraySource, IArrayLoader } from "./ILoader";
-import { FeatureDataType, FeatureArrayType, featureTypeSpecs } from "../types";
-import { packDataTexture } from "../utils/texture_utils";
 import { DataTexture } from "three";
+
+import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
+import { packDataTexture } from "../utils/texture_utils";
+
+import { ArraySource, IArrayLoader } from "./ILoader";
 
 type FeatureDataJson = {
   data: number[] | boolean[];

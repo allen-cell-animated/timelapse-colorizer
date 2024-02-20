@@ -11,9 +11,11 @@ import {
   DEFAULT_COLOR_RAMPS,
   PaletteData,
 } from "../colorizer";
+
 import { AppThemeContext } from "./AppStyle";
-import styles from "./ColorRampDropdown.module.css";
 import IconButton from "./IconButton";
+
+import styles from "./ColorRampDropdown.module.css";
 
 type ColorRampSelectorProps = {
   selectedRamp: string;

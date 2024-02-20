@@ -3,6 +3,7 @@ import { Color } from "three";
 
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
+
 import { AppThemeContext } from "./AppStyle";
 
 type CanvasWrapperProps = {

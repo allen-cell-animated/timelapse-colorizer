@@ -1,32 +1,33 @@
 import { Button, Tooltip } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
-import React, { ReactElement, memo, useContext, useEffect, useRef, useState, useTransition } from "react";
+import React, { memo, ReactElement, useContext, useEffect, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
-
-import { AppThemeContext } from "../AppStyle";
-import { ColorRamp, Dataset, Track } from "../../colorizer";
-import { useDebounce } from "../../colorizer/utils/react_utils";
-import IconButton from "../IconButton";
-import LabeledDropdown from "../LabeledDropdown";
-import LoadingSpinner from "../LoadingSpinner";
-import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
-import { SwitchIconSVG } from "../../assets";
 import { Color, ColorRepresentation, HexColorString } from "three";
+
+import { SwitchIconSVG } from "../../assets";
+import { ColorRamp, Dataset, Track } from "../../colorizer";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
+import { useDebounce } from "../../colorizer/utils/react_utils";
+import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import {
   DataArray,
-  TraceData,
-  scaleColorOpacityByMarkerCount,
   drawCrosshair,
   getBucketIndex,
   getHoverTemplate,
   isHistogramEvent,
+  makeEmptyTraceData,
   makeLineTrace,
+  scaleColorOpacityByMarkerCount,
   splitTraceData,
   subsampleColorRamp,
-  makeEmptyTraceData,
+  TraceData,
 } from "./scatter_plot_data_utils";
+
+import { AppThemeContext } from "../AppStyle";
+import IconButton from "../IconButton";
+import LabeledDropdown from "../LabeledDropdown";
+import LoadingSpinner from "../LoadingSpinner";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
