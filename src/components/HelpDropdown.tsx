@@ -18,7 +18,7 @@ export default function HelpDropdown(): ReactElement {
 
   const items: MenuProps["items"] = [
     {
-      key: "issues",
+      key: "https://github.com/allen-cell-animated/nucmorph-colorizer/issues",
       label: (
         <a
           target="_blank"
@@ -36,11 +36,18 @@ export default function HelpDropdown(): ReactElement {
       ),
     },
   ];
+  const menuConfig: MenuProps = {
+    items,
+    // Makes dropdown accessible via keyboard nav + enter key
+    onClick: (e) => {
+      window.open(e.key, "_blank", "noopener noreferrer");
+    },
+  };
 
   return (
     <div ref={dropdownContainer}>
       <Dropdown
-        menu={{ items }}
+        menu={menuConfig}
         getPopupContainer={dropdownContainer.current ? () => dropdownContainer.current! : undefined}
         trigger={["click", "hover"]}
       >
