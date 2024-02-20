@@ -1,10 +1,12 @@
-import { DropdownSVG } from "../assets";
-import { FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
-import { AppThemeContext } from "./AppStyle";
 import { ArrowRightOutlined } from "@ant-design/icons";
 import { Button, Dropdown, MenuProps, Space } from "antd";
 import React, { ReactElement, useContext, useRef } from "react";
 import styled from "styled-components";
+
+import { DropdownSVG } from "../assets";
+import { FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
+
+import { AppThemeContext } from "./AppStyle";
 
 const HelpButton = styled(Button)`
   padding-top: 0;
