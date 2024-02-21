@@ -699,12 +699,7 @@ function App(): ReactElement {
           />
         </div>
         <FlexRowAlignCenter className={styles.headerRight}>
-          <Button
-            type="link"
-            className={styles.copyUrlButton}
-            onClick={openCopyNotification}
-            style={{ fontSize: theme.font.size.label, marginBottom: "4px" }}
-          >
+          <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
             <FlexRowAlignCenter $gap={6}>
               <LinkOutlined />
               Copy URL
