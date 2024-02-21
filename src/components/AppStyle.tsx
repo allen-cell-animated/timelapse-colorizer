@@ -43,7 +43,7 @@ const theme = {
     },
     layout: {
       background: palette.gray0,
-      dividers: palette.gray10,
+      dividers: palette.gray20,
       borders: palette.gray20,
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
