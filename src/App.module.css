@@ -88,6 +88,10 @@
   gap: 20px;
 }
 
+.headerLeft * {
+  display: inline-block;
+}
+
 .headerRight {
   height: 100%;
   gap: 10px;

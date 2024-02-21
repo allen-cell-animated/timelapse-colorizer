@@ -9,7 +9,9 @@ import {
 import { Button, Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import styled from "styled-components";
 
+import { AicsLogoSVG } from "./assets";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_ID, DEFAULT_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
@@ -40,6 +42,18 @@ import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/Tabs";
 
 import styles from "./App.module.css";
+
+const AicsLogoContainer = styled.div`
+  position: relative;
+  width: 180px;
+  height: 46px;
+`;
+
+const StyledAicsLogo = styled(AicsLogoSVG)`
+  left: 0;
+  top: 0;
+  position: absolute;
+`;
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -658,45 +672,11 @@ function App(): ReactElement {
       {/* TODO: Split into its own component? */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1>Timelapse Colorizer</h1>
+          <AicsLogoContainer>
+            <StyledAicsLogo />
+          </AicsLogoContainer>
           <span className={styles.verticalDivider}></span>
-
-          <LabeledDropdown
-            disabled={disableUi}
-            label="Dataset"
-            selected={datasetKey}
-            buttonType="primary"
-            items={collection?.getDatasetKeys() || []}
-            onChange={handleDatasetChange}
-          />
-          <LabeledDropdown
-            disabled={disableUi}
-            label="Feature"
-            selected={featureName}
-            items={getFeatureDropdownData()}
-            onChange={(value) => {
-              if (value !== featureName && dataset) {
-                replaceFeature(dataset, value);
-                resetColorRampRangeToDefaults(dataset, value);
-              }
-            }}
-          />
-
-          <ColorRampDropdown
-            colorRamps={DEFAULT_COLOR_RAMPS}
-            selectedRamp={colorRampKey}
-            reversed={colorRampReversed}
-            onChangeRamp={(name, reversed) => {
-              setColorRampKey(name);
-              setColorRampReversed(reversed);
-            }}
-            disabled={disableUi}
-            categoricalPalettes={DEFAULT_CATEGORICAL_PALETTES}
-            useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
-            numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
-            selectedPalette={categoricalPalette}
-            onChangePalette={setCategoricalPalette}
-          />
+          <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
         </div>
         <FlexRowAlignCenter className={styles.headerRight}>
           <Button
@@ -730,6 +710,44 @@ function App(): ReactElement {
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
         <div className={styles.topControls}>
+          <FlexRowAlignCenter $gap={12}>
+            <LabeledDropdown
+              disabled={disableUi}
+              label="Dataset"
+              selected={datasetKey}
+              buttonType="primary"
+              items={collection?.getDatasetKeys() || []}
+              onChange={handleDatasetChange}
+            />
+            <LabeledDropdown
+              disabled={disableUi}
+              label="Feature"
+              selected={featureName}
+              items={getFeatureDropdownData()}
+              onChange={(value) => {
+                if (value !== featureName && dataset) {
+                  replaceFeature(dataset, value);
+                  resetColorRampRangeToDefaults(dataset, value);
+                }
+              }}
+            />
+
+            <ColorRampDropdown
+              colorRamps={DEFAULT_COLOR_RAMPS}
+              selectedRamp={colorRampKey}
+              reversed={colorRampReversed}
+              onChangeRamp={(name, reversed) => {
+                setColorRampKey(name);
+                setColorRampReversed(reversed);
+              }}
+              disabled={disableUi}
+              categoricalPalettes={DEFAULT_CATEGORICAL_PALETTES}
+              useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
+              numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
+              selectedPalette={categoricalPalette}
+              onChangePalette={setCategoricalPalette}
+            />
+          </FlexRowAlignCenter>
           <h3 style={{ margin: "0" }}>
             {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
           </h3>
