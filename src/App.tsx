@@ -429,6 +429,9 @@ function App(): ReactElement {
       if (initialUrlParams.config) {
         updateConfig(initialUrlParams.config);
       }
+      if (initialUrlParams.scatterPlotConfig) {
+        updateScatterPlotConfig(initialUrlParams.scatterPlotConfig);
+      }
     };
 
     setupInitialParameters();
