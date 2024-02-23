@@ -168,7 +168,7 @@ export const defaultViewerConfig: ViewerConfig = {
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
 };
 
-export enum RangeType {
+export enum PlotRangeType {
   ALL_TIME = "All time",
   CURRENT_TRACK = "Current track",
   CURRENT_FRAME = "Current frame",
@@ -177,12 +177,12 @@ export enum RangeType {
 export type ScatterPlotConfig = {
   xAxis: string | null;
   yAxis: string | null;
-  rangeType: RangeType;
+  rangeType: PlotRangeType;
 };
 
 // Use a function instead of a constant to avoid sharing the same object reference.
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   xAxis: null,
   yAxis: null,
-  rangeType: RangeType.ALL_TIME,
+  rangeType: PlotRangeType.ALL_TIME,
 });

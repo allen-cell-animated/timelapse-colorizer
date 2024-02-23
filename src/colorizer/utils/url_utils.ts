@@ -15,6 +15,8 @@ import {
   FeatureThreshold,
   isDrawMode,
   isThresholdCategorical,
+  PlotRangeType,
+  ScatterPlotConfig,
   ThresholdType,
   ViewerConfig,
 } from "../types";
@@ -44,6 +46,9 @@ enum UrlParam {
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
+  SCATTERPLOT_X_AXIS = "scatter-x",
+  SCATTERPLOT_Y_AXIS = "scatter-y",
+  SCATTERPLOT_RANGE_MODE = "scatter-range",
 }
 
 const ALLEN_FILE_PREFIX = "/allen/";
@@ -65,6 +70,7 @@ export type UrlParams = {
   categoricalPalette: Color[];
   config: Partial<ViewerConfig>;
   selectedBackdropKey: string | null;
+  scatterPlotConfig: Partial<ScatterPlotConfig>;
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -300,6 +306,41 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
   return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
 }
 
+const rangeTypeToUrlParam: Record<PlotRangeType, string> = {
+  [PlotRangeType.ALL_TIME]: "all",
+  [PlotRangeType.CURRENT_TRACK]: "track",
+  [PlotRangeType.CURRENT_FRAME]: "frame",
+};
+
+const urlParamToRangeType: Record<string, PlotRangeType> = {
+  all: PlotRangeType.ALL_TIME,
+  track: PlotRangeType.CURRENT_TRACK,
+  frame: PlotRangeType.CURRENT_FRAME,
+};
+
+function serializeScatterPlotConfig(config: Partial<ScatterPlotConfig>): string[] {
+  const parameters: string[] = [];
+  if (config.rangeType) {
+    const rangeString = rangeTypeToUrlParam[config.rangeType];
+    parameters.push(`${UrlParam.SCATTERPLOT_RANGE_MODE}=${rangeString}`);
+  }
+  config.xAxis && parameters.push(`${UrlParam.SCATTERPLOT_X_AXIS}=${config.xAxis}`);
+  config.yAxis && parameters.push(`${UrlParam.SCATTERPLOT_Y_AXIS}=${config.yAxis}`);
+  return parameters;
+}
+
+function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterPlotConfig> | undefined {
+  const newConfig: Partial<ScatterPlotConfig> = {};
+  const rangeString = params.get(UrlParam.SCATTERPLOT_RANGE_MODE);
+  if (rangeString && urlParamToRangeType[rangeString]) {
+    newConfig.rangeType = urlParamToRangeType[rangeString];
+  }
+  newConfig.xAxis = params.get(UrlParam.SCATTERPLOT_X_AXIS);
+  newConfig.yAxis = params.get(UrlParam.SCATTERPLOT_Y_AXIS);
+  const finalConfig = removeUndefinedProperties(newConfig);
+  return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
+}
+
 /**
  * Creates a url query string from parameters that can be appended onto the base URL.
  *
@@ -372,6 +413,9 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
   }
   if (state.selectedBackdropKey) {
     includedParameters.push(`${UrlParam.BACKDROP_KEY}=${encodeURIComponent(state.selectedBackdropKey)}`);
+  }
+  if (state.scatterPlotConfig) {
+    includedParameters.push(...serializeScatterPlotConfig(state.scatterPlotConfig));
   }
 
   // If parameters present, join with URL syntax and push into the URL
@@ -557,6 +601,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
 
   const config = deserializeViewerConfig(urlParams);
   const selectedBackdropKey = decodePossiblyNullString(urlParams.get(UrlParam.BACKDROP_KEY)) ?? undefined;
+  const scatterPlotConfig = deserializeScatterPlotConfig(urlParams);
 
   // Remove undefined entries from the object for a cleaner return value
   return removeUndefinedProperties({
