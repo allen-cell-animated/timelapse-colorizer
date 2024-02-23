@@ -135,60 +135,22 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
   }, [isPlaying]);
 
+  const [scatterConfig, _setScatterConfig] = useState(props.scatterPlotConfig);
+  useEffect(() => {
+    if (props.scatterPlotConfig !== scatterConfig) {
+      setIsRendering(true);
+      startTransition(() => {
+        _setScatterConfig(props.scatterPlotConfig);
+      });
+    }
+  }, [props.scatterPlotConfig]);
+  const { xAxis: xAxisFeatureName, yAxis: yAxisFeatureName, rangeType } = scatterConfig;
+
   const isDebouncePending =
-    dataset !== props.dataset || colorRampMin !== props.colorRampMin || colorRampMax !== props.colorRampMax;
-
-  /**
-   * Wrapper around a prop value and its setter. Triggers a callback whenever the values are set or the
-   * prop value changes, and tracks its own copy of the prop value as state to defer re-renders.
-   * @param propValue The prop value to track.
-   * @param setPropValue The setter for the prop value.
-   * @param onChange An optional callback to call when the prop value changes.
-   * @returns A tuple with the current value and a setter that triggers a render.
-   */
-  const usePropTransitionWrapper = <T extends any>(
-    propValue: T,
-    setPropValue: (newValue: T) => void,
-    onChange?: () => void
-  ): [T, (value: T) => void] => {
-    const [value, _setValue] = useState(propValue);
-
-    // Returned setter which will flag that a render is occurring.
-    const setState = (newPropValue: T): void => {
-      if (newPropValue === propValue) {
-        return;
-      }
-      setPropValue(newPropValue);
-      onChange && onChange();
-    };
-
-    // Trigger a render when the prop value changes.
-    useEffect(() => {
-      if (propValue !== value) {
-        onChange && onChange();
-        startTransition(() => {
-          _setValue(propValue);
-        });
-      }
-    }, [propValue]);
-    return [value, setState];
-  };
-
-  const [rangeType, setRangeType] = usePropTransitionWrapper<PlotRangeType>(
-    props.scatterPlotConfig.rangeType,
-    (rangeType: PlotRangeType) => props.updateScatterPlotConfig({ rangeType }),
-    () => setIsRendering(true)
-  );
-  const [xAxisFeatureName, setXAxisFeatureName] = usePropTransitionWrapper<string | null>(
-    props.scatterPlotConfig.xAxis,
-    (xAxis: string | null) => props.updateScatterPlotConfig({ xAxis }),
-    () => setIsRendering(true)
-  );
-  const [yAxisFeatureName, setYAxisFeatureName] = usePropTransitionWrapper<string | null>(
-    props.scatterPlotConfig.yAxis,
-    (yAxis: string | null) => props.updateScatterPlotConfig({ yAxis }),
-    () => setIsRendering(true)
-  );
+    props.scatterPlotConfig !== scatterConfig ||
+    dataset !== props.dataset ||
+    colorRampMin !== props.colorRampMin ||
+    colorRampMax !== props.colorRampMax;
 
   //////////////////////////////////
   // Click Handlers
@@ -792,13 +754,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           label={"X"}
           selected={xAxisFeatureName || ""}
           items={menuItems}
-          onChange={setXAxisFeatureName}
+          onChange={(key) => props.updateScatterPlotConfig({ xAxis: key })}
         />
         <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
-              setXAxisFeatureName(yAxisFeatureName);
-              setYAxisFeatureName(xAxisFeatureName);
+              props.updateScatterPlotConfig({
+                xAxis: yAxisFeatureName,
+                yAxis: xAxisFeatureName,
+              });
             }}
             type="link"
           >
@@ -809,7 +773,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           label={"Y"}
           selected={yAxisFeatureName || ""}
           items={menuItems}
-          onChange={setYAxisFeatureName}
+          onChange={(key) => props.updateScatterPlotConfig({ yAxis: key })}
         />
 
         <LabeledDropdown
@@ -818,7 +782,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           selected={rangeType}
           items={Object.values(PlotRangeType)}
           width={"120px"}
-          onChange={(value) => setRangeType(value as PlotRangeType)}
+          onChange={(value) => props.updateScatterPlotConfig({ rangeType: value as PlotRangeType })}
         ></LabeledDropdown>
       </FlexRowAlignCenter>
     );
