@@ -617,5 +617,6 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     categoricalPalette,
     config,
     selectedBackdropKey,
+    scatterPlotConfig,
   });
 }
