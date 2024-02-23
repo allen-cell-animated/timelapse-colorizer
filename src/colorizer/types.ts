@@ -79,6 +79,7 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
 };
 
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
+// CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 /** Draw options for object types. */
 export enum DrawMode {
   /** Hide this object type. */
