@@ -2,7 +2,14 @@ import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
-import { defaultViewerConfig, DrawMode, DrawSettings, ThresholdType, ViewerConfig } from "../src/colorizer/types";
+import {
+  defaultViewerConfig,
+  DrawMode,
+  DrawSettings,
+  PlotRangeType,
+  ThresholdType,
+  ViewerConfig,
+} from "../src/colorizer/types";
 import {
   isAllenPath,
   isHexColor,
@@ -149,8 +156,13 @@ describe("Loading + saving from URL query strings", () => {
         objectOpacity: 25,
         outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
         outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
-      } as Required<ViewerConfig>,
+      },
       selectedBackdropKey: "some_backdrop",
+      scatterPlotConfig: {
+        xAxis: "x axis name",
+        yAxis: "y axis name",
+        rangeType: PlotRangeType.ALL_TIME,
+      },
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =

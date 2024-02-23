@@ -134,6 +134,13 @@ export type DrawSettings = {
   color: Color;
 };
 
+export enum TabType {
+  FILTERS = "filters",
+  TRACK_PLOT = "track_plot",
+  SCATTER_PLOT = "scatter_plot",
+  SETTINGS = "settings",
+}
+
 /**
  * Configuration for the viewer. These are high-level settings
  * that are not specific to a particular dataset.
@@ -151,6 +158,7 @@ export type ViewerConfig = {
   objectOpacity: number;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
+  openTab: TabType;
 };
 
 export const defaultViewerConfig: ViewerConfig = {
@@ -166,6 +174,7 @@ export const defaultViewerConfig: ViewerConfig = {
   objectOpacity: 100,
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
+  openTab: TabType.TRACK_PLOT,
 };
 
 export enum PlotRangeType {
