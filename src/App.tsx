@@ -13,7 +13,14 @@ import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRe
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_ID, DEFAULT_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
-import { defaultViewerConfig, FeatureThreshold, isThresholdNumeric, ViewerConfig } from "./colorizer/types";
+import {
+  defaultViewerConfig,
+  FeatureThreshold,
+  getDefaultScatterPlotConfig,
+  isThresholdNumeric,
+  ScatterPlotConfig,
+  ViewerConfig,
+} from "./colorizer/types";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -61,6 +68,10 @@ function App(): ReactElement {
   const [config, updateConfig] = useReducer(
     (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
     defaultViewerConfig
+  );
+  const [scatterPlotConfig, updateScatterPlotConfig] = useReducer(
+    (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
+    getDefaultScatterPlotConfig()
   );
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
@@ -941,6 +952,8 @@ function App(): ReactElement {
                           categoricalPalette={categoricalPalette}
                           inRangeIds={inRangeLUT}
                           viewerConfig={config}
+                          scatterPlotConfig={scatterPlotConfig}
+                          updateScatterPlotConfig={updateScatterPlotConfig}
                         />
                       </div>
                     ),

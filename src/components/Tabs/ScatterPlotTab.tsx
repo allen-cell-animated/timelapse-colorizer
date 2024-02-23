@@ -7,7 +7,7 @@ import { Color, ColorRepresentation, HexColorString } from "three";
 
 import { SwitchIconSVG } from "../../assets";
 import { ColorRamp, Dataset, Track } from "../../colorizer";
-import { DrawMode, ViewerConfig } from "../../colorizer/types";
+import { DrawMode, RangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import {
@@ -44,11 +44,6 @@ const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
 
-enum RangeType {
-  ALL_TIME = "All time",
-  CURRENT_TRACK = "Current track",
-  CURRENT_FRAME = "Current frame",
-}
 const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
 
 type ScatterPlotTabProps = {
@@ -68,6 +63,8 @@ type ScatterPlotTabProps = {
   inRangeIds: Uint8Array;
 
   viewerConfig: ViewerConfig;
+  scatterPlotConfig: ScatterPlotConfig;
+  updateScatterPlotConfig: (config: Partial<ScatterPlotConfig>) => void;
 };
 
 const ScatterPlotContainer = styled.div`
@@ -142,26 +139,56 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     dataset !== props.dataset || colorRampMin !== props.colorRampMin || colorRampMax !== props.colorRampMax;
 
   /**
-   * Wrapper around useState that signals the render spinner whenever the values are set, and
-   * uses useTransition to deprioritize the state update.
+   * Wrapper around a prop value and its setter. Triggers a callback whenever the values are set or the
+   * prop value changes, and tracks its own copy of the prop value as state to defer re-renders.
+   * @param propValue The prop value to track.
+   * @param setPropValue The setter for the prop value.
+   * @param onChange An optional callback to call when the prop value changes.
+   * @returns A tuple with the current value and a setter that triggers a render.
    */
-  const useRenderTriggeringState = <T extends any>(initialValue: T): [T, (value: T) => void] => {
-    const [value, _setValue] = useState(initialValue);
-    const setState = (newValue: T): void => {
-      if (newValue === value) {
+  const usePropTransitionWrapper = <T extends any>(
+    propValue: T,
+    setPropValue: (newValue: T) => void,
+    onChange?: () => void
+  ): [T, (value: T) => void] => {
+    const [value, _setValue] = useState(propValue);
+
+    // Returned setter which will flag that a render is occurring.
+    const setState = (newPropValue: T): void => {
+      if (newPropValue === propValue) {
         return;
       }
-      setIsRendering(true);
-      startTransition(() => {
-        _setValue(newValue);
-      });
+      setPropValue(newPropValue);
+      onChange && onChange();
     };
+
+    // Trigger a render when the prop value changes.
+    useEffect(() => {
+      if (propValue !== value) {
+        onChange && onChange();
+        startTransition(() => {
+          _setValue(propValue);
+        });
+      }
+    }, [propValue]);
     return [value, setState];
   };
 
-  const [rangeType, setRangeType] = useRenderTriggeringState<RangeType>(DEFAULT_RANGE_TYPE);
-  const [xAxisFeatureName, setXAxisFeatureName] = useRenderTriggeringState<string | null>(null);
-  const [yAxisFeatureName, setYAxisFeatureName] = useRenderTriggeringState<string | null>(null);
+  const [rangeType, setRangeType] = usePropTransitionWrapper<RangeType>(
+    props.scatterPlotConfig.rangeType,
+    (rangeType: RangeType) => props.updateScatterPlotConfig({ rangeType }),
+    () => setIsRendering(true)
+  );
+  const [xAxisFeatureName, setXAxisFeatureName] = usePropTransitionWrapper<string | null>(
+    props.scatterPlotConfig.xAxis,
+    (xAxis: string | null) => props.updateScatterPlotConfig({ xAxis }),
+    () => setIsRendering(true)
+  );
+  const [yAxisFeatureName, setYAxisFeatureName] = usePropTransitionWrapper<string | null>(
+    props.scatterPlotConfig.yAxis,
+    (yAxis: string | null) => props.updateScatterPlotConfig({ yAxis }),
+    () => setIsRendering(true)
+  );
 
   //////////////////////////////////
   // Click Handlers
