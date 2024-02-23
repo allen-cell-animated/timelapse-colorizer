@@ -324,8 +324,8 @@ function serializeScatterPlotConfig(config: Partial<ScatterPlotConfig>): string[
     const rangeString = rangeTypeToUrlParam[config.rangeType];
     parameters.push(`${UrlParam.SCATTERPLOT_RANGE_MODE}=${rangeString}`);
   }
-  config.xAxis && parameters.push(`${UrlParam.SCATTERPLOT_X_AXIS}=${config.xAxis}`);
-  config.yAxis && parameters.push(`${UrlParam.SCATTERPLOT_Y_AXIS}=${config.yAxis}`);
+  config.xAxis && parameters.push(`${UrlParam.SCATTERPLOT_X_AXIS}=${encodeURIComponent(config.xAxis)}`);
+  config.yAxis && parameters.push(`${UrlParam.SCATTERPLOT_Y_AXIS}=${encodeURIComponent(config.yAxis)}`);
   return parameters;
 }
 
@@ -335,8 +335,8 @@ function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterP
   if (rangeString && urlParamToRangeType[rangeString]) {
     newConfig.rangeType = urlParamToRangeType[rangeString];
   }
-  newConfig.xAxis = params.get(UrlParam.SCATTERPLOT_X_AXIS);
-  newConfig.yAxis = params.get(UrlParam.SCATTERPLOT_Y_AXIS);
+  newConfig.xAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_X_AXIS));
+  newConfig.yAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_Y_AXIS));
   const finalConfig = removeUndefinedProperties(newConfig);
   return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
 }
