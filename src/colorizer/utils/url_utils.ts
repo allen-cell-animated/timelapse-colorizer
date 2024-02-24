@@ -14,6 +14,7 @@ import {
   DrawSettings,
   FeatureThreshold,
   isDrawMode,
+  isTabType,
   isThresholdCategorical,
   PlotRangeType,
   ScatterPlotConfig,
@@ -49,6 +50,7 @@ enum UrlParam {
   SCATTERPLOT_X_AXIS = "scatter-x",
   SCATTERPLOT_Y_AXIS = "scatter-y",
   SCATTERPLOT_RANGE_MODE = "scatter-range",
+  OPEN_TAB = "tab",
 }
 
 const ALLEN_FILE_PREFIX = "/allen/";
@@ -241,6 +243,9 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
     parameters.push(`${UrlParam.FILTERED_COLOR}=${config.outOfRangeDrawSettings.color.getHexString()}`);
     parameters.push(`${UrlParam.FILTERED_MODE}=${config.outOfRangeDrawSettings.mode}`);
   }
+  if (config.openTab) {
+    parameters.push(`${UrlParam.OPEN_TAB}=${config.openTab}`);
+  }
 
   tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
   tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
@@ -295,6 +300,10 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
       params.get(UrlParam.FILTERED_MODE),
       defaultViewerConfig.outOfRangeDrawSettings
     );
+  }
+  const openTab = params.get(UrlParam.OPEN_TAB);
+  if (openTab && isTabType(openTab)) {
+    newConfig.openTab = openTab;
   }
 
   newConfig.showScaleBar = getBooleanParam(params.get(UrlParam.SHOW_SCALEBAR));

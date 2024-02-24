@@ -7,8 +7,8 @@ import {
   DrawMode,
   DrawSettings,
   PlotRangeType,
+  TabType,
   ThresholdType,
-  ViewerConfig,
 } from "../src/colorizer/types";
 import {
   isAllenPath,
@@ -154,6 +154,7 @@ describe("Loading + saving from URL query strings", () => {
         backdropBrightness: 75,
         backdropSaturation: 50,
         objectOpacity: 25,
+        openTab: TabType.FILTERS,
         outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
         outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
       },
@@ -166,7 +167,7 @@ describe("Loading + saving from URL query strings", () => {
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
-      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&tab=filters&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
     expect(queryString).equals(expectedQueryString);
 
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -364,33 +365,61 @@ describe("Loading + saving from URL query strings", () => {
     expect(parsedParams).deep.equals({ categoricalPalette: expectedColors });
   });
 
-  it("Returns partial configs if values are undefined", () => {
-    const params: Partial<UrlParams> = {
-      config: {
-        showTrackPath: true,
-        showScaleBar: false,
-      },
-    };
-    const queryString = paramsToUrlQueryString(params);
-    expect(queryString).equals("?scalebar=0&path=1");
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
-    expect(parsedParams).deep.equals(params);
-  });
+  describe("ViewerConfig", () => {
+    it("Handles all tab types", () => {
+      for (const tabType of Object.values(TabType)) {
+        const params: Partial<UrlParams> = { config: { openTab: tabType } };
+        const queryString = paramsToUrlQueryString(params);
+        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        expect(parsedParams).deep.equals(params);
+      }
+    });
 
-  it("Uses default DrawSettings colors for malformed or missing color strings", () => {
-    const queryString = "?outlier-mode=0&outlier-color=a8d8c8d9&filter-mode=1";
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
-    expect(parsedParams).deep.equals({
-      config: {
-        outlierDrawSettings: {
-          mode: DrawMode.HIDE,
-          color: defaultViewerConfig.outlierDrawSettings.color,
+    it("Keeps backwards-compatible with existing tab strings", () => {
+      // This test will break if the tab strings are changed, and signal that
+      // we need to keep backwards compatibility.
+      const knownTabStrings: Record<string, TabType> = {
+        filters: TabType.FILTERS,
+        track_plot: TabType.TRACK_PLOT,
+        scatter_plot: TabType.SCATTER_PLOT,
+        settings: TabType.SETTINGS,
+      };
+      for (const tabString of Object.keys(knownTabStrings)) {
+        const expectedTabType = knownTabStrings[tabString];
+        const queryString = `?tab=${tabString}`;
+        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        expect(parsedParams).deep.equals({ config: { openTab: expectedTabType } });
+      }
+    });
+
+    it("Returns partial configs if values are undefined", () => {
+      const params: Partial<UrlParams> = {
+        config: {
+          showTrackPath: true,
+          showScaleBar: false,
         },
-        outOfRangeDrawSettings: {
-          mode: DrawMode.USE_COLOR,
-          color: defaultViewerConfig.outOfRangeDrawSettings.color,
+      };
+      const queryString = paramsToUrlQueryString(params);
+      expect(queryString).equals("?scalebar=0&path=1");
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals(params);
+    });
+
+    it("Uses default DrawSettings colors for malformed or missing color strings", () => {
+      const queryString = "?outlier-mode=0&outlier-color=a8d8c8d9&filter-mode=1";
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals({
+        config: {
+          outlierDrawSettings: {
+            mode: DrawMode.HIDE,
+            color: defaultViewerConfig.outlierDrawSettings.color,
+          },
+          outOfRangeDrawSettings: {
+            mode: DrawMode.USE_COLOR,
+            color: defaultViewerConfig.outOfRangeDrawSettings.color,
+          },
         },
-      },
+      });
     });
   });
 

@@ -120,7 +120,6 @@ function App(): ReactElement {
   }, [dataset, featureThresholds]);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
-  const [openTab, setOpenTab] = useState(TabType.TRACK_PLOT);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -917,8 +916,8 @@ function App(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
-                activeKey={openTab}
-                onChange={(key) => setOpenTab(key as TabType)}
+                activeKey={config.openTab}
+                onChange={(key) => updateConfig({ openTab: key as TabType })}
                 items={[
                   {
                     label: "Track Plot",
@@ -949,7 +948,7 @@ function App(): ReactElement {
                           selectedTrack={selectedTrack}
                           findTrack={findTrack}
                           setFrame={setFrameAndRender}
-                          isVisible={openTab === TabType.SCATTER_PLOT}
+                          isVisible={config.openTab === TabType.SCATTER_PLOT}
                           isPlaying={timeControls.isPlaying() || isRecording}
                           selectedFeatureName={featureName}
                           colorRampMin={colorRampMin}

@@ -134,12 +134,17 @@ export type DrawSettings = {
   color: Color;
 };
 
+// CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
   FILTERS = "filters",
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
   SETTINGS = "settings",
 }
+
+export const isTabType = (tab: string): tab is TabType => {
+  return Object.values(TabType).includes(tab as TabType);
+};
 
 /**
  * Configuration for the viewer. These are high-level settings
