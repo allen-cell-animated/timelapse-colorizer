@@ -166,7 +166,7 @@ describe("Loading + saving from URL query strings", () => {
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
-      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop";
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
     expect(queryString).equals(expectedQueryString);
 
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -391,6 +391,70 @@ describe("Loading + saving from URL query strings", () => {
           color: defaultViewerConfig.outOfRangeDrawSettings.color,
         },
       },
+    });
+  });
+
+  describe("scatterPlotConfig", () => {
+    it("Ignores null feature names", () => {
+      const queryParams: Partial<UrlParams> = {
+        scatterPlotConfig: {
+          xAxis: null,
+          yAxis: "y_axis_name",
+          rangeType: PlotRangeType.ALL_TIME,
+        },
+      };
+      const expectedParams: Partial<UrlParams> = {
+        scatterPlotConfig: {
+          yAxis: "y_axis_name",
+          rangeType: PlotRangeType.ALL_TIME,
+        },
+      };
+
+      const queryString = paramsToUrlQueryString(queryParams);
+      const expectedQueryString = "?scatter-range=all&scatter-y=y_axis_name";
+      expect(queryString).equals(expectedQueryString);
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals(expectedParams);
+    });
+
+    it("Handles non-standard feature names", () => {
+      const featureNames = [
+        "feature,,,",
+        "(feature)",
+        "feat:u:re",
+        "Feature",
+        "fe@tμre",
+        "feature feature feature feature",
+      ];
+      for (const name of featureNames) {
+        const expectedEncodedName = encodeURIComponent(name);
+        const queryParams: Partial<UrlParams> = {
+          scatterPlotConfig: {
+            xAxis: name,
+            yAxis: name,
+          },
+        };
+        const expectedQueryString = `?scatter-x=${expectedEncodedName}&scatter-y=${expectedEncodedName}`;
+        const queryString = paramsToUrlQueryString(queryParams);
+        expect(queryString).equals(expectedQueryString);
+        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        expect(parsedParams).deep.equals(queryParams);
+      }
+    });
+
+    it("Handles all range enum values", () => {
+      for (const rangeType of Object.values(PlotRangeType)) {
+        const queryParams = { scatterPlotConfig: { rangeType } };
+        const queryString = paramsToUrlQueryString(queryParams);
+        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        expect(parsedParams).deep.equals(queryParams);
+      }
+    });
+
+    it("Skips bad range enum types", () => {
+      const queryString = "?scatter-range=bad_value";
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals({});
     });
   });
 

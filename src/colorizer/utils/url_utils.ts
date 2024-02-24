@@ -335,8 +335,14 @@ function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterP
   if (rangeString && urlParamToRangeType[rangeString]) {
     newConfig.rangeType = urlParamToRangeType[rangeString];
   }
-  newConfig.xAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_X_AXIS));
-  newConfig.yAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_Y_AXIS));
+  const xAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_X_AXIS));
+  const yAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_Y_AXIS));
+  if (xAxis) {
+    newConfig.xAxis = xAxis;
+  }
+  if (yAxis) {
+    newConfig.yAxis = yAxis;
+  }
   const finalConfig = removeUndefinedProperties(newConfig);
   return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
 }
