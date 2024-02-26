@@ -375,9 +375,8 @@ describe("Loading + saving from URL query strings", () => {
       }
     });
 
-    it("Keeps backwards-compatible with existing tab strings", () => {
-      // This test will break if the tab strings are changed, and signal that
-      // we need to keep backwards compatibility.
+    it("Keeps backwards-compatibility with existing tab strings", () => {
+      // This test will break if the tab strings are ever changed as a warning.
       const knownTabStrings: Record<string, TabType> = {
         filters: TabType.FILTERS,
         track_plot: TabType.TRACK_PLOT,
