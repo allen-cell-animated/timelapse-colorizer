@@ -1,0 +1,95 @@
+.labeledDropdown {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: max-content;
+  gap: 6px !important;
+}
+
+/* Make button and dropdown have the same width */
+#dropdownButton,
+.dropdownContent {
+  max-width: 164px;
+  width: 15vw;
+  min-width: 84px;
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s; /* Override Antd width transition */
+}
+
+#dropdownButton:global(.ant-btn-default):not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-borders);
+}
+
+#dropdownButton:global(.ant-btn-default):not(:disabled):hover {
+  background-color: transparent;
+  border-color: var(--color-button);
+}
+
+#dropdownButton:global(.ant-btn-default):not(:disabled):active {
+  background-color: transparent;
+  border-color: var(--color-button-active);
+}
+
+/* 
+* When the modal is opened ("pinned") by clicking on it, show an
+* extra active-style outline.
+*/
+#dropdownButton:not(:disabled).forceOpen {
+  border-color: var(--color-button-active);
+}
+#dropdownButton:global(.ant-btn-default):not(:disabled).forceOpen {
+  border-color: var(--color-button);
+}
+
+.buttonContents {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.buttonText {
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.buttonIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.dropdownContent {
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdownItem {
+  text-align: left;
+  padding: 3px 12px;
+  border: 0px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dropdownItem span {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Important tags needed here to prevent ant default button styling from overriding */
+.dropdownItem:hover,
+.dropdownItem:focus {
+  background-color: var(--color-dropdown-hover) !important;
+}
+
+.dropdownItem.selected {
+  background-color: var(--color-dropdown-selected) !important;
+  color: var(--color-button) !important;
+}
