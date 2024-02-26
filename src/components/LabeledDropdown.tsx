@@ -6,8 +6,6 @@ import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../assets";
 
-import styles from "./LabeledDropdown.module.css";
-
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
