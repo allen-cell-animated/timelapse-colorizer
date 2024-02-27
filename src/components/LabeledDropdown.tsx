@@ -39,12 +39,13 @@ const defaultProps = {
   style: {},
 };
 
+/** Contains the main dropdown button and label text */
 const MainContainer = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
   width: max-content;
-  gap: 6px !important;
+  gap: 6px;
 `;
 
 /** Button that is clicked to open the dropdown */
@@ -52,7 +53,8 @@ const MainButton = styled(Button)<{ $open: boolean }>`
   max-width: 164px;
   width: 15vw;
   min-width: 84px;
-  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s; /* Override Antd width transition */
+  // Override Antd width transition
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s;
 
   // Override Ant styling for the default (outlined) button style
   // so it fills in solid when hovered
@@ -64,13 +66,13 @@ const MainButton = styled(Button)<{ $open: boolean }>`
   &.ant-btn-default:not(:disabled):hover {
     background-color: transparent;
     border-color: var(--color-button);
-    color: var(--color-text);
+    color: var(--color-text); // Repeated to override color changes
   }
 
   &.ant-btn-default:not(:disabled):active {
-    color: var(--color-text);
     background-color: transparent;
     border-color: var(--color-button-active);
+    color: var(--color-text);
   }
 
   // When the modal is opened ("pinned") by clicking on it, show an
@@ -90,6 +92,7 @@ const MainButton = styled(Button)<{ $open: boolean }>`
   }}
 `;
 
+/** Container for the text label and dropdown inside the main dropdown-triggering button. */
 const MainButtonContents = styled.div`
   width: 100%;
   display: flex;
@@ -121,6 +124,7 @@ const DropdownContent = styled.div`
   gap: 2px;
 `;
 
+/** A styled button inside the dropdown, which can be clicked to select an item. */
 const DropdownItem = styled(Button)<{ $selected: boolean }>`
   text-align: left;
   padding: 3px 12px;
@@ -143,7 +147,7 @@ const DropdownItem = styled(Button)<{ $selected: boolean }>`
         color: var(--color-button) !important;
       `;
     }
-    // Add grey backdrop when hovered or focused
+    // Otherwise, add grey backdrop when hovered or focused
     return css`
       &:hover,
       &:focus {
