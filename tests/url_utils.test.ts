@@ -2,9 +2,10 @@ import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
-import { ThresholdType } from "../src/colorizer/types";
+import { defaultViewerConfig, DrawMode, DrawSettings, ThresholdType, ViewerConfig } from "../src/colorizer/types";
 import {
   isAllenPath,
+  isHexColor,
   isJson,
   isUrl,
   loadParamsFromUrlQueryString,
@@ -138,10 +139,22 @@ describe("Loading + saving from URL query strings", () => {
       colorRampKey: "myMap-1",
       colorRampReversed: true,
       categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors,
+      config: {
+        showTrackPath: true,
+        showScaleBar: true,
+        showTimestamp: false,
+        keepRangeBetweenDatasets: true,
+        backdropBrightness: 75,
+        backdropSaturation: 50,
+        objectOpacity: 25,
+        outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
+        outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
+      } as Required<ViewerConfig>,
+      selectedBackdropKey: "some_backdrop",
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
-      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe";
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop";
     expect(queryString).equals(expectedQueryString);
 
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -337,5 +350,60 @@ describe("Loading + saving from URL query strings", () => {
     const defaultColors = DEFAULT_CATEGORICAL_PALETTES.get("adobe")!.colors;
     const expectedColors = [...colors, ...defaultColors.slice(4)];
     expect(parsedParams).deep.equals({ categoricalPalette: expectedColors });
+  });
+
+  it("Returns partial configs if values are undefined", () => {
+    const params: Partial<UrlParams> = {
+      config: {
+        showTrackPath: true,
+        showScaleBar: false,
+      },
+    };
+    const queryString = paramsToUrlQueryString(params);
+    expect(queryString).equals("?scalebar=0&path=1");
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    expect(parsedParams).deep.equals(params);
+  });
+
+  it("Uses default DrawSettings colors for malformed or missing color strings", () => {
+    const queryString = "?outlier-mode=0&outlier-color=a8d8c8d9&filter-mode=1";
+    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    expect(parsedParams).deep.equals({
+      config: {
+        outlierDrawSettings: {
+          mode: DrawMode.HIDE,
+          color: defaultViewerConfig.outlierDrawSettings.color,
+        },
+        outOfRangeDrawSettings: {
+          mode: DrawMode.USE_COLOR,
+          color: defaultViewerConfig.outOfRangeDrawSettings.color,
+        },
+      },
+    });
+  });
+
+  describe("isHexColor", () => {
+    it("Handles 3 character hex strings", () => {
+      expect(isHexColor("#000")).to.be.true;
+      expect(isHexColor("#fff")).to.be.true;
+      expect(isHexColor("#ccc")).to.be.true;
+    });
+
+    it("Handles 6-character hex strings", () => {
+      expect(isHexColor("#000000")).to.be.true;
+      expect(isHexColor("#ffffff")).to.be.true;
+      expect(isHexColor("#a0c8b0")).to.be.true;
+    });
+
+    it("Catches non-hex values", () => {
+      expect(isHexColor("000000")).to.be.false;
+      expect(isHexColor("gggggg")).to.be.false;
+      expect(isHexColor("#44")).to.be.false;
+      expect(isHexColor("some-bad-value")).to.be.false;
+    });
+
+    it("Ignores hex values with alpha", () => {
+      expect(isHexColor("#aabbccdd")).to.be.false;
+    });
   });
 });
