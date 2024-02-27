@@ -1,17 +1,25 @@
 import { ArrowRightOutlined } from "@ant-design/icons";
-import { Button, ConfigProvider, Dropdown, MenuProps, Space } from "antd";
-import React, { ReactElement, useRef } from "react";
+import { Space } from "antd";
+import React, { ReactElement } from "react";
 
-import { DropdownSVG } from "../assets";
-import { FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
+import { VisuallyHidden } from "../styles/utils";
+
+import AccessibleDropdown from "./AccessibleDropdown";
+import { DropdownItem, DropdownItemList } from "./SelectionDropdown";
 
 export default function HelpDropdown(): ReactElement {
-  const dropdownContainer = useRef<HTMLDivElement>(null);
+  const makeOnButtonClick = (link: string) => {
+    return () => {
+      window.open(link, "_blank", "noopener noreferrer");
+    };
+  };
 
-  const items: MenuProps["items"] = [
-    {
-      key: "https://github.com/allen-cell-animated/nucmorph-colorizer/issues",
-      label: (
+  const dropdownContent = (
+    <DropdownItemList>
+      <DropdownItem
+        onClick={makeOnButtonClick("https://github.com/allen-cell-animated/nucmorph-colorizer/issues")}
+        type={"text"}
+      >
         <Space>
           <p>
             Report an issue
@@ -19,36 +27,17 @@ export default function HelpDropdown(): ReactElement {
           </p>
           <ArrowRightOutlined />
         </Space>
-      ),
-    },
-  ];
-  const menuConfig: MenuProps = {
-    items,
-    // Makes dropdown accessible via keyboard nav + enter key
-    onClick: (e) => {
-      window.open(e.key, "_blank", "noopener noreferrer");
-    },
-  };
+      </DropdownItem>
+    </DropdownItemList>
+  );
 
   return (
-    <ConfigProvider theme={{ components: { Button: { paddingInline: 12 } } }}>
-      <div ref={dropdownContainer}>
-        <Dropdown
-          menu={menuConfig}
-          getPopupContainer={dropdownContainer.current ? () => dropdownContainer.current! : undefined}
-          trigger={["click", "hover"]}
-        >
-          <Button type="default" style={{}}>
-            <a onClick={(e) => e.preventDefault()} role="tab">
-              <FlexRowAlignCenter $gap={4}>
-                Help
-                {/* TODO: At 14x14, this doesn't match with the labeled dropdowns */}
-                <DropdownSVG style={{ width: "11px", height: "11px" }} />
-              </FlexRowAlignCenter>
-            </a>
-          </Button>
-        </Dropdown>
-      </div>
-    </ConfigProvider>
+    <AccessibleDropdown
+      dropdownContent={dropdownContent}
+      buttonText={"Help"}
+      buttonType="default"
+      showTooltip={false}
+      buttonStyle={{ width: "fit-content" }}
+    />
   );
 }
