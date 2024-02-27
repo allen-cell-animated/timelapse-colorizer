@@ -38,8 +38,9 @@ const defaultProps = {
   style: {},
 };
 
+// TODO: Make this into an actual component, which has the type set to "text" by default?
 /** A styled button inside the dropdown, which can be clicked to select an item. */
-const DropdownItem = styled(Button)<{ $selected: boolean }>`
+export const DropdownItem = styled(Button)<{ $selected: boolean }>`
   text-align: left;
   padding: 3px 12px;
   border: 0px solid transparent;
@@ -71,7 +72,7 @@ const DropdownItem = styled(Button)<{ $selected: boolean }>`
   }}
 `;
 
-const DropdownItemList = styled.div`
+export const DropdownItemList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -138,11 +139,17 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
 
   const dropdownContent = <DropdownItemList>{dropdownList}</DropdownItemList>;
 
+  const mainButtonStyle: React.CSSProperties = {
+    width: props.width || "15vw",
+    minWidth: "60px",
+    maxWidth: "270px",
+  };
+
   return (
     <AccessibleDropdown
       label={props.label}
       disabled={props.disabled}
-      width={props.width}
+      buttonStyle={mainButtonStyle}
       buttonType={props.buttonType}
       buttonText={selectedLabel}
       showTooltip={props.showTooltip}

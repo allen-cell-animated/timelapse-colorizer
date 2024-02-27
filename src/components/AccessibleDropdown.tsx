@@ -17,6 +17,7 @@ type AccessibleDropdownProps = {
    * https://ant.design/components/button#components-button-demo-basic */
   buttonType?: "primary" | "default" | "outlined" | "dashed" | "text" | "link";
   buttonText: string;
+  buttonStyle?: React.CSSProperties;
   /** Override for the button element. By default, renders the `props.buttonText` in a styled Antd button. */
   renderButton?: ((props: AccessibleDropdownProps) => ReactElement) | null;
   onButtonClicked?: (key: string) => void;
@@ -24,7 +25,6 @@ type AccessibleDropdownProps = {
   /** If null, uses button text. */
   tooltipText?: string | null;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
-  width?: string | null;
 };
 
 const defaultProps: Partial<AccessibleDropdownProps> = {
@@ -34,7 +34,7 @@ const defaultProps: Partial<AccessibleDropdownProps> = {
   buttonType: "outlined",
   showTooltip: true,
   tooltipText: null,
-  width: null,
+  buttonStyle: {},
   renderButton: null,
   onButtonClicked: () => {},
 };
@@ -49,30 +49,27 @@ const MainContainer = styled.div`
 `;
 
 /** Button that is clicked to open the dropdown */
-const MainButton = styled(Button)<{ $open: boolean; type: AccessibleDropdownProps["buttonType"] }>`
-  max-width: 164px;
+const MainButton = styled(Button)<{ $open: boolean; $type: AccessibleDropdownProps["buttonType"] }>`
   width: 15vw;
-  min-width: 84px;
   // Override Antd width transition
   transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s;
 
   // Override Ant styling for the outlined button style
-  // so it fills in solid when hovered
   ${(props) => {
-    if (props.type === "outlined") {
+    if (props.$type === "outlined") {
       return css`
-        &:not(:disabled) {
+        &.ant-btn:not(:disabled) {
           border-color: var(--color-borders);
           color: var(--color-text);
         }
 
-        &:not(:disabled):hover {
+        &.ant-btn:not(:disabled):hover {
           background-color: transparent;
           border-color: var(--color-button);
           color: var(--color-text); // Repeated to override color changes
         }
 
-        &:not(:disabled):active {
+        &.ant-btn:not(:disabled):active {
           background-color: transparent;
           border-color: var(--color-button-active);
           color: var(--color-text);
@@ -170,8 +167,9 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
     return (
       <MainButton
         disabled={props.disabled}
-        style={props.width ? { width: props.width } : undefined}
-        type={props.buttonType}
+        style={props.buttonStyle}
+        $type={props.buttonType}
+        type={props.buttonType === "outlined" ? "default" : props.buttonType}
         $open={forceOpen}
         // Open the button when clicked for accessibility
         onClick={() => setForceOpen(!forceOpen)}
@@ -194,9 +192,6 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
       borderRadius: token.borderRadiusLG,
       boxShadow: token.boxShadowSecondary,
     };
-    if (props.width) {
-      dropdownStyle.width = props.width;
-    }
 
     return <DropdownContentWrapper style={dropdownStyle}>{content}</DropdownContentWrapper>;
   };

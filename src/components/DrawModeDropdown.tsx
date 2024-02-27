@@ -75,6 +75,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
           props.onChange(Number.parseInt(key, 10), props.color);
         }}
         disabled={props.disabled}
+        width={"165px"}
       ></SelectionDropdown>
 
       <ColorPicker
