@@ -197,7 +197,9 @@ function App(): ReactElement {
       colorRampKey: colorRampKey,
       colorRampReversed: colorRampReversed,
       categoricalPalette: categoricalPalette,
-    });
+      config: config,
+      selectedBackdropKey,
+    } as Required<urlUtils.UrlParams>);
   }, [
     getDatasetAndCollectionParam,
     getRangeParam,
@@ -208,6 +210,8 @@ function App(): ReactElement {
     colorRampKey,
     colorRampReversed,
     categoricalPalette,
+    selectedBackdropKey,
+    config,
   ]);
 
   // Update url whenever the viewer settings change
@@ -403,6 +407,16 @@ function App(): ReactElement {
         setCurrentFrame(newTime); // Force render
         setFrameInput(newTime);
       }
+
+      const backdropKey = initialUrlParams.selectedBackdropKey;
+      if (backdropKey) {
+        if (dataset?.hasBackdrop(backdropKey)) {
+          setSelectedBackdropKey(backdropKey);
+        }
+      }
+      if (initialUrlParams.config) {
+        updateConfig(initialUrlParams.config);
+      }
     };
 
     setupInitialParameters();
@@ -449,7 +463,9 @@ function App(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      setSelectedBackdropKey(null);
+      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
+        setSelectedBackdropKey(null);
+      }
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
