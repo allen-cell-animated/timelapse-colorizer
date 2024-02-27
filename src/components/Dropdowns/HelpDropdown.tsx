@@ -5,7 +5,7 @@ import React, { ReactElement } from "react";
 import { VisuallyHidden } from "../../styles/utils";
 
 import AccessibleDropdown from "./AccessibleDropdown";
-import { DropdownItem, DropdownItemList } from "./SelectionDropdown";
+import DropdownItem, { DropdownItemList } from "./DropdownItem";
 
 export default function HelpDropdown(): ReactElement {
   const makeOnButtonClick = (link: string) => {
@@ -17,8 +17,8 @@ export default function HelpDropdown(): ReactElement {
   const dropdownContent = (
     <DropdownItemList>
       <DropdownItem
+        key={"issues"}
         onClick={makeOnButtonClick("https://github.com/allen-cell-animated/nucmorph-colorizer/issues")}
-        type={"text"}
       >
         <Space>
           <p>

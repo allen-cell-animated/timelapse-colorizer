@@ -4,6 +4,7 @@ import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "rea
 import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../../assets";
+import { VisuallyHidden } from "../../styles/utils";
 
 type AccessibleDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -123,14 +124,13 @@ const DropdownContentWrapper = styled.div`
 `;
 
 /**
- * A wrapper around the Antd Dropdown with tooltips and a text label added.
+ * A keyboard-accessible wrapper around the Antd `Dropdown` component, with support for button styling, labels, and tooltips.
  */
 export default function AccessibleDropdown(inputProps: AccessibleDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<AccessibleDropdownProps>;
 
   //// Handle clicking on the dropdowns ///////////////////////////////////
 
-  // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Support tab navigation by forcing the dropdown to stay open when clicked.
   const [forceOpen, setForceOpen] = useState(false);
   const componentContainerRef = useRef<HTMLDivElement>(null);
@@ -171,11 +171,14 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
         $type={props.buttonType}
         type={props.buttonType === "outlined" ? "default" : props.buttonType}
         $open={forceOpen}
-        // Open the button when clicked for accessibility
+        // Open the dropdown when clicked for accessibility
         onClick={() => setForceOpen(!forceOpen)}
       >
         <MainButtonContents>
-          <div>{props.buttonText}</div>
+          <div>
+            {props.buttonText}
+            <VisuallyHidden>(click to open menu)</VisuallyHidden>
+          </div>
           <DropdownSVG />
         </MainButtonContents>
       </MainButton>

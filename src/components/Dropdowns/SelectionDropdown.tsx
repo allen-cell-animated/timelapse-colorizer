@@ -1,9 +1,9 @@
-import { Button, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useMemo } from "react";
-import styled, { css } from "styled-components";
 
 import AccessibleDropdown from "./AccessibleDropdown";
+import DropdownItem, { DropdownItemList } from "./DropdownItem";
 
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -38,50 +38,10 @@ const defaultProps = {
   style: {},
 };
 
-// TODO: Make this into an actual component, which has the type set to "text" by default?
-/** A styled button inside the dropdown, which can be clicked to select an item. */
-export const DropdownItem = styled(Button)<{ $selected: boolean }>`
-  text-align: left;
-  padding: 3px 12px;
-  border: 0px solid transparent;
-  border-radius: 4px;
-  overflow: hidden;
-
-  & span {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    width: 100%;
-  }
-
-  ${(props) => {
-    // Important tags needed here to prevent ant default button styling from overriding
-    if (props.$selected) {
-      // If selected, override hover and focus styles
-      return css`
-        background-color: var(--color-dropdown-selected) !important;
-        color: var(--color-button) !important;
-      `;
-    }
-    // Otherwise, add grey backdrop when hovered or focused
-    return css`
-      &:hover,
-      &:focus {
-        background-color: var(--color-dropdown-hover) !important;
-      }
-    `;
-  }}
-`;
-
-export const DropdownItemList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
 /**
  * An wrapper around an AccessibleDropdown that allows for the selection of a single item at a time.
- * @param inputProps
- * @returns
+ *
+ * Items can be passed in as an array of strings,or as an array of ItemType objects if you need the keys to differ from the labels.
  */
 export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<SelectionDropdownProps>;
@@ -124,8 +84,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
         <DropdownItem
           key={item.key}
-          type={"text"}
-          $selected={item.key === props.selected}
+          selected={item.key === props.selected}
           disabled={props.disabled}
           onClick={() => {
             props.onChange(item.key.toString());
