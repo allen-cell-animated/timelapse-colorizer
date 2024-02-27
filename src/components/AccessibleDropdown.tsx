@@ -1,12 +1,13 @@
 import { Button, Dropdown, Tooltip } from "antd";
-import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import useToken from "antd/es/theme/useToken";
-import React, { ReactElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../assets";
 
 const AntRecognizedButtonTypes = ["primary", "default", "dashed", "text", "link"];
+
+// TODO: Handle outlined styling for help button
 
 const convertToAntButtonType = (type: string): "primary" | "default" | "dashed" | "text" | "link" => {
   if (AntRecognizedButtonTypes.includes(type)) {
@@ -18,30 +19,35 @@ const convertToAntButtonType = (type: string): "primary" | "default" | "dashed" 
 type AccessibleDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
-  /** The key of the item that is currently selected. */
-  selected: string;
 
-  dropdownContents: ReactElement;
+  /** Contents rendered inside the dropdown. By default, a  */
+  dropdownContent: ReactElement;
+  renderDropdownContent?: ((content: ReactElement) => ReactElement) | null;
   disabled?: boolean;
   /** The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic */
   buttonType?: "primary" | "default" | "outlined" | "dashed" | "text" | "link";
-  buttonText?: string;
-  /** Optional override for the button. Can add a wrapper element or styling or completely replace the root dropdown object. */
-  renderButton?: (button: ReactElement | null) => ReactElement;
-  onButtonClicked: (key: string) => void;
+  buttonText: string;
+  /** Override for the button element. By default, renders the `props.buttonText` in a styled Antd button. */
+  renderButton?: ((props: AccessibleDropdownProps) => ReactElement) | null;
+  onButtonClicked?: (key: string) => void;
   showTooltip?: boolean;
+  /** If null, uses button text. */
+  tooltipText?: string | null;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
 };
 
-const defaultProps = {
+const defaultProps: Partial<AccessibleDropdownProps> = {
   label: null,
+  renderDropdownContent: null,
   disabled: false,
   buttonType: "outlined",
   showTooltip: true,
+  tooltipText: null,
   width: null,
-  style: {},
+  renderButton: null,
+  onButtonClicked: () => {},
 };
 
 /** Contains the main dropdown button and label text */
@@ -121,12 +127,9 @@ const MainButtonContents = styled.div`
   }
 `;
 
-/** List of dropdown items */
-const DropdownContent = styled.div`
+/** Wrapper around the dropdown content. */
+const DropdownContentWrapper = styled.div`
   padding: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 `;
 
 /** A styled button inside the dropdown, which can be clicked to select an item. */
@@ -168,6 +171,8 @@ const DropdownItem = styled(Button)<{ $selected: boolean }>`
 export default function AccessibleDropdown(inputProps: AccessibleDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<AccessibleDropdownProps>;
 
+  //// Handle clicking on the dropdowns ///////////////////////////////////
+
   // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Support tab navigation by forcing the dropdown to stay open when clicked.
   const [forceOpen, setForceOpen] = useState(false);
@@ -200,87 +205,47 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
     };
   }, [forceOpen]);
 
-  // Set up the items for the dropdown menu
-  const items = useMemo((): MenuItemType[] => {
-    if (props.items.length === 0) {
-      return [];
-    }
-    if (typeof props.items[0] === "string") {
-      // Convert items into MenuItemType by missing properties
-      return (props.items as string[]).map((name) => {
-        return {
-          label: name,
-          key: name,
-        };
-      });
-    } else {
-      return props.items as MenuItemType[];
-    }
-  }, [props.items]);
-
-  const selectedLabel = useMemo((): string => {
-    for (const item of items) {
-      if (item && item.key === props.selected) {
-        return item.label?.toString() || "";
-      }
-    }
-    return "";
-  }, [props.selected, items]);
-
-  const dropdownButton = (
-    <MainButton
-      disabled={props.disabled}
-      style={props.width ? { width: props.width } : undefined}
-      type={props.buttonType}
-      $open={forceOpen}
-      // Open the button when clicked for accessibility
-      onClick={() => setForceOpen(!forceOpen)}
-    >
-      <MainButtonContents>
-        <div>{selectedLabel}</div>
-        <DropdownSVG />
-      </MainButtonContents>
-    </MainButton>
-  );
-
-  // Completely customize the dropdown menu and make the buttons manually.
-  // This is because Antd's Dropdown component doesn't allow us to add item tooltips, and complicates
-  // other behaviors (like tab navigation or setting width).
-  // Ant recommends using the Popover component for this instead of Dropdown, but they use
-  // different animation styling (Dropdown looks nicer).
-  const dropdownList: ReactElement[] = items.map((item) => {
+  //// Handle rendering of buttons and dropdown contents ///////////////////
+  const defaultRenderButton = (props: AccessibleDropdownProps): ReactElement => {
     return (
-      <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
-        <DropdownItem
-          key={item.key}
-          type={"text"}
-          $selected={item.key === props.selected}
-          disabled={props.disabled}
-          onClick={() => {
-            props.onChange(item.key.toString());
-          }}
-        >
-          {item.label}
-        </DropdownItem>
-      </Tooltip>
+      <MainButton
+        disabled={props.disabled}
+        style={props.width ? { width: props.width } : undefined}
+        type={props.buttonType}
+        $open={forceOpen}
+        // Open the button when clicked for accessibility
+        onClick={() => setForceOpen(!forceOpen)}
+      >
+        <MainButtonContents>
+          <div>{props.buttonText}</div>
+          <DropdownSVG />
+        </MainButtonContents>
+      </MainButton>
     );
-  });
+  };
+  const renderButton = props.renderButton || defaultRenderButton;
+
+  // Use Ant styling for default dropdown content rendering
+  const [, token] = useToken();
+  const defaultRenderDropdownContent = (content: ReactElement): ReactElement => {
+    // Fake the menu background styling
+    const dropdownStyle: React.CSSProperties = {
+      backgroundColor: token.colorBgElevated,
+      borderRadius: token.borderRadiusLG,
+      boxShadow: token.boxShadowSecondary,
+    };
+    if (props.width) {
+      dropdownStyle.width = props.width;
+    }
+
+    return <DropdownContentWrapper style={dropdownStyle}>{content}</DropdownContentWrapper>;
+  };
+  const renderDropdownContent = props.renderDropdownContent || defaultRenderDropdownContent;
 
   const disableTooltip = props.disabled || !props.showTooltip;
 
-  const [, token] = useToken();
-  const dropdownStyle: React.CSSProperties = {
-    backgroundColor: token.colorBgElevated,
-    borderRadius: token.borderRadiusLG,
-    boxShadow: token.boxShadowSecondary,
-  };
-
-  if (props.width) {
-    dropdownStyle.width = props.width;
-  }
-
   return (
-    <MainContainer ref={componentContainerRef} style={props.style}>
+    <MainContainer ref={componentContainerRef}>
       {props.label && <h3>{props.label}</h3>}
       <Dropdown
         menu={{}}
@@ -288,20 +253,17 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
         open={forceOpen || undefined}
         getPopupContainer={componentContainerRef.current ? () => componentContainerRef.current! : undefined}
         dropdownRender={(_menus: ReactNode) => {
-          return (
-            // Fake the menu background styling
-            <DropdownContent style={dropdownStyle}>{dropdownList}</DropdownContent>
-          );
+          return renderDropdownContent(props.dropdownContent);
         }}
       >
         <Tooltip
           // Force the tooltip to be hidden (open=false) when disabled
           open={disableTooltip ? false : undefined}
-          title={selectedLabel}
+          title={props.tooltipText !== null ? props.tooltipText : props.buttonText}
           placement="right"
           trigger={["hover", "focus"]}
         >
-          {dropdownButton}
+          {renderButton(props)}
         </Tooltip>
       </Dropdown>
     </MainContainer>
