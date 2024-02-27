@@ -8,8 +8,8 @@ import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 
 import CustomCollapse from "../CustomCollapse";
-import DrawModeDropdown from "../DrawModeDropdown";
-import SelectionDropdown from "../SelectionDropdown";
+import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
+import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 
 const NO_BACKDROP = {

@@ -3,7 +3,7 @@ import useToken from "antd/es/theme/useToken";
 import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { DropdownSVG } from "../assets";
+import { DropdownSVG } from "../../assets";
 
 type AccessibleDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */

@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ColorRamp, ColorRampData, ColorRampType, RawColorData } from "../src/colorizer";
 import { ANY_ERROR } from "./test_utils";
 
-import ColorRampDropdown from "../src/components/ColorRampDropdown";
+import ColorRampDropdown from "../src/components/Dropdowns/ColorRampDropdown";
 
 describe("ColorRampDropdown", () => {
   const defaultPalette = [new Color("#000000"), new Color("#ffffff")];

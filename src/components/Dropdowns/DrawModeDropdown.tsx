@@ -5,8 +5,8 @@ import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
 import { ColorRepresentation, Color as ThreeColor } from "three";
 
-import { DrawMode } from "../colorizer/types";
-import { FlexRowAlignCenter } from "../styles/utils";
+import { DrawMode } from "../../colorizer/types";
+import { FlexRowAlignCenter } from "../../styles/utils";
 
 import SelectionDropdown from "./SelectionDropdown";
 

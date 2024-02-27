@@ -2,7 +2,7 @@ import React, { ReactElement } from "react";
 
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
 
-import SelectionDropdown from "./SelectionDropdown";
+import SelectionDropdown from "./Dropdowns/SelectionDropdown";
 
 type PlaybackSpeedControlProps = {
   fps: number;

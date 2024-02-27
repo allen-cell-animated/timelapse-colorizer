@@ -27,15 +27,15 @@ import TimeControls from "./colorizer/TimeControls";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
-import ColorRampDropdown from "./components/ColorRampDropdown";
+import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
+import HelpDropdown from "./components/Dropdowns/HelpDropdown";
+import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
-import HelpDropdown from "./components/HelpDropdown";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
-import SelectionDropdown from "./components/SelectionDropdown";
 import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/Tabs";
 

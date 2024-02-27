@@ -2,7 +2,7 @@ import { ArrowRightOutlined } from "@ant-design/icons";
 import { Space } from "antd";
 import React, { ReactElement } from "react";
 
-import { VisuallyHidden } from "../styles/utils";
+import { VisuallyHidden } from "../../styles/utils";
 
 import AccessibleDropdown from "./AccessibleDropdown";
 import { DropdownItem, DropdownItemList } from "./SelectionDropdown";

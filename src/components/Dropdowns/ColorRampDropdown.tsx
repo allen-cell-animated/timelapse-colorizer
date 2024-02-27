@@ -10,10 +10,10 @@ import {
   DEFAULT_CATEGORICAL_PALETTES,
   DEFAULT_COLOR_RAMPS,
   PaletteData,
-} from "../colorizer";
+} from "../../colorizer";
 
-import { AppThemeContext } from "./AppStyle";
-import IconButton from "./IconButton";
+import { AppThemeContext } from "../AppStyle";
+import IconButton from "../IconButton";
 
 import styles from "./ColorRampDropdown.module.css";
 

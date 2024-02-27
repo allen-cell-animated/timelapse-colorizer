@@ -25,9 +25,9 @@ import {
 } from "./scatter_plot_data_utils";
 
 import { AppThemeContext } from "../AppStyle";
+import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
 import LoadingSpinner from "../LoadingSpinner";
-import SelectionDropdown from "../SelectionDropdown";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
