@@ -73,10 +73,8 @@ const MainButton = styled(Button)<{ $open: boolean }>`
     border-color: var(--color-button-active);
   }
 
-  /* 
-  * When the modal is opened ("pinned") by clicking on it, show an
-  * extra active-style outline.
-  */
+  // When the modal is opened ("pinned") by clicking on it, show an
+  // extra active-style outline.
   ${(props) => {
     if (props.$open) {
       return css`
@@ -108,6 +106,7 @@ const MainButtonContents = styled.div`
     white-space: nowrap;
   }
 
+  // Dropdown arrow
   & svg {
     width: 14px;
     height: 14px;
