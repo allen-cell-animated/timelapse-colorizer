@@ -32,10 +32,10 @@ import Export from "./components/Export";
 import HelpDropdown from "./components/HelpDropdown";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
-import LabeledDropdown from "./components/LabeledDropdown";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
+import SelectionDropdown from "./components/SelectionDropdown";
 import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/Tabs";
 
@@ -661,7 +661,7 @@ function App(): ReactElement {
           <h1>Timelapse Colorizer</h1>
           <span className={styles.verticalDivider}></span>
 
-          <LabeledDropdown
+          <SelectionDropdown
             disabled={disableUi}
             label="Dataset"
             selected={datasetKey}
@@ -669,7 +669,7 @@ function App(): ReactElement {
             items={collection?.getDatasetKeys() || []}
             onChange={handleDatasetChange}
           />
-          <LabeledDropdown
+          <SelectionDropdown
             disabled={disableUi}
             label="Feature"
             selected={featureName}

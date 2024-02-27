@@ -2,7 +2,7 @@ import React, { ReactElement } from "react";
 
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
 
-import LabeledDropdown from "./LabeledDropdown";
+import SelectionDropdown from "./SelectionDropdown";
 
 type PlaybackSpeedControlProps = {
   fps: number;
@@ -39,12 +39,12 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
   const sliderValue = props.fps / props.baselineFps;
 
   return (
-    <LabeledDropdown
+    <SelectionDropdown
       width="80px"
       label={"Speed"}
       selected={sliderValue.toFixed(2)}
       items={dropdownItems}
       onChange={(key: string) => onSliderChange(parseFloat(key))}
-    ></LabeledDropdown>
+    ></SelectionDropdown>
   );
 }

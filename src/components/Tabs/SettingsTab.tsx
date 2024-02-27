@@ -4,12 +4,12 @@ import styled from "styled-components";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode,ViewerConfig } from "../../colorizer/types";
+import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../DrawModeDropdown";
-import LabeledDropdown from "../LabeledDropdown";
+import SelectionDropdown from "../SelectionDropdown";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 
 const NO_BACKDROP = {
@@ -65,7 +65,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       <CustomCollapse label="Backdrop">
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
           <SettingsItem label="Backdrop images">
-            <LabeledDropdown
+            <SelectionDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
               items={backdropOptions}
               onChange={props.setSelectedBackdropKey}

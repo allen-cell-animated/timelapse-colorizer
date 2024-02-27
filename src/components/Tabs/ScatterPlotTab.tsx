@@ -26,8 +26,8 @@ import {
 
 import { AppThemeContext } from "../AppStyle";
 import IconButton from "../IconButton";
-import LabeledDropdown from "../LabeledDropdown";
 import LoadingSpinner from "../LoadingSpinner";
+import SelectionDropdown from "../SelectionDropdown";
 
 /** Extra feature that's added to the dropdowns representing the frame number. */
 const TIME_FEATURE = { key: "scatterplot_time", name: "Time" };
@@ -761,7 +761,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     return (
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
-        <LabeledDropdown
+        <SelectionDropdown
           label={"X"}
           selected={xAxisFeatureName || ""}
           items={menuItems}
@@ -778,21 +778,21 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             <SwitchIconSVG />
           </IconButton>
         </Tooltip>
-        <LabeledDropdown
+        <SelectionDropdown
           label={"Y"}
           selected={yAxisFeatureName || ""}
           items={menuItems}
           onChange={setYAxisFeatureName}
         />
 
-        <LabeledDropdown
+        <SelectionDropdown
           label={"Show objects from"}
           style={{ marginLeft: "10px" }}
           selected={rangeType}
           items={Object.values(RangeType)}
           width={"120px"}
           onChange={(value) => setRangeType(value as RangeType)}
-        ></LabeledDropdown>
+        ></SelectionDropdown>
       </FlexRowAlignCenter>
     );
   };

@@ -6,34 +6,39 @@ import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../assets";
 
-type LabeledDropdownProps = {
+const AntRecognizedButtonTypes = ["primary", "default", "dashed", "text", "link"];
+
+const convertToAntButtonType = (type: string): "primary" | "default" | "dashed" | "text" | "link" => {
+  if (AntRecognizedButtonTypes.includes(type)) {
+    return type as "primary" | "default" | "dashed" | "text" | "link";
+  }
+  return "default";
+};
+
+type AccessibleDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
   /** The key of the item that is currently selected. */
   selected: string;
-  /** An array of ItemType that describes the item properties (`{key, label}`),
-   * or an array of strings. Dropdown items will be presented in the provided array order.
-   *
-   * If a string array is provided, ItemType objects will be
-   * auto-generated with `key` and `label` values set to the string.*/
-  items: ItemType[] | string[];
+
+  dropdownContents: ReactElement;
   disabled?: boolean;
   /** The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic */
-  buttonType?: "primary" | "default" | "dashed" | "text" | "link";
-  /** Callback that is fired whenever an item in the dropdown is selected.
-   * The callback will be passed the `key` of the selected item. */
-  onChange: (key: string) => void;
+  buttonType?: "primary" | "default" | "outlined" | "dashed" | "text" | "link";
+  buttonText?: string;
+  /** Optional override for the button. Can add a wrapper element or styling or completely replace the root dropdown object. */
+  renderButton?: (button: ReactElement | null) => ReactElement;
+  onButtonClicked: (key: string) => void;
   showTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
-  style?: React.CSSProperties;
 };
 
 const defaultProps = {
   label: null,
   disabled: false,
-  buttonType: "default",
+  buttonType: "outlined",
   showTooltip: true,
   width: null,
   style: {},
@@ -49,7 +54,7 @@ const MainContainer = styled.div`
 `;
 
 /** Button that is clicked to open the dropdown */
-const MainButton = styled(Button)<{ $open: boolean }>`
+const MainButton = styled(Button)<{ $open: boolean; type: AccessibleDropdownProps["buttonType"] }>`
   max-width: 164px;
   width: 15vw;
   min-width: 84px;
@@ -160,8 +165,8 @@ const DropdownItem = styled(Button)<{ $selected: boolean }>`
 /**
  * A wrapper around the Antd Dropdown with tooltips and a text label added.
  */
-export default function LabeledDropdown(inputProps: LabeledDropdownProps): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as Required<LabeledDropdownProps>;
+export default function AccessibleDropdown(inputProps: AccessibleDropdownProps): ReactElement {
+  const props = { ...defaultProps, ...inputProps } as Required<AccessibleDropdownProps>;
 
   // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Support tab navigation by forcing the dropdown to stay open when clicked.
