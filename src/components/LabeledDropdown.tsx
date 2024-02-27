@@ -2,10 +2,9 @@ import { Button, Dropdown, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import useToken from "antd/es/theme/useToken";
 import React, { ReactElement, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../assets";
-
-import styles from "./LabeledDropdown.module.css";
 
 type LabeledDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -39,6 +38,124 @@ const defaultProps = {
   width: null,
   style: {},
 };
+
+/** Contains the main dropdown button and label text */
+const MainContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: max-content;
+  gap: 6px;
+`;
+
+/** Button that is clicked to open the dropdown */
+const MainButton = styled(Button)<{ $open: boolean }>`
+  max-width: 164px;
+  width: 15vw;
+  min-width: 84px;
+  // Override Antd width transition
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s;
+
+  // Override Ant styling for the default (outlined) button style
+  // so it fills in solid when hovered
+  &.ant-btn-default:not(:disabled) {
+    border-color: var(--color-borders);
+    color: var(--color-text);
+  }
+
+  &.ant-btn-default:not(:disabled):hover {
+    background-color: transparent;
+    border-color: var(--color-button);
+    color: var(--color-text); // Repeated to override color changes
+  }
+
+  &.ant-btn-default:not(:disabled):active {
+    background-color: transparent;
+    border-color: var(--color-button-active);
+    color: var(--color-text);
+  }
+
+  // When the modal is opened ("pinned") by clicking on it, show an
+  // extra active-style outline.
+  ${(props) => {
+    if (props.$open) {
+      return css`
+        :not(:disabled) {
+          border-color: var(--color-button-active);
+        }
+        & .ant-btn-default:not(:disabled) {
+          border-color: var(--color-button);
+        }
+      `;
+    }
+    return;
+  }}
+`;
+
+/** Container for the text label and dropdown inside the main dropdown-triggering button. */
+const MainButtonContents = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+
+  // Button text label
+  & div {
+    width: 100%;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Dropdown arrow
+  & svg {
+    width: 14px;
+    height: 14px;
+  }
+`;
+
+/** List of dropdown items */
+const DropdownContent = styled.div`
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+/** A styled button inside the dropdown, which can be clicked to select an item. */
+const DropdownItem = styled(Button)<{ $selected: boolean }>`
+  text-align: left;
+  padding: 3px 12px;
+  border: 0px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+
+  & span {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  ${(props) => {
+    // Important tags needed here to prevent ant default button styling from overriding
+    if (props.$selected) {
+      // If selected, override hover and focus styles
+      return css`
+        background-color: var(--color-dropdown-selected) !important;
+        color: var(--color-button) !important;
+      `;
+    }
+    // Otherwise, add grey backdrop when hovered or focused
+    return css`
+      &:hover,
+      &:focus {
+        background-color: var(--color-dropdown-hover) !important;
+      }
+    `;
+  }}
+`;
 
 /**
  * A wrapper around the Antd Dropdown with tooltips and a text label added.
@@ -106,20 +223,19 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   }, [props.selected, items]);
 
   const dropdownButton = (
-    <Button
-      id={styles.dropdownButton}
+    <MainButton
       disabled={props.disabled}
       style={props.width ? { width: props.width } : undefined}
       type={props.buttonType}
-      className={forceOpen ? styles.forceOpen : ""}
+      $open={forceOpen}
       // Open the button when clicked for accessibility
       onClick={() => setForceOpen(!forceOpen)}
     >
-      <div className={styles.buttonContents}>
-        <div className={styles.buttonText}>{selectedLabel}</div>
-        <DropdownSVG className={`${styles.buttonIcon} ${styles[props.buttonType || "default"]}`} />
-      </div>
-    </Button>
+      <MainButtonContents>
+        <div>{selectedLabel}</div>
+        <DropdownSVG />
+      </MainButtonContents>
+    </MainButton>
   );
 
   // Completely customize the dropdown menu and make the buttons manually.
@@ -128,21 +244,19 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   // Ant recommends using the Popover component for this instead of Dropdown, but they use
   // different animation styling (Dropdown looks nicer).
   const dropdownList: ReactElement[] = items.map((item) => {
-    const isSelected = item.key === props.selected;
-    const className = styles.dropdownItem + (isSelected ? ` ${styles.selected}` : "");
     return (
       <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
-        <Button
+        <DropdownItem
           key={item.key}
           type={"text"}
+          $selected={item.key === props.selected}
           disabled={props.disabled}
-          rootClassName={className}
           onClick={() => {
             props.onChange(item.key.toString());
           }}
         >
           {item.label}
-        </Button>
+        </DropdownItem>
       </Tooltip>
     );
   });
@@ -161,7 +275,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
   }
 
   return (
-    <div className={styles.labeledDropdown} ref={componentContainerRef} style={props.style}>
+    <MainContainer ref={componentContainerRef} style={props.style}>
       {props.label && <h3>{props.label}</h3>}
       <Dropdown
         menu={{}}
@@ -171,9 +285,7 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
         dropdownRender={(_menus: ReactNode) => {
           return (
             // Fake the menu background styling
-            <div style={dropdownStyle} className={styles.dropdownContent}>
-              {dropdownList}
-            </div>
+            <DropdownContent style={dropdownStyle}>{dropdownList}</DropdownContent>
           );
         }}
       >
@@ -187,6 +299,6 @@ export default function LabeledDropdown(inputProps: LabeledDropdownProps): React
           {dropdownButton}
         </Tooltip>
       </Dropdown>
-    </div>
+    </MainContainer>
   );
 }
