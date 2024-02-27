@@ -1,12 +1,9 @@
 import { ArrowRightOutlined } from "@ant-design/icons";
 import { Button, ConfigProvider, Dropdown, MenuProps, Space } from "antd";
 import React, { ReactElement, useRef } from "react";
-import styled from "styled-components";
 
 import { DropdownSVG } from "../assets";
 import { FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
-
-const HelpButton = styled(Button)``;
 
 export default function HelpDropdown(): ReactElement {
   const dropdownContainer = useRef<HTMLDivElement>(null);
@@ -41,7 +38,7 @@ export default function HelpDropdown(): ReactElement {
           getPopupContainer={dropdownContainer.current ? () => dropdownContainer.current! : undefined}
           trigger={["click", "hover"]}
         >
-          <HelpButton type="default" style={{}}>
+          <Button type="default" style={{}}>
             <a onClick={(e) => e.preventDefault()} role="tab">
               <FlexRowAlignCenter $gap={4}>
                 Help
@@ -49,7 +46,7 @@ export default function HelpDropdown(): ReactElement {
                 <DropdownSVG style={{ width: "11px", height: "11px" }} />
               </FlexRowAlignCenter>
             </a>
-          </HelpButton>
+          </Button>
         </Dropdown>
       </div>
     </ConfigProvider>
