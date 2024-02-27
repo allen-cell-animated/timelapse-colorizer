@@ -14,14 +14,20 @@ type AccessibleDropdownProps = {
   dropdownContent: ReactElement;
   renderDropdownContent?: ((content: ReactElement) => ReactElement) | null;
   disabled?: boolean;
-  /** The type of button to render for the dropdown. See Antd's button types:
-   * https://ant.design/components/button#components-button-demo-basic */
+  /**
+   * The type of button to render for the dropdown. See Antd's button types:
+   * https://ant.design/components/button#components-button-demo-basic
+   */
   buttonType?: "primary" | "default" | "outlined" | "dashed" | "text" | "link";
   buttonText: string;
   buttonStyle?: React.CSSProperties;
-  /** Override for the button element. By default, renders the `props.buttonText` in a styled Antd button. */
+  /**
+   * Override for the button element. By default, renders the `props.buttonText` in a styled Antd button.
+   * Note that tooltips may not work as expected if this is overridden.
+   */
   renderButton?: ((props: AccessibleDropdownProps) => ReactElement) | null;
   onButtonClicked?: (key: string) => void;
+  /** Whether the tooltip should appear when hovered. */
   showTooltip?: boolean;
   /** If null, uses button text. */
   tooltipText?: string | null;
@@ -94,7 +100,7 @@ const MainButton = styled(Button)<{ $open: boolean; $type: AccessibleDropdownPro
   }}
 `;
 
-/** Container for the text label and dropdown inside the main dropdown-triggering button. */
+/** Container for the text label and dropdown arrow SVG inside the main dropdown-triggering button. */
 const MainButtonContents = styled.div`
   width: 100%;
   display: flex;
@@ -195,7 +201,6 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
       borderRadius: token.borderRadiusLG,
       boxShadow: token.boxShadowSecondary,
     };
-
     return <DropdownContentWrapper style={dropdownStyle}>{content}</DropdownContentWrapper>;
   };
   const renderDropdownContent = props.renderDropdownContent || defaultRenderDropdownContent;
@@ -206,7 +211,6 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
     <MainContainer ref={componentContainerRef}>
       {props.label && <h3>{props.label}</h3>}
       <Dropdown
-        menu={{}}
         disabled={props.disabled}
         open={forceOpen || undefined}
         getPopupContainer={componentContainerRef.current ? () => componentContainerRef.current! : undefined}

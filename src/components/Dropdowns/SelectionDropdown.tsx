@@ -39,9 +39,10 @@ const defaultProps = {
 };
 
 /**
- * An wrapper around an AccessibleDropdown that allows for the selection of a single item at a time.
+ * An wrapper around an AccessibleDropdown that allows for the selection of a single item from a list.
  *
- * Items can be passed in as an array of strings,or as an array of ItemType objects if you need the keys to differ from the labels.
+ * Items can be passed in as an array of strings, or as an array of ItemType objects if you need the
+ * keys to differ from the labels.
  */
 export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<SelectionDropdownProps>;
@@ -52,7 +53,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       return [];
     }
     if (typeof props.items[0] === "string") {
-      // Convert items into MenuItemType by missing properties
+      // string array instead of ItemType array
       return (props.items as string[]).map((name) => {
         return {
           label: name,
@@ -64,7 +65,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     }
   }, [props.items]);
 
-  // Get the label of the selected item
+  // Get the label of the selected item to display in the dropdown button
   const selectedLabel = useMemo((): string => {
     for (const item of items) {
       if (item && item.key === props.selected) {
