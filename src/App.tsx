@@ -19,6 +19,7 @@ import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
+import { FlexRowAlignCenter } from "./styles/utils";
 
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
@@ -28,6 +29,7 @@ import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/ColorRampDropdown";
 import Export from "./components/Export";
+import HelpDropdown from "./components/HelpDropdown";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledDropdown from "./components/LabeledDropdown";
@@ -712,10 +714,12 @@ function App(): ReactElement {
             onChangePalette={setCategoricalPalette}
           />
         </div>
-        <div className={styles.headerRight}>
+        <FlexRowAlignCenter className={styles.headerRight}>
           <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
-            <LinkOutlined />
-            Copy URL
+            <FlexRowAlignCenter $gap={6}>
+              <LinkOutlined />
+              Copy URL
+            </FlexRowAlignCenter>
           </Button>
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
@@ -729,7 +733,8 @@ function App(): ReactElement {
             setIsRecording={setIsRecording}
           />
           <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
-        </div>
+          <HelpDropdown />
+        </FlexRowAlignCenter>
       </div>
 
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
