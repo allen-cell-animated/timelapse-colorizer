@@ -1,5 +1,4 @@
-import { Button, Dropdown, Tooltip } from "antd";
-import useToken from "antd/es/theme/useToken";
+import { Button, ButtonProps, Dropdown, theme, Tooltip } from "antd";
 import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
@@ -18,7 +17,7 @@ type AccessibleDropdownProps = {
    * The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic
    */
-  buttonType?: "primary" | "default" | "outlined" | "dashed" | "text" | "link";
+  buttonType?: ButtonProps["type"] | "outlined";
   buttonText: string;
   buttonStyle?: React.CSSProperties;
   /**
@@ -193,7 +192,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
   const renderButton = props.renderButton || defaultRenderButton;
 
   // Use Ant styling for default dropdown content rendering
-  const [, token] = useToken();
+  const { token } = theme.useToken();
   const defaultRenderDropdownContent = (content: ReactElement): ReactElement => {
     // Fake the menu background styling
     const dropdownStyle: React.CSSProperties = {
