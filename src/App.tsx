@@ -794,7 +794,7 @@ function App(): ReactElement {
                   )
                 }
                 {/** Additional top bar settings */}
-                <div>
+                <div style={{ width: "30%" }}>
                   <Checkbox
                     checked={config.keepRangeBetweenDatasets}
                     onChange={() => {
@@ -802,16 +802,7 @@ function App(): ReactElement {
                       updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
                     }}
                   >
-                    Keep range between datasets
-                  </Checkbox>
-                  <Checkbox
-                    type="checkbox"
-                    checked={config.showTrackPath}
-                    onChange={() => {
-                      updateConfig({ showTrackPath: !config.showTrackPath });
-                    }}
-                  >
-                    Show track path
+                    Keep range when switching datasets and features
                   </Checkbox>
                 </div>
               </div>

@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode,ViewerConfig } from "../../colorizer/types";
+import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 
 import CustomCollapse from "../CustomCollapse";
@@ -127,6 +127,18 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               value={props.config.objectOpacity}
               onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
             />
+          </SettingsItem>
+
+          <SettingsItem>
+            <Checkbox
+              type="checkbox"
+              checked={props.config.showTrackPath}
+              onChange={(event) => {
+                props.updateConfig({ showTrackPath: event.target.checked });
+              }}
+            >
+              Show track path
+            </Checkbox>
           </SettingsItem>
           <SettingsItem>
             <Checkbox

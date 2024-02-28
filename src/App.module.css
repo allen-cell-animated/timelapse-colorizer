@@ -104,7 +104,7 @@
   margin: 16px 0;
 }
 
-.mainContent .canvasControlsContainer {
+.canvasControlsContainer {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -134,6 +134,7 @@
 }
 
 .canvasTopContainer {
+  max-width: var(--content-width);
   display: flex;
   flex-direction: column;
   padding: 14px 16px;

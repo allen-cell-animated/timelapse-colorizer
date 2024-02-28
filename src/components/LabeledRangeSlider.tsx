@@ -52,7 +52,6 @@ const ComponentContainer = styled.div`
   gap: 5px;
   width: 100%;
   max-width: 460px;
-  margin-right: 20px;
 `;
 
 const SliderContainer = styled.div`
