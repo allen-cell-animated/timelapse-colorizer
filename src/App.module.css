@@ -101,10 +101,10 @@
 }
 
 .mainContent .topControls {
-  margin: 10px 0 5px 0;
+  margin: 16px 0;
 }
 
-.mainContent .controlsContainer {
+.mainContent .canvasControlsContainer {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -131,6 +131,15 @@
     flex-direction: column;
     max-width: 100%;
   }
+}
+
+.canvasTopContainer {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border: 1px solid var(--color-borders);
+  border-bottom: 0px;
+  border-radius: 5px 5px 0 0;
 }
 
 .canvasPanel {

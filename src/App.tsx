@@ -758,62 +758,64 @@ function App(): ReactElement {
               onChangePalette={setCategoricalPalette}
             />
           </FlexRowAlignCenter>
-          <h3 style={{ margin: "0" }}>
-            {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
-          </h3>
-          <div className={styles.controlsContainer}>
-            {
-              // Render either a categorical color picker or a range slider depending on the feature type
-              dataset?.isFeatureCategorical(featureName) ? (
-                <CategoricalColorPicker
-                  categories={dataset.getFeatureCategories(featureName) || []}
-                  selectedPalette={categoricalPalette}
-                  onChangePalette={setCategoricalPalette}
-                  disabled={disableUi}
-                />
-              ) : (
-                <LabeledRangeSlider
-                  min={colorRampMin}
-                  max={colorRampMax}
-                  minSliderBound={dataset?.getFeatureData(featureName)?.min}
-                  maxSliderBound={dataset?.getFeatureData(featureName)?.max}
-                  onChange={function (min: number, max: number): void {
-                    setColorRampMin(min);
-                    setColorRampMax(max);
-                  }}
-                  marks={getColorMapSliderMarks()}
-                  disabled={disableUi}
-                />
-              )
-            }
-            {/** Additional top bar settings */}
-            <div>
-              <Checkbox
-                checked={config.keepRangeBetweenDatasets}
-                onChange={() => {
-                  // Invert lock on range
-                  updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
-                }}
-              >
-                Keep range between datasets
-              </Checkbox>
-              <Checkbox
-                type="checkbox"
-                checked={config.showTrackPath}
-                onChange={() => {
-                  updateConfig({ showTrackPath: !config.showTrackPath });
-                }}
-              >
-                Show track path
-              </Checkbox>
-            </div>
-          </div>
         </div>
 
         {/* Organize the main content areas */}
         <div className={styles.contentPanels}>
           <div className={styles.canvasPanel}>
             {/** Canvas */}
+            <div className={styles.canvasTopContainer}>
+              <h3 style={{ margin: "0" }}>
+                {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
+              </h3>
+              <div className={styles.canvasControlsContainer}>
+                {
+                  // Render either a categorical color picker or a range slider depending on the feature type
+                  dataset?.isFeatureCategorical(featureName) ? (
+                    <CategoricalColorPicker
+                      categories={dataset.getFeatureCategories(featureName) || []}
+                      selectedPalette={categoricalPalette}
+                      onChangePalette={setCategoricalPalette}
+                      disabled={disableUi}
+                    />
+                  ) : (
+                    <LabeledRangeSlider
+                      min={colorRampMin}
+                      max={colorRampMax}
+                      minSliderBound={dataset?.getFeatureData(featureName)?.min}
+                      maxSliderBound={dataset?.getFeatureData(featureName)?.max}
+                      onChange={function (min: number, max: number): void {
+                        setColorRampMin(min);
+                        setColorRampMax(max);
+                      }}
+                      marks={getColorMapSliderMarks()}
+                      disabled={disableUi}
+                    />
+                  )
+                }
+                {/** Additional top bar settings */}
+                <div>
+                  <Checkbox
+                    checked={config.keepRangeBetweenDatasets}
+                    onChange={() => {
+                      // Invert lock on range
+                      updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
+                    }}
+                  >
+                    Keep range between datasets
+                  </Checkbox>
+                  <Checkbox
+                    type="checkbox"
+                    checked={config.showTrackPath}
+                    onChange={() => {
+                      updateConfig({ showTrackPath: !config.showTrackPath });
+                    }}
+                  >
+                    Show track path
+                  </Checkbox>
+                </div>
+              </div>
+            </div>
             <HoverTooltip
               tooltipContent={
                 <>
