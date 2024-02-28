@@ -1,7 +1,7 @@
 // Typescript doesn't recognize RequestInit
 
 /* global RequestInit */
-import { Color, ColorRepresentation } from "three";
+import { Color, ColorRepresentation, HexColorString } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import {
@@ -9,7 +9,15 @@ import {
   DEFAULT_CATEGORICAL_PALETTES,
   getKeyFromPalette,
 } from "../colors/categorical_palettes";
-import { FeatureThreshold, isThresholdCategorical, ThresholdType } from "../types";
+import {
+  defaultViewerConfig,
+  DrawSettings,
+  FeatureThreshold,
+  isDrawMode,
+  isThresholdCategorical,
+  ThresholdType,
+  ViewerConfig,
+} from "../types";
 import { numberToStringDecimal } from "./math_utils";
 
 enum UrlParam {
@@ -24,6 +32,18 @@ enum UrlParam {
   COLOR_RAMP_REVERSED_SUFFIX = "!",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
+  BACKDROP_KEY = "bg-key",
+  BACKDROP_BRIGHTNESS = "bg-brightness",
+  BACKDROP_SATURATION = "bg-sat",
+  FOREGROUND_ALPHA = "fg-alpha",
+  OUTLIER_MODE = "outlier-mode",
+  OUTLIER_COLOR = "outlier-color",
+  FILTERED_MODE = "filter-mode",
+  FILTERED_COLOR = "filter-color",
+  SHOW_PATH = "path",
+  SHOW_SCALEBAR = "scalebar",
+  SHOW_TIMESTAMP = "timestamp",
+  KEEP_RANGE = "keep-range",
 }
 
 const ALLEN_FILE_PREFIX = "/allen/";
@@ -45,6 +65,8 @@ export type UrlParams = {
   colorRampKey: string | null;
   colorRampReversed: boolean | null;
   categoricalPalette: Color[];
+  config: Partial<ViewerConfig>;
+  selectedBackdropKey: string | null;
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -183,6 +205,104 @@ function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | 
 }
 
 /**
+ * If the boolean parameter is defined, serializes it as a string and adds it to the parameters array.
+ */
+function tryAddBooleanParam(parameters: string[], value: boolean | undefined, key: string): void {
+  if (value !== undefined) {
+    parameters.push(`${key}=${value ? "1" : "0"}`);
+  }
+}
+
+function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
+  const parameters: string[] = [];
+  // Backdrop
+  if (config.backdropSaturation !== undefined) {
+    parameters.push(`${UrlParam.BACKDROP_SATURATION}=${config.backdropSaturation}`);
+  }
+  if (config.backdropBrightness !== undefined) {
+    parameters.push(`${UrlParam.BACKDROP_BRIGHTNESS}=${config.backdropBrightness}`);
+  }
+
+  // Foreground
+  if (config.objectOpacity !== undefined) {
+    parameters.push(`${UrlParam.FOREGROUND_ALPHA}=${config.objectOpacity}`);
+  }
+
+  // Outlier + filter colors
+  if (config.outlierDrawSettings) {
+    parameters.push(`${UrlParam.OUTLIER_COLOR}=${config.outlierDrawSettings.color.getHexString()}`);
+    parameters.push(`${UrlParam.OUTLIER_MODE}=${config.outlierDrawSettings.mode}`);
+  }
+  if (config.outOfRangeDrawSettings) {
+    parameters.push(`${UrlParam.FILTERED_COLOR}=${config.outOfRangeDrawSettings.color.getHexString()}`);
+    parameters.push(`${UrlParam.FILTERED_MODE}=${config.outOfRangeDrawSettings.mode}`);
+  }
+
+  tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
+  tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
+  tryAddBooleanParam(parameters, config.showTrackPath, UrlParam.SHOW_PATH);
+  tryAddBooleanParam(parameters, config.keepRangeBetweenDatasets, UrlParam.KEEP_RANGE);
+
+  return parameters;
+}
+
+export function isHexColor(value: string | null): value is HexColorString {
+  const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
+  return value !== null && hexRegex.test(value);
+}
+
+function parseDrawSettings(color: string | null, mode: string | null, defaultSettings: DrawSettings): DrawSettings {
+  const modeInt = parseInt(mode || "-1", 10);
+  const hexColor = "#" + color;
+  return {
+    color: isHexColor(hexColor) ? new Color(hexColor) : defaultSettings.color,
+    mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
+  };
+}
+
+function getBooleanParam(value: string | null): boolean | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  return value === "1";
+}
+
+function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig> | undefined {
+  const newConfig: Partial<ViewerConfig> = {};
+  if (params.get(UrlParam.BACKDROP_SATURATION)) {
+    newConfig.backdropSaturation = parseInt(params.get(UrlParam.BACKDROP_SATURATION)!, 10);
+  }
+  if (params.get(UrlParam.BACKDROP_BRIGHTNESS)) {
+    newConfig.backdropBrightness = parseInt(params.get(UrlParam.BACKDROP_BRIGHTNESS)!, 10);
+  }
+  if (params.get(UrlParam.FOREGROUND_ALPHA)) {
+    newConfig.objectOpacity = parseInt(params.get(UrlParam.FOREGROUND_ALPHA)!, 10);
+  }
+  if (params.get(UrlParam.OUTLIER_COLOR) || params.get(UrlParam.OUTLIER_MODE)) {
+    newConfig.outlierDrawSettings = parseDrawSettings(
+      params.get(UrlParam.OUTLIER_COLOR),
+      params.get(UrlParam.OUTLIER_MODE),
+      defaultViewerConfig.outlierDrawSettings
+    );
+  }
+  if (params.get(UrlParam.FILTERED_COLOR) || params.get(UrlParam.FILTERED_MODE)) {
+    newConfig.outOfRangeDrawSettings = parseDrawSettings(
+      params.get(UrlParam.FILTERED_COLOR),
+      params.get(UrlParam.FILTERED_MODE),
+      defaultViewerConfig.outOfRangeDrawSettings
+    );
+  }
+
+  newConfig.showScaleBar = getBooleanParam(params.get(UrlParam.SHOW_SCALEBAR));
+  newConfig.showTimestamp = getBooleanParam(params.get(UrlParam.SHOW_TIMESTAMP));
+  newConfig.showTrackPath = getBooleanParam(params.get(UrlParam.SHOW_PATH));
+  newConfig.keepRangeBetweenDatasets = getBooleanParam(params.get(UrlParam.KEEP_RANGE));
+
+  const finalConfig = removeUndefinedProperties(newConfig);
+  return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
+}
+
+/**
  * Creates a url query string from parameters that can be appended onto the base URL.
  *
  * @param state: An object matching any of the properties of `UrlParams`.
@@ -248,6 +368,12 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
       });
       includedParameters.push(`${UrlParam.PALETTE}=${stops.join("-")}`);
     }
+  }
+  if (state.config) {
+    includedParameters.push(...serializeViewerConfig(state.config));
+  }
+  if (state.selectedBackdropKey) {
+    includedParameters.push(`${UrlParam.BACKDROP_KEY}=${encodeURIComponent(state.selectedBackdropKey)}`);
   }
 
   // If parameters present, join with URL syntax and push into the URL
@@ -431,6 +557,9 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     categoricalPalette = hexColors.map((hex) => new Color(hex));
   }
 
+  const config = deserializeViewerConfig(urlParams);
+  const selectedBackdropKey = decodePossiblyNullString(urlParams.get(UrlParam.BACKDROP_KEY)) ?? undefined;
+
   // Remove undefined entries from the object for a cleaner return value
   return removeUndefinedProperties({
     collection: collectionParam,
@@ -443,5 +572,7 @@ export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlPa
     colorRampKey: colorRampParam,
     colorRampReversed: colorRampReversedParam,
     categoricalPalette,
+    config,
+    selectedBackdropKey,
   });
 }

@@ -80,6 +80,7 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
 };
 
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
+// CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 /** Draw options for object types. */
 export enum DrawMode {
   /** Hide this object type. */
@@ -87,6 +88,10 @@ export enum DrawMode {
   /** Use a solid color for this object type. */
   USE_COLOR = 1,
 }
+
+export const isDrawMode = (mode: number): mode is DrawMode => {
+  return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
+};
 
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
 // to numeric data. Numeric thresholds do not track if their source feature is integer
@@ -139,8 +144,11 @@ export type ViewerConfig = {
   showScaleBar: boolean;
   showTimestamp: boolean;
   keepRangeBetweenDatasets: boolean;
+  /** Brightness, as an integer percentage. */
   backdropBrightness: number;
+  /** Saturation, as an integer percentage. */
   backdropSaturation: number;
+  /** Opacity, as an integer percentage. */
   objectOpacity: number;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
@@ -151,11 +159,11 @@ export const defaultViewerConfig: ViewerConfig = {
   showScaleBar: true,
   showTimestamp: true,
   keepRangeBetweenDatasets: false,
-  /** Opacity, as a number percentage. */
+  /** Brightness, as an integer percentage. */
   backdropBrightness: 100,
-  /** Saturation, as a number percentage. */
+  /** Saturation, as an integer percentage. */
   backdropSaturation: 100,
-  /** Opacity, as a number percentage. */
+  /** Opacity, as an integer percentage. */
   objectOpacity: 100,
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
