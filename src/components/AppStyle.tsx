@@ -221,12 +221,6 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorTextPlaceholder: theme.color.text.hint,
           },
           components: {
-            Tabs: {
-              itemColor: theme.color.text.tertiary,
-              cardBg: theme.color.layout.tabBackground,
-              colorBorder: theme.color.layout.borders,
-              colorBorderSecondary: theme.color.layout.borders,
-            },
             Button: {
               colorPrimaryActive: theme.color.button.hover,
               colorPrimaryHover: theme.color.button.hover,
@@ -252,6 +246,12 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               railHoverBg: theme.color.slider.rail,
               controlHeightSM: 20,
               trackHoverBg: theme.color.themeLight,
+            },
+            Tabs: {
+              itemColor: theme.color.text.primary,
+              cardBg: theme.color.layout.tabBackground,
+              colorBorder: theme.color.layout.borders,
+              colorBorderSecondary: theme.color.layout.borders,
             },
             Divider: {
               marginLG: 0,
