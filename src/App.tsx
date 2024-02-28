@@ -25,6 +25,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
+import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/ColorRampDropdown";
@@ -714,13 +715,8 @@ function App(): ReactElement {
             onChangePalette={setCategoricalPalette}
           />
         </div>
-        <FlexRowAlignCenter className={styles.headerRight}>
-          <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
-            <FlexRowAlignCenter $gap={6}>
-              <LinkOutlined />
-              Copy URL
-            </FlexRowAlignCenter>
-          </Button>
+        <FlexRowAlignCenter className={styles.headerRight} $gap={2}>
+          <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
             setFrame={setFrameAndRender}
@@ -732,7 +728,10 @@ function App(): ReactElement {
             disabled={dataset === null}
             setIsRecording={setIsRecording}
           />
-          <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+          <TextButton onClick={openCopyNotification}>
+            <LinkOutlined />
+            <p>Copy URL</p>
+          </TextButton>
           <HelpDropdown />
         </FlexRowAlignCenter>
       </div>

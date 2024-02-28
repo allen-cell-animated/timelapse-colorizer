@@ -1,4 +1,4 @@
-import { FolderOpenOutlined } from "@ant-design/icons";
+import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -9,6 +9,7 @@ import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_uti
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
 
 import { AppThemeContext } from "./AppStyle";
+import TextButton from "./Buttons/TextButton";
 
 /** Key for local storage to read/write recently opened datasets */
 const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
@@ -242,9 +243,10 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   return (
     <div ref={modalContextRef}>
-      <Button type="primary" onClick={() => setIsLoadModalOpen(true)}>
-        Load
-      </Button>
+      <TextButton onClick={() => setIsLoadModalOpen(true)}>
+        <UploadOutlined />
+        <p>Load</p>
+      </TextButton>
       <Modal
         title={"Load a single dataset or collection"}
         open={isLoadModalOpen}
