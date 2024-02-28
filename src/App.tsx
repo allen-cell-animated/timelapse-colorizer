@@ -909,7 +909,7 @@ function App(): ReactElement {
                 onChange={(key) => setOpenTab(key as TabType)}
                 items={[
                   {
-                    label: "Track Plot",
+                    label: "Track plot",
                     key: TabType.TRACK_PLOT,
                     children: (
                       <div className={styles.tabContent}>
@@ -927,7 +927,7 @@ function App(): ReactElement {
                     ),
                   },
                   {
-                    label: "Scatter Plot",
+                    label: "Scatter plot",
                     key: TabType.SCATTER_PLOT,
                     children: (
                       <div className={styles.tabContent}>
@@ -966,7 +966,7 @@ function App(): ReactElement {
                     ),
                   },
                   {
-                    label: "Settings",
+                    label: "Viewer settings",
                     key: TabType.SETTINGS,
                     children: (
                       <div className={styles.tabContent}>
