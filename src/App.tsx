@@ -695,7 +695,7 @@ function App(): ReactElement {
           <span className={styles.verticalDivider}></span>
           <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
         </div>
-        <h3>Dataset Name</h3>
+        {/* <h3>Dataset Name</h3> */}
         <FlexRowAlignCenter $gap={2}>
           <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
           <Export
@@ -795,11 +795,7 @@ function App(): ReactElement {
                       )
                     }
                   </div>
-                  {/** Additional top bar settings */}
-                  <div
-                    className={styles.checkbox}
-                    style={{ flexBasis: 150, flexShrink: 1, flexGrow: 1, width: "fit-content" }}
-                  >
+                  <div style={{ flexBasis: 150, flexShrink: 1, flexGrow: 1, width: "fit-content" }}>
                     <Checkbox
                       checked={config.keepRangeBetweenDatasets}
                       onChange={() => {
