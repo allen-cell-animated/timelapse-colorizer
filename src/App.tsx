@@ -19,6 +19,7 @@ import {
   getDefaultScatterPlotConfig,
   isThresholdNumeric,
   ScatterPlotConfig,
+  TabType,
   ViewerConfig,
 } from "./colorizer/types";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
@@ -44,7 +45,7 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/Tabs";
+import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
 
 import styles from "./App.module.css";
 
@@ -121,7 +122,6 @@ function App(): ReactElement {
   }, [dataset, featureThresholds]);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
-  const [openTab, setOpenTab] = useState(TabType.TRACK_PLOT);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -195,8 +195,7 @@ function App(): ReactElement {
   const getUrlParams = useCallback((): string => {
     const { datasetParam, collectionParam } = getDatasetAndCollectionParam();
     const rangeParam = getRangeParam();
-
-    return urlUtils.paramsToUrlQueryString({
+    const state: Partial<urlUtils.UrlParams> = {
       collection: collectionParam,
       dataset: datasetParam,
       feature: featureName,
@@ -210,7 +209,9 @@ function App(): ReactElement {
       categoricalPalette: categoricalPalette,
       config: config,
       selectedBackdropKey,
-    } as Required<urlUtils.UrlParams>);
+      scatterPlotConfig,
+    };
+    return urlUtils.paramsToUrlQueryString(state);
   }, [
     getDatasetAndCollectionParam,
     getRangeParam,
@@ -221,8 +222,9 @@ function App(): ReactElement {
     colorRampKey,
     colorRampReversed,
     categoricalPalette,
-    selectedBackdropKey,
     config,
+    selectedBackdropKey,
+    scatterPlotConfig,
   ]);
 
   // Update url whenever the viewer settings change
@@ -427,6 +429,9 @@ function App(): ReactElement {
       }
       if (initialUrlParams.config) {
         updateConfig(initialUrlParams.config);
+      }
+      if (initialUrlParams.scatterPlotConfig) {
+        updateScatterPlotConfig(initialUrlParams.scatterPlotConfig);
       }
     };
 
@@ -916,8 +921,8 @@ function App(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
-                activeKey={openTab}
-                onChange={(key) => setOpenTab(key as TabType)}
+                activeKey={config.openTab}
+                onChange={(key) => updateConfig({ openTab: key as TabType })}
                 items={[
                   {
                     label: "Track plot",
@@ -948,7 +953,7 @@ function App(): ReactElement {
                           selectedTrack={selectedTrack}
                           findTrack={findTrack}
                           setFrame={setFrameAndRender}
-                          isVisible={openTab === TabType.SCATTER_PLOT}
+                          isVisible={config.openTab === TabType.SCATTER_PLOT}
                           isPlaying={timeControls.isPlaying() || isRecording}
                           selectedFeatureName={featureName}
                           colorRampMin={colorRampMin}

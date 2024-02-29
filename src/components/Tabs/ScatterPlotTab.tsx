@@ -7,7 +7,7 @@ import { Color, ColorRepresentation, HexColorString } from "three";
 
 import { SwitchIconSVG } from "../../assets";
 import { ColorRamp, Dataset, Track } from "../../colorizer";
-import { DrawMode, RangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
+import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import {
@@ -44,7 +44,7 @@ const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
 
-const DEFAULT_RANGE_TYPE = RangeType.ALL_TIME;
+const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
@@ -201,7 +201,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   // Track last rendered props + state to make optimizations on re-renders
   type LastRenderedState = {
-    rangeType: RangeType;
+    rangeType: PlotRangeType;
     xAxisFeatureName: string | null;
     yAxisFeatureName: string | null;
   } & ScatterPlotTabProps;
@@ -229,7 +229,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const shouldDelayRender = (): boolean => {
     // Don't render when tab is not visible.
     // Also, don't render updates during playback, to prevent blocking the UI.
-    return !props.isVisible || (isPlaying && rangeType === RangeType.ALL_TIME);
+    return !props.isVisible || (isPlaying && rangeType === PlotRangeType.ALL_TIME);
   };
 
   const clearPlotAndStopRender = (): void => {
@@ -252,7 +252,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const filterDataByRange = (
     rawXData: DataArray,
     rawYData: DataArray,
-    range: RangeType
+    range: PlotRangeType
   ):
     | undefined
     | {
@@ -266,7 +266,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let objectIds: number[] = [];
     let trackIds: number[] = [];
 
-    if (range === RangeType.CURRENT_FRAME) {
+    if (range === PlotRangeType.CURRENT_FRAME) {
       // Filter data to only show the current frame.
       if (!dataset?.times) {
         return undefined;
@@ -279,7 +279,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           yData.push(rawYData[i]);
         }
       }
-    } else if (range === RangeType.CURRENT_TRACK) {
+    } else if (range === PlotRangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
       if (!selectedTrack) {
         return { xData: [], yData: [], objectIds: [], trackIds: [] };
@@ -595,7 +595,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const { xData, yData, objectIds, trackIds } = result;
 
     let markerBaseColor = undefined;
-    if (rangeType === RangeType.ALL_TIME && selectedTrack) {
+    if (rangeType === PlotRangeType.ALL_TIME && selectedTrack) {
       // Use a light grey for other markers when a track is selected.
       markerBaseColor = new Color("#dddddd");
     }
@@ -628,8 +628,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     traces.push(yHistogram);
 
     // Render current track as an extra trace.
-    const trackData = filterDataByRange(rawXData, rawYData, RangeType.CURRENT_TRACK);
-    if (trackData && rangeType !== RangeType.CURRENT_FRAME) {
+    const trackData = filterDataByRange(rawXData, rawYData, PlotRangeType.CURRENT_TRACK);
+    if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
       // Render an extra trace for lines connecting the points in the current track when time is a feature.
       if (isUsingTime) {
         const hovertemplate = getHoverTemplate(dataset, xAxisFeatureName, yAxisFeatureName);
@@ -780,9 +780,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           label={"Show objects from"}
           style={{ marginLeft: "10px" }}
           selected={rangeType}
-          items={Object.values(RangeType)}
+          items={Object.values(PlotRangeType)}
           width={"120px"}
-          onChange={(value) => props.updateScatterPlotConfig({ rangeType: value as RangeType })}
+          onChange={(value) => props.updateScatterPlotConfig({ rangeType: value as PlotRangeType })}
         ></LabeledDropdown>
       </FlexRowAlignCenter>
     );
