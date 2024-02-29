@@ -76,6 +76,11 @@
   padding: 12px 30px;
   border-bottom: 1px solid var(--color-borders);
   gap: 10px;
+  position: sticky;
+  background-color: var(--color-background);
+  z-index: 100;
+  top: 0;
+  left: 0;
 }
 
 .header > div {
@@ -141,11 +146,11 @@
   overflow: hidden;
 }
 
+/* Custom styling to make the Ant checkbox line up with the top of the text label*/
 .canvasTopContainer label:global(.ant-checkbox-wrapper) {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  text-wrap: wrap;
 }
 
 .canvasTopContainer label:global(.ant-checkbox-wrapper) > :global(.ant-checkbox) {
