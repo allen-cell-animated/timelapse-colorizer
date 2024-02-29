@@ -12,6 +12,7 @@
   font-style: normal;
   font-weight: 400;
   margin: 5px 0;
+  color: var(--color-text-theme);
 }
 
 .app h2 {
@@ -72,7 +73,7 @@
   width: auto;
   height: fit-content;
   min-height: var(--header-content-height);
-  padding: 18px 30px;
+  padding: 12px 30px;
   border-bottom: 1px solid var(--color-borders);
   gap: 10px;
 }

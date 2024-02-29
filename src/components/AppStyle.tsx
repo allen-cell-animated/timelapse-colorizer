@@ -36,12 +36,12 @@ const theme = {
     text: {
       primary: palette.gray60,
       secondary: palette.gray50,
-      tertiary: palette.gray40,
       hint: palette.gray30,
       disabled: palette.gray30,
       button: palette.gray0,
       error: palette.error,
       success: palette.success,
+      theme: palette.theme,
     },
     layout: {
       background: palette.gray0,
@@ -76,7 +76,7 @@ const theme = {
     family: "Lato, LatoExtended, sans-serif",
     resource: "https://fonts.googleapis.com/css2?family=Lato&display=swap",
     size: {
-      header: 22,
+      header: 20,
       section: 18,
       label: 16,
       content: 14,
@@ -112,6 +112,7 @@ const CssContainer = styled.div`
   --color-text-button: ${theme.color.text.button};
   --color-text-error: ${theme.color.text.error};
   --color-text-success: ${theme.color.text.success};
+  --color-text-theme: ${theme.color.text.theme};
 
   /* Layout */
   --color-background: ${theme.color.layout.background};

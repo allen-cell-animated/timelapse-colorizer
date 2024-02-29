@@ -695,7 +695,8 @@ function App(): ReactElement {
           <span className={styles.verticalDivider}></span>
           <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
         </div>
-        <FlexRowAlignCenter className={styles.headerRight} $gap={2}>
+        <h3>Dataset Name</h3>
+        <FlexRowAlignCenter $gap={2}>
           <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
           <Export
             totalFrames={dataset?.numberOfFrames || 0}
