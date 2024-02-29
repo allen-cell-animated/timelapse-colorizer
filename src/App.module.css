@@ -137,9 +137,6 @@
 
 .canvasTopContainer {
   max-width: var(--content-width);
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
   padding: 14px 16px;
   overflow: hidden;
 }
