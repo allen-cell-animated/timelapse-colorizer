@@ -21,10 +21,20 @@ type AccessibleDropdownProps = {
   buttonText: string;
   buttonStyle?: React.CSSProperties;
   /**
-   * Override for the button element. By default, renders the `props.buttonText` in a styled Antd button.
-   * Note that tooltips may not work as expected if this is overridden.
+   * Override for the button element. By default, renders `props.buttonText` in a styled Antd button.
+   *
+   * @param props: The props passed to the dropdown component.
+   * @param isOpen: Whether the dropdown is currently open.
+   * @param onClick: The callback to open the dropdown.
+   *
+   * Overrides must call the provided `onClick` callback during click or interaction events for the
+   * dropdown to work correctly.
+   *
+   * Tooltips may not work as expected if the root element is not a button or does not take callbacks
+   *  as props for the following events: `onMouseEnter/Leave`, `onPointerEnter/Leave`,
+   * `onFocus`, or `onBlur`. See implementation of `IconButton.tsx` for an example.
    */
-  renderButton?: ((props: AccessibleDropdownProps) => ReactElement) | null;
+  renderButton?: ((props: AccessibleDropdownProps, isOpen: boolean, onClick: () => void) => ReactElement) | null;
   onButtonClicked?: (key: string) => void;
   /** Whether the tooltip should appear when hovered. */
   showTooltip?: boolean;
@@ -168,16 +178,16 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
   }, [forceOpen]);
 
   //// Handle rendering of buttons and dropdown contents ///////////////////
-  const defaultRenderButton = (props: AccessibleDropdownProps): ReactElement => {
+  const defaultRenderButton = (props: AccessibleDropdownProps, isOpen: boolean, onClick: () => void): ReactElement => {
     return (
       <MainButton
         disabled={props.disabled}
         style={props.buttonStyle}
         $type={props.buttonType}
         type={props.buttonType === "outlined" ? "default" : props.buttonType}
-        $open={forceOpen}
+        $open={isOpen}
         // Open the dropdown when clicked for accessibility
-        onClick={() => setForceOpen(!forceOpen)}
+        onClick={onClick}
       >
         <MainButtonContents>
           <div>
@@ -224,7 +234,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
           placement="right"
           trigger={["hover", "focus"]}
         >
-          {renderButton(props)}
+          {renderButton(props, forceOpen, () => setForceOpen(!forceOpen))}
         </Tooltip>
       </Dropdown>
     </MainContainer>
