@@ -765,87 +765,89 @@ function App(): ReactElement {
         <div className={styles.contentPanels}>
           <div className={styles.canvasPanel}>
             {/** Canvas */}
-            <div className={styles.canvasTopContainer}>
-              <h3 style={{ margin: "0" }}>
-                {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
-              </h3>
-              <div className={styles.canvasControlsContainer}>
-                <div style={{ flexBasis: 2, flexGrow: 2, minWidth: "75px" }}>
-                  {
-                    // Render either a categorical color picker or a range slider depending on the feature type
-                    dataset?.isFeatureCategorical(featureName) ? (
-                      <CategoricalColorPicker
-                        categories={dataset.getFeatureCategories(featureName) || []}
-                        selectedPalette={categoricalPalette}
-                        onChangePalette={setCategoricalPalette}
-                        disabled={disableUi}
-                      />
-                    ) : (
-                      <LabeledRangeSlider
-                        min={colorRampMin}
-                        max={colorRampMax}
-                        minSliderBound={dataset?.getFeatureData(featureName)?.min}
-                        maxSliderBound={dataset?.getFeatureData(featureName)?.max}
-                        onChange={function (min: number, max: number): void {
-                          setColorRampMin(min);
-                          setColorRampMax(max);
-                        }}
-                        marks={getColorMapSliderMarks()}
-                        disabled={disableUi}
-                      />
-                    )
-                  }
-                </div>
-                {/** Additional top bar settings */}
-                <div className={styles.checkbox} style={{ flexBasis: 1, flexGrow: 1 }}>
-                  <Checkbox
-                    checked={config.keepRangeBetweenDatasets}
-                    onChange={() => {
-                      // Invert lock on range
-                      updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
-                    }}
-                  >
-                    Keep range when switching datasets and features
-                  </Checkbox>
+            <div className={styles.canvasTopAndCanvasContainer}>
+              <div className={styles.canvasTopContainer}>
+                <h3 style={{ margin: "0" }}>
+                  {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
+                </h3>
+                <div className={styles.canvasControlsContainer}>
+                  <div style={{ flexBasis: 2, flexGrow: 2, minWidth: "75px" }}>
+                    {
+                      // Render either a categorical color picker or a range slider depending on the feature type
+                      dataset?.isFeatureCategorical(featureName) ? (
+                        <CategoricalColorPicker
+                          categories={dataset.getFeatureCategories(featureName) || []}
+                          selectedPalette={categoricalPalette}
+                          onChangePalette={setCategoricalPalette}
+                          disabled={disableUi}
+                        />
+                      ) : (
+                        <LabeledRangeSlider
+                          min={colorRampMin}
+                          max={colorRampMax}
+                          minSliderBound={dataset?.getFeatureData(featureName)?.min}
+                          maxSliderBound={dataset?.getFeatureData(featureName)?.max}
+                          onChange={function (min: number, max: number): void {
+                            setColorRampMin(min);
+                            setColorRampMax(max);
+                          }}
+                          marks={getColorMapSliderMarks()}
+                          disabled={disableUi}
+                        />
+                      )
+                    }
+                  </div>
+                  {/** Additional top bar settings */}
+                  <div className={styles.checkbox} style={{ flexBasis: 1, flexGrow: 1 }}>
+                    <Checkbox
+                      checked={config.keepRangeBetweenDatasets}
+                      onChange={() => {
+                        // Invert lock on range
+                        updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
+                      }}
+                    >
+                      Keep range when switching datasets and features
+                    </Checkbox>
+                  </div>
                 </div>
               </div>
+              <HoverTooltip
+                tooltipContent={
+                  <>
+                    <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
+                    <p>
+                      {featureName}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
+                    </p>
+                  </>
+                }
+                disabled={!showHoveredId}
+              >
+                <CanvasWrapper
+                  canv={canv}
+                  dataset={dataset}
+                  selectedBackdropKey={selectedBackdropKey}
+                  colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
+                  colorRampMin={colorRampMin}
+                  colorRampMax={colorRampMax}
+                  categoricalColors={categoricalPalette}
+                  selectedTrack={selectedTrack}
+                  config={config}
+                  onTrackClicked={(track) => {
+                    setFindTrackInput("");
+                    setSelectedTrack(track);
+                  }}
+                  inRangeLUT={inRangeLUT}
+                  onMouseHover={(id: number): void => {
+                    const isObject = id !== BACKGROUND_ID;
+                    setShowHoveredId(isObject);
+                    if (isObject) {
+                      setLastHoveredId(id);
+                    }
+                  }}
+                  onMouseLeave={() => setShowHoveredId(false)}
+                />
+              </HoverTooltip>
             </div>
-            <HoverTooltip
-              tooltipContent={
-                <>
-                  <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
-                  <p>
-                    {featureName}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
-                  </p>
-                </>
-              }
-              disabled={!showHoveredId}
-            >
-              <CanvasWrapper
-                canv={canv}
-                dataset={dataset}
-                selectedBackdropKey={selectedBackdropKey}
-                colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
-                colorRampMin={colorRampMin}
-                colorRampMax={colorRampMax}
-                categoricalColors={categoricalPalette}
-                selectedTrack={selectedTrack}
-                config={config}
-                onTrackClicked={(track) => {
-                  setFindTrackInput("");
-                  setSelectedTrack(track);
-                }}
-                inRangeLUT={inRangeLUT}
-                onMouseHover={(id: number): void => {
-                  const isObject = id !== BACKGROUND_ID;
-                  setShowHoveredId(isObject);
-                  if (isObject) {
-                    setLastHoveredId(id);
-                  }
-                }}
-                onMouseLeave={() => setShowHoveredId(false)}
-              />
-            </HoverTooltip>
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>

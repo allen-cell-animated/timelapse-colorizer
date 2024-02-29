@@ -138,14 +138,19 @@
   }
 }
 
+.canvasTopAndCanvasContainer {
+  border: 1px solid var(--color-borders);
+  border-radius: 5px 5px 0 0;
+}
+
 .canvasTopContainer {
   max-width: var(--content-width);
   display: flex;
   flex-direction: column;
   padding: 14px 16px;
-  border: 1px solid var(--color-borders);
-  border-bottom: 0px;
-  border-radius: 5px 5px 0 0;
+}
+
+label.ant-checkbox-wrapper {
 }
 
 .canvasPanel {
@@ -161,7 +166,7 @@
 }
 
 .app canvas {
-  border: 1px solid var(--color-borders);
+  border-top: 1px solid var(--color-borders);
 }
 
 .canvasPanel .timeControls {
