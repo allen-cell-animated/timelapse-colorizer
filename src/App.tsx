@@ -795,7 +795,7 @@ function App(): ReactElement {
                       )
                     }
                   </div>
-                  <div style={{ flexBasis: 150, flexShrink: 1, flexGrow: 1, width: "fit-content" }}>
+                  <div style={{ flexBasis: 100, flexShrink: 1, flexGrow: 1, width: "fit-content" }}>
                     <Checkbox
                       checked={config.keepRangeBetweenDatasets}
                       onChange={() => {
