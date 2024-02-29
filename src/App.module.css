@@ -112,6 +112,10 @@
   gap: 10px;
 }
 
+.canvasControlsContainer span:not(:global(.ant-checkbox)) {
+  text-wrap: wrap;
+}
+
 .mainContent {
   margin: 8px 30px;
 }
