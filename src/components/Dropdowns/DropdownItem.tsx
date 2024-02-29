@@ -55,6 +55,7 @@ export const DropdownItemList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow-y: auto;
 `;
 
 /** Styled Antd Button for use with Dropdown inputs. */

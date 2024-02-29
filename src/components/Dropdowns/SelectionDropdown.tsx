@@ -1,6 +1,9 @@
-import { Tooltip } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+import { Input, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
-import React, { ReactElement, useMemo } from "react";
+import React, { ReactElement, useMemo, useState, useTransition } from "react";
+
+import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 
 import AccessibleDropdown from "./AccessibleDropdown";
 import DropdownItem, { DropdownItemList } from "./DropdownItem";
@@ -27,6 +30,14 @@ type SelectionDropdownProps = {
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
   style?: React.CSSProperties;
+
+  /**
+   * Whether the searchbar should be enabled. If enabled, will show search bar and filter when the
+   * number of items is above `searchThresholdCount`.
+   */
+  enableSearch?: boolean;
+  /** The number of items that must be in the original list before the search bar will be shown. */
+  searchThresholdCount?: number;
 };
 
 const defaultProps = {
@@ -46,6 +57,10 @@ const defaultProps = {
  */
 export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<SelectionDropdownProps>;
+
+  const [isPending, startTransition] = useTransition();
+  const [searchInput, setSearchInput] = useState("");
+  const [filteredItems, setFilteredItems] = useState<MenuItemType[]>([]);
 
   // Convert items into MenuItemType, adding missing properties as needed
   const items = useMemo((): MenuItemType[] => {
@@ -75,12 +90,29 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     return "";
   }, [props.selected, items]);
 
+  // Filter the items based on the search input
+  // TODO: Use fuse or other library for fuzzy searching
+  useMemo(() => {
+    if (searchInput === "") {
+      startTransition(() => {
+        setFilteredItems(items);
+      });
+    } else {
+      const filtered = items.filter((item) => {
+        return item.label?.toString().toLowerCase().includes(searchInput.toLowerCase());
+      });
+      startTransition(() => {
+        setFilteredItems(filtered);
+      });
+    }
+  }, [searchInput, items]);
+
   // Completely customize the dropdown menu and make the buttons manually.
   // This is because Antd's Dropdown component doesn't allow us to add item tooltips, and complicates
   // other behaviors (like tab navigation or setting width).
   // Ant recommends using the Popover component for this instead of Dropdown, but they use
   // different animation styling (Dropdown looks nicer).
-  const dropdownList: ReactElement[] = items.map((item) => {
+  const dropdownList: ReactElement[] = filteredItems.map((item) => {
     return (
       <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
         <DropdownItem
@@ -97,7 +129,21 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     );
   });
 
-  const dropdownContent = <DropdownItemList>{dropdownList}</DropdownItemList>;
+  const dropdownContent = (
+    <FlexColumn $gap={2}>
+      <Input
+        style={{ paddingLeft: "6px" }}
+        value={searchInput}
+        onChange={(e) => {
+          setSearchInput(e.target.value);
+        }}
+        prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
+        placeholder="Type to search"
+        allowClear
+      ></Input>
+      <DropdownItemList>{dropdownList}</DropdownItemList>
+    </FlexColumn>
+  );
 
   const mainButtonStyle: React.CSSProperties = {
     width: props.width || "15vw",
