@@ -101,21 +101,6 @@
   display: inline-block;
 }
 
-.mainContent .topControls {
-  margin: 16px 0;
-}
-
-.canvasControlsContainer {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.canvasControlsContainer span:not(:global(.ant-checkbox)) {
-  text-wrap: wrap;
-}
-
 .mainContent {
   margin: 8px 30px;
 }
@@ -143,14 +128,32 @@
   border-radius: 5px 5px 0 0;
 }
 
+.canvasControlsContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .canvasTopContainer {
   max-width: var(--content-width);
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
   padding: 14px 16px;
+  overflow: hidden;
 }
 
-label.ant-checkbox-wrapper {
+.canvasTopContainer label:global(.ant-checkbox-wrapper) {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  text-wrap: wrap;
+}
+
+.canvasTopContainer label:global(.ant-checkbox-wrapper) > :global(.ant-checkbox) {
+  align-self: flex-start;
+  margin-top: 3px;
 }
 
 .canvasPanel {

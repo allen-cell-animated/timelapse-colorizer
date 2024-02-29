@@ -720,46 +720,44 @@ function App(): ReactElement {
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
-        <div className={styles.topControls}>
-          <FlexRowAlignCenter $gap={12}>
-            <LabeledDropdown
-              disabled={disableUi}
-              label="Dataset"
-              selected={datasetKey}
-              buttonType="primary"
-              items={collection?.getDatasetKeys() || []}
-              onChange={handleDatasetChange}
-            />
-            <LabeledDropdown
-              disabled={disableUi}
-              label="Feature"
-              selected={featureName}
-              items={getFeatureDropdownData()}
-              onChange={(value) => {
-                if (value !== featureName && dataset) {
-                  replaceFeature(dataset, value);
-                  resetColorRampRangeToDefaults(dataset, value);
-                }
-              }}
-            />
+        <FlexRowAlignCenter $gap={12} style={{ margin: "16px 0", flexWrap: "wrap" }}>
+          <LabeledDropdown
+            disabled={disableUi}
+            label="Dataset"
+            selected={datasetKey}
+            buttonType="primary"
+            items={collection?.getDatasetKeys() || []}
+            onChange={handleDatasetChange}
+          />
+          <LabeledDropdown
+            disabled={disableUi}
+            label="Feature"
+            selected={featureName}
+            items={getFeatureDropdownData()}
+            onChange={(value) => {
+              if (value !== featureName && dataset) {
+                replaceFeature(dataset, value);
+                resetColorRampRangeToDefaults(dataset, value);
+              }
+            }}
+          />
 
-            <ColorRampDropdown
-              colorRamps={DEFAULT_COLOR_RAMPS}
-              selectedRamp={colorRampKey}
-              reversed={colorRampReversed}
-              onChangeRamp={(name, reversed) => {
-                setColorRampKey(name);
-                setColorRampReversed(reversed);
-              }}
-              disabled={disableUi}
-              categoricalPalettes={DEFAULT_CATEGORICAL_PALETTES}
-              useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
-              numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
-              selectedPalette={categoricalPalette}
-              onChangePalette={setCategoricalPalette}
-            />
-          </FlexRowAlignCenter>
-        </div>
+          <ColorRampDropdown
+            colorRamps={DEFAULT_COLOR_RAMPS}
+            selectedRamp={colorRampKey}
+            reversed={colorRampReversed}
+            onChangeRamp={(name, reversed) => {
+              setColorRampKey(name);
+              setColorRampReversed(reversed);
+            }}
+            disabled={disableUi}
+            categoricalPalettes={DEFAULT_CATEGORICAL_PALETTES}
+            useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
+            numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
+            selectedPalette={categoricalPalette}
+            onChangePalette={setCategoricalPalette}
+          />
+        </FlexRowAlignCenter>
 
         {/* Organize the main content areas */}
         <div className={styles.contentPanels}>
@@ -770,8 +768,8 @@ function App(): ReactElement {
                 <h3 style={{ margin: "0" }}>
                   {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
                 </h3>
-                <div className={styles.canvasControlsContainer}>
-                  <div style={{ flexBasis: 2, flexGrow: 2, minWidth: "75px" }}>
+                <FlexRowAlignCenter $gap={12} style={{ flexWrap: "wrap", justifyContent: "space-between" }}>
+                  <div style={{ flexBasis: 250, flexShrink: 2, flexGrow: 2, minWidth: "75px" }}>
                     {
                       // Render either a categorical color picker or a range slider depending on the feature type
                       dataset?.isFeatureCategorical(featureName) ? (
@@ -798,7 +796,10 @@ function App(): ReactElement {
                     }
                   </div>
                   {/** Additional top bar settings */}
-                  <div className={styles.checkbox} style={{ flexBasis: 1, flexGrow: 1 }}>
+                  <div
+                    className={styles.checkbox}
+                    style={{ flexBasis: 150, flexShrink: 1, flexGrow: 1, width: "fit-content" }}
+                  >
                     <Checkbox
                       checked={config.keepRangeBetweenDatasets}
                       onChange={() => {
@@ -809,7 +810,7 @@ function App(): ReactElement {
                       Keep range when switching datasets and features
                     </Checkbox>
                   </div>
-                </div>
+                </FlexRowAlignCenter>
               </div>
               <HoverTooltip
                 tooltipContent={
