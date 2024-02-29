@@ -44,7 +44,7 @@ import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } f
 
 import styles from "./App.module.css";
 
-const AicsLogoContainer = styled.div`
+const AicsLogoLink = styled.a`
   position: relative;
   width: 180px;
   height: 46px;
@@ -689,9 +689,9 @@ function App(): ReactElement {
       {/* TODO: Split into its own component? */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <AicsLogoContainer>
+          <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer">
             <StyledAicsLogo />
-          </AicsLogoContainer>
+          </AicsLogoLink>
           <span className={styles.verticalDivider}></span>
           <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
         </div>
