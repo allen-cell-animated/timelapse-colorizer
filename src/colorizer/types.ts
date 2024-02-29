@@ -168,3 +168,22 @@ export const defaultViewerConfig: ViewerConfig = {
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
 };
+
+export enum RangeType {
+  ALL_TIME = "All time",
+  CURRENT_TRACK = "Current track",
+  CURRENT_FRAME = "Current frame",
+}
+
+export type ScatterPlotConfig = {
+  xAxis: string | null;
+  yAxis: string | null;
+  rangeType: RangeType;
+};
+
+// Use a function instead of a constant to avoid sharing the same object reference.
+export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
+  xAxis: null,
+  yAxis: null,
+  rangeType: RangeType.ALL_TIME,
+});
