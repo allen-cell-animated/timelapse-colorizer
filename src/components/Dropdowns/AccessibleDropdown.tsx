@@ -60,7 +60,6 @@ const MainContainer = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  width: max-content;
   gap: 6px;
 `;
 
@@ -111,7 +110,6 @@ const MainButton = styled(Button)<{ $open: boolean; $type: AccessibleDropdownPro
 
 /** Container for the text label and dropdown arrow SVG inside the main dropdown-triggering button. */
 const MainButtonContents = styled.div`
-  width: 100%;
   display: flex;
   flex-direction: row;
   align-items: center;
