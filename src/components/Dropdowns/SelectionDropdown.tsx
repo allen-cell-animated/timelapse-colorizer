@@ -133,47 +133,57 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   // other behaviors (like tab navigation or setting width).
   // Ant recommends using the Popover component for this instead of Dropdown, but they use
   // different animation styling (Dropdown looks nicer).
-  const dropdownItems: ReactElement[] = filteredItems.map((item) => {
-    return (
-      <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
-        <DropdownItem
-          key={item.key}
-          selected={item.key === props.selected}
-          disabled={props.disabled}
-          onClick={() => {
-            props.onChange(item.key.toString());
-          }}
-        >
-          {item.label}
-        </DropdownItem>
-      </Tooltip>
-    );
-  });
+
+  const getDropdownItems = (closeDropdown: () => void): ReactElement[] => {
+    return filteredItems.map((item) => {
+      return (
+        <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
+          <DropdownItem
+            key={item.key}
+            selected={item.key === props.selected}
+            disabled={props.disabled}
+            onClick={() => {
+              props.onChange(item.key.toString());
+              closeDropdown();
+              // Add a slight delay so the dropdown closes first before the input is cleared
+              setTimeout(() => setSearchInput(""), 1);
+            }}
+          >
+            {item.label}
+          </DropdownItem>
+        </Tooltip>
+      );
+    });
+  };
 
   const showSearch = props.enableSearch && items.length > props.searchThresholdCount;
-  let dropdownContent;
-  if (showSearch) {
-    dropdownContent = (
-      <FlexColumn $gap={6}>
-        <Input
-          style={{ paddingLeft: "6px" }}
-          value={searchInput}
-          onChange={(e) => {
-            setSearchInput(e.target.value);
-          }}
-          size="middle"
-          prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
-          placeholder="Type to search"
-          allowClear
-        ></Input>
-        <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
-          <DropdownItemList>{dropdownItems}</DropdownItemList>
-        </LoadingSpinner>
-      </FlexColumn>
-    );
-  } else {
-    dropdownContent = <DropdownItemList>{dropdownItems}</DropdownItemList>;
-  }
+  const getDropdownContent = (setForceOpen: (forceOpen: boolean) => void): ReactElement => {
+    const closeDropdown = () => {
+      setForceOpen(false);
+    };
+    if (showSearch) {
+      return (
+        <FlexColumn $gap={6}>
+          <Input
+            style={{ paddingLeft: "6px" }}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+            }}
+            size="middle"
+            prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
+            placeholder="Type to search"
+            allowClear
+          ></Input>
+          <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
+            <DropdownItemList>{getDropdownItems(closeDropdown)}</DropdownItemList>
+          </LoadingSpinner>
+        </FlexColumn>
+      );
+    } else {
+      return <DropdownItemList>{getDropdownItems(closeDropdown)}</DropdownItemList>;
+    }
+  };
 
   const mainButtonStyle: React.CSSProperties = {
     width: props.width || "15vw",
@@ -189,7 +199,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       buttonType={props.buttonType}
       buttonText={selectedLabel}
       showTooltip={props.showTooltip}
-      dropdownContent={dropdownContent}
+      dropdownContent={getDropdownContent}
     ></AccessibleDropdown>
   );
 }

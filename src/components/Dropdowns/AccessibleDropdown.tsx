@@ -9,8 +9,14 @@ type AccessibleDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
 
-  /** Contents to be rendered inside the dropdown. */
-  dropdownContent: ReactElement;
+  /**
+   * Contents to be rendered inside the dropdown. Can either be a React element or a function
+   * that returns a React element.
+   *
+   * @param setOpenState: A callback that can be used to force the dropdown open or closed.
+   * Useful for closing the dropdown after a selection has been made.
+   */
+  dropdownContent: ReactElement | ((setOpenState: (open: boolean) => void) => ReactElement);
   renderDropdownContent?: ((content: ReactElement) => ReactElement) | null;
   disabled?: boolean;
   /**
@@ -146,17 +152,27 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
 
   //// Handle clicking on the dropdowns ///////////////////////////////////
 
-  // Support tab navigation by forcing the dropdown to stay open when clicked.
-  const [forceOpen, setForceOpen] = useState(false);
+  /**
+   * Whether the dropdown's visibility is forced open or closed. If null, the dropdown will use default behavior.
+   */
+  const [forceOpenState, setForceOpenState] = useState<boolean | null>(null);
   const componentContainerRef = useRef<HTMLDivElement>(null);
 
   // If open, close the dropdown when focus is lost.
   // Note that the focus out event will fire even if the newly focused element is also
   // inside the component, so we need to check if the new target is also a child element.
   useEffect(() => {
-    if (!forceOpen) {
+    if (forceOpenState === null) {
+      // Null = default behavior, do nothing.
       return;
     }
+
+    if (!forceOpenState) {
+      // Immediately reset the open state to null if the dropdown was forced closed. This is used
+      // to close the dropdown when the user makes a selection.
+      setForceOpenState(null);
+    }
+
     const doesContainTarget = (target: EventTarget | null): boolean => {
       return (
         (target instanceof Element &&
@@ -167,7 +183,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
     };
     const handleFocusLoss = (event: FocusEvent): void => {
       if (!doesContainTarget(event.relatedTarget)) {
-        setForceOpen(false);
+        setForceOpenState(null);
       }
     };
 
@@ -175,7 +191,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
     return () => {
       componentContainerRef.current?.removeEventListener("focusout", handleFocusLoss);
     };
-  }, [forceOpen]);
+  }, [forceOpenState]);
 
   //// Handle rendering of buttons and dropdown contents ///////////////////
   const defaultRenderButton = (props: AccessibleDropdownProps, isOpen: boolean, onClick: () => void): ReactElement => {
@@ -214,17 +230,25 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
   };
   const renderDropdownContent = props.renderDropdownContent || defaultRenderDropdownContent;
 
+  let dropdownContent: ReactElement;
+  if (typeof props.dropdownContent === "function") {
+    dropdownContent = props.dropdownContent(setForceOpenState);
+  } else {
+    dropdownContent = props.dropdownContent;
+  }
+
   const disableTooltip = props.disabled || !props.showTooltip;
+  // const dropdownOpenOverride = forceOpenState !== null ? forceOpenState : undefined;
 
   return (
     <MainContainer ref={componentContainerRef}>
       {props.label && <h3>{props.label}</h3>}
       <Dropdown
         disabled={props.disabled}
-        open={forceOpen || undefined}
+        open={forceOpenState !== null ? forceOpenState : undefined}
         getPopupContainer={componentContainerRef.current ? () => componentContainerRef.current! : undefined}
         dropdownRender={(_menus: ReactNode) => {
-          return renderDropdownContent(props.dropdownContent);
+          return renderDropdownContent(dropdownContent);
         }}
       >
         <Tooltip
@@ -234,7 +258,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
           placement="right"
           trigger={["hover", "focus"]}
         >
-          {renderButton(props, forceOpen, () => setForceOpen(!forceOpen))}
+          {renderButton(props, forceOpenState === true, () => setForceOpenState(!forceOpenState))}
         </Tooltip>
       </Dropdown>
     </MainContainer>
