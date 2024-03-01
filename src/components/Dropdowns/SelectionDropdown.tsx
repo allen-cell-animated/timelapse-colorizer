@@ -11,9 +11,8 @@ import AccessibleDropdown from "./AccessibleDropdown";
 import DropdownItem from "./DropdownItem";
 import DropdownItemList from "./DropdownItemList";
 
-// TODO: Have the dropdown show a loading indicator or something when clicking an item
-// while waiting for its prop to update. -> this is especially noticeable when loading
-// datasets when off of the Institute ethernet.
+// TODO: Have the dropdown show a loading indicator after a selection has been made
+// but before the prop value updates. -> this is especially noticeable when slow datasets.
 // Is there a way we can do this using async promises, maybe? If the promise rejects,
 // discard the changed value?
 
@@ -38,24 +37,21 @@ type SelectionDropdownProps = {
   showTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
-  style?: React.CSSProperties;
-
   /**
    * Whether the search bar should be enabled. If enabled, will show search bar and filter
-   * by search input when the total number of items is above `searchThresholdCount`.
+   * by search input when the total number of items is above `searchThresholdCount`. True by default.
    */
   enableSearch?: boolean;
-  /** The number of items that must be in the original list before the search bar will be shown. */
+  /** The number of items that must be in the original list before the search bar will be shown. 10 by default.*/
   searchThresholdCount?: number;
 };
 
-const defaultProps = {
+const defaultProps: Partial<SelectionDropdownProps> = {
   label: null,
   disabled: false,
   buttonType: "outlined",
   showTooltip: true,
   width: null,
-  style: {},
   enableSearch: true,
   searchThresholdCount: 10,
 };
@@ -92,9 +88,6 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     }
   }, [props.items]);
 
-  // TODO: Get max width text label so dropdown does not resize when filtered items change.
-  // Use canvas.measureText?
-
   // Get the label of the selected item to display in the dropdown button
   const selectedLabel = useMemo((): string => {
     for (const item of items) {
@@ -118,6 +111,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   useMemo(() => {
     if (searchInput === "") {
       startTransition(() => {
+        // Reset to original list
         setFilteredItems(items);
       });
     } else {
@@ -171,7 +165,6 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
             onChange={(e) => {
               setSearchInput(e.target.value);
             }}
-            size="middle"
             prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
             placeholder="Type to search"
             allowClear
@@ -207,7 +200,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       showTooltip={props.showTooltip}
       dropdownContent={getDropdownContent}
       onButtonClicked={() => {
-        // Focus the search input when the dropdown is opened
+        // Focus the search input when the dropdown is clicked open
         if (searchInputRef.current) {
           searchInputRef.current.focus();
         }

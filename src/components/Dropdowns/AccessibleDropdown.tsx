@@ -163,11 +163,10 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
   // inside the component, so we need to check if the new target is also a child element.
   useEffect(() => {
     if (forceOpenState === null) {
-      // Null = default behavior, do nothing.
       return;
     } else if (!forceOpenState) {
-      // Immediately reset the open state to null if the dropdown was forced closed. This is used
-      // to close the dropdown when the user makes a selection.
+      // If the dropdown was forced closed, reset the open state to the default so it can be interacted with
+      // again.
       setForceOpenState(null);
       return;
     }
@@ -237,7 +236,11 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
   }
 
   const disableTooltip = props.disabled || !props.showTooltip;
-  // const dropdownOpenOverride = forceOpenState !== null ? forceOpenState : undefined;
+  const isOpen = forceOpenState === true;
+  const onButtonClick = (): void => {
+    props.onButtonClicked();
+    setForceOpenState(!forceOpenState);
+  };
 
   return (
     <MainContainer ref={componentContainerRef}>
@@ -257,10 +260,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
           placement="right"
           trigger={["hover", "focus"]}
         >
-          {renderButton(props, forceOpenState === true, () => {
-            props.onButtonClicked();
-            setForceOpenState(!forceOpenState);
-          })}
+          {renderButton(props, isOpen, onButtonClick)}
         </Tooltip>
       </Dropdown>
     </MainContainer>

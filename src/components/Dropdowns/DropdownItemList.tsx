@@ -16,7 +16,6 @@ const MainContainer = styled.div`
   width: auto;
 `;
 
-/** Convenience styled div for alignment and spacing of dropdown items. */
 const ScrollContainer = styled.div`
   overflow-y: auto;
 `;

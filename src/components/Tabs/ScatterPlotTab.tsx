@@ -785,14 +785,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           onChange={setYAxisFeatureName}
         />
 
-        <SelectionDropdown
-          label={"Show objects from"}
-          style={{ marginLeft: "10px" }}
-          selected={rangeType}
-          items={Object.values(RangeType)}
-          width={"120px"}
-          onChange={(value) => setRangeType(value as RangeType)}
-        ></SelectionDropdown>
+        <div style={{ marginLeft: "10px" }}>
+          <SelectionDropdown
+            label={"Show objects from"}
+            selected={rangeType}
+            items={Object.values(RangeType)}
+            width={"120px"}
+            onChange={(value) => setRangeType(value as RangeType)}
+          ></SelectionDropdown>
+        </div>
       </FlexRowAlignCenter>
     );
   };
