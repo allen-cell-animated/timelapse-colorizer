@@ -1,6 +1,7 @@
 import { SearchOutlined } from "@ant-design/icons";
 import { Input, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
+import Fuse from "fuse.js";
 import React, { ReactElement, useMemo, useState, useTransition } from "react";
 
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
@@ -80,6 +81,9 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     }
   }, [props.items]);
 
+  // TODO: Get max width text label so dropdown does not resize when filtered items change.
+  // Use canvas.measureText?
+
   // Get the label of the selected item to display in the dropdown button
   const selectedLabel = useMemo((): string => {
     for (const item of items) {
@@ -90,19 +94,26 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     return "";
   }, [props.selected, items]);
 
+  // Set up fuse for fuzzy searching
+  const fuse = useMemo(() => {
+    return new Fuse(items, {
+      keys: ["key", "label"],
+      isCaseSensitive: false,
+      shouldSort: true,
+    });
+  }, [props.items]);
+
   // Filter the items based on the search input
-  // TODO: Use fuse or other library for fuzzy searching
   useMemo(() => {
     if (searchInput === "") {
       startTransition(() => {
         setFilteredItems(items);
       });
     } else {
-      const filtered = items.filter((item) => {
-        return item.label?.toString().toLowerCase().includes(searchInput.toLowerCase());
-      });
+      const searchResult = fuse.search(searchInput);
+      const filteredItems = searchResult.map((result) => result.item);
       startTransition(() => {
-        setFilteredItems(filtered);
+        setFilteredItems(filteredItems);
       });
     }
   }, [searchInput, items]);
