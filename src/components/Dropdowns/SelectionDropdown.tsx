@@ -4,8 +4,9 @@ import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import Fuse from "fuse.js";
 import React, { ReactElement, useMemo, useState, useTransition } from "react";
 
-import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+import { FlexColumn } from "../../styles/utils";
 
+import LoadingSpinner from "../LoadingSpinner";
 import AccessibleDropdown from "./AccessibleDropdown";
 import DropdownItem, { DropdownItemList } from "./DropdownItem";
 
@@ -141,18 +142,21 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   });
 
   const dropdownContent = (
-    <FlexColumn $gap={2}>
+    <FlexColumn $gap={6}>
       <Input
         style={{ paddingLeft: "6px" }}
         value={searchInput}
         onChange={(e) => {
           setSearchInput(e.target.value);
         }}
+        size="middle"
         prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
         placeholder="Type to search"
         allowClear
       ></Input>
-      <DropdownItemList>{dropdownList}</DropdownItemList>
+      <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
+        <DropdownItemList>{dropdownList}</DropdownItemList>
+      </LoadingSpinner>
     </FlexColumn>
   );
 

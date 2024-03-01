@@ -6,11 +6,12 @@ import styled, { css } from "styled-components";
 type LoadingSpinnerProps = {
   loading: boolean;
   iconSize?: number;
-  style: React.CSSProperties;
+  style?: React.CSSProperties;
 };
 
 const defaultProps: Partial<LoadingSpinnerProps> = {
   iconSize: 48,
+  style: {},
 };
 
 const LoadingSpinnerContainer = styled.div`
