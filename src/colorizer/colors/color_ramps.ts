@@ -132,13 +132,14 @@ export const KNOWN_COLOR_RAMPS = colorRampMap;
  * Color ramps should never be removed from `KNOWN_COLOR_RAMPS` to maintain backwards
  * compatibility with URLs, only removed here to omit them from the UI.
  */
-export const DISPLAY_COLOR_RAMPS = [
+export const DISPLAY_COLOR_RAMP_KEYS = [
   "matplotlib-cool",
-  "esri-orange_5",
-  "esri-yellow_2",
+  "esri-red_5",
+  // "esri-orange_5",
+  // "esri-yellow_2",
   "esri-green_4",
   "esri-blue_14",
-  "esri-purple_4",
+  // "esri-purple_4",
   "esri-mentone_beach",
   "esri-retro_flow",
   "esri-heatmap_4",

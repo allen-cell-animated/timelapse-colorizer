@@ -12,7 +12,7 @@ import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRe
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_ID, DISPLAY_COLOR_RAMPS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
+import { DEFAULT_COLOR_RAMP_ID, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
 import {
   defaultViewerConfig,
   FeatureThreshold,
@@ -717,7 +717,7 @@ function App(): ReactElement {
 
           <ColorRampDropdown
             knownColorRamps={KNOWN_COLOR_RAMPS}
-            colorRampsToDisplay={DISPLAY_COLOR_RAMPS}
+            colorRampsToDisplay={DISPLAY_COLOR_RAMP_KEYS}
             selectedRamp={colorRampKey}
             reversed={colorRampReversed}
             onChangeRamp={(name, reversed) => {

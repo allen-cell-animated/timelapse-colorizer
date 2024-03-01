@@ -1,8 +1,26 @@
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CATEGORICAL_PALETTE_ID,DEFAULT_CATEGORICAL_PALETTES } from "../src/colorizer";
+import {
+  DEFAULT_CATEGORICAL_PALETTE_ID,
+  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_COLOR_RAMP_ID,
+  DISPLAY_COLOR_RAMP_KEYS,
+  KNOWN_COLOR_RAMPS,
+} from "../src/colorizer";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
+
+describe("Color Ramps", () => {
+  it("has the default key in the map of known color ramps", () => {
+    expect(KNOWN_COLOR_RAMPS.has(DEFAULT_COLOR_RAMP_ID));
+  });
+
+  it("has every display key in the map of known color ramps", () => {
+    for (const key of DISPLAY_COLOR_RAMP_KEYS) {
+      expect(KNOWN_COLOR_RAMPS.has(key)).to.be.true;
+    }
+  });
+});
 
 describe("Categorical Palettes", () => {
   it("has expected length", () => {
