@@ -712,23 +712,25 @@ function App(): ReactElement {
           <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
         </div>
         {/* <h3>Dataset Name</h3> */}
-        <FlexRowAlignCenter $gap={2}>
-          <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
-          <Export
-            totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrameAndRender}
-            getCanvas={() => canv.domElement}
-            // Stop playback when exporting
-            onClick={() => timeControls.pause()}
-            currentFrame={currentFrame}
-            defaultImagePrefix={datasetKey + "-" + featureName}
-            disabled={dataset === null}
-            setIsRecording={setIsRecording}
-          />
-          <TextButton onClick={openCopyNotification}>
-            <LinkOutlined />
-            <p>Copy URL</p>
-          </TextButton>
+        <FlexRowAlignCenter $gap={12}>
+          <FlexRowAlignCenter $gap={2}>
+            <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+            <Export
+              totalFrames={dataset?.numberOfFrames || 0}
+              setFrame={setFrameAndRender}
+              getCanvas={() => canv.domElement}
+              // Stop playback when exporting
+              onClick={() => timeControls.pause()}
+              currentFrame={currentFrame}
+              defaultImagePrefix={datasetKey + "-" + featureName}
+              disabled={dataset === null}
+              setIsRecording={setIsRecording}
+            />
+            <TextButton onClick={openCopyNotification}>
+              <LinkOutlined />
+              <p>Copy URL</p>
+            </TextButton>
+          </FlexRowAlignCenter>
           <HelpDropdown />
         </FlexRowAlignCenter>
       </div>
