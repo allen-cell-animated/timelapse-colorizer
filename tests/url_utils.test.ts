@@ -1,7 +1,7 @@
 import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
+import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../src/colorizer";
 import {
   defaultViewerConfig,
   DrawMode,
@@ -292,7 +292,7 @@ describe("Loading + saving from URL query strings", () => {
 
   it("Handles all color map names", () => {
     // Test all color ramp names to make sure they can be safely sent through the URL.
-    for (const key of DEFAULT_COLOR_RAMPS.keys()) {
+    for (const key of KNOWN_COLOR_RAMPS.keys()) {
       const params: Partial<UrlParams> = { colorRampKey: key };
       let parsedParams = loadParamsFromUrlQueryString(paramsToUrlQueryString(params));
       expect(parsedParams).deep.equals(params);

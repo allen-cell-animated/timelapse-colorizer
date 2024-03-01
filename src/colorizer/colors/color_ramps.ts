@@ -15,6 +15,8 @@ export type ColorRampData = RawColorData & {
 
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
 // NOTE: All color ramps must not have the suffix "!". This is reserved for the reversed color ramp URL parameter.
+// DO NOT REMOVE COLOR RAMPS FROM THIS LIST OR CHANGE THEIR KEYS. This will break backwards compatibility with URLs.
+// Instead, remove them from `DISPLAY_COLOR_RAMPS` to omit them from the UI.
 const rawColorRampData: RawColorData[] = [
   { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
   { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
@@ -124,5 +126,26 @@ const keyedColorRampData: [string, ColorRampData][] = colorRampData.map((value) 
 });
 const colorRampMap = new Map(keyedColorRampData);
 
-export const DEFAULT_COLOR_RAMPS = colorRampMap;
+export const KNOWN_COLOR_RAMPS = colorRampMap;
+/**
+ * List of color ramp keys that should be visible on the UI, in order of display.
+ * Color ramps should never be removed from `KNOWN_COLOR_RAMPS` to maintain backwards
+ * compatibility with URLs, only removed here to omit them from the UI.
+ */
+export const DISPLAY_COLOR_RAMPS = [
+  "matplotlib-cool",
+  "esri-orange_5",
+  "esri-yellow_2",
+  "esri-green_4",
+  "esri-blue_14",
+  "esri-purple_4",
+  "esri-mentone_beach",
+  "esri-retro_flow",
+  "esri-heatmap_4",
+  "esri-blue_red_9",
+  "esri-blue_red_8",
+  "esri-red_green_9",
+  "esri-purple_red_2",
+  "esri-green_brown_1",
+];
 export const DEFAULT_COLOR_RAMP_ID = Array.from(colorRampMap.keys())[0];

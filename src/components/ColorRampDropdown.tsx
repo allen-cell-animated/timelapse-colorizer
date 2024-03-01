@@ -8,7 +8,8 @@ import {
   ColorRampData,
   ColorRampType,
   DEFAULT_CATEGORICAL_PALETTES,
-  DEFAULT_COLOR_RAMPS,
+  DISPLAY_COLOR_RAMPS,
+  KNOWN_COLOR_RAMPS,
   PaletteData,
 } from "../colorizer";
 
@@ -20,7 +21,8 @@ import styles from "./ColorRampDropdown.module.css";
 type ColorRampSelectorProps = {
   selectedRamp: string;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
-  colorRamps?: Map<string, ColorRampData>;
+  colorRampsToDisplay?: string[];
+  knownColorRamps?: Map<string, ColorRampData>;
 
   useCategoricalPalettes?: boolean;
   categoricalPalettes?: Map<string, PaletteData>;
@@ -33,7 +35,8 @@ type ColorRampSelectorProps = {
 };
 
 const defaultProps: Partial<ColorRampSelectorProps> = {
-  colorRamps: DEFAULT_COLOR_RAMPS,
+  colorRampsToDisplay: DISPLAY_COLOR_RAMPS,
+  knownColorRamps: KNOWN_COLOR_RAMPS,
   disabled: false,
   useCategoricalPalettes: false,
   categoricalPalettes: DEFAULT_CATEGORICAL_PALETTES,
@@ -92,7 +95,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     };
   }, [forceOpen]);
 
-  const selectedRampData = props.colorRamps.get(props.selectedRamp);
+  const selectedRampData = props.knownColorRamps.get(props.selectedRamp);
 
   if (!selectedRampData || !selectedRampData.colorRamp) {
     throw new Error(`Selected color ramp name '${props.selectedRamp}' is invalid.`);
@@ -162,11 +165,14 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       return makeRampButtonList(colorRampData, onClick);
     } else {
       // Make gradient ramps instead
-      return makeRampButtonList(Array.from(props.colorRamps.values()), (rampData) => {
-        props.onChangeRamp(rampData.key, false);
-      });
+      return makeRampButtonList(
+        props.colorRampsToDisplay.map((key) => KNOWN_COLOR_RAMPS.get(key)!),
+        (rampData) => {
+          props.onChangeRamp(rampData.key, false);
+        }
+      );
     }
-  }, [props.colorRamps, props.useCategoricalPalettes, props.categoricalPalettes, props.numCategories]);
+  }, [props.colorRampsToDisplay, props.useCategoricalPalettes, props.categoricalPalettes, props.numCategories]);
 
   /// Rendering
 
