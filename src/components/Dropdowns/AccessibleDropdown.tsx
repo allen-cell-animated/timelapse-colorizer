@@ -41,7 +41,7 @@ type AccessibleDropdownProps = {
    * `onFocus`, or `onBlur`. See implementation of `IconButton.tsx` for an example.
    */
   renderButton?: ((props: AccessibleDropdownProps, isOpen: boolean, onClick: () => void) => ReactElement) | null;
-  onButtonClicked?: (key: string) => void;
+  onButtonClicked?: () => void;
   /** Whether the tooltip should appear when hovered. */
   showTooltip?: boolean;
   /** If null, uses button text. */
@@ -258,7 +258,10 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
           placement="right"
           trigger={["hover", "focus"]}
         >
-          {renderButton(props, forceOpenState === true, () => setForceOpenState(!forceOpenState))}
+          {renderButton(props, forceOpenState === true, () => {
+            props.onButtonClicked();
+            setForceOpenState(!forceOpenState);
+          })}
         </Tooltip>
       </Dropdown>
     </MainContainer>

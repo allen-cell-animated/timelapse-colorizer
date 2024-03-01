@@ -1,8 +1,8 @@
 import { SearchOutlined } from "@ant-design/icons";
-import { Input, Tooltip } from "antd";
+import { Input, InputRef, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import Fuse from "fuse.js";
-import React, { ReactElement, useMemo, useState, useTransition } from "react";
+import React, { MutableRefObject, ReactElement, useMemo, useRef, useState, useTransition } from "react";
 
 import { FlexColumn } from "../../styles/utils";
 
@@ -72,6 +72,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
   const [filteredItems, setFilteredItems] = useState<MenuItemType[]>([]);
+  const searchInputRef = useRef<InputRef>();
 
   // Convert items into MenuItemType, adding missing properties as needed
   const items = useMemo((): MenuItemType[] => {
@@ -174,6 +175,11 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
             prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
             placeholder="Type to search"
             allowClear
+            ref={searchInputRef as MutableRefObject<InputRef>}
+            onFocus={() => {
+              // Keep the dropdown pinned open if the user clicks into the input box
+              setForceOpen(true);
+            }}
           ></Input>
           <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
             <DropdownItemList>{getDropdownItems(closeDropdown)}</DropdownItemList>
@@ -200,6 +206,12 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       buttonText={selectedLabel}
       showTooltip={props.showTooltip}
       dropdownContent={getDropdownContent}
+      onButtonClicked={() => {
+        // Focus the search input when the dropdown is opened
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }}
     ></AccessibleDropdown>
   );
 }
