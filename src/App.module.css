@@ -88,16 +88,6 @@
   gap: 20px;
 }
 
-.headerRight {
-  height: 100%;
-  gap: 10px;
-}
-
-.copyUrlButton {
-  padding-left: 0;
-  padding-right: 6px;
-}
-
 .header h2 {
   margin: 0;
   line-height: normal;

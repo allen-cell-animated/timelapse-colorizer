@@ -6,7 +6,7 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, notification, Slider, Tabs } from "antd";
+import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
@@ -33,6 +33,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
+import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/ColorRampDropdown";
@@ -730,25 +731,25 @@ function App(): ReactElement {
             onChangePalette={setCategoricalPalette}
           />
         </div>
-        <FlexRowAlignCenter className={styles.headerRight}>
-          <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
-            <FlexRowAlignCenter $gap={6}>
+        <FlexRowAlignCenter $gap={12}>
+          <FlexRowAlignCenter $gap={2}>
+            <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+            <Export
+              totalFrames={dataset?.numberOfFrames || 0}
+              setFrame={setFrameAndRender}
+              getCanvas={() => canv.domElement}
+              // Stop playback when exporting
+              onClick={() => timeControls.pause()}
+              currentFrame={currentFrame}
+              defaultImagePrefix={`${datasetKey}-${featureName}`}
+              disabled={dataset === null}
+              setIsRecording={setIsRecording}
+            />
+            <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
-              Copy URL
-            </FlexRowAlignCenter>
-          </Button>
-          <Export
-            totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrameAndRender}
-            getCanvas={() => canv.domElement}
-            // Stop playback when exporting
-            onClick={() => timeControls.pause()}
-            currentFrame={currentFrame}
-            defaultImagePrefix={datasetKey + "-" + featureName}
-            disabled={dataset === null}
-            setIsRecording={setIsRecording}
-          />
-          <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+              <p>Copy URL</p>
+            </TextButton>
+          </FlexRowAlignCenter>
           <HelpDropdown />
         </FlexRowAlignCenter>
       </div>
