@@ -725,7 +725,7 @@ function App(): ReactElement {
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
               currentFrame={currentFrame}
-              defaultImagePrefix={datasetKey + "-" + featureName}
+              defaultImagePrefix={`${datasetKey}-${featureName}`}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
             />
