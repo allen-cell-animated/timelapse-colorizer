@@ -50,14 +50,6 @@ const DropdownItemButton = styled(Button)<{ $selected: boolean }>`
   }}
 `;
 
-/** Convenience styled div for alignment and spacing of dropdown items. */
-export const DropdownItemList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-y: auto;
-`;
-
 /** Styled Antd Button for use with Dropdown inputs. */
 export default function DropdownItem(inputProps: PropsWithChildren<DropdownItemProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<DropdownItemProps>>;

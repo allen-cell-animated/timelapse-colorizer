@@ -8,7 +8,14 @@ import { FlexColumn } from "../../styles/utils";
 
 import LoadingSpinner from "../LoadingSpinner";
 import AccessibleDropdown from "./AccessibleDropdown";
-import DropdownItem, { DropdownItemList } from "./DropdownItem";
+import DropdownItem from "./DropdownItem";
+import DropdownItemList from "./DropdownItemList";
+
+// TODO: Have the dropdown show a loading indicator or something when clicking an item
+// while waiting for its prop to update. -> this is especially noticeable when loading
+// datasets when off of the Institute ethernet.
+// Is there a way we can do this using async promises, maybe? If the promise rejects,
+// discard the changed value?
 
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -34,8 +41,8 @@ type SelectionDropdownProps = {
   style?: React.CSSProperties;
 
   /**
-   * Whether the searchbar should be enabled. If enabled, will show search bar and filter when the
-   * number of items is above `searchThresholdCount`.
+   * Whether the search bar should be enabled. If enabled, will show search bar and filter
+   * by search input when the total number of items is above `searchThresholdCount`.
    */
   enableSearch?: boolean;
   /** The number of items that must be in the original list before the search bar will be shown. */
@@ -49,6 +56,8 @@ const defaultProps = {
   showTooltip: true,
   width: null,
   style: {},
+  enableSearch: true,
+  searchThresholdCount: 10,
 };
 
 /**
@@ -124,7 +133,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   // other behaviors (like tab navigation or setting width).
   // Ant recommends using the Popover component for this instead of Dropdown, but they use
   // different animation styling (Dropdown looks nicer).
-  const dropdownList: ReactElement[] = filteredItems.map((item) => {
+  const dropdownItems: ReactElement[] = filteredItems.map((item) => {
     return (
       <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
         <DropdownItem
@@ -141,24 +150,30 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     );
   });
 
-  const dropdownContent = (
-    <FlexColumn $gap={6}>
-      <Input
-        style={{ paddingLeft: "6px" }}
-        value={searchInput}
-        onChange={(e) => {
-          setSearchInput(e.target.value);
-        }}
-        size="middle"
-        prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
-        placeholder="Type to search"
-        allowClear
-      ></Input>
-      <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
-        <DropdownItemList>{dropdownList}</DropdownItemList>
-      </LoadingSpinner>
-    </FlexColumn>
-  );
+  const showSearch = props.enableSearch && items.length > props.searchThresholdCount;
+  let dropdownContent;
+  if (showSearch) {
+    dropdownContent = (
+      <FlexColumn $gap={6}>
+        <Input
+          style={{ paddingLeft: "6px" }}
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+          }}
+          size="middle"
+          prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
+          placeholder="Type to search"
+          allowClear
+        ></Input>
+        <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
+          <DropdownItemList>{dropdownItems}</DropdownItemList>
+        </LoadingSpinner>
+      </FlexColumn>
+    );
+  } else {
+    dropdownContent = <DropdownItemList>{dropdownItems}</DropdownItemList>;
+  }
 
   const mainButtonStyle: React.CSSProperties = {
     width: props.width || "15vw",

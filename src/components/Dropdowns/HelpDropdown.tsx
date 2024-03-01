@@ -5,7 +5,8 @@ import React, { ReactElement } from "react";
 import { VisuallyHidden } from "../../styles/utils";
 
 import AccessibleDropdown from "./AccessibleDropdown";
-import DropdownItem, { DropdownItemList } from "./DropdownItem";
+import DropdownItem from "./DropdownItem";
+import DropdownItemList from "./DropdownItemList";
 
 export default function HelpDropdown(): ReactElement {
   const makeOnButtonClick = (link: string) => {
