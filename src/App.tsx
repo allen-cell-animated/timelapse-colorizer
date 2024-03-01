@@ -28,7 +28,6 @@ import AppStyle, { AppThemeContext } from "./components/AppStyle";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
-import DropdownItemList from "./components/Dropdowns/DropdownItemList";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
@@ -986,34 +985,6 @@ function App(): ReactElement {
               />
             </div>
           </div>
-        </div>
-        <div style={{ width: "100px" }}>
-          <DropdownItemList maxHeightPx={100}>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-            <p>Hi</p>
-          </DropdownItemList>
         </div>
       </div>
     </AppStyle>
