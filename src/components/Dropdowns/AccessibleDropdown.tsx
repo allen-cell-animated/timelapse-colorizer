@@ -165,12 +165,11 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
     if (forceOpenState === null) {
       // Null = default behavior, do nothing.
       return;
-    }
-
-    if (!forceOpenState) {
+    } else if (!forceOpenState) {
       // Immediately reset the open state to null if the dropdown was forced closed. This is used
       // to close the dropdown when the user makes a selection.
       setForceOpenState(null);
+      return;
     }
 
     const doesContainTarget = (target: EventTarget | null): boolean => {

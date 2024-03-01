@@ -159,7 +159,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
 
   const showSearch = props.enableSearch && items.length > props.searchThresholdCount;
   const getDropdownContent = (setForceOpen: (forceOpen: boolean) => void): ReactElement => {
-    const closeDropdown = () => {
+    const closeDropdown = (): void => {
       setForceOpen(false);
     };
     if (showSearch) {
