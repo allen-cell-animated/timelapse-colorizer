@@ -112,11 +112,11 @@ export const ScrollShadowContainer = styled.div`
  *   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
  *
  *   return (
- *   <div style={{maxHeight: "50px", position: "relative"}}>
+ *   <div style={{position: "relative"}}>
  *     <div
  *       ref={scrollRef}
  *       onScroll={onScrollHandler}
- *       style={{overflow-y: "auto", height: "100%"}}
+ *       style={{overflow-y: "auto", height: "50px"}}
  *     >
  *       <p>Some content</p>
  *       <p>Some more content</p>

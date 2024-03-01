@@ -2,6 +2,7 @@ import React, { PropsWithChildren, ReactElement } from "react";
 import styled from "styled-components";
 
 import { ScrollShadowContainer, useScrollShadow } from "../../colorizer/utils/react_utils";
+import { FlexColumn } from "../../styles/utils";
 
 type DropdownItemListProps = {
   maxHeightPx?: number;
@@ -12,17 +13,12 @@ const defaultProps: Partial<DropdownItemListProps> = {
 
 const MainContainer = styled.div`
   position: relative;
-  overflow: auto;
   width: auto;
 `;
 
 /** Convenience styled div for alignment and spacing of dropdown items. */
-const DropdownItemContainer = styled.div`
-  display: block;
-  flex-direction: column;
-  gap: 4px;
+const ScrollContainer = styled.div`
   overflow-y: auto;
-  height: 100%;
 `;
 
 export default function DropdownItemList(inputProps: PropsWithChildren<DropdownItemListProps>): ReactElement {
@@ -31,10 +27,10 @@ export default function DropdownItemList(inputProps: PropsWithChildren<DropdownI
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
   return (
-    <MainContainer style={{ maxHeight: props.maxHeightPx }}>
-      <DropdownItemContainer onScroll={onScrollHandler} ref={scrollRef}>
-        {props.children}
-      </DropdownItemContainer>
+    <MainContainer>
+      <ScrollContainer onScroll={onScrollHandler} ref={scrollRef} style={{ maxHeight: props.maxHeightPx }}>
+        <FlexColumn $gap={4}>{props.children}</FlexColumn>
+      </ScrollContainer>
       <ScrollShadowContainer style={{ ...scrollShadowStyle }} />
     </MainContainer>
   );
