@@ -19,7 +19,7 @@ import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
-import { FlexRow } from "./styles/utils";
+import { FlexRowAlignCenter } from "./styles/utils";
 
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
@@ -715,8 +715,8 @@ function App(): ReactElement {
             onChangePalette={setCategoricalPalette}
           />
         </div>
-        <FlexRow $gap={12}>
-          <FlexRow $gap={2}>
+        <FlexRowAlignCenter $gap={12}>
+          <FlexRowAlignCenter $gap={2}>
             <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
@@ -733,9 +733,9 @@ function App(): ReactElement {
               <LinkOutlined />
               <p>Copy URL</p>
             </TextButton>
-          </FlexRow>
+          </FlexRowAlignCenter>
           <HelpDropdown />
-        </FlexRow>
+        </FlexRowAlignCenter>
       </div>
 
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
