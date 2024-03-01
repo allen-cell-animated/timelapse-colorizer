@@ -1,34 +1,40 @@
-import { ArrowRightOutlined } from "@ant-design/icons";
-import { Space } from "antd";
 import React, { ReactElement } from "react";
+import styled from "styled-components";
 
 import { VisuallyHidden } from "../../styles/utils";
 
 import AccessibleDropdown from "./AccessibleDropdown";
-import DropdownItem from "./DropdownItem";
 import DropdownItemList from "./DropdownItemList";
 
-export default function HelpDropdown(): ReactElement {
-  const makeOnButtonClick = (link: string) => {
-    return () => {
-      window.open(link, "_blank", "noopener noreferrer");
-    };
-  };
+const StyledLink = styled.a`
+  border-radius: 4px;
+  padding: 3px 12px;
+  color: var(--color-text-primary);
 
+  &:hover,
+  &:focus {
+    background-color: var(--color-dropdown-hover);
+    color: var(--color-text-primary);
+  }
+
+  &:focus-visible {
+    outline: 4px solid var(--color-focus-shadow) !important;
+  }
+`;
+
+export default function HelpDropdown(): ReactElement {
   const dropdownContent = (
     <DropdownItemList>
-      <DropdownItem
-        key={"issues"}
-        onClick={makeOnButtonClick("https://github.com/allen-cell-animated/nucmorph-colorizer/issues")}
+      <StyledLink
+        className="button"
+        href="https://github.com/allen-cell-animated/nucmorph-colorizer/issues"
+        rel="noopener noreferrer"
+        target="_blank"
+        role="link"
       >
-        <Space>
-          <p>
-            Report an issue
-            <VisuallyHidden>(opens in new tab)</VisuallyHidden>
-          </p>
-          <ArrowRightOutlined />
-        </Space>
-      </DropdownItem>
+        Report an issue
+        <VisuallyHidden>(opens in new tab)</VisuallyHidden>
+      </StyledLink>
     </DropdownItemList>
   );
 
