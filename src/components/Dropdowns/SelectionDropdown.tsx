@@ -173,6 +173,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
               // Keep the dropdown pinned open if the user clicks into the input box
               setForceOpen(true);
             }}
+            spellCheck={false}
           ></Input>
           <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
             <DropdownItemList>{getDropdownItems(closeDropdown)}</DropdownItemList>
