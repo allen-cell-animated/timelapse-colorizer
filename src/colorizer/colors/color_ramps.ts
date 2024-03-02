@@ -19,6 +19,31 @@ export type ColorRampData = RawColorData & {
 // Instead, remove them from `DISPLAY_COLOR_RAMP_KEYS` to omit them from the UI.
 const rawColorRampData: RawColorData[] = [
   { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
+  {
+    key: "matplotlib-viridis",
+    name: "Matplotlib - Viridis",
+    colorStops: ["#fde725", "#5ec962", "#21908c", "#3b528b", "#440154"],
+  },
+  {
+    key: "matplotlib-inferno",
+    name: "Matplotlib - Inferno",
+    colorStops: ["#fcffa4", "#fca50a", "#dd513a", "#932667", "#420a68", "#000004"],
+  },
+  {
+    key: "matplotlib-magma",
+    name: "Matplotlib - Magma",
+    colorStops: ["#fcfdbf", "#fe9f6d", "#de4968", "#8c2981", "#3b0f70", "#000004"],
+  },
+  {
+    key: "seaborn-mako",
+    name: "Seaborn - Mako",
+    colorStops: ["#def4e4", "#5fceac", "#3496a9", "#395d9b", "#382a54", "#0b0305"],
+  },
+  {
+    key: "seaborn-crest",
+    name: "Seaborn - Crest",
+    colorStops: ["#a4cc90", "#6cb190", "#44948e", "#23758b", "#205583", "#2c3071"],
+  },
   { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
   {
     key: "esri-orange_5",
@@ -134,6 +159,11 @@ export const KNOWN_COLOR_RAMPS = colorRampMap;
  */
 export const DISPLAY_COLOR_RAMP_KEYS = [
   "matplotlib-cool",
+  "matplotlib-viridis",
+  "matplotlib-inferno",
+  "matplotlib-magma",
+  "seaborn-mako",
+  "seaborn-crest",
   "esri-red_5",
   // "esri-orange_5",
   // "esri-yellow_2",
@@ -142,7 +172,7 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   // "esri-purple_4",
   "esri-mentone_beach",
   "esri-retro_flow",
-  "esri-heatmap_4",
+  // "esri-heatmap_4",
   "esri-blue_red_9",
   "esri-blue_red_8",
   "esri-red_green_9",
