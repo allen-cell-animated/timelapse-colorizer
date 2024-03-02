@@ -7,7 +7,7 @@ import {
   ColorRamp,
   ColorRampData,
   ColorRampType,
-  DEFAULT_CATEGORICAL_PALETTES,
+  KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   PaletteData,
 } from "../colorizer";
@@ -28,7 +28,8 @@ type ColorRampSelectorProps = {
   knownColorRamps?: Map<string, ColorRampData>;
 
   useCategoricalPalettes?: boolean;
-  categoricalPalettes?: Map<string, PaletteData>;
+  knownCategoricalPalettes?: Map<string, PaletteData>;
+  categoricalPalettesToDisplay?: string[] | null;
   numCategories: number;
   selectedPalette: Color[];
   onChangePalette: (newPalette: Color[]) => void;
@@ -40,9 +41,10 @@ type ColorRampSelectorProps = {
 const defaultProps: Partial<ColorRampSelectorProps> = {
   knownColorRamps: KNOWN_COLOR_RAMPS,
   colorRampsToDisplay: null,
+  categoricalPalettesToDisplay: null,
   disabled: false,
   useCategoricalPalettes: false,
-  categoricalPalettes: DEFAULT_CATEGORICAL_PALETTES,
+  knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
 };
 
 /**
@@ -68,6 +70,8 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   const theme = useContext(AppThemeContext);
 
   const colorRampsToDisplay = props.colorRampsToDisplay ?? Array.from(props.knownColorRamps.keys());
+  const categoricalPalettesToDisplay =
+    props.categoricalPalettesToDisplay ?? Array.from(props.knownCategoricalPalettes.keys());
 
   // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Override the open/close behavior for the dropdown so it's compatible with keyboard navigation.
@@ -123,7 +127,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   // Determine if we're currently using a preset palette; otherwise show the "Custom" tooltip.
   let selectedPaletteName = "Custom";
-  for (const [, paletteData] of props.categoricalPalettes) {
+  for (const [, paletteData] of props.knownCategoricalPalettes) {
     if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
       selectedPaletteName = paletteData.name;
       break;
@@ -155,13 +159,14 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     if (props.useCategoricalPalettes) {
       // Make categorical palettes by converting them into color ramps.
       const onClick = (paletteData: ColorRampData): void => {
-        const colors = props.categoricalPalettes.get(paletteData.key)?.colors;
+        const colors = props.knownCategoricalPalettes.get(paletteData.key)?.colors;
         if (colors) {
           props.onChangePalette(colors);
         }
       };
       // Generate color ramps from the palettes.
-      const paletteData = Array.from(props.categoricalPalettes.values());
+
+      const paletteData = categoricalPalettesToDisplay.map((key) => props.knownCategoricalPalettes.get(key)!);
       // Append the missing ColorRamp into the palette data so it can be handled as a ColorRampData.
       const colorRampData = paletteData.map((data) => {
         const visibleColors = data.colors.slice(0, Math.max(1, props.numCategories));
@@ -181,7 +186,8 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     props.knownColorRamps,
     props.colorRampsToDisplay,
     props.useCategoricalPalettes,
-    props.categoricalPalettes,
+    props.knownCategoricalPalettes,
+    props.categoricalPalettesToDisplay,
     props.numCategories,
   ]);
 

@@ -11,7 +11,11 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
-import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
+import {
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DISPLAY_CATEGORICAL_PALETTE_KEYS,
+  KNOWN_CATEGORICAL_PALETTES,
+} from "./colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_ID, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
 import {
   defaultViewerConfig,
@@ -88,7 +92,7 @@ function App(): ReactElement {
   const [colorRampMax, setColorRampMax] = useState(0);
 
   const [categoricalPalette, setCategoricalPalette] = useState(
-    DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
+    KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors
   );
 
   const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
@@ -725,7 +729,8 @@ function App(): ReactElement {
               setColorRampReversed(reversed);
             }}
             disabled={disableUi}
-            categoricalPalettes={DEFAULT_CATEGORICAL_PALETTES}
+            knownCategoricalPalettes={KNOWN_CATEGORICAL_PALETTES}
+            categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
             useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
             numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
             selectedPalette={categoricalPalette}
