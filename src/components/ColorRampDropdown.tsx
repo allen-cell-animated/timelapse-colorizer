@@ -171,7 +171,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     } else {
       // Make gradient ramps instead
       return makeRampButtonList(
-        colorRampsToDisplay.map((key) => KNOWN_COLOR_RAMPS.get(key)!),
+        colorRampsToDisplay.map((key) => props.knownColorRamps.get(key)!),
         (rampData) => {
           props.onChangeRamp(rampData.key, false);
         }
