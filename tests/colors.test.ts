@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
   DEFAULT_COLOR_RAMP_ID,
+  DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
@@ -40,6 +41,12 @@ describe("Categorical Palettes", () => {
     KNOWN_CATEGORICAL_PALETTES.forEach((palette) => {
       palette.colorStops.every((color) => new Color(color));
     });
+  });
+
+  it("has the display keys in the list of known palettes", () => {
+    for (const key of DISPLAY_CATEGORICAL_PALETTE_KEYS) {
+      expect(KNOWN_CATEGORICAL_PALETTES.has(key)).to.be.true;
+    }
   });
 
   it("has the default ID as a key for categorical palettes", () => {
