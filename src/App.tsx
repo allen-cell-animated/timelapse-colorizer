@@ -16,7 +16,7 @@ import {
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   KNOWN_CATEGORICAL_PALETTES,
 } from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_ID, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
+import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
 import {
   defaultViewerConfig,
   FeatureThreshold,
@@ -86,7 +86,7 @@ function App(): ReactElement {
   const [datasetOpen, setDatasetOpen] = useState(false);
 
   const colorRampData = KNOWN_COLOR_RAMPS;
-  const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
+  const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_KEY);
   const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);

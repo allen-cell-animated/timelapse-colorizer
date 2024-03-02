@@ -16,7 +16,7 @@ export type ColorRampData = RawColorData & {
 // https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-color-ramps/
 // NOTE: All color ramps must not have the suffix "!". This is reserved for the reversed color ramp URL parameter.
 // DO NOT REMOVE COLOR RAMPS FROM THIS LIST OR CHANGE THEIR KEYS. This will break backwards compatibility with URLs.
-// Instead, remove them from `DISPLAY_COLOR_RAMPS` to omit them from the UI.
+// Instead, remove them from `DISPLAY_COLOR_RAMP_KEYS` to omit them from the UI.
 const rawColorRampData: RawColorData[] = [
   { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
   { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
@@ -149,4 +149,4 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   "esri-purple_red_2",
   "esri-green_brown_1",
 ];
-export const DEFAULT_COLOR_RAMP_ID = Array.from(colorRampMap.keys())[0];
+export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];

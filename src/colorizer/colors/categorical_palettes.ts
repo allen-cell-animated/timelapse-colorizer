@@ -7,6 +7,8 @@ export type PaletteData = RawColorData & {
   colors: Color[];
 };
 
+// DO NOT REMOVE PALETTES FROM THIS LIST OR CHANGE THEIR KEYS. This will break backwards compatibility with URLs.
+// Instead, remove them from `DISPLAY_CATEGORICAL_PALETTE_KEYS` to omit them from the UI.
 const rawPaletteData: RawColorData[] = [
   {
     // https://spectrum.adobe.com/page/color-for-data-visualization/
@@ -266,7 +268,11 @@ export const getKeyFromPalette = (palette: Color[]): string | null => {
 };
 
 export const KNOWN_CATEGORICAL_PALETTES = paletteMap;
-
+/**
+ * List of categorical palettes keys that should be visible on the UI, in order of display.
+ * Palettes should never be removed from `KNOWN_CATEGORICAL_PALETTES` to maintain backwards
+ * compatibility with URLs, only removed here to omit them from the UI.
+ */
 export const DISPLAY_CATEGORICAL_PALETTE_KEYS = [
   "adobe",
   // "adobe_light",

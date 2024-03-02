@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
-  DEFAULT_COLOR_RAMP_ID,
+  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
   KNOWN_CATEGORICAL_PALETTES,
@@ -13,7 +13,7 @@ import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 
 describe("Color Ramps", () => {
   it("has the default key in the map of known color ramps", () => {
-    expect(KNOWN_COLOR_RAMPS.has(DEFAULT_COLOR_RAMP_ID));
+    expect(KNOWN_COLOR_RAMPS.has(DEFAULT_COLOR_RAMP_KEY));
   });
 
   it("has every display key in the map of known color ramps", () => {
