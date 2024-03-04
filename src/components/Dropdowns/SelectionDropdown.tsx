@@ -1,9 +1,20 @@
-import { ButtonProps, Tooltip } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+import { ButtonProps, Input, InputRef, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
-import React, { ReactElement, useMemo } from "react";
+import Fuse from "fuse.js";
+import React, { MutableRefObject, ReactElement, useMemo, useRef, useState, useTransition } from "react";
 
+import { FlexColumn } from "../../styles/utils";
+
+import LoadingSpinner from "../LoadingSpinner";
 import AccessibleDropdown from "./AccessibleDropdown";
-import DropdownItem, { DropdownItemList } from "./DropdownItem";
+import DropdownItem from "./DropdownItem";
+import DropdownItemList from "./DropdownItemList";
+
+// TODO: Have the dropdown show a loading indicator after a selection has been made
+// but before the prop value updates. -> this is especially noticeable when slow datasets.
+// Is there a way we can do this using async promises, maybe? If the promise rejects,
+// discard the changed value?
 
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -26,16 +37,23 @@ type SelectionDropdownProps = {
   showTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
-  style?: React.CSSProperties;
+  /**
+   * Whether the search bar should be enabled. If enabled, will show search bar and filter
+   * by search input when the total number of items is above `searchThresholdCount`. True by default.
+   */
+  enableSearch?: boolean;
+  /** The number of items that must be in the original list before the search bar will be shown. 10 by default.*/
+  searchThresholdCount?: number;
 };
 
-const defaultProps = {
+const defaultProps: Partial<SelectionDropdownProps> = {
   label: null,
   disabled: false,
   buttonType: "outlined",
   showTooltip: true,
   width: null,
-  style: {},
+  enableSearch: true,
+  searchThresholdCount: 10,
 };
 
 /**
@@ -46,6 +64,11 @@ const defaultProps = {
  */
 export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<SelectionDropdownProps>;
+
+  const [isPending, startTransition] = useTransition();
+  const [searchInput, setSearchInput] = useState("");
+  const [filteredItems, setFilteredItems] = useState<MenuItemType[]>([]);
+  const searchInputRef = useRef<InputRef>();
 
   // Convert items into MenuItemType, adding missing properties as needed
   const items = useMemo((): MenuItemType[] => {
@@ -75,29 +98,92 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     return "";
   }, [props.selected, items]);
 
+  // Set up fuse for fuzzy searching
+  const fuse = useMemo(() => {
+    return new Fuse(items, {
+      keys: ["key", "label"],
+      isCaseSensitive: false,
+      shouldSort: true, // sorts by match score
+    });
+  }, [props.items]);
+
+  // Filter the items based on the search input
+  useMemo(() => {
+    if (searchInput === "") {
+      startTransition(() => {
+        // Reset to original list
+        setFilteredItems(items);
+      });
+    } else {
+      const searchResult = fuse.search(searchInput);
+      const filteredItems = searchResult.map((result) => result.item);
+      startTransition(() => {
+        setFilteredItems(filteredItems);
+      });
+    }
+  }, [searchInput, items]);
+
   // Completely customize the dropdown menu and make the buttons manually.
   // This is because Antd's Dropdown component doesn't allow us to add item tooltips, and complicates
   // other behaviors (like tab navigation or setting width).
   // Ant recommends using the Popover component for this instead of Dropdown, but they use
   // different animation styling (Dropdown looks nicer).
-  const dropdownList: ReactElement[] = items.map((item) => {
-    return (
-      <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
-        <DropdownItem
-          key={item.key}
-          selected={item.key === props.selected}
-          disabled={props.disabled}
-          onClick={() => {
-            props.onChange(item.key.toString());
-          }}
-        >
-          {item.label}
-        </DropdownItem>
-      </Tooltip>
-    );
-  });
 
-  const dropdownContent = <DropdownItemList>{dropdownList}</DropdownItemList>;
+  const getDropdownItems = (closeDropdown: () => void): ReactElement[] => {
+    return filteredItems.map((item) => {
+      return (
+        <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
+          <DropdownItem
+            key={item.key}
+            selected={item.key === props.selected}
+            disabled={props.disabled}
+            onClick={() => {
+              props.onChange(item.key.toString());
+              closeDropdown();
+              // Add a slight delay so the dropdown closes first before the input is cleared
+              setTimeout(() => setSearchInput(""), 1);
+            }}
+          >
+            {item.label}
+          </DropdownItem>
+        </Tooltip>
+      );
+    });
+  };
+
+  const showSearch = props.enableSearch && items.length > props.searchThresholdCount;
+  const getDropdownContent = (setForceOpen: (forceOpen: boolean) => void): ReactElement => {
+    const closeDropdown = (): void => {
+      setForceOpen(false);
+    };
+    if (showSearch) {
+      return (
+        <FlexColumn $gap={6}>
+          <Input
+            style={{ paddingLeft: "6px" }}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+            }}
+            prefix={<SearchOutlined style={{ color: "var(--color-text-hint)" }} />}
+            placeholder="Type to search"
+            allowClear
+            ref={searchInputRef as MutableRefObject<InputRef>}
+            onFocus={() => {
+              // Keep the dropdown pinned open if the user clicks into the input box
+              setForceOpen(true);
+            }}
+            spellCheck={false}
+          ></Input>
+          <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
+            <DropdownItemList>{getDropdownItems(closeDropdown)}</DropdownItemList>
+          </LoadingSpinner>
+        </FlexColumn>
+      );
+    } else {
+      return <DropdownItemList>{getDropdownItems(closeDropdown)}</DropdownItemList>;
+    }
+  };
 
   const mainButtonStyle: React.CSSProperties = {
     width: props.width || "15vw",
@@ -113,7 +199,13 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       buttonType={props.buttonType}
       buttonText={selectedLabel}
       showTooltip={props.showTooltip}
-      dropdownContent={dropdownContent}
+      dropdownContent={getDropdownContent}
+      onButtonClicked={() => {
+        // Focus the search input when the dropdown is clicked open
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }}
     ></AccessibleDropdown>
   );
 }
