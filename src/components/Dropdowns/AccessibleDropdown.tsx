@@ -13,6 +13,12 @@ import { VisuallyHidden } from "../../styles/utils";
  */
 type getDropdownContentFunction = (setOpenState: (open: boolean) => void) => ReactElement;
 
+const enum OpenState {
+  FORCE_OPEN,
+  FORCE_CLOSED,
+  DEFAULT,
+}
+
 type AccessibleDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
@@ -157,21 +163,21 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
   //// Handle clicking on the dropdowns ///////////////////////////////////
 
   /**
-   * Whether the dropdown's visibility is forced open or closed. If null, the dropdown will use default behavior.
+   * Whether the dropdown's visibility is forced open, forced closed, or in the default state.
    */
-  const [forceOpenState, setForceOpenState] = useState<boolean | null>(null);
+  const [forceOpenState, setForceOpenState] = useState<OpenState>(OpenState.DEFAULT);
   const componentContainerRef = useRef<HTMLDivElement>(null);
 
   // If open, close the dropdown when focus is lost.
   // Note that the focus out event will fire even if the newly focused element is also
   // inside the component, so we need to check if the new target is also a child element.
   useEffect(() => {
-    if (forceOpenState === null) {
+    if (forceOpenState === OpenState.DEFAULT) {
       return;
-    } else if (!forceOpenState) {
+    } else if (forceOpenState === OpenState.FORCE_CLOSED) {
       // If the dropdown was forced closed, reset the open state to the default so it can be interacted with
       // again.
-      setForceOpenState(null);
+      setForceOpenState(OpenState.DEFAULT);
       return;
     }
 
@@ -185,7 +191,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
     };
     const handleFocusLoss = (event: FocusEvent): void => {
       if (!doesContainTarget(event.relatedTarget)) {
-        setForceOpenState(null);
+        setForceOpenState(OpenState.DEFAULT);
       }
     };
 
@@ -234,24 +240,35 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
 
   let dropdownContent: ReactElement;
   if (typeof props.dropdownContent === "function") {
-    dropdownContent = props.dropdownContent(setForceOpenState);
+    const setOpenState = (open: boolean): void => {
+      setForceOpenState(open ? OpenState.FORCE_OPEN : OpenState.FORCE_CLOSED);
+    };
+    dropdownContent = props.dropdownContent(setOpenState);
   } else {
     dropdownContent = props.dropdownContent;
   }
 
   const disableTooltip = props.disabled || !props.showTooltip;
-  const isOpen = forceOpenState === true;
+  const isOpen = forceOpenState === OpenState.FORCE_OPEN;
   const onButtonClick = (): void => {
     props.onButtonClicked();
-    setForceOpenState(!forceOpenState);
+    // Toggle
+    setForceOpenState(forceOpenState === OpenState.FORCE_OPEN ? OpenState.FORCE_CLOSED : OpenState.FORCE_OPEN);
   };
+
+  let dropdownOpenProp = undefined;
+  if (forceOpenState === OpenState.FORCE_OPEN) {
+    dropdownOpenProp = true;
+  } else if (forceOpenState === OpenState.FORCE_CLOSED) {
+    dropdownOpenProp = false;
+  }
 
   return (
     <MainContainer ref={componentContainerRef}>
       {props.label && <h3>{props.label}</h3>}
       <Dropdown
         disabled={props.disabled}
-        open={forceOpenState !== null ? forceOpenState : undefined}
+        open={dropdownOpenProp}
         getPopupContainer={componentContainerRef.current ? () => componentContainerRef.current! : undefined}
         dropdownRender={(_menus: ReactNode) => {
           return renderDropdownContent(dropdownContent);
