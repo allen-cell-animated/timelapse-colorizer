@@ -142,12 +142,12 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "esri-blue_red_9",
     name: "ESRI - Blue Red 9",
-    colorStops: ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
+    colorStops: ["#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"],
   },
   {
     key: "esri-blue_red_8",
     name: "ESRI - Blue Red 8",
-    colorStops: ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"],
+    colorStops: ["#0571b0", "#92c5de", "#f7f7f7", "#f4a582", "#ca0020"],
   },
   {
     key: "esri-red_green_9",
@@ -157,12 +157,12 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "esri-purple_red_2",
     name: "ESRI - Purple Red 2",
-    colorStops: ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"],
+    colorStops: ["#570959", "#ab84a0", "#fffee6", "#d2987f", "#a53217"],
   },
   {
     key: "esri-green_brown_1",
     name: "ESRI - Green Brown 1",
-    colorStops: ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"],
+    colorStops: ["#018571", "#80cdc1", "#f5f5f5", "#dfc27d", "#a6611a"],
   },
 ];
 
