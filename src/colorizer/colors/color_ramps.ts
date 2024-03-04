@@ -25,6 +25,11 @@ const rawColorRampData: RawColorData[] = [
     colorStops: ["#440154", "#3a528b", "#20908c", "#5ec961", "#fde724"],
   },
   {
+    key: "matplotlib-plasma",
+    name: "Matplotlib - Plasma",
+    colorStops: ["#0c0786", "#5c00a5", "#9b179e", "#cb4777", "#ec7853", "#fdb32e", "#eff821"],
+  },
+  {
     key: "matplotlib-inferno",
     name: "Matplotlib - Inferno",
     colorStops: ["#000003", "#410967", "#932567", "#dc5039", "#fba40a", "#fcfea4"],
@@ -168,6 +173,11 @@ const rawColorRampData: RawColorData[] = [
     name: "Color Brewer - Spectral",
     colorStops: ["#5e4fa2", "#53adad", "#bee5a0", "#fefebd", "#fdbe6f", "#e95c47", "#9e0142"],
   },
+  {
+    key: "matplotlib-purple_orange",
+    name: "Matplotlib - Purple Orange",
+    colorStops: ["#2d004b", "#998fbf", "#f7f6f5", "#ed9b39", "#7f3b08"],
+  },
 ];
 
 // Convert the color stops into color ramps
@@ -192,14 +202,16 @@ export const KNOWN_COLOR_RAMPS = colorRampMap;
  */
 export const DISPLAY_COLOR_RAMP_KEYS = [
   "matplotlib-cool",
+  // "seaborn-crest",
   "esri-red_5",
   "esri-green_4",
-  "seaborn-crest",
+  "esri-purple_4",
+  "matplotlib-plasma",
   "matplotlib-viridis",
   "seaborn-mako",
   "matplotlib-inferno",
   "matplotlib-magma",
-  "esri-mentone_beach",
+  // "esri-mentone_beach",
   // "esri-orange_5",
   // "esri-yellow_2",
   // "esri-blue_14",
@@ -208,10 +220,11 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   // "esri-retro_flow",
   "matplotlib-turbo",
   "color_brewer-spectral",
-  "esri-blue_red_9",
+  // "esri-blue_red_9",
   "esri-blue_red_8",
   // "esri-red_green_9",
-  "esri-purple_red_2",
+  // "esri-purple_red_2",
   "esri-green_brown_1",
+  "matplotlib-purple_orange",
 ];
 export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];
