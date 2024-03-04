@@ -6,14 +6,22 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Button, Checkbox, notification, Slider, Tabs } from "antd";
+import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_ID, DEFAULT_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
-import { defaultViewerConfig, FeatureThreshold, isThresholdNumeric, ViewerConfig } from "./colorizer/types";
+import {
+  defaultViewerConfig,
+  FeatureThreshold,
+  getDefaultScatterPlotConfig,
+  isThresholdNumeric,
+  ScatterPlotConfig,
+  TabType,
+  ViewerConfig,
+} from "./colorizer/types";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
@@ -25,6 +33,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import AppStyle, { AppThemeContext } from "./components/AppStyle";
+import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
@@ -37,7 +46,7 @@ import LabeledRangeSlider from "./components/LabeledRangeSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab, TabType } from "./components/Tabs";
+import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
 
 import styles from "./App.module.css";
 
@@ -63,6 +72,10 @@ function App(): ReactElement {
   const [config, updateConfig] = useReducer(
     (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
     defaultViewerConfig
+  );
+  const [scatterPlotConfig, updateScatterPlotConfig] = useReducer(
+    (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
+    getDefaultScatterPlotConfig()
   );
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
@@ -110,7 +123,6 @@ function App(): ReactElement {
   }, [dataset, featureThresholds]);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
-  const [openTab, setOpenTab] = useState(TabType.TRACK_PLOT);
 
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
@@ -184,8 +196,7 @@ function App(): ReactElement {
   const getUrlParams = useCallback((): string => {
     const { datasetParam, collectionParam } = getDatasetAndCollectionParam();
     const rangeParam = getRangeParam();
-
-    return urlUtils.paramsToUrlQueryString({
+    const state: Partial<urlUtils.UrlParams> = {
       collection: collectionParam,
       dataset: datasetParam,
       feature: featureName,
@@ -199,7 +210,9 @@ function App(): ReactElement {
       categoricalPalette: categoricalPalette,
       config: config,
       selectedBackdropKey,
-    } as Required<urlUtils.UrlParams>);
+      scatterPlotConfig,
+    };
+    return urlUtils.paramsToUrlQueryString(state);
   }, [
     getDatasetAndCollectionParam,
     getRangeParam,
@@ -210,8 +223,9 @@ function App(): ReactElement {
     colorRampKey,
     colorRampReversed,
     categoricalPalette,
-    selectedBackdropKey,
     config,
+    selectedBackdropKey,
+    scatterPlotConfig,
   ]);
 
   // Update url whenever the viewer settings change
@@ -416,6 +430,9 @@ function App(): ReactElement {
       }
       if (initialUrlParams.config) {
         updateConfig(initialUrlParams.config);
+      }
+      if (initialUrlParams.scatterPlotConfig) {
+        updateScatterPlotConfig(initialUrlParams.scatterPlotConfig);
       }
     };
 
@@ -714,25 +731,25 @@ function App(): ReactElement {
             onChangePalette={setCategoricalPalette}
           />
         </div>
-        <FlexRowAlignCenter className={styles.headerRight}>
-          <Button type="link" className={styles.copyUrlButton} onClick={openCopyNotification}>
-            <FlexRowAlignCenter $gap={6}>
+        <FlexRowAlignCenter $gap={12}>
+          <FlexRowAlignCenter $gap={2}>
+            <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+            <Export
+              totalFrames={dataset?.numberOfFrames || 0}
+              setFrame={setFrameAndRender}
+              getCanvas={() => canv.domElement}
+              // Stop playback when exporting
+              onClick={() => timeControls.pause()}
+              currentFrame={currentFrame}
+              defaultImagePrefix={`${datasetKey}-${featureName}`}
+              disabled={dataset === null}
+              setIsRecording={setIsRecording}
+            />
+            <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
-              Copy URL
-            </FlexRowAlignCenter>
-          </Button>
-          <Export
-            totalFrames={dataset?.numberOfFrames || 0}
-            setFrame={setFrameAndRender}
-            getCanvas={() => canv.domElement}
-            // Stop playback when exporting
-            onClick={() => timeControls.pause()}
-            currentFrame={currentFrame}
-            defaultImagePrefix={datasetKey + "-" + featureName}
-            disabled={dataset === null}
-            setIsRecording={setIsRecording}
-          />
-          <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+              <p>Copy URL</p>
+            </TextButton>
+          </FlexRowAlignCenter>
           <HelpDropdown />
         </FlexRowAlignCenter>
       </div>
@@ -905,11 +922,11 @@ function App(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
-                activeKey={openTab}
-                onChange={(key) => setOpenTab(key as TabType)}
+                activeKey={config.openTab}
+                onChange={(key) => updateConfig({ openTab: key as TabType })}
                 items={[
                   {
-                    label: "Track Plot",
+                    label: "Track plot",
                     key: TabType.TRACK_PLOT,
                     children: (
                       <div className={styles.tabContent}>
@@ -927,7 +944,7 @@ function App(): ReactElement {
                     ),
                   },
                   {
-                    label: "Scatter Plot",
+                    label: "Scatter plot",
                     key: TabType.SCATTER_PLOT,
                     children: (
                       <div className={styles.tabContent}>
@@ -937,7 +954,7 @@ function App(): ReactElement {
                           selectedTrack={selectedTrack}
                           findTrack={findTrack}
                           setFrame={setFrameAndRender}
-                          isVisible={openTab === TabType.SCATTER_PLOT}
+                          isVisible={config.openTab === TabType.SCATTER_PLOT}
                           isPlaying={timeControls.isPlaying() || isRecording}
                           selectedFeatureName={featureName}
                           colorRampMin={colorRampMin}
@@ -946,6 +963,8 @@ function App(): ReactElement {
                           categoricalPalette={categoricalPalette}
                           inRangeIds={inRangeLUT}
                           viewerConfig={config}
+                          scatterPlotConfig={scatterPlotConfig}
+                          updateScatterPlotConfig={updateScatterPlotConfig}
                         />
                       </div>
                     ),
@@ -966,7 +985,7 @@ function App(): ReactElement {
                     ),
                   },
                   {
-                    label: "Settings",
+                    label: "Viewer settings",
                     key: TabType.SETTINGS,
                     children: (
                       <div className={styles.tabContent}>

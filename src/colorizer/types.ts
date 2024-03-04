@@ -135,6 +135,18 @@ export type DrawSettings = {
   color: Color;
 };
 
+// CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
+export enum TabType {
+  FILTERS = "filters",
+  TRACK_PLOT = "track_plot",
+  SCATTER_PLOT = "scatter_plot",
+  SETTINGS = "settings",
+}
+
+export const isTabType = (tab: string): tab is TabType => {
+  return Object.values(TabType).includes(tab as TabType);
+};
+
 /**
  * Configuration for the viewer. These are high-level settings
  * that are not specific to a particular dataset.
@@ -152,6 +164,7 @@ export type ViewerConfig = {
   objectOpacity: number;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
+  openTab: TabType;
 };
 
 export const defaultViewerConfig: ViewerConfig = {
@@ -167,4 +180,24 @@ export const defaultViewerConfig: ViewerConfig = {
   objectOpacity: 100,
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
+  openTab: TabType.TRACK_PLOT,
 };
+
+export enum PlotRangeType {
+  ALL_TIME = "All time",
+  CURRENT_TRACK = "Current track",
+  CURRENT_FRAME = "Current frame",
+}
+
+export type ScatterPlotConfig = {
+  xAxis: string | null;
+  yAxis: string | null;
+  rangeType: PlotRangeType;
+};
+
+// Use a function instead of a constant to avoid sharing the same object reference.
+export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
+  xAxis: null,
+  yAxis: null,
+  rangeType: PlotRangeType.ALL_TIME,
+});
