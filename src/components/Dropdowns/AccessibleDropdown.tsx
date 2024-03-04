@@ -11,7 +11,7 @@ import { VisuallyHidden } from "../../styles/utils";
  * @param setOpenState: A callback that can be used to force the dropdown open or closed.
  * Useful for closing the dropdown after a selection has been made.
  */
-type getDropdownContentFunction = (setOpenState: (open: boolean) => void) => ReactElement;
+type GetDropdownContentFunction = (setOpenState: (open: boolean) => void) => ReactElement;
 
 const enum OpenState {
   FORCE_OPEN,
@@ -27,7 +27,7 @@ type AccessibleDropdownProps = {
    * Contents to be rendered inside the dropdown. Can either be a React element or a function
    * that returns a React element.
    */
-  dropdownContent: ReactElement | getDropdownContentFunction;
+  dropdownContent: ReactElement | GetDropdownContentFunction;
   /** Styles the `dropdownContent` to match other Antd styling. Can be overridden to change how content is displayed or rendered. */
   styleDropdownContent?: ((dropdownContent: ReactElement) => ReactElement) | null;
   disabled?: boolean;
