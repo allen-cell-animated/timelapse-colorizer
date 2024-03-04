@@ -3,12 +3,12 @@ import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-import { Color as ThreeColor, ColorRepresentation } from "three";
+import { Color as ThreeColor,ColorRepresentation } from "three";
 
-import { DrawMode } from "../colorizer/types";
-import { FlexRowAlignCenter } from "../styles/utils";
+import { DrawMode } from "../../colorizer/types";
+import { FlexRowAlignCenter } from "../../styles/utils";
 
-import LabeledDropdown from "./LabeledDropdown";
+import SelectionDropdown from "./SelectionDropdown";
 
 type DrawModeSelectorProps = {
   selected: DrawMode;
@@ -66,7 +66,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
 
   return (
     <HorizontalDiv ref={colorPickerRef}>
-      <LabeledDropdown
+      <SelectionDropdown
         label={null}
         selected={props.selected.toString()}
         items={items}
@@ -75,7 +75,8 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
           props.onChange(Number.parseInt(key, 10), props.color);
         }}
         disabled={props.disabled}
-      ></LabeledDropdown>
+        width={"165px"}
+      ></SelectionDropdown>
 
       <ColorPicker
         // Uses the default 1s transition animation
