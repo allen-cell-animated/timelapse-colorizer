@@ -100,6 +100,7 @@ const rawPaletteData: RawColorData[] = [
       "#64637C",
       "#BCBD40",
       "#2CBDCD",
+      // TODO: This color is very difficult to distinguish from the    orange.
       "#FF8964",
       "#862CCD",
     ],
@@ -282,7 +283,7 @@ export const DISPLAY_CATEGORICAL_PALETTE_KEYS = [
   // "iwanthue_set2",
   // "iwanthue_set3",
   "neon",
-  "iwanthue_dark",
+  // "iwanthue_dark",
   "matplotlib_pastel1",
   // "matplotlib_pastel2",
   // "iwanthue_pastel_3",
