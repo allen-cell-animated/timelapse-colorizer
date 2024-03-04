@@ -103,7 +103,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     return new Fuse(items, {
       keys: ["key", "label"],
       isCaseSensitive: false,
-      shouldSort: true,
+      shouldSort: true, // sorts by match score
     });
   }, [props.items]);
 
