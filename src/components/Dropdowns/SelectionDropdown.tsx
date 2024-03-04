@@ -1,5 +1,5 @@
 import { SearchOutlined } from "@ant-design/icons";
-import { Input, InputRef, Tooltip } from "antd";
+import { ButtonProps, Input, InputRef, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import Fuse from "fuse.js";
 import React, { MutableRefObject, ReactElement, useMemo, useRef, useState, useTransition } from "react";
@@ -30,7 +30,7 @@ type SelectionDropdownProps = {
   disabled?: boolean;
   /** The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic */
-  buttonType?: "primary" | "default" | "outlined" | "dashed" | "text" | "link";
+  buttonType?: ButtonProps["type"] | "outlined";
   /** Callback that is fired whenever an item in the dropdown is selected.
    * The callback will be passed the `key` of the selected item. */
   onChange: (key: string) => void;
