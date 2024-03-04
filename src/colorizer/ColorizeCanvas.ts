@@ -36,7 +36,7 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 
-const BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
+const BACKGROUND_COLOR_DEFAULT = 0xffffff;
 const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 

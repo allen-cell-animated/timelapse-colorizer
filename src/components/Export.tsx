@@ -1,4 +1,4 @@
-import { CheckCircleOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, ExportOutlined } from "@ant-design/icons";
 import { App, Button, Card, Input, InputNumber, Modal, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -10,6 +10,7 @@ import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasR
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
 import { AppThemeContext } from "./AppStyle";
+import TextButton from "./Buttons/TextButton";
 import { SettingsContainer, SettingsItem } from "./SettingsContainer";
 import SpinBox from "./SpinBox";
 
@@ -424,16 +425,16 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   return (
     <div ref={modalContextRef}>
       {/* Export button */}
-      <Button
-        type="primary"
+      <TextButton
         onClick={() => {
           setIsLoadModalOpen(true);
           props.onClick();
         }}
         disabled={props.disabled}
       >
-        Export
-      </Button>
+        <ExportOutlined />
+        <p>Export</p>
+      </TextButton>
 
       {/* Export modal */}
       <Modal

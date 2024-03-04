@@ -2,7 +2,14 @@ import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
-import { defaultViewerConfig, DrawMode, DrawSettings, ThresholdType, ViewerConfig } from "../src/colorizer/types";
+import {
+  defaultViewerConfig,
+  DrawMode,
+  DrawSettings,
+  PlotRangeType,
+  TabType,
+  ThresholdType,
+} from "../src/colorizer/types";
 import {
   isAllenPath,
   isHexColor,
@@ -147,14 +154,20 @@ describe("Loading + saving from URL query strings", () => {
         backdropBrightness: 75,
         backdropSaturation: 50,
         objectOpacity: 25,
+        openTab: TabType.FILTERS,
         outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
         outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
-      } as Required<ViewerConfig>,
+      },
       selectedBackdropKey: "some_backdrop",
+      scatterPlotConfig: {
+        xAxis: "x axis name",
+        yAxis: "y axis name",
+        rangeType: PlotRangeType.ALL_TIME,
+      },
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
-      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop";
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&tab=filters&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
     expect(queryString).equals(expectedQueryString);
 
     const parsedParams = loadParamsFromUrlQueryString(queryString);
@@ -352,33 +365,124 @@ describe("Loading + saving from URL query strings", () => {
     expect(parsedParams).deep.equals({ categoricalPalette: expectedColors });
   });
 
-  it("Returns partial configs if values are undefined", () => {
-    const params: Partial<UrlParams> = {
-      config: {
-        showTrackPath: true,
-        showScaleBar: false,
-      },
-    };
-    const queryString = paramsToUrlQueryString(params);
-    expect(queryString).equals("?scalebar=0&path=1");
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
-    expect(parsedParams).deep.equals(params);
+  describe("ViewerConfig", () => {
+    it("Handles all tab types", () => {
+      for (const tabType of Object.values(TabType)) {
+        const params: Partial<UrlParams> = { config: { openTab: tabType } };
+        const queryString = paramsToUrlQueryString(params);
+        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        expect(parsedParams).deep.equals(params);
+      }
+    });
+
+    it("Keeps backwards-compatibility with existing tab strings", () => {
+      // This test will break if the tab strings are ever changed as a warning.
+      const knownTabStrings: Record<string, TabType> = {
+        filters: TabType.FILTERS,
+        track_plot: TabType.TRACK_PLOT,
+        scatter_plot: TabType.SCATTER_PLOT,
+        settings: TabType.SETTINGS,
+      };
+      for (const tabString of Object.keys(knownTabStrings)) {
+        const expectedTabType = knownTabStrings[tabString];
+        const queryString = `?tab=${tabString}`;
+        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        expect(parsedParams).deep.equals({ config: { openTab: expectedTabType } });
+      }
+    });
+
+    it("Returns partial configs if values are undefined", () => {
+      const params: Partial<UrlParams> = {
+        config: {
+          showTrackPath: true,
+          showScaleBar: false,
+        },
+      };
+      const queryString = paramsToUrlQueryString(params);
+      expect(queryString).equals("?scalebar=0&path=1");
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals(params);
+    });
+
+    it("Uses default DrawSettings colors for malformed or missing color strings", () => {
+      const queryString = "?outlier-mode=0&outlier-color=a8d8c8d9&filter-mode=1";
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals({
+        config: {
+          outlierDrawSettings: {
+            mode: DrawMode.HIDE,
+            color: defaultViewerConfig.outlierDrawSettings.color,
+          },
+          outOfRangeDrawSettings: {
+            mode: DrawMode.USE_COLOR,
+            color: defaultViewerConfig.outOfRangeDrawSettings.color,
+          },
+        },
+      });
+    });
   });
 
-  it("Uses default DrawSettings colors for malformed or missing color strings", () => {
-    const queryString = "?outlier-mode=0&outlier-color=a8d8c8d9&filter-mode=1";
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
-    expect(parsedParams).deep.equals({
-      config: {
-        outlierDrawSettings: {
-          mode: DrawMode.HIDE,
-          color: defaultViewerConfig.outlierDrawSettings.color,
+  describe("scatterPlotConfig", () => {
+    it("Ignores null feature names", () => {
+      const queryParams: Partial<UrlParams> = {
+        scatterPlotConfig: {
+          xAxis: null,
+          yAxis: "y_axis_name",
+          rangeType: PlotRangeType.ALL_TIME,
         },
-        outOfRangeDrawSettings: {
-          mode: DrawMode.USE_COLOR,
-          color: defaultViewerConfig.outOfRangeDrawSettings.color,
+      };
+      const expectedParams: Partial<UrlParams> = {
+        scatterPlotConfig: {
+          yAxis: "y_axis_name",
+          rangeType: PlotRangeType.ALL_TIME,
         },
-      },
+      };
+
+      const queryString = paramsToUrlQueryString(queryParams);
+      const expectedQueryString = "?scatter-range=all&scatter-y=y_axis_name";
+      expect(queryString).equals(expectedQueryString);
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals(expectedParams);
+    });
+
+    it("Handles non-standard feature names", () => {
+      const featureNames = [
+        "feature,,,",
+        "(feature)",
+        "feat:u:re",
+        "Feature",
+        "fe@tμre",
+        "feature feature feature feature",
+      ];
+      for (const name of featureNames) {
+        const expectedEncodedName = encodeURIComponent(name);
+        const queryParams: Partial<UrlParams> = {
+          scatterPlotConfig: {
+            xAxis: name,
+            yAxis: name,
+          },
+        };
+        const expectedQueryString = `?scatter-x=${expectedEncodedName}&scatter-y=${expectedEncodedName}`;
+        const queryString = paramsToUrlQueryString(queryParams);
+        expect(queryString).equals(expectedQueryString);
+        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        expect(parsedParams).deep.equals(queryParams);
+      }
+    });
+
+    it("Handles all range enum values", () => {
+      for (const rangeType of Object.values(PlotRangeType)) {
+        const queryParams = { scatterPlotConfig: { rangeType } };
+        const queryString = paramsToUrlQueryString(queryParams);
+        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        expect(parsedParams).deep.equals(queryParams);
+      }
+    });
+
+    it("Skips bad range enum types", () => {
+      const queryString = "?scatter-range=bad_value";
+      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      expect(parsedParams).deep.equals({});
     });
   });
 

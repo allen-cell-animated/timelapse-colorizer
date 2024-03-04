@@ -12,11 +12,12 @@ const palette = {
   themeLight: "#aa88ed",
   themeGray: "#f7f0ff",
   gray0: "#ffffff",
-  gray5: "#f2f2f2",
-  gray10: "#e6e7e8",
+  gray5: "#fafafa",
+  gray10: "#f2f2f2",
+  gray15: "#e7e7e7",
   gray20: "#cbcbcc",
   gray30: "#a3a4a5",
-  gray40: "#7c7d7f",
+  gray40: "#737373",
   gray50: "#575859",
   gray60: "#323233",
   success: "#2fc022",
@@ -35,6 +36,7 @@ const theme = {
     text: {
       primary: palette.gray60,
       secondary: palette.gray50,
+      tertiary: palette.gray40,
       hint: palette.gray30,
       disabled: palette.gray30,
       button: palette.gray0,
@@ -43,13 +45,14 @@ const theme = {
     },
     layout: {
       background: palette.gray0,
-      dividers: palette.gray10,
+      tabBackground: palette.gray5,
+      dividers: palette.gray15,
       borders: palette.gray20,
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
     button: {
       backgroundPrimary: palette.theme,
-      backgroundDisabled: palette.gray5,
+      backgroundDisabled: palette.gray10,
       outline: palette.theme,
       outlineActive: palette.themeDark,
       hover: palette.themeLight,
@@ -57,11 +60,11 @@ const theme = {
       focusShadow: "rgba(137, 98, 211, 0.06)",
     },
     dropdown: {
-      backgroundHover: palette.gray5,
+      backgroundHover: palette.gray10,
       backgroundSelected: palette.themeGray,
     },
     slider: {
-      rail: palette.gray5,
+      rail: palette.gray10,
     },
   },
   font: {
@@ -243,6 +246,12 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               railHoverBg: theme.color.slider.rail,
               controlHeightSM: 20,
               trackHoverBg: theme.color.themeLight,
+            },
+            Tabs: {
+              itemColor: theme.color.text.primary,
+              cardBg: theme.color.layout.tabBackground,
+              colorBorder: theme.color.layout.borders,
+              colorBorderSecondary: theme.color.layout.borders,
             },
             Divider: {
               marginLG: 0,
