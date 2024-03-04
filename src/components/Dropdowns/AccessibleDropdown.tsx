@@ -5,6 +5,14 @@ import styled, { css } from "styled-components";
 import { DropdownSVG } from "../../assets";
 import { VisuallyHidden } from "../../styles/utils";
 
+/**
+ * A function that returns the contents to be rendered inside the dropdown.
+ *
+ * @param setOpenState: A callback that can be used to force the dropdown open or closed.
+ * Useful for closing the dropdown after a selection has been made.
+ */
+type getDropdownContentFunction = (setOpenState: (open: boolean) => void) => ReactElement;
+
 type AccessibleDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
@@ -12,12 +20,10 @@ type AccessibleDropdownProps = {
   /**
    * Contents to be rendered inside the dropdown. Can either be a React element or a function
    * that returns a React element.
-   *
-   * @param setOpenState: A callback that can be used to force the dropdown open or closed.
-   * Useful for closing the dropdown after a selection has been made.
    */
-  dropdownContent: ReactElement | ((setOpenState: (open: boolean) => void) => ReactElement);
-  renderDropdownContent?: ((content: ReactElement) => ReactElement) | null;
+  dropdownContent: ReactElement | getDropdownContentFunction;
+  /** Styles the `dropdownContent` to match other Antd styling. Can be overridden to change how content is displayed or rendered. */
+  styleDropdownContent?: ((dropdownContent: ReactElement) => ReactElement) | null;
   disabled?: boolean;
   /**
    * The type of button to render for the dropdown. See Antd's button types:
@@ -51,7 +57,7 @@ type AccessibleDropdownProps = {
 
 const defaultProps: Partial<AccessibleDropdownProps> = {
   label: null,
-  renderDropdownContent: null,
+  styleDropdownContent: null,
   disabled: false,
   buttonType: "outlined",
   showTooltip: true,
@@ -224,7 +230,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
     };
     return <DropdownContentWrapper style={dropdownStyle}>{content}</DropdownContentWrapper>;
   };
-  const renderDropdownContent = props.renderDropdownContent || defaultRenderDropdownContent;
+  const renderDropdownContent = props.styleDropdownContent || defaultRenderDropdownContent;
 
   let dropdownContent: ReactElement;
   if (typeof props.dropdownContent === "function") {
