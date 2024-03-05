@@ -48,9 +48,10 @@ import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
 
-import styles from "./App.module.css";
+// TODO: Refactor with styled-components
+import styles from "./Viewer.module.css";
 
-function App(): ReactElement {
+function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
 
@@ -1010,4 +1011,4 @@ function App(): ReactElement {
   );
 }
 
-export default App;
+export default Viewer;
