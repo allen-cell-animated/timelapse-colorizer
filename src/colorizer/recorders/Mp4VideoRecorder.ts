@@ -57,7 +57,8 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     // - https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter#iso_base_media_file_format_mp4_quicktime_and_3gp
     // - List of recognized codecs: https://cconcolato.github.io/media-mime-support/#avc_codecs
     const codecs: [string, "avc" | "vp9" | "av1"][] = [
-      ["avc1.420032", "avc"], // baseline profile at level 5.0 allows 128 MB/s max bitrate
+      // 42 = baseline profile, 32 = level 5.0 (allows 128 MB/s max bitrate)
+      ["avc1.420032", "avc"],
       ["vp09.00.10.08", "vp9"],
       ["av01.0.04M.08", "av1"],
     ];
