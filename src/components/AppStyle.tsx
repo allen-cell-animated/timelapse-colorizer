@@ -190,6 +190,51 @@ const CssContainer = styled.div`
     border-color: ${theme.color.button.outline};
     color: ${theme.color.button.outline};
   }
+
+  font-family: var(--default-font);
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  margin: 0;
+  color: var(--color-text-primary);
+
+  h1 {
+    font-size: var(--font-size-header);
+    font-style: normal;
+    font-weight: 400;
+    margin: 5px 0;
+  }
+
+  h2 {
+    font-size: var(--font-size-section);
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  h3 {
+    font-size: var(--font-size-label);
+    font-style: normal;
+    font-weight: 400;
+    margin: 0;
+  }
+
+  p {
+    font-family: var(--default-font);
+    font-size: var(--font-size-content);
+    font-style: normal;
+    font-weight: 400;
+    margin: 2px;
+  }
+
+  label {
+    font-family: var(--default-font);
+    font-size: var(--font-size-content);
+    font-style: normal;
+    font-weight: 400;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+  }
 `;
 
 /**
