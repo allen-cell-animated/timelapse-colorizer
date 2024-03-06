@@ -140,7 +140,7 @@ const CssContainer = styled.div`
   --color-collapse-hover: ${theme.color.theme};
   --color-collapse-active: ${theme.color.themeDark};
 
-  --color-focus-shadow: rgba(137, 98, 211, 0.06);
+  --color-focus-shadow: #f2ebfa;
 
   /* Fonts */
   --default-font: ${theme.font.family};

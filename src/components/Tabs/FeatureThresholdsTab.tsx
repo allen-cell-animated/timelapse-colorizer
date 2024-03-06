@@ -14,7 +14,7 @@ import {
   ThresholdType,
 } from "../../colorizer/types";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
-import { useScrollShadow } from "../../colorizer/utils/react_utils";
+import { ScrollShadowContainer, useScrollShadow } from "../../colorizer/utils/react_utils";
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
 
@@ -61,18 +61,6 @@ const FiltersContent = styled.div`
   height: 100%;
   padding: 0 10px;
   position: relative;
-`;
-
-const FiltersShadow = styled.div`
-  position: absolute;
-  pointer-events: none;
-  // Fill the parent (FiltersCardContainer) completely so we can overlay the
-  // shadow effects above the content (FiltersCard).
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transition: box-shadow 0.1s ease-in;
 `;
 
 const FeatureLabel = styled.h3<{ $disabled?: boolean }>`
@@ -380,7 +368,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
             }}
           />
         </FiltersContent>
-        <FiltersShadow style={scrollShadowStyle}></FiltersShadow>
+        <ScrollShadowContainer style={scrollShadowStyle} />
       </FiltersContainer>
     </PanelContainer>
   );
