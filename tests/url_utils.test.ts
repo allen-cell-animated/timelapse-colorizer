@@ -379,7 +379,9 @@ describe("Loading + saving from URL query strings", () => {
       // This test will break if the tab strings are ever changed as a warning.
       const knownTabStrings: Record<string, TabType> = {
         filters: TabType.FILTERS,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         track_plot: TabType.TRACK_PLOT,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         scatter_plot: TabType.SCATTER_PLOT,
         settings: TabType.SETTINGS,
       };

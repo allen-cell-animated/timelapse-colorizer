@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { VisuallyHidden } from "../../styles/utils";
 
 import AccessibleDropdown from "./AccessibleDropdown";
-import { DropdownItemList } from "./DropdownItem";
+import DropdownItemList from "./DropdownItemList";
 
 const StyledLink = styled.a`
   border-radius: 4px;
