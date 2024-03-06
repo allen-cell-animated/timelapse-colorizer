@@ -82,7 +82,8 @@
   width: 100%;
 }
 
-.app canvas {
+/* TODO: Use a better selector for the Canvas element or move this to CanvasWrapper? */
+canvas {
   border: 1px solid var(--color-borders);
 }
 

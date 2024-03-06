@@ -32,7 +32,7 @@ import { FlexRowAlignCenter } from "./styles/utils";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import AppStyle, { AppThemeContext } from "./components/AppStyle";
+import { AppThemeContext } from "./components/AppStyle";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
@@ -685,7 +685,7 @@ function Viewer(): ReactElement {
   }
 
   return (
-    <AppStyle className={styles.app}>
+    <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
 
       {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
@@ -1007,7 +1007,7 @@ function Viewer(): ReactElement {
           </div>
         </div>
       </div>
-    </AppStyle>
+    </div>
   );
 }
 
