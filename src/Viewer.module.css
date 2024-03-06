@@ -9,9 +9,14 @@
   width: auto;
   height: fit-content;
   min-height: var(--header-content-height);
-  padding: 18px 30px;
+  padding: 12px 30px;
   border-bottom: 1px solid var(--color-borders);
   gap: 10px;
+  position: sticky;
+  background-color: var(--color-background);
+  z-index: 100;
+  top: 0;
+  left: 0;
 }
 
 .header > div {
@@ -37,17 +42,6 @@
   display: inline-block;
 }
 
-.mainContent .topControls {
-  margin: 10px 0 5px 0;
-}
-
-.mainContent .controlsContainer {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .mainContent {
   margin: 8px 30px;
 }
@@ -70,6 +64,36 @@
   }
 }
 
+.canvasTopAndCanvasContainer {
+  border: 1px solid var(--color-borders);
+  border-radius: 5px 5px 0 0;
+}
+
+.canvasControlsContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.canvasTopContainer {
+  max-width: var(--content-width);
+  padding: 14px 16px;
+  overflow: hidden;
+}
+
+/* Custom styling to make the Ant checkbox line up with the top of the text label*/
+.canvasTopContainer label:global(.ant-checkbox-wrapper) {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.canvasTopContainer label:global(.ant-checkbox-wrapper) > :global(.ant-checkbox) {
+  align-self: flex-start;
+  margin-top: 3px;
+}
+
 .canvasPanel {
   flex-grow: 0;
   max-width: var(--content-width);
@@ -83,7 +107,7 @@
 }
 
 .colorizeCanvas {
-  border: 1px solid var(--color-borders);
+  border-top: 1px solid var(--color-borders);
 }
 
 .canvasPanel .timeControls {

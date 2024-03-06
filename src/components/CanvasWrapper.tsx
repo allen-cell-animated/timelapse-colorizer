@@ -210,8 +210,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
      * TODO: Margin calculation?
      */
     const setSize = (): void => {
-      const width = Math.min(window.innerWidth - 75, props.maxWidth);
-      const height = Math.min(window.innerHeight - 75, props.maxHeight);
+      const width = Math.min(window.innerWidth - 75 - 4, props.maxWidth);
+      const height = Math.min(window.innerHeight - 75 - 4, props.maxHeight);
       canv.setSize(width, height);
     };
     const handleResize = (): void => {

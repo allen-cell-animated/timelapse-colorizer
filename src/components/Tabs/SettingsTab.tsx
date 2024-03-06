@@ -128,6 +128,18 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
             />
           </SettingsItem>
+
+          <SettingsItem>
+            <Checkbox
+              type="checkbox"
+              checked={props.config.showTrackPath}
+              onChange={(event) => {
+                props.updateConfig({ showTrackPath: event.target.checked });
+              }}
+            >
+              Show track path
+            </Checkbox>
+          </SettingsItem>
           <SettingsItem>
             <Checkbox
               type="checkbox"
