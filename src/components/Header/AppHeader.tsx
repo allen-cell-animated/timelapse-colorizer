@@ -1,11 +1,8 @@
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { ReactElement } from "react";
 import styled from "styled-components";
 
 import { AicsLogoSVG } from "../../assets";
 import { FlexRowAlignCenter } from "../../styles/utils";
-
-type AppHeaderProps = {};
-const defaultProps: Partial<AppHeaderProps> = {};
 
 const AicsLogoLink = styled.a`
   position: relative;
@@ -26,10 +23,25 @@ const VerticalDivider = styled.div`
   display: inline-block;
 `;
 
-export default function AppHeader(inputProps: PropsWithChildren<AppHeaderProps>): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<AppHeaderProps>>;
-  return <>{props.children}</>;
-}
+/** Top title bar for the app */
+export const AppHeader = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  width: auto;
+  height: fit-content;
+  min-height: var(--header-content-height);
+  padding: 12px 30px;
+  border-bottom: 1px solid var(--color-borders);
+  gap: 10px;
+  position: sticky;
+  background-color: var(--color-background);
+  z-index: 100;
+  top: 0;
+  left: 0;
+`;
 
 export function HeaderLogo(): ReactElement {
   return (

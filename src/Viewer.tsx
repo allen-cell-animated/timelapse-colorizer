@@ -40,7 +40,7 @@ import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
-import { HeaderLogo } from "./components/Header/AppHeader";
+import { AppHeader, HeaderLogo } from "./components/Header/AppHeader";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
@@ -693,7 +693,7 @@ function Viewer(): ReactElement {
 
       {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
       {/* TODO: Split into its own component? */}
-      <div className={styles.header}>
+      <AppHeader>
         <HeaderLogo />
         {/* <h3>Dataset Name</h3> */}
         <FlexRowAlignCenter $gap={12}>
@@ -717,7 +717,7 @@ function Viewer(): ReactElement {
           </FlexRowAlignCenter>
           <HelpDropdown />
         </FlexRowAlignCenter>
-      </div>
+      </AppHeader>
 
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
