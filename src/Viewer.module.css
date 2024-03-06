@@ -26,20 +26,9 @@
   align-items: center;
 }
 
-.headerLeft {
-  gap: 20px;
-}
-
 .header h2 {
   margin: 0;
   line-height: normal;
-}
-
-.verticalDivider {
-  height: var(--header-content-height);
-  width: 1px;
-  background-color: var(--color-dividers);
-  display: inline-block;
 }
 
 .mainContent {
