@@ -82,8 +82,7 @@
   width: 100%;
 }
 
-/* TODO: Use a better selector for the Canvas element or move this to CanvasWrapper? */
-canvas {
+.colorizeCanvas {
   border: 1px solid var(--color-borders);
 }
 

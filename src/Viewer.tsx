@@ -56,7 +56,9 @@ function Viewer(): ReactElement {
   const theme = useContext(AppThemeContext);
 
   const canv = useConstructor(() => {
-    return new ColorizeCanvas();
+    const canvas = new ColorizeCanvas();
+    canvas.domElement.className = styles.colorizeCanvas;
+    return canvas;
   });
 
   const [collection, setCollection] = useState<Collection | undefined>();
