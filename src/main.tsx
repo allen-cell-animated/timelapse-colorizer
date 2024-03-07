@@ -8,13 +8,20 @@ import Viewer from "./Viewer";
 
 // Set up react router
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <Viewer />,
+      errorElement: <ErrorPage />,
+    },
+  ],
   {
-    path: "/",
-    element: <Viewer />,
-    errorElement: <ErrorPage />,
-  },
-]);
+    // Base path is the --base option passed to vite. This ensures that builds
+    // work correctly when deployed to subpages.
+    basename: import.meta.env.BASE_URL,
+  }
+);
 
 // Render React component
 const container = document.getElementById("root");
