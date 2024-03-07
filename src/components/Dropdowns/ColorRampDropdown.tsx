@@ -21,15 +21,14 @@ type ColorRampSelectorProps = {
   selectedRamp: string;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
   /**
-   * The keys of the color ramps to display, in order. If `null` (default), shows all
-   * the color ramps given by `knownColorRamps`.
+   * The keys of the color ramps to display, in order.
    */
-  colorRampsToDisplay?: string[] | null;
+  colorRampsToDisplay: string[];
   knownColorRamps?: Map<string, ColorRampData>;
 
   useCategoricalPalettes?: boolean;
   knownCategoricalPalettes?: Map<string, PaletteData>;
-  categoricalPalettesToDisplay?: string[] | null;
+  categoricalPalettesToDisplay: string[];
   numCategories: number;
   selectedPalette: Color[];
   onChangePalette: (newPalette: Color[]) => void;
@@ -40,8 +39,6 @@ type ColorRampSelectorProps = {
 
 const defaultProps: Partial<ColorRampSelectorProps> = {
   knownColorRamps: KNOWN_COLOR_RAMPS,
-  colorRampsToDisplay: null,
-  categoricalPalettesToDisplay: null,
   disabled: false,
   useCategoricalPalettes: false,
   knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
@@ -69,9 +66,8 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
   const theme = useContext(AppThemeContext);
 
-  const colorRampsToDisplay = props.colorRampsToDisplay ?? Array.from(props.knownColorRamps.keys());
-  const categoricalPalettesToDisplay =
-    props.categoricalPalettesToDisplay ?? Array.from(props.knownCategoricalPalettes.keys());
+  const colorRampsToDisplay = props.colorRampsToDisplay;
+  const categoricalPalettesToDisplay = props.categoricalPalettesToDisplay;
 
   // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Override the open/close behavior for the dropdown so it's compatible with keyboard navigation.
