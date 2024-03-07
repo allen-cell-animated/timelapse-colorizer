@@ -9,21 +9,13 @@ import Viewer from "./Viewer";
 // Set up react router
 // Use HashRouter for GitHub Pages support, so additional paths are routed to
 // the base app instead of trying to open pages that don't exist.
-const router = createHashRouter(
-  [
-    {
-      path: "/*",
-      element: <Viewer />,
-      errorElement: <ErrorPage />,
-    },
-    { path: "/test", element: <p>Not a hash page</p> },
-  ],
+const router = createHashRouter([
   {
-    // Base path is the --base option passed to vite. This ensures that builds
-    // work correctly when deployed to subpages.
-    basename: import.meta.env.BASE_URL,
-  }
-);
+    path: "/",
+    element: <Viewer />,
+    errorElement: <ErrorPage />,
+  },
+]);
 
 // Render React component
 const container = document.getElementById("root");
