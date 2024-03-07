@@ -12,7 +12,7 @@ import Viewer from "./Viewer";
 const router = createHashRouter(
   [
     {
-      path: "/",
+      path: "/*",
       element: <Viewer />,
       errorElement: <ErrorPage />,
     },
