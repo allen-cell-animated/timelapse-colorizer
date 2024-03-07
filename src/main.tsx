@@ -20,7 +20,7 @@ const router = createHashRouter(
   {
     // Base path is the --base option passed to vite. This ensures that builds
     // work correctly when deployed to subpages.
-    basename: import.meta.env.BASE_URL,
+    // basename: import.meta.env.BASE_URL,
   }
 );
 
@@ -30,7 +30,7 @@ const root = createRoot(container!);
 root.render(
   <React.StrictMode>
     <AppStyle>
-      <p>b</p>
+      <p>c</p>
       <RouterProvider router={router} />
     </AppStyle>
   </React.StrictMode>
