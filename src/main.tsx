@@ -1,17 +1,18 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, RouterProvider } from "react-router-dom";
 
 import AppStyle from "./components/AppStyle";
 import ErrorPage from "./routes/ErrorPage";
 import Viewer from "./Viewer";
 
 // Set up react router
-
-const router = createBrowserRouter(
+// Use HashRouter for GitHub Pages support, so additional paths are routed to
+// the base app instead of trying to open pages that don't exist.
+const router = createHashRouter(
   [
     {
-      path: "/",
+      path: "/*",
       element: <Viewer />,
       errorElement: <ErrorPage />,
     },
