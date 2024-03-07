@@ -100,7 +100,7 @@ const rawPaletteData: RawColorData[] = [
       "#64637C",
       "#BCBD40",
       "#2CBDCD",
-      // TODO: This color is very difficult to distinguish from the    orange.
+      // TODO: This color is very difficult to distinguish from the other orange.
       "#FF8964",
       "#862CCD",
     ],
