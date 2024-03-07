@@ -77,6 +77,8 @@ const rawColorRampData: RawColorData[] = [
     ],
   },
 
+  // TODO: The red, green, and blue color ramps don't have equal perceptual darkness, so they're not great for comparison.
+  // Can I generate versions of them with equal brightness?
   { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
   {
     key: "esri-orange_5",
@@ -92,6 +94,11 @@ const rawColorRampData: RawColorData[] = [
     key: "esri-green_4",
     name: "ESRI - Green 4",
     colorStops: ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
+  },
+  {
+    key: "esri-blue_3",
+    name: "ESRI - Blue 3",
+    colorStops: ["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"],
   },
   {
     key: "esri-blue_14",
@@ -205,7 +212,8 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   // "seaborn-crest",
   "esri-red_5",
   "esri-green_4",
-  "esri-purple_4",
+  "esri-blue_3",
+  // "esri-purple_4",
   "matplotlib-plasma",
   "matplotlib-viridis",
   "seaborn-mako",
