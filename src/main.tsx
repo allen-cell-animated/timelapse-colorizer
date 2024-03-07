@@ -17,11 +17,11 @@ const router = createHashRouter(
       errorElement: <ErrorPage />,
     },
     {
-      path: "/test",
-      element: <p>This is the /test page</p>,
+      path: "test",
+      element: <p>This is the test page</p>,
     },
     {
-      path: "#//test",
+      path: "#/test",
       element: <p>This is the #/test page</p>,
     },
   ],
@@ -38,7 +38,7 @@ const root = createRoot(container!);
 root.render(
   <React.StrictMode>
     <AppStyle>
-      <p>d</p>
+      <p>e</p>
       <RouterProvider router={router} />
     </AppStyle>
   </React.StrictMode>
