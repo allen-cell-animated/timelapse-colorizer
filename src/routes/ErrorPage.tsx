@@ -25,7 +25,7 @@ export default function ErrorPage(): ReactElement {
       <h1>{errorMessage}</h1>
       <p>Sorry, something went wrong.</p>
       <br />
-      <Link to="/">
+      <Link to="#/">
         <Button type="primary">Return to homepage</Button>
       </Link>
     </FlexColumnAlignCenter>

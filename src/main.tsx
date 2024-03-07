@@ -16,6 +16,10 @@ const router = createHashRouter(
       element: <Viewer />,
       errorElement: <ErrorPage />,
     },
+    {
+      path: "*",
+      element: <ErrorPage />,
+    },
   ],
   {
     // Base path is the --base option passed to vite. This ensures that builds
