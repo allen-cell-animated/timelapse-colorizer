@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "/nucmorph-colorizer/pr-preview/pr-255/",
   "scripts": {
     "start": "vite",
     "dev": "vite",
