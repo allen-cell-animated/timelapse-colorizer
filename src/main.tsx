@@ -16,6 +16,14 @@ const router = createHashRouter(
       element: <Viewer />,
       errorElement: <ErrorPage />,
     },
+    {
+      path: "/test",
+      element: <p>This is the /test page</p>,
+    },
+    {
+      path: "#//test",
+      element: <p>This is the #/test page</p>,
+    },
   ],
   {
     // Base path is the --base option passed to vite. This ensures that builds
@@ -30,7 +38,7 @@ const root = createRoot(container!);
 root.render(
   <React.StrictMode>
     <AppStyle>
-      <p>c</p>
+      <p>d</p>
       <RouterProvider router={router} />
     </AppStyle>
   </React.StrictMode>
