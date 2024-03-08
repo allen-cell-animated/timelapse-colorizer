@@ -7,6 +7,8 @@ export type PaletteData = RawColorData & {
   colors: Color[];
 };
 
+// DO NOT REMOVE PALETTES FROM THIS LIST OR CHANGE THEIR KEYS. This will break backwards compatibility with URLs.
+// Instead, remove them from `DISPLAY_CATEGORICAL_PALETTE_KEYS` to omit them from the UI.
 const rawPaletteData: RawColorData[] = [
   {
     // https://spectrum.adobe.com/page/color-for-data-visualization/
@@ -236,25 +238,6 @@ const rawPaletteData: RawColorData[] = [
       "#E8B297",
     ],
   },
-  {
-    // https://matplotlib.org/stable/gallery/color/colormap_reference.html
-    key: "matplotlib_paired",
-    name: "Paired",
-    colorStops: [
-      "#A8CEE2",
-      "#2678B0",
-      "#B4DF92",
-      "#3C9F3C",
-      "#F99C9B",
-      "#E02626",
-      "#FCC079",
-      "#FC822A",
-      "#C9B3D4",
-      "#693E96",
-      "#CC967B",
-      "#AF5B31",
-    ],
-  },
 ];
 
 // Format the array so it can be read as a map
@@ -284,5 +267,26 @@ export const getKeyFromPalette = (palette: Color[]): string | null => {
   return null;
 };
 
-export const DEFAULT_CATEGORICAL_PALETTES = paletteMap;
-export const DEFAULT_CATEGORICAL_PALETTE_ID = "adobe";
+export const KNOWN_CATEGORICAL_PALETTES = paletteMap;
+/**
+ * List of categorical palettes keys that should be visible on the UI, in order of display.
+ * Palettes should never be removed from `KNOWN_CATEGORICAL_PALETTES` to maintain backwards
+ * compatibility with URLs, only removed here to omit them from the UI.
+ */
+export const DISPLAY_CATEGORICAL_PALETTE_KEYS = [
+  "adobe",
+  // "adobe_light",
+  "matplotlib_paired",
+  // "matplotlib_accent",
+  "matplotlib_tab10",
+  // "iwanthue_set2",
+  // "iwanthue_set3",
+  "neon",
+  "iwanthue_dark",
+  "matplotlib_pastel1",
+  // "matplotlib_pastel2",
+  // "iwanthue_pastel_3",
+  // "matplotlib_paired",
+];
+
+export const DEFAULT_CATEGORICAL_PALETTE_KEY = "adobe";

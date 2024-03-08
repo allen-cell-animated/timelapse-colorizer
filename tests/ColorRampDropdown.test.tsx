@@ -10,13 +10,13 @@ import ColorRampDropdown from "../src/components/Dropdowns/ColorRampDropdown";
 
 describe("ColorRampDropdown", () => {
   const defaultPalette = [new Color("#000000"), new Color("#ffffff")];
-  const colorRamps: [string, RawColorData][] = [
+  const knownRamps: [string, RawColorData][] = [
     ["map1", { key: "map1", name: "Map 1", colorStops: ["#ffffff", "#000000"] }],
     ["map2", { key: "map2", name: "Map 2", colorStops: ["#ffffff", "#000000"] }],
     ["map3", { key: "map3", name: "Map 3", colorStops: ["#ffffff", "#000000"] }],
   ];
   const customColorRamps: Map<string, ColorRampData> = new Map(
-    colorRamps.map(([key, data]) => {
+    knownRamps.map(([key, data]) => {
       return [key, { ...data, colorRamp: new ColorRamp(data.colorStops, ColorRampType.LINEAR) }];
     })
   );
@@ -26,12 +26,14 @@ describe("ColorRampDropdown", () => {
       render(
         <ColorRampDropdown
           selectedRamp={"map1"}
-          colorRamps={customColorRamps}
+          knownColorRamps={customColorRamps}
           onChangeRamp={(_value: string) => {}}
           useCategoricalPalettes={false}
           numCategories={0}
           selectedPalette={defaultPalette}
           onChangePalette={(): void => {}}
+          colorRampsToDisplay={["map1", "map2", "map3"]}
+          categoricalPalettesToDisplay={[]}
         />
       );
       const element = screen.getByText(/Color map/);
@@ -47,7 +49,9 @@ describe("ColorRampDropdown", () => {
       render(
         <ColorRampDropdown
           selectedRamp={"map1"}
-          colorRamps={customColorRamps}
+          colorRampsToDisplay={["map1", "map2", "map3"]}
+          categoricalPalettesToDisplay={[]}
+          knownColorRamps={customColorRamps}
           onChangeRamp={mockCallback}
           useCategoricalPalettes={false}
           numCategories={0}
@@ -80,9 +84,11 @@ describe("ColorRampDropdown", () => {
         render(
           <ColorRampDropdown
             selectedRamp={"bad-key"}
-            colorRamps={customColorRamps}
+            knownColorRamps={customColorRamps}
             onChangeRamp={(_value: string) => {}}
             useCategoricalPalettes={false}
+            colorRampsToDisplay={["map1", "map2", "map3"]}
+            categoricalPalettesToDisplay={[]}
             numCategories={0}
             selectedPalette={[]}
             onChangePalette={(): void => {}}
