@@ -38,7 +38,7 @@ import { FlexRowAlignCenter } from "./styles/utils";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
-import AppStyle, { AppThemeContext } from "./components/AppStyle";
+import { AppThemeContext } from "./components/AppStyle";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
@@ -54,7 +54,8 @@ import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
 
-import styles from "./App.module.css";
+// TODO: Refactor with styled-components
+import styles from "./Viewer.module.css";
 
 const AicsLogoLink = styled.a`
   position: relative;
@@ -68,12 +69,14 @@ const StyledAicsLogo = styled(AicsLogoSVG)`
   position: absolute;
 `;
 
-function App(): ReactElement {
+function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
 
   const canv = useConstructor(() => {
-    return new ColorizeCanvas();
+    const canvas = new ColorizeCanvas();
+    canvas.domElement.className = styles.colorizeCanvas;
+    return canvas;
   });
 
   const [collection, setCollection] = useState<Collection | undefined>();
@@ -702,7 +705,7 @@ function App(): ReactElement {
   }
 
   return (
-    <AppStyle className={styles.app}>
+    <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
 
       {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
@@ -1025,8 +1028,8 @@ function App(): ReactElement {
           </div>
         </div>
       </div>
-    </AppStyle>
+    </div>
   );
 }
 
-export default App;
+export default Viewer;

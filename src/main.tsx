@@ -1,13 +1,29 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { createHashRouter, RouterProvider } from "react-router-dom";
 
-import App from "./App";
+import AppStyle from "./components/AppStyle";
+import ErrorPage from "./routes/ErrorPage";
+import Viewer from "./Viewer";
+
+// Set up react router
+// Use HashRouter for GitHub Pages support, so additional paths are routed to
+// the base app instead of trying to open pages that don't exist.
+const router = createHashRouter([
+  {
+    path: "/",
+    element: <Viewer />,
+    errorElement: <ErrorPage />,
+  },
+]);
 
 // Render React component
 const container = document.getElementById("root");
 const root = createRoot(container!);
 root.render(
   <React.StrictMode>
-    <App />
+    <AppStyle>
+      <RouterProvider router={router} />
+    </AppStyle>
   </React.StrictMode>
 );

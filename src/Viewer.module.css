@@ -1,67 +1,3 @@
-.app {
-  font-family: var(--default-font);
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
-  margin: 0;
-  color: var(--color-text-primary);
-}
-
-.app h1 {
-  font-size: var(--font-size-header);
-  font-style: normal;
-  font-weight: 400;
-  margin: 5px 0;
-  color: var(--color-text-theme);
-}
-
-.app h2 {
-  font-size: var(--font-size-section);
-  font-style: normal;
-  font-weight: 400;
-}
-
-.app h3 {
-  font-size: var(--font-size-label);
-  font-style: normal;
-  font-weight: 400;
-  margin: 0;
-}
-
-.app p {
-  font-family: var(--default-font);
-  font-size: var(--font-size-content);
-  font-style: normal;
-  font-weight: 400;
-  margin: 2px;
-}
-
-.app label {
-  font-family: var(--default-font);
-  font-size: var(--font-size-content);
-  font-style: normal;
-  font-weight: 400;
-  display: flex;
-  flex-direction: row;
-  gap: 2px;
-}
-
-.app .ant-btn:active {
-  border: 1px solid var(--color-button);
-}
-
-.app .ant-btn-default:not(:disabled):hover {
-  background-color: var(--color-button-hover);
-  color: var(--color-text-button);
-  fill: var(--color-text-button);
-}
-
-.app .ant-btn-default:not(:disabled):active {
-  border: 1px solid var(--color-button);
-  color: var(--color-text-button);
-  fill: var(--color-text-button);
-}
-
 .header {
   --header-content-height: 24px;
 
@@ -170,7 +106,7 @@
   width: 100%;
 }
 
-.app canvas {
+.colorizeCanvas {
   border-top: 1px solid var(--color-borders);
 }
 
