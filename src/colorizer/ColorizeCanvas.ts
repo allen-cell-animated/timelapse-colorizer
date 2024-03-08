@@ -539,6 +539,7 @@ export default class ColorizeCanvas {
    * is already loaded.
    */
   async setFrame(index: number, forceUpdate: boolean = false): Promise<void> {
+    console.trace("setFrame called with index: ", index);
     // Ignore same or bad frame indices
     if ((!forceUpdate && this.currentFrame === index) || !this.isValidFrame(index)) {
       return;

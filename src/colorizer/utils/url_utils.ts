@@ -440,17 +440,6 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
 }
 
 /**
- * Replaces the current URL in the browser history with a new one, made by appending
- * the urlParams to the base URL.
- * @param urlParams A string of parameters that can be appended to the base URL.
- */
-export function updateUrl(urlParams: string): void {
-  // Use replaceState rather than pushState, because otherwise every frame will be a unique
-  // URL in the browser history
-  window.history.replaceState(null, document.title, urlParams);
-}
-
-/**
  * Returns if a string is a URL where resources can be fetched from, rather than just a
  * string name.
  * @param input String to be checked.
@@ -531,9 +520,10 @@ export function formatPath(input: string): string {
  * A parameter is `undefined` if it was not found in the URL, or if
  * it could not be parsed.
  */
-export function loadParamsFromUrl(): Partial<UrlParams> {
+export function loadParamsFromUrl(queryString: string): Partial<UrlParams> {
   // Get params from URL and load, with default fallbacks.
-  const queryString = window.location.search;
+  // const queryString = window.location.search;
+  // console.log(queryString);
   return loadParamsFromUrlQueryString(queryString);
 }
 
