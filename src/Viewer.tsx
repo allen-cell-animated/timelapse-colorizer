@@ -239,9 +239,6 @@ function Viewer(): ReactElement {
 
   useEffect(() => {
     if (!timeControls.isPlaying() && !isRecording) {
-      // TODO: setSearchParams converts this from a string to a URLSearchParams object,
-      // which means our unit tests don't reflect the current use case.
-      // (unit tests don't test conversion to and from URLSearchParams...)
       setSearchParams(getUrlParams());
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams]);
@@ -371,7 +368,7 @@ function Viewer(): ReactElement {
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
-      console.log("Num Items:" + dataset?.numObjects);
+      console.log("Num Items:" + newDataset?.numObjects);
     },
     [
       dataset,
@@ -391,10 +388,8 @@ function Viewer(): ReactElement {
   // and lose information (like the track, feature, time, etc.) that isn't
   // accessed in the first render.
   const initialUrlParams = useConstructor(() => {
-    console.log(searchParams.toString());
     return urlUtils.loadFromUrlSearchParams(searchParams);
   });
-  console.log(initialUrlParams);
 
   // Load URL parameters into the state that don't require a dataset to be loaded.
   // This reduces flicker on initial load.
@@ -498,7 +493,6 @@ function Viewer(): ReactElement {
       if (initialUrlParams.time && initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
         const newTime = initialUrlParams.time;
-        console.log("Setting time to " + newTime + ".");
         await canv.setFrame(newTime);
         setCurrentFrame(newTime); // Force render
         setFrameInput(newTime);

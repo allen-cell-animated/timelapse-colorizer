@@ -529,7 +529,7 @@ function removeUndefinedProperties<T>(object: T): Partial<T> {
 }
 
 /**
- * Loads parameters from the a URLSearchParams object.
+ * Loads viewer parameters from a URLSearchParams object.
  * @param queryString A URLSearchParams object.
  * @returns A partial UrlParams object with values loaded from the queryString.
  * Enforces min/max ordering for thresholds and range.
