@@ -15,7 +15,7 @@ import {
   isHexColor,
   isJson,
   isUrl,
-  loadParamsFromUrlQueryString,
+  loadFromUrlSearchParams,
   paramsToUrlQueryString,
   UrlParams,
 } from "../src/colorizer/utils/url_utils";
@@ -79,7 +79,7 @@ describe("paramsToUrlQueryString", () => {
 
 describe("loadParamsFromUrlQueryString", () => {
   it("Handles empty query strings", () => {
-    const result = loadParamsFromUrlQueryString("");
+    const result = loadFromUrlSearchParams(new URLSearchParams(""));
     expect(result).to.deep.equal({});
   });
 });
@@ -111,7 +111,7 @@ describe("Loading + saving from URL query strings", () => {
     const queryString = paramsToUrlQueryString(originalParams);
     expect(queryString).equals(stateWithNonLatinCharacters[1]);
 
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams).deep.equals(originalParams);
   });
 
@@ -170,7 +170,7 @@ describe("Loading + saving from URL query strings", () => {
       "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&tab=filters&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
     expect(queryString).equals(expectedQueryString);
 
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams).deep.equals(originalParams);
   });
 
@@ -193,7 +193,7 @@ describe("Loading + saving from URL query strings", () => {
       "?filters=feature%252C%252C%252C%3A%252Cm%252C%3A0%3A1%2C(feature)%3A(m)%3A0%3A1%2Cfeat%253Aure%3A%253Am%3A0%3A1%2C0.0%2525%3Am%2526m's%3A1";
     expect(queryString).equals(expectedQueryString);
 
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams).deep.equals(originalParams);
   });
 
@@ -211,7 +211,7 @@ describe("Loading + saving from URL query strings", () => {
       "?filters=feature1%3Am%3A1%3A0%2Cfeature2%3Am%3A12%3A-34%2Cfeature3%3Am%3A0.500%3A0.250&range=1%2C0";
     expect(queryString).equals(expectedQueryString);
 
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
 
     expect(parsedParams.thresholds).deep.equals([
       { featureName: "feature1", units: "m", type: ThresholdType.NUMERIC, min: 0, max: 1 },
@@ -229,7 +229,7 @@ describe("Loading + saving from URL query strings", () => {
     const expectedQueryString = "?filters=feature1%3A%3A0%3A1";
     expect(queryString).equals(expectedQueryString);
 
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams.thresholds).deep.equals(originalParams.thresholds);
   });
 
@@ -244,7 +244,7 @@ describe("Loading + saving from URL query strings", () => {
     const expectedQueryString = "?track=0&t=0&filters=feature%3A%3A0%3A0&range=0%2C0";
     expect(queryString).equals(expectedQueryString);
 
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams).deep.equals(originalParams);
   });
 
@@ -256,7 +256,7 @@ describe("Loading + saving from URL query strings", () => {
     const expectedQueryString = "?filters=feature%3A%3A1";
     expect(queryString).equals(expectedQueryString);
 
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams.thresholds).deep.equals([
       {
         featureName: "feature",
@@ -279,7 +279,7 @@ describe("Loading + saving from URL query strings", () => {
     const expectedQueryString = "?filters=feature%3A%3A1003";
     expect(queryString).equals(expectedQueryString);
 
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams.thresholds).deep.equals([
       {
         featureName: "feature",
@@ -294,12 +294,14 @@ describe("Loading + saving from URL query strings", () => {
     // Test all color ramp names to make sure they can be safely sent through the URL.
     for (const key of DEFAULT_COLOR_RAMPS.keys()) {
       const params: Partial<UrlParams> = { colorRampKey: key };
-      let parsedParams = loadParamsFromUrlQueryString(paramsToUrlQueryString(params));
+      let queryString = paramsToUrlQueryString(params);
+      let parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
       expect(parsedParams).deep.equals(params);
 
       // Reversed
       params.colorRampReversed = true;
-      parsedParams = loadParamsFromUrlQueryString(paramsToUrlQueryString(params));
+      queryString = paramsToUrlQueryString(params);
+      parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
       expect(parsedParams).deep.equals(params);
     }
   });
@@ -311,7 +313,7 @@ describe("Loading + saving from URL query strings", () => {
 
       expect(queryString).to.equal(`?palette-key=${data.key}`);
 
-      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
       expect(parsedParams).deep.equals(params);
       expect(parsedParams.categoricalPalette).deep.equals(data.colors);
     }
@@ -338,7 +340,7 @@ describe("Loading + saving from URL query strings", () => {
     expect(queryString).equals(
       "?palette=000000-000010-000020-000030-000040-000050-000060-000070-000080-000090-0000a0-0000b0"
     );
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams).deep.equals(params);
   });
 
@@ -348,7 +350,7 @@ describe("Loading + saving from URL query strings", () => {
     const expectedParams = {
       categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get("adobe")?.colors,
     };
-    expect(loadParamsFromUrlQueryString(queryString)).deep.equals(expectedParams);
+    expect(loadFromUrlSearchParams(new URLSearchParams(queryString))).deep.equals(expectedParams);
   });
 
   it("Backfills missing palette colors", () => {
@@ -358,7 +360,7 @@ describe("Loading + saving from URL query strings", () => {
     const params: Partial<UrlParams> = { categoricalPalette: colors };
     const queryString = paramsToUrlQueryString(params);
     expect(queryString).equals("?palette=000000-000010-000020-000030");
-    const parsedParams = loadParamsFromUrlQueryString(queryString);
+    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
 
     const defaultColors = DEFAULT_CATEGORICAL_PALETTES.get("adobe")!.colors;
     const expectedColors = [...colors, ...defaultColors.slice(4)];
@@ -370,7 +372,7 @@ describe("Loading + saving from URL query strings", () => {
       for (const tabType of Object.values(TabType)) {
         const params: Partial<UrlParams> = { config: { openTab: tabType } };
         const queryString = paramsToUrlQueryString(params);
-        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
         expect(parsedParams).deep.equals(params);
       }
     });
@@ -388,7 +390,7 @@ describe("Loading + saving from URL query strings", () => {
       for (const tabString of Object.keys(knownTabStrings)) {
         const expectedTabType = knownTabStrings[tabString];
         const queryString = `?tab=${tabString}`;
-        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
         expect(parsedParams).deep.equals({ config: { openTab: expectedTabType } });
       }
     });
@@ -402,13 +404,13 @@ describe("Loading + saving from URL query strings", () => {
       };
       const queryString = paramsToUrlQueryString(params);
       expect(queryString).equals("?scalebar=0&path=1");
-      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
       expect(parsedParams).deep.equals(params);
     });
 
     it("Uses default DrawSettings colors for malformed or missing color strings", () => {
       const queryString = "?outlier-mode=0&outlier-color=a8d8c8d9&filter-mode=1";
-      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
       expect(parsedParams).deep.equals({
         config: {
           outlierDrawSettings: {
@@ -443,7 +445,7 @@ describe("Loading + saving from URL query strings", () => {
       const queryString = paramsToUrlQueryString(queryParams);
       const expectedQueryString = "?scatter-range=all&scatter-y=y_axis_name";
       expect(queryString).equals(expectedQueryString);
-      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
       expect(parsedParams).deep.equals(expectedParams);
     });
 
@@ -467,7 +469,7 @@ describe("Loading + saving from URL query strings", () => {
         const expectedQueryString = `?scatter-x=${expectedEncodedName}&scatter-y=${expectedEncodedName}`;
         const queryString = paramsToUrlQueryString(queryParams);
         expect(queryString).equals(expectedQueryString);
-        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
         expect(parsedParams).deep.equals(queryParams);
       }
     });
@@ -476,14 +478,14 @@ describe("Loading + saving from URL query strings", () => {
       for (const rangeType of Object.values(PlotRangeType)) {
         const queryParams = { scatterPlotConfig: { rangeType } };
         const queryString = paramsToUrlQueryString(queryParams);
-        const parsedParams = loadParamsFromUrlQueryString(queryString);
+        const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
         expect(parsedParams).deep.equals(queryParams);
       }
     });
 
     it("Skips bad range enum types", () => {
       const queryString = "?scatter-range=bad_value";
-      const parsedParams = loadParamsFromUrlQueryString(queryString);
+      const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
       expect(parsedParams).deep.equals({});
     });
   });

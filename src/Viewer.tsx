@@ -392,7 +392,7 @@ function Viewer(): ReactElement {
   // accessed in the first render.
   const initialUrlParams = useConstructor(() => {
     console.log(searchParams.toString());
-    return urlUtils.loadParamsFromUrl(searchParams.toString());
+    return urlUtils.loadFromUrlSearchParams(searchParams);
   });
   console.log(initialUrlParams);
 

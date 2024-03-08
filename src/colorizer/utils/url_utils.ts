@@ -515,19 +515,6 @@ export function formatPath(input: string): string {
 }
 
 /**
- * Loads parameters from the current window URL.
- * @returns An object with a dataset, feature, track, and time parameters.
- * A parameter is `undefined` if it was not found in the URL, or if
- * it could not be parsed.
- */
-export function loadParamsFromUrl(queryString: string): Partial<UrlParams> {
-  // Get params from URL and load, with default fallbacks.
-  // const queryString = window.location.search;
-  // console.log(queryString);
-  return loadParamsFromUrlQueryString(queryString);
-}
-
-/**
  * Returns a copy of an object where any properties with a value of `undefined`
  * are not included.
  */
@@ -542,15 +529,12 @@ function removeUndefinedProperties<T>(object: T): Partial<T> {
 }
 
 /**
- * Loads parameters from the query string of a URL.
- * @param queryString A URL query string, as from `window.location.search`.
+ * Loads parameters from the a URLSearchParams object.
+ * @param queryString A URLSearchParams object.
  * @returns A partial UrlParams object with values loaded from the queryString.
  * Enforces min/max ordering for thresholds and range.
  */
-export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlParams> {
-  // NOTE: URLSearchParams automatically applies one level of URI decoding.
-  const urlParams = new URLSearchParams(queryString);
-
+export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<UrlParams> {
   const base10Radix = 10; // required for parseInt
   const collectionParam = urlParams.get(UrlParam.COLLECTION) ?? undefined;
   const datasetParam = urlParams.get(UrlParam.DATASET) ?? undefined;
