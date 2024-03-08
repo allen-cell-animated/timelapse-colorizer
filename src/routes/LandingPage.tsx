@@ -7,9 +7,7 @@ import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../styles/utils";
 import { AppThemeContext } from "../components/AppStyle";
 import { Header, HeaderLogo } from "../components/Header";
 
-type LandingPageProps = {};
-
-export default function LandingPage(props: LandingPageProps): ReactElement {
+export default function LandingPage(): ReactElement {
   const theme = useContext(AppThemeContext);
   return (
     <>
@@ -27,17 +25,19 @@ export default function LandingPage(props: LandingPageProps): ReactElement {
           <br />
           <p>If your link previously looked like this:</p>
           <code>https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html?collection=....</code>
-          <p>You'll need to edit it by adding the new viewer subpath:</p>
+          <p>You&#39;ll need to edit it by adding the new viewer subpath:</p>
           <code>
             https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html
-            <span style={{ color: "var(--color-text-theme)" }}>/#/viewer</span>
+            <b>
+              <span style={{ color: "var(--color-text-theme)" }}>/#/viewer</span>
+            </b>
             ?collection=....
           </code>
           <br />
           <br />
           <p>
-            Make sure to update any links you've shared with other people. Thanks for your patience while the tool is
-            getting ready for release!
+            Make sure to update any links you&#39;ve shared with other people. Thanks for your patience while the tool
+            is getting ready for release!
           </p>
         </Card>
         <Link to="viewer">
