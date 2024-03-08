@@ -72,8 +72,6 @@ const rawColorRampData: RawColorData[] = [
     ],
   },
 
-  // TODO: The red, green, and blue color ramps don't have equal perceptual darkness, so they're not great for comparison.
-  // Can I generate versions of them with equal brightness?
   { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
   {
     key: "esri-orange_5",
@@ -89,11 +87,6 @@ const rawColorRampData: RawColorData[] = [
     key: "esri-green_4",
     name: "ESRI - Green 4",
     colorStops: ["#ffffcc", "#c2e699", "#78c679", "#31a354", "#006837"],
-  },
-  {
-    key: "esri-blue_3",
-    name: "ESRI - Blue 3",
-    colorStops: ["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"],
   },
   {
     key: "esri-blue_14",
@@ -171,14 +164,25 @@ const rawColorRampData: RawColorData[] = [
     colorStops: ["#018571", "#80cdc1", "#f5f5f5", "#dfc27d", "#a6611a"],
   },
   {
-    key: "color_brewer-spectral",
-    name: "Color Brewer - Spectral",
-    colorStops: ["#5e4fa2", "#53adad", "#bee5a0", "#fefebd", "#fdbe6f", "#e95c47", "#9e0142"],
-  },
-  {
     key: "matplotlib-purple_orange",
     name: "Matplotlib - Purple Orange",
     colorStops: ["#2d004b", "#998fbf", "#f7f6f5", "#ed9b39", "#7f3b08"],
+  },
+  // Three (hopefully perceptually comparable) color ramps
+  {
+    key: "colorbrewer-blues",
+    name: "ColorBrewer - Blues",
+    colorStops: ["#f7fbff", "#c5daee", "#6aadd5", "#2070b4", "#08306b"],
+  },
+  {
+    key: "colorbrewer-reds",
+    name: "ColorBrewer - Reds",
+    colorStops: ["#fff5f0", "#fcbaa0", "#fa6949", "#ca171c", "#67000c"],
+  },
+  {
+    key: "colorbrewer-greens",
+    name: "ColorBrewer - Greens",
+    colorStops: ["#f7fcf5", "#c6e8bf", "#73c375", "#228a44", "#00441b"],
   },
 ];
 
@@ -204,16 +208,15 @@ export const KNOWN_COLOR_RAMPS = colorRampMap;
  */
 export const DISPLAY_COLOR_RAMP_KEYS = [
   "matplotlib-cool",
-  "esri-red_5",
-  "esri-green_4",
-  "esri-blue_3",
+  "colorbrewer-reds",
+  "colorbrewer-greens",
+  "colorbrewer-blues",
   "matplotlib-plasma",
   "matplotlib-viridis",
   "seaborn-mako",
   "matplotlib-inferno",
   "matplotlib-magma",
   "matplotlib-turbo",
-  "color_brewer-spectral",
   "esri-blue_red_8",
   "esri-green_brown_1",
   "matplotlib-purple_orange",
