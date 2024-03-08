@@ -45,11 +45,6 @@ const rawColorRampData: RawColorData[] = [
     colorStops: ["#0b0305", "#382a54", "#395d9b", "#3496a9", "#5fceac", "#def4e4"],
   },
   {
-    key: "seaborn-crest",
-    name: "Seaborn - Crest",
-    colorStops: ["#2c3071", "#205583", "#23758b", "#44948e", "#6cb190", "#a4cc90"],
-  },
-  {
     key: "matplotlib-turbo",
     name: "Matplotlib - Turbo",
     colorStops: [
@@ -209,29 +204,17 @@ export const KNOWN_COLOR_RAMPS = colorRampMap;
  */
 export const DISPLAY_COLOR_RAMP_KEYS = [
   "matplotlib-cool",
-  // "seaborn-crest",
   "esri-red_5",
   "esri-green_4",
   "esri-blue_3",
-  // "esri-purple_4",
   "matplotlib-plasma",
   "matplotlib-viridis",
   "seaborn-mako",
   "matplotlib-inferno",
   "matplotlib-magma",
-  // "esri-mentone_beach",
-  // "esri-orange_5",
-  // "esri-yellow_2",
-  // "esri-blue_14",
-  // "esri-purple_4",
-  // "esri-heatmap_4",
-  // "esri-retro_flow",
   "matplotlib-turbo",
   "color_brewer-spectral",
-  // "esri-blue_red_9",
   "esri-blue_red_8",
-  // "esri-red_green_9",
-  // "esri-purple_red_2",
   "esri-green_brown_1",
   "matplotlib-purple_orange",
 ];
