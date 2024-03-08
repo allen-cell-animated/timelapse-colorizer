@@ -40,6 +40,15 @@ export const FlexColumn = styled(FlexDiv)`
 `;
 
 /**
+ * A flexbox container that lays out children in a column, and aligns all items
+ * to the horizontal center.
+ * @param $gap: The gap, in pixels, between each child element. 0 by default.
+ */
+export const FlexColumnAlignCenter = styled(FlexColumn)`
+  align-items: center;
+`;
+
+/**
  * A flexbox container that lays out children in a row.
  * @param $gap: The gap, in pixels, between each child element. 0 by default.
  */

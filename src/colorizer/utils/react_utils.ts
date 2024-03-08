@@ -1,4 +1,5 @@
 import React, { EventHandler, useEffect, useRef, useState } from "react";
+import styled from "styled-components";
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -73,6 +74,23 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
 }
 
 /**
+ * Convenience styled component for use with `useScrollShadow`, intended to
+ * display the edge shadows. Place this inside the parent component as a sibling
+ * to the scrolling area, and apply the `scrollShadowStyle` to it.
+ */
+export const ScrollShadowContainer = styled.div`
+  position: absolute;
+  pointer-events: none;
+  // Fill the parent completely so we can overlay the
+  // shadow effects above the content.
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: box-shadow 0.1s ease-in;
+`;
+
+/**
  * Hook for adding scroll shadows to an element.
  *
  * Adapted with edits from https://medium.com/dfind-consulting/react-scroll-hook-with-shadows-9ba2d47ae32.
@@ -88,27 +106,23 @@ export function excludeUndefinedValues<T extends Object>(obj: T): Partial<T> {
  *
  * @example
  * ```
+ * import { useScrollShadow, ScrollShadowContainer } from "colorizer/utils/react_utils";
+ *
  * function MyComponent() {
  *   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
  *
  *   return (
- *   <div style={{maxHeight: "50px", position: "relative"}}>
+ *   <div style={{position: "relative"}}>
  *     <div
  *       ref={scrollRef}
  *       onScroll={onScrollHandler}
- *       style={{overflow-y: "auto", height: "100%"}}
+ *       style={{overflow-y: "auto", height: "50px"}}
  *     >
  *       <p>Some content</p>
  *       <p>Some more content</p>
  *       <p>Some more content</p>
  *     </div>
- *     <div style={{
- *       // This div applies the shadow and exists above the scrolling element.
- *       width: "100%",
- *       height: "100%",
- *       position: "absolute",
- *       top: 0,
- *       pointerEvents: "none",
+ *     <ScrollShadowContainer style={{
  *       ...scrollShadowStyle
  *     }} />
  *   </div>

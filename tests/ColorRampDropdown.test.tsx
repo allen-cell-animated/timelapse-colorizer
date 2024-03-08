@@ -32,6 +32,8 @@ describe("ColorRampDropdown", () => {
           numCategories={0}
           selectedPalette={defaultPalette}
           onChangePalette={(): void => {}}
+          colorRampsToDisplay={["map1", "map2", "map3"]}
+          categoricalPalettesToDisplay={[]}
         />
       );
       const element = screen.getByText(/Color map/);
@@ -47,6 +49,8 @@ describe("ColorRampDropdown", () => {
       render(
         <ColorRampDropdown
           selectedRamp={"map1"}
+          colorRampsToDisplay={["map1", "map2", "map3"]}
+          categoricalPalettesToDisplay={[]}
           knownColorRamps={customColorRamps}
           onChangeRamp={mockCallback}
           useCategoricalPalettes={false}
@@ -83,6 +87,8 @@ describe("ColorRampDropdown", () => {
             knownColorRamps={customColorRamps}
             onChangeRamp={(_value: string) => {}}
             useCategoricalPalettes={false}
+            colorRampsToDisplay={["map1", "map2", "map3"]}
+            categoricalPalettesToDisplay={[]}
             numCategories={0}
             selectedPalette={[]}
             onChangePalette={(): void => {}}

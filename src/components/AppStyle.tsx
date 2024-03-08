@@ -36,12 +36,12 @@ const theme = {
     text: {
       primary: palette.gray60,
       secondary: palette.gray50,
-      tertiary: palette.gray40,
       hint: palette.gray30,
       disabled: palette.gray30,
       button: palette.gray0,
       error: palette.error,
       success: palette.success,
+      theme: palette.theme,
     },
     layout: {
       background: palette.gray0,
@@ -76,7 +76,7 @@ const theme = {
     family: "Lato, LatoExtended, sans-serif",
     resource: "https://fonts.googleapis.com/css2?family=Lato&display=swap",
     size: {
-      header: 22,
+      header: 20,
       section: 18,
       label: 16,
       content: 14,
@@ -112,6 +112,7 @@ const CssContainer = styled.div`
   --color-text-button: ${theme.color.text.button};
   --color-text-error: ${theme.color.text.error};
   --color-text-success: ${theme.color.text.success};
+  --color-text-theme: ${theme.color.text.theme};
 
   /* Layout */
   --color-background: ${theme.color.layout.background};
@@ -189,6 +190,51 @@ const CssContainer = styled.div`
   .ant-btn-default:not(:disabled) {
     border-color: ${theme.color.button.outline};
     color: ${theme.color.button.outline};
+  }
+
+  font-family: var(--default-font);
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  margin: 0;
+  color: var(--color-text-primary);
+
+  h1 {
+    font-size: var(--font-size-header);
+    font-style: normal;
+    font-weight: 400;
+    margin: 5px 0;
+  }
+
+  h2 {
+    font-size: var(--font-size-section);
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  h3 {
+    font-size: var(--font-size-label);
+    font-style: normal;
+    font-weight: 400;
+    margin: 0;
+  }
+
+  p {
+    font-family: var(--default-font);
+    font-size: var(--font-size-content);
+    font-style: normal;
+    font-weight: 400;
+    margin: 2px;
+  }
+
+  label {
+    font-family: var(--default-font);
+    font-size: var(--font-size-content);
+    font-style: normal;
+    font-weight: 400;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
   }
 `;
 

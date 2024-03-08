@@ -20,16 +20,13 @@ import styles from "./ColorRampDropdown.module.css";
 type ColorRampSelectorProps = {
   selectedRamp: string;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
-  /**
-   * The keys of the color ramps to display, in order. If `null` (default), shows all
-   * the color ramps given by `knownColorRamps`.
-   */
-  colorRampsToDisplay?: string[] | null;
+  /** The keys of the color ramps to display, in order. */
+  colorRampsToDisplay: string[];
   knownColorRamps?: Map<string, ColorRampData>;
 
   useCategoricalPalettes?: boolean;
   knownCategoricalPalettes?: Map<string, PaletteData>;
-  categoricalPalettesToDisplay?: string[] | null;
+  categoricalPalettesToDisplay: string[];
   numCategories: number;
   selectedPalette: Color[];
   onChangePalette: (newPalette: Color[]) => void;
@@ -40,16 +37,12 @@ type ColorRampSelectorProps = {
 
 const defaultProps: Partial<ColorRampSelectorProps> = {
   knownColorRamps: KNOWN_COLOR_RAMPS,
-  colorRampsToDisplay: null,
-  categoricalPalettesToDisplay: null,
   disabled: false,
   useCategoricalPalettes: false,
   knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
 };
 
-/**
- * Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i.
- */
+/** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
   if (arr1.length !== arr2.length) {
     return false;
@@ -62,16 +55,12 @@ function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
   return true;
 }
 
-/**
- * A dropdown selector for color ramp gradients.
- */
+/** A dropdown selector for color ramp gradients. */
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
   const theme = useContext(AppThemeContext);
 
-  const colorRampsToDisplay = props.colorRampsToDisplay ?? Array.from(props.knownColorRamps.keys());
-  const categoricalPalettesToDisplay =
-    props.categoricalPalettesToDisplay ?? Array.from(props.knownCategoricalPalettes.keys());
+  const { colorRampsToDisplay, categoricalPalettesToDisplay } = props;
 
   // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Override the open/close behavior for the dropdown so it's compatible with keyboard navigation.
