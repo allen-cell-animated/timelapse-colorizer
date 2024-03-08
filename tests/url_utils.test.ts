@@ -1,7 +1,7 @@
 import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES, DEFAULT_COLOR_RAMPS } from "../src/colorizer";
+import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../src/colorizer";
 import {
   defaultViewerConfig,
   DrawMode,
@@ -145,7 +145,7 @@ describe("Loading + saving from URL query strings", () => {
       range: [21.433, 89.4],
       colorRampKey: "myMap-1",
       colorRampReversed: true,
-      categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors,
+      categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
       config: {
         showTrackPath: true,
         showScaleBar: true,
@@ -292,7 +292,7 @@ describe("Loading + saving from URL query strings", () => {
 
   it("Handles all color map names", () => {
     // Test all color ramp names to make sure they can be safely sent through the URL.
-    for (const key of DEFAULT_COLOR_RAMPS.keys()) {
+    for (const key of KNOWN_COLOR_RAMPS.keys()) {
       const params: Partial<UrlParams> = { colorRampKey: key };
       let parsedParams = loadParamsFromUrlQueryString(paramsToUrlQueryString(params));
       expect(parsedParams).deep.equals(params);
@@ -305,7 +305,7 @@ describe("Loading + saving from URL query strings", () => {
   });
 
   it("Accepts keys for all palettes", () => {
-    for (const data of DEFAULT_CATEGORICAL_PALETTES.values()) {
+    for (const data of KNOWN_CATEGORICAL_PALETTES.values()) {
       const params: Partial<UrlParams> = { categoricalPalette: data.colors };
       const queryString = paramsToUrlQueryString(params);
 
@@ -346,7 +346,7 @@ describe("Loading + saving from URL query strings", () => {
     const queryString =
       "?palette-key=adobe&palette=000000-ff0000-00ff00-0000ff-000000-ff0000-00ff00-0000ff-000000-ff0000-00ff00-0000ff";
     const expectedParams = {
-      categoricalPalette: DEFAULT_CATEGORICAL_PALETTES.get("adobe")?.colors,
+      categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get("adobe")?.colors,
     };
     expect(loadParamsFromUrlQueryString(queryString)).deep.equals(expectedParams);
   });
@@ -360,7 +360,7 @@ describe("Loading + saving from URL query strings", () => {
     expect(queryString).equals("?palette=000000-000010-000020-000030");
     const parsedParams = loadParamsFromUrlQueryString(queryString);
 
-    const defaultColors = DEFAULT_CATEGORICAL_PALETTES.get("adobe")!.colors;
+    const defaultColors = KNOWN_CATEGORICAL_PALETTES.get("adobe")!.colors;
     const expectedColors = [...colors, ...defaultColors.slice(4)];
     expect(parsedParams).deep.equals({ categoricalPalette: expectedColors });
   });

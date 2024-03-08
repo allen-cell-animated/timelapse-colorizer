@@ -7,8 +7,8 @@ import {
   ColorRamp,
   ColorRampData,
   ColorRampType,
-  DEFAULT_CATEGORICAL_PALETTES,
-  DEFAULT_COLOR_RAMPS,
+  KNOWN_CATEGORICAL_PALETTES,
+  KNOWN_COLOR_RAMPS,
   PaletteData,
 } from "../../colorizer";
 
@@ -20,10 +20,13 @@ import styles from "./ColorRampDropdown.module.css";
 type ColorRampSelectorProps = {
   selectedRamp: string;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
-  colorRamps?: Map<string, ColorRampData>;
+  /** The keys of the color ramps to display, in order. */
+  colorRampsToDisplay: string[];
+  knownColorRamps?: Map<string, ColorRampData>;
 
   useCategoricalPalettes?: boolean;
-  categoricalPalettes?: Map<string, PaletteData>;
+  knownCategoricalPalettes?: Map<string, PaletteData>;
+  categoricalPalettesToDisplay: string[];
   numCategories: number;
   selectedPalette: Color[];
   onChangePalette: (newPalette: Color[]) => void;
@@ -33,15 +36,13 @@ type ColorRampSelectorProps = {
 };
 
 const defaultProps: Partial<ColorRampSelectorProps> = {
-  colorRamps: DEFAULT_COLOR_RAMPS,
+  knownColorRamps: KNOWN_COLOR_RAMPS,
   disabled: false,
   useCategoricalPalettes: false,
-  categoricalPalettes: DEFAULT_CATEGORICAL_PALETTES,
+  knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
 };
 
-/**
- * Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i.
- */
+/** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
   if (arr1.length !== arr2.length) {
     return false;
@@ -54,12 +55,12 @@ function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
   return true;
 }
 
-/**
- * A dropdown selector for color ramp gradients.
- */
+/** A dropdown selector for color ramp gradients. */
 const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
   const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
   const theme = useContext(AppThemeContext);
+
+  const { colorRampsToDisplay, categoricalPalettesToDisplay } = props;
 
   // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
   // Override the open/close behavior for the dropdown so it's compatible with keyboard navigation.
@@ -92,7 +93,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     };
   }, [forceOpen]);
 
-  const selectedRampData = props.colorRamps.get(props.selectedRamp);
+  const selectedRampData = props.knownColorRamps.get(props.selectedRamp);
 
   if (!selectedRampData || !selectedRampData.colorRamp) {
     throw new Error(`Selected color ramp name '${props.selectedRamp}' is invalid.`);
@@ -115,7 +116,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
 
   // Determine if we're currently using a preset palette; otherwise show the "Custom" tooltip.
   let selectedPaletteName = "Custom";
-  for (const [, paletteData] of props.categoricalPalettes) {
+  for (const [, paletteData] of props.knownCategoricalPalettes) {
     if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
       selectedPaletteName = paletteData.name;
       break;
@@ -147,13 +148,14 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
     if (props.useCategoricalPalettes) {
       // Make categorical palettes by converting them into color ramps.
       const onClick = (paletteData: ColorRampData): void => {
-        const colors = props.categoricalPalettes.get(paletteData.key)?.colors;
+        const colors = props.knownCategoricalPalettes.get(paletteData.key)?.colors;
         if (colors) {
           props.onChangePalette(colors);
         }
       };
       // Generate color ramps from the palettes.
-      const paletteData = Array.from(props.categoricalPalettes.values());
+
+      const paletteData = categoricalPalettesToDisplay.map((key) => props.knownCategoricalPalettes.get(key)!);
       // Append the missing ColorRamp into the palette data so it can be handled as a ColorRampData.
       const colorRampData = paletteData.map((data) => {
         const visibleColors = data.colors.slice(0, Math.max(1, props.numCategories));
@@ -162,11 +164,21 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       return makeRampButtonList(colorRampData, onClick);
     } else {
       // Make gradient ramps instead
-      return makeRampButtonList(Array.from(props.colorRamps.values()), (rampData) => {
-        props.onChangeRamp(rampData.key, false);
-      });
+      return makeRampButtonList(
+        colorRampsToDisplay.map((key) => props.knownColorRamps.get(key)!),
+        (rampData) => {
+          props.onChangeRamp(rampData.key, false);
+        }
+      );
     }
-  }, [props.colorRamps, props.useCategoricalPalettes, props.categoricalPalettes, props.numCategories]);
+  }, [
+    props.knownColorRamps,
+    props.colorRampsToDisplay,
+    props.useCategoricalPalettes,
+    props.knownCategoricalPalettes,
+    props.categoricalPalettesToDisplay,
+    props.numCategories,
+  ]);
 
   /// Rendering
 
