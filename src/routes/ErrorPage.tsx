@@ -5,7 +5,7 @@ import { ErrorResponse, Link, useRouteError } from "react-router-dom";
 import { FlexColumnAlignCenter } from "../styles/utils";
 
 const isErrorResponse = (error: unknown): error is ErrorResponse => {
-  return (error as ErrorResponse).status !== undefined && (error as ErrorResponse).statusText !== undefined;
+  return typeof (error as ErrorResponse).status === "number" && typeof (error as ErrorResponse).statusText === "string";
 };
 
 export default function ErrorPage(): ReactElement {
