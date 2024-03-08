@@ -9,7 +9,9 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import styled from "styled-components";
 
+import { AicsLogoSVG } from "./assets";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
@@ -53,6 +55,18 @@ import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
 
 import styles from "./App.module.css";
+
+const AicsLogoLink = styled.a`
+  position: relative;
+  width: 180px;
+  height: 46px;
+`;
+
+const StyledAicsLogo = styled(AicsLogoSVG)`
+  left: 0;
+  top: 0;
+  position: absolute;
+`;
 
 function App(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -695,9 +709,40 @@ function App(): ReactElement {
       {/* TODO: Split into its own component? */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1>Timelapse Colorizer</h1>
+          <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer">
+            <StyledAicsLogo />
+          </AicsLogoLink>
           <span className={styles.verticalDivider}></span>
+          <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
+        </div>
+        {/* <h3>Dataset Name</h3> */}
+        <FlexRowAlignCenter $gap={12}>
+          <FlexRowAlignCenter $gap={2}>
+            <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+            <Export
+              totalFrames={dataset?.numberOfFrames || 0}
+              setFrame={setFrameAndRender}
+              getCanvas={() => canv.domElement}
+              // Stop playback when exporting
+              onClick={() => timeControls.pause()}
+              currentFrame={currentFrame}
+              defaultImagePrefix={datasetKey + "-" + featureName}
+              disabled={dataset === null}
+              setIsRecording={setIsRecording}
+            />
+            <TextButton onClick={openCopyNotification}>
+              <LinkOutlined />
+              <p>Copy URL</p>
+            </TextButton>
+          </FlexRowAlignCenter>
+          <HelpDropdown />
+        </FlexRowAlignCenter>
+      </div>
 
+      {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
+      <div className={styles.mainContent}>
+        {/** Top Control Bar */}
+        <FlexRowAlignCenter $gap={12} style={{ margin: "16px 0", flexWrap: "wrap" }}>
           <SelectionDropdown
             disabled={disableUi}
             label="Dataset"
@@ -736,126 +781,94 @@ function App(): ReactElement {
             selectedPalette={categoricalPalette}
             onChangePalette={setCategoricalPalette}
           />
-        </div>
-        <FlexRowAlignCenter $gap={12}>
-          <FlexRowAlignCenter $gap={2}>
-            <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
-            <Export
-              totalFrames={dataset?.numberOfFrames || 0}
-              setFrame={setFrameAndRender}
-              getCanvas={() => canv.domElement}
-              // Stop playback when exporting
-              onClick={() => timeControls.pause()}
-              currentFrame={currentFrame}
-              defaultImagePrefix={`${datasetKey}-${featureName}`}
-              disabled={dataset === null}
-              setIsRecording={setIsRecording}
-            />
-            <TextButton onClick={openCopyNotification}>
-              <LinkOutlined />
-              <p>Copy URL</p>
-            </TextButton>
-          </FlexRowAlignCenter>
-          <HelpDropdown />
         </FlexRowAlignCenter>
-      </div>
-
-      {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
-      <div className={styles.mainContent}>
-        {/** Top Control Bar */}
-        <div className={styles.topControls}>
-          <h3 style={{ margin: "0" }}>
-            {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
-          </h3>
-          <div className={styles.controlsContainer}>
-            {
-              // Render either a categorical color picker or a range slider depending on the feature type
-              dataset?.isFeatureCategorical(featureName) ? (
-                <CategoricalColorPicker
-                  categories={dataset.getFeatureCategories(featureName) || []}
-                  selectedPalette={categoricalPalette}
-                  onChangePalette={setCategoricalPalette}
-                  disabled={disableUi}
-                />
-              ) : (
-                <LabeledRangeSlider
-                  min={colorRampMin}
-                  max={colorRampMax}
-                  minSliderBound={dataset?.getFeatureData(featureName)?.min}
-                  maxSliderBound={dataset?.getFeatureData(featureName)?.max}
-                  onChange={function (min: number, max: number): void {
-                    setColorRampMin(min);
-                    setColorRampMax(max);
-                  }}
-                  marks={getColorMapSliderMarks()}
-                  disabled={disableUi}
-                />
-              )
-            }
-            {/** Additional top bar settings */}
-            <div>
-              <Checkbox
-                checked={config.keepRangeBetweenDatasets}
-                onChange={() => {
-                  // Invert lock on range
-                  updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
-                }}
-              >
-                Keep range between datasets
-              </Checkbox>
-              <Checkbox
-                type="checkbox"
-                checked={config.showTrackPath}
-                onChange={() => {
-                  updateConfig({ showTrackPath: !config.showTrackPath });
-                }}
-              >
-                Show track path
-              </Checkbox>
-            </div>
-          </div>
-        </div>
 
         {/* Organize the main content areas */}
         <div className={styles.contentPanels}>
           <div className={styles.canvasPanel}>
             {/** Canvas */}
-            <HoverTooltip
-              tooltipContent={
-                <>
-                  <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
-                  <p>
-                    {featureName}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
-                  </p>
-                </>
-              }
-              disabled={!showHoveredId}
-            >
-              <CanvasWrapper
-                canv={canv}
-                dataset={dataset}
-                selectedBackdropKey={selectedBackdropKey}
-                colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
-                colorRampMin={colorRampMin}
-                colorRampMax={colorRampMax}
-                categoricalColors={categoricalPalette}
-                selectedTrack={selectedTrack}
-                config={config}
-                onTrackClicked={(track) => {
-                  setFindTrackInput("");
-                  setSelectedTrack(track);
-                }}
-                inRangeLUT={inRangeLUT}
-                onMouseHover={(id: number): void => {
-                  const isObject = id !== BACKGROUND_ID;
-                  setShowHoveredId(isObject);
-                  if (isObject) {
-                    setLastHoveredId(id);
-                  }
-                }}
-                onMouseLeave={() => setShowHoveredId(false)}
-              />
-            </HoverTooltip>
+            <div className={styles.canvasTopAndCanvasContainer}>
+              <div className={styles.canvasTopContainer}>
+                <h3 style={{ margin: "0" }}>
+                  {dataset ? dataset.getFeatureNameWithUnits(featureName) : "Feature value range"}
+                </h3>
+                <FlexRowAlignCenter $gap={12} style={{ flexWrap: "wrap", justifyContent: "space-between" }}>
+                  <div style={{ flexBasis: 250, flexShrink: 2, flexGrow: 2, minWidth: "75px" }}>
+                    {
+                      // Render either a categorical color picker or a range slider depending on the feature type
+                      dataset?.isFeatureCategorical(featureName) ? (
+                        <CategoricalColorPicker
+                          categories={dataset.getFeatureCategories(featureName) || []}
+                          selectedPalette={categoricalPalette}
+                          onChangePalette={setCategoricalPalette}
+                          disabled={disableUi}
+                        />
+                      ) : (
+                        <LabeledRangeSlider
+                          min={colorRampMin}
+                          max={colorRampMax}
+                          minSliderBound={dataset?.getFeatureData(featureName)?.min}
+                          maxSliderBound={dataset?.getFeatureData(featureName)?.max}
+                          onChange={function (min: number, max: number): void {
+                            setColorRampMin(min);
+                            setColorRampMax(max);
+                          }}
+                          marks={getColorMapSliderMarks()}
+                          disabled={disableUi}
+                        />
+                      )
+                    }
+                  </div>
+                  <div style={{ flexBasis: 100, flexShrink: 1, flexGrow: 1, width: "fit-content" }}>
+                    <Checkbox
+                      checked={config.keepRangeBetweenDatasets}
+                      onChange={() => {
+                        // Invert lock on range
+                        updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
+                      }}
+                    >
+                      Keep range when switching datasets and features
+                    </Checkbox>
+                  </div>
+                </FlexRowAlignCenter>
+              </div>
+              <HoverTooltip
+                tooltipContent={
+                  <>
+                    <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
+                    <p>
+                      {featureName}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
+                    </p>
+                  </>
+                }
+                disabled={!showHoveredId}
+              >
+                <CanvasWrapper
+                  canv={canv}
+                  dataset={dataset}
+                  selectedBackdropKey={selectedBackdropKey}
+                  colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
+                  colorRampMin={colorRampMin}
+                  colorRampMax={colorRampMax}
+                  categoricalColors={categoricalPalette}
+                  selectedTrack={selectedTrack}
+                  config={config}
+                  onTrackClicked={(track) => {
+                    setFindTrackInput("");
+                    setSelectedTrack(track);
+                  }}
+                  inRangeLUT={inRangeLUT}
+                  onMouseHover={(id: number): void => {
+                    const isObject = id !== BACKGROUND_ID;
+                    setShowHoveredId(isObject);
+                    if (isObject) {
+                      setLastHoveredId(id);
+                    }
+                  }}
+                  onMouseLeave={() => setShowHoveredId(false)}
+                />
+              </HoverTooltip>
+            </div>
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
