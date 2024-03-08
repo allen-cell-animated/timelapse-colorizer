@@ -25,8 +25,8 @@ const VerticalDivider = styled.div`
 `;
 
 /**
- * The logo for the header, with links for the
- * @returns
+ * The logo and title of the app, to be used with the Header component.
+ * Both the logo and app title are links that can be used for navigation.
  */
 export default function HeaderLogo(): ReactElement {
   return (
