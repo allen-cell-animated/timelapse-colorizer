@@ -129,6 +129,7 @@ function Viewer(): ReactElement {
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
+  const [searchParams, setSearchParams] = useSearchParams();
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
@@ -235,8 +236,6 @@ function Viewer(): ReactElement {
 
   // Update url whenever the viewer settings change
   // (but not while playing/recording for performance reasons)
-  const [searchParams, setSearchParams] = useSearchParams();
-
   useEffect(() => {
     if (!timeControls.isPlaying() && !isRecording) {
       setSearchParams(getUrlParams());
@@ -407,7 +406,8 @@ function Viewer(): ReactElement {
   }, []);
 
   // Break React rules to prevent a race condition where the initial dataset is reloaded
-  // due to useEffect being fired twice, which causes URL parameters like time to get lost.
+  // when useEffect gets fired twice. This caused certain URL parameters like time to get
+  // lost or reset.
   const isLoadingInitialDataset = useRef<boolean>(false);
 
   // Attempt to load database and collections data from the URL.
