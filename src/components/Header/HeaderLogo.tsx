@@ -31,7 +31,7 @@ const VerticalDivider = styled.div`
 export default function HeaderLogo(): ReactElement {
   return (
     <FlexRowAlignCenter $gap={20}>
-      <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer">
+      <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer" target="_blank">
         <StyledAicsLogo title={"https://www.allencell.org"} />
       </AicsLogoLink>
       <VerticalDivider />
