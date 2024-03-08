@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import styled from "styled-components";
 
 import { AicsLogoSVG } from "../../assets";
-import { FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
+import { FlexRowAlignCenter } from "../../styles/utils";
 
 const AicsLogoLink = styled.a`
   position: relative;
@@ -35,9 +35,8 @@ export default function HeaderLogo(): ReactElement {
         <StyledAicsLogo title={"https://www.allencell.org"} />
       </AicsLogoLink>
       <VerticalDivider />
-      <Link to="/">
+      <Link to="/" aria-label="Go to home page">
         <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
-        <VisuallyHidden>(go to home page)</VisuallyHidden>
       </Link>
     </FlexRowAlignCenter>
   );

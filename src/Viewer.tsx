@@ -695,8 +695,6 @@ function Viewer(): ReactElement {
     <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
 
-      {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
-      {/* TODO: Split into its own component? */}
       <Header>
         <HeaderLogo />
         {/* <h3>Dataset Name</h3> */}
