@@ -1,0 +1,15 @@
+export type DatasetEntry = {
+  name: string;
+  description: string;
+  loadLink: string;
+};
+
+export type ProjectEntry = {
+  name: string;
+  description: string;
+  publicationLink?: URL;
+  loadLink?: string;
+  datasets: DatasetEntry[];
+  hiddenDatasets?: DatasetEntry[];
+  inReview?: boolean;
+};
