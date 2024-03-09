@@ -9,7 +9,7 @@ export type ProjectEntry = {
   description: string;
   publicationLink?: URL;
   loadLink?: string;
-  datasets: DatasetEntry[];
+  datasets?: DatasetEntry[];
   hiddenDatasets?: DatasetEntry[];
   inReview?: boolean;
 };

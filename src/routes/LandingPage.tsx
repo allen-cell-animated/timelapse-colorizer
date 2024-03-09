@@ -3,7 +3,7 @@ import React, { ReactElement, useContext } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../styles/utils";
 import { DatasetEntry, ProjectEntry } from "../types";
 
 import { AppThemeContext } from "../components/AppStyle";
@@ -19,7 +19,7 @@ const ContentContainer = styled(FlexColumn)`
 const ProjectList = styled.ul`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
   padding: 0;
 
   // Add a pseudo-element line between cards
@@ -29,6 +29,7 @@ const ProjectList = styled.ul`
     width: 100%;
     height: 1px;
     background-color: var(--color-borders);
+    margin-bottom: 10px;
   }
 `;
 
@@ -56,7 +57,7 @@ const DatasetCard = styled.li`
   grid-row: span 3;
   min-width: 180px;
 
-  & > h3 {
+  & > h4 {
     width: 100%;
     text-align: center;
     display: grid;
@@ -76,6 +77,13 @@ const DatasetCard = styled.li`
 `;
 
 const exampleData: ProjectEntry[] = [
+  {
+    name: "This is a project name in the case of multiple datasets belonging to a single project/publication",
+    description:
+      "Introductory explanatory text about the dataset(s) and anything a user should know before opening in app. This should ideally only be a couple of sentences.",
+    publicationLink: new URL("https://www.google.com"),
+    loadLink: "link1",
+  },
   {
     name: "This is a project name in the case of multiple datasets belonging to a single project/publication",
     description:
@@ -157,7 +165,7 @@ export default function LandingPage(): ReactElement {
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
     return (
       <DatasetCard key={index}>
-        <h3>{dataset.name}</h3>
+        <h4>{dataset.name}</h4>
         <p>{dataset.description}</p>
         <Link to={dataset.loadLink}>
           <Button type="primary">Load</Button>
@@ -195,43 +203,39 @@ export default function LandingPage(): ReactElement {
       </Header>
       <br />
       <ContentContainer $gap={10}>
-        <Card>
-          <h1>Hello! This is the new WIP landing page.</h1>
-          <p>
-            If you got to this page with a link that previously took you to the viewer, you can continue using it with a
-            quick edit.
-          </p>
-          <br />
-          <p>If your link previously looked like this:</p>
-          <code>https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html?collection=....</code>
-          <p>You&#39;ll need to edit it by adding the new viewer subpath:</p>
-          <code>
-            https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html
-            <b>
-              <span style={{ color: "var(--color-text-theme)" }}>/#/viewer</span>
-            </b>
-            ?collection=....
-          </code>
-          <br />
-          <br />
-          <p>
-            Make sure to update any links you&#39;ve shared with other people. Thanks for your patience while the tool
-            is getting ready for release!
-          </p>
-        </Card>
-        <Link to="viewer">
-          <Button type="primary" size="large" style={{ fontSize: theme.font.size.label }}>
-            <FlexRowAlignCenter>Go to viewer</FlexRowAlignCenter>
-          </Button>
-        </Link>
+        <FlexColumnAlignCenter $gap={10}>
+          <Card>
+            <h1>Hello! This is the new WIP landing page.</h1>
+            <p>
+              If you got to this page with a link that previously took you to the viewer, you can continue using it with
+              a quick edit.
+            </p>
+            <br />
+            <p>If your link previously looked like this:</p>
+            <code>https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html?collection=....</code>
+            <p>You&#39;ll need to edit it by adding the new viewer subpath:</p>
+            <code>
+              https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html
+              <b>
+                <span style={{ color: "var(--color-text-theme)" }}>/#/viewer</span>
+              </b>
+              ?collection=....
+            </code>
+            <br />
+            <br />
+            <p>
+              Make sure to update any links you&#39;ve shared with other people. Thanks for your patience while the tool
+              is getting ready for release!
+            </p>
+          </Card>
+          <Link to="viewer">
+            <Button type="primary" size="large" style={{ fontSize: theme.font.size.label }}>
+              <FlexRowAlignCenter>Go to viewer</FlexRowAlignCenter>
+            </Button>
+          </Link>
+        </FlexColumnAlignCenter>
         <h3>Get started by loading a dataset below</h3>
-        <ProjectList>
-          {exampleData.map(renderProject)}
-          <ProjectCard>hi</ProjectCard>
-          <ProjectCard>hi</ProjectCard>
-          <ProjectCard>hi</ProjectCard>
-          <ProjectCard>hi</ProjectCard>
-        </ProjectList>
+        <ProjectList>{exampleData.map(renderProject)}</ProjectList>
       </ContentContainer>
     </>
   );
