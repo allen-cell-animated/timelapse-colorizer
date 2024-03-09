@@ -8,6 +8,7 @@ export type ProjectEntry = {
   name: string;
   description: string;
   publicationLink?: URL;
+  publicationName?: string;
   loadLink?: string;
   datasets?: DatasetEntry[];
   hiddenDatasets?: DatasetEntry[];

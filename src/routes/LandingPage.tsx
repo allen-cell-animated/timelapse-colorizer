@@ -82,6 +82,7 @@ const exampleData: ProjectEntry[] = [
     description:
       "Introductory explanatory text about the dataset(s) and anything a user should know before opening in app. This should ideally only be a couple of sentences.",
     publicationLink: new URL("https://www.google.com"),
+    publicationName: "Some publication name",
     loadLink: "link1",
   },
   {
@@ -175,7 +176,16 @@ export default function LandingPage(): ReactElement {
   };
 
   const renderProject = (project: ProjectEntry, index: number): ReactElement => {
-    const publicationElement = project.publicationLink ? <></> : null;
+    // TODO: Add fontawesome arrow icon at end of link
+    // also custom link colors
+    const publicationElement = project.publicationLink ? (
+      <p>
+        Related publication:{" "}
+        <a href={project.publicationLink.toString()} target="_blank" rel="noopener noreferrer">
+          {project.publicationName}
+        </a>
+      </p>
+    ) : null;
 
     const loadButton = project.loadLink ? (
       <Link to={project.loadLink}>
@@ -185,6 +195,7 @@ export default function LandingPage(): ReactElement {
 
     const datasetList = project.datasets ? <DatasetList>{project.datasets.map(renderDataset)}</DatasetList> : null;
 
+    // TODO: Add "In Review" banner
     return (
       <ProjectCard key={index}>
         <h3>{project.name}</h3>
