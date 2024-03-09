@@ -10,8 +10,10 @@ import { AppThemeContext } from "../components/AppStyle";
 import { Header, HeaderLogo } from "../components/Header";
 
 const ContentContainer = styled(FlexColumn)`
-  width: 1060px;
+  max-width: 1060px;
+  width: 100%;
   margin: auto;
+  padding: 0 20px;
 `;
 
 const ProjectList = styled.ul`
@@ -38,31 +40,33 @@ const ProjectCard = styled.li`
 `;
 
 const DatasetList = styled.ol`
+  padding: 0;
   margin: auto;
   display: grid;
-  // Row for the title, description, and button link
-  grid-template-rows: auto auto auto;
-  grid-auto-flow: column;
-  gap: 10px;
+  // Repeat rows for the title, description, and button link
+  grid-template-rows: repeat(3, auto);
+  grid-template-columns: repeat(auto-fit, minmax(180px, auto));
+  justify-content: space-between;
+  gap: 10px 10px;
 `;
 
 const DatasetCard = styled.li`
   display: grid;
   grid-template-rows: subgrid;
   grid-row: span 3;
-  min-width: 220px;
+  min-width: 180px;
 
   & > h3 {
     display: grid;
-    grid-row: 1/2;
+    grid-row: 1;
   }
   & > p {
     display: grid;
-    grid-row: 2/3;
+    grid-row: 2;
   }
   & > button {
     display: grid;
-    grid-row: 3/4;
+    grid-row: 3;
   }
 `;
 
@@ -96,6 +100,47 @@ const exampleData: ProjectEntry[] = [
       {
         name: "This is a dataset with a longer name than the other elements, which should cause it to wrap",
         description: "This is a short description about this particular dataset. 2 lines at most.",
+        loadLink: "link1",
+      },
+    ],
+  },
+  {
+    name: "This is a project name in the case of multiple datasets belonging to a single project/publication",
+    description:
+      "Introductory explanatory text about the dataset(s) and anything a user should know before opening in app. This should ideally only be a couple of sentences.",
+    datasets: [
+      {
+        name: "This is a dataset with a semi-long name",
+        description: "This is a short description about this particular dataset. 2 lines at most.",
+        loadLink: "link1",
+      },
+      {
+        name: "This is a dataset with a semi-long name",
+        description:
+          "This is a long description about this particular dataset. 2 lines at most, but it has extra lines, so the entire section should wrap.",
+        loadLink: "link1",
+      },
+      {
+        name: "This is a dataset with a longer name than the other elements, which should cause it to wrap",
+        description: "This is a short description about this particular dataset. 2 lines at most.",
+        loadLink: "link1",
+      },
+    ],
+  },
+  {
+    name: "This is a project name in the case of multiple datasets belonging to a single project/publication",
+    description:
+      "Introductory explanatory text about the dataset(s) and anything a user should know before opening in app. This should ideally only be a couple of sentences.",
+    datasets: [
+      {
+        name: "This is a dataset with a semi-long name",
+        description: "This is a short description about this particular dataset. 2 lines at most.",
+        loadLink: "link1",
+      },
+      {
+        name: "This is a dataset with a semi-long name",
+        description:
+          "This is a long description about this particular dataset. 2 lines at most, but it has extra lines, so the entire section should wrap.",
         loadLink: "link1",
       },
     ],
