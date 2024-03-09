@@ -41,12 +41,12 @@ const ProjectCard = styled.li`
 
 const DatasetList = styled.ol`
   padding: 0;
-  margin: auto;
+  width: 100%;
   display: grid;
   // Repeat rows for the title, description, and button link
   grid-template-rows: repeat(3, auto);
-  grid-template-columns: repeat(auto-fit, minmax(180px, auto));
-  justify-content: space-between;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 280px));
+  justify-content: space-around;
   gap: 10px 10px;
 `;
 
@@ -57,14 +57,19 @@ const DatasetCard = styled.li`
   min-width: 180px;
 
   & > h3 {
+    width: 100%;
+    text-align: center;
     display: grid;
     grid-row: 1;
   }
   & > p {
+    width: 100%;
+    text-align: center;
     display: grid;
     grid-row: 2;
   }
-  & > button {
+  & > a {
+    margin: auto;
     display: grid;
     grid-row: 3;
   }
@@ -116,12 +121,11 @@ const exampleData: ProjectEntry[] = [
       },
       {
         name: "This is a dataset with a semi-long name",
-        description:
-          "This is a long description about this particular dataset. 2 lines at most, but it has extra lines, so the entire section should wrap.",
+        description: "This is a long description about this particular dataset. 2 lines at most.",
         loadLink: "link1",
       },
       {
-        name: "This is a dataset with a longer name than the other elements, which should cause it to wrap",
+        name: "This is a dataset with a semi-long name",
         description: "This is a short description about this particular dataset. 2 lines at most.",
         loadLink: "link1",
       },
