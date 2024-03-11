@@ -1,9 +1,11 @@
+import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Card } from "antd";
 import React, { ReactElement, useContext } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 import { DatasetEntry, ProjectEntry } from "../types";
 
 import { AppThemeContext } from "../components/AppStyle";
@@ -212,6 +214,9 @@ export default function LandingPage(): ReactElement {
         Related publication:{" "}
         <a href={project.publicationLink.toString()} target="_blank" rel="noopener noreferrer">
           {project.publicationName}
+          {/* Icon offset slightly to align with text */}
+          <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
+          <VisuallyHidden>(opens in new tab)</VisuallyHidden>
         </a>
       </p>
     ) : null;
