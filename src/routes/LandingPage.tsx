@@ -3,7 +3,7 @@ import React, { ReactElement, useContext } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../styles/utils";
 import { DatasetEntry, ProjectEntry } from "../types";
 
 import { AppThemeContext } from "../components/AppStyle";
@@ -78,6 +78,21 @@ const DatasetCard = styled.li`
   }
 `;
 
+const InReviewFlag = styled(FlexRowAlignCenter)`
+  border-radius: 4px;
+  padding: 1px 6px;
+  background-color: var(--color-flag-background);
+  height: 22px;
+  flex-wrap: wrap;
+
+  & > p {
+    color: var(--color-flag-text);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+`;
+
 const exampleData: ProjectEntry[] = [
   {
     name: "This is a project name in the case of multiple datasets belonging to a single project/publication",
@@ -86,6 +101,7 @@ const exampleData: ProjectEntry[] = [
     publicationLink: new URL("https://www.google.com"),
     publicationName: "Some publication name",
     loadLink: "link1",
+    inReview: true,
   },
   {
     name: "This is a project name in the case of multiple datasets belonging to a single project/publication",
@@ -180,6 +196,17 @@ export default function LandingPage(): ReactElement {
   const renderProject = (project: ProjectEntry, index: number): ReactElement => {
     // TODO: Add fontawesome arrow icon at end of link
     // also custom link colors
+    const projectNameElement = project.inReview ? (
+      <FlexRow style={{ justifyContent: "space-between" }} $gap={10}>
+        <h3>{project.name}</h3>
+        <InReviewFlag>
+          <p>IN REVIEW</p>
+        </InReviewFlag>
+      </FlexRow>
+    ) : (
+      <h3>{project.name}</h3>
+    );
+
     const publicationElement = project.publicationLink ? (
       <p>
         Related publication:{" "}
@@ -200,7 +227,7 @@ export default function LandingPage(): ReactElement {
     // TODO: Add "In Review" banner
     return (
       <ProjectCard key={index}>
-        <h3>{project.name}</h3>
+        {projectNameElement}
         <p>{project.description}</p>
         {publicationElement}
         {loadButton}

@@ -11,6 +11,7 @@ const palette = {
   themeDark: "#5f369f",
   themeLight: "#aa88ed",
   themeGray: "#f7f0ff",
+  themeGrayDark: "#e7e4f2",
   gray0: "#ffffff",
   gray5: "#fafafa",
   gray10: "#f2f2f2",
@@ -65,6 +66,9 @@ const theme = {
     },
     slider: {
       rail: palette.gray10,
+    },
+    flag: {
+      background: palette.themeGrayDark,
     },
   },
   font: {
@@ -141,6 +145,9 @@ const CssContainer = styled.div`
   --color-collapse-active: ${theme.color.themeDark};
 
   --color-focus-shadow: #f2ebfa;
+
+  --color-flag-background: ${theme.color.flag.background};
+  --color-flag-text: ${theme.color.themeDark};
 
   /* Fonts */
   --default-font: ${theme.font.family};
