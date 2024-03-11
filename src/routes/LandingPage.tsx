@@ -37,7 +37,7 @@ const ProjectCard = styled.li`
   display: flex;
   width: 100%;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 `;
 
 const DatasetList = styled.ol`
@@ -56,12 +56,14 @@ const DatasetCard = styled.li`
   grid-template-rows: subgrid;
   grid-row: span 3;
   min-width: 180px;
+  padding: 5px;
 
   & > h4 {
     width: 100%;
     text-align: center;
     display: grid;
     grid-row: 1;
+    margin: 0;
   }
   & > p {
     width: 100%;
