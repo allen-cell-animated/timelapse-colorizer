@@ -23,6 +23,7 @@ const palette = {
   gray60: "#323233",
   success: "#2fc022",
   error: "#f92d20",
+  link: "#0094FF",
 };
 
 // Note: Some advanced version of this could swap different theme objects, and
@@ -43,6 +44,7 @@ const theme = {
       error: palette.error,
       success: palette.success,
       theme: palette.theme,
+      link: palette.link,
     },
     layout: {
       background: palette.gray0,
@@ -117,6 +119,7 @@ const CssContainer = styled.div`
   --color-text-error: ${theme.color.text.error};
   --color-text-success: ${theme.color.text.success};
   --color-text-theme: ${theme.color.text.theme};
+  --color-text-link: ${theme.color.text.link};
 
   /* Layout */
   --color-background: ${theme.color.layout.background};

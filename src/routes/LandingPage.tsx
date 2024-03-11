@@ -40,6 +40,10 @@ const ProjectCard = styled.li`
   width: 100%;
   flex-direction: column;
   gap: 12px;
+
+  & h3 {
+    font-weight: 600;
+  }
 `;
 
 const DatasetList = styled.ol`
@@ -101,7 +105,8 @@ const exampleData: ProjectEntry[] = [
     description:
       "Introductory explanatory text about the dataset(s) and anything a user should know before opening in app. This should ideally only be a couple of sentences.",
     publicationLink: new URL("https://www.google.com"),
-    publicationName: "Some publication name",
+    publicationName:
+      "This is the name of the associated publication that the user can click to open in a new tab (Publisher name, mm/dd/yyyy)",
     loadLink: "link1",
     inReview: true,
   },
@@ -109,6 +114,9 @@ const exampleData: ProjectEntry[] = [
     name: "This is a project name in the case of multiple datasets belonging to a single project/publication",
     description:
       "Introductory explanatory text about the dataset(s) and anything a user should know before opening in app. This should ideally only be a couple of sentences.",
+    publicationLink: new URL("https://www.google.com"),
+    publicationName:
+      "This is the name of the associated publication that the user can click to open in a new tab (Publisher name, mm/dd/yyyy)",
     datasets: [
       {
         name: "This is a dataset with a semi-long name",
@@ -183,13 +191,16 @@ const exampleData: ProjectEntry[] = [
 export default function LandingPage(): ReactElement {
   const theme = useContext(AppThemeContext);
 
+  // TODO: Should the load buttons be a elements or buttons?
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
     return (
       <DatasetCard key={index}>
         <h4>{dataset.name}</h4>
         <p>{dataset.description}</p>
         <Link to={dataset.loadLink}>
-          <Button type="primary">Load</Button>
+          <Button type="primary">
+            Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
+          </Button>
         </Link>
       </DatasetCard>
     );
@@ -212,7 +223,12 @@ export default function LandingPage(): ReactElement {
     const publicationElement = project.publicationLink ? (
       <p>
         Related publication:{" "}
-        <a href={project.publicationLink.toString()} target="_blank" rel="noopener noreferrer">
+        <a
+          href={project.publicationLink.toString()}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "var(--color-text-link)" }}
+        >
           {project.publicationName}
           {/* Icon offset slightly to align with text */}
           <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
@@ -223,7 +239,9 @@ export default function LandingPage(): ReactElement {
 
     const loadButton = project.loadLink ? (
       <Link to={project.loadLink}>
-        <Button type="primary">Load</Button>
+        <Button type="primary">
+          Load<VisuallyHidden> dataset {project.name}</VisuallyHidden>
+        </Button>
       </Link>
     ) : null;
 
