@@ -14,7 +14,7 @@ import { landingPageContent } from "./LandingPageContent";
 
 const ContentContainer = styled(FlexColumn)`
   max-width: 1060px;
-  width: 100%;
+  width: calc(90vw - 40px);
   margin: auto;
   padding: 0 20px;
 `;
@@ -53,9 +53,9 @@ const DatasetList = styled.ol`
   display: grid;
   // Repeat rows for the title, description, and button link
   grid-template-rows: repeat(3, auto);
-  grid-template-columns: repeat(auto-fit, minmax(220px, 280px));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   justify-content: space-around;
-  gap: 10px 10px;
+  gap: 10px 20px;
 `;
 
 const DatasetCard = styled.li`
@@ -77,6 +77,7 @@ const DatasetCard = styled.li`
     text-align: center;
     display: grid;
     grid-row: 2;
+    text-justify: auto;
   }
   & > a {
     margin: auto;
