@@ -120,8 +120,6 @@ export default function LandingPage(): ReactElement {
   };
 
   const renderProject = (project: ProjectEntry, index: number): ReactElement => {
-    // TODO: Add fontawesome arrow icon at end of link
-    // also custom link colors
     const projectNameElement = project.inReview ? (
       <FlexRow style={{ justifyContent: "space-between" }} $gap={10}>
         <h3>{project.name}</h3>
@@ -158,9 +156,9 @@ export default function LandingPage(): ReactElement {
       </Link>
     ) : null;
 
+    // TODO: Break up list of datasets when too long and hide under collapsible section.
     const datasetList = project.datasets ? <DatasetList>{project.datasets.map(renderDataset)}</DatasetList> : null;
 
-    // TODO: Add "In Review" banner
     return (
       <ProjectCard key={index}>
         {projectNameElement}

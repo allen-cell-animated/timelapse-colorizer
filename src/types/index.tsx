@@ -11,6 +11,5 @@ export type ProjectEntry = {
   publicationName?: string;
   loadLink?: string;
   datasets?: DatasetEntry[];
-  hiddenDatasets?: DatasetEntry[];
   inReview?: boolean;
 };
