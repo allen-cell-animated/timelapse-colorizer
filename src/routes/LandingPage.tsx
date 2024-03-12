@@ -51,7 +51,8 @@ const DatasetList = styled.ol`
   padding: 0;
   width: 100%;
   display: grid;
-  // Repeat rows for the title, description, and button link
+  // Use grid + subgrid to align the title, description, and button for each horizontal
+  // row of cards. repeat is used to tile the layout if the cards wrap to a new line.
   grid-template-rows: repeat(3, auto);
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   justify-content: space-around;
@@ -66,23 +67,17 @@ const DatasetCard = styled.li`
   padding: 5px;
 
   & > h4 {
-    width: 100%;
     text-align: center;
     display: grid;
-    grid-row: 1;
     margin: 0;
   }
   & > p {
-    width: 100%;
     text-align: center;
     display: grid;
-    grid-row: 2;
-    text-justify: auto;
   }
   & > a {
     margin: auto;
     display: grid;
-    grid-row: 3;
   }
 `;
 
@@ -104,7 +99,8 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
 export default function LandingPage(): ReactElement {
   const theme = useContext(AppThemeContext);
 
-  // TODO: Should the load buttons be a elements or buttons?
+  // TODO: Should the load buttons be link elements or buttons?
+  // Currently both the link and the button inside can be tab-selected.
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
     return (
       <DatasetCard key={index}>
