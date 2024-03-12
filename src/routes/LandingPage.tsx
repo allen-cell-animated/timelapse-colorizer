@@ -1,6 +1,6 @@
 import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Card } from "antd";
+import { Button, Card, Tooltip } from "antd";
 import React, { ReactElement, useContext } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
@@ -119,9 +119,11 @@ export default function LandingPage(): ReactElement {
     const projectNameElement = project.inReview ? (
       <FlexRow style={{ justifyContent: "space-between" }} $gap={10}>
         <h3>{project.name}</h3>
-        <InReviewFlag>
-          <p>IN REVIEW</p>
-        </InReviewFlag>
+        <Tooltip title="Final version of dataset will be released when associated paper is published.">
+          <InReviewFlag>
+            <p>IN REVIEW</p>
+          </InReviewFlag>
+        </Tooltip>
       </FlexRow>
     ) : (
       <h3>{project.name}</h3>
