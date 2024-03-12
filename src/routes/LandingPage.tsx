@@ -119,7 +119,7 @@ export default function LandingPage(): ReactElement {
     const projectNameElement = project.inReview ? (
       <FlexRow style={{ justifyContent: "space-between" }} $gap={10}>
         <h3>{project.name}</h3>
-        <Tooltip title="Final version of dataset will be released when associated paper is published.">
+        <Tooltip title="Final version of dataset will be released when associated paper is published">
           <InReviewFlag>
             <p>IN REVIEW</p>
           </InReviewFlag>
