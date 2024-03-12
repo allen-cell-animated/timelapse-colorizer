@@ -168,21 +168,23 @@ const rawColorRampData: RawColorData[] = [
     name: "Matplotlib - Purple Orange",
     colorStops: ["#2d004b", "#998fbf", "#f7f6f5", "#ed9b39", "#7f3b08"],
   },
-  // Three (hopefully perceptually comparable) color ramps
   {
-    key: "colorbrewer-blues",
-    name: "ColorBrewer - Blues",
-    colorStops: ["#f7fbff", "#c5daee", "#6aadd5", "#2070b4", "#08306b"],
+    key: "seaborn-cubehelix_blue",
+    name: "Seaborn - Cubehelix Blue",
+    // seaborn.cubehelix_palette(start=0.2, rot=-0.3, as_cmap=True, reverse=True)
+    colorStops: ["#27203f", "#48507e", "#6585ab", "#8cb8c9", "#c2e2e2"],
   },
   {
-    key: "colorbrewer-reds",
-    name: "ColorBrewer - Reds",
-    colorStops: ["#fff5f0", "#fcbaa0", "#fa6949", "#ca171c", "#67000c"],
+    key: "seaborn-cubehelix_purple",
+    name: "Seaborn - Cubehelix Purple",
+    // seaborn.cubehelix_palette(as_cmap=True, reverse=True)
+    colorStops: ["#2c1e3d", "#6d3f71", "#aa678f", "#d499a7", "#edd1cb"],
   },
   {
-    key: "colorbrewer-greens",
-    name: "ColorBrewer - Greens",
-    colorStops: ["#f7fcf5", "#c6e8bf", "#73c375", "#228a44", "#00441b"],
+    key: "seaborn-cubehelix_green",
+    name: "Seaborn - Cubehelix Green",
+    // seaborn.cubehelix_palette(start=2.3, rot=-0.3, as_cmap=True, reverse=True)
+    colorStops: ["#0f3221", "#31673d", "#64945a", "#a0ba84", "#d9ddbf"],
   },
 ];
 
@@ -208,9 +210,9 @@ export const KNOWN_COLOR_RAMPS = colorRampMap;
  */
 export const DISPLAY_COLOR_RAMP_KEYS = [
   "matplotlib-cool",
-  "colorbrewer-reds",
-  "colorbrewer-greens",
-  "colorbrewer-blues",
+  "seaborn-cubehelix_purple",
+  "seaborn-cubehelix_green",
+  "seaborn-cubehelix_blue",
   "matplotlib-plasma",
   "matplotlib-viridis",
   "seaborn-mako",
