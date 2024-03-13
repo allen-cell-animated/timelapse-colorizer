@@ -7,7 +7,7 @@ import { FlexColumnAlignCenter } from "../styles/utils";
 import { Header, HeaderLogo } from "../components/Header";
 
 const isErrorResponse = (error: unknown): error is ErrorResponse => {
-  return (error as ErrorResponse).status !== undefined && (error as ErrorResponse).statusText !== undefined;
+  return typeof (error as ErrorResponse).status === "number" && typeof (error as ErrorResponse).statusText === "string";
 };
 
 export default function ErrorPage(): ReactElement {

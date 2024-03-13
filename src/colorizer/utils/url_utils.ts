@@ -5,9 +5,9 @@ import { Color, ColorRepresentation, HexColorString } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import {
-  DEFAULT_CATEGORICAL_PALETTE_ID,
-  DEFAULT_CATEGORICAL_PALETTES,
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
   getKeyFromPalette,
+  KNOWN_CATEGORICAL_PALETTES,
 } from "../colors/categorical_palettes";
 import {
   defaultViewerConfig,
@@ -572,12 +572,12 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
   // Parse palette data
   const paletteKeyParam = urlParams.get(UrlParam.PALETTE_KEY);
   const paletteStringParam = urlParams.get(UrlParam.PALETTE);
-  const defaultPalette = DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!;
+  const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
 
   let categoricalPalette: Color[] | undefined = undefined;
   if (paletteKeyParam) {
     // Use key if provided
-    categoricalPalette = DEFAULT_CATEGORICAL_PALETTES.get(paletteKeyParam)?.colors || defaultPalette.colors;
+    categoricalPalette = KNOWN_CATEGORICAL_PALETTES.get(paletteKeyParam)?.colors || defaultPalette.colors;
   } else if (paletteStringParam) {
     // Parse into color objects
     const hexColors: ColorRepresentation[] = paletteStringParam
