@@ -44,7 +44,7 @@ import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
-import { Header, HeaderLogo } from "./components/Header";
+import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
@@ -696,7 +696,6 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
 
       <Header>
-        <HeaderLogo />
         {/* <h3>Dataset Name</h3> */}
         <FlexRowAlignCenter $gap={12}>
           <FlexRowAlignCenter $gap={2}>
