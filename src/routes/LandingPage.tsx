@@ -5,15 +5,13 @@ import { Link } from "react-router-dom";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../styles/utils";
 
 import { AppThemeContext } from "../components/AppStyle";
-import { Header, HeaderLogo } from "../components/Header";
+import Header from "../components/Header";
 
 export default function LandingPage(): ReactElement {
   const theme = useContext(AppThemeContext);
   return (
     <>
-      <Header>
-        <HeaderLogo />
-      </Header>
+      <Header />
       <br />
       <FlexColumnAlignCenter $gap={10}>
         <Card>
