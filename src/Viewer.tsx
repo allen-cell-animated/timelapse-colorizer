@@ -9,9 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import styled from "styled-components";
 
-import { AicsLogoSVG } from "./assets";
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
@@ -46,6 +44,7 @@ import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
+import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
@@ -56,18 +55,6 @@ import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./co
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
-
-const AicsLogoLink = styled.a`
-  position: relative;
-  width: 180px;
-  height: 46px;
-`;
-
-const StyledAicsLogo = styled(AicsLogoSVG)`
-  left: 0;
-  top: 0;
-  position: absolute;
-`;
 
 function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -708,16 +695,7 @@ function Viewer(): ReactElement {
     <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
 
-      {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
-      {/* TODO: Split into its own component? */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer">
-            <StyledAicsLogo />
-          </AicsLogoLink>
-          <span className={styles.verticalDivider}></span>
-          <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
-        </div>
+      <Header>
         {/* <h3>Dataset Name</h3> */}
         <FlexRowAlignCenter $gap={12}>
           <FlexRowAlignCenter $gap={2}>
@@ -740,7 +718,7 @@ function Viewer(): ReactElement {
           </FlexRowAlignCenter>
           <HelpDropdown />
         </FlexRowAlignCenter>
-      </div>
+      </Header>
 
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
