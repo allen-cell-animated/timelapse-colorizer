@@ -80,7 +80,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
-  const emptyColorRamp = new ColorRamp(["black"]).texture;
+  const emptyColorRamp = new ColorRamp(["#aaa", "#fff"]).texture;
 
   return {
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -481,8 +481,10 @@ export default class ColorizeCanvas {
 
   setInRangeLUT(inRangeLUT: Uint8Array): void {
     // Save the array to a texture and pass it into the shader
-    this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeLUT), FeatureDataType.U8));
-    this.render();
+    if (inRangeLUT.length > 0) {
+      this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeLUT), FeatureDataType.U8));
+      this.render();
+    }
   }
 
   getColorMapRangeMin(): number {

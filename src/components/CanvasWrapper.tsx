@@ -6,6 +6,8 @@ import { ViewerConfig } from "../colorizer/types";
 
 import { AppThemeContext } from "./AppStyle";
 
+const CANVAS_BORDER_OFFSET_PX = 4;
+
 type CanvasWrapperProps = {
   canv: ColorizeCanvas;
   /** Dataset to look up track and ID information in.
@@ -210,8 +212,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
      * TODO: Margin calculation?
      */
     const setSize = (): void => {
-      const width = Math.min(window.innerWidth - 75 - 4, props.maxWidth);
-      const height = Math.min(window.innerHeight - 75 - 4, props.maxHeight);
+      const width = Math.min(window.innerWidth - 75 - CANVAS_BORDER_OFFSET_PX, props.maxWidth);
+      const height = Math.min(window.innerHeight - 75 - CANVAS_BORDER_OFFSET_PX, props.maxHeight);
       canv.setSize(width, height);
     };
     const handleResize = (): void => {

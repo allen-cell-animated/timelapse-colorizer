@@ -12,8 +12,12 @@ import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRe
 import { useSearchParams } from "react-router-dom";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
-import { DEFAULT_CATEGORICAL_PALETTE_ID, DEFAULT_CATEGORICAL_PALETTES } from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_ID, DEFAULT_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
+import {
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DISPLAY_CATEGORICAL_PALETTE_KEYS,
+  KNOWN_CATEGORICAL_PALETTES,
+} from "./colorizer/colors/categorical_palettes";
+import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
 import {
   defaultViewerConfig,
   FeatureThreshold,
@@ -41,7 +45,7 @@ import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
-import { Header, HeaderLogo } from "./components/Header";
+import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledRangeSlider from "./components/LabeledRangeSlider";
@@ -86,14 +90,14 @@ function Viewer(): ReactElement {
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
-  const colorRampData = DEFAULT_COLOR_RAMPS;
-  const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_ID);
+  const colorRampData = KNOWN_COLOR_RAMPS;
+  const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_KEY);
   const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
   const [colorRampMax, setColorRampMax] = useState(0);
 
   const [categoricalPalette, setCategoricalPalette] = useState(
-    DEFAULT_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_ID)!.colors
+    KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors
   );
 
   const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
@@ -702,10 +706,7 @@ function Viewer(): ReactElement {
     <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
 
-      {/* Header bar: Contains dataset, feature, color ramp, and other top-level functionality. */}
-      {/* TODO: Split into its own component? */}
       <Header>
-        <HeaderLogo />
         {/* <h3>Dataset Name</h3> */}
         <FlexRowAlignCenter $gap={12}>
           <FlexRowAlignCenter $gap={2}>
@@ -756,7 +757,8 @@ function Viewer(): ReactElement {
           />
 
           <ColorRampDropdown
-            colorRamps={DEFAULT_COLOR_RAMPS}
+            knownColorRamps={KNOWN_COLOR_RAMPS}
+            colorRampsToDisplay={DISPLAY_COLOR_RAMP_KEYS}
             selectedRamp={colorRampKey}
             reversed={colorRampReversed}
             onChangeRamp={(name, reversed) => {
@@ -764,7 +766,8 @@ function Viewer(): ReactElement {
               setColorRampReversed(reversed);
             }}
             disabled={disableUi}
-            categoricalPalettes={DEFAULT_CATEGORICAL_PALETTES}
+            knownCategoricalPalettes={KNOWN_CATEGORICAL_PALETTES}
+            categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
             useCategoricalPalettes={dataset?.isFeatureCategorical(featureName) || false}
             numCategories={dataset?.getFeatureCategories(featureName)?.length || 1}
             selectedPalette={categoricalPalette}
