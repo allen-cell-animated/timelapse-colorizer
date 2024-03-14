@@ -5,6 +5,7 @@ import React, { ReactElement, useContext } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
+import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 import { DatasetEntry, ProjectEntry } from "../types";
 
@@ -102,11 +103,13 @@ export default function LandingPage(): ReactElement {
   // TODO: Should the load buttons be link elements or buttons?
   // Currently both the link and the button inside can be tab-selected.
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
+    const viewerLink = "viewer" + paramsToUrlQueryString(dataset.loadParams);
+
     return (
       <DatasetCard key={index}>
         <h4>{dataset.name}</h4>
         <p>{dataset.description}</p>
-        <Link to={dataset.loadLink}>
+        <Link to={viewerLink}>
           <Button type="primary">
             Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
           </Button>
@@ -146,8 +149,8 @@ export default function LandingPage(): ReactElement {
       </p>
     ) : null;
 
-    const loadButton = project.loadLink ? (
-      <Link to={project.loadLink}>
+    const loadButton = project.loadParams ? (
+      <Link to={"viewer" + paramsToUrlQueryString(project.loadParams)}>
         <Button type="primary">
           Load<VisuallyHidden> dataset {project.name}</VisuallyHidden>
         </Button>

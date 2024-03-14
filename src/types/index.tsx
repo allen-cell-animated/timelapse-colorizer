@@ -1,7 +1,9 @@
+import { UrlParams } from "../colorizer/utils/url_utils";
+
 export type DatasetEntry = {
   name: string;
   description: string;
-  loadLink: string;
+  loadParams: Partial<UrlParams>;
 };
 
 export type ProjectEntry = {
@@ -9,7 +11,7 @@ export type ProjectEntry = {
   description: string;
   publicationLink?: URL;
   publicationName?: string;
-  loadLink?: string;
+  loadParams?: Partial<UrlParams>;
   datasets?: DatasetEntry[];
   inReview?: boolean;
 };
