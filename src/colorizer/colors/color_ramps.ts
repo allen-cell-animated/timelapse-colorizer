@@ -19,6 +19,59 @@ export type ColorRampData = RawColorData & {
 // Instead, remove them from `DISPLAY_COLOR_RAMP_KEYS` to omit them from the UI.
 const rawColorRampData: RawColorData[] = [
   { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
+  {
+    key: "matplotlib-viridis",
+    name: "Matplotlib - Viridis",
+    colorStops: ["#440154", "#3a528b", "#20908c", "#5ec961", "#fde724"],
+  },
+  {
+    key: "matplotlib-plasma",
+    name: "Matplotlib - Plasma",
+    colorStops: ["#0c0786", "#5c00a5", "#9b179e", "#cb4777", "#ec7853", "#fdb32e", "#eff821"],
+  },
+  {
+    key: "matplotlib-inferno",
+    name: "Matplotlib - Inferno",
+    colorStops: ["#000003", "#410967", "#932567", "#dc5039", "#fba40a", "#fcfea4"],
+  },
+  {
+    key: "matplotlib-magma",
+    name: "Matplotlib - Magma",
+    colorStops: ["#000003", "#3b0f6f", "#8c2980", "#dd4968", "#fd9f6c", "#fbfcbf"],
+  },
+  {
+    key: "seaborn-mako",
+    name: "Seaborn - Mako",
+    colorStops: ["#0b0305", "#382a54", "#395d9b", "#3496a9", "#5fceac", "#def4e4"],
+  },
+  {
+    key: "matplotlib-turbo",
+    name: "Matplotlib - Turbo",
+    colorStops: [
+      "#30123b",
+      "#3c358b",
+      "#4458cb",
+      "#467af2",
+      "#3e9bfe",
+      "#28bbeb",
+      "#18d5cc",
+      "#20e9ac",
+      "#46f783",
+      "#78fe59",
+      "#a4fc3b",
+      "#c3f133",
+      "#e1dc37",
+      "#f6c23a",
+      "#fda330",
+      "#fa7d20",
+      "#ef5a11",
+      "#dd3c07",
+      "#c32402",
+      "#a01101",
+      "#7a0402",
+    ],
+  },
+
   { key: "esri-red_5", name: "ESRI - Red 5", colorStops: ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"] },
   {
     key: "esri-orange_5",
@@ -48,7 +101,7 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "esri-mentone_beach",
     name: "ESRI - Mentone Beach",
-    colorStops: ["#fee086", "#fc9a59", "#db4a5b", "#995375", "#48385f"],
+    colorStops: ["#48385f", "#995375", "#db4a5b", "#fc9a59", "#fee086"],
   },
   {
     key: "esri-retro_flow",
@@ -88,12 +141,12 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "esri-blue_red_9",
     name: "ESRI - Blue Red 9",
-    colorStops: ["#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"],
+    colorStops: ["#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"],
   },
   {
     key: "esri-blue_red_8",
     name: "ESRI - Blue Red 8",
-    colorStops: ["#ca0020", "#f4a582", "#f7f7f7", "#92c5de", "#0571b0"],
+    colorStops: ["#0571b0", "#92c5de", "#f7f7f7", "#f4a582", "#ca0020"],
   },
   {
     key: "esri-red_green_9",
@@ -103,12 +156,35 @@ const rawColorRampData: RawColorData[] = [
   {
     key: "esri-purple_red_2",
     name: "ESRI - Purple Red 2",
-    colorStops: ["#a53217", "#d2987f", "#fffee6", "#ab84a0", "#570959"],
+    colorStops: ["#570959", "#ab84a0", "#fffee6", "#d2987f", "#a53217"],
   },
   {
     key: "esri-green_brown_1",
     name: "ESRI - Green Brown 1",
-    colorStops: ["#a6611a", "#dfc27d", "#f5f5f5", "#80cdc1", "#018571"],
+    colorStops: ["#018571", "#80cdc1", "#f5f5f5", "#dfc27d", "#a6611a"],
+  },
+  {
+    key: "matplotlib-purple_orange",
+    name: "Matplotlib - Purple Orange",
+    colorStops: ["#2d004b", "#998fbf", "#f7f6f5", "#ed9b39", "#7f3b08"],
+  },
+  {
+    key: "seaborn-cubehelix_blue",
+    name: "Seaborn - Cubehelix Blue",
+    // seaborn.cubehelix_palette(start=0.2, rot=-0.3, as_cmap=True, reverse=True)
+    colorStops: ["#27203f", "#48507e", "#6585ab", "#8cb8c9", "#c2e2e2"],
+  },
+  {
+    key: "seaborn-cubehelix_purple",
+    name: "Seaborn - Cubehelix Purple",
+    // seaborn.cubehelix_palette(as_cmap=True, reverse=True)
+    colorStops: ["#2c1e3d", "#6d3f71", "#aa678f", "#d499a7", "#edd1cb"],
+  },
+  {
+    key: "seaborn-cubehelix_green",
+    name: "Seaborn - Cubehelix Green",
+    // seaborn.cubehelix_palette(start=2.3, rot=-0.3, as_cmap=True, reverse=True)
+    colorStops: ["#0f3221", "#31673d", "#64945a", "#a0ba84", "#d9ddbf"],
   },
 ];
 
@@ -134,19 +210,17 @@ export const KNOWN_COLOR_RAMPS = colorRampMap;
  */
 export const DISPLAY_COLOR_RAMP_KEYS = [
   "matplotlib-cool",
-  "esri-red_5",
-  // "esri-orange_5",
-  // "esri-yellow_2",
-  "esri-green_4",
-  "esri-blue_14",
-  // "esri-purple_4",
-  "esri-mentone_beach",
-  "esri-retro_flow",
-  "esri-heatmap_4",
-  "esri-blue_red_9",
+  "matplotlib-viridis",
+  "seaborn-mako",
+  "matplotlib-plasma",
+  "matplotlib-inferno",
+  "matplotlib-magma",
+  "seaborn-cubehelix_purple",
+  "seaborn-cubehelix_green",
+  "seaborn-cubehelix_blue",
+  "matplotlib-turbo",
   "esri-blue_red_8",
-  "esri-red_green_9",
-  "esri-purple_red_2",
   "esri-green_brown_1",
+  "matplotlib-purple_orange",
 ];
 export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];
