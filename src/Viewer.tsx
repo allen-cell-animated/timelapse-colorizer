@@ -238,7 +238,7 @@ function Viewer(): ReactElement {
   // (but not while playing/recording for performance reasons)
   useEffect(() => {
     if (!timeControls.isPlaying() && !isRecording) {
-      setSearchParams(getUrlParams());
+      setSearchParams(getUrlParams(), { replace: true });
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams]);
 
