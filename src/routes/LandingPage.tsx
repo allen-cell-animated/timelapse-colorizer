@@ -10,7 +10,7 @@ import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, Visuall
 import { DatasetEntry, ProjectEntry } from "../types";
 
 import { AppThemeContext } from "../components/AppStyle";
-import { Header, HeaderLogo } from "../components/Header";
+import Header from "../components/Header";
 import { landingPageContent } from "./LandingPageContent";
 
 const ContentContainer = styled(FlexColumn)`
@@ -173,9 +173,7 @@ export default function LandingPage(): ReactElement {
 
   return (
     <>
-      <Header>
-        <HeaderLogo />
-      </Header>
+      <Header />
       <br />
       <ContentContainer $gap={10}>
         <FlexColumnAlignCenter $gap={10}>
