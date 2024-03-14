@@ -4,6 +4,7 @@ import { createHashRouter, RouterProvider } from "react-router-dom";
 
 import AppStyle from "./components/AppStyle";
 import ErrorPage from "./routes/ErrorPage";
+import LandingPage from "./routes/LandingPage";
 import Viewer from "./Viewer";
 
 // Set up react router
@@ -12,6 +13,11 @@ import Viewer from "./Viewer";
 const router = createHashRouter([
   {
     path: "/",
+    element: <LandingPage />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "viewer",
     element: <Viewer />,
     errorElement: <ErrorPage />,
   },

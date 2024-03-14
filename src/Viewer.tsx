@@ -9,6 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
@@ -132,6 +133,7 @@ function Viewer(): ReactElement {
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
+  const [searchParams, setSearchParams] = useSearchParams();
   // Provides a mounting point for Antd's notification component. Otherwise, the notifications
   // are mounted outside of App and don't receive CSS styling variables.
   const notificationContainer = useRef<HTMLDivElement>(null);
@@ -240,7 +242,7 @@ function Viewer(): ReactElement {
   // (but not while playing/recording for performance reasons)
   useEffect(() => {
     if (!timeControls.isPlaying() && !isRecording) {
-      urlUtils.updateUrl(getUrlParams());
+      setSearchParams(getUrlParams());
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams]);
 
@@ -321,13 +323,75 @@ function Viewer(): ReactElement {
     [featureThresholds, config.keepRangeBetweenDatasets]
   );
 
+  // DATASET LOADING ///////////////////////////////////////////////////////
+  /**
+   * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
+   * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
+   * @param newDatasetKey the key of the new dataset in the Collection.
+   * @returns a Promise<void> that resolves when the loading is complete.
+   */
+  const replaceDataset = useCallback(
+    async (newDataset: Dataset | null, newDatasetKey: string): Promise<void> => {
+      console.trace("Replacing dataset with " + newDatasetKey + ".");
+      // TODO: Change the way flags are handled to prevent flickering during dataset replacement
+      setDatasetOpen(false);
+      if (newDataset === null) {
+        // TODO: Determine with UX what expected behavior should be for bad datasets
+        return;
+      }
+
+      // Dispose of the old dataset
+      if (dataset !== null) {
+        dataset.dispose();
+      }
+      // State updates
+      setDataset(newDataset);
+      setDatasetKey(newDatasetKey);
+
+      // Only change the feature if there's no equivalent in the new dataset
+      let newFeatureName = featureName;
+      if (!newDataset.hasFeature(newFeatureName)) {
+        newFeatureName = newDataset.featureNames[0];
+      }
+      replaceFeature(newDataset, newFeatureName);
+      resetColorRampRangeToDefaults(newDataset, newFeatureName);
+      setFeatureName(newFeatureName);
+
+      await canv.setDataset(newDataset);
+      canv.setFeature(newFeatureName);
+
+      // Clamp frame to new range
+      const newFrame = Math.min(currentFrame, canv.getTotalFrames() - 1);
+      await setFrame(newFrame);
+
+      setFindTrackInput("");
+      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
+        setSelectedBackdropKey(null);
+      }
+      setSelectedTrack(null);
+      setDatasetOpen(true);
+      setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
+      console.log("Num Items:" + newDataset?.numObjects);
+    },
+    [
+      dataset,
+      featureName,
+      canv,
+      currentFrame,
+      getUrlParams,
+      replaceFeature,
+      resetColorRampRangeToDefaults,
+      featureThresholds,
+    ]
+  );
+
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
   // Only retrieve parameters once, because the URL can be updated by state updates
   // and lose information (like the track, feature, time, etc.) that isn't
   // accessed in the first render.
   const initialUrlParams = useConstructor(() => {
-    return urlUtils.loadParamsFromUrl();
+    return urlUtils.loadFromUrlSearchParams(searchParams);
   });
 
   // Load URL parameters into the state that don't require a dataset to be loaded.
@@ -345,10 +409,19 @@ function Viewer(): ReactElement {
     }
   }, []);
 
+  // Break React rules to prevent a race condition where the initial dataset is reloaded
+  // when useEffect gets fired twice. This caused certain URL parameters like time to get
+  // lost or reset.
+  const isLoadingInitialDataset = useRef<boolean>(false);
+
   // Attempt to load database and collections data from the URL.
   // This is memoized so that it only runs one time on startup.
   useEffect(() => {
     const loadInitialDataset = async (): Promise<void> => {
+      if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
+        return;
+      }
+      isLoadingInitialDataset.current = true;
       let newCollection: Collection;
       const collectionUrlParam = initialUrlParams.collection;
       const datasetParam = initialUrlParams.dataset;
@@ -421,10 +494,9 @@ function Viewer(): ReactElement {
         // Highlight the track. Seek to start of frame only if time is not defined.
         findTrack(initialUrlParams.track, initialUrlParams.time !== undefined);
       }
-      let newTime = currentFrame;
       if (initialUrlParams.time && initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
-        newTime = initialUrlParams.time;
+        const newTime = initialUrlParams.time;
         await canv.setFrame(newTime);
         setCurrentFrame(newTime); // Force render
         setFrameInput(newTime);
@@ -446,67 +518,6 @@ function Viewer(): ReactElement {
 
     setupInitialParameters();
   }, [isInitialDatasetLoaded]);
-
-  // DATASET LOADING ///////////////////////////////////////////////////////
-  /**
-   * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
-   * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
-   * @param newDatasetKey the key of the new dataset in the Collection.
-   * @returns a Promise<void> that resolves when the loading is complete.
-   */
-  const replaceDataset = useCallback(
-    async (newDataset: Dataset | null, newDatasetKey: string): Promise<void> => {
-      // TODO: Change the way flags are handled to prevent flickering during dataset replacement
-      setDatasetOpen(false);
-      if (newDataset === null) {
-        // TODO: Determine with UX what expected behavior should be for bad datasets
-        return;
-      }
-
-      // Dispose of the old dataset
-      if (dataset !== null) {
-        dataset.dispose();
-      }
-      // State updates
-      setDataset(newDataset);
-      setDatasetKey(newDatasetKey);
-
-      // Only change the feature if there's no equivalent in the new dataset
-      let newFeatureName = featureName;
-      if (!newDataset.hasFeature(newFeatureName)) {
-        newFeatureName = newDataset.featureNames[0];
-      }
-      replaceFeature(newDataset, newFeatureName);
-      resetColorRampRangeToDefaults(newDataset, newFeatureName);
-      setFeatureName(newFeatureName);
-
-      await canv.setDataset(newDataset);
-      canv.setFeature(newFeatureName);
-
-      // Clamp frame to new range
-      const newFrame = Math.min(currentFrame, canv.getTotalFrames() - 1);
-      await setFrame(newFrame);
-
-      setFindTrackInput("");
-      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
-        setSelectedBackdropKey(null);
-      }
-      setSelectedTrack(null);
-      setDatasetOpen(true);
-      setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
-      console.log("Num Items:" + dataset?.numObjects);
-    },
-    [
-      dataset,
-      featureName,
-      canv,
-      currentFrame,
-      getUrlParams,
-      replaceFeature,
-      resetColorRampRangeToDefaults,
-      featureThresholds,
-    ]
-  );
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(

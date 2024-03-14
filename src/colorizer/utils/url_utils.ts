@@ -440,17 +440,6 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
 }
 
 /**
- * Replaces the current URL in the browser history with a new one, made by appending
- * the urlParams to the base URL.
- * @param urlParams A string of parameters that can be appended to the base URL.
- */
-export function updateUrl(urlParams: string): void {
-  // Use replaceState rather than pushState, because otherwise every frame will be a unique
-  // URL in the browser history
-  window.history.replaceState(null, document.title, urlParams);
-}
-
-/**
  * Returns if a string is a URL where resources can be fetched from, rather than just a
  * string name.
  * @param input String to be checked.
@@ -526,18 +515,6 @@ export function formatPath(input: string): string {
 }
 
 /**
- * Loads parameters from the current window URL.
- * @returns An object with a dataset, feature, track, and time parameters.
- * A parameter is `undefined` if it was not found in the URL, or if
- * it could not be parsed.
- */
-export function loadParamsFromUrl(): Partial<UrlParams> {
-  // Get params from URL and load, with default fallbacks.
-  const queryString = window.location.search;
-  return loadParamsFromUrlQueryString(queryString);
-}
-
-/**
  * Returns a copy of an object where any properties with a value of `undefined`
  * are not included.
  */
@@ -552,15 +529,12 @@ function removeUndefinedProperties<T>(object: T): Partial<T> {
 }
 
 /**
- * Loads parameters from the query string of a URL.
- * @param queryString A URL query string, as from `window.location.search`.
+ * Loads viewer parameters from a URLSearchParams object.
+ * @param queryString A URLSearchParams object.
  * @returns A partial UrlParams object with values loaded from the queryString.
  * Enforces min/max ordering for thresholds and range.
  */
-export function loadParamsFromUrlQueryString(queryString: string): Partial<UrlParams> {
-  // NOTE: URLSearchParams automatically applies one level of URI decoding.
-  const urlParams = new URLSearchParams(queryString);
-
+export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<UrlParams> {
   const base10Radix = 10; // required for parseInt
   const collectionParam = urlParams.get(UrlParam.COLLECTION) ?? undefined;
   const datasetParam = urlParams.get(UrlParam.DATASET) ?? undefined;
