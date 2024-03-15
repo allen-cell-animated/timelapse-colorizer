@@ -8,7 +8,8 @@ import styled from "styled-components";
 import { Dataset } from "../colorizer";
 import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
-import { DatasetEntry, ProjectEntry } from "../types";
+import { DatasetEntry, LocationState, ProjectEntry } from "../types";
+import { PageRoutes } from "./index";
 
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "../components/AppStyle";
@@ -107,8 +108,14 @@ export default function LandingPage(): ReactElement {
 
   // Behavior
 
-  const onDatasetLoad = (collection: Collection, datasetKey: string, newDataset: Dataset): void => {
-    navigate("viewer", { state: { collection: collection, datasetKey: datasetKey, dataset: newDataset } });
+  const onDatasetLoad = (collection: Collection, datasetKey: string, _newDataset: Dataset): void => {
+    // Unfortunately we can't pass the dataset directly through the `navigate` `state` API due to
+    // certain Dataset state (like HTMLImageElement objects) being non-serializable. This means that the
+    // dataset will be loaded twice, once here and once in the viewer.
+    // Dataset loading is relatively fast and the browser should cache most of the loaded data so it
+    // should hopefully not be a performance issue.
+    // TODO: Pass dataset directly here?
+    navigate(PageRoutes.VIEWER, { state: { collection: collection, datasetKey: datasetKey } as LocationState });
   };
 
   // Rendering
@@ -116,7 +123,7 @@ export default function LandingPage(): ReactElement {
   // TODO: Should the load buttons be link elements or buttons?
   // Currently both the link and the button inside can be tab-selected.
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
-    const viewerLink = "viewer" + paramsToUrlQueryString(dataset.loadParams);
+    const viewerLink = PageRoutes.VIEWER + paramsToUrlQueryString(dataset.loadParams);
 
     return (
       <DatasetCard key={index}>

@@ -9,7 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
@@ -33,6 +33,7 @@ import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRowAlignCenter } from "./styles/utils";
+import { LocationState } from "./types";
 
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
@@ -60,6 +61,7 @@ import styles from "./Viewer.module.css";
 function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
+  const location = useLocation();
 
   const canv = useConstructor(() => {
     const canvas = new ColorizeCanvas();
@@ -422,20 +424,29 @@ function Viewer(): ReactElement {
         return;
       }
       isLoadingInitialDataset.current = true;
-      let newCollection: Collection;
-      const collectionUrlParam = initialUrlParams.collection;
-      const datasetParam = initialUrlParams.dataset;
-      let datasetKey: string;
 
-      if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
-        // Dataset is a URL and no collection URL is provided;
-        // Make a dummy collection that will include only this dataset
-        newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
-        datasetKey = newCollection.getDefaultDatasetKey();
+      let newCollection: Collection;
+      let datasetKey: string;
+      // Check if we were passed a collection + dataset from the previous page.
+      if (location.state && "collection" in location.state && "datasetKey" in location.state) {
+        const { collection: stateCollection, datasetKey: stateDatasetKey } = location.state as LocationState;
+        datasetKey = stateDatasetKey;
+        newCollection = stateCollection;
       } else {
-        // Try loading the collection, with the default collection as a fallback.
-        newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
-        datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
+        // Collect from URL
+        const collectionUrlParam = initialUrlParams.collection;
+        const datasetParam = initialUrlParams.dataset;
+
+        if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
+          // Dataset is a URL and no collection URL is provided;
+          // Make a dummy collection that will include only this dataset
+          newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+          datasetKey = newCollection.getDefaultDatasetKey();
+        } else {
+          // Try loading the collection, with the default collection as a fallback.
+          newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
+          datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
+        }
       }
 
       setCollection(newCollection);
