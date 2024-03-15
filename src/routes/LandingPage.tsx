@@ -2,15 +2,19 @@ import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Card, Tooltip } from "antd";
 import React, { ReactElement, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
+import { Dataset } from "../colorizer";
 import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 import { DatasetEntry, ProjectEntry } from "../types";
 
+import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "../components/AppStyle";
+import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
+import LoadDatasetButton from "../components/LoadDatasetButton";
 import { landingPageContent } from "./LandingPageContent";
 
 const ContentContainer = styled(FlexColumn)`
@@ -99,6 +103,15 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
 
 export default function LandingPage(): ReactElement {
   const theme = useContext(AppThemeContext);
+  const navigate = useNavigate();
+
+  // Behavior
+
+  const onDatasetLoad = (collection: Collection, datasetKey: string, newDataset: Dataset): void => {
+    navigate("viewer", { state: { collection: collection, datasetKey: datasetKey, dataset: newDataset } });
+  };
+
+  // Rendering
 
   // TODO: Should the load buttons be link elements or buttons?
   // Currently both the link and the button inside can be tab-selected.
@@ -173,7 +186,12 @@ export default function LandingPage(): ReactElement {
 
   return (
     <>
-      <Header />
+      <Header>
+        <FlexRowAlignCenter $gap={15}>
+          <LoadDatasetButton onLoad={onDatasetLoad} currentResourceUrl={""} />
+          <HelpDropdown />
+        </FlexRowAlignCenter>
+      </Header>
       <br />
       <ContentContainer $gap={10}>
         <FlexColumnAlignCenter $gap={10}>

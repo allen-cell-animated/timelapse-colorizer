@@ -547,30 +547,11 @@ function Viewer(): ReactElement {
    * @throws an error if the URL could not be loaded.
    * @returns the absolute path of the URL resource that was loaded.
    */
-  const handleLoadRequest = useCallback(
-    async (url: string): Promise<string> => {
-      console.log("Loading '" + url + "'.");
-      const newCollection = await Collection.loadFromAmbiguousUrl(url);
-      const newDatasetKey = newCollection.getDefaultDatasetKey();
-      const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
-      if (!loadResult.loaded) {
-        const errorMessage = loadResult.errorMessage;
-
-        if (errorMessage) {
-          // Remove 'Error:' prefixes
-          const matches = errorMessage.replace(/^(Error:)*/, "");
-          // Reject the promise with the error message
-          throw new Error(matches);
-          // throw new Error(errorMessage);
-        } else {
-          throw new Error();
-        }
-      }
-
+  const handleDatasetLoad = useCallback(
+    (newCollection: Collection, newDatasetKey: string, newDataset: Dataset): void => {
       setCollection(newCollection);
       setFeatureThresholds([]); // Clear when switching collections
-      await replaceDataset(loadResult.dataset, newDatasetKey);
-      return newCollection.url || newCollection.getDefaultDatasetKey();
+      replaceDataset(newDataset, newDatasetKey);
     },
     [replaceDataset]
   );
@@ -710,7 +691,7 @@ function Viewer(): ReactElement {
         {/* <h3>Dataset Name</h3> */}
         <FlexRowAlignCenter $gap={12}>
           <FlexRowAlignCenter $gap={2}>
-            <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+            <LoadDatasetButton onLoad={handleDatasetLoad} currentResourceUrl={collection?.url || datasetKey} />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
