@@ -424,11 +424,11 @@ function Viewer(): ReactElement {
         return;
       }
       isLoadingInitialDataset.current = true;
-
       let newCollection: Collection;
       let datasetKey: string;
       // Check if we were passed a collection + dataset from the previous page.
       if (location.state && "collection" in location.state && "datasetKey" in location.state) {
+        // Collect from previous page state
         const { collection: stateCollection, datasetKey: stateDatasetKey } = location.state as LocationState;
         datasetKey = stateDatasetKey;
         newCollection = stateCollection;

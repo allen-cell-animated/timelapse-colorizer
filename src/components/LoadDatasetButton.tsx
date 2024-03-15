@@ -99,7 +99,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   // The dropdown should be shown whenever the user clicks on the input field, and hidden if the user starts
   // typing or clicks off of the input (including selecting options in the dropdown).
-  // TODO: It's not currently possible to open the dropdown with tab navigation. Pending further discussion with UX team.
+  // TODO: Switch to using AccessibleDropdown as a base component
   useClickAnyWhere((event) => {
     if (event.target === inputRef.current?.input) {
       setShowRecentDropdown(true);
@@ -129,7 +129,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         const matches = errorMessage.replace(/^(Error:)*/, "");
         // Reject the promise with the error message
         throw new Error(matches);
-        // throw new Error(errorMessage);
       } else {
         throw new Error();
       }
