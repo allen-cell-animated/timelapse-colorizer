@@ -44,32 +44,91 @@ describe("Collection", () => {
   });
 
   describe("loadCollection", () => {
-    it("should parse dataset paths correctly", async () => {
-      const url = "https://e.com/collection.json/";
-      const collectionJson = [
-        { name: "dataset1", path: "dir1" },
-        { name: "dataset2", path: "dir2/nested/some_dir/" },
-        { name: "dataset3", path: "dir3/data.json" },
-        { name: "dataset4", path: "https://b.com/dataset4/" },
-        { name: "dataset5", path: "https://b.com/dataset5/custom.json" },
-      ];
+    const datasets = [
+      { name: "dataset1", path: "dir1" },
+      { name: "dataset2", path: "dir2/nested/some_dir/" },
+      { name: "dataset3", path: "dir3/data.json" },
+      { name: "dataset4", path: "https://b.com/dataset4/" },
+      { name: "dataset5", path: "https://b.com/dataset5/custom.json" },
+    ];
 
-      const mockFetch = makeMockFetchMethod("https://e.com/collection.json", collectionJson);
-      const collection = await Collection.loadCollection(url, mockFetch);
+    const collectionFormats: { version: string; collectionJson: object }[] = [
+      { version: "v0.0.0", collectionJson: datasets },
+      {
+        version: "v1.1.0",
+        collectionJson: {
+          datasets: datasets,
+          metadata: {
+            name: "c_name",
+            description: "c_description",
+            author: "c_author",
+            collectionVersion: "c_collectionVersion",
+            lastModified: "2024-01-01T00:00:00Z",
+            dateCreated: "2023-01-01T00:00:00Z",
+            revision: 15,
+            writerVersion: "v1.1.0",
+          },
+        },
+      },
+    ];
 
-      expect(collection.getDatasetKeys().length).to.equal(5);
-      expect(collection.getAbsoluteDatasetPath("dataset1")).to.equal("https://e.com/dir1/manifest.json");
-      expect(collection.getAbsoluteDatasetPath("dataset2")).to.equal(
-        "https://e.com/dir2/nested/some_dir/manifest.json"
-      );
-      expect(collection.getAbsoluteDatasetPath("dataset3")).to.equal("https://e.com/dir3/data.json");
-      expect(collection.getAbsoluteDatasetPath("dataset4")).to.equal("https://b.com/dataset4/manifest.json");
-      expect(collection.getAbsoluteDatasetPath("dataset5")).to.equal("https://b.com/dataset5/custom.json");
-    });
+    for (const { version, collectionJson } of collectionFormats) {
+      describe(version, () => {
+        it("collects datasets", async () => {
+          const url = "https://e.com/collection.json";
+          const mockFetch = makeMockFetchMethod(url, collectionJson);
+          const collection = await Collection.loadCollection(url, mockFetch);
+
+          expect(collection.getDatasetKeys().length).to.equal(5);
+          expect(collection.getDatasetKeys()).to.deep.equal([
+            "dataset1",
+            "dataset2",
+            "dataset3",
+            "dataset4",
+            "dataset5",
+          ]);
+        });
+
+        it("should parse dataset paths correctly", async () => {
+          const url = "https://e.com/collection.json/";
+          const mockFetch = makeMockFetchMethod("https://e.com/collection.json", collectionJson);
+          const collection = await Collection.loadCollection(url, mockFetch);
+
+          expect(collection.getAbsoluteDatasetPath("dataset1")).to.equal("https://e.com/dir1/manifest.json");
+          expect(collection.getAbsoluteDatasetPath("dataset2")).to.equal(
+            "https://e.com/dir2/nested/some_dir/manifest.json"
+          );
+          expect(collection.getAbsoluteDatasetPath("dataset3")).to.equal("https://e.com/dir3/data.json");
+          expect(collection.getAbsoluteDatasetPath("dataset4")).to.equal("https://b.com/dataset4/manifest.json");
+          expect(collection.getAbsoluteDatasetPath("dataset5")).to.equal("https://b.com/dataset5/custom.json");
+        });
+
+        it("retrieves metadata", async () => {
+          const url = "https://e.com/collection.json";
+          const mockFetch = makeMockFetchMethod(url, collectionJson);
+          const collection = await Collection.loadCollection(url, mockFetch);
+
+          if (version === "v0.0.0") {
+            expect(collection.metadata).deep.equals({});
+            return;
+          }
+
+          // Test that all properties can be retrieved as stored
+          expect(collection.metadata.name).to.equal("c_name");
+          expect(collection.metadata.description).to.equal("c_description");
+          expect(collection.metadata.author).to.equal("c_author");
+          expect(collection.metadata.collectionVersion).to.equal("c_collectionVersion");
+          expect(collection.metadata.lastModified).to.equal("2024-01-01T00:00:00Z");
+          expect(collection.metadata.dateCreated).to.equal("2023-01-01T00:00:00Z");
+          expect(collection.metadata.revision).to.equal(15);
+          expect(collection.metadata.writerVersion).to.equal(version);
+        });
+      });
+    }
 
     it("should substitute default collection filename if URL is not a JSON", async () => {
       const url = "https://e.com";
-      // Will only allow this exact fetch URL
+      // Will only allow this exact fetch URL or else it will throw an error
       const mockFetch = makeMockFetchMethod("https://e.com/" + DEFAULT_COLLECTION_FILENAME, [{ name: "", path: "" }]);
 
       await Collection.loadCollection(url, mockFetch);
