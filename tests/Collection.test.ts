@@ -70,7 +70,7 @@ describe("Collection", () => {
     it("should substitute default collection filename if URL is not a JSON", async () => {
       const url = "https://e.com";
       // Will only allow this exact fetch URL
-      const mockFetch = makeMockFetchMethod("https://e.com/" + DEFAULT_COLLECTION_FILENAME, []);
+      const mockFetch = makeMockFetchMethod("https://e.com/" + DEFAULT_COLLECTION_FILENAME, [{ name: "", path: "" }]);
 
       await Collection.loadCollection(url, mockFetch);
     });
