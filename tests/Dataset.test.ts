@@ -65,6 +65,7 @@ describe("Dataset", () => {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const manifestV0_0_0: AnyManifestFile = {
     frames: ["frame0.json"],
     features: {
@@ -83,6 +84,7 @@ describe("Dataset", () => {
     },
   };
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const manifestV1_0_0: AnyManifestFile = {
     ...manifestV0_0_0,
     features: [
@@ -104,6 +106,7 @@ describe("Dataset", () => {
     },
   };
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const manifestV1_1_0: ManifestFile = {
     ...manifestV1_0_0,
     metadata: {

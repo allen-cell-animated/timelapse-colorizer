@@ -2,6 +2,7 @@
 // updating manifests from one version to another.
 import { Spread } from "./type_utils";
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileMetadataV0_0_0 = {
   /** Dimensions of the frame, in scale units. Default width and height are 0. */
   frameDims: {
@@ -14,6 +15,7 @@ type ManifestFileMetadataV0_0_0 = {
   startTimeSeconds: number;
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileMetadataV1_1_0 = ManifestFileMetadataV0_0_0 &
   Partial<{
     name: string;
@@ -68,6 +70,7 @@ type ManifestFileV1_0_0 = Spread<
 >;
 
 // v1.1.0 adds additional optional metadata fields.
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV1_1_0 = Spread<
   ManifestFileV1_0_0 & {
     metadata?: Partial<ManifestFileMetadataV1_1_0>;
