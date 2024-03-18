@@ -55,19 +55,17 @@ type ManifestFileV0_0_0 = {
 // v1.0.0 removes the featureMetadata field, replaces the features map with an ordered
 // array of metadata objects.
 // eslint-disable-next-line @typescript-eslint/naming-convention
-type ManifestFileV1_0_0 = Spread<
-  Omit<ManifestFileV0_0_0, "features" | "featureMetadata" | "metadata"> & {
-    features: {
-      name: string;
-      data: string;
-      units?: string;
-      type?: string;
-      categories?: string[];
-    }[];
-    /** Optional list of backdrop/overlay images. */
-    backdrops?: { name: string; key: string; frames: string[] }[];
-  }
->;
+type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata" | "metadata"> & {
+  features: {
+    name: string;
+    data: string;
+    units?: string;
+    type?: string;
+    categories?: string[];
+  }[];
+  /** Optional list of backdrop/overlay images. */
+  backdrops?: { name: string; key: string; frames: string[] }[];
+};
 
 // v1.1.0 adds additional optional metadata fields.
 // eslint-disable-next-line @typescript-eslint/naming-convention
