@@ -1,15 +1,8 @@
 // Defines types for working with dataset manifests, and methods for
 // updating manifests from one version to another.
+import { Spread } from "./type_utils";
 
-export type ManifestFileMetadata = {
-  name?: string;
-  description?: string;
-  author?: string;
-  datasetVersion?: string;
-  lastModified?: string;
-  dateCreated?: string;
-  revision?: number;
-  writerVersion?: string;
+type ManifestFileMetadataV0_0_0 = {
   /** Dimensions of the frame, in scale units. Default width and height are 0. */
   frameDims: {
     width: number;
@@ -20,6 +13,20 @@ export type ManifestFileMetadata = {
   /* Optional offset for the timestamp. */
   startTimeSeconds: number;
 };
+
+type ManifestFileMetadataV1_1_0 = ManifestFileMetadataV0_0_0 &
+  Partial<{
+    name: string;
+    description: string;
+    author: string;
+    datasetVersion: string;
+    lastModified: string;
+    dateCreated: string;
+    revision: number;
+    writerVersion: string;
+  }>;
+
+export type ManifestFileMetadata = Spread<ManifestFileMetadataV1_1_0>;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV0_0_0 = {
@@ -40,24 +47,26 @@ type ManifestFileV0_0_0 = {
   times?: string;
   centroids?: string;
   bounds?: string;
-  metadata?: Partial<ManifestFileMetadata>;
+  metadata?: Partial<ManifestFileMetadataV0_0_0>;
 };
 
 // v1.0.0 removes the featureMetadata field, replaces the features map with an ordered
 // array of metadata objects.
 // eslint-disable-next-line @typescript-eslint/naming-convention
-type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata"> & {
-  features: {
-    name: string;
-    data: string;
-    units?: string;
-    type?: string;
-    categories?: string[];
-  }[];
-  /** Optional list of backdrop/overlay images. */
-  backdrops?: { name: string; key: string; frames: string[] }[];
-  version: "2.0.0";
-};
+type ManifestFileV1_0_0 = Spread<
+  Omit<ManifestFileV0_0_0, "features" | "featureMetadata" | "metadata"> & {
+    features: {
+      name: string;
+      data: string;
+      units?: string;
+      type?: string;
+      categories?: string[];
+    }[];
+    /** Optional list of backdrop/overlay images. */
+    backdrops?: { name: string; key: string; frames: string[] }[];
+    metadata?: Partial<ManifestFileMetadataV1_1_0>;
+  }
+>;
 
 /** Type definition for the dataset manifest JSON file. */
 export type ManifestFile = ManifestFileV1_0_0;
@@ -98,7 +107,6 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
     return {
       ...manifest,
       features,
-      version: "2.0.0",
     };
   }
   return manifest;
