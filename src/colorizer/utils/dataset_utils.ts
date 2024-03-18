@@ -64,14 +64,20 @@ type ManifestFileV1_0_0 = Spread<
     }[];
     /** Optional list of backdrop/overlay images. */
     backdrops?: { name: string; key: string; frames: string[] }[];
+  }
+>;
+
+// v1.1.0 adds additional optional metadata fields.
+type ManifestFileV1_1_0 = Spread<
+  ManifestFileV1_0_0 & {
     metadata?: Partial<ManifestFileMetadataV1_1_0>;
   }
 >;
 
 /** Type definition for the dataset manifest JSON file. */
-export type ManifestFile = ManifestFileV1_0_0;
+export type ManifestFile = ManifestFileV1_1_0;
 /** Any manifest version, including deprecated manifests. Call `update_manifest_version` to transform to an up-to-date version. */
-export type AnyManifestFile = ManifestFileV0_0_0 | ManifestFileV1_0_0;
+export type AnyManifestFile = ManifestFileV0_0_0 | ManifestFileV1_0_0 | ManifestFileV1_1_0;
 
 ///////////// Conversion functions /////////////////////
 
