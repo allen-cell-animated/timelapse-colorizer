@@ -199,25 +199,38 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
 const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
 const MAX_RECENT_DATASETS = 10;
 
-export type RecentDataset = {
+export type RecentCollection = {
   /** The absolute URL path of the dataset resource. */
   url: string;
-  /** The user input for the dataset resource. */
+  /**
+   * The user input for the dataset resource.
+   * If `null`, uses the existing label (if already in recent datasets) or reuse the URL (if new).
+   */
   label: string;
 };
 
-export const useRecentDatasets = (): [RecentDataset[], (dataset: RecentDataset) => void] => {
-  const [recentDatasets, setRecentDatasets] = useLocalStorage<RecentDataset[]>(RECENT_DATASETS_STORAGE_KEY, []);
+/**
+ * Wrapper around locally-stored recent collections.
+ * @returns an array containing the list of recent collections and a function to add a new collection to the list.
+ */
+export const useRecentCollections = (): [RecentCollection[], (collection: RecentCollection) => void] => {
+  const [recentCollections, setRecentCollections] = useLocalStorage<RecentCollection[]>(
+    RECENT_DATASETS_STORAGE_KEY,
+    []
+  );
 
-  const addRecentDataset = (dataset: RecentDataset): void => {
-    const datasetIndex = recentDatasets.findIndex(({ url }) => url === dataset.url);
+  const addRecentCollection = (collection: RecentCollection): void => {
+    const datasetIndex = recentCollections.findIndex(({ url }) => url === collection.url);
     if (datasetIndex === -1) {
-      // New dataset, add to front while maintaining max length
-      setRecentDatasets([dataset, ...recentDatasets.slice(0, MAX_RECENT_DATASETS - 1)]);
+      setRecentCollections([collection, ...recentCollections.slice(0, MAX_RECENT_DATASETS - 1)]);
     } else {
       // Move to front; this also updates the label if it changed.
-      setRecentDatasets([dataset, ...recentDatasets.slice(0, datasetIndex), ...recentDatasets.slice(datasetIndex + 1)]);
+      setRecentCollections([
+        collection,
+        ...recentCollections.slice(0, datasetIndex),
+        ...recentCollections.slice(datasetIndex + 1),
+      ]);
     }
   };
-  return [recentDatasets, addRecentDataset];
+  return [recentCollections, addRecentCollection];
 };
