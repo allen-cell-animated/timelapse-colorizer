@@ -242,6 +242,7 @@ export const useRecentCollections = (): [StoredRecentCollection[], (collection: 
       // Move to front; this also updates the label if it changed.
       setRecentCollections([
         collection as StoredRecentCollection,
+
         ...recentCollections.slice(0, datasetIndex),
         ...recentCollections.slice(datasetIndex + 1),
       ]);
