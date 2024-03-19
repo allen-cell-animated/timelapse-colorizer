@@ -25,6 +25,7 @@ export type CollectionFileMetadata = {
 };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
+// v1.0.0 uses an array of collection entries.
 type CollectionFileV1_0_0 = CollectionEntry[];
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -33,6 +34,7 @@ function isV1_0_0(collection: AnyCollectionFile): collection is CollectionFileV1
 }
 // ^ future versions will be able to use the metadata's writerVersion + semver to check!
 
+// v1.1.0 turns collections into an object with a `datasets` field and a `metadata` field.
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type CollectionFileV1_1_0 = {
   datasets: CollectionEntry[];

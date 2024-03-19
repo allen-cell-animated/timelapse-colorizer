@@ -1,3 +1,4 @@
+import semver from "semver";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../src/constants";
@@ -108,20 +109,22 @@ describe("Collection", () => {
           const mockFetch = makeMockFetchMethod(url, collectionJson);
           const collection = await Collection.loadCollection(url, mockFetch);
 
-          if (version === "v0.0.0") {
+          if (semver.lte(version, "v0.0.0")) {
             expect(collection.metadata).deep.equals({});
             return;
           }
 
-          // Test that all properties can be retrieved as stored
-          expect(collection.metadata.name).to.equal("c_name");
-          expect(collection.metadata.description).to.equal("c_description");
-          expect(collection.metadata.author).to.equal("c_author");
-          expect(collection.metadata.collectionVersion).to.equal("c_collectionVersion");
-          expect(collection.metadata.lastModified).to.equal("2024-01-01T00:00:00Z");
-          expect(collection.metadata.dateCreated).to.equal("2023-01-01T00:00:00Z");
-          expect(collection.metadata.revision).to.equal(15);
-          expect(collection.metadata.writerVersion).to.equal(version);
+          if (semver.gte(version, "v1.1.0")) {
+            // Test that all properties can be retrieved as stored
+            expect(collection.metadata.name).to.equal("c_name");
+            expect(collection.metadata.description).to.equal("c_description");
+            expect(collection.metadata.author).to.equal("c_author");
+            expect(collection.metadata.collectionVersion).to.equal("c_collectionVersion");
+            expect(collection.metadata.lastModified).to.equal("2024-01-01T00:00:00Z");
+            expect(collection.metadata.dateCreated).to.equal("2023-01-01T00:00:00Z");
+            expect(collection.metadata.revision).to.equal(15);
+            expect(collection.metadata.writerVersion).to.equal(version);
+          }
         });
       });
     }
