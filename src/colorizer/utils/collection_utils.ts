@@ -24,8 +24,8 @@ export type CollectionFileMetadata = {
   writerVersion: string;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 // v1.0.0 uses an array of collection entries.
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type CollectionFileV1_0_0 = CollectionEntry[];
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -46,7 +46,7 @@ export type CollectionFile = CollectionFileV1_1_0;
 type AnyCollectionFile = CollectionFileV1_0_0 | CollectionFileV1_1_0;
 
 /**
- * Converts potentially outdated collections to the latest manifest format.
+ * Converts potentially outdated collections to the latest schema.
  * @param collection Collection object, as parsed from a JSON file.
  * @returns An object with fields reflecting the most recent CollectionFile spec.
  */
