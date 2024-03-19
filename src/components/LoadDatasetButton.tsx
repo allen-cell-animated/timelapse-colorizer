@@ -6,7 +6,7 @@ import styled from "styled-components";
 import { useClickAnyWhere } from "usehooks-ts";
 
 import { Dataset } from "../colorizer";
-import { useRecentDatasets } from "../colorizer/utils/react_utils";
+import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 
 import Collection from "../colorizer/Collection";
@@ -78,7 +78,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     _setUrlInput(newUrl);
   }, []);
 
-  const [recentDatasets, registerDataset] = useRecentDatasets();
+  const [recentCollections, registerCollection] = useRecentCollections();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string>("");
@@ -176,7 +176,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           setIsLoadModalOpen(false);
           setIsLoading(false);
           // Add to recent datasets
-          registerDataset({
+          registerCollection({
             url: loadedUrl,
             label: urlInput, // Use raw url input for the label
           });
@@ -212,7 +212,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   // RENDERING ////////////////////////////////////////////////////////
 
-  const datasetsDropdownItems: MenuItemType[] = recentDatasets.map(({ url, label }) => {
+  const datasetsDropdownItems: MenuItemType[] = recentCollections.map(({ url, label }) => {
     const isCurrentUrl = props.currentResourceUrl === url;
     return {
       key: url,
@@ -224,11 +224,11 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   });
 
   // Get the URLs (keys) of any recent datasets that match the currently selected urlInput.
-  const matchingKeys = recentDatasets.filter(({ label }) => label === urlInput).map(({ url }) => url);
+  const matchingKeys = recentCollections.filter(({ label }) => label === urlInput).map(({ url }) => url);
   const datasetsDropdownProps: MenuProps = {
     onClick: (info) => {
       // Set the URL input to the label of the selected dataset
-      const dataset = recentDatasets.find(({ url }) => url === info.key);
+      const dataset = recentCollections.find(({ url }) => url === info.key);
       if (dataset) {
         setUrlInput(dataset.label);
       }
