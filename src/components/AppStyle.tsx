@@ -11,6 +11,7 @@ const palette = {
   themeDark: "#5f369f",
   themeLight: "#aa88ed",
   themeGray: "#f7f0ff",
+  themeGrayDark: "#e7e4f2",
   gray0: "#ffffff",
   gray5: "#fafafa",
   gray10: "#f2f2f2",
@@ -22,6 +23,7 @@ const palette = {
   gray60: "#323233",
   success: "#2fc022",
   error: "#f92d20",
+  link: "#0094FF",
 };
 
 // Note: Some advanced version of this could swap different theme objects, and
@@ -42,6 +44,7 @@ const theme = {
       error: palette.error,
       success: palette.success,
       theme: palette.theme,
+      link: palette.link,
     },
     layout: {
       background: palette.gray0,
@@ -65,6 +68,9 @@ const theme = {
     },
     slider: {
       rail: palette.gray10,
+    },
+    flag: {
+      background: palette.themeGrayDark,
     },
   },
   font: {
@@ -113,6 +119,7 @@ const CssContainer = styled.div`
   --color-text-error: ${theme.color.text.error};
   --color-text-success: ${theme.color.text.success};
   --color-text-theme: ${theme.color.text.theme};
+  --color-text-link: ${theme.color.text.link};
 
   /* Layout */
   --color-background: ${theme.color.layout.background};
@@ -141,6 +148,9 @@ const CssContainer = styled.div`
   --color-collapse-active: ${theme.color.themeDark};
 
   --color-focus-shadow: #f2ebfa;
+
+  --color-flag-background: ${theme.color.flag.background};
+  --color-flag-text: ${theme.color.themeDark};
 
   /* Fonts */
   --default-font: ${theme.font.family};
