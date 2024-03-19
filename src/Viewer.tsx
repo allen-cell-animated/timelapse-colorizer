@@ -251,6 +251,7 @@ function Viewer(): ReactElement {
       await canv.setFrame(frame);
       setCurrentFrame(frame);
       setFrameInput(frame);
+      canv.render();
     },
     [canv]
   );
