@@ -199,22 +199,26 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
 const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
 const MAX_RECENT_DATASETS = 10;
 
-export type RecentCollection = {
-  /** The absolute URL path of the dataset resource. */
+export type StoredRecentCollection = {
+  /** The absolute URL path of the collection resource. */
   url: string;
   /**
-   * The user input for the dataset resource.
-   * If `null`, uses the existing label (if already in recent datasets) or reuse the URL (if new).
+   * The user input for the collection resource.
+   * If `undefined`, uses the existing label (if already in recent datasets) or reuses the URL (if new).
    */
   label: string;
+};
+
+export type RecentCollection = Partial<StoredRecentCollection> & {
+  url: string;
 };
 
 /**
  * Wrapper around locally-stored recent collections.
  * @returns an array containing the list of recent collections and a function to add a new collection to the list.
  */
-export const useRecentCollections = (): [RecentCollection[], (collection: RecentCollection) => void] => {
-  const [recentCollections, setRecentCollections] = useLocalStorage<RecentCollection[]>(
+export const useRecentCollections = (): [StoredRecentCollection[], (collection: RecentCollection) => void] => {
+  const [recentCollections, setRecentCollections] = useLocalStorage<StoredRecentCollection[]>(
     RECENT_DATASETS_STORAGE_KEY,
     []
   );
@@ -222,11 +226,22 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
   const addRecentCollection = (collection: RecentCollection): void => {
     const datasetIndex = recentCollections.findIndex(({ url }) => url === collection.url);
     if (datasetIndex === -1) {
-      setRecentCollections([collection, ...recentCollections.slice(0, MAX_RECENT_DATASETS - 1)]);
+      // New dataset, add to front while maintaining max length
+      if (collection.label === undefined) {
+        collection.label = collection.url;
+      }
+      setRecentCollections([
+        collection as StoredRecentCollection,
+        ...recentCollections.slice(0, MAX_RECENT_DATASETS - 1),
+      ]);
     } else {
+      if (collection.label === undefined) {
+        // Reuse existing label
+        collection.label = recentCollections[datasetIndex].label;
+      }
       // Move to front; this also updates the label if it changed.
       setRecentCollections([
-        collection,
+        collection as StoredRecentCollection,
         ...recentCollections.slice(0, datasetIndex),
         ...recentCollections.slice(datasetIndex + 1),
       ]);

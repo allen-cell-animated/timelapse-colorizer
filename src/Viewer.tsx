@@ -29,7 +29,7 @@ import {
 } from "./colorizer/types";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
-import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
+import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRowAlignCenter } from "./styles/utils";
@@ -72,6 +72,7 @@ function Viewer(): ReactElement {
   const [collection, setCollection] = useState<Collection | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetKey, setDatasetKey] = useState("");
+  const [, addRecentCollection] = useRecentCollections();
 
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -444,8 +445,19 @@ function Viewer(): ReactElement {
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
           // Try loading the collection, with the default collection as a fallback.
-          newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
-          datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
+          try {
+            newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
+            datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
+          } catch (error) {
+            console.error(error);
+            notificationApi["error"]({
+              message: "Error loading dataset:",
+              description: (error as Error).message,
+              placement: "bottomLeft",
+              duration: 4,
+            });
+            return;
+          }
         }
       }
 
@@ -462,6 +474,9 @@ function Viewer(): ReactElement {
         });
         return;
       }
+
+      // Add the collection to the recent collections list
+      addRecentCollection({ url: newCollection.getUrl() });
 
       // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
       if (!isInitialDatasetLoaded) {

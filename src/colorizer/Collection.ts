@@ -200,6 +200,17 @@ export default class Collection {
     return this.formatDatasetPath(collectionDirectory + "/" + datasetPath);
   }
 
+  // TODO: Refactor how dummy collections store URLs? The URL should always be a valid resource maybe?
+  /**
+   * Returns a URL to the collection or dataset.
+   */
+  public getUrl(): string {
+    if (this.url === null) {
+      return this.entries.get(this.getDefaultDatasetKey())!.path;
+    }
+    return this.url;
+  }
+
   // ===================================================================================
   // Static Loader Methods
 
