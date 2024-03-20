@@ -319,6 +319,7 @@ export default class Dataset {
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
+    console.log("Dataset metadata:", this.metadata);
 
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
