@@ -9,7 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { Location, useLocation, useSearchParams } from "react-router-dom";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
@@ -426,8 +426,13 @@ function Viewer(): ReactElement {
       isLoadingInitialDataset.current = true;
       let newCollection: Collection;
       let datasetKey: string;
+
+      const locationHasCollectionAndDataset = (location: Location): boolean => {
+        return location.state && "collection" in location.state && "datasetKey" in location.state;
+      };
+
       // Check if we were passed a collection + dataset from the previous page.
-      if (location.state && "collection" in location.state && "datasetKey" in location.state) {
+      if (locationHasCollectionAndDataset(location)) {
         // Collect from previous page state
         const { collection: stateCollection, datasetKey: stateDatasetKey } = location.state as LocationState;
         datasetKey = stateDatasetKey;
