@@ -195,9 +195,9 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
   return { scrollShadowStyle: { boxShadow: getBoxShadow() }, onScrollHandler, scrollRef };
 }
 
-/** Key for local storage to read/write recently opened datasets */
-const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
-const MAX_RECENT_DATASETS = 10;
+/** Key for local storage to read/write recently opened collections */
+const RECENT_COLLECTIONS_STORAGE_KEY = "recentDatasets";
+const MAX_RECENT_COLLECTIONS = 10;
 
 export type StoredRecentCollection = {
   /** The absolute URL path of the collection resource. */
@@ -219,7 +219,7 @@ export type RecentCollection = Partial<StoredRecentCollection> & {
  */
 export const useRecentCollections = (): [StoredRecentCollection[], (collection: RecentCollection) => void] => {
   const [recentCollections, setRecentCollections] = useLocalStorage<StoredRecentCollection[]>(
-    RECENT_DATASETS_STORAGE_KEY,
+    RECENT_COLLECTIONS_STORAGE_KEY,
     []
   );
 
@@ -232,7 +232,7 @@ export const useRecentCollections = (): [StoredRecentCollection[], (collection: 
       }
       setRecentCollections([
         collection as StoredRecentCollection,
-        ...recentCollections.slice(0, MAX_RECENT_DATASETS - 1),
+        ...recentCollections.slice(0, MAX_RECENT_COLLECTIONS - 1),
       ]);
     } else {
       if (collection.label === undefined) {
