@@ -245,6 +245,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     </DropdownContentContainer>
   );
 
+  const isRecentDropdownEmpty = recentCollections.length === 0;
+
   return (
     <div ref={modalContextRef}>
       <TextButton onClick={() => setIsLoadModalOpen(true)}>
@@ -274,7 +276,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   trigger={["click"]}
                   menu={collectionsDropdownProps}
                   placement="bottomLeft"
-                  open={showRecentDropdown}
+                  open={showRecentDropdown && !isRecentDropdownEmpty}
                   getPopupContainer={dropdownContextRef.current ? () => dropdownContextRef.current! : undefined}
                   dropdownRender={renderDropdown}
                 >
