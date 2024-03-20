@@ -215,7 +215,7 @@ export default function LandingPage(): ReactElement {
             <code>
               https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html
               <b>
-                <span style={{ color: "var(--color-text-theme)" }}>/#/viewer</span>
+                <span style={{ color: "var(--color-text-theme)" }}>#/viewer</span>
               </b>
               ?collection=....
             </code>
