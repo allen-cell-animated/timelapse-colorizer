@@ -707,7 +707,7 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
 
       <Header>
-        {/* <h3>Dataset Name</h3> */}
+        <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12}>
           <FlexRowAlignCenter $gap={2}>
             <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />

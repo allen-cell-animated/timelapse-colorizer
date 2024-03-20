@@ -47,6 +47,7 @@ export default class Collection {
     this.entries = entries;
     this.url = url ? Collection.formatAbsoluteCollectionPath(url) : url;
     this.metadata = metadata;
+    console.log("Collection metadata: ", this.metadata);
 
     // Check that all entry paths are JSON urls.
     this.entries.forEach((value, key) => {
