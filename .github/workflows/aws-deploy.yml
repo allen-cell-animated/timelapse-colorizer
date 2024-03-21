@@ -68,7 +68,7 @@ jobs:
             run: ls -al
 
           - name: Write an arbitrary file to S3 - just to demonstrate how. 
-            run: aws s3 sync ./index.html ${{ env.S3_BUCKET }}
+            run: aws s3 sync . ${{ env.S3_BUCKET }}
 
           - name: Invalidate CloudFront cache
             run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
