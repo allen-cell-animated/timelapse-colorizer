@@ -61,8 +61,13 @@ jobs:
                 exit 1
               fi          
               
+          # the src/assets directory below was chosen arbitrarily for demonstration purposes and should be replaced 
+          # with the actual directory containing the files to be uploaded to S3
+          # 
+          # Note that the below will copy the files to the root of the S3 bucket. If you want to copy them to a subdirectory,
+          # you would want something like ${{ env.S3_BUCKET }}/your_subdirectory below      
           - name: Write an arbitrary file to S3 - just to demonstrate how. 
-            run: aws s3 sync src/assets ${{ env.S3_BUCKET }}  # the src/assets is an arbitrary directory chosen for demonstration purposes
+            run: aws s3 sync src/assets ${{ env.S3_BUCKET }}
 
           - name: Invalidate CloudFront cache
             run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
