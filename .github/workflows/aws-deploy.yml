@@ -60,13 +60,7 @@ jobs:
                 echo "Invalid environment specified"
                 exit 1
               fi          
-
-          - name: DEBUG - pwd
-            run: pwd
-
-          - name: DEBUG - ls
-            run: ls -al
-
+              
           - name: Write an arbitrary file to S3 - just to demonstrate how. 
             run: aws s3 sync . ${{ env.S3_BUCKET }}
 
