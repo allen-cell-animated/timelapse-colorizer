@@ -64,9 +64,9 @@ jobs:
           # the src/assets directory below was chosen arbitrarily for demonstration purposes and should be replaced 
           # with the actual directory containing the files to be uploaded to S3
           # 
-          # Note that the below will copy the files to the root of the S3 bucket. If you want to copy them to a subdirectory,
-          # you would want something like ${{ env.S3_BUCKET }}/your_subdirectory below      
-          - name: Write an arbitrary file to S3 - just to demonstrate how. 
+          # Note that the command below will copy the files to the root of the S3 bucket e.g., s3://timelapse.allencell.org/ 
+          # If you want to copy files to a S3 prefix / subdirectory, you would want something like ${{ env.S3_BUCKET }}/your_prefix below      
+          - name: Sync an arbitrary directory to S3 - just to demonstrate how. 
             run: aws s3 sync src/assets ${{ env.S3_BUCKET }}
 
           - name: Invalidate CloudFront cache
