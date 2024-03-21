@@ -1,3 +1,4 @@
+import semver from "semver";
 import { DataTexture, RGBAFormat, Texture, UnsignedByteType, Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
@@ -64,19 +65,8 @@ describe("Dataset", () => {
     }
   }
 
-  const defaultManifest: ManifestFile = {
-    frames: ["frame0.json"],
-    features: [
-      { name: "feature1", data: "feature1.json", units: "meters", type: "continuous" },
-      { name: "feature2", data: "feature2.json", units: "(m)", type: "discrete" },
-      { name: "feature3", data: "feature3.json", units: "μm/s", type: "bad-type" },
-      { name: "feature4", data: "feature4.json" },
-      { name: "feature5", data: "feature4.json", type: "categorical", categories: ["small", "medium", "large"] },
-    ],
-    version: "2.0.0",
-  };
-
-  const manifestV1: AnyManifestFile = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const manifestV0_0_0: AnyManifestFile = {
     frames: ["frame0.json"],
     features: {
       feature1: "feature1.json",
@@ -94,14 +84,53 @@ describe("Dataset", () => {
     },
   };
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const manifestV1_0_0: AnyManifestFile = {
+    ...manifestV0_0_0,
+    features: [
+      { name: "feature1", data: "feature1.json", units: "meters", type: "continuous" },
+      { name: "feature2", data: "feature2.json", units: "(m)", type: "discrete" },
+      { name: "feature3", data: "feature3.json", units: "μm/s", type: "bad-type" },
+      { name: "feature4", data: "feature4.json" },
+      { name: "feature5", data: "feature4.json", type: "categorical", categories: ["small", "medium", "large"] },
+    ],
+    metadata: {
+      frameDims: {
+        width: 10,
+        height: 11,
+        units: "um",
+      },
+      frameDurationSeconds: 12,
+      /* Optional offset for the timestamp. */
+      startTimeSeconds: 13,
+    },
+  };
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const manifestV1_1_0: ManifestFile = {
+    ...manifestV1_0_0,
+    metadata: {
+      ...manifestV1_0_0.metadata,
+      name: "d_name",
+      description: "d_description",
+      author: "d_author",
+      datasetVersion: "d_datasetVersion",
+      lastModified: "2024-01-01T00:00:00Z",
+      dateCreated: "2023-01-01T00:00:00Z",
+      revision: 14,
+      writerVersion: "v1.1.0",
+    },
+  };
+
   const manifestsToTest: [string, AnyManifestFile][] = [
-    ["Default Manifest", defaultManifest],
-    ["Deprecated Manifest V1", manifestV1],
+    ["v0.0.0", manifestV0_0_0],
+    ["v1.0.0", manifestV1_0_0],
+    ["v1.1.0", manifestV1_1_0],
   ];
 
   // Test both normal and deprecated manifests
-  for (const [name, manifest] of manifestsToTest) {
-    describe(name, () => {
+  for (const [version, manifest] of manifestsToTest) {
+    describe(version, () => {
       it("retrieves feature units", async () => {
         const dataset = new Dataset(defaultPath, new MockFrameLoader(), new MockArrayLoader());
         const mockFetch = makeMockFetchMethod(defaultPath, manifest);
@@ -208,6 +237,46 @@ describe("Dataset", () => {
           expect(dataset.frameResolution).to.deep.equal(new Vector2(1, 1));
           await dataset.open(mockFetch);
           expect(dataset.frameResolution).to.deep.equal(new Vector2(width, height));
+        }
+      });
+
+      it("Loads metadata", async () => {
+        const dataset = new Dataset(defaultPath, new MockFrameLoader(), new MockArrayLoader());
+        const mockFetch = makeMockFetchMethod(defaultPath, manifest);
+        await dataset.open(mockFetch);
+
+        // Default metadata should be auto-filled with default values
+        if (semver.lt(version, "1.0.0")) {
+          expect(dataset.metadata).to.deep.equal({
+            frameDims: {
+              width: 0,
+              height: 0,
+              units: "",
+            },
+            frameDurationSeconds: 0,
+            startTimeSeconds: 0,
+          });
+          return;
+        }
+
+        if (semver.gte(version, "1.0.0")) {
+          expect(dataset.metadata.frameDims).to.deep.equal({
+            width: 10,
+            height: 11,
+            units: "um",
+          });
+          expect(dataset.metadata.frameDurationSeconds).to.equal(12);
+          expect(dataset.metadata.startTimeSeconds).to.equal(13);
+        }
+        if (semver.gte(version, "1.1.0")) {
+          expect(dataset.metadata.name).to.equal("d_name");
+          expect(dataset.metadata.description).to.equal("d_description");
+          expect(dataset.metadata.author).to.equal("d_author");
+          expect(dataset.metadata.datasetVersion).to.equal("d_datasetVersion");
+          expect(dataset.metadata.lastModified).to.equal("2024-01-01T00:00:00Z");
+          expect(dataset.metadata.dateCreated).to.equal("2023-01-01T00:00:00Z");
+          expect(dataset.metadata.revision).to.equal(14);
+          expect(dataset.metadata.writerVersion).to.equal("v1.1.0");
         }
       });
     });

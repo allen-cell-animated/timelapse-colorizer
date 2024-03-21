@@ -1,7 +1,9 @@
 // Defines types for working with dataset manifests, and methods for
 // updating manifests from one version to another.
+import { Spread } from "./type_utils";
 
-export type ManifestFileMetadata = {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type ManifestFileMetadataV0_0_0 = {
   /** Dimensions of the frame, in scale units. Default width and height are 0. */
   frameDims: {
     width: number;
@@ -13,7 +15,23 @@ export type ManifestFileMetadata = {
   startTimeSeconds: number;
 };
 
-type ManifestFileV1 = {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type ManifestFileMetadataV1_1_0 = ManifestFileMetadataV0_0_0 &
+  Partial<{
+    name: string;
+    description: string;
+    author: string;
+    datasetVersion: string;
+    lastModified: string;
+    dateCreated: string;
+    revision: number;
+    writerVersion: string;
+  }>;
+
+export type ManifestFileMetadata = Spread<ManifestFileMetadataV1_1_0>;
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type ManifestFileV0_0_0 = {
   frames: string[];
   /** Map from feature name to relative path */
   features: Record<string, string>;
@@ -31,12 +49,13 @@ type ManifestFileV1 = {
   times?: string;
   centroids?: string;
   bounds?: string;
-  metadata?: Partial<ManifestFileMetadata>;
+  metadata?: Partial<ManifestFileMetadataV0_0_0>;
 };
 
-// V2 removes the featureMetadata field, replaces the features map with an ordered
+// v1.0.0 removes the featureMetadata field, replaces the features map with an ordered
 // array of metadata objects.
-type ManifestFileV2 = Omit<ManifestFileV1, "features" | "featureMetadata"> & {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata" | "metadata"> & {
   features: {
     name: string;
     data: string;
@@ -46,13 +65,20 @@ type ManifestFileV2 = Omit<ManifestFileV1, "features" | "featureMetadata"> & {
   }[];
   /** Optional list of backdrop/overlay images. */
   backdrops?: { name: string; key: string; frames: string[] }[];
-  version: "2.0.0";
 };
 
+// v1.1.0 adds additional optional metadata fields.
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type ManifestFileV1_1_0 = Spread<
+  ManifestFileV1_0_0 & {
+    metadata?: Partial<ManifestFileMetadataV1_1_0>;
+  }
+>;
+
 /** Type definition for the dataset manifest JSON file. */
-export type ManifestFile = ManifestFileV2;
+export type ManifestFile = ManifestFileV1_1_0;
 /** Any manifest version, including deprecated manifests. Call `update_manifest_version` to transform to an up-to-date version. */
-export type AnyManifestFile = ManifestFileV1 | ManifestFileV2;
+export type AnyManifestFile = ManifestFileV0_0_0 | ManifestFileV1_0_0 | ManifestFileV1_1_0;
 
 ///////////// Conversion functions /////////////////////
 
@@ -60,7 +86,8 @@ export type AnyManifestFile = ManifestFileV1 | ManifestFileV2;
  * Returns whether the dataset is using the older, deprecated manifest format, where feature metadata
  * was stored in a separate object from the `feature` file path declaration.
  */
-function isV1(manifest: AnyManifestFile): manifest is ManifestFileV1 {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+function isV0_0_0(manifest: AnyManifestFile): manifest is ManifestFileV0_0_0 {
   return typeof Object.values(manifest.features)[0] === "string";
 }
 
@@ -70,7 +97,7 @@ function isV1(manifest: AnyManifestFile): manifest is ManifestFileV1 {
  * @returns An object with fields reflecting the most recent ManifestFile spec.
  */
 export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile => {
-  if (isV1(manifest)) {
+  if (isV0_0_0(manifest)) {
     // Parse feature metadata into the new features format
     const features: ManifestFile["features"] = [];
     for (const [featureName, featurePath] of Object.entries(manifest.features)) {
@@ -87,7 +114,6 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
     return {
       ...manifest,
       features,
-      version: "2.0.0",
     };
   }
   return manifest;
