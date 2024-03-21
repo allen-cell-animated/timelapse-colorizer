@@ -1,5 +1,7 @@
 import { UrlParams } from "../colorizer/utils/url_utils";
 
+import Collection from "../colorizer/Collection";
+
 export type DatasetEntry = {
   name: string;
   description: string;
@@ -14,4 +16,9 @@ export type ProjectEntry = {
   loadParams?: Partial<UrlParams>;
   datasets?: DatasetEntry[];
   inReview?: boolean;
+};
+
+export type LocationState = {
+  collection: Collection;
+  datasetKey: string;
 };

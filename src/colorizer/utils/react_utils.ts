@@ -1,5 +1,6 @@
 import React, { EventHandler, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
+import { useLocalStorage } from "usehooks-ts";
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -193,3 +194,43 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
 
   return { scrollShadowStyle: { boxShadow: getBoxShadow() }, onScrollHandler, scrollRef };
 }
+
+/** Key for local storage to read/write recently opened collections */
+const RECENT_COLLECTIONS_STORAGE_KEY = "recentDatasets";
+const MAX_RECENT_COLLECTIONS = 10;
+
+export type RecentCollection = {
+  /** The absolute URL path of the collection resource. */
+  url: string;
+  /**
+   * The user input for the collection resource.
+   * If `null`, uses the existing label (if already in recent datasets) or reuse the URL (if new).
+   */
+  label: string;
+};
+
+/**
+ * Wrapper around locally-stored recent collections.
+ * @returns an array containing the list of recent collections and a function to add a new collection to the list.
+ */
+export const useRecentCollections = (): [RecentCollection[], (collection: RecentCollection) => void] => {
+  const [recentCollections, setRecentCollections] = useLocalStorage<RecentCollection[]>(
+    RECENT_COLLECTIONS_STORAGE_KEY,
+    []
+  );
+
+  const addRecentCollection = (collection: RecentCollection): void => {
+    const datasetIndex = recentCollections.findIndex(({ url }) => url === collection.url);
+    if (datasetIndex === -1) {
+      setRecentCollections([collection, ...recentCollections.slice(0, MAX_RECENT_COLLECTIONS - 1)]);
+    } else {
+      // Move to front; this also updates the label if it changed.
+      setRecentCollections([
+        collection,
+        ...recentCollections.slice(0, datasetIndex),
+        ...recentCollections.slice(datasetIndex + 1),
+      ]);
+    }
+  };
+  return [recentCollections, addRecentCollection];
+};
