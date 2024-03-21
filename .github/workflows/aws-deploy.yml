@@ -14,7 +14,6 @@ on:
             type: choice
        
 env:
-  # TODO: Verify what these values are for the allen-cell-animated Github organization
   AWS_ACCOUNT_ID: ${{ vars.AWS_PUBLIC_DATA_RELEASES_ACCOUNT_ID }}
   AWS_REGION: ${{ vars.AWS_DEFAULT_REGION }}
   STAGING_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STAGING_CLOUDFRONT_DISTRIBUTION_ID }}
@@ -63,7 +62,7 @@ jobs:
               fi          
 
           - name: Write an arbitrary file to S3 - just to demonstrate how. 
-            run: aws s3 sync ./index.html ${{ env.S3_BUCKET }}
+            run: aws s3 sync index.html ${{ env.S3_BUCKET }}
 
           - name: Invalidate CloudFront cache
             run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
