@@ -123,7 +123,7 @@ export default function LandingPage(): ReactElement {
   // TODO: Should the load buttons be link elements or buttons?
   // Currently both the link and the button inside can be tab-selected.
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
-    const viewerLink = PageRoutes.VIEWER + paramsToUrlQueryString(dataset.loadParams);
+    const viewerLink = `${PageRoutes.VIEWER}${paramsToUrlQueryString(dataset.loadParams)}`;
 
     return (
       <DatasetCard key={index}>
