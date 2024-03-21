@@ -423,7 +423,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   );
 
   return (
-    <>
+    <div>
       {/* Export button */}
       <TextButton
         onClick={() => {
@@ -608,6 +608,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           </HorizontalDiv>
         </div>
       </Modal>
-    </>
+    </div>
   );
 }

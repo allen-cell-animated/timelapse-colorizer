@@ -242,7 +242,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   );
 
   return (
-    <>
+    <div>
       <TextButton onClick={() => setIsLoadModalOpen(true)}>
         <UploadOutlined />
         <p>Load</p>
@@ -299,6 +299,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           )}
         </div>
       </Modal>
-    </>
+    </div>
   );
 }
