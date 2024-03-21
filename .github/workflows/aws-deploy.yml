@@ -1,5 +1,5 @@
 ---
-name: Sample workflow to demonstrate AWS deployment including publishing data to S3 and invalidating a CloudFront distribution cache
+name: AWS Deploy Example
 
 on: 
   workflow_dispatch:
@@ -14,7 +14,6 @@ on:
             type: choice
        
 env:
-  # TODO: Verify what these values are for the allen-cell-animated Github organization
   AWS_ACCOUNT_ID: ${{ vars.AWS_PUBLIC_DATA_RELEASES_ACCOUNT_ID }}
   AWS_REGION: ${{ vars.AWS_DEFAULT_REGION }}
   STAGING_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STAGING_CLOUDFRONT_DISTRIBUTION_ID }}
@@ -61,9 +60,14 @@ jobs:
                 echo "Invalid environment specified"
                 exit 1
               fi          
-
-          - name: Write an arbitrary file to S3 - just to demonstrate how. 
-            run: aws s3 sync ./index.html ${{ env.S3_BUCKET }}
+              
+          # the src/assets directory below was chosen arbitrarily for demonstration purposes and should be replaced 
+          # with the actual directory containing the files to be uploaded to S3
+          # 
+          # Note that the command below will copy the files to the root of the S3 bucket e.g., s3://timelapse.allencell.org/ 
+          # If you want to copy files to a S3 prefix / subdirectory, you would want something like ${{ env.S3_BUCKET }}/your_prefix below      
+          - name: Sync an arbitrary directory to S3 - just to demonstrate how. 
+            run: aws s3 sync src/assets ${{ env.S3_BUCKET }}
 
           - name: Invalidate CloudFront cache
             run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
