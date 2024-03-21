@@ -1,4 +1,3 @@
-import semver from "semver";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../src/constants";
@@ -80,7 +79,7 @@ describe("Collection", () => {
           const mockFetch = makeMockFetchMethod(url, collectionJson);
           const collection = await Collection.loadCollection(url, mockFetch);
 
-          expect(collection.getDatasetKeys().length).to.equal(5);
+          expect(collection.getDatasetKeys().length).to.equal(datasets.length);
           expect(collection.getDatasetKeys()).to.deep.equal([
             "dataset1",
             "dataset2",
@@ -109,25 +108,31 @@ describe("Collection", () => {
           const mockFetch = makeMockFetchMethod(url, collectionJson);
           const collection = await Collection.loadCollection(url, mockFetch);
 
-          if (semver.lte(version, "v0.0.0")) {
+          if (version === "v0.0.0") {
             expect(collection.metadata).deep.equals({});
             return;
           }
 
-          if (semver.gte(version, "v1.1.0")) {
-            // Test that all properties can be retrieved as stored
-            expect(collection.metadata.name).to.equal("c_name");
-            expect(collection.metadata.description).to.equal("c_description");
-            expect(collection.metadata.author).to.equal("c_author");
-            expect(collection.metadata.collectionVersion).to.equal("c_collectionVersion");
-            expect(collection.metadata.lastModified).to.equal("2024-01-01T00:00:00Z");
-            expect(collection.metadata.dateCreated).to.equal("2023-01-01T00:00:00Z");
-            expect(collection.metadata.revision).to.equal(15);
-            expect(collection.metadata.writerVersion).to.equal(version);
-          }
+          // Test that all properties can be retrieved as stored
+          expect(collection.metadata.name).to.equal("c_name");
+          expect(collection.metadata.description).to.equal("c_description");
+          expect(collection.metadata.author).to.equal("c_author");
+          expect(collection.metadata.collectionVersion).to.equal("c_collectionVersion");
+          expect(collection.metadata.lastModified).to.equal("2024-01-01T00:00:00Z");
+          expect(collection.metadata.dateCreated).to.equal("2023-01-01T00:00:00Z");
+          expect(collection.metadata.revision).to.equal(15);
+          expect(collection.metadata.writerVersion).to.equal(version);
         });
       });
     }
+
+    it("returns an empty metadata object for v0.0.0", async () => {
+      const url = "https://e.com/collection.json";
+      const mockFetch = makeMockFetchMethod(url, collectionFormats[0].collectionJson);
+      const collection = await Collection.loadCollection(url, mockFetch);
+
+      expect(collection.metadata).deep.equals({});
+    });
 
     it("should substitute default collection filename if URL is not a JSON", async () => {
       const url = "https://e.com";
@@ -135,6 +140,13 @@ describe("Collection", () => {
       const mockFetch = makeMockFetchMethod("https://e.com/" + DEFAULT_COLLECTION_FILENAME, [{ name: "", path: "" }]);
 
       await Collection.loadCollection(url, mockFetch);
+    });
+
+    it("Throws an error when loading a collection with no datasets", async () => {
+      const url = "https://e.com/collection.json";
+      const mockFetch = makeMockFetchMethod(url, { datasets: [] });
+      const tryLoad = Collection.loadCollection(url, mockFetch);
+      expect(tryLoad).rejects.toMatch(ANY_ERROR);
     });
   });
 
