@@ -62,7 +62,7 @@ jobs:
               fi          
               
           - name: Write an arbitrary file to S3 - just to demonstrate how. 
-            run: aws s3 sync . ${{ env.S3_BUCKET }}
+            run: aws s3 sync src/assets ${{ env.S3_BUCKET }}  # the src/assets is an arbitrary directory chosen for demonstration purposes
 
           - name: Invalidate CloudFront cache
             run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
