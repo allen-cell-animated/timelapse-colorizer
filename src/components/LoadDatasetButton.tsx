@@ -8,7 +8,7 @@ import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
 
-import { AppThemeContext } from "./AppStyle";
+import { AppThemeContext, DocumentContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
 
 /** Key for local storage to read/write recently opened datasets */
@@ -69,7 +69,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   props = { ...defaultProps, ...props };
 
   const theme = useContext(AppThemeContext);
-  const modalContextRef = useRef<HTMLDivElement>(null);
+  const { modalContainerRef } = useContext(DocumentContext);
   const dropdownContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
 
@@ -242,7 +242,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   );
 
   return (
-    <div ref={modalContextRef}>
+    <>
       <TextButton onClick={() => setIsLoadModalOpen(true)}>
         <UploadOutlined />
         <p>Load</p>
@@ -251,7 +251,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         title={"Load a single dataset or collection"}
         open={isLoadModalOpen}
         onCancel={handleCancel}
-        getContainer={modalContextRef.current || undefined}
+        getContainer={modalContainerRef || undefined}
         afterOpenChange={(open) => open && inputRef.current?.focus({ cursor: "all" })}
         footer={<Button onClick={handleCancel}>Cancel</Button>}
       >
@@ -299,6 +299,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           )}
         </div>
       </Modal>
-    </div>
+    </>
   );
 }
