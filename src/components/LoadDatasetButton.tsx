@@ -229,7 +229,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       // Set the URL input to the label of the selected collection
       const collection = recentCollections.find(({ url }) => url === info.key);
       if (collection) {
-        setUrlInput(collection.label);
+        setUrlInput(collection.label ?? collection.url);
       }
     },
     items: collectionsDropdownItems,

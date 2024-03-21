@@ -199,26 +199,22 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
 const RECENT_COLLECTIONS_STORAGE_KEY = "recentDatasets";
 const MAX_RECENT_COLLECTIONS = 10;
 
-export type StoredRecentCollection = {
+export type RecentCollection = {
   /** The absolute URL path of the collection resource. */
   url: string;
   /**
    * The user input for the collection resource.
    * If `undefined`, uses the existing label (if already in recent datasets) or reuses the URL (if new).
    */
-  label: string;
-};
-
-export type RecentCollection = Partial<StoredRecentCollection> & {
-  url: string;
+  label?: string;
 };
 
 /**
  * Wrapper around locally-stored recent collections.
  * @returns an array containing the list of recent collections and a function to add a new collection to the list.
  */
-export const useRecentCollections = (): [StoredRecentCollection[], (collection: RecentCollection) => void] => {
-  const [recentCollections, setRecentCollections] = useLocalStorage<StoredRecentCollection[]>(
+export const useRecentCollections = (): [RecentCollection[], (collection: RecentCollection) => void] => {
+  const [recentCollections, setRecentCollections] = useLocalStorage<RecentCollection[]>(
     RECENT_COLLECTIONS_STORAGE_KEY,
     []
   );
@@ -230,10 +226,7 @@ export const useRecentCollections = (): [StoredRecentCollection[], (collection: 
       if (collection.label === undefined) {
         collection.label = collection.url;
       }
-      setRecentCollections([
-        collection as StoredRecentCollection,
-        ...recentCollections.slice(0, MAX_RECENT_COLLECTIONS - 1),
-      ]);
+      setRecentCollections([collection as RecentCollection, ...recentCollections.slice(0, MAX_RECENT_COLLECTIONS - 1)]);
     } else {
       if (collection.label === undefined) {
         // Reuse existing label
@@ -241,7 +234,7 @@ export const useRecentCollections = (): [StoredRecentCollection[], (collection: 
       }
       // Move to front; this also updates the label if it changed.
       setRecentCollections([
-        collection as StoredRecentCollection,
+        collection as RecentCollection,
 
         ...recentCollections.slice(0, datasetIndex),
         ...recentCollections.slice(datasetIndex + 1),
