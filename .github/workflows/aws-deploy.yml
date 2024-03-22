@@ -47,6 +47,7 @@ jobs:
             path: ./dist
     
     deploy:
+        needs: build
         runs-on: ubuntu-latest
 
         # Dynamically set the environment variable based on the input above:
