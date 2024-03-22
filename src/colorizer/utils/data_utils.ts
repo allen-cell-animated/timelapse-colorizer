@@ -1,6 +1,6 @@
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { ColorRampData } from "../colors/color_ramps";
-import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric,ThresholdType } from "../types";
+import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric, ThresholdType } from "../types";
 
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
@@ -120,4 +120,8 @@ export function getInRangeLUT(dataset: Dataset, thresholds: FeatureThreshold[]):
     }
   }
   return inRangeIds;
+}
+
+export function getKeyFromName(name: string): string {
+  return name.toLowerCase().replaceAll(/[^a-z0-9_]/g, "_");
 }
