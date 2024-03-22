@@ -26,7 +26,9 @@ import { numberToStringDecimal } from "./math_utils";
 enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
+  // Will be deprecated once feature keys are implemented
   FEATURE = "feature",
+  FEATURE_KEY = "feature-key",
   TIME = "t",
   COLLECTION = "collection",
   THRESHOLDS = "filters",
@@ -64,7 +66,9 @@ const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
 export type UrlParams = {
   collection: string;
   dataset: string;
+  /** Will be deprecated. */
   feature: string;
+  featureKey: string;
   track: number;
   time: number;
   thresholds: FeatureThreshold[];
@@ -113,7 +117,7 @@ export function fetchWithTimeout(
 function serializeThreshold(threshold: FeatureThreshold): string {
   // featureName + units are encoded in case it contains special characters (":" or ",").
   // TODO: remove once feature keys are implemented.
-  const featureName = encodeURIComponent(threshold.featureName);
+  const featureName = encodeURIComponent(threshold.featureKey);
   const featureUnit = encodeURIComponent(threshold.units);
 
   // TODO: Are there better characters I can be using here? ":" and "," take up
@@ -142,8 +146,8 @@ function serializeThreshold(threshold: FeatureThreshold): string {
  * - `undefined` if the string could not be parsed.
  */
 function deserializeThreshold(thresholdString: string): FeatureThreshold | undefined {
-  const [featureName, featureUnit, ...selection] = thresholdString.split(":");
-  if (featureName === undefined || featureUnit === undefined) {
+  const [featureKey, featureUnit, ...selection] = thresholdString.split(":");
+  if (featureKey === undefined || featureUnit === undefined) {
     console.warn(
       "url_utils.deserializeThreshold: Could not parse threshold string: '" +
         thresholdString +
@@ -161,7 +165,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
       enabledCategories.push((selectedBinary & (1 << i)) !== 0);
     }
     threshold = {
-      featureName: decodeURIComponent(featureName),
+      featureKey: decodeURIComponent(featureKey),
       units: decodeURIComponent(featureUnit),
       type: ThresholdType.CATEGORICAL,
       enabledCategories,
@@ -169,7 +173,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
   } else if (selection.length === 2) {
     // Feature is numeric and a range.
     threshold = {
-      featureName: decodeURIComponent(featureName),
+      featureKey: decodeURIComponent(featureKey),
       units: decodeURIComponent(featureUnit),
       type: ThresholdType.NUMERIC,
       min: parseFloat(selection[0]),
@@ -185,7 +189,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
       `url_utils.deserializeThreshold: invalid threshold '${thresholdString}' has too many or too few parameters.`
     );
     threshold = {
-      featureName: decodeURIComponent(featureName),
+      featureKey: decodeURIComponent(featureKey),
       units: decodeURIComponent(featureUnit),
       type: ThresholdType.NUMERIC,
       min: NaN,
@@ -365,6 +369,7 @@ function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterP
  * - `collection`: string path to the collection. Ignores paths matching the default collection address.
  * - `dataset`: string name or URL of the dataset.
  * - `feature`: string name of the feature.
+ * - `feature_key`: string key of the currently-selected feature.
  * - `track`: integer track number.
  * - `time`: integer frame number.
  * - `thresholds`: array of feature threshold.
@@ -389,6 +394,9 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
   }
   if (state.feature) {
     includedParameters.push(`${UrlParam.FEATURE}=${encodeURIComponent(state.feature)}`);
+  }
+  if (state.featureKey) {
+    includedParameters.push(`${UrlParam.FEATURE_KEY}=${encodeURIComponent(state.featureKey)}`);
   }
   if (state.track !== undefined) {
     includedParameters.push(`${UrlParam.TRACK}=${state.track}`);
@@ -539,6 +547,7 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
   const collectionParam = urlParams.get(UrlParam.COLLECTION) ?? undefined;
   const datasetParam = urlParams.get(UrlParam.DATASET) ?? undefined;
   const featureParam = urlParams.get(UrlParam.FEATURE) ?? undefined;
+  const featureKeyParam = urlParams.get(UrlParam.FEATURE_KEY) ?? undefined;
   const trackParam = urlParams.get(UrlParam.TRACK) ? parseInt(urlParams.get(UrlParam.TRACK)!, base10Radix) : undefined;
   // This assumes there are no negative timestamps in the dataset
   const timeParam = urlParams.get(UrlParam.TIME) ? parseInt(urlParams.get(UrlParam.TIME)!, base10Radix) : undefined;
@@ -599,6 +608,7 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
     collection: collectionParam,
     dataset: datasetParam,
     feature: featureParam,
+    featureKey: featureKeyParam,
     track: trackParam,
     time: timeParam,
     thresholds: thresholdsParam,

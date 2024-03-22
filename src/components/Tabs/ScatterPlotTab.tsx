@@ -55,7 +55,7 @@ type ScatterPlotTabProps = {
   isVisible: boolean;
   isPlaying: boolean;
 
-  selectedFeatureName: string | null;
+  selectedFeatureKey: string | null;
   colorRampMin: number;
   colorRampMax: number;
   colorRamp: ColorRamp;
@@ -116,7 +116,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     currentFrame,
     colorRamp,
     categoricalPalette,
-    selectedFeatureName,
+    selectedFeatureKey,
     isPlaying,
     isVisible,
     inRangeIds,
@@ -416,16 +416,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
     overrideColor?: Color
   ): Partial<PlotData>[] => {
-    if (selectedFeatureName === null || dataset === null || !xAxisFeatureName || !yAxisFeatureName) {
+    if (selectedFeatureKey === null || dataset === null || !xAxisFeatureName || !yAxisFeatureName) {
       return [];
     }
-    const featureData = dataset.getFeatureData(selectedFeatureName);
+    const featureData = dataset.getFeatureData(selectedFeatureKey);
     if (!featureData) {
       return [];
     }
 
     // Generate colors
-    const categories = dataset.getFeatureCategories(selectedFeatureName);
+    const categories = dataset.getFeatureCategories(selectedFeatureKey);
     const isCategorical = categories !== null;
     const usingOverrideColor = markerConfig.color || overrideColor;
     overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
@@ -569,7 +569,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     isPlaying,
     plotDivRef.current,
     viewerConfig,
-    selectedFeatureName,
+    selectedFeatureKey,
     colorRampMin,
     colorRampMax,
     colorRamp,
@@ -742,9 +742,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   //////////////////////////////////
 
   const makeControlBar = (): ReactElement => {
-    const featureNames = dataset?.featureNames || [];
-    const menuItems: MenuItemType[] = featureNames.map((name: string) => {
-      return { key: name, label: dataset?.getFeatureNameWithUnits(name) };
+    const featureKeys = dataset ? dataset.featureKeys : [];
+    const menuItems: MenuItemType[] = featureKeys.map((key: string) => {
+      return { key, label: dataset?.getFeatureNameWithUnits(key) };
     });
     menuItems.push({ key: TIME_FEATURE.name, label: TIME_FEATURE.name });
 
