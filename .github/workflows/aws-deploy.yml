@@ -1,5 +1,5 @@
 ---
-name: AWS Deploy Example
+name: AWS Deployment
 
 on: 
   workflow_dispatch:
