@@ -2,6 +2,7 @@ import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
+import { getKeyFromName } from "./utils/data_utils";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
 
@@ -18,6 +19,8 @@ export enum FeatureType {
 }
 
 export type FeatureData = {
+  name: string;
+  key: string;
   data: Float32Array;
   tex: Texture;
   min: number;
@@ -57,6 +60,7 @@ export default class Dataset {
 
   private arrayLoader: IArrayLoader;
   // Use map to enforce ordering
+  /** Maps, in order, from feature names to feature data. */
   private features: Map<string, FeatureData>;
 
   private outlierFile?: string;
@@ -144,6 +148,8 @@ export default class Dataset {
     return [
       name,
       {
+        name,
+        key: metadata.key || getKeyFromName(name),
         tex: source.getTexture(FeatureDataType.F32),
         data: source.getBuffer(FeatureDataType.F32),
         min: source.getMin(),
