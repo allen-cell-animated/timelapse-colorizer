@@ -180,8 +180,8 @@ export default class Dataset {
   }
 
   // TODO: Throw an error if undefined?
-  public getFeatureName(key: string): string {
-    return this.features.get(key)!.name;
+  public getFeatureName(key: string): string | undefined {
+    return this.features.get(key)?.name;
   }
 
   /**
@@ -193,6 +193,9 @@ export default class Dataset {
 
   public getFeatureNameWithUnits(key: string): string {
     const name = this.getFeatureName(key);
+    if (!name) {
+      return "N/A";
+    }
     const units = this.getFeatureUnits(key);
     if (units) {
       return `${name} (${units})`;

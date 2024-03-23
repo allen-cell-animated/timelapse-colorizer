@@ -309,7 +309,8 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     // both in the current dataset to be enabled and editable.
     const featureData = props.dataset?.getFeatureData(threshold.featureKey);
     const disabled = featureData === undefined || featureData.units !== threshold.units;
-    const featureLabel = threshold.units ? `${threshold.featureKey} (${threshold.units})` : threshold.featureKey;
+    const name = featureData?.name || threshold.featureKey;
+    const featureLabel = threshold.units ? `${name} (${threshold.units})` : name;
 
     return (
       <List.Item style={{ position: "relative" }} key={index}>
