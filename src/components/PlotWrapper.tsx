@@ -44,7 +44,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   useMemo(() => {
     plot?.removePlot();
     if (props.selectedTrack) {
-      plot?.plot(props.selectedTrack, props.dataset?.getFeatureName(props.featureKey) || "", props.frame);
+      plot?.plot(props.selectedTrack, props.featureKey, props.frame);
     }
   }, [props.selectedTrack, props.featureKey]);
 

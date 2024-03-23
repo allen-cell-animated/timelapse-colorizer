@@ -60,7 +60,7 @@ export default class Dataset {
 
   private arrayLoader: IArrayLoader;
   // Use map to enforce ordering
-  /** Maps, in order, from feature names to feature data. */
+  /** Maps, in order, from feature keys to feature data. */
   private features: Map<string, FeatureData>;
 
   private outlierFile?: string;
@@ -126,7 +126,7 @@ export default class Dataset {
 
   /**
    * Loads a feature from the dataset, fetching its data from the provided url.
-   * @returns A promise of an array tuple containing the feature name and its FeatureData.
+   * @returns A promise of an array tuple containing the feature key and its FeatureData.
    */
   private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
     const name = metadata.name;
@@ -172,7 +172,7 @@ export default class Dataset {
   }
 
   /**
-   * Attempts to get the feature data from this dataset for the given feature name.
+   * Attempts to get the feature data from this dataset for the given feature key.
    * Returns `undefined` if feature is not in the dataset.
    */
   public getFeatureData(key: string): FeatureData | undefined {
@@ -217,7 +217,7 @@ export default class Dataset {
 
   /**
    * Returns the array of string categories for the given feature, if it exists and is categorical.
-   * @param name Feature name to retrieve.
+   * @param key Feature key to retrieve.
    * @returns The array of string categories for the given feature, or null if the feature is not categorical.
    */
   public getFeatureCategories(key: string): string[] | null {
@@ -450,10 +450,10 @@ export default class Dataset {
    * Get the times and values of a track for a given feature
    * this data is suitable to hand to d3 or plotly as two arrays of domain and range values
    */
-  public buildTrackFeaturePlot(track: Track, feature: string): { domain: number[]; range: number[] } {
-    const featureData = this.getFeatureData(feature);
+  public buildTrackFeaturePlot(track: Track, featureKey: string): { domain: number[]; range: number[] } {
+    const featureData = this.getFeatureData(featureKey);
     if (!featureData) {
-      throw new Error("Dataset.buildTrackFeaturePlot: Feature '" + feature + "' does not exist in dataset.");
+      throw new Error("Dataset.buildTrackFeaturePlot: Feature '" + featureKey + "' does not exist in dataset.");
     }
     const range = track.ids.map((i) => featureData.data[i]);
     const domain = track.times;
