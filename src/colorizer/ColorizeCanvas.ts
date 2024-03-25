@@ -573,6 +573,8 @@ export default class ColorizeCanvas {
       this.setUniform("backdrop", backdrop.value);
     } else {
       if (backdrop.status === "rejected") {
+        // Only show error message if the backdrop load encountered an error (null/undefined backdrops are okay,
+        // since that means the path has been deliberately set to null.)
         console.error(
           "Failed to load backdrop " + this.selectedBackdropKey + " for frame " + index + ": ",
           backdrop.reason
@@ -586,7 +588,7 @@ export default class ColorizeCanvas {
       this.setUniform("frame", frame.value);
     } else {
       if (frame.status === "rejected") {
-        // TODO: Pass in a callback for an error notification?
+        // Only show error message if the frame load encountered an error. (Null/undefined is okay)
         console.error("Failed to load frame " + index + ": ", frame.reason);
         this.onLoadError("Failed to load frame " + index);
       }
