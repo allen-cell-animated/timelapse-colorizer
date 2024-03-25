@@ -204,9 +204,9 @@ export type RecentCollection = {
   url: string;
   /**
    * The user input for the collection resource.
-   * If `null`, uses the existing label (if already in recent datasets) or reuse the URL (if new).
+   * If `undefined`, uses the existing label (if already in recent datasets) or reuses the URL (if new).
    */
-  label: string;
+  label?: string;
 };
 
 /**
@@ -222,11 +222,20 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
   const addRecentCollection = (collection: RecentCollection): void => {
     const datasetIndex = recentCollections.findIndex(({ url }) => url === collection.url);
     if (datasetIndex === -1) {
-      setRecentCollections([collection, ...recentCollections.slice(0, MAX_RECENT_COLLECTIONS - 1)]);
+      // New dataset, add to front while maintaining max length
+      if (collection.label === undefined) {
+        collection.label = collection.url;
+      }
+      setRecentCollections([collection as RecentCollection, ...recentCollections.slice(0, MAX_RECENT_COLLECTIONS - 1)]);
     } else {
+      if (collection.label === undefined) {
+        // Reuse existing label
+        collection.label = recentCollections[datasetIndex].label;
+      }
       // Move to front; this also updates the label if it changed.
       setRecentCollections([
-        collection,
+        collection as RecentCollection,
+
         ...recentCollections.slice(0, datasetIndex),
         ...recentCollections.slice(datasetIndex + 1),
       ]);

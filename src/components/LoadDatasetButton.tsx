@@ -229,7 +229,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       // Set the URL input to the label of the selected collection
       const collection = recentCollections.find(({ url }) => url === info.key);
       if (collection) {
-        setUrlInput(collection.label);
+        setUrlInput(collection.label ?? collection.url);
       }
     },
     items: collectionsDropdownItems,
@@ -244,6 +244,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       {menu}
     </DropdownContentContainer>
   );
+
+  const isRecentDropdownEmpty = recentCollections.length === 0;
 
   return (
     <div ref={modalContextRef}>
@@ -274,7 +276,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   trigger={["click"]}
                   menu={collectionsDropdownProps}
                   placement="bottomLeft"
-                  open={showRecentDropdown}
+                  open={showRecentDropdown && !isRecentDropdownEmpty}
                   getPopupContainer={dropdownContextRef.current ? () => dropdownContextRef.current! : undefined}
                   dropdownRender={renderDropdown}
                 >
