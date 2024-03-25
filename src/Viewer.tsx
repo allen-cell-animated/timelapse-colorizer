@@ -858,6 +858,7 @@ function Viewer(): ReactElement {
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
+                  stopPlayback={() => timeControls.pause()}
                   onTrackClicked={(track) => {
                     setFindTrackInput("");
                     setSelectedTrack(track);

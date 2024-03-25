@@ -1,10 +1,13 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import { CloseCircleFilled } from "@ant-design/icons";
+import { Button, Checkbox, Modal } from "antd";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Color } from "three";
 
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
+import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
 
-import { AppThemeContext } from "./AppStyle";
+import { AppThemeContext, DocumentContext } from "./AppStyle";
 
 const CANVAS_BORDER_OFFSET_PX = 4;
 
@@ -35,13 +38,16 @@ type CanvasWrapperProps = {
   /** Called when the canvas is clicked; reports the track info of the clicked object. */
   onTrackClicked?: (track: Track | null) => void;
 
+  stopPlayback?: () => void;
+
   maxWidth?: number;
   maxHeight?: number;
 };
 
 const defaultProps: Partial<CanvasWrapperProps> = {
-  onMouseHover() {},
-  onMouseLeave() {},
+  stopPlayback: () => {},
+  onMouseHover: () => {},
+  onMouseLeave: () => {},
   onTrackClicked: () => {},
   inRangeLUT: new Uint8Array(0),
   maxWidth: 730,
@@ -57,11 +63,42 @@ const defaultProps: Partial<CanvasWrapperProps> = {
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
+  const [allowLoadErrorModal, setAllowLoadErrorModal] = useState(true);
+
+  const [hasShownLoadError, setHasShownLoadError] = useState(false);
+  const [showLoadError, setShowLoadError] = useState(false);
+  const [loadErrorMessage, setLoadErrorMessage] = useState("");
+
+  const { modalContainerRef } = useContext(DocumentContext);
+
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
   const theme = useContext(AppThemeContext);
+
+  // ERROR HANDLING /////////////////////////////////////////////////
+
+  const onLoadError = useCallback(
+    (message: string): void => {
+      if (allowLoadErrorModal && !hasShownLoadError) {
+        setLoadErrorMessage(message);
+        setShowLoadError(true);
+        setHasShownLoadError(true);
+        props.stopPlayback();
+      }
+    },
+    [allowLoadErrorModal, modalContainerRef]
+  );
+
+  useEffect(() => {
+    canv.setOnLoadError(onLoadError);
+  }, [onLoadError]);
+
+  useEffect(() => {
+    // Reset error message state when the dataset changes
+    setHasShownLoadError(false);
+  }, [props.dataset]);
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
@@ -230,6 +267,60 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
+  const errorStyle = { color: "var(--color-text-error)" };
+
+  const modalTitle = (
+    <FlexRowAlignCenter $gap={6}>
+      <h3>
+        <span style={errorStyle}>
+          <CloseCircleFilled />
+        </span>
+      </h3>
+      <h3>
+        <b>File load error</b>
+      </h3>
+    </FlexRowAlignCenter>
+  );
+
   canv.render();
-  return <div ref={canvasRef}></div>;
+  return (
+    <>
+      <div ref={canvasRef}></div>
+      <Modal
+        title={modalTitle}
+        open={showLoadError}
+        getContainer={modalContainerRef || undefined}
+        onCancel={() => setShowLoadError(false)}
+        footer={
+          <Button onClick={() => setShowLoadError(false)} type="primary">
+            OK
+          </Button>
+        }
+      >
+        <FlexColumn $gap={12}>
+          <p>An error occurred when trying to load dataset assets. Missing data will be shown as a blank screen.</p>
+          <p style={errorStyle}>Error message: {loadErrorMessage}</p>
+          <p>
+            For troubleshooting, <b>check that you are connected to the network</b> and have access to the dataset path,
+            and <b>check the browser console</b> for more details. Otherwise, please contact the dataset creator as the
+            dataset may be missing files.
+          </p>
+          <p>
+            <i>Note that this message will only be shown once per dataset; other files may also be missing.</i>
+          </p>
+          <FlexColumn>
+            <Checkbox
+              type="checkbox"
+              checked={!allowLoadErrorModal}
+              onChange={() => {
+                setAllowLoadErrorModal(!allowLoadErrorModal);
+              }}
+            >
+              Don't show again this session
+            </Checkbox>
+          </FlexColumn>
+        </FlexColumn>
+      </Modal>
+    </>
+  );
 }

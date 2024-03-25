@@ -143,6 +143,8 @@ export default class ColorizeCanvas {
   private categoricalPalette: ColorRamp;
   private currentFrame: number;
 
+  private onLoadError: (message: string) => void;
+
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
     this.material = new ShaderMaterial({
@@ -206,6 +208,8 @@ export default class ColorizeCanvas {
     this.showScaleBar = false;
     this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
+
+    this.onLoadError = () => {};
 
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
@@ -533,6 +537,10 @@ export default class ColorizeCanvas {
     });
   }
 
+  public setOnLoadError(callback: (message: string) => void): void {
+    this.onLoadError = callback;
+  }
+
   /**
    * Sets the current frame of the canvas, loading the new frame data if the
    * frame number changes.
@@ -569,6 +577,7 @@ export default class ColorizeCanvas {
           "Failed to load backdrop " + this.selectedBackdropKey + " for frame " + index + ": ",
           backdrop.reason
         );
+        this.onLoadError("Failed to load backdrop '" + this.selectedBackdropKey + "' on frame " + index);
       }
       this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
@@ -579,6 +588,7 @@ export default class ColorizeCanvas {
       if (frame.status === "rejected") {
         // TODO: Pass in a callback for an error notification?
         console.error("Failed to load frame " + index + ": ", frame.reason);
+        this.onLoadError("Failed to load frame " + index);
       }
       // Set to blank
       const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
