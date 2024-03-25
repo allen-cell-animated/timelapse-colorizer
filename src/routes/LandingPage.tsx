@@ -2,15 +2,20 @@ import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Card, Tooltip } from "antd";
 import React, { ReactElement, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
+import { Dataset } from "../colorizer";
 import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
-import { DatasetEntry, ProjectEntry } from "../types";
+import { DatasetEntry, LocationState, ProjectEntry } from "../types";
+import { PageRoutes } from "./index";
 
+import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "../components/AppStyle";
+import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
+import LoadDatasetButton from "../components/LoadDatasetButton";
 import { landingPageContent } from "./LandingPageContent";
 
 const ContentContainer = styled(FlexColumn)`
@@ -99,11 +104,26 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
 
 export default function LandingPage(): ReactElement {
   const theme = useContext(AppThemeContext);
+  const navigate = useNavigate();
+
+  // Behavior
+
+  const onDatasetLoad = (collection: Collection, datasetKey: string, _newDataset: Dataset): void => {
+    // Unfortunately we can't pass the dataset directly through the `navigate` `state` API due to
+    // certain Dataset state (like HTMLImageElement objects) being non-serializable. This means that the
+    // dataset will be loaded twice, once here and once in the viewer.
+    // Dataset loading is relatively fast and the browser should cache most of the loaded data so it
+    // should hopefully not be a performance issue.
+    // TODO: Pass dataset directly here?
+    navigate(PageRoutes.VIEWER, { state: { collection: collection, datasetKey: datasetKey } as LocationState });
+  };
+
+  // Rendering
 
   // TODO: Should the load buttons be link elements or buttons?
   // Currently both the link and the button inside can be tab-selected.
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
-    const viewerLink = "viewer" + paramsToUrlQueryString(dataset.loadParams);
+    const viewerLink = `${PageRoutes.VIEWER}${paramsToUrlQueryString(dataset.loadParams)}`;
 
     return (
       <DatasetCard key={index}>
@@ -173,7 +193,12 @@ export default function LandingPage(): ReactElement {
 
   return (
     <>
-      <Header />
+      <Header>
+        <FlexRowAlignCenter $gap={15}>
+          <LoadDatasetButton onLoad={onDatasetLoad} currentResourceUrl={""} />
+          <HelpDropdown />
+        </FlexRowAlignCenter>
+      </Header>
       <br />
       <ContentContainer $gap={10}>
         <FlexColumnAlignCenter $gap={10}>

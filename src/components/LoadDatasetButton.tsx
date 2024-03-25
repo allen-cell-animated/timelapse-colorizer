@@ -3,32 +3,24 @@ import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { useClickAnyWhere, useLocalStorage } from "usehooks-ts";
+import { useClickAnyWhere } from "usehooks-ts";
 
+import { Dataset } from "../colorizer";
+import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
-import { DEFAULT_COLLECTION_FILENAME, DEFAULT_COLLECTION_PATH } from "../constants";
 
+import Collection from "../colorizer/Collection";
 import { AppThemeContext, DocumentContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
 
-/** Key for local storage to read/write recently opened datasets */
-const RECENT_DATASETS_STORAGE_KEY = "recentDatasets";
-const MAX_RECENT_DATASETS = 10;
-
-type RecentDataset = {
-  /** The absolute URL path of the dataset resource. */
-  url: string;
-  /** The user input for the dataset resource. */
-  label: string;
-};
-
 type LoadDatasetButtonProps = {
   /**
-   * Callback for when a URL is requested to be loaded.
-   * @param url The string URL, as typed into the URL input field.
-   * @returns a Promise object resolving to the absolute path of the resource.
+   * Callback when a dataset was successfully loaded.
+   * @param collection
+   * @param dataset
+   * @returns
    */
-  onRequestLoad: (url: string) => Promise<string>;
+  onLoad: (collection: Collection, datasetKey: string, dataset: Dataset) => void;
   /** The URL of the currently loaded resource, used to indicate it on the recent datasets dropdown. */
   currentResourceUrl: string;
 };
@@ -86,13 +78,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     _setUrlInput(newUrl);
   }, []);
 
-  const defaultDataset = DEFAULT_COLLECTION_PATH + "/" + DEFAULT_COLLECTION_FILENAME;
-  const [recentDatasets, setRecentDatasets] = useLocalStorage<RecentDataset[]>(RECENT_DATASETS_STORAGE_KEY, [
-    {
-      url: defaultDataset,
-      label: defaultDataset,
-    },
-  ]);
+  const [recentCollections, registerCollection] = useRecentCollections();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string>("");
@@ -113,7 +99,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   // The dropdown should be shown whenever the user clicks on the input field, and hidden if the user starts
   // typing or clicks off of the input (including selecting options in the dropdown).
-  // TODO: It's not currently possible to open the dropdown with tab navigation. Pending further discussion with UX team.
+  // TODO: Switch to using AccessibleDropdown as a base component
   useClickAnyWhere((event) => {
     if (event.target === inputRef.current?.input) {
       setShowRecentDropdown(true);
@@ -121,6 +107,36 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       setShowRecentDropdown(false);
     }
   });
+
+  /**
+   * Attempt to load a URL and return the resource path, the loaded collection, and the loaded dataset.
+   * The URL can either be a collection or a dataset, so handle it as an ambiguous URL.
+   * @throws an error if the URL could not be loaded.
+   * @returns an array, containing:
+   *   - the loaded collection
+   *   - the loaded dataset
+   */
+  const handleLoadRequest = async (url: string): Promise<[string, Collection, Dataset]> => {
+    console.log("Loading '" + url + "'.");
+    const newCollection = await Collection.loadFromAmbiguousUrl(url);
+    const newDatasetKey = newCollection.getDefaultDatasetKey();
+    const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
+    if (!loadResult.loaded) {
+      const errorMessage = loadResult.errorMessage;
+
+      if (errorMessage) {
+        // Remove 'Error:' prefixes
+        const matches = errorMessage.replace(/^(Error:)*/, "");
+        // Reject the promise with the error message
+        throw new Error(matches);
+      } else {
+        throw new Error();
+      }
+    }
+
+    const resourceUrl = newCollection.url || newCollection.getDefaultDatasetKey();
+    return [resourceUrl, newCollection, loadResult.dataset];
+  };
 
   const handleLoadClicked = useCallback(async (): Promise<void> => {
     if (urlInput === "") {
@@ -150,31 +166,20 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       return;
     }
     setIsLoading(true);
-    props.onRequestLoad(formattedUrlInput).then(
-      (loadedUrl) => {
+
+    handleLoadRequest(formattedUrlInput).then(
+      ([loadedUrl, collection, dataset]) => {
+        props.onLoad(collection, collection.getDefaultDatasetKey(), dataset);
+
         // Add a slight delay before closing and resetting the modal for a smoother experience
         setTimeout(() => {
           setIsLoadModalOpen(false);
           setIsLoading(false);
-          // Add to recent datasets
-          // Check if we have this dataset already in our recent datasets. Match with the resource URL
-          // because there is some ambiguity in user input, since we accept both filenames and directories.
-          const newRecentDataset: RecentDataset = {
+          // Add to recent collections
+          registerCollection({
             url: loadedUrl,
             label: urlInput, // Use raw url input for the label
-          };
-          const datasetIndex = recentDatasets.findIndex(({ url }) => url === loadedUrl);
-          if (datasetIndex === -1) {
-            // New dataset, add to front while maintaining max length
-            setRecentDatasets([newRecentDataset, ...recentDatasets.slice(0, MAX_RECENT_DATASETS - 1)]);
-          } else {
-            // Move to front; this also updates the label if it changed.
-            setRecentDatasets([
-              newRecentDataset,
-              ...recentDatasets.slice(0, datasetIndex),
-              ...recentDatasets.slice(datasetIndex + 1),
-            ]);
-          }
+          });
           setErrorText("");
           setUrlInput("");
         }, 500);
@@ -195,10 +200,10 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         setIsLoading(false);
       }
     );
-  }, [urlInput, props.onRequestLoad]);
+  }, [urlInput, props.onLoad]);
 
   const handleCancel = useCallback(() => {
-    // should this cancel dataset loading mid-load?
+    // should this cancel datasets/collection loading mid-load?
     setIsLoading(false);
     setErrorText("");
     setIsLoadModalOpen(false);
@@ -207,28 +212,27 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
 
   // RENDERING ////////////////////////////////////////////////////////
 
-  const datasetsDropdownItems: MenuItemType[] = recentDatasets.map(({ url, label }) => {
+  const collectionsDropdownItems: MenuItemType[] = recentCollections.map(({ url, label }) => {
     const isCurrentUrl = props.currentResourceUrl === url;
     return {
       key: url,
       label: label,
-      // Disable if dataset is currently open
-      disabled: isCurrentUrl,
+      style: isCurrentUrl ? { color: "var(--color-text-hint)" } : undefined,
       icon: isCurrentUrl ? <FolderOpenOutlined /> : undefined,
     };
   });
 
-  // Get the URLs (keys) of any recent datasets that match the currently selected urlInput.
-  const matchingKeys = recentDatasets.filter(({ label }) => label === urlInput).map(({ url }) => url);
-  const datasetsDropdownProps: MenuProps = {
+  // Get the URLs (keys) of any recent collections that match the currently selected urlInput.
+  const matchingKeys = recentCollections.filter(({ label }) => label === urlInput).map(({ url }) => url);
+  const collectionsDropdownProps: MenuProps = {
     onClick: (info) => {
-      // Set the URL input to the label of the selected dataset
-      const dataset = recentDatasets.find(({ url }) => url === info.key);
-      if (dataset) {
-        setUrlInput(dataset.label);
+      // Set the URL input to the label of the selected collection
+      const collection = recentCollections.find(({ url }) => url === info.key);
+      if (collection) {
+        setUrlInput(collection.label ?? collection.url);
       }
     },
-    items: datasetsDropdownItems,
+    items: collectionsDropdownItems,
     selectable: true,
     selectedKeys: matchingKeys,
   };
@@ -240,6 +244,8 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       {menu}
     </DropdownContentContainer>
   );
+
+  const isRecentDropdownEmpty = recentCollections.length === 0;
 
   return (
     <div>
@@ -256,9 +262,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         footer={<Button onClick={handleCancel}>Cancel</Button>}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <p style={{ marginBottom: "10px" }}>
-            Load a collection of datasets or a single dataset by providing its URL.
-          </p>
+          <p style={{ marginBottom: "10px" }}>Load a collection of datasets or a single dataset by providing a URL.</p>
 
           <div ref={dropdownContextRef} style={{ position: "relative" }}>
             <p>
@@ -270,9 +274,9 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               <Space.Compact style={{ width: "100%" }}>
                 <Dropdown
                   trigger={["click"]}
-                  menu={datasetsDropdownProps}
+                  menu={collectionsDropdownProps}
                   placement="bottomLeft"
-                  open={showRecentDropdown}
+                  open={showRecentDropdown && !isRecentDropdownEmpty}
                   getPopupContainer={dropdownContextRef.current ? () => dropdownContextRef.current! : undefined}
                   dropdownRender={renderDropdown}
                 >

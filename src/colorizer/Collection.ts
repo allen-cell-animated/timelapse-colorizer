@@ -1,19 +1,14 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
+import {
+  CollectionEntry,
+  CollectionFile,
+  CollectionFileMetadata,
+  updateCollectionVersion,
+} from "./utils/collection_utils";
 import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl } from "./utils/url_utils";
 
 import Dataset from "./Dataset";
 
-/**
- * Dataset properties in a collection. Collections are defined as .json files containing an array of objects
- * with the following properties:
- *
- * - `path`: a relative path from the base directory of the collection URL, or a URL to a dataset.
- * - `name`: the display name for the dataset.
- */
-export type CollectionEntry = {
-  path: string;
-  name: string;
-};
 export type CollectionData = Map<string, CollectionEntry>;
 
 export type DatasetLoadResult =
@@ -34,6 +29,7 @@ export type DatasetLoadResult =
  */
 export default class Collection {
   private entries: CollectionData;
+  public metadata: Partial<CollectionFileMetadata>;
   /**
    * The URL this Collection was loaded from. `null` if this Collection is a placeholder object,
    * such as when generating dummy Collections for single datasets.
@@ -47,9 +43,11 @@ export default class Collection {
    * @param url the optional string url representing the source of the Collection. `null` by default.
    * @throws an error if a `path` is not a URL to a JSON resource.
    */
-  constructor(entries: CollectionData, url: string | null = null) {
+  constructor(entries: CollectionData, url: string | null = null, metadata: Partial<CollectionFileMetadata> = {}) {
     this.entries = entries;
     this.url = url ? Collection.formatAbsoluteCollectionPath(url) : url;
+    this.metadata = metadata;
+    console.log("Collection metadata: ", this.metadata);
 
     // Check that all entry paths are JSON urls.
     this.entries.forEach((value, key) => {
@@ -200,6 +198,17 @@ export default class Collection {
     return this.formatDatasetPath(collectionDirectory + "/" + datasetPath);
   }
 
+  // TODO: Refactor how dummy collections store URLs? The URL should always be a valid resource maybe?
+  /**
+   * Returns a URL to the collection or dataset.
+   */
+  public getUrl(): string {
+    if (this.url === null) {
+      return this.entries.get(this.getDefaultDatasetKey())!.path;
+    }
+    return this.url;
+  }
+
   // ===================================================================================
   // Static Loader Methods
 
@@ -224,16 +233,22 @@ export default class Collection {
       throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': Fetch failed.`);
     }
 
-    const json = await response.json();
-    if (!Array.isArray(json)) {
-      throw new Error(
-        `Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': JSON is not an array.`
-      );
+    let collection: CollectionFile;
+    try {
+      const json = await response.json();
+      collection = updateCollectionVersion(json);
+    } catch (e) {
+      throw new Error(`Could not parse collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
     }
 
     // Convert JSON array into map
+    if (collection.datasets.length === 0) {
+      throw new Error(
+        `Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': No datasets found.`
+      );
+    }
     const collectionData: Map<string, CollectionEntry> = new Map();
-    for (const entry of json) {
+    for (const entry of collection.datasets) {
       collectionData.set(entry.name, entry);
     }
 
@@ -244,7 +259,7 @@ export default class Collection {
       collectionData.set(key, newEntry);
     });
 
-    return new Collection(collectionData, absoluteCollectionUrl);
+    return new Collection(collectionData, absoluteCollectionUrl, collection.metadata);
   }
 
   /**
@@ -260,6 +275,7 @@ export default class Collection {
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
 
+    // TODO: Should the dummy collection copy the dataset's metadata?
     return new Collection(collectionData, null);
   }
 

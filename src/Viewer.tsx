@@ -9,7 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Location, useLocation, useSearchParams } from "react-router-dom";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
@@ -29,10 +29,11 @@ import {
 } from "./colorizer/types";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
-import { useConstructor, useDebounce } from "./colorizer/utils/react_utils";
+import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRowAlignCenter } from "./styles/utils";
+import { LocationState } from "./types";
 
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
@@ -60,6 +61,7 @@ import styles from "./Viewer.module.css";
 function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
+  const location = useLocation();
 
   const canv = useConstructor(() => {
     const canvas = new ColorizeCanvas();
@@ -70,6 +72,7 @@ function Viewer(): ReactElement {
   const [collection, setCollection] = useState<Collection | undefined>();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetKey, setDatasetKey] = useState("");
+  const [, addRecentCollection] = useRecentCollections();
 
   const [featureName, setFeatureName] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -424,19 +427,44 @@ function Viewer(): ReactElement {
       }
       isLoadingInitialDataset.current = true;
       let newCollection: Collection;
-      const collectionUrlParam = initialUrlParams.collection;
-      const datasetParam = initialUrlParams.dataset;
       let datasetKey: string;
 
-      if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
-        // Dataset is a URL and no collection URL is provided;
-        // Make a dummy collection that will include only this dataset
-        newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
-        datasetKey = newCollection.getDefaultDatasetKey();
+      const locationHasCollectionAndDataset = (location: Location): boolean => {
+        return location.state && "collection" in location.state && "datasetKey" in location.state;
+      };
+
+      // Check if we were passed a collection + dataset from the previous page.
+      if (locationHasCollectionAndDataset(location)) {
+        // Collect from previous page state
+        const { collection: stateCollection, datasetKey: stateDatasetKey } = location.state as LocationState;
+        datasetKey = stateDatasetKey;
+        newCollection = stateCollection;
       } else {
-        // Try loading the collection, with the default collection as a fallback.
-        newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
-        datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
+        // Collect from URL
+        const collectionUrlParam = initialUrlParams.collection;
+        const datasetParam = initialUrlParams.dataset;
+
+        if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
+          // Dataset is a URL and no collection URL is provided;
+          // Make a dummy collection that will include only this dataset
+          newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+          datasetKey = newCollection.getDefaultDatasetKey();
+        } else {
+          // Try loading the collection, with the default collection as a fallback.
+          try {
+            newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
+            datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
+          } catch (error) {
+            console.error(error);
+            notificationApi["error"]({
+              message: "Error loading dataset:",
+              description: (error as Error).message,
+              placement: "bottomLeft",
+              duration: 4,
+            });
+            return;
+          }
+        }
       }
 
       setCollection(newCollection);
@@ -452,6 +480,9 @@ function Viewer(): ReactElement {
         });
         return;
       }
+
+      // Add the collection to the recent collections list
+      addRecentCollection({ url: newCollection.getUrl() });
 
       // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
       if (!isInitialDatasetLoaded) {
@@ -548,30 +579,11 @@ function Viewer(): ReactElement {
    * @throws an error if the URL could not be loaded.
    * @returns the absolute path of the URL resource that was loaded.
    */
-  const handleLoadRequest = useCallback(
-    async (url: string): Promise<string> => {
-      console.log("Loading '" + url + "'.");
-      const newCollection = await Collection.loadFromAmbiguousUrl(url);
-      const newDatasetKey = newCollection.getDefaultDatasetKey();
-      const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
-      if (!loadResult.loaded) {
-        const errorMessage = loadResult.errorMessage;
-
-        if (errorMessage) {
-          // Remove 'Error:' prefixes
-          const matches = errorMessage.replace(/^(Error:)*/, "");
-          // Reject the promise with the error message
-          throw new Error(matches);
-          // throw new Error(errorMessage);
-        } else {
-          throw new Error();
-        }
-      }
-
+  const handleDatasetLoad = useCallback(
+    (newCollection: Collection, newDatasetKey: string, newDataset: Dataset): void => {
       setCollection(newCollection);
       setFeatureThresholds([]); // Clear when switching collections
-      await replaceDataset(loadResult.dataset, newDatasetKey);
-      return newCollection.url || newCollection.getDefaultDatasetKey();
+      replaceDataset(newDataset, newDatasetKey);
     },
     [replaceDataset]
   );
@@ -708,10 +720,10 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
 
       <Header>
-        {/* <h3>Dataset Name</h3> */}
+        <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12}>
           <FlexRowAlignCenter $gap={2}>
-            <LoadDatasetButton onRequestLoad={handleLoadRequest} currentResourceUrl={collection?.url || datasetKey} />
+            <LoadDatasetButton onLoad={handleDatasetLoad} currentResourceUrl={collection?.url || datasetKey} />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
