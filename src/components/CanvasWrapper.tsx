@@ -316,7 +316,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
                 setAllowLoadErrorModal(!allowLoadErrorModal);
               }}
             >
-              Don't show again this session
+              Don&apos;t show again this session
             </Checkbox>
           </FlexColumn>
         </FlexColumn>

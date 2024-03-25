@@ -300,7 +300,7 @@ export default class Dataset {
       return undefined;
     }
 
-    // Allow for undefined or null frame files in the manifest
+    // Allow for undefined or null backdrop frames in the manifest
     if (this.frameFiles[index] === undefined || this.frameFiles[index] === null) {
       return undefined;
     }
