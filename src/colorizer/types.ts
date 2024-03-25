@@ -102,8 +102,6 @@ export enum ThresholdType {
 }
 
 type BaseFeatureThreshold = {
-  // TODO: Replace with key string
-  // featureKey: string;
   featureKey: string;
   units: string;
   type: ThresholdType;

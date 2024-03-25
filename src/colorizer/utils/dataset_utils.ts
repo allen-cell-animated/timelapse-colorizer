@@ -34,7 +34,7 @@ export type ManifestFileMetadata = Spread<ManifestFileMetadataV1_1_0>;
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV0_0_0 = {
   frames: string[];
-  /** Map from feature name to relative path */
+  /** Deprecated; Map from feature name to relative path. */
   features: Record<string, string>;
   /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
   featureMetadata?: Record<

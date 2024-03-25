@@ -130,7 +130,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
   const selectContainerRef = useRef<HTMLDivElement>(null);
 
-  /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature name and unit. */
+  /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature key and unit. */
   const thresholdToKey = (threshold: FeatureThreshold): string => {
     return `${encodeURIComponent(threshold.featureKey)}:${threshold.units ? encodeURIComponent(threshold.units) : ""}`;
   };
