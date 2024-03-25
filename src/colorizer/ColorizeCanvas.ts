@@ -552,23 +552,40 @@ export default class ColorizeCanvas {
       backdropPromise = this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
     }
     const framePromise = this.dataset?.loadFrame(index);
-    const result = await Promise.all([framePromise, backdropPromise]);
+    const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
-    if (!frame) {
-      return;
-    }
     if (this.currentFrame !== index) {
       // This load request has been superceded by a request for another frame, which has already loaded in image data.
       // Drop this request.
       return;
     }
-    if (backdrop) {
-      this.setUniform("backdrop", backdrop);
+
+    if (backdrop.status === "fulfilled" && backdrop.value) {
+      this.setUniform("backdrop", backdrop.value);
     } else {
+      if (backdrop.status === "rejected") {
+        console.error(
+          "Failed to load backdrop " + this.selectedBackdropKey + " for frame " + index + ": ",
+          backdrop.reason
+        );
+      }
       this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
-    this.setUniform("frame", frame);
+
+    if (frame.status === "fulfilled" && frame.value) {
+      this.setUniform("frame", frame.value);
+    } else {
+      if (frame.status === "rejected") {
+        // TODO: Pass in a callback for an error notification?
+        console.error("Failed to load frame " + index + ": ", frame.reason);
+      }
+      // Set to blank
+      const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
+      emptyFrame.internalFormat = "RGBA8UI";
+      emptyFrame.needsUpdate = true;
+      this.setUniform("frame", emptyFrame);
+    }
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently
