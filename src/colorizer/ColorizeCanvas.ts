@@ -143,7 +143,7 @@ export default class ColorizeCanvas {
   private categoricalPalette: ColorRamp;
   private currentFrame: number;
 
-  private isMissingFrameCallback: (isMissing: boolean) => void;
+  private missingFrameCallback: (isMissing: boolean) => void;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -209,7 +209,7 @@ export default class ColorizeCanvas {
     this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
 
-    this.isMissingFrameCallback = () => {};
+    this.missingFrameCallback = () => {};
 
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
@@ -537,8 +537,8 @@ export default class ColorizeCanvas {
     });
   }
 
-  public setIsMissingFrameCallback(callback: (isMissing: boolean) => void): void {
-    this.isMissingFrameCallback = callback;
+  public setMissingFrameCallback(callback: (isMissing: boolean) => void): void {
+    this.missingFrameCallback = callback;
   }
 
   /**
@@ -575,8 +575,8 @@ export default class ColorizeCanvas {
       this.setUniform("backdrop", backdrop.value);
     } else {
       if (backdrop.status === "rejected") {
-        // Only show error message if the backdrop load encountered an error (null/undefined backdrops are okay,
-        // since that means the path has been deliberately set to null.)
+        // Only show error message if the backdrop load encountered an error (null/undefined backdrops aren't
+        // considered errors, since that means the path has been deliberately marked as missing.)
         console.error(
           "Failed to load backdrop " + this.selectedBackdropKey + " for frame " + index + ": ",
           backdrop.reason
@@ -601,7 +601,7 @@ export default class ColorizeCanvas {
       this.setUniform("frame", emptyFrame);
     }
 
-    this.isMissingFrameCallback(isMissingFile);
+    this.missingFrameCallback(isMissingFile);
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently
