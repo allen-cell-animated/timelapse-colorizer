@@ -45,8 +45,21 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
   const newThresholds: FeatureThreshold[] = [];
 
   for (const threshold of thresholds) {
-    const featureData = dataset.getFeatureData(threshold.featureKey);
+    // `featureKey` may be a name for backwards-compatibility. Convert it to the key if it exists in the dataset.
+    // This will still match against the units below
+    let featureKey = threshold.featureKey;
+    const matchedFeatureKey = dataset.findFeatureByKeyOrName(threshold.featureKey);
+    if (matchedFeatureKey !== undefined) {
+      featureKey = matchedFeatureKey;
+    }
+
+    const featureData = dataset.getFeatureData(featureKey);
     const isInDataset = featureData && featureData.units === threshold.units;
+
+    if (isInDataset) {
+      // Update feature key just in case it was a name
+      threshold.featureKey = featureKey;
+    }
 
     if (isInDataset && featureData.type === FeatureType.CATEGORICAL && isThresholdNumeric(threshold)) {
       // Threshold is not categorical but the feature is.
@@ -55,7 +68,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
       // This is important for historical reasons, because older versions of the app used to only store features as numeric
       // thresholds. This would cause categorical features loaded from the URL to be incorrectly shown on the UI.
       newThresholds.push({
-        featureKey: threshold.featureKey,
+        featureKey: featureKey,
         units: threshold.units,
         type: ThresholdType.CATEGORICAL,
         enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
@@ -64,7 +77,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
       // Threshold is categorical but the feature is not.
       // Convert to numeric threshold instead.
       newThresholds.push({
-        featureKey: threshold.featureKey,
+        featureKey: featureKey,
         units: threshold.units,
         type: ThresholdType.NUMERIC,
         min: featureData.min,

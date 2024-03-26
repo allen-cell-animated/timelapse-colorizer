@@ -497,11 +497,7 @@ function Viewer(): ReactElement {
       let newFeatureKey = featureKey;
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        const featureKeyOrName = initialUrlParams.feature;
-        newFeatureKey = dataset.hasFeatureKey(featureKeyOrName)
-          ? featureKeyOrName
-          : dataset.findFeatureKeyFromName(featureKeyOrName) || featureKey; // Try to look up key from name
-        newFeatureKey = replaceFeature(dataset, newFeatureKey);
+        newFeatureKey = replaceFeature(dataset, dataset.findFeatureByKeyOrName(initialUrlParams.feature) || featureKey);
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {

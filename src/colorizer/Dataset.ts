@@ -166,6 +166,24 @@ export default class Dataset {
     return this.featureKeys.includes(key);
   }
 
+  /**
+   * Returns the feature key if a feature with a matching key or name exists in the
+   * dataset.
+   * @param keyOrName String key or name of the feature to find.
+   * @returns The feature key if found, otherwise undefined.
+   */
+  public findFeatureByKeyOrName(keyOrName: string): string | undefined {
+    if (this.hasFeatureKey(keyOrName)) {
+      return keyOrName;
+    } else {
+      return this.findFeatureKeyFromName(keyOrName);
+    }
+  }
+
+  /**
+   * Attempts to find a matching feature key for a feature name.
+   * @returns The feature key if found, otherwise undefined.
+   */
   public findFeatureKeyFromName(name: string): string | undefined {
     return Array.from(this.features.values()).find((f) => f.name === name)?.key;
   }
