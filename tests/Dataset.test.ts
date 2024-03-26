@@ -90,8 +90,8 @@ describe("Dataset", () => {
     features: [
       { key: "feature1", name: "Feature1", data: "feature1.json", units: "meters", type: "continuous" },
       { key: "feature2", name: "Feature2", data: "feature2.json", units: "(m)", type: "discrete" },
-      { key: "feature3", name: "Feature3", data: "feature3.json", units: "μm/s", type: "bad-type" },
-      { key: "feature4", name: "Feature4", data: "feature4.json" },
+      { name: "Feature3", data: "feature3.json", units: "μm/s", type: "bad-type" },
+      { name: "Feature4", data: "feature4.json" },
       {
         key: "feature5",
         name: "Feature5",
@@ -137,8 +137,11 @@ describe("Dataset", () => {
   // Test both normal and deprecated manifests
   for (const [version, manifest] of manifestsToTest) {
     describe(version, () => {
-      it("fills in feature keys if only names are provided", () => {
-        throw new Error("Test not implemented");
+      it("fills in feature keys if only names are provided", async () => {
+        const dataset = new Dataset(defaultPath, new MockFrameLoader(), new MockArrayLoader());
+        const mockFetch = makeMockFetchMethod(defaultPath, manifest);
+        await dataset.open(mockFetch);
+        expect(dataset.featureKeys).to.deep.equal(["feature1", "feature2", "feature3", "feature4", "feature5"]);
       });
 
       it("retrieves feature units", async () => {

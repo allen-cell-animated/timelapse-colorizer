@@ -167,7 +167,6 @@ export default class Dataset {
   }
 
   public findFeatureKeyFromName(name: string): string | undefined {
-    // TODO: Replace once you add back in featureNames
     return Array.from(this.features.values()).find((f) => f.name === name)?.key;
   }
 

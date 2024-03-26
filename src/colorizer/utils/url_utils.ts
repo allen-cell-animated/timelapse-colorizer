@@ -26,9 +26,7 @@ import { numberToStringDecimal } from "./math_utils";
 enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
-  // Will be deprecated once feature keys are implemented
   FEATURE = "feature",
-  FEATURE_KEY = "feature-key",
   TIME = "t",
   COLLECTION = "collection",
   THRESHOLDS = "filters",
@@ -66,9 +64,8 @@ const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
 export type UrlParams = {
   collection: string;
   dataset: string;
-  /** Will be deprecated. */
+  /** Either feature key or feature name. */
   feature: string;
-  featureKey: string;
   track: number;
   time: number;
   thresholds: FeatureThreshold[];
@@ -395,9 +392,6 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
   if (state.feature) {
     includedParameters.push(`${UrlParam.FEATURE}=${encodeURIComponent(state.feature)}`);
   }
-  if (state.featureKey) {
-    includedParameters.push(`${UrlParam.FEATURE_KEY}=${encodeURIComponent(state.featureKey)}`);
-  }
   if (state.track !== undefined) {
     includedParameters.push(`${UrlParam.TRACK}=${state.track}`);
   }
@@ -547,7 +541,6 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
   const collectionParam = urlParams.get(UrlParam.COLLECTION) ?? undefined;
   const datasetParam = urlParams.get(UrlParam.DATASET) ?? undefined;
   const featureParam = urlParams.get(UrlParam.FEATURE) ?? undefined;
-  const featureKeyParam = urlParams.get(UrlParam.FEATURE_KEY) ?? undefined;
   const trackParam = urlParams.get(UrlParam.TRACK) ? parseInt(urlParams.get(UrlParam.TRACK)!, base10Radix) : undefined;
   // This assumes there are no negative timestamps in the dataset
   const timeParam = urlParams.get(UrlParam.TIME) ? parseInt(urlParams.get(UrlParam.TIME)!, base10Radix) : undefined;
@@ -608,7 +601,6 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
     collection: collectionParam,
     dataset: datasetParam,
     feature: featureParam,
-    featureKey: featureKeyParam,
     track: trackParam,
     time: timeParam,
     thresholds: thresholdsParam,

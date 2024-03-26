@@ -211,7 +211,7 @@ function Viewer(): ReactElement {
     const state: Partial<urlUtils.UrlParams> = {
       collection: collectionParam,
       dataset: datasetParam,
-      featureKey: featureKey,
+      feature: featureKey,
       track: selectedTrack?.trackId,
       // Ignore time=0 to reduce clutter
       time: currentFrame !== 0 ? currentFrame : undefined,
@@ -497,7 +497,11 @@ function Viewer(): ReactElement {
       let newFeatureKey = featureKey;
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        newFeatureKey = replaceFeature(dataset, initialUrlParams.feature);
+        const featureKeyOrName = initialUrlParams.feature;
+        newFeatureKey = dataset.hasFeatureKey(featureKeyOrName)
+          ? featureKeyOrName
+          : dataset.findFeatureKeyFromName(featureKeyOrName) || featureKey; // Try to look up key from name
+        newFeatureKey = replaceFeature(dataset, newFeatureKey);
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {
