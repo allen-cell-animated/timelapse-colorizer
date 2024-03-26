@@ -5,16 +5,20 @@ import { Color } from "three";
 import { NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
+import { FlexColumnAlignCenter } from "../styles/utils";
 
 import { AppThemeContext } from "./AppStyle";
 
 const CANVAS_BORDER_OFFSET_PX = 4;
 
-const MissingFileIconContainer = styled.div`
+const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  background-color: #fff9;
+  padding: 10px 15px;
+  border-radius: 6px;
   // TODO: Make this responsive to background color?
   --fill-color: #0006;
   fill: var(--fill-color);
@@ -255,11 +259,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     <div style={{ position: "relative" }}>
       <div ref={canvasRef}></div>
       <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
-        <NoImageSVG aria-labelledby="no-image" />
+        <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
         <p id="no-image">
-          <b>
-            <i>Missing image data</i>
-          </b>
+          <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
     </div>
