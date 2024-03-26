@@ -14,7 +14,7 @@ export const landingPageContent: ProjectEntry[] = [
     loadParams: {
       collection: "https://dev-aics-dtp-001.int.allencell.org/dan-data/colorizer/data/collection.json",
       dataset: "Mama Bear",
-      featureKey: "volume",
+      feature: "volume",
     },
     inReview: true,
   },
@@ -29,7 +29,7 @@ export const landingPageContent: ProjectEntry[] = [
         loadParams: {
           collection: "https://dev-aics-dtp-001.int.allencell.org/dan-data/colorizer/data/collection.json",
           dataset: "Mama Bear",
-          featureKey: "height",
+          feature: "height",
           range: [0.54, 9.452],
           colorRampKey: "esri-mentone_beach",
           time: 154,
@@ -41,7 +41,7 @@ export const landingPageContent: ProjectEntry[] = [
         loadParams: {
           collection: "https://dev-aics-dtp-001.int.allencell.org/dan-data/colorizer/data/collection.json",
           dataset: "Goldilocks",
-          featureKey: "height",
+          feature: "height",
           range: [1.084, 8.156],
           colorRampKey: "esri-blue_red_8",
           time: 446,
@@ -53,7 +53,7 @@ export const landingPageContent: ProjectEntry[] = [
         loadParams: {
           collection: "https://dev-aics-dtp-001.int.allencell.org/dan-data/colorizer/data/collection.json",
           dataset: "Baby Bear",
-          featureKey: "height",
+          feature: "height",
           range: [0.54, 8.895],
           colorRampKey: "esri-green_brown_1",
           time: 397,
