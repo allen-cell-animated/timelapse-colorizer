@@ -530,6 +530,14 @@ function Viewer(): ReactElement {
         updateConfig(initialUrlParams.config);
       }
       if (initialUrlParams.scatterPlotConfig) {
+        const newScatterPlotConfig = initialUrlParams.scatterPlotConfig;
+        // For backwards-compatibility, cast xAxis and yAxis to feature keys.
+        if (newScatterPlotConfig.xAxis) {
+          newScatterPlotConfig.xAxis = dataset?.findFeatureByKeyOrName(newScatterPlotConfig.xAxis);
+        }
+        if (newScatterPlotConfig.yAxis) {
+          newScatterPlotConfig.yAxis = dataset?.findFeatureByKeyOrName(newScatterPlotConfig.yAxis);
+        }
         updateScatterPlotConfig(initialUrlParams.scatterPlotConfig);
       }
     };
