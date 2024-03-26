@@ -366,7 +366,6 @@ function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterP
  * - `collection`: string path to the collection. Ignores paths matching the default collection address.
  * - `dataset`: string name or URL of the dataset.
  * - `feature`: string name of the feature.
- * - `feature_key`: string key of the currently-selected feature.
  * - `track`: integer track number.
  * - `time`: integer frame number.
  * - `thresholds`: array of feature threshold.

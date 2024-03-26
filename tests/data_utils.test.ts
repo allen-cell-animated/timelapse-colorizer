@@ -35,6 +35,8 @@ describe("data_utils", () => {
 
   describe("validateThresholds", () => {
     it("replaces feature names with keys", async () => {
+      // For backwards-compatibility, feature keys in thresholds can sometimes be feature names. These should
+      // be detected if they match features in the dataset, and replaced with their corresonding feature keys.
       const dataset = await makeMockDataset({
         frames: ["frame0.json"],
         features: [
@@ -68,7 +70,7 @@ describe("data_utils", () => {
         },
         {
           featureKey: "My Feature C",
-          units: "will_not_match_unit",
+          units: "different_unit_and_wont_match",
           type: ThresholdType.CATEGORICAL,
           enabledCategories: [true, false, false],
         },
@@ -94,7 +96,7 @@ describe("data_utils", () => {
         // Ignores features that don't match the units of the dataset's feature
         {
           featureKey: "My Feature C",
-          units: "will_not_match_unit",
+          units: "different_unit_and_wont_match",
           type: ThresholdType.CATEGORICAL,
           enabledCategories: [true, false, false],
         },

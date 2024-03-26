@@ -34,7 +34,8 @@ export function getColorMap(colorRampData: Map<string, ColorRampData>, key: stri
 /**
  * Validates the thresholds against the dataset. If the threshold's feature is present but the wrong type, it is updated.
  * This is most likely to happen when datasets have different types for the same feature key, or if thresholds are loaded from
- * an outdated URL.
+ * an outdated URL. Also changes feature names to keys if they are present in the dataset for backwards-compatibility.
+ *
  * @param dataset The dataset to validate thresholds against.
  * @param thresholds An array of `FeatureThresholds` to validate.
  * @returns a new array of thresholds, with any categorical thresholds converted to numeric thresholds if the feature is numeric
@@ -45,8 +46,8 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
   const newThresholds: FeatureThreshold[] = [];
 
   for (const threshold of thresholds) {
-    // `featureKey` may be a name for backwards-compatibility. Convert it to the key if it exists in the dataset.
-    // This will still match against the units below
+    // Under the old URL schema, `featureKey` may be a name. Convert it to a key if a matching feature exists in the dataset.
+    // Note that units will also need to match for the threshold to be valid for this dataset.
     let featureKey = threshold.featureKey;
     const matchedFeatureKey = dataset.findFeatureByKeyOrName(threshold.featureKey);
     if (matchedFeatureKey !== undefined) {
@@ -57,7 +58,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
     const isInDataset = featureData && featureData.units === threshold.units;
 
     if (isInDataset) {
-      // Update feature key just in case it was a name
+      // Threshold key + unit matches, so update feature key just in case it was a name
       threshold.featureKey = featureKey;
     }
 
@@ -135,6 +136,10 @@ export function getInRangeLUT(dataset: Dataset, thresholds: FeatureThreshold[]):
   return inRangeIds;
 }
 
+/**
+ * Sanitizes a string name to a key for internal use. Replaces all non-alphanumeric characters with underscores,
+ * and converts the string to lowercase.
+ */
 export function getKeyFromName(name: string): string {
   return name.toLowerCase().replaceAll(/[^a-z0-9_]/g, "_");
 }

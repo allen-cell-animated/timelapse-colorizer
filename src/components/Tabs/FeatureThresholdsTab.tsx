@@ -309,6 +309,8 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     // both in the current dataset to be enabled and editable.
     const featureData = props.dataset?.getFeatureData(threshold.featureKey);
     const disabled = featureData === undefined || featureData.units !== threshold.units;
+    // TODO: This will show the internal feature key name for any filters on features not in
+    // the current dataset. Show a different placeholder instead?
     const name = featureData?.name || threshold.featureKey;
     const featureLabel = threshold.units ? `${name} (${threshold.units})` : name;
 
