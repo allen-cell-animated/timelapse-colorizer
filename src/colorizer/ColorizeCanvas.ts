@@ -143,6 +143,8 @@ export default class ColorizeCanvas {
   private categoricalPalette: ColorRamp;
   private currentFrame: number;
 
+  private isMissingFrameCallback: (isMissing: boolean) => void;
+
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
     this.material = new ShaderMaterial({
@@ -206,6 +208,8 @@ export default class ColorizeCanvas {
     this.showScaleBar = false;
     this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
+
+    this.isMissingFrameCallback = () => {};
 
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
@@ -533,6 +537,10 @@ export default class ColorizeCanvas {
     });
   }
 
+  public setIsMissingFrameCallback(callback: (isMissing: boolean) => void): void {
+    this.isMissingFrameCallback = callback;
+  }
+
   /**
    * Sets the current frame of the canvas, loading the new frame data if the
    * frame number changes.
@@ -561,6 +569,8 @@ export default class ColorizeCanvas {
       return;
     }
 
+    let isMissingFile = false;
+
     if (backdrop.status === "fulfilled" && backdrop.value) {
       this.setUniform("backdrop", backdrop.value);
     } else {
@@ -571,6 +581,7 @@ export default class ColorizeCanvas {
           "Failed to load backdrop " + this.selectedBackdropKey + " for frame " + index + ": ",
           backdrop.reason
         );
+        isMissingFile = true;
       }
       this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
@@ -581,6 +592,7 @@ export default class ColorizeCanvas {
       if (frame.status === "rejected") {
         // Only show error message if the frame load encountered an error. (Null/undefined is okay)
         console.error("Failed to load frame " + index + ": ", frame.reason);
+        isMissingFile = true;
       }
       // Set to blank
       const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
@@ -588,6 +600,8 @@ export default class ColorizeCanvas {
       emptyFrame.needsUpdate = true;
       this.setUniform("frame", emptyFrame);
     }
+
+    this.isMissingFrameCallback(isMissingFile);
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently

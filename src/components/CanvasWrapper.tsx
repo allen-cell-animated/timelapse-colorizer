@@ -1,12 +1,26 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import styled from "styled-components";
 import { Color } from "three";
 
+import { NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
 
 import { AppThemeContext } from "./AppStyle";
 
 const CANVAS_BORDER_OFFSET_PX = 4;
+
+const MissingFileIconContainer = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  // TODO: Make this responsive to background color?
+  --fill-color: #0006;
+  fill: var(--fill-color);
+  color: var(--fill-color);
+  pointer-events: none;
+`;
 
 type CanvasWrapperProps = {
   canv: ColorizeCanvas;
@@ -63,7 +77,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const lastMousePositionPx = useRef([0, 0]);
   const theme = useContext(AppThemeContext);
 
+  const [showMissingFileIcon, setShowMissingFileIcon] = useState(false);
+
   // CANVAS PROPERTIES /////////////////////////////////////////////////
+
+  useEffect(() => {
+    canv.setIsMissingFrameCallback(setShowMissingFileIcon);
+  }, [canv, setShowMissingFileIcon]);
 
   // Mount the canvas to the wrapper's location in the document.
   useEffect(() => {
@@ -231,5 +251,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // RENDERING /////////////////////////////////////////////////
 
   canv.render();
-  return <div ref={canvasRef}></div>;
+  return (
+    <div style={{ position: "relative" }}>
+      <div ref={canvasRef}></div>
+      <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
+        <NoImageSVG aria-labelledby="no-image" />
+        <p id="no-image">
+          <b>
+            <i>Missing image data</i>
+          </b>
+        </p>
+      </MissingFileIconContainer>
+    </div>
+  );
 }
