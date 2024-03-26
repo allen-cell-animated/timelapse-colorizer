@@ -60,7 +60,7 @@ export default class Dataset {
 
   private arrayLoader: IArrayLoader;
   // Use map to enforce ordering
-  /** Maps, in order, from feature keys to feature data. */
+  /** Ordered map from feature keys to feature data. */
   private features: Map<string, FeatureData>;
 
   private outlierFile?: string;
@@ -196,7 +196,6 @@ export default class Dataset {
     return this.features.get(key);
   }
 
-  // TODO: Throw an error if undefined?
   public getFeatureName(key: string): string | undefined {
     return this.features.get(key)?.name;
   }
@@ -287,10 +286,6 @@ export default class Dataset {
   public get featureKeys(): string[] {
     return Array.from(this.features.keys());
   }
-
-  // public get featureNames(): string[] {
-  //   return Array.from(this.features.values()).map((f) => f.name);
-  // }
 
   public get numObjects(): number {
     const featureData = this.getFeatureData(this.featureKeys[0]);
