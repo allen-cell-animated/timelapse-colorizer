@@ -1,6 +1,6 @@
-import { App, ConfigProvider } from "antd";
-import React, { createContext, PropsWithChildren, ReactElement } from "react";
-import styled from "styled-components";
+import { theme as AntTheme, App, Checkbox, ConfigProvider } from "antd";
+import React, { createContext, PropsWithChildren, ReactElement, useState } from "react";
+import styled, { css } from "styled-components";
 
 type AppStyleProps = {
   className?: string;
@@ -21,6 +21,8 @@ const palette = {
   gray40: "#737373",
   gray50: "#575859",
   gray60: "#323233",
+  gray80: "#1f1f1f",
+  gray90: "#141414",
   success: "#2fc022",
   error: "#f92d20",
   link: "#0094FF",
@@ -30,7 +32,7 @@ const palette = {
 // regenerate the CssContainer along with the theme.
 // These could probably be added as props to AppStyle in the future!
 /** Top-level theme variables, used to drive the styling of the entire app. */
-const theme = {
+const DEFAULT_LIGHT_THEME = {
   color: {
     theme: palette.theme,
     themeDark: palette.themeDark,
@@ -96,156 +98,211 @@ const theme = {
   },
 };
 
-export const AppThemeContext = createContext(theme);
+const DEFAULT_DARK_THEME: typeof DEFAULT_LIGHT_THEME = {
+  ...DEFAULT_LIGHT_THEME,
+  color: {
+    text: {
+      primary: palette.gray20,
+      secondary: palette.gray20,
+      hint: palette.gray30,
+      disabled: palette.gray40,
+      button: palette.gray0,
+      error: palette.error,
+      success: palette.success,
+      theme: palette.theme,
+      link: palette.link,
+    },
+    layout: {
+      background: palette.gray80,
+      tabBackground: palette.gray50,
+      dividers: palette.gray60,
+      borders: palette.gray60,
+      modalOverlay: "rgba(0, 0, 0, 0.7)",
+    },
+    button: {
+      backgroundPrimary: palette.theme,
+      backgroundDisabled: palette.gray10,
+      outline: palette.theme,
+      outlineActive: palette.themeDark,
+      hover: palette.themeLight,
+      active: palette.themeDark,
+      focusShadow: "rgba(137, 98, 211, 0.06)",
+    },
+    dropdown: {
+      backgroundHover: palette.gray10,
+      backgroundSelected: palette.themeGray,
+    },
+    slider: {
+      rail: palette.gray10,
+    },
+    flag: {
+      background: palette.themeGrayDark,
+    },
+    theme: palette.theme,
+    themeDark: palette.themeDark,
+    themeLight: palette.themeLight,
+  },
+};
+
+export const AppThemeContext = createContext(DEFAULT_DARK_THEME);
 
 /** Applies theme as CSS variables that affect the rest of the document. */
-const CssContainer = styled.div`
-  @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+const CssContainer = styled.div<{ $theme: typeof DEFAULT_LIGHT_THEME }>`
+  ${({ $theme }) => {
+    return css`
+      @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
 
-  @font-face {
-    font-family: LatoExtended;
-    font-style: normal;
-    font-weight: 400;
-    src: url("/fonts/Lato-Regular.woff2") format("woff2"), url("/fonts/Lato-Regular.woff") format("woff"),
-      url("/fonts/Lato-Regular.ttf") format("truetype"), url("/fonts/Lato-Regular.eot") format("embedded-opentype");
-  }
+      @font-face {
+        font-family: LatoExtended;
+        font-style: normal;
+        font-weight: 400;
+        src: url("/fonts/Lato-Regular.woff2") format("woff2"), url("/fonts/Lato-Regular.woff") format("woff"),
+          url("/fonts/Lato-Regular.ttf") format("truetype"), url("/fonts/Lato-Regular.eot") format("embedded-opentype");
+      }
 
-  /* Text */
-  --color-text-primary: ${theme.color.text.primary};
-  --color-text-secondary: ${theme.color.text.secondary};
-  --color-text-hint: ${theme.color.text.hint};
-  --color-text-disabled: ${theme.color.text.disabled};
-  --color-text-button: ${theme.color.text.button};
-  --color-text-error: ${theme.color.text.error};
-  --color-text-success: ${theme.color.text.success};
-  --color-text-theme: ${theme.color.text.theme};
-  --color-text-link: ${theme.color.text.link};
+      /* Text */
+      --color-text-primary: ${$theme.color.text.primary};
+      --color-text-secondary: ${$theme.color.text.secondary};
+      --color-text-hint: ${$theme.color.text.hint};
+      --color-text-disabled: ${$theme.color.text.disabled};
+      --color-text-button: ${$theme.color.text.button};
+      --color-text-error: ${$theme.color.text.error};
+      --color-text-success: ${$theme.color.text.success};
+      --color-text-theme: ${$theme.color.text.theme};
+      --color-text-link: ${$theme.color.text.link};
 
-  /* Layout */
-  --color-background: ${theme.color.layout.background};
-  --color-dividers: ${theme.color.layout.dividers};
-  --color-borders: ${theme.color.layout.borders};
-  --color-modal-overlay: ${theme.color.layout.modalOverlay};
+      /* Layout */
+      --color-background: ${$theme.color.layout.background};
+      --color-dividers: ${$theme.color.layout.dividers};
+      --color-borders: ${$theme.color.layout.borders};
+      --color-modal-overlay: ${$theme.color.layout.modalOverlay};
 
-  /* Controls */
-  /* TODO: Possible issue with hover/active colors because the UI design
+      /* Controls */
+      /* TODO: Possible issue with hover/active colors because the UI design
   styling has the same active and hover colors (just with different outlines).
   Would dark/light theme be more descriptive? 
    */
-  --color-button: ${theme.color.button.backgroundPrimary};
-  --color-button-hover: ${theme.color.button.hover};
-  --color-button-active: ${theme.color.button.active};
-  --color-button-disabled: ${theme.color.button.backgroundDisabled};
+      --color-button: ${$theme.color.button.backgroundPrimary};
+      --color-button-hover: ${$theme.color.button.hover};
+      --color-button-active: ${$theme.color.button.active};
+      --color-button-disabled: ${$theme.color.button.backgroundDisabled};
 
-  --button-height: ${theme.controls.height}px;
-  --button-height-small: ${theme.controls.heightSmall}px;
-  --radius-control-small: ${theme.controls.radius}px;
+      --button-height: ${$theme.controls.height}px;
+      --button-height-small: ${$theme.controls.heightSmall}px;
+      --radius-control-small: ${$theme.controls.radius}px;
 
-  --color-dropdown-hover: ${theme.color.dropdown.backgroundHover};
-  --color-dropdown-selected: ${theme.color.dropdown.backgroundSelected};
+      --color-dropdown-hover: ${$theme.color.dropdown.backgroundHover};
+      --color-dropdown-selected: ${$theme.color.dropdown.backgroundSelected};
 
-  --color-collapse-hover: ${theme.color.theme};
-  --color-collapse-active: ${theme.color.themeDark};
+      --color-collapse-hover: ${$theme.color.theme};
+      --color-collapse-active: ${$theme.color.themeDark};
 
-  --color-focus-shadow: #f2ebfa;
+      --color-focus-shadow: #f2ebfa;
 
-  --color-flag-background: ${theme.color.flag.background};
-  --color-flag-text: ${theme.color.themeDark};
+      --color-flag-background: ${$theme.color.flag.background};
+      --color-flag-text: ${$theme.color.themeDark};
 
-  /* Fonts */
-  --default-font: ${theme.font.family};
-  --font-size-header: ${theme.font.size.header}px;
-  --font-size-section: ${theme.font.size.section}px;
-  --font-size-label: ${theme.font.size.label}px;
-  --font-size-content: ${theme.font.size.content}px;
-  --font-size-label-small: ${theme.font.size.labelSmall}px;
+      /* Fonts */
+      --default-font: ${$theme.font.family};
+      --font-size-header: ${$theme.font.size.header}px;
+      --font-size-section: ${$theme.font.size.section}px;
+      --font-size-label: ${$theme.font.size.label}px;
+      --font-size-content: ${$theme.font.size.content}px;
+      --font-size-label-small: ${$theme.font.size.labelSmall}px;
 
-  .ant-input-number-input {
-    text-align: right;
-  }
+      /** Div container */
+      width: 100%;
+      height: 100%;
+      background-color: var(--color-background);
 
-  // Override button styling to match design.
-  // Specifically, remove the drop shadow, and change the hover/active
-  // behavior so the border changes color instead of the background.
-  .ant-btn-primary:not(:disabled),
-  .ant-btn-default:not(:disabled) {
-    // disable drop shadow
-    box-shadow: none;
-  }
+      .ant-input-number-input {
+        text-align: right;
+      }
 
-  // Both buttons go to solid light theme color and change text color when hovered.
-  :where(.ant-btn-primary:not(:disabled):active),
-  :where(.ant-btn-primary:not(:disabled):hover),
-  .ant-btn-default:not(:disabled):active,
-  .ant-btn-default:not(:disabled):hover {
-    border-color: ${theme.color.button.hover};
-    background-color: ${theme.color.button.hover};
-    color: ${theme.color.text.button};
-  }
+      // Override button styling to match design.
+      // Specifically, remove the drop shadow, and change the hover/active
+      // behavior so the border changes color instead of the background.
+      .ant-btn-primary:not(:disabled),
+      .ant-btn-default:not(:disabled) {
+        // disable drop shadow
+        box-shadow: none;
+      }
 
-  // Use the darker theme color for the primary-style, solid-color button
-  .ant-btn-primary:where(:not(:disabled):active) {
-    border: 1px solid ${theme.color.button.backgroundPrimary};
-  }
+      // Both buttons go to solid light theme color and change text color when hovered.
+      :where(.ant-btn-primary:not(:disabled):active),
+      :where(.ant-btn-primary:not(:disabled):hover),
+      .ant-btn-default:not(:disabled):active,
+      .ant-btn-default:not(:disabled):hover {
+        border-color: ${$theme.color.button.hover};
+        background-color: ${$theme.color.button.hover};
+        color: ${$theme.color.text.button};
+      }
 
-  // Use the normal theme color for the button outline when hovered,
-  // then darken it when active. This way, the outline is always visible
-  // for the default button.
-  .ant-btn-default:not(:disabled):hover {
-    border: 1px solid ${theme.color.button.backgroundPrimary};
-  }
-  .ant-btn-default:not(:disabled):active {
-    border: 1px solid ${theme.color.button.outlineActive};
-  }
-  .ant-btn-default:not(:disabled) {
-    border-color: ${theme.color.button.outline};
-    color: ${theme.color.button.outline};
-  }
+      // Use the darker theme color for the primary-style, solid-color button
+      .ant-btn-primary:where(:not(:disabled):active) {
+        border: 1px solid ${$theme.color.button.backgroundPrimary};
+      }
 
-  font-family: var(--default-font);
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
-  margin: 0;
-  color: var(--color-text-primary);
+      // Use the normal theme color for the button outline when hovered,
+      // then darken it when active. This way, the outline is always visible
+      // for the default button.
+      .ant-btn-default:not(:disabled):hover {
+        border: 1px solid ${$theme.color.button.backgroundPrimary};
+      }
+      .ant-btn-default:not(:disabled):active {
+        border: 1px solid ${$theme.color.button.outlineActive};
+      }
+      .ant-btn-default:not(:disabled) {
+        border-color: ${$theme.color.button.outline};
+        color: ${$theme.color.button.outline};
+      }
 
-  h1 {
-    font-size: var(--font-size-header);
-    font-style: normal;
-    font-weight: 400;
-    margin: 5px 0;
-  }
+      font-family: var(--default-font);
+      font-style: normal;
+      font-weight: 400;
+      line-height: normal;
+      margin: 0;
+      color: var(--color-text-primary);
 
-  h2 {
-    font-size: var(--font-size-section);
-    font-style: normal;
-    font-weight: 400;
-  }
+      h1 {
+        font-size: var(--font-size-header);
+        font-style: normal;
+        font-weight: 400;
+        margin: 5px 0;
+      }
 
-  h3 {
-    font-size: var(--font-size-label);
-    font-style: normal;
-    font-weight: 400;
-    margin: 0;
-  }
+      h2 {
+        font-size: var(--font-size-section);
+        font-style: normal;
+        font-weight: 400;
+      }
 
-  p {
-    font-family: var(--default-font);
-    font-size: var(--font-size-content);
-    font-style: normal;
-    font-weight: 400;
-    margin: 2px;
-  }
+      h3 {
+        font-size: var(--font-size-label);
+        font-style: normal;
+        font-weight: 400;
+        margin: 0;
+      }
 
-  label {
-    font-family: var(--default-font);
-    font-size: var(--font-size-content);
-    font-style: normal;
-    font-weight: 400;
-    display: flex;
-    flex-direction: row;
-    gap: 2px;
-  }
+      p {
+        font-family: var(--default-font);
+        font-size: var(--font-size-content);
+        font-style: normal;
+        font-weight: 400;
+        margin: 2px;
+      }
+
+      label {
+        font-family: var(--default-font);
+        font-size: var(--font-size-content);
+        font-style: normal;
+        font-weight: 400;
+        display: flex;
+        flex-direction: row;
+        gap: 2px;
+      }
+    `;
+  }}
 `;
 
 /**
@@ -256,75 +313,94 @@ const CssContainer = styled.div`
  *   - children: All the children that should be rendered with the applied styling.
  */
 export default function AppStyle(props: PropsWithChildren<AppStyleProps>): ReactElement {
-  return (
-    <CssContainer className={props.className}>
-      <link rel="preconnect" href="https://fonts.gstatic.com" />
-      <link href={theme.font.resource} rel="stylesheet" />
+  const [useDarkTheme, setUseDarkTheme] = useState(false);
+  const theme = useDarkTheme ? DEFAULT_DARK_THEME : DEFAULT_LIGHT_THEME;
 
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: theme.color.theme,
-            colorLink: theme.color.theme,
-            colorLinkHover: theme.color.themeDark,
-            colorBorder: theme.color.layout.borders,
-            colorBorderSecondary: theme.color.layout.dividers,
-            controlHeight: theme.controls.height,
-            controlHeightSM: theme.controls.heightSmall,
-            fontFamily: theme.font.family,
-            borderRadiusLG: 6,
-            colorText: theme.color.text.primary,
-            colorTextPlaceholder: theme.color.text.hint,
-          },
-          components: {
-            Button: {
-              colorPrimaryActive: theme.color.button.hover,
-              colorPrimaryHover: theme.color.button.hover,
-              textHoverBg: theme.color.text.button,
-              colorBgTextHover: theme.color.text.button,
-              defaultBorderColor: theme.color.theme,
-              defaultColor: theme.color.theme,
-            },
-            Checkbox: {
-              borderRadiusSM: 2,
-              controlInteractiveSize: 16,
-              fontSize: theme.font.size.content,
-              paddingXS: 6,
-            },
-            Slider: {
-              // Override hover colors
-              dotActiveBorderColor: theme.color.theme,
-              dotBorderColor: theme.color.themeLight,
-              handleActiveColor: theme.color.themeLight,
-              handleColor: theme.color.theme,
-              trackBg: theme.color.theme,
-              railBg: theme.color.slider.rail,
-              railHoverBg: theme.color.slider.rail,
-              controlHeightSM: 20,
-              trackHoverBg: theme.color.themeLight,
-            },
-            Tabs: {
-              itemColor: theme.color.text.primary,
-              cardBg: theme.color.layout.tabBackground,
+  const { defaultAlgorithm, darkAlgorithm } = AntTheme;
+
+  return (
+    <AppThemeContext.Provider value={theme}>
+      <CssContainer className={props.className} $theme={theme}>
+        <link rel="preconnect" href="https://fonts.gstatic.com" />
+        <link href={theme.font.resource} rel="stylesheet" />
+        <ConfigProvider
+          theme={{
+            algorithm: theme === DEFAULT_LIGHT_THEME ? defaultAlgorithm : darkAlgorithm,
+            token: {
+              colorPrimary: theme.color.theme,
+              colorLink: theme.color.theme,
+              colorLinkHover: theme.color.themeDark,
               colorBorder: theme.color.layout.borders,
-              colorBorderSecondary: theme.color.layout.borders,
+              colorBorderSecondary: theme.color.layout.dividers,
+              controlHeight: theme.controls.height,
+              controlHeightSM: theme.controls.heightSmall,
+              fontFamily: theme.font.family,
+              borderRadiusLG: 6,
+              colorText: theme.color.text.primary,
+              colorTextPlaceholder: theme.color.text.hint,
+              colorBgMask: theme.color.layout.modalOverlay,
             },
-            Divider: {
-              marginLG: 0,
+            components: {
+              Button: {
+                colorPrimaryActive: theme.color.button.hover,
+                colorPrimaryHover: theme.color.button.hover,
+                textHoverBg: theme.color.text.button,
+                colorBgTextHover: theme.color.text.button,
+                defaultBorderColor: theme.color.theme,
+                defaultColor: theme.color.theme,
+              },
+              Checkbox: {
+                borderRadiusSM: 2,
+                controlInteractiveSize: 16,
+                fontSize: theme.font.size.content,
+                paddingXS: 6,
+              },
+              Slider: {
+                // Override hover colors
+                dotActiveBorderColor: theme.color.theme,
+                dotBorderColor: theme.color.themeLight,
+                handleActiveColor: theme.color.themeLight,
+                handleColor: theme.color.theme,
+                trackBg: theme.color.theme,
+                railBg: theme.color.slider.rail,
+                railHoverBg: theme.color.slider.rail,
+                controlHeightSM: 20,
+                trackHoverBg: theme.color.themeLight,
+              },
+              Tabs: {
+                itemColor: theme.color.text.primary,
+                cardBg: theme.color.layout.tabBackground,
+                colorBorder: theme.color.layout.borders,
+                colorBorderSecondary: theme.color.layout.borders,
+              },
+              Divider: {
+                marginLG: 0,
+              },
+              Modal: {
+                // Set z-index to 2000 here because Ant sets popups to 1050 by default, and modals to 1000.
+                zIndexBase: 2000,
+                zIndexPopupBase: 2000,
+                contentBg: theme.color.layout.background,
+              },
             },
-            Modal: {
-              // Set z-index to 2000 here because Ant sets popups to 1050 by default, and modals to 1000.
-              zIndexBase: 2000,
-              zIndexPopupBase: 2000,
-            },
-          },
-        }}
-      >
-        {/* App provides context for the static notification, modal, and message APIs.
-         * See https://ant.design/components/app.
-         */}
-        <App>{props.children}</App>
-      </ConfigProvider>
-    </CssContainer>
+          }}
+        >
+          {/* App provides context for the static notification, modal, and message APIs.
+           * See https://ant.design/components/app.
+           */}
+
+          <Checkbox
+            type="checkbox"
+            checked={useDarkTheme}
+            onChange={() => {
+              setUseDarkTheme(!useDarkTheme);
+            }}
+          >
+            Use dark theme
+          </Checkbox>
+          <App>{props.children}</App>
+        </ConfigProvider>
+      </CssContainer>
+    </AppThemeContext.Provider>
   );
 }
