@@ -1,5 +1,6 @@
-import { Button, Checkbox, Modal } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useState } from "react";
+import { InfoCircleOutlined } from "@ant-design/icons";
+import { App, Checkbox, Modal } from "antd";
+import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
 import { FlexColumn } from "../../styles/utils";
@@ -18,52 +19,66 @@ const defaultProps: Partial<SmallScreenWarningProps> = {
 export default function SmallScreenWarning(inputProps: SmallScreenWarningProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<SmallScreenWarningProps>;
 
-  const [showModal, setShowModal] = useState(false);
+  // This class has to do a lot of extra work because Ant Modal component doesn't have a convenient way to add icons.
+  // Instead, we have to use the static Modal API and then manipulate it to update and have state like a component.
+
+  // `isShowingModal` is required to prevent the modal from being rendered twice in the `useEffect` hook.
+  const isShowingModal = useRef(false);
+  const [currentModal, setCurrentModal] = useState<ReturnType<typeof Modal.info> | null>(null);
   const [allowWarning, setAllowWarning] = useLocalStorage(STORAGE_KEY_ALLOW_SMALL_SCREEN_WARNING, true);
   const { modalContainerRef } = useContext(DocumentContext);
 
+  const { modal } = App.useApp();
+
   const checkScreenSize = useCallback((): void => {
-    setShowModal(window.innerWidth < props.minWidthPx && allowWarning);
-  }, [props.minWidthPx, allowWarning]);
+    const shouldShowModal = window.innerWidth < props.minWidthPx;
+
+    // Toggle between showing and hiding the modal
+    if (shouldShowModal && !isShowingModal.current && allowWarning) {
+      isShowingModal.current = true;
+      setCurrentModal(modal.info({}));
+    } else if (!shouldShowModal && isShowingModal.current) {
+      isShowingModal.current = false;
+      currentModal?.destroy();
+      setCurrentModal(null);
+    }
+  }, [props.minWidthPx, allowWarning, currentModal]);
 
   useEffect(() => {
-    console.log("Added event listener");
+    checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
     return () => {
       window.removeEventListener("resize", checkScreenSize);
     };
   }, [checkScreenSize]);
 
-  return (
-    <Modal
-      open={showModal}
-      onCancel={() => {
-        setShowModal(false);
-      }}
-      getContainer={modalContainerRef || undefined}
-      footer={
-        <Button onClick={() => setShowModal(false)} type="primary">
-          Ok
-        </Button>
-      }
-      centered={true}
-      title="This app is not optimized for use on small screens"
-      modalRender={(node) => {
-        return <div>{node}</div>;
-      }}
-      style={{ maxWidth: "min(calc(100vw - 30px), 360px)" }}
-    >
-      <FlexColumn $gap={10}>
-        <p>For optimal experience, please try with a minimum screen width of {props.minWidthPx}px.</p>
-        <Checkbox
-          checked={!allowWarning}
-          onChange={() => {
-            setAllowWarning(!allowWarning);
-          }}
-        >
-          Don&apos;t show this message again
-        </Checkbox>
-      </FlexColumn>
-    </Modal>
-  );
+  // Update render for the modal
+  // TODO: Should this be centered?
+  // TODO: Should "Don't show this message again" getting checked be saved even if the user cancels instead of pressing OK?
+  if (currentModal !== null) {
+    currentModal.update({
+      title: "This app is not optimized for use on small screens",
+      getContainer: modalContainerRef || undefined,
+      content: (
+        <FlexColumn $gap={10}>
+          <p>For optimal experience, please try with a minimum screen width of {props.minWidthPx}px.</p>
+          <Checkbox
+            checked={!allowWarning}
+            onChange={() => {
+              setAllowWarning(!allowWarning);
+            }}
+          >
+            Don&apos;t show this message again
+          </Checkbox>
+        </FlexColumn>
+      ),
+      maskClosable: true,
+      onCancel: currentModal.destroy,
+      onOk: currentModal.destroy,
+      okText: "Ok",
+      icon: <InfoCircleOutlined style={{ color: "var(--color-text-theme)" }} />,
+    });
+  }
+
+  return <></>;
 }
