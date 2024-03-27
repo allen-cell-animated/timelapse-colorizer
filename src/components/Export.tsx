@@ -133,7 +133,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameIncrement, setFrameIncrement] = useState(1);
-  const [fps, setFps] = useState(30);
+  const [fps, setFps] = useState(12);
   const [videoBitsPerSecond, setVideoBitsPerSecond] = useState(VideoBitrate.MEDIUM);
 
   const [percentComplete, setPercentComplete] = useState(0);
