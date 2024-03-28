@@ -53,8 +53,6 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
   }, [checkScreenSize]);
 
   // Update render for the modal
-  // TODO: Should this be centered?
-  // TODO: Should "Don't show this message again" getting checked be saved even if the user cancels instead of pressing OK?
   if (currentModal !== null) {
     currentModal.update({
       title: "This app is not optimized for use on small screens",
