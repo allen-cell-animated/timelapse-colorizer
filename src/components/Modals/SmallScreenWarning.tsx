@@ -1,11 +1,11 @@
 import { InfoCircleOutlined } from "@ant-design/icons";
-import { App, Checkbox, Modal } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Checkbox, Modal } from "antd";
+import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
 import { FlexColumn } from "../../styles/utils";
 
-import { DocumentContext } from "../AppStyle";
+import { useStyledModal } from "./StyledModal";
 
 const STORAGE_KEY_ALLOW_SMALL_SCREEN_WARNING = "allowSmallScreenWarning";
 
@@ -26,9 +26,8 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
   const isShowingModal = useRef(false);
   const [currentModal, setCurrentModal] = useState<ReturnType<typeof Modal.info> | null>(null);
   const [allowWarning, setAllowWarning] = useLocalStorage(STORAGE_KEY_ALLOW_SMALL_SCREEN_WARNING, true);
-  const { modalContainerRef } = useContext(DocumentContext);
 
-  const { modal } = App.useApp();
+  const modal = useStyledModal();
 
   const checkScreenSize = useCallback((): void => {
     const shouldShowModal = window.innerWidth < props.minWidthPx;
@@ -56,7 +55,6 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
   if (currentModal !== null) {
     currentModal.update({
       title: "This app is not optimized for use on small screens",
-      getContainer: modalContainerRef || undefined,
       content: (
         <FlexColumn $gap={10}>
           <p>For optimal experience, please try with a minimum screen width of {props.minWidthPx}px.</p>
