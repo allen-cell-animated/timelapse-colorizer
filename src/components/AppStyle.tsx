@@ -335,6 +335,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               zIndexBase: 2000,
               zIndexPopupBase: 2000,
               titleFontSize: theme.font.size.section,
+              margin: 20,
             },
           },
         }}

@@ -77,6 +77,7 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
       onOk: currentModal.destroy,
       okText: "Ok",
       icon: <InfoCircleOutlined style={{ color: "var(--color-text-theme)" }} />,
+      centered: true,
     });
   }
 
