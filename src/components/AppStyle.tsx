@@ -1,5 +1,5 @@
 import { App, ConfigProvider } from "antd";
-import React, { createContext, PropsWithChildren, ReactElement, useEffect, useRef, useState } from "react";
+import React, { createContext, PropsWithChildren, ReactElement, useState } from "react";
 import styled from "styled-components";
 
 type AppStyleProps = {
@@ -261,17 +261,10 @@ const CssContainer = styled.div`
  *   - children: All the children that should be rendered with the applied styling.
  */
 export default function AppStyle(props: PropsWithChildren<AppStyleProps>): ReactElement {
-  // Provide a ref for modals to use as a container. This allows them to float over
-  // other elements in the app, and lets us use the <Modal> component from Ant instead
-  // of the static modal API through Ant.App, which is less flexible.
-  const modalContainerRef = useRef<HTMLDivElement>(null);
-
-  // Force a rerender so the context provider updates with the new div ref; otherwise
-  // the value will always be null.
-  const [, setForceRerender] = useState(false);
-  useEffect(() => {
-    setForceRerender(true);
-  }, []);
+  // Provide a div container element for modals. This allows them to float over
+  // other elements in the app and escape their local stacking contexts,
+  // while still obeying styling rules.
+  const [modalContainer, setModalContainer] = useState<HTMLDivElement | null>(null);
 
   return (
     <CssContainer className={props.className}>
@@ -341,8 +334,8 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
          * See https://ant.design/components/app.
          */}
         <App>
-          <div ref={modalContainerRef}>
-            <DocumentContext.Provider value={{ modalContainerRef: modalContainerRef.current }}>
+          <div ref={setModalContainer}>
+            <DocumentContext.Provider value={{ modalContainerRef: modalContainer }}>
               {props.children}
             </DocumentContext.Provider>
           </div>
