@@ -1,5 +1,5 @@
 import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, InputRef, MenuProps, Modal, Space } from "antd";
+import { Button, Dropdown, Input, InputRef, MenuProps, Space } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -10,8 +10,9 @@ import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 
 import Collection from "../colorizer/Collection";
-import { AppThemeContext, DocumentContext } from "./AppStyle";
+import { AppThemeContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
+import StyledModal from "./Modals/StyledModal";
 
 type LoadDatasetButtonProps = {
   /**
@@ -61,7 +62,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   props = { ...defaultProps, ...props };
 
   const theme = useContext(AppThemeContext);
-  const { modalContainerRef } = useContext(DocumentContext);
   const dropdownContextRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<InputRef>(null);
 
@@ -253,11 +253,10 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         <UploadOutlined />
         <p>Load</p>
       </TextButton>
-      <Modal
+      <StyledModal
         title={"Load a single dataset or collection"}
         open={isLoadModalOpen}
         onCancel={handleCancel}
-        getContainer={modalContainerRef || undefined}
         afterOpenChange={(open) => open && inputRef.current?.focus({ cursor: "all" })}
         footer={<Button onClick={handleCancel}>Cancel</Button>}
       >
@@ -302,7 +301,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
             </p>
           )}
         </div>
-      </Modal>
+      </StyledModal>
     </div>
   );
 }
