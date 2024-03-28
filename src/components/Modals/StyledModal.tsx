@@ -5,55 +5,52 @@ import React, { PropsWithChildren, ReactElement, useContext } from "react";
 
 import { DocumentContext } from "../AppStyle";
 
-type AppModal = useAppProps["modal"];
-type StaticModalFunction = useAppProps["modal"]["info"];
-// Extract parameter types from update method
-type StaticModalUpdateProps = Parameters<ReturnType<StaticModalFunction>["update"]>[0];
+type AntModalApi = useAppProps["modal"];
+type StaticModalFunction = AntModalApi["info"];
+type StaticModalUpdateFuncProps = Parameters<ReturnType<StaticModalFunction>["update"]>[0];
+type ContainerRef = HTMLDivElement | null;
+
+const addContainerToModalProps = (modalContainerRef: ContainerRef, props: ModalFuncProps): ModalFuncProps => {
+  const newProps = { ...props };
+  if (!newProps.getContainer) {
+    newProps.getContainer = modalContainerRef || undefined;
+  }
+  return newProps;
+};
 
 /**
- * Injects a modal container into the updater props if `getContainer` doesn't exist.
- * Handles case where prop can either be an update method or an object.
+ * Injects a modal container into the modal updater function's props if `getContainer` doesn't exist.
+ * Handles case where the prop can either be an update method or an object.
  */
-const addContainerToUpdaterProps = (
-  modalContainerRef: HTMLDivElement | null,
-  props: StaticModalUpdateProps
-): StaticModalUpdateProps => {
+const addContainerToUpdateFuncProps = (
+  modalContainerRef: ContainerRef,
+  props: StaticModalUpdateFuncProps
+): StaticModalUpdateFuncProps => {
   // Props can either be an object or a function that takes in the old object and returns a new one
   if (props instanceof Function) {
-    // Wrap the function
     const propFunction = props; // Rename for clarity
+    // Wrap the function
     return (oldProps) => {
-      const updatedProps = propFunction(oldProps);
-      if (!updatedProps.getContainer) {
-        return { ...updatedProps, getContainer: modalContainerRef || undefined };
-      }
-      return updatedProps;
+      return addContainerToModalProps(modalContainerRef, propFunction(oldProps));
     };
   } else {
-    const newProps = { ...props };
-    if (!newProps.getContainer) {
-      newProps.getContainer = modalContainerRef || undefined;
-    }
-    return newProps;
+    return addContainerToModalProps(modalContainerRef, props);
   }
 };
 
 /**
- * Wraps Ant's static modal functions and injects the modal container ref into the props for both
- * the function and its returned updater method.
+ * Wrapper for Ant's static modal functions. The wrapper injects the modal container reference
+ * into the props for both the static modal function and its returned updater method.
  */
 const wrappedStaticModalFunctionFactory = (
-  modalContainerRef: HTMLDivElement | null,
+  modalContainerRef: ContainerRef,
   modalFunction: StaticModalFunction
 ): StaticModalFunction => {
   return (props: ModalFuncProps) => {
-    const newProps = { ...props };
-    if (!newProps.getContainer) {
-      newProps.getContainer = modalContainerRef || undefined;
-    }
+    const newProps = addContainerToModalProps(modalContainerRef, props);
     const { destroy, update } = modalFunction(newProps);
-    const wrappedUpdate: typeof update = (props: StaticModalUpdateProps) => {
-      return update(addContainerToUpdaterProps(modalContainerRef, props));
+    const wrappedUpdate: typeof update = (props: StaticModalUpdateFuncProps) => {
+      return update(addContainerToUpdateFuncProps(modalContainerRef, props));
     };
     return { destroy, update: wrappedUpdate };
   };
@@ -78,7 +75,7 @@ const wrappedStaticModalFunctionFactory = (
  * export default MyButton;
  * ```
  */
-export const useStyledModal = (): AppModal => {
+export const useStyledModal = (): AntModalApi => {
   const { modalContainerRef } = useContext(DocumentContext);
   const { modal } = App.useApp();
   return {
