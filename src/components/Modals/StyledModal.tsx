@@ -7,8 +7,8 @@ import { DocumentContext } from "../AppStyle";
 
 type AntModalApi = useAppProps["modal"];
 type AntModalApiFunction = AntModalApi["info"];
-// The Ant Modal API returns a tuple with a destroy method and an updater method.
-// Get the type of the updater method's props, so we can wrap it.
+// The Ant Modal API functions return a tuple with `destroy` and `update` callbacks.
+// Get the type of the update method's arguments, so we can wrap it.
 type ModalUpdateMethodProps = Parameters<ReturnType<AntModalApiFunction>["update"]>[0];
 type ContainerRef = HTMLDivElement | null;
 

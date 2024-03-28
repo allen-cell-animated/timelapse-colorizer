@@ -211,6 +211,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       return;
     }
 
+    // TODO: Close the modal if the recording is done, but the modal is still open.
     // Currently recording; user must be prompted to confirm
     modal.confirm({
       title: "Cancel export",
