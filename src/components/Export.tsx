@@ -9,9 +9,9 @@ import { FlexRow } from "../styles/utils";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
-import { AppThemeContext, DocumentContext } from "./AppStyle";
+import { AppThemeContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
-import StyledModal from "./Modals/StyledModal";
+import StyledModal, { useStyledModal } from "./Modals/StyledModal";
 import { SettingsContainer, SettingsItem } from "./SettingsContainer";
 import SpinBox from "./SpinBox";
 
@@ -99,7 +99,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ExportButtonProps>;
 
   const theme = useContext(AppThemeContext);
-  const { modalContainerRef } = useContext(DocumentContext);
 
   const enum RangeMode {
     ALL,
@@ -116,7 +115,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   // Used here for the cancel modal and the success notification.
   // Note: notification API seems to only place notifications at the top-level under the
   // <body> tag, which causes some issues with styling.
-  const { modal, notification } = App.useApp();
+  const { notification } = App.useApp();
+  const modal = useStyledModal();
 
   const originalFrameRef = useRef(props.currentFrame);
   const [isModalOpen, _setIsModalOpen] = useState(false);
@@ -219,12 +219,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       cancelText: "Back",
       centered: true,
       icon: null,
-      getContainer: modalContainerRef || undefined,
       onOk: () => {
         stopRecording(true);
       },
     });
-  }, [isRecording, modalContainerRef, stopRecording]);
+  }, [isRecording, stopRecording]);
 
   /**
    * Stop the recording without closing the modal.
