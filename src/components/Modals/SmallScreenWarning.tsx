@@ -20,9 +20,10 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
   const props = { ...defaultProps, ...inputProps } as Required<SmallScreenWarningProps>;
 
   // This class has to do a lot of extra work because Ant Modal component doesn't have a convenient way to add icons.
-  // Instead, we have to use the static Modal API and then manipulate it to update and have state like a component.
+  // Instead, we have to use the static Modal API (through `useStyledModal`) and then manipulate it to update with
+  // state like a component.
 
-  // `isShowingModal` is required to prevent the modal from being rendered twice in the `useEffect` hook.
+  // `isShowingModal` is required to prevent the modal from being rendered during  in the `useEffect` hook.
   const isShowingModal = useRef(false);
   const [currentModal, setCurrentModal] = useState<ReturnType<typeof Modal.info> | null>(null);
   const [allowWarning, setAllowWarning] = useLocalStorage(STORAGE_KEY_ALLOW_SMALL_SCREEN_WARNING, true);
