@@ -11,9 +11,10 @@ import { DocumentContext } from "../AppStyle";
 export default function StyledModal(props: PropsWithChildren<ModalProps>): ReactElement {
   const { modalContainerRef } = useContext(DocumentContext);
 
-  if (!props.getContainer) {
-    props.getContainer = modalContainerRef || undefined;
+  const newProps = { ...props };
+  if (!newProps.getContainer) {
+    newProps.getContainer = modalContainerRef || undefined;
   }
 
-  return <Modal {...props}>{props.children}</Modal>;
+  return <Modal {...newProps}>{newProps.children}</Modal>;
 }
