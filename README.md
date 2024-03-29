@@ -21,7 +21,7 @@ for more details about potential future features!
 
 ### Opening New Datasets
 
-Nucmorph Colorizer-compatible datasets hosted over HTTPS can be loaded directly from the interface! More details can be found in the [data format specification](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/DATA_FORMAT.md).
+Timelapse Feature Explorer-compatible datasets hosted over HTTPS can be loaded directly from the interface! More details can be found in the [data format specification](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/DATA_FORMAT.md).
 
 Click the **Load** button in the top right to open a URL.
 
@@ -31,7 +31,7 @@ Note: If your dataset is hosted via **HTTP** rather than HTTPS, you'll need to i
 
 ## Installation
 
-Installing is optional! You can use the [hosted version of Nucmorph Colorizer](https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html)
+Installing is optional! You can use the [hosted version of Timelapse Feature Explorer](https://timelapse.allencell.org)
 to access our existing HTTPS-hosted datasets without installing the project.
 
 **Prerequisites:**
