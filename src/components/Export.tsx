@@ -1,5 +1,5 @@
 import { CheckCircleOutlined } from "@ant-design/icons";
-import { App, Button, Card, Input, InputNumber, Modal, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
+import { App, Button, Card, Input, InputNumber, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
@@ -10,8 +10,9 @@ import { FlexRow } from "../styles/utils";
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
 import Mp4VideoRecorder, { VideoBitrate } from "../colorizer/recorders/Mp4VideoRecorder";
-import { AppThemeContext } from "./AppStyle";
+import { AppThemeContext, DocumentContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
+import StyledModal from "./Modals/StyledModal";
 import { SettingsContainer, SettingsItem } from "./SettingsContainer";
 import SpinBox from "./SpinBox";
 
@@ -99,6 +100,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ExportButtonProps>;
 
   const theme = useContext(AppThemeContext);
+  const { modalContainerRef } = useContext(DocumentContext);
 
   const enum RangeMode {
     ALL,
@@ -116,10 +118,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   // Note: notification API seems to only place notifications at the top-level under the
   // <body> tag, which causes some issues with styling.
   const { modal, notification } = App.useApp();
-  const modalContextRef = useRef<HTMLDivElement>(null);
 
   const originalFrameRef = useRef(props.currentFrame);
-  const [isLoadModalOpen, _setIsLoadModalOpen] = useState(false);
+  const [isModalOpen, _setIsModalOpen] = useState(false);
   const [isRecording, _setIsRecording] = useState(false);
   const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
 
@@ -150,12 +151,12 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
   // Override setIsLoadModalOpen to store the current frame whenever the modal opens.
   // This is so we can reset to it when the modal is closed.
-  const setIsLoadModalOpen = (isOpen: boolean): void => {
+  const setIsModalOpen = (isOpen: boolean): void => {
     if (isOpen) {
       originalFrameRef.current = props.currentFrame;
       setErrorText(null);
     }
-    _setIsLoadModalOpen(isOpen);
+    _setIsModalOpen(isOpen);
   };
 
   // Notify parent via props if recording state changes
@@ -195,7 +196,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       setIsPlayingCloseAnimation(false);
       setPercentComplete(0);
       if (closeModal) {
-        setIsLoadModalOpen(false);
+        setIsModalOpen(false);
       }
     },
     [props.setFrame]
@@ -207,7 +208,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const handleCancel = useCallback(() => {
     // Not recording; exit
     if (!isRecording) {
-      setIsLoadModalOpen(false);
+      setIsModalOpen(false);
       return;
     }
 
@@ -219,12 +220,12 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       cancelText: "Back",
       centered: true,
       icon: null,
-      getContainer: modalContextRef.current || undefined,
+      getContainer: modalContainerRef || undefined,
       onOk: () => {
         stopRecording(true);
       },
     });
-  }, [isRecording, modalContextRef.current, stopRecording]);
+  }, [isRecording, modalContainerRef, stopRecording]);
 
   /**
    * Stop the recording without closing the modal.
@@ -424,11 +425,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   );
 
   return (
-    <div ref={modalContextRef}>
+    <div>
       {/* Export button */}
       <TextButton
         onClick={() => {
-          setIsLoadModalOpen(true);
+          setIsModalOpen(true);
           props.onClick();
         }}
         disabled={props.disabled}
@@ -438,15 +439,14 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       </TextButton>
 
       {/* Export modal */}
-      <Modal
+      <StyledModal
         title={"Export"}
-        open={isLoadModalOpen}
+        open={isModalOpen}
         onCancel={handleCancel}
         cancelButtonProps={{ hidden: true }}
         centered={true}
         // Don't allow cancellation of modal by clicking off it when the recording is happening
         maskClosable={!isRecording}
-        getContainer={modalContextRef.current || undefined}
         footer={modalFooter}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px", marginTop: "15px" }}>
@@ -608,7 +608,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </Button>
           </HorizontalDiv>
         </div>
-      </Modal>
+      </StyledModal>
     </div>
   );
 }
