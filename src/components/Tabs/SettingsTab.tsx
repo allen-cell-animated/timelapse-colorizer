@@ -75,12 +75,11 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           <SettingsItem label="Brightness">
             <HiddenMarksSlider
               style={{ maxWidth: "200px", width: "100%" }}
-              min={50}
-              max={150}
-              step={10}
+              min={0}
+              max={200}
               value={props.config.backdropBrightness}
               onChange={(newBrightness: number) => props.updateConfig({ backdropBrightness: newBrightness })}
-              marks={makeAntSliderMarks([50, 100, 150])}
+              marks={makeAntSliderMarks([100])}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </SettingsItem>
@@ -90,10 +89,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               style={{ maxWidth: "200px", width: "100%" }}
               min={0}
               max={100}
-              step={10}
               value={props.config.backdropSaturation}
               onChange={(saturation) => props.updateConfig({ backdropSaturation: saturation })}
-              marks={makeAntSliderMarks([0, 50, 100])}
+              marks={makeAntSliderMarks([100])}
               tooltip={{ formatter: (value) => `${value}%` }}
             />
           </SettingsItem>
@@ -126,6 +124,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               max={100}
               value={props.config.objectOpacity}
               onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
+              tooltip={{ formatter: (value) => `${value}%` }}
+              marks={makeAntSliderMarks([100])}
             />
           </SettingsItem>
 
