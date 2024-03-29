@@ -1,5 +1,5 @@
 import { InfoCircleOutlined } from "@ant-design/icons";
-import { Checkbox, Modal } from "antd";
+import { Checkbox } from "antd";
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -23,12 +23,11 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
   // Instead, we have to use the static Modal API (through `useStyledModal`) and then manipulate it to update with
   // state like a component.
 
-  // `isShowingModal` is required to prevent the modal from being rendered during  in the `useEffect` hook.
-  const isShowingModal = useRef(false);
-  const [currentModal, setCurrentModal] = useState<ReturnType<typeof Modal.info> | null>(null);
-  const [allowWarning, setAllowWarning] = useLocalStorage(STORAGE_KEY_ALLOW_SMALL_SCREEN_WARNING, true);
-
   const modal = useStyledModal();
+  // `isShowingModal` is required to prevent the modal from being rendered twice on initial page load in the `useEffect` hook.
+  const isShowingModal = useRef(false);
+  const [currentModal, setCurrentModal] = useState<ReturnType<typeof modal.info> | null>(null);
+  const [allowWarning, setAllowWarning] = useLocalStorage(STORAGE_KEY_ALLOW_SMALL_SCREEN_WARNING, true);
 
   const checkScreenSize = useCallback((): void => {
     const shouldShowModal = window.innerWidth < props.minWidthPx;
@@ -36,6 +35,7 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
     // Toggle between showing and hiding the modal
     if (shouldShowModal && !isShowingModal.current && allowWarning) {
       isShowingModal.current = true;
+      // Create new empty modal; style will be updated below
       setCurrentModal(modal.info({}));
     } else if (!shouldShowModal && isShowingModal.current) {
       isShowingModal.current = false;
@@ -45,6 +45,7 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
   }, [props.minWidthPx, allowWarning, currentModal]);
 
   useEffect(() => {
+    // Check on initial load and on resize
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
     return () => {
