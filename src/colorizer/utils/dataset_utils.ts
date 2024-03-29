@@ -1,6 +1,5 @@
 // Defines types for working with dataset manifests, and methods for
 // updating manifests from one version to another.
-import { getKeyFromName } from "./data_utils";
 import { Spread } from "./type_utils";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -106,7 +105,6 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
       const featureMetadata = manifest.featureMetadata?.[featureName];
       features.push({
         name: featureName,
-        key: getKeyFromName(featureName),
         data: featurePath,
         units: featureMetadata?.units || undefined,
         type: featureMetadata?.type || undefined,
