@@ -49,7 +49,7 @@ import Export from "./components/Export";
 import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
-import LabeledRangeSlider from "./components/LabeledRangeSlider";
+import LabeledSlider from "./components/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
@@ -818,7 +818,8 @@ function Viewer(): ReactElement {
                           disabled={disableUi}
                         />
                       ) : (
-                        <LabeledRangeSlider
+                        <LabeledSlider
+                          type="range"
                           min={colorRampMin}
                           max={colorRampMax}
                           minSliderBound={dataset?.getFeatureData(featureKey)?.min}
