@@ -1,4 +1,5 @@
-import { InputNumber, Slider } from "antd";
+import { InputNumber, Slider, SliderSingleProps } from "antd";
+import { SliderRangeProps } from "antd/es/slider";
 import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react";
 import styled, { css } from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
@@ -6,12 +7,10 @@ import { clamp } from "three/src/math/MathUtils";
 import { numberToStringDecimal, setMaxDecimalPrecision } from "../colorizer/utils/math_utils";
 import { excludeUndefinedValues } from "../colorizer/utils/react_utils";
 
-type LabeledRangeSliderProps = {
+type BaseLabeledSliderProps = {
+  type: "range" | "value";
   disabled?: boolean;
-  /** Currently selected min range value.*/
-  min: number;
-  /** Currently selected max range value.*/
-  max: number;
+
   /** The lower bound for the slider. If undefined, uses Number.NaN. */
   minSliderBound?: number;
   /** The upper bound for the slider. If undefined, uses Number.NaN. */
@@ -24,16 +23,35 @@ type LabeledRangeSliderProps = {
   /** Minimum number of steps for the slider to use if integer steps cannot be used.
    * Default is 25. */
   minSteps?: number;
-  /** Marks to draw on the range slider. */
+  /** Marks to draw on the slider. */
   marks?: number[] | undefined;
   // TODO: Add a way to fetch significant figures for each feature. This is a temporary fix
   // and may not work for all features. Use scientific notation maybe?
   maxDecimalsToDisplay?: number;
+  numberFormatter?: (value?: number) => React.ReactNode;
+};
 
+type LabeledRangeSliderProps = BaseLabeledSliderProps & {
+  type: "range";
+  /** Currently selected min range value.*/
+  min: number;
+  /** Currently selected max range value.*/
+  max: number;
   onChange: (min: number, max: number) => void;
 };
 
-const defaultProps: Partial<LabeledRangeSliderProps> = {
+type LabeledValueSliderProps = BaseLabeledSliderProps & {
+  type: "value";
+  value: number;
+  /** Default value to return to if the input is invalid/NaN */
+  defaultValue: number;
+  onChange: (value?: number) => void;
+};
+
+type LabeledSliderProps = LabeledRangeSliderProps | LabeledValueSliderProps;
+
+const defaultProps: Partial<LabeledSliderProps> = {
+  type: "range",
   minInputBound: Number.MIN_SAFE_INTEGER,
   maxInputBound: Number.MAX_SAFE_INTEGER,
   minSliderBound: Number.NaN,
@@ -103,20 +121,35 @@ const SliderLabel = styled.p<{ $disabled?: boolean }>`
 ///////////////////////////////////////////////////////////////////
 
 /**
- * Creates a Slider with two number input fields on either side. The slider is bounded
+ * Creates a Slider with numberic input fields. The slider is bounded
  * separately from the min and max value bounds and acts as a suggested range.
  */
-export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps): ReactElement {
-  const props = { ...defaultProps, ...excludeUndefinedValues(inputProps) } as Required<LabeledRangeSliderProps>;
+export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElement {
+  const props = { ...defaultProps, ...excludeUndefinedValues(inputProps) } as Required<LabeledSliderProps>;
 
   // TODO: Could add a controlled/uncontrolled mode to this component, maybe with
   // a custom hook? (e.g., use state if min/max are undefined, otherwise use props)
 
+  const valueInput = useRef<HTMLInputElement>(null);
   const minInput = useRef<HTMLInputElement>(null);
   const maxInput = useRef<HTMLInputElement>(null);
 
   // Broadcast changes to input fields
-  const handleValueChange = (minValue: number, maxValue: number): void => {
+  const handleValueChange = (value: number): void => {
+    if (props.type !== "value") {
+      return;
+    }
+    if (Number.isNaN(value)) {
+      value = props.defaultValue;
+    }
+    value = clamp(value, props.minInputBound, props.maxInputBound);
+    props.onChange(value);
+  };
+
+  const handleRangeChange = (minValue: number, maxValue: number): void => {
+    if (props.type !== "range") {
+      return;
+    }
     // Clamp values
     if (Number.isNaN(minValue)) {
       minValue = props.min;
@@ -137,13 +170,23 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
 
   // Handle changes to input field. This only triggers with enter or blur,
   // to prevent the input values from swapping mid-input.
+  const handleValueInputChange: ReactEventHandler<HTMLInputElement> = (): void => {
+    if (props.type === "value") {
+      const value = Number.parseFloat(valueInput.current!.value);
+      handleValueChange(value);
+    }
+  };
   const handleMinInputChange: ReactEventHandler<HTMLInputElement> = (): void => {
-    const value = Number.parseFloat(minInput.current!.value);
-    handleValueChange(value, props.max);
+    if (props.type === "range") {
+      const value = Number.parseFloat(minInput.current!.value);
+      handleRangeChange(value, props.max);
+    }
   };
   const handleMaxInputChange: ReactEventHandler<HTMLInputElement> = (): void => {
-    const value = Number.parseFloat(maxInput.current!.value);
-    handleValueChange(props.min, value);
+    if (props.type === "range") {
+      const value = Number.parseFloat(maxInput.current!.value);
+      handleRangeChange(props.min, value);
+    }
   };
 
   let stepSize = (props.maxSliderBound - props.minSliderBound) / props.minSteps;
@@ -162,58 +205,86 @@ export default function LabeledRangeSlider(inputProps: LabeledRangeSliderProps):
   }
 
   // Use a placeholder if the min/max bounds are undefined
-  const minSliderLabel = Number.isNaN(props.minSliderBound)
-    ? "--"
-    : numberToStringDecimal(props.minSliderBound, props.maxDecimalsToDisplay);
-  const maxSliderLabel = Number.isNaN(props.maxSliderBound)
-    ? "--"
-    : numberToStringDecimal(props.maxSliderBound, props.maxDecimalsToDisplay);
+
+  const defaultNumberFormatter = (value?: number) => numberToStringDecimal(value, props.maxDecimalsToDisplay);
+  const numberFormatter = props.numberFormatter ? props.numberFormatter : defaultNumberFormatter;
+
+  const minSliderLabel = Number.isNaN(props.minSliderBound) ? "--" : numberFormatter(props.minSliderBound);
+  const maxSliderLabel = Number.isNaN(props.maxSliderBound) ? "--" : numberFormatter(props.maxSliderBound);
+
+  // Change value/onChange properties based on the type of slider
+  const sliderProps: SliderSingleProps | SliderRangeProps =
+    props.type === "value"
+      ? {
+          value: props.value,
+          onChange: handleValueChange,
+        }
+      : {
+          value: [props.min, props.max],
+          onChange: (value: [number, number]) => handleRangeChange(value[0], value[1]),
+          range: { draggableTrack: true },
+        };
 
   return (
     <ComponentContainer>
-      <InputNumber
-        ref={minInput}
-        size="small"
-        style={{ width: "80px" }}
-        value={props.min}
-        onPressEnter={handleMinInputChange}
-        onBlur={handleMinInputChange}
-        controls={false}
-        disabled={props.disabled}
-      />
+      {
+        // Conditionally render either min or value input
+        props.type === "value" ? (
+          <InputNumber
+            ref={valueInput}
+            size="small"
+            style={{ width: "80px" }}
+            value={props.value}
+            onPressEnter={handleValueInputChange}
+            onBlur={handleValueInputChange}
+            controls={false}
+            disabled={props.disabled}
+          />
+        ) : (
+          <InputNumber
+            ref={minInput}
+            size="small"
+            style={{ width: "80px" }}
+            value={props.min}
+            onPressEnter={handleMinInputChange}
+            onBlur={handleMinInputChange}
+            controls={false}
+            disabled={props.disabled}
+          />
+        )
+      }
       <SliderContainer>
         <Slider
+          {...sliderProps}
           min={props.minSliderBound}
           max={props.maxSliderBound}
-          range={{ draggableTrack: true }}
-          value={[props.min, props.max]}
           disabled={props.disabled}
-          onChange={(value: [number, number]) => {
-            handleValueChange(value[0], value[1]);
-          }}
           marks={marks}
           step={stepSize}
           // Show formatted decimals in tooltip
           // TODO: Is this better than showing the precise value?
           tooltip={{
-            formatter: (value) => numberToStringDecimal(value, props.maxDecimalsToDisplay),
+            formatter: numberFormatter,
             open: props.disabled ? false : undefined, // Hide tooltip when disabled
           }}
         />
+
         <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
         <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
-      <InputNumber
-        ref={maxInput}
-        size="small"
-        type="number"
-        style={{ width: "80px" }}
-        value={props.max}
-        onPressEnter={handleMaxInputChange}
-        onBlur={handleMaxInputChange}
-        controls={false}
-        disabled={props.disabled}
-      />
+      {props.type === "range" ? (
+        <InputNumber
+          ref={maxInput}
+          size="small"
+          type="number"
+          style={{ width: "80px" }}
+          value={props.max}
+          onPressEnter={handleMaxInputChange}
+          onBlur={handleMaxInputChange}
+          controls={false}
+          disabled={props.disabled}
+        />
+      ) : null}
     </ComponentContainer>
   );
 }
