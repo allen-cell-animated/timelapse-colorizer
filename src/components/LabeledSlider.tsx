@@ -206,7 +206,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
 
   // Use a placeholder if the min/max bounds are undefined
 
-  const defaultNumberFormatter = (value?: number) => numberToStringDecimal(value, props.maxDecimalsToDisplay);
+  const defaultNumberFormatter = (value?: number): string => numberToStringDecimal(value, props.maxDecimalsToDisplay);
   const numberFormatter = props.numberFormatter ? props.numberFormatter : defaultNumberFormatter;
 
   const minSliderLabel = Number.isNaN(props.minSliderBound) ? "--" : numberFormatter(props.minSliderBound);
