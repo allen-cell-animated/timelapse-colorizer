@@ -730,8 +730,8 @@ function Viewer(): ReactElement {
 
       <Header>
         <h3>{collection?.metadata.name ?? null}</h3>
-        <FlexRowAlignCenter $gap={12}>
-          <FlexRowAlignCenter $gap={2}>
+        <FlexRowAlignCenter $gap={12} $wrap="wrap">
+          <FlexRowAlignCenter $gap={2} $wrap="wrap">
             <LoadDatasetButton onLoad={handleDatasetLoad} currentResourceUrl={collection?.url || datasetKey} />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}

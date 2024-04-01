@@ -194,7 +194,7 @@ export default function LandingPage(): ReactElement {
   return (
     <>
       <Header>
-        <FlexRowAlignCenter $gap={15}>
+        <FlexRowAlignCenter $gap={15} $wrap="wrap">
           <LoadDatasetButton onLoad={onDatasetLoad} currentResourceUrl={""} />
           <HelpDropdown />
         </FlexRowAlignCenter>
