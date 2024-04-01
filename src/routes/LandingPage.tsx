@@ -18,6 +18,48 @@ import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
 import { landingPageContent } from "./LandingPageContent";
 
+const BannerContainer = styled(FlexColumnAlignCenter)`
+  position: relative;
+  --container-padding: 20px;
+  padding: 30px 20px;
+  overflow: hidden;
+  margin: 0;
+`;
+
+const BannerTextContainer = styled(FlexColumn)`
+  --padding: 30px;
+  max-width: calc(1060px - 2 * var(--padding));
+  width: calc(90vw - 2 * (var(--padding) + var(--container-padding)));
+  padding: var(--padding);
+  border-radius: 5px;
+  background-color: color-mix(in srgb, var(--color-background) 80%, transparent);
+  gap: 10px;
+
+  & > h1 {
+    margin-top: 0;
+  }
+
+  & > p {
+    font-size: var(--font-size-label);
+  }
+`;
+
+const BannerVideo = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ded9ef;
+  z-index: -1;
+
+  & > video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
 const ContentContainer = styled(FlexColumn)`
   max-width: 1060px;
   width: calc(90vw - 40px);
@@ -228,6 +270,23 @@ export default function LandingPage(): ReactElement {
           <HelpDropdown />
         </FlexRowAlignCenter>
       </Header>
+      <BannerContainer>
+        <BannerVideo>
+          <video autoPlay loop muted>
+            <source src="/banner_video.mp4" type="video/mp4" />
+          </video>
+        </BannerVideo>
+        <BannerTextContainer>
+          <h1>Welcome to Timelapse Feature Explorer</h1>
+          <p>
+            The Timelapse Feature Explorer is a web-based application designed for the interactive visualization and
+            analysis of segmented time-series microscopy data. Ideal for biomedical researchers and other data
+            professionals, it offers an intuitive set of tools for scientific research and deeper understanding of
+            dynamic datasets.
+          </p>
+        </BannerTextContainer>
+      </BannerContainer>
+
       <br />
       <ContentContainer $gap={10}>
         <FlexColumnAlignCenter $gap={10}>
