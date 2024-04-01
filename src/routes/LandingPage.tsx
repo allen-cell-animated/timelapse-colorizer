@@ -1,7 +1,7 @@
 import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Tooltip } from "antd";
-import React, { ReactElement, useContext } from "react";
+import React, { ReactElement } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
@@ -12,7 +12,6 @@ import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
 import Collection from "../colorizer/Collection";
-import { AppThemeContext } from "../components/AppStyle";
 import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
@@ -176,10 +175,6 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
 `;
 
 export default function LandingPage(): ReactElement {
-  // Removing this line causes buttons to stop rendering correctly even on OTHER pages.
-  // TODO: Ant???? Hello???????
-  useContext(AppThemeContext);
-
   const navigate = useNavigate();
 
   // Behavior
