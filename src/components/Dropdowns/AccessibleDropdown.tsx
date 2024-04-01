@@ -91,18 +91,19 @@ const MainButton = styled(Button)<{ $open: boolean; $type: AccessibleDropdownPro
   ${(props) => {
     if (props.$type === "outlined") {
       return css`
-        &.ant-btn:not(:disabled) {
+        // Extra classnames to increase selector specificity; otherwise gets overridden by root styling
+        &.ant-btn.ant-btn-default:not(:disabled) {
           border-color: var(--color-borders);
           color: var(--color-text);
         }
 
-        &.ant-btn:not(:disabled):hover {
+        &.ant-btn.ant-btn-default:not(:disabled):hover {
           background-color: transparent;
           border-color: var(--color-button);
           color: var(--color-text); // Repeated to override color changes
         }
 
-        &.ant-btn:not(:disabled):active {
+        &.ant-btn.ant-btn-default:not(:disabled):active {
           background-color: transparent;
           border-color: var(--color-button-active);
           color: var(--color-text);
