@@ -17,20 +17,25 @@ import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
 import { landingPageContent } from "./LandingPageContent";
 
-const BannerContainer = styled(FlexColumnAlignCenter)`
+const Banner = styled(FlexColumnAlignCenter)`
   position: relative;
-  --container-padding: 20px;
-  padding: 30px 20px;
+  --container-padding-x: 20px;
+  padding: 30px var(--container-padding-x);
   overflow: hidden;
   margin: 0;
 `;
 
 const BannerTextContainer = styled(FlexColumn)`
-  --padding: 30px;
-  max-width: calc(1060px - 2 * var(--padding));
-  width: calc(90vw - 2 * (var(--padding) + var(--container-padding)));
-  padding: var(--padding);
+  --padding-x: 30px;
+  padding: var(--padding-x);
+  max-width: calc(1060px - 2 * var(--padding-x));
+
+  --total-padding-x: calc(2 * var(--padding-x) + 2 * var(--container-padding-x));
+  width: calc(90vw - var(--total-padding-x));
   border-radius: 5px;
+  // Fallback in case color-mix is unsupported.
+  background-color: var(--color-background);
+  // Make the background slightly transparent. Note that this may fail on internet explorer.
   background-color: color-mix(in srgb, var(--color-background) 80%, transparent);
   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
   gap: 10px;
@@ -44,7 +49,7 @@ const BannerTextContainer = styled(FlexColumn)`
   }
 `;
 
-const BannerVideo = styled.div`
+const BannerVideoContainer = styled.div`
   position: absolute;
   top: 0;
   right: 0;
@@ -57,6 +62,8 @@ const BannerVideo = styled.div`
     width: 100%;
     height: 100%;
     object-fit: cover;
+    // Fixes a bug where a single pixel black outline would appear around the video.
+    clip-path: inset(1px 1px);
   }
 `;
 
@@ -67,7 +74,7 @@ const ContentContainer = styled(FlexColumn)`
   padding: 0 20px;
 `;
 
-const HighlightsContainer = styled.li`
+const FeatureHighlightsContainer = styled.li`
   display: grid;
   width: 100%;
   grid-template-rows: repeat(2, auto);
@@ -78,7 +85,7 @@ const HighlightsContainer = styled.li`
   margin: 20px 0;
 `;
 
-const HighlightsItem = styled(FlexColumn)`
+const FeatureHighlightsItem = styled(FlexColumn)`
   display: grid;
   grid-template-rows: subgrid;
   grid-row: span 2;
@@ -270,12 +277,12 @@ export default function LandingPage(): ReactElement {
           <HelpDropdown />
         </FlexRowAlignCenter>
       </Header>
-      <BannerContainer>
-        <BannerVideo>
+      <Banner>
+        <BannerVideoContainer>
           <video autoPlay loop muted>
             <source src="/banner_video.mp4" type="video/mp4" />
           </video>
-        </BannerVideo>
+        </BannerVideoContainer>
         <BannerTextContainer>
           <h1>Welcome to Timelapse Feature Explorer</h1>
           <p>
@@ -285,33 +292,33 @@ export default function LandingPage(): ReactElement {
             dynamic datasets.
           </p>
         </BannerTextContainer>
-      </BannerContainer>
+      </Banner>
 
       <br />
       <ContentContainer $gap={10}>
-        <HighlightsContainer>
-          <HighlightsItem>
+        <FeatureHighlightsContainer>
+          <FeatureHighlightsItem>
             <h3>Dynamic color mapping</h3>
             <p>Customizable colormaps to understand patterns and trends within time lapse data.</p>
-          </HighlightsItem>
-          <HighlightsItem>
+          </FeatureHighlightsItem>
+          <FeatureHighlightsItem>
             <h3>Interactive data exploration</h3>
             <p>Easily switch between features for focused analysis or comparing different datasets.</p>
-          </HighlightsItem>
-          <HighlightsItem>
+          </FeatureHighlightsItem>
+          <FeatureHighlightsItem>
             <h3>Temporal navigation controls</h3>
             <p>
               Feature-rich playback controls to observe motion and dynamics over time, revealing trends and anomalies.
             </p>
-          </HighlightsItem>
-          <HighlightsItem>
+          </FeatureHighlightsItem>
+          <FeatureHighlightsItem>
             <h3>Feature extraction and visualization</h3>
             <p>
               Integrated plots show feature evolution, outliers, clusters and other patterns facilitating a nuanced
               understanding of temporal dynamics.
             </p>
-          </HighlightsItem>
-        </HighlightsContainer>
+          </FeatureHighlightsItem>
+        </FeatureHighlightsContainer>
         <Divider />
         <FlexColumnAlignCenter>
           <h2>Load dataset(s) below or your own data to get started</h2>

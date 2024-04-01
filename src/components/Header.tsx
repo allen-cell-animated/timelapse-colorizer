@@ -36,7 +36,7 @@ function HeaderLogo(): ReactElement {
       </AicsLogoLink>
       <VerticalDivider />
       <Link to="/" aria-label="Go to home page">
-        <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Colorizer</h1>
+        <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Feature Explorer</h1>
       </Link>
     </FlexRowAlignCenter>
   );
