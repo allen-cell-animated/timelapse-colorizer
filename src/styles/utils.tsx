@@ -1,4 +1,4 @@
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 
 /**
  * Blocks `input` elements inside this container from having visible spinner handles.
@@ -18,17 +18,10 @@ export const NoSpinnerContainer = styled.div`
   }
 `;
 
-const FlexDiv = styled.div<{ $gap?: number }>`
+const FlexDiv = styled.div<{ $gap?: number; $wrap?: React.CSSProperties["flexWrap"] }>`
   display: flex;
-  ${(props) => {
-    // Gap between items is parameterized
-    if (props.$gap) {
-      return css`
-        gap: ${props.$gap}px;
-      `;
-    }
-    return;
-  }}
+  gap: ${(props) => props.$gap || 0}px;
+  flex-wrap: ${(props) => props.$wrap || "nowrap"};
 `;
 
 /**
