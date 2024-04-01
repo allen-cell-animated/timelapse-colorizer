@@ -42,6 +42,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
     : [];
   backdropOptions.unshift(NO_BACKDROP);
 
+  const isBackdropDisabled = backdropOptions.length === 1 || !props.selectedBackdropKey;
+
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
@@ -66,6 +68,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropDisabled}
               />
             </div>
           </SettingsItem>
@@ -82,6 +85,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropDisabled}
               />
             </div>
           </SettingsItem>
