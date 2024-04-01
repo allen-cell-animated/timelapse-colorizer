@@ -28,6 +28,10 @@ type BaseLabeledSliderProps = {
   // TODO: Add a way to fetch significant figures for each feature. This is a temporary fix
   // and may not work for all features. Use scientific notation maybe?
   maxDecimalsToDisplay?: number;
+  /**
+   * Optional method for formatting display numbers, used in the slider tooltip and the text labels
+   * under the slider endpoints. If undefined, formats numbers to `maxDecimalsToDisplay` decimal places.
+   */
   numberFormatter?: (value?: number) => React.ReactNode;
 };
 
@@ -43,9 +47,7 @@ type LabeledRangeSliderProps = BaseLabeledSliderProps & {
 type LabeledValueSliderProps = BaseLabeledSliderProps & {
   type: "value";
   value: number;
-  /** Default value to return to if the input is invalid/NaN */
-  defaultValue: number;
-  onChange: (value?: number) => void;
+  onChange: (value: number) => void;
 };
 
 type LabeledSliderProps = LabeledRangeSliderProps | LabeledValueSliderProps;
@@ -121,8 +123,8 @@ const SliderLabel = styled.p<{ $disabled?: boolean }>`
 ///////////////////////////////////////////////////////////////////
 
 /**
- * Creates a Slider with numberic input fields. The slider is bounded
- * separately from the min and max value bounds and acts as a suggested range.
+ * Creates a Slider with numeric input fields, either a value or min/max range.
+ * The slider is bounded separately from the input bounds and acts as a suggested range.
  */
 export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElement {
   const props = { ...defaultProps, ...excludeUndefinedValues(inputProps) } as Required<LabeledSliderProps>;
@@ -136,11 +138,8 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
 
   // Broadcast changes to input fields
   const handleValueChange = (value: number): void => {
-    if (props.type !== "value") {
+    if (props.type !== "value" || Number.isNaN(value)) {
       return;
-    }
-    if (Number.isNaN(value)) {
-      value = props.defaultValue;
     }
     value = clamp(value, props.minInputBound, props.maxInputBound);
     props.onChange(value);
@@ -204,11 +203,10 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     });
   }
 
-  // Use a placeholder if the min/max bounds are undefined
-
   const defaultNumberFormatter = (value?: number): string => numberToStringDecimal(value, props.maxDecimalsToDisplay);
   const numberFormatter = props.numberFormatter ? props.numberFormatter : defaultNumberFormatter;
 
+  // Use a placeholder if the min/max bounds are undefined
   const minSliderLabel = Number.isNaN(props.minSliderBound) ? "--" : numberFormatter(props.minSliderBound);
   const maxSliderLabel = Number.isNaN(props.maxSliderBound) ? "--" : numberFormatter(props.maxSliderBound);
 

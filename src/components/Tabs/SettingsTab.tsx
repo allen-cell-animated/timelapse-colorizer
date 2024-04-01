@@ -58,17 +58,14 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 type="value"
-                value={props.config.backdropBrightness}
-                marks={[100]}
-                defaultValue={100}
                 minSliderBound={0}
                 maxSliderBound={200}
                 minInputBound={0}
                 maxInputBound={200}
+                value={props.config.backdropBrightness}
+                onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
+                marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                onChange={(brightness?: number) =>
-                  brightness !== undefined && props.updateConfig({ backdropBrightness: brightness })
-                }
               />
             </div>
           </SettingsItem>
@@ -77,17 +74,14 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 type="value"
-                value={props.config.backdropSaturation}
-                marks={[100]}
-                defaultValue={100}
                 minSliderBound={0}
                 maxSliderBound={100}
                 minInputBound={0}
                 maxInputBound={100}
+                value={props.config.backdropSaturation}
+                onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
+                marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                onChange={(saturation?: number) =>
-                  saturation !== undefined && props.updateConfig({ backdropSaturation: saturation })
-                }
               />
             </div>
           </SettingsItem>
@@ -117,17 +111,14 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 type="value"
-                value={props.config.objectOpacity}
-                marks={[100]}
-                defaultValue={100}
                 minSliderBound={0}
                 maxSliderBound={100}
                 minInputBound={0}
                 maxInputBound={100}
+                value={props.config.objectOpacity}
+                onChange={(objectOpacity: number) => props.updateConfig({ objectOpacity: objectOpacity })}
+                marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                onChange={(objectOpacity?: number) =>
-                  objectOpacity !== undefined && props.updateConfig({ objectOpacity: objectOpacity })
-                }
               />
             </div>
           </SettingsItem>
