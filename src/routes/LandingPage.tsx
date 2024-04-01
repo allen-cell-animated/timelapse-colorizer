@@ -25,14 +25,43 @@ const ContentContainer = styled(FlexColumn)`
   padding: 0 20px;
 `;
 
+const HighlightsContainer = styled.li`
+  display: grid;
+  width: 100%;
+  grid-template-rows: repeat(2, auto);
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  padding: 0;
+  justify-content: space-evenly;
+  gap: 10px;
+`;
+
+const HighlightsItem = styled(FlexColumn)`
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 2;
+
+  & > h3 {
+    font-weight: 600;
+  }
+`;
+
+const Divider = styled.hr`
+  display: block;
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-borders);
+  border-style: none;
+`;
+
 const ProjectList = styled.ul`
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 0;
+  margin-top: 0;
 
   // Add a pseudo-element line between cards
-  & > li::before {
+  & > li:not(:first-child)::before {
     content: "";
     display: block;
     width: 100%;
@@ -232,7 +261,33 @@ export default function LandingPage(): ReactElement {
             </Button>
           </Link>
         </FlexColumnAlignCenter>
-        <h3>Get started by loading a dataset below</h3>
+        <HighlightsContainer>
+          <HighlightsItem>
+            <h3>Dynamic color mapping</h3>
+            <p>Customizable colormaps to understand patterns and trends within time lapse data.</p>
+          </HighlightsItem>
+          <HighlightsItem>
+            <h3>Interactive data exploration</h3>
+            <p>Easily switch between features for focused analysis or comparing different datasets.</p>
+          </HighlightsItem>
+          <HighlightsItem>
+            <h3>Temporal navigation controls</h3>
+            <p>
+              Feature-rich playback controls to observe motion and dynamics over time, revealing trends and anomalies.
+            </p>
+          </HighlightsItem>
+          <HighlightsItem>
+            <h3>Feature extraction and visualization</h3>
+            <p>
+              Integrated plots show feature evolution, outliers, clusters and other patterns facilitating a nuanced
+              understanding of temporal dynamics.
+            </p>
+          </HighlightsItem>
+        </HighlightsContainer>
+        <Divider />
+        <FlexColumnAlignCenter>
+          <h2>Load dataset(s) below or your own data to get started</h2>
+        </FlexColumnAlignCenter>
         <ProjectList>{landingPageContent.map(renderProject)}</ProjectList>
       </ContentContainer>
     </>
