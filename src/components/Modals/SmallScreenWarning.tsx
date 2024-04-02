@@ -1,13 +1,15 @@
 import { InfoCircleOutlined } from "@ant-design/icons";
-import { Checkbox } from "antd";
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import { Button, Checkbox } from "antd";
+import React, { ReactElement, useCallback, useEffect, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
-import { FlexColumn } from "../../styles/utils";
+import { FlexColumn, FlexRow } from "../../styles/utils";
 
-import { useStyledModal } from "./StyledModal";
+import StyledModal from "./StyledModal";
 
 const STORAGE_KEY_ALLOW_SMALL_SCREEN_WARNING = "allowSmallScreenWarning";
+const ICON_SIZE_PX = 22;
+const ICON_MARGIN_PX = 12;
 
 type SmallScreenWarningProps = {
   minWidthPx?: number;
@@ -19,30 +21,25 @@ const defaultProps: Partial<SmallScreenWarningProps> = {
 export default function SmallScreenWarning(inputProps: SmallScreenWarningProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<SmallScreenWarningProps>;
 
-  // This class has to do a lot of extra work because Ant Modal component doesn't have a convenient way to add icons.
-  // Instead, we have to use the static Modal API (through `useStyledModal`) and then manipulate it to update with
-  // state like a component.
-
-  const modal = useStyledModal();
-  // `isShowingModal` is required to prevent the modal from being rendered twice on initial page load in the `useEffect` hook.
-  const isShowingModal = useRef(false);
-  const [currentModal, setCurrentModal] = useState<ReturnType<typeof modal.info> | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  // Separately track whether the user is below the threshold.
+  // Only show the modal again once the page is resized to be above the threshold width.
+  const [isBelowThreshold, setIsBelowThreshold] = useState(false);
   const [allowWarning, setAllowWarning] = useLocalStorage(STORAGE_KEY_ALLOW_SMALL_SCREEN_WARNING, true);
 
   const checkScreenSize = useCallback((): void => {
-    const shouldShowModal = window.innerWidth < props.minWidthPx;
+    const shouldShowModal = window.innerWidth < props.minWidthPx && allowWarning;
 
-    // Toggle between showing and hiding the modal
-    if (shouldShowModal && !isShowingModal.current && allowWarning) {
-      isShowingModal.current = true;
-      // Create new empty modal; style will be updated below
-      setCurrentModal(modal.info({}));
-    } else if (!shouldShowModal && isShowingModal.current) {
-      isShowingModal.current = false;
-      currentModal?.destroy();
-      setCurrentModal(null);
+    if (shouldShowModal && !isBelowThreshold) {
+      // Trigger modal
+      setShowModal(true);
+      setIsBelowThreshold(true);
+    } else if (!shouldShowModal && isBelowThreshold) {
+      // Reset
+      setShowModal(false);
+      setIsBelowThreshold(false);
     }
-  }, [props.minWidthPx, allowWarning, currentModal]);
+  }, [props.minWidthPx, allowWarning, isBelowThreshold]);
 
   useEffect(() => {
     // Check on initial load and on resize
@@ -53,31 +50,41 @@ export default function SmallScreenWarning(inputProps: SmallScreenWarningProps):
     };
   }, [checkScreenSize]);
 
-  // Update render for the modal
-  if (currentModal !== null) {
-    currentModal.update({
-      title: "This app is not optimized for use on small screens",
-      content: (
-        <FlexColumn $gap={10}>
-          <p>For optimal experience, please try with a minimum screen width of {props.minWidthPx}px.</p>
-          <Checkbox
-            checked={!allowWarning}
-            onChange={() => {
-              setAllowWarning(!allowWarning);
-            }}
-          >
-            Don&apos;t show this message again
-          </Checkbox>
-        </FlexColumn>
-      ),
-      maskClosable: true,
-      onCancel: currentModal.destroy,
-      onOk: currentModal.destroy,
-      okText: "Ok",
-      icon: <InfoCircleOutlined style={{ color: "var(--color-text-theme)" }} />,
-      centered: true,
-    });
-  }
+  const title = (
+    // Right margin prevents text from overflowing into where 'X' icon is
+    <FlexRow $gap={ICON_MARGIN_PX} style={{ marginRight: "20px", alignItems: "flex-start" }}>
+      <InfoCircleOutlined
+        style={{ color: "var(--color-text-theme)", fontSize: ICON_SIZE_PX + "px", marginTop: "2.5px" }}
+      />
+      <span>This app is not optimized for use on small screens.</span>
+    </FlexRow>
+  );
 
-  return <></>;
+  return (
+    <StyledModal
+      title={title}
+      open={showModal}
+      centered
+      width={416}
+      onCancel={() => setShowModal(false)}
+      footer={() => (
+        <Button type="primary" onClick={() => setShowModal(false)}>
+          Ok
+        </Button>
+      )}
+    >
+      {/* Add margin to left to match the icon styling */}
+      <FlexColumn $gap={10} style={{ marginLeft: ICON_SIZE_PX + ICON_MARGIN_PX + "px" }}>
+        <p>For optimal experience, please try with a minimum screen width of {props.minWidthPx}px.</p>
+        <Checkbox
+          checked={!allowWarning}
+          onChange={() => {
+            setAllowWarning(!allowWarning);
+          }}
+        >
+          Don&apos;t show this message again
+        </Checkbox>
+      </FlexColumn>
+    </StyledModal>
+  );
 }
