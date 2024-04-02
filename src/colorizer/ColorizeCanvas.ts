@@ -135,13 +135,15 @@ export default class ColorizeCanvas {
   private points: Float32Array;
   private canvasResolution: Vector2 | null;
 
-  private featureName: string | null;
+  private featureKey: string | null;
   private selectedBackdropKey: string | null;
   private colorRamp: ColorRamp;
   private colorMapRangeMin: number;
   private colorMapRangeMax: number;
   private categoricalPalette: ColorRamp;
   private currentFrame: number;
+
+  private missingFrameCallback: (isMissing: boolean) => void;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -191,7 +193,7 @@ export default class ColorizeCanvas {
 
     this.dataset = null;
     this.canvasResolution = null;
-    this.featureName = null;
+    this.featureKey = null;
     this.selectedBackdropKey = null;
     this.colorRamp = new ColorRamp(["black"]);
     this.categoricalPalette = new ColorRamp(["black"]);
@@ -206,6 +208,8 @@ export default class ColorizeCanvas {
     this.showScaleBar = false;
     this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
+
+    this.missingFrameCallback = () => {};
 
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
@@ -448,12 +452,12 @@ export default class ColorizeCanvas {
     this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame));
   }
 
-  setFeature(name: string): void {
-    if (!this.dataset?.hasFeature(name)) {
+  setFeatureKey(key: string): void {
+    if (!this.dataset?.hasFeatureKey(key)) {
       return;
     }
-    const featureData = this.dataset.getFeatureData(name)!;
-    this.featureName = name;
+    const featureData = this.dataset.getFeatureData(key)!;
+    this.featureKey = key;
     this.setUniform("featureData", featureData.tex);
     this.render(); // re-render necessary because map range may have changed
   }
@@ -467,10 +471,10 @@ export default class ColorizeCanvas {
   }
 
   resetColorMapRange(): void {
-    if (!this.featureName) {
+    if (!this.featureKey) {
       return;
     }
-    const featureData = this.dataset?.getFeatureData(this.featureName);
+    const featureData = this.dataset?.getFeatureData(this.featureKey);
     if (featureData) {
       this.colorMapRangeMin = featureData.min;
       this.colorMapRangeMax = featureData.max;
@@ -533,6 +537,10 @@ export default class ColorizeCanvas {
     });
   }
 
+  public setMissingFrameCallback(callback: (isMissing: boolean) => void): void {
+    this.missingFrameCallback = callback;
+  }
+
   /**
    * Sets the current frame of the canvas, loading the new frame data if the
    * frame number changes.
@@ -552,30 +560,55 @@ export default class ColorizeCanvas {
       backdropPromise = this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
     }
     const framePromise = this.dataset?.loadFrame(index);
-    const result = await Promise.all([framePromise, backdropPromise]);
+    const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
-    if (!frame) {
-      return;
-    }
     if (this.currentFrame !== index) {
       // This load request has been superceded by a request for another frame, which has already loaded in image data.
       // Drop this request.
       return;
     }
-    if (backdrop) {
-      this.setUniform("backdrop", backdrop);
+
+    let isMissingFile = false;
+
+    if (backdrop.status === "fulfilled" && backdrop.value) {
+      this.setUniform("backdrop", backdrop.value);
     } else {
+      if (backdrop.status === "rejected") {
+        // Only show error message if the backdrop load encountered an error (null/undefined backdrops aren't
+        // considered errors, since that means the path has been deliberately marked as missing.)
+        console.error(
+          "Failed to load backdrop " + this.selectedBackdropKey + " for frame " + index + ": ",
+          backdrop.reason
+        );
+        isMissingFile = true;
+      }
       this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
     }
-    this.setUniform("frame", frame);
+
+    if (frame.status === "fulfilled" && frame.value) {
+      this.setUniform("frame", frame.value);
+    } else {
+      if (frame.status === "rejected") {
+        // Only show error message if the frame load encountered an error. (Null/undefined is okay)
+        console.error("Failed to load frame " + index + ": ", frame.reason);
+        isMissingFile = true;
+      }
+      // Set to blank
+      const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
+      emptyFrame.internalFormat = "RGBA8UI";
+      emptyFrame.needsUpdate = true;
+      this.setUniform("frame", emptyFrame);
+    }
+
+    this.missingFrameCallback(isMissingFile);
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently
    * selected feature.
    */
   updateRamp(): void {
-    if (this.featureName && this.dataset?.isFeatureCategorical(this.featureName)) {
+    if (this.featureKey && this.dataset?.isFeatureCategorical(this.featureKey)) {
       this.setUniform("colorRamp", this.categoricalPalette.texture);
       this.setUniform("featureColorRampMin", 0);
       this.setUniform("featureColorRampMax", MAX_FEATURE_CATEGORIES - 1);

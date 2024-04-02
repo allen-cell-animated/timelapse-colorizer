@@ -43,7 +43,7 @@ const addContainerToUpdateMethodProps = (
  * Wrapper for Ant's static modal functions. The wrapper injects the modal container reference
  * into the props for both the static modal function and its returned updater method.
  */
-const wrappedStaticModalFunctionFactory = (
+const wrapStaticModalFunction = (
   modalContainerRef: ContainerRef,
   modalFunction: AntModalApiFunction
 ): AntModalApiFunction => {
@@ -66,6 +66,7 @@ const wrappedStaticModalFunctionFactory = (
  * @example
  * ```
  * const MyButton = (): ReactElement => {
+ *   // before: const { modal } = App.useApp();
  *   const modal = useStyledModal();
  *   return <Button
  *      onClick={() => modal.info({title: "An info modal", content: "Some information here"})}
@@ -81,11 +82,11 @@ export const useStyledModal = (): AntModalApi => {
   const { modalContainerRef } = useContext(DocumentContext);
   const { modal } = App.useApp();
   return {
-    confirm: wrappedStaticModalFunctionFactory(modalContainerRef, modal.confirm),
-    info: wrappedStaticModalFunctionFactory(modalContainerRef, modal.info),
-    success: wrappedStaticModalFunctionFactory(modalContainerRef, modal.success),
-    error: wrappedStaticModalFunctionFactory(modalContainerRef, modal.error),
-    warning: wrappedStaticModalFunctionFactory(modalContainerRef, modal.warning),
+    confirm: wrapStaticModalFunction(modalContainerRef, modal.confirm),
+    info: wrapStaticModalFunction(modalContainerRef, modal.info),
+    success: wrapStaticModalFunction(modalContainerRef, modal.success),
+    error: wrapStaticModalFunction(modalContainerRef, modal.error),
+    warning: wrapStaticModalFunction(modalContainerRef, modal.warning),
   };
 };
 

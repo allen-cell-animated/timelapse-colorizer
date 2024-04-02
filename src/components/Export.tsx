@@ -1,9 +1,10 @@
-import { CheckCircleOutlined, ExportOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined } from "@ant-design/icons";
 import { App, Button, Card, Input, InputNumber, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
+import { ExportIconSVG } from "../assets";
 import { FlexRow } from "../styles/utils";
 
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
@@ -134,7 +135,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   const [imagePrefix, setImagePrefix] = useState(props.defaultImagePrefix);
   const [useDefaultImagePrefix, setUseDefaultImagePrefix] = useState(true);
   const [frameIncrement, setFrameIncrement] = useState(1);
-  const [fps, setFps] = useState(30);
+  const [fps, setFps] = useState(12);
   const [videoBitsPerSecond, setVideoBitsPerSecond] = useState(VideoBitrate.MEDIUM);
 
   const [percentComplete, setPercentComplete] = useState(0);
@@ -433,7 +434,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         }}
         disabled={props.disabled}
       >
-        <ExportOutlined />
+        <ExportIconSVG />
         <p>Export</p>
       </TextButton>
 
