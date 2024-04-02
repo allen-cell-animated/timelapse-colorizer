@@ -16,7 +16,6 @@
   /* Switch from row to column layout when the screen width goes below 1200px */
   .contentPanels {
     flex-direction: column;
-    max-width: 100%;
   }
 }
 
