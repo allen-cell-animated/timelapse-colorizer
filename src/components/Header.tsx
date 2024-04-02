@@ -15,10 +15,11 @@ const AicsLogoLink = styled.a`
   }
 
   // Toggle between the two logos based on the currently available screen real estate
-  @media only screen and (max-width: 550px) {
+  // Width is determined here experimentally to prevent popping as the other buttons in the header wrap.
+  @media only screen and (max-width: 520px) {
     & {
-      max-width: 46px;
-      max-height: 46px;
+      max-width: 30px;
+      max-height: 30px;
     }
 
     & > div > svg:first-child {
@@ -38,8 +39,8 @@ const VerticalDivider = styled.div`
   display: inline-block;
   margin: 0 20px;
 
-  @media only screen and (max-width: 550px) {
-    margin: 0 20px;
+  @media only screen and (max-width: 520px) {
+    margin: 0 10px;
   }
 `;
 
@@ -49,7 +50,7 @@ const VerticalDivider = styled.div`
  */
 function HeaderLogo(): ReactElement {
   return (
-    <FlexRowAlignCenter $wrap="wrap">
+    <FlexRowAlignCenter>
       <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer" target="_blank">
         <div title={"https://www.allencell.org"}>
           <AicsLogoAndNameSVG />
