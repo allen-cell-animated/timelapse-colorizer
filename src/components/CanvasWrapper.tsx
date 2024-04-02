@@ -10,7 +10,6 @@ import { FlexColumnAlignCenter } from "../styles/utils";
 import { AppThemeContext } from "./AppStyle";
 
 const CANVAS_BORDER_OFFSET_PX = 4;
-const ASPECT_RATIO = 14 / 10;
 
 const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   position: absolute;
@@ -237,17 +236,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
      * TODO: Margin calculation?
      */
     const setSize = (): void => {
-      // TODO: Calculate aspect ratio based on the current frame?
-      // TODO: This is a little buggy because the scrollbar popping in and out can cause the canvas to jitter due to a resizing loop.
-      // I fixed this by setting the breakpoint for the side panel to 1250px instead of 1200px, but
-      // ideally, canvas size should be managed by CSS, and this callback should only update canvas variables.
       const width = Math.min(window.innerWidth - 75 - CANVAS_BORDER_OFFSET_PX, props.maxWidth);
-
-      const height = width / ASPECT_RATIO;
-
+      const height = Math.min(window.innerHeight - 75 - CANVAS_BORDER_OFFSET_PX, props.maxHeight);
       canv.setSize(width, height);
     };
-
     const handleResize = (): void => {
       setSize();
       canv.render();
