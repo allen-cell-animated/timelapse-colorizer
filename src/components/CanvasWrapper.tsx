@@ -237,6 +237,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
      * TODO: Margin calculation?
      */
     const setSize = (): void => {
+      // TODO: Potentially unsafe calculation here when using `window.innerWidth`. If close to the breakpoint where the side
+      // panel gets wrapped to below the canvas, the scrollbar added to account for the increased page height
+      // will cause this calculation to change (window.innerWidth will become smaller by ~15 pixels).
+      // Under certain circumstances, this can cause a flickering effect as the canvas resizes to accommodate the scrollbar,
+      // which causes the page to shrink, which causes the scrollbar to disappear, and so on in a loop.
+      // I've fixed this for now by setting the breakpoint to 1250 pixels, but it's not a robust solution.
+
       // TODO: Calculate aspect ratio based on the current frame?
       const width = Math.min(window.innerWidth - 75 - CANVAS_BORDER_OFFSET_PX, props.maxWidth);
       const height = Math.floor(width / ASPECT_RATIO);
