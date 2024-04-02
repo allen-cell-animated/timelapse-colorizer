@@ -247,8 +247,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // TODO: Calculate aspect ratio based on the current frame?
       const width = Math.min(window.innerWidth - 75 - CANVAS_BORDER_OFFSET_PX, props.maxWidth);
       const height = Math.floor(width / ASPECT_RATIO);
-
-      console.log("Setting canvas size to", width, height);
       canv.setSize(width, height);
     };
 
