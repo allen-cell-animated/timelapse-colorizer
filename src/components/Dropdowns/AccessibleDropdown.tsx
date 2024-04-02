@@ -13,6 +13,7 @@ import { VisuallyHidden } from "../../styles/utils";
  */
 type GetDropdownContentFunction = (setOpenState: (open: boolean) => void) => ReactElement;
 
+const OUTLINED_BUTTON_CLASS = "accessible-dropdown-outlined-button";
 const enum OpenState {
   FORCE_OPEN,
   FORCE_CLOSED,
@@ -82,36 +83,28 @@ const MainContainer = styled.div`
 `;
 
 /** Button that is clicked to open the dropdown */
-const MainButton = styled(Button)<{ $open: boolean; $type: AccessibleDropdownProps["buttonType"] }>`
+const MainButton = styled(Button)<{ $open: boolean }>`
   width: 15vw;
   // Override Antd width transition
   transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s;
 
   // Override Ant styling for the outlined button style
-  ${(props) => {
-    if (props.$type === "outlined") {
-      return css`
-        // Extra classnames to increase selector specificity; otherwise gets overridden by root styling
-        &.ant-btn.ant-btn-default:not(:disabled) {
-          border-color: var(--color-borders);
-          color: var(--color-text);
-        }
+  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled) {
+    border-color: var(--color-borders);
+    color: var(--color-text);
+  }
 
-        &.ant-btn.ant-btn-default:not(:disabled):hover {
-          background-color: transparent;
-          border-color: var(--color-button);
-          color: var(--color-text); // Repeated to override color changes
-        }
+  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):hover {
+    background-color: transparent;
+    border-color: var(--color-button);
+    color: var(--color-text); // Repeated to override color changes
+  }
 
-        &.ant-btn.ant-btn-default:not(:disabled):active {
-          background-color: transparent;
-          border-color: var(--color-button-active);
-          color: var(--color-text);
-        }
-      `;
-    }
-    return;
-  }}
+  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):active {
+    background-color: transparent;
+    border-color: var(--color-button-active);
+    color: var(--color-text);
+  }
 
   // When the modal is opened ("pinned") by clicking on it, show an
   // extra active-style outline.
@@ -208,7 +201,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
       <MainButton
         disabled={props.disabled}
         style={props.buttonStyle}
-        $type={props.buttonType}
+        className={props.buttonType === "outlined" ? OUTLINED_BUTTON_CLASS : ""}
         type={props.buttonType === "outlined" ? "default" : props.buttonType}
         $open={isOpen}
         // Open the dropdown when clicked for accessibility
