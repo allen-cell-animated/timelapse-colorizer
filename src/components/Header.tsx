@@ -11,7 +11,7 @@ const AicsLogoLink = styled.a`
   height: 46px;
 
   div > svg:last-child {
-    visibility: collapse;
+    display: none;
   }
 
   // Toggle between the two logos based on the currently available screen real estate
@@ -27,6 +27,7 @@ const AicsLogoLink = styled.a`
     }
 
     & > div > svg:last-child {
+      display: block;
       visibility: visible;
     }
   }
