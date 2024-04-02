@@ -89,18 +89,18 @@ const MainButton = styled(Button)<{ $open: boolean }>`
   transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s;
 
   // Override Ant styling for the outlined button style
-  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled) {
+  &${"." + OUTLINED_BUTTON_CLASS}:not(:disabled) {
     border-color: var(--color-borders);
     color: var(--color-text);
   }
 
-  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):hover {
+  &${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):hover {
     background-color: transparent;
     border-color: var(--color-button);
     color: var(--color-text); // Repeated to override color changes
   }
 
-  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):active {
+  &${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):active {
     background-color: transparent;
     border-color: var(--color-button-active);
     color: var(--color-text);
