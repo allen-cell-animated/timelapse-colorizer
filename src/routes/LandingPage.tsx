@@ -1,7 +1,7 @@
 import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Card, Tooltip } from "antd";
-import React, { ReactElement, useContext } from "react";
+import { Button, Tooltip } from "antd";
+import React, { ReactElement } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
@@ -12,11 +12,60 @@ import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
 import Collection from "../colorizer/Collection";
-import { AppThemeContext } from "../components/AppStyle";
 import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
 import { landingPageContent } from "./LandingPageContent";
+
+const Banner = styled(FlexColumnAlignCenter)`
+  position: relative;
+  --container-padding-x: 20px;
+  padding: 30px var(--container-padding-x);
+  overflow: hidden;
+  margin: 0;
+`;
+
+const BannerTextContainer = styled(FlexColumn)`
+  --padding-x: 30px;
+  padding: var(--padding-x);
+  max-width: calc(1060px - 2 * var(--padding-x));
+
+  --total-padding-x: calc(2 * var(--padding-x) + 2 * var(--container-padding-x));
+  width: calc(90vw - var(--total-padding-x));
+  border-radius: 5px;
+  // Fallback in case color-mix is unsupported.
+  background-color: var(--color-background);
+  // Make the background slightly transparent. Note that this may fail on internet explorer.
+  background-color: color-mix(in srgb, var(--color-background) 80%, transparent);
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
+  gap: 10px;
+
+  & > h1 {
+    margin-top: 0;
+  }
+
+  & > p {
+    font-size: var(--font-size-label);
+  }
+`;
+
+const BannerVideoContainer = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ded9ef;
+  z-index: -1;
+
+  & > video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    // Fixes a bug where a single pixel black outline would appear around the video.
+    clip-path: inset(1px 1px);
+  }
+`;
 
 const ContentContainer = styled(FlexColumn)`
   max-width: 1060px;
@@ -25,14 +74,44 @@ const ContentContainer = styled(FlexColumn)`
   padding: 0 20px;
 `;
 
+const FeatureHighlightsContainer = styled.li`
+  display: grid;
+  width: 100%;
+  grid-template-rows: repeat(2, auto);
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  padding: 0;
+  justify-content: space-evenly;
+  gap: 10px;
+  margin: 20px 0;
+`;
+
+const FeatureHighlightsItem = styled(FlexColumn)`
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 2;
+
+  & > h3 {
+    font-weight: 600;
+  }
+`;
+
+const Divider = styled.hr`
+  display: block;
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-borders);
+  border-style: none;
+`;
+
 const ProjectList = styled.ul`
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 0;
+  margin-top: 0;
 
   // Add a pseudo-element line between cards
-  & > li::before {
+  & > li:not(:first-child)::before {
     content: "";
     display: block;
     width: 100%;
@@ -103,7 +182,6 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
 `;
 
 export default function LandingPage(): ReactElement {
-  const theme = useContext(AppThemeContext);
   const navigate = useNavigate();
 
   // Behavior
@@ -194,45 +272,57 @@ export default function LandingPage(): ReactElement {
   return (
     <>
       <Header>
-        <FlexRowAlignCenter $gap={15}>
+        <FlexRowAlignCenter $gap={15} $wrap="wrap">
           <LoadDatasetButton onLoad={onDatasetLoad} currentResourceUrl={""} />
           <HelpDropdown />
         </FlexRowAlignCenter>
       </Header>
+      <Banner>
+        <BannerVideoContainer>
+          <video autoPlay loop muted>
+            <source src="/banner_video.mp4" type="video/mp4" />
+          </video>
+        </BannerVideoContainer>
+        <BannerTextContainer>
+          <h1>Welcome to Timelapse Feature Explorer</h1>
+          <p>
+            The Timelapse Feature Explorer is a web-based application designed for the interactive visualization and
+            analysis of segmented time-series microscopy data. Ideal for biomedical researchers and other data
+            professionals, it offers an intuitive set of tools for scientific research and deeper understanding of
+            dynamic datasets.
+          </p>
+        </BannerTextContainer>
+      </Banner>
+
       <br />
       <ContentContainer $gap={10}>
-        <FlexColumnAlignCenter $gap={10}>
-          <Card>
-            <h1>Hello! This is the new WIP landing page.</h1>
+        <FeatureHighlightsContainer>
+          <FeatureHighlightsItem>
+            <h3>Dynamic color mapping</h3>
+            <p>Customizable colormaps to understand patterns and trends within time lapse data.</p>
+          </FeatureHighlightsItem>
+          <FeatureHighlightsItem>
+            <h3>Interactive data exploration</h3>
+            <p>Easily switch between features for focused analysis or comparing different datasets.</p>
+          </FeatureHighlightsItem>
+          <FeatureHighlightsItem>
+            <h3>Temporal navigation controls</h3>
             <p>
-              If you got to this page with a link that previously took you to the viewer, you can continue using it with
-              a quick edit.
+              Feature-rich playback controls to observe motion and dynamics over time, revealing trends and anomalies.
             </p>
-            <br />
-            <p>If your link previously looked like this:</p>
-            <code>https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html?collection=....</code>
-            <p>You&#39;ll need to edit it by adding the new viewer subpath:</p>
-            <code>
-              https://dev-aics-dtp-001.int.allencell.org/nucmorph-colorizer/dist/index.html
-              <b>
-                <span style={{ color: "var(--color-text-theme)" }}>#/viewer</span>
-              </b>
-              ?collection=....
-            </code>
-            <br />
-            <br />
+          </FeatureHighlightsItem>
+          <FeatureHighlightsItem>
+            <h3>Feature extraction and visualization</h3>
             <p>
-              Make sure to update any links you&#39;ve shared with other people. Thanks for your patience while the tool
-              is getting ready for release!
+              Integrated plots show feature evolution, outliers, clusters and other patterns facilitating a nuanced
+              understanding of temporal dynamics.
             </p>
-          </Card>
-          <Link to="viewer">
-            <Button type="primary" size="large" style={{ fontSize: theme.font.size.label }}>
-              <FlexRowAlignCenter>Go to viewer</FlexRowAlignCenter>
-            </Button>
-          </Link>
+          </FeatureHighlightsItem>
+        </FeatureHighlightsContainer>
+        <Divider />
+        <FlexColumnAlignCenter>
+          <h2>Load dataset(s) below or your own data to get started</h2>
         </FlexColumnAlignCenter>
-        <h3>Get started by loading a dataset below</h3>
         <ProjectList>{landingPageContent.map(renderProject)}</ProjectList>
       </ContentContainer>
     </>
