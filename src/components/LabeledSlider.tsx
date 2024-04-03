@@ -1,5 +1,5 @@
 import { InputNumber, Slider } from "antd";
-import { SliderRangeProps, SliderSingleProps } from "antd/es/slider";
+import { SliderBaseProps, SliderRangeProps, SliderSingleProps } from "antd/es/slider";
 import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react";
 import styled, { css } from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
@@ -210,19 +210,31 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
   const minSliderLabel = Number.isNaN(props.minSliderBound) ? "--" : numberFormatter(props.minSliderBound);
   const maxSliderLabel = Number.isNaN(props.maxSliderBound) ? "--" : numberFormatter(props.maxSliderBound);
 
-  // Change value/onChange properties based on the type of slider
-  const sliderProps: SliderSingleProps | SliderRangeProps =
-    props.type === "value"
-      ? {
-          value: props.value,
-          onChange: handleValueChange,
-        }
-      : {
-          value: [props.min, props.max],
-          onChange: (value: [number, number]) => handleRangeChange(value[0], value[1]),
-          range: { draggableTrack: true },
-        };
+  // Slider Props
+  const sharedSliderProps: Partial<SliderBaseProps> = {
+    min: props.minSliderBound,
+    max: props.maxSliderBound,
+    disabled: props.disabled,
+    marks: marks,
+    step: stepSize,
+    // Show formatted decimals in tooltip
+    // TODO: Is this better than showing the precise value?
+    tooltip: {
+      formatter: numberFormatter,
+      open: props.disabled ? false : undefined, // Hide tooltip when disabled
+    },
+  };
+  const valueSliderProps: SliderSingleProps = {
+    value: props.type === "value" ? props.value : undefined,
+    onChange: handleValueChange,
+  };
+  const rangeSliderProps: SliderRangeProps = {
+    range: { draggableTrack: true },
+    value: props.type === "range" ? [props.min, props.max] : undefined,
+    onChange: (value: [number, number]) => handleRangeChange(value[0], value[1]),
+  };
 
+  // Numeric input field props
   const sharedInputNumberProps: Partial<InputNumberProps> = {
     size: "small",
     controls: false,
@@ -262,21 +274,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
         )
       }
       <SliderContainer>
-        <Slider
-          {...sliderProps}
-          min={props.minSliderBound}
-          max={props.maxSliderBound}
-          disabled={props.disabled}
-          marks={marks}
-          step={stepSize}
-          // Show formatted decimals in tooltip
-          // TODO: Is this better than showing the precise value?
-          tooltip={{
-            formatter: numberFormatter,
-            open: props.disabled ? false : undefined, // Hide tooltip when disabled
-          }}
-        />
-
+        <Slider {...sharedSliderProps} {...(props.type === "value" ? valueSliderProps : rangeSliderProps)} />
         <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
         <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
