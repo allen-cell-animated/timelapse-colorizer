@@ -1,5 +1,5 @@
-import { InputNumber, Slider, SliderSingleProps } from "antd";
-import { SliderRangeProps } from "antd/es/slider";
+import { InputNumber, Slider } from "antd";
+import { SliderRangeProps, SliderSingleProps } from "antd/es/slider";
 import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react";
 import styled, { css } from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
@@ -223,32 +223,42 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
           range: { draggableTrack: true },
         };
 
+  const sharedInputNumberProps: Partial<InputNumberProps> = {
+    size: "small",
+    controls: false,
+    disabled: props.disabled,
+    style: { width: "80px" },
+    type: "number",
+  };
+
+  type InputNumberProps = Partial<Parameters<typeof InputNumber>[0]>;
+  const valueInputNumberProps: InputNumberProps = {
+    ref: valueInput,
+    value: props.type === "value" ? props.value : undefined,
+    onPressEnter: handleValueInputChange,
+    onBlur: handleValueInputChange,
+  };
+  const minInputNumberProps: InputNumberProps = {
+    ref: minInput,
+    value: props.type === "range" ? props.min : undefined,
+    onPressEnter: handleMinInputChange,
+    onBlur: handleMinInputChange,
+  };
+  const maxInputNumberProps: InputNumberProps = {
+    ref: maxInput,
+    value: props.type === "range" ? props.max : undefined,
+    onPressEnter: handleMaxInputChange,
+    onBlur: handleMaxInputChange,
+  };
+
   return (
     <ComponentContainer>
       {
         // Conditionally render either min or value input
         props.type === "value" ? (
-          <InputNumber
-            ref={valueInput}
-            size="small"
-            style={{ width: "80px" }}
-            value={props.value}
-            onPressEnter={handleValueInputChange}
-            onBlur={handleValueInputChange}
-            controls={false}
-            disabled={props.disabled}
-          />
+          <InputNumber {...sharedInputNumberProps} {...valueInputNumberProps} />
         ) : (
-          <InputNumber
-            ref={minInput}
-            size="small"
-            style={{ width: "80px" }}
-            value={props.min}
-            onPressEnter={handleMinInputChange}
-            onBlur={handleMinInputChange}
-            controls={false}
-            disabled={props.disabled}
-          />
+          <InputNumber {...sharedInputNumberProps} {...minInputNumberProps} />
         )
       }
       <SliderContainer>
@@ -270,19 +280,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
         <SliderLabel $disabled={props.disabled}>{minSliderLabel}</SliderLabel>
         <SliderLabel $disabled={props.disabled}>{maxSliderLabel}</SliderLabel>
       </SliderContainer>
-      {props.type === "range" ? (
-        <InputNumber
-          ref={maxInput}
-          size="small"
-          type="number"
-          style={{ width: "80px" }}
-          value={props.max}
-          onPressEnter={handleMaxInputChange}
-          onBlur={handleMaxInputChange}
-          controls={false}
-          disabled={props.disabled}
-        />
-      ) : null}
+      {props.type === "range" && <InputNumber {...sharedInputNumberProps} {...maxInputNumberProps} />}
     </ComponentContainer>
   );
 }
