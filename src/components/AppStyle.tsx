@@ -72,6 +72,9 @@ const theme = {
     flag: {
       background: palette.themeGrayDark,
     },
+    tooltip: {
+      background: "rgba(50, 50, 51, 0.90)",
+    },
   },
   font: {
     // LatoExtended font is a custom font family declared in the CssContainer.
@@ -285,6 +288,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             borderRadiusLG: 6,
             colorText: theme.color.text.primary,
             colorTextPlaceholder: theme.color.text.hint,
+            colorBgSpotlight: theme.color.tooltip.background,
             fontWeightStrong: 400,
           },
           components: {
