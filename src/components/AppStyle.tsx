@@ -289,6 +289,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorText: theme.color.text.primary,
             colorTextPlaceholder: theme.color.text.hint,
             colorBgSpotlight: theme.color.tooltip.background,
+            fontWeightStrong: 400,
           },
           components: {
             Button: {
@@ -330,6 +331,8 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               // Set z-index to 2000 here because Ant sets popups to 1050 by default, and modals to 1000.
               zIndexBase: 2000,
               zIndexPopupBase: 2000,
+              titleFontSize: theme.font.size.section,
+              margin: 20,
             },
           },
         }}
