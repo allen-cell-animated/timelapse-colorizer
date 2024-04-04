@@ -89,21 +89,21 @@ const MainButton = styled(Button)<{ $open: boolean }>`
   transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s;
 
   // Override Ant styling for the outlined button style
-  &${"." + OUTLINED_BUTTON_CLASS}:not(:disabled) {
+  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled) {
     border-color: var(--color-borders);
-    color: var(--color-text);
+    color: var(--color-text-primary);
   }
 
-  &${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):hover {
+  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):hover {
     background-color: transparent;
     border-color: var(--color-button);
-    color: var(--color-text); // Repeated to override color changes
+    color: var(--color-text-primary); // Repeated to override color changes
   }
 
-  &${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):active {
+  &.ant-btn${"." + OUTLINED_BUTTON_CLASS}:not(:disabled):active {
     background-color: transparent;
     border-color: var(--color-button-active);
-    color: var(--color-text);
+    color: var(--color-text-primary);
   }
 
   // When the modal is opened ("pinned") by clicking on it, show an
