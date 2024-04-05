@@ -2,19 +2,37 @@ import React, { PropsWithChildren, ReactElement } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
-import { AicsLogoSVG } from "../assets";
+import { AicsLogoAndNameSVG, AicsLogoSVG } from "../assets";
 import { FlexRowAlignCenter } from "../styles/utils";
+
+const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
 
 const AicsLogoLink = styled.a`
   position: relative;
   width: 180px;
   height: 46px;
-`;
 
-const StyledAicsLogo = styled(AicsLogoSVG)`
-  left: 0;
-  top: 0;
-  position: absolute;
+  div > svg:last-child {
+    display: none;
+  }
+
+  // Toggle between the two logos based on the currently available screen real estate
+  // Width is determined here experimentally to prevent popping as the other buttons in the header wrap.
+  @media only screen and (max-width: ${AICS_LOGO_RESIZE_THRESHOLD_PX}px) {
+    & {
+      max-width: 30px;
+      max-height: 30px;
+    }
+
+    & > div > svg:first-child {
+      display: none;
+    }
+
+    & > div > svg:last-child {
+      display: block;
+      visibility: visible;
+    }
+  }
 `;
 
 const VerticalDivider = styled.div`
@@ -22,6 +40,11 @@ const VerticalDivider = styled.div`
   width: 1px;
   background-color: var(--color-dividers);
   display: inline-block;
+  margin: 0 20px;
+
+  @media only screen and (max-width: ${AICS_LOGO_RESIZE_THRESHOLD_PX}px) {
+    margin: 0 10px;
+  }
 `;
 
 /**
@@ -30,13 +53,16 @@ const VerticalDivider = styled.div`
  */
 function HeaderLogo(): ReactElement {
   return (
-    <FlexRowAlignCenter $gap={20}>
+    <FlexRowAlignCenter>
       <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer" target="_blank">
-        <StyledAicsLogo title={"https://www.allencell.org"} />
+        <div title={"https://www.allencell.org"}>
+          <AicsLogoAndNameSVG />
+          <AicsLogoSVG />
+        </div>
       </AicsLogoLink>
       <VerticalDivider />
       <Link to="/" aria-label="Go to home page">
-        <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Feature Explorer</h1>
+        <h1>Timelapse Feature Explorer</h1>
       </Link>
     </FlexRowAlignCenter>
   );
@@ -60,7 +86,7 @@ const HeaderContainer = styled.div`
   gap: 10px;
   position: sticky;
   background-color: var(--color-background);
-  z-index: 100;
+  z-index: 2000;
   top: 0;
   left: 0;
 `;
