@@ -20,7 +20,7 @@ import { FlexColumn } from "../../styles/utils";
 
 import { FeatureType } from "../../colorizer/Dataset";
 import IconButton from "../IconButton";
-import LabeledRangeSlider from "../LabeledRangeSlider";
+import LabeledSlider from "../LabeledSlider";
 
 import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 
@@ -261,7 +261,8 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
 
     return (
       <div style={{ width: "calc(100% - 10px)" }}>
-        <LabeledRangeSlider
+        <LabeledSlider
+          type="range"
           min={item.min}
           max={item.max}
           minSliderBound={sliderMin}
