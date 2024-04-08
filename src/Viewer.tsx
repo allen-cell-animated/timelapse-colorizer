@@ -49,8 +49,9 @@ import Export from "./components/Export";
 import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
-import LabeledRangeSlider from "./components/LabeledRangeSlider";
+import LabeledSlider from "./components/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
+import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
@@ -727,6 +728,7 @@ function Viewer(): ReactElement {
   return (
     <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
+      <SmallScreenWarning />
 
       <Header>
         <h3>{collection?.metadata.name ?? null}</h3>
@@ -818,7 +820,8 @@ function Viewer(): ReactElement {
                           disabled={disableUi}
                         />
                       ) : (
-                        <LabeledRangeSlider
+                        <LabeledSlider
+                          type="range"
                           min={colorRampMin}
                           max={colorRampMax}
                           minSliderBound={dataset?.getFeatureData(featureKey)?.min}

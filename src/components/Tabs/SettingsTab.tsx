@@ -1,6 +1,5 @@
-import { Checkbox, Slider } from "antd";
+import { Checkbox } from "antd";
 import React, { ReactElement } from "react";
-import styled from "styled-components";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
@@ -10,6 +9,7 @@ import { FlexColumn } from "../../styles/utils";
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
+import LabeledSlider from "../LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 
 const NO_BACKDROP = {
@@ -18,6 +18,7 @@ const NO_BACKDROP = {
 };
 
 const INDENT_PX = 24;
+const MAX_SLIDER_WIDTH = "250px";
 
 type SettingsTabProps = {
   config: ViewerConfig;
@@ -27,25 +28,6 @@ type SettingsTabProps = {
   setSelectedBackdropKey: (key: string | null) => void;
 
   dataset: Dataset | null;
-};
-
-const HiddenMarksSlider = styled(Slider)`
-  &.ant-slider-with-marks {
-    /** Override ant default styling which adds margin for mark text */
-    margin-bottom: 9.625px;
-  }
-  & .ant-slider-mark {
-    /** Hide mark text */
-    display: none;
-    height: 0;
-  }
-`;
-
-const makeAntSliderMarks = (marks: number[]): { [key: number]: string } => {
-  return marks.reduce((acc, mark) => {
-    acc[mark] = mark.toString();
-    return acc;
-  }, {} as { [key: number]: string });
 };
 
 const h3Wrapper = (label: string | ReactElement): ReactElement => {
@@ -60,6 +42,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
     : [];
   backdropOptions.unshift(NO_BACKDROP);
 
+  const isBackdropDisabled = backdropOptions.length === 1 || !props.selectedBackdropKey;
+
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
@@ -73,29 +57,37 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             />
           </SettingsItem>
           <SettingsItem label="Brightness">
-            <HiddenMarksSlider
-              style={{ maxWidth: "200px", width: "100%" }}
-              min={50}
-              max={150}
-              step={10}
-              value={props.config.backdropBrightness}
-              onChange={(newBrightness: number) => props.updateConfig({ backdropBrightness: newBrightness })}
-              marks={makeAntSliderMarks([50, 100, 150])}
-              tooltip={{ formatter: (value) => `${value}%` }}
-            />
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={200}
+                minInputBound={0}
+                maxInputBound={200}
+                value={props.config.backdropBrightness}
+                onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropDisabled}
+              />
+            </div>
           </SettingsItem>
 
           <SettingsItem label="Saturation">
-            <HiddenMarksSlider
-              style={{ maxWidth: "200px", width: "100%" }}
-              min={0}
-              max={100}
-              step={10}
-              value={props.config.backdropSaturation}
-              onChange={(saturation) => props.updateConfig({ backdropSaturation: saturation })}
-              marks={makeAntSliderMarks([0, 50, 100])}
-              tooltip={{ formatter: (value) => `${value}%` }}
-            />
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={props.config.backdropSaturation}
+                onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropDisabled}
+              />
+            </div>
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
@@ -120,13 +112,19 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             />
           </SettingsItem>
           <SettingsItem label="Opacity">
-            <HiddenMarksSlider
-              style={{ maxWidth: "200px", width: "100%" }}
-              min={0}
-              max={100}
-              value={props.config.objectOpacity}
-              onChange={(opacity) => props.updateConfig({ objectOpacity: opacity })}
-            />
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={props.config.objectOpacity}
+                onChange={(objectOpacity: number) => props.updateConfig({ objectOpacity: objectOpacity })}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+              />
+            </div>
           </SettingsItem>
 
           <SettingsItem>

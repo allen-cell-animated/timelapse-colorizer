@@ -141,10 +141,6 @@ vec4 getBackdropColor(vec2 sUv) {
 }
 
 vec4 getObjectColor(vec2 sUv) {
-
-  // Scale uv to compensate for the aspect of the frame
-  ivec2 frameDims = textureSize(frame, 0);
-
   // This pixel is background if, after scaling uv, it is outside the frame
   if (isOutsideBounds(sUv)) {
     return TRANSPARENT;
@@ -159,6 +155,7 @@ vec4 getObjectColor(vec2 sUv) {
   }
 
   // do an outline around highlighted object
+  ivec2 frameDims = textureSize(frame, 0);
   if (int(id) - 1 == highlightedId) {
     if (isEdge(sUv, frameDims)) {
       return vec4(1.0, 0.0, 1.0, 1.0);
@@ -191,11 +188,14 @@ vec4 getObjectColor(vec2 sUv) {
 void main() {
   vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
 
+  // Backdrop image
   vec4 backdropColor = getBackdropColor(sUv);
 
+  // Segmentation colors
   vec4 mainColor = getObjectColor(sUv);
   mainColor.a *= objectOpacity;
 
+  // Overlays for timestamp/scale bar
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
 
   gOutputColor = vec4(backgroundColor, 1.0);

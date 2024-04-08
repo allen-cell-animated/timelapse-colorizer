@@ -72,6 +72,9 @@ const theme = {
     flag: {
       background: palette.themeGrayDark,
     },
+    tooltip: {
+      background: "rgba(50, 50, 51, 0.90)",
+    },
   },
   font: {
     // LatoExtended font is a custom font family declared in the CssContainer.
@@ -285,6 +288,8 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             borderRadiusLG: 6,
             colorText: theme.color.text.primary,
             colorTextPlaceholder: theme.color.text.hint,
+            colorBgSpotlight: theme.color.tooltip.background,
+            fontWeightStrong: 400,
           },
           components: {
             Button: {
@@ -326,6 +331,8 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               // Set z-index to 2000 here because Ant sets popups to 1050 by default, and modals to 1000.
               zIndexBase: 2000,
               zIndexPopupBase: 2000,
+              titleFontSize: theme.font.size.section,
+              margin: 20,
             },
           },
         }}
