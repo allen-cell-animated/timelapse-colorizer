@@ -53,7 +53,7 @@ const VerticalDivider = styled.div`
  */
 function HeaderLogo(): ReactElement {
   return (
-    <FlexRowAlignCenter $gap={20}>
+    <FlexRowAlignCenter>
       <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer" target="_blank">
         <div title={"https://www.allencell.org"}>
           <AicsLogoAndNameSVG />
@@ -62,7 +62,7 @@ function HeaderLogo(): ReactElement {
       </AicsLogoLink>
       <VerticalDivider />
       <Link to="/" aria-label="Go to home page">
-        <h1 style={{ whiteSpace: "nowrap" }}>Timelapse Feature Explorer</h1>
+        <h1>Timelapse Feature Explorer</h1>
       </Link>
     </FlexRowAlignCenter>
   );

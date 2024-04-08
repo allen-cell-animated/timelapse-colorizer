@@ -249,6 +249,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const height = Math.floor(width / ASPECT_RATIO);
       canv.setSize(width, height);
     };
+
     const handleResize = (): void => {
       setSize();
       canv.render();
