@@ -5,6 +5,7 @@ import React, { ReactElement } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
+import { bannerVideo } from "../assets";
 import { Dataset } from "../colorizer";
 import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
@@ -280,7 +281,7 @@ export default function LandingPage(): ReactElement {
       <Banner>
         <BannerVideoContainer>
           <video autoPlay loop muted>
-            <source src="/banner_video.mp4" type="video/mp4" />
+            <source src={bannerVideo} type="video/mp4" />
           </video>
         </BannerVideoContainer>
         <BannerTextContainer>

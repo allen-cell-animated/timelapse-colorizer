@@ -2,6 +2,8 @@ import { App, ConfigProvider } from "antd";
 import React, { createContext, PropsWithChildren, ReactElement, useState } from "react";
 import styled from "styled-components";
 
+import { latoRegularEot, latoRegularTtf, latoRegularWoff, latoRegularWoff2 } from "../assets";
+
 type AppStyleProps = {
   className?: string;
 };
@@ -114,8 +116,8 @@ const CssContainer = styled.div`
     font-family: LatoExtended;
     font-style: normal;
     font-weight: 400;
-    src: url("/fonts/Lato-Regular.woff2") format("woff2"), url("/fonts/Lato-Regular.woff") format("woff"),
-      url("/fonts/Lato-Regular.ttf") format("truetype"), url("/fonts/Lato-Regular.eot") format("embedded-opentype");
+    src: url(${latoRegularWoff2}) format("woff2"), url(${latoRegularWoff}) format("woff"),
+      url(${latoRegularTtf}) format("truetype"), url(${latoRegularEot}) format("embedded-opentype");
   }
 
   /* Text */

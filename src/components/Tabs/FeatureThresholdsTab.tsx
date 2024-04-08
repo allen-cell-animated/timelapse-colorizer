@@ -4,6 +4,7 @@ import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react
 import styled, { css } from "styled-components";
 import { Color } from "three";
 
+import { DropdownSVG } from "../../assets";
 import { Dataset } from "../../colorizer";
 import {
   CategoricalFeatureThreshold,
@@ -21,8 +22,6 @@ import { FlexColumn } from "../../styles/utils";
 import { FeatureType } from "../../colorizer/Dataset";
 import IconButton from "../IconButton";
 import LabeledSlider from "../LabeledSlider";
-
-import DropdownSVG from "../../assets/dropdown-arrow.svg?react";
 
 const PanelContainer = styled(FlexColumn)`
   flex-grow: 1;
