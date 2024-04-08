@@ -1,11 +1,10 @@
 import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Tooltip } from "antd";
-import React, { ReactElement } from "react";
+import React, { lazy, ReactElement, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
-import { bannerVideo } from "../assets";
 import { Dataset } from "../colorizer";
 import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
@@ -17,6 +16,8 @@ import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
 import { landingPageContent } from "./LandingPageContent";
+
+const BannerVideo = lazy(() => import("../components/Banner/BannerVideo"));
 
 const Banner = styled(FlexColumnAlignCenter)`
   position: relative;
@@ -280,9 +281,10 @@ export default function LandingPage(): ReactElement {
       </Header>
       <Banner>
         <BannerVideoContainer>
-          <video autoPlay loop muted>
-            <source src={bannerVideo} type="video/mp4" />
-          </video>
+          <Suspense fallback={<></>}>
+            {/* Wrap in lazy + suspense so that the video doesn't block loading of the main page. TODO: transition*/}
+            <BannerVideo />
+          </Suspense>
         </BannerVideoContainer>
         <BannerTextContainer>
           <h1>Welcome to Timelapse Feature Explorer</h1>
