@@ -12,7 +12,6 @@ import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
 import Collection from "../colorizer/Collection";
-import AlertBanner from "../components/Banner/AlertBanner";
 import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
@@ -280,7 +279,6 @@ export default function LandingPage(): ReactElement {
           <HelpDropdown />
         </FlexRowAlignCenter>
       </Header>
-      <AlertBanner message="Warning: One or more frames failed to load." description={"More information here"} />
       <Banner>
         <BannerVideoContainer>
           <Suspense fallback={<></>}>
