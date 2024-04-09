@@ -219,6 +219,13 @@ const CssContainer = styled.div`
   margin: 0;
   color: var(--color-text-primary);
 
+  a {
+    &:focus,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
   h1 {
     font-size: var(--font-size-header);
     font-style: normal;
