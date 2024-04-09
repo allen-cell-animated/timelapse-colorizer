@@ -12,13 +12,13 @@ import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
 import Collection from "../colorizer/Collection";
-import WarningBanner from "../components/Banner/AlertBanner";
+import AlertBanner from "../components/Banner/AlertBanner";
 import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
 import { landingPageContent } from "./LandingPageContent";
 
-const BannerVideo = lazy(() => import("../components/Banner/BannerVideo"));
+const BannerVideo = lazy(() => import("../components/AssetWrappers/BannerVideo"));
 
 const Banner = styled(FlexColumnAlignCenter)`
   position: relative;
@@ -280,7 +280,7 @@ export default function LandingPage(): ReactElement {
           <HelpDropdown />
         </FlexRowAlignCenter>
       </Header>
-      <WarningBanner message="Warning: One or more frames failed to load." description={"More information here"} />
+      <AlertBanner message="Warning: One or more frames failed to load." description={"More information here"} />
       <Banner>
         <BannerVideoContainer>
           <Suspense fallback={<></>}>

@@ -50,18 +50,28 @@ const StyledAlert = styled(Alert)`
   }
 `;
 
-type WarningBannerProps = Spread<
+export type AlertBannerProps = Spread<
   Omit<AlertProps, "onClose" | "afterClose" | "message" | "description" | "closable" | "banner"> & {
     message: string;
+    /** Additional text, hidden behind a button labeled "Read more". */
     description?: string;
-    /**  */
+    /** If true, will show a checkbox reading, "Do not show again for this dataset." */
     showDoNotShowAgainCheckbox?: boolean;
     onClose?: (doNotShowAgain: boolean) => void;
     afterClose?: (doNotShowAgain: boolean) => void;
   }
 >;
 
-export default function WarningBanner(props: WarningBannerProps): ReactElement {
+/**
+ * A banner-style alert that wraps around the Ant Alert component.
+ * @param message: The main message to display in the alert.
+ * @param description: The description to display in the alert. This will be hidden behind a "Read more" button until clicked.
+ * @param showDoNotShowAgainCheckbox: If true, will show a checkbox reading, "Do not show again for this dataset."
+ * @param action: A button or other component element to show in the alert.
+ *
+ * Please consider using the `useAlertBanner` hook to manage alert banner states!
+ */
+export default function AlertBanner(props: AlertBannerProps): ReactElement {
   const [isDoNotShowAgainChecked, setIsDoNotShowAgainChecked] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
 
