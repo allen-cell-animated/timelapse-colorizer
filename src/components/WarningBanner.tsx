@@ -3,15 +3,42 @@ import React, { ReactElement, useState } from "react";
 import styled from "styled-components";
 
 import { Spread } from "../colorizer/utils/type_utils";
-import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
 
+// Adjusts alignment of items within the Alert
 const StyledAlert = styled(Alert)`
   & {
-    align-items: baseline;
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 
+  & > .ant-alert-action {
+    max-width: 30vw;
+
+    // Align checkbox with the top of the text, and align
+    // items so they meet the top edge of the container
+    & .ant-checkbox-wrapper {
+      margin-left: 10px;
+
+      & span {
+        align-self: flex-start;
+      }
+
+      & .ant-checkbox {
+        margin-top: 4px;
+      }
+    }
+  }
+
+  // Align the icon with the top of the text
   & > .anticon {
-    padding-top: 0px;
+    position: relative;
+    top: 4px;
+
+    & svg {
+      overflow-x: visible;
+      overflow-y: visible;
+    }
   }
 `;
 
@@ -39,7 +66,7 @@ export default function WarningBanner(props: WarningBannerProps): ReactElement {
         {!showFullContent && (
           <Button
             type="link"
-            style={{ padding: "2px", color: "var(--color-text-link)" }}
+            style={{ padding: "0px", color: "var(--color-text-link)" }}
             onClick={() => setShowFullContent(true)}
           >
             Read More
