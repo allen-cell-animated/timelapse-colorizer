@@ -1,4 +1,4 @@
-import React, { DependencyList, ReactElement, useEffect, useReducer, useRef } from "react";
+import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
 import AlertBanner, { AlertBannerProps } from "./AlertBanner";
 
@@ -21,44 +21,57 @@ export const useAlertBanner = (
   // TODO: Additional calls to `showAlert` with different `onClose` callbacks will be ignored; should probably
   // be added to a list of callbacks to call when the banner is closed.
   // TODO: Alerts are currently keyed by message, and only the first call for a message wil lbe
-  const [currentBanners, setCurrentBanners] = useReducer(
-    (_currentBanners: (ReactElement | undefined)[], newBanners: (ReactElement | undefined)[]) => newBanners,
+  const [bannerProps, setBannerProps] = useReducer(
+    (_currentBanners: AlertBannerProps[], newBanners: AlertBannerProps[]) => newBanners,
     []
   );
 
   // Do not render banner messages that are already seen or currently being rendered.
   const seenBannerMessages = useRef(new Set<string>());
 
-  const showAlert = (props: AlertBannerProps) => {
-    // Modify props to add a listener for the close event
-    // Check if banner message has been seen; if so we are already rendering this banner (or have forcibly
-    // disabled it) and should ignore it.
-    // TODO: Update currently rendered banner instead of ignoring?
-    if (seenBannerMessages.current.has(props.message)) {
-      return;
-    }
-    seenBannerMessages.current.add(props.message);
-
-    const bannerIndex = currentBanners.length;
-    // Add a listener to the onClose event to remove the banner from the list.
-    const afterClose = (doNotShowAgain: boolean) => {
-      setCurrentBanners(currentBanners.map((banner, i) => (i === bannerIndex ? undefined : banner)));
-      if (!doNotShowAgain) {
-        seenBannerMessages.current.delete(props.message);
+  const showAlert = useCallback(
+    (props: AlertBannerProps) => {
+      // Modify props to add a listener for the close event
+      // Check if banner message has been seen; if so we are already rendering this banner (or have forcibly
+      // disabled it) and should ignore it.
+      // TODO: Update currently rendered banner instead of ignoring?
+      if (seenBannerMessages.current.has(props.message)) {
+        return;
       }
-    };
-
-    const banner = <AlertBanner key={bannerIndex} {...props} afterClose={afterClose} />;
-    setCurrentBanners([...currentBanners, banner]);
-  };
+      seenBannerMessages.current.add(props.message);
+      setBannerProps([...bannerProps, props]);
+    },
+    [bannerProps, seenBannerMessages.current]
+  );
 
   useEffect(() => {
     // Clear banner list
-    setCurrentBanners([]);
+    setBannerProps([]);
     seenBannerMessages.current.clear();
-  }, [deps]);
+  }, deps);
 
-  const bannerElements = <div>{currentBanners}</div>;
+  const bannerElements = useMemo(
+    () => (
+      <div>
+        {bannerProps.map((props: AlertBannerProps | undefined, index: number) => {
+          if (!props) {
+            return null;
+          }
+          // Add a listener to the onClose event to remove the banner from the list.
+          const afterClose = (doNotShowAgain: boolean) => {
+            setBannerProps(bannerProps.filter((_, i) => i !== index));
+            if (!doNotShowAgain) {
+              seenBannerMessages.current.delete(props.message);
+            }
+            props.afterClose?.(doNotShowAgain);
+          };
+
+          return <AlertBanner key={props.message} {...props} afterClose={afterClose} />;
+        })}
+      </div>
+    ),
+    [bannerProps]
+  );
 
   return { banner: bannerElements, showAlert };
 };
