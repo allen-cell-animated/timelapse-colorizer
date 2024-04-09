@@ -5,7 +5,9 @@ import styled, { css } from "styled-components";
 import { Spread } from "../../colorizer/utils/type_utils";
 import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
 
-// Adjusts alignment of items within the Alert
+// Adjusts alignment of items within the Alert.
+// Alerts are structured like this:
+// icon | message | action (optional) | close button
 const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "success" }>`
   // Change item alignment to top of container, and apply a border color
   & {
@@ -17,6 +19,18 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
         border-bottom: 1px solid var(--color-alert-${props.type}-border) !important;
       `;
     }}
+  }
+
+  // Align the icon with the top of the text
+  & > .anticon {
+    position: relative;
+    top: 4px;
+
+    & svg {
+      // Prevent clipping of the icon
+      overflow-x: visible;
+      overflow-y: visible;
+    }
   }
 
   // Force action to resize reasonably
@@ -34,18 +48,6 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
       & .ant-checkbox {
         margin-top: 3px;
       }
-    }
-  }
-
-  // Align the icon with the top of the text
-  & > .anticon {
-    position: relative;
-    top: 4px;
-
-    & svg {
-      // Prevent clipping of the icon
-      overflow-x: visible;
-      overflow-y: visible;
     }
   }
 
@@ -72,6 +74,7 @@ export type AlertBannerProps = Spread<
 
 /**
  * A banner-style alert that wraps around the Ant Alert component.
+ * @param type: Type of alert to show. Can be "info", "warning" (default), "error", or "success".
  * @param message: The main message to display in the alert.
  * @param description: The description to display in the alert. This will be hidden behind a "Read more" button until clicked.
  * @param showDoNotShowAgainCheckbox: If true, will show a checkbox reading, "Do not show again for this dataset."
@@ -95,7 +98,7 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
   newProps.description = undefined;
   newProps.closable = true;
 
-  // Override action if showDoNotShowAgainCheckbox is true
+  // Override action if set to use the "Do not show again" checkbox
   if (props.showDoNotShowAgainCheckbox) {
     newProps.action = (
       <Checkbox checked={isDoNotShowAgainChecked} onChange={() => setIsDoNotShowAgainChecked(!isDoNotShowAgainChecked)}>

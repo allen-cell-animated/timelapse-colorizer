@@ -147,7 +147,7 @@ function Viewer(): ReactElement {
   };
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
-  const { bannerEl, showAlert } = useAlertBanner([dataset]);
+  const { bannerElement: bannerEl, showAlert } = useAlertBanner([dataset]);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
