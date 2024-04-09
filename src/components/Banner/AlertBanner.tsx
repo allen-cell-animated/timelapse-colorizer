@@ -1,15 +1,21 @@
 import { Alert, AlertProps, Button, Checkbox } from "antd";
 import React, { ReactElement, useState } from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 import { Spread } from "../../colorizer/utils/type_utils";
 import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
 
 // Adjusts alignment of items within the Alert
-const StyledAlert = styled(Alert)`
+const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "success" }>`
   & {
     align-items: flex-start;
     flex-wrap: wrap;
+
+    ${(props) => {
+      return css`
+        border-bottom: 1px solid var(--color-alert-${props.type}-border) !important;
+      `;
+    }}
   }
 
   & > .ant-alert-action {

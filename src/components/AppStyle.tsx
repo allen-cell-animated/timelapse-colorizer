@@ -26,6 +26,11 @@ const palette = {
   success: "#2fc022",
   error: "#f92d20",
   link: "#0094FF",
+  warning: "#faad14",
+  successLight: "#b7eb8f",
+  errorLight: "#ffa39e",
+  infoLight: "#91d5ff",
+  warningLight: "#ffe58f",
 };
 
 // Note: Some advanced version of this could swap different theme objects, and
@@ -76,6 +81,14 @@ const theme = {
     },
     tooltip: {
       background: "rgba(50, 50, 51, 0.90)",
+    },
+    alert: {
+      border: {
+        info: palette.infoLight,
+        warning: palette.warningLight,
+        error: palette.errorLight,
+        success: palette.successLight,
+      },
     },
   },
   font: {
@@ -161,6 +174,11 @@ const CssContainer = styled.div`
 
   --color-flag-background: ${theme.color.flag.background};
   --color-flag-text: ${theme.color.themeDark};
+
+  --color-alert-info-border: ${theme.color.alert.border.info};
+  --color-alert-warning-border: ${theme.color.alert.border.warning};
+  --color-alert-error-border: ${theme.color.alert.border.error};
+  --color-alert-success-border: ${theme.color.alert.border.success};
 
   /* Fonts */
   --default-font: ${theme.font.family};
