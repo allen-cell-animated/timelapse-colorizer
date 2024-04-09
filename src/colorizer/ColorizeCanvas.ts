@@ -143,7 +143,7 @@ export default class ColorizeCanvas {
   private categoricalPalette: ColorRamp;
   private currentFrame: number;
 
-  private missingFrameCallback: (isMissing: boolean) => void;
+  private onFrameChangeCallback: (isMissing: boolean) => void;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -209,7 +209,7 @@ export default class ColorizeCanvas {
     this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
 
-    this.missingFrameCallback = () => {};
+    this.onFrameChangeCallback = () => {};
 
     this.render = this.render.bind(this);
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
@@ -537,8 +537,8 @@ export default class ColorizeCanvas {
     });
   }
 
-  public setMissingFrameCallback(callback: (isMissing: boolean) => void): void {
-    this.missingFrameCallback = callback;
+  public setOnFrameChangeCallback(callback: (isMissing: boolean) => void): void {
+    this.onFrameChangeCallback = callback;
   }
 
   /**
@@ -600,7 +600,8 @@ export default class ColorizeCanvas {
       emptyFrame.needsUpdate = true;
       this.setUniform("frame", emptyFrame);
     }
-    this.missingFrameCallback(isMissingFile);
+
+    this.onFrameChangeCallback(isMissingFile);
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently

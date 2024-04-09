@@ -89,7 +89,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
-  const missingFrameCallback = useCallback(
+  const onFrameChangedCallback = useCallback(
     (isMissing: boolean) => {
       setShowMissingFileIcon(isMissing);
       if (props.showAlert && isMissing) {
@@ -105,7 +105,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [props.showAlert, setShowMissingFileIcon, canv]
   );
 
-  canv.setMissingFrameCallback(missingFrameCallback);
+  canv.setOnFrameChangeCallback(onFrameChangedCallback);
 
   // Mount the canvas to the wrapper's location in the document.
   useEffect(() => {
