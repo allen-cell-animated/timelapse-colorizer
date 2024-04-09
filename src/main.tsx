@@ -1,11 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, Link, RouterProvider } from "react-router-dom";
 
-import { ErrorPage, LandingPage } from "./routes";
+import { FlexColumnAlignCenter } from "./styles/utils";
 
 import AppStyle from "./components/AppStyle";
-import Viewer from "./Viewer";
 
 // Set up react router
 // Use HashRouter for GitHub Pages support, so additional paths are routed to
@@ -13,13 +12,24 @@ import Viewer from "./Viewer";
 const router = createHashRouter([
   {
     path: "/",
-    element: <LandingPage />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "viewer",
-    element: <Viewer />,
-    errorElement: <ErrorPage />,
+    element: (
+      <div>
+        <FlexColumnAlignCenter style={{ width: "100%", padding: "40px" }}>
+          <h1>Coming soon...</h1>
+          <p>This page is currently under construction.</p>
+          <Link to="https://allencell.org/">Return to Allen Institute for Cell Science</Link>
+        </FlexColumnAlignCenter>
+      </div>
+    ),
+    errorElement: (
+      <div>
+        <FlexColumnAlignCenter style={{ width: "100%", padding: "40px" }}>
+          <h1>404</h1>
+          <p>The requested page could not be found.</p>
+          <Link to="https://allencell.org/">Return to Allen Institute for Cell Science</Link>
+        </FlexColumnAlignCenter>
+      </div>
+    ),
   },
 ]);
 
