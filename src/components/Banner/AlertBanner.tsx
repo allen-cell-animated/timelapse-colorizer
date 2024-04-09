@@ -2,8 +2,8 @@ import { Alert, AlertProps, Button, Checkbox } from "antd";
 import React, { ReactElement, useState } from "react";
 import styled from "styled-components";
 
-import { Spread } from "../colorizer/utils/type_utils";
-import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
+import { Spread } from "../../colorizer/utils/type_utils";
+import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
 
 // Adjusts alignment of items within the Alert
 const StyledAlert = styled(Alert)`
@@ -25,7 +25,7 @@ const StyledAlert = styled(Alert)`
       }
 
       & .ant-checkbox {
-        margin-top: 4px;
+        margin-top: 3px;
       }
     }
   }
@@ -51,21 +51,40 @@ const StyledAlert = styled(Alert)`
 `;
 
 type WarningBannerProps = Spread<
-  Omit<AlertProps, "message" | "description" | "closable" | "banner" | "action"> & {
+  Omit<AlertProps, "onClose" | "afterClose" | "message" | "description" | "closable" | "banner"> & {
     message: string;
     description?: string;
+    /**  */
+    showDoNotShowAgainCheckbox?: boolean;
+    onClose?: (doNotShowAgain: boolean) => void;
+    afterClose?: (doNotShowAgain: boolean) => void;
   }
 >;
 
 export default function WarningBanner(props: WarningBannerProps): ReactElement {
-  const [visible, setVisible] = useState(false);
+  const [isDoNotShowAgainChecked, setIsDoNotShowAgainChecked] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
 
-  const newProps: AlertProps = { ...props };
+  const onClose = () => {
+    props.onClose?.(isDoNotShowAgainChecked);
+  };
+  const afterClose = () => {
+    props.afterClose?.(isDoNotShowAgainChecked);
+  };
+
+  const newProps: AlertProps = { ...props, onClose, afterClose };
   newProps.banner = true;
   newProps.description = undefined;
   newProps.closable = true;
-  newProps.action = <Checkbox>Do not show again for this dataset</Checkbox>;
+
+  // Override action if showDoNotShowAgainCheckbox is true
+  if (props.showDoNotShowAgainCheckbox) {
+    newProps.action = (
+      <Checkbox checked={isDoNotShowAgainChecked} onChange={() => setIsDoNotShowAgainChecked(!isDoNotShowAgainChecked)}>
+        Do not show again for this dataset
+      </Checkbox>
+    );
+  }
 
   const message = (
     <FlexColumn>

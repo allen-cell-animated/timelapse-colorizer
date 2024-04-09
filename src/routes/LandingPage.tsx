@@ -12,10 +12,10 @@ import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
 import Collection from "../colorizer/Collection";
+import WarningBanner from "../components/Banner/AlertBanner";
 import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
-import WarningBanner from "../components/WarningBanner";
 import { landingPageContent } from "./LandingPageContent";
 
 const BannerVideo = lazy(() => import("../components/Banner/BannerVideo"));
