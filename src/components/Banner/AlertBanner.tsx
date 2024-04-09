@@ -104,7 +104,7 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
       ))}
     </>
   ) : (
-    <p>props.description</p>
+    <p>{props.description}</p>
   );
 
   const message = (

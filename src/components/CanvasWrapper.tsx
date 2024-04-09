@@ -8,6 +8,7 @@ import { ViewerConfig } from "../colorizer/types";
 import { FlexColumnAlignCenter } from "../styles/utils";
 
 import { AppThemeContext } from "./AppStyle";
+import { AlertBannerProps } from "./Banner";
 
 const CANVAS_BORDER_OFFSET_PX = 4;
 const ASPECT_RATIO = 14 / 10;
@@ -54,6 +55,8 @@ type CanvasWrapperProps = {
   /** Called when the canvas is clicked; reports the track info of the clicked object. */
   onTrackClicked?: (track: Track | null) => void;
 
+  showAlert?: (props: AlertBannerProps) => void;
+
   maxWidth?: number;
   maxHeight?: number;
 };
@@ -86,9 +89,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
-  useEffect(() => {
-    canv.setMissingFrameCallback(setShowMissingFileIcon);
-  }, [canv, setShowMissingFileIcon]);
+  const missingFrameCallback = useCallback(
+    (isMissing: boolean) => {
+      setShowMissingFileIcon(isMissing);
+      if (props.showAlert && isMissing) {
+        props.showAlert({
+          type: "warning",
+          message: "Warning: One or more frames failed to load.",
+          description:
+            "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
+          showDoNotShowAgainCheckbox: true,
+        });
+      }
+    },
+    [props.showAlert, setShowMissingFileIcon, canv]
+  );
+
+  canv.setMissingFrameCallback(missingFrameCallback);
 
   // Mount the canvas to the wrapper's location in the document.
   useEffect(() => {

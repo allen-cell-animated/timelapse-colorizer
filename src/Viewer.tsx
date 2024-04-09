@@ -892,6 +892,7 @@ function Viewer(): ReactElement {
                     }
                   }}
                   onMouseLeave={() => setShowHoveredId(false)}
+                  showAlert={isInitialDatasetLoaded ? showAlert : undefined}
                 />
               </HoverTooltip>
             </div>

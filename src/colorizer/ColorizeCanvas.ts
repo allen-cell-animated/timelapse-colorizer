@@ -600,7 +600,6 @@ export default class ColorizeCanvas {
       emptyFrame.needsUpdate = true;
       this.setUniform("frame", emptyFrame);
     }
-
     this.missingFrameCallback(isMissingFile);
   }
 
