@@ -7,6 +7,7 @@ import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
 
 // Adjusts alignment of items within the Alert
 const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "success" }>`
+  // Change item alignment to top of container, and apply a border color
   & {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -18,11 +19,11 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
     }}
   }
 
+  // Force action to resize reasonably
+  // and if it is a checkbox, align the checkbox and text with the top of the container/
   & > .ant-alert-action {
     max-width: 30vw;
 
-    // Align checkbox with the top of the text, and align
-    // items so they meet the top edge of the container
     & .ant-checkbox-wrapper {
       margin-left: 10px;
 
@@ -42,12 +43,13 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
     top: 4px;
 
     & svg {
+      // Prevent clipping of the icon
       overflow-x: visible;
       overflow-y: visible;
     }
   }
 
-  // Add focus outline to close
+  // Add outline to close button when focused
   & > .ant-alert-close-icon:focus,
   & > .ant-alert-close-icon:focus-visible {
     outline: 4px solid #f2ebfa;
@@ -120,7 +122,7 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
         {!showFullContent && (
           <Button
             type="link"
-            style={{ padding: "0px", height: "22px", color: "var(--color-text-link)" }}
+            style={{ padding: "0px", height: "22px", margin: "0 10px 0 0", border: 0, color: "var(--color-text-link)" }}
             onClick={() => setShowFullContent(true)}
           >
             Read More
