@@ -12,12 +12,12 @@ import AlertBanner, { AlertBannerProps } from "./AlertBanner";
  * "do not show again" behavior.
  *
  * @returns:
- *   - banner: A React element containing all the alert banners.
+ *   - bannerEl: A React element containing all the alert banners.
  *   - showAlert: A callback that adds a new alert banner (if it doesn't currently exist).
  */
 export const useAlertBanner = (
   deps: DependencyList
-): { banner: ReactElement; showAlert: (props: AlertBannerProps) => void } => {
+): { bannerEl: ReactElement; showAlert: (props: AlertBannerProps) => void } => {
   // TODO: Additional calls to `showAlert` with different `onClose` callbacks will be ignored; should probably
   // be added to a list of callbacks to call when the banner is closed.
   // TODO: Alerts are currently keyed by message, and only the first call for a message wil lbe
@@ -73,5 +73,5 @@ export const useAlertBanner = (
     [bannerProps]
   );
 
-  return { banner: bannerElements, showAlert };
+  return { bannerEl: bannerElements, showAlert };
 };

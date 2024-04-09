@@ -53,8 +53,8 @@ const StyledAlert = styled(Alert)`
 export type AlertBannerProps = Spread<
   Omit<AlertProps, "onClose" | "afterClose" | "message" | "description" | "closable" | "banner"> & {
     message: string;
-    /** Additional text, hidden behind a button labeled "Read more". */
-    description?: string;
+    /** Additional text, hidden behind a button labeled "Read more". Use an array for multiple lines.*/
+    description?: string | string[];
     /** If true, will show a checkbox reading, "Do not show again for this dataset." */
     showDoNotShowAgainCheckbox?: boolean;
     onClose?: (doNotShowAgain: boolean) => void;
@@ -96,6 +96,17 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
     );
   }
 
+  const propsDescription = props.description;
+  const description = Array.isArray(propsDescription) ? (
+    <>
+      {propsDescription.map((text: string, index: number) => (
+        <p key={index}>{text}</p>
+      ))}
+    </>
+  ) : (
+    <p>props.description</p>
+  );
+
   const message = (
     <FlexColumn>
       <FlexRowAlignCenter $wrap={"wrap"} $gap={4}>
@@ -110,7 +121,7 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
           </Button>
         )}
       </FlexRowAlignCenter>
-      {showFullContent && <p>{props.description}</p>}
+      {showFullContent && <FlexColumn>{description}</FlexColumn>}
     </FlexColumn>
   );
 
