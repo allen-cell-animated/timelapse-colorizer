@@ -51,7 +51,7 @@ export const useAlertBanner = (
       <div>
         {bannerProps.map((props: AlertBannerProps, index: number) => {
           // Extend the close callback to remove the banner from the list
-          const afterClose = (doNotShowAgain: boolean) => {
+          const afterClose = (doNotShowAgain: boolean): void => {
             setBannerProps(bannerProps.filter((_, i) => i !== index));
             if (!doNotShowAgain) {
               ignoredBannerMessages.current.delete(props.message);

@@ -86,10 +86,10 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
   const [isDoNotShowAgainChecked, setIsDoNotShowAgainChecked] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
 
-  const onClose = () => {
+  const onClose = (): void => {
     props.onClose?.(isDoNotShowAgainChecked);
   };
-  const afterClose = () => {
+  const afterClose = (): void => {
     props.afterClose?.(isDoNotShowAgainChecked);
   };
 
