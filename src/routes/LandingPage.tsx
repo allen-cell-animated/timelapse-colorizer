@@ -15,6 +15,7 @@ import Collection from "../colorizer/Collection";
 import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
+import WarningBanner from "../components/WarningBanner";
 import { landingPageContent } from "./LandingPageContent";
 
 const BannerVideo = lazy(() => import("../components/Banner/BannerVideo"));
@@ -279,6 +280,7 @@ export default function LandingPage(): ReactElement {
           <HelpDropdown />
         </FlexRowAlignCenter>
       </Header>
+      <WarningBanner message="Warning: One or more frames failed to load." description={"More information here"} />
       <Banner>
         <BannerVideoContainer>
           <Suspense fallback={<></>}>
