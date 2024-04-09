@@ -40,6 +40,14 @@ const StyledAlert = styled(Alert)`
       overflow-y: visible;
     }
   }
+
+  // Add focus outline to close
+  & > .ant-alert-close-icon:focus,
+  & > .ant-alert-close-icon:focus-visible {
+    outline: 4px solid #f2ebfa;
+    outline-offset: 1px;
+    transition: outline-offset 0s, outline 0s;
+  }
 `;
 
 type WarningBannerProps = Spread<
@@ -66,7 +74,7 @@ export default function WarningBanner(props: WarningBannerProps): ReactElement {
         {!showFullContent && (
           <Button
             type="link"
-            style={{ padding: "0px", color: "var(--color-text-link)" }}
+            style={{ padding: "0px", height: "22px", color: "var(--color-text-link)" }}
             onClick={() => setShowFullContent(true)}
           >
             Read More
