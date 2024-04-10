@@ -104,6 +104,7 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
         Do not show again for this dataset
       </Checkbox>
     );
+    newProps.closable = true;
   }
 
   const propsDescription = props.description;
