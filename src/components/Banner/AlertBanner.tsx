@@ -108,15 +108,19 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
   }
 
   const propsDescription = props.description;
-  const description = Array.isArray(propsDescription) ? (
-    <>
-      {propsDescription.map((text: string, index: number) => (
-        <p key={index}>{text}</p>
-      ))}
-    </>
-  ) : (
-    <p>{props.description}</p>
-  );
+  let description: ReactElement | undefined = undefined;
+  if (Array.isArray(propsDescription) && propsDescription.length > 0) {
+    description = (
+      <>
+        {propsDescription.map((text: string, index: number) => (
+          <p key={index}>{text}</p>
+        ))}
+      </>
+    );
+  } else if (!Array.isArray(propsDescription) && propsDescription) {
+    // Ignore empty text or undefined
+    description = <p>{propsDescription}</p>;
+  }
 
   const message = (
     <FlexColumn>
