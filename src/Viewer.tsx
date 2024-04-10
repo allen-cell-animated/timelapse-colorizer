@@ -737,7 +737,7 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
       <SmallScreenWarning />
 
-      <Header>
+      <Header alertElement={bannerEl}>
         <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
@@ -761,8 +761,6 @@ function Viewer(): ReactElement {
           <HelpDropdown />
         </FlexRowAlignCenter>
       </Header>
-
-      {bannerEl}
 
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
