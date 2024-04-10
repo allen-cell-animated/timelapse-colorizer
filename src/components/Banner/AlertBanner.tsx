@@ -55,11 +55,16 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
   }
 
   // Add outline to close button when focused
-  & > .ant-alert-close-icon:focus,
-  & > .ant-alert-close-icon:focus-visible {
-    outline: 4px solid #f2ebfa;
-    outline-offset: 1px;
-    transition: outline-offset 0s, outline 0s;
+  & > .ant-alert-close-icon {
+    // Align with rest of content/actions
+    margin-top: 7px;
+
+    &:focus,
+    &:focus-visible {
+      outline: 4px solid #f2ebfa;
+      outline-offset: 1px;
+      transition: outline-offset 0s, outline 0s;
+    }
   }
 `;
 
