@@ -24,8 +24,8 @@ const router = createHashRouter([
     errorElement: (
       <div>
         <FlexColumnAlignCenter style={{ width: "100%", padding: "40px" }}>
-          <h1>404</h1>
-          <p>The requested page could not be found.</p>
+          <h1>Coming soon...</h1>
+          <p>This page is currently under construction.</p>
           <Link to="https://allencell.org/">Return to Allen Institute for Cell Science</Link>
         </FlexColumnAlignCenter>
       </div>
