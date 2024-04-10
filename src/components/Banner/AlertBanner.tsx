@@ -13,6 +13,7 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
   & {
     align-items: flex-start;
     flex-wrap: wrap;
+    padding: 8px 30px;
 
     ${(props) => {
       return css`
@@ -24,7 +25,8 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
   // Align the icon with the top of the text
   & > .anticon {
     position: relative;
-    top: 4px;
+    top: 3px;
+    font-size: 22px;
 
     & svg {
       // Prevent clipping of the icon
@@ -40,6 +42,7 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
 
     & .ant-checkbox-wrapper {
       margin-left: 10px;
+      margin-top: 3px;
 
       & span {
         align-self: flex-start;
@@ -125,14 +128,14 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
   const message = (
     <FlexColumn>
       <FlexRowAlignCenter $wrap={"wrap"} $gap={4}>
-        <p style={{ margin: 0 }}>{props.message}</p>
+        <h3 style={{ margin: 0 }}>{props.message}</h3>
         {!showFullContent && (
           <Button
             type="link"
-            style={{ padding: "0px", height: "22px", margin: "0 10px 0 0", border: 0, color: "var(--color-text-link)" }}
+            style={{ padding: "0px", margin: "0 10px 0 0", border: 0, color: "var(--color-text-link)" }}
             onClick={() => setShowFullContent(true)}
           >
-            Read More
+            <h3>Read More</h3>
           </Button>
         )}
       </FlexRowAlignCenter>
