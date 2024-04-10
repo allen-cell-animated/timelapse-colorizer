@@ -464,6 +464,7 @@ function Viewer(): ReactElement {
             showAlert({
               message: "Dataset could not be loaded.",
               type: "error",
+              closable: false,
               description: [
                 'Encountered the following error when loading the dataset: "' + (error as Error).message + '"',
                 "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",

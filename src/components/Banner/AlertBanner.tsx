@@ -61,7 +61,7 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
 `;
 
 export type AlertBannerProps = Spread<
-  Omit<AlertProps, "onClose" | "afterClose" | "message" | "description" | "closable" | "banner"> & {
+  Omit<AlertProps, "onClose" | "afterClose" | "message" | "description" | "banner"> & {
     message: string;
     /** Additional text, hidden behind a button labeled "Read more". Use an array for multiple lines.*/
     description?: string | string[];
@@ -96,7 +96,6 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
   const newProps: AlertProps = { ...props, onClose, afterClose };
   newProps.banner = true;
   newProps.description = undefined;
-  newProps.closable = true;
 
   // Override action if set to use the "Do not show again" checkbox
   if (props.showDoNotShowAgainCheckbox) {
