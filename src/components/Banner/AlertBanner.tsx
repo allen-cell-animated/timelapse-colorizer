@@ -85,10 +85,11 @@ export type AlertBannerProps = Spread<
  * @param type: Type of alert to show. Can be "info", "warning" (default), "error", or "success".
  * @param message: The main message to display in the alert.
  * @param description: The description to display in the alert. This will be hidden behind a "Read more" button until clicked.
- * @param showDoNotShowAgainCheckbox: If true, will show a checkbox reading, "Do not show again for this dataset."
- * @param action: A button or other component element to show in the alert.
+ * @param showDoNotShowAgainCheckbox: If true, will show a checkbox reading, "Do not show again for this dataset." for the alert's action.
+ * @param action: A button or other component element to show in the alert. Overridden if `showDoNotShowAgainCheckbox` is true.
  *
- * Please consider using the `useAlertBanner` hook to manage alert banner states!
+ * Use this component directly to display static messages that should appear on startup.
+ * If dynamically adding or removing banners, use the `useAlertBanner` hook to manage alert banner states.
  */
 export default function AlertBanner(props: AlertBannerProps): ReactElement {
   const [isDoNotShowAgainChecked, setIsDoNotShowAgainChecked] = useState(false);

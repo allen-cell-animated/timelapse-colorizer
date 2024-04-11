@@ -3,25 +3,42 @@ import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, u
 import AlertBanner, { AlertBannerProps } from "./AlertBanner";
 
 /**
- * A hook to manage a list of alert banners. When a new alert message is provided, it is added to the list of
- * banners to show. Banners with repeat messages will be ignored until the original banner is closed.
+ * A hook to manage a list of alert banners. When a new alert message is provided, a new banner is shown for it.
+ * Additional alerts with repeat messages will be ignored until the original banner is closed.
  *
- * Banners that are closed with the "Do not show again" option checked will ignore any future identical
+ * Banners that are closed with the "Do not show again" option checked will ignore any future alerts with identical
  * messages until the dependency list changes.
  *
- * @param deps Dependency list. When changed, clears the visible banners and resets the
+ * @param deps Dependency list. When changed, clears all managed banners and resets the
  * "do not show again" behavior.
  *
- * @returns:
+ * @returns
  *   - bannerElement: A React element containing all the alert banners.
  *   - showAlert: A callback that adds a new alert banner (if it doesn't currently exist).
+ *
+ * @example
+ * ```
+ * const { bannerElement, showAlert } = useAlertBanner([someDependency]);
+ *
+ * try {
+ *  someOperationThatCouldThrowAnError();
+ * } catch (error) {
+ *  showAlert({
+ *    type: "error",
+ *    message: "An error occurred",
+ *    description: ["Encountered the following error: ", error.message],
+ *    showDoNotShowAgainCheckbox: true,
+ *    closable: true,
+ *   });
+ * }
+ * ```
  */
 export const useAlertBanner = (
   deps: DependencyList
 ): { bannerElement: ReactElement; showAlert: (props: AlertBannerProps) => void } => {
   // TODO: Additional calls to `showAlert` with different props/callbacks will be ignored; should we update the
   // banner or only ever show the first call?
-  // TODO: Nice animations when banners appear or are closed?
+  // TODO: Nice animations when banners appear or when all of them are cleared at once?
   const [bannerProps, setBannerProps] = useReducer(
     (_currentBanners: AlertBannerProps[], newBanners: AlertBannerProps[]) => newBanners,
     []
