@@ -9,7 +9,7 @@ type AppStyleProps = {
 };
 
 const palette = {
-  theme: "#8962d3",
+  theme: "#8860d2",
   themeDark: "#5f369f",
   themeLight: "#aa88ed",
   themeGray: "#f7f0ff",
