@@ -234,6 +234,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const clearPlotAndStopRender = (): void => {
     // TODO: Show histograms on default, cleared layout
+    // TODO: When React implements error boundaries, wrap rendering for the ScatterPlotTab
+    // and plot tab with one to catch potential rendering errors.
+    // https://react.dev/reference/react/useTransition#displaying-an-error-to-users-with-error-boundary
     Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
     setIsRendering(false);
   };
