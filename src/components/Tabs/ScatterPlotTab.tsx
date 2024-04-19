@@ -239,6 +239,28 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   };
 
   /**
+   * Removes data from all indices where xData or yData is NaN or Infinity.
+   */
+  const sanitizeNumericDataArrays = (
+    xData: DataArray,
+    yData: DataArray,
+    objectIds: number[],
+    trackIds: number[]
+  ): { xData: DataArray; yData: DataArray; objectIds: number[]; trackIds: number[] } => {
+    // Boolean array, true if both x and y are not NaN/infinity
+    const isFiniteLut = Array.from(new Uint8Array(xData.length)).map(
+      (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
+    );
+
+    return {
+      xData: xData.filter((_, i) => isFiniteLut[i]),
+      yData: yData.filter((_, i) => isFiniteLut[i]),
+      objectIds: objectIds.filter((_, i) => isFiniteLut[i]),
+      trackIds: trackIds.filter((_, i) => isFiniteLut[i]),
+    };
+  };
+
+  /**
    * Reduces the given data to only show the selected range (frame, track, or all data points).
    * @param rawXData raw data for the X-axis feature
    * @param rawYData raw data for the Y-axis feature.
@@ -299,7 +321,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xData = rawXData;
       yData = rawYData;
     }
-    return { xData, yData, objectIds, trackIds };
+    return sanitizeNumericDataArrays(xData, yData, objectIds, trackIds);
   };
 
   /**
