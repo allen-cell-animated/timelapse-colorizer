@@ -1010,6 +1010,7 @@ function Viewer(): ReactElement {
                           viewerConfig={config}
                           scatterPlotConfig={scatterPlotConfig}
                           updateScatterPlotConfig={updateScatterPlotConfig}
+                          showAlert={showAlert}
                         />
                       </div>
                     ),

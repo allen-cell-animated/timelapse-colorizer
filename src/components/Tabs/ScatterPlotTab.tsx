@@ -10,6 +10,7 @@ import { ColorRamp, Dataset, Track } from "../../colorizer";
 import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+import { ShowAlertBannerCallback } from "../Banner/hooks";
 import {
   DataArray,
   drawCrosshair,
@@ -65,6 +66,7 @@ type ScatterPlotTabProps = {
   viewerConfig: ViewerConfig;
   scatterPlotConfig: ScatterPlotConfig;
   updateScatterPlotConfig: (config: Partial<ScatterPlotConfig>) => void;
+  showAlert: ShowAlertBannerCallback;
 };
 
 const ScatterPlotContainer = styled.div`
@@ -741,15 +743,31 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       layout.uirevision = uiRevision.current;
     }
 
-    Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
-      setIsRendering(false);
-      lastRenderedState.current = {
-        xAxisFeatureKey,
-        yAxisFeatureKey,
-        rangeType,
-        ...props,
-      };
-    });
+    try {
+      Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
+        setIsRendering(false);
+        lastRenderedState.current = {
+          xAxisFeatureKey,
+          yAxisFeatureKey,
+          rangeType,
+          ...props,
+        };
+      });
+    } catch (error) {
+      console.error(error);
+      props.showAlert({
+        message: "Could not update scatter plot.",
+        type: "warning",
+        closable: true,
+        // TODO: add a better handler for different types of error messages. Handle string vs. Error.
+        description: [
+          'Encountered the following error when rendering the scatter plot: "' + error + '"',
+          "This may be due to invalid values in the feature data. If the issue persists, please contact the dataset creator or report an issue from the Help menu.",
+        ],
+        showDoNotShowAgainCheckbox: true,
+      });
+      clearPlotAndStopRender();
+    }
   };
 
   /**
