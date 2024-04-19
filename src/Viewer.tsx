@@ -9,7 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Location, useLocation, useSearchParams } from "react-router-dom";
+import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
@@ -39,6 +39,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import TimeControls from "./colorizer/TimeControls";
 import { AppThemeContext } from "./components/AppStyle";
+import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
@@ -145,6 +146,8 @@ function Viewer(): ReactElement {
     getContainer: () => notificationContainer.current as HTMLElement,
   };
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
+
+  const { bannerElement: bannerEl, showAlert } = useAlertBanner([dataset]);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -458,11 +461,15 @@ function Viewer(): ReactElement {
             datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
           } catch (error) {
             console.error(error);
-            notificationApi["error"]({
-              message: "Error loading dataset:",
-              description: (error as Error).message,
-              placement: "bottomLeft",
-              duration: 4,
+            showAlert({
+              message: "Dataset could not be loaded.",
+              type: "error",
+              closable: false,
+              description: [
+                'Encountered the following error when loading the dataset: "' + (error as Error).message + '"',
+                "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
+              ],
+              action: <Link to="/">Return to homepage</Link>,
             });
             return;
           }
@@ -730,7 +737,7 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
       <SmallScreenWarning />
 
-      <Header>
+      <Header alertElement={bannerEl}>
         <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
@@ -884,6 +891,7 @@ function Viewer(): ReactElement {
                     }
                   }}
                   onMouseLeave={() => setShowHoveredId(false)}
+                  showAlert={isInitialDatasetLoaded ? showAlert : undefined}
                 />
               </HoverTooltip>
             </div>
