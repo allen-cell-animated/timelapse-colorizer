@@ -251,7 +251,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     trackIds: number[]
   ): { xData: DataArray; yData: DataArray; objectIds: number[]; trackIds: number[] } => {
     // Boolean array, true if both x and y are not NaN/infinity
-    const isFiniteLut = Array.from(new Uint8Array(xData.length)).map(
+    const isFiniteLut = Array.from(Array(xData.length)).map(
       (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
     );
 
