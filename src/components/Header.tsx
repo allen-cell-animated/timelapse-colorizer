@@ -90,6 +90,7 @@ const HeaderContainer = styled(FlexRowAlignCenter)`
   gap: 10px;
   position: sticky;
   background-color: var(--color-background);
+  z-index: 1000;
 `;
 
 type HeaderProps = {
