@@ -1,4 +1,4 @@
-import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import AlertBanner, { AlertBannerProps } from "./AlertBanner";
 
@@ -39,20 +39,16 @@ export const useAlertBanner = (
   // TODO: Additional calls to `showAlert` with different props/callbacks will be ignored; should we update the
   // banner or only ever show the first call?
   // TODO: Nice animations when banners appear or when all of them are cleared at once?
-  const [bannerProps, setBannerProps] = useReducer(
-    (_currentBanners: AlertBannerProps[], newBanners: AlertBannerProps[]) => newBanners,
-    []
-  );
+  const [bannerProps, setBannerProps] = useState<AlertBannerProps[]>([]);
   const ignoredBannerMessages = useRef(new Set<string>());
 
   const showAlert = useCallback(
-    // Modify props to add a listener for the close event so we can delete the banner.
     (props: AlertBannerProps) => {
       if (ignoredBannerMessages.current.has(props.message)) {
         return;
       }
       ignoredBannerMessages.current.add(props.message);
-      setBannerProps([...bannerProps, props]);
+      setBannerProps((previousBannerProps) => [...previousBannerProps, props]);
     },
     [bannerProps, ignoredBannerMessages.current]
   );
@@ -69,7 +65,7 @@ export const useAlertBanner = (
         {bannerProps.map((props: AlertBannerProps, index: number) => {
           // Extend the close callback to remove the banner from the list
           const afterClose = (doNotShowAgain: boolean): void => {
-            setBannerProps(bannerProps.filter((_, i) => i !== index));
+            setBannerProps((previousBannerProps) => previousBannerProps.filter((_, i) => i !== index));
             if (!doNotShowAgain) {
               ignoredBannerMessages.current.delete(props.message);
             }
