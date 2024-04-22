@@ -147,7 +147,7 @@ function Viewer(): ReactElement {
   };
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
-  const { bannerElement: bannerEl, showAlert } = useAlertBanner([dataset]);
+  const { bannerElement, showAlert } = useAlertBanner([dataset]);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -737,7 +737,7 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
       <SmallScreenWarning />
 
-      <Header alertElement={bannerEl}>
+      <Header alertElement={bannerElement}>
         <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
