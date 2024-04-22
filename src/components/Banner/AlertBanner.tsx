@@ -10,17 +10,16 @@ import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
 // icon | message | action (optional) | close button
 const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "success" }>`
   // Change item alignment to top of container, and apply a border color
-  & {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    padding: 8px 30px;
 
-    ${(props) => {
-      return css`
-        border-bottom: 1px solid var(--color-alert-${props.type}-border) !important;
-      `;
-    }}
-  }
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding: 8px 30px;
+
+  ${(props) => {
+    return css`
+      border-bottom: 1px solid var(--color-alert-${props.type}-border) !important;
+    `;
+  }}
 
   // Align the icon with the top of the text
   & > .anticon {
@@ -28,15 +27,14 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
     top: 3px;
     font-size: 22px;
 
-    & svg {
+    svg {
       // Prevent clipping of the icon
-      overflow-x: visible;
-      overflow-y: visible;
+      overflow: visible;
     }
   }
 
   // Force action to resize reasonably
-  // and if it is a checkbox, align the checkbox and text with the top of the container/
+  // and if it is a checkbox, align the checkbox and text with the top of the container
   & > .ant-alert-action {
     max-width: 30vw;
 
@@ -149,8 +147,8 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
     </FlexColumn>
   );
 
+  // Override the "message" prop on the Alert with a custom react element
   newProps.message = message;
 
-  // Override the "message" prop on the Alert with a custom react element
   return <StyledAlert {...newProps}></StyledAlert>;
 }
