@@ -17,7 +17,7 @@ import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
 import { landingPageContent } from "./LandingPageContent";
 
-const BannerVideo = lazy(() => import("../components/Banner/BannerVideo"));
+const BannerVideo = lazy(() => import("../components/AssetWrappers/BannerVideo"));
 
 const Banner = styled(FlexColumnAlignCenter)`
   position: relative;

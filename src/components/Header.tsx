@@ -68,15 +68,19 @@ function HeaderLogo(): ReactElement {
   );
 }
 
+const StickyContainer = styled.div`
+  position: sticky;
+  z-index: 2000;
+  top: 0;
+  left: 0;
+`;
+
 /**
  * Top title bar for the app, which will stick to the top of the page.
  * Child components will be spaced apart evenly.
  * */
-const HeaderContainer = styled.div`
-  display: flex;
-  flex-direction: row;
+const HeaderContainer = styled(FlexRowAlignCenter)`
   flex-wrap: wrap;
-  align-items: center;
   justify-content: space-between;
   width: auto;
   height: fit-content;
@@ -86,16 +90,22 @@ const HeaderContainer = styled.div`
   gap: 10px;
   position: sticky;
   background-color: var(--color-background);
-  z-index: 2000;
-  top: 0;
-  left: 0;
+  z-index: 1000;
 `;
 
-export default function Header(props: PropsWithChildren): ReactElement {
+type HeaderProps = {
+  /** Optional element for alerts; will be rendered under the main header bar and use sticky positioning. */
+  alertElement?: ReactElement;
+};
+
+export default function Header(props: PropsWithChildren<HeaderProps>): ReactElement {
   return (
-    <HeaderContainer>
-      <HeaderLogo />
-      {props.children}
-    </HeaderContainer>
+    <StickyContainer>
+      <HeaderContainer>
+        <HeaderLogo />
+        {props.children}
+      </HeaderContainer>
+      {props.alertElement}
+    </StickyContainer>
   );
 }
