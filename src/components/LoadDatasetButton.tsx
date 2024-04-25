@@ -270,28 +270,26 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               </i>
             </p>
             <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
-              <Space.Compact style={{ width: "100%" }}>
-                <Dropdown
-                  trigger={["click"]}
-                  menu={collectionsDropdownProps}
-                  placement="bottomLeft"
-                  open={showRecentDropdown && !isRecentDropdownEmpty}
-                  getPopupContainer={dropdownContextRef.current ? () => dropdownContextRef.current! : undefined}
-                  dropdownRender={renderDropdown}
-                >
-                  <Input
-                    placeholder="https://example.com/collection.json"
-                    value={urlInput}
-                    ref={inputRef}
-                    onChange={(event) => setUrlInput(event.target.value)}
-                    allowClear
-                    disabled={isLoading}
-                  />
-                </Dropdown>
-                <Button type="primary" onClick={handleLoadClicked} loading={isLoading}>
-                  Load
-                </Button>
-              </Space.Compact>
+              <Dropdown
+                trigger={["click"]}
+                menu={collectionsDropdownProps}
+                placement="bottomLeft"
+                open={showRecentDropdown && !isRecentDropdownEmpty}
+                getPopupContainer={dropdownContextRef.current ? () => dropdownContextRef.current! : undefined}
+                dropdownRender={renderDropdown}
+              >
+                <Input
+                  placeholder="https://example.com/collection.json"
+                  value={urlInput}
+                  ref={inputRef}
+                  onChange={(event) => setUrlInput(event.target.value)}
+                  allowClear
+                  disabled={isLoading}
+                />
+              </Dropdown>
+              <Button type="primary" onClick={handleLoadClicked} loading={isLoading}>
+                Load
+              </Button>
             </div>
           </div>
 
