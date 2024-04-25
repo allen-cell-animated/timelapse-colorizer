@@ -2,6 +2,8 @@ import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, u
 
 import AlertBanner, { AlertBannerProps } from "./AlertBanner";
 
+export type ShowAlertBannerCallback = (props: AlertBannerProps) => void;
+
 /**
  * A hook to manage a list of alert banners. When a new alert message is provided, a new banner is shown for it.
  * Additional alerts with repeat messages will be ignored until the original banner is closed.
@@ -35,7 +37,7 @@ import AlertBanner, { AlertBannerProps } from "./AlertBanner";
  */
 export const useAlertBanner = (
   deps: DependencyList
-): { bannerElement: ReactElement; showAlert: (props: AlertBannerProps) => void } => {
+): { bannerElement: ReactElement; showAlert: ShowAlertBannerCallback } => {
   // TODO: Additional calls to `showAlert` with different props/callbacks will be ignored; should we update the
   // banner or only ever show the first call?
   // TODO: Nice animations when banners appear or when all of them are cleared at once?

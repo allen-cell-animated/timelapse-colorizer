@@ -10,6 +10,7 @@ import { ColorRamp, Dataset, Track } from "../../colorizer";
 import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+import { ShowAlertBannerCallback } from "../Banner/hooks";
 import {
   DataArray,
   drawCrosshair,
@@ -65,6 +66,7 @@ type ScatterPlotTabProps = {
   viewerConfig: ViewerConfig;
   scatterPlotConfig: ScatterPlotConfig;
   updateScatterPlotConfig: (config: Partial<ScatterPlotConfig>) => void;
+  showAlert: ShowAlertBannerCallback;
 };
 
 const ScatterPlotContainer = styled.div`
@@ -239,6 +241,28 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   };
 
   /**
+   * Removes data from all indices where xData or yData is NaN or Infinity.
+   */
+  const sanitizeNumericDataArrays = (
+    xData: DataArray,
+    yData: DataArray,
+    objectIds: number[],
+    trackIds: number[]
+  ): { xData: DataArray; yData: DataArray; objectIds: number[]; trackIds: number[] } => {
+    // Boolean array, true if both x and y are not NaN/infinity
+    const isFiniteLut = Array.from(Array(xData.length)).map(
+      (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
+    );
+
+    return {
+      xData: xData.filter((_, i) => isFiniteLut[i]),
+      yData: yData.filter((_, i) => isFiniteLut[i]),
+      objectIds: objectIds.filter((_, i) => isFiniteLut[i]),
+      trackIds: trackIds.filter((_, i) => isFiniteLut[i]),
+    };
+  };
+
+  /**
    * Reduces the given data to only show the selected range (frame, track, or all data points).
    * @param rawXData raw data for the X-axis feature
    * @param rawYData raw data for the Y-axis feature.
@@ -299,7 +323,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xData = rawXData;
       yData = rawYData;
     }
-    return { xData, yData, objectIds, trackIds };
+    // TODO: Consider moving this or making it conditional if it causes performance issues.
+    return sanitizeNumericDataArrays(xData, yData, objectIds, trackIds);
   };
 
   /**
@@ -716,15 +741,31 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       layout.uirevision = uiRevision.current;
     }
 
-    Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
-      setIsRendering(false);
-      lastRenderedState.current = {
-        xAxisFeatureKey,
-        yAxisFeatureKey,
-        rangeType,
-        ...props,
-      };
-    });
+    try {
+      Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
+        setIsRendering(false);
+        lastRenderedState.current = {
+          xAxisFeatureKey,
+          yAxisFeatureKey,
+          rangeType,
+          ...props,
+        };
+      });
+    } catch (error) {
+      console.error(error);
+      props.showAlert({
+        message: "Could not update scatter plot.",
+        type: "warning",
+        closable: true,
+        // TODO: add a better handler for different types of error messages. Handle string vs. Error.
+        description: [
+          'Encountered the following error when rendering the scatter plot: "' + error + '"',
+          "This may be due to invalid values in the feature data. If the issue persists, please contact the dataset creator or report an issue from the Help menu.",
+        ],
+        showDoNotShowAgainCheckbox: true,
+      });
+      clearPlotAndStopRender();
+    }
   };
 
   /**
