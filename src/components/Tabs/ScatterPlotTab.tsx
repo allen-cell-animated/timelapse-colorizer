@@ -323,6 +323,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xData = rawXData;
       yData = rawYData;
     }
+    // TODO: Consider moving this or making it conditional if it causes performance issues.
     return sanitizeNumericDataArrays(xData, yData, objectIds, trackIds);
   };
 
