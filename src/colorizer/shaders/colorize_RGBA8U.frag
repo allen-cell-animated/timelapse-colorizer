@@ -145,7 +145,6 @@ vec4 getBackdropColor(vec2 sUv) {
 vec4 getObjectColor(vec2 sUv) {
   // This pixel is background if, after scaling uv, it is outside the frame
   if (isOutsideBounds(sUv)) {
-    // TODO: Make this configurable.
     return vec4(canvasBackgroundColor, 1.0);
   }
 
