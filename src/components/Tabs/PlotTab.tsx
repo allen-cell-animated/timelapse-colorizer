@@ -36,6 +36,10 @@ type PlotTabProps = {
 };
 
 export default function PlotTab(props: PlotTabProps): ReactElement {
+  const searchForTrack = (): void => {
+    props.findTrack(parseInt(props.findTrackInputText, 10));
+  };
+
   return (
     <>
       <TrackTitleBar>
@@ -51,13 +55,9 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
               onChange={(event) => {
                 props.setFindTrackInputText(event.target.value);
               }}
+              onPressEnter={searchForTrack}
             />
-            <IconButton
-              disabled={props.disabled}
-              onClick={() => {
-                props.findTrack(parseInt(props.findTrackInputText, 10));
-              }}
-            >
+            <IconButton disabled={props.disabled} onClick={searchForTrack}>
               <SearchOutlined />
             </IconButton>
           </TrackSearch>
