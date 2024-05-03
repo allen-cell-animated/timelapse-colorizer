@@ -61,7 +61,7 @@ const theme = {
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
     viewport: {
-      background: palette.gray5,
+      background: "#f7f7f7",
     },
     button: {
       backgroundPrimary: palette.theme,
