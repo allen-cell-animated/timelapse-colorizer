@@ -60,6 +60,7 @@ type ColorizeUniformTypes = {
   backdropSaturation: number;
   colorRamp: Texture;
   backgroundColor: Color;
+  canvasBackgroundColor: Color;
   outlierColor: Color;
   outOfRangeColor: Color;
   highlightedId: number;
@@ -99,6 +100,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
+    canvasBackgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
@@ -365,6 +367,11 @@ export default class ColorizeCanvas {
 
   setBackgroundColor(color: Color): void {
     this.setUniform("backgroundColor", color);
+  }
+
+  /** Set the color of the area outside the frame in the canvas. */
+  setCanvasBackgroundColor(color: Color): void {
+    this.setUniform("canvasBackgroundColor", color);
   }
 
   setOutlierDrawMode(mode: DrawMode, color?: Color): void {

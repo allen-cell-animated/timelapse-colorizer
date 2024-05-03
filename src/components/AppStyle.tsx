@@ -60,6 +60,9 @@ const theme = {
       borders: palette.gray20,
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
+    viewport: {
+      background: palette.gray5,
+    },
     button: {
       backgroundPrimary: palette.theme,
       backgroundDisabled: palette.gray10,
