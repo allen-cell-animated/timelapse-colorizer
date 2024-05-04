@@ -356,13 +356,19 @@ export default class Dataset {
   }
 
   /** Loads the dataset manifest and features. */
-  public async open(manifestLoader = this.fetchJson): Promise<void> {
+  public async open(
+    options: Partial<{ manifestLoader: (url: string) => Promise<AnyManifestFile> }> = {}
+  ): Promise<void> {
     if (this.hasOpened) {
       return;
     }
+
+    const defaultOptions = { manifestLoader: this.fetchJson };
+    const fullOptions = { ...defaultOptions, ...options };
+
     this.hasOpened = true;
 
-    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
+    const manifest = updateManifestVersion(await fullOptions.manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
@@ -392,7 +398,7 @@ export default class Dataset {
       this.loadFeature(data)
     );
 
-    const result = await Promise.all([
+    const result = await Promise.allSettled([
       this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
       this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
@@ -403,15 +409,42 @@ export default class Dataset {
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
-    this.outliers = outliers;
-    this.trackIds = tracks;
-    this.times = times;
-    this.centroids = centroids;
-    this.bounds = bounds;
+    // TODO: Add reporting pathway for Dataset.load?
+    if (outliers.status === "rejected") {
+      console.warn("Failed to load outliers: ", outliers.reason);
+    } else {
+      this.outliers = outliers.value;
+    }
+    if (tracks.status === "rejected") {
+      console.warn("Failed to load tracks: ", tracks.reason);
+    } else {
+      this.trackIds = tracks.value;
+    }
+    if (times.status === "rejected") {
+      throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
+    } else {
+      this.times = times.value;
+    }
+    if (centroids.status === "rejected") {
+      console.warn("Failed to load centroids: ", centroids.reason);
+    } else {
+      this.centroids = centroids.value;
+    }
+    if (bounds.status === "rejected") {
+      console.warn("Failed to load bounds: ", bounds.reason);
+    } else {
+      this.bounds = bounds.value;
+    }
 
     // Keep original sorting order of features by inserting in promise order.
-    featureResults.forEach(([key, data]) => {
-      this.features.set(key, data);
+    featureResults.forEach((result) => {
+      if (result.status === "rejected") {
+        console.warn("Failed to load feature: ", result.reason);
+        return;
+      } else {
+        const [key, data] = result.value;
+        this.features.set(key, data);
+      }
     });
 
     if (this.features.size === 0) {
