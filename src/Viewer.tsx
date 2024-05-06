@@ -280,7 +280,7 @@ function Viewer(): ReactElement {
       if (seekToFrame) {
         setFrame(newTrack.times[0]);
       }
-      setFindTrackInput("" + trackId);
+      setFindTrackInput(trackId.toString());
     },
     [canv, dataset, featureKey, currentFrame]
   );
@@ -879,7 +879,7 @@ function Viewer(): ReactElement {
                   selectedTrack={selectedTrack}
                   config={config}
                   onTrackClicked={(track) => {
-                    setFindTrackInput("");
+                    setFindTrackInput(track?.trackId.toString() || "");
                     setSelectedTrack(track);
                   }}
                   inRangeLUT={inRangeLUT}
