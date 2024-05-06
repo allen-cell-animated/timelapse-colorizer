@@ -37,6 +37,9 @@ type PlotTabProps = {
 
 export default function PlotTab(props: PlotTabProps): ReactElement {
   const searchForTrack = (): void => {
+    if (props.findTrackInputText === "") {
+      return;
+    }
     props.findTrack(parseInt(props.findTrackInputText, 10));
   };
 
