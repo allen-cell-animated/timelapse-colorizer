@@ -17,6 +17,9 @@ import IconButton from "../IconButton";
 
 import styles from "./ColorRampDropdown.module.css";
 
+const COLOR_RAMP_BUTTON_CLASS = "color-ramp-button";
+const COLOR_PALETTE_BUTTON_CLASS = "color-palette-button";
+
 type ColorRampSelectorProps = {
   selectedRamp: string;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
@@ -128,14 +131,26 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   /** Generates a list of tooltip-wrapped buttons containing color ramp gradients. */
   const makeRampButtonList = (
     colorRampData: ColorRampData[],
-    onClick: (rampData: ColorRampData) => void
+    onClick: (rampData: ColorRampData) => void,
+    isPalette: boolean
   ): ReactElement[] => {
     const contents: ReactElement[] = [];
     for (let i = 0; i < colorRampData.length; i++) {
+      const key = colorRampData[i].key;
+      const name = colorRampData[i].name;
       contents.push(
-        <Tooltip title={colorRampData[i].name} placement="right" key={i} trigger={["hover", "focus"]}>
-          <Button onClick={() => onClick(colorRampData[i])} rootClassName={styles.dropdownButton}>
-            <img src={colorRampData[i].colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()} />
+        <Tooltip title={name} placement="right" key={i} trigger={["hover", "focus"]}>
+          <Button
+            onClick={() => onClick(colorRampData[i])}
+            rootClassName={styles.dropdownButton}
+            className={isPalette ? COLOR_PALETTE_BUTTON_CLASS : COLOR_RAMP_BUTTON_CLASS}
+            id={key} // Save ID in button for GA tracking
+            aria-label={name}
+          >
+            <img
+              style={{ pointerEvents: "none" }}
+              src={colorRampData[i].colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()}
+            />
           </Button>
         </Tooltip>
       );
@@ -161,14 +176,15 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
         const visibleColors = data.colors.slice(0, Math.max(1, props.numCategories));
         return { ...data, colorRamp: new ColorRamp(visibleColors, ColorRampType.HARD_STOP) };
       });
-      return makeRampButtonList(colorRampData, onClick);
+      return makeRampButtonList(colorRampData, onClick, true);
     } else {
       // Make gradient ramps instead
       return makeRampButtonList(
         colorRampsToDisplay.map((key) => props.knownColorRamps.get(key)!),
         (rampData) => {
           props.onChangeRamp(rampData.key, false);
-        }
+        },
+        false
       );
     }
   }, [
@@ -196,6 +212,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
   }
   const dropdownContainerClassName = dropdownClassNames.join(" ");
 
+  const currentSelectionName = props.useCategoricalPalettes ? selectedPaletteName : selectedRampData.name;
   return (
     <div className={styles.colorRampSelector} ref={componentContainerRef}>
       <h3>Color map</h3>
@@ -203,11 +220,12 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
         <Tooltip
           // Force the tooltip to be hidden (open=false) when disabled
           open={props.disabled ? false : undefined}
-          title={props.useCategoricalPalettes ? selectedPaletteName : selectedRampData.name}
+          title={currentSelectionName}
           placement="right"
           trigger={["focus", "hover"]}
         >
           <Button
+            aria-label={"Change color map (currently selected: " + currentSelectionName + ".)"}
             id={styles.selectorButton}
             className={props.useCategoricalPalettes ? styles.categorical : ""}
             disabled={props.disabled}
@@ -221,6 +239,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
       {/** Reverse map button */}
       <Tooltip title="Reverse color map" open={props.disabled || props.useCategoricalPalettes ? false : undefined}>
         <IconButton
+          aria-label="Reverse color map"
           style={{ marginLeft: "2px" }}
           type="link"
           disabled={props.disabled || props.useCategoricalPalettes}
