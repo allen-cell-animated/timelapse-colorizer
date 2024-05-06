@@ -2,6 +2,7 @@ import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
+import { AnalyticsEvent, triggerCustomEvent } from "./utils/analytics_utils";
 import { getKeyFromName } from "./utils/data_utils";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
@@ -417,6 +418,9 @@ export default class Dataset {
     if (this.features.size === 0) {
       throw new Error("No features found in dataset. Is the dataset manifest file valid?");
     }
+
+    // Analytics reporting
+    triggerCustomEvent(AnalyticsEvent.DATASET_LOAD, { dataset_writer_version: this.metadata.writerVersion || "N/A" });
 
     // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)

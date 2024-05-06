@@ -1,4 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
+import { AnalyticsEvent, triggerCustomEvent } from "./utils/analytics_utils";
 import {
   CollectionEntry,
   CollectionFile,
@@ -251,6 +252,10 @@ export default class Collection {
     for (const entry of collection.datasets) {
       collectionData.set(entry.name, entry);
     }
+
+    triggerCustomEvent(AnalyticsEvent.COLLECTION_LOAD, {
+      collection_writer_version: collection.metadata?.writerVersion || "N/A",
+    });
 
     // Convert paths to absolute paths
     collectionData.forEach((entry, key) => {
