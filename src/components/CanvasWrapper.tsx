@@ -10,7 +10,6 @@ import { FlexColumnAlignCenter } from "../styles/utils";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 
-const CANVAS_BORDER_OFFSET_PX = 4;
 const ASPECT_RATIO = 14 / 10;
 
 const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
@@ -57,8 +56,8 @@ type CanvasWrapperProps = {
 
   showAlert?: (props: AlertBannerProps) => void;
 
-  maxWidth?: number;
-  maxHeight?: number;
+  maxWidthPx?: number;
+  maxHeightPx?: number;
 };
 
 const defaultProps: Partial<CanvasWrapperProps> = {
@@ -66,8 +65,8 @@ const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseLeave() {},
   onTrackClicked: () => {},
   inRangeLUT: new Uint8Array(0),
-  maxWidth: 730,
-  maxHeight: 500,
+  maxWidthPx: 1400,
+  maxHeightPx: 1000,
 };
 
 /**
@@ -78,6 +77,8 @@ const defaultProps: Partial<CanvasWrapperProps> = {
  */
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -263,7 +264,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // I've fixed this for now by setting the breakpoint to 1250 pixels, but it's not a robust solution.
 
       // TODO: Calculate aspect ratio based on the current frame?
-      const width = Math.min(window.innerWidth - 75 - CANVAS_BORDER_OFFSET_PX, props.maxWidth);
+      const width = Math.min(
+        containerRef.current?.clientWidth ?? props.maxWidthPx,
+        props.maxWidthPx,
+        props.maxHeightPx * ASPECT_RATIO
+      );
       const height = Math.floor(width / ASPECT_RATIO);
       canv.setSize(width, height);
     };
@@ -284,7 +289,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   canv.render();
   return (
-    <div style={{ position: "relative" }}>
+    <FlexColumnAlignCenter
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+      }}
+      ref={containerRef}
+    >
       <div ref={canvasRef}></div>
       <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
@@ -292,6 +304,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
-    </div>
+    </FlexColumnAlignCenter>
   );
 }
