@@ -28,8 +28,10 @@ export type AnalyticsEventPayload<T extends AnalyticsEvent> = {
  * Fires a custom event to Google Tag Manager. Should include the event name and any additional required data.
  */
 export function triggerAnalyticsEvent<T extends AnalyticsEvent>(eventName: T, data: AnalyticsEventPayload<T>): void {
-  window.dataLayer.push({
-    event: eventName,
-    ...data,
-  });
+  if (window.dataLayer) {
+    window.dataLayer.push({
+      event: eventName,
+      ...data,
+    });
+  }
 }
