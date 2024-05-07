@@ -254,7 +254,7 @@ export default class Collection {
     }
 
     triggerAnalyticsEvent(AnalyticsEvent.COLLECTION_LOAD, {
-      collection_writer_version: collection.metadata?.writerVersion || "N/A",
+      collectionWriterVersion: collection.metadata?.writerVersion || "N/A",
     });
 
     // Convert paths to absolute paths

@@ -318,8 +318,8 @@ function Viewer(): ReactElement {
           ? featureData.categories!.length
           : featureData.max - featureData.min;
       triggerAnalyticsEvent(AnalyticsEvent.FEATURE_SELECTED, {
-        feature_type: featureData.type,
-        feature_range: range,
+        featureType: featureData.type,
+        featureRange: range,
       });
     }
   }, []);

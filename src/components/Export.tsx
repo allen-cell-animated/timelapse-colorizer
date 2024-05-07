@@ -297,7 +297,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         setIsPlayingCloseAnimation(true);
         setTimeout(() => stopRecording(true), 750);
         triggerAnalyticsEvent(AnalyticsEvent.EXPORT_COMPLETE, {
-          export_format: recordingMode === RecordingMode.IMAGE_SEQUENCE ? "png" : "mp4",
+          exportFormat: recordingMode === RecordingMode.IMAGE_SEQUENCE ? "png" : "mp4",
         });
       },
       onRecordedFrame: (frame: number) => {

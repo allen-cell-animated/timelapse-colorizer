@@ -17,13 +17,13 @@ export default function ErrorPage(): ReactElement {
 
   if (isErrorResponse(error)) {
     errorMessage = error.status + " " + error.statusText;
-    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { error_message: error.statusText, error_status: error.status });
+    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { errorMessage: error.statusText, errorStatus: error.status });
   } else if (error instanceof Error) {
     errorMessage = error.message;
-    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { error_message: error.message });
+    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { errorMessage: error.message });
   } else {
     errorMessage = "Unknown error";
-    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { error_message: "Unknown error" });
+    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { errorMessage: "Unknown error" });
   }
 
   return (
