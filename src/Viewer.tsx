@@ -27,7 +27,7 @@ import {
   TabType,
   ViewerConfig,
 } from "./colorizer/types";
-import { AnalyticsEvent, triggerCustomEvent } from "./colorizer/utils/analytics_utils";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics_utils";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
@@ -317,7 +317,7 @@ function Viewer(): ReactElement {
         featureData.type === FeatureType.CATEGORICAL
           ? featureData.categories!.length
           : featureData.max - featureData.min;
-      triggerCustomEvent(AnalyticsEvent.FEATURE_SELECTED, {
+      triggerAnalyticsEvent(AnalyticsEvent.FEATURE_SELECTED, {
         feature_type: featureData.type,
         feature_range: range,
       });

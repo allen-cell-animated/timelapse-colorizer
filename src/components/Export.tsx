@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
-import { AnalyticsEvent, triggerCustomEvent } from "../colorizer/utils/analytics_utils";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics_utils";
 import { FlexRow } from "../styles/utils";
 
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
@@ -296,7 +296,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         // Close the modal after a small delay so the success notification can be seen
         setIsPlayingCloseAnimation(true);
         setTimeout(() => stopRecording(true), 750);
-        triggerCustomEvent(AnalyticsEvent.EXPORT_COMPLETE, {
+        triggerAnalyticsEvent(AnalyticsEvent.EXPORT_COMPLETE, {
           export_format: recordingMode === RecordingMode.IMAGE_SEQUENCE ? "png" : "mp4",
         });
       },

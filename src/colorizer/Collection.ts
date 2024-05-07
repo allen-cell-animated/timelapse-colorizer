@@ -1,5 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
-import { AnalyticsEvent, triggerCustomEvent } from "./utils/analytics_utils";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics_utils";
 import {
   CollectionEntry,
   CollectionFile,
@@ -253,7 +253,7 @@ export default class Collection {
       collectionData.set(entry.name, entry);
     }
 
-    triggerCustomEvent(AnalyticsEvent.COLLECTION_LOAD, {
+    triggerAnalyticsEvent(AnalyticsEvent.COLLECTION_LOAD, {
       collection_writer_version: collection.metadata?.writerVersion || "N/A",
     });
 
