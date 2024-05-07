@@ -297,8 +297,6 @@ export default function LandingPage(): ReactElement {
         </BannerTextContainer>
       </Banner>
 
-      <Link to="/bad">Reroute but bad:)</Link>
-
       <br />
       <ContentContainer $gap={10}>
         <FeatureHighlightsContainer>
