@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color } from "three";
+import { Color, ColorRepresentation } from "three";
 
 import { NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
@@ -128,6 +128,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.overlay.updateScaleBarOptions(defaultTheme);
     canv.overlay.updateTimestampOptions(defaultTheme);
     canv.overlay.updateBackgroundOptions({ stroke: theme.color.layout.borders });
+    canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
 
   // Update canvas color ramp
@@ -294,6 +295,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         position: "relative",
         width: "100%",
         height: "100%",
+        backgroundColor: theme.color.viewport.background,
       }}
       ref={containerRef}
     >
