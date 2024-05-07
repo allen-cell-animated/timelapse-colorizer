@@ -422,6 +422,7 @@ export default class Dataset {
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
       dataset_writer_version: this.metadata.writerVersion || "N/A",
+      total_objects: this.numObjects,
     });
 
     // TODO: Dynamically fetch features
