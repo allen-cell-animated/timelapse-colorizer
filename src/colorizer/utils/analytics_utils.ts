@@ -8,11 +8,13 @@ declare global {
 export const enum AnalyticsEvent {
   COLLECTION_LOAD = "collection_load",
   DATASET_LOAD = "dataset_load",
+  EXPORT_COMPLETE = "export_complete",
 }
 
 export type AnalyticsEventPayload<T extends AnalyticsEvent> = {
   [AnalyticsEvent.COLLECTION_LOAD]: { collection_writer_version: string };
   [AnalyticsEvent.DATASET_LOAD]: { dataset_writer_version: string };
+  [AnalyticsEvent.EXPORT_COMPLETE]: { export_format: "mp4" | "png" };
 }[T];
 
 /**
