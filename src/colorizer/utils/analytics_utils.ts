@@ -23,8 +23,12 @@ export const enum AnalyticsEvent {
 
 export type AnalyticsEventPayload<T extends AnalyticsEvent> = {
   [AnalyticsEvent.COLLECTION_LOAD]: { collectionWriterVersion: string };
-  // Include number of elements in the dataset? Number of features?
-  [AnalyticsEvent.DATASET_LOAD]: { datasetWriterVersion: string; datasetTotalObjects: number };
+  [AnalyticsEvent.DATASET_LOAD]: {
+    datasetWriterVersion: string;
+    datasetTotalObjects: number;
+    datasetFeatureCount: number;
+    datasetFrameCount: number;
+  };
   [AnalyticsEvent.EXPORT_COMPLETE]: { exportFormat: "mp4" | "png" };
   [AnalyticsEvent.FEATURE_SELECTED]: { featureType: FeatureType; featureRange: number };
   [AnalyticsEvent.ROUTE_ERROR]: { errorMessage?: string; errorStatus?: number };

@@ -423,6 +423,8 @@ export default class Dataset {
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
       datasetWriterVersion: this.metadata.writerVersion || "N/A",
       datasetTotalObjects: this.numObjects,
+      datasetFeatureCount: this.features.size,
+      datasetFrameCount: this.numberOfFrames,
     });
 
     // TODO: Dynamically fetch features
