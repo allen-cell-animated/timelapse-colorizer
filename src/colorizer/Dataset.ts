@@ -363,6 +363,8 @@ export default class Dataset {
     }
     this.hasOpened = true;
 
+    const startTime = new Date();
+
     const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
@@ -425,6 +427,7 @@ export default class Dataset {
       datasetTotalObjects: this.numObjects,
       datasetFeatureCount: this.features.size,
       datasetFrameCount: this.numberOfFrames,
+      datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
     // TODO: Dynamically fetch features

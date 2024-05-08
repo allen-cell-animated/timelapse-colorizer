@@ -29,6 +29,7 @@ export type AnalyticsEventPayload<T extends AnalyticsEvent> = {
     datasetTotalObjects: number;
     datasetFeatureCount: number;
     datasetFrameCount: number;
+    datasetLoadTimeMs: number;
   };
   [AnalyticsEvent.EXPORT_COMPLETE]: { exportFormat: "mp4" | "png" };
   [AnalyticsEvent.FEATURE_SELECTED]: { featureType: FeatureType; featureRange: number };
