@@ -1,11 +1,12 @@
 import { FeatureType } from "../Dataset";
 
 // Added by Google Tag Manager.
-// Custom events are triggered by pushing to the `event` field.
-// Additional data can also be pushed to include it as a parameter in the event.
-// Note that data will persist in the dataLayer until the page is reloaded;
-// this means that certain fields (like datasetWriterVersion) can be included in all subsequent
-// events without needing to be re-pushed.
+// Events have an event field (name) and optional payloads of additional fields.
+//
+// The dataLayer is cumulative, so previous event payload data will be included in
+// future events unless overwritten or cleared.
+// (Consecutive pushes to the dataLayer with events of different types will result in
+// a dataLayer that is the union of those two payloads.)
 declare global {
   interface Window {
     // Optional because it is undefined in testing environments
