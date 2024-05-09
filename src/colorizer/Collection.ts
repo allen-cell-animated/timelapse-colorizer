@@ -1,5 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
-import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics_utils";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
   CollectionEntry,
   CollectionFile,

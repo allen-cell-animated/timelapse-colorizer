@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
-import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics_utils";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
 import { FlexRow } from "../styles/utils";
 
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";

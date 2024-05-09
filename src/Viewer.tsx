@@ -27,7 +27,7 @@ import {
   TabType,
   ViewerConfig,
 } from "./colorizer/types";
-import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics_utils";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";

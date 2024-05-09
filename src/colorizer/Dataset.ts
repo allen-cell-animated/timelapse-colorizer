@@ -2,7 +2,7 @@ import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
-import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics_utils";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { getKeyFromName } from "./utils/data_utils";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
