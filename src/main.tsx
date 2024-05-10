@@ -1,16 +1,25 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { ErrorPage, LandingPage } from "./routes";
+import { decodeUrlAndRemoveHashRouting, isEncodedPathUrl } from "./utils/gh_routing";
 
 import AppStyle from "./components/AppStyle";
 import Viewer from "./Viewer";
 
+const locationUrl = new URL(window.location.toString());
+if (locationUrl.hash !== "" || isEncodedPathUrl(locationUrl)) {
+  const url = decodeUrlAndRemoveHashRouting(locationUrl);
+  const newRelativePath = url.pathname + url.search + url.hash;
+  console.log("Redirecting to " + newRelativePath);
+  // Replaces the query string path with the original path now that the
+  // single-page app has loaded. This lets routing work as normal below.
+  window.history.replaceState(null, "", newRelativePath);
+}
+
 // Set up react router
-// Use HashRouter for GitHub Pages support, so additional paths are routed to
-// the base app instead of trying to open pages that don't exist.
-const router = createHashRouter([
+const router = createBrowserRouter([
   {
     path: "/",
     element: <LandingPage />,
