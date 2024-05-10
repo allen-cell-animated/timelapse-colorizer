@@ -2,6 +2,7 @@ import { Button } from "antd";
 import React, { ReactElement } from "react";
 import { ErrorResponse, Link, useRouteError } from "react-router-dom";
 
+import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
 import { FlexColumnAlignCenter } from "../styles/utils";
 
 import Header from "../components/Header";
@@ -16,10 +17,13 @@ export default function ErrorPage(): ReactElement {
 
   if (isErrorResponse(error)) {
     errorMessage = error.status + " " + error.statusText;
+    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { errorMessage: error.statusText, errorStatus: error.status });
   } else if (error instanceof Error) {
     errorMessage = error.message;
+    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { errorMessage: error.message });
   } else {
     errorMessage = "Unknown error";
+    triggerAnalyticsEvent(AnalyticsEvent.ROUTE_ERROR, { errorMessage: "Unknown error" });
   }
 
   return (

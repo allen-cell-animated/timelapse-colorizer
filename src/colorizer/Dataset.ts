@@ -2,6 +2,7 @@ import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { getKeyFromName } from "./utils/data_utils";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
@@ -362,6 +363,8 @@ export default class Dataset {
     }
     this.hasOpened = true;
 
+    const startTime = new Date();
+
     const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
@@ -417,6 +420,15 @@ export default class Dataset {
     if (this.features.size === 0) {
       throw new Error("No features found in dataset. Is the dataset manifest file valid?");
     }
+
+    // Analytics reporting
+    triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
+      datasetWriterVersion: this.metadata.writerVersion || "N/A",
+      datasetTotalObjects: this.numObjects,
+      datasetFeatureCount: this.features.size,
+      datasetFrameCount: this.numberOfFrames,
+      datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
+    });
 
     // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
