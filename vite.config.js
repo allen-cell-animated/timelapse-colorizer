@@ -8,6 +8,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        // TODO: Currently 404.html imports all of the same JS chunks as index.html.
+        // Can we make it so that 404.html only imports `gh_404.js` chunks?
+        
         // eslint-disable-next-line no-undef
         main: resolve(__dirname, 'index.html'),
         // eslint-disable-next-line no-undef

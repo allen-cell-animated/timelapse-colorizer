@@ -70,6 +70,7 @@ export function isEncodedPathUrl(url: URL): boolean {
  * See `encodeUrlPathAsQueryString()` for more details.
  */
 export function encodeGitHubPagesUrl(url: URL): URL {
+  url = new URL(url); // Clone the URL to avoid modifying the original
   if (url.hostname === "allen-cell-animated.github.io") {
     if (url.pathname.toString().includes("pr-preview")) {
       return encodeUrlPathAsQueryString(url, 3);
