@@ -16,7 +16,7 @@
         padding: 0;
         background-color: #ffffff;
         color: #323233;
-        font-family: "Lato", Arial, sans-serif;
+        font-family: Lato, sans-serif;
       }
 
       #error-page-404 {
@@ -27,7 +27,7 @@
         align-items: center;
 
         a {
-          color: #0094FF;
+          color: #0099ff;
 
           &:hover,
           &:focus-within {
@@ -39,10 +39,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet" />
+    
+    <script type="module" crossorigin src="/nucmorph-colorizer/assets/404-2c2fd936.js"></script>
+    <link rel="modulepreload" crossorigin href="/nucmorph-colorizer/assets/gh_routing-04cbc116.js">
+  </head>
   <body>
     <div id="error-page-404">
-      <h1>404 Error</h1>
-      <p>The page you were looking for could not be found.</p>
+      <h1>Rerouting...</h1>
+      <p>Timelapse Colorizer encountered a 404 error when attempting to load this page.</p>
+      <p>
+        You should automatically be redirected to a working page. (If this doesn't work, your browser may have
+        JavaScript disabled, which the viewer needs to run.)
+      </p>
+      <br />
       <p>
         Return to our GitHub repository:
         <a href="https://github.com/allen-cell-animated/nucmorph-colorizer" target="_self" rel="noreferrer noopener"
