@@ -1,0 +1,1 @@
+import{j as e}from"./index-831425b2.js";const o="/nucmorph-colorizer/main/assets/banner_video-783a41be.mp4";function t(){return e.jsx("video",{autoPlay:!0,loop:!0,muted:!0,children:e.jsx("source",{src:o,type:"video/mp4"})})}export{t as default};
