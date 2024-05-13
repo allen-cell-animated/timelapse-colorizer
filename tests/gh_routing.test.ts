@@ -66,7 +66,7 @@ describe("Route utils", () => {
   });
 
   describe("URL encoding and decoding", () => {
-    function testUrlEncodingAndDecoding(urls: string[][]) {
+    function testUrlEncodingAndDecoding(urls: string[][]): void {
       for (const [input, encoded, decoded] of urls) {
         const url = new URL(input);
 
