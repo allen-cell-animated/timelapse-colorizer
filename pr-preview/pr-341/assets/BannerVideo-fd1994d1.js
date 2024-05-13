@@ -1,1 +1,0 @@
-import{j as e}from"./main-a5e5c057.js";import"./gh_routing-04cbc116.js";const r="/nucmorph-colorizer/pr-preview/pr-341/assets/banner_video-783a41be.mp4";function n(){return e.jsx("video",{autoPlay:!0,loop:!0,muted:!0,children:e.jsx("source",{src:r,type:"video/mp4"})})}export{n as default};
