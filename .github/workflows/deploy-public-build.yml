@@ -48,5 +48,5 @@ jobs:
         with:
           folder: ./dist
           # Leave existing PR preview deployments in place
-          clean-exclude: pr-preview/ main/
+          clean-exclude: pr-preview/
           branch: gh-pages
