@@ -1,74 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','GTM-KB579ZN7');</script>
-
-    <title>Timelapse Feature Explorer</title>
-    <link rel="icon" type="image/svg+xml" href="/nucmorph-colorizer/images/aics-logo.svg" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="A web-based application for interactive visualization and analysis of segmented time-series microscopy data."
-    />
-    <meta name="keywords" content="Microscopy, biology, imaging, data visualization" />
-    <meta name="author" content="Allen Institute for Cell Science" />
+    <title>Nuclear Morphogenesis Colorizer</title>
+    <style>
+#color_ramp {
+  position: absolute;
+  margin-left: 5px;
+}
 
-    <!-- FB/Opengraph Meta Tags -->
-    <meta property="og:title" content="Timelapse Feature Explorer" />
-    <meta property="og:determiner" content="the" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Allen Institute for Cell Science" />
-    <meta property="og:url" content="https://timelapse.allencell.org/" />
-    <meta
-      property="og:description"
-      content="A web-based application for interactive visualization and analysis of segmented time-series microscopy data."
-    />
-    <!-- TODO: Add image -->
-    <meta property="og:image" content="/images/meta-image.png" />
-    <meta property="og:image:width" content="1250" />
-    <meta property="og:image:height" content="800" />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:locale" content="en_US" />
-    <meta
-      property="og:image:alt"
-      content="A view of the Timelapse Feature Explorer showing a colony of cells with nuclei colored by volume."
-    />
+#color_ramp canvas {
+  display: block;
+}
 
-    <!-- Twitter meta tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@AllenInstitute" />
-    <meta property="twitter:domain" content="timelapse.allencell.org" />
-    <meta property="twitter:url" content="https://timelapse.allencell.org/" />
-    <meta name="twitter:title" content="Timelapse Feature Explorer" />
-    <meta
-      name="twitter:description"
-      content="A web-based application for interactive visualization and analysis of segmented time-series microscopy data."
-    />
-    <meta name="twitter:image" content="/images/meta-image.png" />
-    <meta
-      name="twitter:image:alt"
-      content="A view of the Timelapse Feature Explorer showing a colony of cells with nuclei colored by volume."
-    />
-    <script type="module" crossorigin src="/nucmorph-colorizer/assets/main-9c40094d.js"></script>
-    <link rel="modulepreload" crossorigin href="/nucmorph-colorizer/assets/gh_routing-04cbc116.js">
-    <link rel="stylesheet" href="/nucmorph-colorizer/assets/index-305c231e.css">
+#color_ramp:not(:hover) canvas:not(.selected) {
+  display: none;
+}
+
+#color_ramp canvas:hover, #color_ramp canvas.selected {
+  outline: 3px solid black;
+  outline-offset: -2px;
+}
+    </style>
+    <script type="module" crossorigin src="/nucmorph-colorizer/assets/index-02b88161.js"></script>
   </head>
-  <body style="margin: 0">
-    <noscript
-      ><iframe
-        src="https://www.googletagmanager.com/ns.html?id=GTM-KB579ZN7"
-        height="0"
-        width="0"
-        style="display: none; visibility: hidden"
-      ></iframe
-    ></noscript>
-
-    <div id="root"></div>
+  <body>
+    <div style="height: 30px;">
+      <label for="dataset">Dataset</label>
+      <select name="Dataset" id="dataset">
+        <option value="mama_bear">mama_bear</option>
+        <option value="goldilocks">goldilocks</option>
+        <option value="baby_bear">baby_bear</option>
+      </select>
+      <label for="feature">Feature</label>
+      <select name="Feature" id="feature"></select>
+      <label for="color_ramp">Color ramp</label>
+      <span id="color_ramp"></span>
+    </div>
+    <div id="app"></div>
+    <div>(use arrow keys)</div>
     
   </body>
 </html>
