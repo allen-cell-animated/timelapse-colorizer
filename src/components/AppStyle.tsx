@@ -16,6 +16,7 @@ const palette = {
   themeGrayDark: "#e7e4f2",
   gray0: "#ffffff",
   gray5: "#fafafa",
+  gray7: "#f7f7f7",
   gray10: "#f2f2f2",
   gray15: "#e7e7e7",
   gray20: "#cbcbcc",
@@ -59,6 +60,9 @@ const theme = {
       dividers: palette.gray15,
       borders: palette.gray20,
       modalOverlay: "rgba(0, 0, 0, 0.7)",
+    },
+    viewport: {
+      background: palette.gray7,
     },
     button: {
       backgroundPrimary: palette.theme,

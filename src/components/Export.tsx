@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
 import { FlexRow } from "../styles/utils";
 
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
@@ -295,6 +296,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         // Close the modal after a small delay so the success notification can be seen
         setIsPlayingCloseAnimation(true);
         setTimeout(() => stopRecording(true), 750);
+        triggerAnalyticsEvent(AnalyticsEvent.EXPORT_COMPLETE, {
+          exportFormat: recordingMode === RecordingMode.IMAGE_SEQUENCE ? "png" : "mp4",
+        });
       },
       onRecordedFrame: (frame: number) => {
         // Update the progress bar as frames are recorded.
@@ -413,6 +417,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           onClick={isRecording ? handleStop : handleStartExport}
           style={{ width: "76px" }}
           disabled={isPlayingCloseAnimation}
+          id={isRecording ? "export-modal-stop-button" : "export-modal-export-button"}
         >
           {isRecording ? "Stop" : "Export"}
         </Button>
@@ -433,6 +438,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           props.onClick();
         }}
         disabled={props.disabled}
+        id="export-button"
       >
         <ExportIconSVG />
         <p>Export</p>

@@ -27,6 +27,7 @@ import {
   TabType,
   ViewerConfig,
 } from "./colorizer/types";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
@@ -37,6 +38,7 @@ import { LocationState } from "./types";
 
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import { FeatureType } from "./colorizer/Dataset";
 import TimeControls from "./colorizer/TimeControls";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
@@ -280,7 +282,7 @@ function Viewer(): ReactElement {
       if (seekToFrame) {
         setFrame(newTrack.times[0]);
       }
-      setFindTrackInput("" + trackId);
+      setFindTrackInput(trackId.toString());
     },
     [canv, dataset, featureKey, currentFrame]
   );
@@ -304,6 +306,23 @@ function Viewer(): ReactElement {
     },
     [canv, featureKey]
   );
+
+  /**
+   * Fire a custom analytics event when a feature is selected.
+   */
+  const reportFeatureSelected = useCallback((featureDataset: Dataset, newFeatureKey: string): void => {
+    const featureData = featureDataset.getFeatureData(newFeatureKey);
+    if (featureData) {
+      const range =
+        featureData.type === FeatureType.CATEGORICAL
+          ? featureData.categories!.length
+          : featureData.max - featureData.min;
+      triggerAnalyticsEvent(AnalyticsEvent.FEATURE_SELECTED, {
+        featureType: featureData.type,
+        featureRange: range,
+      });
+    }
+  }, []);
 
   /**
    * Resets the color ramp to a default min and max value based on the feature and dataset.
@@ -783,6 +802,7 @@ function Viewer(): ReactElement {
               if (value !== featureKey && dataset) {
                 replaceFeature(dataset, value);
                 resetColorRampRangeToDefaults(dataset, value);
+                reportFeatureSelected(dataset, value);
               }
             }}
           />
@@ -879,7 +899,7 @@ function Viewer(): ReactElement {
                   selectedTrack={selectedTrack}
                   config={config}
                   onTrackClicked={(track) => {
-                    setFindTrackInput("");
+                    setFindTrackInput(track?.trackId.toString() || "");
                     setSelectedTrack(track);
                   }}
                   inRangeLUT={inRangeLUT}
