@@ -39,10 +39,6 @@ export function encodeUrlPathAsQueryString(url: URL, basePathSegments: number = 
   return new URL(newUrl);
 }
 
-export function isEncodedPathUrl(url: URL): boolean {
-  return url.search !== "" && url.search.startsWith("?/");
-}
-
 /**
  * Converts a query string back into a complete URL. Used in combination with `convertUrlToQueryStringPath()`.
  * to redirect the browser for single-page apps when the server cannot be configured, e.g. GitHub pages.
@@ -65,6 +61,14 @@ export function decodeUrlQueryStringPath(url: URL): URL {
   return new URL(`${url.origin}${url.pathname}${newPathAndQueryString}${url.hash}`);
 }
 
+export function isEncodedPathUrl(url: URL): boolean {
+  return url.search !== "" && url.search.startsWith("?/");
+}
+
+/**
+ * Encodes a URL for GitHub pages by converting the path to a query string.
+ * See `encodeUrlPathAsQueryString()` for more details.
+ */
 export function encodeGitHubPagesUrl(url: URL): URL {
   if (url.hostname === "allen-cell-animated.github.io") {
     if (url.pathname.toString().includes("pr-preview")) {
@@ -80,8 +84,19 @@ export function encodeGitHubPagesUrl(url: URL): URL {
   return url;
 }
 
-export function decodeUrlAndRemoveHashRouting(url: URL): URL {
-  url = decodeUrlQueryStringPath(url);
+/**
+ * Decodes a URL that was encoded for GitHub pages, e.g. by `encodeGitHubPagesUrl()`.
+ * See `decodeUrlQueryStringPath()` for more details.
+ */
+export function decodeGitHubPagesUrl(url: URL): URL {
+  return decodeUrlQueryStringPath(url);
+}
+
+/**
+ * Changes URLs with hash-based routing to path-based routing by removing the hash from
+ * the URL. Does nothing to URLs that do not use hash-based routing.
+ */
+export function tryRemoveHashRouting(url: URL): URL {
   // Remove #/ from the URL path
   if (url.hash.startsWith("#/")) {
     const hashContents = url.hash.slice(2);

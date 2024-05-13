@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  decodeUrlAndRemoveHashRouting,
+  decodeGitHubPagesUrl,
   decodeUrlQueryStringPath,
   encodeGitHubPagesUrl,
   encodeUrlPathAsQueryString,
+  tryRemoveHashRouting,
 } from "../src/utils/gh_routing";
 
 describe("Route utils", () => {
@@ -72,7 +73,7 @@ describe("Route utils", () => {
 
         const encodedInput = encodeGitHubPagesUrl(url);
         expect(encodedInput.toString()).toEqual(encoded);
-        expect(decodeUrlAndRemoveHashRouting(encodedInput).toString()).toEqual(decoded);
+        expect(tryRemoveHashRouting(decodeGitHubPagesUrl(encodedInput)).toString()).toEqual(decoded);
       }
     }
 
@@ -171,7 +172,7 @@ describe("Route utils", () => {
 
       for (const [input, expected] of urlsToTest) {
         const url = new URL(input);
-        expect(decodeUrlAndRemoveHashRouting(url).toString()).toEqual(expected);
+        expect(tryRemoveHashRouting(decodeGitHubPagesUrl(url)).toString()).toEqual(expected);
       }
     });
   });
