@@ -357,20 +357,15 @@ export default class Dataset {
   }
 
   /** Loads the dataset manifest and features. */
-  public async open(
-    options: Partial<{ manifestLoader: (url: string) => Promise<AnyManifestFile> }> = {}
-  ): Promise<void> {
+  public async open(manifestLoader = this.fetchJson): Promise<void> {
     if (this.hasOpened) {
       return;
     }
-
-    const defaultOptions = { manifestLoader: this.fetchJson };
-    const fullOptions = { ...defaultOptions, ...options };
-
     this.hasOpened = true;
 
-    const manifest = updateManifestVersion(await fullOptions.manifestLoader(this.manifestUrl));
     const startTime = new Date();
+
+    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
