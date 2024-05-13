@@ -11,7 +11,7 @@
     "build": "vite build",
     "build-internal": "vite build --base=/nucmorph-colorizer/",
     "preview": "vite preview",
-    "deploy": "vite build --base=/nucmorph-colorizer/ && gh-pages -d dist",
+    "deploy": "vite build --base=/nucmorph-colorizer/ && gh-pages -d dist -a -m \"New gh-pages build; deployed via `deploy` script in `package.json`.\"",
     "lint": "eslint --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
     "lint-fix": "eslint --fix --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
     "typeCheck": "tsc -p tsconfig.json --noEmit"

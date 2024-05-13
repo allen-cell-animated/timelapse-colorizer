@@ -1,6 +1,6 @@
-// Hide the default 404 page content and just show a blank screen.
 import { encodeGitHubPagesUrl } from "../utils/gh_routing";
 
+// Hide the default 404 page content and just show a blank screen.
 // The content should only be shown if the browser doesn't support JavaScript.
 window.onload = () => {
   document.body.innerHTML = "";

@@ -20,18 +20,21 @@ if (locationUrl.hash !== "" || isEncodedPathUrl(locationUrl)) {
 }
 
 // Set up react router
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <LandingPage />,
-    errorElement: <ErrorPage />,
-  },
-  {
-    path: "viewer",
-    element: <Viewer />,
-    errorElement: <ErrorPage />,
-  },
-]);
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <LandingPage />,
+      errorElement: <ErrorPage />,
+    },
+    {
+      path: "viewer",
+      element: <Viewer />,
+      errorElement: <ErrorPage />,
+    },
+  ],
+  { basename: import.meta.env.BASE_URL }
+);
 
 // Render React component
 const container = document.getElementById("root");
