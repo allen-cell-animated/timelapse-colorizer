@@ -15,7 +15,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "skipLibCheck": true,
-    "types": ["vite-plugin-svgr/client", "@types/dom-webcodecs"]
+    "types": ["vite-plugin-svgr/client", "@types/dom-webcodecs", "./env.d.ts"]
   },
   "include": ["src", "tests"],
   "exclude": ["dist"]
