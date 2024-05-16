@@ -356,6 +356,19 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
+  /**
+   * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
+   */
+  private getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
+    if (promise.status === "rejected") {
+      if (failureWarning) {
+        console.warn(failureWarning, promise.reason);
+      }
+      return null;
+    }
+    return promise.value;
+  }
+
   /** Loads the dataset manifest and features. */
   public async open(manifestLoader = this.fetchJson): Promise<void> {
     if (this.hasOpened) {
@@ -406,39 +419,21 @@ export default class Dataset {
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
     // TODO: Add reporting pathway for Dataset.load?
-    if (outliers.status === "rejected") {
-      console.warn("Failed to load outliers: ", outliers.reason);
-    } else {
-      this.outliers = outliers.value;
-    }
-    if (tracks.status === "rejected") {
-      console.warn("Failed to load tracks: ", tracks.reason);
-    } else {
-      this.trackIds = tracks.value;
-    }
+    this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
+    this.trackIds = this.getPromiseValue(tracks, "Failed to load tracks: ");
+    this.times = this.getPromiseValue(times, "Failed to load times: ");
+    this.centroids = this.getPromiseValue(centroids, "Failed to load centroids: ");
+    this.bounds = this.getPromiseValue(bounds, "Failed to load bounds: ");
+
     if (times.status === "rejected") {
       throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
-    } else {
-      this.times = times.value;
-    }
-    if (centroids.status === "rejected") {
-      console.warn("Failed to load centroids: ", centroids.reason);
-    } else {
-      this.centroids = centroids.value;
-    }
-    if (bounds.status === "rejected") {
-      console.warn("Failed to load bounds: ", bounds.reason);
-    } else {
-      this.bounds = bounds.value;
     }
 
     // Keep original sorting order of features by inserting in promise order.
     featureResults.forEach((result) => {
-      if (result.status === "rejected") {
-        console.warn("Failed to load feature: ", result.reason);
-        return;
-      } else {
-        const [key, data] = result.value;
+      const featureValue = this.getPromiseValue(result, "Failed to load feature: ");
+      if (featureValue) {
+        const [key, data] = featureValue;
         this.features.set(key, data);
       }
     });
