@@ -609,6 +609,8 @@ export default class ColorizeCanvas {
     }
 
     this.onFrameChangeCallback(isMissingFile);
+    // Force rescale in case frame dimensions changed
+    this.updateScaling(this.dataset?.frameResolution || null, this.canvasResolution);
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently

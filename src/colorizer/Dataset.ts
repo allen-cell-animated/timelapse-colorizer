@@ -356,6 +356,19 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
+  /**
+   * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
+   */
+  private getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
+    if (promise.status === "rejected") {
+      if (failureWarning) {
+        console.warn(failureWarning, promise.reason);
+      }
+      return null;
+    }
+    return promise.value;
+  }
+
   /** Loads the dataset manifest and features. */
   public async open(manifestLoader = this.fetchJson): Promise<void> {
     if (this.hasOpened) {
@@ -366,7 +379,6 @@ export default class Dataset {
     const startTime = new Date();
 
     const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
-
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
@@ -395,7 +407,7 @@ export default class Dataset {
       this.loadFeature(data)
     );
 
-    const result = await Promise.all([
+    const result = await Promise.allSettled([
       this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
       this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
@@ -406,15 +418,24 @@ export default class Dataset {
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
-    this.outliers = outliers;
-    this.trackIds = tracks;
-    this.times = times;
-    this.centroids = centroids;
-    this.bounds = bounds;
+    // TODO: Add reporting pathway for Dataset.load?
+    this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
+    this.trackIds = this.getPromiseValue(tracks, "Failed to load tracks: ");
+    this.times = this.getPromiseValue(times, "Failed to load times: ");
+    this.centroids = this.getPromiseValue(centroids, "Failed to load centroids: ");
+    this.bounds = this.getPromiseValue(bounds, "Failed to load bounds: ");
+
+    if (times.status === "rejected") {
+      throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
+    }
 
     // Keep original sorting order of features by inserting in promise order.
-    featureResults.forEach(([key, data]) => {
-      this.features.set(key, data);
+    featureResults.forEach((result) => {
+      const featureValue = this.getPromiseValue(result, "Failed to load feature: ");
+      if (featureValue) {
+        const [key, data] = featureValue;
+        this.features.set(key, data);
+      }
     });
 
     if (this.features.size === 0) {
