@@ -92,3 +92,11 @@ export function numberToSciNotation(input: number, significantFigures: number): 
   const coefficient = input / 10 ** exponent;
   return `${prefix}${coefficient.toFixed(significantFigures - 1)}×10${numberToUnicodeSuperscript(exponent)}`;
 }
+
+export function getDisplayDateString(date: Date): string {
+  try {
+    return date.toLocaleString("en-US", { timeZoneName: "short" });
+  } catch {
+    return date.toISOString();
+  }
+}
