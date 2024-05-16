@@ -100,3 +100,7 @@ export function getDisplayDateString(date: Date): string {
     return date.toISOString();
   }
 }
+
+export function getBuildTimeDisplayString(): string {
+  return getDisplayDateString(new Date(Number.parseInt(import.meta.env.VITE_BUILD_TIME_UTC, 10)));
+}

@@ -2,7 +2,7 @@ import { Button } from "antd";
 import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
-import { getDisplayDateString } from "../../colorizer/utils/math_utils";
+import { getBuildTimeDisplayString } from "../../colorizer/utils/math_utils";
 import { VisuallyHidden } from "../../styles/utils";
 
 import StyledModal from "../Modals/StyledModal";
@@ -80,8 +80,8 @@ export default function HelpDropdown(): ReactElement {
         onCancel={() => setShowVersionModal(false)}
         footer={<Button onClick={() => setShowVersionModal(false)}>Close</Button>}
       >
-        <p>Timelapse Colorizer v{APP_VERSION}</p>
-        <p>Last built on {getDisplayDateString(new Date(BUILD_TIME_UTC))}</p>
+        <p>Timelapse Colorizer v{import.meta.env.VITE_APP_VERSION}</p>
+        <p>Last built on {getBuildTimeDisplayString()}</p>
       </StyledModal>
     </div>
   );
