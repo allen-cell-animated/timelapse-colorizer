@@ -26,9 +26,6 @@ npm run lint
 npm run typeCheck
 ```
 
-1. Currently `npm run build-internal` is the only code path that results in a working deployment,
-due to data being hosted only on internal servers.
-
 ## Project Documentation
 
 The `README` in the root of the repository should contain or link to
@@ -42,7 +39,7 @@ you'd like to see documented.
 
 2. Create a branch and make your edits on your branch, pushing back to your fork.
 
-3. Ensure that your changes are working, and that `npm run typeCheck`, `npm run test` and `npm run lint` all exit without errors. Add tests and documentation as needed.
+3. Ensure that your changes are working, and that `npm run typeCheck`, `npm run test` and `npm run lint` all exit without errors (`npm run checks` will perform all three for you). Add tests and documentation as needed.
 
 4. Submit a pull request back to `main` via GitHub using the provided template. Include screenshots for visual changes.
 
