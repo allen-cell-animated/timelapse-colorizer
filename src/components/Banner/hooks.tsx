@@ -1,8 +1,9 @@
-import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useMemo, useRef, useState } from "react";
 
 import AlertBanner, { AlertBannerProps } from "./AlertBanner";
 
 export type ShowAlertBannerCallback = (props: AlertBannerProps) => void;
+export type ClearBannersCallback = () => void;
 
 /**
  * A hook to manage a list of alert banners. When a new alert message is provided, a new banner is shown for it.
@@ -35,9 +36,11 @@ export type ShowAlertBannerCallback = (props: AlertBannerProps) => void;
  * }
  * ```
  */
-export const useAlertBanner = (
-  deps: DependencyList
-): { bannerElement: ReactElement; showAlert: ShowAlertBannerCallback } => {
+export const useAlertBanner = (): {
+  bannerElement: ReactElement;
+  showAlert: ShowAlertBannerCallback;
+  clearBanners: ClearBannersCallback;
+} => {
   // TODO: Additional calls to `showAlert` with different props/callbacks will be ignored; should we update the
   // banner or only ever show the first call?
   // TODO: Nice animations when banners appear or when all of them are cleared at once?
@@ -55,11 +58,10 @@ export const useAlertBanner = (
     [bannerProps, ignoredBannerMessages.current]
   );
 
-  useEffect(() => {
-    // Clear banner list
-    setBannerProps([]);
+  const clearBanners = useCallback(() => {
+    setBannerProps((_previousBannerProps) => []);
     ignoredBannerMessages.current.clear();
-  }, deps);
+  }, []);
 
   const bannerElements = useMemo(
     () => (
@@ -81,5 +83,5 @@ export const useAlertBanner = (
     [bannerProps]
   );
 
-  return { bannerElement: bannerElements, showAlert };
+  return { bannerElement: bannerElements, showAlert, clearBanners };
 };
