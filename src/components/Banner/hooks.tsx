@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo, useRef, useState } from "react";
+import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import AlertBanner, { AlertBannerProps } from "./AlertBanner";
 
@@ -12,12 +12,13 @@ export type ClearBannersCallback = () => void;
  * Banners that are closed with the "Do not show again" option checked will ignore any future alerts with identical
  * messages until the dependency list changes.
  *
- * @param deps Dependency list. When changed, clears all managed banners and resets the
- * "do not show again" behavior.
+ * @param deps Dependency list. When elements change, clears all managed banners and resets the
+ * "do not show again" behavior. Empty by default.
  *
  * @returns
  *   - bannerElement: A React element containing all the alert banners.
  *   - showAlert: A callback that adds a new alert banner (if it doesn't currently exist).
+ *   - clearBanners: A callback that clears all alert banners and resets the "do not show again" behavior.
  *
  * @example
  * ```
@@ -36,7 +37,9 @@ export type ClearBannersCallback = () => void;
  * }
  * ```
  */
-export const useAlertBanner = (): {
+export const useAlertBanner = (
+  deps: DependencyList = []
+): {
   bannerElement: ReactElement;
   showAlert: ShowAlertBannerCallback;
   clearBanners: ClearBannersCallback;
@@ -62,6 +65,11 @@ export const useAlertBanner = (): {
     setBannerProps((_previousBannerProps) => []);
     ignoredBannerMessages.current.clear();
   }, []);
+
+  // Automatically clear banners when the dependency list changes.
+  useEffect(() => {
+    clearBanners();
+  }, deps);
 
   const bannerElements = useMemo(
     () => (
