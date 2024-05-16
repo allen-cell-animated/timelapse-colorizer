@@ -101,6 +101,6 @@ export function getDisplayDateString(date: Date): string {
   }
 }
 
-export function getBuildTimeDisplayString(): string {
+export function getBuildDisplayDateString(): string {
   return getDisplayDateString(new Date(Number.parseInt(import.meta.env.VITE_BUILD_TIME_UTC, 10)));
 }

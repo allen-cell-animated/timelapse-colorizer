@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 
-import { getBuildTimeDisplayString } from "./colorizer/utils/math_utils";
+import { getBuildDisplayDateString } from "./colorizer/utils/math_utils";
 import { ErrorPage, LandingPage } from "./routes";
 
 import AppStyle from "./components/AppStyle";
@@ -13,7 +13,7 @@ const basename = import.meta.env.BASE_URL;
 
 console.log(`Timelapse Colorizer - Version ${version}`);
 console.log(`Timelapse Colorizer - Basename ${basename}`);
-console.log(`Timelapse Colorizer - Last built ${getBuildTimeDisplayString()}`);
+console.log(`Timelapse Colorizer - Last built ${getBuildDisplayDateString()}`);
 
 // Set up react router
 // Use HashRouter for GitHub Pages support, so additional paths are routed to
