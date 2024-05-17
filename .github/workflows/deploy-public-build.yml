@@ -1,11 +1,12 @@
 # Adapted from https://github.com/marketplace/actions/deploy-pr-preview and
 # https://github.com/sitek94/vite-deploy-demo
-name: Deploy Public Build
+name: Deploy GH Pages Build
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency: pages-build-deployment-${{ github.ref }}
 
@@ -43,8 +44,9 @@ jobs:
           path: ./dist
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          destination_dir: main
+          folder: ./dist
+          # Leave existing PR preview deployments in place
+          clean-exclude: pr-preview/
+          branch: gh-pages
