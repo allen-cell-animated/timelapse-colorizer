@@ -82,6 +82,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  const canvasZoom = useRef(1.0);
+  const canvasPan = useRef([0, 0]);
+
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
   const theme = useContext(AppThemeContext);
@@ -286,6 +290,34 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [canv]);
 
+  // CANVAS INTERACTION ////////////////////////////////////////
+
+  const handleZoom = (zoomDelta: number): void => {
+    canvasZoom.current += zoomDelta;
+    // Clamp zoom
+    canvasZoom.current = Math.min(2, Math.max(0.1, canvasZoom.current));
+    canv.setZoom(canvasZoom.current);
+  };
+
+  useEffect(() => {
+    const onZoom = (event: WheelEvent): void => {
+      event.preventDefault();
+      const delta = event.deltaY / 1000;
+      handleZoom(delta);
+    };
+
+    canv.domElement.addEventListener("wheel", onZoom);
+    return () => {
+      canv.domElement.removeEventListener("wheel", onZoom);
+    };
+  }, [handleZoom]);
+
+  const handlePan = (dx: number, dy: number): void => {
+    canvasPan.current[0] += dx;
+    canvasPan.current[1] += dy;
+    // canv.setPan(canvasPan.current[0], canvasPan.current[1]);
+  };
+
   // RENDERING /////////////////////////////////////////////////
 
   canv.render();
@@ -306,6 +338,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
+      <p>Zoom: {canvasZoom.current}</p>
     </FlexColumnAlignCenter>
   );
 }

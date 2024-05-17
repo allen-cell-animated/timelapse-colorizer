@@ -125,6 +125,7 @@ export default class ColorizeCanvas {
   private showTimestamp: boolean;
   private showScaleBar: boolean;
   private frameToCanvasScale: Vector4;
+  private zoomMultiplier: number;
 
   private scene: Scene;
   private pickScene: Scene;
@@ -210,6 +211,7 @@ export default class ColorizeCanvas {
     this.showScaleBar = false;
     this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
+    this.zoomMultiplier = 1;
 
     this.onFrameChangeCallback = () => {};
 
@@ -242,6 +244,14 @@ export default class ColorizeCanvas {
     if (this.dataset) {
       this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     }
+  }
+
+  setZoom(zoom: number): void {
+    this.zoomMultiplier = zoom;
+    if (this.dataset) {
+      this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    }
+    this.render();
   }
 
   private updateScaleBar(): void {
@@ -318,6 +328,7 @@ export default class ColorizeCanvas {
     } else {
       canvasToFrameScale.y = frameAspect / canvasAspect;
     }
+    canvasToFrameScale.multiplyScalar(this.zoomMultiplier);
     // Inverse
     const frameToCanvasScale = new Vector4(1 / canvasToFrameScale.x, 1 / canvasToFrameScale.y, 1, 1);
 
