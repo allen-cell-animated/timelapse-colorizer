@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-1. To do all code static analysis checks: (DO THIS BEFORE PUSHING COMMITS)
+2. To do all code static analysis checks: (DO THIS BEFORE PUSHING COMMITS)
 
 ```cmd
 npm run lint
