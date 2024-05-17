@@ -15,6 +15,7 @@ uniform float featureColorRampMin;
 uniform float featureColorRampMax;
 
 uniform vec2 canvasToFrameScale;
+uniform vec2 canvasCenterCoords;
 uniform sampler2D colorRamp;
 uniform sampler2D overlay;
 uniform sampler2D backdrop;
@@ -188,7 +189,7 @@ vec4 getObjectColor(vec2 sUv) {
 }
 
 void main() {
-  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
+  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5 - canvasCenterCoords;
 
   // Backdrop image
   vec4 backdropColor = getBackdropColor(sUv);

@@ -43,6 +43,8 @@ export const BACKGROUND_ID = -1;
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
   canvasToFrameScale: Vector2;
+  /** XY centerpoint of the canvas, in normalized frame coordinates in a [-1, 1] range. */
+  canvasCenterCoords: Vector2;
   /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
   objectOpacity: number;
@@ -84,6 +86,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyColorRamp = new ColorRamp(["#aaa", "#fff"]).texture;
 
   return {
+    canvasCenterCoords: new Uniform(new Vector2(0, 0)),
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
@@ -126,6 +129,12 @@ export default class ColorizeCanvas {
   private showScaleBar: boolean;
   private frameToCanvasScale: Vector4;
   private zoomMultiplier: number;
+  /**
+   * XY coordinates where the canvas view should be centered.
+   * Normalized to frame coordinates from [-1, 1] range, where [0, 0] is the center
+   * of the frame and [-1, -1] is the top left corner.
+   */
+  private panCoords: Vector2;
 
   private scene: Scene;
   private pickScene: Scene;
@@ -212,6 +221,7 @@ export default class ColorizeCanvas {
     this.showTimestamp = false;
     this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
     this.zoomMultiplier = 1;
+    this.panCoords = new Vector2(0, 0);
 
     this.onFrameChangeCallback = () => {};
 
@@ -251,6 +261,12 @@ export default class ColorizeCanvas {
     if (this.dataset) {
       this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     }
+    this.render();
+  }
+
+  setPan(x: number, y: number): void {
+    this.panCoords = new Vector2(x, y);
+    this.setUniform("canvasCenterCoords", this.panCoords);
     this.render();
   }
 

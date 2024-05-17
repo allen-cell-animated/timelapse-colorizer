@@ -85,6 +85,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canvasZoom = useRef(1.0);
   const canvasPan = useRef([0, 0]);
+  const isMouseDragging = useRef(false);
 
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
@@ -254,6 +255,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [props.dataset, canv]);
 
+  const calculateCanvasWidthPx = useCallback((): number => {
+    return Math.min(
+      containerRef.current?.clientWidth ?? props.maxWidthPx,
+      props.maxWidthPx,
+      props.maxHeightPx * ASPECT_RATIO
+    );
+  }, [props.maxHeightPx, props.maxWidthPx]);
+
   // Respond to window resizing
   useEffect(() => {
     /**
@@ -269,11 +278,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // I've fixed this for now by setting the breakpoint to 1250 pixels, but it's not a robust solution.
 
       // TODO: Calculate aspect ratio based on the current frame?
-      const width = Math.min(
-        containerRef.current?.clientWidth ?? props.maxWidthPx,
-        props.maxWidthPx,
-        props.maxHeightPx * ASPECT_RATIO
-      );
+      const width = calculateCanvasWidthPx();
       const height = Math.floor(width / ASPECT_RATIO);
       canv.setSize(width, height);
     };
@@ -312,11 +317,46 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [handleZoom]);
 
-  const handlePan = (dx: number, dy: number): void => {
-    canvasPan.current[0] += dx;
-    canvasPan.current[1] += dy;
-    // canv.setPan(canvasPan.current[0], canvasPan.current[1]);
-  };
+  const handlePan = useCallback(
+    (dx: number, dy: number): void => {
+      // Normalize by zoom and canvas size
+      // Convert from screen pixels to normalized, relative canvas coordinates ([-1, 1] or [0, 1]).
+      const canvasWidthPixels = calculateCanvasWidthPx();
+      const canvasHeightPixels = canvasWidthPixels / ASPECT_RATIO;
+
+      canvasPan.current[0] += (dx / canvasWidthPixels) * canvasZoom.current;
+      canvasPan.current[1] += (-dy / canvasHeightPixels) * canvasZoom.current;
+      // Clamp panning
+      canvasPan.current[0] = Math.min(0.5, Math.max(-0.5, canvasPan.current[0]));
+      canvasPan.current[1] = Math.min(0.5, Math.max(-0.5, canvasPan.current[1]));
+      canv.setPan(canvasPan.current[0], canvasPan.current[1]);
+    },
+    [calculateCanvasWidthPx]
+  );
+
+  useEffect(() => {
+    const onMouseDown = (_event: MouseEvent): void => {
+      isMouseDragging.current = true;
+    };
+    const onMouseMove = (event: MouseEvent): void => {
+      if (isMouseDragging.current) {
+        handlePan(event.movementX, event.movementY);
+      }
+    };
+    const onMouseUp = (_event: MouseEvent): void => {
+      isMouseDragging.current = false;
+    };
+
+    canv.domElement.addEventListener("mousedown", onMouseDown);
+    canv.domElement.addEventListener("mousemove", onMouseMove);
+    // Listen for mouseup events anywhere
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      canv.domElement.removeEventListener("mousedown", onMouseDown);
+      canv.domElement.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [canv, handlePan]);
 
   // RENDERING /////////////////////////////////////////////////
 
