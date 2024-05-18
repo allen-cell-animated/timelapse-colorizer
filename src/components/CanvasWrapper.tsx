@@ -12,7 +12,10 @@ import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 
 const ASPECT_RATIO = 14 / 10;
-const MIN_DRAG_THRESHOLD_PX = 5; // Minimum distance to drag before considering it a drag
+/* Minimum distance in either X or Y that mouse should move
+ * before mouse event is considered a drag
+ */
+const MIN_DRAG_THRESHOLD_PX = 5;
 
 const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   position: absolute;
@@ -309,7 +312,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseMove = useCallback(
     (event: MouseEvent): void => {
-      if (isMouseDown.current) {
+      if (isMouseDown.current && event.ctrlKey) {
+        canv.domElement.style.cursor = "grabbing";
         handlePan(event.movementX, event.movementY);
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
         // to be a drag and disable track selection.
@@ -321,6 +325,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         ) {
           isMouseDragging.current = true;
         }
+      } else {
+        canv.domElement.style.cursor = "auto";
       }
     },
     [handlePan]
@@ -337,10 +343,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseWheel = useCallback(
     (event: WheelEvent): void => {
-      event.preventDefault();
-      // TODO: Does this behave weirdly with different zoom/scroll wheel sensitivities?
-      const delta = event.deltaY / 1000;
-      handleZoom(delta);
+      if (event.ctrlKey) {
+        event.preventDefault();
+        // TODO: Does this behave weirdly with different zoom/scroll wheel sensitivities?
+        const delta = event.deltaY / 1000;
+        handleZoom(delta);
+      }
     },
     [handleZoom]
   );
