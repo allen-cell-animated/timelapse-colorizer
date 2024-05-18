@@ -108,6 +108,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // the click as a track selection.
   const isMouseDragging = useRef(false);
   const totalMouseDrag = useRef([0, 0]);
+  const [enablePan, setEnablePan] = useState(false);
 
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
@@ -325,7 +326,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const onMouseMove = useCallback(
     // TODO: Change the cursor in response to the ctrl key being held or not
     (event: MouseEvent): void => {
-      if (isMouseDown.current && event.ctrlKey) {
+      if (isMouseDown.current && (event.ctrlKey || enablePan)) {
         canv.domElement.style.cursor = "grabbing";
         handlePan(event.movementX, event.movementY);
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
@@ -339,10 +340,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           isMouseDragging.current = true;
         }
       } else {
-        canv.domElement.style.cursor = "auto";
+        // TODO: Centralized cursor handling?
+        if (enablePan) {
+          canv.domElement.style.cursor = "grab";
+        } else {
+          canv.domElement.style.cursor = "auto";
+        }
       }
     },
-    [handlePan]
+    [handlePan, enablePan]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -479,6 +485,16 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             }}
           >
             <ZoomOutOutlined />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={"Pan (Ctrl + Drag)"} placement="right">
+          <IconButton
+            type={enablePan ? "primary" : "outlined"}
+            onClick={() => {
+              setEnablePan(!enablePan);
+            }}
+          >
+            ✋
           </IconButton>
         </Tooltip>
       </CanvasControlsContainer>
