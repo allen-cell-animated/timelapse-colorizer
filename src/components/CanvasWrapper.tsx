@@ -1,4 +1,5 @@
-import { Button } from "antd";
+import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
@@ -6,16 +7,27 @@ import { Color, ColorRepresentation, Vector2 } from "three";
 import { NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
-import { FlexColumnAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter } from "../styles/utils";
 
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
+import IconButton from "./IconButton";
 
 const ASPECT_RATIO = 14 / 10;
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
  */
 const MIN_DRAG_THRESHOLD_PX = 5;
+
+const CanvasControlsContainer = styled(FlexColumn)`
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 4px;
+  border-radius: 4px;
+  background-color: var(--color-viewport-overlay-background);
+  border: 1px solid var(--color-viewport-overlay-outline);
+`;
 
 const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   position: absolute;
@@ -311,6 +323,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, []);
 
   const onMouseMove = useCallback(
+    // TODO: Change the cursor in response to the ctrl key being held or not
     (event: MouseEvent): void => {
       if (isMouseDown.current && event.ctrlKey) {
         canv.domElement.style.cursor = "grabbing";
@@ -434,17 +447,41 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         </p>
       </MissingFileIconContainer>
       <p>Zoom: {canvasZoom.current}</p>
-      <Button
-        style={{ position: "absolute", top: "0", right: "0" }}
-        onClick={() => {
-          canvasZoom.current = 1.0;
-          canvasPan.current = [0, 0];
-          canv.setZoom(1.0);
-          canv.setPan(0, 0);
-        }}
-      >
-        Reset view
-      </Button>
+      <CanvasControlsContainer $gap={4}>
+        <Tooltip title={"Reset view"} placement="right">
+          <IconButton
+            onClick={() => {
+              canvasZoom.current = 1.0;
+              canvasPan.current = [0, 0];
+              canv.setZoom(1.0);
+              canv.setPan(0, 0);
+            }}
+            type="outlined"
+          >
+            <HomeOutlined />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={"Zoom in (Ctrl + Scroll)"} placement="right">
+          <IconButton
+            type="outlined"
+            onClick={() => {
+              handleZoom(-0.25);
+            }}
+          >
+            <ZoomInOutlined />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={"Zoom out (Ctrl + Scroll)"} placement="right">
+          <IconButton
+            type="outlined"
+            onClick={() => {
+              handleZoom(0.25);
+            }}
+          >
+            <ZoomOutOutlined />
+          </IconButton>
+        </Tooltip>
+      </CanvasControlsContainer>
     </FlexColumnAlignCenter>
   );
 }
