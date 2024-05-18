@@ -1,6 +1,7 @@
+import { Button } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation } from "three";
+import { Color, ColorRepresentation, Vector2 } from "three";
 
 import { NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
@@ -11,6 +12,7 @@ import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 
 const ASPECT_RATIO = 14 / 10;
+const MIN_DRAG_THRESHOLD_PX = 5; // Minimum distance to drag before considering it a drag
 
 const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   position: absolute;
@@ -85,7 +87,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canvasZoom = useRef(1.0);
   const canvasPan = useRef([0, 0]);
+  const isMouseDown = useRef(false);
+  // Turns on if the mouse has moved more than MIN_DRAG_THRESHOLD_PX after initial click;
+  // turns off when mouse is released. Used to determine whether to pan the canvas or treat
+  // the click as a track selection.
   const isMouseDragging = useRef(false);
+  const totalMouseDrag = useRef([0, 0]);
 
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef([0, 0]);
@@ -189,71 +196,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setTimestampVisibility(props.config.showTimestamp);
   }, [props.config.showTimestamp]);
 
-  // CANVAS ACTIONS /////////////////////////////////////////////////
-
-  /** Report clicked tracks via the passed callback. */
-  const handleCanvasClick = useCallback(
-    async (event: MouseEvent): Promise<void> => {
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
-      if (id < 0 || props.dataset === null) {
-        props.onTrackClicked(null);
-      } else {
-        const trackId = props.dataset.getTrackId(id);
-        const newTrack = props.dataset.buildTrack(trackId);
-        props.onTrackClicked(newTrack);
-      }
-    },
-    [props.dataset]
-  );
-
-  useEffect(() => {
-    canv.domElement.addEventListener("click", handleCanvasClick);
-    return () => {
-      canv.domElement.removeEventListener("click", handleCanvasClick);
-    };
-  }, [handleCanvasClick]);
-
-  /** Report hovered id via the passed callback. */
-  const reportHoveredIdAtPixel = useCallback(
-    (x: number, y: number): void => {
-      if (!props.dataset) {
-        return;
-      }
-      const id = canv.getIdAtPixel(x, y);
-      props.onMouseHover(id);
-    },
-    [props.dataset, canv]
-  );
-
-  /** Track whether the canvas is hovered, so we can determine whether to send updates about the
-   * hovered value wwhen the canvas frame updates.
-   */
-  useEffect(() => {
-    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
-    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
-  });
-
-  /** Update hovered id when the canvas updates the current frame */
-  useEffect(() => {
-    if (isMouseOverCanvas.current) {
-      reportHoveredIdAtPixel(lastMousePositionPx.current[0], lastMousePositionPx.current[1]);
-    }
-  }, [canv.getCurrentFrame()]);
-
-  useEffect(() => {
-    const onMouseMove = (event: MouseEvent): void => {
-      reportHoveredIdAtPixel(event.offsetX, event.offsetY);
-      lastMousePositionPx.current = [event.offsetX, event.offsetY];
-    };
-
-    canv.domElement.addEventListener("mousemove", onMouseMove);
-    canv.domElement.addEventListener("mouseleave", props.onMouseLeave);
-    return () => {
-      canv.domElement.removeEventListener("mousemove", onMouseMove);
-      canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
-    };
-  }, [props.dataset, canv]);
+  // CANVAS RESIZING /////////////////////////////////////////////////
 
   const calculateCanvasWidthPx = useCallback((): number => {
     return Math.min(
@@ -295,27 +238,35 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [canv]);
 
-  // CANVAS INTERACTION ////////////////////////////////////////
+  // CANVAS ACTIONS /////////////////////////////////////////////////
 
-  const handleZoom = (zoomDelta: number): void => {
-    canvasZoom.current += zoomDelta;
-    // Clamp zoom
-    canvasZoom.current = Math.min(2, Math.max(0.1, canvasZoom.current));
-    canv.setZoom(canvasZoom.current);
-  };
+  /** Report clicked tracks via the passed callback. */
+  const handleTrackSelection = useCallback(
+    async (event: MouseEvent): Promise<void> => {
+      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      // Reset track input
+      if (id < 0 || props.dataset === null) {
+        props.onTrackClicked(null);
+      } else {
+        const trackId = props.dataset.getTrackId(id);
+        const newTrack = props.dataset.buildTrack(trackId);
+        props.onTrackClicked(newTrack);
+      }
+    },
+    [canv, props.dataset]
+  );
 
-  useEffect(() => {
-    const onZoom = (event: WheelEvent): void => {
-      event.preventDefault();
-      const delta = event.deltaY / 1000;
-      handleZoom(delta);
-    };
-
-    canv.domElement.addEventListener("wheel", onZoom);
-    return () => {
-      canv.domElement.removeEventListener("wheel", onZoom);
-    };
-  }, [handleZoom]);
+  const handleZoom = useCallback(
+    (zoomDelta: number): void => {
+      // TODO: Move canvas center point towards mouse position on zoom
+      // TODO: Invert zoom direction so that zooming in is positive
+      canvasZoom.current += zoomDelta;
+      // Clamp zoom
+      canvasZoom.current = Math.min(2, Math.max(0.1, canvasZoom.current));
+      canv.setZoom(canvasZoom.current);
+    },
+    [canv]
+  );
 
   const handlePan = useCallback(
     (dx: number, dy: number): void => {
@@ -331,32 +282,128 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPan.current[1] = Math.min(0.5, Math.max(-0.5, canvasPan.current[1]));
       canv.setPan(canvasPan.current[0], canvasPan.current[1]);
     },
-    [calculateCanvasWidthPx]
+    [canv, calculateCanvasWidthPx]
   );
 
-  useEffect(() => {
-    const onMouseDown = (_event: MouseEvent): void => {
-      isMouseDragging.current = true;
-    };
-    const onMouseMove = (event: MouseEvent): void => {
-      if (isMouseDragging.current) {
-        handlePan(event.movementX, event.movementY);
-      }
-    };
-    const onMouseUp = (_event: MouseEvent): void => {
-      isMouseDragging.current = false;
-    };
+  // Mouse event handlers
 
+  const onMouseClick = useCallback(
+    (event: MouseEvent): void => {
+      // Note that click events won't fire until the mouse is released. We need to check
+      // if the mouse was dragged before treating the click as a track selection; otherwise
+      // the track selection gets changed unexpectedly.
+      if (!isMouseDragging.current) {
+        handleTrackSelection(event);
+      }
+    },
+    [handleTrackSelection]
+  );
+
+  const onMouseDown = useCallback((event: MouseEvent): void => {
+    // Prevent text selection
+    event.preventDefault();
+    isMouseDragging.current = false;
+    isMouseDown.current = true;
+    totalMouseDrag.current = [0, 0];
+  }, []);
+
+  const onMouseMove = useCallback(
+    (event: MouseEvent): void => {
+      if (isMouseDown.current) {
+        handlePan(event.movementX, event.movementY);
+        // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
+        // to be a drag and disable track selection.
+        totalMouseDrag.current[0] += Math.abs(event.movementX);
+        totalMouseDrag.current[1] += Math.abs(event.movementY);
+        if (
+          !isMouseDragging.current &&
+          new Vector2(totalMouseDrag.current[0], totalMouseDrag.current[1]).length() > MIN_DRAG_THRESHOLD_PX
+        ) {
+          isMouseDragging.current = true;
+        }
+      }
+    },
+    [handlePan]
+  );
+
+  const onMouseUp = useCallback((_event: MouseEvent): void => {
+    // Reset any mouse tracking state
+    isMouseDown.current = false;
+    setTimeout(() => {
+      // Make sure that click event is processed first before resetting dragging state
+      isMouseDragging.current = false;
+    }, 10);
+  }, []);
+
+  const onMouseWheel = useCallback(
+    (event: WheelEvent): void => {
+      event.preventDefault();
+      // TODO: Does this behave weirdly with different zoom/scroll wheel sensitivities?
+      const delta = event.deltaY / 1000;
+      handleZoom(delta);
+    },
+    [handleZoom]
+  );
+
+  // Mount the event listeners
+  // Technically it's more performant to separate these into individual useEffects, but
+  // this is much more readable.
+  useEffect(() => {
+    canv.domElement.addEventListener("click", onMouseClick);
+    canv.domElement.addEventListener("wheel", onMouseWheel);
     canv.domElement.addEventListener("mousedown", onMouseDown);
-    canv.domElement.addEventListener("mousemove", onMouseMove);
-    // Listen for mouseup events anywhere
+    // Listen for mouseup and mousemove events anywhere
+    document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
     return () => {
+      canv.domElement.removeEventListener("click", onMouseClick);
+      canv.domElement.removeEventListener("wheel", onMouseWheel);
       canv.domElement.removeEventListener("mousedown", onMouseDown);
-      canv.domElement.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [canv, handlePan]);
+  }, [canv, onMouseClick, onMouseWheel, onMouseDown, onMouseMove, onMouseUp, handlePan]);
+
+  /** Track whether the canvas is hovered, so we can determine whether to send updates about the
+   * hovered value wwhen the canvas frame updates.
+   */
+  useEffect(() => {
+    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
+    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
+  });
+
+  /** Report hovered id via the passed callback. */
+  const reportHoveredIdAtPixel = useCallback(
+    (x: number, y: number): void => {
+      if (!props.dataset) {
+        return;
+      }
+      const id = canv.getIdAtPixel(x, y);
+      props.onMouseHover(id);
+    },
+    [props.dataset, canv]
+  );
+
+  /** Update hovered id when the canvas updates the current frame */
+  useEffect(() => {
+    if (isMouseOverCanvas.current) {
+      reportHoveredIdAtPixel(lastMousePositionPx.current[0], lastMousePositionPx.current[1]);
+    }
+  }, [canv.getCurrentFrame()]);
+
+  useEffect(() => {
+    const onMouseMove = (event: MouseEvent): void => {
+      reportHoveredIdAtPixel(event.offsetX, event.offsetY);
+      lastMousePositionPx.current = [event.offsetX, event.offsetY];
+    };
+
+    canv.domElement.addEventListener("mousemove", onMouseMove);
+    canv.domElement.addEventListener("mouseleave", props.onMouseLeave);
+    return () => {
+      canv.domElement.removeEventListener("mousemove", onMouseMove);
+      canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
+    };
+  }, [props.dataset, canv]);
 
   // RENDERING /////////////////////////////////////////////////
 
@@ -379,6 +426,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         </p>
       </MissingFileIconContainer>
       <p>Zoom: {canvasZoom.current}</p>
+      <Button
+        style={{ position: "absolute", top: "0", right: "0" }}
+        onClick={() => {
+          canvasZoom.current = 1.0;
+          canvasPan.current = [0, 0];
+          canv.setZoom(1.0);
+          canv.setPan(0, 0);
+        }}
+      >
+        Reset view
+      </Button>
     </FlexColumnAlignCenter>
   );
 }
