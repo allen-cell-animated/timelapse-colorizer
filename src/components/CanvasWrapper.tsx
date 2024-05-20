@@ -214,6 +214,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
+  /**
+   * Returns the current width of the canvas component, constrained by
+   * resizing rules while maintaining the aspect ratio.
+   */
   const calculateCanvasWidthPx = useCallback((): number => {
     return Math.min(
       containerRef.current?.clientWidth ?? props.maxWidthPx,
@@ -287,18 +291,28 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const handlePan = useCallback(
     (dx: number, dy: number): void => {
       // Normalize by zoom and canvas size
-      // Convert from screen pixels to normalized, relative canvas coordinates ([-1, 1] or [0, 1]).
-      const canvasWidthPixels = calculateCanvasWidthPx();
-      const canvasHeightPixels = canvasWidthPixels / ASPECT_RATIO;
+      // Convert from screen pixels to normalized, relative frame coordinates (range of [-1, 1] for X and Y).
+      const canvasWidthPx = calculateCanvasWidthPx();
+      const canvasHeightPx = canvasWidthPx / ASPECT_RATIO;
 
-      canvasPan.current[0] += (dx / canvasWidthPixels) * canvasZoom.current;
-      canvasPan.current[1] += (-dy / canvasHeightPixels) * canvasZoom.current;
+      const frameBaseWidthPx = props.dataset?.frameResolution.x ?? canvasWidthPx;
+      const frameBaseHeightPx = props.dataset?.frameResolution.y ?? canvasHeightPx;
+      const frameBaseAspectRatio = frameBaseWidthPx / frameBaseHeightPx;
+
+      // Calculate onscreen frame size in pixels by finding largest size it can be while fitting in
+      // the canvas aspect ratio.
+      const frameOnscreenWidthPx = Math.min(canvasWidthPx, canvasHeightPx * frameBaseAspectRatio);
+      const frameOnscreenHeightPx = frameOnscreenWidthPx / frameBaseAspectRatio;
+
+      // Normalize dx/dy (change in pixels) to change in frame coordinates
+      canvasPan.current[0] += (dx / frameOnscreenWidthPx) * canvasZoom.current;
+      canvasPan.current[1] += (-dy / frameOnscreenHeightPx) * canvasZoom.current;
       // Clamp panning
       canvasPan.current[0] = Math.min(0.5, Math.max(-0.5, canvasPan.current[0]));
       canvasPan.current[1] = Math.min(0.5, Math.max(-0.5, canvasPan.current[1]));
       canv.setPan(canvasPan.current[0], canvasPan.current[1]);
     },
-    [canv, calculateCanvasWidthPx]
+    [canv, calculateCanvasWidthPx, props.dataset]
   );
 
   // Mouse event handlers
