@@ -280,7 +280,7 @@ export default class ColorizeCanvas {
       // size of the frame relative to the canvas to determine the canvas' width in units.
       // We only consider X scaling here because the scale bar is always horizontal.
       const canvasWidthInUnits = frameDims.width * this.frameToCanvasScale.x;
-      const unitsPerScreenPixel = canvasWidthInUnits / this.canvasResolution.x;
+      const unitsPerScreenPixel = canvasWidthInUnits / (this.canvasResolution.x / this.zoomMultiplier);
       this.overlay.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
     } else {
       this.overlay.updateScaleBarOptions({ visible: false });
