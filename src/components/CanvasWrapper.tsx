@@ -4,7 +4,7 @@ import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRe
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 
-import { NoImageSVG } from "../assets";
+import { HandIconSVG, NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
 import { FlexColumn, FlexColumnAlignCenter } from "../styles/utils";
@@ -476,14 +476,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
               canv.setZoom(1.0);
               canv.setPan(0, 0);
             }}
-            type="outlined"
+            type="link"
           >
             <HomeOutlined />
           </IconButton>
         </Tooltip>
         <Tooltip title={"Zoom in (Ctrl + Scroll)"} placement="right">
           <IconButton
-            type="outlined"
+            type="link"
             onClick={() => {
               handleZoom(-0.25);
             }}
@@ -493,7 +493,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         </Tooltip>
         <Tooltip title={"Zoom out (Ctrl + Scroll)"} placement="right">
           <IconButton
-            type="outlined"
+            type="link"
             onClick={() => {
               handleZoom(0.25);
             }}
@@ -503,12 +503,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         </Tooltip>
         <Tooltip title={"Pan (Ctrl + Drag)"} placement="right">
           <IconButton
-            type={enablePan ? "primary" : "outlined"}
+            type={enablePan ? "primary" : "link"}
             onClick={() => {
               setEnablePan(!enablePan);
             }}
           >
-            ✋
+            <HandIconSVG />
           </IconButton>
         </Tooltip>
       </CanvasControlsContainer>
