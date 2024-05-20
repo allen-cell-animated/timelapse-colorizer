@@ -276,6 +276,53 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [canv, props.dataset]
   );
 
+  /**
+   * Returns the full size of the frame in screen pixels.
+   * This includes the full frame dimensions, not limited to what is shown
+   * onscreen within the canvas.
+   */
+  const getFrameSizeInScreenPx = useCallback((): [number, number] => {
+    const canvasWidthPx = calculateCanvasWidthPx();
+    const canvasHeightPx = canvasWidthPx / ASPECT_RATIO;
+
+    const frameBaseWidthPx = props.dataset?.frameResolution.x ?? canvasWidthPx;
+    const frameBaseHeightPx = props.dataset?.frameResolution.y ?? canvasHeightPx;
+    const frameBaseAspectRatio = frameBaseWidthPx / frameBaseHeightPx;
+
+    // Calculate onscreen frame size in pixels by finding largest size it can be while fitting in
+    // the canvas aspect ratio.
+    const frameOnscreenWidthPx = Math.min(canvasWidthPx, canvasHeightPx * frameBaseAspectRatio);
+    const frameOnscreenHeightPx = frameOnscreenWidthPx / frameBaseAspectRatio;
+
+    // Scale with current zoom level
+    return [frameOnscreenWidthPx / canvasZoom.current, frameOnscreenHeightPx / canvasZoom.current];
+  }, [props.dataset, calculateCanvasWidthPx]);
+
+  /**
+   * Converts a pixel offset relative to the canvas to relative frame coordinates.
+   * @param canvasOffsetPx Offset in pixels relative to the canvas.
+   */
+  const convertPxOffsetToFrameCoords = useCallback(
+    (canvasOffsetPx: [number, number]) => {
+      const canvasWidthPx = calculateCanvasWidthPx();
+      const canvasHeightPx = canvasWidthPx / ASPECT_RATIO;
+      const frameSizeScreenPx = getFrameSizeInScreenPx();
+
+      // Change the offset to be relative to the center of the canvas, rather than the top left corner.
+      const offsetFromCenter: [number, number] = [
+        canvasOffsetPx[0] - canvasWidthPx / 2,
+        canvasOffsetPx[1] - canvasHeightPx / 2,
+      ];
+      // Get the point in pixel coordinates relative to the frame
+      return [
+        offsetFromCenter[0] / frameSizeScreenPx[0] - canvasPan.current[0],
+        offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPan.current[1],
+      ];
+    },
+    // TODO: Refactor into its own testable module
+    [props.dataset, calculateCanvasWidthPx, getFrameSizeInScreenPx]
+  );
+
   const handleZoom = useCallback(
     (zoomDelta: number): void => {
       // TODO: Move canvas center point towards mouse position on zoom
@@ -288,25 +335,35 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [canv]
   );
 
+  const handleWheelZoom = useCallback(
+    (event: WheelEvent, zoomDelta: number): void => {
+      // Get the current mouse position in frame coordinates; we will change the pan later so the
+      // mouse position remains the same after zooming.
+      const currentMousePosition = convertPxOffsetToFrameCoords([event.offsetX, event.offsetY]);
+
+      handleZoom(zoomDelta);
+
+      // Calculate new position of the mouse in frame coordinates
+      const newMousePosition = convertPxOffsetToFrameCoords([event.offsetX, event.offsetY]);
+      const mousePositionDelta = [
+        currentMousePosition[0] - newMousePosition[0],
+        currentMousePosition[1] - newMousePosition[1],
+      ];
+      canvasPan.current[0] -= mousePositionDelta[0];
+      canvasPan.current[1] += mousePositionDelta[1];
+
+      canv.setPan(canvasPan.current[0], canvasPan.current[1]);
+      // TODO: Add clamping
+    },
+    [handleZoom]
+  );
+
   const handlePan = useCallback(
     (dx: number, dy: number): void => {
-      // Normalize by zoom and canvas size
-      // Convert from screen pixels to normalized, relative frame coordinates (range of [-1, 1] for X and Y).
-      const canvasWidthPx = calculateCanvasWidthPx();
-      const canvasHeightPx = canvasWidthPx / ASPECT_RATIO;
-
-      const frameBaseWidthPx = props.dataset?.frameResolution.x ?? canvasWidthPx;
-      const frameBaseHeightPx = props.dataset?.frameResolution.y ?? canvasHeightPx;
-      const frameBaseAspectRatio = frameBaseWidthPx / frameBaseHeightPx;
-
-      // Calculate onscreen frame size in pixels by finding largest size it can be while fitting in
-      // the canvas aspect ratio.
-      const frameOnscreenWidthPx = Math.min(canvasWidthPx, canvasHeightPx * frameBaseAspectRatio);
-      const frameOnscreenHeightPx = frameOnscreenWidthPx / frameBaseAspectRatio;
-
+      const [frameOnscreenWidthPx, frameOnscreenHeightPx] = getFrameSizeInScreenPx();
       // Normalize dx/dy (change in pixels) to change in frame coordinates
-      canvasPan.current[0] += (dx / frameOnscreenWidthPx) * canvasZoom.current;
-      canvasPan.current[1] += (-dy / frameOnscreenHeightPx) * canvasZoom.current;
+      canvasPan.current[0] += dx / frameOnscreenWidthPx;
+      canvasPan.current[1] += -dy / frameOnscreenHeightPx;
       // Clamp panning
       canvasPan.current[0] = Math.min(0.5, Math.max(-0.5, canvasPan.current[0]));
       canvasPan.current[1] = Math.min(0.5, Math.max(-0.5, canvasPan.current[1]));
@@ -380,7 +437,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         event.preventDefault();
         // TODO: Does this behave weirdly with different zoom/scroll wheel sensitivities?
         const delta = event.deltaY / 1000;
-        handleZoom(delta);
+        handleWheelZoom(event, delta);
       }
     },
     [handleZoom]
