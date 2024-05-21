@@ -18,6 +18,8 @@ const ASPECT_RATIO = 14 / 10;
  * before mouse event is considered a drag
  */
 const MIN_DRAG_THRESHOLD_PX = 5;
+const LEFT_CLICK_BUTTON = 0;
+const MIDDLE_CLICK_BUTTON = 1;
 
 const CanvasControlsContainer = styled(FlexColumn)`
   position: absolute;
@@ -102,7 +104,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canvasZoom = useRef(1.0);
   const canvasPan = useRef([0, 0]);
-  const isMouseDown = useRef(false);
+  const isMouseLeftDown = useRef(false);
+  const isMouseMiddleDown = useRef(false);
   // Turns on if the mouse has moved more than MIN_DRAG_THRESHOLD_PX after initial click;
   // turns off when mouse is released. Used to determine whether to pan the canvas or treat
   // the click as a track selection.
@@ -390,14 +393,21 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // Prevent text selection
     event.preventDefault();
     isMouseDragging.current = false;
-    isMouseDown.current = true;
+
+    if (event.button === MIDDLE_CLICK_BUTTON) {
+      isMouseMiddleDown.current = true;
+    } else if (event.button === LEFT_CLICK_BUTTON) {
+      isMouseLeftDown.current = true;
+    }
+
     totalMouseDrag.current = [0, 0];
   }, []);
 
   const onMouseMove = useCallback(
     // TODO: Change the cursor in response to the ctrl key being held or not
     (event: MouseEvent): void => {
-      if (isMouseDown.current && (event.ctrlKey || event.metaKey || enablePan)) {
+      const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey);
+      if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || enablePan) {
         canv.domElement.style.cursor = "grabbing";
         handlePan(event.movementX, event.movementY);
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
@@ -424,7 +434,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
     // Reset any mouse tracking state
-    isMouseDown.current = false;
+    if (isMouseLeftDown.current) {
+      isMouseLeftDown.current = false;
+    }
+    if (isMouseMiddleDown.current) {
+      isMouseMiddleDown.current = false;
+    }
     setTimeout(() => {
       // Make sure that click event is processed first before resetting dragging state
       isMouseDragging.current = false;
@@ -433,7 +448,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseWheel = useCallback(
     (event: WheelEvent): void => {
-      if (event.ctrlKey) {
+      if (event.ctrlKey || event.metaKey) {
         event.preventDefault();
         // TODO: Does this behave weirdly with different zoom/scroll wheel sensitivities?
         const delta = event.deltaY / 1000;
