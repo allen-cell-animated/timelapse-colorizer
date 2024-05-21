@@ -7,7 +7,7 @@ import { Color, ColorRepresentation, Vector2 } from "three";
 import { HandIconSVG, NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
-import { FlexColumn, FlexColumnAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
@@ -406,8 +406,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const onMouseMove = useCallback(
     // TODO: Change the cursor in response to the ctrl key being held or not
     (event: MouseEvent): void => {
-      const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey);
-      if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || enablePan) {
+      const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey || enablePan);
+      if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current) {
         canv.domElement.style.cursor = "grabbing";
         handlePan(event.movementX, event.movementY);
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
@@ -539,7 +539,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         </p>
       </MissingFileIconContainer>
       <CanvasControlsContainer $gap={4}>
-        <Tooltip title={"Reset view"} placement="right">
+        <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
               canvasZoom.current = 1.0;
@@ -550,9 +550,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             type="link"
           >
             <HomeOutlined />
+            <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={"Zoom in (Ctrl + Scroll)"} placement="right">
+        <Tooltip title={"Zoom in (Ctrl + Scroll)"} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -560,9 +561,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             }}
           >
             <ZoomInOutlined />
+            <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={"Zoom out (Ctrl + Scroll)"} placement="right">
+        <Tooltip title={"Zoom out (Ctrl + Scroll)"} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -570,16 +572,20 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             }}
           >
             <ZoomOutOutlined />
+            <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={"Pan (Ctrl + Drag)"} placement="right">
+        <Tooltip title={"Pan (Ctrl + Drag)"} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type={enablePan ? "primary" : "link"}
             onClick={() => {
-              setEnablePan(!enablePan);
+              setTimeout(() => {
+                setEnablePan(!enablePan);
+              });
             }}
           >
             <HandIconSVG />
+            <VisuallyHidden>Toggle pan (currently {enablePan ? "on" : "off"}.)</VisuallyHidden>
           </IconButton>
         </Tooltip>
       </CanvasControlsContainer>
