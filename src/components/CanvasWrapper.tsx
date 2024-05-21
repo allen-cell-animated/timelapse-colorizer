@@ -520,6 +520,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
+  const makeTitleWithSubtext = (title: string | ReactElement, subtext: string | ReactElement): ReactElement => {
+    return (
+      <>
+        <p style={{ margin: 0 }}>{title}</p>
+        <p style={{ margin: 0, fontSize: "12px" }}>{subtext}</p>
+      </>
+    );
+  };
+
   canv.render();
   return (
     <FlexColumnAlignCenter
@@ -553,7 +562,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={"Zoom in (Ctrl + Scroll)"} placement="right" trigger={["hover", "focus"]}>
+        <Tooltip
+          title={makeTitleWithSubtext("Zoom in", "⌘/Ctrl + Scroll")}
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
           <IconButton
             type="link"
             onClick={() => {
@@ -564,7 +577,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={"Zoom out (Ctrl + Scroll)"} placement="right" trigger={["hover", "focus"]}>
+        <Tooltip
+          title={makeTitleWithSubtext("Zoom out", "⌘/Ctrl + Scroll")}
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
           <IconButton
             type="link"
             onClick={() => {
@@ -575,7 +592,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={"Pan (Ctrl + Drag)"} placement="right" trigger={["hover", "focus"]}>
+        <Tooltip title={makeTitleWithSubtext("Pan", "⌘/Ctrl + Drag")} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type={enablePan ? "primary" : "link"}
             onClick={() => {
@@ -585,7 +602,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             }}
           >
             <HandIconSVG />
-            <VisuallyHidden>Toggle pan (currently {enablePan ? "on" : "off"}.)</VisuallyHidden>
+            <VisuallyHidden>Toggle pan (currently {enablePan ? "ON" : "OFF"}.)</VisuallyHidden>
           </IconButton>
         </Tooltip>
       </CanvasControlsContainer>
