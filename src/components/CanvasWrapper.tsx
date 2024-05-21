@@ -221,12 +221,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    * Returns the current width of the canvas component, constrained by
    * resizing rules while maintaining the aspect ratio.
    */
-  const calculateCanvasWidthPx = useCallback((): number => {
-    return Math.min(
+  const getCanvasSizePx = useCallback((): [number, number] => {
+    const widthPx = Math.min(
       containerRef.current?.clientWidth ?? props.maxWidthPx,
       props.maxWidthPx,
       props.maxHeightPx * ASPECT_RATIO
     );
+    return [Math.floor(widthPx), Math.floor(widthPx / ASPECT_RATIO)];
   }, [props.maxHeightPx, props.maxWidthPx]);
 
   // Respond to window resizing
@@ -244,9 +245,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // I've fixed this for now by setting the breakpoint to 1250 pixels, but it's not a robust solution.
 
       // TODO: Calculate aspect ratio based on the current frame?
-      const width = calculateCanvasWidthPx();
-      const height = Math.floor(width / ASPECT_RATIO);
-      canv.setSize(width, height);
+      const [widthPx, heightPx] = getCanvasSizePx();
+      canv.setSize(widthPx, heightPx);
     };
 
     const handleResize = (): void => {
@@ -281,12 +281,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   /**
    * Returns the full size of the frame in screen pixels.
-   * This includes the full frame dimensions, not limited to what is shown
+   * This is the full frame dimensions, not limited to what is shown
    * onscreen within the canvas.
    */
   const getFrameSizeInScreenPx = useCallback((): [number, number] => {
-    const canvasWidthPx = calculateCanvasWidthPx();
-    const canvasHeightPx = canvasWidthPx / ASPECT_RATIO;
+    const [canvasWidthPx, canvasHeightPx] = getCanvasSizePx();
 
     const frameBaseWidthPx = props.dataset?.frameResolution.x ?? canvasWidthPx;
     const frameBaseHeightPx = props.dataset?.frameResolution.y ?? canvasHeightPx;
@@ -299,7 +298,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
     // Scale with current zoom level
     return [frameOnscreenWidthPx / canvasZoom.current, frameOnscreenHeightPx / canvasZoom.current];
-  }, [props.dataset?.frameResolution, calculateCanvasWidthPx]);
+  }, [props.dataset?.frameResolution, getCanvasSizePx]);
 
   /**
    * Converts a pixel offset relative to the canvas to relative frame coordinates.
@@ -307,8 +306,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const convertPxOffsetToFrameCoords = useCallback(
     (canvasOffsetPx: [number, number]) => {
-      const canvasWidthPx = calculateCanvasWidthPx();
-      const canvasHeightPx = canvasWidthPx / ASPECT_RATIO;
+      const [canvasWidthPx, canvasHeightPx] = getCanvasSizePx();
       const frameSizeScreenPx = getFrameSizeInScreenPx();
 
       // Change the offset to be relative to the center of the canvas, rather than the top left corner.
@@ -323,7 +321,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       ];
     },
     // TODO: Refactor into its own testable module
-    [calculateCanvasWidthPx, getFrameSizeInScreenPx]
+    [getCanvasSizePx, getFrameSizeInScreenPx]
   );
 
   const handleZoom = useCallback(
@@ -372,7 +370,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPan.current[1] = Math.min(0.5, Math.max(-0.5, canvasPan.current[1]));
       canv.setPan(canvasPan.current[0], canvasPan.current[1]);
     },
-    [canv, calculateCanvasWidthPx, props.dataset]
+    [canv, getCanvasSizePx, props.dataset]
   );
 
   // Mouse event handlers
