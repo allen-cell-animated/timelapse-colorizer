@@ -13,7 +13,7 @@ import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 import IconButton from "./IconButton";
 
-const ASPECT_RATIO = 14 / 10;
+const ASPECT_RATIO = 14.6 / 10;
 /* Minimum distance in either X or Y that mouse should move
  * before mouse event is considered a drag
  */
@@ -23,8 +23,8 @@ const MIDDLE_CLICK_BUTTON = 1;
 
 const CanvasControlsContainer = styled(FlexColumn)`
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 12px;
+  right: 12px;
   padding: 4px;
   border-radius: 4px;
   background-color: var(--color-viewport-overlay-background);
@@ -538,7 +538,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
-      <p>Zoom: {canvasZoom.current}</p>
       <CanvasControlsContainer $gap={4}>
         <Tooltip title={"Reset view"} placement="right">
           <IconButton
