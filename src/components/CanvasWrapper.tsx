@@ -3,6 +3,7 @@ import { Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
+import { clamp } from "three/src/math/MathUtils";
 
 import { HandIconSVG, NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
@@ -20,6 +21,10 @@ const ASPECT_RATIO = 14.6 / 10;
 const MIN_DRAG_THRESHOLD_PX = 5;
 const LEFT_CLICK_BUTTON = 0;
 const MIDDLE_CLICK_BUTTON = 1;
+
+const MAX_ZOOM = 2;
+const MIN_ZOOM = 0.1;
+const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10];
 
 const CanvasControlsContainer = styled(FlexColumn)`
   position: absolute;
@@ -102,7 +107,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  const canvasZoom = useRef(1.0);
+  /** Canvas zoom level, stored as its inverse. This makes it easier to translate linear
+   * changes in scrolling to exponential changes in zoom level.
+   */
+  const canvasZoomInverse = useRef(1.0);
   const canvasPan = useRef([0, 0]);
   const isMouseLeftDown = useRef(false);
   const isMouseMiddleDown = useRef(false);
@@ -259,7 +267,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [canv]);
+  }, [canv, getCanvasSizePx]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
 
@@ -297,7 +305,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const frameOnscreenHeightPx = frameOnscreenWidthPx / frameBaseAspectRatio;
 
     // Scale with current zoom level
-    return [frameOnscreenWidthPx / canvasZoom.current, frameOnscreenHeightPx / canvasZoom.current];
+    return [frameOnscreenWidthPx / canvasZoomInverse.current, frameOnscreenHeightPx / canvasZoomInverse.current];
   }, [props.dataset?.frameResolution, getCanvasSizePx]);
 
   /**
@@ -329,15 +337,24 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const handleZoom = useCallback(
     (zoomDelta: number): void => {
-      // TODO: Move canvas center point towards mouse position on zoom
-      // TODO: Invert zoom direction so that zooming in is positive
-      canvasZoom.current += zoomDelta;
+      // TODO: Invert zoom direction so that zooming in is > 1 and zooming out is < 1
+      canvasZoomInverse.current += zoomDelta;
       // Clamp zoom
-      canvasZoom.current = Math.min(2, Math.max(0.1, canvasZoom.current));
-      canv.setZoom(canvasZoom.current);
+      canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_ZOOM, MAX_ZOOM);
+      canv.setZoom(1 / canvasZoomInverse.current);
     },
     [canv]
   );
+
+  // const handleButtonZoom = useCallback(
+  //   (zoomIn: boolean): void => {
+  //     // Find nearest zoom level, then increment to next step.
+  //     const nearestZoomIndex = ZOOM_LEVELS.findIndex((z) => z >= canvasZoomInverse.current);
+  //     const newZoomIndex = clamp(nearestZoomIndex + (zoomIn ? 1 : -1), 0, ZOOM_LEVELS.length - 1);
+  //     handleZoom(ZOOM_LEVELS[newZoomIndex] - canvasZoomInverse.current);
+  //   },
+  //   [handleZoom]
+  // );
 
   const handleWheelZoom = useCallback(
     (event: WheelEvent, zoomDelta: number): void => {
@@ -552,7 +569,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
-              canvasZoom.current = 1.0;
+              canvasZoomInverse.current = 1.0;
               canvasPan.current = [0, 0];
               canv.setZoom(1.0);
               canv.setPan(0, 0);

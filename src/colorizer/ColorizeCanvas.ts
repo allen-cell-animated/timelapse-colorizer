@@ -18,7 +18,6 @@ import {
   Uniform,
   UnsignedByteType,
   Vector2,
-  Vector4,
   WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
@@ -127,7 +126,7 @@ export default class ColorizeCanvas {
 
   private showTimestamp: boolean;
   private showScaleBar: boolean;
-  private frameToCanvasScale: Vector4;
+  private frameSizeInCanvasCoordinates: Vector2;
   private zoomMultiplier: number;
   /**
    * XY coordinates where the canvas view should be centered.
@@ -223,7 +222,7 @@ export default class ColorizeCanvas {
     this.overlay = new CanvasOverlay();
     this.showScaleBar = false;
     this.showTimestamp = false;
-    this.frameToCanvasScale = new Vector4(1, 1, 1, 1);
+    this.frameSizeInCanvasCoordinates = new Vector2(1, 1);
     this.zoomMultiplier = 1;
     this.panCoords = new Vector2(0, 0);
 
@@ -274,8 +273,8 @@ export default class ColorizeCanvas {
 
     // Adjust the line mesh position with scaling and panning
     this.line.position.set(
-      2 * this.panCoords.x * this.frameToCanvasScale.x,
-      2 * this.panCoords.y * this.frameToCanvasScale.y,
+      2 * this.panCoords.x * this.frameSizeInCanvasCoordinates.x,
+      2 * this.panCoords.y * this.frameSizeInCanvasCoordinates.y,
       0
     );
     this.render();
@@ -290,8 +289,8 @@ export default class ColorizeCanvas {
       // `frameDims` are already in the provided unit scaling, so we figure out the current
       // size of the frame relative to the canvas to determine the canvas' width in units.
       // We only consider X scaling here because the scale bar is always horizontal.
-      const canvasWidthInUnits = frameDims.width * this.frameToCanvasScale.x;
-      const unitsPerScreenPixel = canvasWidthInUnits / (this.canvasResolution.x / this.zoomMultiplier);
+      const canvasWidthInUnits = frameDims.width / this.frameSizeInCanvasCoordinates.x;
+      const unitsPerScreenPixel = canvasWidthInUnits / this.canvasResolution.x;
       this.overlay.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
     } else {
       this.overlay.updateScaleBarOptions({ visible: false });
@@ -344,29 +343,34 @@ export default class ColorizeCanvas {
     }
     const canvasAspect = canvasResolution.x / canvasResolution.y;
     const frameAspect = frameResolution.x / frameResolution.y;
-    // Proportion by which the frame must be scaled to maintain its aspect ratio in the canvas.
-    // This is required because the canvas coordinates are defined in relative coordinates with
-    // a range of [-1, 1], and don't reflect scaling/changes to the canvas aspect ratio.
-    const canvasToFrameScale: Vector2 = new Vector2(1, 1);
+    // The canvas has coordinates in a range of [-1, 1] in both dimensions.
+    // We want to scale the frame to fit within this range, while maintaining the aspect ratio.
+    const frameSizeInCanvasCoordinates: Vector2 = new Vector2(1, 1);
     if (canvasAspect > frameAspect) {
       // Canvas has a wider aspect ratio than the frame, so proportional height is 1
       // and we scale width accordingly.
-      canvasToFrameScale.x = canvasAspect / frameAspect;
+      frameSizeInCanvasCoordinates.x = canvasAspect / frameAspect;
     } else {
-      canvasToFrameScale.y = frameAspect / canvasAspect;
+      frameSizeInCanvasCoordinates.y = frameAspect / canvasAspect;
     }
-    canvasToFrameScale.multiplyScalar(this.zoomMultiplier);
-    // Inverse
-    const frameToCanvasScale = new Vector4(1 / canvasToFrameScale.x, 1 / canvasToFrameScale.y, 1, 1);
 
-    this.frameToCanvasScale = frameToCanvasScale;
-    this.setUniform("canvasToFrameScale", canvasToFrameScale);
+    frameSizeInCanvasCoordinates.multiplyScalar(this.zoomMultiplier);
+
+    this.setUniform("canvasToFrameScale", frameSizeInCanvasCoordinates);
+    console.log(this.zoomMultiplier);
+    console.log(frameSizeInCanvasCoordinates);
+
+    // x=1, y=0.25, but if we scale by 2x then the frame size should be x=2, y=0.5.
+
+    // Inverse
+    // Transforms from [-1, 1] space of the frame to the [-1, 1] space of the canvas.
+    this.frameSizeInCanvasCoordinates = frameSizeInCanvasCoordinates;
     // Scale the line mesh so the vertices line up correctly even when the canvas changes
-    this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
+    this.line.scale.set(frameSizeInCanvasCoordinates.x, frameSizeInCanvasCoordinates.y, 1);
     // Adjust the line mesh position with scaling and panning
     this.line.position.set(
-      2 * this.panCoords.x * this.frameToCanvasScale.x,
-      2 * this.panCoords.y * this.frameToCanvasScale.y,
+      2 * this.panCoords.x * frameSizeInCanvasCoordinates.x,
+      2 * this.panCoords.y * frameSizeInCanvasCoordinates.y,
       0
     );
     this.updateScaleBar();

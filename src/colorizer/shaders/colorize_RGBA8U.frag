@@ -189,7 +189,8 @@ vec4 getObjectColor(vec2 sUv) {
 }
 
 void main() {
-  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5 - canvasCenterCoords;
+  // sUv is in relative coordinates to frame.
+  vec2 sUv = (vUv - 0.5) / canvasToFrameScale + 0.5 - canvasCenterCoords;
 
   // Backdrop image
   vec4 backdropColor = getBackdropColor(sUv);
