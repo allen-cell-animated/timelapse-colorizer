@@ -299,7 +299,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
     // Scale with current zoom level
     return [frameOnscreenWidthPx / canvasZoom.current, frameOnscreenHeightPx / canvasZoom.current];
-  }, [props.dataset, calculateCanvasWidthPx]);
+  }, [props.dataset?.frameResolution, calculateCanvasWidthPx]);
 
   /**
    * Converts a pixel offset relative to the canvas to relative frame coordinates.
@@ -323,7 +323,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       ];
     },
     // TODO: Refactor into its own testable module
-    [props.dataset, calculateCanvasWidthPx, getFrameSizeInScreenPx]
+    [calculateCanvasWidthPx, getFrameSizeInScreenPx]
   );
 
   const handleZoom = useCallback(
@@ -346,7 +346,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
       handleZoom(zoomDelta);
 
-      // Calculate new position of the mouse in frame coordinates
+      // Calculate new position of the mouse in the new frame coordinates
       const newMousePosition = convertPxOffsetToFrameCoords([event.offsetX, event.offsetY]);
       const mousePositionDelta = [
         currentMousePosition[0] - newMousePosition[0],
@@ -358,7 +358,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.setPan(canvasPan.current[0], canvasPan.current[1]);
       // TODO: Add clamping
     },
-    [handleZoom]
+    [handleZoom, convertPxOffsetToFrameCoords]
   );
 
   const handlePan = useCallback(
@@ -455,7 +455,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         handleWheelZoom(event, delta);
       }
     },
-    [handleZoom]
+    [handleWheelZoom]
   );
 
   // Mount the event listeners
