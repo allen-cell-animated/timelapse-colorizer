@@ -397,7 +397,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const onMouseMove = useCallback(
     // TODO: Change the cursor in response to the ctrl key being held or not
     (event: MouseEvent): void => {
-      if (isMouseDown.current && (event.ctrlKey || enablePan)) {
+      if (isMouseDown.current && (event.ctrlKey || event.metaKey || enablePan)) {
         canv.domElement.style.cursor = "grabbing";
         handlePan(event.movementX, event.movementY);
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction

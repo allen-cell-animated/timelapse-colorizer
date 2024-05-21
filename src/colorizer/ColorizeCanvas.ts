@@ -195,6 +195,10 @@ export default class ColorizeCanvas {
     });
 
     this.line = new Line(lineGeometry, lineMaterial);
+    // Disable frustum culling for the line so it's always visible; prevents a bug
+    // where the line disappears when the camera is zoomed in and panned.
+    this.line.frustumCulled = false;
+
     this.scene.add(this.line);
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
@@ -267,6 +271,13 @@ export default class ColorizeCanvas {
   setPan(x: number, y: number): void {
     this.panCoords = new Vector2(x, y);
     this.setUniform("canvasCenterCoords", this.panCoords);
+
+    // Adjust the line mesh position with scaling and panning
+    this.line.position.set(
+      2 * this.panCoords.x * this.frameToCanvasScale.x,
+      2 * this.panCoords.y * this.frameToCanvasScale.y,
+      0
+    );
     this.render();
   }
 
@@ -348,10 +359,16 @@ export default class ColorizeCanvas {
     // Inverse
     const frameToCanvasScale = new Vector4(1 / canvasToFrameScale.x, 1 / canvasToFrameScale.y, 1, 1);
 
+    this.frameToCanvasScale = frameToCanvasScale;
     this.setUniform("canvasToFrameScale", canvasToFrameScale);
     // Scale the line mesh so the vertices line up correctly even when the canvas changes
     this.line.scale.set(frameToCanvasScale.x, frameToCanvasScale.y, 1);
-
+    // Adjust the line mesh position with scaling and panning
+    this.line.position.set(
+      2 * this.panCoords.x * this.frameToCanvasScale.x,
+      2 * this.panCoords.y * this.frameToCanvasScale.y,
+      0
+    );
     this.updateScaleBar();
   }
 
