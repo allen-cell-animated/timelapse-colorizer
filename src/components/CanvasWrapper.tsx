@@ -303,8 +303,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /**
    * Converts a pixel offset relative to the canvas to relative frame coordinates.
    * @param canvasOffsetPx Offset in pixels relative to the canvas.
+   *
+   * @returns Offset in frame coordinates, normalized to the size of the frame. [0, 0] is the center
+   * of the frame, and [-0.5, -0.5] is the top left corner.
    */
-  const convertPxOffsetToFrameCoords = useCallback(
+  const convertCanvasOffsetPxToFrameCoords = useCallback(
     (canvasOffsetPx: [number, number]) => {
       const [canvasWidthPx, canvasHeightPx] = getCanvasSizePx();
       const frameSizeScreenPx = getFrameSizeInScreenPx();
@@ -340,12 +343,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     (event: WheelEvent, zoomDelta: number): void => {
       // Get the current mouse position in frame coordinates; we will change the pan later so the
       // mouse position remains the same after zooming.
-      const currentMousePosition = convertPxOffsetToFrameCoords([event.offsetX, event.offsetY]);
+      const currentMousePosition = convertCanvasOffsetPxToFrameCoords([event.offsetX, event.offsetY]);
 
       handleZoom(zoomDelta);
 
       // Calculate new position of the mouse in the new frame coordinates
-      const newMousePosition = convertPxOffsetToFrameCoords([event.offsetX, event.offsetY]);
+      const newMousePosition = convertCanvasOffsetPxToFrameCoords([event.offsetX, event.offsetY]);
       const mousePositionDelta = [
         currentMousePosition[0] - newMousePosition[0],
         currentMousePosition[1] - newMousePosition[1],
@@ -356,7 +359,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.setPan(canvasPan.current[0], canvasPan.current[1]);
       // TODO: Add clamping
     },
-    [handleZoom, convertPxOffsetToFrameCoords]
+    [handleZoom, convertCanvasOffsetPxToFrameCoords]
   );
 
   const handlePan = useCallback(
