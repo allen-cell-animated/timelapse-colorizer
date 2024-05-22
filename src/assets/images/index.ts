@@ -1,5 +1,5 @@
-import AicsLogoAndNameSVGAsset from "./AICS-logo-and-name.svg?react";
 import AicsLogoSVGAsset from "./AICS-logo.svg?react";
+import AicsLogoAndNameSVGAsset from "./AICS-logo-and-name.svg?react";
 import DropdownSVGAsset from "./dropdown-arrow.svg?react";
 import ExportIconSVGAsset from "./icon-export.svg?react";
 import HandIconSVGAsset from "./icon-hand.svg?react";
