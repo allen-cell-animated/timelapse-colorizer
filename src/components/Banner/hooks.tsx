@@ -3,6 +3,7 @@ import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, u
 import AlertBanner, { AlertBannerProps } from "./AlertBanner";
 
 export type ShowAlertBannerCallback = (props: AlertBannerProps) => void;
+export type ClearBannersCallback = () => void;
 
 /**
  * A hook to manage a list of alert banners. When a new alert message is provided, a new banner is shown for it.
@@ -11,12 +12,13 @@ export type ShowAlertBannerCallback = (props: AlertBannerProps) => void;
  * Banners that are closed with the "Do not show again" option checked will ignore any future alerts with identical
  * messages until the dependency list changes.
  *
- * @param deps Dependency list. When changed, clears all managed banners and resets the
- * "do not show again" behavior.
+ * @param deps Dependency list. When elements change, clears all managed banners and resets the
+ * "do not show again" behavior. Empty by default.
  *
  * @returns
  *   - bannerElement: A React element containing all the alert banners.
  *   - showAlert: A callback that adds a new alert banner (if it doesn't currently exist).
+ *   - clearBanners: A callback that clears all alert banners and resets the "do not show again" behavior.
  *
  * @example
  * ```
@@ -36,8 +38,12 @@ export type ShowAlertBannerCallback = (props: AlertBannerProps) => void;
  * ```
  */
 export const useAlertBanner = (
-  deps: DependencyList
-): { bannerElement: ReactElement; showAlert: ShowAlertBannerCallback } => {
+  deps: DependencyList = []
+): {
+  bannerElement: ReactElement;
+  showAlert: ShowAlertBannerCallback;
+  clearBanners: ClearBannersCallback;
+} => {
   // TODO: Additional calls to `showAlert` with different props/callbacks will be ignored; should we update the
   // banner or only ever show the first call?
   // TODO: Nice animations when banners appear or when all of them are cleared at once?
@@ -55,10 +61,14 @@ export const useAlertBanner = (
     [bannerProps, ignoredBannerMessages.current]
   );
 
-  useEffect(() => {
-    // Clear banner list
-    setBannerProps([]);
+  const clearBanners = useCallback(() => {
+    setBannerProps((_previousBannerProps) => []);
     ignoredBannerMessages.current.clear();
+  }, []);
+
+  // Automatically clear banners when the dependency list changes.
+  useEffect(() => {
+    clearBanners();
   }, deps);
 
   const bannerElements = useMemo(
@@ -81,5 +91,5 @@ export const useAlertBanner = (
     [bannerProps]
   );
 
-  return { bannerElement: bannerElements, showAlert };
+  return { bannerElement: bannerElements, showAlert, clearBanners };
 };
