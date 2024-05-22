@@ -890,6 +890,7 @@ function Viewer(): ReactElement {
               >
                 <CanvasWrapper
                   canv={canv}
+                  collection={collection || null}
                   dataset={dataset}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}

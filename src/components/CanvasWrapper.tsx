@@ -10,6 +10,7 @@ import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
+import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 import IconButton from "./IconButton";
@@ -57,6 +58,8 @@ type CanvasWrapperProps = {
    * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
+  /** Pan and zoom will be reset on collection change. */
+  collection: Collection | null;
   config: ViewerConfig;
 
   selectedBackdropKey: string | null;
@@ -269,6 +272,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [canv, getCanvasSizePx]);
 
   // CANVAS ACTIONS /////////////////////////////////////////////////
+
+  // Reset the canvas zoom + pan when the collection changes
+  useEffect(() => {
+    canvasZoomInverse.current = 1.0;
+    canvasPan.current = [0, 0];
+    canv.setZoom(1.0);
+    canv.setPan(0, 0);
+  }, [props.collection]);
 
   /** Report clicked tracks via the passed callback. */
   const handleTrackSelection = useCallback(
