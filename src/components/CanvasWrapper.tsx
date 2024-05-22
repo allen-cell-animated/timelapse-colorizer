@@ -22,9 +22,8 @@ const MIN_DRAG_THRESHOLD_PX = 5;
 const LEFT_CLICK_BUTTON = 0;
 const MIDDLE_CLICK_BUTTON = 1;
 
-const MAX_ZOOM = 2;
-const MIN_ZOOM = 0.25;
-const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10];
+const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
+const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
 
 const CanvasControlsContainer = styled(FlexColumn)`
   position: absolute;
@@ -340,21 +339,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // TODO: Invert zoom direction so that zooming in is > 1 and zooming out is < 1
       canvasZoomInverse.current += zoomDelta;
       // Clamp zoom
-      canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_ZOOM, MAX_ZOOM);
+      canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
       canv.setZoom(1 / canvasZoomInverse.current);
     },
     [canv]
   );
-
-  // const handleButtonZoom = useCallback(
-  //   (zoomIn: boolean): void => {
-  //     // Find nearest zoom level, then increment to next step.
-  //     const nearestZoomIndex = ZOOM_LEVELS.findIndex((z) => z >= canvasZoomInverse.current);
-  //     const newZoomIndex = clamp(nearestZoomIndex + (zoomIn ? 1 : -1), 0, ZOOM_LEVELS.length - 1);
-  //     handleZoom(ZOOM_LEVELS[newZoomIndex] - canvasZoomInverse.current);
-  //   },
-  //   [handleZoom]
-  // );
 
   const handleWheelZoom = useCallback(
     (event: WheelEvent, zoomDelta: number): void => {
@@ -603,7 +592,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <IconButton
             type="link"
             onClick={() => {
-              handleZoom(0.25);
+              // Little hack because the minimum zoom level is 0.1x, but all the other zoom levels
+              // are in increments of 0.25x.
+              handleZoom(canvasZoomInverse.current === MIN_INVERSE_ZOOM ? 0.15 : 0.25);
             }}
           >
             <ZoomOutOutlined />

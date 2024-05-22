@@ -358,7 +358,7 @@ export default class ColorizeCanvas {
     }
 
     // Get final size by applying the current zoom level, where `zoomMultiplier=2` means the frame is 2x
-    // larger than its base size. Save this to use when calculating the scale bar.
+    // larger than its base size. Save this to use when calculating units with the scale bar.
     const frameSizeInCanvasCoordinates = unscaledFrameSizeInCanvasCoords.clone().multiplyScalar(this.zoomMultiplier);
     this.frameSizeInCanvasCoordinates = frameSizeInCanvasCoordinates;
 
