@@ -23,7 +23,7 @@ const LEFT_CLICK_BUTTON = 0;
 const MIDDLE_CLICK_BUTTON = 1;
 
 const MAX_ZOOM = 2;
-const MIN_ZOOM = 0.1;
+const MIN_ZOOM = 0.25;
 const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10];
 
 const CanvasControlsContainer = styled(FlexColumn)`
