@@ -370,8 +370,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         currentMousePosition[0] - newMousePosition[0],
         currentMousePosition[1] - newMousePosition[1],
       ];
-      canvasPan.current[0] -= mousePositionDelta[0];
-      canvasPan.current[1] += mousePositionDelta[1];
+
+      canvasPan.current[0] = clamp(canvasPan.current[0] - mousePositionDelta[0], -0.5, 0.5);
+      canvasPan.current[1] = clamp(canvasPan.current[1] + mousePositionDelta[1], -0.5, 0.5);
 
       canv.setPan(canvasPan.current[0], canvasPan.current[1]);
       // TODO: Add clamping
