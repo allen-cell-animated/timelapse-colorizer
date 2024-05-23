@@ -8,6 +8,7 @@ import { clamp } from "three/src/math/MathUtils";
 import { HandIconSVG, NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
+import * as mathUtils from "../colorizer/utils/math_utils";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import Collection from "../colorizer/Collection";
@@ -121,7 +122,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    * centered in the canvas view.
    * X and Y are clamped to a range of [-0.5, 0.5] to prevent the frame from being panned out of view.
    */
-  const canvasPanOffset = useRef([0, 0]);
+  const canvasPanOffset = useRef<[number, number]>([0, 0]);
   const isMouseLeftDown = useRef(false);
   const isMouseMiddleDown = useRef(false);
   const isMouseRightDown = useRef(false);
@@ -296,54 +297,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [canv, props.dataset]
   );
 
-  // TODO: Refactor pure math functions into a separate file and add unit testing.
+  const vec2ToArray = (v: Vector2): [number, number] => [v.x, v.y];
+
   /**
-   * Returns the full size of the frame in screen pixels.
-   * This is the full frame dimensions, not limited to what is shown
-   * onscreen within the canvas.
+   * Returns the full size of the frame in screen pixels, including offscreen pixels.
    */
   const getFrameSizeInScreenPx = useCallback((): [number, number] => {
-    const [canvasWidthPx, canvasHeightPx] = getCanvasSizePx();
-
-    const frameBaseWidthPx = props.dataset?.frameResolution.x ?? canvasWidthPx;
-    const frameBaseHeightPx = props.dataset?.frameResolution.y ?? canvasHeightPx;
-    const frameBaseAspectRatio = frameBaseWidthPx / frameBaseHeightPx;
-
-    // Calculate base onscreen frame size in pixels by finding largest size it can be while fitting in
-    // the canvas aspect ratio.
-    const baseFrameWidthPx = Math.min(canvasWidthPx, canvasHeightPx * frameBaseAspectRatio);
-    const baseFrameHeightPx = baseFrameWidthPx / frameBaseAspectRatio;
-
-    // Scale with current zoom level
-    return [baseFrameWidthPx / canvasZoomInverse.current, baseFrameHeightPx / canvasZoomInverse.current];
+    const canvasSizePx = getCanvasSizePx();
+    const frameResolution = props.dataset ? vec2ToArray(props.dataset.frameResolution) : canvasSizePx;
+    const canvasZoom = 1 / canvasZoomInverse.current;
+    return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
   }, [props.dataset?.frameResolution, getCanvasSizePx]);
-
-  /**
-   * Converts a pixel offset relative to the canvas to relative frame coordinates.
-   * @param canvasOffsetPx Offset in pixels relative to the canvas' top left corner, as returned by
-   * mouse events.
-   * @returns Offset in frame coordinates, normalized to the size of the frame. [0, 0] is the center
-   * of the frame, and [0.5, 0.5] is the top right corner.
-   */
-  const convertCanvasOffsetPxToFrameCoords = useCallback(
-    (canvasOffsetPx: [number, number]) => {
-      const canvasSizePx = getCanvasSizePx();
-      const frameSizeScreenPx = getFrameSizeInScreenPx();
-
-      // Change the offset to be relative to the center of the canvas, rather than the top left corner.
-      const offsetFromCenter: [number, number] = [
-        // +X is flipped between the canvas and the frame, so invert the offset.
-        -(canvasOffsetPx[0] - canvasSizePx[0] / 2),
-        canvasOffsetPx[1] - canvasSizePx[1] / 2,
-      ];
-      // Get the point in pixel coordinates relative to the frame
-      return [
-        offsetFromCenter[0] / frameSizeScreenPx[0] + canvasPanOffset.current[0],
-        offsetFromCenter[1] / frameSizeScreenPx[1] + canvasPanOffset.current[1],
-      ];
-    },
-    [getCanvasSizePx, getFrameSizeInScreenPx]
-  );
 
   const handleZoom = useCallback(
     (zoomDelta: number): void => {
@@ -356,13 +320,29 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const handleWheelZoom = useCallback(
     (event: WheelEvent, zoomDelta: number): void => {
-      const currentMousePosition = convertCanvasOffsetPxToFrameCoords([event.offsetX, event.offsetY]);
+      const canvasSizePx = getCanvasSizePx();
+      const startingFrameSizePx = getFrameSizeInScreenPx();
+      const canvasOffsetPx: [number, number] = [event.offsetX, event.offsetY];
+
+      const currentMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
+        canvasSizePx,
+        startingFrameSizePx,
+        canvasOffsetPx,
+        canvasPanOffset.current
+      );
 
       handleZoom(zoomDelta);
-      const newMousePosition = convertCanvasOffsetPxToFrameCoords([event.offsetX, event.offsetY]);
+
+      const newFrameSizePx = getFrameSizeInScreenPx();
+      const newMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
+        canvasSizePx,
+        newFrameSizePx,
+        canvasOffsetPx,
+        canvasPanOffset.current
+      );
       const mousePositionDelta = [
-        currentMousePosition[0] - newMousePosition[0],
-        currentMousePosition[1] - newMousePosition[1],
+        newMousePosition[0] - currentMousePosition[0],
+        newMousePosition[1] - currentMousePosition[1],
       ];
 
       canvasPanOffset.current[0] = clamp(canvasPanOffset.current[0] + mousePositionDelta[0], -0.5, 0.5);
@@ -370,7 +350,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
       canv.setPan(canvasPanOffset.current[0], canvasPanOffset.current[1]);
     },
-    [handleZoom, convertCanvasOffsetPxToFrameCoords]
+    [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
   );
 
   const handlePan = useCallback(

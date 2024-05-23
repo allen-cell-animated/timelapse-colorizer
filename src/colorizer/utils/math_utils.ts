@@ -137,7 +137,7 @@ export function convertCanvasOffsetPxToFrameCoords(
   frameSizeScreenPx: [number, number],
   canvasOffsetPx: [number, number],
   canvasPanPx: [number, number]
-) {
+): [number, number] {
   // Change the offset to be relative to the center of the canvas, rather than the top left corner.
   const offsetFromCenter: [number, number] = [
     // +X is flipped between the canvas and the frame, so invert the offset.
