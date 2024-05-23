@@ -110,17 +110,26 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  /** Canvas zoom level, stored as its inverse. This makes it easier to translate linear
-   * changes in scrolling to exponential changes in zoom level.
+  /**
+   * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
+   * (by +/-0.25) affect the zoom level more when zoomed in than zoomed out.
    */
   const canvasZoomInverse = useRef(1.0);
-  const canvasPan = useRef([0, 0]);
+  /**
+   * The offset of the frame in the canvas, in normalized frame coordinates. [0, 0] means the
+   * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
+   * centered in the canvas view.
+   * X and Y are clamped to a range of [-0.5, 0.5] to prevent the frame from being panned out of view.
+   */
+  const canvasPanOffset = useRef([0, 0]);
   const isMouseLeftDown = useRef(false);
   const isMouseMiddleDown = useRef(false);
   const isMouseRightDown = useRef(false);
-  // Turns on if the mouse has moved more than MIN_DRAG_THRESHOLD_PX after initial click;
-  // turns off when mouse is released. Used to determine whether to pan the canvas or treat
-  // the click as a track selection.
+  /**
+   * Turns on if the mouse has moved more than MIN_DRAG_THRESHOLD_PX in X or Y after initial click;
+   * turns off when mouse is released. Used to determine whether to pan the canvas or treat
+   * the click as a track selection/regular click.
+   */
   const isMouseDragging = useRef(false);
   const totalMouseDrag = useRef([0, 0]);
   const [enablePan, setEnablePan] = useState(false);
@@ -278,7 +287,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Reset the canvas zoom + pan when the collection changes
   useEffect(() => {
     canvasZoomInverse.current = 1.0;
-    canvasPan.current = [0, 0];
+    canvasPanOffset.current = [0, 0];
     canv.setZoom(1.0);
     canv.setPan(0, 0);
   }, [props.collection]);
@@ -339,8 +348,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       ];
       // Get the point in pixel coordinates relative to the frame
       return [
-        offsetFromCenter[0] / frameSizeScreenPx[0] - canvasPan.current[0],
-        offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPan.current[1],
+        offsetFromCenter[0] / frameSizeScreenPx[0] - canvasPanOffset.current[0],
+        offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPanOffset.current[1],
       ];
     },
     // TODO: Refactor into its own testable module
@@ -373,10 +382,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         currentMousePosition[1] - newMousePosition[1],
       ];
 
-      canvasPan.current[0] = clamp(canvasPan.current[0] - mousePositionDelta[0], -0.5, 0.5);
-      canvasPan.current[1] = clamp(canvasPan.current[1] + mousePositionDelta[1], -0.5, 0.5);
+      canvasPanOffset.current[0] = clamp(canvasPanOffset.current[0] - mousePositionDelta[0], -0.5, 0.5);
+      canvasPanOffset.current[1] = clamp(canvasPanOffset.current[1] + mousePositionDelta[1], -0.5, 0.5);
 
-      canv.setPan(canvasPan.current[0], canvasPan.current[1]);
+      canv.setPan(canvasPanOffset.current[0], canvasPanOffset.current[1]);
       // TODO: Add clamping
     },
     [handleZoom, convertCanvasOffsetPxToFrameCoords]
@@ -386,12 +395,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     (dx: number, dy: number): void => {
       const [frameOnscreenWidthPx, frameOnscreenHeightPx] = getFrameSizeInScreenPx();
       // Normalize dx/dy (change in pixels) to change in frame coordinates
-      canvasPan.current[0] += dx / frameOnscreenWidthPx;
-      canvasPan.current[1] += -dy / frameOnscreenHeightPx;
+      canvasPanOffset.current[0] += dx / frameOnscreenWidthPx;
+      canvasPanOffset.current[1] += -dy / frameOnscreenHeightPx;
       // Clamp panning
-      canvasPan.current[0] = Math.min(0.5, Math.max(-0.5, canvasPan.current[0]));
-      canvasPan.current[1] = Math.min(0.5, Math.max(-0.5, canvasPan.current[1]));
-      canv.setPan(canvasPan.current[0], canvasPan.current[1]);
+      canvasPanOffset.current[0] = Math.min(0.5, Math.max(-0.5, canvasPanOffset.current[0]));
+      canvasPanOffset.current[1] = Math.min(0.5, Math.max(-0.5, canvasPanOffset.current[1]));
+      canv.setPan(canvasPanOffset.current[0], canvasPanOffset.current[1]);
     },
     [canv, getCanvasSizePx, props.dataset]
   );
@@ -590,7 +599,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <IconButton
             onClick={() => {
               canvasZoomInverse.current = 1.0;
-              canvasPan.current = [0, 0];
+              canvasPanOffset.current = [0, 0];
               canv.setZoom(1.0);
               canv.setPan(0, 0);
             }}

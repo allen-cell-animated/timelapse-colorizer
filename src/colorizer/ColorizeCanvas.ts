@@ -42,8 +42,8 @@ export const BACKGROUND_ID = -1;
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
   canvasToFrameScale: Vector2;
-  /** XY centerpoint of the canvas, in normalized frame coordinates in a [-1, 1] range. */
-  canvasCenterCoords: Vector2;
+  /** XY offset of the frame, in normalized frame coordinates. [-0.5, 0.5] range. */
+  panOffset: Vector2;
   /** Image, mapping each pixel to an object ID using the RGBA values. */
   frame: Texture;
   objectOpacity: number;
@@ -85,7 +85,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   const emptyColorRamp = new ColorRamp(["#aaa", "#fff"]).texture;
 
   return {
-    canvasCenterCoords: new Uniform(new Vector2(0, 0)),
+    panOffset: new Uniform(new Vector2(0, 0)),
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
@@ -128,13 +128,19 @@ export default class ColorizeCanvas {
   private showScaleBar: boolean;
   private frameSizeInCanvasCoordinates: Vector2;
   private frameToCanvasCoordinates: Vector2;
+
+  /**
+   * The zoom level of the frame in the canvas. At default zoom level 1, the frame will be
+   * either the width or height of the canvas while maintaining the aspect ratio. A zoom level
+   * of 2.0 means the frame will be twice that size.
+   */
   private zoomMultiplier: number;
   /**
-   * XY coordinates where the canvas view should be centered.
-   * Normalized to frame coordinates from [-1, 1] range, where [0, 0] is the center
-   * of the frame and [-1, -1] is the top left corner.
+   * The offset of the frame in the canvas, in normalized frame coordinates. [0, 0] means the
+   * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
+   * centered in the canvas view.
    */
-  private panCoords: Vector2;
+  private panOffset: Vector2;
 
   private scene: Scene;
   private pickScene: Scene;
@@ -226,7 +232,7 @@ export default class ColorizeCanvas {
     this.frameSizeInCanvasCoordinates = new Vector2(1, 1);
     this.frameToCanvasCoordinates = new Vector2(1, 1);
     this.zoomMultiplier = 1;
-    this.panCoords = new Vector2(0, 0);
+    this.panOffset = new Vector2(0, 0);
 
     this.onFrameChangeCallback = () => {};
 
@@ -269,14 +275,21 @@ export default class ColorizeCanvas {
     this.render();
   }
 
+  /**
+   * Sets the panned offset of the frame in the canvas, in normalized frame coordinates.
+   * @param x The x offset in the range [-0.5, 0.5]. The frame will be centered at 0,
+   * and -0.5 means the right edge of the frame will be centered in the canvas.
+   * @param y The y offset in the range [-0.5, 0.5]. The frame will be centered at 0,
+   * and -0.5 means the top edge of the frame will be centered in the canvas.
+   */
   setPan(x: number, y: number): void {
-    this.panCoords = new Vector2(x, y);
-    this.setUniform("canvasCenterCoords", this.panCoords);
+    this.panOffset = new Vector2(x, y);
+    this.setUniform("panOffset", this.panOffset);
 
     // Adjust the line mesh position with scaling and panning
     this.line.position.set(
-      2 * this.panCoords.x * this.frameToCanvasCoordinates.x,
-      2 * this.panCoords.y * this.frameToCanvasCoordinates.y,
+      2 * this.panOffset.x * this.frameToCanvasCoordinates.x,
+      2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
     this.render();
@@ -376,8 +389,8 @@ export default class ColorizeCanvas {
     this.line.scale.set(this.frameToCanvasCoordinates.x, this.frameToCanvasCoordinates.y, 1);
     // The line mesh is centered at [0,0]. Adjust the line mesh position with scaling and panning
     this.line.position.set(
-      2 * this.panCoords.x * this.frameToCanvasCoordinates.x,
-      2 * this.panCoords.y * this.frameToCanvasCoordinates.y,
+      2 * this.panOffset.x * this.frameToCanvasCoordinates.x,
+      2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
     this.updateScaleBar();
