@@ -277,10 +277,8 @@ export default class ColorizeCanvas {
 
   /**
    * Sets the panned offset of the frame in the canvas, in normalized frame coordinates.
-   * @param x The x offset in the range [-0.5, 0.5]. The frame will be centered at 0,
-   * and -0.5 means the right edge of the frame will be centered in the canvas.
-   * @param y The y offset in the range [-0.5, 0.5]. The frame will be centered at 0,
-   * and -0.5 means the top edge of the frame will be centered in the canvas.
+   * Expects x and y in a range of [-0.5, 0.5], where [0, 0] means the frame will be centered
+   * and [-0.5, -0.5] means the top right corner of the frame will be centered in the canvas view.
    */
   setPan(x: number, y: number): void {
     this.panOffset = new Vector2(x, y);
