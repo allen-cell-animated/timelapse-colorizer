@@ -22,6 +22,7 @@ const ASPECT_RATIO = 14.6 / 10;
 const MIN_DRAG_THRESHOLD_PX = 5;
 const LEFT_CLICK_BUTTON = 0;
 const MIDDLE_CLICK_BUTTON = 1;
+const RIGHT_CLICK_BUTTON = 2;
 
 const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
@@ -116,6 +117,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const canvasPan = useRef([0, 0]);
   const isMouseLeftDown = useRef(false);
   const isMouseMiddleDown = useRef(false);
+  const isMouseRightDown = useRef(false);
   // Turns on if the mouse has moved more than MIN_DRAG_THRESHOLD_PX after initial click;
   // turns off when mouse is released. Used to determine whether to pan the canvas or treat
   // the click as a track selection.
@@ -404,9 +406,19 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       if (!isMouseDragging.current && !enablePan) {
         handleTrackSelection(event);
       }
+      if (isMouseRightDown && isMouseDragging) {
+        // Prevent context menu from appearing when view was dragged via right click
+        event.preventDefault();
+      }
     },
     [handleTrackSelection, enablePan]
   );
+
+  const onContextMenu = useCallback((event: MouseEvent): void => {
+    if (isMouseDragging.current) {
+      event.preventDefault();
+    }
+  }, []);
 
   const onMouseDown = useCallback((event: MouseEvent): void => {
     // Prevent text selection
@@ -417,6 +429,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       isMouseMiddleDown.current = true;
     } else if (event.button === LEFT_CLICK_BUTTON) {
       isMouseLeftDown.current = true;
+    } else if (event.button === RIGHT_CLICK_BUTTON) {
+      isMouseRightDown.current = true;
     }
 
     totalMouseDrag.current = [0, 0];
@@ -426,7 +440,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // TODO: Change the cursor in response to the ctrl key being held or not
     (event: MouseEvent): void => {
       const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey || enablePan);
-      if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current) {
+      if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || isMouseRightDown.current) {
         canv.domElement.style.cursor = "grabbing";
         handlePan(event.movementX, event.movementY);
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
@@ -459,6 +473,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     if (isMouseMiddleDown.current) {
       isMouseMiddleDown.current = false;
     }
+    if (isMouseRightDown.current) {
+      isMouseRightDown.current = false;
+    }
     setTimeout(() => {
       // Make sure that click event is processed first before resetting dragging state
       isMouseDragging.current = false;
@@ -467,12 +484,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseWheel = useCallback(
     (event: WheelEvent): void => {
-      if (event.ctrlKey || event.metaKey) {
-        event.preventDefault();
-        // TODO: Does this behave weirdly with different zoom/scroll wheel sensitivities?
-        const delta = event.deltaY / 1000;
-        handleWheelZoom(event, delta);
-      }
+      event.preventDefault();
+      // TODO: Does this behave weirdly with different zoom/scroll wheel sensitivities?
+      const delta = event.deltaY / 1000;
+      handleWheelZoom(event, delta);
     },
     [handleWheelZoom]
   );
@@ -484,13 +499,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.domElement.addEventListener("click", onMouseClick);
     canv.domElement.addEventListener("wheel", onMouseWheel);
     canv.domElement.addEventListener("mousedown", onMouseDown);
-    // Listen for mouseup and mousemove events anywhere
+    // Listen for context menu, mouseup, and mousemove events anywhere.
+    // For context menu, this allows us to hide the context menu if the user was dragging the mouse
+    // and releases the right mouse button off the canvas.
+    document.addEventListener("contextmenu", onContextMenu);
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
     return () => {
       canv.domElement.removeEventListener("click", onMouseClick);
       canv.domElement.removeEventListener("wheel", onMouseWheel);
       canv.domElement.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("contextmenu", onContextMenu);
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
@@ -581,11 +600,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip
-          title={makeTitleWithSubtext("Zoom in", "⌘/Ctrl + Scroll")}
-          placement="right"
-          trigger={["hover", "focus"]}
-        >
+        <Tooltip title={makeTitleWithSubtext("Zoom in", "Scroll")} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -596,11 +611,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip
-          title={makeTitleWithSubtext("Zoom out", "⌘/Ctrl + Scroll")}
-          placement="right"
-          trigger={["hover", "focus"]}
-        >
+        <Tooltip title={makeTitleWithSubtext("Zoom out", "Scroll")} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -613,7 +624,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={makeTitleWithSubtext("Pan", "⌘/Ctrl + Drag")} placement="right" trigger={["hover", "focus"]}>
+        <Tooltip
+          title={makeTitleWithSubtext("Pan", "🖱️ Right click + drag")}
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
           <IconButton
             type={enablePan ? "primary" : "link"}
             onClick={() => {
