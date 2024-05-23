@@ -131,7 +131,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    * the click as a track selection/regular click.
    */
   const isMouseDragging = useRef(false);
-  const totalMouseDrag = useRef([0, 0]);
+  const totalMouseDrag = useRef(new Vector2(0, 0));
   const [enablePan, setEnablePan] = useState(false);
 
   const isMouseOverCanvas = useRef(false);
@@ -239,8 +239,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // CANVAS RESIZING /////////////////////////////////////////////////
 
   /**
-   * Returns the current width of the canvas component, constrained by
-   * resizing rules while maintaining the aspect ratio.
+   * Measures the current width of the canvas component, constraining it by
+   * the maximum width and height props while maintaining the aspect ratio.
    */
   const getCanvasSizePx = useCallback((): [number, number] => {
     const widthPx = Math.min(
@@ -253,29 +253,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Respond to window resizing
   useEffect(() => {
-    /**
-     * Update the canvas dimensions based on the current window size.
-     * TODO: Margin calculation?
-     */
-    const setSize = (): void => {
-      // TODO: Potentially unsafe calculation here when using `window.innerWidth`. If close to the breakpoint where the side
-      // panel gets wrapped to below the canvas, the scrollbar added to account for the increased page height
-      // will cause this calculation to change (window.innerWidth will become smaller by ~15 pixels).
-      // Under certain circumstances, this can cause a flickering effect as the canvas resizes to accommodate the scrollbar,
-      // which causes the page to shrink, which causes the scrollbar to disappear, and so on in a loop.
-      // I've fixed this for now by setting the breakpoint to 1250 pixels, but it's not a robust solution.
-
-      // TODO: Calculate aspect ratio based on the current frame?
+    const updateCanvasDimensions = (): void => {
       const [widthPx, heightPx] = getCanvasSizePx();
       canv.setSize(widthPx, heightPx);
     };
+    updateCanvasDimensions(); // Initial size setting
 
     const handleResize = (): void => {
-      setSize();
+      updateCanvasDimensions();
       canv.render();
     };
 
-    setSize(); // Initial size setting
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
@@ -320,47 +308,46 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const frameBaseHeightPx = props.dataset?.frameResolution.y ?? canvasHeightPx;
     const frameBaseAspectRatio = frameBaseWidthPx / frameBaseHeightPx;
 
-    // Calculate onscreen frame size in pixels by finding largest size it can be while fitting in
+    // Calculate base onscreen frame size in pixels by finding largest size it can be while fitting in
     // the canvas aspect ratio.
-    const frameOnscreenWidthPx = Math.min(canvasWidthPx, canvasHeightPx * frameBaseAspectRatio);
-    const frameOnscreenHeightPx = frameOnscreenWidthPx / frameBaseAspectRatio;
+    const baseFrameWidthPx = Math.min(canvasWidthPx, canvasHeightPx * frameBaseAspectRatio);
+    const baseFrameHeightPx = baseFrameWidthPx / frameBaseAspectRatio;
 
     // Scale with current zoom level
-    return [frameOnscreenWidthPx / canvasZoomInverse.current, frameOnscreenHeightPx / canvasZoomInverse.current];
+    return [baseFrameWidthPx / canvasZoomInverse.current, baseFrameHeightPx / canvasZoomInverse.current];
   }, [props.dataset?.frameResolution, getCanvasSizePx]);
 
   /**
    * Converts a pixel offset relative to the canvas to relative frame coordinates.
-   * @param canvasOffsetPx Offset in pixels relative to the canvas.
-   *
+   * @param canvasOffsetPx Offset in pixels relative to the canvas' top left corner, as returned by
+   * mouse events.
    * @returns Offset in frame coordinates, normalized to the size of the frame. [0, 0] is the center
-   * of the frame, and [-0.5, -0.5] is the top left corner.
+   * of the frame, and [0.5, 0.5] is the top right corner.
    */
   const convertCanvasOffsetPxToFrameCoords = useCallback(
     (canvasOffsetPx: [number, number]) => {
-      const [canvasWidthPx, canvasHeightPx] = getCanvasSizePx();
+      const canvasSizePx = getCanvasSizePx();
       const frameSizeScreenPx = getFrameSizeInScreenPx();
 
       // Change the offset to be relative to the center of the canvas, rather than the top left corner.
       const offsetFromCenter: [number, number] = [
-        canvasOffsetPx[0] - canvasWidthPx / 2,
-        canvasOffsetPx[1] - canvasHeightPx / 2,
+        // +X is flipped between the canvas and the frame, so invert the offset.
+        -(canvasOffsetPx[0] - canvasSizePx[0] / 2),
+        canvasOffsetPx[1] - canvasSizePx[1] / 2,
       ];
       // Get the point in pixel coordinates relative to the frame
       return [
-        offsetFromCenter[0] / frameSizeScreenPx[0] - canvasPanOffset.current[0],
-        offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPanOffset.current[1],
+        offsetFromCenter[0] / frameSizeScreenPx[0] + canvasPanOffset.current[0],
+        offsetFromCenter[1] / frameSizeScreenPx[1] + canvasPanOffset.current[1],
       ];
     },
-    // TODO: Refactor into its own testable module
+    // TODO: Refactor into its own testable module?
     [getCanvasSizePx, getFrameSizeInScreenPx]
   );
 
   const handleZoom = useCallback(
     (zoomDelta: number): void => {
-      // TODO: Invert zoom direction so that zooming in is > 1 and zooming out is < 1
       canvasZoomInverse.current += zoomDelta;
-      // Clamp zoom
       canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
       canv.setZoom(1 / canvasZoomInverse.current);
     },
@@ -369,37 +356,32 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const handleWheelZoom = useCallback(
     (event: WheelEvent, zoomDelta: number): void => {
-      // Get the current mouse position in frame coordinates; we will change the pan later so the
-      // mouse position remains the same after zooming.
       const currentMousePosition = convertCanvasOffsetPxToFrameCoords([event.offsetX, event.offsetY]);
 
       handleZoom(zoomDelta);
-
-      // Calculate new position of the mouse in the new frame coordinates
       const newMousePosition = convertCanvasOffsetPxToFrameCoords([event.offsetX, event.offsetY]);
       const mousePositionDelta = [
         currentMousePosition[0] - newMousePosition[0],
         currentMousePosition[1] - newMousePosition[1],
       ];
 
-      canvasPanOffset.current[0] = clamp(canvasPanOffset.current[0] - mousePositionDelta[0], -0.5, 0.5);
+      canvasPanOffset.current[0] = clamp(canvasPanOffset.current[0] + mousePositionDelta[0], -0.5, 0.5);
       canvasPanOffset.current[1] = clamp(canvasPanOffset.current[1] + mousePositionDelta[1], -0.5, 0.5);
 
       canv.setPan(canvasPanOffset.current[0], canvasPanOffset.current[1]);
-      // TODO: Add clamping
     },
     [handleZoom, convertCanvasOffsetPxToFrameCoords]
   );
 
   const handlePan = useCallback(
     (dx: number, dy: number): void => {
-      const [frameOnscreenWidthPx, frameOnscreenHeightPx] = getFrameSizeInScreenPx();
-      // Normalize dx/dy (change in pixels) to change in frame coordinates
-      canvasPanOffset.current[0] += dx / frameOnscreenWidthPx;
-      canvasPanOffset.current[1] += -dy / frameOnscreenHeightPx;
+      const frameSizePx = getFrameSizeInScreenPx();
+      // Normalize dx/dy (change in pixels) to frame coordinates
+      canvasPanOffset.current[0] += dx / frameSizePx[0];
+      canvasPanOffset.current[1] += -dy / frameSizePx[1];
       // Clamp panning
-      canvasPanOffset.current[0] = Math.min(0.5, Math.max(-0.5, canvasPanOffset.current[0]));
-      canvasPanOffset.current[1] = Math.min(0.5, Math.max(-0.5, canvasPanOffset.current[1]));
+      canvasPanOffset.current[0] = clamp(canvasPanOffset.current[0], -0.5, 0.5);
+      canvasPanOffset.current[1] = clamp(canvasPanOffset.current[1], -0.5, 0.5);
       canv.setPan(canvasPanOffset.current[0], canvasPanOffset.current[1]);
     },
     [canv, getCanvasSizePx, props.dataset]
@@ -415,10 +397,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       if (!isMouseDragging.current && !enablePan) {
         handleTrackSelection(event);
       }
-      if (isMouseRightDown && isMouseDragging) {
-        // Prevent context menu from appearing when view was dragged via right click
-        event.preventDefault();
-      }
     },
     [handleTrackSelection, enablePan]
   );
@@ -430,8 +408,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, []);
 
   const onMouseDown = useCallback((event: MouseEvent): void => {
-    // Prevent text selection
-    event.preventDefault();
+    event.preventDefault(); // Prevent text selection
     isMouseDragging.current = false;
 
     if (event.button === MIDDLE_CLICK_BUTTON) {
@@ -442,11 +419,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       isMouseRightDown.current = true;
     }
 
-    totalMouseDrag.current = [0, 0];
+    totalMouseDrag.current = new Vector2(0, 0);
   }, []);
 
   const onMouseMove = useCallback(
-    // TODO: Change the cursor in response to the ctrl key being held or not
     (event: MouseEvent): void => {
       const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey || enablePan);
       if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || isMouseRightDown.current) {
@@ -454,12 +430,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         handlePan(event.movementX, event.movementY);
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
         // to be a drag and disable track selection.
-        totalMouseDrag.current[0] += Math.abs(event.movementX);
-        totalMouseDrag.current[1] += Math.abs(event.movementY);
-        if (
-          !isMouseDragging.current &&
-          new Vector2(totalMouseDrag.current[0], totalMouseDrag.current[1]).length() > MIN_DRAG_THRESHOLD_PX
-        ) {
+        totalMouseDrag.current.x += Math.abs(event.movementX);
+        totalMouseDrag.current.y += Math.abs(event.movementY);
+        if (!isMouseDragging.current && totalMouseDrag.current.length() > MIN_DRAG_THRESHOLD_PX) {
           isMouseDragging.current = true;
         }
       } else {
@@ -486,7 +459,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       isMouseRightDown.current = false;
     }
     setTimeout(() => {
-      // Make sure that click event is processed first before resetting dragging state
+      // Delay slightly to make sure that click event is processed first before resetting drag state
       isMouseDragging.current = false;
     }, 10);
   }, []);
@@ -501,9 +474,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [handleWheelZoom]
   );
 
-  // Mount the event listeners
-  // Technically it's more performant to separate these into individual useEffects, but
-  // this is much more readable.
+  // Mount the event listeners for pan and zoom interactions.
+  // It may be more performant to separate these into individual useEffects, but
+  // this is more readable.
   useEffect(() => {
     canv.domElement.addEventListener("click", onMouseClick);
     canv.domElement.addEventListener("wheel", onMouseWheel);
@@ -524,14 +497,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [canv, onMouseClick, onMouseWheel, onMouseDown, onMouseMove, onMouseUp, handlePan]);
 
-  /** Track whether the canvas is hovered, so we can determine whether to send updates about the
-   * hovered value wwhen the canvas frame updates.
-   */
-  useEffect(() => {
-    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
-    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
-  });
-
   /** Report hovered id via the passed callback. */
   const reportHoveredIdAtPixel = useCallback(
     (x: number, y: number): void => {
@@ -543,6 +508,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     },
     [props.dataset, canv]
   );
+
+  /** Track whether the canvas is hovered, so we can determine whether to send updates about the
+   * hovered value when the canvas frame updates.
+   */
+  useEffect(() => {
+    canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
+    canv.domElement.addEventListener("mouseleave", () => (isMouseOverCanvas.current = false));
+  });
 
   /** Update hovered id when the canvas updates the current frame */
   useEffect(() => {
@@ -625,7 +598,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             type="link"
             onClick={() => {
               // Little hack because the minimum zoom level is 0.1x, but all the other zoom levels
-              // are in increments of 0.25x.
+              // are in increments of 0.25x. This ensures zooming all the way in and back out will return
+              // the zoom to 1.0x.
               handleZoom(canvasZoomInverse.current === MIN_INVERSE_ZOOM ? 0.15 : 0.25);
             }}
           >
