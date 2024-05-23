@@ -92,3 +92,61 @@ export function numberToSciNotation(input: number, significantFigures: number): 
   const coefficient = input / 10 ** exponent;
   return `${prefix}${coefficient.toFixed(significantFigures - 1)}×10${numberToUnicodeSuperscript(exponent)}`;
 }
+
+/**
+ * Calculates the size of a frame in pixels that is scaled to fit within a canvas with known
+ * onscreen pixel dimensions.
+ * @param canvasSizePx Size of the canvas, in pixels.
+ * @param frameResolution Resolution of the frame, in pixels or units.
+ * @param frameZoom The zoom level of the frame. A zoom of 1x means the frame is scaled to fit in the canvas
+ * while maintaining its aspect ratio. A zoom of 2x means the frame is twice as large as it would be at 1x zoom.
+ * @returns A tuple of `[width, height]` in pixels.
+ */
+export function getFrameSizeInScreenPx(
+  canvasSizePx: [number, number] | number[],
+  frameResolution: [number, number] | number[],
+  frameZoom: number
+): [number, number] {
+  const frameBaseWidthPx = frameResolution[0];
+  const frameBaseHeightPx = frameResolution[1];
+  const frameBaseAspectRatio = frameBaseWidthPx / frameBaseHeightPx;
+
+  // Calculate base onscreen frame size in pixels by finding largest size it can be while fitting in
+  // the canvas aspect ratio.
+  const baseFrameWidthPx = Math.min(canvasSizePx[0], canvasSizePx[1] * frameBaseAspectRatio);
+  const baseFrameHeightPx = baseFrameWidthPx / frameBaseAspectRatio;
+
+  // Scale with current zoom level
+  return [baseFrameWidthPx * frameZoom, baseFrameHeightPx * frameZoom];
+}
+
+/**
+ * Converts a pixel offset relative to the canvas to relative frame coordinates.
+ * @param frameSizeScreenPx Size of the frame in pixels, as returned by `getFrameSizeInScreenPx`.
+ * @param canvasSizePx Size of the canvas, in pixels.
+ * @param canvasOffsetPx Offset in pixels relative to the canvas' top left corner, as returned by
+ * mouse events.
+ * @param canvasPanPx Relative offset of the frame within the canvas, in normalized frame coordinates.
+ * [0, 0] means the frame will be centered, while [-0.5, -0.5] means the top right corner of the frame
+ *  will be centered in the canvas view.
+ * @returns Offset in frame coordinates, normalized to the size of the frame. [0, 0] is the center
+ * of the frame, and [0.5, 0.5] is the top right corner.
+ */
+export function convertCanvasOffsetPxToFrameCoords(
+  canvasSizePx: [number, number],
+  frameSizeScreenPx: [number, number],
+  canvasOffsetPx: [number, number],
+  canvasPanPx: [number, number]
+) {
+  // Change the offset to be relative to the center of the canvas, rather than the top left corner.
+  const offsetFromCenter: [number, number] = [
+    // +X is flipped between the canvas and the frame, so invert the offset.
+    canvasOffsetPx[0] - canvasSizePx[0] / 2,
+    -(canvasOffsetPx[1] - canvasSizePx[1] / 2),
+  ];
+  // Get the point in pixel coordinates relative to the frame
+  return [
+    offsetFromCenter[0] / frameSizeScreenPx[0] - canvasPanPx[0],
+    offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPanPx[1],
+  ];
+}

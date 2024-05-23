@@ -296,6 +296,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [canv, props.dataset]
   );
 
+  // TODO: Refactor pure math functions into a separate file and add unit testing.
   /**
    * Returns the full size of the frame in screen pixels.
    * This is the full frame dimensions, not limited to what is shown
@@ -341,7 +342,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         offsetFromCenter[1] / frameSizeScreenPx[1] + canvasPanOffset.current[1],
       ];
     },
-    // TODO: Refactor into its own testable module?
     [getCanvasSizePx, getFrameSizeInScreenPx]
   );
 

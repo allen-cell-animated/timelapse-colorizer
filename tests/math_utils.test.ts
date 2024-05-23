@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { numberToSciNotation, remap } from "../src/colorizer/utils/math_utils";
+import {
+  convertCanvasOffsetPxToFrameCoords,
+  getFrameSizeInScreenPx,
+  numberToSciNotation,
+  remap,
+} from "../src/colorizer/utils/math_utils";
 
 describe("numberToSciNotation", () => {
   it("Handles zero", () => {
@@ -83,5 +88,130 @@ describe("remap", () => {
   it("Handles values outside of input min/max when clamping is disabled", () => {
     expect(remap(-1, 0, 1, 0, 10, false)).to.equal(-10);
     expect(remap(2, 0, 1, 0, 10, false)).to.equal(20);
+  });
+});
+
+describe("getFrameSizeInScreenPx", () => {
+  it("returns canvas size when frame is the same aspect ratio", () => {
+    const frameSizePx = getFrameSizeInScreenPx([100, 100], [1, 1], 1);
+    expect(frameSizePx).to.deep.equal([100, 100]);
+  });
+
+  it("does not change returned size if frame resolution is higher", () => {
+    const frameResolutions: [number, number][] = [
+      [0.1, 0.1],
+      [1, 1],
+      [10, 10],
+      [100, 100],
+    ];
+    for (const frameResolution of frameResolutions) {
+      const frameSizePx = getFrameSizeInScreenPx([100, 100], frameResolution, 1);
+      expect(frameSizePx).to.deep.equal([100, 100]);
+    }
+  });
+
+  it("constrains by height when frame aspect ratio is taller than canvas", () => {
+    const canvasSizePx: [number, number] = [100, 100];
+    const frameResolution: [number, number] = [0.5, 1];
+    const frameZoom = 1;
+    const frameSizePx = getFrameSizeInScreenPx(canvasSizePx, frameResolution, frameZoom);
+    expect(frameSizePx).to.deep.equal([50, 100]);
+  });
+
+  it("constrains by width when frame aspect ratio is wider than canvas", () => {
+    const canvasSizePx: [number, number] = [100, 100];
+    const frameResolution: [number, number] = [1, 0.5];
+    const frameZoom = 1;
+    const frameSizePx = getFrameSizeInScreenPx(canvasSizePx, frameResolution, frameZoom);
+    expect(frameSizePx).to.deep.equal([100, 50]);
+  });
+
+  it("scales frame dimensions with zoom", () => {
+    const canvasSizePx: [number, number] = [100, 100];
+    const frameResolution: [number, number] = [1, 0.5];
+    const frameZoom = 2;
+    const frameSizePx = getFrameSizeInScreenPx(canvasSizePx, frameResolution, frameZoom);
+    expect(frameSizePx).to.deep.equal([200, 100]);
+  });
+});
+
+describe("convertCanvasOffsetPxToFrameCoords", () => {
+  const makeConversionTester = (props: {
+    frameSizeScreenPx: [number, number];
+    canvasSizePx: [number, number];
+    canvasPanPx: [number, number];
+  }) => {
+    return (canvasOffsetPx: [number, number], expected: [number, number]) => {
+      const frameCoords = convertCanvasOffsetPxToFrameCoords(
+        props.canvasSizePx,
+        props.frameSizeScreenPx,
+        canvasOffsetPx,
+        props.canvasPanPx
+      );
+      expect(frameCoords[0]).equals(expected[0]);
+      expect(frameCoords[1]).equals(expected[1]);
+    };
+  };
+
+  it("maps corners correctly on unscaled frames", () => {
+    const checkCanvasOffsetMatches = makeConversionTester({
+      frameSizeScreenPx: [100, 100],
+      canvasSizePx: [100, 100],
+      canvasPanPx: [0, 0],
+    });
+
+    // Test centerpoint
+    checkCanvasOffsetMatches([50, 50], [0, 0]);
+    // Test corners
+    checkCanvasOffsetMatches([0, 0], [-0.5, 0.5]);
+    checkCanvasOffsetMatches([100, 0], [0.5, 0.5]);
+    checkCanvasOffsetMatches([0, 100], [-0.5, -0.5]);
+    checkCanvasOffsetMatches([100, 100], [0.5, -0.5]);
+  });
+
+  it("maps corners when canvas has different aspect ratio than frame", () => {
+    const checkCanvasOffsetMatches = makeConversionTester({
+      frameSizeScreenPx: [100, 50],
+      canvasSizePx: [100, 100],
+      canvasPanPx: [0, 0],
+    });
+
+    checkCanvasOffsetMatches([50, 50], [0, 0]);
+
+    checkCanvasOffsetMatches([0, 0], [-0.5, 1]);
+    checkCanvasOffsetMatches([100, 0], [0.5, 1]);
+    checkCanvasOffsetMatches([0, 100], [-0.5, -1]);
+    checkCanvasOffsetMatches([100, 100], [0.5, -1]);
+  });
+
+  it("maps corners correctly when frame is panned", () => {
+    const checkCanvasOffsetMatches = makeConversionTester({
+      frameSizeScreenPx: [100, 100],
+      canvasSizePx: [100, 100],
+      canvasPanPx: [-0.5, -0.5],
+    });
+
+    checkCanvasOffsetMatches([50, 50], [0.5, 0.5]);
+
+    checkCanvasOffsetMatches([0, 0], [0, 1]);
+    checkCanvasOffsetMatches([100, 0], [1, 1]);
+    checkCanvasOffsetMatches([0, 100], [0, 0]);
+    checkCanvasOffsetMatches([100, 100], [1, 0]);
+  });
+
+  it("maps corners correctly when frame is zoomed", () => {
+    const checkCanvasOffsetMatches = makeConversionTester({
+      frameSizeScreenPx: [200, 200],
+      canvasSizePx: [100, 100],
+      canvasPanPx: [0, 0],
+    });
+
+    checkCanvasOffsetMatches([50, 50], [0, 0]);
+
+    // Test corners
+    checkCanvasOffsetMatches([0, 0], [-0.25, 0.25]);
+    checkCanvasOffsetMatches([100, 0], [0.25, 0.25]);
+    checkCanvasOffsetMatches([0, 100], [-0.25, -0.25]);
+    checkCanvasOffsetMatches([100, 100], [0.25, -0.25]);
   });
 });
