@@ -150,3 +150,15 @@ export function convertCanvasOffsetPxToFrameCoords(
     offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPanPx[1],
   ];
 }
+
+export function getDisplayDateString(date: Date): string {
+  try {
+    return date.toLocaleString("en-US", { timeZoneName: "short" });
+  } catch {
+    return date.toISOString();
+  }
+}
+
+export function getBuildDisplayDateString(): string {
+  return getDisplayDateString(new Date(Number.parseInt(import.meta.env.VITE_BUILD_TIME_UTC, 10)));
+}

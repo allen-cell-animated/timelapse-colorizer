@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import { getBuildDisplayDateString } from "./colorizer/utils/math_utils";
 import { ErrorPage, LandingPage } from "./routes";
 import { decodeGitHubPagesUrl, isEncodedPathUrl, tryRemoveHashRouting } from "./utils/gh_routing";
 
@@ -18,6 +19,13 @@ if (locationUrl.hash !== "" || isEncodedPathUrl(locationUrl)) {
   // single-page app has loaded. This lets routing work as normal below.
   window.history.replaceState(null, "", newRelativePath);
 }
+
+const version = import.meta.env.VITE_APP_VERSION;
+const basename = import.meta.env.BASE_URL;
+
+console.log(`Timelapse Colorizer - Version ${version}`);
+console.log(`Timelapse Colorizer - Basename ${basename}`);
+console.log(`Timelapse Colorizer - Last built ${getBuildDisplayDateString()}`);
 
 // Set up react router
 const router = createBrowserRouter(

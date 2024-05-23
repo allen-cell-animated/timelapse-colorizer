@@ -32,7 +32,7 @@ import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } 
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
+import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
@@ -149,7 +149,7 @@ function Viewer(): ReactElement {
   };
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
-  const { bannerElement, showAlert } = useAlertBanner([dataset]);
+  const { bannerElement, showAlert, clearBanners } = useAlertBanner();
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -372,6 +372,7 @@ function Viewer(): ReactElement {
         dataset.dispose();
       }
       // State updates
+      clearBanners();
       setDataset(newDataset);
       setDatasetKey(newDatasetKey);
 
@@ -474,9 +475,23 @@ function Viewer(): ReactElement {
           newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
+          if (!collectionUrlParam) {
+            showAlert({
+              message: "No dataset loaded.",
+              type: "info",
+              closable: false,
+              description: [
+                "You'll need to load a dataset to use Timelapse Colorizer.",
+                "If you have a dataset, load it from the menu above. Otherwise, return to the homepage to see our published datasets.",
+              ],
+              action: <Link to="/">Return to homepage</Link>,
+            });
+            console.error("No collection URL or dataset URL provided.");
+            return;
+          }
           // Try loading the collection, with the default collection as a fallback.
           try {
-            newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
+            newCollection = await Collection.loadCollection(collectionUrlParam);
             datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
           } catch (error) {
             console.error(error);

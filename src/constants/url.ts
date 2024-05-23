@@ -1,4 +1,3 @@
-export const DEFAULT_COLLECTION_PATH = "https://dev-aics-dtp-001.int.allencell.org/dan-data/colorizer/data";
 /**
  * Default name for a collection descriptor JSON, which provides relative
  * filepaths to one or more datasets.
