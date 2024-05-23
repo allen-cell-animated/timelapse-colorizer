@@ -625,7 +625,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           </IconButton>
         </Tooltip>
         <Tooltip
-          title={makeTitleWithSubtext("Pan", "🖱️ Right click + drag")}
+          title={makeTitleWithSubtext("Pan", "Right click + drag")}
           placement="right"
           trigger={["hover", "focus"]}
         >
