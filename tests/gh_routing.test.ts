@@ -80,24 +80,24 @@ describe("Route utils", () => {
     it("handles basic viewer links", () => {
       testUrlEncodingAndDecoding([
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/?/",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/?/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/",
         ],
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/viewer",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/?/viewer",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/?/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/viewer",
         ],
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/viewer?collection=https://example.com/collection.json",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/?/viewer&collection=https://example.com/collection.json",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/viewer?collection=https://example.com/collection.json",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/viewer?collection=https://example.com/collection.json",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/?/viewer&collection=https://example.com/collection.json",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/viewer?collection=https://example.com/collection.json",
         ],
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/viewer?collection=https://example.com/collection.json&dataset=example",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/?/viewer&collection=https://example.com/collection.json~and~dataset=example",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/viewer?collection=https://example.com/collection.json&dataset=example",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/viewer?collection=https://example.com/collection.json&dataset=example",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/?/viewer&collection=https://example.com/collection.json~and~dataset=example",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/viewer?collection=https://example.com/collection.json&dataset=example",
         ],
       ]);
     });
@@ -105,14 +105,14 @@ describe("Route utils", () => {
     it("removes hash routing", () => {
       testUrlEncodingAndDecoding([
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/#/viewer",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/?/#/viewer",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/#/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/?/#/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/viewer",
         ],
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/main/#/viewer?url=https://example.com",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/?/#/viewer?url=https://example.com",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/viewer?url=https://example.com",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/main/#/viewer?url=https://example.com",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/?/#/viewer?url=https://example.com",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/viewer?url=https://example.com",
         ],
       ]);
     });
@@ -120,14 +120,14 @@ describe("Route utils", () => {
     it("reroutes from main to root", () => {
       testUrlEncodingAndDecoding([
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/main/",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/?/",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/main/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/?/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/",
         ],
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/main",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/?/",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/main",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/?/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/",
         ],
       ]);
     });
@@ -135,38 +135,38 @@ describe("Route utils", () => {
     it("keeps pr-preview basepaths", () => {
       testUrlEncodingAndDecoding([
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/?/",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/?/",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/",
         ],
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/viewer",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/?/viewer",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/?/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/viewer",
         ],
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/#/viewer",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/?/#/viewer",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/#/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/?/#/viewer",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/viewer",
         ],
         [
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/#/viewer?collection=https://example.com/collection.json&dataset=example",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/?/#/viewer?collection=https://example.com/collection.json&dataset=example",
-          "https://allen-cell-animated.github.io/nucmorph-colorizer/pr-preview/pr-100/viewer?collection=https://example.com/collection.json&dataset=example",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/#/viewer?collection=https://example.com/collection.json&dataset=example",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/?/#/viewer?collection=https://example.com/collection.json&dataset=example",
+          "https://allen-cell-animated.github.io/timelapse-colorizer/pr-preview/pr-100/viewer?collection=https://example.com/collection.json&dataset=example",
         ],
       ]);
     });
 
     it("handles hash removal when decoding dev server links", () => {
       const urlsToTest = [
-        ["https://example-server.com/nucmorph-colorizer/", "https://example-server.com/nucmorph-colorizer/"],
+        ["https://example-server.com/timelapse-colorizer/", "https://example-server.com/timelapse-colorizer/"],
         [
-          "https://example-server.com/nucmorph-colorizer/#/viewer",
-          "https://example-server.com/nucmorph-colorizer/viewer",
+          "https://example-server.com/timelapse-colorizer/#/viewer",
+          "https://example-server.com/timelapse-colorizer/viewer",
         ],
         [
-          "https://example-server.com/nucmorph-colorizer/#/viewer?collection=https://example.com/collection.json&dataset=example",
-          "https://example-server.com/nucmorph-colorizer/viewer?collection=https://example.com/collection.json&dataset=example",
+          "https://example-server.com/timelapse-colorizer/#/viewer?collection=https://example.com/collection.json&dataset=example",
+          "https://example-server.com/timelapse-colorizer/viewer?collection=https://example.com/collection.json&dataset=example",
         ],
       ];
 

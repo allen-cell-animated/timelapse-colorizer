@@ -48,7 +48,7 @@ you'd like to see documented.
 1. Make a new version: `npm version [patch/minor/major]` -- this will give you the new tag, e.g., `2.7.1`
 2. Push the new package.json version: `git push origin main`
 3. Push the new tag: `git push origin [NEW_TAG]` -- e.g. `git push origin v2.7.1`
-4. Write up [release notes](https://github.com/allen-cell-animated/nucmorph-colorizer/releases).
+4. Write up [release notes](https://github.com/allen-cell-animated/timelapse-colorizer/releases).
     - Select the tag
     - Click "generate release notes"
     - Use this template to summarize changes (delete any categories that aren't relevant). `## Pull requests included in this release` should be above the auto generated content:

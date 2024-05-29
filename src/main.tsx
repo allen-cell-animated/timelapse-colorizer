@@ -23,9 +23,9 @@ if (locationUrl.hash !== "" || isEncodedPathUrl(locationUrl)) {
 const version = import.meta.env.VITE_APP_VERSION;
 const basename = import.meta.env.BASE_URL;
 
-console.log(`Timelapse Colorizer - Version ${version}`);
-console.log(`Timelapse Colorizer - Basename ${basename}`);
-console.log(`Timelapse Colorizer - Last built ${getBuildDisplayDateString()}`);
+console.log(`Timelapse Feature Explorer - Version ${version}`);
+console.log(`Timelapse Feature Explorer - Basename ${basename}`);
+console.log(`Timelapse Feature Explorer - Last built ${getBuildDisplayDateString()}`);
 
 // Set up react router
 const router = createBrowserRouter(
