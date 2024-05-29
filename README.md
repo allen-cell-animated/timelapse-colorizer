@@ -8,16 +8,16 @@
 switch between features in your dataset, play through your data to observe motion, and view plots showing how feature data change over time!
 
 This project originated from the [Allen Institute for Cell Science (AICS)](https://alleninstitute.org/division/cell-science/) Nuclear Morphogenesis
-project and is being updated to support broader use cases. View our [Issues page](https://github.com/allen-cell-animated/nucmorph-colorizer/issues)
+project and is being updated to support broader use cases. View our [Issues page](https://github.com/allen-cell-animated/timelapse-colorizer/issues)
 for more details about potential future features!
 
 ### Builds
 
 **Stable build: [timelapse.allencell.org](https://timelapse.allencell.org)**
 
-**Latest (`main` branch): [https://allen-cell-animated.github.io/nucmorph-colorizer/](https://allen-cell-animated.github.io/nucmorph-colorizer/)**
+**Latest (`main` branch): [https://allen-cell-animated.github.io/timelapse-colorizer/](https://allen-cell-animated.github.io/timelapse-colorizer/)**
 
-![image](https://github.com/allen-cell-animated/nucmorph-colorizer/assets/30200665/81130299-7e75-4fc2-a344-19aba7aae8a5)
+![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/81130299-7e75-4fc2-a344-19aba7aae8a5)
 
 ### Opening New Datasets
 
@@ -25,7 +25,7 @@ Timelapse Feature Explorer-compatible datasets hosted over HTTPS can be loaded d
 
 Click the **Load** button in the top right to open a URL.
 
-![image](https://github.com/allen-cell-animated/nucmorph-colorizer/assets/30200665/e2631a78-b0d6-49fc-bb93-cefc94a91a53)
+![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/e2631a78-b0d6-49fc-bb93-cefc94a91a53)
 
 Note: If your dataset is hosted via **HTTP** rather than HTTPS, you'll need to install and run the project locally for security reasons. See below for more help.
 

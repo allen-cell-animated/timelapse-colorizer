@@ -481,7 +481,7 @@ function Viewer(): ReactElement {
               type: "info",
               closable: false,
               description: [
-                "You'll need to load a dataset to use Timelapse Colorizer.",
+                "You'll need to load a dataset to use Timelapse Feature Explorer.",
                 "If you have a dataset, load it from the menu above. Otherwise, return to the homepage to see our published datasets.",
               ],
               action: <Link to="/">Return to homepage</Link>,
