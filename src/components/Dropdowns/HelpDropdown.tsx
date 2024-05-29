@@ -41,7 +41,7 @@ export default function HelpDropdown(): ReactElement {
     <DropdownItemList>
       <StyledLink
         className="button"
-        href="https://github.com/allen-cell-animated/nucmorph-colorizer"
+        href="https://github.com/allen-cell-animated/timelapse-colorizer"
         rel="noopener noreferrer"
         target="_blank"
         role="link"
@@ -51,7 +51,7 @@ export default function HelpDropdown(): ReactElement {
       </StyledLink>
       <StyledLink
         className="button"
-        href="https://github.com/allen-cell-animated/nucmorph-colorizer/issues"
+        href="https://github.com/allen-cell-animated/timelapse-colorizer/issues"
         rel="noopener noreferrer"
         target="_blank"
         role="link"
@@ -80,7 +80,7 @@ export default function HelpDropdown(): ReactElement {
         onCancel={() => setShowVersionModal(false)}
         footer={<Button onClick={() => setShowVersionModal(false)}>Close</Button>}
       >
-        <p>Timelapse Colorizer v{import.meta.env.VITE_APP_VERSION}</p>
+        <p>Timelapse Feature Explorer v{import.meta.env.VITE_APP_VERSION}</p>
         <p>Last built on {getBuildDisplayDateString()}</p>
       </StyledModal>
     </div>

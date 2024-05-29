@@ -23,7 +23,7 @@ jobs:
           node-version: "18"
 
       - name: Install and Build
-        run: npm ci && npx vite build --base=/nucmorph-colorizer/
+        run: npm ci && npx vite build --base=/timelapse-colorizer/
 
       - name: Upload build files
         uses: actions/upload-artifact@v3

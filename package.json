@@ -1,5 +1,5 @@
 {
-  "name": "nucmorph-colorizer",
+  "name": "timelapse-colorizer",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,9 +9,9 @@
     "test": "vitest",
     "checks": "npm run lint & npm run typeCheck & npx vitest run",
     "build": "vite build",
-    "build-internal": "vite build --base=/nucmorph-colorizer/dist/",
+    "build-internal": "vite build --base=/timelapse-colorizer/dist/",
     "preview": "vite preview",
-    "deploy": "vite build --base=/nucmorph-colorizer/ && gh-pages -d dist -a -m \"New gh-pages build; deployed via `deploy` script in `package.json`.\"",
+    "deploy": "vite build --base=/timelapse-colorizer/ && gh-pages -d dist -a -m \"New gh-pages build; deployed via `deploy` script in `package.json`.\"",
     "lint": "eslint --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
     "lint-fix": "eslint --fix --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
