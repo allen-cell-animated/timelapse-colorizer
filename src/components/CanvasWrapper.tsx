@@ -309,6 +309,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
   }, [props.dataset?.frameResolution, getCanvasSizePx]);
 
+  /** Change zoom by some delta factor. */
   const handleZoom = useCallback(
     (zoomDelta: number): void => {
       canvasZoomInverse.current += zoomDelta;
@@ -318,7 +319,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [canv]
   );
 
-  const handleWheelZoom = useCallback(
+  /** Zoom with respect to the pointer; keeps the mouse in the same position relative to the underlying
+   *  frame by panning as the zoom changes.
+   */
+  const handleZoomToMouse = useCallback(
     (event: WheelEvent, zoomDelta: number): void => {
       const canvasSizePx = getCanvasSizePx();
       const startingFrameSizePx = getFrameSizeInScreenPx();
@@ -447,11 +451,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const onMouseWheel = useCallback(
     (event: WheelEvent): void => {
       event.preventDefault();
-      // TODO: Does this behave weirdly with different zoom/scroll wheel sensitivities?
-      const delta = event.deltaY / 1000;
-      handleWheelZoom(event, delta);
+      if (event.metaKey || event.ctrlKey) {
+        if (Math.abs(event.deltaY) > 25) {
+          // Using mouse wheel (probably). There's no surefire way to detect this, but mice usually
+          // scroll in much larger increments.
+          handleZoomToMouse(event, event.deltaY * 0.001);
+        } else {
+          // Track pad zoom
+          handleZoomToMouse(event, event.deltaY * 0.005);
+        }
+      } else if (event.shiftKey) {
+        // Translate Y to horizontal movement for mice.
+        handlePan(-event.deltaY, 0);
+      } else {
+        handlePan(-event.deltaX, -event.deltaY);
+      }
     },
-    [handleWheelZoom]
+    [handleZoomToMouse]
   );
 
   // Mount the event listeners for pan and zoom interactions.
@@ -562,7 +578,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={makeTitleWithSubtext("Zoom in", "Scroll")} placement="right" trigger={["hover", "focus"]}>
+        <Tooltip
+          title={makeTitleWithSubtext("Zoom in", "Ctrl + Scroll")}
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
           <IconButton
             type="link"
             onClick={() => {
@@ -573,7 +593,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip title={makeTitleWithSubtext("Zoom out", "Scroll")} placement="right" trigger={["hover", "focus"]}>
+        <Tooltip
+          title={makeTitleWithSubtext("Zoom out", "Ctrl + Scroll")}
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
           <IconButton
             type="link"
             onClick={() => {
