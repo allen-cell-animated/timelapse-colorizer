@@ -799,7 +799,7 @@ function Viewer(): ReactElement {
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
-        <FlexRowAlignCenter $gap={12} style={{ margin: "16px 0", flexWrap: "wrap" }}>
+        <FlexRowAlignCenter $gap={20} style={{ margin: "16px 0", flexWrap: "wrap" }}>
           <SelectionDropdown
             disabled={disableUi}
             label="Dataset"
