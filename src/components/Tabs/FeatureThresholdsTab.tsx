@@ -352,6 +352,8 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
           suffixIcon={isFocused ? <SearchOutlined /> : <DropdownSVG style={{ pointerEvents: "none", width: "12px" }} />}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          // Fixes a bug where the last item would be cut off
+          virtual={false}
         />
       </SelectContainer>
       <FiltersContainer>
