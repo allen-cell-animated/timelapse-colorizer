@@ -184,7 +184,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
       );
     };
     const handleFocusLoss = (event: FocusEvent): void => {
-      if (!doesContainTarget(event.relatedTarget)) {
+      if (!doesContainTarget(event.target)) {
         setForceOpenState(OpenState.DEFAULT);
       }
     };
