@@ -9,8 +9,8 @@ const AICS_LOGO_RESIZE_THRESHOLD_PX = 540;
 
 const AicsLogoLink = styled.a`
   position: relative;
-  width: 180px;
-  height: 46px;
+  width: 140px;
+  height: 36px;
 
   div > svg:last-child {
     display: none;
@@ -62,7 +62,7 @@ function HeaderLogo(): ReactElement {
       </AicsLogoLink>
       <VerticalDivider />
       <Link to="/" aria-label="Go to home page">
-        <h1>Timelapse Feature Explorer</h1>
+        <h1 style={{ margin: "0" }}>Timelapse Feature Explorer</h1>
       </Link>
     </FlexRowAlignCenter>
   );
