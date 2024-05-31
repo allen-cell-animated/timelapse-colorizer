@@ -121,7 +121,7 @@ export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: He
   return (baseColor + opacityString) as HexColorString;
 }
 
-/** Retrieve feature name, if it exists. Accounts for the artificially-added time feature. */
+/** Retrieve feature name, if it exists. Accounts for the added time feature. */
 export const getFeatureOrTimeName = (featureKey: string | null, dataset: Dataset | null): string => {
   if (featureKey === null || dataset === null) {
     return "";
@@ -132,7 +132,7 @@ export const getFeatureOrTimeName = (featureKey: string | null, dataset: Dataset
   return dataset.getFeatureName(featureKey) || "";
 };
 
-/** Retrieve feature name with units, if it exists. Accounts for the artificially-added time feature. */
+/** Retrieve feature name with units, if it exists. Accounts for the added time feature. */
 export const getFeatureOrTimeNameWithUnits = (featureKey: string | null, dataset: Dataset | null): string => {
   if (featureKey === null || dataset === null) {
     return "";

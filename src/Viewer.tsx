@@ -32,6 +32,7 @@ import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } 
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
+import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
@@ -590,12 +591,16 @@ function Viewer(): ReactElement {
         const newScatterPlotConfig = initialUrlParams.scatterPlotConfig;
         // For backwards-compatibility, cast xAxis and yAxis to feature keys.
         if (newScatterPlotConfig.xAxis) {
-          newScatterPlotConfig.xAxis = dataset?.findFeatureByKeyOrName(newScatterPlotConfig.xAxis);
+          const xAxis = newScatterPlotConfig.xAxis;
+          newScatterPlotConfig.xAxis =
+            xAxis === SCATTERPLOT_TIME_FEATURE.key ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
         }
         if (newScatterPlotConfig.yAxis) {
-          newScatterPlotConfig.yAxis = dataset?.findFeatureByKeyOrName(newScatterPlotConfig.yAxis);
+          const yAxis = newScatterPlotConfig.yAxis;
+          newScatterPlotConfig.yAxis =
+            yAxis === SCATTERPLOT_TIME_FEATURE.key ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
         }
-        updateScatterPlotConfig(initialUrlParams.scatterPlotConfig);
+        updateScatterPlotConfig(newScatterPlotConfig);
       }
     };
 
