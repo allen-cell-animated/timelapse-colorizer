@@ -183,15 +183,17 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
         false
       );
     };
-    const handleFocusLoss = (event: FocusEvent): void => {
-      if (!doesContainTarget(event.target)) {
+    const handleDocumentClick = (event: MouseEvent): void => {
+      // Close dropdown if the dropdown loses focus (click outside of the dropdown).
+      // Uses click listener instead of focus listener to handle clicks on non-focusable elements.
+      if (forceOpenState === OpenState.FORCE_OPEN && !doesContainTarget(event.target)) {
         setForceOpenState(OpenState.DEFAULT);
       }
     };
 
-    componentContainerRef.current?.addEventListener("focusout", handleFocusLoss);
+    document.addEventListener("click", handleDocumentClick);
     return () => {
-      componentContainerRef.current?.removeEventListener("focusout", handleFocusLoss);
+      document.removeEventListener("click", handleDocumentClick);
     };
   }, [forceOpenState]);
 
