@@ -1051,7 +1051,7 @@ function Viewer(): ReactElement {
                     ),
                   },
                   {
-                    label: "Filters",
+                    label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
                     key: TabType.FILTERS,
                     children: (
                       <div className={styles.tabContent}>
