@@ -7,6 +7,10 @@ import {
   remap,
 } from "../src/colorizer/utils/math_utils";
 
+const DEFAULT_ZOOM = 1;
+const DEFAULT_CANVAS_RESOLUTION: [number, number] = [100, 100];
+const DEFAULT_FRAME_RESOLUTION: [number, number] = [1, 1];
+
 describe("numberToSciNotation", () => {
   it("Handles zero", () => {
     expect(numberToSciNotation(0, 1)).to.equal("0×10⁰");
@@ -93,8 +97,8 @@ describe("remap", () => {
 
 describe("getFrameSizeInScreenPx", () => {
   it("returns canvas size when frame is the same aspect ratio", () => {
-    const frameSizePx = getFrameSizeInScreenPx([100, 100], [1, 1], 1);
-    expect(frameSizePx).to.deep.equal([100, 100]);
+    const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, DEFAULT_FRAME_RESOLUTION, DEFAULT_ZOOM);
+    expect(frameSizePx).to.deep.equal(DEFAULT_CANVAS_RESOLUTION);
   });
 
   it("does not change returned size if frame resolution is higher", () => {
@@ -105,113 +109,228 @@ describe("getFrameSizeInScreenPx", () => {
       [100, 100],
     ];
     for (const frameResolution of frameResolutions) {
-      const frameSizePx = getFrameSizeInScreenPx([100, 100], frameResolution, 1);
-      expect(frameSizePx).to.deep.equal([100, 100]);
+      const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, frameResolution, DEFAULT_ZOOM);
+      expect(frameSizePx).to.deep.equal(DEFAULT_CANVAS_RESOLUTION);
     }
   });
 
-  it("constrains by height when frame aspect ratio is taller than canvas", () => {
-    const canvasSizePx: [number, number] = [100, 100];
+  it("sets frame height to canvas height when frame aspect ratio is taller than canvas", () => {
     const frameResolution: [number, number] = [0.5, 1];
-    const frameZoom = 1;
-    const frameSizePx = getFrameSizeInScreenPx(canvasSizePx, frameResolution, frameZoom);
+    const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, frameResolution, DEFAULT_ZOOM);
     expect(frameSizePx).to.deep.equal([50, 100]);
   });
 
-  it("constrains by width when frame aspect ratio is wider than canvas", () => {
-    const canvasSizePx: [number, number] = [100, 100];
+  it("sets frame width to canvas width when frame aspect ratio is wider than canvas", () => {
     const frameResolution: [number, number] = [1, 0.5];
-    const frameZoom = 1;
-    const frameSizePx = getFrameSizeInScreenPx(canvasSizePx, frameResolution, frameZoom);
+    const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, frameResolution, DEFAULT_ZOOM);
     expect(frameSizePx).to.deep.equal([100, 50]);
   });
 
   it("scales frame dimensions with zoom", () => {
-    const canvasSizePx: [number, number] = [100, 100];
+    const frameZoom = 2;
+    const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, DEFAULT_FRAME_RESOLUTION, frameZoom);
+    expect(frameSizePx).to.deep.equal([200, 200]);
+  });
+
+  it("scales frame dimensions with zoom while maintaining aspect ratio", () => {
     const frameResolution: [number, number] = [1, 0.5];
     const frameZoom = 2;
-    const frameSizePx = getFrameSizeInScreenPx(canvasSizePx, frameResolution, frameZoom);
+    const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, frameResolution, frameZoom);
     expect(frameSizePx).to.deep.equal([200, 100]);
   });
 });
 
 describe("convertCanvasOffsetPxToFrameCoords", () => {
-  const makeConversionTester = (props: {
-    frameSizeScreenPx: [number, number];
-    canvasSizePx: [number, number];
-    canvasPanPx: [number, number];
-  }) => {
-    return (canvasOffsetPx: [number, number], expected: [number, number]) => {
-      const frameCoords = convertCanvasOffsetPxToFrameCoords(
-        props.canvasSizePx,
-        props.frameSizeScreenPx,
-        canvasOffsetPx,
-        props.canvasPanPx
-      );
-      expect(frameCoords[0]).equals(expected[0]);
-      expect(frameCoords[1]).equals(expected[1]);
-    };
-  };
+  /**
+   * NOTE: The canvas and frame use different coordinate systems;
+   * this series of tests validates that the conversion function is working correctly.
+   *
+   * Canvas dimensions are in pixels, with the upper left corner being [0, 0] and the bottom right corner being
+   * `[canvas width, canvas height]`. The center of the canvas is `[canvas width / 2, canvas height / 2]`.
+   *
+   * Frame coordinates are a relative offset from the center, normalized to a [-0.5, 0.5] range.
+   * The center of the frame is [0, 0], the top right corner is [0.5, 0.5].
+   *
+   * Visually, a 100x100 canvas and normalized frame look like this:
+   *
+   *   +-canvas--+ y: 0
+   *   |         |
+   *   |    x    | <= [50, 50]
+   *   |         |
+   *   +---------+ y: 100
+   *  x: 0       x: 100
+   *
+   *   +-frame---+ y: 0.5
+   *   |         |
+   *   |    x    |  <= [0, 0]
+   *   |         |
+   *   +---------+ y: -0.5
+   *  x: -0.5   x: 0.5
+   *
+   */
 
-  it("maps corners correctly on unscaled frames", () => {
-    const checkCanvasOffsetMatches = makeConversionTester({
-      frameSizeScreenPx: [100, 100],
-      canvasSizePx: [100, 100],
-      canvasPanPx: [0, 0],
-    });
+  const DEFAULT_PAN: [number, number] = [0, 0];
+  const DEFAULT_CANVAS_SIZE_PX: [number, number] = [100, 100];
+  const DEFAULT_FRAME_SIZE_PX: [number, number] = [100, 100];
+
+  /**
+   * Convenience wrapper around `convertCanvasOffsetPxToFrameCoords`. Allows the repeated information
+   * (frame size, canvas size, etc.) to be passed in as a single object to reduce boilerplate.
+   */
+  function getFrameOffset(
+    frameInfo: {
+      frameSizeScreenPx: [number, number];
+      canvasSizePx: [number, number];
+      canvasPanPx: [number, number];
+    },
+    canvasOffsetPx: [number, number]
+  ): [number, number] {
+    return convertCanvasOffsetPxToFrameCoords(
+      frameInfo.canvasSizePx,
+      frameInfo.frameSizeScreenPx,
+      canvasOffsetPx,
+      frameInfo.canvasPanPx
+    );
+  }
+
+  it("maps canvas corners to frame coordinates on unscaled frames", () => {
+    const frameInfo = {
+      frameSizeScreenPx: DEFAULT_FRAME_SIZE_PX,
+      canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
+      canvasPanPx: DEFAULT_PAN,
+    };
+
+    const canvCenter: [number, number] = [50, 50];
+    const canvLeft = 0;
+    const canvRight = 100;
+    const canvTop = 0;
+    const canvBottom = 100;
+
+    const expFrameCenter: [number, number] = [0, 0];
+    const expFrameLeft = -0.5;
+    const expFrameRight = 0.5;
+    const expYBottom = -0.5;
+    const expYTop = 0.5;
+
+    expect(getFrameOffset(frameInfo, [0, 0])).to.deep.equal([-0.5, 0.5]);
 
     // Test centerpoint
-    checkCanvasOffsetMatches([50, 50], [0, 0]);
+    expect(getFrameOffset(frameInfo, canvCenter)).deep.equals(expFrameCenter);
     // Test corners
-    checkCanvasOffsetMatches([0, 0], [-0.5, 0.5]);
-    checkCanvasOffsetMatches([100, 0], [0.5, 0.5]);
-    checkCanvasOffsetMatches([0, 100], [-0.5, -0.5]);
-    checkCanvasOffsetMatches([100, 100], [0.5, -0.5]);
+    expect(getFrameOffset(frameInfo, [canvLeft, canvTop])).deep.equals([expFrameLeft, expYTop]);
+    expect(getFrameOffset(frameInfo, [canvRight, canvTop])).deep.equals([expFrameRight, expYTop]);
+    expect(getFrameOffset(frameInfo, [canvLeft, canvBottom])).deep.equals([expFrameLeft, expYBottom]);
+    expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
   });
 
-  it("maps corners when canvas has different aspect ratio than frame", () => {
-    const checkCanvasOffsetMatches = makeConversionTester({
-      frameSizeScreenPx: [100, 50],
-      canvasSizePx: [100, 100],
-      canvasPanPx: [0, 0],
-    });
+  it("maps corners to frame coordinates when canvas has different aspect ratio than frame", () => {
+    const frameInfo = {
+      frameSizeScreenPx: [100, 50] as [number, number],
+      canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
+      canvasPanPx: DEFAULT_PAN,
+    };
 
-    checkCanvasOffsetMatches([50, 50], [0, 0]);
+    // The frame is half the canvas height, and will only occupy half the canvas.
+    //  The frame is normally normalized to the [-0.5, 0.5] range, so the
+    // corners of the canvas would map to [-1.0, 1.0] in the Y-axis.
 
-    checkCanvasOffsetMatches([0, 0], [-0.5, 1]);
-    checkCanvasOffsetMatches([100, 0], [0.5, 1]);
-    checkCanvasOffsetMatches([0, 100], [-0.5, -1]);
-    checkCanvasOffsetMatches([100, 100], [0.5, -1]);
+    // +--canvas--+  // canvasY = 0  | frameY = 1.0
+    // +--frame---+  // canvasY = 25 | frameY = 0.5   <= frame corner
+    // |    o     |  // canvasY = 50 | frameY = 0     <= frame center
+    // +----------+  // canvasY = 75 | frameY = -0.5  <= frame corner
+    // +----------+  // canvasY = 100| frameY = -1.0
+
+    const canvCenter: [number, number] = [50, 50];
+    const canvLeft = 0;
+    const canvRight = 100;
+    const canvTop = 0;
+    const canvBottom = 100;
+
+    const expFrameCenter: [number, number] = [0, 0];
+    const expFrameLeft = -0.5;
+    const expFrameRight = 0.5;
+    const expYBottom = -1;
+    const expYTop = 1;
+
+    // Test centerpoint
+    expect(getFrameOffset(frameInfo, canvCenter)).deep.equals(expFrameCenter);
+    // Test corners
+    expect(getFrameOffset(frameInfo, [canvLeft, canvTop])).deep.equals([expFrameLeft, expYTop]);
+    expect(getFrameOffset(frameInfo, [canvRight, canvTop])).deep.equals([expFrameRight, expYTop]);
+    expect(getFrameOffset(frameInfo, [canvLeft, canvBottom])).deep.equals([expFrameLeft, expYBottom]);
+    expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
   });
 
   it("maps corners correctly when frame is panned", () => {
-    const checkCanvasOffsetMatches = makeConversionTester({
-      frameSizeScreenPx: [100, 100],
-      canvasSizePx: [100, 100],
-      canvasPanPx: [-0.5, -0.5],
-    });
+    const frameInfo = {
+      frameSizeScreenPx: DEFAULT_FRAME_SIZE_PX,
+      canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
+      canvasPanPx: [-0.5, -0.5] as [number, number],
+    };
 
-    checkCanvasOffsetMatches([50, 50], [0.5, 0.5]);
+    // The frame is panned by [-0.5, -0.5], which means the top right corner of the frame will be centered in the canvas.
 
-    checkCanvasOffsetMatches([0, 0], [0, 1]);
-    checkCanvasOffsetMatches([100, 0], [1, 1]);
-    checkCanvasOffsetMatches([0, 100], [0, 0]);
-    checkCanvasOffsetMatches([100, 100], [1, 0]);
+    // +-----c-----+  < canvasY = 0  | frameY = 1.0
+    // |           |
+    // +--f--+     |  < canvasY = 50 | frameY = 0.5 <= frame corner
+    // |     |     |
+    // o-----+-----+  < canvasY = 100| frameY = 0   <= frame center
+
+    const canvCenter: [number, number] = [50, 50];
+    const canvLeft = 0;
+    const canvRight = 100;
+    const canvTop = 0;
+    const canvBottom = 100;
+
+    const expFrameCenter: [number, number] = [0.5, 0.5];
+    const expFrameLeft = 0;
+    const expFrameRight = 1;
+    const expYBottom = 0;
+    const expYTop = 1;
+
+    // Test centerpoint
+    expect(getFrameOffset(frameInfo, canvCenter)).deep.equals(expFrameCenter);
+    // Test corners
+    expect(getFrameOffset(frameInfo, [canvLeft, canvTop])).deep.equals([expFrameLeft, expYTop]);
+    expect(getFrameOffset(frameInfo, [canvRight, canvTop])).deep.equals([expFrameRight, expYTop]);
+    expect(getFrameOffset(frameInfo, [canvLeft, canvBottom])).deep.equals([expFrameLeft, expYBottom]);
+    expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
   });
 
   it("maps corners correctly when frame is zoomed", () => {
-    const checkCanvasOffsetMatches = makeConversionTester({
-      frameSizeScreenPx: [200, 200],
-      canvasSizePx: [100, 100],
-      canvasPanPx: [0, 0],
-    });
+    const frameInfo = {
+      frameSizeScreenPx: [200, 200] as [number, number],
+      canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
+      canvasPanPx: DEFAULT_PAN,
+    };
 
-    checkCanvasOffsetMatches([50, 50], [0, 0]);
+    // Frame is twice as large as the canvas, so the corners of the canvas will only
+    // be half the relative dimensions of the frame. (0.5 / 2 = 0.25)
+    //
+    // +-----f-----+
+    // |  +--c--+  |  // canvasY = 0 | frameY = 0.25     <= frame corner
+    // |  |  o  |  |  // canvasY = 50 | frameY = 0       <= frame center
+    // |  +-----+  |  // canvasY = 100 | frameY = -0.25  <= frame corner
+    // +-----------+
 
+    const canvCenter: [number, number] = [50, 50];
+    const canvLeft = 0;
+    const canvRight = 100;
+    const canvTop = 0;
+    const canvBottom = 100;
+
+    const expFrameCenter: [number, number] = [0, 0];
+    const expFrameLeft = -0.25;
+    const expFrameRight = 0.25;
+    const expYBottom = -0.25;
+    const expYTop = 0.25;
+
+    // Test centerpoint
+    expect(getFrameOffset(frameInfo, canvCenter)).deep.equals(expFrameCenter);
     // Test corners
-    checkCanvasOffsetMatches([0, 0], [-0.25, 0.25]);
-    checkCanvasOffsetMatches([100, 0], [0.25, 0.25]);
-    checkCanvasOffsetMatches([0, 100], [-0.25, -0.25]);
-    checkCanvasOffsetMatches([100, 100], [0.25, -0.25]);
+    expect(getFrameOffset(frameInfo, [canvLeft, canvTop])).deep.equals([expFrameLeft, expYTop]);
+    expect(getFrameOffset(frameInfo, [canvRight, canvTop])).deep.equals([expFrameRight, expYTop]);
+    expect(getFrameOffset(frameInfo, [canvLeft, canvBottom])).deep.equals([expFrameLeft, expYBottom]);
+    expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
   });
 });

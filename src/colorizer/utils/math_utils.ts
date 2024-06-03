@@ -145,9 +145,10 @@ export function convertCanvasOffsetPxToFrameCoords(
     -(canvasOffsetPx[1] - canvasSizePx[1] / 2),
   ];
   // Get the point in pixel coordinates relative to the frame
+  // Adding 0 prevents `-0` from being returned.
   return [
-    offsetFromCenter[0] / frameSizeScreenPx[0] - canvasPanPx[0],
-    offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPanPx[1],
+    offsetFromCenter[0] / frameSizeScreenPx[0] - canvasPanPx[0] + 0,
+    offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPanPx[1] + 0,
   ];
 }
 
