@@ -15,11 +15,13 @@ import {
   DataArray,
   drawCrosshair,
   getBucketIndex,
+  getFeatureOrTimeNameWithUnits,
   getHoverTemplate,
   isHistogramEvent,
   makeEmptyTraceData,
   makeLineTrace,
   scaleColorOpacityByMarkerCount,
+  SCATTERPLOT_TIME_FEATURE,
   splitTraceData,
   subsampleColorRamp,
   TraceData,
@@ -30,8 +32,6 @@ import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
 import LoadingSpinner from "../LoadingSpinner";
 
-/** Extra feature that's added to the dropdowns representing the frame number. */
-const TIME_FEATURE = { key: "scatterplot_time", label: "Time" };
 // TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
 
 const PLOTLY_CONFIG: Partial<Plotly.Config> = {
@@ -195,7 +195,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (featureKey === null || dataset === null) {
       return undefined;
     }
-    if (featureKey === TIME_FEATURE.key) {
+    if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
       return dataset.times || undefined;
     }
     return dataset.getFeatureData(featureKey)?.data;
@@ -362,7 +362,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
 
     // Special case for time feature, which isn't in the dataset
-    if (featureKey === TIME_FEATURE.key) {
+    if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
       min = 0;
       max = dataset?.numberOfFrames || 0;
     }
@@ -625,7 +625,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       markerBaseColor = new Color("#dddddd");
     }
 
-    const isUsingTime = xAxisFeatureKey === TIME_FEATURE.key || yAxisFeatureKey === TIME_FEATURE.key;
+    const isUsingTime =
+      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key;
 
     // Configure traces
     const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds, {}, markerBaseColor);
@@ -706,11 +707,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yHistogram
     );
 
-    scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey || "");
+    scatterPlotXAxis.title = getFeatureOrTimeNameWithUnits(xAxisFeatureKey, dataset);
     // Due to limited space in the Y-axis, hide categorical feature names.
     scatterPlotYAxis.title = dataset.isFeatureCategorical(yAxisFeatureKey)
       ? ""
-      : dataset.getFeatureNameWithUnits(yAxisFeatureKey || "");
+      : getFeatureOrTimeNameWithUnits(yAxisFeatureKey, dataset);
 
     // Add extra margin for categorical feature labels on the Y axis.
     const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureKey));
@@ -787,7 +788,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const menuItems: MenuItemType[] = featureKeys.map((key: string) => {
       return { key, label: dataset?.getFeatureNameWithUnits(key) };
     });
-    menuItems.push(TIME_FEATURE);
+    menuItems.push(SCATTERPLOT_TIME_FEATURE);
 
     return (
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
