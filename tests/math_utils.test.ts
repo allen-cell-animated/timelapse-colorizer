@@ -308,8 +308,8 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // be half the relative dimensions of the frame. (0.5 / 2 = 0.25)
     //
     // +-----f-----+
-    // |  +--c--+  |  // canvasY = 0 | frameY = 0.25     <= frame corner
-    // |  |  o  |  |  // canvasY = 50 | frameY = 0       <= frame center
+    // |  +--c--+  |  // canvasY = 0   | frameY = 0.25     <= frame corner
+    // |  |  o  |  |  // canvasY = 50  | frameY = 0       <= frame center
     // |  +-----+  |  // canvasY = 100 | frameY = -0.25  <= frame corner
     // +-----------+
 
