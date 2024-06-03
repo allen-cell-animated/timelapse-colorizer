@@ -223,7 +223,7 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
   });
 
-  it("maps corners to frame coordinates when canvas has different aspect ratio than frame", () => {
+  it("maps canvas corners to frame coordinates when canvas has different aspect ratio than frame", () => {
     const frameInfo = {
       frameSizeScreenPx: [100, 50] as [number, number],
       canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
@@ -261,7 +261,7 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
   });
 
-  it("maps corners correctly when frame is panned", () => {
+  it("maps canvas corners to frame relative coordinates when frame is panned", () => {
     const frameInfo = {
       frameSizeScreenPx: DEFAULT_FRAME_SIZE_PX,
       canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
@@ -297,7 +297,7 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
   });
 
-  it("maps corners correctly when frame is zoomed", () => {
+  it("maps canvas corners to frame relative coordinates when frame is zoomed", () => {
     const frameInfo = {
       frameSizeScreenPx: [200, 200] as [number, number],
       canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
