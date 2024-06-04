@@ -1,6 +1,6 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
-import { Tooltip } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Tooltip, TooltipProps } from "antd";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
@@ -27,6 +27,22 @@ const RIGHT_CLICK_BUTTON = 2;
 
 const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
+
+function TooltipWithSubtext(props: TooltipProps & { title: ReactNode; subtext: ReactNode }): ReactElement {
+  return (
+    <Tooltip
+      {...props}
+      title={
+        <>
+          <p style={{ margin: 0 }}>{props.title}</p>
+          <p style={{ margin: 0, fontSize: "12px" }}>{props.subtext}</p>
+        </>
+      }
+    >
+      {props.children}
+    </Tooltip>
+  );
+}
 
 const CanvasControlsContainer = styled(FlexColumn)`
   position: absolute;
@@ -433,15 +449,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
     // Reset any mouse tracking state
-    if (isMouseLeftDown.current) {
-      isMouseLeftDown.current = false;
-    }
-    if (isMouseMiddleDown.current) {
-      isMouseMiddleDown.current = false;
-    }
-    if (isMouseRightDown.current) {
-      isMouseRightDown.current = false;
-    }
+    isMouseLeftDown.current = false;
+    isMouseMiddleDown.current = false;
+    isMouseRightDown.current = false;
     setTimeout(() => {
       // Delay slightly to make sure that click event is processed first before resetting drag state
       isMouseDragging.current = false;
@@ -535,16 +545,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.dataset, canv]);
 
   // RENDERING /////////////////////////////////////////////////
-
-  const makeTitleWithSubtext = (title: string | ReactElement, subtext: string | ReactElement): ReactElement => {
-    return (
-      <>
-        <p style={{ margin: 0 }}>{title}</p>
-        <p style={{ margin: 0, fontSize: "12px" }}>{subtext}</p>
-      </>
-    );
-  };
-
   canv.render();
   return (
     <FlexColumnAlignCenter
@@ -578,11 +578,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <Tooltip
-          title={makeTitleWithSubtext("Zoom in", "Ctrl + Scroll")}
-          placement="right"
-          trigger={["hover", "focus"]}
-        >
+        <TooltipWithSubtext title={"Zoom in"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -592,12 +588,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <ZoomInOutlined />
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
-        </Tooltip>
-        <Tooltip
-          title={makeTitleWithSubtext("Zoom out", "Ctrl + Scroll")}
-          placement="right"
-          trigger={["hover", "focus"]}
-        >
+        </TooltipWithSubtext>
+        <TooltipWithSubtext title={"Zoom out"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -610,9 +602,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <ZoomOutOutlined />
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
-        </Tooltip>
-        <Tooltip
-          title={makeTitleWithSubtext("Pan", "Right click + drag")}
+        </TooltipWithSubtext>
+        <TooltipWithSubtext
+          title={"Toggle pan"}
+          subtext="Right click + drag"
           placement="right"
           trigger={["hover", "focus"]}
         >
@@ -627,7 +620,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <HandIconSVG />
             <VisuallyHidden>Toggle pan (currently {enablePan ? "ON" : "OFF"}.)</VisuallyHidden>
           </IconButton>
-        </Tooltip>
+        </TooltipWithSubtext>
       </CanvasControlsContainer>
     </FlexColumnAlignCenter>
   );
