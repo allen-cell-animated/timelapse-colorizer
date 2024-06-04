@@ -370,8 +370,7 @@ export default class ColorizeCanvas {
 
     // Get final size by applying the current zoom level, where `zoomMultiplier=2` means the frame is 2x
     // larger than its base size. Save this to use when calculating units with the scale bar.
-    const frameSizeInCanvasCoordinates = unscaledFrameSizeInCanvasCoords.clone().multiplyScalar(this.zoomMultiplier);
-    this.frameSizeInCanvasCoordinates = frameSizeInCanvasCoordinates;
+    this.frameSizeInCanvasCoordinates = unscaledFrameSizeInCanvasCoords.clone().multiplyScalar(this.zoomMultiplier);
 
     // Transforms from [0, 1] space of the canvas to the [0, 1] space of the frame by dividing by the zoom level.
     // ex: Let's say our frame has the same aspect ratio as the canvas, but our zoom is set to 2x.
@@ -382,8 +381,8 @@ export default class ColorizeCanvas {
 
     // Invert to get the frame to canvas coordinates. The line mesh is in frame coordinates, so transform it to
     // canvas coordinates so it matches the zoomed frame.
-    const frameToCanvasCoordinates = new Vector2(1 / canvasToFrameCoordinates.x, 1 / canvasToFrameCoordinates.y);
-    this.frameToCanvasCoordinates = frameToCanvasCoordinates;
+    this.frameToCanvasCoordinates = new Vector2(1 / canvasToFrameCoordinates.x, 1 / canvasToFrameCoordinates.y);
+
     this.line.scale.set(this.frameToCanvasCoordinates.x, this.frameToCanvasCoordinates.y, 1);
     // The line mesh is centered at [0,0]. Adjust the line mesh position with scaling and panning
     this.line.position.set(

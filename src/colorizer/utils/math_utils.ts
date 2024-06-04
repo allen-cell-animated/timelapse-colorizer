@@ -94,17 +94,20 @@ export function numberToSciNotation(input: number, significantFigures: number): 
 }
 
 /**
- * Calculates the size of a frame in pixels that is scaled to fit within a canvas with known
+ * Calculates the size of a frame in pixels, fit within a canvas with known
  * onscreen pixel dimensions.
+ * The frame is scaled to fill the canvas while maintaining its aspect ratio.
+ *
  * @param canvasSizePx Size of the canvas, in pixels.
  * @param frameResolution Resolution of the frame, in pixels or units.
  * @param frameZoom The zoom level of the frame. A zoom of 1x means the frame is scaled to fit in the canvas
- * while maintaining its aspect ratio. A zoom of 2x means the frame is twice as large as it would be at 1x zoom.
+ * while maintaining its aspect ratio (e.g. the frame will have the width or height of the canvas).
+ * A zoom of 2x means the frame is twice as large as it would be at 1x zoom.
  * @returns A tuple of `[width, height]` in pixels.
  */
 export function getFrameSizeInScreenPx(
-  canvasSizePx: [number, number] | number[],
-  frameResolution: [number, number] | number[],
+  canvasSizePx: [number, number],
+  frameResolution: [number, number],
   frameZoom: number
 ): [number, number] {
   const frameBaseWidthPx = frameResolution[0];
