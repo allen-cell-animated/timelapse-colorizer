@@ -138,7 +138,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    * centered in the canvas view.
    * X and Y are clamped to a range of [-0.5, 0.5] to prevent the frame from being panned out of view.
    */
-  const canvasPanOffset = useRef<[number, number]>([0, 0]);
+  const canvasPanOffset = useRef(new Vector2(0, 0));
   const isMouseLeftDown = useRef(false);
   const isMouseMiddleDown = useRef(false);
   const isMouseRightDown = useRef(false);
@@ -152,7 +152,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const [enablePan, setEnablePan] = useState(false);
 
   const isMouseOverCanvas = useRef(false);
-  const lastMousePositionPx = useRef([0, 0]);
+  const lastMousePositionPx = useRef(new Vector2(0, 0));
   const theme = useContext(AppThemeContext);
 
   const [showMissingFileIcon, setShowMissingFileIcon] = useState(false);
@@ -259,20 +259,20 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    * Measures the current width of the canvas component, constraining it by
    * the maximum width and height props while maintaining the aspect ratio.
    */
-  const getCanvasSizePx = useCallback((): [number, number] => {
+  const getCanvasSizePx = useCallback((): Vector2 => {
     const widthPx = Math.min(
       containerRef.current?.clientWidth ?? props.maxWidthPx,
       props.maxWidthPx,
       props.maxHeightPx * ASPECT_RATIO
     );
-    return [Math.floor(widthPx), Math.floor(widthPx / ASPECT_RATIO)];
+    return new Vector2(Math.floor(widthPx), Math.floor(widthPx / ASPECT_RATIO));
   }, [props.maxHeightPx, props.maxWidthPx]);
 
   // Respond to window resizing
   useEffect(() => {
     const updateCanvasDimensions = (): void => {
-      const [widthPx, heightPx] = getCanvasSizePx();
-      canv.setSize(widthPx, heightPx);
+      const canvasSizePx = getCanvasSizePx();
+      canv.setSize(canvasSizePx.x, canvasSizePx.y);
     };
     updateCanvasDimensions(); // Initial size setting
 
@@ -292,7 +292,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Reset the canvas zoom + pan when the collection changes
   useEffect(() => {
     canvasZoomInverse.current = 1.0;
-    canvasPanOffset.current = [0, 0];
+    canvasPanOffset.current = new Vector2(0, 0);
     canv.setZoom(1.0);
     canv.setPan(0, 0);
   }, [props.collection]);
@@ -313,14 +313,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     [canv, props.dataset]
   );
 
-  const vec2ToArray = (v: Vector2): [number, number] => [v.x, v.y];
-
   /**
    * Returns the full size of the frame in screen pixels, including offscreen pixels.
    */
-  const getFrameSizeInScreenPx = useCallback((): [number, number] => {
+  const getFrameSizeInScreenPx = useCallback((): Vector2 => {
     const canvasSizePx = getCanvasSizePx();
-    const frameResolution = props.dataset ? vec2ToArray(props.dataset.frameResolution) : canvasSizePx;
+    const frameResolution = props.dataset ? props.dataset.frameResolution : canvasSizePx;
     const canvasZoom = 1 / canvasZoomInverse.current;
     return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
   }, [props.dataset?.frameResolution, getCanvasSizePx]);
@@ -342,7 +340,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     (event: WheelEvent, zoomDelta: number): void => {
       const canvasSizePx = getCanvasSizePx();
       const startingFrameSizePx = getFrameSizeInScreenPx();
-      const canvasOffsetPx: [number, number] = [event.offsetX, event.offsetY];
+      const canvasOffsetPx = new Vector2(event.offsetX, event.offsetY);
 
       const currentMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
         canvasSizePx,
@@ -360,15 +358,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         canvasOffsetPx,
         canvasPanOffset.current
       );
-      const mousePositionDelta = [
-        newMousePosition[0] - currentMousePosition[0],
-        newMousePosition[1] - currentMousePosition[1],
-      ];
+      const mousePositionDelta = newMousePosition.clone().sub(currentMousePosition);
 
-      canvasPanOffset.current[0] = clamp(canvasPanOffset.current[0] + mousePositionDelta[0], -0.5, 0.5);
-      canvasPanOffset.current[1] = clamp(canvasPanOffset.current[1] + mousePositionDelta[1], -0.5, 0.5);
+      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -0.5, 0.5);
+      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -0.5, 0.5);
 
-      canv.setPan(canvasPanOffset.current[0], canvasPanOffset.current[1]);
+      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
     [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
   );
@@ -377,12 +372,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     (dx: number, dy: number): void => {
       const frameSizePx = getFrameSizeInScreenPx();
       // Normalize dx/dy (change in pixels) to frame coordinates
-      canvasPanOffset.current[0] += dx / frameSizePx[0];
-      canvasPanOffset.current[1] += -dy / frameSizePx[1];
+      canvasPanOffset.current.x += dx / frameSizePx.x;
+      canvasPanOffset.current.y += -dy / frameSizePx.y;
       // Clamp panning
-      canvasPanOffset.current[0] = clamp(canvasPanOffset.current[0], -0.5, 0.5);
-      canvasPanOffset.current[1] = clamp(canvasPanOffset.current[1], -0.5, 0.5);
-      canv.setPan(canvasPanOffset.current[0], canvasPanOffset.current[1]);
+      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x, -0.5, 0.5);
+      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
+      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
     [canv, getCanvasSizePx, props.dataset]
   );
@@ -526,14 +521,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Update hovered id when the canvas updates the current frame */
   useEffect(() => {
     if (isMouseOverCanvas.current) {
-      reportHoveredIdAtPixel(lastMousePositionPx.current[0], lastMousePositionPx.current[1]);
+      reportHoveredIdAtPixel(lastMousePositionPx.current.x, lastMousePositionPx.current.y);
     }
   }, [canv.getCurrentFrame()]);
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent): void => {
       reportHoveredIdAtPixel(event.offsetX, event.offsetY);
-      lastMousePositionPx.current = [event.offsetX, event.offsetY];
+      lastMousePositionPx.current = new Vector2(event.offsetX, event.offsetY);
     };
 
     canv.domElement.addEventListener("mousemove", onMouseMove);
@@ -568,7 +563,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <IconButton
             onClick={() => {
               canvasZoomInverse.current = 1.0;
-              canvasPanOffset.current = [0, 0];
+              canvasPanOffset.current = new Vector2(0, 0);
               canv.setZoom(1.0);
               canv.setPan(0, 0);
             }}

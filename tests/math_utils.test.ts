@@ -1,3 +1,4 @@
+import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -8,8 +9,8 @@ import {
 } from "../src/colorizer/utils/math_utils";
 
 const DEFAULT_ZOOM = 1;
-const DEFAULT_CANVAS_RESOLUTION: [number, number] = [100, 100];
-const DEFAULT_FRAME_RESOLUTION: [number, number] = [1, 1];
+const DEFAULT_CANVAS_RESOLUTION = new Vector2(100, 100);
+const DEFAULT_FRAME_RESOLUTION = new Vector2(1, 1);
 
 describe("numberToSciNotation", () => {
   it("Handles zero", () => {
@@ -102,11 +103,11 @@ describe("getFrameSizeInScreenPx", () => {
   });
 
   it("does not change returned size if frame resolution is higher", () => {
-    const frameResolutions: [number, number][] = [
-      [0.1, 0.1],
-      [1, 1],
-      [10, 10],
-      [100, 100],
+    const frameResolutions: Vector2[] = [
+      new Vector2(0.1, 0.1),
+      new Vector2(1, 1),
+      new Vector2(10, 10),
+      new Vector2(100, 100),
     ];
     for (const frameResolution of frameResolutions) {
       const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, frameResolution, DEFAULT_ZOOM);
@@ -115,28 +116,28 @@ describe("getFrameSizeInScreenPx", () => {
   });
 
   it("sets frame height to canvas height when frame aspect ratio is taller than canvas", () => {
-    const frameResolution: [number, number] = [0.5, 1];
+    const frameResolution = new Vector2(0.5, 1);
     const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, frameResolution, DEFAULT_ZOOM);
-    expect(frameSizePx).to.deep.equal([50, 100]);
+    expect(frameSizePx).to.deep.equal(new Vector2(50, 100));
   });
 
   it("sets frame width to canvas width when frame aspect ratio is wider than canvas", () => {
-    const frameResolution: [number, number] = [1, 0.5];
+    const frameResolution = new Vector2(1, 0.5);
     const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, frameResolution, DEFAULT_ZOOM);
-    expect(frameSizePx).to.deep.equal([100, 50]);
+    expect(frameSizePx).to.deep.equal(new Vector2(100, 50));
   });
 
   it("scales frame dimensions with zoom", () => {
     const frameZoom = 2;
     const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, DEFAULT_FRAME_RESOLUTION, frameZoom);
-    expect(frameSizePx).to.deep.equal([200, 200]);
+    expect(frameSizePx).to.deep.equal(new Vector2(200, 200));
   });
 
   it("scales frame dimensions with zoom while maintaining aspect ratio", () => {
-    const frameResolution: [number, number] = [1, 0.5];
+    const frameResolution = new Vector2(1, 0.5);
     const frameZoom = 2;
     const frameSizePx = getFrameSizeInScreenPx(DEFAULT_CANVAS_RESOLUTION, frameResolution, frameZoom);
-    expect(frameSizePx).to.deep.equal([200, 100]);
+    expect(frameSizePx).to.deep.equal(new Vector2(200, 100));
   });
 });
 
@@ -169,9 +170,9 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
    *
    */
 
-  const DEFAULT_PAN: [number, number] = [0, 0];
-  const DEFAULT_CANVAS_SIZE_PX: [number, number] = [100, 100];
-  const DEFAULT_FRAME_SIZE_PX: [number, number] = [100, 100];
+  const DEFAULT_PAN = new Vector2(0, 0);
+  const DEFAULT_CANVAS_SIZE_PX = new Vector2(100, 100);
+  const DEFAULT_FRAME_SIZE_PX = new Vector2(100, 100);
 
   /**
    * Convenience wrapper around `convertCanvasOffsetPxToFrameCoords`. Allows the repeated information
@@ -179,12 +180,12 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
    */
   function getFrameOffset(
     frameInfo: {
-      frameSizeScreenPx: [number, number];
-      canvasSizePx: [number, number];
-      canvasPanPx: [number, number];
+      frameSizeScreenPx: Vector2;
+      canvasSizePx: Vector2;
+      canvasPanPx: Vector2;
     },
-    canvasOffsetPx: [number, number]
-  ): [number, number] {
+    canvasOffsetPx: Vector2
+  ): Vector2 {
     return convertCanvasOffsetPxToFrameCoords(
       frameInfo.canvasSizePx,
       frameInfo.frameSizeScreenPx,
@@ -200,32 +201,36 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
       canvasPanPx: DEFAULT_PAN,
     };
 
-    const canvCenter: [number, number] = [50, 50];
+    const canvCenter = new Vector2(50, 50);
     const canvLeft = 0;
     const canvRight = 100;
     const canvTop = 0;
     const canvBottom = 100;
 
-    const expFrameCenter: [number, number] = [0, 0];
+    const expFrameCenter = new Vector2(0, 0);
     const expFrameLeft = -0.5;
     const expFrameRight = 0.5;
     const expYBottom = -0.5;
     const expYTop = 0.5;
 
-    expect(getFrameOffset(frameInfo, [0, 0])).to.deep.equal([-0.5, 0.5]);
+    expect(getFrameOffset(frameInfo, new Vector2(0, 0))).to.deep.equal(new Vector2(-0.5, 0.5));
 
     // Test centerpoint
     expect(getFrameOffset(frameInfo, canvCenter)).deep.equals(expFrameCenter);
     // Test corners
-    expect(getFrameOffset(frameInfo, [canvLeft, canvTop])).deep.equals([expFrameLeft, expYTop]);
-    expect(getFrameOffset(frameInfo, [canvRight, canvTop])).deep.equals([expFrameRight, expYTop]);
-    expect(getFrameOffset(frameInfo, [canvLeft, canvBottom])).deep.equals([expFrameLeft, expYBottom]);
-    expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
+    expect(getFrameOffset(frameInfo, new Vector2(canvLeft, canvTop))).deep.equals(new Vector2(expFrameLeft, expYTop));
+    expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvTop))).deep.equals(new Vector2(expFrameRight, expYTop));
+    expect(getFrameOffset(frameInfo, new Vector2(canvLeft, canvBottom))).deep.equals(
+      new Vector2(expFrameLeft, expYBottom)
+    );
+    expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvBottom))).deep.equals(
+      new Vector2(expFrameRight, expYBottom)
+    );
   });
 
   it("maps canvas corners to frame coordinates when canvas has different aspect ratio than frame", () => {
     const frameInfo = {
-      frameSizeScreenPx: [100, 50] as [number, number],
+      frameSizeScreenPx: new Vector2(100, 50),
       canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
       canvasPanPx: DEFAULT_PAN,
     };
@@ -240,13 +245,13 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // +----------+  // canvasY = 75 | frameY = -0.5  <= frame corner
     // +----------+  // canvasY = 100| frameY = -1.0
 
-    const canvCenter: [number, number] = [50, 50];
+    const canvCenter = new Vector2(50, 50);
     const canvLeft = 0;
     const canvRight = 100;
     const canvTop = 0;
     const canvBottom = 100;
 
-    const expFrameCenter: [number, number] = [0, 0];
+    const expFrameCenter = new Vector2(0, 0);
     const expFrameLeft = -0.5;
     const expFrameRight = 0.5;
     const expYBottom = -1;
@@ -255,17 +260,21 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // Test centerpoint
     expect(getFrameOffset(frameInfo, canvCenter)).deep.equals(expFrameCenter);
     // Test corners
-    expect(getFrameOffset(frameInfo, [canvLeft, canvTop])).deep.equals([expFrameLeft, expYTop]);
-    expect(getFrameOffset(frameInfo, [canvRight, canvTop])).deep.equals([expFrameRight, expYTop]);
-    expect(getFrameOffset(frameInfo, [canvLeft, canvBottom])).deep.equals([expFrameLeft, expYBottom]);
-    expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
+    expect(getFrameOffset(frameInfo, new Vector2(canvLeft, canvTop))).deep.equals(new Vector2(expFrameLeft, expYTop));
+    expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvTop))).deep.equals(new Vector2(expFrameRight, expYTop));
+    expect(getFrameOffset(frameInfo, new Vector2(canvLeft, canvBottom))).deep.equals(
+      new Vector2(expFrameLeft, expYBottom)
+    );
+    expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvBottom))).deep.equals(
+      new Vector2(expFrameRight, expYBottom)
+    );
   });
 
   it("maps canvas corners to frame relative coordinates when frame is panned", () => {
     const frameInfo = {
       frameSizeScreenPx: DEFAULT_FRAME_SIZE_PX,
       canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
-      canvasPanPx: [-0.5, -0.5] as [number, number],
+      canvasPanPx: new Vector2(-0.5, -0.5),
     };
 
     // The frame is panned by [-0.5, -0.5], which means the top right corner of the frame will be centered in the canvas.
@@ -276,13 +285,13 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // |     |     |
     // o-----+-----+  < canvasY = 100| frameY = 0   <= frame center
 
-    const canvCenter: [number, number] = [50, 50];
+    const canvCenter = new Vector2(50, 50);
     const canvLeft = 0;
     const canvRight = 100;
     const canvTop = 0;
     const canvBottom = 100;
 
-    const expFrameCenter: [number, number] = [0.5, 0.5];
+    const expFrameCenter = new Vector2(0.5, 0.5);
     const expFrameLeft = 0;
     const expFrameRight = 1;
     const expYBottom = 0;
@@ -291,15 +300,19 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // Test centerpoint
     expect(getFrameOffset(frameInfo, canvCenter)).deep.equals(expFrameCenter);
     // Test corners
-    expect(getFrameOffset(frameInfo, [canvLeft, canvTop])).deep.equals([expFrameLeft, expYTop]);
-    expect(getFrameOffset(frameInfo, [canvRight, canvTop])).deep.equals([expFrameRight, expYTop]);
-    expect(getFrameOffset(frameInfo, [canvLeft, canvBottom])).deep.equals([expFrameLeft, expYBottom]);
-    expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
+    expect(getFrameOffset(frameInfo, new Vector2(canvLeft, canvTop))).deep.equals(new Vector2(expFrameLeft, expYTop));
+    expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvTop))).deep.equals(new Vector2(expFrameRight, expYTop));
+    expect(getFrameOffset(frameInfo, new Vector2(canvLeft, canvBottom))).deep.equals(
+      new Vector2(expFrameLeft, expYBottom)
+    );
+    expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvBottom))).deep.equals(
+      new Vector2(expFrameRight, expYBottom)
+    );
   });
 
   it("maps canvas corners to frame relative coordinates when frame is zoomed", () => {
     const frameInfo = {
-      frameSizeScreenPx: [200, 200] as [number, number],
+      frameSizeScreenPx: new Vector2(200, 200) as Vector2,
       canvasSizePx: DEFAULT_CANVAS_SIZE_PX,
       canvasPanPx: DEFAULT_PAN,
     };
@@ -313,13 +326,13 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // |  +-----+  |  // canvasY = 100 | frameY = -0.25  <= frame corner
     // +-----------+
 
-    const canvCenter: [number, number] = [50, 50];
+    const canvCenter = new Vector2(50, 50);
     const canvLeft = 0;
     const canvRight = 100;
     const canvTop = 0;
     const canvBottom = 100;
 
-    const expFrameCenter: [number, number] = [0, 0];
+    const expFrameCenter = new Vector2(0, 0);
     const expFrameLeft = -0.25;
     const expFrameRight = 0.25;
     const expYBottom = -0.25;
@@ -328,9 +341,13 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // Test centerpoint
     expect(getFrameOffset(frameInfo, canvCenter)).deep.equals(expFrameCenter);
     // Test corners
-    expect(getFrameOffset(frameInfo, [canvLeft, canvTop])).deep.equals([expFrameLeft, expYTop]);
-    expect(getFrameOffset(frameInfo, [canvRight, canvTop])).deep.equals([expFrameRight, expYTop]);
-    expect(getFrameOffset(frameInfo, [canvLeft, canvBottom])).deep.equals([expFrameLeft, expYBottom]);
-    expect(getFrameOffset(frameInfo, [canvRight, canvBottom])).deep.equals([expFrameRight, expYBottom]);
+    expect(getFrameOffset(frameInfo, new Vector2(canvLeft, canvTop))).deep.equals(new Vector2(expFrameLeft, expYTop));
+    expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvTop))).deep.equals(new Vector2(expFrameRight, expYTop));
+    expect(getFrameOffset(frameInfo, new Vector2(canvLeft, canvBottom))).deep.equals(
+      new Vector2(expFrameLeft, expYBottom)
+    );
+    expect(getFrameOffset(frameInfo, new Vector2(canvRight, canvBottom))).deep.equals(
+      new Vector2(expFrameRight, expYBottom)
+    );
   });
 });

@@ -1,3 +1,5 @@
+import { Vector2 } from "three";
+
 /**
  * Formats a number as a string decimal with a defined number of digits
  * after the decimal place. Optionally ignores integers and returns them as-is.
@@ -105,22 +107,16 @@ export function numberToSciNotation(input: number, significantFigures: number): 
  * A zoom of 2x means the frame is twice as large as it would be at 1x zoom.
  * @returns A tuple of `[width, height]` in pixels.
  */
-export function getFrameSizeInScreenPx(
-  canvasSizePx: [number, number],
-  frameResolution: [number, number],
-  frameZoom: number
-): [number, number] {
-  const frameBaseWidthPx = frameResolution[0];
-  const frameBaseHeightPx = frameResolution[1];
-  const frameBaseAspectRatio = frameBaseWidthPx / frameBaseHeightPx;
+export function getFrameSizeInScreenPx(canvasSizePx: Vector2, frameResolution: Vector2, frameZoom: number): Vector2 {
+  const frameBaseAspectRatio = frameResolution.x / frameResolution.y;
 
   // Calculate base onscreen frame size in pixels by finding largest size it can be while fitting in
   // the canvas aspect ratio.
-  const baseFrameWidthPx = Math.min(canvasSizePx[0], canvasSizePx[1] * frameBaseAspectRatio);
+  const baseFrameWidthPx = Math.min(canvasSizePx.x, canvasSizePx.y * frameBaseAspectRatio);
   const baseFrameHeightPx = baseFrameWidthPx / frameBaseAspectRatio;
 
   // Scale with current zoom level
-  return [baseFrameWidthPx * frameZoom, baseFrameHeightPx * frameZoom];
+  return new Vector2(baseFrameWidthPx, baseFrameHeightPx).multiplyScalar(frameZoom);
 }
 
 /**
@@ -136,23 +132,23 @@ export function getFrameSizeInScreenPx(
  * of the frame, and [0.5, 0.5] is the top right corner.
  */
 export function convertCanvasOffsetPxToFrameCoords(
-  canvasSizePx: [number, number],
-  frameSizeScreenPx: [number, number],
-  canvasOffsetPx: [number, number],
-  canvasPanPx: [number, number]
-): [number, number] {
+  canvasSizePx: Vector2,
+  frameSizeScreenPx: Vector2,
+  canvasOffsetPx: Vector2,
+  canvasPanPx: Vector2
+): Vector2 {
   // Change the offset to be relative to the center of the canvas, rather than the top left corner.
-  const offsetFromCenter: [number, number] = [
+  const offsetFromCenter = new Vector2(
     // +X is flipped between the canvas and the frame, so invert the offset.
-    canvasOffsetPx[0] - canvasSizePx[0] / 2,
-    -(canvasOffsetPx[1] - canvasSizePx[1] / 2),
-  ];
+    canvasOffsetPx.x - canvasSizePx.x / 2,
+    -(canvasOffsetPx.y - canvasSizePx.y / 2)
+  );
   // Get the point in pixel coordinates relative to the frame
   // Adding 0 prevents `-0` from being returned.
-  return [
-    offsetFromCenter[0] / frameSizeScreenPx[0] - canvasPanPx[0] + 0,
-    offsetFromCenter[1] / frameSizeScreenPx[1] - canvasPanPx[1] + 0,
-  ];
+  return new Vector2(
+    offsetFromCenter.x / frameSizeScreenPx.x - canvasPanPx.x + 0,
+    offsetFromCenter.y / frameSizeScreenPx.y - canvasPanPx.y + 0
+  );
 }
 
 export function getDisplayDateString(date: Date): string {
