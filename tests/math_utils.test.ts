@@ -241,7 +241,7 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
 
     // +--canvas--+  // canvasY = 0  | frameY = 1.0
     // +--frame---+  // canvasY = 25 | frameY = 0.5   <= frame corner
-    // |    o     |  // canvasY = 50 | frameY = 0     <= frame center
+    // |    x     |  // canvasY = 50 | frameY = 0     <= frame center
     // +----------+  // canvasY = 75 | frameY = -0.5  <= frame corner
     // +----------+  // canvasY = 100| frameY = -1.0
 
@@ -283,7 +283,7 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // |           |
     // +--f--+     |  < canvasY = 50 | frameY = 0.5 <= frame corner
     // |     |     |
-    // o-----+-----+  < canvasY = 100| frameY = 0   <= frame center
+    // x-----+-----+  < canvasY = 100| frameY = 0   <= frame center
 
     const canvCenter = new Vector2(50, 50);
     const canvLeft = 0;
@@ -321,9 +321,9 @@ describe("convertCanvasOffsetPxToFrameCoords", () => {
     // be half the relative dimensions of the frame. (0.5 / 2 = 0.25)
     //
     // +-----f-----+
-    // |  +--c--+  |  // canvasY = 0   | frameY = 0.25     <= frame corner
-    // |  |  o  |  |  // canvasY = 50  | frameY = 0       <= frame center
-    // |  +-----+  |  // canvasY = 100 | frameY = -0.25  <= frame corner
+    // |  +--c--+  |  // canvasY = 0   | frameY = 0.25
+    // |  |  x  |  |  // canvasY = 50  | frameY = 0      <= frame center
+    // |  +-----+  |  // canvasY = 100 | frameY = -0.25
     // +-----------+
 
     const canvCenter = new Vector2(50, 50);
