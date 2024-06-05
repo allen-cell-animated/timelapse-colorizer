@@ -1,16 +1,58 @@
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { Tooltip, TooltipProps } from "antd";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation } from "three";
+import { Color, ColorRepresentation, Vector2 } from "three";
+import { clamp } from "three/src/math/MathUtils";
 
-import { NoImageSVG } from "../assets";
+import { HandIconSVG, NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
-import { FlexColumnAlignCenter } from "../styles/utils";
+import * as mathUtils from "../colorizer/utils/math_utils";
+import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
+import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
+import IconButton from "./IconButton";
 
-const ASPECT_RATIO = 14 / 10;
+const ASPECT_RATIO = 14.6 / 10;
+/* Minimum distance in either X or Y that mouse should move
+ * before mouse event is considered a drag
+ */
+const MIN_DRAG_THRESHOLD_PX = 5;
+const LEFT_CLICK_BUTTON = 0;
+const MIDDLE_CLICK_BUTTON = 1;
+const RIGHT_CLICK_BUTTON = 2;
+
+const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
+const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
+
+function TooltipWithSubtext(props: TooltipProps & { title: ReactNode; subtext: ReactNode }): ReactElement {
+  return (
+    <Tooltip
+      {...props}
+      title={
+        <>
+          <p style={{ margin: 0 }}>{props.title}</p>
+          <p style={{ margin: 0, fontSize: "12px" }}>{props.subtext}</p>
+        </>
+      }
+    >
+      {props.children}
+    </Tooltip>
+  );
+}
+
+const CanvasControlsContainer = styled(FlexColumn)`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px;
+  border-radius: 4px;
+  background-color: var(--color-viewport-overlay-background);
+  border: 1px solid var(--color-viewport-overlay-outline);
+`;
 
 const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   position: absolute;
@@ -34,6 +76,8 @@ type CanvasWrapperProps = {
    * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
+  /** Pan and zoom will be reset on collection change. */
+  collection: Collection | null;
   config: ViewerConfig;
 
   selectedBackdropKey: string | null;
@@ -82,8 +126,33 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canv = props.canv;
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
+   * (by +/-0.25) affect the zoom level more when zoomed in than zoomed out.
+   */
+  const canvasZoomInverse = useRef(1.0);
+  /**
+   * The offset of the frame in the canvas, in normalized frame coordinates. [0, 0] means the
+   * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
+   * centered in the canvas view.
+   * X and Y are clamped to a range of [-0.5, 0.5] to prevent the frame from being panned out of view.
+   */
+  const canvasPanOffset = useRef(new Vector2(0, 0));
+  const isMouseLeftDown = useRef(false);
+  const isMouseMiddleDown = useRef(false);
+  const isMouseRightDown = useRef(false);
+  /**
+   * Turns on if the mouse has moved more than MIN_DRAG_THRESHOLD_PX in X or Y after initial click;
+   * turns off when mouse is released. Used to determine whether to pan the canvas or treat
+   * the click as a track selection/regular click.
+   */
+  const isMouseDragging = useRef(false);
+  const totalMouseDrag = useRef(new Vector2(0, 0));
+  const [enablePan, setEnablePan] = useState(false);
+
   const isMouseOverCanvas = useRef(false);
-  const lastMousePositionPx = useRef([0, 0]);
+  const lastMousePositionPx = useRef(new Vector2(0, 0));
   const theme = useContext(AppThemeContext);
 
   const [showMissingFileIcon, setShowMissingFileIcon] = useState(false);
@@ -184,10 +253,52 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setTimestampVisibility(props.config.showTimestamp);
   }, [props.config.showTimestamp]);
 
+  // CANVAS RESIZING /////////////////////////////////////////////////
+
+  /**
+   * Measures the current width of the canvas component, constraining it by
+   * the maximum width and height props while maintaining the aspect ratio.
+   */
+  const getCanvasSizePx = useCallback((): Vector2 => {
+    const widthPx = Math.min(
+      containerRef.current?.clientWidth ?? props.maxWidthPx,
+      props.maxWidthPx,
+      props.maxHeightPx * ASPECT_RATIO
+    );
+    return new Vector2(Math.floor(widthPx), Math.floor(widthPx / ASPECT_RATIO));
+  }, [props.maxHeightPx, props.maxWidthPx]);
+
+  // Respond to window resizing
+  useEffect(() => {
+    const updateCanvasDimensions = (): void => {
+      const canvasSizePx = getCanvasSizePx();
+      canv.setSize(canvasSizePx.x, canvasSizePx.y);
+    };
+    updateCanvasDimensions(); // Initial size setting
+
+    const handleResize = (): void => {
+      updateCanvasDimensions();
+      canv.render();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [canv, getCanvasSizePx]);
+
   // CANVAS ACTIONS /////////////////////////////////////////////////
 
+  // Reset the canvas zoom + pan when the collection changes
+  useEffect(() => {
+    canvasZoomInverse.current = 1.0;
+    canvasPanOffset.current = new Vector2(0, 0);
+    canv.setZoom(1.0);
+    canv.setPan(0, 0);
+  }, [props.collection]);
+
   /** Report clicked tracks via the passed callback. */
-  const handleCanvasClick = useCallback(
+  const handleTrackSelection = useCallback(
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
@@ -199,15 +310,193 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.onTrackClicked(newTrack);
       }
     },
-    [props.dataset]
+    [canv, props.dataset]
   );
 
+  /**
+   * Returns the full size of the frame in screen pixels, including offscreen pixels.
+   */
+  const getFrameSizeInScreenPx = useCallback((): Vector2 => {
+    const canvasSizePx = getCanvasSizePx();
+    const frameResolution = props.dataset ? props.dataset.frameResolution : canvasSizePx;
+    const canvasZoom = 1 / canvasZoomInverse.current;
+    return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
+  }, [props.dataset?.frameResolution, getCanvasSizePx]);
+
+  /** Change zoom by some delta factor. */
+  const handleZoom = useCallback(
+    (zoomDelta: number): void => {
+      canvasZoomInverse.current += zoomDelta;
+      canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
+      canv.setZoom(1 / canvasZoomInverse.current);
+    },
+    [canv]
+  );
+
+  /** Zoom with respect to the pointer; keeps the mouse in the same position relative to the underlying
+   *  frame by panning as the zoom changes.
+   */
+  const handleZoomToMouse = useCallback(
+    (event: WheelEvent, zoomDelta: number): void => {
+      const canvasSizePx = getCanvasSizePx();
+      const startingFrameSizePx = getFrameSizeInScreenPx();
+      const canvasOffsetPx = new Vector2(event.offsetX, event.offsetY);
+
+      const currentMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
+        canvasSizePx,
+        startingFrameSizePx,
+        canvasOffsetPx,
+        canvasPanOffset.current
+      );
+
+      handleZoom(zoomDelta);
+
+      const newFrameSizePx = getFrameSizeInScreenPx();
+      const newMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
+        canvasSizePx,
+        newFrameSizePx,
+        canvasOffsetPx,
+        canvasPanOffset.current
+      );
+      const mousePositionDelta = newMousePosition.clone().sub(currentMousePosition);
+
+      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -0.5, 0.5);
+      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -0.5, 0.5);
+
+      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+    },
+    [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
+  );
+
+  const handlePan = useCallback(
+    (dx: number, dy: number): void => {
+      const frameSizePx = getFrameSizeInScreenPx();
+      // Normalize dx/dy (change in pixels) to frame coordinates
+      canvasPanOffset.current.x += dx / frameSizePx.x;
+      canvasPanOffset.current.y += -dy / frameSizePx.y;
+      // Clamp panning
+      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x, -0.5, 0.5);
+      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
+      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+    },
+    [canv, getCanvasSizePx, props.dataset]
+  );
+
+  // Mouse event handlers
+
+  const onMouseClick = useCallback(
+    (event: MouseEvent): void => {
+      // Note that click events won't fire until the mouse is released. We need to check
+      // if the mouse was dragged before treating the click as a track selection; otherwise
+      // the track selection gets changed unexpectedly.
+      if (!isMouseDragging.current && !enablePan) {
+        handleTrackSelection(event);
+      }
+    },
+    [handleTrackSelection, enablePan]
+  );
+
+  const onContextMenu = useCallback((event: MouseEvent): void => {
+    if (isMouseDragging.current) {
+      event.preventDefault();
+    }
+  }, []);
+
+  const onMouseDown = useCallback((event: MouseEvent): void => {
+    event.preventDefault(); // Prevent text selection
+    isMouseDragging.current = false;
+
+    if (event.button === MIDDLE_CLICK_BUTTON) {
+      isMouseMiddleDown.current = true;
+    } else if (event.button === LEFT_CLICK_BUTTON) {
+      isMouseLeftDown.current = true;
+    } else if (event.button === RIGHT_CLICK_BUTTON) {
+      isMouseRightDown.current = true;
+    }
+
+    totalMouseDrag.current = new Vector2(0, 0);
+  }, []);
+
+  const onMouseMove = useCallback(
+    (event: MouseEvent): void => {
+      const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey || enablePan);
+      if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || isMouseRightDown.current) {
+        canv.domElement.style.cursor = "grabbing";
+        handlePan(event.movementX, event.movementY);
+        // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
+        // to be a drag and disable track selection.
+        totalMouseDrag.current.x += Math.abs(event.movementX);
+        totalMouseDrag.current.y += Math.abs(event.movementY);
+        if (!isMouseDragging.current && totalMouseDrag.current.length() > MIN_DRAG_THRESHOLD_PX) {
+          isMouseDragging.current = true;
+        }
+      } else {
+        // TODO: Centralized cursor handling?
+        if (enablePan) {
+          canv.domElement.style.cursor = "grab";
+        } else {
+          canv.domElement.style.cursor = "auto";
+        }
+      }
+    },
+    [handlePan, enablePan]
+  );
+
+  const onMouseUp = useCallback((_event: MouseEvent): void => {
+    // Reset any mouse tracking state
+    isMouseLeftDown.current = false;
+    isMouseMiddleDown.current = false;
+    isMouseRightDown.current = false;
+    setTimeout(() => {
+      // Delay slightly to make sure that click event is processed first before resetting drag state
+      isMouseDragging.current = false;
+    }, 10);
+  }, []);
+
+  const onMouseWheel = useCallback(
+    (event: WheelEvent): void => {
+      event.preventDefault();
+      if (event.metaKey || event.ctrlKey) {
+        if (Math.abs(event.deltaY) > 25) {
+          // Using mouse wheel (probably). There's no surefire way to detect this, but mice usually
+          // scroll in much larger increments.
+          handleZoomToMouse(event, event.deltaY * 0.001);
+        } else {
+          // Track pad zoom
+          handleZoomToMouse(event, event.deltaY * 0.005);
+        }
+      } else if (event.shiftKey) {
+        // Translate Y to horizontal movement for mice.
+        handlePan(-event.deltaY, 0);
+      } else {
+        handlePan(-event.deltaX, -event.deltaY);
+      }
+    },
+    [handleZoomToMouse]
+  );
+
+  // Mount the event listeners for pan and zoom interactions.
+  // It may be more performant to separate these into individual useEffects, but
+  // this is more readable.
   useEffect(() => {
-    canv.domElement.addEventListener("click", handleCanvasClick);
+    canv.domElement.addEventListener("click", onMouseClick);
+    canv.domElement.addEventListener("wheel", onMouseWheel);
+    canv.domElement.addEventListener("mousedown", onMouseDown);
+    // Listen for context menu, mouseup, and mousemove events anywhere.
+    // For context menu, this allows us to hide the context menu if the user was dragging the mouse
+    // and releases the right mouse button off the canvas.
+    document.addEventListener("contextmenu", onContextMenu);
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
     return () => {
-      canv.domElement.removeEventListener("click", handleCanvasClick);
+      canv.domElement.removeEventListener("click", onMouseClick);
+      canv.domElement.removeEventListener("wheel", onMouseWheel);
+      canv.domElement.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("contextmenu", onContextMenu);
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [handleCanvasClick]);
+  }, [canv, onMouseClick, onMouseWheel, onMouseDown, onMouseMove, onMouseUp, handlePan]);
 
   /** Report hovered id via the passed callback. */
   const reportHoveredIdAtPixel = useCallback(
@@ -222,7 +511,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
-   * hovered value wwhen the canvas frame updates.
+   * hovered value when the canvas frame updates.
    */
   useEffect(() => {
     canv.domElement.addEventListener("mouseenter", () => (isMouseOverCanvas.current = true));
@@ -232,14 +521,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Update hovered id when the canvas updates the current frame */
   useEffect(() => {
     if (isMouseOverCanvas.current) {
-      reportHoveredIdAtPixel(lastMousePositionPx.current[0], lastMousePositionPx.current[1]);
+      reportHoveredIdAtPixel(lastMousePositionPx.current.x, lastMousePositionPx.current.y);
     }
   }, [canv.getCurrentFrame()]);
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent): void => {
       reportHoveredIdAtPixel(event.offsetX, event.offsetY);
-      lastMousePositionPx.current = [event.offsetX, event.offsetY];
+      lastMousePositionPx.current = new Vector2(event.offsetX, event.offsetY);
     };
 
     canv.domElement.addEventListener("mousemove", onMouseMove);
@@ -250,44 +539,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [props.dataset, canv]);
 
-  // Respond to window resizing
-  useEffect(() => {
-    /**
-     * Update the canvas dimensions based on the current window size.
-     * TODO: Margin calculation?
-     */
-    const setSize = (): void => {
-      // TODO: Potentially unsafe calculation here when using `window.innerWidth`. If close to the breakpoint where the side
-      // panel gets wrapped to below the canvas, the scrollbar added to account for the increased page height
-      // will cause this calculation to change (window.innerWidth will become smaller by ~15 pixels).
-      // Under certain circumstances, this can cause a flickering effect as the canvas resizes to accommodate the scrollbar,
-      // which causes the page to shrink, which causes the scrollbar to disappear, and so on in a loop.
-      // I've fixed this for now by setting the breakpoint to 1250 pixels, but it's not a robust solution.
-
-      // TODO: Calculate aspect ratio based on the current frame?
-      const width = Math.min(
-        containerRef.current?.clientWidth ?? props.maxWidthPx,
-        props.maxWidthPx,
-        props.maxHeightPx * ASPECT_RATIO
-      );
-      const height = Math.floor(width / ASPECT_RATIO);
-      canv.setSize(width, height);
-    };
-
-    const handleResize = (): void => {
-      setSize();
-      canv.render();
-    };
-
-    setSize(); // Initial size setting
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [canv]);
-
   // RENDERING /////////////////////////////////////////////////
-
   canv.render();
   return (
     <FlexColumnAlignCenter
@@ -306,6 +558,65 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
+      <CanvasControlsContainer $gap={4}>
+        <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
+          <IconButton
+            onClick={() => {
+              canvasZoomInverse.current = 1.0;
+              canvasPanOffset.current = new Vector2(0, 0);
+              canv.setZoom(1.0);
+              canv.setPan(0, 0);
+            }}
+            type="link"
+          >
+            <HomeOutlined />
+            <VisuallyHidden>Reset view</VisuallyHidden>
+          </IconButton>
+        </Tooltip>
+        <TooltipWithSubtext title={"Zoom in"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+          <IconButton
+            type="link"
+            onClick={() => {
+              handleZoom(-0.25);
+            }}
+          >
+            <ZoomInOutlined />
+            <VisuallyHidden>Zoom in</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtext>
+        <TooltipWithSubtext title={"Zoom out"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+          <IconButton
+            type="link"
+            onClick={() => {
+              // Little hack because the minimum zoom level is 0.1x, but all the other zoom levels
+              // are in increments of 0.25x. This ensures zooming all the way in and back out will return
+              // the zoom to 1.0x.
+              handleZoom(canvasZoomInverse.current === MIN_INVERSE_ZOOM ? 0.15 : 0.25);
+            }}
+          >
+            <ZoomOutOutlined />
+            <VisuallyHidden>Zoom out</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtext>
+        <TooltipWithSubtext
+          title={"Toggle pan"}
+          subtext="Right click + drag"
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
+          <IconButton
+            type={enablePan ? "primary" : "link"}
+            onClick={() => {
+              setTimeout(() => {
+                setEnablePan(!enablePan);
+              });
+            }}
+          >
+            <HandIconSVG />
+            <VisuallyHidden>Toggle pan (currently {enablePan ? "ON" : "OFF"}.)</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtext>
+      </CanvasControlsContainer>
     </FlexColumnAlignCenter>
   );
 }

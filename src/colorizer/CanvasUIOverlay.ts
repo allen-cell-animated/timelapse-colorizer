@@ -60,7 +60,7 @@ const defaultBackgroundOptions: OverlayFillOptions = {
   fill: "rgba(255, 255, 255, 0.8)",
   stroke: "rgba(0, 0, 0, 0.2)",
   paddingPx: new Vector2(10, 10),
-  marginPx: new Vector2(20, 20),
+  marginPx: new Vector2(12, 12),
   radiusPx: 4,
 };
 
