@@ -941,11 +941,11 @@ function Viewer(): ReactElement {
             <div className={styles.timeControls}>
               {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
                 // Swap between play and pause button
-                <IconButton type="outlined" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
+                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
                   <PauseOutlined />
                 </IconButton>
               ) : (
-                <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.play()} type="outlined">
+                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.play()}>
                   <CaretRightOutlined />
                 </IconButton>
               )}
