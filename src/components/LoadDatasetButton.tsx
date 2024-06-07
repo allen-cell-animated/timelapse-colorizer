@@ -6,6 +6,7 @@ import styled from "styled-components";
 import { useClickAnyWhere } from "usehooks-ts";
 
 import { Dataset } from "../colorizer";
+import { openDirectory } from "../colorizer/utils/file";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 
@@ -292,6 +293,14 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   Load
                 </Button>
               </Space.Compact>
+              <Button
+                onClick={async () => {
+                  const files = await openDirectory();
+                  console.log(files);
+                }}
+              >
+                Load directory
+              </Button>
             </div>
           </div>
 

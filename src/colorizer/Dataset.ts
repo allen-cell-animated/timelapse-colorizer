@@ -109,8 +109,13 @@ export default class Dataset {
     this.metadata = defaultMetadata;
   }
 
+  // ArrayLoader but have it handle FileSystemFileHandle etc.
+
+  // Swap this too... Or just have baseUrl be empty for file system
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
+  // TODO: Replace with swappable fetch operation, like an IResourceLoader?
+  // IResourceLoader can be constructed with
   private async fetchJson(url: string): Promise<AnyManifestFile> {
     const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
