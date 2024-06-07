@@ -221,7 +221,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
           // Force the tooltip to be hidden (open=false) when disabled
           open={props.disabled ? false : undefined}
           title={currentSelectionName}
-          placement="right"
+          placement="top"
           trigger={["focus", "hover"]}
         >
           <Button
