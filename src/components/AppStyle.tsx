@@ -362,7 +362,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               marginLG: 0,
             },
             Modal: {
-              // Set z-index to 2000 here because Ant sets popups to 1050 by default, and modals to 1000.
+              // Set z-index to 2100 here because Ant sets popups to 1050 by default, and modals to 1000.
               zIndexBase: 2100,
               zIndexPopupBase: 2100,
               titleFontSize: theme.font.size.section,
