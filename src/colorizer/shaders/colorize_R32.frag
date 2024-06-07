@@ -11,7 +11,7 @@ uniform vec3 outlierColor;
 
 in vec2 vUv;
 
-layout(location = 0) out vec4 gOutputColor;
+layout (location = 0) out vec4 gOutputColor;
 
 // if data was generated from an image, the alpha channel may be maxed out
 // discard 8 most significant bits
@@ -60,7 +60,7 @@ void main() {
 
   // Data buffer starts at 0, non-background segmentation IDs start at 1
   float featureVal = getFeatureVal(id - 1);
-  uint outlierVal = getOutlierVal(id - 1)
+  uint outlierVal = getOutlierVal(id - 1);
 
   if (isinf(featureVal) || outlierVal != 0u) {
     // outlier

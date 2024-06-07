@@ -95,7 +95,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
 /** Returns whether a feature value is inside the range of a threshold. */
 export function isValueWithinThreshold(value: number, threshold: FeatureThreshold): boolean {
   if (isThresholdNumeric(threshold)) {
-    return value >= threshold.min && value <= threshold.max;
+    return value >= threshold.min && value <= threshold.max && Number.isFinite(value) && !Number.isNaN(value);
   } else {
     return threshold.enabledCategories[value];
   }

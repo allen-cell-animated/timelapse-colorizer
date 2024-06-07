@@ -24,6 +24,9 @@ class JsonArraySource implements ArraySource {
       this.array = array.map(Number);
       this.isBool = true;
     } else {
+      // Must store Infinity values internally because WebGL states that NaN behavior is undefined.
+      // This can cause shaders to not detect NaN, and operations like isnan() fail.
+      // On the UI, however, Infinity should be parsed as NaN for display.
       this.array = array.map((val) => (val === null ? Infinity : val));
       this.isBool = false;
     }

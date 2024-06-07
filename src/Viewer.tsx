@@ -648,7 +648,8 @@ function Viewer(): ReactElement {
       const featureData = dataset.getFeatureData(featureKey);
       // ?? is a nullish coalescing operator; it checks for null + undefined values
       // (safe for falsy values like 0 or NaN, which are valid feature values)
-      const featureValue = featureData?.data[id] ?? -1;
+      let featureValue = featureData?.data[id] ?? -1;
+      featureValue = isFinite(featureValue) ? featureValue : NaN;
       const unitsLabel = featureData?.units ? ` ${featureData?.units}` : "";
       // Check if int, otherwise return float
       return numberToStringDecimal(featureValue, 3) + unitsLabel;
