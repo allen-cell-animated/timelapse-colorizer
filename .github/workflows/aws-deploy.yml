@@ -62,8 +62,8 @@ jobs:
           - name: Configure AWS credentials with OIDC
             uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
             with:
-                role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github_nucmorph_colorizer
-                role-session-name: nucmorph_colorizer-${{ env.SHORT_SHA }}
+                role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github_timelapse_colorizer
+                role-session-name: timelapse_colorizer-${{ env.SHORT_SHA }}
                 aws-region: ${{ env.AWS_REGION }}
 
           # Setup variables based on the staging or production environment
