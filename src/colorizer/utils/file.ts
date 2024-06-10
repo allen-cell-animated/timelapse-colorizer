@@ -8,7 +8,13 @@ declare global {
       startIn?: "desktop" | "documents" | "downloads" | "music" | "pictures" | "videos";
     }) => Promise<FileSystemDirectoryHandle>;
   }
+
+  interface FileSystemDirectoryHandle {
+    values: () => AsyncIterableIterator<FileSystemDirectoryHandle | FileSystemFileHandle>;
+  }
 }
+
+type READ_WRITE_MODE = "read" | "readwrite";
 
 // Feature detection. The API needs to be supported
 // and the app not run in an iframe.
@@ -22,23 +28,22 @@ export const supportsFileSystemAccess =
     }
   })();
 
-
-
-// Recursive function that walks the directory structure.
-const getFiles = async (
-  dirHandle: FileSystemDirectoryHandle,
-  path = dirHandle.name
-): Promise<File[]> => {
+/**
+ * Recursively parses a directory and returns a list of all files within it.
+ * Paths are saved in the `webkitRelativePath` property of the File object.
+ * @param dirHandle The directory handle to parse.
+ * @param path The root path of the directory.
+ * @returns
+ */
+const getFiles = async (dirHandle: FileSystemDirectoryHandle, path = dirHandle.name): Promise<File[]> => {
   const dirs: Promise<File[]>[] = [];
-  const files: File[] = [];
-  
+  const files: Promise<File>[] = [];
+
   for await (const entry of dirHandle.values()) {
     const nestedPath = `${path}/${entry.name}`;
     if (entry.kind === "file") {
       files.push(
         entry.getFile().then((file) => {
-          file.directoryHandle = dirHandle;
-          file.handle = entry;
           return Object.defineProperty(file, "webkitRelativePath", {
             configurable: true,
             enumerable: true,
@@ -56,7 +61,7 @@ const getFiles = async (
 
 const getFolderName = (path: string): string => {
   return path.substring(0, path.indexOf("/"));
-}
+};
 
 // TODO: Make the file list a nested dict to reduce the amount of repeated strings?
 const fileListToFileMap = (files: File[]): Record<string, File> => {
@@ -75,45 +80,64 @@ const fileListToFileMap = (files: File[]): Record<string, File> => {
  * Creates a file picker dialog to select a directory and returns a list of files (as File objects)
  * within the directory.
  */
-const openDirectoryAndGetFileList = async (mode: "read" | "readwrite" = "read" ): Promise<File[]> => {
+const openDirectoryAndGetFileList = async (mode: READ_WRITE_MODE = "read"): Promise<File[] | null> => {
   // If the File System Access API is supported…
   if (window.showDirectoryPicker && supportsFileSystemAccess) {
     try {
-      // Open the directory.
       const handle = await window.showDirectoryPicker({
         mode,
       });
-      // Get the directory structure.
       return await getFiles(handle, undefined);
     } catch (err) {
-      if (err.name !== "AbortError") {
-        console.error(err.name, err.message);
+      if (typeof err === "string") {
+        if (!err.includes("AbortError")) {
+          console.error(err);
+        }
+      } else if (err instanceof Error) {
+        if (err.name !== "AbortError") {
+          console.error(err);
+        }
+      } else {
+        console.error(err);
       }
     }
-  }
+  } else {
+    // Fallback if the File System Access API is not supported.
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.webkitdirectory = true;
 
-  // Fallback if the File System Access API is not supported.
-  return new Promise((resolve) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.webkitdirectory = true;
+      input.addEventListener("change", () => {
+        let files = Array.from(input.files || []);
+        resolve(files);
+        document.removeChild(input);
+      });
 
-    input.addEventListener("change", () => {
-      console.log(input);
-      let files = Array.from(input.files || []);
-      resolve(files);
+      if ("showPicker" in HTMLInputElement.prototype) {
+        input.showPicker();
+      } else {
+        input.click();
+      }
     });
-    if ("showPicker" in HTMLInputElement.prototype) {
-      input.showPicker();
-    } else {
-      input.click();
-    }
-  });
+  }
+  return null;
 };
 
-export const openDirectory = async (mode = "read"): Promise<{folderName: string, fileMap: Record<string, File>}> => {\
+/**
+ * Show a prompt and open a directory to get a list of files.
+ * @param mode
+ * @returns
+ */
+export const openDirectory = async (
+  mode: READ_WRITE_MODE = "read"
+): Promise<{ folderName: string; fileMap: Record<string, File> } | null> => {
   const files = await openDirectoryAndGetFileList(mode);
+  if (files === null) {
+    return null;
+  }
+
   const fileMap = fileListToFileMap(files);
   const folderName = getFolderName(files[0].webkitRelativePath);
-  return {folderName, fileMap};
+  return { folderName, fileMap };
 };
