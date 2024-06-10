@@ -38,6 +38,7 @@ export const supportsFileSystemAccess =
 const getFiles = async (dirHandle: FileSystemDirectoryHandle, path = dirHandle.name): Promise<File[]> => {
   const dirs: Promise<File[]>[] = [];
   const files: Promise<File>[] = [];
+  console.log("Parsing directory:", path);
 
   for await (const entry of dirHandle.values()) {
     const nestedPath = `${path}/${entry.name}`;
@@ -133,11 +134,15 @@ export const openDirectory = async (
   mode: READ_WRITE_MODE = "read"
 ): Promise<{ folderName: string; fileMap: Record<string, File> } | null> => {
   const files = await openDirectoryAndGetFileList(mode);
+  console.log("Files loaded.");
+  console.log(files);
+  console.log("Parsing files...");
   if (files === null) {
     return null;
   }
 
   const fileMap = fileListToFileMap(files);
   const folderName = getFolderName(files[0].webkitRelativePath);
+  console.log("Done parsing files.");
   return { folderName, fileMap };
 };

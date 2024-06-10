@@ -295,8 +295,17 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               </Space.Compact>
               <Button
                 onClick={async () => {
-                  const files = await openDirectory();
-                  console.log(files);
+                  const result = await openDirectory();
+                  if (!result) {
+                    return;
+                  }
+                  const { folderName, fileMap } = result;
+                  const collection = await Collection.loadCollectionFromFile(folderName, fileMap);
+                  collection.tryLoadDataset(collection.getDefaultDatasetKey()).then((result) => {
+                    if (result.loaded) {
+                      props.onLoad(collection, collection.getDefaultDatasetKey(), result.dataset);
+                    }
+                  });
                 }}
               >
                 Load directory
