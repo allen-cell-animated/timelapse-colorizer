@@ -32,6 +32,7 @@ import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } 
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
+import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
@@ -590,12 +591,16 @@ function Viewer(): ReactElement {
         const newScatterPlotConfig = initialUrlParams.scatterPlotConfig;
         // For backwards-compatibility, cast xAxis and yAxis to feature keys.
         if (newScatterPlotConfig.xAxis) {
-          newScatterPlotConfig.xAxis = dataset?.findFeatureByKeyOrName(newScatterPlotConfig.xAxis);
+          const xAxis = newScatterPlotConfig.xAxis;
+          newScatterPlotConfig.xAxis =
+            xAxis === SCATTERPLOT_TIME_FEATURE.key ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
         }
         if (newScatterPlotConfig.yAxis) {
-          newScatterPlotConfig.yAxis = dataset?.findFeatureByKeyOrName(newScatterPlotConfig.yAxis);
+          const yAxis = newScatterPlotConfig.yAxis;
+          newScatterPlotConfig.yAxis =
+            yAxis === SCATTERPLOT_TIME_FEATURE.key ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
         }
-        updateScatterPlotConfig(initialUrlParams.scatterPlotConfig);
+        updateScatterPlotConfig(newScatterPlotConfig);
       }
     };
 
@@ -800,7 +805,7 @@ function Viewer(): ReactElement {
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
-        <FlexRowAlignCenter $gap={12} style={{ margin: "16px 0", flexWrap: "wrap" }}>
+        <FlexRowAlignCenter $gap={20} style={{ margin: "16px 0", flexWrap: "wrap" }}>
           <SelectionDropdown
             disabled={disableUi}
             label="Dataset"
@@ -906,6 +911,7 @@ function Viewer(): ReactElement {
               >
                 <CanvasWrapper
                   canv={canv}
+                  collection={collection || null}
                   dataset={dataset}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
@@ -936,11 +942,11 @@ function Viewer(): ReactElement {
             <div className={styles.timeControls}>
               {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
                 // Swap between play and pause button
-                <IconButton type="outlined" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
+                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
                   <PauseOutlined />
                 </IconButton>
               ) : (
-                <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.play()} type="outlined">
+                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.play()}>
                   <CaretRightOutlined />
                 </IconButton>
               )}
@@ -1052,7 +1058,7 @@ function Viewer(): ReactElement {
                     ),
                   },
                   {
-                    label: "Filters",
+                    label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
                     key: TabType.FILTERS,
                     children: (
                       <div className={styles.tabContent}>

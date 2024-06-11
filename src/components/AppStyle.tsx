@@ -63,6 +63,8 @@ const theme = {
     },
     viewport: {
       background: palette.gray7,
+      overlayBackground: "rgba(255, 255, 255, 0.8)",
+      overlayOutline: "rgba(0, 0, 0, 0.2)",
     },
     button: {
       backgroundPrimary: palette.theme,
@@ -178,6 +180,9 @@ const CssContainer = styled.div`
 
   --color-flag-background: ${theme.color.flag.background};
   --color-flag-text: ${theme.color.themeDark};
+
+  --color-viewport-overlay-background: ${theme.color.viewport.overlayBackground};
+  --color-viewport-overlay-outline: ${theme.color.viewport.overlayOutline};
 
   --color-alert-info-border: ${theme.color.alert.border.info};
   --color-alert-warning-border: ${theme.color.alert.border.warning};
@@ -355,13 +360,16 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               colorBorder: theme.color.layout.borders,
               colorBorderSecondary: theme.color.layout.borders,
             },
+            Tooltip: {
+              zIndexPopup: 2000,
+            },
             Divider: {
               marginLG: 0,
             },
             Modal: {
-              // Set z-index to 2000 here because Ant sets popups to 1050 by default, and modals to 1000.
-              zIndexBase: 2000,
-              zIndexPopupBase: 2000,
+              // Set z-index to 2100 here because Ant sets popups to 1050 by default, and modals to 1000.
+              zIndexBase: 2100,
+              zIndexPopupBase: 2100,
               titleFontSize: theme.font.size.section,
               margin: 20,
             },

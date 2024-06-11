@@ -304,6 +304,7 @@ export default class Dataset {
 
     const cachedFrame = this.frames?.get(index);
     if (cachedFrame) {
+      this.frameDimensions = new Vector2(cachedFrame.image.width, cachedFrame.image.height);
       return cachedFrame;
     }
 
