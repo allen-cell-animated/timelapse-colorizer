@@ -16,6 +16,16 @@ declare global {
 
 type READ_WRITE_MODE = "read" | "readwrite";
 
+export type FileLoadOptions = {
+  onFileDiscovered?: () => void;
+  onFileLoaded?: (file: File) => void;
+};
+
+const defaultFileLoadOptions: FileLoadOptions = {
+  onFileDiscovered: () => {},
+  onFileLoaded: () => {},
+};
+
 // Feature detection. The API needs to be supported
 // and the app not run in an iframe.
 export const supportsFileSystemAccess =
@@ -35,7 +45,11 @@ export const supportsFileSystemAccess =
  * @param path The root path of the directory.
  * @returns
  */
-const getFiles = async (dirHandle: FileSystemDirectoryHandle, path = dirHandle.name): Promise<File[]> => {
+const getFiles = async (
+  dirHandle: FileSystemDirectoryHandle,
+  path = dirHandle.name,
+  options: FileLoadOptions = defaultFileLoadOptions
+): Promise<File[]> => {
   const dirs: Promise<File[]>[] = [];
   const files: Promise<File>[] = [];
   console.log("Parsing directory:", path);
@@ -43,17 +57,24 @@ const getFiles = async (dirHandle: FileSystemDirectoryHandle, path = dirHandle.n
   for await (const entry of dirHandle.values()) {
     const nestedPath = `${path}/${entry.name}`;
     if (entry.kind === "file") {
+      options.onFileDiscovered?.();
       files.push(
-        entry.getFile().then((file) => {
-          return Object.defineProperty(file, "webkitRelativePath", {
-            configurable: true,
-            enumerable: true,
-            get: () => nestedPath,
-          });
-        })
+        entry
+          .getFile()
+          .then((file) => {
+            return Object.defineProperty(file, "webkitRelativePath", {
+              configurable: true,
+              enumerable: true,
+              get: () => nestedPath,
+            });
+          })
+          .then((file) => {
+            options.onFileLoaded?.(file);
+            return file;
+          })
       );
     } else if (entry.kind === "directory") {
-      dirs.push(getFiles(entry, nestedPath));
+      dirs.push(getFiles(entry, nestedPath, options));
     }
   }
 
@@ -81,14 +102,17 @@ const fileListToFileMap = (files: File[]): Record<string, File> => {
  * Creates a file picker dialog to select a directory and returns a list of files (as File objects)
  * within the directory.
  */
-const openDirectoryAndGetFileList = async (mode: READ_WRITE_MODE = "read"): Promise<File[] | null> => {
+const openDirectoryAndGetFileList = async (
+  mode: READ_WRITE_MODE = "read",
+  options: FileLoadOptions = defaultFileLoadOptions
+): Promise<File[] | null> => {
   // If the File System Access API is supported…
   if (window.showDirectoryPicker && supportsFileSystemAccess) {
     try {
       const handle = await window.showDirectoryPicker({
         mode,
       });
-      return await getFiles(handle, undefined);
+      return await getFiles(handle, undefined, options);
     } catch (err) {
       if (typeof err === "string") {
         if (!err.includes("AbortError")) {
@@ -108,9 +132,11 @@ const openDirectoryAndGetFileList = async (mode: READ_WRITE_MODE = "read"): Prom
       const input = document.createElement("input");
       input.type = "file";
       input.webkitdirectory = true;
+      input.id = "file-input";
 
       input.addEventListener("change", () => {
         let files = Array.from(input.files || []);
+        console.log("File count:", files.length, "files: ", files);
         resolve(files);
         document.removeChild(input);
       });
@@ -131,9 +157,10 @@ const openDirectoryAndGetFileList = async (mode: READ_WRITE_MODE = "read"): Prom
  * @returns
  */
 export const openDirectory = async (
-  mode: READ_WRITE_MODE = "read"
+  mode: READ_WRITE_MODE = "read",
+  options: FileLoadOptions = defaultFileLoadOptions
 ): Promise<{ folderName: string; fileMap: Record<string, File> } | null> => {
-  const files = await openDirectoryAndGetFileList(mode);
+  const files = await openDirectoryAndGetFileList(mode, options);
   console.log("Files loaded.");
   console.log(files);
   console.log("Parsing files...");

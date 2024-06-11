@@ -1,5 +1,5 @@
 import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, InputRef, MenuProps, Space } from "antd";
+import { Button, Dropdown, Input, InputRef, MenuProps, Space, Upload } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -85,6 +85,11 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [errorText, setErrorText] = useState<string>("");
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [loadedFiles, setLoadedFiles] = useState(0);
+  const totalFilesRef = useRef(0);
+  const loadedFilesRef = useRef(0);
 
   // BEHAVIOR ////////////////////////////////////////////////////////////
 
@@ -295,7 +300,24 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               </Space.Compact>
               <Button
                 onClick={async () => {
-                  const result = await openDirectory();
+                  setLoadedFiles(0);
+                  setTotalFiles(0);
+
+                  const onProgress = (deltaLoaded: number, deltaTotal: number) => {
+                    loadedFilesRef.current += deltaLoaded;
+                    totalFilesRef.current += deltaTotal;
+                    setLoadedFiles(loadedFilesRef.current);
+                    setTotalFiles(totalFilesRef.current);
+                  };
+
+                  const result = await openDirectory("read", {
+                    onFileDiscovered: () => {
+                      onProgress(0, 1);
+                    },
+                    onFileLoaded: () => {
+                      onProgress(1, 0);
+                    },
+                  });
                   if (!result) {
                     return;
                   }
@@ -310,6 +332,24 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               >
                 Load directory
               </Button>
+              Files loaded: {loadedFiles}/{totalFiles}
+              <Upload
+                onChange={(info) => {}}
+                showUploadList={true}
+                directory={true}
+                multiple={true}
+                maxCount={10000}
+                beforeUpload={() => {
+                  return false;
+                }}
+                action={() => {
+                  return "";
+                }}
+              >
+                <Button>
+                  <UploadOutlined /> Load local files
+                </Button>
+              </Upload>
             </div>
           </div>
 
