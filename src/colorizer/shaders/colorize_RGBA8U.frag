@@ -1,5 +1,4 @@
 precision highp usampler2D;
-precision highp sampler2D;
 
 uniform usampler2D frame;
 uniform sampler2D featureData;
