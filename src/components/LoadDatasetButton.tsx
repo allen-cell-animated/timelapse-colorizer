@@ -1,5 +1,5 @@
 import { FolderOpenOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, InputRef, MenuProps, Space, Upload } from "antd";
+import { Button, Dropdown, Input, InputRef, MenuProps, Space } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -9,7 +9,7 @@ import { Dataset } from "../colorizer";
 import { openDirectory } from "../colorizer/utils/file";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
-import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
+import { FlexRowAlignCenter } from "../styles/utils";
 
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
@@ -299,23 +299,6 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   Load
                 </Button>
               </Space.Compact>
-              <Upload
-                onChange={(info) => {}}
-                showUploadList={true}
-                directory={true}
-                multiple={true}
-                maxCount={10000}
-                beforeUpload={() => {
-                  return false;
-                }}
-                action={() => {
-                  return "";
-                }}
-              >
-                <Button>
-                  <UploadOutlined /> Load local files
-                </Button>
-              </Upload>
             </div>
             <FlexRowAlignCenter $gap={8} style={{ margin: "5px 0px" }}>
               <Button
