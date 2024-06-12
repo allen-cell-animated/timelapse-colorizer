@@ -9,6 +9,7 @@ import { Dataset } from "../colorizer";
 import { openDirectory } from "../colorizer/utils/file";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
+import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
 
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
@@ -298,6 +299,25 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                   Load
                 </Button>
               </Space.Compact>
+              <Upload
+                onChange={(info) => {}}
+                showUploadList={true}
+                directory={true}
+                multiple={true}
+                maxCount={10000}
+                beforeUpload={() => {
+                  return false;
+                }}
+                action={() => {
+                  return "";
+                }}
+              >
+                <Button>
+                  <UploadOutlined /> Load local files
+                </Button>
+              </Upload>
+            </div>
+            <FlexRowAlignCenter $gap={8} style={{ margin: "5px 0px" }}>
               <Button
                 onClick={async () => {
                   setLoadedFiles(0);
@@ -333,24 +353,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                 Load directory
               </Button>
               Files loaded: {loadedFiles}/{totalFiles}
-              <Upload
-                onChange={(info) => {}}
-                showUploadList={true}
-                directory={true}
-                multiple={true}
-                maxCount={10000}
-                beforeUpload={() => {
-                  return false;
-                }}
-                action={() => {
-                  return "";
-                }}
-              >
-                <Button>
-                  <UploadOutlined /> Load local files
-                </Button>
-              </Upload>
-            </div>
+            </FlexRowAlignCenter>
           </div>
 
           {errorText && (
