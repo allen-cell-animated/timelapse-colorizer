@@ -159,6 +159,25 @@ describe("Dataset", () => {
         expect(dataset.getFeatureUnits("feature5")).to.equal("");
       });
 
+      it("retrieves feature units and names", async () => {
+        const dataset = await makeMockDataset(manifest);
+
+        // Display labels are only implemented in v1.0.0 and later
+        if (semver.lt(version, "1.0.0")) {
+          expect(dataset.getFeatureNameWithUnits("feature1")).to.equal("feature1 (meters)");
+          expect(dataset.getFeatureNameWithUnits("feature2")).to.equal("feature2 ((m))");
+          expect(dataset.getFeatureNameWithUnits("feature3")).to.equal("feature3 (μm/s)");
+          expect(dataset.getFeatureNameWithUnits("feature4")).to.equal("feature4");
+          expect(dataset.getFeatureNameWithUnits("feature5")).to.equal("feature5");
+        } else {
+          expect(dataset.getFeatureNameWithUnits("feature1")).to.equal("Feature1 (meters)");
+          expect(dataset.getFeatureNameWithUnits("feature2")).to.equal("Feature2 ((m))");
+          expect(dataset.getFeatureNameWithUnits("feature3")).to.equal("Feature3 (μm/s)");
+          expect(dataset.getFeatureNameWithUnits("feature4")).to.equal("Feature4");
+          expect(dataset.getFeatureNameWithUnits("feature5")).to.equal("Feature5");
+        }
+      });
+
       it("retrieves feature types", async () => {
         const dataset = await makeMockDataset(manifest);
 
