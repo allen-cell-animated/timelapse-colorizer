@@ -95,9 +95,9 @@ describe("Dataset", () => {
   const manifestV1_0_0: AnyManifestFile = {
     ...manifestV0_0_0,
     features: [
-      { key: "feature1", name: "Feature1", data: "feature1.json", units: "meters", type: "continuous" },
-      { key: "feature2", name: "Feature2", data: "feature2.json", units: "(m)", type: "discrete" },
-      { name: "Feature3", data: "feature3.json", units: "μm/s", type: "bad-type" },
+      { key: "feature1", name: "Feature1", data: "feature1.json", unit: "meters", type: "continuous" },
+      { key: "feature2", name: "Feature2", data: "feature2.json", unit: "(m)", type: "discrete" },
+      { name: "Feature3", data: "feature3.json", unit: "μm/s", type: "bad-type" },
       { name: "Feature4", data: "feature4.json" },
       {
         key: "feature5",
@@ -157,6 +157,25 @@ describe("Dataset", () => {
         expect(dataset.getFeatureUnits("feature3")).to.equal("μm/s");
         expect(dataset.getFeatureUnits("feature4")).to.equal("");
         expect(dataset.getFeatureUnits("feature5")).to.equal("");
+      });
+
+      it("retrieves feature units and names", async () => {
+        const dataset = await makeMockDataset(manifest);
+
+        // Display labels are only implemented in v1.0.0 and later
+        if (semver.lt(version, "1.0.0")) {
+          expect(dataset.getFeatureNameWithUnits("feature1")).to.equal("feature1 (meters)");
+          expect(dataset.getFeatureNameWithUnits("feature2")).to.equal("feature2 ((m))");
+          expect(dataset.getFeatureNameWithUnits("feature3")).to.equal("feature3 (μm/s)");
+          expect(dataset.getFeatureNameWithUnits("feature4")).to.equal("feature4");
+          expect(dataset.getFeatureNameWithUnits("feature5")).to.equal("feature5");
+        } else {
+          expect(dataset.getFeatureNameWithUnits("feature1")).to.equal("Feature1 (meters)");
+          expect(dataset.getFeatureNameWithUnits("feature2")).to.equal("Feature2 ((m))");
+          expect(dataset.getFeatureNameWithUnits("feature3")).to.equal("Feature3 (μm/s)");
+          expect(dataset.getFeatureNameWithUnits("feature4")).to.equal("Feature4");
+          expect(dataset.getFeatureNameWithUnits("feature5")).to.equal("Feature5");
+        }
       });
 
       it("retrieves feature types", async () => {
