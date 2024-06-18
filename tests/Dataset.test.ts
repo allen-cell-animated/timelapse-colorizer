@@ -95,9 +95,9 @@ describe("Dataset", () => {
   const manifestV1_0_0: AnyManifestFile = {
     ...manifestV0_0_0,
     features: [
-      { key: "feature1", name: "Feature1", data: "feature1.json", units: "meters", type: "continuous" },
-      { key: "feature2", name: "Feature2", data: "feature2.json", units: "(m)", type: "discrete" },
-      { name: "Feature3", data: "feature3.json", units: "μm/s", type: "bad-type" },
+      { key: "feature1", name: "Feature1", data: "feature1.json", unit: "meters", type: "continuous" },
+      { key: "feature2", name: "Feature2", data: "feature2.json", unit: "(m)", type: "discrete" },
+      { name: "Feature3", data: "feature3.json", unit: "μm/s", type: "bad-type" },
       { name: "Feature4", data: "feature4.json" },
       {
         key: "feature5",

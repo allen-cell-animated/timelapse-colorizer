@@ -117,8 +117,8 @@ function Viewer(): ReactElement {
       // threshold values.
       const featureData = dataset?.getFeatureData(featureKey);
       if (featureData) {
-        const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.units));
-        const newThreshold = newThresholds.find(thresholdMatchFinder(featureKey, featureData.units));
+        const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
+        const newThreshold = newThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
 
         if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold) && isThresholdNumeric(oldThreshold)) {
           if (newThreshold.min !== oldThreshold.min || newThreshold.max !== oldThreshold.max) {
@@ -338,7 +338,7 @@ function Viewer(): ReactElement {
       const featureData = featureDataset.getFeatureData(featureKey);
       if (!config.keepRangeBetweenDatasets && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
-        const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.units));
+        const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
         if (threshold && isThresholdNumeric(threshold)) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
@@ -655,7 +655,7 @@ function Viewer(): ReactElement {
       // (safe for falsy values like 0 or NaN, which are valid feature values)
       let featureValue = featureData?.data[id] ?? -1;
       featureValue = isFinite(featureValue) ? featureValue : NaN;
-      const unitsLabel = featureData?.units ? ` ${featureData?.units}` : "";
+      const unitsLabel = featureData?.unit ? ` ${featureData?.unit}` : "";
       // Check if int, otherwise return float
       return numberToStringDecimal(featureValue, 3) + unitsLabel;
     },
@@ -754,7 +754,7 @@ function Viewer(): ReactElement {
     if (!featureData || featureThresholds.length === 0) {
       return undefined;
     }
-    const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.units));
+    const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
     if (!threshold || !isThresholdNumeric(threshold)) {
       return undefined;
     }

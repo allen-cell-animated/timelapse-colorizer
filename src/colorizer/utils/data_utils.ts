@@ -55,7 +55,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
     }
 
     const featureData = dataset.getFeatureData(featureKey);
-    const isInDataset = featureData && featureData.units === threshold.units;
+    const isInDataset = featureData && featureData.unit === threshold.units;
 
     if (isInDataset) {
       // Threshold key + unit matches, so update feature key just in case it was a name
@@ -119,7 +119,7 @@ export function getInRangeLUT(dataset: Dataset, thresholds: FeatureThreshold[]):
   // Ignore thresholds with features that don't exist in this dataset or whose units don't match
   const validThresholds = thresholds.filter((threshold) => {
     const featureData = dataset.getFeatureData(threshold.featureKey);
-    return featureData && featureData.units === threshold.units;
+    return featureData && featureData.unit === threshold.units;
   });
 
   for (let id = 0; id < dataset.numObjects; id++) {
