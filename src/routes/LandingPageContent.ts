@@ -61,7 +61,7 @@ export const landingPageContent: ProjectEntry[] = [
             {
               featureKey: "volume",
               type: ThresholdType.NUMERIC,
-              units: "µm³",
+              unit: "µm³",
               min: 649.121,
               max: 2457.944,
             },
