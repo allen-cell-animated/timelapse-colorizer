@@ -29,7 +29,7 @@ export default function ErrorPage(): ReactElement {
   return (
     <div>
       <Header />
-      <FlexColumnAlignCenter style={{ width: "100%", padding: "40px" }}>
+      <FlexColumnAlignCenter style={{ width: "100%", padding: "40px 0" }}>
         <h1>Sorry, something went wrong.</h1>
         <FlexColumnAlignCenter>
           <p>We encountered the following error:</p>
