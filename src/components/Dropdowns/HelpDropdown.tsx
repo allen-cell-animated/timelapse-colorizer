@@ -59,6 +59,16 @@ export default function HelpDropdown(): ReactElement {
         Report an issue
         <VisuallyHidden>(opens in new tab)</VisuallyHidden>
       </StyledLink>
+      <StyledLink
+        className="button"
+        href="https://forum.image.sc/tag/timelapse-feature-explorer"
+        rel="noopener noreferrer"
+        target="_blank"
+        role="link"
+      >
+        Support Forum
+        <VisuallyHidden>(opens in new tab)</VisuallyHidden>
+      </StyledLink>
       <StyledButton type="text" onClick={() => setShowVersionModal(true)}>
         Version info
       </StyledButton>
