@@ -58,6 +58,7 @@ const theme = {
     },
     layout: {
       background: palette.gray0,
+      backgroundAlt: palette.gray7,
       tabBackground: palette.gray5,
       dividers: palette.gray15,
       borders: palette.gray20,
@@ -108,8 +109,8 @@ const theme = {
     family: "Lato, LatoExtended, sans-serif",
     resource: "https://fonts.googleapis.com/css2?family=Lato&display=swap",
     size: {
-      header: 20,
-      section: 18,
+      header: 26,
+      section: 20,
       label: 16,
       content: 14,
       labelSmall: 12,
@@ -154,6 +155,7 @@ const CssContainer = styled.div`
   --color-text-link: ${theme.color.text.link};
 
   /* Layout */
+  --color-background-alt: ${theme.color.layout.backgroundAlt};
   --color-background: ${theme.color.layout.background};
   --color-dividers: ${theme.color.layout.dividers};
   --color-borders: ${theme.color.layout.borders};

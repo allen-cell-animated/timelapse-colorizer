@@ -69,7 +69,7 @@ function HeaderLogo(): ReactElement {
       </AicsLogoLink>
       <VerticalDivider />
       <HeaderLink to="/" aria-label="Go to home page">
-        <h1 style={{ margin: "0" }}>Timelapse Feature Explorer</h1>
+        <h1 style={{ margin: "0", fontSize: "20px" }}>Timelapse Feature Explorer</h1>
       </HeaderLink>
     </FlexRowAlignCenter>
   );

@@ -9,6 +9,7 @@ import { ProjectEntry } from "../types";
 export const landingPageContent: ProjectEntry[] = [
   {
     name: "Segmented hiPSC FOV-nuclei timelapse and analysis datasets",
+    inReview: true,
     description: (
       <p>
         Maximum projections of tracked 3D segmentations of nuclei in growing hiPS cell colonies, with quantitative
@@ -27,8 +28,8 @@ export const landingPageContent: ProjectEntry[] = [
         .
       </p>
     ),
-    publicationLink: new URL("https://www.google.com"),
-    publicationName: "<NucMorph manuscript> (Publisher name, mm/dd/yyyy)",
+    // publicationLink: new URL("https://www.google.com"),
+    // publicationName: "<NucMorph manuscript> (Publisher name, mm/dd/yyyy)",
     datasets: [
       {
         name: "Exploratory dataset",

@@ -27,7 +27,7 @@ const Banner = styled(FlexColumnAlignCenter)`
   margin: 0;
 `;
 
-const BannerTextContainer = styled(FlexColumn)`
+const BannerTextContainer = styled(FlexColumnAlignCenter)`
   --padding-x: 30px;
   padding: var(--padding-x);
   max-width: calc(1060px - 2 * var(--padding-x));
@@ -331,10 +331,15 @@ export default function LandingPage(): ReactElement {
             </p>
           </FeatureHighlightsItem>
         </FeatureHighlightsContainer>
+      </ContentContainer>
 
-        <Divider />
+      <FlexColumnAlignCenter
+        style={{ backgroundColor: "var(--color-background-alt)", padding: "30px", margin: "30px 0" }}
+      >
         <h2 style={{ margin: 0 }}>Load dataset(s) below or your own data to get started</h2>
+      </FlexColumnAlignCenter>
 
+      <ContentContainer>
         <ProjectList>{landingPageContent.map(renderProject)}</ProjectList>
       </ContentContainer>
     </>
