@@ -10,15 +10,18 @@ import { ColorRamp, Dataset, Track } from "../../colorizer";
 import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+import { ShowAlertBannerCallback } from "../Banner/hooks";
 import {
   DataArray,
   drawCrosshair,
   getBucketIndex,
+  getFeatureOrTimeNameWithUnits,
   getHoverTemplate,
   isHistogramEvent,
   makeEmptyTraceData,
   makeLineTrace,
   scaleColorOpacityByMarkerCount,
+  SCATTERPLOT_TIME_FEATURE,
   splitTraceData,
   subsampleColorRamp,
   TraceData,
@@ -29,8 +32,6 @@ import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
 import LoadingSpinner from "../LoadingSpinner";
 
-/** Extra feature that's added to the dropdowns representing the frame number. */
-const TIME_FEATURE = { key: "scatterplot_time", label: "Time" };
 // TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
 
 const PLOTLY_CONFIG: Partial<Plotly.Config> = {
@@ -65,6 +66,7 @@ type ScatterPlotTabProps = {
   viewerConfig: ViewerConfig;
   scatterPlotConfig: ScatterPlotConfig;
   updateScatterPlotConfig: (config: Partial<ScatterPlotConfig>) => void;
+  showAlert: ShowAlertBannerCallback;
 };
 
 const ScatterPlotContainer = styled.div`
@@ -193,7 +195,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (featureKey === null || dataset === null) {
       return undefined;
     }
-    if (featureKey === TIME_FEATURE.key) {
+    if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
       return dataset.times || undefined;
     }
     return dataset.getFeatureData(featureKey)?.data;
@@ -236,6 +238,28 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // TODO: Show histograms on default, cleared layout
     Plotly.react(plotDivRef.current!, [], {}, PLOTLY_CONFIG);
     setIsRendering(false);
+  };
+
+  /**
+   * Removes data from all indices where xData or yData is NaN or Infinity.
+   */
+  const sanitizeNumericDataArrays = (
+    xData: DataArray,
+    yData: DataArray,
+    objectIds: number[],
+    trackIds: number[]
+  ): { xData: DataArray; yData: DataArray; objectIds: number[]; trackIds: number[] } => {
+    // Boolean array, true if both x and y are not NaN/infinity
+    const isFiniteLut = Array.from(Array(xData.length)).map(
+      (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
+    );
+
+    return {
+      xData: xData.filter((_, i) => isFiniteLut[i]),
+      yData: yData.filter((_, i) => isFiniteLut[i]),
+      objectIds: objectIds.filter((_, i) => isFiniteLut[i]),
+      trackIds: trackIds.filter((_, i) => isFiniteLut[i]),
+    };
   };
 
   /**
@@ -299,7 +323,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xData = rawXData;
       yData = rawYData;
     }
-    return { xData, yData, objectIds, trackIds };
+    // TODO: Consider moving this or making it conditional if it causes performance issues.
+    return sanitizeNumericDataArrays(xData, yData, objectIds, trackIds);
   };
 
   /**
@@ -337,7 +362,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
 
     // Special case for time feature, which isn't in the dataset
-    if (featureKey === TIME_FEATURE.key) {
+    if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
       min = 0;
       max = dataset?.numberOfFrames || 0;
     }
@@ -600,7 +625,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       markerBaseColor = new Color("#dddddd");
     }
 
-    const isUsingTime = xAxisFeatureKey === TIME_FEATURE.key || yAxisFeatureKey === TIME_FEATURE.key;
+    const isUsingTime =
+      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key;
 
     // Configure traces
     const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds, {}, markerBaseColor);
@@ -681,11 +707,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yHistogram
     );
 
-    scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey || "");
+    scatterPlotXAxis.title = getFeatureOrTimeNameWithUnits(xAxisFeatureKey, dataset);
     // Due to limited space in the Y-axis, hide categorical feature names.
     scatterPlotYAxis.title = dataset.isFeatureCategorical(yAxisFeatureKey)
       ? ""
-      : dataset.getFeatureNameWithUnits(yAxisFeatureKey || "");
+      : getFeatureOrTimeNameWithUnits(yAxisFeatureKey, dataset);
 
     // Add extra margin for categorical feature labels on the Y axis.
     const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureKey));
@@ -716,15 +742,31 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       layout.uirevision = uiRevision.current;
     }
 
-    Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
-      setIsRendering(false);
-      lastRenderedState.current = {
-        xAxisFeatureKey,
-        yAxisFeatureKey,
-        rangeType,
-        ...props,
-      };
-    });
+    try {
+      Plotly.react(plotDivRef.current, traces, layout, PLOTLY_CONFIG).then(() => {
+        setIsRendering(false);
+        lastRenderedState.current = {
+          xAxisFeatureKey,
+          yAxisFeatureKey,
+          rangeType,
+          ...props,
+        };
+      });
+    } catch (error) {
+      console.error(error);
+      props.showAlert({
+        message: "Could not update scatter plot.",
+        type: "warning",
+        closable: true,
+        // TODO: add a better handler for different types of error messages. Handle string vs. Error.
+        description: [
+          'Encountered the following error when rendering the scatter plot: "' + error + '"',
+          "This may be due to invalid values in the feature data. If the issue persists, please contact the dataset creator or report an issue from the Help menu.",
+        ],
+        showDoNotShowAgainCheckbox: true,
+      });
+      clearPlotAndStopRender();
+    }
   };
 
   /**
@@ -746,7 +788,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const menuItems: MenuItemType[] = featureKeys.map((key: string) => {
       return { key, label: dataset?.getFeatureNameWithUnits(key) };
     });
-    menuItems.push(TIME_FEATURE);
+    menuItems.push(SCATTERPLOT_TIME_FEATURE);
 
     return (
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>

@@ -103,7 +103,7 @@ export enum ThresholdType {
 
 type BaseFeatureThreshold = {
   featureKey: string;
-  units: string;
+  unit: string;
   type: ThresholdType;
 };
 

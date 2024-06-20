@@ -2,6 +2,7 @@ import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { getKeyFromName } from "./utils/data_utils";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
@@ -25,7 +26,7 @@ export type FeatureData = {
   tex: Texture;
   min: number;
   max: number;
-  units: string;
+  unit: string;
   type: FeatureType;
   categories: string[] | null;
 };
@@ -155,7 +156,7 @@ export default class Dataset {
         data: source.getBuffer(FeatureDataType.F32),
         min: source.getMin(),
         max: source.getMax(),
-        units: metadata?.units || "",
+        unit: metadata?.unit || "",
         type: featureType,
         categories: featureCategories || null,
       },
@@ -204,7 +205,7 @@ export default class Dataset {
    * Gets the feature's units if it exists; otherwise returns an empty string.
    */
   public getFeatureUnits(key: string): string {
-    return this.getFeatureData(key)?.units || "";
+    return this.getFeatureData(key)?.unit || "";
   }
 
   public getFeatureNameWithUnits(key: string): string {
@@ -303,6 +304,7 @@ export default class Dataset {
 
     const cachedFrame = this.frames?.get(index);
     if (cachedFrame) {
+      this.frameDimensions = new Vector2(cachedFrame.image.width, cachedFrame.image.height);
       return cachedFrame;
     }
 
@@ -355,6 +357,19 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
+  /**
+   * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
+   */
+  private getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
+    if (promise.status === "rejected") {
+      if (failureWarning) {
+        console.warn(failureWarning, promise.reason);
+      }
+      return null;
+    }
+    return promise.value;
+  }
+
   /** Loads the dataset manifest and features. */
   public async open(manifestLoader = this.fetchJson): Promise<void> {
     if (this.hasOpened) {
@@ -362,8 +377,9 @@ export default class Dataset {
     }
     this.hasOpened = true;
 
-    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
+    const startTime = new Date();
 
+    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
@@ -392,7 +408,7 @@ export default class Dataset {
       this.loadFeature(data)
     );
 
-    const result = await Promise.all([
+    const result = await Promise.allSettled([
       this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
       this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
       this.loadToBuffer(FeatureDataType.U32, this.timesFile),
@@ -403,20 +419,38 @@ export default class Dataset {
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
-    this.outliers = outliers;
-    this.trackIds = tracks;
-    this.times = times;
-    this.centroids = centroids;
-    this.bounds = bounds;
+    // TODO: Add reporting pathway for Dataset.load?
+    this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
+    this.trackIds = this.getPromiseValue(tracks, "Failed to load tracks: ");
+    this.times = this.getPromiseValue(times, "Failed to load times: ");
+    this.centroids = this.getPromiseValue(centroids, "Failed to load centroids: ");
+    this.bounds = this.getPromiseValue(bounds, "Failed to load bounds: ");
+
+    if (times.status === "rejected") {
+      throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
+    }
 
     // Keep original sorting order of features by inserting in promise order.
-    featureResults.forEach(([key, data]) => {
-      this.features.set(key, data);
+    featureResults.forEach((result) => {
+      const featureValue = this.getPromiseValue(result, "Failed to load feature: ");
+      if (featureValue) {
+        const [key, data] = featureValue;
+        this.features.set(key, data);
+      }
     });
 
     if (this.features.size === 0) {
       throw new Error("No features found in dataset. Is the dataset manifest file valid?");
     }
+
+    // Analytics reporting
+    triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
+      datasetWriterVersion: this.metadata.writerVersion || "N/A",
+      datasetTotalObjects: this.numObjects,
+      datasetFeatureCount: this.features.size,
+      datasetFrameCount: this.numberOfFrames,
+      datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
+    });
 
     // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)

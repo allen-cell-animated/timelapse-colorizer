@@ -15,6 +15,7 @@ uniform float featureColorRampMin;
 uniform float featureColorRampMax;
 
 uniform vec2 canvasToFrameScale;
+uniform vec2 panOffset;
 uniform sampler2D colorRamp;
 uniform sampler2D overlay;
 uniform sampler2D backdrop;
@@ -23,6 +24,8 @@ uniform float backdropBrightness;
 uniform float objectOpacity;
 
 uniform vec3 backgroundColor;
+// Background color for the canvas, anywhere where the frame is not drawn.
+uniform vec3 canvasBackgroundColor;
 
 const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 
@@ -143,7 +146,7 @@ vec4 getBackdropColor(vec2 sUv) {
 vec4 getObjectColor(vec2 sUv) {
   // This pixel is background if, after scaling uv, it is outside the frame
   if (isOutsideBounds(sUv)) {
-    return TRANSPARENT;
+    return vec4(canvasBackgroundColor, 1.0);
   }
 
   // Get the segmentation id at this pixel
@@ -186,7 +189,8 @@ vec4 getObjectColor(vec2 sUv) {
 }
 
 void main() {
-  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5;
+  // sUv is in relative coordinates to frame.
+  vec2 sUv = (vUv - 0.5) * canvasToFrameScale + 0.5 - panOffset;
 
   // Backdrop image
   vec4 backdropColor = getBackdropColor(sUv);

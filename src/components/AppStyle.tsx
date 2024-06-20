@@ -9,13 +9,14 @@ type AppStyleProps = {
 };
 
 const palette = {
-  theme: "#8962d3",
+  theme: "#8860d2",
   themeDark: "#5f369f",
   themeLight: "#aa88ed",
   themeGray: "#f7f0ff",
   themeGrayDark: "#e7e4f2",
   gray0: "#ffffff",
   gray5: "#fafafa",
+  gray7: "#f7f7f7",
   gray10: "#f2f2f2",
   gray15: "#e7e7e7",
   gray20: "#cbcbcc",
@@ -26,6 +27,11 @@ const palette = {
   success: "#2fc022",
   error: "#f92d20",
   link: "#0094FF",
+  warning: "#faad14",
+  successLight: "#b7eb8f",
+  errorLight: "#ffa39e",
+  infoLight: "#91d5ff",
+  warningLight: "#ffe58f",
 };
 
 // Note: Some advanced version of this could swap different theme objects, and
@@ -55,6 +61,11 @@ const theme = {
       borders: palette.gray20,
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
+    viewport: {
+      background: palette.gray7,
+      overlayBackground: "rgba(255, 255, 255, 0.8)",
+      overlayOutline: "rgba(0, 0, 0, 0.2)",
+    },
     button: {
       backgroundPrimary: palette.theme,
       backgroundDisabled: palette.gray10,
@@ -76,6 +87,14 @@ const theme = {
     },
     tooltip: {
       background: "rgba(50, 50, 51, 0.90)",
+    },
+    alert: {
+      border: {
+        info: palette.infoLight,
+        warning: palette.warningLight,
+        error: palette.errorLight,
+        success: palette.successLight,
+      },
     },
   },
   font: {
@@ -162,6 +181,14 @@ const CssContainer = styled.div`
   --color-flag-background: ${theme.color.flag.background};
   --color-flag-text: ${theme.color.themeDark};
 
+  --color-viewport-overlay-background: ${theme.color.viewport.overlayBackground};
+  --color-viewport-overlay-outline: ${theme.color.viewport.overlayOutline};
+
+  --color-alert-info-border: ${theme.color.alert.border.info};
+  --color-alert-warning-border: ${theme.color.alert.border.warning};
+  --color-alert-error-border: ${theme.color.alert.border.error};
+  --color-alert-success-border: ${theme.color.alert.border.success};
+
   /* Fonts */
   --default-font: ${theme.font.family};
   --font-size-header: ${theme.font.size.header}px;
@@ -218,6 +245,13 @@ const CssContainer = styled.div`
   line-height: normal;
   margin: 0;
   color: var(--color-text-primary);
+
+  a {
+    &:focus,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
 
   h1 {
     font-size: var(--font-size-header);
@@ -326,13 +360,16 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               colorBorder: theme.color.layout.borders,
               colorBorderSecondary: theme.color.layout.borders,
             },
+            Tooltip: {
+              zIndexPopup: 2000,
+            },
             Divider: {
               marginLG: 0,
             },
             Modal: {
-              // Set z-index to 2000 here because Ant sets popups to 1050 by default, and modals to 1000.
-              zIndexBase: 2000,
-              zIndexPopupBase: 2000,
+              // Set z-index to 2100 here because Ant sets popups to 1050 by default, and modals to 1000.
+              zIndexBase: 2100,
+              zIndexPopupBase: 2100,
               titleFontSize: theme.font.size.section,
               margin: 20,
             },

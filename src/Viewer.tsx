@@ -9,7 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Location, useLocation, useSearchParams } from "react-router-dom";
+import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
 import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
@@ -27,18 +27,22 @@ import {
   TabType,
   ViewerConfig,
 } from "./colorizer/types";
+import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
-import { DEFAULT_COLLECTION_PATH, DEFAULT_PLAYBACK_FPS } from "./constants";
+import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
+import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import { FeatureType } from "./colorizer/Dataset";
 import TimeControls from "./colorizer/TimeControls";
 import { AppThemeContext } from "./components/AppStyle";
+import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
@@ -113,8 +117,8 @@ function Viewer(): ReactElement {
       // threshold values.
       const featureData = dataset?.getFeatureData(featureKey);
       if (featureData) {
-        const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.units));
-        const newThreshold = newThresholds.find(thresholdMatchFinder(featureKey, featureData.units));
+        const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
+        const newThreshold = newThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
 
         if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold) && isThresholdNumeric(oldThreshold)) {
           if (newThreshold.min !== oldThreshold.min || newThreshold.max !== oldThreshold.max) {
@@ -145,6 +149,8 @@ function Viewer(): ReactElement {
     getContainer: () => notificationContainer.current as HTMLElement,
   };
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
+
+  const { bannerElement, showAlert, clearBanners } = useAlertBanner();
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -277,7 +283,7 @@ function Viewer(): ReactElement {
       if (seekToFrame) {
         setFrame(newTrack.times[0]);
       }
-      setFindTrackInput("" + trackId);
+      setFindTrackInput(trackId.toString());
     },
     [canv, dataset, featureKey, currentFrame]
   );
@@ -303,6 +309,23 @@ function Viewer(): ReactElement {
   );
 
   /**
+   * Fire a custom analytics event when a feature is selected.
+   */
+  const reportFeatureSelected = useCallback((featureDataset: Dataset, newFeatureKey: string): void => {
+    const featureData = featureDataset.getFeatureData(newFeatureKey);
+    if (featureData) {
+      const range =
+        featureData.type === FeatureType.CATEGORICAL
+          ? featureData.categories!.length
+          : featureData.max - featureData.min;
+      triggerAnalyticsEvent(AnalyticsEvent.FEATURE_SELECTED, {
+        featureType: featureData.type,
+        featureRange: range,
+      });
+    }
+  }, []);
+
+  /**
    * Resets the color ramp to a default min and max value based on the feature and dataset.
    *
    * If the feature is thresholded, the color ramp will be set to the threshold's min and max.
@@ -315,7 +338,7 @@ function Viewer(): ReactElement {
       const featureData = featureDataset.getFeatureData(featureKey);
       if (!config.keepRangeBetweenDatasets && featureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
-        const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.units));
+        const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
         if (threshold && isThresholdNumeric(threshold)) {
           setColorRampMin(threshold.min);
           setColorRampMax(threshold.max);
@@ -350,6 +373,7 @@ function Viewer(): ReactElement {
         dataset.dispose();
       }
       // State updates
+      clearBanners();
       setDataset(newDataset);
       setDatasetKey(newDatasetKey);
 
@@ -452,17 +476,35 @@ function Viewer(): ReactElement {
           newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
+          if (!collectionUrlParam) {
+            showAlert({
+              message: "No dataset loaded.",
+              type: "info",
+              closable: false,
+              description: [
+                "You'll need to load a dataset to use Timelapse Feature Explorer.",
+                "If you have a dataset, load it from the menu above. Otherwise, return to the homepage to see our published datasets.",
+              ],
+              action: <Link to="/">Return to homepage</Link>,
+            });
+            console.error("No collection URL or dataset URL provided.");
+            return;
+          }
           // Try loading the collection, with the default collection as a fallback.
           try {
-            newCollection = await Collection.loadCollection(collectionUrlParam || DEFAULT_COLLECTION_PATH);
+            newCollection = await Collection.loadCollection(collectionUrlParam);
             datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
           } catch (error) {
             console.error(error);
-            notificationApi["error"]({
-              message: "Error loading dataset:",
-              description: (error as Error).message,
-              placement: "bottomLeft",
-              duration: 4,
+            showAlert({
+              message: "Dataset could not be loaded.",
+              type: "error",
+              closable: false,
+              description: [
+                'Encountered the following error when loading the dataset: "' + (error as Error).message + '"',
+                "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
+              ],
+              action: <Link to="/">Return to homepage</Link>,
             });
             return;
           }
@@ -549,12 +591,16 @@ function Viewer(): ReactElement {
         const newScatterPlotConfig = initialUrlParams.scatterPlotConfig;
         // For backwards-compatibility, cast xAxis and yAxis to feature keys.
         if (newScatterPlotConfig.xAxis) {
-          newScatterPlotConfig.xAxis = dataset?.findFeatureByKeyOrName(newScatterPlotConfig.xAxis);
+          const xAxis = newScatterPlotConfig.xAxis;
+          newScatterPlotConfig.xAxis =
+            xAxis === SCATTERPLOT_TIME_FEATURE.key ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
         }
         if (newScatterPlotConfig.yAxis) {
-          newScatterPlotConfig.yAxis = dataset?.findFeatureByKeyOrName(newScatterPlotConfig.yAxis);
+          const yAxis = newScatterPlotConfig.yAxis;
+          newScatterPlotConfig.yAxis =
+            yAxis === SCATTERPLOT_TIME_FEATURE.key ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
         }
-        updateScatterPlotConfig(initialUrlParams.scatterPlotConfig);
+        updateScatterPlotConfig(newScatterPlotConfig);
       }
     };
 
@@ -607,8 +653,9 @@ function Viewer(): ReactElement {
       const featureData = dataset.getFeatureData(featureKey);
       // ?? is a nullish coalescing operator; it checks for null + undefined values
       // (safe for falsy values like 0 or NaN, which are valid feature values)
-      const featureValue = featureData?.data[id] ?? -1;
-      const unitsLabel = featureData?.units ? ` ${featureData?.units}` : "";
+      let featureValue = featureData?.data[id] ?? -1;
+      featureValue = isFinite(featureValue) ? featureValue : NaN;
+      const unitsLabel = featureData?.unit ? ` ${featureData?.unit}` : "";
       // Check if int, otherwise return float
       return numberToStringDecimal(featureValue, 3) + unitsLabel;
     },
@@ -707,7 +754,7 @@ function Viewer(): ReactElement {
     if (!featureData || featureThresholds.length === 0) {
       return undefined;
     }
-    const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.units));
+    const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
     if (!threshold || !isThresholdNumeric(threshold)) {
       return undefined;
     }
@@ -730,7 +777,7 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
       <SmallScreenWarning />
 
-      <Header>
+      <Header alertElement={bannerElement}>
         <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
@@ -758,7 +805,7 @@ function Viewer(): ReactElement {
       {/** Main Content: Contains canvas and plot, ramp controls, time controls, etc. */}
       <div className={styles.mainContent}>
         {/** Top Control Bar */}
-        <FlexRowAlignCenter $gap={12} style={{ margin: "16px 0", flexWrap: "wrap" }}>
+        <FlexRowAlignCenter $gap={20} style={{ margin: "16px 0", flexWrap: "wrap" }}>
           <SelectionDropdown
             disabled={disableUi}
             label="Dataset"
@@ -776,6 +823,7 @@ function Viewer(): ReactElement {
               if (value !== featureKey && dataset) {
                 replaceFeature(dataset, value);
                 resetColorRampRangeToDefaults(dataset, value);
+                reportFeatureSelected(dataset, value);
               }
             }}
           />
@@ -863,6 +911,7 @@ function Viewer(): ReactElement {
               >
                 <CanvasWrapper
                   canv={canv}
+                  collection={collection || null}
                   dataset={dataset}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
@@ -872,7 +921,7 @@ function Viewer(): ReactElement {
                   selectedTrack={selectedTrack}
                   config={config}
                   onTrackClicked={(track) => {
-                    setFindTrackInput("");
+                    setFindTrackInput(track?.trackId.toString() || "");
                     setSelectedTrack(track);
                   }}
                   inRangeLUT={inRangeLUT}
@@ -884,6 +933,7 @@ function Viewer(): ReactElement {
                     }
                   }}
                   onMouseLeave={() => setShowHoveredId(false)}
+                  showAlert={isInitialDatasetLoaded ? showAlert : undefined}
                 />
               </HoverTooltip>
             </div>
@@ -892,11 +942,11 @@ function Viewer(): ReactElement {
             <div className={styles.timeControls}>
               {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
                 // Swap between play and pause button
-                <IconButton type="outlined" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
+                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
                   <PauseOutlined />
                 </IconButton>
               ) : (
-                <IconButton disabled={disableTimeControlsUi} onClick={() => timeControls.play()} type="outlined">
+                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.play()}>
                   <CaretRightOutlined />
                 </IconButton>
               )}
@@ -1002,12 +1052,13 @@ function Viewer(): ReactElement {
                           viewerConfig={config}
                           scatterPlotConfig={scatterPlotConfig}
                           updateScatterPlotConfig={updateScatterPlotConfig}
+                          showAlert={showAlert}
                         />
                       </div>
                     ),
                   },
                   {
-                    label: "Filters",
+                    label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
                     key: TabType.FILTERS,
                     children: (
                       <div className={styles.tabContent}>
