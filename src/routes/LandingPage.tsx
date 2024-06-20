@@ -152,7 +152,7 @@ const DatasetList = styled.ol`
   display: grid;
   // Use grid + subgrid to align the title, description, and button for each horizontal
   // row of cards. repeat is used to tile the layout if the cards wrap to a new line.
-  grid-template-rows: repeat(3, auto);
+  grid-template-rows: repeat(2, auto);
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   justify-content: space-around;
   text-align: start;
@@ -162,23 +162,22 @@ const DatasetList = styled.ol`
 const DatasetCard = styled.li`
   display: grid;
   grid-template-rows: subgrid;
-  grid-row: span 3;
+  grid-row: span 2;
   min-width: 180px;
   align-items: flex-start;
   margin-top: 10px;
 
-  & > h3 {
+  & > h3,
+  & > div {
     text-align: left;
     display: grid;
     margin: 0;
   }
   & > p {
     text-align: left;
-    display: grid;
   }
   & > a {
     margin: 2px auto 0 0;
-    display: grid;
   }
 `;
 
@@ -222,12 +221,14 @@ export default function LandingPage(): ReactElement {
     return (
       <DatasetCard key={index}>
         <h3>{dataset.name}</h3>
-        <p>{dataset.description}</p>
-        <Link to={viewerLink}>
-          <Button type="primary">
-            Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
-          </Button>
-        </Link>
+        <FlexColumn $gap={10}>
+          <p>{dataset.description}</p>
+          <Link to={viewerLink}>
+            <Button type="primary">
+              Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
+            </Button>
+          </Link>
+        </FlexColumn>
       </DatasetCard>
     );
   };
