@@ -38,35 +38,19 @@ export const landingPageContent: ProjectEntry[] = [
       },
       {
         name: "Baseline colony dataset",
-        description: (
-          <p>
-            Nuclei tracked throughout colony growth
-            <br />
-            (subset of exploratory analysis dataset)
-          </p>
-        ),
+        description: "Nuclei tracked throughout colony growth (subset of exploratory analysis dataset)",
         loadParams: {},
       },
       {
         name: "Full-interphase dataset",
-        description: (
-          <p>
-            Nuclei tracked throughout interphase
-            <br />
-            (subset of baseline colony analysis dataset, with added growth trajectory features)
-          </p>
-        ),
+        description:
+          "Nuclei tracked throughout interphase (subset of baseline colony analysis dataset, with added growth trajectory features)",
         loadParams: {},
       },
       {
         name: "Lineage-annotated dataset",
-        description: (
-          <p>
-            Nuclei tracked across multiple generations
-            <br />
-            (subset of full-interphase analysis dataset, with added lineage annotation)
-          </p>
-        ),
+        description:
+          "Nuclei tracked across multiple generations (subset of full-interphase analysis dataset, with added lineage annotation)",
         loadParams: {},
       },
     ],
