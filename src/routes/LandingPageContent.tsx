@@ -1,3 +1,5 @@
+import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 import { Color } from "three";
 
@@ -7,8 +9,24 @@ import { ProjectEntry } from "../types";
 export const landingPageContent: ProjectEntry[] = [
   {
     name: "Segmented hiPSC FOV-nuclei timelapse and analysis datasets",
-    description:
-      "Maximum projections of tracked 3D segmentations of nuclei in growing hiPS cell colonies, with quantitative features of nuclear shape, size and more. The exploratory dataset includes all tracked nuclei, with the baseline colony, full-interphase and lineage-annotated datasets as subsets of this dataset, analyzed in the study of nuclear growth <Biorxiv ref>. For documentation on the features available in these datasets, visit <link to quilt readme on features>.",
+    description: (
+      <p>
+        Maximum projections of tracked 3D segmentations of nuclei in growing hiPS cell colonies, with quantitative
+        features of nuclear shape, size and more. The exploratory dataset includes all tracked nuclei, with the baseline
+        colony, full-interphase and lineage-annotated datasets as subsets of this dataset, analyzed in the study of
+        nuclear growth{" "}
+        <a href="https://www.biorxiv.org/" rel="noopener noreferrer" target="_blank">
+          {"<Biorxiv ref>"}
+          <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
+        </a>
+        . For documentation on the features available in these datasets, visit{" "}
+        <a href="https://www.quiltdata.com/" rel="noopener noreferrer" target="_blank">
+          {"<a to quilt readme on features>"}
+          <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
+        </a>
+        .
+      </p>
+    ),
     publicationLink: new URL("https://www.google.com"),
     publicationName: "<NucMorph manuscript> (Publisher name, mm/dd/yyyy)",
     datasets: [
