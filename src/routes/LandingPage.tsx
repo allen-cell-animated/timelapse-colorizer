@@ -250,12 +250,7 @@ export default function LandingPage(): ReactElement {
     const publicationElement = project.publicationLink ? (
       <p>
         Related publication:{" "}
-        <a
-          href={project.publicationLink.toString()}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "var(--color-text-link)" }}
-        >
+        <a href={project.publicationLink.toString()} target="_blank" rel="noopener noreferrer">
           {project.publicationName}
           {/* Icon offset slightly to align with text */}
           <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />

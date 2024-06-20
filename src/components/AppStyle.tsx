@@ -27,6 +27,7 @@ const palette = {
   success: "#2fc022",
   error: "#f92d20",
   link: "#0094FF",
+  linkDark: "#007FD6",
   warning: "#faad14",
   successLight: "#b7eb8f",
   errorLight: "#ffa39e",
@@ -53,6 +54,7 @@ const theme = {
       success: palette.success,
       theme: palette.theme,
       link: palette.link,
+      linkHover: palette.linkDark,
     },
     layout: {
       background: palette.gray0,
@@ -147,7 +149,8 @@ const CssContainer = styled.div`
   --color-text-button: ${theme.color.text.button};
   --color-text-error: ${theme.color.text.error};
   --color-text-success: ${theme.color.text.success};
-  --color-text-theme: ${theme.color.text.theme};
+  --color-text-theme: ${theme.color.theme};
+  --color-text-theme-dark: ${theme.color.themeDark};
   --color-text-link: ${theme.color.text.link};
 
   /* Layout */
@@ -314,11 +317,13 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
         theme={{
           token: {
             colorPrimary: theme.color.theme,
-            colorLink: theme.color.theme,
-            colorLinkHover: theme.color.themeDark,
+            colorLink: theme.color.text.link,
+            colorLinkHover: theme.color.text.linkHover,
             colorBorder: theme.color.layout.borders,
             colorBorderSecondary: theme.color.layout.dividers,
+            colorBgContainerDisabled: theme.color.button.backgroundDisabled,
             controlHeight: theme.controls.height,
+            colorTextQuaternary: theme.color.text.disabled,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
             borderRadiusLG: 6,

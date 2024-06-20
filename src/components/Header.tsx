@@ -47,6 +47,13 @@ const VerticalDivider = styled.div`
   }
 `;
 
+const HeaderLink = styled(Link)`
+  color: var(--color-text-theme);
+  &:hover {
+    color: var(--color-text-theme-dark);
+  }
+`;
+
 /**
  * The logo and title of the app, to be used with the Header component.
  * Both the logo and app title are links that can be used for navigation.
@@ -61,9 +68,9 @@ function HeaderLogo(): ReactElement {
         </div>
       </AicsLogoLink>
       <VerticalDivider />
-      <Link to="/" aria-label="Go to home page">
+      <HeaderLink to="/" aria-label="Go to home page">
         <h1 style={{ margin: "0" }}>Timelapse Feature Explorer</h1>
-      </Link>
+      </HeaderLink>
     </FlexRowAlignCenter>
   );
 }
