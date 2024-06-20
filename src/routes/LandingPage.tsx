@@ -97,15 +97,6 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   }
 `;
 
-const Divider = styled.hr`
-  display: block;
-  width: 100%;
-  height: 1px;
-  background-color: var(--color-borders);
-  border-style: none;
-  margin: 0 0;
-`;
-
 const ProjectList = styled.ul`
   display: flex;
   flex-direction: column;
