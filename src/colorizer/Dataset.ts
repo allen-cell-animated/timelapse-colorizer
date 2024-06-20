@@ -7,7 +7,7 @@ import { getKeyFromName } from "./utils/data_utils";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
 
-import FrameCache from "./FrameCache";
+import { DataCache } from "./FrameCache";
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
@@ -51,7 +51,7 @@ const MAX_CACHED_FRAMES = 60;
 export default class Dataset {
   private frameLoader: IFrameLoader;
   private frameFiles: string[];
-  private frames: FrameCache | null;
+  private frames: DataCache<Texture> | null;
   private frameDimensions: Vector2 | null;
 
   private backdropLoader: IFrameLoader;
@@ -281,7 +281,7 @@ export default class Dataset {
   }
 
   public get numberOfFrames(): number {
-    return this.frames?.length || 0;
+    return this.frameFiles.length || 0;
   }
 
   public get featureKeys(): string[] {
@@ -401,7 +401,7 @@ export default class Dataset {
       }
     }
 
-    this.frames = new FrameCache(this.frameFiles.length, MAX_CACHED_FRAMES);
+    this.frames = new DataCache(MAX_CACHED_FRAMES);
 
     // Load feature data
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
