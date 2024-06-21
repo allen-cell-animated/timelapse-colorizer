@@ -136,14 +136,14 @@ function Viewer(): ReactElement {
   );
 
   /** A look-up-table from object ID to whether it is in range (=1) or not (=0) */
-  const [inRangeLUT, _setinRangeLUT] = useState<Uint8Array>(new Uint8Array(0));
+  const [inRangeLUT, setInRangeLUT] = useState<Uint8Array>(new Uint8Array(0));
   useEffect(() => {
     const updateInRangeLUT = async (): Promise<void> => {
       if (!dataset) {
-        _setinRangeLUT(new Uint8Array(0));
+        setInRangeLUT(new Uint8Array(0));
         return;
       }
-      _setinRangeLUT(await getInRangeLUT(dataset, featureThresholds));
+      setInRangeLUT(await getInRangeLUT(dataset, featureThresholds));
     };
     updateInRangeLUT();
   }, [dataset, featureThresholds]);

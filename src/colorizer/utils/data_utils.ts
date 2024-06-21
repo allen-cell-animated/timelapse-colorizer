@@ -119,16 +119,21 @@ export async function getInRangeLUT(dataset: Dataset, thresholds: FeatureThresho
   const inRangeIds = new Uint8Array(dataset.objectCount);
 
   // Ignore thresholds with features that don't exist in this dataset or whose units don't match
-  const validThresholds = thresholds.filter(async (threshold) => {
-    const featureData = await dataset.getFeatureData(threshold.featureKey);
-    return featureData && featureData.unit === threshold.unit;
+  const validThresholds = thresholds.filter((threshold) => {
+    return (
+      dataset.hasFeatureKey(threshold.featureKey) && dataset.getFeatureUnits(threshold.featureKey) === threshold.unit
+    );
   });
+
+  const featureDataForThresholds = await Promise.all(
+    validThresholds.map((threshold) => dataset.getFeatureData(threshold.featureKey))
+  );
 
   for (let id = 0; id < dataset.objectCount; id++) {
     inRangeIds[id] = 1;
     for (let thresholdIdx = 0; thresholdIdx < validThresholds.length; thresholdIdx++) {
       const threshold = validThresholds[thresholdIdx];
-      const featureData = await dataset.getFeatureData(threshold.featureKey);
+      const featureData = featureDataForThresholds[thresholdIdx];
       if (featureData && !isValueWithinThreshold(featureData.data[id], threshold)) {
         inRangeIds[id] = 0;
         break;
