@@ -31,6 +31,14 @@ export type FeatureData = {
   categories: string[] | null;
 };
 
+/**
+ * Feature info that can be loaded from the manifest file.
+ * Does not include min/max or other data that needs to be fetched.
+ */
+type FeatureInfo = ManifestFile["features"][number];
+
+/** Feature data that can be stored in a DataCache. */
+type FeatureCacheValue = { data: FeatureData; dispose: () => void };
 type BackdropData = {
   name: string;
   frames: string[];
@@ -47,6 +55,7 @@ const defaultMetadata: ManifestFileMetadata = {
 };
 
 const MAX_CACHED_FRAMES = 60;
+const MAX_CACHE_FEATURES = 100;
 
 export default class Dataset {
   private frameLoader: IFrameLoader;
@@ -61,8 +70,9 @@ export default class Dataset {
 
   private arrayLoader: IArrayLoader;
   // Use map to enforce ordering
-  /** Ordered map from feature keys to feature data. */
-  private features: Map<string, FeatureData>;
+  /** Ordered map from feature keys to feature info. */
+  private featureInfo: Map<string, FeatureInfo>;
+  private featureCache: DataCache<FeatureCacheValue>;
 
   private outlierFile?: string;
   public outliers?: Uint8Array | null;
@@ -84,6 +94,8 @@ export default class Dataset {
   public manifestUrl: string;
   private hasOpened: boolean;
 
+  public objectCount: number;
+
   /**
    * Constructs a new Dataset using the provided manifest path.
    * @param manifestUrl Must be a path to a .json manifest file.
@@ -100,13 +112,15 @@ export default class Dataset {
     this.frameFiles = [];
     this.frames = null;
     this.frameDimensions = null;
+    this.featureCache = new DataCache(MAX_CACHE_FEATURES);
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
     this.arrayLoader = arrayLoader || new JsonArrayLoader();
-    this.features = new Map();
+    this.featureInfo = new Map();
     this.metadata = defaultMetadata;
+    this.objectCount = -1;
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
@@ -186,26 +200,38 @@ export default class Dataset {
    * @returns The feature key if found, otherwise undefined.
    */
   public findFeatureKeyFromName(name: string): string | undefined {
-    return Array.from(this.features.values()).find((f) => f.name === name)?.key;
+    return Array.from(this.featureInfo.values()).find((f) => f.name === name)?.key;
   }
 
   /**
    * Attempts to get the feature data from this dataset for the given feature key.
    * Returns `undefined` if feature is not in the dataset.
    */
-  public getFeatureData(key: string): FeatureData | undefined {
-    return this.features.get(key);
+  public async getFeatureData(key: string): Promise<FeatureData | undefined> {
+    const info = this.featureInfo.get(key);
+    if (!info) {
+      return undefined;
+    }
+    // Attempt to load the feature data if it hasn't been loaded yet.
+    let featureData = this.featureCache.get(key);
+    if (featureData) {
+      return featureData.data;
+    } else {
+      const [key, data] = await this.loadFeature(info);
+      this.featureCache.insert(key, { data, dispose: () => data.tex.dispose() });
+      return data;
+    }
   }
 
   public getFeatureName(key: string): string | undefined {
-    return this.features.get(key)?.name;
+    return this.featureInfo.get(key)?.name;
   }
 
   /**
    * Gets the feature's units if it exists; otherwise returns an empty string.
    */
   public getFeatureUnits(key: string): string {
-    return this.getFeatureData(key)?.unit || "";
+    return this.featureInfo.get(key)?.unit || "";
   }
 
   public getFeatureNameWithUnits(key: string): string {
@@ -228,11 +254,11 @@ export default class Dataset {
    * @returns The FeatureType of the given feature (categorical, continuous, or discrete)
    */
   public getFeatureType(key: string): FeatureType {
-    const featureData = this.getFeatureData(key);
+    const featureData = this.featureInfo.get(key);
     if (featureData === undefined) {
       throw new Error("Feature '" + key + "' does not exist in dataset.");
     }
-    return featureData.type;
+    return this.parseFeatureType(featureData.type);
   }
 
   /**
@@ -241,20 +267,20 @@ export default class Dataset {
    * @returns The array of string categories for the given feature, or null if the feature is not categorical.
    */
   public getFeatureCategories(key: string): string[] | null {
-    const featureData = this.getFeatureData(key);
-    if (featureData === undefined) {
+    const featureInfo = this.featureInfo.get(key);
+    if (featureInfo === undefined) {
       throw new Error("Feature '" + key + "' does not exist in dataset.");
     }
-    if (featureData.type === FeatureType.CATEGORICAL) {
-      return featureData.categories;
+    if (featureInfo.type === FeatureType.CATEGORICAL && featureInfo.categories) {
+      return featureInfo.categories;
     }
     return null;
   }
 
   /** Returns whether the given feature represents categorical data. */
   public isFeatureCategorical(key: string): boolean {
-    const featureData = this.getFeatureData(key);
-    return featureData !== undefined && featureData.type === FeatureType.CATEGORICAL;
+    const featureInfo = this.featureInfo.get(key);
+    return featureInfo !== undefined && featureInfo.type === FeatureType.CATEGORICAL;
   }
 
   /**
@@ -285,15 +311,11 @@ export default class Dataset {
   }
 
   public get featureKeys(): string[] {
-    return Array.from(this.features.keys());
+    return Array.from(this.featureInfo.keys());
   }
 
   public get numObjects(): number {
-    const featureData = this.getFeatureData(this.featureKeys[0]);
-    if (!featureData) {
-      throw new Error("Dataset.numObjects: The first feature could not be loaded. Is the dataset manifest file valid?");
-    }
-    return featureData.data.length;
+    return this.objectCount;
   }
 
   /** Loads a single frame from the dataset */
@@ -402,11 +424,16 @@ export default class Dataset {
     }
 
     this.frames = new DataCache(MAX_CACHED_FRAMES);
+    this.featureInfo = new Map(
+      manifest.features.map((data) => {
+        if (!data.key) {
+          data.key = getKeyFromName(data.name);
+        }
+        return [data.key, data];
+      })
+    );
 
     // Load feature data
-    const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
-      this.loadFeature(data)
-    );
 
     const result = await Promise.allSettled([
       this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
@@ -415,9 +442,9 @@ export default class Dataset {
       this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
       this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
       this.loadFrame(0),
-      ...featuresPromises,
+      this.loadFeature(manifest.features[0]),
     ]);
-    const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
+    const [outliers, tracks, times, centroids, bounds, _loadedFrame, loadedFeature] = result;
 
     // TODO: Add reporting pathway for Dataset.load?
     this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
@@ -430,24 +457,21 @@ export default class Dataset {
       throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
     }
 
-    // Keep original sorting order of features by inserting in promise order.
-    featureResults.forEach((result) => {
-      const featureValue = this.getPromiseValue(result, "Failed to load feature: ");
-      if (featureValue) {
-        const [key, data] = featureValue;
-        this.features.set(key, data);
-      }
-    });
-
-    if (this.features.size === 0) {
+    if (this.featureInfo.size === 0) {
       throw new Error("No features found in dataset. Is the dataset manifest file valid?");
+    }
+
+    // TODO: What happens if the feature fails to load? Should that be a permanent error state?
+    const featureData = this.getPromiseValue(loadedFeature, "Failed to load feature data: ");
+    if (featureData) {
+      this.objectCount = featureData[1].data.length;
     }
 
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
       datasetWriterVersion: this.metadata.writerVersion || "N/A",
-      datasetTotalObjects: this.numObjects,
-      datasetFeatureCount: this.features.size,
+      datasetTotalObjects: this.objectCount,
+      datasetFeatureCount: this.featureInfo.size,
       datasetFrameCount: this.numberOfFrames,
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
@@ -458,7 +482,7 @@ export default class Dataset {
 
   /** Frees the GPU resources held by this dataset */
   public dispose(): void {
-    Object.values(this.features).forEach(({ tex }) => tex.dispose());
+    Object.values(this.featureInfo).forEach(({ tex }) => tex.dispose());
     this.frames?.dispose();
   }
 
@@ -510,11 +534,7 @@ export default class Dataset {
    * Get the times and values of a track for a given feature
    * this data is suitable to hand to d3 or plotly as two arrays of domain and range values
    */
-  public buildTrackFeaturePlot(track: Track, featureKey: string): { domain: number[]; range: number[] } {
-    const featureData = this.getFeatureData(featureKey);
-    if (!featureData) {
-      throw new Error("Dataset.buildTrackFeaturePlot: Feature '" + featureKey + "' does not exist in dataset.");
-    }
+  public buildTrackFeaturePlot(track: Track, featureData: FeatureData): { domain: number[]; range: number[] } {
     const range = track.ids.map((i) => featureData.data[i]);
     const domain = track.times;
     return { domain, range };

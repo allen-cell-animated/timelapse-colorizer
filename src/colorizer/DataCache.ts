@@ -1,4 +1,4 @@
-type DisposableValue = {
+export type DisposableValue = {
   dispose?: () => void;
 };
 
