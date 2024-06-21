@@ -182,6 +182,17 @@ function Viewer(): ReactElement {
   const [lastHoveredId, setLastHoveredId] = useState<number | null>(null);
   const [showHoveredId, setShowHoveredId] = useState(false);
 
+  useEffect(() => {
+    // Mark features that are currently in use on the dataset.
+    if (dataset) {
+      const featuresInUse = new Set<string>();
+      featureData && featuresInUse.add(featureData.key);
+      scatterPlotConfig.xAxis && featuresInUse.add(scatterPlotConfig.xAxis);
+      scatterPlotConfig.yAxis && featuresInUse.add(scatterPlotConfig.yAxis);
+      dataset.setReservedFeatureKeys(featuresInUse);
+    }
+  }, [featureData, scatterPlotConfig.xAxis, scatterPlotConfig.yAxis, dataset]);
+
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
   /**

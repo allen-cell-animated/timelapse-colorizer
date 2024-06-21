@@ -55,7 +55,7 @@ const defaultMetadata: ManifestFileMetadata = {
 };
 
 const MAX_CACHED_FRAMES = 60;
-const MAX_CACHE_FEATURES = 100;
+const MAX_CACHE_FEATURES = 1;
 
 export default class Dataset {
   private frameLoader: IFrameLoader;
@@ -221,6 +221,15 @@ export default class Dataset {
       this.featureCache.insert(key, { data, dispose: () => data.tex.dispose() });
       return data;
     }
+  }
+
+  /**
+   * Marks the set of features that are currently in-use. This prevents internal caching from
+   * removing or cleaning them up preemptively.
+   * @param keys
+   */
+  public setReservedFeatureKeys(keys: Set<string>): void {
+    this.featureCache.setReservedKeys(keys);
   }
 
   public getFeatureName(key: string): string | undefined {
@@ -486,7 +495,7 @@ export default class Dataset {
 
   /** Frees the GPU resources held by this dataset */
   public dispose(): void {
-    Object.values(this.featureInfo).forEach(({ tex }) => tex.dispose());
+    this.featureCache.dispose();
     this.frames?.dispose();
   }
 
