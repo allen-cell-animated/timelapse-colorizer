@@ -283,6 +283,10 @@ export default class Dataset {
     return featureInfo !== undefined && featureInfo.type === FeatureType.CATEGORICAL;
   }
 
+  public isFeatureDataCategorical(data: FeatureData | null): boolean {
+    return data !== null && data.type === FeatureType.CATEGORICAL;
+  }
+
   /**
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
    * @param dataType The expected format of the data.
