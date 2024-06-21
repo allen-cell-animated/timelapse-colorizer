@@ -81,6 +81,9 @@ function Viewer(): ReactElement {
 
   // Feature key and data must be updated together.
   // TODO: Merge this into one object rather than two separate states?
+  // TODO: Because feature data is cached, it's possible for the data to fall out of the cache and for the texture to get disposed of.
+  // Make the cache infinitely large? Locks? Ref counting?
+  // Make ColorizeCanvas request the texture data every time it renders?
   const [featureKey, setFeatureKey] = useState("");
   const [currentFeatureData, setCurrentFeatureData] = useState<FeatureData | null>(null);
 
@@ -1042,7 +1045,7 @@ function Viewer(): ReactElement {
                           setFrame={setFrameAndRender}
                           isVisible={config.openTab === TabType.SCATTER_PLOT}
                           isPlaying={timeControls.isPlaying() || isRecording}
-                          selectedFeatureKey={featureKey}
+                          selectedFeatureData={currentFeatureData}
                           colorRampMin={colorRampMin}
                           colorRampMax={colorRampMax}
                           colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
