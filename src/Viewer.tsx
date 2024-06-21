@@ -135,6 +135,8 @@ function Viewer(): ReactElement {
     [featureData, dataset, featureThresholds]
   );
 
+  // TODO: Debounce this? Ideally it should still update every few ms, but batch updates.
+  // It's noticeably slow when many thresholds are updated at once.
   /** A look-up-table from object ID to whether it is in range (=1) or not (=0) */
   const [inRangeLUT, setInRangeLUT] = useState<Uint8Array>(new Uint8Array(0));
   useEffect(() => {
@@ -320,13 +322,17 @@ function Viewer(): ReactElement {
       if (!config.keepRangeBetweenDatasets && newFeatureData) {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(newFeatureData.key, newFeatureData.unit));
+        let min = newFeatureData.min;
+        let max = newFeatureData.max;
         if (threshold && isThresholdNumeric(threshold)) {
-          setColorRampMin(threshold.min);
-          setColorRampMax(threshold.max);
-        } else {
-          setColorRampMin(newFeatureData.min);
-          setColorRampMax(newFeatureData.max);
+          min = threshold.min;
+          max = threshold.max;
         }
+        setColorRampMin(min);
+        setColorRampMax(max);
+        // Forcing changes on canv prevents a flickering issue
+        canv.setColorMapRangeMin(min);
+        canv.setColorMapRangeMax(max);
       }
     },
     [featureThresholds, config.keepRangeBetweenDatasets]
@@ -341,14 +347,15 @@ function Viewer(): ReactElement {
    */
   const replaceFeature = useCallback(
     async (featureDataset: Dataset, newFeatureKey: string): Promise<FeatureData | null> => {
+      // TODO: If this operation takes a long time, show a loading spinner in the main view.
       const newFeatureData = await featureDataset.getFeatureData(newFeatureKey);
       if (!newFeatureData) {
         console.warn("Failed to load feature data for '" + newFeatureKey + "'.");
         return featureData;
       }
+      resetColorRampRangeToDefaults(newFeatureData);
       canv.setFeature(newFeatureData);
       setFeatureData(newFeatureData);
-      resetColorRampRangeToDefaults(newFeatureData);
       return newFeatureData;
     },
     [canv, featureData, resetColorRampRangeToDefaults]
