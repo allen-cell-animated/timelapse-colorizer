@@ -77,19 +77,25 @@ export default class DataCache<E extends DisposableValue> {
     return this.currentSize;
   }
 
-  /** Inserts a frame into the cache at `index` */
+  /**
+   * Inserts a value into the cache with the key. If the key already exists, the value is replaced.
+   * If the cache is full, the least recently used entry is evicted and its `dispose()` function is
+   * called if it exists.
+   *
+   * Throws an error if the size of the value is greater than the cache's maxSize.
+   */
   public insert(key: string | number, value: E, size: number = 1): void {
     key = key.toString();
     const currentEntry = this.data.get(key);
 
     if (size > this.maxSize) {
-      console.error(`Attempted to insert a value of size ${size} into a cache with maxSize ${this.maxSize}`);
-      return;
+      throw new Error(`Attempted to insert a value of size ${size} into a cache with maxSize ${this.maxSize}`);
     }
 
     if (currentEntry !== null && currentEntry !== undefined) {
       // NOTE: This assumes that the value's size HAS NOT CHANGED. If it has,
-      // the size of the cache will be incorrect and the old value will not be disposed.
+      // the size of the cache will be incorrect and the old value will not be disposed of.
+      // TODO: Throw an error if the size is different?
       currentEntry.value = value;
       this.moveToFirst(currentEntry);
     } else {
@@ -108,7 +114,7 @@ export default class DataCache<E extends DisposableValue> {
     }
   }
 
-  /** Gets a frame from the cache. Returns `undefined` if no frame is present at `index`. */
+  /** Retrieves a value from the cache. Returns `undefined` if the `key` could not be found. */
   public get(key: string | number): E | undefined {
     key = key.toString();
     const entry = this.data.get(key);
@@ -129,27 +135,3 @@ export default class DataCache<E extends DisposableValue> {
     this.data.clear();
   }
 }
-
-// TODO make this into a proper test
-// function testFrameCache(): void {
-//   const cache = new FrameCache(5, 3);
-
-//   cache.insert(0, new DataTexture());
-//   cache.insert(2, new DataTexture(new Uint8Array([8])));
-//   console.log("Expect only 0 and 2 are not null");
-//   console.log(cache.get(2));
-//   console.log(cache.get(1));
-
-//   cache.insert(2, new DataTexture(new Uint8Array([55])));
-//   console.log("Expect 2 has been replaced");
-//   console.log(cache.get(2));
-
-//   cache.insert(1, new DataTexture());
-//   cache.insert(3, new DataTexture());
-//   console.log("Expect 0 is evicted");
-//   console.log(cache.get(0));
-
-//   cache.insert(1, new DataTexture());
-//   console.log("Expect 2 is not evicted");
-//   console.log(cache.get(2));
-// }
