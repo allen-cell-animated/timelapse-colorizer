@@ -88,19 +88,20 @@ export default class DataCache<E extends DisposableValue> {
     }
 
     if (currentEntry !== null && currentEntry !== undefined) {
-      // NOTE: This assumes that the value HAS NOT CHANGED. If it has,
+      // NOTE: This assumes that the value's size HAS NOT CHANGED. If it has,
       // the size of the cache will be incorrect and the old value will not be disposed.
       currentEntry.value = value;
       this.moveToFirst(currentEntry);
     } else {
       const newEntry = { value, key, prev: null, next: null, size: size };
       this.data.set(key, newEntry);
-      this.setFirst(newEntry);
 
       this.currentSize += size;
-      while (this.currentSize > this.maxSize) {
+      while (this.currentSize > this.maxSize && this.last) {
         this.evictLast();
       }
+
+      this.setFirst(newEntry);
       if (!this.last) {
         this.last = newEntry;
       }
