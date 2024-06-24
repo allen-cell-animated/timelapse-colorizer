@@ -43,7 +43,7 @@ describe("DataCache", () => {
     const cache = new DataCache<DisposableString>(3);
 
     cache.insert("1", new DisposableString("A"));
-    cache.insert("2", new DisposableString("B"));
+    cache.insert(2, new DisposableString("B"));
     cache.insert("3", new DisposableString("C"));
 
     expect(cache.get("1")?.value).toBe("A");
@@ -65,6 +65,7 @@ describe("DataCache", () => {
     cache.insert("4", new DisposableString("D"));
 
     expect(cache.size).toBe(3);
+    // Oldest value is evicted
     expect(cache.get("1")?.value).toBe(undefined);
     expect(cache.get("2")?.value).toBe("B");
     expect(cache.get("3")?.value).toBe("C");
@@ -111,7 +112,7 @@ describe("DataCache", () => {
     expect(cache.get("1")?.value).toBe("AA");
   });
 
-  it("evicts entries by size", () => {
+  it("accounts for entry size when evicting to maintain max size", () => {
     const cache = new DataCache<DisposableString>(3);
     cache.insert("1", new DisposableString("A"), 1);
     expect(cache.size).toBe(1);
