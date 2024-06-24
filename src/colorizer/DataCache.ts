@@ -124,7 +124,7 @@ export default class DataCache<E extends DisposableValue> {
     return entry?.value;
   }
 
-  /** Clears the cache and frees the GPU resources held by the textures in it */
+  /** Clears the cache and calls `dispose()` on all entries to clear their resources. */
   public dispose(): void {
     this.first = null;
     this.last = null;
