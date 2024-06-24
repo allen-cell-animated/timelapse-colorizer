@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ANY_ERROR } from "./test_utils";
 
-import DataCache from "../src/colorizer/FrameCache";
+import DataCache from "../src/colorizer/DataCache";
 
 describe("DataCache", () => {
   class DisposableString {
