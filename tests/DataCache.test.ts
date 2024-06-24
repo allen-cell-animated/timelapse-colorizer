@@ -13,7 +13,7 @@ describe("DataCache", () => {
       this.value = value;
     }
 
-    dispose() {
+    dispose(): void {
       this.hasBeenDisposed = true;
     }
   }
