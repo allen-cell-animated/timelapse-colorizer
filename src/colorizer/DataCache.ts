@@ -14,7 +14,8 @@ type CacheEntry<E extends DisposableValue> = {
  * Generic LRU cache for data, intended for Texture or other GPU resources.
  * Calls `dispose` on eviction to keep GPU memory under control.
  *
- * Keys can be "reserved" which protects them from eviction and disposal.
+ * Keys can be "reserved" which protects them from eviction and disposal. See
+ * `setReservedKeys` for more information.
  *
  * @template E The type of the data to be stored in the cache.
  * @param maxSize The maximum size of the cache. This can either be the number of entries
@@ -27,6 +28,11 @@ export default class DataCache<E extends DisposableValue> {
   private last: CacheEntry<E> | null;
   private currentSize: number;
   private maxSize: number;
+  /**
+   * A set of keys that are exempted from eviction and disposal.
+   * Entries with keys in this set should not be reachable via normal linked-list
+   * traversal (e.g., they are not reachable from `this.first` or `this.last`).
+   */
   private reservedKeys: Set<string>;
 
   constructor(maxSize: number = 30) {
@@ -102,15 +108,15 @@ export default class DataCache<E extends DisposableValue> {
   }
 
   /**
-   * Sets the currently reserved set of keys, preventing them from being evicted from the cache
-   * and dispose of.
+   * Sets the currently reserved keys, preventing them from being evicted from the cache
+   * and disposed of.
    * @param keys the set of keys that should be reserved.
-   * If a key is already reserved but is not in this set, it will be unreserved.
-   * Reserved keys will still count towards the total size limit.
+   * If a key is currently reserved but is not in the new set, it will be "unreserved" and
+   * subject to normal cache eviction.
+   * Reserved keys/values will still count towards the total size limit for the cache
    */
   public setReservedKeys(keys: Set<string>): void {
-    // Check for newly added keys; remove from cache list so they cannot be
-    // disposed of.
+    // Check for newly reserved keys; remove from cache list if they are currently saved.
     keys.forEach((key) => {
       if (!this.reservedKeys.has(key)) {
         const entry = this.data.get(key);
@@ -118,7 +124,7 @@ export default class DataCache<E extends DisposableValue> {
       }
     });
     // Check for newly unreserved keys; add back to cache list as they are now eligible
-    // for disposal.
+    // for eviction/disposal.
     this.reservedKeys.forEach((key) => {
       if (!keys.has(key)) {
         const entry = this.data.get(key);
@@ -179,7 +185,7 @@ export default class DataCache<E extends DisposableValue> {
   public get(key: string | number): E | undefined {
     key = key.toString();
     const entry = this.data.get(key);
-    if (entry) {
+    if (entry && !this.reservedKeys.has(key)) {
       this.moveToFirst(entry);
     }
     return entry?.value;
