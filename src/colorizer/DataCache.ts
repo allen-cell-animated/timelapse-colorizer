@@ -179,7 +179,7 @@ export default class DataCache<E extends DisposableValue> {
   public get(key: string | number): E | undefined {
     key = key.toString();
     const entry = this.data.get(key);
-    if (entry) {
+    if (entry && !this.reservedKeys.has(key)) {
       this.moveToFirst(entry);
     }
     return entry?.value;
