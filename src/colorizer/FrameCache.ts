@@ -14,7 +14,7 @@ type CacheEntry<E extends DisposableValue> = {
  * Generic LRU cache for data, intended for Texture or other GPU resources.
  * Calls `dispose` on eviction to keep GPU memory under control.
  */
-export default class FrameCache<E extends DisposableValue> {
+export default class DataCache<E extends DisposableValue> {
   private data: Map<string, CacheEntry<E>>;
   private first: CacheEntry<E> | null;
   private last: CacheEntry<E> | null;
@@ -39,7 +39,9 @@ export default class FrameCache<E extends DisposableValue> {
       this.last.next.prev = null;
     }
 
-    this.last.value.dispose && this.last.value.dispose();
+    if (this.last.value.dispose) {
+      this.last.value.dispose();
+    }
     this.data.delete(this.last.key);
     this.currentSize -= this.last.size;
     this.last = this.last.next;
@@ -82,7 +84,8 @@ export default class FrameCache<E extends DisposableValue> {
    * If the cache is full, the least recently used entry is evicted and its `dispose()` function is
    * called if it exists.
    *
-   * Throws an error if the size of the value is greater than the cache's maxSize.
+   * Throws an error if the `size` is greater than the cache's `maxSize`, as defined in the
+   * constructor.
    */
   public insert(key: string | number, value: E, size: number = 1): void {
     key = key.toString();

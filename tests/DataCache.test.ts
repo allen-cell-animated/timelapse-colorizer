@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ANY_ERROR } from "./test_utils";
 
-import FrameCache from "../src/colorizer/FrameCache";
+import DataCache from "../src/colorizer/FrameCache";
 
 describe("DataCache", () => {
   class DisposableString {
@@ -19,7 +19,7 @@ describe("DataCache", () => {
   }
 
   it("can insert and retrieve values up to capacity", () => {
-    const cache = new FrameCache<DisposableString>(3);
+    const cache = new DataCache<DisposableString>(3);
 
     cache.insert("1", new DisposableString("A"));
     expect(cache.size).toBe(1);
@@ -30,7 +30,7 @@ describe("DataCache", () => {
   });
 
   it("returns undefined for values not in cache", () => {
-    const cache = new FrameCache<DisposableString>(3);
+    const cache = new DataCache<DisposableString>(3);
 
     cache.insert("1", new DisposableString("A"));
 
@@ -40,7 +40,7 @@ describe("DataCache", () => {
   });
 
   it("accepts both integers and strings as keys", () => {
-    const cache = new FrameCache<DisposableString>(3);
+    const cache = new DataCache<DisposableString>(3);
 
     cache.insert("1", new DisposableString("A"));
     cache.insert("2", new DisposableString("B"));
@@ -55,7 +55,7 @@ describe("DataCache", () => {
   });
 
   it("evicts entries when new items are inserted", () => {
-    const cache = new FrameCache<DisposableString>(3);
+    const cache = new DataCache<DisposableString>(3);
     cache.insert("1", new DisposableString("A"));
     cache.insert("2", new DisposableString("B"));
     cache.insert("3", new DisposableString("C"));
@@ -72,7 +72,7 @@ describe("DataCache", () => {
   });
 
   it("calls dispose() on entries when they are evicted", () => {
-    const cache = new FrameCache<DisposableString>(1);
+    const cache = new DataCache<DisposableString>(1);
     const a = new DisposableString("A");
     const b = new DisposableString("B");
 
@@ -85,7 +85,7 @@ describe("DataCache", () => {
   });
 
   it("moves values to front of list when they are accessed (evicts LRU)", () => {
-    const cache = new FrameCache<DisposableString>(3);
+    const cache = new DataCache<DisposableString>(3);
     cache.insert("1", new DisposableString("A"));
     cache.insert("2", new DisposableString("B"));
     cache.insert("3", new DisposableString("C"));
@@ -103,7 +103,7 @@ describe("DataCache", () => {
   });
 
   it("replaces values when reinserted", () => {
-    const cache = new FrameCache<DisposableString>(3);
+    const cache = new DataCache<DisposableString>(3);
     cache.insert("1", new DisposableString("A"));
     expect(cache.get("1")?.value).toBe("A");
 
@@ -112,7 +112,7 @@ describe("DataCache", () => {
   });
 
   it("evicts entries by size", () => {
-    const cache = new FrameCache<DisposableString>(3);
+    const cache = new DataCache<DisposableString>(3);
     cache.insert("1", new DisposableString("A"), 1);
     expect(cache.size).toBe(1);
     cache.insert("2", new DisposableString("B"), 2);
@@ -127,7 +127,7 @@ describe("DataCache", () => {
   });
 
   it("throws an error if entry size is larger than capacity", () => {
-    const cache = new FrameCache<DisposableString>(3);
+    const cache = new DataCache<DisposableString>(3);
     expect(() => cache.insert("1", new DisposableString("A"), 4)).toThrowError(ANY_ERROR);
   });
 });
