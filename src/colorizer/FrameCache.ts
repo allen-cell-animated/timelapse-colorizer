@@ -14,7 +14,7 @@ type CacheEntry<E extends DisposableValue> = {
  * Generic LRU cache for data, intended for Texture or other GPU resources.
  * Calls `dispose` on eviction to keep GPU memory under control.
  */
-export default class DataCache<E extends DisposableValue> {
+export default class FrameCache<E extends DisposableValue> {
   private data: Map<string, CacheEntry<E>>;
   private first: CacheEntry<E> | null;
   private last: CacheEntry<E> | null;
