@@ -202,6 +202,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       return {
         name: SCATTERPLOT_TIME_FEATURE.label,
         key: SCATTERPLOT_TIME_FEATURE.key,
+        path: "",
         categories: null,
         min: 0,
         max: dataset.numberOfFrames,
