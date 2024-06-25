@@ -79,9 +79,6 @@ function Viewer(): ReactElement {
   const [datasetKey, setDatasetKey] = useState("");
   const [, addRecentCollection] = useRecentCollections();
 
-  // TODO: Because feature data is cached, it's possible for the data to fall out of the cache and for the texture to get disposed of.
-  // Make the cache infinitely large? Locks? Ref counting?
-  // Make ColorizeCanvas request the texture data every time it renders?
   const [featureData, setFeatureData] = useState<FeatureData | null>(null);
 
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -185,12 +182,19 @@ function Viewer(): ReactElement {
   const [showHoveredId, setShowHoveredId] = useState(false);
 
   useEffect(() => {
-    // Mark features that are currently in use on the dataset.
+    // Mark features that are currently in use on the dataset so they are not
+    // cleared from the cache.
     if (dataset) {
       const featuresInUse = new Set<string>();
-      featureData && featuresInUse.add(featureData.key);
-      scatterPlotConfig.xAxis && featuresInUse.add(scatterPlotConfig.xAxis);
-      scatterPlotConfig.yAxis && featuresInUse.add(scatterPlotConfig.yAxis);
+      if (featureData) {
+        featuresInUse.add(featureData.key);
+      }
+      if (scatterPlotConfig.xAxis) {
+        featuresInUse.add(scatterPlotConfig.xAxis);
+      }
+      if (scatterPlotConfig.yAxis) {
+        featuresInUse.add(scatterPlotConfig.yAxis);
+      }
       dataset.setReservedFeatureKeys(featuresInUse);
     }
   }, [featureData, scatterPlotConfig.xAxis, scatterPlotConfig.yAxis, dataset]);
@@ -350,6 +354,7 @@ function Viewer(): ReactElement {
       // TODO: If this operation takes a long time, show a loading spinner in the main view.
       const newFeatureData = await featureDataset.getFeatureData(newFeatureKey);
       if (!newFeatureData) {
+        // TODO: Show a warning banner so the user knows that the load failed.
         console.warn("Failed to load feature data for '" + newFeatureKey + "'.");
         return featureData;
       }
@@ -560,6 +565,8 @@ function Viewer(): ReactElement {
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.thresholds) {
         if (dataset) {
+          // TODO: `validateThresholds` is an async operation. Should we wait for the operation to finish
+          // before we consider the UI "set up"?
           validateThresholds(dataset, initialUrlParams.thresholds).then((thresholds) =>
             setFeatureThresholds(thresholds)
           );
@@ -569,10 +576,10 @@ function Viewer(): ReactElement {
       }
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        await replaceFeature(
-          dataset,
-          dataset.findFeatureByKeyOrName(initialUrlParams.feature) || featureData?.key || ""
-        );
+        const newFeatureKey = dataset.findFeatureByKeyOrName(initialUrlParams.feature);
+        if (newFeatureKey) {
+          await replaceFeature(dataset, newFeatureKey);
+        }
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {

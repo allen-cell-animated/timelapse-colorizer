@@ -153,7 +153,6 @@ export default class ColorizeCanvas {
   private points: Float32Array;
   private canvasResolution: Vector2 | null;
 
-  // private featureKey: string | null;
   private featureData: FeatureData | null;
   private selectedBackdropKey: string | null;
   private colorRamp: ColorRamp;

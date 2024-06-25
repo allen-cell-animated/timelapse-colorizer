@@ -20,8 +20,9 @@ export enum FeatureType {
 }
 
 /**
- * Feature info that can be loaded from the manifest file.
- * Does not include min/max or other data that needs to be fetched.
+ * Feature info loaded from the manifest file.
+ * Does not include min/max or other data that needs to be fetched
+ * from the feature JSON file.
  */
 type FeatureInfo = {
   name: string;
@@ -39,6 +40,10 @@ type FeatureInfo = {
     }
 );
 
+/**
+ * Full feature data, loaded from a JSON file, with additional
+ * manifest-provided metadata.
+ */
 export type FeatureData = FeatureInfo & {
   data: Float32Array;
   tex: Texture;
@@ -78,7 +83,6 @@ export default class Dataset {
   // private backdrops: Map<string, FrameCache | null>;
 
   private arrayLoader: IArrayLoader;
-  // Use map to enforce ordering
   /** Ordered map from feature keys to feature info. */
   private featureInfo: Map<string, FeatureInfo>;
   private featureCache: DataCache<FeatureCacheValue>;
@@ -148,6 +152,13 @@ export default class Dataset {
     return isFeatureType(inputType) ? inputType : defaultType;
   }
 
+  /**
+   * Parses the feature metadata from the manifest file into a FeatureInfo object and
+   * validates its properties.
+   * @param metadata The feature metadata from the manifest file.
+   * @returns A FeatureInfo object with the parsed metadata.
+   * @throws An error if the feature metadata is invalid (e.g., type is categorical but no categories are provided.)
+   */
   private parseManifestFeatureData(metadata: ManifestFile["features"][number]): FeatureInfo {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
@@ -250,7 +261,8 @@ export default class Dataset {
   /**
    * Marks the set of features that are currently in-use. This prevents internal caching from
    * removing or cleaning them up preemptively.
-   * @param keys
+   * @param keys Set of feature keys that will be reserved. If a key is currently reserved but
+   * is not in the set, it will be no longer be reserved and is subject to normal cache eviction.
    */
   public setReservedFeatureKeys(keys: Set<string>): void {
     this.featureCache.setReservedKeys(keys);
@@ -291,7 +303,7 @@ export default class Dataset {
     if (featureData === undefined) {
       throw new Error("Feature '" + key + "' does not exist in dataset.");
     }
-    return this.parseFeatureType(featureData.type);
+    return featureData.type;
   }
 
   /**
@@ -304,7 +316,7 @@ export default class Dataset {
     if (featureInfo === undefined) {
       throw new Error("Feature '" + key + "' does not exist in dataset.");
     }
-    if (featureInfo.type === FeatureType.CATEGORICAL && featureInfo.categories) {
+    if (featureInfo.type === FeatureType.CATEGORICAL) {
       return featureInfo.categories;
     }
     return null;
@@ -468,7 +480,9 @@ export default class Dataset {
       })
     );
 
-    // Load feature data
+    if (this.featureInfo.size === 0) {
+      throw new Error("No features found in dataset. Is the dataset manifest file valid?");
+    }
 
     const result = await Promise.allSettled([
       this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
@@ -492,13 +506,13 @@ export default class Dataset {
       throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
     }
 
-    if (this.featureInfo.size === 0) {
-      throw new Error("No features found in dataset. Is the dataset manifest file valid?");
-    }
-
     // TODO: What happens if the feature fails to load? Should that be a permanent error state?
     const featureData = this.getPromiseValue(loadedFeature, "Failed to load feature data: ");
-    if (featureData) {
+
+    // Attempt to get the number of objects from any of the loaded data
+    if (times.status === "fulfilled" && times.value) {
+      this.objectCount = times.value.length;
+    } else if (featureData) {
       this.objectCount = featureData.data.length;
     }
 
