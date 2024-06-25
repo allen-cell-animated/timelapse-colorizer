@@ -69,7 +69,7 @@ const defaultMetadata: ManifestFileMetadata = {
 };
 
 const MAX_CACHED_FRAMES = 60;
-const MAX_CACHE_FEATURES = 1;
+const MAX_CACHE_FEATURES = 100;
 
 export default class Dataset {
   private frameLoader: IFrameLoader;
