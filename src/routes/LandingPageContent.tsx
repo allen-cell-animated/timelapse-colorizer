@@ -21,7 +21,7 @@ export const landingPageContent: ProjectEntry[] = [
         </a>
         . For documentation on the features available in these datasets, visit{" "}
         <a
-          href="https://open.quiltdata.com/b/allencell/tree/aics/nuc-morph-dataset/"
+          href="https://open.quiltdata.com/b/allencell/tree/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/"
           rel="noopener noreferrer"
           target="_blank"
         >
