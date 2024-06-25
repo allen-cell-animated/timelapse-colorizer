@@ -82,7 +82,7 @@ const FeatureHighlightsContainer = styled.li`
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   padding: 0;
   justify-content: space-evenly;
-  gap: 10px;
+  gap: 20px;
   margin: 30px 0 0 0;
 `;
 
