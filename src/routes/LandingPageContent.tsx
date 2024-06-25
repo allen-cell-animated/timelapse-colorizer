@@ -20,8 +20,12 @@ export const landingPageContent: ProjectEntry[] = [
           <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
         </a>
         . For documentation on the features available in these datasets, visit{" "}
-        <a href="https://www.quiltdata.com/" rel="noopener noreferrer" target="_blank">
-          {"<a to quilt readme on features>"}
+        <a
+          href="https://open.quiltdata.com/b/allencell/tree/aics/nuc-morph-dataset/"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          {"our datasets hosted on Quilt"}
           <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
         </a>
         .
