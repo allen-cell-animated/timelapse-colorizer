@@ -73,7 +73,6 @@ const ContentContainer = styled(FlexColumn)`
   max-width: 1060px;
   width: calc(90vw - 40px);
   margin: auto;
-  padding: 0 20px;
 `;
 
 const FeatureHighlightsContainer = styled.li`
@@ -329,7 +328,7 @@ export default function LandingPage(): ReactElement {
         <h2 style={{ margin: 0 }}>Load dataset(s) below or your own data to get started</h2>
       </FlexColumnAlignCenter>
 
-      <ContentContainer>
+      <ContentContainer style={{ paddingBottom: "400px" }}>
         <ProjectList>{landingPageContent.map(renderProject)}</ProjectList>
       </ContentContainer>
     </>
