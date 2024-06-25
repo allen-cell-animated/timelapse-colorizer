@@ -216,7 +216,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     return null;
   };
 
-  // Is useEffect right for this?
   useEffect(() => {
     getData(xAxisFeatureKey, dataset).then((data) => setXAxisData(data));
   }, [xAxisFeatureKey, dataset]);
