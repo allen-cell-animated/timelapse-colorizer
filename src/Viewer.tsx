@@ -490,6 +490,7 @@ function Viewer(): ReactElement {
               action: <Link to="/">Return to homepage</Link>,
             });
             console.error("No collection URL or dataset URL provided.");
+            setIsDatasetLoading(false);
             return;
           }
           // Try loading the collection, with the default collection as a fallback.
@@ -508,6 +509,7 @@ function Viewer(): ReactElement {
               ],
               action: <Link to="/">Return to homepage</Link>,
             });
+            setIsDatasetLoading(false);
             return;
           }
         }
@@ -535,8 +537,8 @@ function Viewer(): ReactElement {
       if (!isInitialDatasetLoaded) {
         await replaceDataset(datasetResult.dataset, datasetKey);
         setIsInitialDatasetLoaded(true);
-        setIsDatasetLoading(false);
       }
+      setIsDatasetLoading(false);
       return;
     };
     loadInitialDataset();
