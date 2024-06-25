@@ -13,7 +13,7 @@ export const landingPageContent: ProjectEntry[] = [
       <p>
         Maximum projections of tracked 3D segmentations of nuclei in growing hiPS cell colonies, with quantitative
         features of nuclear shape, size and more. The exploratory dataset includes all tracked nuclei, with the baseline
-        colony, full-interphase and lineage-annotated datasets as subsets of this dataset, analyzed in the study of
+        colonies, full-interphase, and lineage-annotated datasets as subsets of this dataset, analyzed in the study of
         nuclear growth{" "}
         <a href="https://www.biorxiv.org/" rel="noopener noreferrer" target="_blank">
           {"<Biorxiv ref>"}
@@ -70,7 +70,7 @@ export const landingPageContent: ProjectEntry[] = [
         },
       },
       {
-        name: "Baseline colony dataset",
+        name: "Baseline colonies dataset",
         description:
           "Minimally filtered tracked nuclei with quantitative single-timepoint features (subset of exploratory analysis dataset)",
         loadParams: {
@@ -82,7 +82,7 @@ export const landingPageContent: ProjectEntry[] = [
       {
         name: "Full-interphase dataset",
         description:
-          "Nuclei tracked throughout interphase (subset of baseline colony analysis dataset, with added growth trajectory features)",
+          "Nuclei tracked throughout interphase (subset of baseline colonies analysis dataset, with added growth trajectory features)",
         loadParams: {
           collection:
             "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/full-interphase_dataset/collection.json",
