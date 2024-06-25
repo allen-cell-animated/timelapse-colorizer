@@ -103,6 +103,13 @@ export function isValueWithinThreshold(value: number, threshold: FeatureThreshol
   }
 }
 
+/** Returns true if the threshold's feature key name and unit matches one in the provided dataset. */
+export function isThresholdInDataset(threshold: FeatureThreshold, dataset: Dataset): boolean {
+  return (
+    dataset.hasFeatureKey(threshold.featureKey) && dataset.getFeatureUnits(threshold.featureKey) === threshold.unit
+  );
+}
+
 /**
  * Returns a Uint8 array look-up table indexed by object ID, storing whether that object ID is in range of
  * the given thresholds (=1) or not (=0).
@@ -119,11 +126,7 @@ export async function getInRangeLUT(dataset: Dataset, thresholds: FeatureThresho
   const inRangeIds = new Uint8Array(dataset.objectCount);
 
   // Ignore thresholds with features that don't exist in this dataset or whose units don't match
-  const validThresholds = thresholds.filter((threshold) => {
-    return (
-      dataset.hasFeatureKey(threshold.featureKey) && dataset.getFeatureUnits(threshold.featureKey) === threshold.unit
-    );
-  });
+  const validThresholds = thresholds.filter((threshold) => isThresholdInDataset(threshold, dataset));
 
   const featureDataForThresholds = await Promise.all(
     validThresholds.map((threshold) => dataset.getFeatureData(threshold.featureKey))

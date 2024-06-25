@@ -14,7 +14,7 @@ import {
   NumericFeatureThreshold,
   ThresholdType,
 } from "../../colorizer/types";
-import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
+import { isThresholdInDataset, thresholdMatchFinder } from "../../colorizer/utils/data_utils";
 import { ScrollShadowContainer, useScrollShadow } from "../../colorizer/utils/react_utils";
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
@@ -237,22 +237,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   };
 
   ////// RENDERING ///////////////////
-  // Rendering-related state
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [listIndexToRenderedItem, setListIndexToRenderedItem] = useState([] as ReactNode[]);
-
-  useEffect(() => {
-    const updateSelectedFeatures = async (): Promise<void> => {
-      // Filter out thresholds that no longer match the dataset (feature and/or unit), so we only
-      // show selections that are actually valid.
-      const thresholdsInDataset = props.featureThresholds.filter(async (t) => {
-        const featureData = await props.dataset?.getFeatureData(t.featureKey);
-        return featureData && featureData.unit === t.unit;
-      });
-      setSelectedFeatures(thresholdsInDataset.map((t) => t.featureKey));
-    };
-    updateSelectedFeatures();
-  }, [props.featureThresholds]);
+  const [renderedListItems, setRenderedListItems] = useState([] as ReactNode[]);
 
   // The Select dropdown should ONLY show features that are currently present in the dataset.
   const featureOptions =
@@ -260,6 +245,11 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
       label: props.dataset?.getFeatureNameWithUnits(key),
       value: key,
     })) || [];
+
+  const thresholdsInDataset = props.featureThresholds.filter(
+    (t) => props.dataset && isThresholdInDataset(t, props.dataset)
+  );
+  const selectedFeatures = thresholdsInDataset.map((t) => t.featureKey);
 
   const renderNumericItem = async (item: NumericFeatureThreshold, index: number): Promise<ReactNode> => {
     const featureData = await props.dataset?.getFeatureData(item.featureKey);
@@ -346,7 +336,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   useEffect(() => {
     const updateListItems = async (): Promise<void> => {
       const newItems = await Promise.all(props.featureThresholds.map(renderListItems));
-      setListIndexToRenderedItem(newItems);
+      setRenderedListItems(newItems);
     };
     updateListItems();
   }, [props.featureThresholds]);
@@ -378,7 +368,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
       <FiltersContainer>
         <FiltersContent style={{ paddingTop: 0 }} ref={scrollRef} onScroll={onScrollHandler}>
           <List
-            renderItem={(_, index) => listIndexToRenderedItem[index] || <></>}
+            renderItem={(_, index) => renderedListItems[index] || <></>}
             dataSource={props.featureThresholds}
             locale={{
               emptyText: (

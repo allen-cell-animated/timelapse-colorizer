@@ -28,7 +28,13 @@ import {
   ViewerConfig,
 } from "./colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
-import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
+import {
+  getColorMap,
+  getInRangeLUT,
+  isThresholdInDataset,
+  thresholdMatchFinder,
+  validateThresholds,
+} from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
@@ -195,6 +201,10 @@ function Viewer(): ReactElement {
       if (scatterPlotConfig.yAxis) {
         featuresInUse.add(scatterPlotConfig.yAxis);
       }
+      // Reserve thresholded features
+      featureThresholds.forEach((threshold) => {
+        isThresholdInDataset(threshold, dataset) && featuresInUse.add(threshold.featureKey);
+      });
       dataset.setReservedFeatureKeys(featuresInUse);
     }
   }, [featureData, scatterPlotConfig.xAxis, scatterPlotConfig.yAxis, dataset]);
