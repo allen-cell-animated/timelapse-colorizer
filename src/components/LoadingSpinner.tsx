@@ -3,9 +3,12 @@ import { Spin } from "antd";
 import React, { PropsWithChildren, ReactElement } from "react";
 import styled, { css } from "styled-components";
 
+import { FlexColumnAlignCenter } from "../styles/utils";
+
 type LoadingSpinnerProps = {
   loading: boolean;
   iconSize?: number;
+  loadingText?: string;
   style?: React.CSSProperties;
 };
 
@@ -18,6 +21,12 @@ const LoadingSpinnerContainer = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
+
+  h4 {
+    font-style: normal;
+    font-weight: 400;
+    /* color: var(--color-text-theme-dark); */
+  }
 `;
 
 const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
@@ -51,7 +60,10 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
   return (
     <LoadingSpinnerContainer style={props.style}>
       <LoadingSpinnerOverlay $loading={props.loading}>
-        <Spin indicator={<LoadingOutlined style={{ fontSize: props.iconSize }} spin />}></Spin>
+        <FlexColumnAlignCenter $gap={10}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: props.iconSize }} spin />}></Spin>
+          {props.loadingText && <h4>{props.loadingText}</h4>}
+        </FlexColumnAlignCenter>
       </LoadingSpinnerOverlay>
       {props.children}
     </LoadingSpinnerContainer>

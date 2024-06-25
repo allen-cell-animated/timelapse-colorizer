@@ -15,6 +15,7 @@ import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 import IconButton from "./IconButton";
+import LoadingSpinner from "./LoadingSpinner";
 
 const ASPECT_RATIO = 14.6 / 10;
 /* Minimum distance in either X or Y that mouse should move
@@ -79,6 +80,7 @@ type CanvasWrapperProps = {
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
+  loading: boolean;
 
   selectedBackdropKey: string | null;
 
@@ -551,14 +553,16 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       }}
       ref={containerRef}
     >
-      <div ref={canvasRef}></div>
+      <LoadingSpinner loading={props.loading} loadingText="This may take a few seconds.">
+        <div ref={canvasRef}></div>
+      </LoadingSpinner>
       <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
         <p id="no-image">
           <b>Missing image data</b>
         </p>
       </MissingFileIconContainer>
-      <CanvasControlsContainer $gap={4}>
+      <CanvasControlsContainer $gap={4} style={{ zIndex: 101 }}>
         <Tooltip title={"Reset view"} placement="right" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
