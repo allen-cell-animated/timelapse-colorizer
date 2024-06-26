@@ -59,7 +59,6 @@ const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
   }}
 `;
 
-// TODO: This component is redundant with the built-in Ant Design Spin component. Remove it?
 /**
  * Applies a loading spinner overlay on the provided children, which can be toggled on and off via props.
  */
@@ -71,9 +70,11 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
         <Spin
           indicator={
             <LoadSpinnerIconContainer $fontSize={props.iconSize}>
-              {/* Make larger loading icon by merging two of them together */}
+              {/* Make larger loading icon by multiple of them together */}
+              {/* TODO: Make custom loading spinner SVG? */}
               <LoadingOutlined />
               <LoadingOutlined rotate={90} />
+              <LoadingOutlined rotate={135} />
             </LoadSpinnerIconContainer>
           }
         ></Spin>
