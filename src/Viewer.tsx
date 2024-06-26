@@ -777,7 +777,7 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
       <SmallScreenWarning />
 
-      <Header alertElement={bannerElement}>
+      <Header alertElement={bannerElement} headerOpensInNewTab={true}>
         <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
