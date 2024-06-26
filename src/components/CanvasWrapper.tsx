@@ -553,7 +553,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       }}
       ref={containerRef}
     >
-      <LoadingSpinner loading={props.loading} loadingText="This may take a few seconds.">
+      <LoadingSpinner loading={props.loading}>
         <div ref={canvasRef}></div>
       </LoadingSpinner>
       <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
