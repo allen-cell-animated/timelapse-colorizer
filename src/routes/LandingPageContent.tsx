@@ -35,6 +35,36 @@ export const landingPageContent: ProjectEntry[] = [
     // publicationName: "<NucMorph manuscript> (Publisher name, mm/dd/yyyy)",
     datasets: [
       {
+        name: "Baseline colonies dataset",
+        description:
+          "Minimally filtered tracked nuclei with quantitative single-timepoint features (subset of exploratory analysis dataset)",
+        loadParams: {
+          collection:
+            "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/baseline_colonies_dataset/collection.json",
+          time: 15,
+        },
+      },
+      {
+        name: "Full-interphase dataset",
+        description:
+          "Nuclei tracked throughout interphase (subset of baseline colonies analysis dataset, with added growth trajectory features)",
+        loadParams: {
+          collection:
+            "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/full-interphase_dataset/collection.json",
+          time: 15,
+        },
+      },
+      {
+        name: "Lineage-annotated dataset",
+        description:
+          "Nuclei tracked across multiple generations (subset of full-interphase analysis dataset, with added lineage annotation)",
+        loadParams: {
+          collection:
+            "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/lineage-annotated_dataset/collection.json",
+          time: 15,
+        },
+      },
+      {
         name: "Exploratory dataset",
         description: "All successful tracked nuclei, with all available features and filters",
         loadParams: {
@@ -67,36 +97,6 @@ export const landingPageContent: ProjectEntry[] = [
               enabledCategories: [true, true],
             },
           ],
-        },
-      },
-      {
-        name: "Baseline colonies dataset",
-        description:
-          "Minimally filtered tracked nuclei with quantitative single-timepoint features (subset of exploratory analysis dataset)",
-        loadParams: {
-          collection:
-            "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/baseline_colonies_dataset/collection.json",
-          time: 15,
-        },
-      },
-      {
-        name: "Full-interphase dataset",
-        description:
-          "Nuclei tracked throughout interphase (subset of baseline colonies analysis dataset, with added growth trajectory features)",
-        loadParams: {
-          collection:
-            "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/full-interphase_dataset/collection.json",
-          time: 15,
-        },
-      },
-      {
-        name: "Lineage-annotated dataset",
-        description:
-          "Nuclei tracked across multiple generations (subset of full-interphase analysis dataset, with added lineage annotation)",
-        loadParams: {
-          collection:
-            "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/lineage-annotated_dataset/collection.json",
-          time: 15,
         },
       },
     ],
