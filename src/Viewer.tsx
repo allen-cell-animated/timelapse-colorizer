@@ -249,13 +249,15 @@ function Viewer(): ReactElement {
     scatterPlotConfig,
   ]);
 
-  // Update url whenever the viewer settings change
-  // (but not while playing/recording for performance reasons)
+  // Update url whenever the viewer settings change, with a few exceptions:
+  // - The URL should not change while playing/recording for performance reasons.
+  // - The URL should not change if the dataset hasn't loaded yet, or if it failed to load.
+  //   that way, users can refresh the page to try again.
   useEffect(() => {
-    if (!timeControls.isPlaying() && !isRecording) {
+    if (!timeControls.isPlaying() && !isRecording && isInitialDatasetLoaded) {
       setSearchParams(getUrlParams(), { replace: true });
     }
-  }, [timeControls.isPlaying(), isRecording, getUrlParams]);
+  }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
   const setFrame = useCallback(
     async (frame: number) => {
@@ -360,14 +362,10 @@ function Viewer(): ReactElement {
    * @returns a Promise<void> that resolves when the loading is complete.
    */
   const replaceDataset = useCallback(
-    async (newDataset: Dataset | null, newDatasetKey: string): Promise<void> => {
+    async (newDataset: Dataset, newDatasetKey: string): Promise<void> => {
       console.trace("Replacing dataset with " + newDatasetKey + ".");
       // TODO: Change the way flags are handled to prevent flickering during dataset replacement
       setDatasetOpen(false);
-      if (newDataset === null) {
-        // TODO: Determine with UX what expected behavior should be for bad datasets
-        return;
-      }
 
       // Dispose of the old dataset
       if (dataset !== null) {
@@ -529,11 +527,9 @@ function Viewer(): ReactElement {
         setIsDatasetLoading(false);
         return;
       }
-
       // Add the collection to the recent collections list
       addRecentCollection({ url: newCollection.getUrl() });
 
-      // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
       if (!isInitialDatasetLoaded) {
         await replaceDataset(datasetResult.dataset, datasetKey);
         setIsInitialDatasetLoaded(true);
