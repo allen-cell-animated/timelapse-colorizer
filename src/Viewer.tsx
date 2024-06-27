@@ -256,7 +256,7 @@ function Viewer(): ReactElement {
     if (!timeControls.isPlaying() && !isRecording && isInitialDatasetLoaded) {
       setSearchParams(getUrlParams(), { replace: true });
     }
-  }, [timeControls.isPlaying(), isRecording, getUrlParams]);
+  }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
   const setFrame = useCallback(
     async (frame: number) => {
