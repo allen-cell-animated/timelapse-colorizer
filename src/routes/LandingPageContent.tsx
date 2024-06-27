@@ -16,7 +16,7 @@ export const landingPageContent: ProjectEntry[] = [
         colonies, full-interphase, and lineage-annotated datasets as subsets of this dataset, analyzed in the study of
         nuclear growth{" "}
         <a href="https://www.biorxiv.org/" rel="noopener noreferrer" target="_blank">
-          {"<Biorxiv ref>"}
+          {"Dixon et al. 2024"}
           <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
         </a>
         . For documentation on the features available in these datasets, visit{" "}
