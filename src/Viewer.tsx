@@ -96,6 +96,7 @@ function Viewer(): ReactElement {
   );
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
+  const [isDatasetLoading, setIsDatasetLoading] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
   const colorRampData = KNOWN_COLOR_RAMPS;
@@ -451,6 +452,7 @@ function Viewer(): ReactElement {
       if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
         return;
       }
+      setIsDatasetLoading(true);
       isLoadingInitialDataset.current = true;
       let newCollection: Collection;
       let datasetKey: string;
@@ -488,6 +490,7 @@ function Viewer(): ReactElement {
               action: <Link to="/">Return to homepage</Link>,
             });
             console.error("No collection URL or dataset URL provided.");
+            setIsDatasetLoading(false);
             return;
           }
           // Try loading the collection, with the default collection as a fallback.
@@ -506,6 +509,7 @@ function Viewer(): ReactElement {
               ],
               action: <Link to="/">Return to homepage</Link>,
             });
+            setIsDatasetLoading(false);
             return;
           }
         }
@@ -522,6 +526,7 @@ function Viewer(): ReactElement {
           placement: "bottomLeft",
           duration: 4,
         });
+        setIsDatasetLoading(false);
         return;
       }
 
@@ -533,6 +538,7 @@ function Viewer(): ReactElement {
         await replaceDataset(datasetResult.dataset, datasetKey);
         setIsInitialDatasetLoaded(true);
       }
+      setIsDatasetLoading(false);
       return;
     };
     loadInitialDataset();
@@ -611,6 +617,7 @@ function Viewer(): ReactElement {
   const handleDatasetChange = useCallback(
     async (newDatasetKey: string): Promise<void> => {
       if (newDatasetKey !== datasetKey && collection) {
+        setIsDatasetLoading(true);
         const result = await collection.tryLoadDataset(newDatasetKey);
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
@@ -624,6 +631,7 @@ function Viewer(): ReactElement {
             duration: 4,
           });
         }
+        setIsDatasetLoading(false);
       }
     },
     [replaceDataset, collection, datasetKey]
@@ -910,6 +918,7 @@ function Viewer(): ReactElement {
                 disabled={!showHoveredId}
               >
                 <CanvasWrapper
+                  loading={isDatasetLoading}
                   canv={canv}
                   collection={collection || null}
                   dataset={dataset}

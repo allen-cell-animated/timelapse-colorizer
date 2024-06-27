@@ -158,12 +158,10 @@ const DatasetCard = styled.li`
   margin-top: 10px;
 
   & > h3 {
-    text-align: left;
     display: grid;
     margin: 0;
   }
   & > p {
-    text-align: left;
     display: grid;
   }
   & > a {
