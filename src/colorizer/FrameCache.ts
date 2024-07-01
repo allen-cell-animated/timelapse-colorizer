@@ -96,10 +96,6 @@ export default class DataCache<E extends DisposableValue> {
     key = key.toString();
     const currentEntry = this.data.get(key);
 
-    if (size > this.maxSize) {
-      throw new Error(`Attempted to insert a value of size ${size} into a cache with maxSize ${this.maxSize}`);
-    }
-
     if (currentEntry !== null && currentEntry !== undefined) {
       // NOTE: This assumes that the value's size HAS NOT CHANGED. If it has,
       // the size of the cache will be incorrect and the old value will not be disposed of.
