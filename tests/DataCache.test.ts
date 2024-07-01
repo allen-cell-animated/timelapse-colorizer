@@ -59,13 +59,12 @@ describe("DataCache", () => {
     cache.insert("1", new DisposableString("A"));
     cache.insert("2", new DisposableString("B"));
     cache.insert("3", new DisposableString("C"));
-
     expect(cache.size).toBe(3);
 
+    // Inserting another value will evict the oldest value, 1
     cache.insert("4", new DisposableString("D"));
-
     expect(cache.size).toBe(3);
-    // Oldest value is evicted
+
     expect(cache.get("1")?.value).toBe(undefined);
     expect(cache.get("2")?.value).toBe("B");
     expect(cache.get("3")?.value).toBe("C");
@@ -80,6 +79,7 @@ describe("DataCache", () => {
     cache.insert("1", a);
     expect(a.hasBeenDisposed).toBe(false);
 
+    // Key 1 is evicted, so `a` should be disposed.
     cache.insert("2", b);
     expect(a.hasBeenDisposed).toBe(true);
     expect(b.hasBeenDisposed).toBe(false);
@@ -92,7 +92,7 @@ describe("DataCache", () => {
     cache.insert("3", new DisposableString("C"));
 
     // 1 is oldest, but accessing it will make it the newest.
-    // 2 is now the oldest and will be evicted.
+    // 2 is now the oldest and will be evicted next time a new value is inserted.
     cache.get("1");
 
     cache.insert("4", new DisposableString("D"));
@@ -119,7 +119,9 @@ describe("DataCache", () => {
     cache.insert("2", new DisposableString("B"), 2);
     expect(cache.size).toBe(3);
 
-    // Size 2 means both previous entries should get evicted
+    // Insert a third value that has a size of 2. Key 1 is the oldest value,
+    // but because key 2 also has a size of 2, both must be
+    // evicted to make room for the new value.
     cache.insert("3", new DisposableString("C"), 2);
     expect(cache.size).toBe(2);
     expect(cache.get("1")?.value).toBe(undefined);
