@@ -46,7 +46,7 @@ const defaultMetadata: ManifestFileMetadata = {
   startTimeSeconds: 0,
 };
 
-const MAX_CACHED_FRAME_BYTES = 128_000_000; // 128 MB
+const MAX_CACHED_FRAME_BYTES = 1_000_000_000; // 1 GB
 
 export default class Dataset {
   private frameLoader: IFrameLoader;
