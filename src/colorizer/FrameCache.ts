@@ -2,7 +2,7 @@ type DisposableValue = {
   dispose?: () => void;
 };
 
-type CacheEntry<E extends DisposableValue> = {
+type CacheEntry<E> = {
   key: string;
   value: E;
   size: number;
@@ -14,7 +14,7 @@ type CacheEntry<E extends DisposableValue> = {
  * Generic LRU cache for data, intended for Texture or other GPU resources.
  * Calls `dispose` on eviction to keep GPU memory under control.
  */
-export default class DataCache<E extends DisposableValue> {
+export default class DataCache<E extends DisposableValue | Object> {
   private data: Map<string, CacheEntry<E>>;
   private first: CacheEntry<E> | null;
   private last: CacheEntry<E> | null;
@@ -44,9 +44,11 @@ export default class DataCache<E extends DisposableValue> {
       this.last.next.prev = null;
     }
 
-    if (this.last.value.dispose) {
-      this.last.value.dispose();
+    // Check if value has a dispose function and call it if it does
+    if ("dispose" in this.last.value) {
+      this.last.value.dispose && this.last.value.dispose();
     }
+
     this.data.delete(this.last.key);
     this.currentSize -= this.last.size;
     this.last = this.last.next;
@@ -134,7 +136,9 @@ export default class DataCache<E extends DisposableValue> {
     this.last = null;
     this.currentSize = 0;
     this.data.forEach((cacheEntry) => {
-      cacheEntry.value.dispose && cacheEntry.value.dispose();
+      if ("dispose" in cacheEntry.value) {
+        cacheEntry.value.dispose && cacheEntry.value.dispose();
+      }
     });
     this.data.clear();
   }

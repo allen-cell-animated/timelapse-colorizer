@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { ANY_ERROR } from "./test_utils";
-
 import DataCache from "../src/colorizer/FrameCache";
 
 describe("DataCache", () => {
@@ -140,5 +138,22 @@ describe("DataCache", () => {
     expect(cache.size).toBe(18);
     expect(cache.get("1")?.value).toBe(undefined);
     expect(cache.get("2")?.value).toBe("B");
+  });
+
+  it("allows values that are non-disposable", () => {
+    const cache = new DataCache<string[]>(2);
+    cache.insert("1", ["A"]);
+    cache.insert("2", ["B"]);
+    expect(cache.size).toBe(2);
+
+    expect(cache.get("1")).toEqual(["A"]);
+    expect(cache.get("2")).toEqual(["B"]);
+
+    // Insert a value and evict the oldest value.
+    cache.insert("3", ["C"]);
+    expect(cache.size).toBe(2);
+    expect(cache.get("1")).toBe(undefined);
+    expect(cache.get("2")).toEqual(["B"]);
+    expect(cache.get("3")).toEqual(["C"]);
   });
 });
