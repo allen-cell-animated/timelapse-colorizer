@@ -15,7 +15,7 @@ export const landingPageContent: ProjectEntry[] = [
         features of nuclear shape, size and more. The exploratory dataset includes all tracked nuclei, with the baseline
         colonies, full-interphase, and lineage-annotated datasets as subsets of this dataset, analyzed in the study of
         nuclear growth{" "}
-        <a href="https://www.biorxiv.org/" rel="noopener noreferrer" target="_blank">
+        <a href="https://www.biorxiv.org/content/10.1101/2024.06.28.601071v1" rel="noopener noreferrer" target="_blank">
           {"Dixon et al. 2024"}
           <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
         </a>
