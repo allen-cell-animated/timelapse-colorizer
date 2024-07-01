@@ -143,17 +143,17 @@ describe("DataCache", () => {
   it("allows values that are non-disposable", () => {
     const cache = new DataCache<string[]>(2);
     cache.insert("1", ["A"]);
-    cache.insert("2", ["B"]);
+    cache.insert("2", ["B", "B"]);
     expect(cache.size).toBe(2);
 
     expect(cache.get("1")).toEqual(["A"]);
-    expect(cache.get("2")).toEqual(["B"]);
+    expect(cache.get("2")).toEqual(["B", "B"]);
 
     // Insert a value and evict the oldest value.
-    cache.insert("3", ["C"]);
+    cache.insert("3", ["C", "C", "C"]);
     expect(cache.size).toBe(2);
     expect(cache.get("1")).toBe(undefined);
-    expect(cache.get("2")).toEqual(["B"]);
-    expect(cache.get("3")).toEqual(["C"]);
+    expect(cache.get("2")).toEqual(["B", "B"]);
+    expect(cache.get("3")).toEqual(["C", "C", "C"]);
   });
 });
