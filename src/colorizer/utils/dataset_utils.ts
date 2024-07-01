@@ -56,11 +56,12 @@ type ManifestFileV0_0_0 = {
 // array of metadata objects.
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata" | "metadata"> & {
+  /** List of feature metadata, including keys and data paths. */
   features: {
     key?: string;
     name: string;
     data: string;
-    units?: string;
+    unit?: string;
     type?: string;
     categories?: string[];
   }[];
@@ -106,7 +107,8 @@ export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile =
       features.push({
         name: featureName,
         data: featurePath,
-        units: featureMetadata?.units || undefined,
+        // Note change from "units" to "unit"
+        unit: featureMetadata?.units || undefined,
         type: featureMetadata?.type || undefined,
         categories: featureMetadata?.categories || undefined,
       });

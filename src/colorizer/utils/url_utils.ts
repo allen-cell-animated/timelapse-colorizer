@@ -115,7 +115,7 @@ function serializeThreshold(threshold: FeatureThreshold): string {
   // featureKey + units are encoded in case it contains special characters (":" or ",").
   // TODO: remove once feature keys are implemented.
   const featureKey = encodeURIComponent(threshold.featureKey);
-  const featureUnit = encodeURIComponent(threshold.units);
+  const featureUnit = encodeURIComponent(threshold.unit);
 
   // TODO: Are there better characters I can be using here? ":" and "," take up
   // more space in the URL. -> once features are converted to use keys, use "-" as a separator here? "|"?
@@ -163,7 +163,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
     }
     threshold = {
       featureKey: decodeURIComponent(featureKey),
-      units: decodeURIComponent(featureUnit),
+      unit: decodeURIComponent(featureUnit),
       type: ThresholdType.CATEGORICAL,
       enabledCategories,
     };
@@ -171,7 +171,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
     // Feature is numeric and a range.
     threshold = {
       featureKey: decodeURIComponent(featureKey),
-      units: decodeURIComponent(featureUnit),
+      unit: decodeURIComponent(featureUnit),
       type: ThresholdType.NUMERIC,
       min: parseFloat(selection[0]),
       max: parseFloat(selection[1]),
@@ -187,7 +187,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
     );
     threshold = {
       featureKey: decodeURIComponent(featureKey),
-      units: decodeURIComponent(featureUnit),
+      unit: decodeURIComponent(featureUnit),
       type: ThresholdType.NUMERIC,
       min: NaN,
       max: NaN,

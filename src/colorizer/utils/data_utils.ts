@@ -16,8 +16,8 @@ import Dataset, { FeatureType } from "../Dataset";
  * const matchThreshold = featureThresholds.find(thresholdMatchFinder("Temperature", "°C"));
  * ```
  */
-export function thresholdMatchFinder(featureKey: string, units: string): (threshold: FeatureThreshold) => boolean {
-  return (threshold: FeatureThreshold) => threshold.featureKey === featureKey && threshold.units === units;
+export function thresholdMatchFinder(featureKey: string, unit: string): (threshold: FeatureThreshold) => boolean {
+  return (threshold: FeatureThreshold) => threshold.featureKey === featureKey && threshold.unit === unit;
 }
 
 /**
@@ -55,7 +55,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
     }
 
     const featureData = dataset.getFeatureData(featureKey);
-    const isInDataset = featureData && featureData.units === threshold.units;
+    const isInDataset = featureData && featureData.unit === threshold.unit;
 
     if (isInDataset) {
       // Threshold key + unit matches, so update feature key just in case it was a name
@@ -70,7 +70,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
       // thresholds. This would cause categorical features loaded from the URL to be incorrectly shown on the UI.
       newThresholds.push({
         featureKey: featureKey,
-        units: threshold.units,
+        unit: threshold.unit,
         type: ThresholdType.CATEGORICAL,
         enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
       });
@@ -79,7 +79,7 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
       // Convert to numeric threshold instead.
       newThresholds.push({
         featureKey: featureKey,
-        units: threshold.units,
+        unit: threshold.unit,
         type: ThresholdType.NUMERIC,
         min: featureData.min,
         max: featureData.max,
@@ -119,7 +119,7 @@ export function getInRangeLUT(dataset: Dataset, thresholds: FeatureThreshold[]):
   // Ignore thresholds with features that don't exist in this dataset or whose units don't match
   const validThresholds = thresholds.filter((threshold) => {
     const featureData = dataset.getFeatureData(threshold.featureKey);
-    return featureData && featureData.units === threshold.units;
+    return featureData && featureData.unit === threshold.unit;
   });
 
   for (let id = 0; id < dataset.numObjects; id++) {
