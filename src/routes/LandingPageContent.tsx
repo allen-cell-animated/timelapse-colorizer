@@ -1,8 +1,7 @@
-import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 
 import { ThresholdType } from "../colorizer/types";
+import { ExternalLink } from "../styles/utils";
 import { ProjectEntry } from "../types";
 
 export const landingPageContent: ProjectEntry[] = [
@@ -15,19 +14,17 @@ export const landingPageContent: ProjectEntry[] = [
         features of nuclear shape, size and more. The exploratory dataset includes all tracked nuclei, with the baseline
         colonies, full-interphase, and lineage-annotated datasets as subsets of this dataset, analyzed in the study of
         nuclear growth{" "}
-        <a href="https://www.biorxiv.org/content/10.1101/2024.06.28.601071v1" rel="noopener noreferrer" target="_blank">
-          {"Dixon et al. 2024"}
-          <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
-        </a>
+        <ExternalLink href="https://www.biorxiv.org/content/10.1101/2024.06.28.601071v1">
+          Dixon et al. 2024 (bioRxiv)
+        </ExternalLink>
         . For documentation on the features available in these datasets, visit{" "}
-        <a
-          href="https://open.quiltdata.com/b/allencell/tree/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/"
-          rel="noopener noreferrer"
-          target="_blank"
+        <ExternalLink
+          href={
+            "https://open.quiltdata.com/b/allencell/tree/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/"
+          }
         >
-          {"our datasets hosted on Quilt"}
-          <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
-        </a>
+          our datasets hosted on Quilt
+        </ExternalLink>
         .
       </p>
     ),
