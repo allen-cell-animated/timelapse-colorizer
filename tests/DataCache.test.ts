@@ -79,7 +79,7 @@ describe("DataCache", () => {
     cache.insert("1", a);
     expect(a.hasBeenDisposed).toBe(false);
 
-    // Key 1 is evicted, so a should be disposed.
+    // Key 1 is evicted, so `a` should be disposed.
     cache.insert("2", b);
     expect(a.hasBeenDisposed).toBe(true);
     expect(b.hasBeenDisposed).toBe(false);
