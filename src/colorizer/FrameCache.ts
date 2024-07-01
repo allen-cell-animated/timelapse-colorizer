@@ -21,6 +21,11 @@ export default class DataCache<E extends DisposableValue> {
   private currentSize: number;
   private maxSize: number;
 
+  /**
+   * Creates a new data cache with a maximum size.
+   * @param maxSize Arbitrary max size. Can be in number of entries or bytes; if bytes,
+   * entries should have a size defined in bytes when inserted.
+   */
   constructor(maxSize: number = 30) {
     this.data = new Map();
     this.first = null;
