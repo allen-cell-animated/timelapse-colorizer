@@ -46,7 +46,7 @@ const defaultMetadata: ManifestFileMetadata = {
   startTimeSeconds: 0,
 };
 
-const MAX_CACHED_FRAMES = 60;
+const MAX_CACHED_FRAME_BYTES = 1_000_000_000; // 1 GB
 
 export default class Dataset {
   private frameLoader: IFrameLoader;
@@ -316,7 +316,10 @@ export default class Dataset {
     const fullUrl = this.resolveUrl(this.frameFiles[index]);
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
-    this.frames?.insert(index, loadedFrame);
+    const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
+    console.log("frame size (bytes):", frameSizeBytes);
+    // Note that, due to image compression, images may take up much less space in memory than their raw size.
+    this.frames?.insert(index, loadedFrame, frameSizeBytes);
     return loadedFrame;
   }
 
@@ -401,7 +404,7 @@ export default class Dataset {
       }
     }
 
-    this.frames = new DataCache(MAX_CACHED_FRAMES);
+    this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
 
     // Load feature data
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>

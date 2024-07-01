@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { ANY_ERROR } from "./test_utils";
-
 import DataCache from "../src/colorizer/DataCache";
 
 describe("DataCache", () => {
@@ -129,9 +127,34 @@ describe("DataCache", () => {
     expect(cache.get("3")?.value).toBe("C");
   });
 
-  it("throws an error if entry size is larger than capacity", () => {
+  it("allows entry sizes larger than capacity", () => {
     const cache = new DataCache<DisposableString>(3);
-    expect(() => cache.insert("1", new DisposableString("A"), 4)).toThrowError(ANY_ERROR);
+    cache.insert("1", new DisposableString("A"), 4);
+    expect(cache.size).toBe(4);
+    expect(cache.get("1")?.value).toBe("A");
+
+    // Inserting another large value should evict the first value.
+    cache.insert("2", new DisposableString("B"), 18);
+    expect(cache.size).toBe(18);
+    expect(cache.get("1")?.value).toBe(undefined);
+    expect(cache.get("2")?.value).toBe("B");
+  });
+
+  it("allows values that are non-disposable", () => {
+    const cache = new DataCache<string[]>(2);
+    cache.insert("1", ["A"]);
+    cache.insert("2", ["B", "B"]);
+    expect(cache.size).toBe(2);
+
+    expect(cache.get("1")).toEqual(["A"]);
+    expect(cache.get("2")).toEqual(["B", "B"]);
+
+    // Insert a value and evict the oldest value.
+    cache.insert("3", ["C", "C", "C"]);
+    expect(cache.size).toBe(2);
+    expect(cache.get("1")).toBe(undefined);
+    expect(cache.get("2")).toEqual(["B", "B"]);
+    expect(cache.get("3")).toEqual(["C", "C", "C"]);
   });
 
   it("reserves keys and prevents them from being evicted", () => {
