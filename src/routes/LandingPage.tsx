@@ -27,7 +27,7 @@ const Banner = styled(FlexColumnAlignCenter)`
   margin: 0;
 `;
 
-const BannerTextContainer = styled(FlexColumn)`
+const BannerTextContainer = styled(FlexColumnAlignCenter)`
   --padding-x: 30px;
   padding: var(--padding-x);
   max-width: calc(1060px - 2 * var(--padding-x));
@@ -73,7 +73,6 @@ const ContentContainer = styled(FlexColumn)`
   max-width: 1060px;
   width: calc(90vw - 40px);
   margin: auto;
-  padding: 0 20px;
 `;
 
 const FeatureHighlightsContainer = styled.li`
@@ -83,8 +82,8 @@ const FeatureHighlightsContainer = styled.li`
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   padding: 0;
   justify-content: space-evenly;
-  gap: 10px;
-  margin: 20px 0;
+  gap: 20px;
+  margin: 30px 0 0 0;
 `;
 
 const FeatureHighlightsItem = styled(FlexColumn)`
@@ -97,18 +96,10 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   }
 `;
 
-const Divider = styled.hr`
-  display: block;
-  width: 100%;
-  height: 1px;
-  background-color: var(--color-borders);
-  border-style: none;
-`;
-
 const ProjectList = styled.ul`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 30px;
   padding: 0;
   margin-top: 0;
 
@@ -119,7 +110,7 @@ const ProjectList = styled.ul`
     width: 100%;
     height: 1px;
     background-color: var(--color-borders);
-    margin-bottom: 10px;
+    margin-bottom: 15px;
   }
 `;
 
@@ -127,10 +118,21 @@ const ProjectCard = styled.li`
   display: flex;
   width: 100%;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 
   & h3 {
     font-weight: 600;
+  }
+
+  & p,
+  & h3,
+  & span {
+    margin: 0;
+  }
+
+  & a {
+    // Add 2px margin to maintain the same visual gap that text has
+    margin: 2px 0 0 0;
   }
 `;
 
@@ -143,6 +145,7 @@ const DatasetList = styled.ol`
   grid-template-rows: repeat(3, auto);
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   justify-content: space-around;
+  text-align: start;
   gap: 10px 20px;
 `;
 
@@ -151,19 +154,18 @@ const DatasetCard = styled.li`
   grid-template-rows: subgrid;
   grid-row: span 3;
   min-width: 180px;
-  padding: 5px;
+  align-items: flex-start;
+  margin-top: 10px;
 
-  & > h4 {
-    text-align: center;
+  & > h3 {
     display: grid;
     margin: 0;
   }
   & > p {
-    text-align: center;
     display: grid;
   }
   & > a {
-    margin: auto;
+    margin: 2px auto 0 0;
     display: grid;
   }
 `;
@@ -207,7 +209,7 @@ export default function LandingPage(): ReactElement {
 
     return (
       <DatasetCard key={index}>
-        <h4>{dataset.name}</h4>
+        <h3>{dataset.name}</h3>
         <p>{dataset.description}</p>
         <Link to={viewerLink}>
           <Button type="primary">
@@ -235,12 +237,7 @@ export default function LandingPage(): ReactElement {
     const publicationElement = project.publicationLink ? (
       <p>
         Related publication:{" "}
-        <a
-          href={project.publicationLink.toString()}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "var(--color-text-link)" }}
-        >
+        <a href={project.publicationLink.toString()} target="_blank" rel="noopener noreferrer">
           {project.publicationName}
           {/* Icon offset slightly to align with text */}
           <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
@@ -297,8 +294,7 @@ export default function LandingPage(): ReactElement {
         </BannerTextContainer>
       </Banner>
 
-      <br />
-      <ContentContainer $gap={10}>
+      <ContentContainer $gap={30}>
         <FeatureHighlightsContainer>
           <FeatureHighlightsItem>
             <h3>Dynamic color mapping</h3>
@@ -322,10 +318,15 @@ export default function LandingPage(): ReactElement {
             </p>
           </FeatureHighlightsItem>
         </FeatureHighlightsContainer>
-        <Divider />
-        <FlexColumnAlignCenter>
-          <h2>Load dataset(s) below or your own data to get started</h2>
-        </FlexColumnAlignCenter>
+      </ContentContainer>
+
+      <FlexColumnAlignCenter
+        style={{ backgroundColor: "var(--color-background-alt)", padding: "30px", margin: "30px 0" }}
+      >
+        <h2 style={{ margin: 0 }}>Load dataset(s) below or your own data to get started</h2>
+      </FlexColumnAlignCenter>
+
+      <ContentContainer style={{ paddingBottom: "400px" }}>
         <ProjectList>{landingPageContent.map(renderProject)}</ProjectList>
       </ContentContainer>
     </>

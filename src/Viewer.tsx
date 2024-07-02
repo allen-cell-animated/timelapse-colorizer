@@ -96,6 +96,7 @@ function Viewer(): ReactElement {
   );
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
+  const [isDatasetLoading, setIsDatasetLoading] = useState(false);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
   const colorRampData = KNOWN_COLOR_RAMPS;
@@ -248,13 +249,15 @@ function Viewer(): ReactElement {
     scatterPlotConfig,
   ]);
 
-  // Update url whenever the viewer settings change
-  // (but not while playing/recording for performance reasons)
+  // Update url whenever the viewer settings change, with a few exceptions:
+  // - The URL should not change while playing/recording for performance reasons.
+  // - The URL should not change if the dataset hasn't loaded yet, or if it failed to load.
+  //   that way, users can refresh the page to try again.
   useEffect(() => {
-    if (!timeControls.isPlaying() && !isRecording) {
+    if (!timeControls.isPlaying() && !isRecording && isInitialDatasetLoaded) {
       setSearchParams(getUrlParams(), { replace: true });
     }
-  }, [timeControls.isPlaying(), isRecording, getUrlParams]);
+  }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
   const setFrame = useCallback(
     async (frame: number) => {
@@ -359,14 +362,10 @@ function Viewer(): ReactElement {
    * @returns a Promise<void> that resolves when the loading is complete.
    */
   const replaceDataset = useCallback(
-    async (newDataset: Dataset | null, newDatasetKey: string): Promise<void> => {
+    async (newDataset: Dataset, newDatasetKey: string): Promise<void> => {
       console.trace("Replacing dataset with " + newDatasetKey + ".");
       // TODO: Change the way flags are handled to prevent flickering during dataset replacement
       setDatasetOpen(false);
-      if (newDataset === null) {
-        // TODO: Determine with UX what expected behavior should be for bad datasets
-        return;
-      }
 
       // Dispose of the old dataset
       if (dataset !== null) {
@@ -451,6 +450,7 @@ function Viewer(): ReactElement {
       if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
         return;
       }
+      setIsDatasetLoading(true);
       isLoadingInitialDataset.current = true;
       let newCollection: Collection;
       let datasetKey: string;
@@ -488,6 +488,7 @@ function Viewer(): ReactElement {
               action: <Link to="/">Return to homepage</Link>,
             });
             console.error("No collection URL or dataset URL provided.");
+            setIsDatasetLoading(false);
             return;
           }
           // Try loading the collection, with the default collection as a fallback.
@@ -506,6 +507,7 @@ function Viewer(): ReactElement {
               ],
               action: <Link to="/">Return to homepage</Link>,
             });
+            setIsDatasetLoading(false);
             return;
           }
         }
@@ -522,17 +524,17 @@ function Viewer(): ReactElement {
           placement: "bottomLeft",
           duration: 4,
         });
+        setIsDatasetLoading(false);
         return;
       }
-
       // Add the collection to the recent collections list
       addRecentCollection({ url: newCollection.getUrl() });
 
-      // TODO: The new dataset may be null if loading failed. See TODO in replaceDataset about expected behavior.
       if (!isInitialDatasetLoaded) {
         await replaceDataset(datasetResult.dataset, datasetKey);
         setIsInitialDatasetLoaded(true);
       }
+      setIsDatasetLoading(false);
       return;
     };
     loadInitialDataset();
@@ -611,6 +613,7 @@ function Viewer(): ReactElement {
   const handleDatasetChange = useCallback(
     async (newDatasetKey: string): Promise<void> => {
       if (newDatasetKey !== datasetKey && collection) {
+        setIsDatasetLoading(true);
         const result = await collection.tryLoadDataset(newDatasetKey);
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
@@ -624,6 +627,7 @@ function Viewer(): ReactElement {
             duration: 4,
           });
         }
+        setIsDatasetLoading(false);
       }
     },
     [replaceDataset, collection, datasetKey]
@@ -777,7 +781,7 @@ function Viewer(): ReactElement {
       <div ref={notificationContainer}>{notificationContextHolder}</div>
       <SmallScreenWarning />
 
-      <Header alertElement={bannerElement}>
+      <Header alertElement={bannerElement} headerOpensInNewTab={true}>
         <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
@@ -910,6 +914,7 @@ function Viewer(): ReactElement {
                 disabled={!showHoveredId}
               >
                 <CanvasWrapper
+                  loading={isDatasetLoading}
                   canv={canv}
                   collection={collection || null}
                   dataset={dataset}
