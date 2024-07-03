@@ -26,7 +26,7 @@ const LEFT_CLICK_BUTTON = 0;
 const MIDDLE_CLICK_BUTTON = 1;
 const RIGHT_CLICK_BUTTON = 2;
 
-const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
+const MAX_INVERSE_ZOOM = 1; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
 
 function TooltipWithSubtext(props: TooltipProps & { title: ReactNode; subtext: ReactNode }): ReactElement {
@@ -325,6 +325,28 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
   }, [props.dataset?.frameResolution, getCanvasSizePx]);
 
+  /**
+   * Pan the canvas by a delta defined in frame coordinates.
+   * @param dx Change in X in frame coordinates.
+   * @param dy Change in Y in frame coordinates.
+   * Positive values move the frame to the right and down.
+   */
+  const handlePan = useCallback(
+    (dx: number, dy: number): void => {
+      const frameSizePx = getFrameSizeInScreenPx();
+      const canvasSizePx = getCanvasSizePx();
+
+      // Clamp panning
+      const xClamp = clamp((frameSizePx.x - canvasSizePx.x) / (2 * frameSizePx.x), 0, 0.5);
+      const yClamp = clamp((frameSizePx.y - canvasSizePx.y) / (2 * frameSizePx.y), 0, 0.5);
+
+      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + dx, -xClamp, xClamp);
+      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + dy, -yClamp, yClamp);
+      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+    },
+    [canv, getCanvasSizePx, getFrameSizeInScreenPx, props.dataset]
+  );
+
   /** Change zoom by some delta factor. */
   const handleZoom = useCallback(
     (zoomDelta: number): void => {
@@ -341,12 +363,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const handleZoomToMouse = useCallback(
     (event: WheelEvent, zoomDelta: number): void => {
       const canvasSizePx = getCanvasSizePx();
-      const startingFrameSizePx = getFrameSizeInScreenPx();
+      const frameSizePx = getFrameSizeInScreenPx();
       const canvasOffsetPx = new Vector2(event.offsetX, event.offsetY);
 
       const currentMousePosition = mathUtils.convertCanvasOffsetPxToFrameCoords(
         canvasSizePx,
-        startingFrameSizePx,
+        frameSizePx,
         canvasOffsetPx,
         canvasPanOffset.current
       );
@@ -362,26 +384,28 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       );
       const mousePositionDelta = newMousePosition.clone().sub(currentMousePosition);
 
-      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -0.5, 0.5);
-      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -0.5, 0.5);
+      const xClamp = clamp((newFrameSizePx.x - canvasSizePx.x) / (2 * newFrameSizePx.x), 0, 0.5);
+      const yClamp = clamp((newFrameSizePx.y - canvasSizePx.y) / (2 * newFrameSizePx.y), 0, 0.5);
+      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -xClamp, xClamp);
+      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -yClamp, yClamp);
 
       canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
     [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
   );
 
-  const handlePan = useCallback(
-    (dx: number, dy: number): void => {
+  /**
+   * Pan the canvas by a delta defined in screen pixels.
+   */
+  const handlePanPx = useCallback(
+    (dxPx: number, dyPx: number): void => {
+      // Normalize pixel delta to frame coordinates
       const frameSizePx = getFrameSizeInScreenPx();
-      // Normalize dx/dy (change in pixels) to frame coordinates
-      canvasPanOffset.current.x += dx / frameSizePx.x;
-      canvasPanOffset.current.y += -dy / frameSizePx.y;
-      // Clamp panning
-      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x, -0.5, 0.5);
-      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
-      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+      const dx = dxPx / frameSizePx.x;
+      const dy = -dyPx / frameSizePx.y;
+      handlePan(dx, dy);
     },
-    [canv, getCanvasSizePx, props.dataset]
+    [handlePan, getFrameSizeInScreenPx]
   );
 
   // Mouse event handlers
@@ -424,7 +448,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey || enablePan);
       if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || isMouseRightDown.current) {
         canv.domElement.style.cursor = "grabbing";
-        handlePan(event.movementX, event.movementY);
+        handlePanPx(event.movementX, event.movementY);
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
         // to be a drag and disable track selection.
         totalMouseDrag.current.x += Math.abs(event.movementX);
@@ -469,9 +493,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       } else if (event.shiftKey) {
         // Translate Y to horizontal movement for mice.
-        handlePan(-event.deltaY, 0);
+        handlePanPx(-event.deltaY, 0);
       } else {
-        handlePan(-event.deltaX, -event.deltaY);
+        handlePanPx(-event.deltaX, -event.deltaY);
       }
     },
     [handleZoomToMouse]
@@ -582,6 +606,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             type="link"
             onClick={() => {
               handleZoom(-0.25);
+              handlePan(0, 0);
             }}
           >
             <ZoomInOutlined />
@@ -596,6 +621,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
               // are in increments of 0.25x. This ensures zooming all the way in and back out will return
               // the zoom to 1.0x.
               handleZoom(canvasZoomInverse.current === MIN_INVERSE_ZOOM ? 0.15 : 0.25);
+              handlePan(0, 0);
             }}
           >
             <ZoomOutOutlined />
