@@ -36,7 +36,8 @@ type SelectionDropdownProps = {
    * The callback will be passed the `key` of the selected item.
    *
    * If the callback returns a promise, the dropdown will show a loading spinner and
-   * optimistically show the new selected item until either the promise resolves or rejects.
+   * optimistically override the `selected` prop with the newly selected item until
+   * the promise resolves or rejects.
    */
   onChange: (key: string) => Promise<void> | void;
   showTooltip?: boolean;

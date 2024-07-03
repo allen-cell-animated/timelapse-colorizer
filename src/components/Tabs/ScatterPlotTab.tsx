@@ -8,7 +8,7 @@ import { Color, ColorRepresentation, HexColorString } from "three";
 import { SwitchIconSVG } from "../../assets";
 import { ColorRamp, Dataset, Track } from "../../colorizer";
 import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
-import { useDebounce } from "../../colorizer/utils/react_utils";
+import { useDebounce, useRefState } from "../../colorizer/utils/react_utils";
 import { sleep } from "../../colorizer/utils/timing_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
@@ -46,8 +46,18 @@ const COLOR_RAMP_SUBSAMPLES = 100;
 const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
+/**
+ * Threshold in milliseconds over which an async operation
+ * will show a loading spinner.
+ */
+const ASYNC_FETCH_THRESHOLD_MS = 500;
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
+
+enum Axis {
+  X = "x",
+  Y = "y",
+}
 
 /** FeatureData type but without the texture. Useful for mocked features (like the time feature). */
 type RawFeatureData = Omit<FeatureData, "tex">;
@@ -94,6 +104,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // so we need to track completion with a separate flag.
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
+
+  /** Feature keys that are currently loading. */
+  const [numLoadingKeysRef, setNumLoadingKeys] = useRefState(0);
 
   const plotDivRef = React.useRef<HTMLDivElement>(null);
   const plotRef = React.useRef<Plotly.PlotlyHTMLElement | null>(null);
@@ -161,6 +174,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     colorRampMin !== props.colorRampMin ||
     colorRampMax !== props.colorRampMax;
 
+  const isLoadPending = numLoadingKeysRef.current > 0;
+  console.log("Is load pending", isLoadPending);
+
   //////////////////////////////////
   // Click Handlers
   //////////////////////////////////
@@ -218,34 +234,52 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   };
 
   useEffect(() => {
-    if (!xAxisData || xAxisData.key !== xAxisFeatureKey) {
-      getData(xAxisFeatureKey, dataset).then((data) => setXAxisData(data));
-    }
+    setNumLoadingKeys(numLoadingKeysRef.current + 1);
+    getData(xAxisFeatureKey, dataset)
+      .then((data) => {
+        setXAxisData(data);
+      })
+      .finally(() => {
+        setNumLoadingKeys(numLoadingKeysRef.current - 1);
+      });
   }, [xAxisFeatureKey, dataset]);
 
   useEffect(() => {
-    if (!yAxisData || yAxisData.key !== yAxisFeatureKey) {
-      getData(yAxisFeatureKey, dataset).then((data) => setYAxisData(data));
-    }
+    setNumLoadingKeys(numLoadingKeysRef.current + 1);
+    getData(yAxisFeatureKey, dataset)
+      .then((data) => {
+        setYAxisData(data);
+      })
+      .finally(() => {
+        setNumLoadingKeys(numLoadingKeysRef.current - 1);
+      });
   }, [yAxisFeatureKey, dataset]);
 
-  const onXAxisChanged = async (key: string): Promise<void> => {
-    const newXAxisData = await getData(key, dataset);
-    setXAxisData(newXAxisData);
-    props.updateScatterPlotConfig({ xAxis: key });
-    // Slightly extend promise duration so it concludes after the UI has updated.
-    // This prevents a visual bug where the dropdown's selected item reverts to the
-    // previous value before the new value is set.
-    // TODO: Only delay if `getData` takes more than a few milliseconds, indicating
-    // that the feature data is not cached.
-    await sleep(500);
-  };
+  const onAxisChanged = async (key: string, axis: Axis): Promise<void> => {
+    // Measure how long it takes to load the new data.
+    const startTime = performance.now();
+    setNumLoadingKeys(numLoadingKeysRef.current + 1);
 
-  const onYAxisChanged = async (key: string): Promise<void> => {
-    const newYAxisData = await getData(key, dataset);
-    setYAxisData(newYAxisData);
-    props.updateScatterPlotConfig({ yAxis: key });
-    await sleep(500);
+    await getData(key, dataset)
+      .then(async (newData) => {
+        if (axis === Axis.X) {
+          setXAxisData(newData);
+          props.updateScatterPlotConfig({ xAxis: key });
+        } else {
+          setYAxisData(newData);
+          props.updateScatterPlotConfig({ yAxis: key });
+        }
+        const loadDuration = performance.now() - startTime;
+        if (loadDuration >= ASYNC_FETCH_THRESHOLD_MS) {
+          // Slightly extend promise duration so it concludes after the UI has updated.
+          // This prevents a visual bug where the dropdown's selected item reverts to the
+          // previous value before the new value is set.
+          await sleep(500);
+        }
+      })
+      .finally(() => {
+        setNumLoadingKeys(numLoadingKeysRef.current - 1);
+      });
   };
 
   // Track last rendered props + state to make optimizations on re-renders
@@ -278,7 +312,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const shouldDelayRender = (): boolean => {
     // Don't render when tab is not visible.
     // Also, don't render updates during playback, to prevent blocking the UI.
-    return !props.isVisible || (isPlaying && rangeType === PlotRangeType.ALL_TIME);
+    // Also also, don't re-render until all data is finished loading
+    return !props.isVisible || (isPlaying && rangeType === PlotRangeType.ALL_TIME) || isLoadPending;
   };
 
   const clearPlotAndStopRender = (): void => {
@@ -564,6 +599,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
 
       const bucket = traceDataBuckets[bucketIndex];
+      if (bucket === undefined) {
+        continue;
+      }
       bucket.x.push(xData[i]);
       bucket.y.push(yData[i]);
       bucket.objectIds.push(objectIds[i]);
@@ -649,9 +687,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     colorRamp,
     inRangeIds,
     categoricalPalette,
+    shouldDelayRender(),
   ];
 
+  console.log("Number of pending featues", numLoadingKeysRef.current);
+
   const renderPlot = (forceRelayout: boolean = false): void => {
+    console.log("Rendering plot");
     const rawXData = xAxisData?.data;
     const rawYData = yAxisData?.data;
 
@@ -841,7 +883,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     return (
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
-        <SelectionDropdown label={"X"} selected={xAxisFeatureKey || ""} items={menuItems} onChange={onXAxisChanged} />
+        <SelectionDropdown
+          label={"X"}
+          selected={xAxisFeatureKey || ""}
+          items={menuItems}
+          onChange={(key) => onAxisChanged(key, Axis.X)}
+        />
         <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
@@ -855,7 +902,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             <SwitchIconSVG />
           </IconButton>
         </Tooltip>
-        <SelectionDropdown label={"Y"} selected={yAxisFeatureKey || ""} items={menuItems} onChange={onYAxisChanged} />
+        <SelectionDropdown
+          label={"Y"}
+          selected={yAxisFeatureKey || ""}
+          items={menuItems}
+          onChange={(key) => onAxisChanged(key, Axis.Y)}
+        />
 
         <div style={{ marginLeft: "10px" }}>
           <SelectionDropdown
@@ -900,7 +952,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     <>
       {makeControlBar()}
       <div style={{ position: "relative" }}>
-        <LoadingSpinner loading={isPending || isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
+        <LoadingSpinner
+          loading={isPending || isRendering || isDebouncePending || isLoadPending}
+          style={{ marginTop: "10px" }}
+        >
           {makePlotButtons()}
           <ScatterPlotContainer
             style={{ width: "100%", height: "475px", padding: "5px" }}
