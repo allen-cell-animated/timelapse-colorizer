@@ -217,12 +217,28 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   };
 
   useEffect(() => {
-    getData(xAxisFeatureKey, dataset).then((data) => setXAxisData(data));
+    if (!xAxisData || xAxisData.key !== xAxisFeatureKey) {
+      getData(xAxisFeatureKey, dataset).then((data) => setXAxisData(data));
+    }
   }, [xAxisFeatureKey, dataset]);
 
   useEffect(() => {
-    getData(yAxisFeatureKey, dataset).then((data) => setYAxisData(data));
+    if (!yAxisData || yAxisData.key !== yAxisFeatureKey) {
+      getData(yAxisFeatureKey, dataset).then((data) => setYAxisData(data));
+    }
   }, [yAxisFeatureKey, dataset]);
+
+  const onXAxisChanged = async (key: string): Promise<void> => {
+    const newXAxisData = await getData(key, dataset);
+    setXAxisData(newXAxisData);
+    props.updateScatterPlotConfig({ xAxis: key });
+  };
+
+  const onYAxisChanged = async (key: string): Promise<void> => {
+    const newYAxisData = await getData(key, dataset);
+    setYAxisData(newYAxisData);
+    props.updateScatterPlotConfig({ yAxis: key });
+  };
 
   // Track last rendered props + state to make optimizations on re-renders
   type LastRenderedState = {
@@ -817,12 +833,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     return (
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
-        <SelectionDropdown
-          label={"X"}
-          selected={xAxisFeatureKey || ""}
-          items={menuItems}
-          onChange={(key) => props.updateScatterPlotConfig({ xAxis: key })}
-        />
+        <SelectionDropdown label={"X"} selected={xAxisFeatureKey || ""} items={menuItems} onChange={onXAxisChanged} />
         <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
@@ -836,12 +847,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             <SwitchIconSVG />
           </IconButton>
         </Tooltip>
-        <SelectionDropdown
-          label={"Y"}
-          selected={yAxisFeatureKey || ""}
-          items={menuItems}
-          onChange={(key) => props.updateScatterPlotConfig({ yAxis: key })}
-        />
+        <SelectionDropdown label={"Y"} selected={yAxisFeatureKey || ""} items={menuItems} onChange={onYAxisChanged} />
 
         <div style={{ marginLeft: "10px" }}>
           <SelectionDropdown

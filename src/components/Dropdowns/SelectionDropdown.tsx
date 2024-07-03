@@ -38,7 +38,7 @@ type SelectionDropdownProps = {
    * If the callback returns a promise, the dropdown will show a loading spinner and
    * optimistically show the new selected item until either the promise resolves or rejects.
    */
-  onChange: (key: string) => Promise<void>;
+  onChange: (key: string) => Promise<void> | void;
   showTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
@@ -150,19 +150,18 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
             key={item.key}
             selected={item.key === selectedKey}
             disabled={props.disabled}
-            onClick={() => {
+            onClick={async () => {
               const key = item.key.toString();
               pendingKey.current = key;
               setIsLoading(true);
-              props.onChange(key).then(() => {
-                if (pendingKey.current === key) {
-                  setIsLoading(false);
-                  pendingKey.current = null;
-                }
-              });
               closeDropdown();
               // Add a slight delay so the dropdown closes first before the input is cleared
               setTimeout(() => setSearchInput(""), 1);
+              await props.onChange(key);
+              if (pendingKey.current === key) {
+                setIsLoading(false);
+                pendingKey.current = null;
+              }
             }}
           >
             {item.label}
