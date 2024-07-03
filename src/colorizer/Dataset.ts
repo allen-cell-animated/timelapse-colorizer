@@ -68,7 +68,7 @@ const defaultMetadata: ManifestFileMetadata = {
   startTimeSeconds: 0,
 };
 
-const MAX_CACHE_FEATURES = 100;
+const MAX_CACHE_FEATURE_BYTES = 1_000_000_000; // 1 GB
 const MAX_CACHED_FRAME_BYTES = 1_000_000_000; // 1 GB
 
 export default class Dataset {
@@ -125,7 +125,7 @@ export default class Dataset {
     this.frameFiles = [];
     this.frames = null;
     this.frameDimensions = null;
-    this.featureCache = new DataCache(MAX_CACHE_FEATURES);
+    this.featureCache = new DataCache(MAX_CACHE_FEATURE_BYTES);
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
@@ -253,7 +253,8 @@ export default class Dataset {
       return featureData.data;
     } else {
       const data = await this.loadFeature(info);
-      this.featureCache.insert(key, { data, dispose: () => data.tex.dispose() });
+      const size = data.data.length * 4; // data.data is a Float32Array
+      this.featureCache.insert(key, { data, dispose: () => data.tex.dispose() }, size);
       return data;
     }
   }
