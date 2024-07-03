@@ -47,11 +47,18 @@ const VerticalDivider = styled.div`
   }
 `;
 
+const HeaderLink = styled(Link)`
+  color: var(--color-text-theme);
+  &:hover {
+    color: var(--color-text-theme-dark);
+  }
+`;
+
 /**
  * The logo and title of the app, to be used with the Header component.
  * Both the logo and app title are links that can be used for navigation.
  */
-function HeaderLogo(): ReactElement {
+function HeaderLogo(props: { headerOpensInNewTab?: boolean }): ReactElement {
   return (
     <FlexRowAlignCenter>
       <AicsLogoLink href="https://www.allencell.org/" rel="noopener noreferrer" target="_blank">
@@ -61,9 +68,14 @@ function HeaderLogo(): ReactElement {
         </div>
       </AicsLogoLink>
       <VerticalDivider />
-      <Link to="/" aria-label="Go to home page">
-        <h1 style={{ margin: "0" }}>Timelapse Feature Explorer</h1>
-      </Link>
+      <HeaderLink
+        to="/"
+        aria-label="Go to home page"
+        target={props.headerOpensInNewTab ? "_blank" : undefined}
+        rel={props.headerOpensInNewTab ? "noopener noreferrer" : undefined}
+      >
+        <h1 style={{ margin: "0", fontSize: "20px" }}>Timelapse Feature Explorer</h1>
+      </HeaderLink>
     </FlexRowAlignCenter>
   );
 }
@@ -96,13 +108,14 @@ const HeaderContainer = styled(FlexRowAlignCenter)`
 type HeaderProps = {
   /** Optional element for alerts; will be rendered under the main header bar and use sticky positioning. */
   alertElement?: ReactElement;
+  headerOpensInNewTab?: boolean;
 };
 
 export default function Header(props: PropsWithChildren<HeaderProps>): ReactElement {
   return (
     <StickyContainer>
       <HeaderContainer>
-        <HeaderLogo />
+        <HeaderLogo headerOpensInNewTab={props.headerOpensInNewTab} />
         {props.children}
       </HeaderContainer>
       {props.alertElement}
