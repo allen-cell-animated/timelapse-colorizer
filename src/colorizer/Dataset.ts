@@ -389,7 +389,6 @@ export default class Dataset {
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
-    console.log("frame size (bytes):", frameSizeBytes);
     // Note that, due to image compression, images may take up much less space in memory than their raw size.
     this.frames?.insert(index, loadedFrame, frameSizeBytes);
     return loadedFrame;
