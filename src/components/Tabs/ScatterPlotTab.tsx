@@ -9,6 +9,7 @@ import { SwitchIconSVG } from "../../assets";
 import { ColorRamp, Dataset, Track } from "../../colorizer";
 import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
+import { sleep } from "../../colorizer/utils/timing_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
 import {
@@ -232,12 +233,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const newXAxisData = await getData(key, dataset);
     setXAxisData(newXAxisData);
     props.updateScatterPlotConfig({ xAxis: key });
+    // Slightly extend promise duration so it concludes after the UI has updated.
+    // This prevents a visual bug where the dropdown's selected item reverts to the
+    // previous value before the new value is set.
+    // TODO: Only delay if `getData` takes more than a few milliseconds, indicating
+    // that the feature data is not cached.
+    await sleep(500);
   };
 
   const onYAxisChanged = async (key: string): Promise<void> => {
     const newYAxisData = await getData(key, dataset);
     setYAxisData(newYAxisData);
     props.updateScatterPlotConfig({ yAxis: key });
+    await sleep(500);
   };
 
   // Track last rendered props + state to make optimizations on re-renders
