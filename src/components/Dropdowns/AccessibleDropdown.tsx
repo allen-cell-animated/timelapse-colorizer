@@ -1,3 +1,4 @@
+import { LoadingOutlined } from "@ant-design/icons";
 import { Button, ButtonProps, Dropdown, theme, Tooltip } from "antd";
 import React, { ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
@@ -59,7 +60,8 @@ type AccessibleDropdownProps = {
   showTooltip?: boolean;
   /** If null, uses button text. */
   tooltipText?: string | null;
-  /** Width of the dropdown. Overrides the default sizing behavior if set. */
+  /** Whether the dropdown should show a loading spinner. Overridden if `renderButton` is defined.*/
+  loading?: boolean;
 };
 
 const defaultProps: Partial<AccessibleDropdownProps> = {
@@ -214,7 +216,7 @@ export default function AccessibleDropdown(inputProps: AccessibleDropdownProps):
             {props.buttonText}
             <VisuallyHidden>(click to open menu)</VisuallyHidden>
           </div>
-          <DropdownSVG />
+          {props.loading === true ? <LoadingOutlined spin /> : <DropdownSVG />}
         </MainButtonContents>
       </MainButton>
     );

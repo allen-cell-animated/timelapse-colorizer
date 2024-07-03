@@ -849,11 +849,10 @@ function Viewer(): ReactElement {
             label="Feature"
             selected={featureData?.key}
             items={getFeatureDropdownData()}
-            onChange={(value) => {
+            onChange={async (value) => {
               if (value !== featureData?.key && dataset) {
-                replaceFeature(dataset, value).then((newFeatureData) => {
-                  reportFeatureSelected(newFeatureData);
-                });
+                const newFeatureData = await replaceFeature(dataset, value);
+                reportFeatureSelected(newFeatureData);
               }
             }}
           />

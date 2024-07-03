@@ -31,9 +31,14 @@ type SelectionDropdownProps = {
   /** The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic */
   buttonType?: ButtonProps["type"] | "outlined";
-  /** Callback that is fired whenever an item in the dropdown is selected.
-   * The callback will be passed the `key` of the selected item. */
-  onChange: (key: string) => void;
+  /**
+   * Callback that is fired whenever an item in the dropdown is selected.
+   * The callback will be passed the `key` of the selected item.
+   *
+   * If the callback returns a promise, the dropdown will show a loading spinner and
+   * optimistically show the new selected item until either the promise resolves or rejects.
+   */
+  onChange: (key: string) => Promise<void>;
   showTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
@@ -65,9 +70,14 @@ const defaultProps: Partial<SelectionDropdownProps> = {
 export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<SelectionDropdownProps>;
 
-  const [isPending, startTransition] = useTransition();
+  const [isTransitionPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
   const [filteredItems, setFilteredItems] = useState<MenuItemType[]>([]);
+  // TODO: use Cameron's ref hook here?
+  // A key that is pending to be selected. When set, the dropdown will show a loading spinner.
+  const pendingKey = useRef<string | null>(null);
+  // Redundant with pending key but needs to have a state change to trigger render >:(
+  const [_isLoading, setIsLoading] = useState(false);
   const searchInputRef = useRef<InputRef>();
 
   // Convert items into MenuItemType, adding missing properties as needed
@@ -90,13 +100,15 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
 
   // Get the label of the selected item to display in the dropdown button
   const selectedLabel = useMemo((): string => {
+    // Pending key takes precedence over selected key for optimistic loading.
+    const searchKey = pendingKey.current || props.selected;
     for (const item of items) {
-      if (item && item.key === props.selected) {
+      if (item && item.key === searchKey) {
         return item.label?.toString() || "";
       }
     }
     return "";
-  }, [props.selected, items]);
+  }, [props.selected, items, pendingKey.current]);
 
   // Set up fuse for fuzzy searching
   const fuse = useMemo(() => {
@@ -130,15 +142,24 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   // different animation styling (Dropdown looks nicer).
 
   const getDropdownItems = (closeDropdown: () => void): ReactElement[] => {
+    const selectedKey = pendingKey.current || props.selected;
     return filteredItems.map((item) => {
       return (
         <Tooltip key={item.key} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
           <DropdownItem
             key={item.key}
-            selected={item.key === props.selected}
+            selected={item.key === selectedKey}
             disabled={props.disabled}
             onClick={() => {
-              props.onChange(item.key.toString());
+              const key = item.key.toString();
+              pendingKey.current = key;
+              setIsLoading(true);
+              props.onChange(key).then(() => {
+                if (pendingKey.current === key) {
+                  setIsLoading(false);
+                  pendingKey.current = null;
+                }
+              });
               closeDropdown();
               // Add a slight delay so the dropdown closes first before the input is cleared
               setTimeout(() => setSearchInput(""), 1);
@@ -175,7 +196,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
             }}
             spellCheck={false}
           ></Input>
-          <LoadingSpinner loading={isPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
+          <LoadingSpinner loading={isTransitionPending} style={{ borderRadius: "4px", overflow: "hidden" }}>
             <DropdownItemList>{getDropdownItems(closeDropdown)}</DropdownItemList>
           </LoadingSpinner>
         </FlexColumn>
@@ -200,6 +221,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       buttonText={selectedLabel}
       showTooltip={props.showTooltip}
       dropdownContent={getDropdownContent}
+      loading={pendingKey.current !== null}
       onButtonClicked={() => {
         // Focus the search input when the dropdown is clicked open
         if (searchInputRef.current) {
