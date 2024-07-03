@@ -165,7 +165,9 @@ describe("DataCache", () => {
     cache.setReservedKeys(new Set(["1", "2"]));
     expect(cache.size).toBe(3);
 
-    // 3 should be evicted because 1 and 2 are reserved.
+    // Add another element, 4, to the cache, which will force an element to be
+    // evicted. 1 and 2 are oldest elements, but because they are reserved,
+    // element 3 is the oldest non-reserved element and will be evicted.
     cache.insert("4", new DisposableString("D"));
     expect(cache.size).toBe(3);
     expect(cache.get("1")?.value).toBe("A");
@@ -181,23 +183,24 @@ describe("DataCache", () => {
     cache.setReservedKeys(new Set(["1"]));
     expect(cache.size).toBe(2);
 
+    // 1 is reserved, so 2 will be evicted when a new value is inserted.
     cache.insert("3", new DisposableString("C"));
     expect(cache.size).toBe(2);
-    // 2 is evicted
     expect(cache.get("1")?.value).toBe("A");
     expect(cache.get("2")?.value).toBe(undefined);
     expect(cache.get("3")?.value).toBe("C");
 
-    // Remove A from the reserved keys. It will be added to the front of the list.
+    // Remove 1 from the reserved keys. It will be added to the front of the list.
     cache.setReservedKeys(new Set([]));
 
-    // Test that A is at the front of the list (C is evicted)
+    // Test that 1 is at the front of the list (3 should be the oldest
+    // and evicted next time a new value is inserted).
     cache.insert("4", new DisposableString("D"));
     expect(cache.size).toBe(2);
     expect(cache.get("1")?.value).toBe("A");
     expect(cache.get("4")?.value).toBe("D");
 
-    // Inserting one more value will evict A
+    // Inserting one more value will evict 1
     cache.insert("5", new DisposableString("E"));
     expect(cache.size).toBe(2);
     expect(cache.get("4")?.value).toBe("D");
@@ -232,7 +235,7 @@ describe("DataCache", () => {
     expect(cache.get("2")?.value).toBe("B");
     expect(cache.get("3")?.value).toBe("C");
 
-    // Inserting another value should evict C.
+    // Inserting another value should evict 3.
     cache.insert("4", new DisposableString("D"));
     expect(cache.get("1")?.value).toBe("A");
     expect(cache.get("2")?.value).toBe("B");
