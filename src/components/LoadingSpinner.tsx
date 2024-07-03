@@ -10,7 +10,7 @@ type LoadingSpinnerProps = {
 };
 
 const defaultProps: Partial<LoadingSpinnerProps> = {
-  iconSize: 48,
+  iconSize: 72,
   style: {},
 };
 
@@ -28,7 +28,7 @@ const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
   height: 100%;
   z-index: 100;
   pointer-events: none;
-  background-color: #00000040;
+  background-color: #ffffff90;
   transition: opacity 0.2s ease-in-out 0.2s;
 
   ${(props) => {
@@ -43,6 +43,22 @@ const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
   align-items: center;
 `;
 
+const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
+  position: relative;
+
+  ${(props) => {
+    return css`
+      & > * {
+        position: absolute;
+        font-size: ${props.$fontSize}px;
+        color: var(--color-text-hint);
+        top: calc(50% - ${props.$fontSize / 2}px);
+        left: calc(50% - ${props.$fontSize / 2}px);
+      }
+    `;
+  }}
+`;
+
 /**
  * Applies a loading spinner overlay on the provided children, which can be toggled on and off via props.
  */
@@ -51,7 +67,17 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
   return (
     <LoadingSpinnerContainer style={props.style}>
       <LoadingSpinnerOverlay $loading={props.loading}>
-        <Spin indicator={<LoadingOutlined style={{ fontSize: props.iconSize }} spin />}></Spin>
+        <Spin
+          indicator={
+            <LoadSpinnerIconContainer $fontSize={props.iconSize}>
+              {/* Make larger loading icon by multiple of them together */}
+              {/* TODO: Make custom loading spinner SVG? */}
+              <LoadingOutlined />
+              <LoadingOutlined rotate={90} />
+              <LoadingOutlined rotate={135} />
+            </LoadSpinnerIconContainer>
+          }
+        ></Spin>
       </LoadingSpinnerOverlay>
       {props.children}
     </LoadingSpinnerContainer>

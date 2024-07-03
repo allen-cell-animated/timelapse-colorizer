@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { ANY_ERROR } from "./test_utils";
-
 import DataCache from "../src/colorizer/DataCache";
 
 describe("DataCache", () => {
@@ -59,13 +57,12 @@ describe("DataCache", () => {
     cache.insert("1", new DisposableString("A"));
     cache.insert("2", new DisposableString("B"));
     cache.insert("3", new DisposableString("C"));
-
     expect(cache.size).toBe(3);
 
+    // Inserting another value will evict the oldest value, 1
     cache.insert("4", new DisposableString("D"));
-
     expect(cache.size).toBe(3);
-    // Oldest value is evicted
+
     expect(cache.get("1")?.value).toBe(undefined);
     expect(cache.get("2")?.value).toBe("B");
     expect(cache.get("3")?.value).toBe("C");
@@ -80,6 +77,7 @@ describe("DataCache", () => {
     cache.insert("1", a);
     expect(a.hasBeenDisposed).toBe(false);
 
+    // Key 1 is evicted, so `a` should be disposed.
     cache.insert("2", b);
     expect(a.hasBeenDisposed).toBe(true);
     expect(b.hasBeenDisposed).toBe(false);
@@ -92,7 +90,7 @@ describe("DataCache", () => {
     cache.insert("3", new DisposableString("C"));
 
     // 1 is oldest, but accessing it will make it the newest.
-    // 2 is now the oldest and will be evicted.
+    // 2 is now the oldest and will be evicted next time a new value is inserted.
     cache.get("1");
 
     cache.insert("4", new DisposableString("D"));
@@ -119,7 +117,9 @@ describe("DataCache", () => {
     cache.insert("2", new DisposableString("B"), 2);
     expect(cache.size).toBe(3);
 
-    // Size 2 means both previous entries should get evicted
+    // Insert a third value that has a size of 2. Key 1 is the oldest value,
+    // but because key 2 also has a size of 2, both must be
+    // evicted to make room for the new value.
     cache.insert("3", new DisposableString("C"), 2);
     expect(cache.size).toBe(2);
     expect(cache.get("1")?.value).toBe(undefined);
@@ -127,9 +127,34 @@ describe("DataCache", () => {
     expect(cache.get("3")?.value).toBe("C");
   });
 
-  it("throws an error if entry size is larger than capacity", () => {
+  it("allows entry sizes larger than capacity", () => {
     const cache = new DataCache<DisposableString>(3);
-    expect(() => cache.insert("1", new DisposableString("A"), 4)).toThrowError(ANY_ERROR);
+    cache.insert("1", new DisposableString("A"), 4);
+    expect(cache.size).toBe(4);
+    expect(cache.get("1")?.value).toBe("A");
+
+    // Inserting another large value should evict the first value.
+    cache.insert("2", new DisposableString("B"), 18);
+    expect(cache.size).toBe(18);
+    expect(cache.get("1")?.value).toBe(undefined);
+    expect(cache.get("2")?.value).toBe("B");
+  });
+
+  it("allows values that are non-disposable", () => {
+    const cache = new DataCache<string[]>(2);
+    cache.insert("1", ["A"]);
+    cache.insert("2", ["B"]);
+    expect(cache.size).toBe(2);
+
+    expect(cache.get("1")).toEqual(["A"]);
+    expect(cache.get("2")).toEqual(["B"]);
+
+    // Insert a value and evict the oldest value.
+    cache.insert("3", ["C"]);
+    expect(cache.size).toBe(2);
+    expect(cache.get("1")).toBe(undefined);
+    expect(cache.get("2")).toEqual(["B"]);
+    expect(cache.get("3")).toEqual(["C"]);
   });
 
   it("reserves keys and prevents them from being evicted", () => {
@@ -140,7 +165,9 @@ describe("DataCache", () => {
     cache.setReservedKeys(new Set(["1", "2"]));
     expect(cache.size).toBe(3);
 
-    // 3 should be evicted because 1 and 2 are reserved.
+    // Add another element, 4, to the cache, which will force an element to be
+    // evicted. 1 and 2 are oldest elements, but because they are reserved,
+    // element 3 is the oldest non-reserved element and will be evicted.
     cache.insert("4", new DisposableString("D"));
     expect(cache.size).toBe(3);
     expect(cache.get("1")?.value).toBe("A");
@@ -156,23 +183,24 @@ describe("DataCache", () => {
     cache.setReservedKeys(new Set(["1"]));
     expect(cache.size).toBe(2);
 
+    // 1 is reserved, so 2 will be evicted when a new value is inserted.
     cache.insert("3", new DisposableString("C"));
     expect(cache.size).toBe(2);
-    // 2 is evicted
     expect(cache.get("1")?.value).toBe("A");
     expect(cache.get("2")?.value).toBe(undefined);
     expect(cache.get("3")?.value).toBe("C");
 
-    // Remove A from the reserved keys. It will be added to the front of the list.
+    // Remove 1 from the reserved keys. It will be added to the front of the list.
     cache.setReservedKeys(new Set([]));
 
-    // Test that A is at the front of the list (C is evicted)
+    // Test that 1 is at the front of the list (3 should be the oldest
+    // and evicted next time a new value is inserted).
     cache.insert("4", new DisposableString("D"));
     expect(cache.size).toBe(2);
     expect(cache.get("1")?.value).toBe("A");
     expect(cache.get("4")?.value).toBe("D");
 
-    // Inserting one more value will evict A
+    // Inserting one more value will evict 1
     cache.insert("5", new DisposableString("E"));
     expect(cache.size).toBe(2);
     expect(cache.get("4")?.value).toBe("D");
@@ -207,7 +235,7 @@ describe("DataCache", () => {
     expect(cache.get("2")?.value).toBe("B");
     expect(cache.get("3")?.value).toBe("C");
 
-    // Inserting another value should evict C.
+    // Inserting another value should evict 3.
     cache.insert("4", new DisposableString("D"));
     expect(cache.get("1")?.value).toBe("A");
     expect(cache.get("2")?.value).toBe("B");

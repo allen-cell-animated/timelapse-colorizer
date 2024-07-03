@@ -27,6 +27,7 @@ const palette = {
   success: "#2fc022",
   error: "#f92d20",
   link: "#0094FF",
+  linkDark: "#007FD6",
   warning: "#faad14",
   successLight: "#b7eb8f",
   errorLight: "#ffa39e",
@@ -53,9 +54,11 @@ const theme = {
       success: palette.success,
       theme: palette.theme,
       link: palette.link,
+      linkHover: palette.linkDark,
     },
     layout: {
       background: palette.gray0,
+      backgroundAlt: palette.gray7,
       tabBackground: palette.gray5,
       dividers: palette.gray15,
       borders: palette.gray20,
@@ -106,8 +109,8 @@ const theme = {
     family: "Lato, LatoExtended, sans-serif",
     resource: "https://fonts.googleapis.com/css2?family=Lato&display=swap",
     size: {
-      header: 20,
-      section: 18,
+      header: 26,
+      section: 20,
       label: 16,
       content: 14,
       labelSmall: 12,
@@ -147,10 +150,12 @@ const CssContainer = styled.div`
   --color-text-button: ${theme.color.text.button};
   --color-text-error: ${theme.color.text.error};
   --color-text-success: ${theme.color.text.success};
-  --color-text-theme: ${theme.color.text.theme};
+  --color-text-theme: ${theme.color.theme};
+  --color-text-theme-dark: ${theme.color.themeDark};
   --color-text-link: ${theme.color.text.link};
 
   /* Layout */
+  --color-background-alt: ${theme.color.layout.backgroundAlt};
   --color-background: ${theme.color.layout.background};
   --color-dividers: ${theme.color.layout.dividers};
   --color-borders: ${theme.color.layout.borders};
@@ -314,11 +319,13 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
         theme={{
           token: {
             colorPrimary: theme.color.theme,
-            colorLink: theme.color.theme,
-            colorLinkHover: theme.color.themeDark,
+            colorLink: theme.color.text.link,
+            colorLinkHover: theme.color.text.linkHover,
             colorBorder: theme.color.layout.borders,
             colorBorderSecondary: theme.color.layout.dividers,
+            colorBgContainerDisabled: theme.color.button.backgroundDisabled,
             controlHeight: theme.controls.height,
+            colorTextQuaternary: theme.color.text.disabled,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
             borderRadiusLG: 6,

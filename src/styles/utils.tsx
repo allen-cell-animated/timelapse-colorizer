@@ -1,4 +1,6 @@
-import React from "react";
+import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { ReactElement } from "react";
 import styled from "styled-components";
 
 /**
@@ -74,3 +76,12 @@ export const VisuallyHidden = styled.span`
   white-space: nowrap;
   border-width: 0;
 `;
+
+export function ExternalLink(props: { href: string; children: React.ReactNode }): ReactElement {
+  return (
+    <a href={props.href} style={{ whiteSpace: "nowrap" }} rel="noopener noreferrer" target="_blank">
+      {props.children}
+      <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "0px", marginLeft: "3px" }} />
+    </a>
+  );
+}
