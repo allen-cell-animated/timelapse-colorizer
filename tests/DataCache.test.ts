@@ -38,16 +38,49 @@ describe("DataCache", () => {
       expect(cache.get("A")?.value).toBe(undefined);
     });
 
-    it("accepts integers as keys", () => {
-      const cache = new DataCache<number, DisposableString>(3);
+    describe("key types", () => {
+      it("accepts integers as keys", () => {
+        const cache = new DataCache<number, DisposableString>(3);
 
-      cache.insert(1, new DisposableString("A"));
-      cache.insert(2, new DisposableString("B"));
-      cache.insert(3, new DisposableString("C"));
+        cache.insert(1, new DisposableString("A"));
+        cache.insert(2, new DisposableString("B"));
+        cache.insert(3, new DisposableString("C"));
 
-      expect(cache.get(1)?.value).toBe("A");
-      expect(cache.get(2)?.value).toBe("B");
-      expect(cache.get(3)?.value).toBe("C");
+        expect(cache.get(1)?.value).toBe("A");
+        expect(cache.get(2)?.value).toBe("B");
+        expect(cache.get(3)?.value).toBe("C");
+      });
+
+      it("accepts floats as keys", () => {
+        const cache = new DataCache<number, DisposableString>(3);
+
+        cache.insert(0.24, new DisposableString("A"));
+        cache.insert(-2344.6, new DisposableString("B"));
+        cache.insert(0.0001, new DisposableString("C"));
+
+        expect(cache.get(0.24)?.value).toBe("A");
+        expect(cache.get(-2344.6)?.value).toBe("B");
+        expect(cache.get(0.0001)?.value).toBe("C");
+      });
+
+      it("accepts nonstandard numbers as keys", () => {
+        const cache = new DataCache<number, DisposableString>(10);
+
+        const numberValuePairs: [number, string][] = [
+          [0, "A"],
+          [Number.NaN, "B"],
+          [Number.MIN_SAFE_INTEGER, "C"],
+          [Number.MAX_SAFE_INTEGER, "D"],
+          [Number.NEGATIVE_INFINITY, "E"],
+          [Number.POSITIVE_INFINITY, "F"],
+        ];
+        numberValuePairs.forEach(([key, value]) => {
+          cache.insert(key, new DisposableString(value));
+        });
+        numberValuePairs.forEach(([key, value]) => {
+          expect(cache.get(key)?.value).toBe(value);
+        });
+      });
     });
 
     it("evicts entries when new items are inserted", () => {
