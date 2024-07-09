@@ -1,12 +1,16 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import { Spin } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import { Progress, Spin } from "antd";
+import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
 import styled, { css } from "styled-components";
 
 type LoadingSpinnerProps = {
   loading: boolean;
   iconSize?: number;
   style?: React.CSSProperties;
+  /** Integer percentage to display, from 0 to 100, inclusive.
+   * If undefined, the spinner will be shown without progress.
+   */
+  progress?: number | null;
 };
 
 const defaultProps: Partial<LoadingSpinnerProps> = {
@@ -64,20 +68,32 @@ const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
  */
 export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpinnerProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<LoadingSpinnerProps>>;
+
+  // const progressFormatter = (percent?: number): ReactNode => {
+  //   if (percent === undefined) {
+  //     return "";
+  //   }
+  //   return percent >= 100 ? "" : `${percent}%`;
+  // };
+
   return (
     <LoadingSpinnerContainer style={props.style}>
       <LoadingSpinnerOverlay $loading={props.loading}>
-        <Spin
-          indicator={
-            <LoadSpinnerIconContainer $fontSize={props.iconSize}>
-              {/* Make larger loading icon by multiple of them together */}
-              {/* TODO: Make custom loading spinner SVG? */}
-              <LoadingOutlined />
-              <LoadingOutlined rotate={90} />
-              <LoadingOutlined rotate={135} />
-            </LoadSpinnerIconContainer>
-          }
-        ></Spin>
+        {props.progress === undefined || props.progress === null ? (
+          <Spin
+            indicator={
+              <LoadSpinnerIconContainer $fontSize={props.iconSize}>
+                {/* Make larger loading icon by multiple of them together */}
+                {/* TODO: Make custom loading spinner SVG? */}
+                <LoadingOutlined />
+                <LoadingOutlined rotate={90} />
+                <LoadingOutlined rotate={135} />
+              </LoadSpinnerIconContainer>
+            }
+          ></Spin>
+        ) : (
+          <Progress type="circle" percent={props.progress} size={props.iconSize} />
+        )}
       </LoadingSpinnerOverlay>
       {props.children}
     </LoadingSpinnerContainer>

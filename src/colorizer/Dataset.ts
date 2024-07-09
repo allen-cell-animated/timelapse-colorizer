@@ -373,8 +373,24 @@ export default class Dataset {
     return promise.value;
   }
 
+  /** Adds event callbacks for when an async load operation is initiated and when it completes. */
+  private async wrapLoad<T>(promise: Promise<T>, onLoadStart?: () => void, onLoadComplete?: () => void): Promise<T> {
+    onLoadStart?.();
+    return promise.then((result) => {
+      onLoadComplete?.();
+      return result;
+    });
+  }
+
   /** Loads the dataset manifest and features. */
-  public async open(manifestLoader = this.fetchJson): Promise<void> {
+  public async open(
+    manifestLoader = this.fetchJson,
+    onLoadStart?: () => void,
+    onLoadComplete?: () => void
+  ): Promise<void> {
+    if (manifestLoader === undefined) {
+      manifestLoader = this.fetchJson;
+    }
     if (this.hasOpened) {
       return;
     }
@@ -408,18 +424,20 @@ export default class Dataset {
 
     // Load feature data
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
-      this.loadFeature(data)
+      this.wrapLoad(this.loadFeature(data), onLoadStart, onLoadComplete)
     );
 
-    const result = await Promise.allSettled([
-      this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
-      this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
-      this.loadToBuffer(FeatureDataType.U32, this.timesFile),
-      this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
-      this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
-      this.loadFrame(0),
+    const promises = [
+      this.wrapLoad(this.loadToBuffer(FeatureDataType.U8, this.outlierFile), onLoadStart, onLoadComplete),
+      this.wrapLoad(this.loadToBuffer(FeatureDataType.U32, this.tracksFile), onLoadStart, onLoadComplete),
+      this.wrapLoad(this.loadToBuffer(FeatureDataType.U32, this.timesFile), onLoadStart, onLoadComplete),
+      this.wrapLoad(this.loadToBuffer(FeatureDataType.U16, this.centroidsFile), onLoadStart, onLoadComplete),
+      this.wrapLoad(this.loadToBuffer(FeatureDataType.U16, this.boundsFile), onLoadStart, onLoadComplete),
+      this.wrapLoad(this.loadFrame(0), onLoadStart, onLoadComplete),
       ...featuresPromises,
-    ]);
+    ] as const;
+
+    const result = await Promise.allSettled(promises);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
     // TODO: Add reporting pathway for Dataset.load?
