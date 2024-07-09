@@ -3,6 +3,8 @@ import { Progress, Spin } from "antd";
 import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
 import styled, { css } from "styled-components";
 
+import { useDebounce } from "../colorizer/utils/react_utils";
+
 type LoadingSpinnerProps = {
   loading: boolean;
   iconSize?: number;
@@ -35,8 +37,13 @@ const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
   background-color: #ffffff90;
   ${(props) => {
     // Disable delay when loading is complete
+    if (!props.$loading) {
+      return css`
+        transition: opacity 0.25s ease-in-out 0s;
+      `;
+    }
     return css`
-      opacity: opacity 0.25s ease-in-out ${props.$loading ? "0.5" : "0"};
+      transition: opacity 0.5s ease-in-out 0.75s;
     `;
   }}
 
@@ -79,6 +86,10 @@ const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
 export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpinnerProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<LoadingSpinnerProps>>;
 
+  // Delay showing progress bar slightly; this fixes a visual bug where the loading spinner
+  // would flash the progress bar right as it vanished.
+  const showProgressBar = useDebounce(props.progress !== undefined && props.progress !== null, 500);
+
   // Disable completion checkmark by forcing value to always be shown as a number %
   const progressFormatter = (percent?: number): ReactNode => {
     if (percent === undefined) {
@@ -90,7 +101,9 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
   return (
     <LoadingSpinnerContainer style={props.style}>
       <LoadingSpinnerOverlay $loading={props.loading}>
-        {props.progress === undefined || props.progress === null ? (
+        {showProgressBar && props.progress !== undefined && props.progress !== null ? (
+          <Progress type="circle" percent={props.progress} size={props.iconSize} format={progressFormatter} />
+        ) : (
           <Spin
             indicator={
               <LoadSpinnerIconContainer $fontSize={props.iconSize}>
@@ -102,8 +115,6 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
               </LoadSpinnerIconContainer>
             }
           ></Spin>
-        ) : (
-          <Progress type="circle" percent={props.progress} size={props.iconSize} format={progressFormatter} />
         )}
       </LoadingSpinnerOverlay>
       {props.children}
