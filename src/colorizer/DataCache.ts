@@ -21,7 +21,7 @@ type CacheEntry<E> = {
  * @param maxSize The maximum size of the cache. This can either be the number of entries
  * or the total size of the entries (e.g. bytes)
  */
-export default class DataCache<E extends DisposableValue | Object> {
+export default class DataCache<K extends string | number, E extends DisposableValue | Object> {
   private data: Map<string, CacheEntry<E>>;
   // Next points towards front of the list (most recently used), prev points towards back
   private first: CacheEntry<E> | null;
@@ -122,9 +122,11 @@ export default class DataCache<E extends DisposableValue | Object> {
    * subject to normal cache eviction.
    * Reserved keys/values will still count towards the total size limit for the cache
    */
-  public setReservedKeys(keys: Set<string>): void {
+  public setReservedKeys(keys: Set<K>): void {
+    // Cast all keys to string
+    const stringKeys = new Set(Array.from(keys).map((key) => key.toString()));
     // Check for newly reserved keys; remove from cache list if they are currently saved.
-    keys.forEach((key) => {
+    stringKeys.forEach((key) => {
       if (!this.reservedKeys.has(key)) {
         const entry = this.data.get(key);
         entry && this.removeFromList(entry);
@@ -133,13 +135,13 @@ export default class DataCache<E extends DisposableValue | Object> {
     // Check for newly unreserved keys; add back to cache list as they are now eligible
     // for eviction/disposal.
     this.reservedKeys.forEach((key) => {
-      if (!keys.has(key)) {
+      if (!stringKeys.has(key.toString())) {
         const entry = this.data.get(key);
         entry && this.setNewEntryAsFirst(entry);
       }
     });
 
-    this.reservedKeys = new Set(keys);
+    this.reservedKeys = stringKeys;
   }
 
   public get size(): number {
@@ -154,28 +156,28 @@ export default class DataCache<E extends DisposableValue | Object> {
    * Throws an error if the `size` is greater than the cache's `maxSize`, as defined in the
    * constructor.
    */
-  public insert(key: string | number, value: E, size: number = 1): void {
-    key = key.toString();
-    const currentEntry = this.data.get(key);
+  public insert(key: K, value: E, size: number = 1): void {
+    const stringKey = key.toString();
+    const currentEntry = this.data.get(stringKey);
 
     if (currentEntry !== null && currentEntry !== undefined) {
       // NOTE: This assumes that the value's size HAS NOT CHANGED. If it has,
       // the size of the cache will be incorrect and the old value will not be disposed of.
       // TODO: Throw an error if the size is different?
       currentEntry.value = value;
-      if (!this.reservedKeys.has(key)) {
+      if (!this.reservedKeys.has(stringKey)) {
         this.moveToFirst(currentEntry);
       }
     } else {
-      const newEntry = { value, key, prev: null, next: null, size: size };
-      this.data.set(key, newEntry);
+      const newEntry = { value, key: stringKey, prev: null, next: null, size: size };
+      this.data.set(stringKey, newEntry);
 
       this.currentSize += size;
       while (this.currentSize > this.maxSize && this.last) {
         this.evictLast();
       }
 
-      if (!this.reservedKeys.has(key)) {
+      if (!this.reservedKeys.has(stringKey)) {
         this.setNewEntryAsFirst(newEntry);
         if (!this.last) {
           this.last = newEntry;
@@ -185,10 +187,10 @@ export default class DataCache<E extends DisposableValue | Object> {
   }
 
   /** Retrieves a value from the cache. Returns `undefined` if the `key` could not be found. */
-  public get(key: string | number): E | undefined {
-    key = key.toString();
-    const entry = this.data.get(key);
-    if (entry && !this.reservedKeys.has(key)) {
+  public get(key: K): E | undefined {
+    const stringKey = key.toString();
+    const entry = this.data.get(stringKey);
+    if (entry && !this.reservedKeys.has(stringKey)) {
       this.moveToFirst(entry);
     }
     return entry?.value;

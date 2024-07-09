@@ -51,7 +51,7 @@ const MAX_CACHED_FRAME_BYTES = 1_000_000_000; // 1 GB
 export default class Dataset {
   private frameLoader: IFrameLoader;
   private frameFiles: string[];
-  private frames: DataCache<Texture> | null;
+  private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
   private backdropLoader: IFrameLoader;
