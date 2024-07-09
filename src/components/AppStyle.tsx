@@ -349,6 +349,9 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               fontSize: theme.font.size.content,
               paddingXS: 6,
             },
+            Progress: {
+              defaultColor: theme.color.theme,
+            },
             Slider: {
               // Override hover colors
               dotActiveBorderColor: theme.color.theme,
