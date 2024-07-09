@@ -1,16 +1,22 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { Progress, Spin } from "antd";
-import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
+import React, { PropsWithChildren, ReactElement, ReactNode, useContext } from "react";
 import styled, { css } from "styled-components";
 
 import { useDebounce } from "../colorizer/utils/react_utils";
+
+import { AppThemeContext } from "./AppStyle";
+
+const VANISH_DURATION_MS = 250;
 
 type LoadingSpinnerProps = {
   loading: boolean;
   iconSize?: number;
   style?: React.CSSProperties;
-  /** Integer percentage to display, from 0 to 100, inclusive.
-   * If undefined, the spinner will be shown without progress.
+  /**
+   * Integer percentage to display, from 0 to 100, inclusive.
+   * If null or undefined, the regular spinner (without progress indicators)
+   * is shown.
    */
   progress?: number | null;
 };
@@ -36,20 +42,16 @@ const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
   pointer-events: none;
   background-color: #ffffff90;
   ${(props) => {
-    // Disable delay when loading is complete
     if (!props.$loading) {
+      // Disable delay + shorten animation when loading is complete
       return css`
-        transition: opacity 0.25s ease-in-out 0s;
+        opacity: 0;
+        transition: opacity ${VANISH_DURATION_MS}ms ease-in-out 0s;
       `;
     }
     return css`
+      opacity: 1;
       transition: opacity 0.5s ease-in-out 0.75s;
-    `;
-  }}
-
-  ${(props) => {
-    return css`
-      opacity: ${props.$loading ? 1 : 0};
     `;
   }}
 
@@ -57,11 +59,6 @@ const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
-
-  /* Prevent the inner text from turning purple when progress finishes */
-  & .ant-progress-text {
-    color: var(--color-text-primary) !important;
-  }
 `;
 
 const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
@@ -84,11 +81,12 @@ const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
  * Applies a loading spinner overlay on the provided children, which can be toggled on and off via props.
  */
 export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpinnerProps>): ReactElement {
+  const theme = useContext(AppThemeContext);
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<LoadingSpinnerProps>>;
 
   // Delay showing progress bar slightly; this fixes a visual bug where the loading spinner
-  // would flash the progress bar right as it vanished.
-  const showProgressBar = useDebounce(props.progress !== undefined && props.progress !== null, 500);
+  // would flash the progress bar at 100% right as it vanished.
+  const showProgressBar = useDebounce(props.progress !== undefined && props.progress !== null, VANISH_DURATION_MS);
 
   // Disable completion checkmark by forcing value to always be shown as a number %
   const progressFormatter = (percent?: number): ReactNode => {
@@ -102,7 +100,14 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
     <LoadingSpinnerContainer style={props.style}>
       <LoadingSpinnerOverlay $loading={props.loading}>
         {showProgressBar && props.progress !== undefined && props.progress !== null ? (
-          <Progress type="circle" percent={props.progress} size={props.iconSize} format={progressFormatter} />
+          <Progress
+            type="circle"
+            percent={props.progress}
+            size={props.iconSize}
+            format={progressFormatter}
+            strokeColor={theme.color.theme}
+            status="normal"
+          />
         ) : (
           <Spin
             indicator={
