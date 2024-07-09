@@ -351,6 +351,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             },
             Progress: {
               defaultColor: theme.color.theme,
+              colorSuccess: theme.color.theme,
             },
             Slider: {
               // Override hover colors

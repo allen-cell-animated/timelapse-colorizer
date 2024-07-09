@@ -1,6 +1,6 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { Progress, Spin } from "antd";
-import React, { PropsWithChildren, ReactElement } from "react";
+import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
 import styled, { css } from "styled-components";
 
 type LoadingSpinnerProps = {
@@ -33,7 +33,12 @@ const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
   z-index: 100;
   pointer-events: none;
   background-color: #ffffff90;
-  transition: opacity 0.2s ease-in-out 0.2s;
+  ${(props) => {
+    // Disable delay when loading is complete
+    return css`
+      opacity: opacity 0.25s ease-in-out ${props.$loading ? "0.5" : "0"};
+    `;
+  }}
 
   ${(props) => {
     return css`
@@ -45,6 +50,11 @@ const LoadingSpinnerOverlay = styled.div<{ $loading: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
+
+  /* Prevent the inner text from turning purple when progress finishes */
+  & .ant-progress-text {
+    color: var(--color-text-primary) !important;
+  }
 `;
 
 const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
@@ -69,12 +79,13 @@ const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
 export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpinnerProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<LoadingSpinnerProps>>;
 
-  // const progressFormatter = (percent?: number): ReactNode => {
-  //   if (percent === undefined) {
-  //     return "";
-  //   }
-  //   return percent >= 100 ? "" : `${percent}%`;
-  // };
+  // Disable completion checkmark by forcing value to always be shown as a number %
+  const progressFormatter = (percent?: number): ReactNode => {
+    if (percent === undefined) {
+      return "";
+    }
+    return `${percent}%`;
+  };
 
   return (
     <LoadingSpinnerContainer style={props.style}>
@@ -92,7 +103,7 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
             }
           ></Spin>
         ) : (
-          <Progress type="circle" percent={props.progress} size={props.iconSize} />
+          <Progress type="circle" percent={props.progress} size={props.iconSize} format={progressFormatter} />
         )}
       </LoadingSpinnerOverlay>
       {props.children}
