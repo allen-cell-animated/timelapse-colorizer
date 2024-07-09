@@ -68,6 +68,8 @@ function Viewer(): ReactElement {
   const theme = useContext(AppThemeContext);
   const location = useLocation();
 
+  const [, startTransition] = React.useTransition();
+
   const canv = useConstructor(() => {
     const canvas = new ColorizeCanvas();
     canvas.domElement.className = styles.colorizeCanvas;
@@ -359,7 +361,9 @@ function Viewer(): ReactElement {
 
   const handleProgressUpdate = useCallback(
     (complete: number, total: number): void => {
-      setDatasetLoadProgress(Math.round((complete / total) * 100));
+      startTransition(() => {
+        setDatasetLoadProgress(Math.round((complete / total) * 100));
+      });
     },
     [setDatasetLoadProgress]
   );
