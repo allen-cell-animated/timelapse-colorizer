@@ -138,17 +138,12 @@ export default class Collection {
 
     let totalLoadItems = 0;
     let completedLoadItems = 0;
-
-    const onLoadStart = () => {
+    const onLoadStart = (): void => {
       totalLoadItems++;
     };
-
-    const onLoadCompleted = () => {
+    const onLoadCompleted = (): void => {
       completedLoadItems++;
-      console.log(`Loading dataset: ${completedLoadItems}/${totalLoadItems}`);
-      if (onLoadProgress) {
-        onLoadProgress(completedLoadItems, totalLoadItems);
-      }
+      onLoadProgress && onLoadProgress(completedLoadItems, totalLoadItems);
     };
 
     // TODO: Override fetch method

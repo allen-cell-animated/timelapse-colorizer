@@ -1,6 +1,6 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { Progress, Spin } from "antd";
-import React, { PropsWithChildren, ReactElement, ReactNode } from "react";
+import React, { PropsWithChildren, ReactElement } from "react";
 import styled, { css } from "styled-components";
 
 type LoadingSpinnerProps = {
