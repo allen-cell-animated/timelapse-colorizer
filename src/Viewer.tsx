@@ -357,10 +357,12 @@ function Viewer(): ReactElement {
 
   // DATASET LOADING ///////////////////////////////////////////////////////
 
-  const handleProgressUpdate = (complete: number, total: number) => {
-    console.log("Loading progress: " + complete + " / " + total + " (" + (complete / total) * 100 + "%).");
-    setDatasetLoadProgress(Math.round((complete / total) * 100));
-  };
+  const handleProgressUpdate = useCallback(
+    (complete: number, total: number): void => {
+      setDatasetLoadProgress(Math.round((complete / total) * 100));
+    },
+    [setDatasetLoadProgress]
+  );
 
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
@@ -407,6 +409,7 @@ function Viewer(): ReactElement {
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
+      console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
     },
     [
@@ -639,7 +642,7 @@ function Viewer(): ReactElement {
         setIsDatasetLoading(false);
       }
     },
-    [replaceDataset, collection, datasetKey]
+    [replaceDataset, handleProgressUpdate, collection, datasetKey]
   );
 
   /**
