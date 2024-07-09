@@ -111,6 +111,7 @@ export default class Dataset {
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
 
+  // TODO: Make this part of `urlUtils`?
   private async fetchJson(url: string): Promise<AnyManifestFile> {
     const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
     return await response.json();
@@ -372,7 +373,13 @@ export default class Dataset {
     return promise.value;
   }
 
-  /** Loads the dataset manifest and features. */
+  /**
+   * Opens the dataset and loads all necessary files from the manifest.
+   * @param manifestLoader Optional. The function used to load the manifest JSON data. If undefined, uses a default fetch method.
+   * @param onLoadStart Called once for each data file (other than the manifest) that starts an async load process.
+   * @param onLoadComplete Called once when each data file finishes loading.
+   * @returns A Promise that resolves when loading completes.
+   */
   public async open(
     manifestLoader = this.fetchJson,
     onLoadStart?: () => void,

@@ -143,7 +143,7 @@ export default class Collection {
     };
     const onLoadCompleted = (): void => {
       completedLoadItems++;
-      onLoadProgress && onLoadProgress(completedLoadItems, totalLoadItems);
+      onLoadProgress?.(completedLoadItems, totalLoadItems);
     };
 
     // TODO: Override fetch method
