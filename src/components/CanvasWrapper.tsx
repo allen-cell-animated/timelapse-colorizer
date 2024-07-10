@@ -414,7 +414,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // Note that click events won't fire until the mouse is released. We need to check
       // if the mouse was dragged before treating the click as a track selection; otherwise
       // the track selection gets changed unexpectedly.
-      if (!isMouseDragging.current && !usePanWithLeftMouse) {
+      if (!isMouseDragging.current) {
         handleTrackSelection(event);
       }
     },
