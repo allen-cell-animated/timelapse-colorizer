@@ -151,7 +151,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const isMouseDragging = useRef(false);
   const totalMouseDrag = useRef(new Vector2(0, 0));
-  const [enablePan, setEnablePan] = useState(false);
+  const [usePanWithLeftMouse, setUsePanWithLeftMouse] = useState(false);
+  /** Whether pan is allowed. Pan via scroll is blocked until the first zoom interaction by default. */
+  const [allowScrollPanning, setAllowScrollPanning] = useState(false);
 
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef(new Vector2(0, 0));
@@ -333,23 +335,25 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const handlePan = useCallback(
     (dx: number, dy: number): void => {
-      const frameSizePx = getFrameSizeInScreenPx();
-      const canvasSizePx = getCanvasSizePx();
+      // const frameSizePx = getFrameSizeInScreenPx();
+      // const canvasSizePx = getCanvasSizePx();
 
-      // Clamp panning
-      const xClamp = clamp((frameSizePx.x - canvasSizePx.x) / (2 * frameSizePx.x), 0, 0.5);
-      const yClamp = clamp((frameSizePx.y - canvasSizePx.y) / (2 * frameSizePx.y), 0, 0.5);
+      // // Clamp panning
+      // const xClamp = clamp((frameSizePx.x - canvasSizePx.x) / (2 * frameSizePx.x), 0, 0.5);
+      // const yClamp = clamp((frameSizePx.y - canvasSizePx.y) / (2 * frameSizePx.y), 0, 0.5);
 
-      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + dx, -xClamp, xClamp);
-      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + dy, -yClamp, yClamp);
+      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + dx, -0.5, 0.5);
+      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + dy, -0.5, 0.5);
+
       canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
-    [canv, getCanvasSizePx, getFrameSizeInScreenPx, props.dataset]
+    [canv, getCanvasSizePx, getFrameSizeInScreenPx, props.dataset, canvasZoomInverse.current]
   );
 
   /** Change zoom by some delta factor. */
   const handleZoom = useCallback(
     (zoomDelta: number): void => {
+      setAllowScrollPanning(true);
       canvasZoomInverse.current += zoomDelta;
       canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
       canv.setZoom(1 / canvasZoomInverse.current);
@@ -384,14 +388,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       );
       const mousePositionDelta = newMousePosition.clone().sub(currentMousePosition);
 
-      const xClamp = clamp((newFrameSizePx.x - canvasSizePx.x) / (2 * newFrameSizePx.x), 0, 0.5);
-      const yClamp = clamp((newFrameSizePx.y - canvasSizePx.y) / (2 * newFrameSizePx.y), 0, 0.5);
-      canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -xClamp, xClamp);
-      canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -yClamp, yClamp);
-
-      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+      handlePan(mousePositionDelta.x, mousePositionDelta.y);
     },
-    [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
+    [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx, handlePan]
   );
 
   /**
@@ -415,11 +414,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // Note that click events won't fire until the mouse is released. We need to check
       // if the mouse was dragged before treating the click as a track selection; otherwise
       // the track selection gets changed unexpectedly.
-      if (!isMouseDragging.current && !enablePan) {
+      if (!isMouseDragging.current && !usePanWithLeftMouse) {
         handleTrackSelection(event);
       }
     },
-    [handleTrackSelection, enablePan]
+    [handleTrackSelection, usePanWithLeftMouse]
   );
 
   const onContextMenu = useCallback((event: MouseEvent): void => {
@@ -445,7 +444,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseMove = useCallback(
     (event: MouseEvent): void => {
-      const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey || enablePan);
+      const isMouseLeftHeldWithModifier =
+        isMouseLeftDown.current && (event.ctrlKey || event.metaKey || usePanWithLeftMouse);
       if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || isMouseRightDown.current) {
         canv.domElement.style.cursor = "grabbing";
         handlePanPx(event.movementX, event.movementY);
@@ -458,14 +458,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       } else {
         // TODO: Centralized cursor handling?
-        if (enablePan) {
+        if (usePanWithLeftMouse) {
           canv.domElement.style.cursor = "grab";
         } else {
           canv.domElement.style.cursor = "auto";
         }
       }
     },
-    [handlePan, enablePan]
+    [handlePan, usePanWithLeftMouse]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -481,8 +481,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseWheel = useCallback(
     (event: WheelEvent): void => {
-      event.preventDefault();
       if (event.metaKey || event.ctrlKey) {
+        event.preventDefault();
         if (Math.abs(event.deltaY) > 25) {
           // Using mouse wheel (probably). There's no surefire way to detect this, but mice usually
           // scroll in much larger increments.
@@ -491,12 +491,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           // Track pad zoom
           handleZoomToMouse(event, event.deltaY * 0.005);
         }
-      } else if (event.shiftKey) {
+      } else if (event.shiftKey && allowScrollPanning) {
         // Translate Y to horizontal movement for mice.
         handlePanPx(-event.deltaY, 0);
-      } else {
+        event.preventDefault();
+      } else if (allowScrollPanning) {
         handlePanPx(-event.deltaX, -event.deltaY);
+        event.preventDefault();
       }
+      // Otherwise allow default page scrolling
     },
     [handleZoomToMouse]
   );
@@ -594,6 +597,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
               canvasPanOffset.current = new Vector2(0, 0);
               canv.setZoom(1.0);
               canv.setPan(0, 0);
+              setAllowScrollPanning(false);
             }}
             type="link"
           >
@@ -635,15 +639,16 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           trigger={["hover", "focus"]}
         >
           <IconButton
-            type={enablePan ? "primary" : "link"}
+            type={usePanWithLeftMouse ? "primary" : "link"}
             onClick={() => {
               setTimeout(() => {
-                setEnablePan(!enablePan);
+                setAllowScrollPanning(true);
+                setUsePanWithLeftMouse(!usePanWithLeftMouse);
               });
             }}
           >
             <HandIconSVG />
-            <VisuallyHidden>Toggle pan (currently {enablePan ? "ON" : "OFF"}.)</VisuallyHidden>
+            <VisuallyHidden>Toggle pan (currently {usePanWithLeftMouse ? "ON" : "OFF"}.)</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
       </CanvasControlsContainer>
