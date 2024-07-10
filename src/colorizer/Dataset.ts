@@ -8,9 +8,9 @@ import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVers
 import * as urlUtils from "./utils/url_utils";
 
 import DataCache from "./DataCache";
-import { ArraySource, IArrayLoader, IFrameLoader } from "./loaders/ILoader";
+import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import JsonArrayLoader, { JsonArraySource } from "./loaders/JsonArrayLoader";
+import JsonArrayLoader from "./loaders/JsonArrayLoader";
 import Track from "./Track";
 
 export enum FeatureType {
@@ -133,24 +133,7 @@ export default class Dataset {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
     const url = this.resolveUrl(metadata.data);
-
-    let source: ArraySource;
-    if (url.endsWith(".json")) {
-      source = await this.arrayLoader.load(url);
-    } else if (url.endsWith(".parquet")) {
-      throw new Error("Not yet implemented");
-      // const reader = await ParquetReader.openFile(url);
-      // const cursor = reader.getCursor();
-      // const data: number[] = [];
-      // let record = null;
-      // while ((record = await cursor.next())) {
-      //   data.push(record["data"] as number);
-      // }
-      // source = new JsonArraySource(data, metadata.min, metadata.max);
-    } else {
-      throw new Error(`Unsupported feature data format for feature`);
-    }
-
+    const source = await this.arrayLoader.load(url);
     const featureType = this.parseFeatureType(metadata.type);
 
     const featureCategories = metadata?.categories;

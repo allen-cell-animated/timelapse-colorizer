@@ -13,7 +13,7 @@ type FeatureDataJson = {
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
-export class JsonArraySource implements ArraySource {
+class JsonArraySource implements ArraySource {
   array: number[];
   isBool: boolean;
   min?: number;
