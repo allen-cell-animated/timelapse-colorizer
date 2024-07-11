@@ -46,11 +46,13 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.2.5",
+    "@dsnp/parquetjs": "^1.7.0",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "antd": "^5.9.4",
     "fuse.js": "^7.0.0",
+    "hyparquet": "^1.0.0",
     "mp4-muxer": "^2.2.2",
     "plotly.js-dist-min": "^2.27.0",
     "react": "^18.2.0",

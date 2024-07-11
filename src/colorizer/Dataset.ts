@@ -1,3 +1,4 @@
+import { parquetMetadata, parquetRead } from "hyparquet";
 import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
@@ -138,15 +139,16 @@ export default class Dataset {
     if (url.endsWith(".json")) {
       source = await this.arrayLoader.load(url);
     } else if (url.endsWith(".parquet")) {
-      throw new Error("Not yet implemented");
-      // const reader = await ParquetReader.openFile(url);
-      // const cursor = reader.getCursor();
-      // const data: number[] = [];
-      // let record = null;
-      // while ((record = await cursor.next())) {
-      //   data.push(record["data"] as number);
-      // }
-      // source = new JsonArraySource(data, metadata.min, metadata.max);
+      const result = await fetch(url);
+      const arrayBuffer = await result.arrayBuffer();
+      let data: number[] = [];
+      await parquetRead({
+        file: arrayBuffer,
+        onComplete: (loadedData: number[][]) => {
+          data = loadedData.map((row) => row[0]);
+        },
+      });
+      source = new JsonArraySource(data, metadata.min, metadata.max);
     } else {
       throw new Error(`Unsupported feature data format for feature`);
     }
