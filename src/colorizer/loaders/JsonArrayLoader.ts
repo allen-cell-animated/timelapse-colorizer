@@ -59,6 +59,8 @@ export class JsonArraySource implements ArraySource {
 
 const nanToNull = (json: string): string => json.replace(/NaN/g, "null");
 
+// TODO: Make JsonArrayLoader also handle parquet files -> unified UrlFeatureLoader
+// Also break out the nanToNull function into a separate file since it's repeated logic in Dataset.
 export default class JsonArrayLoader implements IArrayLoader {
   async load(url: string): Promise<JsonArraySource> {
     const response = await fetch(url);
