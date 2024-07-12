@@ -4,7 +4,7 @@ import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { getKeyFromName } from "./utils/data_utils";
-import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
 
 import DataCache from "./FrameCache";
@@ -110,12 +110,6 @@ export default class Dataset {
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
-
-  // TODO: Make this part of `urlUtils`?
-  private async fetchJson(url: string): Promise<AnyManifestFile> {
-    const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
-    return await response.json();
-  }
 
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
     const isFeatureType = (inputType: string): inputType is FeatureType => {
@@ -381,12 +375,12 @@ export default class Dataset {
    * @returns A Promise that resolves when loading completes.
    */
   public async open(
-    manifestLoader = this.fetchJson,
+    manifestLoader = urlUtils.fetchManifestJson,
     onLoadStart?: () => void,
     onLoadComplete?: () => void
   ): Promise<void> {
     if (manifestLoader === undefined) {
-      manifestLoader = this.fetchJson;
+      manifestLoader = urlUtils.fetchManifestJson;
     }
     if (this.hasOpened) {
       return;
