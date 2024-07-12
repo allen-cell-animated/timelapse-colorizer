@@ -96,6 +96,13 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   }
 `;
 
+const LoadPromptContainer = styled(FlexColumnAlignCenter)`
+  background-color: var(--color-background-alt);
+  // The 20px margin on the top is required because of the 20px row gap after the FeatureHighlightsContainer
+  margin: 30px 0;
+  padding: 30px;
+`;
+
 const ProjectList = styled.ul`
   display: flex;
   flex-direction: column;
@@ -296,7 +303,7 @@ export default function LandingPage(): ReactElement {
         </BannerTextContainer>
       </Banner>
 
-      <ContentContainer $gap={30}>
+      <ContentContainer>
         <FeatureHighlightsContainer>
           <FeatureHighlightsItem>
             <h3>Dynamic color mapping</h3>
@@ -322,11 +329,9 @@ export default function LandingPage(): ReactElement {
         </FeatureHighlightsContainer>
       </ContentContainer>
 
-      <FlexColumnAlignCenter
-        style={{ backgroundColor: "var(--color-background-alt)", padding: "30px", margin: "30px 0" }}
-      >
+      <LoadPromptContainer>
         <h2 style={{ margin: 0 }}>Load dataset(s) below or your own data to get started</h2>
-      </FlexColumnAlignCenter>
+      </LoadPromptContainer>
 
       <ContentContainer style={{ paddingBottom: "400px" }}>
         <ProjectList>{landingPageContent.map(renderProject)}</ProjectList>
