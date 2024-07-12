@@ -98,7 +98,6 @@ const FeatureHighlightsItem = styled(FlexColumn)`
 
 const LoadPromptContainer = styled(FlexColumnAlignCenter)`
   background-color: var(--color-background-alt);
-  // The 20px margin on the top is required because of the 20px row gap after the FeatureHighlightsContainer
   margin: 30px 0;
   padding: 30px;
 `;
@@ -173,7 +172,7 @@ const DatasetCard = styled.li`
     display: grid;
   }
   & > a {
-    // -1px left margin gives visual alignment with text
+    // -1px left margin gives button visual alignment with text
     margin: 4px auto 0 -1px;
     display: grid;
   }
