@@ -7,7 +7,7 @@ import styled from "styled-components";
 
 import { Dataset } from "../colorizer";
 import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
@@ -118,14 +118,14 @@ const ProjectCard = styled.li`
   display: flex;
   width: 100%;
   flex-direction: column;
-  gap: 8px;
+  gap: 0px;
 
   & h3 {
     font-weight: 600;
   }
 
   & p,
-  & h3,
+  & h2,
   & span {
     margin: 0;
   }
@@ -140,13 +140,14 @@ const DatasetList = styled.ol`
   padding: 0;
   width: 100%;
   display: grid;
+  margin-top: 4px;
   // Use grid + subgrid to align the title, description, and button for each horizontal
   // row of cards. repeat is used to tile the layout if the cards wrap to a new line.
   grid-template-rows: repeat(3, auto);
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   justify-content: space-around;
   text-align: start;
-  gap: 10px 20px;
+  gap: 0 20px;
 `;
 
 const DatasetCard = styled.li`
@@ -155,7 +156,7 @@ const DatasetCard = styled.li`
   grid-row: span 3;
   min-width: 180px;
   align-items: flex-start;
-  margin-top: 10px;
+  margin-top: 20px;
 
   & > h3 {
     display: grid;
@@ -165,7 +166,8 @@ const DatasetCard = styled.li`
     display: grid;
   }
   & > a {
-    margin: 2px auto 0 0;
+    // -1px left margin gives visual alignment with text
+    margin: 4px auto 0 -1px;
     display: grid;
   }
 `;
@@ -222,16 +224,16 @@ export default function LandingPage(): ReactElement {
 
   const renderProject = (project: ProjectEntry, index: number): ReactElement => {
     const projectNameElement = project.inReview ? (
-      <FlexRow style={{ justifyContent: "space-between" }} $gap={10}>
-        <h3>{project.name}</h3>
+      <FlexRowAlignCenter $gap={10}>
+        <h2>{project.name}</h2>
         <Tooltip title="Final version of dataset will be released when associated paper is published">
           <InReviewFlag>
             <p>IN REVIEW</p>
           </InReviewFlag>
         </Tooltip>
-      </FlexRow>
+      </FlexRowAlignCenter>
     ) : (
-      <h3>{project.name}</h3>
+      <h2>{project.name}</h2>
     );
 
     const publicationElement = project.publicationLink ? (
