@@ -75,6 +75,14 @@ const LoadSpinnerIconContainer = styled.div<{ $fontSize: number }>`
   }}
 `;
 
+// Disable completion checkmark by forcing value to always be shown as a number %
+const progressFormatter = (percent?: number): ReactNode => {
+  if (percent === undefined) {
+    return "";
+  }
+  return `${percent}%`;
+};
+
 /**
  * Applies a loading spinner overlay on the provided children, which can be toggled on and off via props.
  */
@@ -84,14 +92,6 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
   // Delay showing progress bar slightly; this fixes a visual bug where the loading spinner
   // would flash the progress bar at 100% right as it vanished.
   const showProgressBar = useDebounce(props.progress !== undefined && props.progress !== null, VANISH_DURATION_MS);
-
-  // Disable completion checkmark by forcing value to always be shown as a number %
-  const progressFormatter = (percent?: number): ReactNode => {
-    if (percent === undefined) {
-      return "";
-    }
-    return `${percent}%`;
-  };
 
   return (
     <LoadingSpinnerContainer style={props.style}>

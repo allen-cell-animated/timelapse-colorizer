@@ -359,14 +359,11 @@ function Viewer(): ReactElement {
 
   // DATASET LOADING ///////////////////////////////////////////////////////
 
-  const handleProgressUpdate = useCallback(
-    (complete: number, total: number): void => {
-      startTransition(() => {
-        setDatasetLoadProgress(Math.round((complete / total) * 100));
-      });
-    },
-    [setDatasetLoadProgress]
-  );
+  const handleProgressUpdate = useCallback((complete: number, total: number): void => {
+    startTransition(() => {
+      setDatasetLoadProgress(Math.round((complete / total) * 100));
+    });
+  }, []);
 
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
