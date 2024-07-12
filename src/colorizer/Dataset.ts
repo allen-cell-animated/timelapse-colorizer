@@ -1,10 +1,10 @@
-import { parquetMetadata, parquetRead } from "hyparquet";
+import { parquetRead } from "hyparquet";
 import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
-import { getKeyFromName } from "./utils/data_utils";
+import { getKeyFromName, nanToNull } from "./utils/data_utils";
 import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
 
@@ -114,7 +114,8 @@ export default class Dataset {
 
   private async fetchJson(url: string): Promise<AnyManifestFile> {
     const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
-    return await response.json();
+    const jsonText = await response.text();
+    return JSON.parse(nanToNull(jsonText));
   }
 
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
@@ -148,7 +149,7 @@ export default class Dataset {
           data = loadedData.map((row) => row[0]);
         },
       });
-      source = new JsonArraySource(data, metadata.min, metadata.max);
+      source = new JsonArraySource(data, metadata.min ?? undefined, metadata.max ?? undefined);
     } else {
       throw new Error(`Unsupported feature data format for feature`);
     }
