@@ -1,4 +1,3 @@
-import { parquetRead } from "hyparquet";
 import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
@@ -9,9 +8,9 @@ import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVers
 import * as urlUtils from "./utils/url_utils";
 
 import DataCache from "./DataCache";
-import { ArraySource, IArrayLoader, IFrameLoader } from "./loaders/ILoader";
+import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import JsonArrayLoader, { JsonArraySource } from "./loaders/JsonArrayLoader";
+import UrlArrayLoader from "./loaders/JsonArrayLoader";
 import Track from "./Track";
 
 export enum FeatureType {
@@ -105,7 +104,7 @@ export default class Dataset {
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
-    this.arrayLoader = arrayLoader || new JsonArrayLoader();
+    this.arrayLoader = arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.metadata = defaultMetadata;
   }
@@ -136,24 +135,7 @@ export default class Dataset {
     const key = metadata.key || getKeyFromName(name);
     const url = this.resolveUrl(metadata.data);
 
-    let source: ArraySource;
-    if (url.endsWith(".json")) {
-      source = await this.arrayLoader.load(url);
-    } else if (url.endsWith(".parquet")) {
-      const result = await fetch(url);
-      const arrayBuffer = await result.arrayBuffer();
-      let data: number[] = [];
-      await parquetRead({
-        file: arrayBuffer,
-        onComplete: (loadedData: number[][]) => {
-          data = loadedData.map((row) => row[0]);
-        },
-      });
-      source = new JsonArraySource(data, metadata.min ?? undefined, metadata.max ?? undefined);
-    } else {
-      throw new Error(`Unsupported feature data format for feature`);
-    }
-
+    const source = await this.arrayLoader.load(url);
     const featureType = this.parseFeatureType(metadata.type);
 
     const featureCategories = metadata?.categories;
@@ -442,7 +424,7 @@ export default class Dataset {
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
-    // TODO: Add reporting pathway for Dataset.load?
+    // TODO: Add error reporting pathway for Dataset.load?
     this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
     this.trackIds = this.getPromiseValue(tracks, "Failed to load tracks: ");
     this.times = this.getPromiseValue(times, "Failed to load times: ");
@@ -463,7 +445,9 @@ export default class Dataset {
     });
 
     if (this.features.size === 0) {
-      throw new Error("No features found in dataset. Is the dataset manifest file valid?");
+      throw new Error(
+        "Feature data could not be loaded. This may be because of an unsupported format. Expected format uses JSON or Parquet files."
+      );
     }
 
     // Analytics reporting

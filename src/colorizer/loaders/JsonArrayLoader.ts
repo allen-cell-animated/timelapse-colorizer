@@ -1,6 +1,9 @@
+import { parquetRead } from "hyparquet";
+import { compressors } from "hyparquet-compressors";
 import { DataTexture } from "three";
 
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
+import { nanToNull } from "../utils/data_utils";
 import { packDataTexture } from "../utils/texture_utils";
 
 import { ArraySource, IArrayLoader } from "./ILoader";
@@ -13,7 +16,7 @@ type FeatureDataJson = {
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
-export class JsonArraySource implements ArraySource {
+export class UrlArraySource implements ArraySource {
   array: number[];
   isBool: boolean;
   min?: number;
@@ -57,15 +60,37 @@ export class JsonArraySource implements ArraySource {
   }
 }
 
-const nanToNull = (json: string): string => json.replace(/NaN/g, "null");
-
 // TODO: Make JsonArrayLoader also handle parquet files -> unified UrlFeatureLoader
-// Also break out the nanToNull function into a separate file since it's repeated logic in Dataset.
-export default class JsonArrayLoader implements IArrayLoader {
-  async load(url: string): Promise<JsonArraySource> {
-    const response = await fetch(url);
-    const text = await response.text();
-    const { data, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
-    return new JsonArraySource(data, min, max);
+export default class UrlArrayLoader implements IArrayLoader {
+  /**
+   * Loads array data from the specified URL, handling both JSON and Parquet files.
+   * @param url The URL to load data from. Must end in ".json" or ".parquet".
+   * @param min Optional minimum value for the data. For JSON files, this will be overridden
+   * by the min value in the JSON file if it exists.
+   * @param max Optional maximum value for the data. For JSON files, this will be overridden
+   * by the max value in the JSON file if it exists.
+   * @returns a URLArraySource object containing the loaded data.
+   */
+  async load(url: string, min?: number, max?: number): Promise<UrlArraySource> {
+    if (url.endsWith(".json")) {
+      const response = await fetch(url);
+      const text = await response.text();
+      const { data, min: jsonMin, max: jsonMax }: FeatureDataJson = JSON.parse(nanToNull(text));
+      return new UrlArraySource(data, jsonMin ?? min, jsonMax ?? max);
+    } else if (url.endsWith(".parquet")) {
+      const result = await fetch(url);
+      const arrayBuffer = await result.arrayBuffer();
+      let data: number[] = [];
+      await parquetRead({
+        file: arrayBuffer,
+        compressors,
+        onComplete: (loadedData: number[][]) => {
+          data = loadedData.map((row) => row[0]);
+        },
+      });
+      return new UrlArraySource(data, min ?? undefined, max ?? undefined);
+    } else {
+      throw new Error(`Unsupported file format for URL array loader: ${url}`);
+    }
   }
 }
