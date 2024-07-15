@@ -2,7 +2,7 @@ import ColorizeCanvas from "./ColorizeCanvas";
 import ColorRamp, { ColorRampType } from "./ColorRamp";
 import Dataset from "./Dataset";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import UrlArrayLoader from "./loaders/JsonArrayLoader";
+import UrlArrayLoader from "./loaders/UrlArrayLoader";
 import Plotting from "./Plotting";
 import Track from "./Track";
 
