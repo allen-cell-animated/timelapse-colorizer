@@ -68,6 +68,7 @@ export default class UrlArrayLoader implements IArrayLoader {
    *   in the JSON file.
    * @param max Optional maximum value for the data. If defined, overrides the `max` value
    *   in the JSON file.
+   * @throws Error if the file format is not supported (not JSON or Parquet).
    * @returns a URLArraySource object containing the loaded data.
    */
   async load(url: string, min?: number, max?: number): Promise<UrlArraySource> {
