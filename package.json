@@ -52,6 +52,7 @@
     "antd": "^5.9.4",
     "fuse.js": "^7.0.0",
     "hyparquet": "^1.0.0",
+    "hyparquet-compressors": "^0.1.4",
     "mp4-muxer": "^2.2.2",
     "plotly.js-dist-min": "^2.27.0",
     "react": "^18.2.0",
