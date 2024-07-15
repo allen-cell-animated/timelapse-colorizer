@@ -10,7 +10,7 @@ import * as urlUtils from "./utils/url_utils";
 import DataCache from "./DataCache";
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import UrlArrayLoader from "./loaders/UrlArrayLoader";
+import UrlArrayLoader from "./loaders/JsonArrayLoader";
 import Track from "./Track";
 
 export enum FeatureType {
