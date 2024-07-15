@@ -134,7 +134,6 @@ export default class Dataset {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
     const url = this.resolveUrl(metadata.data);
-
     const source = await this.arrayLoader.load(url);
     const featureType = this.parseFeatureType(metadata.type);
 
@@ -409,6 +408,9 @@ export default class Dataset {
     this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
 
     // Load feature data
+    if (manifest.features.length === 0) {
+      throw new Error("No features found in dataset manifest. At least one feature must be defined.");
+    }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
       this.loadFeature(data)
     );
@@ -424,7 +426,7 @@ export default class Dataset {
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
-    // TODO: Add error reporting pathway for Dataset.load?
+    // TODO: Improve error reporting for Dataset.load
     this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
     this.trackIds = this.getPromiseValue(tracks, "Failed to load tracks: ");
     this.times = this.getPromiseValue(times, "Failed to load times: ");
@@ -444,9 +446,9 @@ export default class Dataset {
       }
     });
 
-    if (this.features.size === 0) {
+    if (this.features.size !== manifest.features.length) {
       throw new Error(
-        "Feature data could not be loaded. This may be because of an unsupported format. Expected format uses JSON or Parquet files."
+        "One or more features could not be loaded. This may be because of an unsupported format or a missing file. See console for details."
       );
     }
 

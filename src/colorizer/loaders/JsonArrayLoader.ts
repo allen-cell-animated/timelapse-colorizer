@@ -60,15 +60,14 @@ export class UrlArraySource implements ArraySource {
   }
 }
 
-// TODO: Make JsonArrayLoader also handle parquet files -> unified UrlFeatureLoader
 export default class UrlArrayLoader implements IArrayLoader {
   /**
    * Loads array data from the specified URL, handling both JSON and Parquet files.
    * @param url The URL to load data from. Must end in ".json" or ".parquet".
-   * @param min Optional minimum value for the data. For JSON files, this will be overridden
-   * by the min value in the JSON file if it exists.
-   * @param max Optional maximum value for the data. For JSON files, this will be overridden
-   * by the max value in the JSON file if it exists.
+   * @param min Optional minimum value for the data. If defined, overrides the `min` value
+   *   in the JSON file.
+   * @param max Optional maximum value for the data. If defined, overrides the `max` value
+   *   in the JSON file.
    * @returns a URLArraySource object containing the loaded data.
    */
   async load(url: string, min?: number, max?: number): Promise<UrlArraySource> {
@@ -76,7 +75,7 @@ export default class UrlArrayLoader implements IArrayLoader {
       const response = await fetch(url);
       const text = await response.text();
       const { data, min: jsonMin, max: jsonMax }: FeatureDataJson = JSON.parse(nanToNull(text));
-      return new UrlArraySource(data, jsonMin ?? min, jsonMax ?? max);
+      return new UrlArraySource(data, min ?? jsonMin, max ?? jsonMax);
     } else if (url.endsWith(".parquet")) {
       const result = await fetch(url);
       const arrayBuffer = await result.arrayBuffer();
