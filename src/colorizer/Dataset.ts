@@ -7,7 +7,7 @@ import { getKeyFromName } from "./utils/data_utils";
 import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
 
-import DataCache from "./FrameCache";
+import DataCache from "./DataCache";
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import JsonArrayLoader from "./loaders/JsonArrayLoader";
@@ -51,7 +51,7 @@ const MAX_CACHED_FRAME_BYTES = 1_000_000_000; // 1 GB
 export default class Dataset {
   private frameLoader: IFrameLoader;
   private frameFiles: string[];
-  private frames: DataCache<Texture> | null;
+  private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
   private backdropLoader: IFrameLoader;
