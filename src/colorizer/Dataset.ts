@@ -134,8 +134,9 @@ export default class Dataset {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
     const url = this.resolveUrl(metadata.data);
-    const source = await this.arrayLoader.load(url);
     const featureType = this.parseFeatureType(metadata.type);
+
+    const source = await this.arrayLoader.load(url);
 
     const featureCategories = metadata?.categories;
     // Validation
@@ -438,8 +439,8 @@ export default class Dataset {
     }
 
     // Keep original sorting order of features by inserting in promise order.
-    featureResults.forEach((result) => {
-      const featureValue = this.getPromiseValue(result, "Failed to load feature: ");
+    featureResults.forEach((result, index) => {
+      const featureValue = this.getPromiseValue(result, `Failed to load feature ${index}`);
       if (featureValue) {
         const [key, data] = featureValue;
         this.features.set(key, data);
@@ -447,7 +448,7 @@ export default class Dataset {
     });
 
     if (this.features.size !== manifest.features.length) {
-      throw new Error(
+      console.warn(
         "One or more features could not be loaded. This may be because of an unsupported format or a missing file. See console for details."
       );
     }

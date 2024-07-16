@@ -85,7 +85,7 @@ export default class UrlArrayLoader implements IArrayLoader {
         file: arrayBuffer,
         compressors,
         onComplete: (loadedData: number[][]) => {
-          data = loadedData.map((row) => row[0]);
+          data = loadedData.map((row) => Number(row[0]));
         },
       });
       return new UrlArraySource(data, min ?? undefined, max ?? undefined);
