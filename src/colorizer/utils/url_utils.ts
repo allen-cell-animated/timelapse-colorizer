@@ -21,6 +21,7 @@ import {
   ThresholdType,
   ViewerConfig,
 } from "../types";
+import { nanToNull } from "./data_utils";
 import { AnyManifestFile } from "./dataset_utils";
 import { numberToStringDecimal } from "./math_utils";
 
@@ -103,7 +104,7 @@ export function fetchWithTimeout(
 export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
   // TODO: Should this report error states if load failed?
   const response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
-  return await response.json();
+  return await JSON.parse(nanToNull(await response.text()));
 }
 
 /**
