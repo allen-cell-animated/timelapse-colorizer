@@ -68,6 +68,8 @@ function Viewer(): ReactElement {
   const theme = useContext(AppThemeContext);
   const location = useLocation();
 
+  const [, startTransition] = React.useTransition();
+
   const canv = useConstructor(() => {
     const canvas = new ColorizeCanvas();
     canvas.domElement.className = styles.colorizeCanvas;
@@ -97,6 +99,7 @@ function Viewer(): ReactElement {
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
+  const [datasetLoadProgress, setDatasetLoadProgress] = useState<number | null>(null);
   const [datasetOpen, setDatasetOpen] = useState(false);
 
   const colorRampData = KNOWN_COLOR_RAMPS;
@@ -355,6 +358,13 @@ function Viewer(): ReactElement {
   );
 
   // DATASET LOADING ///////////////////////////////////////////////////////
+
+  const handleProgressUpdate = useCallback((complete: number, total: number): void => {
+    startTransition(() => {
+      setDatasetLoadProgress(Math.round((complete / total) * 100));
+    });
+  }, []);
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -400,6 +410,7 @@ function Viewer(): ReactElement {
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
+      console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
     },
     [
@@ -514,7 +525,8 @@ function Viewer(): ReactElement {
       }
 
       setCollection(newCollection);
-      const datasetResult = await newCollection.tryLoadDataset(datasetKey);
+      setDatasetLoadProgress(null);
+      const datasetResult = await newCollection.tryLoadDataset(datasetKey, handleProgressUpdate);
 
       if (!datasetResult.loaded) {
         console.error(datasetResult.errorMessage);
@@ -614,7 +626,8 @@ function Viewer(): ReactElement {
     async (newDatasetKey: string): Promise<void> => {
       if (newDatasetKey !== datasetKey && collection) {
         setIsDatasetLoading(true);
-        const result = await collection.tryLoadDataset(newDatasetKey);
+        setDatasetLoadProgress(null);
+        const result = await collection.tryLoadDataset(newDatasetKey, handleProgressUpdate);
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
         } else {
@@ -630,7 +643,7 @@ function Viewer(): ReactElement {
         setIsDatasetLoading(false);
       }
     },
-    [replaceDataset, collection, datasetKey]
+    [replaceDataset, handleProgressUpdate, collection, datasetKey]
   );
 
   /**
@@ -915,6 +928,7 @@ function Viewer(): ReactElement {
               >
                 <CanvasWrapper
                   loading={isDatasetLoading}
+                  loadingProgress={datasetLoadProgress}
                   canv={canv}
                   collection={collection || null}
                   dataset={dataset}

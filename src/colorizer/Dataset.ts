@@ -3,8 +3,8 @@ import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
-import { getKeyFromName, nanToNull } from "./utils/data_utils";
-import { AnyManifestFile, ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import { getKeyFromName } from "./utils/data_utils";
+import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
 
 import DataCache from "./DataCache";
@@ -110,12 +110,6 @@ export default class Dataset {
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
-
-  private async fetchJson(url: string): Promise<AnyManifestFile> {
-    const response = await urlUtils.fetchWithTimeout(url, urlUtils.DEFAULT_FETCH_TIMEOUT_MS);
-    const jsonText = await response.text();
-    return JSON.parse(nanToNull(jsonText));
-  }
 
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
     const isFeatureType = (inputType: string): inputType is FeatureType => {
@@ -319,7 +313,6 @@ export default class Dataset {
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
-    console.log("frame size (bytes):", frameSizeBytes);
     // Note that, due to image compression, images may take up much less space in memory than their raw size.
     this.frames?.insert(index, loadedFrame, frameSizeBytes);
     return loadedFrame;
@@ -375,8 +368,21 @@ export default class Dataset {
     return promise.value;
   }
 
-  /** Loads the dataset manifest and features. */
-  public async open(manifestLoader = this.fetchJson): Promise<void> {
+  /**
+   * Opens the dataset and loads all necessary files from the manifest.
+   * @param manifestLoader Optional. The function used to load the manifest JSON data. If undefined, uses a default fetch method.
+   * @param onLoadStart Called once for each data file (other than the manifest) that starts an async load process.
+   * @param onLoadComplete Called once when each data file finishes loading.
+   * @returns A Promise that resolves when loading completes.
+   */
+  public async open(
+    manifestLoader = urlUtils.fetchManifestJson,
+    onLoadStart?: () => void,
+    onLoadComplete?: () => void
+  ): Promise<void> {
+    if (manifestLoader === undefined) {
+      manifestLoader = urlUtils.fetchManifestJson;
+    }
     if (this.hasOpened) {
       return;
     }
@@ -388,7 +394,6 @@ export default class Dataset {
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
-    console.log("Dataset metadata:", this.metadata);
 
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
@@ -408,21 +413,30 @@ export default class Dataset {
 
     this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
 
+    // Wrap an async operation and report progress when it starts + completes
+    const reportLoadProgress = async <T>(promise: Promise<T>): Promise<T> => {
+      onLoadStart?.();
+      return promise.then((result) => {
+        onLoadComplete?.();
+        return result;
+      });
+    };
+
     // Load feature data
     if (manifest.features.length === 0) {
       throw new Error("No features found in dataset manifest. At least one feature must be defined.");
     }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
-      this.loadFeature(data)
+      reportLoadProgress(this.loadFeature(data))
     );
 
     const result = await Promise.allSettled([
-      this.loadToBuffer(FeatureDataType.U8, this.outlierFile),
-      this.loadToBuffer(FeatureDataType.U32, this.tracksFile),
-      this.loadToBuffer(FeatureDataType.U32, this.timesFile),
-      this.loadToBuffer(FeatureDataType.U16, this.centroidsFile),
-      this.loadToBuffer(FeatureDataType.U16, this.boundsFile),
-      this.loadFrame(0),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U8, this.outlierFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.tracksFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.timesFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.centroidsFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.boundsFile)),
+      reportLoadProgress(this.loadFrame(0)),
       ...featuresPromises,
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
