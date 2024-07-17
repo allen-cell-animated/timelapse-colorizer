@@ -379,9 +379,6 @@ export default class Dataset {
     onLoadStart?: () => void,
     onLoadComplete?: () => void
   ): Promise<void> {
-    if (manifestLoader === undefined) {
-      manifestLoader = urlUtils.fetchManifestJson;
-    }
     if (this.hasOpened) {
       return;
     }
