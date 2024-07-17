@@ -141,7 +141,7 @@ export default class Collection {
     const onLoadStart = (): void => {
       totalLoadItems++;
     };
-    const onLoadCompleted = (): void => {
+    const onLoadComplete = (): void => {
       completedLoadItems++;
       onLoadProgress?.(completedLoadItems, totalLoadItems);
     };
@@ -149,7 +149,7 @@ export default class Collection {
     // TODO: Override fetch method
     try {
       const dataset = new Dataset(path);
-      await dataset.open(undefined, onLoadStart, onLoadCompleted);
+      await dataset.open({ onLoadStart, onLoadComplete });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {
