@@ -21,6 +21,7 @@ import {
   ThresholdType,
   ViewerConfig,
 } from "../types";
+import { AnyManifestFile } from "./dataset_utils";
 import { numberToStringDecimal } from "./math_utils";
 
 enum UrlParam {
@@ -94,6 +95,15 @@ export function fetchWithTimeout(
 ): Promise<Response> {
   const fetchPromise = fetch(url, { signal: AbortSignal.timeout(timeoutMs), ...options });
   return fetchPromise;
+}
+
+/**
+ * Fetches a manifest JSON file from a given URL and returns the parsed JSON object.
+ */
+export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
+  // TODO: Should this report error states if load failed?
+  const response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
+  return await response.json();
 }
 
 /**

@@ -124,7 +124,10 @@ export default class Collection {
    *
    * See `DatasetLoadResult` for more details.
    */
-  public async tryLoadDataset(datasetKey: string): Promise<DatasetLoadResult> {
+  public async tryLoadDataset(
+    datasetKey: string,
+    onLoadProgress?: (complete: number, total: number) => void
+  ): Promise<DatasetLoadResult> {
     console.time("loadDataset");
 
     if (!this.hasDataset(datasetKey)) {
@@ -132,10 +135,21 @@ export default class Collection {
     }
     const path = this.getAbsoluteDatasetPath(datasetKey);
     console.log(`Fetching dataset from path '${path}'`);
+
+    let totalLoadItems = 0;
+    let completedLoadItems = 0;
+    const onLoadStart = (): void => {
+      totalLoadItems++;
+    };
+    const onLoadComplete = (): void => {
+      completedLoadItems++;
+      onLoadProgress?.(completedLoadItems, totalLoadItems);
+    };
+
     // TODO: Override fetch method
     try {
       const dataset = new Dataset(path);
-      await dataset.open();
+      await dataset.open({ onLoadStart, onLoadComplete });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {

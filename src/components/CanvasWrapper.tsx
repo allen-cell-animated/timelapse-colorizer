@@ -81,6 +81,7 @@ type CanvasWrapperProps = {
   collection: Collection | null;
   config: ViewerConfig;
   loading: boolean;
+  loadingProgress: number | null;
 
   selectedBackdropKey: string | null;
 
@@ -553,7 +554,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       }}
       ref={containerRef}
     >
-      <LoadingSpinner loading={props.loading}>
+      <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
         <div ref={canvasRef}></div>
       </LoadingSpinner>
       <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>

@@ -67,7 +67,7 @@ class MockArrayLoader implements IArrayLoader {
 export const makeMockDataset = async (manifest: AnyManifestFile): Promise<Dataset> => {
   const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
   const mockFetch = makeMockFetchMethod(DEFAULT_PATH, manifest);
-  await dataset.open(mockFetch);
+  await dataset.open({ manifestLoader: mockFetch });
   return dataset;
 };
 
@@ -225,7 +225,7 @@ describe("Dataset", () => {
         };
         const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
         const mockFetch = makeMockFetchMethod(DEFAULT_PATH, badManifest);
-        await expect(dataset.open(mockFetch)).rejects.toThrowError(ANY_ERROR);
+        await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
       });
 
       it("throws an error if the number of categories exceeds the max", async () => {
@@ -244,7 +244,7 @@ describe("Dataset", () => {
         };
         const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
         const mockFetch = makeMockFetchMethod(DEFAULT_PATH, badManifest);
-        await expect(dataset.open(mockFetch)).rejects.toThrowError(ANY_ERROR);
+        await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
       });
 
       it("Loads the first frame and retrieves frame dimensions on open", async () => {
@@ -262,7 +262,7 @@ describe("Dataset", () => {
         for (const [width, height] of dimensionTests) {
           const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(width, height), new MockArrayLoader());
           expect(dataset.frameResolution).to.deep.equal(new Vector2(1, 1));
-          await dataset.open(mockFetch);
+          await dataset.open({ manifestLoader: mockFetch });
           expect(dataset.frameResolution).to.deep.equal(new Vector2(width, height));
         }
       });
