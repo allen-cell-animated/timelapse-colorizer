@@ -91,15 +91,17 @@ export default function LoadingSpinner(inputProps: PropsWithChildren<LoadingSpin
 
   // Delay showing progress bar slightly; this fixes a visual bug where the loading spinner
   // would flash the progress bar at 100% right as it vanished.
-  const showProgressBar = useDebounce(props.progress !== undefined && props.progress !== null, VANISH_DURATION_MS);
+  const canShowProgressBar = props.progress !== undefined && props.progress !== null;
+  const showProgressBar = canShowProgressBar && useDebounce(canShowProgressBar, VANISH_DURATION_MS);
 
   return (
     <LoadingSpinnerContainer style={props.style}>
       <LoadingSpinnerOverlay $loading={props.loading}>
-        {showProgressBar && props.progress !== undefined && props.progress !== null ? (
+        {showProgressBar ? (
           <Progress
             type="circle"
-            percent={props.progress}
+            // `undefined` added here to make TypeScript happy
+            percent={props.progress ?? undefined}
             size={props.iconSize}
             format={progressFormatter}
             status="normal"

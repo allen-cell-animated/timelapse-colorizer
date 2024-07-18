@@ -363,21 +363,24 @@ export default class Dataset {
    * @returns A Promise that resolves when loading completes.
    */
   public async open(
-    manifestLoader = urlUtils.fetchManifestJson,
-    onLoadStart?: () => void,
-    onLoadComplete?: () => void
+    options: Partial<{
+      manifestLoader: typeof urlUtils.fetchManifestJson;
+      onLoadStart?: () => void;
+      onLoadComplete?: () => void;
+    }> = {}
   ): Promise<void> {
-    if (manifestLoader === undefined) {
-      manifestLoader = urlUtils.fetchManifestJson;
-    }
     if (this.hasOpened) {
       return;
     }
     this.hasOpened = true;
 
+    if (!options.manifestLoader) {
+      options.manifestLoader = urlUtils.fetchManifestJson;
+    }
+
     const startTime = new Date();
 
-    const manifest = updateManifestVersion(await manifestLoader(this.manifestUrl));
+    const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
@@ -402,9 +405,9 @@ export default class Dataset {
 
     // Wrap an async operation and report progress when it starts + completes
     const reportLoadProgress = async <T>(promise: Promise<T>): Promise<T> => {
-      onLoadStart?.();
+      options.onLoadStart?.();
       return promise.then((result) => {
-        onLoadComplete?.();
+        options.onLoadComplete?.();
         return result;
       });
     };
