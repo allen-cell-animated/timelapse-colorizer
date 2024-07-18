@@ -95,7 +95,7 @@ export default class UrlArrayLoader implements IArrayLoader {
           data = loadedData.map((row) => Number(row[0]));
         },
       });
-      return new UrlArraySource(data, min ?? dataMin ?? undefined, max ?? dataMax ?? undefined);
+      return new UrlArraySource(data, min ?? dataMin, max ?? dataMax);
     } else {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }
