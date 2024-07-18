@@ -64,10 +64,10 @@ export default class UrlArrayLoader implements IArrayLoader {
   /**
    * Loads array data from the specified URL, handling both JSON and Parquet files.
    * @param url The URL to load data from. Must end in ".json" or ".parquet".
-   * @param min Optional minimum value for the data. If defined, overrides the `min` value
-   *   in the JSON file.
-   * @param max Optional maximum value for the data. If defined, overrides the `max` value
-   *   in the JSON file.
+   * @param min Optional minimum value for the data. If defined, overrides the `min` field
+   *   in JSON files or the calculated minimum value for Parquet files.
+   * @param max Optional maximum value for the data. If defined, overrides the `max` field
+   *   in JSON files or the calculated maximum value for Parquet files.
    * @throws Error if the file format is not supported (not JSON or Parquet).
    * @returns a URLArraySource object containing the loaded data.
    */
@@ -81,14 +81,21 @@ export default class UrlArrayLoader implements IArrayLoader {
       const result = await fetch(url);
       const arrayBuffer = await result.arrayBuffer();
       let data: number[] = [];
+      let dataMin: number | undefined = undefined;
+      let dataMax: number | undefined = undefined;
       await parquetRead({
         file: arrayBuffer,
         compressors,
         onComplete: (loadedData: number[][]) => {
+          for (const row of loadedData) {
+            dataMin = dataMin === undefined ? row[0] : Math.min(dataMin, row[0]);
+            dataMax = dataMax === undefined ? row[0] : Math.max(dataMax, row[0]);
+            data.push(row[0]);
+          }
           data = loadedData.map((row) => Number(row[0]));
         },
       });
-      return new UrlArraySource(data, min ?? undefined, max ?? undefined);
+      return new UrlArraySource(data, min ?? dataMin ?? undefined, max ?? dataMax ?? undefined);
     } else {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }
