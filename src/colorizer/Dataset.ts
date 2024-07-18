@@ -356,19 +356,6 @@ export default class Dataset {
   }
 
   /**
-   * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
-   */
-  private getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
-    if (promise.status === "rejected") {
-      if (failureWarning) {
-        console.warn(failureWarning, promise.reason);
-      }
-      return null;
-    }
-    return promise.value;
-  }
-
-  /**
    * Opens the dataset and loads all necessary files from the manifest.
    * @param manifestLoader Optional. The function used to load the manifest JSON data. If undefined, uses a default fetch method.
    * @param onLoadStart Called once for each data file (other than the manifest) that starts an async load process.
@@ -442,11 +429,11 @@ export default class Dataset {
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
     // TODO: Improve error reporting for Dataset.load
-    this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
-    this.trackIds = this.getPromiseValue(tracks, "Failed to load tracks: ");
-    this.times = this.getPromiseValue(times, "Failed to load times: ");
-    this.centroids = this.getPromiseValue(centroids, "Failed to load centroids: ");
-    this.bounds = this.getPromiseValue(bounds, "Failed to load bounds: ");
+    this.outliers = urlUtils.getPromiseValue(outliers, "Failed to load outliers: ");
+    this.trackIds = urlUtils.getPromiseValue(tracks, "Failed to load tracks: ");
+    this.times = urlUtils.getPromiseValue(times, "Failed to load times: ");
+    this.centroids = urlUtils.getPromiseValue(centroids, "Failed to load centroids: ");
+    this.bounds = urlUtils.getPromiseValue(bounds, "Failed to load bounds: ");
 
     if (times.status === "rejected") {
       throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
@@ -454,7 +441,7 @@ export default class Dataset {
 
     // Keep original sorting order of features by inserting in promise order.
     featureResults.forEach((result, index) => {
-      const featureValue = this.getPromiseValue(result, `Failed to load feature ${index}`);
+      const featureValue = urlUtils.getPromiseValue(result, `Failed to load feature ${index}`);
       if (featureValue) {
         const [key, data] = featureValue;
         this.features.set(key, data);
@@ -463,7 +450,7 @@ export default class Dataset {
 
     if (this.features.size !== manifest.features.length) {
       console.warn(
-        "One or more features could not be loaded. This may be because of an unsupported format or a missing file. See console for details."
+        "One or more features could not be loaded. This may be because of an unsupported format or a missing file."
       );
     }
 
