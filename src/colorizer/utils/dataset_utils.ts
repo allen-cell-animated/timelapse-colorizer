@@ -64,6 +64,8 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
     unit?: string;
     type?: string;
     categories?: string[];
+    min?: number | null;
+    max?: number | null;
   }[];
   /** Optional list of backdrop/overlay images. */
   backdrops?: { name: string; key: string; frames: string[] }[];

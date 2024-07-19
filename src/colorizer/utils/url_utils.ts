@@ -21,6 +21,7 @@ import {
   ThresholdType,
   ViewerConfig,
 } from "../types";
+import { nanToNull } from "./data_utils";
 import { AnyManifestFile } from "./dataset_utils";
 import { numberToStringDecimal } from "./math_utils";
 
@@ -103,7 +104,21 @@ export function fetchWithTimeout(
 export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
   // TODO: Should this report error states if load failed?
   const response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
-  return await response.json();
+  return await JSON.parse(nanToNull(await response.text()));
+}
+
+/**
+ * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
+ * TODO: Pass in a callback to handle the error case instead of just logging a warning.
+ */
+export function getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
+  if (promise.status === "rejected") {
+    if (failureWarning) {
+      console.warn(failureWarning, promise.reason);
+    }
+    return null;
+  }
+  return promise.value;
 }
 
 /**

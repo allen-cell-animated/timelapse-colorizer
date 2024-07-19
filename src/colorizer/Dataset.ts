@@ -10,7 +10,7 @@ import * as urlUtils from "./utils/url_utils";
 import DataCache from "./DataCache";
 import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
-import JsonArrayLoader from "./loaders/JsonArrayLoader";
+import UrlArrayLoader from "./loaders/UrlArrayLoader";
 import Track from "./Track";
 
 export enum FeatureType {
@@ -104,7 +104,7 @@ export default class Dataset {
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
-    this.arrayLoader = arrayLoader || new JsonArrayLoader();
+    this.arrayLoader = arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.metadata = defaultMetadata;
   }
@@ -128,8 +128,9 @@ export default class Dataset {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
     const url = this.resolveUrl(metadata.data);
-    const source = await this.arrayLoader.load(url);
     const featureType = this.parseFeatureType(metadata.type);
+
+    const source = await this.arrayLoader.load(url);
 
     const featureCategories = metadata?.categories;
     // Validation
@@ -355,19 +356,6 @@ export default class Dataset {
   }
 
   /**
-   * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
-   */
-  private getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
-    if (promise.status === "rejected") {
-      if (failureWarning) {
-        console.warn(failureWarning, promise.reason);
-      }
-      return null;
-    }
-    return promise.value;
-  }
-
-  /**
    * Opens the dataset and loads all necessary files from the manifest.
    * @param manifestLoader Optional. The function used to load the manifest JSON data. If undefined, uses a default fetch method.
    * @param onLoadStart Called once for each data file (other than the manifest) that starts an async load process.
@@ -425,6 +413,9 @@ export default class Dataset {
     };
 
     // Load feature data
+    if (manifest.features.length === 0) {
+      throw new Error("No features found in dataset manifest. At least one feature must be defined.");
+    }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
       reportLoadProgress(this.loadFeature(data))
     );
@@ -440,28 +431,30 @@ export default class Dataset {
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
-    // TODO: Add reporting pathway for Dataset.load?
-    this.outliers = this.getPromiseValue(outliers, "Failed to load outliers: ");
-    this.trackIds = this.getPromiseValue(tracks, "Failed to load tracks: ");
-    this.times = this.getPromiseValue(times, "Failed to load times: ");
-    this.centroids = this.getPromiseValue(centroids, "Failed to load centroids: ");
-    this.bounds = this.getPromiseValue(bounds, "Failed to load bounds: ");
+    // TODO: Improve error reporting for Dataset.load
+    this.outliers = urlUtils.getPromiseValue(outliers, "Failed to load outliers: ");
+    this.trackIds = urlUtils.getPromiseValue(tracks, "Failed to load tracks: ");
+    this.times = urlUtils.getPromiseValue(times, "Failed to load times: ");
+    this.centroids = urlUtils.getPromiseValue(centroids, "Failed to load centroids: ");
+    this.bounds = urlUtils.getPromiseValue(bounds, "Failed to load bounds: ");
 
     if (times.status === "rejected") {
       throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
     }
 
     // Keep original sorting order of features by inserting in promise order.
-    featureResults.forEach((result) => {
-      const featureValue = this.getPromiseValue(result, "Failed to load feature: ");
+    featureResults.forEach((result, index) => {
+      const featureValue = urlUtils.getPromiseValue(result, `Failed to load feature ${index}`);
       if (featureValue) {
         const [key, data] = featureValue;
         this.features.set(key, data);
       }
     });
 
-    if (this.features.size === 0) {
-      throw new Error("No features found in dataset. Is the dataset manifest file valid?");
+    if (this.features.size !== manifest.features.length) {
+      console.warn(
+        "One or more features could not be loaded. This may be because of an unsupported format or a missing file."
+      );
     }
 
     // Analytics reporting
