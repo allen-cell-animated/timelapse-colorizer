@@ -86,13 +86,15 @@ export default class UrlArrayLoader implements IArrayLoader {
       await parquetRead({
         file: arrayBuffer,
         compressors,
+        columns: ["data"],
         onComplete: (loadedData: number[][]) => {
-          for (const row of loadedData) {
-            dataMin = dataMin === undefined ? row[0] : Math.min(dataMin, row[0]);
-            dataMax = dataMax === undefined ? row[0] : Math.max(dataMax, row[0]);
-            data.push(row[0]);
+          data = Array(loadedData.length);
+          for (let i = 0; i < loadedData.length; i++) {
+            const value = Number(loadedData[i][0]);
+            dataMin = dataMin === undefined ? value : Math.min(dataMin, value);
+            dataMax = dataMax === undefined ? value : Math.max(dataMax, value);
+            data[i] = value;
           }
-          data = loadedData.map((row) => Number(row[0]));
         },
       });
       return new UrlArraySource(data, min ?? dataMin, max ?? dataMax);
