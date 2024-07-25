@@ -130,7 +130,7 @@ export default class Dataset {
     const url = this.resolveUrl(metadata.data);
     const featureType = this.parseFeatureType(metadata.type);
 
-    const source = await this.arrayLoader.load(url);
+    const source = await this.arrayLoader.load(url, metadata.min ?? undefined, metadata.max ?? undefined);
 
     const featureCategories = metadata?.categories;
     // Validation

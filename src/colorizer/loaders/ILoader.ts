@@ -15,7 +15,7 @@ export interface ArraySource {
 
 interface ILoader<DataType> {
   /** Begin loading data */
-  load(url: string): Promise<DataType>;
+  load(url: string, min?: number, max?: number): Promise<DataType>;
 }
 
 export interface IFrameLoader extends ILoader<Texture> {}
