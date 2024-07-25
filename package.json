@@ -9,6 +9,7 @@
     "test": "vitest",
     "checks": "npm run lint & npm run typeCheck & npx vitest run",
     "build": "vite build",
+    "build-html": "vite build --base=/timelapse-feature-explorer/",
     "build-internal": "vite build --base=/nucmorph-colorizer/dist/",
     "preview": "vite preview",
     "deploy": "vite build --base=/timelapse-colorizer/ && gh-pages -d dist -a -m \"New gh-pages build; deployed via `deploy` script in `package.json`.\"",
