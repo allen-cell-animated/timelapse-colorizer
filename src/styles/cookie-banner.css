@@ -1,0 +1,10 @@
+#onetrust-consent-sdk {
+  font-family: Lato, LatoExtended, sans-serif;
+
+  .ot-sdk-container {
+  }
+
+  #onetrust-policy-text {
+    color: #323233;
+  }
+}
