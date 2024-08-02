@@ -1,6 +1,6 @@
 # Timelapse Feature Explorer 🔬🎨
 
-#### A web-based, time-series visualizer for tracked segmented data.
+#### A web-based, time-series visualizer for tracked segmented data
 
 ## Description
 
@@ -50,11 +50,11 @@ npm run dev
 
 This will start a development server you can access from your browser. By default, the server will be hosted at `http://localhost:5173/`.
 
-### Data preprocessing
+### Uploading datasets
 
 Data must be preprocessed to work with Timelapse Feature Explorer. We provide a Python package and example scripts in the [`colorizer-data` GitHub repository](https://github.com/allen-cell-animated/colorizer-data).
 
- [You can read more about the data format specification here.](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/DATA_FORMAT.md)
+ You can read more about the [data format specification](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/DATA_FORMAT.md) or follow our [data preprocessing tutorial](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb) for more details on how to load your own datasets.
 
 ## Development
 
