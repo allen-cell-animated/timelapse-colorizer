@@ -335,6 +335,12 @@ export default function LandingPage(): ReactElement {
       <ContentContainer style={{ paddingBottom: "400px" }}>
         <ProjectList>{landingPageContent.map(renderProject)}</ProjectList>
       </ContentContainer>
+
+      <ContentContainer style={{ marginBottom: "20px" }}>
+        <FlexColumnAlignCenter>
+          <Button className="ot-sdk-show-settings">Cookie Settings</Button>
+        </FlexColumnAlignCenter>
+      </ContentContainer>
     </>
   );
 }
