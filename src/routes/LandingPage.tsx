@@ -1,7 +1,7 @@
 import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Tooltip } from "antd";
-import React, { lazy, ReactElement, Suspense } from "react";
+import { Button, Divider, Tooltip } from "antd";
+import React, { lazy, ReactElement, Suspense, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
@@ -12,6 +12,7 @@ import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
 import Collection from "../colorizer/Collection";
+import { AppThemeContext } from "../components/AppStyle";
 import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
@@ -195,6 +196,7 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
 
 export default function LandingPage(): ReactElement {
   const navigate = useNavigate();
+  const theme = useContext(AppThemeContext);
 
   // Behavior
 
@@ -336,9 +338,12 @@ export default function LandingPage(): ReactElement {
         <ProjectList>{landingPageContent.map(renderProject)}</ProjectList>
       </ContentContainer>
 
-      <ContentContainer style={{ marginBottom: "20px" }}>
-        <FlexColumnAlignCenter>
-          <Button className="ot-sdk-show-settings">Cookie Settings</Button>
+      <ContentContainer style={{ padding: "0 30px 40px 30px" }}>
+        <Divider />
+        <FlexColumnAlignCenter style={{ paddingTop: "40px" }}>
+          <Button type="text" style={{ color: theme.color.text.secondary }} className="ot-sdk-show-settings">
+            Cookie settings
+          </Button>
         </FlexColumnAlignCenter>
       </ContentContainer>
     </>
