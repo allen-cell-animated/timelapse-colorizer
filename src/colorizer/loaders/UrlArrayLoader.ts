@@ -1,6 +1,6 @@
-import { parquetRead } from "hyparquet";
-import { compressors } from "hyparquet-compressors";
+import WorkerUrl from "./workers/urlLoadWorker?url&worker";
 import { DataTexture } from "three";
+import workerpool from "workerpool";
 
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
 import { nanToNull } from "../utils/data_utils";
@@ -61,6 +61,17 @@ export class UrlArraySource implements ArraySource {
 }
 
 export default class UrlArrayLoader implements IArrayLoader {
+  private workerPool: workerpool.Pool;
+
+  constructor() {
+    this.workerPool = workerpool.pool(WorkerUrl, {
+      maxWorkers: 5,
+      workerOpts: {
+        type: import.meta.env.PROD ? undefined : "module",
+      },
+    });
+  }
+
   /**
    * Loads array data from the specified URL, handling both JSON and Parquet files.
    * @param url The URL to load data from. Must end in ".json" or ".parquet".
@@ -78,24 +89,26 @@ export default class UrlArrayLoader implements IArrayLoader {
       const { data, min: jsonMin, max: jsonMax }: FeatureDataJson = JSON.parse(nanToNull(text));
       return new UrlArraySource(data, min ?? jsonMin, max ?? jsonMax);
     } else if (url.endsWith(".parquet")) {
-      const result = await fetch(url);
-      const arrayBuffer = await result.arrayBuffer();
-      let data: number[] = [];
-      let dataMin: number | undefined = undefined;
-      let dataMax: number | undefined = undefined;
-      await parquetRead({
-        file: arrayBuffer,
-        compressors,
-        onComplete: (loadedData: number[][]) => {
-          for (const row of loadedData) {
-            dataMin = dataMin === undefined ? row[0] : Math.min(dataMin, row[0]);
-            dataMax = dataMax === undefined ? row[0] : Math.max(dataMax, row[0]);
-            data.push(row[0]);
-          }
-          data = loadedData.map((row) => Number(row[0]));
-        },
-      });
-      return new UrlArraySource(data, min ?? dataMin, max ?? dataMax);
+      const { data, min: newMin, max: newMax } = await this.workerPool.exec("loadFromParquetUrl", [url, min, max]);
+      return new UrlArraySource(data, min ?? newMin, max ?? newMax);
+      // const result = await fetch(url);
+      // const arrayBuffer = await result.arrayBuffer();
+      // let data: number[] = [];
+      // let dataMin: number | undefined = undefined;
+      // let dataMax: number | undefined = undefined;
+      // await parquetRead({
+      //   file: arrayBuffer,
+      //   compressors,
+      //   onComplete: (loadedData: number[][]) => {
+      //     for (const row of loadedData) {
+      //       dataMin = dataMin === undefined ? row[0] : Math.min(dataMin, row[0]);
+      //       dataMax = dataMax === undefined ? row[0] : Math.max(dataMax, row[0]);
+      //       data.push(row[0]);
+      //     }
+      //     data = loadedData.map((row) => Number(row[0]));
+      //   },
+      // });
+      // return new UrlArraySource(data, min ?? dataMin, max ?? dataMax);
     } else {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }
