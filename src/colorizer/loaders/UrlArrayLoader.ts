@@ -44,10 +44,10 @@ export default class UrlArrayLoader implements IArrayLoader {
   private workerPool: workerpool.Pool;
 
   constructor() {
-    // TODO: Maintain a single worker pool for all loaders/all asynchronous operations in the app
+    // TODO: Maintain a single worker pool for all loaders/all asynchronous operations in the app?
     this.workerPool = workerpool.pool(WorkerUrl, {
       workerOpts: {
-        // Set type to fix a Vite issue where the application fails in production:
+        // Set worker type to fix a Vite issue where the application fails in production:
         // https://github.com/josdejong/workerpool/tree/master/examples/vite
         type: import.meta.env.PROD ? undefined : "module",
       },
@@ -57,7 +57,7 @@ export default class UrlArrayLoader implements IArrayLoader {
   /**
    * Loads array data from the specified URL, handling both JSON and Parquet files.
    * @param url The URL to load data from. Must end in ".json" or ".parquet".
-   * @param type Data type for the returned array source.
+   * @param type `FeatureDataType` for the returned array source (e.g. `F32` or `U8`).
    * @param min Optional minimum value for the data. If defined, overrides the `min` field
    *   in JSON files or the calculated minimum value for Parquet files.
    * @param max Optional maximum value for the data. If defined, overrides the `max` field
@@ -69,7 +69,6 @@ export default class UrlArrayLoader implements IArrayLoader {
     if (!url.endsWith(".json") && !url.endsWith(".parquet")) {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }
-    // Ownership of the data array is transferred instead of copied once the worker completes.
     const { data, min: newMin, max: newMax } = await this.workerPool.exec("load", [url, type]);
     return new UrlArraySource<T>(data, type, min ?? newMin, max ?? newMax);
   }
