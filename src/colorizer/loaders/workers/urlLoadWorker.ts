@@ -17,19 +17,20 @@ type FeatureDataJson = {
 async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<Transfer> {
   const result = await fetch(url);
   const text = await result.text();
+  // JSON does not support `NaN` so we use `null` as a placeholder for it.
   let { data: rawData, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
 
-  // Construct typed array from raw data so it can be transferred w/o copying to
-  // main thread
+  // Convert `null` placeholder values back to `NaN`.
+  for (let i = 0; i < rawData.length; i++) {
+    if (rawData[i] === null) {
+      rawData[i] = NaN;
+    }
+  }
   if (isBoolArray(rawData)) {
     rawData = rawData.map(Number);
   }
-  // Replace null values with Infinity due to WebGL not supporting NaN
-  for (let i = 0; i < rawData.length; i++) {
-    if (rawData[i] === null) {
-      rawData[i] = Infinity;
-    }
-  }
+  // Construct typed array from raw data so it can be transferred w/o copying to
+  // main thread
   const data = new featureTypeSpecs[type].ArrayConstructor(rawData);
 
   return new workerpool.Transfer({ min, max, data }, [data.buffer]);
@@ -47,16 +48,14 @@ async function loadFromParquetUrl(url: string, type: FeatureDataType): Promise<T
     compressors,
     onComplete: (rawData: number[][]) => {
       const data = new featureTypeSpecs[type].ArrayConstructor(rawData.flat().map(Number));
-
       // Get min and max values for the data
       for (let i = 0; i < data.length; i++) {
-        const value = Number(data);
+        const value = Number(data[i]);
         dataMin = dataMin === undefined ? value : Math.min(dataMin, value);
         dataMax = dataMax === undefined ? value : Math.max(dataMax, value);
       }
     },
   });
-
   return new workerpool.Transfer({ min: dataMin, max: dataMax, data }, [data.buffer]);
 }
 
@@ -68,6 +67,8 @@ async function load(url: string, type: FeatureDataType): Promise<Transfer> {
   } else {
     throw new Error(`Unsupported file format: ${url}`);
   }
+
+  // TODO: For float arrays, convert NaN to Infinity.
 
   // TODO: Also generate textures for the data on the worker thread too?
   // Would need access to the underlying array buffer to transfer
