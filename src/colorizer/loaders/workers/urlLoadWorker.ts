@@ -37,16 +37,15 @@ async function loadFromJsonUrl<T extends FeatureDataType>(url: string, type: T):
     rawData = rawData.map(Number);
   }
 
+  // Construct typed array
+  const data = new featureTypeSpecs[type].ArrayConstructor(rawData);
   // If min/max is not provided, calculate it from the data
   let dataMin = Number.POSITIVE_INFINITY;
   let dataMax = Number.NEGATIVE_INFINITY;
-  for (let i = 0; i < rawData.length; i++) {
-    dataMin = Math.min(rawData[i], dataMin);
-    dataMax = Math.max(rawData[i], dataMax);
+  for (let i = 0; i < data.length; i++) {
+    dataMin = Math.min(data[i], dataMin);
+    dataMax = Math.max(data[i], dataMax);
   }
-
-  // Construct typed array from raw data for transferring to main thread
-  const data = new featureTypeSpecs[type].ArrayConstructor(rawData);
   return { data, min: min ?? dataMin, max: max ?? dataMax };
 }
 
@@ -91,6 +90,7 @@ async function load(url: string, type: FeatureDataType): Promise<Transfer> {
   // TODO: Also generate textures for the data on the worker thread too?
   // Would need access to the underlying array buffer to transfer
 
+  // `Transfer` is used to transfer the data buffer to the main thread without copying.
   return new workerpool.Transfer({ min, max, data }, [data.buffer]);
 }
 
