@@ -244,10 +244,6 @@ const CssContainer = styled.div`
     color: ${theme.color.button.outline};
   }
 
-  .ant-btn-text:hover > span {
-    text-decoration: underline;
-  }
-
   font-family: var(--default-font);
   font-style: normal;
   font-weight: 400;
