@@ -92,24 +92,7 @@ export default class UrlArrayLoader implements IArrayLoader {
     } else if (url.endsWith(".parquet")) {
       const { data, min: newMin, max: newMax } = await this.workerPool.exec("loadFromParquetUrl", [url, min, max]);
       return new UrlArraySource(data, min ?? newMin, max ?? newMax);
-      // const result = await fetch(url);
-      // const arrayBuffer = await result.arrayBuffer();
-      // let data: number[] = [];
-      // let dataMin: number | undefined = undefined;
-      // let dataMax: number | undefined = undefined;
-      // await parquetRead({
-      //   file: arrayBuffer,
-      //   compressors,
-      //   onComplete: (loadedData: number[][]) => {
-      //     for (const row of loadedData) {
-      //       dataMin = dataMin === undefined ? row[0] : Math.min(dataMin, row[0]);
-      //       dataMax = dataMax === undefined ? row[0] : Math.max(dataMax, row[0]);
-      //       data.push(row[0]);
-      //     }
-      //     data = loadedData.map((row) => Number(row[0]));
-      //   },
-      // });
-      // return new UrlArraySource(data, min ?? dataMin, max ?? dataMax);
+      // TODO: Handle floats vs. integer values
     } else {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }

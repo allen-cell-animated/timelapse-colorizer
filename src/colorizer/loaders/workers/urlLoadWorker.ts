@@ -15,7 +15,7 @@ async function loadFromParquetUrl(url: string): Promise<Transfer> {
     onComplete: (loadedData: number[][]) => {
       const data = new Float32Array(loadedData.length);
       for (let i = 0; i < loadedData.length; i++) {
-        const value = loadedData[i][0];
+        const value = Number(loadedData[i][0]);
         dataMin = dataMin === undefined ? value : Math.min(dataMin, value);
         dataMax = dataMax === undefined ? value : Math.max(dataMax, value);
         data[i] = value;
