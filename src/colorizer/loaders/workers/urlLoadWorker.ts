@@ -3,7 +3,7 @@ import { compressors } from "hyparquet-compressors";
 import workerpool from "workerpool";
 import Transfer from "workerpool/types/transfer";
 
-import { FeatureDataType, featureTypeSpecs } from "../../types";
+import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../../types";
 import { nanToNull } from "../../utils/data_utils";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
@@ -23,7 +23,7 @@ async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<Tran
   // Convert `null` placeholder values back to `NaN`.
   for (let i = 0; i < rawData.length; i++) {
     if (rawData[i] === null) {
-      rawData[i] = NaN;
+      rawData[i] = Infinity;
     }
   }
   if (isBoolArray(rawData)) {
@@ -39,7 +39,7 @@ async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<Tran
 async function loadFromParquetUrl(url: string, type: FeatureDataType): Promise<Transfer> {
   const result = await fetch(url);
   const arrayBuffer = await result.arrayBuffer();
-  let data: Float32Array | Uint32Array | Uint8Array = new Float32Array(0);
+  let data: FeatureArrayType[typeof type] = new featureTypeSpecs[type].ArrayConstructor(0);
   let dataMin: number | undefined = undefined;
   let dataMax: number | undefined = undefined;
 
@@ -47,12 +47,15 @@ async function loadFromParquetUrl(url: string, type: FeatureDataType): Promise<T
     file: arrayBuffer,
     compressors,
     onComplete: (rawData: number[][]) => {
-      const data = new featureTypeSpecs[type].ArrayConstructor(rawData.flat().map(Number));
+      data = new featureTypeSpecs[type].ArrayConstructor(rawData.flat());
       // Get min and max values for the data
       for (let i = 0; i < data.length; i++) {
         const value = Number(data[i]);
         dataMin = dataMin === undefined ? value : Math.min(dataMin, value);
         dataMax = dataMax === undefined ? value : Math.max(dataMax, value);
+        if (isNaN(value)) {
+          data[i] = Infinity;
+        }
       }
     },
   });
