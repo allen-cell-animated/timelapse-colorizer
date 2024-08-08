@@ -8,26 +8,28 @@ import { packDataTexture } from "../utils/texture_utils";
 
 import { ArraySource, IArrayLoader } from "./ILoader";
 
-export class UrlArraySource implements ArraySource {
-  array: number[];
+export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T> {
+  array: FeatureArrayType[T];
+  type: T;
   min: number;
   max: number;
 
-  constructor(array: number[] | Float32Array, min: number, max: number) {
+  constructor(array: FeatureArrayType[T], type: T, min: number, max: number) {
     // Must store Infinity values internally because WebGL states that NaN behavior is undefined.
     // This can cause shaders to not detect NaN, and operations like isnan() fail.
     // On the UI, however, Infinity should be parsed as NaN for display.
-    this.array = array.map((val) => (val === null ? Infinity : val));
+    this.array = array;
+    this.type = type;
     this.min = min;
     this.max = max;
   }
 
-  getBuffer<T extends FeatureDataType>(type: T): FeatureArrayType[T] {
-    return new featureTypeSpecs[type].ArrayConstructor(this.array);
+  getBuffer(): FeatureArrayType[T] {
+    return this.array;
   }
 
-  getTexture(type: FeatureDataType): DataTexture {
-    return packDataTexture(this.array, type);
+  getTexture(): DataTexture {
+    return packDataTexture(this.array, this.type);
   }
 
   getMin(): number {
@@ -62,15 +64,10 @@ export default class UrlArrayLoader implements IArrayLoader {
    * @throws Error if the file format is not supported (not JSON or Parquet).
    * @returns a URLArraySource object containing the loaded data.
    */
-  async load(
-    url: string,
-    min?: number,
-    max?: number,
-    type: FeatureDataType = FeatureDataType.F32
-  ): Promise<UrlArraySource> {
+  async load<T extends FeatureDataType>(url: string, type: T, min?: number, max?: number): Promise<UrlArraySource<T>> {
     if (url.endsWith(".json") || url.endsWith(".parquet")) {
       const { data, min: newMin, max: newMax } = await this.workerPool.exec("load", [url, type]);
-      return new UrlArraySource(data, min ?? newMin, max ?? newMax);
+      return new UrlArraySource<T>(data, type, min ?? newMin, max ?? newMax);
     } else {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }

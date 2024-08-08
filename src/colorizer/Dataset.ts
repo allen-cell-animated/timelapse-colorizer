@@ -130,7 +130,7 @@ export default class Dataset {
     const url = this.resolveUrl(metadata.data);
     const featureType = this.parseFeatureType(metadata.type);
 
-    const source = await this.arrayLoader.load(url);
+    const source = await this.arrayLoader.load(url, FeatureDataType.F32);
 
     const featureCategories = metadata?.categories;
     // Validation
@@ -148,8 +148,8 @@ export default class Dataset {
       {
         name,
         key,
-        tex: source.getTexture(FeatureDataType.F32),
-        data: source.getBuffer(FeatureDataType.F32),
+        tex: source.getTexture(),
+        data: source.getBuffer(),
         min: source.getMin(),
         max: source.getMax(),
         unit: metadata?.unit || "",
@@ -269,8 +269,8 @@ export default class Dataset {
     }
     try {
       const url = this.resolveUrl(fileUrl);
-      const source = await this.arrayLoader.load(url);
-      return source.getBuffer(dataType);
+      const source = await this.arrayLoader.load(url, dataType);
+      return source.getBuffer();
     } catch (e) {
       return null;
     }
