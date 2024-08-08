@@ -16,8 +16,8 @@ type FeatureDataJson = {
 
 type LoadedData<T extends FeatureDataType> = {
   data: FeatureArrayType[T];
-  min?: number;
-  max?: number;
+  min: number;
+  max: number;
 };
 
 async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<LoadedData<typeof type>> {
@@ -36,25 +36,36 @@ async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<Load
     rawData = rawData.map(Number);
   }
 
+  // If min/max is not provided, calculate it from the data
+  let dataMin = Number.POSITIVE_INFINITY;
+  let dataMax = Number.NEGATIVE_INFINITY;
+  for (let i = 0; i < rawData.length; i++) {
+    dataMin = Math.min(rawData[i], dataMin);
+    dataMax = Math.max(rawData[i], dataMax);
+  }
+
   // Construct typed array from raw data so it can be transferred w/o copying to
   // main thread
   const data = new featureTypeSpecs[type].ArrayConstructor(rawData);
 
-  return { data, min, max };
+  return { data, min: min ?? dataMin, max: max ?? dataMax };
 }
 
 async function loadFromParquetUrl(url: string, type: FeatureDataType): Promise<LoadedData<typeof type>> {
   const result = await fetch(url);
   const arrayBuffer = await result.arrayBuffer();
   let data: FeatureArrayType[typeof type] = new featureTypeSpecs[type].ArrayConstructor(0);
-  let dataMin: number | undefined = undefined;
-  let dataMax: number | undefined = undefined;
+  let dataMin: number = Number.POSITIVE_INFINITY;
+  let dataMax: number = Number.NEGATIVE_INFINITY;
 
   await parquetRead({
     file: arrayBuffer,
     compressors,
     onComplete: (rawData: number[][]) => {
-      data = new featureTypeSpecs[type].ArrayConstructor(rawData.flatMap(Number));
+      const flattenedMap = rawData.flat().map((value) => {
+        return value === null ? NaN : Number(value);
+      });
+      data = new featureTypeSpecs[type].ArrayConstructor(flattenedMap);
       // Get min and max values for the data
       for (let i = 0; i < data.length; i++) {
         const value = Number(data[i]);
