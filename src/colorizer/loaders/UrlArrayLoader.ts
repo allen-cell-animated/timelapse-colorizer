@@ -1,7 +1,9 @@
-// @ts-ignore Ignore missing file
-import WorkerUrl from "./workers/urlLoadWorker?url&worker";
+// sort-imports-ignore
 import { DataTexture } from "three";
 import workerpool from "workerpool";
+
+// @ts-ignore Ignore missing file
+import WorkerUrl from "./workers/urlLoadWorker?url&worker";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
 import { packDataTexture } from "../utils/texture_utils";
@@ -45,8 +47,11 @@ export default class UrlArrayLoader implements IArrayLoader {
   private workerPool: workerpool.Pool;
 
   constructor() {
+    // TODO: Maintain a single worker pool for all loaders/all asynchronous operations in the app
     this.workerPool = workerpool.pool(WorkerUrl, {
       workerOpts: {
+        // Fixes a Vite issue  where the application fails in production:
+        //  https://github.com/josdejong/workerpool/tree/master/examples/vite
         type: import.meta.env.PROD ? undefined : "module",
       },
     });
@@ -71,5 +76,9 @@ export default class UrlArrayLoader implements IArrayLoader {
     } else {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }
+  }
+
+  dispose(): void {
+    this.workerPool.terminate();
   }
 }

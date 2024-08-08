@@ -4,7 +4,7 @@ import workerpool from "workerpool";
 import Transfer from "workerpool/types/transfer";
 
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../../types";
-import { nanToNull } from "../../utils/data_utils";
+import { nanToNull } from "../../utils/json_utils";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
@@ -25,7 +25,10 @@ async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<Load
   const text = await result.text();
   // JSON does not support `NaN` so we use `null` as a placeholder for it, then convert back
   // to `NaN` when parsing the data.
-  let { data: rawData, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
+  const parseResult: FeatureDataJson = JSON.parse(nanToNull(text));
+  let { data: rawData } = parseResult;
+  const { min, max } = parseResult;
+
   for (let i = 0; i < rawData.length; i++) {
     if (rawData[i] === null) {
       rawData[i] = NaN;
