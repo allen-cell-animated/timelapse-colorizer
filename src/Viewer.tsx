@@ -40,6 +40,7 @@ import { LocationState } from "./types";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
+import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import TimeControls from "./colorizer/TimeControls";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
@@ -80,6 +81,8 @@ function Viewer(): ReactElement {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetKey, setDatasetKey] = useState("");
   const [, addRecentCollection] = useRecentCollections();
+  // Shared array loader to manage worker pool
+  const arrayLoader = useConstructor(() => new UrlArrayLoader());
 
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -526,7 +529,7 @@ function Viewer(): ReactElement {
 
       setCollection(newCollection);
       setDatasetLoadProgress(null);
-      const datasetResult = await newCollection.tryLoadDataset(datasetKey, handleProgressUpdate);
+      const datasetResult = await newCollection.tryLoadDataset(datasetKey, handleProgressUpdate, arrayLoader);
 
       if (!datasetResult.loaded) {
         console.error(datasetResult.errorMessage);
@@ -627,7 +630,7 @@ function Viewer(): ReactElement {
       if (newDatasetKey !== datasetKey && collection) {
         setIsDatasetLoading(true);
         setDatasetLoadProgress(null);
-        const result = await collection.tryLoadDataset(newDatasetKey, handleProgressUpdate);
+        const result = await collection.tryLoadDataset(newDatasetKey, handleProgressUpdate, arrayLoader);
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
         } else {

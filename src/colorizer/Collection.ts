@@ -118,6 +118,8 @@ export default class Collection {
   /**
    * Attempts to load and return the dataset specified by the key.
    * @param datasetKey string key of the dataset.
+   * @param onLoadProgress optional callback for loading progress.
+   * @param arrayLoader optional array loader to use for loading the dataset.
    * @returns A promise of a `DatasetLoadResult`.
    * - On a success, returns an object with a Dataset `dataset` and the `loaded` flag set to true.
    * - On a failure, returns an object with a null `dataset` and `loaded` set to false, as well as
