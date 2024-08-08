@@ -3,7 +3,7 @@ import WorkerUrl from "./workers/urlLoadWorker?url&worker";
 import { DataTexture } from "three";
 import workerpool from "workerpool";
 
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
+import { FeatureArrayType, FeatureDataType } from "../types";
 import { packDataTexture } from "../utils/texture_utils";
 
 import { ArraySource, IArrayLoader } from "./ILoader";
@@ -46,7 +46,6 @@ export default class UrlArrayLoader implements IArrayLoader {
 
   constructor() {
     this.workerPool = workerpool.pool(WorkerUrl, {
-      maxWorkers: 5,
       workerOpts: {
         type: import.meta.env.PROD ? undefined : "module",
       },
@@ -67,7 +66,8 @@ export default class UrlArrayLoader implements IArrayLoader {
   async load<T extends FeatureDataType>(url: string, type: T, min?: number, max?: number): Promise<UrlArraySource<T>> {
     if (url.endsWith(".json") || url.endsWith(".parquet")) {
       const { data, min: newMin, max: newMax } = await this.workerPool.exec("load", [url, type]);
-      return new UrlArraySource<T>(data, type, min ?? newMin, max ?? newMax);
+      const result = new UrlArraySource<T>(data, type, min ?? newMin, max ?? newMax);
+      return result;
     } else {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }

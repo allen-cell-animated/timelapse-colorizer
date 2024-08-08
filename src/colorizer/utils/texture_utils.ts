@@ -35,6 +35,14 @@ export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayTyp
   const spec = featureTypeSpecs[type];
   const buffer = padToLength(data, type, 0, length);
 
+  // Convert all NaNs in the buffer to Infinity to avoid issues with WebGL.
+  // This assumes that the data is float-based.
+  for (let i = 0; i < buffer.length; i++) {
+    if (Number.isNaN(buffer[i])) {
+      buffer[i] = Infinity;
+    }
+  }
+
   const tex = new DataTexture(buffer, width, height, spec.format, spec.dataType);
   tex.internalFormat = spec.internalFormat;
   tex.needsUpdate = true;
