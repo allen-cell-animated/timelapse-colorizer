@@ -19,4 +19,5 @@ export interface IFrameLoader {
 
 export interface IArrayLoader {
   load<T extends FeatureDataType>(url: string, type: T, min?: number, max?: number): Promise<ArraySource<T>>;
+  dispose(): void;
 }

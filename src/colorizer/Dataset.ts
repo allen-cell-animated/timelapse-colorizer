@@ -60,6 +60,7 @@ export default class Dataset {
   // private backdrops: Map<string, FrameCache | null>;
 
   private arrayLoader: IArrayLoader;
+  private cleanupArrayLoaderOnDispose: boolean;
   // Use map to enforce ordering
   /** Ordered map from feature keys to feature data. */
   private features: Map<string, FeatureData>;
@@ -104,6 +105,7 @@ export default class Dataset {
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
+    this.cleanupArrayLoaderOnDispose = !arrayLoader;
     this.arrayLoader = arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.metadata = defaultMetadata;
@@ -479,6 +481,10 @@ export default class Dataset {
   public dispose(): void {
     Object.values(this.features).forEach(({ tex }) => tex.dispose());
     this.frames?.dispose();
+    // Cleanup array loader if it was created in the constructor
+    if (this.cleanupArrayLoaderOnDispose) {
+      this.arrayLoader.dispose();
+    }
   }
 
   /** get frame index of a given cell id */

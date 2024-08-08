@@ -45,6 +45,7 @@ export default class UrlArrayLoader implements IArrayLoader {
   private workerPool: workerpool.Pool;
 
   constructor() {
+    // TODO: Maintain a single worker pool for all loaders/all asynchronous operations in the app
     this.workerPool = workerpool.pool(WorkerUrl, {
       workerOpts: {
         type: import.meta.env.PROD ? undefined : "module",
@@ -71,5 +72,9 @@ export default class UrlArrayLoader implements IArrayLoader {
     } else {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }
+  }
+
+  dispose(): void {
+    this.workerPool.terminate();
   }
 }
