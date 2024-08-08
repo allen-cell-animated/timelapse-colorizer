@@ -29,12 +29,29 @@ function padToLength<T extends FeatureDataType>(
   return buffer;
 }
 
+/**
+ * Creates a DataTexture from a TypedArray, using the specified FeatureDataType `type` and dimensions.
+ * @returns A `DataTexture` containing the data, with the specified dimensions and an internal format
+ * matching the `type`.
+ */
+export function typedArrayToDataTexture<T extends FeatureDataType>(
+  data: FeatureArrayType[T],
+  type: T,
+  width: number,
+  height: number
+): DataTexture {
+  const spec = featureTypeSpecs[type];
+  const tex = new DataTexture(data, width, height, spec.format, spec.dataType);
+  tex.internalFormat = spec.internalFormat;
+  tex.needsUpdate = true;
+  return tex;
+}
+
 /** Pack a 1d array of data into the squarest 2d texture possible */
 export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayType[T] | number[], type: T): DataTexture {
   const [width, height] = getSquarestTextureDimensions(data);
   const length = width * height;
 
-  const spec = featureTypeSpecs[type];
   const buffer = padToLength(data, type, 0, length);
 
   // Convert all NaNs in the buffer to Infinity before texture conversion, as WebGL has undefined
@@ -45,8 +62,5 @@ export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayTyp
     }
   }
 
-  const tex = new DataTexture(buffer, width, height, spec.format, spec.dataType);
-  tex.internalFormat = spec.internalFormat;
-  tex.needsUpdate = true;
-  return tex;
+  return typedArrayToDataTexture(buffer, type, width, height);
 }

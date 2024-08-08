@@ -7,21 +7,23 @@ import workerpool from "workerpool";
 import WorkerUrl from "./workers/urlLoadWorker?url&worker";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
-import { packDataTexture } from "../utils/texture_utils";
+import { typedArrayToDataTexture } from "../utils/texture_utils";
 
 import { ArraySource, IArrayLoader } from "./ILoader";
 
 export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T> {
   array: FeatureArrayType[T];
+  texture: DataTexture;
   type: T;
   min: number;
   max: number;
 
-  constructor(array: FeatureArrayType[T], type: T, min: number, max: number) {
+  constructor(array: FeatureArrayType[T], texture: DataTexture, type: T, min: number, max: number) {
     this.array = array;
     this.type = type;
     this.min = min;
     this.max = max;
+    this.texture = texture;
   }
 
   getBuffer(): FeatureArrayType[T] {
@@ -29,7 +31,7 @@ export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T>
   }
 
   getTexture(): DataTexture {
-    return packDataTexture(this.array, this.type);
+    return this.texture;
   }
 
   getMin(): number {
@@ -71,8 +73,11 @@ export default class UrlArrayLoader implements IArrayLoader {
     if (!url.endsWith(".json") && !url.endsWith(".parquet")) {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }
-    const { data, min: newMin, max: newMax } = await this.workerPool.exec("load", [url, type]);
-    return new UrlArraySource<T>(data, type, min ?? newMin, max ?? newMax);
+    const { data, texImage, min: newMin, max: newMax } = await this.workerPool.exec("load", [url, type]);
+    // Reconstruct instance of DataTexture on the main thread
+    const tex = typedArrayToDataTexture(texImage.data, type, texImage.width, texImage.height);
+
+    return new UrlArraySource<T>(data, tex, type, min ?? newMin, max ?? newMax);
   }
 
   dispose(): void {
