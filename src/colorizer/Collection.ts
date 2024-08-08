@@ -10,7 +10,6 @@ import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl }
 
 import Dataset from "./Dataset";
 import { IArrayLoader } from "./loaders/ILoader";
-import UrlArrayLoader from "./loaders/UrlArrayLoader";
 
 export type CollectionData = Map<string, CollectionEntry>;
 
@@ -31,7 +30,6 @@ export type DatasetLoadResult =
  * information and paths.
  */
 export default class Collection {
-  private arrayLoader: IArrayLoader;
   private entries: CollectionData;
   public metadata: Partial<CollectionFileMetadata>;
   /**
@@ -51,7 +49,6 @@ export default class Collection {
     this.entries = entries;
     this.url = url ? Collection.formatAbsoluteCollectionPath(url) : url;
     this.metadata = metadata;
-    this.arrayLoader = new UrlArrayLoader();
     console.log("Collection metadata: ", this.metadata);
 
     // Check that all entry paths are JSON urls.
@@ -130,7 +127,8 @@ export default class Collection {
    */
   public async tryLoadDataset(
     datasetKey: string,
-    onLoadProgress?: (complete: number, total: number) => void
+    onLoadProgress?: (complete: number, total: number) => void,
+    arrayLoader?: IArrayLoader
   ): Promise<DatasetLoadResult> {
     console.time("loadDataset");
 
@@ -152,7 +150,7 @@ export default class Collection {
 
     // TODO: Override fetch method
     try {
-      const dataset = new Dataset(path, undefined, this.arrayLoader);
+      const dataset = new Dataset(path, undefined, arrayLoader);
       await dataset.open({ onLoadStart, onLoadComplete });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
