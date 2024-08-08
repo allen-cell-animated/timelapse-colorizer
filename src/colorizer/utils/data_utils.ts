@@ -6,12 +6,6 @@ import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
 
 /**
- * Replaces all NaN in string text (such as the string representation of a JSON
- * object) with null. Can be used to safely parse JSON objects with NaN values.
- */
-export const nanToNull = (json: string): string => json.replace(/NaN/g, "null");
-
-/**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
  * @param featureKey String feature key to match on.
  * @param unit String unit to match on.

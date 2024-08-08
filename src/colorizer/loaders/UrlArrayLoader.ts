@@ -50,6 +50,8 @@ export default class UrlArrayLoader implements IArrayLoader {
     // TODO: Maintain a single worker pool for all loaders/all asynchronous operations in the app
     this.workerPool = workerpool.pool(WorkerUrl, {
       workerOpts: {
+        // Fixes a Vite issue  where the application fails in production:
+        //  https://github.com/josdejong/workerpool/tree/master/examples/vite
         type: import.meta.env.PROD ? undefined : "module",
       },
     });

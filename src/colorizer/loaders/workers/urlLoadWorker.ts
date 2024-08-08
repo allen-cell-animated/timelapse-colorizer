@@ -4,7 +4,7 @@ import workerpool from "workerpool";
 import Transfer from "workerpool/types/transfer";
 
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../../types";
-import { nanToNull } from "../../utils/data_utils";
+import { nanToNull } from "../../utils/json_utils";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
