@@ -1,7 +1,9 @@
-// @ts-ignore Ignore missing file
-import WorkerUrl from "./workers/urlLoadWorker?url&worker";
+// sort-imports-ignore
 import { DataTexture } from "three";
 import workerpool from "workerpool";
+
+// @ts-ignore Ignore missing file
+import WorkerUrl from "./workers/urlLoadWorker?url&worker";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
 import { packDataTexture } from "../utils/texture_utils";
