@@ -20,11 +20,10 @@ type LoadedData<T extends FeatureDataType> = {
   max: number;
 };
 
-async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<LoadedData<typeof type>> {
+async function loadFromJsonUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
   const result = await fetch(url);
   const text = await result.text();
-  // JSON does not support `NaN` so we use `null` as a placeholder for it, then convert back
-  // to `NaN` when parsing the data.
+  // JSON does not support `NaN` so we use `null` as a placeholder for it while parsing, then convert back.
   const parseResult: FeatureDataJson = JSON.parse(nanToNull(text));
   let { data: rawData } = parseResult;
   const { min, max } = parseResult;
@@ -34,7 +33,6 @@ async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<Load
       rawData[i] = NaN;
     }
   }
-
   if (isBoolArray(rawData)) {
     rawData = rawData.map(Number);
   }
@@ -47,17 +45,15 @@ async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<Load
     dataMax = Math.max(rawData[i], dataMax);
   }
 
-  // Construct typed array from raw data so it can be transferred w/o copying to
-  // main thread
+  // Construct typed array from raw data for transferring to main thread
   const data = new featureTypeSpecs[type].ArrayConstructor(rawData);
-
   return { data, min: min ?? dataMin, max: max ?? dataMax };
 }
 
-async function loadFromParquetUrl(url: string, type: FeatureDataType): Promise<LoadedData<typeof type>> {
+async function loadFromParquetUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
   const result = await fetch(url);
   const arrayBuffer = await result.arrayBuffer();
-  let data: FeatureArrayType[typeof type] = new featureTypeSpecs[type].ArrayConstructor(0);
+  let data: FeatureArrayType[T] = new featureTypeSpecs[type].ArrayConstructor(0);
   let dataMin: number = Number.POSITIVE_INFINITY;
   let dataMax: number = Number.NEGATIVE_INFINITY;
 
