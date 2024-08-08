@@ -9,7 +9,7 @@ export const landingPageContent: ProjectEntry[] = [
     name: "Tracked hiPSC FOV-nuclei timelapse datasets",
     inReview: true,
     description: (
-      <p>
+      <>
         Maximum projections of tracked 3D segmentations of nuclei in growing hiPS cell colonies, with quantitative
         features of nuclear shape, size and more. The exploratory dataset includes all tracked nuclei, with the baseline
         colonies, full-interphase, and lineage-annotated datasets as subsets of this dataset, analyzed in the study of
@@ -26,7 +26,7 @@ export const landingPageContent: ProjectEntry[] = [
           our datasets hosted on Quilt
         </ExternalLink>
         .
-      </p>
+      </>
     ),
     // publicationLink: new URL("https://www.google.com"),
     // publicationName: "<NucMorph manuscript> (Publisher name, mm/dd/yyyy)",
