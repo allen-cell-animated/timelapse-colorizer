@@ -14,29 +14,36 @@ type FeatureDataJson = {
   max?: number;
 };
 
-async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<Transfer> {
+type LoadedData<T extends FeatureDataType> = {
+  data: FeatureArrayType[T];
+  min?: number;
+  max?: number;
+};
+
+async function loadFromJsonUrl(url: string, type: FeatureDataType): Promise<LoadedData<typeof type>> {
   const result = await fetch(url);
   const text = await result.text();
-  // JSON does not support `NaN` so we use `null` as a placeholder for it.
+  // JSON does not support `NaN` so we use `null` as a placeholder for it, then convert back
+  // to `NaN` when parsing the data.
   let { data: rawData, min, max }: FeatureDataJson = JSON.parse(nanToNull(text));
-
-  // Convert `null` placeholder values back to `NaN`.
   for (let i = 0; i < rawData.length; i++) {
     if (rawData[i] === null) {
-      rawData[i] = Infinity;
+      rawData[i] = NaN;
     }
   }
+
   if (isBoolArray(rawData)) {
     rawData = rawData.map(Number);
   }
+
   // Construct typed array from raw data so it can be transferred w/o copying to
   // main thread
   const data = new featureTypeSpecs[type].ArrayConstructor(rawData);
 
-  return new workerpool.Transfer({ min, max, data }, [data.buffer]);
+  return { data, min, max };
 }
 
-async function loadFromParquetUrl(url: string, type: FeatureDataType): Promise<Transfer> {
+async function loadFromParquetUrl(url: string, type: FeatureDataType): Promise<LoadedData<typeof type>> {
   const result = await fetch(url);
   const arrayBuffer = await result.arrayBuffer();
   let data: FeatureArrayType[typeof type] = new featureTypeSpecs[type].ArrayConstructor(0);
@@ -47,34 +54,34 @@ async function loadFromParquetUrl(url: string, type: FeatureDataType): Promise<T
     file: arrayBuffer,
     compressors,
     onComplete: (rawData: number[][]) => {
-      data = new featureTypeSpecs[type].ArrayConstructor(rawData.flat());
+      data = new featureTypeSpecs[type].ArrayConstructor(rawData.flatMap(Number));
       // Get min and max values for the data
       for (let i = 0; i < data.length; i++) {
         const value = Number(data[i]);
         dataMin = dataMin === undefined ? value : Math.min(dataMin, value);
         dataMax = dataMax === undefined ? value : Math.max(dataMax, value);
-        if (isNaN(value)) {
-          data[i] = Infinity;
-        }
       }
     },
   });
-  return new workerpool.Transfer({ min: dataMin, max: dataMax, data }, [data.buffer]);
+  return { data, min: dataMin, max: dataMax };
 }
 
 async function load(url: string, type: FeatureDataType): Promise<Transfer> {
+  let result: LoadedData<typeof type>;
   if (url.endsWith(".json")) {
-    return loadFromJsonUrl(url, type);
+    result = await loadFromJsonUrl(url, type);
   } else if (url.endsWith(".parquet")) {
-    return loadFromParquetUrl(url, type);
+    result = await loadFromParquetUrl(url, type);
   } else {
     throw new Error(`Unsupported file format: ${url}`);
   }
 
-  // TODO: For float arrays, convert NaN to Infinity.
+  const { min, max, data } = result;
 
   // TODO: Also generate textures for the data on the worker thread too?
   // Would need access to the underlying array buffer to transfer
+
+  return new workerpool.Transfer({ min, max, data }, [data.buffer]);
 }
 
 workerpool.worker({

@@ -46,7 +46,6 @@ export default class UrlArrayLoader implements IArrayLoader {
 
   constructor() {
     this.workerPool = workerpool.pool(WorkerUrl, {
-      maxWorkers: 5,
       workerOpts: {
         type: import.meta.env.PROD ? undefined : "module",
       },
