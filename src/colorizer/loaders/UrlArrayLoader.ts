@@ -1,3 +1,4 @@
+// @ts-ignore Ignore missing file
 import WorkerUrl from "./workers/urlLoadWorker?url&worker";
 import { DataTexture } from "three";
 import workerpool from "workerpool";
