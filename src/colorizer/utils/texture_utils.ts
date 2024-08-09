@@ -33,7 +33,7 @@ export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayTyp
   const length = width * height;
 
   // If provided a regular array of numbers, convert to TypedArray
-  if (!ArrayBuffer.isView(data)) {
+  if (Array.isArray(data)) {
     data = new featureTypeSpecs[type].ArrayConstructor(data);
   }
 
