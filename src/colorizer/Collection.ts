@@ -9,6 +9,7 @@ import {
 import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl } from "./utils/url_utils";
 
 import Dataset from "./Dataset";
+import { IArrayLoader } from "./loaders/ILoader";
 
 export type CollectionData = Map<string, CollectionEntry>;
 
@@ -117,6 +118,8 @@ export default class Collection {
   /**
    * Attempts to load and return the dataset specified by the key.
    * @param datasetKey string key of the dataset.
+   * @param onLoadProgress optional callback for loading progress.
+   * @param arrayLoader optional array loader to use for loading the dataset.
    * @returns A promise of a `DatasetLoadResult`.
    * - On a success, returns an object with a Dataset `dataset` and the `loaded` flag set to true.
    * - On a failure, returns an object with a null `dataset` and `loaded` set to false, as well as
@@ -126,7 +129,8 @@ export default class Collection {
    */
   public async tryLoadDataset(
     datasetKey: string,
-    onLoadProgress?: (complete: number, total: number) => void
+    onLoadProgress?: (complete: number, total: number) => void,
+    arrayLoader?: IArrayLoader
   ): Promise<DatasetLoadResult> {
     console.time("loadDataset");
 
@@ -148,7 +152,7 @@ export default class Collection {
 
     // TODO: Override fetch method
     try {
-      const dataset = new Dataset(path);
+      const dataset = new Dataset(path, undefined, arrayLoader);
       await dataset.open({ onLoadStart, onLoadComplete });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };

@@ -60,6 +60,7 @@ export default class Dataset {
   // private backdrops: Map<string, FrameCache | null>;
 
   private arrayLoader: IArrayLoader;
+  private cleanupArrayLoaderOnDispose: boolean;
   // Use map to enforce ordering
   /** Ordered map from feature keys to feature data. */
   private features: Map<string, FeatureData>;
@@ -104,6 +105,7 @@ export default class Dataset {
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
+    this.cleanupArrayLoaderOnDispose = !arrayLoader;
     this.arrayLoader = arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.metadata = defaultMetadata;
@@ -130,7 +132,12 @@ export default class Dataset {
     const url = this.resolveUrl(metadata.data);
     const featureType = this.parseFeatureType(metadata.type);
 
-    const source = await this.arrayLoader.load(url);
+    const source = await this.arrayLoader.load(
+      url,
+      FeatureDataType.F32,
+      metadata.min ?? undefined,
+      metadata.max ?? undefined
+    );
 
     const featureCategories = metadata?.categories;
     // Validation
@@ -148,8 +155,8 @@ export default class Dataset {
       {
         name,
         key,
-        tex: source.getTexture(FeatureDataType.F32),
-        data: source.getBuffer(FeatureDataType.F32),
+        tex: source.getTexture(),
+        data: source.getBuffer(),
         min: source.getMin(),
         max: source.getMax(),
         unit: metadata?.unit || "",
@@ -269,8 +276,8 @@ export default class Dataset {
     }
     try {
       const url = this.resolveUrl(fileUrl);
-      const source = await this.arrayLoader.load(url);
-      return source.getBuffer(dataType);
+      const source = await this.arrayLoader.load(url, dataType);
+      return source.getBuffer();
     } catch (e) {
       return null;
     }
@@ -474,6 +481,10 @@ export default class Dataset {
   public dispose(): void {
     Object.values(this.features).forEach(({ tex }) => tex.dispose());
     this.frames?.dispose();
+    // Cleanup array loader if it was created in the constructor
+    if (this.cleanupArrayLoaderOnDispose) {
+      this.arrayLoader.dispose();
+    }
   }
 
   /** get frame index of a given cell id */
