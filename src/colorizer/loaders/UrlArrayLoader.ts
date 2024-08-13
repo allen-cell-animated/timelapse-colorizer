@@ -2,7 +2,8 @@
 import { DataTexture } from "three";
 import workerpool from "workerpool";
 
-// @ts-ignore Ignore missing file
+// Vite import directive for worker files! See https://v3.vitejs.dev/guide/features.html#import-with-query-suffixes.
+// @ts-ignore Ignore missing file warning
 import WorkerUrl from "./workers/urlLoadWorker?url&worker";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
@@ -47,8 +48,8 @@ export default class UrlArrayLoader implements IArrayLoader {
     // TODO: Maintain a single worker pool for all loaders/all asynchronous operations in the app?
     this.workerPool = workerpool.pool(WorkerUrl, {
       workerOpts: {
-        // Set worker type to fix a Vite issue where the application fails in production:
-        // https://github.com/josdejong/workerpool/tree/master/examples/vite
+        // Set worker type to undefined (classic)  in production to fix a Vite issue where the application.
+        // Copied from https://github.com/josdejong/workerpool/tree/master/examples/vite.
         type: import.meta.env.PROD ? undefined : "module",
       },
     });

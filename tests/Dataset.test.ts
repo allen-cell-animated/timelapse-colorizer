@@ -2,7 +2,7 @@ import semver from "semver";
 import { DataTexture, RGBAFormat, Texture, UnsignedByteType, Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
-import { ArraySource, IArrayLoader, IFrameLoader } from "../src/colorizer";
+import { ArraySource, IArrayLoader, ITextureImageLoader } from "../src/colorizer";
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
 import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
@@ -21,7 +21,7 @@ const makeMockFetchMethod = <T>(url: string, manifestJson: T): ((url: string) =>
   };
 };
 
-class MockFrameLoader implements IFrameLoader {
+class MockFrameLoader implements ITextureImageLoader {
   width: number;
   height: number;
 

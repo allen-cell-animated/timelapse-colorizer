@@ -13,7 +13,7 @@ export interface ArraySource<T extends FeatureDataType> {
   getMax(): number;
 }
 
-export interface IFrameLoader {
+export interface ITextureImageLoader {
   load(url: string): Promise<Texture>;
 }
 

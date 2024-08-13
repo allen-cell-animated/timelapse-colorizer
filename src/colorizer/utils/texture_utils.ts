@@ -5,7 +5,9 @@ import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
 /**
  * Calculate the squarest possible texture that `data` can fit into and return a tuple of `[width, height]`
  */
-function getSquareDimensions<T extends FeatureDataType>(data: FeatureArrayType[T] | number[]): [number, number] {
+function getSquarestTextureDimensions<T extends FeatureDataType>(
+  data: FeatureArrayType[T] | number[]
+): [number, number] {
   const width = Math.ceil(Math.sqrt(data.length));
   const height = Math.ceil(data.length / width);
 
@@ -29,7 +31,7 @@ function padToLength<T extends FeatureDataType>(
 
 /** Pack a 1d array of data into the squarest 2d texture possible */
 export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayType[T] | number[], type: T): DataTexture {
-  const [width, height] = getSquareDimensions(data);
+  const [width, height] = getSquarestTextureDimensions(data);
   const length = width * height;
 
   // If provided a regular array of numbers, convert to TypedArray

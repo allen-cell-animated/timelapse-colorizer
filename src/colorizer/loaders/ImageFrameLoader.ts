@@ -1,6 +1,6 @@
 import { NearestFilter, PixelFormat, RGBAIntegerFormat, Texture } from "three";
 
-import { IFrameLoader } from "./ILoader";
+import { ITextureImageLoader } from "./ILoader";
 
 /** Promise-ifies image loading */
 async function loadImageElement(url: string): Promise<HTMLImageElement> {
@@ -29,7 +29,7 @@ async function loadImageElement(url: string): Promise<HTMLImageElement> {
   });
 }
 
-export default class ImageFrameLoader implements IFrameLoader {
+export default class ImageFrameLoader implements ITextureImageLoader {
   private pixelFormat: PixelFormat;
 
   constructor(pixelFormat: PixelFormat = RGBAIntegerFormat) {

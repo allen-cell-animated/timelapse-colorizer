@@ -8,7 +8,7 @@ import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./uti
 import * as urlUtils from "./utils/url_utils";
 
 import DataCache from "./DataCache";
-import { IArrayLoader, IFrameLoader } from "./loaders/ILoader";
+import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import UrlArrayLoader from "./loaders/UrlArrayLoader";
 import Track from "./Track";
@@ -49,12 +49,12 @@ const defaultMetadata: ManifestFileMetadata = {
 const MAX_CACHED_FRAME_BYTES = 1_000_000_000; // 1 GB
 
 export default class Dataset {
-  private frameLoader: IFrameLoader;
+  private frameLoader: ITextureImageLoader;
   private frameFiles: string[];
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
-  private backdropLoader: IFrameLoader;
+  private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, BackdropData>;
   // TODO: Implement caching for overlays-- extend FrameCache to allow multiple frames per index -> string name?
   // private backdrops: Map<string, FrameCache | null>;
@@ -91,7 +91,7 @@ export default class Dataset {
    * @param frameLoader Optional.
    * @param arrayLoader Optional.
    */
-  constructor(manifestUrl: string, frameLoader?: IFrameLoader, arrayLoader?: IArrayLoader) {
+  constructor(manifestUrl: string, frameLoader?: ITextureImageLoader, arrayLoader?: IArrayLoader) {
     this.manifestUrl = manifestUrl;
 
     this.baseUrl = urlUtils.formatPath(manifestUrl.substring(0, manifestUrl.lastIndexOf("/")));
