@@ -13,11 +13,13 @@ process.env = {
 
 export default defineConfig({
   build: {
-    commonjsOptions: {
-      // Ignore built-in modules in Node.js. Fix copied from the workerpool documentation:
-      // https://github.com/josdejong/workerpool/blob/master/examples/vite/vite.config.ts
-      ignore: ["os", "child_process", "worker_threads"],
-    },
+    // This quiets the "module has been externalized for browser compatibility" warnings that
+    // vite throws when building for production.
+    // commonjsOptions: {
+    //   // Ignore built-in modules in Node.js. Fix copied from the workerpool documentation:
+    //   // https://github.com/josdejong/workerpool/blob/master/examples/vite/vite.config.ts
+    //   ignore: ["os", "child_process", "worker_threads"],
+    // },
     rollupOptions: {
       input: {
         // TODO: Currently 404.html imports all of the same JS chunks as index.html.
