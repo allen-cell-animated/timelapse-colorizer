@@ -58,7 +58,7 @@ type AccessibleDropdownProps = {
   /** Whether the tooltip should appear when hovered. */
   showTooltip?: boolean;
   /** If null, uses button text. */
-  tooltipText?: string | null;
+  tooltipText?: string | ReactNode | null;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
 };
 

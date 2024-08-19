@@ -34,7 +34,7 @@ import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/u
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
-import { FlexRowAlignCenter } from "./styles/utils";
+import { FlexColumn, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
 import Collection from "./colorizer/Collection";
@@ -837,6 +837,12 @@ function Viewer(): ReactElement {
           <SelectionDropdown
             disabled={disableUi}
             label="Feature"
+            tooltipText={
+              <FlexColumn>
+                {dataset?.getFeatureData(featureKey)?.descriptionShort}
+                <a style={{ textDecoration: "underline" }}>More info</a>
+              </FlexColumn>
+            }
             selected={featureKey}
             items={getFeatureDropdownData()}
             onChange={(value) => {

@@ -2,7 +2,7 @@ import { SearchOutlined } from "@ant-design/icons";
 import { ButtonProps, Input, InputRef, Tooltip } from "antd";
 import { ItemType, MenuItemType } from "antd/es/menu/hooks/useItems";
 import Fuse from "fuse.js";
-import React, { MutableRefObject, ReactElement, useMemo, useRef, useState, useTransition } from "react";
+import React, { MutableRefObject, ReactElement, ReactNode, useMemo, useRef, useState, useTransition } from "react";
 
 import { FlexColumn } from "../../styles/utils";
 
@@ -34,6 +34,7 @@ type SelectionDropdownProps = {
   /** Callback that is fired whenever an item in the dropdown is selected.
    * The callback will be passed the `key` of the selected item. */
   onChange: (key: string) => void;
+  tooltipText?: string | ReactNode | null;
   showTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
@@ -51,6 +52,7 @@ const defaultProps: Partial<SelectionDropdownProps> = {
   disabled: false,
   buttonType: "outlined",
   showTooltip: true,
+  tooltipText: null,
   width: null,
   enableSearch: true,
   searchThresholdCount: 10,
@@ -199,6 +201,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       buttonType={props.buttonType}
       buttonText={selectedLabel}
       showTooltip={props.showTooltip}
+      tooltipText={props.tooltipText}
       dropdownContent={getDropdownContent}
       onButtonClicked={() => {
         // Focus the search input when the dropdown is clicked open
