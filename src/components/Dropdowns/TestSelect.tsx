@@ -81,16 +81,33 @@ const customStyles: StylesConfig = {
   indicatorSeparator: () => ({
     display: "none",
   }),
-  // Fix z-ordering
   menu: (base) => ({
     ...base,
-    zIndex: 100,
+    // Fix z-ordering
+    zIndex: 1050,
+    width: "max-content",
+    minWidth: base.width,
+    maxWidth: "calc(min(50vw, 500px))",
   }),
-  // option: (styles, { isFocused }) => ({
-  //   ...styles,
-  //   backgroundColor: isFocused ? "#ff0000" : "white",
-  //   color: "black",
-  // }),
+  menuList: (base) => ({
+    ...base,
+    padding: 0,
+  }),
+  option: (styles, { isFocused, isSelected }) => ({
+    ...styles,
+    // Style to match Ant dropdowns
+    borderRadius: 4,
+    color: isSelected ? "var(--color-dropdown-text-selected)" : "black",
+    backgroundColor: isSelected
+      ? "var(--color-dropdown-selected)"
+      : isFocused
+      ? "var(--color-dropdown-hover)"
+      : "white",
+    // Default padding is 8px 12px
+    padding: "4px 8px",
+    margin: 4,
+    width: `calc(${styles.width} - 8px)`,
+  }),
 };
 
 const DropdownIndicator = (props: DropdownIndicatorProps) => {
@@ -100,6 +117,8 @@ const DropdownIndicator = (props: DropdownIndicatorProps) => {
     </components.DropdownIndicator>
   );
 };
+
+// TODO: replace menu list with self-shadowing div
 
 const Option = (props: OptionProps) => {
   // TODO: Tooltip does not respond to aria activeDescendant.
@@ -127,6 +146,7 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
   // Get selected option
   const selectedOption = options.find((option) => option.value === props.selected);
 
+  // TODO: Move tooltip to only be around the dropdown box (and not the whole element)
   return (
     <Tooltip title={selectedOption?.tooltip || selectedOption?.label} trigger={["focus", "hover"]} placement="right">
       <SelectContainer $gap={6}>

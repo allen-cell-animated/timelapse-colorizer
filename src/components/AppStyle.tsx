@@ -81,6 +81,7 @@ const theme = {
     dropdown: {
       backgroundHover: palette.gray10,
       backgroundSelected: palette.themeGray,
+      textSelected: palette.theme,
     },
     slider: {
       rail: palette.gray10,
@@ -177,6 +178,7 @@ const CssContainer = styled.div`
 
   --color-dropdown-hover: ${theme.color.dropdown.backgroundHover};
   --color-dropdown-selected: ${theme.color.dropdown.backgroundSelected};
+  --color-dropdown-text-selected: ${theme.color.dropdown.textSelected};
 
   --color-collapse-hover: ${theme.color.theme};
   --color-collapse-active: ${theme.color.themeDark};
