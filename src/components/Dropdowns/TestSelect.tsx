@@ -1,6 +1,6 @@
 import { ButtonProps, Tooltip } from "antd";
 import React, { ReactElement, ReactNode } from "react";
-import Select, { components, DropdownIndicatorProps, StylesConfig } from "react-select";
+import Select, { components, DropdownIndicatorProps, OptionProps, StylesConfig } from "react-select";
 import styled from "styled-components";
 
 import { DropdownSVG } from "../../assets";
@@ -94,6 +94,20 @@ const DropdownIndicator = (props: DropdownIndicatorProps) => {
   );
 };
 
+const Option = (props: OptionProps) => {
+  return (
+    <Tooltip
+      title={(props as OptionProps<SelectItem>).data.tooltip ?? props.label ?? "AAAAAAAAAAAAA"}
+      trigger={["hover", "focus"]}
+      placement="right"
+    >
+      <div>
+        <components.Option {...props} />
+      </div>
+    </Tooltip>
+  );
+};
+
 export default function TestSelect(props: SelectionDropdownProps): ReactElement {
   const { items } = props;
   let options = items;
@@ -106,13 +120,13 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
       <SelectContainer $gap={6}>
         {props.label && <h3>{props.label}</h3>}
         <Select
+          classNamePrefix="react-select"
+          placeholder=""
+          value={selectedOption}
+          components={{ DropdownIndicator, Option }}
           options={options}
           isDisabled={props.disabled}
-          value={selectedOption}
           isClearable={false}
-          placeholder=""
-          components={{ DropdownIndicator }}
-          classNamePrefix="react-select"
           onChange={(value) => value && props.onChange((value as SelectItem).value)}
           styles={customStyles}
         />
