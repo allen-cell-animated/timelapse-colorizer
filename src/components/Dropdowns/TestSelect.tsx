@@ -4,6 +4,7 @@ import Select, { components, DropdownIndicatorProps, OptionProps, StylesConfig }
 import styled from "styled-components";
 
 import { DropdownSVG } from "../../assets";
+import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
 
 type SelectItem = {
@@ -88,22 +89,38 @@ const customStyles: StylesConfig = {
     width: "max-content",
     minWidth: base.width,
     maxWidth: "calc(min(50vw, 500px))",
+    borderColor: "transparent",
+    outlineColor: "transparent",
+    // boxShadow:
+    //   "rgba(0, 0, 0, 0.08) 0px 6px 16px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px -4px, rgba(0, 0, 0, 0.05) 0px 9px 28px 8px",
   }),
   menuList: (base) => ({
     ...base,
     padding: 0,
   }),
-  option: (styles, { isFocused, isSelected }) => ({
+  option: (styles, { isFocused, isSelected, isDisabled }) => ({
     ...styles,
     // Style to match Ant dropdowns
     borderRadius: 4,
     color: isSelected ? "var(--color-dropdown-text-selected)" : "black",
-    backgroundColor: isSelected
+    backgroundColor: isDisabled
+      ? undefined
+      : isSelected
       ? "var(--color-dropdown-selected)"
       : isFocused
       ? "var(--color-dropdown-hover)"
       : "white",
-    // Default padding is 8px 12px
+    // Don't change background color on click.
+    ":active": {
+      backgroundColor: !isDisabled
+        ? isSelected
+          ? "var(--color-dropdown-selected)"
+          : "var(--color-dropdown-hover)"
+        : undefined,
+    },
+
+    // Pad to match Ant dropdowns. Default padding is "8px 12px" so adjust size to account
+    // for 4px extra padding on every side.
     padding: "4px 8px",
     margin: 4,
     width: `calc(${styles.width} - 8px)`,
@@ -121,15 +138,14 @@ const DropdownIndicator = (props: DropdownIndicatorProps) => {
 // TODO: replace menu list with self-shadowing div
 
 const Option = (props: OptionProps) => {
-  // TODO: Tooltip does not respond to aria activeDescendant.
-  //
+  const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
   return (
     <Tooltip
       title={(props as OptionProps<SelectItem>).data.tooltip ?? props.label ?? "AAAAAAAAAAAAA"}
       trigger={["hover", "focus"]}
       placement="right"
-      open={props.isFocused ? true : undefined}
-      mouseEnterDelay={0.2}
+      open={isFocused ? true : undefined}
+      mouseEnterDelay={0.5}
       mouseLeaveDelay={0}
     >
       <div>
