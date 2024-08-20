@@ -1,6 +1,6 @@
 import { ButtonProps, Tooltip } from "antd";
 import React, { ReactElement, ReactNode } from "react";
-import Select, { components, DropdownIndicatorProps, StylesConfig } from "react-select";
+import Select, { components, DropdownIndicatorProps, OptionProps, StylesConfig } from "react-select";
 import styled from "styled-components";
 
 import { DropdownSVG } from "../../assets";
@@ -61,6 +61,8 @@ const customStyles: StylesConfig = {
     minHeight: 28,
     padding: "0 12px",
     margin: 0,
+    // Adjust feature up slightly to center text
+    top: "-2px",
   }),
   indicatorsContainer: (base) => ({
     ...base,
@@ -84,6 +86,11 @@ const customStyles: StylesConfig = {
     ...base,
     zIndex: 100,
   }),
+  // option: (styles, { isFocused }) => ({
+  //   ...styles,
+  //   backgroundColor: isFocused ? "#ff0000" : "white",
+  //   color: "black",
+  // }),
 };
 
 const DropdownIndicator = (props: DropdownIndicatorProps) => {
@@ -91,6 +98,25 @@ const DropdownIndicator = (props: DropdownIndicatorProps) => {
     <components.DropdownIndicator {...props}>
       <DropdownSVG style={{ width: "14px", height: "14px" }} />
     </components.DropdownIndicator>
+  );
+};
+
+const Option = (props: OptionProps) => {
+  // TODO: Tooltip does not respond to aria activeDescendant.
+  //
+  return (
+    <Tooltip
+      title={(props as OptionProps<SelectItem>).data.tooltip ?? props.label ?? "AAAAAAAAAAAAA"}
+      trigger={["hover", "focus"]}
+      placement="right"
+      open={props.isFocused ? true : undefined}
+      mouseEnterDelay={0.2}
+      mouseLeaveDelay={0}
+    >
+      <div>
+        <components.Option {...props} />
+      </div>
+    </Tooltip>
   );
 };
 
@@ -106,13 +132,13 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
       <SelectContainer $gap={6}>
         {props.label && <h3>{props.label}</h3>}
         <Select
+          classNamePrefix="react-select"
+          placeholder=""
+          value={selectedOption}
+          components={{ DropdownIndicator, Option }}
           options={options}
           isDisabled={props.disabled}
-          value={selectedOption}
           isClearable={false}
-          placeholder=""
-          components={{ DropdownIndicator }}
-          classNamePrefix="react-select"
           onChange={(value) => value && props.onChange((value as SelectItem).value)}
           styles={customStyles}
         />
