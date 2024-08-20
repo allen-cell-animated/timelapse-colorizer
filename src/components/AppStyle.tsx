@@ -171,6 +171,8 @@ const CssContainer = styled.div`
   --color-button-hover: ${theme.color.button.hover};
   --color-button-active: ${theme.color.button.active};
   --color-button-disabled: ${theme.color.button.backgroundDisabled};
+  --color-button-outline: ${theme.color.button.outline};
+  --color-button-outline-active: ${theme.color.button.outlineActive};
 
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;

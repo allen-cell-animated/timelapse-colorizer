@@ -1,13 +1,13 @@
 import { ButtonProps, Tooltip } from "antd";
 import React, { ReactElement, ReactNode } from "react";
 import Select, { components, DropdownIndicatorProps, OptionProps, StylesConfig } from "react-select";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../../assets";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
 
-type SelectItem = {
+export type SelectItem = {
   value: string;
   label: string;
   tooltip?: string | ReactNode;
@@ -46,21 +46,71 @@ type SelectionDropdownProps = {
 // React select offers a few strategies for styling the dropdown. I've elected to use
 // styled-components and the classnames that react-select provides to make it consistent
 // with the rest of the app.
-const SelectContainer = styled(FlexRowAlignCenter)``;
+const SelectContainer = styled(FlexRowAlignCenter)<{ $type: SelectionDropdownProps["buttonType"] }>`
+  & .react-select__control {
+    box-shadow: none;
+
+    ${(props) => {
+      // TODO: Can I compose this shared Ant styling? It's repeated in IconButton.tsx
+      switch (props.$type) {
+        case "outlined":
+          return css`
+            border: 1px solid var(--color-borders);
+            background-color: transparent;
+
+            &:disabled {
+              border: 1px solid var(--color-borders);
+              background-color: var(--color-button-disabled);
+              color: var(--color-text-disabled);
+              fill: var(--color-text-disabled);
+            }
+
+            &:hover {
+              border: 1px solid var(--color-button);
+            }
+          `;
+
+        case "primary":
+        default:
+          return css`
+            fill: var(--color-text-button);
+
+            &:disabled {
+              fill: var(--color-text-disabled);
+            }
+          `;
+      }
+    }}
+
+    &:focus-visible {
+      // Focus ring
+      background-color: green;
+    }
+
+    &:focus-within {
+      border: 1px solid var(--color-button-outline-active);
+    }
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+`;
 
 const customStyles: StylesConfig = {
-  control: (base) => ({
+  control: (base, { isFocused }) => ({
     ...base,
     height: 28,
     minHeight: 28,
     width: "15vw",
     borderRadius: 6,
+    borderColor: isFocused ? "var(--color-button-outline-active)" : "var(--color-borders)",
   }),
   valueContainer: (base) => ({
     ...base,
     height: 28,
     minHeight: 28,
-    padding: "0 12px",
+    padding: "0 0 0 12px",
     margin: 0,
     // Adjust feature up slightly to center text
     top: "-2px",
@@ -84,13 +134,13 @@ const customStyles: StylesConfig = {
   }),
   menu: (base) => ({
     ...base,
-    // Fix z-ordering
+    // use standard z-index for Ant popups
     zIndex: 1050,
     width: "max-content",
     minWidth: base.width,
     maxWidth: "calc(min(50vw, 500px))",
-    borderColor: "transparent",
-    outlineColor: "transparent",
+    // Outline is caused by the shadow! Check w/ Lyndsay on whether we prefer the outline,
+    // if not uncomment the below:
     // boxShadow:
     //   "rgba(0, 0, 0, 0.08) 0px 6px 16px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px -4px, rgba(0, 0, 0, 0.05) 0px 9px 28px 8px",
   }),
@@ -127,16 +177,18 @@ const customStyles: StylesConfig = {
   }),
 };
 
+// Replace existing dropdown with custom dropdown arrow
 const DropdownIndicator = (props: DropdownIndicatorProps) => {
   return (
     <components.DropdownIndicator {...props}>
-      <DropdownSVG style={{ width: "14px", height: "14px" }} />
+      <DropdownSVG style={{ width: "12px", height: "12px" }} viewBox="0 0 12 12" />
     </components.DropdownIndicator>
   );
 };
 
 // TODO: replace menu list with self-shadowing div
 
+// Override options in the menu list to include tooltips
 const Option = (props: OptionProps) => {
   const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
   return (
@@ -155,6 +207,12 @@ const Option = (props: OptionProps) => {
   );
 };
 
+/**
+ * A Select component that supports web accessibility guidelines for keyboard controls.
+ * Options can be searched by typing in the dropdown input.
+ *
+ * Uses react-select internally but mimics the style of Ant Design for consistency.
+ */
 export default function TestSelect(props: SelectionDropdownProps): ReactElement {
   const { items } = props;
   let options = items;
@@ -163,9 +221,10 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
   const selectedOption = options.find((option) => option.value === props.selected);
 
   // TODO: Move tooltip to only be around the dropdown box (and not the whole element)
+  // TODO: blur on selection?
   return (
     <Tooltip title={selectedOption?.tooltip || selectedOption?.label} trigger={["focus", "hover"]} placement="right">
-      <SelectContainer $gap={6}>
+      <SelectContainer $gap={6} $type={"outlined"}>
         {props.label && <h3>{props.label}</h3>}
         <Select
           classNamePrefix="react-select"
