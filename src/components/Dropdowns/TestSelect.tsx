@@ -61,6 +61,8 @@ const customStyles: StylesConfig = {
     minHeight: 28,
     padding: "0 12px",
     margin: 0,
+    // Adjust feature up slightly to center text
+    top: "-2px",
   }),
   indicatorsContainer: (base) => ({
     ...base,
@@ -84,6 +86,11 @@ const customStyles: StylesConfig = {
     ...base,
     zIndex: 100,
   }),
+  // option: (styles, { isFocused }) => ({
+  //   ...styles,
+  //   backgroundColor: isFocused ? "#ff0000" : "white",
+  //   color: "black",
+  // }),
 };
 
 const DropdownIndicator = (props: DropdownIndicatorProps) => {
@@ -95,11 +102,16 @@ const DropdownIndicator = (props: DropdownIndicatorProps) => {
 };
 
 const Option = (props: OptionProps) => {
+  // TODO: Tooltip does not respond to aria activeDescendant.
+  //
   return (
     <Tooltip
       title={(props as OptionProps<SelectItem>).data.tooltip ?? props.label ?? "AAAAAAAAAAAAA"}
       trigger={["hover", "focus"]}
       placement="right"
+      open={props.isFocused ? true : undefined}
+      mouseEnterDelay={0.2}
+      mouseLeaveDelay={0}
     >
       <div>
         <components.Option {...props} />
