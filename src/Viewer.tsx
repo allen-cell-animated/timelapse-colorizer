@@ -49,6 +49,7 @@ import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
+import TestSelect from "./components/Dropdowns/TestSelect";
 import Export from "./components/Export";
 import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
@@ -751,7 +752,7 @@ function Viewer(): ReactElement {
     });
   };
 
-  const getFeatureDropdownData = useCallback((): string[] | { key: string; label: string }[] => {
+  const getFeatureDropdownData = useCallback((): { key: string; label: string }[] => {
     if (!dataset) {
       return [];
     }
@@ -831,11 +832,11 @@ function Viewer(): ReactElement {
             items={collection?.getDatasetKeys() || []}
             onChange={handleDatasetChange}
           />
-          <SelectionDropdown
+          <TestSelect
             disabled={disableUi}
             label="Feature"
             selected={featureKey}
-            items={getFeatureDropdownData()}
+            items={getFeatureDropdownData().map((item) => ({ value: item.key, label: item.label }))}
             onChange={(value) => {
               if (value !== featureKey && dataset) {
                 replaceFeature(dataset, value);
