@@ -82,17 +82,19 @@ const SelectContainer = styled(FlexRowAlignCenter)<{ $type: SelectionDropdownPro
       }
     }}
 
-    &:focus-visible {
+    // Note: Focus ring is visible even when not using keyboard navigation.
+    // This is because browsers show the focus ring whenever an input is focused,
+    // and there is no way to differentiate between navigation methods.
+    &:focus-within:has(input:focus-visible) {
       // Focus ring
-      background-color: green;
-    }
-
-    &:focus-within {
-      border: 1px solid var(--color-button-outline-active);
-    }
-
-    &:focus {
       box-shadow: none;
+      outline: 4px solid #efe9f7 !important ;
+      outline-offset: 1px;
+      transition: outline-offset 0s, outline 0s;
+    }
+
+    &.react-select__control--menu-is-open {
+      border: 1px solid var(--color-button-outline-active);
     }
   }
 `;
