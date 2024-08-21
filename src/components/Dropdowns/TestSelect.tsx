@@ -1,8 +1,7 @@
 import { ButtonProps, Tooltip } from "antd";
 import React, { ReactElement, ReactNode } from "react";
-import { components, DropdownIndicatorProps, OptionProps } from "react-select";
+import { components, OptionProps } from "react-select";
 
-import { DropdownSVG } from "../../assets";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
 
@@ -47,7 +46,7 @@ type SelectionDropdownProps = {
 // TODO: replace menu list with self-shadowing div
 
 // Override options in the menu list to include tooltips
-const Option = (props: OptionProps) => {
+const Option = (props: OptionProps): ReactNode => {
   const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
   return (
     <Tooltip
@@ -73,7 +72,7 @@ const Option = (props: OptionProps) => {
  */
 export default function TestSelect(props: SelectionDropdownProps): ReactElement {
   const { items } = props;
-  let options = items;
+  const options = items;
 
   // Get selected option
   const selectedOption = options.find((option) => option.value === props.selected);

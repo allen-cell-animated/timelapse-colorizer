@@ -1,5 +1,5 @@
 import { ButtonProps } from "antd";
-import React from "react";
+import React, { ReactNode } from "react";
 import { ReactElement } from "react";
 import Select, { components, DropdownIndicatorProps, StylesConfig } from "react-select";
 import { StateManagerProps } from "react-select/dist/declarations/src/useStateManager";
@@ -127,6 +127,7 @@ const customStyles: StylesConfig = {
       ? "var(--color-dropdown-hover)"
       : "white",
     // Don't change background color on click.
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     ":active": {
       backgroundColor: !isDisabled
         ? isSelected
@@ -144,7 +145,7 @@ const customStyles: StylesConfig = {
 };
 
 // Replace existing dropdown with custom dropdown arrow
-const DropdownIndicator = (props: DropdownIndicatorProps) => {
+const DropdownIndicator = (props: DropdownIndicatorProps): ReactNode => {
   return (
     <components.DropdownIndicator {...props}>
       <DropdownSVG style={{ width: "12px", height: "12px" }} viewBox="0 0 12 12" />
