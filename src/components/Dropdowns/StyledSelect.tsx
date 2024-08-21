@@ -58,8 +58,8 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
     &:focus-within:has(input:focus-visible) {
       // Focus ring
       box-shadow: none;
-      outline: 4px solid #efe9f7 !important ;
-      outline-offset: 1px;
+      outline: 2px solid #efe9f7 !important ;
+      outline-offset: 0px;
       transition: outline-offset 0s, outline 0s;
     }
 

@@ -5,7 +5,7 @@ import { components, ControlProps, OptionProps } from "react-select";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
 
-import AntStyledSelect from "./AntStyledSelect";
+import StyledSelect from "./StyledSelect";
 
 export type SelectItem = {
   value: string;
@@ -115,7 +115,7 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
   return (
     <FlexRowAlignCenter $gap={6}>
       {props.label && <h3 id={id ?? props.htmlLabelId}>{props.label}</h3>}
-      <AntStyledSelect
+      <StyledSelect
         aria-labelledby={id}
         classNamePrefix="react-select"
         placeholder=""
