@@ -16,6 +16,9 @@ export type SelectItem = {
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
+  /** ID of the HTML element used to label this dropdown, to be used with `aria-labelledby`.
+   * Overridden if `label` is provided. */
+  htmlLabelId?: string;
   /** The key of the item that is currently selected. */
   selected: string;
   /** An array of SelectItems that describes the item properties (`{key, label}`),
@@ -31,16 +34,13 @@ type SelectionDropdownProps = {
   /** Callback that is fired whenever an item in the dropdown is selected.
    * The callback will be passed the `key` of the selected item. */
   onChange: (value: string) => void;
-  showTooltip?: boolean;
+  /**
+   * Whether to show the tooltip for the currently selected item on hover.
+   * True by default.
+   */
+  showSelectedItemTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
-  /**
-   * Whether the search bar should be enabled. If enabled, will show search bar and filter
-   * by search input when the total number of items is above `searchThresholdCount`. True by default.
-   */
-  enableSearch?: boolean;
-  /** The number of items that must be in the original list before the search bar will be shown. 10 by default.*/
-  searchThresholdCount?: number;
 };
 
 // TODO: replace menu list with self-shadowing div
@@ -96,14 +96,17 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
   // Get selected option
   const selectedOption = options.find((option) => option.value === props.selected);
 
+  const id = props.label ? `dropdown-label-${props.label.toLowerCase()}` : undefined;
+
   // TODO: blur on selection?
   return (
     <FlexRowAlignCenter $gap={6}>
-      {props.label && <h3>{props.label}</h3>}
+      {props.label && <h3 id={id ?? props.htmlLabelId}>{props.label}</h3>}
       <AntStyledSelect
+        aria-labelledby={id}
         classNamePrefix="react-select"
         placeholder=""
-        type="outlined"
+        type={props.buttonType ?? "outlined"}
         value={selectedOption}
         components={{ Option, Control }}
         options={options}
