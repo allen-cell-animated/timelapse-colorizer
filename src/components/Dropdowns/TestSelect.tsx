@@ -1,6 +1,6 @@
 import { ButtonProps, Tooltip } from "antd";
 import React, { ReactElement, ReactNode } from "react";
-import { components, OptionProps } from "react-select";
+import { components, ControlProps, OptionProps } from "react-select";
 
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
@@ -45,20 +45,39 @@ type SelectionDropdownProps = {
 
 // TODO: replace menu list with self-shadowing div
 
-// Override options in the menu list to include tooltips
+// Override options in the menu list to include tooltips.
+// Because the full text is shown in the dropdown, tooltips will only be shown
+// when they are provided as an argument.
 const Option = (props: OptionProps): ReactNode => {
   const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
+  const title = (props as OptionProps<SelectItem>).data.tooltip;
   return (
     <Tooltip
-      title={(props as OptionProps<SelectItem>).data.tooltip ?? props.label ?? "AAAAAAAAAAAAA"}
+      title={(props as OptionProps<SelectItem>).data.tooltip}
       trigger={["hover", "focus"]}
       placement="right"
-      open={isFocused ? true : undefined}
+      open={title !== undefined && isFocused ? true : undefined}
       mouseEnterDelay={0.5}
       mouseLeaveDelay={0}
     >
       <div>
         <components.Option {...props} />
+      </div>
+    </Tooltip>
+  );
+};
+
+const Control = (props: ControlProps): ReactNode => {
+  const selectedOption = props.getValue()[0] as OptionProps<SelectItem> | undefined;
+
+  return (
+    <Tooltip
+      title={selectedOption?.data?.tooltip ?? selectedOption?.label}
+      trigger={["hover", "focus"]}
+      placement="right"
+    >
+      <div>
+        <components.Control {...props} />
       </div>
     </Tooltip>
   );
@@ -77,24 +96,21 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
   // Get selected option
   const selectedOption = options.find((option) => option.value === props.selected);
 
-  // TODO: Move tooltip to only be around the dropdown box (and not the whole element)
   // TODO: blur on selection?
   return (
     <FlexRowAlignCenter $gap={6}>
       {props.label && <h3>{props.label}</h3>}
-      <Tooltip title={selectedOption?.tooltip || selectedOption?.label} trigger={["focus", "hover"]} placement="right">
-        <AntStyledSelect
-          classNamePrefix="react-select"
-          placeholder=""
-          type="outlined"
-          value={selectedOption}
-          components={{ Option }}
-          options={options}
-          isDisabled={props.disabled}
-          isClearable={false}
-          onChange={(value) => value && props.onChange((value as SelectItem).value)}
-        />
-      </Tooltip>
+      <AntStyledSelect
+        classNamePrefix="react-select"
+        placeholder=""
+        type="outlined"
+        value={selectedOption}
+        components={{ Option, Control }}
+        options={options}
+        isDisabled={props.disabled}
+        isClearable={false}
+        onChange={(value) => value && props.onChange((value as SelectItem).value)}
+      />
     </FlexRowAlignCenter>
   );
 }
