@@ -1,6 +1,5 @@
 import { ButtonProps } from "antd";
-import React, { ReactNode, useMemo } from "react";
-import { ReactElement } from "react";
+import React, { ReactElement, useMemo } from "react";
 import Select, { components, DropdownIndicatorProps, StylesConfig } from "react-select";
 import { StateManagerProps } from "react-select/dist/declarations/src/useStateManager";
 import styled, { css } from "styled-components";
@@ -148,7 +147,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
 });
 
 // Replace existing dropdown with custom dropdown arrow
-const DropdownIndicator = (props: DropdownIndicatorProps): ReactNode => {
+const DropdownIndicator = (props: DropdownIndicatorProps): ReactElement => {
   return (
     <components.DropdownIndicator {...props}>
       <DropdownSVG style={{ width: "12px", height: "12px" }} viewBox="0 0 12 12" />

@@ -49,7 +49,7 @@ type SelectionDropdownProps = {
 // Override options in the menu list to include tooltips.
 // Because the full text is shown in the dropdown, tooltips will only be shown
 // when they are provided as an argument.
-const Option = (props: OptionProps): ReactNode => {
+const Option = (props: OptionProps): ReactElement => {
   const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
   const title = (props as OptionProps<SelectItem>).data.tooltip;
   return (
@@ -68,7 +68,7 @@ const Option = (props: OptionProps): ReactNode => {
   );
 };
 
-const Control = (props: ControlProps): ReactNode => {
+const Control = (props: ControlProps): ReactElement => {
   const selectedOption = props.getValue()[0] as OptionProps<SelectItem> | undefined;
 
   return (
