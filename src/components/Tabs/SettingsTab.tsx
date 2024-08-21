@@ -13,7 +13,7 @@ import LabeledSlider from "../LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 
 const NO_BACKDROP = {
-  key: "",
+  value: "",
   label: "(None)",
 };
 
@@ -37,7 +37,7 @@ const h3Wrapper = (label: string | ReactElement): ReactElement => {
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
     ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
-        return { key, label: data.name };
+        return { value: key, label: data.name };
       })
     : [];
   backdropOptions.unshift(NO_BACKDROP);
@@ -50,7 +50,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
           <SettingsItem label="Backdrop images">
             <SelectionDropdown
-              selected={props.selectedBackdropKey || NO_BACKDROP.key}
+              selected={props.selectedBackdropKey || NO_BACKDROP.value}
               items={backdropOptions}
               onChange={props.setSelectedBackdropKey}
               disabled={backdropOptions.length === 1}

@@ -49,7 +49,6 @@ import CategoricalColorPicker from "./components/CategoricalColorPicker";
 import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
-import TestSelect from "./components/Dropdowns/TestSelect";
 import Export from "./components/Export";
 import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
@@ -608,12 +607,12 @@ function Viewer(): ReactElement {
         if (newScatterPlotConfig.xAxis) {
           const xAxis = newScatterPlotConfig.xAxis;
           newScatterPlotConfig.xAxis =
-            xAxis === SCATTERPLOT_TIME_FEATURE.key ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
+            xAxis === SCATTERPLOT_TIME_FEATURE.value ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
         }
         if (newScatterPlotConfig.yAxis) {
           const yAxis = newScatterPlotConfig.yAxis;
           newScatterPlotConfig.yAxis =
-            yAxis === SCATTERPLOT_TIME_FEATURE.key ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
+            yAxis === SCATTERPLOT_TIME_FEATURE.value ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
         }
         updateScatterPlotConfig(newScatterPlotConfig);
       }
@@ -832,12 +831,12 @@ function Viewer(): ReactElement {
             items={collection?.getDatasetKeys() || []}
             onChange={handleDatasetChange}
           />
-          <TestSelect
+          <SelectionDropdown
             disabled={disableUi}
             label="Feature"
             selected={featureKey}
             items={getFeatureDropdownData().map((item) => ({ value: item.key, label: item.label }))}
-            onChange={(value) => {
+            onChange={(value: string) => {
               if (value !== featureKey && dataset) {
                 replaceFeature(dataset, value);
                 resetColorRampRangeToDefaults(dataset, value);
