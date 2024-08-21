@@ -26,7 +26,7 @@ type SelectionDropdownProps = {
    *
    * If a string array is provided, SelectItems objects will be
    * auto-generated with `key` and `label` values set to the string.*/
-  items: SelectItem[];
+  items: SelectItem[] | string[];
   disabled?: boolean;
   /** The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic */
@@ -38,6 +38,7 @@ type SelectionDropdownProps = {
    * Whether to show the tooltip for the currently selected item on hover.
    * True by default.
    */
+  // TODO: Implement
   showSelectedItemTooltip?: boolean;
   /** Width of the dropdown. Overrides the default sizing behavior if set. */
   width?: string | null;
@@ -83,6 +84,18 @@ const Control = (props: ControlProps): ReactNode => {
   );
 };
 
+const itemsToOptions = (items: string[] | SelectItem[]): SelectItem[] => {
+  if (items.length === 0) {
+    return [];
+  }
+
+  if (typeof items[0] === "string") {
+    return (items as string[]).map((item) => ({ value: item, label: item }));
+  }
+
+  return items as SelectItem[];
+};
+
 /**
  * A Select component that supports web accessibility guidelines for keyboard controls.
  * Options can be searched by typing in the dropdown input.
@@ -91,7 +104,7 @@ const Control = (props: ControlProps): ReactNode => {
  */
 export default function TestSelect(props: SelectionDropdownProps): ReactElement {
   const { items } = props;
-  const options = items;
+  const options = itemsToOptions(items);
 
   // Get selected option
   const selectedOption = options.find((option) => option.value === props.selected);
@@ -112,7 +125,12 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
         options={options}
         isDisabled={props.disabled}
         isClearable={false}
-        onChange={(value) => value && props.onChange((value as SelectItem).value)}
+        onChange={(value) => {
+          if (value && (value as SelectItem).value) {
+            props.onChange((value as SelectItem).value);
+          }
+        }}
+        width={props.width ?? undefined}
       />
     </FlexRowAlignCenter>
   );

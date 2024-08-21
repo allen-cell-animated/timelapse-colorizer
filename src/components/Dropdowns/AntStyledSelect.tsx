@@ -11,6 +11,7 @@ import { AppTheme, AppThemeContext } from "../AppStyle";
 
 type AntStyledSelectProps = StateManagerProps & {
   type?: ButtonProps["type"] | "outlined";
+  width?: string;
 };
 
 // React select offers a few strategies for styling the dropdown. I've elected to use
@@ -69,12 +70,12 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
   }
 `;
 
-const getCustomStyles = (theme: AppTheme): StylesConfig => ({
+const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
   control: (base, { isFocused }) => ({
     ...base,
     height: theme.controls.height,
     minHeight: theme.controls.height,
-    width: "15vw",
+    width: width,
     borderRadius: theme.controls.radiusLg,
     borderColor: isFocused ? theme.color.button.outlineActive : theme.color.layout.borders,
   }),
@@ -164,7 +165,7 @@ const DropdownIndicator = (props: DropdownIndicatorProps): ReactNode => {
  */
 export default function AntStyledSelect(props: AntStyledSelectProps): ReactElement {
   const theme = React.useContext(AppThemeContext);
-  const customStyles = useMemo(() => getCustomStyles(theme), [theme]);
+  const customStyles = useMemo(() => getCustomStyles(theme, props.width ?? "15vw"), [theme]);
 
   return (
     <SelectContainer $type={props.type || "outlined"}>
