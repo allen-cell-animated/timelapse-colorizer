@@ -1,11 +1,17 @@
 import { ButtonProps } from "antd";
-import React, { ReactNode } from "react";
+import React, { ReactNode, useMemo } from "react";
 import { ReactElement } from "react";
 import Select, { components, DropdownIndicatorProps, StylesConfig } from "react-select";
 import { StateManagerProps } from "react-select/dist/declarations/src/useStateManager";
 import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../../assets";
+
+import { AppTheme, AppThemeContext } from "../AppStyle";
+
+type AntStyledSelectProps = StateManagerProps & {
+  type?: ButtonProps["type"] | "outlined";
+};
 
 // React select offers a few strategies for styling the dropdown. I've elected to use
 // styled-components and the classnames that react-select provides to make it consistent
@@ -63,19 +69,19 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
   }
 `;
 
-const customStyles: StylesConfig = {
+const getCustomStyles = (theme: AppTheme): StylesConfig => ({
   control: (base, { isFocused }) => ({
     ...base,
-    height: 28,
-    minHeight: 28,
+    height: theme.controls.height,
+    minHeight: theme.controls.height,
     width: "15vw",
-    borderRadius: 6,
-    borderColor: isFocused ? "var(--color-button-outline-active)" : "var(--color-borders)",
+    borderRadius: theme.controls.radiusLg,
+    borderColor: isFocused ? theme.color.button.outlineActive : theme.color.layout.borders,
   }),
   valueContainer: (base) => ({
     ...base,
-    height: 28,
-    minHeight: 28,
+    height: theme.controls.height,
+    minHeight: theme.controls.height,
     padding: "0 0 0 12px",
     margin: 0,
     // Adjust feature up slightly to center text
@@ -83,25 +89,21 @@ const customStyles: StylesConfig = {
   }),
   indicatorsContainer: (base) => ({
     ...base,
-    height: 26,
+    height: theme.controls.height - 2,
     color: undefined,
   }),
   // Hide vertical separator bar and use default font color for the dropdown indicator
+  indicatorSeparator: () => ({
+    display: "none",
+  }),
   dropdownIndicator: (styles) => ({
     ...styles,
     color: undefined,
   }),
-  clearIndicator: (styles) => ({
-    ...styles,
-    color: undefined,
-  }),
-  indicatorSeparator: () => ({
-    display: "none",
-  }),
+  // Fix z-ordering of the dropdown menu and adjust width to fit content
   menu: (base) => ({
     ...base,
-    // use standard z-index for Ant popups
-    zIndex: 1050,
+    zIndex: 1050, // Standard z-index for Ant Design popups
     width: "max-content",
     minWidth: base.width,
     maxWidth: "calc(min(50vw, 500px))",
@@ -118,21 +120,21 @@ const customStyles: StylesConfig = {
     ...styles,
     // Style to match Ant dropdowns
     borderRadius: 4,
-    color: isSelected ? "var(--color-dropdown-text-selected)" : "black",
+    color: isSelected ? theme.color.dropdown.textSelected : theme.color.text.primary,
     backgroundColor: isDisabled
       ? undefined
       : isSelected
-      ? "var(--color-dropdown-selected)"
+      ? theme.color.dropdown.backgroundSelected
       : isFocused
-      ? "var(--color-dropdown-hover)"
+      ? theme.color.dropdown.backgroundHover
       : "white",
     // Don't change background color on click.
     // eslint-disable-next-line @typescript-eslint/naming-convention
     ":active": {
       backgroundColor: !isDisabled
         ? isSelected
-          ? "var(--color-dropdown-selected)"
-          : "var(--color-dropdown-hover)"
+          ? theme.color.dropdown.backgroundSelected
+          : theme.color.dropdown.backgroundHover
         : undefined,
     },
 
@@ -142,7 +144,7 @@ const customStyles: StylesConfig = {
     margin: 4,
     width: `calc(${styles.width} - 8px)`,
   }),
-};
+});
 
 // Replace existing dropdown with custom dropdown arrow
 const DropdownIndicator = (props: DropdownIndicatorProps): ReactNode => {
@@ -153,11 +155,17 @@ const DropdownIndicator = (props: DropdownIndicatorProps): ReactNode => {
   );
 };
 
-type AntStyledSelectProps = StateManagerProps & {
-  type?: ButtonProps["type"] | "outlined";
-};
-
+/**
+ * A wrapper around the `react-select` `Select` component that mimics the style of the
+ * Ant Design library.
+ *
+ * Note that providing a `styles` prop may cause conflicts with existing style overrides
+ * in this component.
+ */
 export default function AntStyledSelect(props: AntStyledSelectProps): ReactElement {
+  const theme = React.useContext(AppThemeContext);
+  const customStyles = useMemo(() => getCustomStyles(theme), [theme]);
+
   return (
     <SelectContainer $type={props.type || "outlined"}>
       <Select

@@ -121,10 +121,12 @@ const theme = {
     height: 28,
     heightSmall: 28,
     radius: 4,
+    radiusLg: 6,
   },
 };
 
 export const AppThemeContext = createContext(theme);
+export type AppTheme = typeof theme;
 
 type DocumentContextType = {
   modalContainerRef: HTMLDivElement | null;
@@ -332,7 +334,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
             colorTextQuaternary: theme.color.text.disabled,
             controlHeightSM: theme.controls.heightSmall,
             fontFamily: theme.font.family,
-            borderRadiusLG: 6,
+            borderRadiusLG: theme.controls.radiusLg,
             colorText: theme.color.text.primary,
             colorTextPlaceholder: theme.color.text.hint,
             colorBgSpotlight: theme.color.tooltip.background,
