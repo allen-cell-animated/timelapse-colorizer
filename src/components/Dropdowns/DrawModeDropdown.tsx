@@ -3,7 +3,7 @@ import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-import { Color as ThreeColor,ColorRepresentation } from "three";
+import { ColorRepresentation, Color as ThreeColor } from "three";
 
 import { DrawMode } from "../../colorizer/types";
 import { FlexRowAlignCenter } from "../../styles/utils";
@@ -39,8 +39,8 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
   const items = [
-    { key: DrawMode.HIDE.toString(), label: "Hide" },
-    { key: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
+    { value: DrawMode.HIDE.toString(), label: "Hide" },
+    { value: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
   ];
 
   const defaultPresetColors = [
@@ -70,7 +70,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
         label={null}
         selected={props.selected.toString()}
         items={items}
-        showTooltip={false}
+        showSelectedTooltip={false}
         onChange={(key: string) => {
           props.onChange(Number.parseInt(key, 10), props.color);
         }}

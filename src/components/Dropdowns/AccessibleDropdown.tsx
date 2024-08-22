@@ -149,7 +149,11 @@ const DropdownContentWrapper = styled.div`
 `;
 
 /**
- * A keyboard-accessible wrapper around the Antd `Dropdown` component, with support for button styling, labels, and tooltips.
+ * A keyboard-accessible wrapper around the Antd `Dropdown` menu component, with support for button styling,
+ * labels, and tooltips. Use when you have multiple action items to present in a single button-style menu.
+ *
+ * Note that `AccessibleDropdown` and `Dropdown` are only intended for menu navigation and NOT for item selection.
+ * Please use `SelectionDropdown` for item selection, which uses the `Select` component internally.
  */
 export default function AccessibleDropdown(inputProps: AccessibleDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<AccessibleDropdownProps>;

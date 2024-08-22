@@ -1,5 +1,4 @@
 import { Button, Tooltip } from "antd";
-import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, { memo, ReactElement, useContext, useEffect, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
@@ -28,7 +27,7 @@ import {
 } from "./scatter_plot_data_utils";
 
 import { AppThemeContext } from "../AppStyle";
-import SelectionDropdown from "../Dropdowns/SelectionDropdown";
+import SelectionDropdown, { SelectOptionType } from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
 import LoadingSpinner from "../LoadingSpinner";
 
@@ -195,7 +194,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (featureKey === null || dataset === null) {
       return undefined;
     }
-    if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
+    if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
       return dataset.times || undefined;
     }
     return dataset.getFeatureData(featureKey)?.data;
@@ -362,7 +361,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
 
     // Special case for time feature, which isn't in the dataset
-    if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
+    if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
       min = 0;
       max = dataset?.numberOfFrames || 0;
     }
@@ -626,7 +625,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     const isUsingTime =
-      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key;
+      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value;
 
     // Configure traces
     const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds, {}, markerBaseColor);
@@ -785,8 +784,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const makeControlBar = (): ReactElement => {
     const featureKeys = dataset ? dataset.featureKeys : [];
-    const menuItems: MenuItemType[] = featureKeys.map((key: string) => {
-      return { key, label: dataset?.getFeatureNameWithUnits(key) };
+    const menuItems: SelectOptionType[] = featureKeys.map((key: string) => {
+      return { value: key, label: dataset?.getFeatureNameWithUnits(key) };
     });
     menuItems.push(SCATTERPLOT_TIME_FEATURE);
 
