@@ -1,16 +1,14 @@
-import { ButtonProps, Select, Tooltip } from "antd";
-import { DefaultOptionType } from "antd/es/select";
+import { LoadingOutlined } from "@ant-design/icons";
+import { ButtonProps, Select } from "antd";
 import Fuse from "fuse.js";
 import React, { ReactElement, ReactNode, useContext, useMemo, useRef, useState, useTransition } from "react";
 import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../../assets";
+import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
 
 import { AppTheme, AppThemeContext } from "../AppStyle";
-
-// TODO: Add loading spinner for when search/filtering is in progress
-// import LoadingSpinner from "../LoadingSpinner";
 
 // TODO: Have the dropdown show a loading indicator after a selection has been made
 // but before the prop value updates. -> this is especially noticeable when slow datasets.
@@ -20,12 +18,13 @@ import { AppTheme, AppThemeContext } from "../AppStyle";
 export type SelectOptionType = {
   value: string;
   label: string | ReactNode;
-  tooltip?: string;
 };
 
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
   label?: string | null;
+  /** The id of an element that labels this selection dropdown. */
+  labelledBy?: string;
   /** The key of the item that is currently selected. */
   selected: string;
   /** An array of ItemType that describes the item properties (`{key, label}`),
@@ -66,8 +65,8 @@ const defaultProps: Partial<SelectionDropdownProps> = {
   enableSearch: true,
 };
 
-const SelectContainer = styled(FlexRowAlignCenter)<{ theme: AppTheme }>`
-  ${({ theme }) => {
+const SelectContainer = styled(FlexRowAlignCenter)<{ theme: AppTheme; $type: SelectionDropdownProps["buttonType"] }>`
+  ${({ theme, $type }) => {
     return css`
       & .ant-select {
       }
@@ -152,48 +151,22 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     }
   }, [searchInput, items]);
 
-  // Completely customize the dropdown menu and make the buttons manually.
-  // This is because Antd's Dropdown component doesn't allow us to add item tooltips, and complicates
-  // other behaviors (like tab navigation or setting width).
-  // Ant recommends using the Popover component for this instead of Dropdown, but they use
-  // different animation styling (Dropdown looks nicer).
-
-  const optionRender = (option: DefaultOptionType & { data: SelectOptionType }, info: { index: number }): ReactNode => {
-    return (
-      <Tooltip title={option.label} placement="right" trigger={["hover", "focus"]}>
-        <span style={{ maxWidth: "100%", textOverflow: "ellipsis", width: "100%", textWrap: "wrap" }}>
-          {option.data.label}
-        </span>
-      </Tooltip>
-    );
-  };
-
-  const dropdownRender = (menu: ReactElement): ReactElement => {
-    console.log(menu);
-    // Iterate over menu items and wrap them in tooltips
-    return menu;
-  };
-
-  // const getDropdownItems = (closeDropdown: () => void): ReactElement[] => {
-  //   return filteredItems.map((item) => {
-  //     return (
-  //       <Tooltip key={item.value} title={item.label?.toString()} placement="right" trigger={["hover", "focus"]}>
-  //         <DropdownItem
-  //           key={item.value}
-  //           selected={item.value === props.selected}
-  //           disabled={props.disabled}
-  //           onClick={() => {
-  //             props.onChange(item.value.toString());
-  //             closeDropdown();
-  //             // Add a slight delay so the dropdown closes first before the input is cleared
-  //             setTimeout(() => setSearchInput(""), 1);
-  //           }}
-  //         >
-  //           {item.label}
-  //         </DropdownItem>
-  //       </Tooltip>
-  //     );
-  //   });
+  // TODO: Allow option to include tooltips for elements.
+  // This may require injecting an invisible div to intercept mouse events and show the tooltips, but it's
+  // unclear without experimentation whether it will also work with keyboard nav and focus.
+  // Currently disabled due to issues with tooltip positioning.
+  //
+  // const optionRender = (
+  //   option: DefaultOptionType & { data: SelectOptionType },
+  //   _info: { index: number }
+  // ): ReactNode => {
+  //   return (
+  //     <Tooltip title={option.label} placement="right" trigger={["hover", "focus"]}>
+  //       <span style={{ maxWidth: "100%", textOverflow: "ellipsis", width: "100%", textWrap: "wrap" }}>
+  //         {option.data.label}
+  //       </span>
+  //     </Tooltip>
+  //   );
   // };
 
   const mainButtonStyle: React.CSSProperties = {
@@ -201,6 +174,13 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
     minWidth: "60px",
     maxWidth: "270px",
   };
+
+  const isPendingExtended = useDebounce(isPending, 400) && isPending;
+  const icon = isPendingExtended ? (
+    <LoadingOutlined style={{ fontSize: "12px" }} />
+  ) : (
+    <DropdownSVG style={{ width: "12px", height: "12px" }} viewBox="0 0 12 12" />
+  );
 
   return (
     <SelectContainer $gap={6} ref={popupContainerRef} theme={theme}>
@@ -212,6 +192,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
           placeholder="Select an item"
           value={props.selected}
           disabled={props.disabled}
+          popupMatchSelectWidth={false}
           onChange={(value) => {
             props.onChange(value);
             startTransition(() => {
@@ -226,11 +207,10 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
               setSearchInput(searchInput);
             });
           }}
-          optionRender={optionRender}
           loading={isPending}
-          suffixIcon={<DropdownSVG style={{ width: "12px", height: "12px" }} viewBox="0 0 12 12" />}
+          suffixIcon={icon}
           getPopupContainer={popupContainerRef.current ? () => popupContainerRef.current! : undefined}
-          dropdownRender={dropdownRender}
+          notFoundContent="No matches found"
         ></Select>
         {/* <Tooltip title="wow!">
           <div
