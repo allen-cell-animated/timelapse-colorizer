@@ -1,9 +1,13 @@
 import { ButtonProps, Select, Tooltip } from "antd";
+import { DefaultOptionType } from "antd/es/select";
 import Fuse from "fuse.js";
-import React, { ReactElement, ReactNode, useMemo, useRef, useState, useTransition } from "react";
+import React, { ReactElement, ReactNode, useContext, useMemo, useRef, useState, useTransition } from "react";
+import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../../assets";
 import { FlexRowAlignCenter } from "../../styles/utils";
+
+import { AppTheme, AppThemeContext } from "../AppStyle";
 
 // TODO: Add loading spinner for when search/filtering is in progress
 // import LoadingSpinner from "../LoadingSpinner";
@@ -62,6 +66,34 @@ const defaultProps: Partial<SelectionDropdownProps> = {
   enableSearch: true,
 };
 
+const SelectContainer = styled(FlexRowAlignCenter)<{ theme: AppTheme }>`
+  ${({ theme }) => {
+    return css`
+      & .ant-select {
+      }
+
+      & .ant-select-dropdown {
+        .ant-select-item:not(:last-child) {
+          margin-bottom: 2px;
+        }
+        .ant-select-item:not(:first-child) {
+          margin-top: 2px;
+        }
+
+        .ant-select-item-option-active {
+          background-color: ${theme.color.dropdown.backgroundHover};
+          color: ${theme.color.dropdown.textHover};
+        }
+
+        .ant-select-item-option-selected {
+          background-color: ${theme.color.dropdown.backgroundSelected};
+          color: ${theme.color.dropdown.textSelected};
+        }
+      }
+    `;
+  }}
+`;
+
 /**
  * An wrapper around an AccessibleDropdown that allows for the selection of a single item from a list.
  *
@@ -72,6 +104,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   const props = { ...defaultProps, ...inputProps } as Required<SelectionDropdownProps>;
 
   const [isPending, startTransition] = useTransition();
+  const theme = useContext(AppThemeContext);
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const [searchInput, setSearchInput] = useState("");
   const [filteredItems, setFilteredItems] = useState<SelectOptionType[]>([]);
@@ -125,6 +158,22 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   // Ant recommends using the Popover component for this instead of Dropdown, but they use
   // different animation styling (Dropdown looks nicer).
 
+  const optionRender = (option: DefaultOptionType & { data: SelectOptionType }, info: { index: number }): ReactNode => {
+    return (
+      <Tooltip title={option.label} placement="right" trigger={["hover", "focus"]}>
+        <span style={{ maxWidth: "100%", textOverflow: "ellipsis", width: "100%", textWrap: "wrap" }}>
+          {option.data.label}
+        </span>
+      </Tooltip>
+    );
+  };
+
+  const dropdownRender = (menu: ReactElement): ReactElement => {
+    console.log(menu);
+    // Iterate over menu items and wrap them in tooltips
+    return menu;
+  };
+
   // const getDropdownItems = (closeDropdown: () => void): ReactElement[] => {
   //   return filteredItems.map((item) => {
   //     return (
@@ -154,9 +203,9 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   };
 
   return (
-    <FlexRowAlignCenter $gap={6} ref={popupContainerRef}>
+    <SelectContainer $gap={6} ref={popupContainerRef} theme={theme}>
       <h3>{props.label}</h3>
-      <Tooltip title="wow!">
+      <div style={{ position: "relative" }}>
         <Select
           options={filteredItems}
           style={mainButtonStyle}
@@ -177,11 +226,24 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
               setSearchInput(searchInput);
             });
           }}
+          optionRender={optionRender}
           loading={isPending}
           suffixIcon={<DropdownSVG style={{ width: "12px", height: "12px" }} viewBox="0 0 12 12" />}
           getPopupContainer={popupContainerRef.current ? () => popupContainerRef.current! : undefined}
-        />
-      </Tooltip>
-    </FlexRowAlignCenter>
+          dropdownRender={dropdownRender}
+        ></Select>
+        {/* <Tooltip title="wow!">
+          <div
+            style={{
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: theme.controls.height,
+              position: "absolute",
+            }}
+          ></div>
+        </Tooltip> */}
+      </div>
+    </SelectContainer>
   );
 }

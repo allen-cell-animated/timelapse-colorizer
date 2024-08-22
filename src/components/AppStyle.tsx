@@ -80,7 +80,9 @@ const theme = {
     },
     dropdown: {
       backgroundHover: palette.gray10,
+      textHover: palette.gray60,
       backgroundSelected: palette.themeGray,
+      textSelected: palette.theme,
     },
     slider: {
       rail: palette.gray10,
@@ -124,6 +126,7 @@ const theme = {
 };
 
 export const AppThemeContext = createContext(theme);
+export type AppTheme = typeof theme;
 
 type DocumentContextType = {
   modalContainerRef: HTMLDivElement | null;
