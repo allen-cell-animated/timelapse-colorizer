@@ -17,6 +17,13 @@ type AntStyledSelectProps = StateManagerProps & {
 // styled-components and the classnames that react-select provides to make it consistent
 // with the rest of the app.
 const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width;
+
+  & .react-select--is-disabled {
+    cursor: not-allowed;
+    pointer-events: unset;
+  }
+
   & .react-select__control {
     box-shadow: none;
 
@@ -43,7 +50,29 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
         case "primary":
         default:
           return css`
+            background-color: var(--color-button);
             fill: var(--color-text-button);
+
+            &:not(.react-select__control--is-disabled) {
+              color: var(--color-text-button) !important;
+            }
+
+            &:not(.react-select__control--menu-is-open):not(.react-select__control--is-disabled) {
+              border-color: transparent !important;
+            }
+
+            &:hover {
+              background-color: var(--color-button-hover);
+            }
+
+            &.react-select__control--is-focused .react-select__single-value {
+              color: var(--color-theme-light);
+            }
+
+            & .react-select__single-value,
+            & .react-select__input-container {
+              color: var(--color-text-button);
+            }
 
             &:disabled {
               fill: var(--color-text-disabled);
@@ -51,6 +80,20 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
           `;
       }
     }}
+
+    &.react-select__control--is-disabled {
+      // Disabled styling
+      cursor: not-allowed;
+      background-color: var(--color-button-disabled);
+      border-color: var(--color-borders);
+      fill: var(--color-text-disabled);
+      color: var(--color-text-disabled);
+    }
+
+    &.react-select__control--control-is-focused .react-select__single-value {
+      // Fade text when dropdown input is selected
+      opacity: 0.75;
+    }
 
     // Note: Focus ring is visible even when not using keyboard navigation.
     // This is because browsers show the focus ring whenever an input is focused,
@@ -99,6 +142,9 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
   dropdownIndicator: (styles) => ({
     ...styles,
     color: undefined,
+    ":hover": {
+      color: "undefined",
+    },
   }),
   // Fix z-ordering of the dropdown menu and adjust width to fit content
   menu: (base) => ({
@@ -107,14 +153,18 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
     width: "max-content",
     minWidth: base.width,
     maxWidth: "calc(min(50vw, 500px))",
+    borderRadius: theme.controls.radiusLg,
     // Outline is caused by the shadow! Check w/ Lyndsay on whether we prefer the outline,
     // if not uncomment the below:
-    // boxShadow:
-    //   "rgba(0, 0, 0, 0.08) 0px 6px 16px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px -4px, rgba(0, 0, 0, 0.05) 0px 9px 28px 8px",
+    boxShadow:
+      " rgba(0, 0, 0, 0.08) 0px 6px 16px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px -4px, rgba(0, 0, 0, 0.05) 0px 9px 28px 8px;",
   }),
   menuList: (base) => ({
     ...base,
-    padding: 0,
+    padding: 4,
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
   }),
   option: (styles, { isFocused, isSelected, isDisabled }) => ({
     ...styles,
@@ -141,7 +191,6 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
     // Pad to match Ant dropdowns. Default padding is "8px 12px" so adjust size to account
     // for 4px extra padding on every side.
     padding: "4px 8px",
-    margin: 4,
     width: `calc(${styles.width} - 8px)`,
   }),
 });
