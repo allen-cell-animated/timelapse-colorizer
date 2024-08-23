@@ -26,7 +26,7 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
     box-shadow: none;
 
     ${(props) => {
-      // TODO: Can I compose this shared Ant styling? It's repeated in IconButton.tsx
+      // TODO: Can this be composed with Ant styling? It's similar to IconButton.tsx
       switch (props.$type) {
         case "outlined":
           return css`
@@ -136,9 +136,9 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
   }),
   dropdownIndicator: (styles) => ({
     ...styles,
-    color: undefined,
+    color: undefined, // Use default font colors, allow CSS control
     padding: "8px 6px",
-
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     ":hover": {
       color: "undefined",
     },
@@ -151,8 +151,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
     minWidth: base.width,
     maxWidth: "calc(min(50vw, 500px))",
     borderRadius: theme.controls.radiusLg,
-    // Outline is caused by the shadow! Check w/ Lyndsay on whether we prefer the outline,
-    // if not uncomment the below:
+    // Ant popup menu shadow style
     boxShadow:
       " rgba(0, 0, 0, 0.08) 0px 6px 16px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px -4px, rgba(0, 0, 0, 0.05) 0px 9px 28px 8px;",
   }),
@@ -166,9 +165,9 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
   option: (styles, { isFocused, isSelected, isDisabled }) => ({
     ...styles,
     // Style to match Ant dropdowns
+    borderRadius: 4,
     padding: "4px 8px",
     width: `calc(${styles.width})`,
-    borderRadius: 4,
     color: isSelected ? theme.color.dropdown.textSelected : theme.color.text.primary,
     backgroundColor: isDisabled
       ? undefined
@@ -200,7 +199,7 @@ const DropdownIndicator = (props: DropdownIndicatorProps): ReactElement => {
 };
 
 // TODO: Add open/close animation to Menu; see similar implementation in
-// ColorRampDropdown.css
+// ColorRampDropdown.css.
 
 /**
  * A wrapper around the `react-select` `Select` component that mimics the style of the

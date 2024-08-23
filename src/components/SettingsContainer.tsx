@@ -5,7 +5,7 @@ import styled, { css } from "styled-components";
 type SettingsItemProps = {
   /** A string or ReactElement label. Strings will be displayed as `p`. Defaults to empty string ("").*/
   label?: string | ReactElement;
-  /** String applied to the `label` element if `label` is a string. */
+  /** HTML ID applied to the `label` element, if `label` is a string. */
   id?: string;
   /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
    * of the parent `SettingsContainer`. */

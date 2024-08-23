@@ -751,13 +751,13 @@ function Viewer(): ReactElement {
     });
   };
 
-  const getFeatureDropdownData = useCallback((): { key: string; label: string }[] => {
+  const getFeatureDropdownData = useCallback((): { value: string; label: string }[] => {
     if (!dataset) {
       return [];
     }
     // Add units to the dataset feature names if present
     return dataset.featureKeys.map((key) => {
-      return { key, label: dataset.getFeatureNameWithUnits(key) };
+      return { value: key, label: dataset.getFeatureNameWithUnits(key) };
     });
   }, [dataset]);
 
@@ -835,7 +835,7 @@ function Viewer(): ReactElement {
             disabled={disableUi}
             label="Feature"
             selected={featureKey}
-            items={getFeatureDropdownData().map((item) => ({ value: item.key, label: item.label }))}
+            items={getFeatureDropdownData()}
             onChange={(value: string) => {
               if (value !== featureKey && dataset) {
                 replaceFeature(dataset, value);
