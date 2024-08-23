@@ -12,6 +12,8 @@ import SelectionDropdown from "./SelectionDropdown";
 
 type DrawModeSelectorProps = {
   selected: DrawMode;
+  /** HTML ID that the selection dropdown is labelled by. */
+  htmlLabelId: string;
   onChange: (mode: DrawMode, color: ThreeColor) => void;
   color: ThreeColor;
   disabled?: boolean;
@@ -68,6 +70,7 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
     <HorizontalDiv ref={colorPickerRef}>
       <SelectionDropdown
         label={null}
+        htmlLabelId={props.htmlLabelId}
         selected={props.selected.toString()}
         items={items}
         showSelectedItemTooltip={false}

@@ -48,8 +48,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
-          <SettingsItem label="Backdrop images">
+          <SettingsItem label="Backdrop images" id="backdrop-images-dropdown-label">
             <SelectionDropdown
+              htmlLabelId="backdrop-images-dropdown-label"
               selected={props.selectedBackdropKey || NO_BACKDROP.value}
               items={backdropOptions}
               onChange={props.setSelectedBackdropKey}
@@ -93,8 +94,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       </CustomCollapse>
       <CustomCollapse label="Objects">
         <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
-          <SettingsItem label="Filtered object color">
+          <SettingsItem label="Filtered object color" id="filtered-object-color-label">
             <DrawModeDropdown
+              htmlLabelId="filtered-object-color-label"
               selected={props.config.outOfRangeDrawSettings.mode}
               color={props.config.outOfRangeDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
@@ -102,8 +104,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               }}
             />
           </SettingsItem>
-          <SettingsItem label="Outlier object color">
+          <SettingsItem label="Outlier object color" id="outlier-object-color-label">
             <DrawModeDropdown
+              htmlLabelId="outlier-object-color-label"
               selected={props.config.outlierDrawSettings.mode}
               color={props.config.outlierDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {

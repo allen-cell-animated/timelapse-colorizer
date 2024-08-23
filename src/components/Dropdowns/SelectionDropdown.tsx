@@ -111,7 +111,6 @@ export default function TestSelect(props: SelectionDropdownProps): ReactElement 
 
   const id = props.label ? `dropdown-label-${props.label.toLowerCase()}` : undefined;
 
-  // TODO: blur on selection?
   return (
     <FlexRowAlignCenter $gap={6}>
       {props.label && <h3 id={id ?? props.htmlLabelId}>{props.label}</h3>}
