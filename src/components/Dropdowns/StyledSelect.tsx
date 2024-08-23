@@ -13,9 +13,7 @@ type AntStyledSelectProps = StateManagerProps & {
   width?: string;
 };
 
-// React select offers a few strategies for styling the dropdown. I've elected to use
-// styled-components and the classnames that react-select provides to make it consistent
-// with the rest of the app.
+// Styling is done via both styled-components and react-select's `styles` prop.
 const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
   transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width;
 
@@ -54,11 +52,11 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
             fill: var(--color-text-button);
 
             &:not(.react-select__control--is-disabled) {
-              color: var(--color-text-button) !important;
+              color: var(--color-text-button);
             }
 
             &:not(.react-select__control--menu-is-open):not(.react-select__control--is-disabled) {
-              border-color: transparent !important;
+              border-color: transparent;
             }
 
             &:hover {
@@ -95,13 +93,10 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
       opacity: 0.75;
     }
 
-    // Note: Focus ring is visible even when not using keyboard navigation.
-    // This is because browsers show the focus ring whenever an input is focused,
-    // and there is no way to differentiate between navigation methods.
     &:focus-within:has(input:focus-visible) {
       // Focus ring
       box-shadow: none;
-      outline: 2px solid #efe9f7 !important ;
+      outline: 2px solid #efe9f7 !important;
       outline-offset: 0px;
       transition: outline-offset 0s, outline 0s;
     }
@@ -142,6 +137,8 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
   dropdownIndicator: (styles) => ({
     ...styles,
     color: undefined,
+    padding: "8px 6px",
+
     ":hover": {
       color: "undefined",
     },
@@ -169,6 +166,8 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
   option: (styles, { isFocused, isSelected, isDisabled }) => ({
     ...styles,
     // Style to match Ant dropdowns
+    padding: "4px 8px",
+    width: `calc(${styles.width})`,
     borderRadius: 4,
     color: isSelected ? theme.color.dropdown.textSelected : theme.color.text.primary,
     backgroundColor: isDisabled
@@ -187,15 +186,11 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
           : theme.color.dropdown.backgroundHover
         : undefined,
     },
-
-    // Pad to match Ant dropdowns. Default padding is "8px 12px" so adjust size to account
-    // for 4px extra padding on every side.
-    padding: "4px 8px",
-    width: `calc(${styles.width} - 8px)`,
   }),
 });
 
 // Replace existing dropdown with custom dropdown arrow
+// TODO: Show loading indicator here?
 const DropdownIndicator = (props: DropdownIndicatorProps): ReactElement => {
   return (
     <components.DropdownIndicator {...props}>
@@ -203,6 +198,9 @@ const DropdownIndicator = (props: DropdownIndicatorProps): ReactElement => {
     </components.DropdownIndicator>
   );
 };
+
+// TODO: Add open/close animation to Menu; see similar implementation in
+// ColorRampDropdown.css
 
 /**
  * A wrapper around the `react-select` `Select` component that mimics the style of the
@@ -219,6 +217,7 @@ export default function AntStyledSelect(props: AntStyledSelectProps): ReactEleme
     <SelectContainer $type={props.type || "outlined"}>
       <Select
         {...props}
+        menuPlacement={props.menuPlacement || "auto"}
         components={{ DropdownIndicator, ...props.components }}
         styles={{ ...customStyles, ...props.styles }}
       />
