@@ -35,10 +35,11 @@
     color: #323233 !important;
   }
 
-  & #ot-pc-title {
+  & #ot-pc-content #ot-pc-title {
     margin-top: 20px;
   }
 
+  & #accept-recommended-btn-handler,
   & #onetrust-accept-btn-handler,
   & .save-preference-btn-handler {
     border-radius: 6px;
