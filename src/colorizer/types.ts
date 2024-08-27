@@ -39,7 +39,7 @@ export type FeatureArrayType = {
 type FeatureTypeSpec<T extends FeatureDataType> = {
   /** The constructor for a `TypedArray` of this numeric type */
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  ArrayConstructor: { new (arr: number[]): FeatureArrayType[T] };
+  ArrayConstructor: { new (arr: number[] | number): FeatureArrayType[T] };
   format: PixelFormat;
   dataType: TextureDataType;
   internalFormat: PixelFormatGPU;

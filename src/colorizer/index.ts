@@ -6,7 +6,7 @@ import UrlArrayLoader from "./loaders/UrlArrayLoader";
 import Plotting from "./Plotting";
 import Track from "./Track";
 
-export type { ArraySource, IArrayLoader, IFrameLoader } from "./loaders/ILoader";
+export type { ArraySource, IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 
 export {
   ColorizeCanvas,
