@@ -349,6 +349,7 @@ export default function LandingPage(): ReactElement {
         <FlexColumnAlignCenter style={{ paddingTop: "40px" }}>
           <CookieSettingsButton type="text" className="ot-sdk-show-settings">
             Cookie settings
+            <VisuallyHidden>(opens popup menu)</VisuallyHidden>
           </CookieSettingsButton>
         </FlexColumnAlignCenter>
       </ContentContainer>
