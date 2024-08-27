@@ -374,6 +374,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               zIndexPopup: 2000,
             },
             Divider: {
+              colorSplit: theme.color.layout.dividers,
               marginLG: 0,
             },
             Modal: {
