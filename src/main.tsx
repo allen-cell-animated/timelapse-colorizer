@@ -9,8 +9,6 @@ import { decodeGitHubPagesUrl, isEncodedPathUrl, tryRemoveHashRouting } from "./
 import AppStyle from "./components/AppStyle";
 import Viewer from "./Viewer";
 
-import "./styles/cookie-banner.css";
-
 // Decode URL path if it was encoded for GitHub pages or uses hash routing.
 const locationUrl = new URL(window.location.toString());
 if (locationUrl.hash !== "" || isEncodedPathUrl(locationUrl)) {

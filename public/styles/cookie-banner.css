@@ -1,43 +1,43 @@
 #onetrust-consent-sdk {
   font-family: Lato, LatoExtended, sans-serif;
 
-  #onetrust-banner-sdk {
+  & #onetrust-banner-sdk {
     height: fit-content !important;
     box-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.3) !important;
     border-radius: 5px;
     /* Fixes visual bug where shadows would be misaligned */
     background-color: #e7e2f7;
 
-    .ot-sdk-container {
+    & .ot-sdk-container {
       box-shadow: none;
+    }
+
+    & #onetrust-pc-btn-handler {
+      font-weight: 400 !important;
+      padding: 12px 10px !important;
     }
   }
 
-  .ot-sdk-container {
+  & .ot-sdk-container {
     height: 100% !important;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  p,
-  #onetrust-policy-text {
+  & h1,
+  & h2,
+  & h3,
+  & h4,
+  & p,
+  & #onetrust-policy-text {
     /** Darken font color for contrast accessibility */
     color: #323233 !important;
   }
 
-  #ot-pc-title {
+  & #ot-pc-title {
     margin-top: 20px;
   }
 
-  #onetrust-accept-btn-handler,
-  .save-preference-btn-handler {
+  & #onetrust-accept-btn-handler,
+  & .save-preference-btn-handler {
     border-radius: 6px;
-  }
-
-  #onetrust-pc-btn-handler {
-    font-weight: 400 !important;
-    padding: 12px 10px !important;
   }
 }
