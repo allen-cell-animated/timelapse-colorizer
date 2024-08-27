@@ -1,3 +1,6 @@
+/* TODO: Nesting syntax is only supported in browsers after 2023. Consider removing the 
+ * the nesting syntax if users report bad banner styling?
+*/
 #onetrust-consent-sdk {
   font-family: Lato, LatoExtended, sans-serif;
 
