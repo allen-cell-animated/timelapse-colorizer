@@ -195,7 +195,8 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
 
 const CookieSettingsButton = styled(Button)`
   color: var(--color-text-secondary);
-  &:hover {
+  &:focus-visible > span,
+  &:hover > span {
     text-decoration: underline;
   }
 `;
