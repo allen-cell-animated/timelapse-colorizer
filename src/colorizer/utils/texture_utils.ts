@@ -18,7 +18,7 @@ function getSquarestTextureDimensions<T extends FeatureDataType>(
  * Returns a copy of the typed array `data` padded with `emptyVal` to the specified length.
  */
 function padToLength<T extends FeatureDataType>(
-  data: FeatureArrayType[T],
+  data: FeatureArrayType[T] | number[],
   type: T,
   emptyVal: number,
   length: number
@@ -33,11 +33,6 @@ function padToLength<T extends FeatureDataType>(
 export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayType[T] | number[], type: T): DataTexture {
   const [width, height] = getSquarestTextureDimensions(data);
   const length = width * height;
-
-  // If provided a regular array of numbers, convert to TypedArray
-  if (Array.isArray(data)) {
-    data = new featureTypeSpecs[type].ArrayConstructor(data);
-  }
 
   const spec = featureTypeSpecs[type];
   const buffer = padToLength(data, type, 0, length);
