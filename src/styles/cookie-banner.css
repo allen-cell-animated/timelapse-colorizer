@@ -1,43 +1,45 @@
+/* TODO: Use nesting syntax here and transform the CSS during building */
 #onetrust-consent-sdk {
   font-family: Lato, LatoExtended, sans-serif;
+}
 
-  #onetrust-banner-sdk {
-    height: fit-content !important;
-    box-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.3) !important;
-    border-radius: 5px;
-    /* Fixes visual bug where shadows would be misaligned */
-    background-color: #e7e2f7;
+#onetrust-consent-sdk #onetrust-banner-sdk {
+  height: fit-content !important;
+  box-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 5px;
+  /* Fixes visual bug where shadows would be misaligned */
+  background-color: #e7e2f7;
+}
 
-    .ot-sdk-container {
-      box-shadow: none;
-    }
-  }
+#onetrust-consent-sdk #onetrust-banner-sdk .ot-sdk-container {
+  box-shadow: none;
+}
 
-  .ot-sdk-container {
-    height: 100% !important;
-  }
+#onetrust-consent-sdk #onetrust-banner-sdk #onetrust-pc-btn-handler {
+  font-weight: 400;
+  padding: 12px 10px;
+}
 
-  h1,
-  h2,
-  h3,
-  h4,
-  p,
-  #onetrust-policy-text {
-    /** Darken font color for contrast accessibility */
-    color: #323233 !important;
-  }
+#onetrust-consent-sdk .ot-sdk-container {
+  height: 100% !important;
+}
 
-  #ot-pc-title {
-    margin-top: 20px;
-  }
+#onetrust-consent-sdk h1,
+#onetrust-consent-sdk h2,
+#onetrust-consent-sdk h3,
+#onetrust-consent-sdk h4,
+#onetrust-consent-sdk p,
+#onetrust-consent-sdk #onetrust-policy-text {
+  /** Darken font color for contrast accessibility */
+  color: #323233 !important;
+}
 
-  #onetrust-accept-btn-handler,
-  .save-preference-btn-handler {
-    border-radius: 6px;
-  }
+#onetrust-consent-sdk #ot-pc-content #ot-pc-title {
+  margin-top: 20px;
+}
 
-  #onetrust-pc-btn-handler {
-    font-weight: 400 !important;
-    padding: 12px 10px !important;
-  }
+#onetrust-consent-sdk #accept-recommended-btn-handler,
+#onetrust-consent-sdk #onetrust-accept-btn-handler,
+#onetrust-consent-sdk .save-preference-btn-handler {
+  border-radius: 6px;
 }
