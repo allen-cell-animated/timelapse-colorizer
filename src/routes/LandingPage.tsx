@@ -92,7 +92,7 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   grid-row: span 2;
 
   & > h3 {
-    font-weight: 600;
+    font-weight: bold;
   }
 `;
 
@@ -127,7 +127,7 @@ const ProjectCard = styled.li`
   gap: 0px;
 
   & h3 {
-    font-weight: 600;
+    font-weight: bold;
   }
 
   & p,
@@ -188,7 +188,7 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
   & > p {
     color: var(--color-flag-text);
     font-size: 10px;
-    font-weight: 700;
+    font-weight: bold;
     white-space: nowrap;
   }
 `;
