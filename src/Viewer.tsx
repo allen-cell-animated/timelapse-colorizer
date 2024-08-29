@@ -34,7 +34,7 @@ import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/u
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
-import { FlexColumn, FlexRowAlignCenter } from "./styles/utils";
+import { FlexColumn, FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
 import Collection from "./colorizer/Collection";
@@ -51,6 +51,7 @@ import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
+import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
@@ -834,25 +835,37 @@ function Viewer(): ReactElement {
             items={collection?.getDatasetKeys() || []}
             onChange={handleDatasetChange}
           />
-          <SelectionDropdown
-            disabled={disableUi}
-            label="Feature"
-            tooltipText={
-              <FlexColumn>
-                {dataset?.getFeatureData(featureKey)?.descriptionShort}
-                <a style={{ textDecoration: "underline" }}>More info</a>
-              </FlexColumn>
-            }
-            selected={featureKey}
-            items={getFeatureDropdownData()}
-            onChange={(value) => {
-              if (value !== featureKey && dataset) {
-                replaceFeature(dataset, value);
-                resetColorRampRangeToDefaults(dataset, value);
-                reportFeatureSelected(dataset, value);
+          <FlexRow $gap={6}>
+            <SelectionDropdown
+              disabled={disableUi}
+              label="Feature"
+              tooltipText={
+                dataset?.getFeatureData(featureKey)?.description ? (
+                  // Show as larger element with subtitle if description is given
+                  <FlexColumn>
+                    <span style={{ fontSize: "14px" }}>
+                      {featureKey && dataset?.getFeatureNameWithUnits(featureKey)}
+                    </span>
+                    <span style={{ fontSize: "13px", opacity: "0.8" }}>
+                      {dataset?.getFeatureData(featureKey)?.description}
+                    </span>
+                  </FlexColumn>
+                ) : (
+                  dataset?.getFeatureNameWithUnits(featureKey)
+                )
               }
-            }}
-          />
+              selected={featureKey}
+              items={getFeatureDropdownData()}
+              onChange={(value) => {
+                if (value !== featureKey && dataset) {
+                  replaceFeature(dataset, value);
+                  resetColorRampRangeToDefaults(dataset, value);
+                  reportFeatureSelected(dataset, value);
+                }
+              }}
+            />
+            <GlossaryPanel dataset={dataset} />
+          </FlexRow>
 
           <ColorRampDropdown
             knownColorRamps={KNOWN_COLOR_RAMPS}
