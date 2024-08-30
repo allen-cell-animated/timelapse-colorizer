@@ -1,4 +1,4 @@
-import { BookOutlined } from "@ant-design/icons";
+import { ReadOutlined } from "@ant-design/icons";
 import { Divider, Drawer, Radio, RadioChangeEvent, Tooltip } from "antd";
 import React, { ReactElement, useContext, useMemo, useState } from "react";
 import styled from "styled-components";
@@ -14,10 +14,6 @@ type GlossaryPanelProps = {
 };
 
 const StyledDrawer = styled(Drawer)`
-  .ant-drawer-header {
-    padding: 18px 24px;
-  }
-
   .ant-drawer-body {
     padding-top: 16px;
   }
@@ -27,6 +23,10 @@ const StyledDrawer = styled(Drawer)`
     display: flex;
     flex-direction: row-reverse;
   }
+
+  p {
+    margin: 0;
+  }
 `;
 
 export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
@@ -34,22 +34,6 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
   const [alphabetizeFeatures, setAlphabetizeFeatures] = useState(false);
 
   const theme = useContext(AppThemeContext);
-
-  const definedFeatureStyle: React.CSSProperties = useMemo(
-    () => ({
-      fontWeight: "bold",
-    }),
-    []
-  );
-  const undefinedFeatureStyle: React.CSSProperties = useMemo(
-    () => ({
-      fontWeight: "bold",
-      color: theme.color.text.hint,
-
-      // fontStyle: "italic",
-    }),
-    []
-  );
 
   const drawerContent = useMemo(() => {
     const dataset = props.dataset;
@@ -68,9 +52,9 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
           const key = featureData.key;
           return (
             <p style={{ lineHeight: "1.5", margin: "0" }} key={key}>
-              <span style={hasDescription ? definedFeatureStyle : undefinedFeatureStyle}>
-                {dataset.getFeatureNameWithUnits(key)}
-              </span>
+              <Tooltip title={hasDescription ? null : "No description provided"} placement="right">
+                <span style={{ fontWeight: "bold" }}>{dataset.getFeatureNameWithUnits(key)}</span>
+              </Tooltip>
               <br />
               {featureData.description}
             </p>
@@ -90,7 +74,7 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
           }}
           disabled={!props.dataset}
         >
-          <BookOutlined />
+          <ReadOutlined />
         </IconButton>
       </Tooltip>
       <StyledDrawer
@@ -125,7 +109,7 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
           <Divider />
           <p>Feature descriptions are provided by the dataset authors. </p>
           <p style={{ margin: 0 }}>
-            For dataset authors: see our{" "}
+            For authors: see our{" "}
             <ExternalLink href="https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/DATA_FORMAT.md#dataset">
               documentation on GitHub
             </ExternalLink>{" "}

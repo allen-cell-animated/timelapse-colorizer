@@ -67,7 +67,7 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
     // Added in v1.3.0
     min?: number | null;
     max?: number | null;
-    // Added in v1.5.0
+    // Added in v1.4.2
     description?: string;
   }[];
   /** Optional list of backdrop/overlay images. */

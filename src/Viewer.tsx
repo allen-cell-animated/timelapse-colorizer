@@ -34,7 +34,7 @@ import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/u
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
-import { FlexColumn, FlexRow, FlexRowAlignCenter } from "./styles/utils";
+import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
 import Collection from "./colorizer/Collection";
@@ -840,19 +840,21 @@ function Viewer(): ReactElement {
               disabled={disableUi}
               label="Feature"
               tooltipText={
-                dataset?.getFeatureData(featureKey)?.description ? (
-                  // Show as larger element with subtitle if description is given
-                  <FlexColumn>
-                    <span style={{ fontSize: "14px" }}>
-                      {featureKey && dataset?.getFeatureNameWithUnits(featureKey)}
-                    </span>
-                    <span style={{ fontSize: "13px", opacity: "0.8" }}>
-                      {dataset?.getFeatureData(featureKey)?.description}
-                    </span>
-                  </FlexColumn>
-                ) : (
-                  dataset?.getFeatureNameWithUnits(featureKey)
-                )
+                dataset?.getFeatureNameWithUnits(featureKey)
+                // TODO: Once dropdowns are refactored, add description into tooltips
+                // dataset?.getFeatureData(featureKey)?.description ? (
+                //   // Show as larger element with subtitle if description is given
+                //   <FlexColumn>
+                //     <span style={{ fontSize: "14px" }}>
+                //       {featureKey && dataset?.getFeatureNameWithUnits(featureKey)}
+                //     </span>
+                //     <span style={{ fontSize: "13px", opacity: "0.9" }}>
+                //       {dataset?.getFeatureData(featureKey)?.description}
+                //     </span>
+                //   </FlexColumn>
+                // ) : (
+                //   dataset?.getFeatureNameWithUnits(featureKey)
+                // )
               }
               selected={featureKey}
               items={getFeatureDropdownData()}
