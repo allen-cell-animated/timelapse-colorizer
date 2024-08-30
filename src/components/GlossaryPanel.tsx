@@ -4,7 +4,7 @@ import React, { ReactElement, useContext, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import { Dataset } from "../colorizer";
-import { ExternalLink, FlexColumn, FlexRowAlignCenter } from "../styles/utils";
+import { FlexColumn, FlexRowAlignCenter } from "../styles/utils";
 
 import { AppThemeContext } from "./AppStyle";
 import IconButton from "./IconButton";
@@ -66,7 +66,7 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
 
   return (
     <>
-      <Tooltip placement="top" title="Open feature glossary">
+      <Tooltip placement="top" title="Open feature glossary" trigger={["hover", "focus"]}>
         <IconButton
           type="link"
           onClick={() => {
@@ -74,7 +74,7 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
           }}
           disabled={!props.dataset}
         >
-          <ReadOutlined />
+          <ReadOutlined style={{ marginTop: "1px" }} /* Visually align with other elements*/ />
         </IconButton>
       </Tooltip>
       <StyledDrawer
@@ -95,7 +95,7 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
             </h3>
             <Radio.Group
               buttonStyle="solid"
-              // TODO: Why does Ant not support aria-label on Radio.Group???
+              // TODO: Why does Ant not support aria-label on Radio.Group?
               // "aria-label"="glossary-sortby-label"
               value={alphabetizeFeatures}
               onChange={(e: RadioChangeEvent) => setAlphabetizeFeatures(e.target.value)}
@@ -106,15 +106,6 @@ export default function GlossaryPanel(props: GlossaryPanelProps): ReactElement {
           </FlexRowAlignCenter>
           <Divider />
           {drawerContent}
-          <Divider />
-          <p>Feature descriptions are provided by the dataset authors. </p>
-          <p style={{ margin: 0 }}>
-            For authors: see our{" "}
-            <ExternalLink href="https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/DATA_FORMAT.md#dataset">
-              documentation on GitHub
-            </ExternalLink>{" "}
-            for adding feature descriptions to a dataset.
-          </p>
         </FlexColumn>
       </StyledDrawer>
     </>
