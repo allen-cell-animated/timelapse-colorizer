@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { HandIconSVG, NoImageSVG } from "../assets";
+import { NoImageSVG } from "../assets";
 import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
@@ -152,7 +152,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const isMouseDragging = useRef(false);
   const totalMouseDrag = useRef(new Vector2(0, 0));
-  const [enablePan, setEnablePan] = useState(false);
 
   const isMouseOverCanvas = useRef(false);
   const lastMousePositionPx = useRef(new Vector2(0, 0));
@@ -392,11 +391,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // Note that click events won't fire until the mouse is released. We need to check
       // if the mouse was dragged before treating the click as a track selection; otherwise
       // the track selection gets changed unexpectedly.
-      if (!isMouseDragging.current && !enablePan) {
+      if (!isMouseDragging.current) {
         handleTrackSelection(event);
       }
     },
-    [handleTrackSelection, enablePan]
+    [handleTrackSelection]
   );
 
   const onContextMenu = useCallback((event: MouseEvent): void => {
@@ -422,27 +421,24 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseMove = useCallback(
     (event: MouseEvent): void => {
-      const isMouseLeftHeldWithModifier = isMouseLeftDown.current && (event.ctrlKey || event.metaKey || enablePan);
-      if (isMouseLeftHeldWithModifier || isMouseMiddleDown.current || isMouseRightDown.current) {
-        canv.domElement.style.cursor = "grabbing";
-        handlePan(event.movementX, event.movementY);
+      if (isMouseLeftDown.current || isMouseMiddleDown.current || isMouseRightDown.current) {
         // Add to total drag distance; if it exceeds threshold, consider the mouse interaction
-        // to be a drag and disable track selection.
+        // to be a drag operation. Start panning and disable track selection.
         totalMouseDrag.current.x += Math.abs(event.movementX);
         totalMouseDrag.current.y += Math.abs(event.movementY);
-        if (!isMouseDragging.current && totalMouseDrag.current.length() > MIN_DRAG_THRESHOLD_PX) {
+        if (totalMouseDrag.current.length() > MIN_DRAG_THRESHOLD_PX) {
           isMouseDragging.current = true;
-        }
-      } else {
-        // TODO: Centralized cursor handling?
-        if (enablePan) {
-          canv.domElement.style.cursor = "grab";
-        } else {
-          canv.domElement.style.cursor = "auto";
+          handlePan(event.movementX, event.movementY);
         }
       }
+
+      if (isMouseDragging.current) {
+        canv.domElement.style.cursor = "move";
+      } else {
+        canv.domElement.style.cursor = "auto";
+      }
     },
-    [handlePan, enablePan]
+    [handlePan]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -458,8 +454,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseWheel = useCallback(
     (event: WheelEvent): void => {
-      event.preventDefault();
       if (event.metaKey || event.ctrlKey) {
+        event.preventDefault();
         if (Math.abs(event.deltaY) > 25) {
           // Using mouse wheel (probably). There's no surefire way to detect this, but mice usually
           // scroll in much larger increments.
@@ -468,11 +464,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           // Track pad zoom
           handleZoomToMouse(event, event.deltaY * 0.005);
         }
-      } else if (event.shiftKey) {
-        // Translate Y to horizontal movement for mice.
-        handlePan(-event.deltaY, 0);
-      } else {
-        handlePan(-event.deltaX, -event.deltaY);
       }
     },
     [handleZoomToMouse]
@@ -601,24 +592,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           >
             <ZoomOutOutlined />
             <VisuallyHidden>Zoom out</VisuallyHidden>
-          </IconButton>
-        </TooltipWithSubtext>
-        <TooltipWithSubtext
-          title={"Toggle pan"}
-          subtext="Right click + drag"
-          placement="right"
-          trigger={["hover", "focus"]}
-        >
-          <IconButton
-            type={enablePan ? "primary" : "link"}
-            onClick={() => {
-              setTimeout(() => {
-                setEnablePan(!enablePan);
-              });
-            }}
-          >
-            <HandIconSVG />
-            <VisuallyHidden>Toggle pan (currently {enablePan ? "ON" : "OFF"}.)</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
       </CanvasControlsContainer>

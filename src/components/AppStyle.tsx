@@ -132,8 +132,6 @@ export const DocumentContext = createContext<DocumentContextType>({ modalContain
 
 /** Applies theme as CSS variables that affect the rest of the document. */
 const CssContainer = styled.div`
-  @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
-
   @font-face {
     font-family: LatoExtended;
     font-style: normal;

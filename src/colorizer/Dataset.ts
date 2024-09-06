@@ -29,6 +29,7 @@ export type FeatureData = {
   unit: string;
   type: FeatureType;
   categories: string[] | null;
+  description: string | null;
 };
 
 type BackdropData = {
@@ -159,9 +160,10 @@ export default class Dataset {
         data: source.getBuffer(),
         min: source.getMin(),
         max: source.getMax(),
-        unit: metadata?.unit || "",
+        unit: metadata.unit || "",
         type: featureType,
         categories: featureCategories || null,
+        description: metadata.description || null,
       },
     ];
   }
