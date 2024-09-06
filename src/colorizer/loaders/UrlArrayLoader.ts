@@ -7,7 +7,7 @@ import workerpool from "workerpool";
 import WorkerUrl from "./workers/urlLoadWorker?url&worker";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
-import { typedArrayToDataTexture } from "../utils/texture_utils";
+import { infoToDataTexture } from "../utils/texture_utils";
 
 import { ArraySource, IArrayLoader } from "./ILoader";
 
@@ -73,10 +73,9 @@ export default class UrlArrayLoader implements IArrayLoader {
     if (!url.endsWith(".json") && !url.endsWith(".parquet")) {
       throw new Error(`Unsupported file format for URL array loader: ${url}`);
     }
-    const { data, texImage, min: newMin, max: newMax } = await this.workerPool.exec("load", [url, type]);
-    // Reconstruct instance of DataTexture on the main thread
-    const tex = typedArrayToDataTexture(texImage.data, type, texImage.width, texImage.height);
+    const { data, textureInfo, min: newMin, max: newMax } = await this.workerPool.exec("load", [url, type]);
 
+    const tex = infoToDataTexture(textureInfo);
     return new UrlArraySource<T>(data, tex, type, min ?? newMin, max ?? newMax);
   }
 
