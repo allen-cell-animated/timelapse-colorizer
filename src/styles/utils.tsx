@@ -82,6 +82,7 @@ export function ExternalLink(props: { href: string; children: React.ReactNode })
     <a href={props.href} style={{ whiteSpace: "nowrap" }} rel="noopener noreferrer" target="_blank">
       {props.children}
       <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "0px", marginLeft: "3px" }} />
+      <VisuallyHidden>(opens in new tab)</VisuallyHidden>
     </a>
   );
 }
