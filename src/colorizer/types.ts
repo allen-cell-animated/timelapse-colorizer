@@ -199,3 +199,10 @@ export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   yAxis: null,
   rangeType: PlotRangeType.ALL_TIME,
 });
+
+export type FontStyleOptions = {
+  fontSizePx: number;
+  fontFamily: string;
+  fontColor: string;
+  fontWeight: string;
+};
