@@ -80,6 +80,8 @@ export default class CanvasOverlay {
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
   private backgroundOptions: OverlayFillOptions;
+  private canvasWidth: number;
+  private canvasHeight: number;
 
   constructor(
     scaleBarOptions: ScaleBarOptions = defaultScaleBarOptions,
@@ -90,14 +92,16 @@ export default class CanvasOverlay {
     this.scaleBarOptions = scaleBarOptions;
     this.timestampOptions = timestampOptions;
     this.backgroundOptions = overlayOptions;
+    this.canvasWidth = 1;
+    this.canvasHeight = 1;
   }
 
   /**
    * Set the size of the canvas overlay.
    */
   setSize(width: number, height: number): void {
-    this.canvas.width = width;
-    this.canvas.height = height;
+    this.canvasWidth = width;
+    this.canvasHeight = height;
   }
 
   updateScaleBarOptions(options: Partial<ScaleBarOptions>): void {
@@ -359,6 +363,9 @@ export default class CanvasOverlay {
       return;
     }
 
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    this.canvas.width = this.canvasWidth * devicePixelRatio;
+    this.canvas.height = this.canvasHeight * devicePixelRatio;
     //Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
