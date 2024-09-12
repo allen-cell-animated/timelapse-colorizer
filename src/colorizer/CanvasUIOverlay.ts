@@ -28,6 +28,12 @@ type OverlayFillOptions = {
   radiusPx: number;
 };
 
+type HeaderOptions = StyleOptions & {
+  fill: string;
+  stroke: string;
+  paddingPx: Vector2;
+};
+
 const defaultStyleOptions: StyleOptions = {
   fontColor: "black",
   fontSizePx: 14,
@@ -54,6 +60,14 @@ const defaultBackgroundOptions: OverlayFillOptions = {
   radiusPx: 4,
 };
 
+const defaultHeaderOptions: HeaderOptions = {
+  ...defaultStyleOptions,
+  fontSizePx: 16,
+  fill: "rgba(255, 255, 255, 0.8)",
+  stroke: "rgba(0, 0, 0, 0.2)",
+  paddingPx: new Vector2(10, 10),
+};
+
 type RenderInfo = {
   /** Size of the element, in pixels. */
   sizePx: Vector2;
@@ -76,6 +90,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
   private backgroundOptions: OverlayFillOptions;
   private canvasWidth: number;
   private canvasHeight: number;
+  private showHeader: boolean;
+  private showFooter: boolean;
 
   constructor(
     scaleBarOptions: ScaleBarOptions = defaultScaleBarOptions,
@@ -92,6 +108,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.backgroundOptions = overlayOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
+    this.showHeader = true;
+    this.showFooter = false;
   }
 
   // Wrapped ColorizeCanvas functions ///////
@@ -125,7 +143,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.backgroundOptions = { ...this.backgroundOptions, ...options };
   }
 
-  private getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: StyleOptions): Vector2 {
+  private static getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: StyleOptions): Vector2 {
     ctx.font = `${options.fontSizePx}px ${options.fontFamily}`;
     ctx.fillStyle = options.fontColor;
     const textWidth = ctx.measureText(text).width;
@@ -152,6 +170,27 @@ export default class CanvasOverlay extends ColorizeCanvas {
     // Magic number to nudge text up a bit so it looks vertically centered.
     const textOffset = Math.round(options.fontSizePx * 0.1);
     ctx.fillText(text, this.canvas.width - textWidth - originPx.x, this.canvas.height - originPx.y - textOffset);
+    return new Vector2(textWidth, options.fontSizePx);
+  }
+
+  private renderCenterAlignedText(
+    ctx: CanvasRenderingContext2D,
+    topLeft: Vector2,
+    bottomRight: Vector2,
+    text: string,
+    options: StyleOptions
+  ): Vector2 {
+    ctx.font = `${options.fontStyle} ${options.fontSizePx}px ${options.fontFamily}`;
+    ctx.fillStyle = options.fontColor;
+    const textWidth = ctx.measureText(text).width;
+    const width = bottomRight.x - topLeft.x;
+    const height = bottomRight.y - topLeft.y;
+
+    const textOffset = Math.round(options.fontSizePx * 0.1);
+    const textX = topLeft.x + width / 2 - textWidth / 2;
+    const textY = topLeft.y + height / 2 + options.fontSizePx / 2 - textOffset;
+
+    ctx.fillText(text, textX, textY);
     return new Vector2(textWidth, options.fontSizePx);
   }
 
@@ -354,7 +393,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
     return {
       sizePx: new Vector2(
-        timestampPaddingPx.x * 2 + this.getTextDimensions(ctx, timestampFormatted, this.timestampOptions).x,
+        timestampPaddingPx.x * 2 + CanvasOverlay.getTextDimensions(ctx, timestampFormatted, this.timestampOptions).x,
         timestampPaddingPx.y * 2 + this.timestampOptions.fontSizePx
       ),
       render,
@@ -382,6 +421,37 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.stroke();
     ctx.closePath();
   }
+
+  public getHeaderSizePx(ctx: CanvasRenderingContext2D, header: string, options: StyleOptions): Vector2 {
+    return CanvasOverlay.getTextDimensions(ctx, header, options);
+  }
+
+  private renderHeader(ctx: CanvasRenderingContext2D, options: HeaderOptions): void {
+    if (!this.showHeader) {
+      return;
+    }
+    // Fill in the background area
+    const height = options.fontSizePx + options.paddingPx.y * 2;
+    console.log("Header height: ", height);
+
+    ctx.fillStyle = options.fill;
+    ctx.strokeStyle = options.stroke;
+    ctx.beginPath();
+    ctx.rect(-0.5, -0.5, ctx.canvas.width + 1, height);
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+
+    this.renderCenterAlignedText(
+      ctx,
+      new Vector2(options.paddingPx.x, 0),
+      new Vector2(ctx.canvas.width - options.paddingPx.x, height),
+      "Header",
+      options
+    );
+  }
+
+  renderFooter(): void {}
 
   /**
    * Render the overlay to the canvas.
@@ -423,6 +493,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     );
     const boxSize = contentSize.clone().add(this.backgroundOptions.paddingPx.clone().multiplyScalar(2.0));
     CanvasOverlay.renderBackground(ctx, boxSize, this.backgroundOptions);
+
+    this.renderHeader(ctx, defaultHeaderOptions);
 
     // Draw elements over the background
     renderScaleBar();
