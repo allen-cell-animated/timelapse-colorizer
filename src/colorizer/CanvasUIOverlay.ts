@@ -3,6 +3,7 @@ import { Color, ColorRepresentation, Vector2 } from "three";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "./colors/color_ramps";
 import { FontStyleOptions } from "./types";
+import { configureCanvasText, renderCanvasText } from "./utils/canvas_utils";
 import { numberToSciNotation } from "./utils/math_utils";
 
 import ColorizeCanvas from "./ColorizeCanvas";
@@ -171,71 +172,9 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.backgroundOptions = { ...this.backgroundOptions, ...options };
   }
 
-  private static setupCanvasContextForTextRendering(ctx: CanvasRenderingContext2D, options: FontStyleOptions) {
-    ctx.font = `${options.fontWeight} ${options.fontSizePx}px ${options.fontFamily}`;
-    ctx.fillStyle = options.fontColor;
-  }
-
   private static getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: FontStyleOptions): Vector2 {
-    ctx.font = `${options.fontSizePx}px ${options.fontFamily}`;
-    ctx.fillStyle = options.fontColor;
+    configureCanvasText(ctx, options);
     const textWidth = ctx.measureText(text).width;
-    return new Vector2(textWidth, options.fontSizePx);
-  }
-
-  /**
-   * Renders text on the canvas, using its bottom right corner as the origin.
-   * @param ctx the canvas context to render to.
-   * @param text the text to render.
-   * @param bottomRight the origin of the text, from the lower right corner, in pixels.
-   * @param options style options for the text.
-   * @returns the width and height of the text, as a Vector2.
-   */
-  private renderRightAlignedText(
-    ctx: CanvasRenderingContext2D,
-    bottomRight: Vector2,
-    text: string,
-    options: FontStyleOptions
-  ): Vector2 {
-    CanvasOverlay.setupCanvasContextForTextRendering(ctx, options);
-    const textWidth = ctx.measureText(text).width;
-
-    // Magic number to nudge text up a bit so it looks vertically centered.
-    const textOffset = Math.round(options.fontSizePx * 0.1);
-    ctx.fillText(text, this.canvas.width - textWidth - bottomRight.x, this.canvas.height - bottomRight.y - textOffset);
-    return new Vector2(textWidth, options.fontSizePx);
-  }
-
-  private renderCenterAlignedText(
-    ctx: CanvasRenderingContext2D,
-    topLeft: Vector2,
-    bottomRight: Vector2,
-    text: string,
-    options: FontStyleOptions
-  ): Vector2 {
-    CanvasOverlay.setupCanvasContextForTextRendering(ctx, options);
-    const textWidth = ctx.measureText(text).width;
-    const width = bottomRight.x - topLeft.x;
-    const height = bottomRight.y - topLeft.y;
-
-    const textOffset = Math.round(options.fontSizePx * 0.1);
-    const textX = topLeft.x + width / 2 - textWidth / 2;
-    const textY = topLeft.y + height / 2 + options.fontSizePx / 2 - textOffset;
-
-    ctx.fillText(text, textX, textY);
-    return new Vector2(textWidth, options.fontSizePx);
-  }
-
-  private renderLeftAlignedText(
-    ctx: CanvasRenderingContext2D,
-    topLeft: Vector2,
-    text: string,
-    options: FontStyleOptions
-  ): Vector2 {
-    CanvasOverlay.setupCanvasContextForTextRendering(ctx, options);
-    const textWidth = ctx.measureText(text).width;
-    const textOffset = Math.round(options.fontSizePx * 0.1);
-    ctx.fillText(text, topLeft.x, topLeft.y + options.fontSizePx - textOffset);
     return new Vector2(textWidth, options.fontSizePx);
   }
 
@@ -338,9 +277,13 @@ export default class CanvasOverlay extends ColorizeCanvas {
     // render the text normally and then hotswap it for a regular canvas when recording occurs.
     // (but most likely a non-issue?)
     const textPaddingPx = new Vector2(6, 4);
-    const textOriginPx = new Vector2(originPx.x + textPaddingPx.x, originPx.y + textPaddingPx.y);
+    const textOriginPx = new Vector2(
+      this.canvas.width - originPx.x - textPaddingPx.x,
+      this.canvas.height - originPx.y - textPaddingPx.y
+    );
     const renderScaleBarText = (): void => {
-      this.renderRightAlignedText(ctx, textOriginPx, textContent, this.scaleBarOptions);
+      configureCanvasText(ctx, this.scaleBarOptions, "right", "bottom");
+      renderCanvasText(ctx, textOriginPx.x, textOriginPx.y, textContent);
     };
 
     return {
@@ -430,10 +373,14 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
     // TODO: Would be nice to configure top/bottom/left/right padding separately.
     const timestampPaddingPx = new Vector2(6, 2);
-    const timestampOriginPx = new Vector2(originPx.x + timestampPaddingPx.x, originPx.y + timestampPaddingPx.y);
+    const timestampOriginPx = new Vector2(
+      this.canvas.width - originPx.x - timestampPaddingPx.x,
+      this.canvas.height - originPx.y - timestampPaddingPx.y
+    );
     // Save the render function for later.
     const render = (): void => {
-      this.renderRightAlignedText(ctx, timestampOriginPx, timestampFormatted, this.scaleBarOptions);
+      configureCanvasText(ctx, this.timestampOptions, "right", "bottom");
+      renderCanvasText(ctx, timestampOriginPx.x, timestampOriginPx.y, timestampFormatted);
     };
 
     return {
@@ -483,13 +430,10 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.fillRect(-0.5, -0.5, ctx.canvas.width + 1, height);
     ctx.strokeRect(-0.5, -0.5, ctx.canvas.width + 1, height);
 
-    this.renderCenterAlignedText(
-      ctx,
-      new Vector2(options.paddingPx.x, 0),
-      new Vector2(ctx.canvas.width - options.paddingPx.x, height),
-      "Header",
-      options
-    );
+    const fontOptions = { maxWidth: ctx.canvas.width - options.paddingPx.x * 2, ...options };
+
+    configureCanvasText(ctx, options, "center", "top");
+    renderCanvasText(ctx, ctx.canvas.width / 2, options.paddingPx.y, "Header", fontOptions);
   }
 
   renderKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {
@@ -505,8 +449,10 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.closePath();
 
     const labelFontStyle: FontStyleOptions = { ...options, fontSizePx: options.labelFontSizePx };
-    this.renderLeftAlignedText(ctx, new Vector2(4, 30), "Min", labelFontStyle);
-    this.renderRightAlignedText(ctx, new Vector2(maxWidthPx, 30 + options.labelFontSizePx), "Max", labelFontStyle);
+    configureCanvasText(ctx, labelFontStyle, "left", "top");
+    renderCanvasText(ctx, 4, 30, "Min");
+    configureCanvasText(ctx, labelFontStyle, "right", "top");
+    renderCanvasText(ctx, maxWidthPx, 30, "Max");
   }
 
   /**
