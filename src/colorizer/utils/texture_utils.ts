@@ -29,24 +29,70 @@ function padToLength<T extends FeatureDataType>(
   return buffer;
 }
 
-/** Pack a 1d array of data into the squarest 2d texture possible */
-export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayType[T] | number[], type: T): DataTexture {
-  const [width, height] = getSquarestTextureDimensions(data);
-  const length = width * height;
+/**
+ * Metadata needed to create a `DataTexture`.
+ * Contains the dimensions of the texture, the type of data, and the data itself.
+ */
+export type DataTextureInfo<T extends FeatureDataType> = {
+  width: number;
+  height: number;
+  type: T;
+  data: FeatureArrayType[T];
+};
 
+/**
+ * Creates a `DataTexture` from a `DataTextureInfo` object.
+ * @param dataTextureArrayInfo The metadata needed to create the texture.
+ * @returns A new `DataTexture` object with the given dimensions, type, and data.
+ */
+export function infoToDataTexture<T extends FeatureDataType>(dataTextureArrayInfo: DataTextureInfo<T>): DataTexture {
+  const { data, width, height, type } = dataTextureArrayInfo;
   const spec = featureTypeSpecs[type];
-  const buffer = padToLength(data, type, 0, length);
-
-  // Convert all NaNs in the buffer to Infinity before texture conversion, as WebGL has undefined
-  // behavior for NaNs. This assumes that the data is float-based.
-  for (let i = 0; i < buffer.length; i++) {
-    if (Number.isNaN(buffer[i])) {
-      buffer[i] = Infinity;
-    }
-  }
-
-  const tex = new DataTexture(buffer, width, height, spec.format, spec.dataType);
+  const tex = new DataTexture(data, width, height, spec.format, spec.dataType);
   tex.internalFormat = spec.internalFormat;
   tex.needsUpdate = true;
   return tex;
+}
+
+/**
+ * Replaces all NaN values with Infinity in-place in the given TypedArray.
+ * This makes the data array safe to use in WebGL, as NaNs have undefined
+ * behavior.
+ * @param data The TypedArray to modify in-place.
+ */
+export function replaceNanWithInfinity<T extends FeatureDataType>(data: FeatureArrayType[T]): FeatureArrayType[T] {
+  for (let i = 0; i < data.length; i++) {
+    if (Number.isNaN(data[i])) {
+      data[i] = Infinity;
+    }
+  }
+  return data;
+}
+
+/**
+ * Optimizes a given data array for rendering by padding it to make it as square as possible.
+ * Returns the dimensions and new data buffer as a `DataTextureInfo` object, which can be
+ * used to construct a `DataTexture` object. See `infoToDataTexture`.
+ * @param data The data array to pack into a texture.
+ * @param type The type of data in the array.
+ * @returns a `DataTextureInfo` object containing the packed data, the dimensions of the texture,
+ * and the type of data.
+ */
+export function arrayToDataTextureInfo<T extends FeatureDataType>(
+  data: FeatureArrayType[T] | number[],
+  type: T
+): DataTextureInfo<T> {
+  const [width, height] = getSquarestTextureDimensions(data);
+  const length = width * height;
+
+  const buffer = replaceNanWithInfinity(padToLength(data, type, 0, length));
+
+  return { data: buffer, width, height, type };
+}
+
+/**
+ * Packs the given data array into a `DataTexture` object.
+ */
+export function packDataTexture<T extends FeatureDataType>(data: FeatureArrayType[T] | number[], type: T): DataTexture {
+  return infoToDataTexture(arrayToDataTextureInfo(data, type));
 }

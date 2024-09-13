@@ -5,6 +5,7 @@ import Transfer from "workerpool/types/transfer";
 
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../../types";
 import { nanToNull } from "../../utils/json_utils";
+import { arrayToDataTextureInfo } from "../../utils/texture_utils";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
@@ -86,12 +87,12 @@ async function load(url: string, type: FeatureDataType): Promise<Transfer> {
   }
 
   const { min, max, data } = result;
-
-  // TODO: Also generate textures for the data on the worker thread too?
-  // Would need access to the underlying array buffer to transfer
+  // Cannot directly transfer the DataTexture, since the class methods are not transferred.
+  // Instead, transfer the underlying image and reconstruct it on the main thread.
+  const textureInfo = arrayToDataTextureInfo(data, type);
 
   // `Transfer` is used to transfer the data buffer to the main thread without copying.
-  return new workerpool.Transfer({ min, max, data }, [data.buffer]);
+  return new workerpool.Transfer({ min, max, data, textureInfo }, [data.buffer, textureInfo.data.buffer]);
 }
 
 workerpool.worker({
