@@ -88,9 +88,9 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
       color: var(--color-text-disabled);
     }
 
-    &.react-select__control--control-is-focused .react-select__single-value {
+    &.react-select__control--is-focused .react-select__single-value {
       // Fade text when dropdown input is selected
-      opacity: 0.75;
+      opacity: 0.7;
     }
 
     &:focus-within:has(input:focus-visible) {
