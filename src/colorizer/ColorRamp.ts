@@ -30,9 +30,11 @@ export default class ColorRamp {
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
     colorStops: Color[],
     width: number,
-    height: number
+    height: number,
+    x: number = 0,
+    y: number = 0
   ): CanvasGradient {
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    const gradient = ctx.createLinearGradient(x, y, width + x, height + y);
     const step = 1 / (colorStops.length - 1);
     colorStops.forEach((color, idx) => {
       gradient.addColorStop(step * idx, `#${color.getHexString()}`);

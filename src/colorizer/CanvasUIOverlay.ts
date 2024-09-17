@@ -9,6 +9,8 @@ import { numberToSciNotation } from "./utils/math_utils";
 import ColorizeCanvas from "./ColorizeCanvas";
 import ColorRamp from "./ColorRamp";
 
+const MAX_CATEGORIES_PER_COLUMN = 4;
+
 type ScaleBarOptions = FontStyleOptions & {
   minWidthPx: number;
   visible: boolean;
@@ -40,6 +42,8 @@ type KeyOptions = FontStyleOptions & {
   categorical: {
     categories: string[];
     categoricalPalette: ColorRepresentation[];
+    paddingPx: Vector2;
+    gapPx: number;
   };
   maxWidthPx: number;
   rampRadiusPx: number;
@@ -100,7 +104,7 @@ const defaultKeyOptions: KeyOptions = {
   stroke: "rgba(0, 0, 0, 0.2)",
   labelFontSizePx: 12,
   labelFontColor: "black",
-  selectedFeatureName: "",
+  selectedFeatureName: "Some example feature (m)",
   type: "numeric",
   numeric: {
     colorRamp: KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!.colorStops,
@@ -110,6 +114,8 @@ const defaultKeyOptions: KeyOptions = {
   categorical: {
     categories: ["test1", "test2", "test 3 long name oopsie!!!!"],
     categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops,
+    paddingPx: new Vector2(2, 2),
+    gapPx: 32,
   },
   maxWidthPx: 200,
   rampRadiusPx: 4,
@@ -152,7 +158,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.canvasWidth = 1;
     this.canvasHeight = 1;
     this.showHeader = true;
-    this.showFooter = false;
+    this.showFooter = true;
   }
 
   // Wrapped ColorizeCanvas functions ///////
@@ -452,7 +458,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
   }
 
   private renderFooter(ctx: CanvasRenderingContext2D, options: FooterOptions): void {
-    if (!this.showHeader) {
+    if (!this.showFooter) {
       return;
     }
     // Fill in the background area
@@ -461,32 +467,69 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.fillStyle = options.fill;
     ctx.strokeStyle = options.stroke;
     ctx.beginPath();
-    ctx.rect(-0.5, this.canvasHeight - 0.5 - height, this.canvasWidth + 1, height);
+    ctx.rect(-0.5, this.canvasHeight - 0.5 - height, this.canvasWidth + 1, height + 1);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
 
-  private renderCategoricalKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {}
+  private renderCategoricalKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {
+    const origin = new Vector2(20, this.canvasHeight - defaultFooterOptions.heightPx + 14);
+
+    const maxWidthPx = options.maxWidthPx;
+    const featureLabelFontStyle: FontStyleOptions = { ...options };
+    configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
+    renderCanvasText(ctx, origin.x, origin.y, options.selectedFeatureName, { maxWidth: maxWidthPx });
+    origin.y += featureLabelFontStyle.fontSizePx + 4; // Padding
+
+    const { categories, categoricalPalette } = options.categorical;
+
+    const numColumns = Math.ceil(categories.length / MAX_CATEGORIES_PER_COLUMN);
+
+    const categoryHeight = options.labelFontSizePx + options.categorical.paddingPx.y * 2;
+    const categoryOrigin = origin.clone();
+    // for (let i = 0; i < categories.length; i++) {
+    //   const category = categories[i];
+    //   const color = new Color(categoricalPalette[i]);
+    //   ctx.fillStyle = color.getStyle();
+    //   ctx.strokeStyle = "transparent";
+    //   ctx.beginPath();
+    //   ctx.rect(categoryOrigin.x, categoryOrigin.y, categoryWidth, categoryHeight);
+    //   ctx.fill();
+    //   ctx.stroke();
+    //   ctx.closePath();
+    //   configureCanvasText(ctx, options, "left", "top");
+    //   renderCanvasText(ctx, categoryOrigin.x + categoryWidth + categoryPadding, categoryOrigin.y, category);
+    //   categoryOrigin.y += categoryHeight + category;
+    // }
+  }
 
   renderNumericKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {
+    const origin = new Vector2(20, this.canvasHeight - defaultFooterOptions.heightPx + 14);
+
     const maxWidthPx = options.maxWidthPx;
+    const featureLabelFontStyle: FontStyleOptions = { ...options };
+    configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
+    renderCanvasText(ctx, origin.x, origin.y, options.selectedFeatureName, { maxWidth: maxWidthPx });
+    origin.y += featureLabelFontStyle.fontSizePx + 4; // Padding
+
     const { colorRamp } = options.numeric;
     const colorStops = colorRamp.map((c) => new Color(c));
-    const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, maxWidthPx, 0);
+    const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, maxWidthPx, 0, origin.x, origin.y);
     ctx.fillStyle = gradient;
     ctx.strokeStyle = options.stroke;
     ctx.beginPath();
-    ctx.roundRect(0.5, 0.5, maxWidthPx - 2, 28, options.rampRadiusPx);
+    ctx.roundRect(origin.x + 0.5, origin.y + 0.5, maxWidthPx - 2, 28, options.rampRadiusPx);
     ctx.fill();
     ctx.stroke();
     ctx.closePath();
+    origin.y += 28 + 4; // Padding
 
-    const labelFontStyle: FontStyleOptions = { ...options, fontSizePx: options.labelFontSizePx };
-    configureCanvasText(ctx, labelFontStyle, "left", "top");
-    renderCanvasText(ctx, 4, 30, "Min");
-    configureCanvasText(ctx, labelFontStyle, "right", "top");
-    renderCanvasText(ctx, maxWidthPx, 30, "Max");
+    const rangeLabelFontStyle: FontStyleOptions = { ...options, fontSizePx: options.labelFontSizePx };
+    configureCanvasText(ctx, rangeLabelFontStyle, "left", "top");
+    renderCanvasText(ctx, origin.x, origin.y, "Min");
+    configureCanvasText(ctx, rangeLabelFontStyle, "right", "top");
+    renderCanvasText(ctx, origin.x + maxWidthPx, origin.y, "Max");
   }
 
   /**
