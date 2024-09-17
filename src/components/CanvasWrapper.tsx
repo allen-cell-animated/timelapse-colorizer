@@ -78,6 +78,7 @@ type CanvasWrapperProps = {
    * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
+  featureKey: string | null;
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
@@ -208,7 +209,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setColorRamp(props.colorRamp);
     canv.setColorMapRangeMin(props.colorRampMin);
     canv.setColorMapRangeMax(props.colorRampMax);
+    canv.updateLegendOptions({
+      min: props.colorRampMin,
+      max: props.colorRampMax,
+      colorRamp: props.colorRamp.colorStops,
+    });
   }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
+
+  useMemo(() => {
+    if (props.featureKey && props.dataset) {
+      canv.updateLegendOptions({
+        selectedFeatureName: props.dataset.getFeatureName(props.featureKey) || "N/A",
+        type: props.dataset.isFeatureCategorical(props.featureKey) ? "categorical" : "numeric",
+      });
+      canv.render();
+    }
+  }, [props.featureKey, props.dataset]);
 
   // Update backdrops
   useMemo(() => {
@@ -220,7 +236,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Update categorical colors
   useMemo(() => {
     canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors]);
+    canv.updateLegendOptions({ categoricalPalette: props.categoricalColors });
+    if (props.dataset && props.featureKey) {
+      canv.updateLegendOptions({
+        categories: props.dataset.getFeatureCategories(props.featureKey) || [],
+      });
+    }
+  }, [props.categoricalColors, props.dataset, props.featureKey]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {

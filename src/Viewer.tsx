@@ -955,6 +955,7 @@ function Viewer(): ReactElement {
                   canv={canv}
                   collection={collection || null}
                   dataset={dataset}
+                  featureKey={featureKey}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                   colorRampMin={colorRampMin}

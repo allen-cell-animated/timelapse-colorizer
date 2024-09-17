@@ -4,7 +4,7 @@ import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./c
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "./colors/color_ramps";
 import { FontStyleOptions } from "./types";
 import { configureCanvasText, renderCanvasText } from "./utils/canvas_utils";
-import { numberToSciNotation } from "./utils/math_utils";
+import { numberToSciNotation, numberToStringDecimal } from "./utils/math_utils";
 
 import ColorizeCanvas from "./ColorizeCanvas";
 import ColorRamp from "./ColorRamp";
@@ -28,24 +28,23 @@ type OverlayFillOptions = {
   radiusPx: number;
 };
 
-type KeyOptions = FontStyleOptions & {
+type LegendOptions = FontStyleOptions & {
   stroke: string;
   labelFontSizePx: number;
   labelFontColor: string;
   selectedFeatureName: string;
   type: "numeric" | "categorical";
-  numeric: {
-    colorRamp: ColorRepresentation[];
-    min: number;
-    max: number;
-  };
-  categorical: {
-    categories: string[];
-    categoricalPalette: ColorRepresentation[];
-    paddingPx: Vector2;
-    gapPx: number;
-  };
-  maxWidthPx: number;
+  colorRamp: ColorRepresentation[];
+  min: number;
+  max: number;
+
+  categories: string[];
+  categoricalPalette: ColorRepresentation[];
+  categoryPaddingPx: Vector2;
+  categoryLabelGapPx: number;
+  categoryColGapPx: number;
+  maxColorRampWidthPx: number;
+  maxHeightPx: number;
   rampRadiusPx: number;
 };
 
@@ -78,7 +77,7 @@ const defaultTimestampOptions: TimestampOptions = {
 };
 
 const defaultBackgroundOptions: OverlayFillOptions = {
-  fill: "rgba(255, 255, 255, 0.8)",
+  fill: "rgba(255, 255, 255, 1.0)",
   stroke: "rgba(0, 0, 0, 0.2)",
   paddingPx: new Vector2(10, 10),
   marginPx: new Vector2(12, 12),
@@ -88,36 +87,37 @@ const defaultBackgroundOptions: OverlayFillOptions = {
 const defaultHeaderOptions: HeaderOptions = {
   ...defaultStyleOptions,
   fontSizePx: 16,
-  fill: "rgba(255, 255, 255, 0.8)",
+  fill: "rgba(255, 255, 255, 1.0)",
   stroke: "rgba(0, 0, 0, 0.2)",
   paddingPx: new Vector2(10, 10),
 };
 
 const defaultFooterOptions: FooterOptions = {
   ...defaultHeaderOptions,
-  heightPx: 88,
+  heightPx: 100,
   paddingPx: new Vector2(10, 10),
 };
 
-const defaultKeyOptions: KeyOptions = {
+const defaultLegendOptions: LegendOptions = {
   ...defaultStyleOptions,
   stroke: "rgba(0, 0, 0, 0.2)",
   labelFontSizePx: 12,
   labelFontColor: "black",
   selectedFeatureName: "Some example feature (m)",
   type: "numeric",
-  numeric: {
-    colorRamp: KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!.colorStops,
-    min: 0,
-    max: 1,
-  },
-  categorical: {
-    categories: ["test1", "test2", "test 3 long name oopsie!!!!"],
-    categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops,
-    paddingPx: new Vector2(2, 2),
-    gapPx: 32,
-  },
-  maxWidthPx: 200,
+
+  colorRamp: KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!.colorStops,
+  min: 0,
+  max: 1,
+
+  categories: ["test1", "test2", "test 3 long name oopsie!!!!"],
+  categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops,
+  categoryPaddingPx: new Vector2(2, 2),
+  categoryLabelGapPx: 6,
+  categoryColGapPx: 32,
+
+  maxColorRampWidthPx: 800,
+  maxHeightPx: 100,
   rampRadiusPx: 4,
 };
 
@@ -141,12 +141,18 @@ export default class CanvasOverlay extends ColorizeCanvas {
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
   private backgroundOptions: OverlayFillOptions;
+  private legendOptions: LegendOptions;
   private canvasWidth: number;
   private canvasHeight: number;
   private showHeader: boolean;
   private showFooter: boolean;
 
-  constructor(options?: { scaleBar?: ScaleBarOptions; timestamp?: TimestampOptions; background?: OverlayFillOptions }) {
+  constructor(options?: {
+    scaleBar?: ScaleBarOptions;
+    timestamp?: TimestampOptions;
+    background?: OverlayFillOptions;
+    legend?: LegendOptions;
+  }) {
     super();
 
     this.canvas = document.createElement("canvas");
@@ -155,6 +161,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.scaleBarOptions = options?.scaleBar || defaultScaleBarOptions;
     this.timestampOptions = options?.timestamp || defaultTimestampOptions;
     this.backgroundOptions = options?.background || defaultBackgroundOptions;
+    this.legendOptions = options?.legend || defaultLegendOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
     this.showHeader = true;
@@ -190,6 +197,10 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
   updateBackgroundOptions(options: Partial<OverlayFillOptions>): void {
     this.backgroundOptions = { ...this.backgroundOptions, ...options };
+  }
+
+  updateLegendOptions(options: Partial<LegendOptions>): void {
+    this.legendOptions = { ...this.legendOptions, ...options };
   }
 
   private static getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: FontStyleOptions): Vector2 {
@@ -473,47 +484,84 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.stroke();
   }
 
-  private renderCategoricalKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {
-    const origin = new Vector2(20, this.canvasHeight - defaultFooterOptions.heightPx + 14);
+  private renderCategoricalKey(ctx: CanvasRenderingContext2D, options: LegendOptions): void {
+    const origin = new Vector2(20, this.canvasHeight - defaultFooterOptions.heightPx + 10);
 
-    const maxWidthPx = options.maxWidthPx;
+    const maxWidthPx = options.maxColorRampWidthPx;
+    // Render feature label
     const featureLabelFontStyle: FontStyleOptions = { ...options };
     configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
     renderCanvasText(ctx, origin.x, origin.y, options.selectedFeatureName, { maxWidth: maxWidthPx });
-    origin.y += featureLabelFontStyle.fontSizePx + 4; // Padding
+    const labelHeight = featureLabelFontStyle.fontSizePx + 6; // Padding
+    origin.y += labelHeight; // Padding
 
-    const { categories, categoricalPalette } = options.categorical;
+    // Render categories
+    const { categories, categoricalPalette } = options;
 
     const numColumns = Math.ceil(categories.length / MAX_CATEGORIES_PER_COLUMN);
+    const categoryWidth = Math.floor(maxWidthPx / numColumns - options.categoryColGapPx);
 
-    const categoryHeight = options.labelFontSizePx + options.categorical.paddingPx.y * 2;
-    const categoryOrigin = origin.clone();
-    // for (let i = 0; i < categories.length; i++) {
-    //   const category = categories[i];
-    //   const color = new Color(categoricalPalette[i]);
-    //   ctx.fillStyle = color.getStyle();
-    //   ctx.strokeStyle = "transparent";
-    //   ctx.beginPath();
-    //   ctx.rect(categoryOrigin.x, categoryOrigin.y, categoryWidth, categoryHeight);
-    //   ctx.fill();
-    //   ctx.stroke();
-    //   ctx.closePath();
-    //   configureCanvasText(ctx, options, "left", "top");
-    //   renderCanvasText(ctx, categoryOrigin.x + categoryWidth + categoryPadding, categoryOrigin.y, category);
-    //   categoryOrigin.y += categoryHeight + category;
-    // }
+    const categoryHeight = options.labelFontSizePx + options.categoryPaddingPx.y * 2;
+    const colOrigin = origin.clone();
+
+    for (let colIndex = 0; colIndex < numColumns; colIndex++) {
+      // Calculate starting point for the column
+      const currCategoryOrigin = colOrigin.clone();
+      // Offset column origin by number of categories in the column
+      // const numItems = Math.min(MAX_CATEGORIES_PER_COLUMN, categories.length - colIndex * MAX_CATEGORIES_PER_COLUMN);
+      // const columnHeight = numItems * categoryHeight;
+      // currCategoryOrigin.y += Math.floor((MAX_CATEGORIES_PER_COLUMN * categoryHeight - columnHeight) / 2);
+
+      let maxCategoryWidth = Number.NEGATIVE_INFINITY;
+      for (
+        let categoryIndex = colIndex * MAX_CATEGORIES_PER_COLUMN;
+        categoryIndex < Math.min((colIndex + 1) * MAX_CATEGORIES_PER_COLUMN, categories.length);
+        categoryIndex++
+      ) {
+        const category = categories[categoryIndex];
+
+        // Color label
+        const color = new Color(categoricalPalette[categoryIndex]);
+        ctx.fillStyle = color.getStyle();
+        ctx.strokeStyle = "transparent";
+        ctx.beginPath();
+        ctx.roundRect(currCategoryOrigin.x, currCategoryOrigin.y, options.labelFontSizePx, options.labelFontSizePx, 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        configureCanvasText(ctx, options, "left", "top");
+        const maxTextWidth = categoryWidth - options.labelFontSizePx - options.categoryLabelGapPx;
+        const textSize = renderCanvasText(
+          ctx,
+          currCategoryOrigin.x + options.labelFontSizePx + options.categoryLabelGapPx,
+          currCategoryOrigin.y,
+          category,
+          {
+            maxWidth: maxTextWidth,
+          }
+        );
+        maxCategoryWidth = Math.max(
+          maxCategoryWidth,
+          textSize.x + options.labelFontSizePx + options.categoryLabelGapPx
+        );
+        currCategoryOrigin.y += categoryHeight;
+      }
+
+      colOrigin.x += maxCategoryWidth + options.categoryColGapPx;
+    }
   }
 
-  renderNumericKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {
+  renderNumericKey(ctx: CanvasRenderingContext2D, options: LegendOptions): void {
     const origin = new Vector2(20, this.canvasHeight - defaultFooterOptions.heightPx + 14);
 
-    const maxWidthPx = options.maxWidthPx;
+    const maxWidthPx = options.maxColorRampWidthPx;
     const featureLabelFontStyle: FontStyleOptions = { ...options };
     configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
     renderCanvasText(ctx, origin.x, origin.y, options.selectedFeatureName, { maxWidth: maxWidthPx });
     origin.y += featureLabelFontStyle.fontSizePx + 4; // Padding
 
-    const { colorRamp } = options.numeric;
+    const { colorRamp } = options;
     const colorStops = colorRamp.map((c) => new Color(c));
     const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, maxWidthPx, 0, origin.x, origin.y);
     ctx.fillStyle = gradient;
@@ -526,10 +574,12 @@ export default class CanvasOverlay extends ColorizeCanvas {
     origin.y += 28 + 4; // Padding
 
     const rangeLabelFontStyle: FontStyleOptions = { ...options, fontSizePx: options.labelFontSizePx };
+    const minLabel = numberToStringDecimal(options.min, 3, true);
+    const maxLabel = numberToStringDecimal(options.max, 3, true);
     configureCanvasText(ctx, rangeLabelFontStyle, "left", "top");
-    renderCanvasText(ctx, origin.x, origin.y, "Min");
+    renderCanvasText(ctx, origin.x, origin.y, minLabel);
     configureCanvasText(ctx, rangeLabelFontStyle, "right", "top");
-    renderCanvasText(ctx, origin.x + maxWidthPx, origin.y, "Max");
+    renderCanvasText(ctx, origin.x + maxWidthPx, origin.y, maxLabel);
   }
 
   /**
@@ -561,14 +611,18 @@ export default class CanvasOverlay extends ColorizeCanvas {
     origin.y += scaleBarDimensions.y;
     const { sizePx: timestampDimensions, render: renderTimestamp } = this.getTimestampRenderer(ctx, origin);
 
+    this.renderHeader(ctx, defaultHeaderOptions);
+    this.renderFooter(ctx, defaultFooterOptions);
+    if (this.legendOptions.type === "categorical") {
+      this.renderCategoricalKey(ctx, this.legendOptions);
+    } else {
+      this.renderNumericKey(ctx, this.legendOptions);
+    }
+
     // If both elements are invisible, don't render the background.
     if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
       return;
     }
-
-    this.renderHeader(ctx, defaultHeaderOptions);
-    this.renderFooter(ctx, defaultFooterOptions);
-    this.renderNumericKey(ctx, defaultKeyOptions);
 
     // Draw background box behind the elements
     const contentSize = new Vector2(

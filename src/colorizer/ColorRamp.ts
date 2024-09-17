@@ -6,7 +6,7 @@ export enum ColorRampType {
 }
 
 export default class ColorRamp {
-  private colorStops: Color[];
+  public readonly colorStops: Color[];
   public readonly texture: DataTexture;
   private type: ColorRampType;
 
