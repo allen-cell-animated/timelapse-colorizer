@@ -31,11 +31,16 @@ type KeyOptions = FontStyleOptions & {
   labelFontSizePx: number;
   labelFontColor: string;
   selectedFeatureName: string;
-  categories: string[];
-  categoricalPalette: ColorRepresentation[];
-  colorRamp: ColorRepresentation[];
-  min: number;
-  max: number;
+  type: "numeric" | "categorical";
+  numeric: {
+    colorRamp: ColorRepresentation[];
+    min: number;
+    max: number;
+  };
+  categorical: {
+    categories: string[];
+    categoricalPalette: ColorRepresentation[];
+  };
   maxWidthPx: number;
   rampRadiusPx: number;
 };
@@ -46,7 +51,9 @@ type HeaderOptions = FontStyleOptions & {
   paddingPx: Vector2;
 };
 
-type FooterOptions = HeaderOptions;
+type FooterOptions = HeaderOptions & {
+  heightPx: number;
+};
 
 const defaultStyleOptions: FontStyleOptions = {
   fontColor: "black",
@@ -84,6 +91,8 @@ const defaultHeaderOptions: HeaderOptions = {
 
 const defaultFooterOptions: FooterOptions = {
   ...defaultHeaderOptions,
+  heightPx: 88,
+  paddingPx: new Vector2(10, 10),
 };
 
 const defaultKeyOptions: KeyOptions = {
@@ -92,11 +101,16 @@ const defaultKeyOptions: KeyOptions = {
   labelFontSizePx: 12,
   labelFontColor: "black",
   selectedFeatureName: "",
-  categories: ["test1", "test2", "test 3 long name oopsie!!!!"],
-  categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops,
-  colorRamp: KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!.colorStops,
-  min: 0,
-  max: 1,
+  type: "numeric",
+  numeric: {
+    colorRamp: KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!.colorStops,
+    min: 0,
+    max: 1,
+  },
+  categorical: {
+    categories: ["test1", "test2", "test 3 long name oopsie!!!!"],
+    categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops,
+  },
   maxWidthPx: 200,
   rampRadiusPx: 4,
 };
@@ -225,7 +239,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     const scaleBarWidthInUnits = nextIncrement * 10 ** (msdPower - 1);
     // Convert back into pixels for rendering.
     // Cheat very slightly by rounding to the nearest pixel for cleaner rendering.
-    const scaleBarWidthPx = Math.round(scaleBarWidthInUnits / unitsPerScreenPixel);
+    // Scale also by device pixel ratio so units are in terms of the screen size (and not any canvas scaling).
+    const scaleBarWidthPx = Math.round(scaleBarWidthInUnits / unitsPerScreenPixel / devicePixelRatio);
     return { scaleBarWidthPx, scaleBarWidthInUnits };
   }
 
@@ -257,8 +272,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ///////// Calculate the padding and origins for drawing and size /////////
     const scaleBarHeight = 10;
     // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
-    const scaleBarX = this.canvas.width - originPx.x + 0.5;
-    const scaleBarY = this.canvas.height - originPx.y + 0.5;
+    const scaleBarX = this.canvasWidth - originPx.x + 0.5;
+    const scaleBarY = this.canvasHeight - originPx.y + 0.5;
 
     const renderScaleBar = (): void => {
       // Render the scale bar
@@ -278,8 +293,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     // (but most likely a non-issue?)
     const textPaddingPx = new Vector2(6, 4);
     const textOriginPx = new Vector2(
-      this.canvas.width - originPx.x - textPaddingPx.x,
-      this.canvas.height - originPx.y - textPaddingPx.y
+      this.canvasWidth - originPx.x - textPaddingPx.x,
+      this.canvasHeight - originPx.y - textPaddingPx.y
     );
     const renderScaleBarText = (): void => {
       configureCanvasText(ctx, this.scaleBarOptions, "right", "bottom");
@@ -374,8 +389,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     // TODO: Would be nice to configure top/bottom/left/right padding separately.
     const timestampPaddingPx = new Vector2(6, 2);
     const timestampOriginPx = new Vector2(
-      this.canvas.width - originPx.x - timestampPaddingPx.x,
-      this.canvas.height - originPx.y - timestampPaddingPx.y
+      this.canvasWidth - originPx.x - timestampPaddingPx.x,
+      this.canvasHeight - originPx.y - timestampPaddingPx.y
     );
     // Save the render function for later.
     const render = (): void => {
@@ -398,13 +413,13 @@ export default class CanvasOverlay extends ColorizeCanvas {
    * @param size Size of the background overlay.
    * @param options Configuration for the background overlay.
    */
-  private static renderBackground(ctx: CanvasRenderingContext2D, size: Vector2, options: OverlayFillOptions): void {
+  private renderBackground(ctx: CanvasRenderingContext2D, size: Vector2, options: OverlayFillOptions): void {
     ctx.fillStyle = options.fill;
     ctx.strokeStyle = options.stroke;
     ctx.beginPath();
     ctx.roundRect(
-      Math.round(ctx.canvas.width - size.x - options.marginPx.x) + 0.5,
-      Math.round(ctx.canvas.height - size.y - options.marginPx.y) + 0.5,
+      Math.round(this.canvasWidth - size.x - options.marginPx.x) + 0.5,
+      Math.round(this.canvasHeight - size.y - options.marginPx.y) + 0.5,
       Math.round(size.x),
       Math.round(size.y),
       options.radiusPx
@@ -427,17 +442,36 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
     ctx.fillStyle = options.fill;
     ctx.strokeStyle = options.stroke;
-    ctx.fillRect(-0.5, -0.5, ctx.canvas.width + 1, height);
-    ctx.strokeRect(-0.5, -0.5, ctx.canvas.width + 1, height);
+    ctx.fillRect(-0.5, -0.5, this.canvasWidth + 1, height);
+    ctx.strokeRect(-0.5, -0.5, this.canvasWidth + 1, height);
 
-    const fontOptions = { maxWidth: ctx.canvas.width - options.paddingPx.x * 2, ...options };
+    const fontOptions = { maxWidth: this.canvasWidth - options.paddingPx.x * 2, ...options };
 
     configureCanvasText(ctx, options, "center", "top");
-    renderCanvasText(ctx, ctx.canvas.width / 2, options.paddingPx.y, "Header", fontOptions);
+    renderCanvasText(ctx, this.canvasWidth / 2, options.paddingPx.y, "Header", fontOptions);
   }
 
-  renderKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {
-    const { colorRamp, maxWidthPx } = options;
+  private renderFooter(ctx: CanvasRenderingContext2D, options: FooterOptions): void {
+    if (!this.showHeader) {
+      return;
+    }
+    // Fill in the background area
+    const height = options.heightPx;
+
+    ctx.fillStyle = options.fill;
+    ctx.strokeStyle = options.stroke;
+    ctx.beginPath();
+    ctx.rect(-0.5, this.canvasHeight - 0.5 - height, this.canvasWidth + 1, height);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  private renderCategoricalKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {}
+
+  renderNumericKey(ctx: CanvasRenderingContext2D, options: KeyOptions): void {
+    const maxWidthPx = options.maxWidthPx;
+    const { colorRamp } = options.numeric;
     const colorStops = colorRamp.map((c) => new Color(c));
     const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, maxWidthPx, 0);
     ctx.fillStyle = gradient;
@@ -468,6 +502,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     const devicePixelRatio = this.getPixelRatio();
     this.canvas.width = this.canvasWidth * devicePixelRatio;
     this.canvas.height = this.canvasHeight * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
     //Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -488,16 +523,17 @@ export default class CanvasOverlay extends ColorizeCanvas {
       return;
     }
 
+    this.renderHeader(ctx, defaultHeaderOptions);
+    this.renderFooter(ctx, defaultFooterOptions);
+    this.renderNumericKey(ctx, defaultKeyOptions);
+
     // Draw background box behind the elements
     const contentSize = new Vector2(
       Math.max(scaleBarDimensions.x, timestampDimensions.x),
       scaleBarDimensions.y + timestampDimensions.y
     );
     const boxSize = contentSize.clone().add(this.backgroundOptions.paddingPx.clone().multiplyScalar(2.0));
-    CanvasOverlay.renderBackground(ctx, boxSize, this.backgroundOptions);
-
-    this.renderHeader(ctx, defaultHeaderOptions);
-    this.renderKey(ctx, defaultKeyOptions);
+    this.renderBackground(ctx, boxSize, this.backgroundOptions);
 
     // Draw elements over the background
     renderScaleBar();
