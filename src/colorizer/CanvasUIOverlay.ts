@@ -77,7 +77,7 @@ const defaultTimestampOptions: TimestampOptions = {
 };
 
 const defaultBackgroundOptions: OverlayFillOptions = {
-  fill: "rgba(255, 255, 255, 1.0)",
+  fill: "rgba(255, 255, 255, 0.8)",
   stroke: "rgba(0, 0, 0, 0.2)",
   paddingPx: new Vector2(10, 10),
   marginPx: new Vector2(12, 12),
@@ -142,6 +142,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
   private timestampOptions: TimestampOptions;
   private backgroundOptions: OverlayFillOptions;
   private legendOptions: LegendOptions;
+  private headerOptions: HeaderOptions;
+  private footerOptions: FooterOptions;
   private canvasWidth: number;
   private canvasHeight: number;
   private showHeader: boolean;
@@ -152,6 +154,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     timestamp?: TimestampOptions;
     background?: OverlayFillOptions;
     legend?: LegendOptions;
+    header?: HeaderOptions;
+    footer?: FooterOptions;
   }) {
     super();
 
@@ -162,9 +166,11 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.timestampOptions = options?.timestamp || defaultTimestampOptions;
     this.backgroundOptions = options?.background || defaultBackgroundOptions;
     this.legendOptions = options?.legend || defaultLegendOptions;
+    this.headerOptions = options?.header || defaultHeaderOptions;
+    this.footerOptions = options?.footer || defaultFooterOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
-    this.showHeader = true;
+    this.showHeader = false;
     this.showFooter = true;
   }
 
@@ -446,8 +452,18 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.closePath();
   }
 
-  public getHeaderSizePx(ctx: CanvasRenderingContext2D, header: string, options: FontStyleOptions): Vector2 {
-    return CanvasOverlay.getTextDimensions(ctx, header, options);
+  public getHeaderSizePx(): Vector2 {
+    if (this.showHeader) {
+      return new Vector2(this.canvasWidth, this.headerOptions.fontSizePx + this.headerOptions.paddingPx.y * 2);
+    }
+    return new Vector2(0, 0);
+  }
+
+  public getFooterSizePx(): Vector2 {
+    if (this.showFooter) {
+      return new Vector2(this.canvasWidth, this.footerOptions.heightPx);
+    }
+    return new Vector2(0, 0);
   }
 
   private renderHeader(ctx: CanvasRenderingContext2D, options: HeaderOptions): void {
@@ -611,8 +627,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     origin.y += scaleBarDimensions.y;
     const { sizePx: timestampDimensions, render: renderTimestamp } = this.getTimestampRenderer(ctx, origin);
 
-    this.renderHeader(ctx, defaultHeaderOptions);
-    this.renderFooter(ctx, defaultFooterOptions);
+    this.renderHeader(ctx, this.headerOptions);
+    this.renderFooter(ctx, this.footerOptions);
     if (this.legendOptions.type === "categorical") {
       this.renderCategoricalKey(ctx, this.legendOptions);
     } else {
