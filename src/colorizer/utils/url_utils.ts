@@ -21,8 +21,8 @@ import {
   ThresholdType,
   ViewerConfig,
 } from "../types";
-import { nanToNull } from "./data_utils";
 import { AnyManifestFile } from "./dataset_utils";
+import { nanToNull } from "./json_utils";
 import { numberToStringDecimal } from "./math_utils";
 
 enum UrlParam {

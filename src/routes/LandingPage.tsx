@@ -1,5 +1,3 @@
-import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Divider, Tooltip } from "antd";
 import React, { lazy, ReactElement, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,7 +5,7 @@ import styled from "styled-components";
 
 import { Dataset } from "../colorizer";
 import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
+import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
@@ -92,7 +90,7 @@ const FeatureHighlightsItem = styled(FlexColumn)`
   grid-row: span 2;
 
   & > h3 {
-    font-weight: 600;
+    font-weight: bold;
   }
 `;
 
@@ -127,7 +125,7 @@ const ProjectCard = styled.li`
   gap: 0px;
 
   & h3 {
-    font-weight: 600;
+    font-weight: bold;
   }
 
   & p,
@@ -188,14 +186,15 @@ const InReviewFlag = styled(FlexRowAlignCenter)`
   & > p {
     color: var(--color-flag-text);
     font-size: 10px;
-    font-weight: 700;
+    font-weight: bold;
     white-space: nowrap;
   }
 `;
 
 const CookieSettingsButton = styled(Button)`
   color: var(--color-text-secondary);
-  &:hover {
+  &:focus-visible > span,
+  &:hover > span {
     text-decoration: underline;
   }
 `;
@@ -252,12 +251,7 @@ export default function LandingPage(): ReactElement {
     const publicationElement = project.publicationLink ? (
       <p>
         Related publication:{" "}
-        <a href={project.publicationLink.toString()} target="_blank" rel="noopener noreferrer">
-          {project.publicationName}
-          {/* Icon offset slightly to align with text */}
-          <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "-1px", marginLeft: "3px" }} />
-          <VisuallyHidden>(opens in new tab)</VisuallyHidden>
-        </a>
+        <ExternalLink href={project.publicationLink.toString()}>{project.publicationName}</ExternalLink>
       </p>
     ) : null;
 
@@ -348,6 +342,7 @@ export default function LandingPage(): ReactElement {
         <FlexColumnAlignCenter style={{ paddingTop: "40px" }}>
           <CookieSettingsButton type="text" className="ot-sdk-show-settings">
             Cookie settings
+            <VisuallyHidden>(opens popup menu)</VisuallyHidden>
           </CookieSettingsButton>
         </FlexColumnAlignCenter>
       </ContentContainer>

@@ -34,12 +34,13 @@ import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/u
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
-import { FlexRowAlignCenter } from "./styles/utils";
+import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
+import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import TimeControls from "./colorizer/TimeControls";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
@@ -50,6 +51,7 @@ import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
+import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
 import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
@@ -80,6 +82,8 @@ function Viewer(): ReactElement {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetKey, setDatasetKey] = useState("");
   const [, addRecentCollection] = useRecentCollections();
+  // Shared array loader to manage worker pool
+  const arrayLoader = useConstructor(() => new UrlArrayLoader());
 
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -526,7 +530,7 @@ function Viewer(): ReactElement {
 
       setCollection(newCollection);
       setDatasetLoadProgress(null);
-      const datasetResult = await newCollection.tryLoadDataset(datasetKey, handleProgressUpdate);
+      const datasetResult = await newCollection.tryLoadDataset(datasetKey, handleProgressUpdate, arrayLoader);
 
       if (!datasetResult.loaded) {
         console.error(datasetResult.errorMessage);
@@ -627,7 +631,7 @@ function Viewer(): ReactElement {
       if (newDatasetKey !== datasetKey && collection) {
         setIsDatasetLoading(true);
         setDatasetLoadProgress(null);
-        const result = await collection.tryLoadDataset(newDatasetKey, handleProgressUpdate);
+        const result = await collection.tryLoadDataset(newDatasetKey, handleProgressUpdate, arrayLoader);
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
         } else {
@@ -831,19 +835,36 @@ function Viewer(): ReactElement {
             items={collection?.getDatasetKeys() || []}
             onChange={handleDatasetChange}
           />
-          <SelectionDropdown
-            disabled={disableUi}
-            label="Feature"
-            selected={featureKey}
-            items={getFeatureDropdownData()}
-            onChange={(value: string) => {
-              if (value !== featureKey && dataset) {
-                replaceFeature(dataset, value);
-                resetColorRampRangeToDefaults(dataset, value);
-                reportFeatureSelected(dataset, value);
-              }
-            }}
-          />
+          <FlexRow $gap={6}>
+            <SelectionDropdown
+              disabled={disableUi}
+              label="Feature"
+              // TODO: Once dropdowns are refactored, add description into tooltips
+              // dataset?.getFeatureData(featureKey)?.description ? (
+              //   // Show as larger element with subtitle if description is given
+              //   <FlexColumn>
+              //     <span style={{ fontSize: "14px" }}>
+              //       {featureKey && dataset?.getFeatureNameWithUnits(featureKey)}
+              //     </span>
+              //     <span style={{ fontSize: "13px", opacity: "0.9" }}>
+              //       {dataset?.getFeatureData(featureKey)?.description}
+              //     </span>
+              //   </FlexColumn>
+              // ) : (
+              //   dataset?.getFeatureNameWithUnits(featureKey)
+              // )
+              selected={featureKey}
+              items={getFeatureDropdownData()}
+              onChange={(value) => {
+                if (value !== featureKey && dataset) {
+                  replaceFeature(dataset, value);
+                  resetColorRampRangeToDefaults(dataset, value);
+                  reportFeatureSelected(dataset, value);
+                }
+              }}
+            />
+            <GlossaryPanel dataset={dataset} />
+          </FlexRow>
 
           <ColorRampDropdown
             knownColorRamps={KNOWN_COLOR_RAMPS}

@@ -2,7 +2,7 @@ import semver from "semver";
 import { DataTexture, RGBAFormat, Texture, UnsignedByteType, Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
-import { ArraySource, IArrayLoader, IFrameLoader } from "../src/colorizer";
+import { ArraySource, IArrayLoader, ITextureImageLoader } from "../src/colorizer";
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
 import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
@@ -21,7 +21,7 @@ const makeMockFetchMethod = <T>(url: string, manifestJson: T): ((url: string) =>
   };
 };
 
-class MockFrameLoader implements IFrameLoader {
+class MockFrameLoader implements ITextureImageLoader {
   width: number;
   height: number;
 
@@ -43,11 +43,17 @@ class MockFrameLoader implements IFrameLoader {
   }
 }
 
-class MockArraySource implements ArraySource {
-  getBuffer<T extends FeatureDataType>(type: T): FeatureArrayType[T] {
-    return new featureTypeSpecs[type].ArrayConstructor([]);
+class MockArraySource<T extends FeatureDataType> implements ArraySource<T> {
+  private type: T;
+
+  constructor(type: T) {
+    this.type = type;
   }
-  getTexture(_type: FeatureDataType): Texture {
+
+  getBuffer<T extends FeatureDataType>(): FeatureArrayType[T] {
+    return new featureTypeSpecs[this.type].ArrayConstructor([]) as unknown as FeatureArrayType[T];
+  }
+  getTexture(): Texture {
     return new Texture();
   }
   getMin(): number {
@@ -59,8 +65,10 @@ class MockArraySource implements ArraySource {
 }
 
 class MockArrayLoader implements IArrayLoader {
-  load(_url: string): Promise<ArraySource> {
-    return Promise.resolve(new MockArraySource());
+  dispose(): void {}
+
+  load<T extends FeatureDataType>(_url: string, type: T): Promise<ArraySource<T>> {
+    return Promise.resolve(new MockArraySource(type));
   }
 }
 

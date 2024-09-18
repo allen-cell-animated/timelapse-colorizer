@@ -495,6 +495,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // Sort data into buckets
     for (let i = 0; i < xData.length; i++) {
       const objectId = objectIds[i];
+      const isMinMaxNaN = Number.isNaN(colorMaxValue) && Number.isNaN(colorMinValue);
+      const isNaN = Number.isNaN(featureData.data[objectId]);
       const isOutlier = dataset.outliers ? dataset.outliers[objectId] : false;
       const isOutOfRange = inRangeIds[objectId] === 0;
 
@@ -505,7 +507,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       let bucketIndex;
       if (isOutOfRange) {
         bucketIndex = BUCKET_INDEX_OUTOFRANGE;
-      } else if (isOutlier) {
+      } else if (isOutlier || isNaN || isMinMaxNaN) {
         bucketIndex = BUCKET_INDEX_OUTLIERS;
       } else if (usingOverrideColor) {
         bucketIndex = NUM_RESERVED_BUCKETS;
