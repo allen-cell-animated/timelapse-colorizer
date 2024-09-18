@@ -9,7 +9,7 @@ export function configureCanvasText(
   options: FontStyleOptions,
   textAlign: CanvasTextAlign = "left",
   textBaseline: CanvasTextBaseline = "alphabetic"
-) {
+): void {
   ctx.font = `${options.fontWeight} ${options.fontSizePx}px ${options.fontFamily}`;
   ctx.fillStyle = options.fontColor;
   ctx.textAlign = textAlign;

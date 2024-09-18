@@ -170,7 +170,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.footerOptions = options?.footer || defaultFooterOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
-    this.showHeader = false;
+    this.showHeader = true;
     this.showFooter = true;
   }
 
@@ -454,14 +454,21 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
   public getHeaderSizePx(): Vector2 {
     if (this.showHeader) {
-      return new Vector2(this.canvasWidth, this.headerOptions.fontSizePx + this.headerOptions.paddingPx.y * 2);
+      const devicePixelRatio = window.devicePixelRatio || 1;
+
+      return new Vector2(
+        this.canvasWidth * devicePixelRatio,
+        (this.headerOptions.fontSizePx + this.headerOptions.paddingPx.y * 2) * devicePixelRatio
+      );
     }
     return new Vector2(0, 0);
   }
 
   public getFooterSizePx(): Vector2 {
     if (this.showFooter) {
-      return new Vector2(this.canvasWidth, this.footerOptions.heightPx);
+      const devicePixelRatio = window.devicePixelRatio || 1;
+
+      return new Vector2(this.canvasWidth * devicePixelRatio, this.footerOptions.heightPx * devicePixelRatio);
     }
     return new Vector2(0, 0);
   }
