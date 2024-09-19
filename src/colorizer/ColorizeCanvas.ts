@@ -27,7 +27,6 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { IControllableCanvas } from "./IControllableCanvas";
 import Track from "./Track";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
@@ -109,7 +108,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-export default class ColorizeCanvas implements IControllableCanvas {
+export default class ColorizeCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;

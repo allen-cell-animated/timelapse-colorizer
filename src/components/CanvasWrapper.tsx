@@ -1,16 +1,6 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip, TooltipProps } from "antd";
-import React, {
-  MutableRefObject,
-  ReactElement,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
@@ -116,8 +106,6 @@ type CanvasWrapperProps = {
 
   maxWidthPx?: number;
   maxHeightPx?: number;
-
-  canvasRef: MutableRefObject<HTMLCanvasElement | null>;
 };
 
 const defaultProps: Partial<CanvasWrapperProps> = {
@@ -195,7 +183,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Mount the canvas to the placeholder's location in the document.
   useEffect(() => {
-    props.canvasRef.current = canv.domElement;
     canvasPlaceholderRef.current?.parentNode?.replaceChild(canv.domElement, canvasPlaceholderRef.current);
   }, []);
 

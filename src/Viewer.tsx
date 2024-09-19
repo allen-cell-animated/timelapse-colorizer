@@ -73,7 +73,6 @@ function Viewer(): ReactElement {
 
   const [, startTransition] = React.useTransition();
 
-  const canvasHtmlRef = useRef<HTMLCanvasElement>(null);
   const canv = useConstructor(() => {
     const canvas = new CanvasOverlay();
     canvas.domElement.className = styles.colorizeCanvas;
@@ -954,7 +953,6 @@ function Viewer(): ReactElement {
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
-                  canvasRef={canvasHtmlRef}
                   collection={collection || null}
                   dataset={dataset}
                   selectedBackdropKey={selectedBackdropKey}

@@ -14,16 +14,10 @@ type StyleOptions = {
 type ScaleBarOptions = StyleOptions & {
   minWidthPx: number;
   visible: boolean;
-  unitsPerScreenPixel: number;
-  units: string;
 };
 
 type TimestampOptions = StyleOptions & {
   visible: boolean;
-  maxTimeSec: number;
-  currTimeSec: number;
-  frameDurationSec: number;
-  startTimeSec: number;
 };
 
 type OverlayFillOptions = {
@@ -45,17 +39,11 @@ const defaultScaleBarOptions: ScaleBarOptions = {
   ...defaultStyleOptions,
   minWidthPx: 80,
   visible: true,
-  unitsPerScreenPixel: 1,
-  units: "",
 };
 
 const defaultTimestampOptions: TimestampOptions = {
   ...defaultStyleOptions,
   visible: true,
-  frameDurationSec: 1,
-  startTimeSec: 0,
-  maxTimeSec: 1,
-  currTimeSec: 0,
 };
 
 const defaultBackgroundOptions: OverlayFillOptions = {
@@ -73,9 +61,12 @@ type RenderInfo = {
   render: () => void;
 };
 
+const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () => {} };
+
 /**
- * Composites overlays, headers, and footers on top of a ColorizeCanvas, rendering to an
- * HTML canvas element.
+ * Extends the ColorizeCanvas class by overlaying and compositing additional
+ * dynamic elements (like a scale bar, timestamp, etc.) on top of the
+ * base rendered image.
  */
 export default class CanvasOverlay extends ColorizeCanvas {
   private canvas: HTMLCanvasElement;
@@ -110,10 +101,6 @@ export default class CanvasOverlay extends ColorizeCanvas {
     return this.canvas;
   }
 
-  public getTotalFrames(): number {
-    return this.dataset ? this.dataset.numberOfFrames : 0;
-  }
-
   public setSize(width: number, height: number): void {
     this.canvasWidth = width;
     this.canvasHeight = height;
@@ -124,46 +111,6 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
   private getPixelRatio(): number {
     return window.devicePixelRatio || 1;
-  }
-
-  private updateScaleBar(): void {
-    // Update the scale bar units
-    const frameDims = this.dataset?.metadata.frameDims;
-    // Ignore cases where dimensions have size 0
-    const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
-    if (this.scaleBarOptions.visible && hasFrameDims) {
-      // `frameDims` are already in the provided unit scaling, so we figure out the current
-      // size of the frame relative to the canvas to determine the canvas' width in units.
-      // We only consider X scaling here because the scale bar is always horizontal.
-      const canvasWidthInUnits = frameDims.width / this.frameSizeInCanvasCoordinates.x;
-      const unitsPerScreenPixel = canvasWidthInUnits / this.canvasWidth / this.getPixelRatio();
-      this.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
-    }
-  }
-
-  private updateTimestamp(): void {
-    // Calculate the current time stamp based on the current frame and the frame duration provided
-    // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
-    // Pass along to the overlay as parameters.
-    if (this.timestampOptions.visible && this.dataset) {
-      const frameDurationSec = this.dataset.metadata.frameDurationSeconds;
-      if (frameDurationSec) {
-        const startTimeSec = this.dataset.metadata.startTimeSeconds;
-        // Note: there's some semi-redundant information here, since the current timestamp and max
-        // timestamp could be calculated from the frame duration if we passed in the current + max
-        // frames instead. For now, it's ok to keep those calculations here in ColorizeCanvas so the
-        // overlay doesn't need to know frame numbers. The duration + start time are needed for
-        // time display calculations, however.
-        this.updateTimestampOptions({
-          visible: true,
-          frameDurationSec,
-          startTimeSec,
-          currTimeSec: this.getCurrentFrame() * frameDurationSec + startTimeSec,
-          maxTimeSec: this.dataset.numberOfFrames * frameDurationSec + startTimeSec,
-        });
-        return;
-      }
-    }
   }
 
   updateScaleBarOptions(options: Partial<ScaleBarOptions>): void {
@@ -229,13 +176,17 @@ export default class CanvasOverlay extends ColorizeCanvas {
    * Unit widths will always have values `nx10^m`, where `n` is 1, 2, or 5, and `m` is an integer. Pixel widths
    * will always be greater than or equal to the `scaleBarOptions.minWidthPx`.
    * @param scaleBarOptions Configuration for the scale bar
+   * @param unitsPerScreenPixel The number of units per pixel on the screen.
    * @returns An object, containing keys for the width in pixels and units.
    */
-  private static getScaleBarWidth(scaleBarOptions: ScaleBarOptions): {
+  private static getScaleBarWidth(
+    scaleBarOptions: ScaleBarOptions,
+    unitsPerScreenPixel: number
+  ): {
     scaleBarWidthPx: number;
     scaleBarWidthInUnits: number;
   } {
-    const minWidthUnits = scaleBarOptions.minWidthPx * scaleBarOptions.unitsPerScreenPixel;
+    const minWidthUnits = scaleBarOptions.minWidthPx * unitsPerScreenPixel;
     // Here we get the power of the most significant digit (MSD) of the minimum width converted to units.
     const msdPower = Math.ceil(Math.log10(minWidthUnits));
 
@@ -251,7 +202,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     const scaleBarWidthInUnits = nextIncrement * 10 ** (msdPower - 1);
     // Convert back into pixels for rendering.
     // Cheat very slightly by rounding to the nearest pixel for cleaner rendering.
-    const scaleBarWidthPx = Math.round(scaleBarWidthInUnits / scaleBarOptions.unitsPerScreenPixel);
+    const scaleBarWidthPx = Math.round(scaleBarWidthInUnits / unitsPerScreenPixel);
     return { scaleBarWidthPx, scaleBarWidthInUnits };
   }
 
@@ -263,13 +214,22 @@ export default class CanvasOverlay extends ColorizeCanvas {
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
   private getScaleBarRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
-    if (!this.scaleBarOptions.unitsPerScreenPixel || !this.scaleBarOptions.visible) {
-      return { sizePx: new Vector2(0, 0), render: () => {} };
+    const frameDims = this.dataset?.metadata.frameDims;
+    const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
+
+    if (!hasFrameDims || !this.scaleBarOptions.visible) {
+      return EMPTY_RENDER_INFO;
     }
 
+    const canvasWidthInUnits = frameDims.width / this.frameSizeInCanvasCoordinates.x;
+    const unitsPerScreenPixel = canvasWidthInUnits / this.canvasWidth / this.getPixelRatio();
+
     ///////// Get scale bar width and unit label /////////
-    const { scaleBarWidthPx, scaleBarWidthInUnits } = CanvasOverlay.getScaleBarWidth(this.scaleBarOptions);
-    const textContent = `${CanvasOverlay.formatScaleBarValue(scaleBarWidthInUnits)} ${this.scaleBarOptions.units}`;
+    const { scaleBarWidthPx, scaleBarWidthInUnits } = CanvasOverlay.getScaleBarWidth(
+      this.scaleBarOptions,
+      unitsPerScreenPixel
+    );
+    const textContent = `${CanvasOverlay.formatScaleBarValue(scaleBarWidthInUnits)} ${frameDims.units}`;
 
     ///////// Calculate the padding and origins for drawing and size /////////
     const scaleBarHeight = 10;
@@ -324,28 +284,37 @@ export default class CanvasOverlay extends ColorizeCanvas {
    * - `ss (s)`
    * - `ss.sss (s)`.
    */
-  private static getTimestampLabel(timestampOptions: TimestampOptions): string {
-    const useHours = timestampOptions.maxTimeSec >= 60 * 60;
-    const useMinutes = timestampOptions.maxTimeSec >= 60;
+  private getTimestampLabel(): string | undefined {
+    if (!this.dataset || !this.dataset.metadata.frameDurationSeconds) {
+      return undefined;
+    }
+
+    const frameDurationSec = this.dataset.metadata.frameDurationSeconds;
+    const startTimeSec = this.dataset.metadata.startTimeSeconds;
+    const currTimeSec = this.getCurrentFrame() * frameDurationSec + startTimeSec;
+    const maxTimeSec = this.dataset.numberOfFrames * frameDurationSec + startTimeSec;
+
+    const useHours = maxTimeSec >= 60 * 60;
+    const useMinutes = maxTimeSec >= 60;
     // Ignore seconds if the frame duration is in minute increments AND the start time is also in minute increments.
-    const useSeconds = !(timestampOptions.frameDurationSec % 60 === 0 && timestampOptions.startTimeSec % 60 === 0);
+    const useSeconds = !(frameDurationSec % 60 === 0 && startTimeSec % 60 === 0);
 
     const timestampDigits: string[] = [];
     const timestampUnits: string[] = [];
 
     if (useHours) {
-      const hours = Math.floor(timestampOptions.currTimeSec / (60 * 60));
+      const hours = Math.floor(currTimeSec / (60 * 60));
       timestampDigits.push(hours.toString().padStart(2, "0"));
       timestampUnits.push("h");
     }
     if (useMinutes) {
-      const minutes = Math.floor(timestampOptions.currTimeSec / 60) % 60;
+      const minutes = Math.floor(currTimeSec / 60) % 60;
       timestampDigits.push(minutes.toString().padStart(2, "0"));
       timestampUnits.push("m");
     }
     if (useSeconds) {
-      const seconds = timestampOptions.currTimeSec % 60;
-      if (!useHours && timestampOptions.frameDurationSec % 1.0 !== 0) {
+      const seconds = currTimeSec % 60;
+      if (!useHours && frameDurationSec % 1.0 !== 0) {
         // Duration increment is smaller than a second and we're not showing hours, so show milliseconds.
         timestampDigits.push(seconds.toFixed(3).padStart(6, "0"));
       } else {
@@ -370,7 +339,10 @@ export default class CanvasOverlay extends ColorizeCanvas {
     }
 
     ////////////////// Format timestamp as text //////////////////
-    const timestampFormatted = CanvasOverlay.getTimestampLabel(this.timestampOptions);
+    const timestampFormatted = this.getTimestampLabel();
+    if (!timestampFormatted) {
+      return EMPTY_RENDER_INFO;
+    }
 
     // TODO: Would be nice to configure top/bottom/left/right padding separately.
     const timestampPaddingPx = new Vector2(6, 2);
@@ -431,9 +403,6 @@ export default class CanvasOverlay extends ColorizeCanvas {
     super.render();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(super.domElement, 0, 0);
-
-    this.updateScaleBar();
-    this.updateTimestamp();
 
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
