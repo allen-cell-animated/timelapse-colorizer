@@ -2,6 +2,8 @@ import { Vector2 } from "three";
 
 import { numberToSciNotation } from "./utils/math_utils";
 
+import ColorizeCanvas from "./ColorizeCanvas";
+
 type StyleOptions = {
   fontSizePx: number;
   fontFamily: string;
@@ -42,14 +44,14 @@ const defaultStyleOptions: StyleOptions = {
 const defaultScaleBarOptions: ScaleBarOptions = {
   ...defaultStyleOptions,
   minWidthPx: 80,
-  visible: false,
+  visible: true,
   unitsPerScreenPixel: 1,
   units: "",
 };
 
 const defaultTimestampOptions: TimestampOptions = {
   ...defaultStyleOptions,
-  visible: false,
+  visible: true,
   frameDurationSec: 1,
   startTimeSec: 0,
   maxTimeSec: 1,
@@ -72,11 +74,12 @@ type RenderInfo = {
 };
 
 /**
- * A canvas used for drawing UI overlays over another screen region. (intended for use
- * with `ColorizeCanvas`.)
+ * Composites overlays, headers, and footers on top of a ColorizeCanvas, rendering to an
+ * HTML canvas element.
  */
-export default class CanvasOverlay {
-  public readonly canvas: OffscreenCanvas;
+export default class CanvasOverlay extends ColorizeCanvas {
+  private canvas: HTMLCanvasElement;
+
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
   private backgroundOptions: OverlayFillOptions;
@@ -88,7 +91,11 @@ export default class CanvasOverlay {
     timestampOptions: TimestampOptions = defaultTimestampOptions,
     overlayOptions: OverlayFillOptions = defaultBackgroundOptions
   ) {
-    this.canvas = new OffscreenCanvas(1, 1);
+    super();
+
+    this.canvas = document.createElement("canvas");
+    this.canvas.style.display = "block";
+
     this.scaleBarOptions = scaleBarOptions;
     this.timestampOptions = timestampOptions;
     this.backgroundOptions = overlayOptions;
@@ -96,12 +103,67 @@ export default class CanvasOverlay {
     this.canvasHeight = 1;
   }
 
-  /**
-   * Set the size of the canvas overlay.
-   */
-  setSize(width: number, height: number): void {
+  // Wrapped ColorizeCanvas functions ///////
+
+  get domElement(): HTMLCanvasElement {
+    // Override base ColorizeCanvas getter with the composited canvas.
+    return this.canvas;
+  }
+
+  public getTotalFrames(): number {
+    return this.dataset ? this.dataset.numberOfFrames : 0;
+  }
+
+  public setSize(width: number, height: number): void {
     this.canvasWidth = width;
     this.canvasHeight = height;
+    super.setSize(width, height);
+  }
+
+  // Rendering ////////////////////////////////
+
+  private getPixelRatio(): number {
+    return window.devicePixelRatio || 1;
+  }
+
+  private updateScaleBar(): void {
+    // Update the scale bar units
+    const frameDims = this.dataset?.metadata.frameDims;
+    // Ignore cases where dimensions have size 0
+    const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
+    if (this.scaleBarOptions.visible && hasFrameDims) {
+      // `frameDims` are already in the provided unit scaling, so we figure out the current
+      // size of the frame relative to the canvas to determine the canvas' width in units.
+      // We only consider X scaling here because the scale bar is always horizontal.
+      const canvasWidthInUnits = frameDims.width / this.frameSizeInCanvasCoordinates.x;
+      const unitsPerScreenPixel = canvasWidthInUnits / this.canvasWidth / this.getPixelRatio();
+      this.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
+    }
+  }
+
+  private updateTimestamp(): void {
+    // Calculate the current time stamp based on the current frame and the frame duration provided
+    // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
+    // Pass along to the overlay as parameters.
+    if (this.timestampOptions.visible && this.dataset) {
+      const frameDurationSec = this.dataset.metadata.frameDurationSeconds;
+      if (frameDurationSec) {
+        const startTimeSec = this.dataset.metadata.startTimeSeconds;
+        // Note: there's some semi-redundant information here, since the current timestamp and max
+        // timestamp could be calculated from the frame duration if we passed in the current + max
+        // frames instead. For now, it's ok to keep those calculations here in ColorizeCanvas so the
+        // overlay doesn't need to know frame numbers. The duration + start time are needed for
+        // time display calculations, however.
+        this.updateTimestampOptions({
+          visible: true,
+          frameDurationSec,
+          startTimeSec,
+          currTimeSec: this.getCurrentFrame() * frameDurationSec + startTimeSec,
+          maxTimeSec: this.dataset.numberOfFrames * frameDurationSec + startTimeSec,
+        });
+        return;
+      }
+    }
   }
 
   updateScaleBarOptions(options: Partial<ScaleBarOptions>): void {
@@ -116,7 +178,7 @@ export default class CanvasOverlay {
     this.backgroundOptions = { ...this.backgroundOptions, ...options };
   }
 
-  private getTextDimensions(ctx: OffscreenCanvasRenderingContext2D, text: string, options: StyleOptions): Vector2 {
+  private getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: StyleOptions): Vector2 {
     ctx.font = `${options.fontSizePx}px ${options.fontFamily}`;
     ctx.fillStyle = options.fontColor;
     const textWidth = ctx.measureText(text).width;
@@ -132,7 +194,7 @@ export default class CanvasOverlay {
    * @returns the width and height of the text, as a Vector2.
    */
   private renderRightAlignedText(
-    ctx: OffscreenCanvasRenderingContext2D,
+    ctx: CanvasRenderingContext2D,
     originPx: Vector2,
     text: string,
     options: StyleOptions
@@ -200,7 +262,7 @@ export default class CanvasOverlay {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getScaleBarRenderer(ctx: OffscreenCanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getScaleBarRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
     if (!this.scaleBarOptions.unitsPerScreenPixel || !this.scaleBarOptions.visible) {
       return { sizePx: new Vector2(0, 0), render: () => {} };
     }
@@ -302,7 +364,7 @@ export default class CanvasOverlay {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getTimestampRenderer(ctx: OffscreenCanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getTimestampRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
     if (!this.timestampOptions.visible) {
       return { sizePx: new Vector2(0, 0), render: () => {} };
     }
@@ -333,11 +395,7 @@ export default class CanvasOverlay {
    * @param size Size of the background overlay.
    * @param options Configuration for the background overlay.
    */
-  private static renderBackground(
-    ctx: OffscreenCanvasRenderingContext2D,
-    size: Vector2,
-    options: OverlayFillOptions
-  ): void {
+  private static renderBackground(ctx: CanvasRenderingContext2D, size: Vector2, options: OverlayFillOptions): void {
     ctx.fillStyle = options.fill;
     ctx.strokeStyle = options.stroke;
     ctx.beginPath();
@@ -357,17 +415,25 @@ export default class CanvasOverlay {
    * Render the overlay to the canvas.
    */
   render(): void {
-    const ctx = this.canvas.getContext("2d") as OffscreenCanvasRenderingContext2D | null;
+    const ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D | null;
     if (ctx === null) {
       console.error("Could not get canvas context");
       return;
     }
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = this.getPixelRatio();
     this.canvas.width = this.canvasWidth * devicePixelRatio;
     this.canvas.height = this.canvasHeight * devicePixelRatio;
     //Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // Render the viewport
+    super.render();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(super.domElement, 0, 0);
+
+    this.updateScaleBar();
+    this.updateTimestamp();
 
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
