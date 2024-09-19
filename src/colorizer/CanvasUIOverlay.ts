@@ -44,6 +44,7 @@ type LegendOptions = FontStyleOptions & {
   categoryLabelGapPx: number;
   categoryColGapPx: number;
   maxColorRampWidthPx: number;
+  maxCategoricalWidthPx: number;
   maxHeightPx: number;
   rampRadiusPx: number;
 };
@@ -116,7 +117,8 @@ const defaultLegendOptions: LegendOptions = {
   categoryLabelGapPx: 6,
   categoryColGapPx: 32,
 
-  maxColorRampWidthPx: 800,
+  maxColorRampWidthPx: 300,
+  maxCategoricalWidthPx: 800,
   maxHeightPx: 100,
   rampRadiusPx: 4,
 };
@@ -185,6 +187,11 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.canvasWidth = width;
     this.canvasHeight = height;
     super.setSize(width, height);
+  }
+
+  public getIdAtPixel(x: number, y: number): number {
+    const headerHeight = this.getHeaderSizePx().y;
+    return super.getIdAtPixel(x, y - headerHeight);
   }
 
   // Rendering ////////////////////////////////
@@ -454,21 +461,14 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
   public getHeaderSizePx(): Vector2 {
     if (this.showHeader) {
-      const devicePixelRatio = window.devicePixelRatio || 1;
-
-      return new Vector2(
-        this.canvasWidth * devicePixelRatio,
-        (this.headerOptions.fontSizePx + this.headerOptions.paddingPx.y * 2) * devicePixelRatio
-      );
+      return new Vector2(this.canvasWidth, this.headerOptions.fontSizePx + this.headerOptions.paddingPx.y * 2);
     }
     return new Vector2(0, 0);
   }
 
   public getFooterSizePx(): Vector2 {
     if (this.showFooter) {
-      const devicePixelRatio = window.devicePixelRatio || 1;
-
-      return new Vector2(this.canvasWidth * devicePixelRatio, this.footerOptions.heightPx * devicePixelRatio);
+      return new Vector2(this.canvasWidth, this.footerOptions.heightPx);
     }
     return new Vector2(0, 0);
   }
@@ -492,34 +492,52 @@ export default class CanvasOverlay extends ColorizeCanvas {
   }
 
   private renderFooter(ctx: CanvasRenderingContext2D, options: FooterOptions): void {
-    if (!this.showFooter) {
-      return;
-    }
-    // Fill in the background area
-    const height = options.heightPx;
+    const origin = new Vector2(0, this.canvasHeight + this.getHeaderSizePx().y);
 
-    ctx.fillStyle = options.fill;
-    ctx.strokeStyle = options.stroke;
-    ctx.beginPath();
-    ctx.rect(-0.5, this.canvasHeight - 0.5 - height, this.canvasWidth + 1, height + 1);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // Fill in the background of the footer
+    const height = options.heightPx;
+    if (this.showFooter) {
+      ctx.fillStyle = options.fill;
+      ctx.strokeStyle = options.stroke;
+      ctx.beginPath();
+      ctx.rect(origin.x - 0.5, origin.y - 0.5, this.canvasWidth + 1, height + 1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Render numeric/categorical key
+      origin.add(options.paddingPx);
+      if (this.dataset && this.featureKey) {
+        if (this.dataset.isFeatureCategorical(this.featureKey)) {
+          this.renderCategoricalKey(ctx, origin, this.legendOptions);
+        } else {
+          this.renderNumericKey(ctx, origin, this.legendOptions);
+        }
+      }
+    }
   }
 
-  private renderCategoricalKey(ctx: CanvasRenderingContext2D, options: LegendOptions): void {
-    const origin = new Vector2(20, this.canvasHeight - defaultFooterOptions.heightPx + 10);
+  private renderCategoricalKey(ctx: CanvasRenderingContext2D, origin: Vector2, options: LegendOptions): void {
+    const maxWidthPx = options.maxCategoricalWidthPx;
+    if (!this.dataset || !this.featureKey) {
+      return;
+    }
 
-    const maxWidthPx = options.maxColorRampWidthPx;
+    const featureData = this.dataset.getFeatureData(this.featureKey);
+    if (!featureData) {
+      return;
+    }
+
     // Render feature label
+    const featureName = this.dataset.getFeatureNameWithUnits(this.featureKey);
     const featureLabelFontStyle: FontStyleOptions = { ...options };
     configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
-    renderCanvasText(ctx, origin.x, origin.y, options.selectedFeatureName, { maxWidth: maxWidthPx });
+    renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
     const labelHeight = featureLabelFontStyle.fontSizePx + 6; // Padding
     origin.y += labelHeight; // Padding
 
     // Render categories
-    const { categories, categoricalPalette } = options;
+    const categories = featureData.categories || [];
 
     const numColumns = Math.ceil(categories.length / MAX_CATEGORIES_PER_COLUMN);
     const categoryWidth = Math.floor(maxWidthPx / numColumns - options.categoryColGapPx);
@@ -544,7 +562,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
         const category = categories[categoryIndex];
 
         // Color label
-        const color = new Color(categoricalPalette[categoryIndex]);
+        const color = new Color(this.categoricalPalette.colorStops[categoryIndex]);
         ctx.fillStyle = color.getStyle();
         ctx.strokeStyle = "transparent";
         ctx.beginPath();
@@ -575,9 +593,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     }
   }
 
-  renderNumericKey(ctx: CanvasRenderingContext2D, options: LegendOptions): void {
-    const origin = new Vector2(20, this.canvasHeight - defaultFooterOptions.heightPx + 14);
-
+  renderNumericKey(ctx: CanvasRenderingContext2D, origin: Vector2, options: LegendOptions): void {
     const maxWidthPx = options.maxColorRampWidthPx;
     const featureLabelFontStyle: FontStyleOptions = { ...options };
     configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
@@ -616,8 +632,11 @@ export default class CanvasOverlay extends ColorizeCanvas {
     }
 
     const devicePixelRatio = this.getPixelRatio();
+    // Expand size by header + footer, if rendering:
+    const headerSize = this.getHeaderSizePx();
+    const footerSize = this.getFooterSizePx();
     this.canvas.width = this.canvasWidth * devicePixelRatio;
-    this.canvas.height = this.canvasHeight * devicePixelRatio;
+    this.canvas.height = (this.canvasHeight + headerSize.y + footerSize.y) * devicePixelRatio;
     ctx.scale(devicePixelRatio, devicePixelRatio);
     //Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -625,7 +644,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     // Render the viewport
     super.render();
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(super.domElement, 0, 0);
+    ctx.drawImage(super.domElement, 0, headerSize.y);
 
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
@@ -636,11 +655,6 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
     this.renderHeader(ctx, this.headerOptions);
     this.renderFooter(ctx, this.footerOptions);
-    if (this.legendOptions.type === "categorical") {
-      this.renderCategoricalKey(ctx, this.legendOptions);
-    } else {
-      this.renderNumericKey(ctx, this.legendOptions);
-    }
 
     // If both elements are invisible, don't render the background.
     if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
