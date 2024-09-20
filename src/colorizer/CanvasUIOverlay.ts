@@ -176,8 +176,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.footerOptions = options?.footer || defaultFooterOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
-    this.showHeader = false;
-    this.showFooter = false;
+    this.showHeader = true;
+    this.showFooter = true;
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
   }
@@ -522,86 +522,6 @@ export default class CanvasOverlay extends ColorizeCanvas {
     };
   }
 
-  private getFooterRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
-    const options = this.footerOptions;
-
-    const { sizePx: overlaySize, render: renderOverlay } = this.getOverlayBoxRenderer(ctx);
-
-    if (!this.showFooter) {
-      // If the footer is hidden, the overlay box floats in the bottom right corner of the viewport.
-      return {
-        sizePx: new Vector2(0, 0),
-        render: (origin = new Vector2(0, 0)) => {
-          // Offset vertically by height + default margins
-          origin.y -= overlaySize.y + this.backgroundOptions.marginPx.y;
-          origin.x = this.canvasWidth - overlaySize.x - this.backgroundOptions.marginPx.x;
-          renderOverlay(origin);
-        },
-      };
-    }
-
-    // Determine size of the footer based on the max height of the legend
-    // and the timestamp/scale bar areas.
-    let maxHeight = overlaySize.y;
-    let legendRenderer: RenderCallback = () => {};
-    if (this.dataset && this.featureKey) {
-      // Update the max width
-      let result: RenderInfo;
-      if (this.dataset.isFeatureCategorical(this.featureKey)) {
-        const legendOptions = {
-          ...this.legendOptions,
-          maxHeightPx: Math.min(
-            this.canvasWidth - options.paddingPx.x * 2 - overlaySize.x,
-            this.legendOptions.maxCategoricalWidthPx
-          ),
-        };
-        result = this.getCategoricalKeyRenderer(ctx, legendOptions);
-      } else {
-        const legendOptions = {
-          ...this.legendOptions,
-          maxHeightPx: Math.min(
-            this.canvasWidth - options.paddingPx.x * 2 - overlaySize.x,
-            this.legendOptions.maxColorRampWidthPx
-          ),
-        };
-        result = this.getNumericKeyRenderer(ctx, legendOptions);
-      }
-      legendRenderer = result.render;
-      maxHeight = Math.max(maxHeight, result.sizePx.y);
-    }
-
-    if (maxHeight === 0) {
-      return EMPTY_RENDER_INFO;
-    }
-
-    const height = Math.round(maxHeight + options.paddingPx.y * 2);
-    const width = Math.round(this.canvasWidth + 1);
-
-    return {
-      sizePx: new Vector2(width, height),
-      render: (origin: Vector2) => {
-        origin.x = Math.round(origin.x);
-        origin.y = Math.round(origin.y) + 1;
-        // Fill in the background of the footer
-        ctx.fillStyle = options.fill;
-        ctx.strokeStyle = options.stroke;
-        ctx.fillRect(origin.x - 0.5, origin.y - 0.5, width, height);
-        ctx.strokeRect(origin.x - 0.5, origin.y - 0.5, width, height);
-
-        // Render the overlay box, centering it vertically
-        const overlayOrigin = new Vector2(
-          this.canvasWidth - overlaySize.x - options.paddingPx.x,
-          origin.y + (height - overlaySize.y) / 2
-        );
-        renderOverlay(overlayOrigin);
-
-        // Render the legend
-        const legendOrigin = new Vector2(origin.x + options.paddingPx.x, origin.y + options.paddingPx.y);
-        legendRenderer(legendOrigin);
-      },
-    };
-  }
-
   private getCategoricalKeyRenderer(ctx: CanvasRenderingContext2D, options: LegendOptions): RenderInfo {
     const maxWidthPx = options.maxCategoricalWidthPx;
     if (!this.dataset || !this.featureKey) {
@@ -728,6 +648,83 @@ export default class CanvasOverlay extends ColorizeCanvas {
         renderCanvasText(ctx, origin.x, origin.y, minLabel);
         configureCanvasText(ctx, rangeLabelFontStyle, "right", "top");
         renderCanvasText(ctx, origin.x + maxWidthPx, origin.y, maxLabel);
+      },
+    };
+  }
+
+  private getFooterRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
+    const options = this.footerOptions;
+
+    const { sizePx: overlaySize, render: renderOverlay } = this.getOverlayBoxRenderer(ctx);
+
+    if (!this.showFooter) {
+      // If the footer is hidden, the overlay box floats in the bottom right corner of the viewport.
+      return {
+        sizePx: new Vector2(0, 0),
+        render: (origin = new Vector2(0, 0)) => {
+          // Offset vertically by height + default margins
+          origin.y -= overlaySize.y + this.backgroundOptions.marginPx.y;
+          origin.x = this.canvasWidth - overlaySize.x - this.backgroundOptions.marginPx.x;
+          renderOverlay(origin);
+        },
+      };
+    }
+
+    // Determine size of the footer based on the max height of the legend
+    // and the timestamp/scale bar areas.
+    let maxHeight = overlaySize.y;
+    let legendRenderer: RenderCallback = () => {};
+    const overlayMargin = overlaySize.x > 0 ? this.backgroundOptions.marginPx.x : 0;
+    const availableContentWidth = this.canvasWidth - options.paddingPx.x * 2 - overlaySize.x - overlayMargin;
+
+    if (this.dataset && this.featureKey) {
+      // Update the max width
+      let result: RenderInfo;
+      if (this.dataset.isFeatureCategorical(this.featureKey)) {
+        const legendOptions = {
+          ...this.legendOptions,
+          maxCategoricalWidthPx: Math.min(availableContentWidth, this.legendOptions.maxCategoricalWidthPx),
+        };
+        result = this.getCategoricalKeyRenderer(ctx, legendOptions);
+      } else {
+        const legendOptions = {
+          ...this.legendOptions,
+          maxColorRampWidthPx: Math.min(availableContentWidth, this.legendOptions.maxColorRampWidthPx),
+        };
+        result = this.getNumericKeyRenderer(ctx, legendOptions);
+      }
+      legendRenderer = result.render;
+      maxHeight = Math.max(maxHeight, result.sizePx.y);
+    }
+
+    if (maxHeight === 0) {
+      return EMPTY_RENDER_INFO;
+    }
+
+    const height = Math.round(maxHeight + options.paddingPx.y * 2);
+    const width = Math.round(this.canvasWidth + 1);
+
+    return {
+      sizePx: new Vector2(width, height),
+      render: (origin: Vector2) => {
+        origin.x = Math.round(origin.x);
+        origin.y = Math.round(origin.y) + 1;
+        // Fill in the background of the footer
+        ctx.fillStyle = options.fill;
+        ctx.strokeStyle = options.stroke;
+        ctx.fillRect(origin.x - 0.5, origin.y - 0.5, width, height);
+        ctx.strokeRect(origin.x - 0.5, origin.y - 0.5, width, height);
+
+        // Render the overlay box, centering it vertically
+        const overlayOrigin = new Vector2(
+          this.canvasWidth - overlaySize.x - options.paddingPx.x,
+          origin.y + (height - overlaySize.y) / 2
+        );
+        renderOverlay(overlayOrigin);
+
+        // Render the legend
+        const legendOrigin = new Vector2(origin.x + options.paddingPx.x, origin.y + options.paddingPx.y);
+        legendRenderer(legendOrigin);
       },
     };
   }
