@@ -216,16 +216,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     });
   }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
 
-  useMemo(() => {
-    if (props.featureKey && props.dataset) {
-      canv.updateLegendOptions({
-        selectedFeatureName: props.dataset.getFeatureName(props.featureKey) || "N/A",
-        type: props.dataset.isFeatureCategorical(props.featureKey) ? "categorical" : "numeric",
-      });
-      canv.render();
-    }
-  }, [props.featureKey, props.dataset]);
-
   // Update backdrops
   useMemo(() => {
     canv.setBackdropKey(props.selectedBackdropKey);

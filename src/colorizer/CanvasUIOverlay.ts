@@ -89,7 +89,7 @@ const defaultHeaderOptions: HeaderOptions = {
   ...defaultStyleOptions,
   fontSizePx: 16,
   fill: "rgba(255, 255, 255, 1.0)",
-  stroke: "rgba(0, 0, 0, 0.2)",
+  stroke: "rgba(0, 0, 0, 1.0)",
   paddingPx: new Vector2(10, 10),
 };
 
@@ -123,11 +123,13 @@ const defaultLegendOptions: LegendOptions = {
   rampRadiusPx: 4,
 };
 
+type RenderCallback = (origin: Vector2) => void;
+
 type RenderInfo = {
   /** Size of the element, in pixels. */
   sizePx: Vector2;
   /** Callback to render the element. */
-  render: () => void;
+  render: RenderCallback;
 };
 
 const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () => {} };
@@ -150,6 +152,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
   private canvasHeight: number;
   private showHeader: boolean;
   private showFooter: boolean;
+  private headerSize: Vector2;
+  private footerSize: Vector2;
 
   constructor(options?: {
     scaleBar?: ScaleBarOptions;
@@ -174,6 +178,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.canvasHeight = 1;
     this.showHeader = true;
     this.showFooter = true;
+    this.headerSize = new Vector2(0, 0);
+    this.footerSize = new Vector2(0, 0);
   }
 
   // Wrapped ColorizeCanvas functions ///////
@@ -190,7 +196,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
   }
 
   public getIdAtPixel(x: number, y: number): number {
-    const headerHeight = this.getHeaderSizePx().y;
+    const headerHeight = this.headerSize.y;
     return super.getIdAtPixel(x, y - headerHeight);
   }
 
@@ -281,7 +287,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getScaleBarRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getScaleBarRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
     const frameDims = this.dataset?.metadata.frameDims;
     const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
 
@@ -301,15 +307,11 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
     ///////// Calculate the padding and origins for drawing and size /////////
     const scaleBarHeight = 10;
-    // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
-    const scaleBarX = this.canvasWidth - originPx.x + 0.5;
-    const scaleBarY = this.canvasHeight - originPx.y + 0.5;
 
-    const renderScaleBar = (): void => {
+    const renderScaleBar = (scaleBarX: number, scaleBarY: number): void => {
       // Render the scale bar
       ctx.beginPath();
       ctx.strokeStyle = this.scaleBarOptions.fontColor;
-      ctx.lineWidth = 1;
       // Draw, starting from the top right corner and going clockwise.
       ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
       ctx.lineTo(scaleBarX, scaleBarY);
@@ -322,20 +324,22 @@ export default class CanvasOverlay extends ColorizeCanvas {
     // render the text normally and then hotswap it for a regular canvas when recording occurs.
     // (but most likely a non-issue?)
     const textPaddingPx = new Vector2(6, 4);
-    const textOriginPx = new Vector2(
-      this.canvasWidth - originPx.x - textPaddingPx.x,
-      this.canvasHeight - originPx.y - textPaddingPx.y
-    );
-    const renderScaleBarText = (): void => {
+    const renderScaleBarText = (origin: Vector2): void => {
+      const textOriginPx = new Vector2(origin.x - textPaddingPx.x, origin.y - textPaddingPx.y);
+
       configureCanvasText(ctx, this.scaleBarOptions, "right", "bottom");
       renderCanvasText(ctx, textOriginPx.x, textOriginPx.y, textContent);
     };
 
     return {
       sizePx: new Vector2(scaleBarWidthPx, this.scaleBarOptions.fontSizePx + textPaddingPx.y * 2),
-      render: () => {
-        renderScaleBar();
-        renderScaleBarText();
+      render: (origin = new Vector2(0, 0)) => {
+        // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
+        const scaleBarX = origin.x + 0.5;
+        const scaleBarY = origin.y + 0.5;
+
+        renderScaleBar(scaleBarX, scaleBarY);
+        renderScaleBarText(origin);
       },
     };
   }
@@ -405,7 +409,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getTimestampRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getTimestampRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
     if (!this.timestampOptions.visible) {
       return { sizePx: new Vector2(0, 0), render: () => {} };
     }
@@ -416,14 +420,10 @@ export default class CanvasOverlay extends ColorizeCanvas {
       return EMPTY_RENDER_INFO;
     }
 
-    // TODO: Would be nice to configure top/bottom/left/right padding separately.
-    const timestampPaddingPx = new Vector2(6, 2);
-    const timestampOriginPx = new Vector2(
-      this.canvasWidth - originPx.x - timestampPaddingPx.x,
-      this.canvasHeight - originPx.y - timestampPaddingPx.y
-    );
     // Save the render function for later.
-    const render = (): void => {
+    const timestampPaddingPx = new Vector2(6, 2);
+    const render = (origin: Vector2): void => {
+      const timestampOriginPx = new Vector2(origin.x - timestampPaddingPx.x, origin.y - timestampPaddingPx.y);
       configureCanvasText(ctx, this.timestampOptions, "right", "bottom");
       renderCanvasText(ctx, timestampOriginPx.x, timestampOriginPx.y, timestampFormatted);
     };
@@ -443,13 +443,18 @@ export default class CanvasOverlay extends ColorizeCanvas {
    * @param size Size of the background overlay.
    * @param options Configuration for the background overlay.
    */
-  private renderBackground(ctx: CanvasRenderingContext2D, size: Vector2, options: OverlayFillOptions): void {
+  private renderBackground(
+    ctx: CanvasRenderingContext2D,
+    origin: Vector2,
+    size: Vector2,
+    options: OverlayFillOptions
+  ): void {
     ctx.fillStyle = options.fill;
     ctx.strokeStyle = options.stroke;
     ctx.beginPath();
     ctx.roundRect(
-      Math.round(this.canvasWidth - size.x - options.marginPx.x) + 0.5,
-      Math.round(this.canvasHeight - size.y - options.marginPx.y) + 0.5,
+      Math.round(origin.x) + 0.5,
+      Math.round(origin.y) + 0.5,
       Math.round(size.x),
       Math.round(size.y),
       options.radiusPx
@@ -459,166 +464,275 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.closePath();
   }
 
-  public getHeaderSizePx(): Vector2 {
-    if (this.showHeader) {
-      return new Vector2(this.canvasWidth, this.headerOptions.fontSizePx + this.headerOptions.paddingPx.y * 2);
-    }
-    return new Vector2(0, 0);
-  }
-
-  public getFooterSizePx(): Vector2 {
-    if (this.showFooter) {
-      return new Vector2(this.canvasWidth, this.footerOptions.heightPx);
-    }
-    return new Vector2(0, 0);
-  }
-
-  private renderHeader(ctx: CanvasRenderingContext2D, options: HeaderOptions): void {
+  private getHeaderRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
     if (!this.showHeader) {
-      return;
+      return EMPTY_RENDER_INFO;
     }
+    const options = this.headerOptions;
     // Fill in the background area
     const height = options.fontSizePx + options.paddingPx.y * 2;
+    const width = this.canvasWidth;
 
-    ctx.fillStyle = options.fill;
-    ctx.strokeStyle = options.stroke;
-    ctx.fillRect(-0.5, -0.5, this.canvasWidth + 1, height);
-    ctx.strokeRect(-0.5, -0.5, this.canvasWidth + 1, height);
+    return {
+      sizePx: new Vector2(width, height),
+      render: () => {
+        ctx.fillStyle = options.fill;
+        ctx.strokeStyle = options.stroke;
+        ctx.fillRect(-0.5, -0.5, this.canvasWidth + 1, height);
+        ctx.strokeRect(-0.5, -0.5, this.canvasWidth + 1, height);
 
-    const fontOptions = { maxWidth: this.canvasWidth - options.paddingPx.x * 2, ...options };
-
-    configureCanvasText(ctx, options, "center", "top");
-    renderCanvasText(ctx, this.canvasWidth / 2, options.paddingPx.y, "Header", fontOptions);
+        const fontOptions = { maxWidth: this.canvasWidth - options.paddingPx.x * 2, ...options };
+        configureCanvasText(ctx, options, "center", "top");
+        renderCanvasText(ctx, this.canvasWidth / 2, options.paddingPx.y, "Header", fontOptions);
+      },
+    };
   }
 
-  private renderFooter(ctx: CanvasRenderingContext2D, options: FooterOptions): void {
-    const origin = new Vector2(0, this.canvasHeight + this.getHeaderSizePx().y);
+  private getOverlayBoxRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
+    // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
+    // behind them.
+    // const origin = this.backgroundOptions.marginPx.clone().add(this.backgroundOptions.paddingPx);
+    const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx);
+    const { sizePx: timestampDimensions, render: renderTimestamp } = this.getTimestampRenderer(ctx);
+    // origin.y += scaleBarDimensions.y;
 
-    // Fill in the background of the footer
-    const height = options.heightPx;
-    if (this.showFooter) {
-      ctx.fillStyle = options.fill;
-      ctx.strokeStyle = options.stroke;
-      ctx.beginPath();
-      ctx.rect(origin.x - 0.5, origin.y - 0.5, this.canvasWidth + 1, height + 1);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // Render numeric/categorical key
-      origin.add(options.paddingPx);
-      if (this.dataset && this.featureKey) {
-        if (this.dataset.isFeatureCategorical(this.featureKey)) {
-          this.renderCategoricalKey(ctx, origin, this.legendOptions);
-        } else {
-          this.renderNumericKey(ctx, origin, this.legendOptions);
-        }
-      }
+    // If both elements are invisible, don't render the background.
+    if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
+      return EMPTY_RENDER_INFO;
     }
+
+    // Draw background box behind the elements
+    const contentSize = new Vector2(
+      Math.max(scaleBarDimensions.x, timestampDimensions.x),
+      scaleBarDimensions.y + timestampDimensions.y
+    );
+    const boxSize = contentSize.clone().add(this.backgroundOptions.paddingPx.clone().multiplyScalar(2.0));
+
+    return {
+      sizePx: boxSize,
+      render: (origin: Vector2) => {
+        this.renderBackground(ctx, origin, boxSize, this.backgroundOptions);
+        // Draw elements over the background
+        origin.add(this.backgroundOptions.paddingPx);
+        // For timestamp, offset so it's right aligned in the box.
+
+        renderTimestamp(origin);
+        // Render the scale bar below
+        origin.y += timestampDimensions.y;
+        renderScaleBar(origin);
+      },
+    };
   }
 
-  private renderCategoricalKey(ctx: CanvasRenderingContext2D, origin: Vector2, options: LegendOptions): void {
+  private getFooterRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
+    // const origin = new Vector2(0, this.canvasHeight + this.headerSize.y);
+    const options = this.footerOptions;
+
+    const { sizePx: overlaySize, render: renderOverlay } = this.getOverlayBoxRenderer(ctx);
+
+    if (!this.showFooter) {
+      // Directly render the overlay box if the footer is hidden in the lower right corner of the screen.
+      return {
+        sizePx: overlaySize,
+        render: (origin = new Vector2(0, 0)) => {
+          // Offset vertically by height + padding
+          origin.y -= overlaySize.y - options.paddingPx.y;
+          origin.x = this.canvasWidth - overlaySize.x - options.paddingPx.x;
+          renderOverlay(origin);
+        },
+      };
+    }
+
+    // Determine size of the footer based on the max height of the legend
+    // and the timestamp/scale bar areas.
+    let maxHeight = overlaySize.y;
+    let legendRenderer: RenderCallback = () => {};
+    if (this.dataset && this.featureKey) {
+      // Update the max width
+      let result: RenderInfo;
+      if (this.dataset.isFeatureCategorical(this.featureKey)) {
+        const legendOptions = {
+          ...this.legendOptions,
+          maxHeightPx: Math.min(
+            this.canvasWidth - options.paddingPx.x * 2 - overlaySize.x,
+            this.legendOptions.maxCategoricalWidthPx
+          ),
+        };
+        result = this.getCategoricalKeyRenderer(ctx, legendOptions);
+      } else {
+        const legendOptions = {
+          ...this.legendOptions,
+          maxHeightPx: Math.min(
+            this.canvasWidth - options.paddingPx.x * 2 - overlaySize.x,
+            this.legendOptions.maxColorRampWidthPx
+          ),
+        };
+        result = this.getNumericKeyRenderer(ctx, legendOptions);
+      }
+      legendRenderer = result.render;
+      maxHeight = Math.max(maxHeight, result.sizePx.y);
+    }
+
+    if (maxHeight === 0) {
+      return EMPTY_RENDER_INFO;
+    }
+
+    const height = Math.round(maxHeight + options.paddingPx.y * 2);
+    const width = Math.round(this.canvasWidth + 1);
+
+    return {
+      sizePx: new Vector2(width, height),
+      render: (origin: Vector2) => {
+        origin.x = Math.round(origin.x);
+        origin.y = Math.round(origin.y) + 1;
+        // Fill in the background of the footer
+        ctx.fillStyle = options.fill;
+        ctx.strokeStyle = options.stroke;
+        ctx.fillRect(origin.x - 0.5, origin.y - 0.5, width, height);
+        ctx.strokeRect(origin.x - 0.5, origin.y - 0.5, width, height);
+
+        // Render the overlay box, centering it vertically
+        const overlayOrigin = new Vector2(
+          this.canvasWidth - overlaySize.x - options.paddingPx.x,
+          origin.y + (height - overlaySize.y) / 2
+        );
+        renderOverlay(overlayOrigin);
+
+        // Render the legend
+        const legendOrigin = new Vector2(origin.x + options.paddingPx.x, origin.y + options.paddingPx.y);
+        legendRenderer(legendOrigin);
+      },
+    };
+  }
+
+  private getCategoricalKeyRenderer(ctx: CanvasRenderingContext2D, options: LegendOptions): RenderInfo {
     const maxWidthPx = options.maxCategoricalWidthPx;
     if (!this.dataset || !this.featureKey) {
-      return;
+      return EMPTY_RENDER_INFO;
     }
 
     const featureData = this.dataset.getFeatureData(this.featureKey);
     if (!featureData) {
-      return;
+      return EMPTY_RENDER_INFO;
     }
 
     // Render feature label
-    const featureName = this.dataset.getFeatureNameWithUnits(this.featureKey);
-    const featureLabelFontStyle: FontStyleOptions = { ...options };
-    configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
-    renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
-    const labelHeight = featureLabelFontStyle.fontSizePx + 6; // Padding
-    origin.y += labelHeight; // Padding
+    const featureLabelHeightPx = options.fontSizePx + 6;
+    const categoryHeightPx = options.labelFontSizePx + options.categoryPaddingPx.y * 2;
+    const categoryColumnHeight = Math.min(options.categories.length, 4) * categoryHeightPx;
+    const heightPx = featureLabelHeightPx + categoryColumnHeight;
 
-    // Render categories
-    const categories = featureData.categories || [];
+    return {
+      sizePx: new Vector2(maxWidthPx, heightPx),
+      render: (origin: Vector2) => {
+        const featureName = this.dataset!.getFeatureNameWithUnits(this.featureKey!);
+        const featureLabelFontStyle: FontStyleOptions = { ...options };
+        configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
+        renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
+        const labelHeight = featureLabelFontStyle.fontSizePx + 6; // Padding
+        origin.y += labelHeight; // Padding
 
-    const numColumns = Math.ceil(categories.length / MAX_CATEGORIES_PER_COLUMN);
-    const categoryWidth = Math.floor(maxWidthPx / numColumns - options.categoryColGapPx);
+        // Render categories
+        const categories = featureData.categories || [];
 
-    const categoryHeight = options.labelFontSizePx + options.categoryPaddingPx.y * 2;
-    const colOrigin = origin.clone();
+        const numColumns = Math.ceil(categories.length / MAX_CATEGORIES_PER_COLUMN);
+        const categoryWidth = Math.floor(maxWidthPx / numColumns - options.categoryColGapPx);
 
-    for (let colIndex = 0; colIndex < numColumns; colIndex++) {
-      // Calculate starting point for the column
-      const currCategoryOrigin = colOrigin.clone();
-      // Offset column origin by number of categories in the column
-      // const numItems = Math.min(MAX_CATEGORIES_PER_COLUMN, categories.length - colIndex * MAX_CATEGORIES_PER_COLUMN);
-      // const columnHeight = numItems * categoryHeight;
-      // currCategoryOrigin.y += Math.floor((MAX_CATEGORIES_PER_COLUMN * categoryHeight - columnHeight) / 2);
+        const categoryHeight = options.labelFontSizePx + options.categoryPaddingPx.y * 2;
+        const colOrigin = origin.clone();
 
-      let maxCategoryWidth = Number.NEGATIVE_INFINITY;
-      for (
-        let categoryIndex = colIndex * MAX_CATEGORIES_PER_COLUMN;
-        categoryIndex < Math.min((colIndex + 1) * MAX_CATEGORIES_PER_COLUMN, categories.length);
-        categoryIndex++
-      ) {
-        const category = categories[categoryIndex];
+        for (let colIndex = 0; colIndex < numColumns; colIndex++) {
+          // Calculate starting point for the column
+          const currCategoryOrigin = colOrigin.clone();
+          // Offset column origin by number of categories in the column
+          // const numItems = Math.min(MAX_CATEGORIES_PER_COLUMN, categories.length - colIndex * MAX_CATEGORIES_PER_COLUMN);
+          // const columnHeight = numItems * categoryHeight;
+          // currCategoryOrigin.y += Math.floor((MAX_CATEGORIES_PER_COLUMN * categoryHeight - columnHeight) / 2);
 
-        // Color label
-        const color = new Color(this.categoricalPalette.colorStops[categoryIndex]);
-        ctx.fillStyle = color.getStyle();
-        ctx.strokeStyle = "transparent";
-        ctx.beginPath();
-        ctx.roundRect(currCategoryOrigin.x, currCategoryOrigin.y, options.labelFontSizePx, options.labelFontSizePx, 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+          let maxCategoryWidth = Number.NEGATIVE_INFINITY;
+          for (
+            let categoryIndex = colIndex * MAX_CATEGORIES_PER_COLUMN;
+            categoryIndex < Math.min((colIndex + 1) * MAX_CATEGORIES_PER_COLUMN, categories.length);
+            categoryIndex++
+          ) {
+            const category = categories[categoryIndex];
 
-        configureCanvasText(ctx, options, "left", "top");
-        const maxTextWidth = categoryWidth - options.labelFontSizePx - options.categoryLabelGapPx;
-        const textSize = renderCanvasText(
-          ctx,
-          currCategoryOrigin.x + options.labelFontSizePx + options.categoryLabelGapPx,
-          currCategoryOrigin.y,
-          category,
-          {
-            maxWidth: maxTextWidth,
+            // Color label
+            const color = new Color(this.categoricalPalette.colorStops[categoryIndex]);
+            ctx.fillStyle = color.getStyle();
+            ctx.strokeStyle = "transparent";
+            ctx.beginPath();
+            ctx.roundRect(
+              currCategoryOrigin.x,
+              currCategoryOrigin.y,
+              options.labelFontSizePx,
+              options.labelFontSizePx,
+              2
+            );
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            configureCanvasText(ctx, options, "left", "top");
+            const maxTextWidth = categoryWidth - options.labelFontSizePx - options.categoryLabelGapPx;
+            const textSize = renderCanvasText(
+              ctx,
+              currCategoryOrigin.x + options.labelFontSizePx + options.categoryLabelGapPx,
+              currCategoryOrigin.y,
+              category,
+              {
+                maxWidth: maxTextWidth,
+              }
+            );
+            maxCategoryWidth = Math.max(
+              maxCategoryWidth,
+              textSize.x + options.labelFontSizePx + options.categoryLabelGapPx
+            );
+            currCategoryOrigin.y += categoryHeight;
           }
-        );
-        maxCategoryWidth = Math.max(
-          maxCategoryWidth,
-          textSize.x + options.labelFontSizePx + options.categoryLabelGapPx
-        );
-        currCategoryOrigin.y += categoryHeight;
-      }
 
-      colOrigin.x += maxCategoryWidth + options.categoryColGapPx;
-    }
+          colOrigin.x += maxCategoryWidth + options.categoryColGapPx;
+        }
+      },
+    };
   }
 
-  renderNumericKey(ctx: CanvasRenderingContext2D, origin: Vector2, options: LegendOptions): void {
+  private getNumericKeyRenderer(ctx: CanvasRenderingContext2D, options: LegendOptions): RenderInfo {
     const maxWidthPx = options.maxColorRampWidthPx;
     const featureLabelFontStyle: FontStyleOptions = { ...options };
-    configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
-    renderCanvasText(ctx, origin.x, origin.y, options.selectedFeatureName, { maxWidth: maxWidthPx });
-    origin.y += featureLabelFontStyle.fontSizePx + 4; // Padding
 
-    const { colorRamp } = options;
-    const colorStops = colorRamp.map((c) => new Color(c));
-    const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, maxWidthPx, 0, origin.x, origin.y);
-    ctx.fillStyle = gradient;
-    ctx.strokeStyle = options.stroke;
-    ctx.beginPath();
-    ctx.roundRect(origin.x + 0.5, origin.y + 0.5, maxWidthPx - 2, 28, options.rampRadiusPx);
-    ctx.fill();
-    ctx.stroke();
-    ctx.closePath();
-    origin.y += 28 + 4; // Padding
+    const height = options.fontSizePx + 4 + 28 + 4 + options.labelFontSizePx;
 
-    const rangeLabelFontStyle: FontStyleOptions = { ...options, fontSizePx: options.labelFontSizePx };
-    const minLabel = numberToStringDecimal(options.min, 3, true);
-    const maxLabel = numberToStringDecimal(options.max, 3, true);
-    configureCanvasText(ctx, rangeLabelFontStyle, "left", "top");
-    renderCanvasText(ctx, origin.x, origin.y, minLabel);
-    configureCanvasText(ctx, rangeLabelFontStyle, "right", "top");
-    renderCanvasText(ctx, origin.x + maxWidthPx, origin.y, maxLabel);
+    return {
+      sizePx: new Vector2(maxWidthPx, height),
+      render: (origin: Vector2) => {
+        configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
+        renderCanvasText(ctx, origin.x, origin.y, options.selectedFeatureName, { maxWidth: maxWidthPx });
+        origin.y += featureLabelFontStyle.fontSizePx + 4; // Padding
+
+        // Render color ramp gradient
+        const { colorRamp } = options;
+        const colorStops = colorRamp.map((c) => new Color(c));
+        const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, maxWidthPx, 0, origin.x, origin.y);
+        ctx.fillStyle = gradient;
+        ctx.strokeStyle = options.stroke;
+        ctx.beginPath();
+        ctx.roundRect(origin.x + 0.5, origin.y + 0.5, maxWidthPx - 2, 28, options.rampRadiusPx);
+        ctx.fill();
+        ctx.stroke();
+        ctx.closePath();
+        origin.y += 28 + 4; // Padding
+
+        // Render min/max labels under color ramp
+        const rangeLabelFontStyle: FontStyleOptions = { ...options, fontSizePx: options.labelFontSizePx };
+        const minLabel = numberToStringDecimal(options.min, 3, true);
+        const maxLabel = numberToStringDecimal(options.max, 3, true);
+        configureCanvasText(ctx, rangeLabelFontStyle, "left", "top");
+        renderCanvasText(ctx, origin.x, origin.y, minLabel);
+        configureCanvasText(ctx, rangeLabelFontStyle, "right", "top");
+        renderCanvasText(ctx, origin.x + maxWidthPx, origin.y, maxLabel);
+      },
+    };
   }
 
   /**
@@ -632,45 +746,26 @@ export default class CanvasOverlay extends ColorizeCanvas {
     }
 
     const devicePixelRatio = this.getPixelRatio();
-    // Expand size by header + footer, if rendering:
-    const headerSize = this.getHeaderSizePx();
-    const footerSize = this.getFooterSizePx();
     this.canvas.width = this.canvasWidth * devicePixelRatio;
-    this.canvas.height = (this.canvasHeight + headerSize.y + footerSize.y) * devicePixelRatio;
-    ctx.scale(devicePixelRatio, devicePixelRatio);
+    this.canvas.height = (this.canvasHeight + this.headerSize.y + this.footerSize.y) * devicePixelRatio;
+
+    // Expand size by header + footer, if rendering:
+    const headerRenderer = this.getHeaderRenderer(ctx);
+    const footerRenderer = this.getFooterRenderer(ctx);
+    this.headerSize = headerRenderer.sizePx;
+    this.footerSize = footerRenderer.sizePx;
+
     //Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Render the viewport
     super.render();
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(super.domElement, 0, headerSize.y);
+    ctx.drawImage(super.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
 
-    // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
-    // behind them.
-    const origin = this.backgroundOptions.marginPx.clone().add(this.backgroundOptions.paddingPx);
-    const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
-    origin.y += scaleBarDimensions.y;
-    const { sizePx: timestampDimensions, render: renderTimestamp } = this.getTimestampRenderer(ctx, origin);
-
-    this.renderHeader(ctx, this.headerOptions);
-    this.renderFooter(ctx, this.footerOptions);
-
-    // If both elements are invisible, don't render the background.
-    if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
-      return;
-    }
-
-    // Draw background box behind the elements
-    const contentSize = new Vector2(
-      Math.max(scaleBarDimensions.x, timestampDimensions.x),
-      scaleBarDimensions.y + timestampDimensions.y
-    );
-    const boxSize = contentSize.clone().add(this.backgroundOptions.paddingPx.clone().multiplyScalar(2.0));
-    this.renderBackground(ctx, boxSize, this.backgroundOptions);
-
-    // Draw elements over the background
-    renderScaleBar();
-    renderTimestamp();
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.lineWidth = 1 / devicePixelRatio;
+    headerRenderer.render(new Vector2(0, 0));
+    footerRenderer.render(new Vector2(0, this.canvasHeight + this.headerSize.y));
   }
 }
