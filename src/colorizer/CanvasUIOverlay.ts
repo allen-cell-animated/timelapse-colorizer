@@ -89,7 +89,7 @@ const defaultHeaderOptions: HeaderOptions = {
   ...defaultStyleOptions,
   fontSizePx: 16,
   fill: "rgba(255, 255, 255, 1.0)",
-  stroke: "rgba(0, 0, 0, 1.0)",
+  stroke: "rgba(203, 203, 204, 1.0)",
   paddingPx: new Vector2(10, 10),
 };
 
@@ -101,7 +101,7 @@ const defaultFooterOptions: FooterOptions = {
 
 const defaultLegendOptions: LegendOptions = {
   ...defaultStyleOptions,
-  stroke: "rgba(0, 0, 0, 0.2)",
+  stroke: "rgba(203, 203, 204, 1.0)",
   labelFontSizePx: 12,
   labelFontColor: "black",
   selectedFeatureName: "Some example feature (m)",
@@ -176,8 +176,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.footerOptions = options?.footer || defaultFooterOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
-    this.showHeader = true;
-    this.showFooter = true;
+    this.showHeader = false;
+    this.showFooter = false;
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
   }
@@ -282,7 +282,6 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
   /**
    * Gets the size of the scale bar and a callback to render it to the canvas.
-   * @param originPx The origin of the scale bar, from the lower right corner, in pixels.
    * @returns an object with two properties:
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
@@ -512,32 +511,30 @@ export default class CanvasOverlay extends ColorizeCanvas {
       sizePx: boxSize,
       render: (origin: Vector2) => {
         this.renderBackground(ctx, origin, boxSize, this.backgroundOptions);
-        // Draw elements over the background
-        origin.add(this.backgroundOptions.paddingPx);
-        // For timestamp, offset so it's right aligned in the box.
 
-        renderTimestamp(origin);
-        // Render the scale bar below
-        origin.y += timestampDimensions.y;
-        renderScaleBar(origin);
+        // Lower right corner of scale bar
+        const scaleBarOrigin = origin.clone().add(boxSize).sub(this.backgroundOptions.paddingPx);
+        renderScaleBar(scaleBarOrigin);
+
+        scaleBarOrigin.y -= scaleBarDimensions.y;
+        renderTimestamp(scaleBarOrigin);
       },
     };
   }
 
   private getFooterRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
-    // const origin = new Vector2(0, this.canvasHeight + this.headerSize.y);
     const options = this.footerOptions;
 
     const { sizePx: overlaySize, render: renderOverlay } = this.getOverlayBoxRenderer(ctx);
 
     if (!this.showFooter) {
-      // Directly render the overlay box if the footer is hidden in the lower right corner of the screen.
+      // If the footer is hidden, the overlay box floats in the bottom right corner of the viewport.
       return {
-        sizePx: overlaySize,
+        sizePx: new Vector2(0, 0),
         render: (origin = new Vector2(0, 0)) => {
-          // Offset vertically by height + padding
-          origin.y -= overlaySize.y - options.paddingPx.y;
-          origin.x = this.canvasWidth - overlaySize.x - options.paddingPx.x;
+          // Offset vertically by height + default margins
+          origin.y -= overlaySize.y + this.backgroundOptions.marginPx.y;
+          origin.x = this.canvasWidth - overlaySize.x - this.backgroundOptions.marginPx.x;
           renderOverlay(origin);
         },
       };
@@ -745,15 +742,16 @@ export default class CanvasOverlay extends ColorizeCanvas {
       return;
     }
 
-    const devicePixelRatio = this.getPixelRatio();
-    this.canvas.width = this.canvasWidth * devicePixelRatio;
-    this.canvas.height = (this.canvasHeight + this.headerSize.y + this.footerSize.y) * devicePixelRatio;
-
     // Expand size by header + footer, if rendering:
     const headerRenderer = this.getHeaderRenderer(ctx);
     const footerRenderer = this.getFooterRenderer(ctx);
     this.headerSize = headerRenderer.sizePx;
     this.footerSize = footerRenderer.sizePx;
+
+    const devicePixelRatio = this.getPixelRatio();
+    this.canvas.width = Math.round(this.canvasWidth * devicePixelRatio);
+    this.canvas.height = Math.round((this.canvasHeight + this.headerSize.y + this.footerSize.y) * devicePixelRatio);
+    ctx.scale(devicePixelRatio, devicePixelRatio);
 
     //Clear canvas
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -763,8 +761,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(super.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
 
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    ctx.lineWidth = 1 / devicePixelRatio;
+    // ctx.lineWidth = 1 / devicePixelRatio;
     headerRenderer.render(new Vector2(0, 0));
     footerRenderer.render(new Vector2(0, this.canvasHeight + this.headerSize.y));
   }

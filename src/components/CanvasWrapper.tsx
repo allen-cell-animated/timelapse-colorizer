@@ -288,7 +288,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const updateCanvasDimensions = (): void => {
       const canvasSizePx = getCanvasSizePx();
       canv.setSize(canvasSizePx.x, canvasSizePx.y);
-      canv.setSize(canvasSizePx.x, canvasSizePx.y);
     };
     updateCanvasDimensions(); // Initial size setting
 
