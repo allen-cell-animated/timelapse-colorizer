@@ -4,6 +4,7 @@ import { FontStyleOptions } from "./types";
 import { configureCanvasText, renderCanvasText } from "./utils/canvas_utils";
 import { numberToSciNotation, numberToStringDecimal } from "./utils/math_utils";
 
+import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
 import ColorRamp from "./ColorRamp";
 
@@ -124,6 +125,9 @@ const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () =>
 export default class CanvasOverlay extends ColorizeCanvas {
   private canvas: HTMLCanvasElement;
 
+  private collection: Collection | null;
+  private datasetKey: string | null;
+
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
   private backgroundOptions: OverlayFillOptions;
@@ -149,6 +153,9 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
     this.canvas = document.createElement("canvas");
     this.canvas.style.display = "block";
+
+    this.collection = null;
+    this.datasetKey = null;
 
     this.scaleBarOptions = options?.scaleBar || defaultScaleBarOptions;
     this.timestampOptions = options?.timestamp || defaultTimestampOptions;
@@ -182,11 +189,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     return super.getIdAtPixel(x, y - headerHeight);
   }
 
-  // Rendering ////////////////////////////////
-
-  private getPixelRatio(): number {
-    return window.devicePixelRatio || 1;
-  }
+  // Getters/Setters ////////////////////////////////
 
   updateScaleBarOptions(options: Partial<ScaleBarOptions>): void {
     this.scaleBarOptions = { ...this.scaleBarOptions, ...options };
@@ -202,6 +205,20 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
   updateLegendOptions(options: Partial<LegendOptions>): void {
     this.legendOptions = { ...this.legendOptions, ...options };
+  }
+
+  setCollection(collection: Collection | null): void {
+    this.collection = collection;
+  }
+
+  setDatasetKey(datasetKey: string | null): void {
+    this.datasetKey = datasetKey;
+  }
+
+  // Utility functions //////////////////////////////
+
+  private getPixelRatio(): number {
+    return window.devicePixelRatio || 1;
   }
 
   private static getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: FontStyleOptions): Vector2 {
@@ -262,6 +279,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     return { scaleBarWidthPx, scaleBarWidthInUnits };
   }
 
+  // Rendering functions ////////////////////////////
+
   /**
    * Gets the size of the scale bar and a callback to render it to the canvas.
    * @returns an object with two properties:
@@ -279,14 +298,14 @@ export default class CanvasOverlay extends ColorizeCanvas {
     const canvasWidthInUnits = frameDims.width / this.frameSizeInCanvasCoordinates.x;
     const unitsPerScreenPixel = canvasWidthInUnits / this.canvasWidth / this.getPixelRatio();
 
-    ///////// Get scale bar width and unit label /////////
+    // Get scale bar width and unit label
     const { scaleBarWidthPx, scaleBarWidthInUnits } = CanvasOverlay.getScaleBarWidth(
       this.scaleBarOptions,
       unitsPerScreenPixel
     );
     const textContent = `${CanvasOverlay.formatScaleBarValue(scaleBarWidthInUnits)} ${frameDims.units}`;
 
-    ///////// Calculate the padding and origins for drawing and size /////////
+    // Calculate the padding and origins for drawing and size
     const scaleBarHeight = 10;
 
     const renderScaleBar = (scaleBarX: number, scaleBarY: number): void => {
@@ -301,9 +320,6 @@ export default class CanvasOverlay extends ColorizeCanvas {
       ctx.stroke();
     };
 
-    // TODO: This looks bad at high magnification. A workaround would be to use CSS2DRenderer to
-    // render the text normally and then hotswap it for a regular canvas when recording occurs.
-    // (but most likely a non-issue?)
     const textPaddingPx = new Vector2(6, 4);
     const renderScaleBarText = (origin: Vector2): void => {
       const textOriginPx = new Vector2(origin.x - textPaddingPx.x, origin.y - textPaddingPx.y);
@@ -445,8 +461,20 @@ export default class CanvasOverlay extends ColorizeCanvas {
     ctx.closePath();
   }
 
+  private getHeaderText(): string | undefined {
+    if (!this.dataset || !this.collection || !this.datasetKey) {
+      return undefined;
+    }
+    const datasetName = this.collection.getDatasetName(this.datasetKey);
+    if (this.collection.metadata.name) {
+      return `${this.collection.metadata.name} - ${datasetName}`;
+    }
+    return datasetName;
+  }
+
   private getHeaderRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
-    if (!this.showHeader) {
+    const headerText = this.getHeaderText();
+    if (!this.showHeader || !headerText) {
       return EMPTY_RENDER_INFO;
     }
     const options = this.headerOptions;
@@ -464,7 +492,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
         const fontOptions = { maxWidth: this.canvasWidth - options.paddingPx.x * 2, ...options };
         configureCanvasText(ctx, options, "center", "top");
-        renderCanvasText(ctx, this.canvasWidth / 2, options.paddingPx.y, "Header", fontOptions);
+        renderCanvasText(ctx, this.canvasWidth / 2, options.paddingPx.y, headerText, fontOptions);
       },
     };
   }

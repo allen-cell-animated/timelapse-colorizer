@@ -78,6 +78,8 @@ type CanvasWrapperProps = {
    * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
+  datasetKey: string | null;
+
   featureKey: string | null;
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
@@ -256,6 +258,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useMemo(() => {
     canv.updateTimestampOptions({ visible: props.config.showTimestamp });
   }, [props.config.showTimestamp]);
+
+  useMemo(() => {
+    canv.setCollection(props.collection);
+  }, [props.collection]);
+
+  useMemo(() => {
+    canv.setDatasetKey(props.datasetKey);
+  }, [props.datasetKey]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
