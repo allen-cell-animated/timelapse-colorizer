@@ -209,11 +209,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setColorRamp(props.colorRamp);
     canv.setColorMapRangeMin(props.colorRampMin);
     canv.setColorMapRangeMax(props.colorRampMax);
-    canv.updateLegendOptions({
-      min: props.colorRampMin,
-      max: props.colorRampMax,
-      colorRamp: props.colorRamp.colorStops,
-    });
   }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
 
   // Update backdrops
@@ -226,12 +221,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Update categorical colors
   useMemo(() => {
     canv.setCategoricalColors(props.categoricalColors);
-    canv.updateLegendOptions({ categoricalPalette: props.categoricalColors });
-    if (props.dataset && props.featureKey) {
-      canv.updateLegendOptions({
-        categories: props.dataset.getFeatureCategories(props.featureKey) || [],
-      });
-    }
   }, [props.categoricalColors, props.dataset, props.featureKey]);
 
   // Update drawing modes for outliers + out of range values

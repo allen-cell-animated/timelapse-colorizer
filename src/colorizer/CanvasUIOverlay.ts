@@ -1,7 +1,5 @@
-import { Color, ColorRepresentation, Vector2 } from "three";
+import { Color, Vector2 } from "three";
 
-import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "./colors/color_ramps";
 import { FontStyleOptions } from "./types";
 import { configureCanvasText, renderCanvasText } from "./utils/canvas_utils";
 import { numberToSciNotation, numberToStringDecimal } from "./utils/math_utils";
@@ -32,21 +30,14 @@ type LegendOptions = FontStyleOptions & {
   stroke: string;
   labelFontSizePx: number;
   labelFontColor: string;
-  selectedFeatureName: string;
-  type: "numeric" | "categorical";
-  colorRamp: ColorRepresentation[];
-  min: number;
-  max: number;
 
-  categories: string[];
-  categoricalPalette: ColorRepresentation[];
+  maxColorRampWidthPx: number;
+  rampRadiusPx: number;
+
   categoryPaddingPx: Vector2;
   categoryLabelGapPx: number;
   categoryColGapPx: number;
-  maxColorRampWidthPx: number;
   maxCategoricalWidthPx: number;
-  maxHeightPx: number;
-  rampRadiusPx: number;
 };
 
 type HeaderOptions = FontStyleOptions & {
@@ -104,22 +95,13 @@ const defaultLegendOptions: LegendOptions = {
   stroke: "rgba(203, 203, 204, 1.0)",
   labelFontSizePx: 12,
   labelFontColor: "black",
-  selectedFeatureName: "Some example feature (m)",
-  type: "numeric",
 
-  colorRamp: KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!.colorStops,
-  min: 0,
-  max: 1,
-
-  categories: ["test1", "test2", "test 3 long name oopsie!!!!"],
-  categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops,
   categoryPaddingPx: new Vector2(2, 2),
   categoryLabelGapPx: 6,
   categoryColGapPx: 32,
+  maxCategoricalWidthPx: 800,
 
   maxColorRampWidthPx: 300,
-  maxCategoricalWidthPx: 800,
-  maxHeightPx: 100,
   rampRadiusPx: 4,
 };
 
@@ -522,6 +504,13 @@ export default class CanvasOverlay extends ColorizeCanvas {
     };
   }
 
+  private getSelectedFeatureName(): string | undefined {
+    if (!this.dataset || !this.featureKey) {
+      return undefined;
+    }
+    return this.dataset.getFeatureNameWithUnits(this.featureKey);
+  }
+
   private getCategoricalKeyRenderer(ctx: CanvasRenderingContext2D, options: LegendOptions): RenderInfo {
     const maxWidthPx = options.maxCategoricalWidthPx;
     if (!this.dataset || !this.featureKey) {
@@ -529,20 +518,20 @@ export default class CanvasOverlay extends ColorizeCanvas {
     }
 
     const featureData = this.dataset.getFeatureData(this.featureKey);
-    if (!featureData) {
+    const featureName = this.getSelectedFeatureName();
+    if (!featureData || !featureData.categories || !featureName) {
       return EMPTY_RENDER_INFO;
     }
 
     // Render feature label
     const featureLabelHeightPx = options.fontSizePx + 6;
     const categoryHeightPx = options.labelFontSizePx + options.categoryPaddingPx.y * 2;
-    const categoryColumnHeight = Math.min(options.categories.length, 4) * categoryHeightPx;
+    const categoryColumnHeight = Math.min(featureData.categories.length, 4) * categoryHeightPx;
     const heightPx = featureLabelHeightPx + categoryColumnHeight;
 
     return {
       sizePx: new Vector2(maxWidthPx, heightPx),
       render: (origin: Vector2) => {
-        const featureName = this.dataset!.getFeatureNameWithUnits(this.featureKey!);
         const featureLabelFontStyle: FontStyleOptions = { ...options };
         configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
         renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
@@ -615,6 +604,10 @@ export default class CanvasOverlay extends ColorizeCanvas {
   }
 
   private getNumericKeyRenderer(ctx: CanvasRenderingContext2D, options: LegendOptions): RenderInfo {
+    const featureName = this.getSelectedFeatureName();
+    if (!featureName) {
+      return EMPTY_RENDER_INFO;
+    }
     const maxWidthPx = options.maxColorRampWidthPx;
     const featureLabelFontStyle: FontStyleOptions = { ...options };
 
@@ -624,12 +617,11 @@ export default class CanvasOverlay extends ColorizeCanvas {
       sizePx: new Vector2(maxWidthPx, height),
       render: (origin: Vector2) => {
         configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
-        renderCanvasText(ctx, origin.x, origin.y, options.selectedFeatureName, { maxWidth: maxWidthPx });
+        renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
         origin.y += featureLabelFontStyle.fontSizePx + 4; // Padding
 
         // Render color ramp gradient
-        const { colorRamp } = options;
-        const colorStops = colorRamp.map((c) => new Color(c));
+        const colorStops = this.colorRamp.colorStops.map((c) => new Color(c));
         const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, maxWidthPx, 0, origin.x, origin.y);
         ctx.fillStyle = gradient;
         ctx.strokeStyle = options.stroke;
@@ -642,8 +634,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
         // Render min/max labels under color ramp
         const rangeLabelFontStyle: FontStyleOptions = { ...options, fontSizePx: options.labelFontSizePx };
-        const minLabel = numberToStringDecimal(options.min, 3, true);
-        const maxLabel = numberToStringDecimal(options.max, 3, true);
+        const minLabel = numberToStringDecimal(this.colorMapRangeMin, 3, true);
+        const maxLabel = numberToStringDecimal(this.colorMapRangeMax, 3, true);
         configureCanvasText(ctx, rangeLabelFontStyle, "left", "top");
         renderCanvasText(ctx, origin.x, origin.y, minLabel);
         configureCanvasText(ctx, rangeLabelFontStyle, "right", "top");
