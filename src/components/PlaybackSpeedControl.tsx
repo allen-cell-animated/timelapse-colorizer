@@ -32,7 +32,7 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
   // Generate values for the dropdown
   const dropdownItems = [];
   for (let i = props.min; i < props.max; i += props.step) {
-    dropdownItems.push({ key: i.toFixed(2), label: i.toFixed(2) + "x" });
+    dropdownItems.push({ value: i.toFixed(2), label: i.toFixed(2) + "x" });
   }
 
   // Convert from raw fps to slider values

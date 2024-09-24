@@ -3,7 +3,7 @@ import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-import { Color as ThreeColor,ColorRepresentation } from "three";
+import { ColorRepresentation, Color as ThreeColor } from "three";
 
 import { DrawMode } from "../../colorizer/types";
 import { FlexRowAlignCenter } from "../../styles/utils";
@@ -12,6 +12,8 @@ import SelectionDropdown from "./SelectionDropdown";
 
 type DrawModeSelectorProps = {
   selected: DrawMode;
+  /** HTML ID that the selection dropdown is labelled by. */
+  htmlLabelId: string;
   onChange: (mode: DrawMode, color: ThreeColor) => void;
   color: ThreeColor;
   disabled?: boolean;
@@ -39,8 +41,8 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
   const items = [
-    { key: DrawMode.HIDE.toString(), label: "Hide" },
-    { key: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
+    { value: DrawMode.HIDE.toString(), label: "Hide" },
+    { value: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
   ];
 
   const defaultPresetColors = [
@@ -68,9 +70,10 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
     <HorizontalDiv ref={colorPickerRef}>
       <SelectionDropdown
         label={null}
+        htmlLabelId={props.htmlLabelId}
         selected={props.selected.toString()}
         items={items}
-        showTooltip={false}
+        showSelectedItemTooltip={false}
         onChange={(key: string) => {
           props.onChange(Number.parseInt(key, 10), props.color);
         }}
