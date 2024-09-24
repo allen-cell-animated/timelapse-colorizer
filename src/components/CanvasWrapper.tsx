@@ -84,8 +84,10 @@ type CanvasWrapperProps = {
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
+
   loading: boolean;
   loadingProgress: number | null;
+  isRecording: boolean;
 
   selectedBackdropKey: string | null;
 
@@ -266,6 +268,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useMemo(() => {
     canv.setDatasetKey(props.datasetKey);
   }, [props.datasetKey]);
+
+  useMemo(() => {
+    canv.updateLegendOptions({ visible: props.config.showLegendDuringExport && props.isRecording });
+  }, [props.config.showLegendDuringExport, props.isRecording]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 

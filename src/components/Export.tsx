@@ -1,12 +1,25 @@
 import { CheckCircleOutlined } from "@ant-design/icons";
-import { App, Button, Card, Input, InputNumber, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
+import {
+  App,
+  Button,
+  Card,
+  Checkbox,
+  Input,
+  InputNumber,
+  Progress,
+  Radio,
+  RadioChangeEvent,
+  Space,
+  Tooltip,
+} from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
+import { ViewerConfig } from "../colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
-import { FlexRow } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow } from "../styles/utils";
 
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
@@ -28,6 +41,8 @@ type ExportButtonProps = {
   setIsRecording?: (recording: boolean) => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
+  config: ViewerConfig;
+  updateConfig: (settings: Partial<ViewerConfig>) => void;
 };
 
 const defaultProps: Partial<ExportButtonProps> = {
@@ -455,9 +470,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         maskClosable={!isRecording}
         footer={modalFooter}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px", marginTop: "15px" }}>
+        <FlexColumn $gap={10} style={{ marginBottom: "20px", marginTop: "15px" }}>
           {/* Recording type (image/video) radio */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <FlexColumnAlignCenter style={{ marginBottom: "10px" }}>
             <ExportModeRadioGroup
               value={recordingMode}
               buttonStyle="solid"
@@ -483,7 +498,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 </CustomRadio>
               </Tooltip>
             </ExportModeRadioGroup>
-          </div>
+          </FlexColumnAlignCenter>
 
           {/* Range options (All/Current Frame/Custom) */}
           <Card size="small">
@@ -580,6 +595,15 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </Card>
           )}
 
+          <Checkbox
+            checked={props.config.showLegendDuringExport}
+            onChange={(e) => {
+              props.updateConfig({ showLegendDuringExport: e.target.checked });
+            }}
+          >
+            Include legend in exported image/video
+          </Checkbox>
+
           <div>
             <p>Helpful tips:</p>
             <div style={{ paddingLeft: "4px" }}>
@@ -613,7 +637,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
               Reset
             </Button>
           </HorizontalDiv>
-        </div>
+        </FlexColumn>
       </StyledModal>
     </div>
   );

@@ -814,6 +814,8 @@ function Viewer(): ReactElement {
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
+              config={config}
+              updateConfig={updateConfig}
             />
             <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
@@ -961,6 +963,7 @@ function Viewer(): ReactElement {
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                   colorRampMin={colorRampMin}
                   colorRampMax={colorRampMax}
+                  isRecording={isRecording}
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}

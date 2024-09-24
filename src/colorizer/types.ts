@@ -153,6 +153,7 @@ export type ViewerConfig = {
   showTrackPath: boolean;
   showScaleBar: boolean;
   showTimestamp: boolean;
+  showLegendDuringExport: boolean;
   keepRangeBetweenDatasets: boolean;
   /** Brightness, as an integer percentage. */
   backdropBrightness: number;
@@ -169,6 +170,7 @@ export const defaultViewerConfig: ViewerConfig = {
   showTrackPath: true,
   showScaleBar: true,
   showTimestamp: true,
+  showLegendDuringExport: true,
   keepRangeBetweenDatasets: false,
   /** Brightness, as an integer percentage. */
   backdropBrightness: 100,

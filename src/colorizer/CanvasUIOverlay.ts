@@ -31,6 +31,7 @@ type LegendOptions = FontStyleOptions & {
   stroke: string;
   labelFontSizePx: number;
   labelFontColor: string;
+  visible: boolean;
 
   maxColorRampWidthPx: number;
   rampRadiusPx: number;
@@ -96,6 +97,7 @@ const defaultLegendOptions: LegendOptions = {
   stroke: "rgba(203, 203, 204, 1.0)",
   labelFontSizePx: 12,
   labelFontColor: "black",
+  visible: true,
 
   categoryPaddingPx: new Vector2(2, 2),
   categoryLabelGapPx: 6,
@@ -165,8 +167,8 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.footerOptions = options?.footer || defaultFooterOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
-    this.showHeader = true;
-    this.showFooter = true;
+    this.showHeader = false;
+    this.showFooter = false;
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
   }
@@ -758,6 +760,10 @@ export default class CanvasOverlay extends ColorizeCanvas {
       console.error("Could not get canvas context");
       return;
     }
+
+    this.showHeader = this.legendOptions.visible;
+    this.showFooter = this.legendOptions.visible;
+    console.log("showFooter", this.showFooter);
 
     // Expand size by header + footer, if rendering:
     const headerRenderer = this.getHeaderRenderer(ctx);
