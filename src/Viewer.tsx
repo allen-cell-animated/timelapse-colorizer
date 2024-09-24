@@ -37,7 +37,7 @@ import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
-import CanvasOverlay from "./colorizer/CanvasUIOverlay";
+import CanvasWithOverlay from "./colorizer/CanvasWithOverlay";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
@@ -74,7 +74,7 @@ function Viewer(): ReactElement {
   const [, startTransition] = React.useTransition();
 
   const canv = useConstructor(() => {
-    const canvas = new CanvasOverlay();
+    const canvas = new CanvasWithOverlay();
     canvas.domElement.className = styles.colorizeCanvas;
     return canvas;
   });

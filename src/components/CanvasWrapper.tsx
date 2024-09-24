@@ -11,7 +11,7 @@ import { ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import CanvasUIOverlay from "../colorizer/CanvasUIOverlay";
+import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";

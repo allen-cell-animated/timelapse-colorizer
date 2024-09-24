@@ -68,8 +68,9 @@ const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () =>
  * dynamic elements (like a scale bar, timestamp, etc.) on top of the
  * base rendered image.
  */
-export default class CanvasOverlay extends ColorizeCanvas {
+export default class CanvasWithOverlay extends ColorizeCanvas {
   private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
 
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
@@ -92,6 +93,12 @@ export default class CanvasOverlay extends ColorizeCanvas {
     this.backgroundOptions = overlayOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
+
+    const canvasContext = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+    if (canvasContext === null) {
+      throw new Error("CanvasWithOverlay: Could not get canvas context; canvas.getContext('2d') returned null.");
+    }
+    this.ctx = canvasContext;
   }
 
   // Wrapped ColorizeCanvas functions ///////
@@ -213,7 +220,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getScaleBarRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getScaleBarRenderer(originPx: Vector2): RenderInfo {
     const frameDims = this.dataset?.metadata.frameDims;
     const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
 
@@ -225,11 +232,11 @@ export default class CanvasOverlay extends ColorizeCanvas {
     const unitsPerScreenPixel = canvasWidthInUnits / this.canvasWidth / this.getPixelRatio();
 
     ///////// Get scale bar width and unit label /////////
-    const { scaleBarWidthPx, scaleBarWidthInUnits } = CanvasOverlay.getScaleBarWidth(
+    const { scaleBarWidthPx, scaleBarWidthInUnits } = CanvasWithOverlay.getScaleBarWidth(
       this.scaleBarOptions,
       unitsPerScreenPixel
     );
-    const textContent = `${CanvasOverlay.formatScaleBarValue(scaleBarWidthInUnits)} ${frameDims.units}`;
+    const textContent = `${CanvasWithOverlay.formatScaleBarValue(scaleBarWidthInUnits)} ${frameDims.units}`;
 
     ///////// Calculate the padding and origins for drawing and size /////////
     const scaleBarHeight = 10;
@@ -239,15 +246,15 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
     const renderScaleBar = (): void => {
       // Render the scale bar
-      ctx.beginPath();
-      ctx.strokeStyle = this.scaleBarOptions.fontColor;
-      ctx.lineWidth = 1;
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = this.scaleBarOptions.fontColor;
+      this.ctx.lineWidth = 1;
       // Draw, starting from the top right corner and going clockwise.
-      ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
-      ctx.lineTo(scaleBarX, scaleBarY);
-      ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY);
-      ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY - scaleBarHeight);
-      ctx.stroke();
+      this.ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
+      this.ctx.lineTo(scaleBarX, scaleBarY);
+      this.ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY);
+      this.ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY - scaleBarHeight);
+      this.ctx.stroke();
     };
 
     // TODO: This looks bad at high magnification. A workaround would be to use CSS2DRenderer to
@@ -256,7 +263,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
     const textPaddingPx = new Vector2(6, 4);
     const textOriginPx = new Vector2(originPx.x + textPaddingPx.x, originPx.y + textPaddingPx.y);
     const renderScaleBarText = (): void => {
-      this.renderRightAlignedText(ctx, textOriginPx, textContent, this.scaleBarOptions);
+      this.renderRightAlignedText(this.ctx, textOriginPx, textContent, this.scaleBarOptions);
     };
 
     return {
@@ -333,7 +340,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas.
    */
-  private getTimestampRenderer(ctx: CanvasRenderingContext2D, originPx: Vector2): RenderInfo {
+  private getTimestampRenderer(originPx: Vector2): RenderInfo {
     if (!this.timestampOptions.visible) {
       return { sizePx: new Vector2(0, 0), render: () => {} };
     }
@@ -349,12 +356,12 @@ export default class CanvasOverlay extends ColorizeCanvas {
     const timestampOriginPx = new Vector2(originPx.x + timestampPaddingPx.x, originPx.y + timestampPaddingPx.y);
     // Save the render function for later.
     const render = (): void => {
-      this.renderRightAlignedText(ctx, timestampOriginPx, timestampFormatted, this.scaleBarOptions);
+      this.renderRightAlignedText(this.ctx, timestampOriginPx, timestampFormatted, this.scaleBarOptions);
     };
 
     return {
       sizePx: new Vector2(
-        timestampPaddingPx.x * 2 + this.getTextDimensions(ctx, timestampFormatted, this.timestampOptions).x,
+        timestampPaddingPx.x * 2 + this.getTextDimensions(this.ctx, timestampFormatted, this.timestampOptions).x,
         timestampPaddingPx.y * 2 + this.timestampOptions.fontSizePx
       ),
       render,
@@ -367,49 +374,43 @@ export default class CanvasOverlay extends ColorizeCanvas {
    * @param size Size of the background overlay.
    * @param options Configuration for the background overlay.
    */
-  private static renderBackground(ctx: CanvasRenderingContext2D, size: Vector2, options: OverlayFillOptions): void {
-    ctx.fillStyle = options.fill;
-    ctx.strokeStyle = options.stroke;
-    ctx.beginPath();
-    ctx.roundRect(
-      Math.round(ctx.canvas.width - size.x - options.marginPx.x) + 0.5,
-      Math.round(ctx.canvas.height - size.y - options.marginPx.y) + 0.5,
+  private renderBackground(size: Vector2, options: OverlayFillOptions): void {
+    this.ctx.fillStyle = options.fill;
+    this.ctx.strokeStyle = options.stroke;
+    this.ctx.beginPath();
+    this.ctx.roundRect(
+      Math.round(this.ctx.canvas.width - size.x - options.marginPx.x) + 0.5,
+      Math.round(this.ctx.canvas.height - size.y - options.marginPx.y) + 0.5,
       Math.round(size.x),
       Math.round(size.y),
       options.radiusPx
     );
-    ctx.fill();
-    ctx.stroke();
-    ctx.closePath();
+    this.ctx.fill();
+    this.ctx.stroke();
+    this.ctx.closePath();
   }
 
   /**
    * Render the overlay to the canvas.
    */
   render(): void {
-    const ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D | null;
-    if (ctx === null) {
-      console.error("Could not get canvas context");
-      return;
-    }
-
     const devicePixelRatio = this.getPixelRatio();
     this.canvas.width = this.canvasWidth * devicePixelRatio;
     this.canvas.height = this.canvasHeight * devicePixelRatio;
     //Clear canvas
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Render the viewport
     super.render();
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(super.domElement, 0, 0);
+    this.ctx.imageSmoothingEnabled = false;
+    this.ctx.drawImage(super.domElement, 0, 0);
 
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
     const origin = this.backgroundOptions.marginPx.clone().add(this.backgroundOptions.paddingPx);
-    const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(ctx, origin);
+    const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer(origin);
     origin.y += scaleBarDimensions.y;
-    const { sizePx: timestampDimensions, render: renderTimestamp } = this.getTimestampRenderer(ctx, origin);
+    const { sizePx: timestampDimensions, render: renderTimestamp } = this.getTimestampRenderer(origin);
 
     // If both elements are invisible, don't render the background.
     if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
@@ -422,7 +423,7 @@ export default class CanvasOverlay extends ColorizeCanvas {
       scaleBarDimensions.y + timestampDimensions.y
     );
     const boxSize = contentSize.clone().add(this.backgroundOptions.paddingPx.clone().multiplyScalar(2.0));
-    CanvasOverlay.renderBackground(ctx, boxSize, this.backgroundOptions);
+    this.renderBackground(boxSize, this.backgroundOptions);
 
     // Draw elements over the background
     renderScaleBar();
