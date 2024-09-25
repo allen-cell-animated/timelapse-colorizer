@@ -763,7 +763,6 @@ export default class CanvasOverlay extends ColorizeCanvas {
 
     this.showHeader = this.legendOptions.visible;
     this.showFooter = this.legendOptions.visible;
-    console.log("showFooter", this.showFooter);
 
     // Expand size by header + footer, if rendering:
     const headerRenderer = this.getHeaderRenderer(ctx);

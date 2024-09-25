@@ -814,6 +814,7 @@ function Viewer(): ReactElement {
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
+              // onVisibilityChange={setIsRecording}
               config={config}
               updateConfig={updateConfig}
             />
