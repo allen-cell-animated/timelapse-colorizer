@@ -59,7 +59,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     const codecs: [string, "avc" | "vp9" | "av1"][] = [
       // 42 = baseline profile, 32 = level 5.0 (allows 128 MB/s max bitrate)
       ["avc1.420032", "avc"],
-      ["vp09.00.10.08", "vp9"],
+      ["vp09.01.10.08", "vp9"],
       ["av01.0.04M.08", "av1"],
     ];
     const accelerations: ("prefer-hardware" | "prefer-software")[] = ["prefer-hardware", "prefer-software"];
