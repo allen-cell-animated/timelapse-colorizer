@@ -154,6 +154,7 @@ export type ViewerConfig = {
   showScaleBar: boolean;
   showTimestamp: boolean;
   showLegendDuringExport: boolean;
+  showHeaderDuringExport: boolean;
   keepRangeBetweenDatasets: boolean;
   /** Brightness, as an integer percentage. */
   backdropBrightness: number;
@@ -171,6 +172,7 @@ export const defaultViewerConfig: ViewerConfig = {
   showScaleBar: true,
   showTimestamp: true,
   showLegendDuringExport: true,
+  showHeaderDuringExport: true,
   keepRangeBetweenDatasets: false,
   /** Brightness, as an integer percentage. */
   backdropBrightness: 100,

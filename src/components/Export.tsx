@@ -396,9 +396,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // (475 MB predicted vs. 70 MB actual)
     // TODO: Is there a way to concretely determine this?
     const compressionRatioBitsPerPixel = 3.5; // Actual value 2.7-3.0, overshooting to be safe
-    const canvasExportDimensions = props.getCanvasExportDimensions();
-    const maxVideoBitsResolution =
-      canvasExportDimensions[0] * canvasExportDimensions[1] * totalFrames * compressionRatioBitsPerPixel;
+    // Use current canvas dimensions as an approximation (instead of the export dimensions)
+    const canvas = props.getCanvas();
+    const maxVideoBitsResolution = canvas.width * canvas.height * totalFrames * compressionRatioBitsPerPixel;
 
     const sizeInMb = Math.min(maxVideoBitsResolution, maxVideoBitsDuration) / 8_000_000; // bits to MB
 
@@ -581,7 +581,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </MaxWidthRadioGroup>
           </Card>
 
-          <SettingsContainer gapPx={10}>
+          <SettingsContainer gapPx={6}>
             {recordingMode === RecordingMode.VIDEO_MP4 && (
               <>
                 <SettingsItem label="Frames per second">
@@ -634,7 +634,17 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   props.updateConfig({ showLegendDuringExport: e.target.checked });
                 }}
               >
-                Include legend in exported image/video
+                Include feature legend
+              </Checkbox>
+            </SettingsItem>
+            <SettingsItem>
+              <Checkbox
+                checked={props.config.showHeaderDuringExport}
+                onChange={(e) => {
+                  props.updateConfig({ showHeaderDuringExport: e.target.checked });
+                }}
+              >
+                Include dataset and collection name
               </Checkbox>
             </SettingsItem>
           </SettingsContainer>

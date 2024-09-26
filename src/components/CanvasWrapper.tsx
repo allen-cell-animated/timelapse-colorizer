@@ -202,9 +202,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       fontColor: theme.color.text.primary,
       fontFamily: theme.font.family,
     };
+    const sidebarTheme = {
+      ...defaultTheme,
+      stroke: theme.color.layout.borders,
+      fill: theme.color.layout.background,
+    };
     canv.updateScaleBarOptions(defaultTheme);
     canv.updateTimestampOptions(defaultTheme);
-    canv.updateBackgroundOptions({ stroke: theme.color.layout.borders });
+    canv.updateOverlayBoxOptions({ stroke: theme.color.layout.borders });
+    canv.updateLegendOptions(defaultTheme);
+    canv.updateFooterOptions(sidebarTheme);
+    canv.updateHeaderOptions(sidebarTheme);
     canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
 
@@ -271,7 +279,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
-    canv.updateHeaderOptions({ visibleOnExport: props.config.showLegendDuringExport });
+    canv.updateHeaderOptions({ visibleOnExport: props.config.showHeaderDuringExport });
     canv.updateFooterOptions({ visibleOnExport: props.config.showLegendDuringExport });
   }, [props.config.showLegendDuringExport, props.isRecording]);
 
