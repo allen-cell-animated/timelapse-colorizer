@@ -689,9 +689,9 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
         const minLabel = numberToStringDecimal(this.colorMapRangeMin, 3, true);
         const maxLabel = numberToStringDecimal(this.colorMapRangeMax, 3, true);
         configureCanvasText(this.ctx, rangeLabelFontStyle, "left", "top");
-        renderCanvasText(this.ctx, origin.x, origin.y, minLabel);
+        renderCanvasText(this.ctx, origin.x, origin.y, minLabel, { maxWidth: maxWidthPx / 2 });
         configureCanvasText(this.ctx, rangeLabelFontStyle, "right", "top");
-        renderCanvasText(this.ctx, origin.x + maxWidthPx, origin.y, maxLabel);
+        renderCanvasText(this.ctx, origin.x + maxWidthPx, origin.y, maxLabel, { maxWidth: maxWidthPx / 2 });
       },
     };
   }
@@ -807,7 +807,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   }
 
   /**
-   * Gets the screen-space dimensions ion pixels of the canvas (including the header and footer) when the
+   * Gets the screen-space pixel dimensions of the canvas (including the header and footer) when the
    * canvas is being exported.
    */
   getExportDimensions(): [number, number] {
