@@ -17,7 +17,7 @@ import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
-import { ViewerConfig } from "../colorizer/types";
+import { defaultViewerConfig, ViewerConfig } from "../colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow } from "../styles/utils";
 
@@ -33,7 +33,7 @@ import SpinBox from "./SpinBox";
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
-  getCanvasExportDimensions: () => [number, number];
+  getCanvasExportDimensions?: () => [number, number];
   getCanvas: () => HTMLCanvasElement;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick?: () => void;
@@ -42,9 +42,8 @@ type ExportButtonProps = {
   setIsRecording?: (recording: boolean) => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
-  config: ViewerConfig;
-  updateConfig: (settings: Partial<ViewerConfig>) => void;
-  onVisibilityChange?: (visible: boolean) => void;
+  config?: ViewerConfig;
+  updateConfig?: (settings: Partial<ViewerConfig>) => void;
 };
 
 const FRAME_RANGE_RADIO_LABEL_ID = "export-modal-frame-range-label";
@@ -54,7 +53,8 @@ const defaultProps: Partial<ExportButtonProps> = {
   defaultImagePrefix: "image",
   disabled: false,
   onClick: () => {},
-  onVisibilityChange: () => {},
+  config: defaultViewerConfig,
+  updateConfig: () => {},
 };
 
 const HorizontalDiv = styled.div`
@@ -178,7 +178,6 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       setErrorText(null);
     }
     _setIsModalOpen(isOpen);
-    props.onVisibilityChange(isOpen);
   };
 
   // Notify parent via props if recording state changes
