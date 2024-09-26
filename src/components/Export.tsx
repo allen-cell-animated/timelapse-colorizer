@@ -640,7 +640,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
 
           <div>
             <p>
-              <b>Recommended browser settings:</b> Turn off &quot;Ask where to save each file before downloading&quot;
+              <b>Recommended browser settings:</b> Disable &quot;Ask where to save each file before downloading&quot;
               and set the default download location.
             </p>
           </div>
