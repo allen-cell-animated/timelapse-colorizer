@@ -261,14 +261,14 @@ export default class CanvasWithOverlay extends ColorizeCanvas implements IContro
    * @param unitsPerScreenPixel The number of units per pixel on the screen.
    * @returns An object, containing keys for the width in pixels and units.
    */
-  private static getScaleBarWidth(
+  private getScaleBarWidth(
     scaleBarOptions: ScaleBarOptions,
     unitsPerScreenPixel: number
   ): {
     scaleBarWidthPx: number;
     scaleBarWidthInUnits: number;
   } {
-    const minWidthUnits = scaleBarOptions.minWidthPx * unitsPerScreenPixel;
+    const minWidthUnits = scaleBarOptions.minWidthPx * unitsPerScreenPixel * this.getPixelRatio();
     // Here we get the power of the most significant digit (MSD) of the minimum width converted to units.
     const msdPower = Math.ceil(Math.log10(minWidthUnits));
 
@@ -309,10 +309,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas implements IContro
     const unitsPerScreenPixel = canvasWidthInUnits / this.canvasWidth / this.getPixelRatio();
 
     ///////// Get scale bar width and unit label /////////
-    const { scaleBarWidthPx, scaleBarWidthInUnits } = CanvasWithOverlay.getScaleBarWidth(
-      this.scaleBarOptions,
-      unitsPerScreenPixel
-    );
+    const { scaleBarWidthPx, scaleBarWidthInUnits } = this.getScaleBarWidth(this.scaleBarOptions, unitsPerScreenPixel);
     const textContent = `${CanvasWithOverlay.formatScaleBarValue(scaleBarWidthInUnits)} ${frameDims.units}`;
 
     // Calculate the padding and origins for drawing and size
@@ -784,6 +781,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas implements IContro
     super.render();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(super.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
+
+    ctx.scale(devicePixelRatio, devicePixelRatio);
 
     // ctx.lineWidth = 1 / devicePixelRatio;
     headerRenderer.render(new Vector2(0, 0));
