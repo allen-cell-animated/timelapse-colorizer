@@ -1,6 +1,5 @@
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
-
-import ColorizeCanvas from "./ColorizeCanvas";
+import { IControllableCanvas } from "./canvas";
 
 // time / playback controls
 const NO_TIMER_ID = -1;
@@ -10,11 +9,11 @@ export default class TimeControls {
   private setFrameFn?: (frame: number) => Promise<void>;
   private playbackFps: number;
 
-  private canvas: ColorizeCanvas;
+  private canvas: IControllableCanvas;
 
   private pauseCallbacks: (() => void)[];
 
-  constructor(canvas: ColorizeCanvas, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
+  constructor(canvas: IControllableCanvas, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
     this.canvas = canvas;
     this.timerId = NO_TIMER_ID;
     this.pauseCallbacks = [];
