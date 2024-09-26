@@ -19,7 +19,7 @@ type TimestampOptions = FontStyleOptions & {
   visible: boolean;
 };
 
-type OverlayFillOptions = {
+type OverlayBoxOptions = {
   fill: string;
   stroke: string;
   paddingPx: Vector2;
@@ -70,7 +70,7 @@ const defaultTimestampOptions: TimestampOptions = {
   visible: true,
 };
 
-const defaultBackgroundOptions: OverlayFillOptions = {
+const defaultOverlayBoxOptions: OverlayBoxOptions = {
   fill: "rgba(255, 255, 255, 0.8)",
   stroke: "rgba(0, 0, 0, 0.2)",
   paddingPx: new Vector2(10, 10),
@@ -133,7 +133,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
-  private backgroundOptions: OverlayFillOptions;
+  private overlayBoxOptions: OverlayBoxOptions;
   private legendOptions: LegendOptions;
   private headerOptions: HeaderOptions;
   private footerOptions: FooterOptions;
@@ -147,7 +147,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   constructor(options?: {
     scaleBar?: ScaleBarOptions;
     timestamp?: TimestampOptions;
-    background?: OverlayFillOptions;
+    background?: OverlayBoxOptions;
     legend?: LegendOptions;
     header?: HeaderOptions;
     footer?: FooterOptions;
@@ -162,7 +162,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
     this.scaleBarOptions = options?.scaleBar || defaultScaleBarOptions;
     this.timestampOptions = options?.timestamp || defaultTimestampOptions;
-    this.backgroundOptions = options?.background || defaultBackgroundOptions;
+    this.overlayBoxOptions = options?.background || defaultOverlayBoxOptions;
     this.legendOptions = options?.legend || defaultLegendOptions;
     this.headerOptions = options?.header || defaultHeaderOptions;
     this.footerOptions = options?.footer || defaultFooterOptions;
@@ -210,8 +210,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.timestampOptions = { ...this.timestampOptions, ...options };
   }
 
-  updateBackgroundOptions(options: Partial<OverlayFillOptions>): void {
-    this.backgroundOptions = { ...this.backgroundOptions, ...options };
+  updateOverlayBoxOptions(options: Partial<OverlayBoxOptions>): void {
+    this.overlayBoxOptions = { ...this.overlayBoxOptions, ...options };
   }
 
   updateLegendOptions(options: Partial<LegendOptions>): void {
@@ -460,7 +460,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
    * @param size Size of the background overlay.
    * @param options Configuration for the background overlay.
    */
-  private renderBackground(origin: Vector2, size: Vector2, options: OverlayFillOptions): void {
+  private renderBackground(origin: Vector2, size: Vector2, options: OverlayBoxOptions): void {
     this.ctx.fillStyle = options.fill;
     this.ctx.strokeStyle = options.stroke;
     this.ctx.beginPath();
@@ -515,10 +515,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private getOverlayBoxRenderer(): RenderInfo {
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
-    // const origin = this.backgroundOptions.marginPx.clone().add(this.backgroundOptions.paddingPx);
     const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer();
     const { sizePx: timestampDimensions, render: renderTimestamp } = this.getTimestampRenderer();
-    // origin.y += scaleBarDimensions.y;
 
     // If both elements are invisible, don't render the background.
     if (scaleBarDimensions.equals(new Vector2(0, 0)) && timestampDimensions.equals(new Vector2(0, 0))) {
@@ -530,15 +528,15 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       Math.max(scaleBarDimensions.x, timestampDimensions.x),
       scaleBarDimensions.y + timestampDimensions.y
     );
-    const boxSize = contentSize.clone().add(this.backgroundOptions.paddingPx.clone().multiplyScalar(2.0));
+    const boxSize = contentSize.clone().add(this.overlayBoxOptions.paddingPx.clone().multiplyScalar(2.0));
 
     return {
       sizePx: boxSize,
       render: (origin: Vector2) => {
-        this.renderBackground(origin, boxSize, this.backgroundOptions);
+        this.renderBackground(origin, boxSize, this.overlayBoxOptions);
 
         // Lower right corner of scale bar
-        const scaleBarOrigin = origin.clone().add(boxSize).sub(this.backgroundOptions.paddingPx);
+        const scaleBarOrigin = origin.clone().add(boxSize).sub(this.overlayBoxOptions.paddingPx);
         renderScaleBar(scaleBarOrigin);
 
         scaleBarOrigin.y -= scaleBarDimensions.y;
@@ -593,10 +591,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
         for (let colIndex = 0; colIndex < numColumns; colIndex++) {
           // Calculate starting point for the column
           const currCategoryOrigin = colOrigin.clone();
-          // Offset column origin by number of categories in the column
-          // const numItems = Math.min(MAX_CATEGORIES_PER_COLUMN, categories.length - colIndex * MAX_CATEGORIES_PER_COLUMN);
-          // const columnHeight = numItems * categoryHeight;
-          // currCategoryOrigin.y += Math.floor((MAX_CATEGORIES_PER_COLUMN * categoryHeight - columnHeight) / 2);
 
           let maxCategoryWidth = Number.NEGATIVE_INFINITY;
           for (
@@ -698,8 +692,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
         sizePx: new Vector2(0, 0),
         render: (origin = new Vector2(0, 0)) => {
           // Offset vertically by height + default margins
-          origin.y -= overlaySize.y + this.backgroundOptions.marginPx.y;
-          origin.x = this.canvasWidth - overlaySize.x - this.backgroundOptions.marginPx.x;
+          origin.y -= overlaySize.y + this.overlayBoxOptions.marginPx.y;
+          origin.x = this.canvasWidth - overlaySize.x - this.overlayBoxOptions.marginPx.x;
           renderOverlay(origin);
         },
       };
@@ -709,7 +703,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     // and the timestamp/scale bar areas.
     let maxHeight = overlaySize.y;
     let legendRenderer: RenderCallback = () => {};
-    const overlayMargin = overlaySize.x > 0 ? this.backgroundOptions.marginPx.x : 0;
+    const overlayMargin = overlaySize.x > 0 ? this.overlayBoxOptions.marginPx.x : 0;
     const availableContentWidth = this.canvasWidth - options.paddingPx.x * 2 - overlaySize.x - overlayMargin;
 
     if (this.dataset && this.featureKey) {
