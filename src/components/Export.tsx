@@ -20,6 +20,7 @@ import SpinBox from "./SpinBox";
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
+  getCanvasExportDimensions: () => [number, number];
   getCanvas: () => HTMLCanvasElement;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick?: () => void;
@@ -29,6 +30,8 @@ type ExportButtonProps = {
   defaultImagePrefix?: string;
   disabled?: boolean;
 };
+
+const FRAME_RANGE_RADIO_LABEL_ID = "export-modal-frame-range-label";
 
 const defaultProps: Partial<ExportButtonProps> = {
   setIsRecording: () => {},
@@ -274,10 +277,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     }
 
     // Copy configuration to options object
-    // TODO: Canvas MUST ALWAYS BE AN EVEN NUMBER for dimensions.
-    // Web codecs will fail to initialize if a dimension is even.
-    const canvas = props.getCanvas();
-    console.log("canvas dimensions", canvas.width, canvas.height);
+    // Note that different codecs will be selected by the browser based on the canvas dimensions.
+    const canvasDims = props.getCanvasExportDimensions();
     const recordingOptions: Partial<RecordingOptions> = {
       min: min,
       max: max,
@@ -288,7 +289,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       frameIncrement: frameIncrement,
       fps: fps,
       bitrate: videoBitsPerSecond,
-      outputSize: [canvas.width, canvas.height],
+      outputSize: [canvasDims[0], canvasDims[1]],
       onCompleted: async () => {
         // Close modal once recording finishes and show completion notification
         setPercentComplete(100);
@@ -378,8 +379,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // (475 MB predicted vs. 70 MB actual)
     // TODO: Is there a way to concretely determine this?
     const compressionRatioBitsPerPixel = 3.5; // Actual value 2.7-3.0, overshooting to be safe
+    const canvasExportDimensions = props.getCanvasExportDimensions();
     const maxVideoBitsResolution =
-      props.getCanvas().width * props.getCanvas().height * totalFrames * compressionRatioBitsPerPixel;
+      canvasExportDimensions[0] * canvasExportDimensions[1] * totalFrames * compressionRatioBitsPerPixel;
 
     const sizeInMb = Math.min(maxVideoBitsResolution, maxVideoBitsDuration) / 8_000_000; // bits to MB
 
@@ -491,14 +493,14 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
           </FlexColumnAlignCenter>
 
           {/* Range options (All/Current Frame/Custom) */}
-          <Card size="small" title={<p id="export-modal-frame-range-label">Frame range</p>}>
+          <Card size="small" title={<p id={FRAME_RANGE_RADIO_LABEL_ID}>Frame range</p>}>
             <MaxWidthRadioGroup
               value={rangeMode}
               onChange={(e: RadioChangeEvent) => {
                 setRangeMode(e.target.value);
               }}
               disabled={isRecording}
-              aria-labelledby="export-modal-frame-range-label"
+              aria-labelledby={FRAME_RANGE_RADIO_LABEL_ID}
             >
               <Space direction="vertical">
                 <Radio value={RangeMode.ALL}>
