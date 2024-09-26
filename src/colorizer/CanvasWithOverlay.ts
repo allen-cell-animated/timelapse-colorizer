@@ -31,7 +31,6 @@ type LegendOptions = FontStyleOptions & {
   stroke: string;
   labelFontSizePx: number;
   labelFontColor: string;
-  visible: boolean;
 
   maxColorRampWidthPx: number;
   rampRadiusPx: number;
@@ -46,6 +45,7 @@ type HeaderOptions = FontStyleOptions & {
   fill: string;
   stroke: string;
   paddingPx: Vector2;
+  visibleOnExport: boolean;
 };
 
 type FooterOptions = HeaderOptions & {
@@ -84,6 +84,7 @@ const defaultHeaderOptions: HeaderOptions = {
   fill: "rgba(255, 255, 255, 1.0)",
   stroke: "rgba(203, 203, 204, 1.0)",
   paddingPx: new Vector2(10, 10),
+  visibleOnExport: false,
 };
 
 const defaultFooterOptions: FooterOptions = {
@@ -97,7 +98,6 @@ const defaultLegendOptions: LegendOptions = {
   stroke: "rgba(203, 203, 204, 1.0)",
   labelFontSizePx: 12,
   labelFontColor: "black",
-  visible: true,
 
   categoryPaddingPx: new Vector2(2, 2),
   categoryLabelGapPx: 6,
@@ -139,10 +139,10 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private footerOptions: FooterOptions;
   private canvasWidth: number;
   private canvasHeight: number;
-  private showHeader: boolean;
-  private showFooter: boolean;
   private headerSize: Vector2;
   private footerSize: Vector2;
+
+  private isExporting: boolean;
 
   constructor(options?: {
     scaleBar?: ScaleBarOptions;
@@ -168,16 +168,18 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.footerOptions = options?.footer || defaultFooterOptions;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
-    this.showHeader = false;
-    this.showFooter = false;
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
+
+    this.isExporting = false;
 
     const canvasContext = this.canvas.getContext("2d") as CanvasRenderingContext2D;
     if (canvasContext === null) {
       throw new Error("CanvasWithOverlay: Could not get canvas context; canvas.getContext('2d') returned null.");
     }
     this.ctx = canvasContext;
+
+    this.getExportDimensions = this.getExportDimensions.bind(this);
   }
 
   // Wrapped ColorizeCanvas functions ///////
@@ -214,6 +216,18 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
   updateLegendOptions(options: Partial<LegendOptions>): void {
     this.legendOptions = { ...this.legendOptions, ...options };
+  }
+
+  updateHeaderOptions(options: Partial<HeaderOptions>): void {
+    this.headerOptions = { ...this.headerOptions, ...options };
+  }
+
+  updateFooterOptions(options: Partial<FooterOptions>): void {
+    this.footerOptions = { ...this.footerOptions, ...options };
+  }
+
+  setIsExporting(isExporting: boolean): void {
+    this.isExporting = isExporting;
   }
 
   setCollection(collection: Collection | null): void {
@@ -475,10 +489,10 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
   private getHeaderRenderer(ctx: CanvasRenderingContext2D): RenderInfo {
     const headerText = this.getHeaderText();
-    if (!this.showHeader || !headerText) {
+    const options = this.headerOptions;
+    if (!headerText || !options.visibleOnExport || !this.isExporting) {
       return EMPTY_RENDER_INFO;
     }
-    const options = this.headerOptions;
     // Fill in the background area
     const height = options.fontSizePx + options.paddingPx.y * 2;
     const width = this.canvasWidth;
@@ -678,7 +692,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
     const { sizePx: overlaySize, render: renderOverlay } = this.getOverlayBoxRenderer();
 
-    if (!this.showFooter) {
+    if (!options.visibleOnExport || !this.isExporting) {
       // If the footer is hidden, the overlay box floats in the bottom right corner of the viewport.
       return {
         sizePx: new Vector2(0, 0),
@@ -754,18 +768,9 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
    * Render the overlay to the canvas.
    */
   render(): void {
-    const ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D | null;
-    if (ctx === null) {
-      console.error("Could not get canvas context");
-      return;
-    }
-
-    this.showHeader = this.legendOptions.visible;
-    this.showFooter = this.legendOptions.visible;
-
     // Expand size by header + footer, if rendering:
-    const headerRenderer = this.getHeaderRenderer(ctx);
-    const footerRenderer = this.getFooterRenderer(ctx);
+    const headerRenderer = this.getHeaderRenderer(this.ctx);
+    const footerRenderer = this.getFooterRenderer(this.ctx);
     this.headerSize = headerRenderer.sizePx;
     this.footerSize = footerRenderer.sizePx;
 
@@ -779,13 +784,36 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     // Because CanvasWithOverlay is a child of ColorizeCanvas, this renders the base
     // colorized viewport image. It is then composited into the CanvasWithOverlay's canvas.
     super.render();
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(super.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
+    this.ctx.imageSmoothingEnabled = false;
+    this.ctx.drawImage(super.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
 
-    ctx.scale(devicePixelRatio, devicePixelRatio);
+    this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
     // ctx.lineWidth = 1 / devicePixelRatio;
     headerRenderer.render(new Vector2(0, 0));
     footerRenderer.render(new Vector2(0, this.canvasHeight + this.headerSize.y));
+  }
+
+  /**
+   * Gets the screen-space dimensions ion pixels of the canvas (including the header and footer) when the
+   * canvas is being exported.
+   */
+  getExportDimensions(): [number, number] {
+    // Temporarily set is exporting to true and measure the dimensions of the header and footer.
+    const originalIsExportingFlag = this.isExporting;
+
+    this.isExporting = true;
+
+    const headerRenderer = this.getHeaderRenderer(this.ctx);
+    const footerRenderer = this.getFooterRenderer(this.ctx);
+    this.headerSize = headerRenderer.sizePx;
+    this.footerSize = footerRenderer.sizePx;
+
+    const devicePixelRatio = this.getPixelRatio();
+    const canvasWidth = Math.round(this.canvasWidth * devicePixelRatio);
+    const canvasHeight = Math.round((this.canvasHeight + this.headerSize.y + this.footerSize.y) * devicePixelRatio);
+
+    this.isExporting = originalIsExportingFlag;
+    return [canvasWidth, canvasHeight];
   }
 }

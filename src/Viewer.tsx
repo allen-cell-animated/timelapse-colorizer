@@ -807,7 +807,7 @@ function Viewer(): ReactElement {
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
-              getCanvasExportDimensions={() => [canv.domElement.width, canv.domElement.height]}
+              getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
