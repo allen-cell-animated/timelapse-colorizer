@@ -11,7 +11,7 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
-import { ColorizeCanvas, Dataset, Track } from "./colorizer";
+import { Dataset, Track } from "./colorizer";
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
@@ -37,6 +37,7 @@ import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
+import CanvasWithOverlay from "./colorizer/CanvasWithOverlay";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
@@ -73,7 +74,7 @@ function Viewer(): ReactElement {
   const [, startTransition] = React.useTransition();
 
   const canv = useConstructor(() => {
-    const canvas = new ColorizeCanvas();
+    const canvas = new CanvasWithOverlay();
     canvas.domElement.className = styles.colorizeCanvas;
     return canvas;
   });

@@ -6,11 +6,12 @@ import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
 import { NoImageSVG } from "../assets";
-import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
+import { ColorRamp, Dataset, Track } from "../colorizer";
 import { ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
+import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
@@ -71,7 +72,7 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
 `;
 
 type CanvasWrapperProps = {
-  canv: ColorizeCanvas;
+  canv: CanvasUIOverlay;
   /** Dataset to look up track and ID information in.
    * Changing this does NOT update the canvas dataset; do so
    * directly by calling `canv.setDataset()`.
@@ -128,7 +129,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canv = props.canv;
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasPlaceholderRef = useRef<HTMLDivElement>(null);
 
   /**
    * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
@@ -180,9 +181,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   canv.setOnFrameChangeCallback(onFrameChangedCallback);
 
-  // Mount the canvas to the wrapper's location in the document.
+  // Mount the canvas to the placeholder's location in the document.
   useEffect(() => {
-    canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
+    canvasPlaceholderRef.current?.parentNode?.replaceChild(canv.domElement, canvasPlaceholderRef.current);
   }, []);
 
   // These are all useMemo calls because the updates to the canvas must happen in the same render;
@@ -196,9 +197,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       fontColor: theme.color.text.primary,
       fontFamily: theme.font.family,
     };
-    canv.overlay.updateScaleBarOptions(defaultTheme);
-    canv.overlay.updateTimestampOptions(defaultTheme);
-    canv.overlay.updateBackgroundOptions({ stroke: theme.color.layout.borders });
+    canv.updateScaleBarOptions(defaultTheme);
+    canv.updateTimestampOptions(defaultTheme);
+    canv.updateBackgroundOptions({ stroke: theme.color.layout.borders });
     canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
 
@@ -248,11 +249,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update overlay settings
   useMemo(() => {
-    canv.setScaleBarVisibility(props.config.showScaleBar);
+    canv.updateScaleBarOptions({ visible: props.config.showScaleBar });
   }, [props.config.showScaleBar]);
 
   useMemo(() => {
-    canv.setTimestampVisibility(props.config.showTimestamp);
+    canv.updateTimestampOptions({ visible: props.config.showTimestamp });
   }, [props.config.showTimestamp]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
@@ -274,6 +275,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     const updateCanvasDimensions = (): void => {
       const canvasSizePx = getCanvasSizePx();
+      canv.setSize(canvasSizePx.x, canvasSizePx.y);
       canv.setSize(canvasSizePx.x, canvasSizePx.y);
     };
     updateCanvasDimensions(); // Initial size setting
@@ -539,14 +541,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     <FlexColumnAlignCenter
       style={{
         position: "relative",
-        width: "100%",
-        height: "100%",
         backgroundColor: theme.color.viewport.background,
       }}
       ref={containerRef}
     >
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
-        <div ref={canvasRef}></div>
+        <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
       <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
