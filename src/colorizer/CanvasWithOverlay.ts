@@ -400,7 +400,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Render the viewport
+    // Because CanvasWithOverlay is a child of ColorizeCanvas, this renders the base
+    // colorized viewport image. It is then composited into the CanvasWithOverlay's canvas.
     super.render();
     this.ctx.imageSmoothingEnabled = false;
     this.ctx.drawImage(super.domElement, 0, 0);
