@@ -16,6 +16,7 @@ describe("ExportButton", () => {
             throw new Error("Function not implemented.");
           }}
           getCanvas={vi.fn()}
+          getCanvasExportDimensions={vi.fn()}
           currentFrame={0}
         />
       );
