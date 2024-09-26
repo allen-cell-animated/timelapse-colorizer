@@ -22,7 +22,6 @@ import {
 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { IControllableCanvas } from "./canvas";
 import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -109,7 +108,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-export default class ColorizeCanvas implements IControllableCanvas {
+export default class ColorizeCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;

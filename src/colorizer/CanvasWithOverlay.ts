@@ -2,7 +2,6 @@ import { Vector2 } from "three";
 
 import { numberToSciNotation } from "./utils/math_utils";
 
-import { IControllableCanvas } from "./canvas/IControllableCanvas";
 import ColorizeCanvas from "./ColorizeCanvas";
 
 type StyleOptions = {
@@ -69,7 +68,7 @@ const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () =>
  * dynamic elements (like a scale bar, timestamp, etc.) on top of the
  * base rendered image.
  */
-export default class CanvasWithOverlay extends ColorizeCanvas implements IControllableCanvas {
+export default class CanvasWithOverlay extends ColorizeCanvas {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
 
@@ -401,7 +400,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas implements IContro
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Render the viewport
+    // Because CanvasWithOverlay is a child of ColorizeCanvas, this renders the base
+    // colorized viewport image. It is then composited into the CanvasWithOverlay's canvas.
     super.render();
     this.ctx.imageSmoothingEnabled = false;
     this.ctx.drawImage(super.domElement, 0, 0);

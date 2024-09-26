@@ -1,5 +1,6 @@
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
-import { IControllableCanvas } from "./canvas";
+
+import CanvasWithOverlay from "./CanvasWithOverlay";
 
 // time / playback controls
 const NO_TIMER_ID = -1;
@@ -9,11 +10,11 @@ export default class TimeControls {
   private setFrameFn?: (frame: number) => Promise<void>;
   private playbackFps: number;
 
-  private canvas: IControllableCanvas;
+  private canvas: CanvasWithOverlay;
 
   private pauseCallbacks: (() => void)[];
 
-  constructor(canvas: IControllableCanvas, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
+  constructor(canvas: CanvasWithOverlay, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
     this.canvas = canvas;
     this.timerId = NO_TIMER_ID;
     this.pauseCallbacks = [];
@@ -90,9 +91,6 @@ export default class TimeControls {
    * @param onNewFrameCallback An optional callback that will be called whenever a new frame is loaded.
    */
   public async play(onNewFrameCallback: () => void = () => {}): Promise<void> {
-    if (this.canvas.getCurrentFrame() >= this.canvas.getTotalFrames() - 1) {
-      await this.canvas.setFrame(0);
-    }
     this.playTimeSeries(onNewFrameCallback);
   }
 
