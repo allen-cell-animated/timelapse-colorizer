@@ -51,7 +51,6 @@ export function renderCanvasText(
   const maxWidth = options?.maxWidth ?? Infinity;
   let textWidth = ctx.measureText(text).width;
   // proxy for font size
-  // TODO: Fix this
   const textHeight = ctx.measureText("M").width;
 
   if (textWidth > maxWidth) {

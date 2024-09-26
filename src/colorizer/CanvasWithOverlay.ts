@@ -802,7 +802,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
-    // ctx.lineWidth = 1 / devicePixelRatio;
     headerRenderer.render(new Vector2(0, 0));
     footerRenderer.render(new Vector2(0, this.canvasHeight + this.headerSize.y));
   }
