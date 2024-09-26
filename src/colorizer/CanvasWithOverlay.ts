@@ -2,7 +2,6 @@ import { Vector2 } from "three";
 
 import { numberToSciNotation } from "./utils/math_utils";
 
-import { IControllableCanvas } from "./canvas/IControllableCanvas";
 import ColorizeCanvas from "./ColorizeCanvas";
 
 type StyleOptions = {
@@ -69,7 +68,7 @@ const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () =>
  * dynamic elements (like a scale bar, timestamp, etc.) on top of the
  * base rendered image.
  */
-export default class CanvasWithOverlay extends ColorizeCanvas implements IControllableCanvas {
+export default class CanvasWithOverlay extends ColorizeCanvas {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
 
