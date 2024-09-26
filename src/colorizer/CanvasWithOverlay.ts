@@ -4,7 +4,6 @@ import { FontStyleOptions } from "./types";
 import { configureCanvasText, renderCanvasText } from "./utils/canvas_utils";
 import { numberToSciNotation, numberToStringDecimal } from "./utils/math_utils";
 
-import { IControllableCanvas } from "./canvas/IControllableCanvas";
 import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
 import ColorRamp from "./ColorRamp";
@@ -125,7 +124,7 @@ const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () =>
  * dynamic elements (like a scale bar, timestamp, etc.) on top of the
  * base rendered image.
  */
-export default class CanvasWithOverlay extends ColorizeCanvas implements IControllableCanvas {
+export default class CanvasWithOverlay extends ColorizeCanvas {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
 
@@ -777,7 +776,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas implements IContro
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Render the viewport
+    // Because CanvasWithOverlay is a child of ColorizeCanvas, this renders the base
+    // colorized viewport image. It is then composited into the CanvasWithOverlay's canvas.
     super.render();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(super.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
