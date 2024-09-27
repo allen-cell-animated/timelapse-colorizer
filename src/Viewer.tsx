@@ -688,10 +688,13 @@ function Viewer(): ReactElement {
   timeControls.setFrameCallback(setFrame);
 
   const handleKeyDown = useCallback(
-    ({ key }: KeyboardEvent): void => {
-      if (key === "ArrowLeft" || key === "Left") {
+    (e: KeyboardEvent): void => {
+      if (e.target instanceof HTMLInputElement) {
+        return;
+      }
+      if (e.key === "ArrowLeft" || e.key === "Left") {
         timeControls.advanceFrame(-1);
-      } else if (key === "ArrowRight" || key === "Right") {
+      } else if (e.key === "ArrowRight" || e.key === "Right") {
         timeControls.advanceFrame(1);
       }
     },
@@ -807,7 +810,7 @@ function Viewer(): ReactElement {
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
-              getCanvasExportDimensions={() => [canv.domElement.width, canv.domElement.height]}
+              getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
@@ -815,6 +818,8 @@ function Viewer(): ReactElement {
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
+              config={config}
+              updateConfig={updateConfig}
             />
             <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
@@ -956,10 +961,13 @@ function Viewer(): ReactElement {
                   canv={canv}
                   collection={collection || null}
                   dataset={dataset}
+                  datasetKey={datasetKey}
+                  featureKey={featureKey}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                   colorRampMin={colorRampMin}
                   colorRampMax={colorRampMax}
+                  isRecording={isRecording}
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
