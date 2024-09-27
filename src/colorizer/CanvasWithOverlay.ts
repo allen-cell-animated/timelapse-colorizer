@@ -112,12 +112,21 @@ const defaultLegendOptions: LegendOptions = {
   rampRadiusPx: 4,
 };
 
+/**
+ * Callback to render an element to the canvas.
+ * @param origin Origin of the element, in canvas pixels.
+ * Unless otherwise specified, the origin is the top left corner of the element.
+ */
 type RenderCallback = (origin: Vector2) => void;
 
 type RenderInfo = {
   /** Size of the element, in pixels. */
   sizePx: Vector2;
-  /** Callback to render the element. */
+  /**
+   * Callback to render an element to the canvas.
+   * @param origin Origin of the element, in canvas pixels.
+   * Unless otherwise specified, the origin is the top left corner of the element.
+   */
   render: RenderCallback;
 };
 
@@ -144,7 +153,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private canvasWidth: number;
   private canvasHeight: number;
 
-  // Size of the header and footer as of the last render.
+  // Size of the header and footer as of the current render.
   private headerSize: Vector2;
   private footerSize: Vector2;
 
@@ -467,12 +476,12 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   }
 
   /**
-   * Draws the background overlay in the bottom right corner of the canvas.
+   * Draws the overlay box's background in the bottom right corner of the canvas.
    * @param ctx Canvas context to render to.
    * @param size Size of the background overlay.
    * @param options Configuration for the background overlay.
    */
-  private renderBackground(origin: Vector2, size: Vector2, options: OverlayBoxOptions): void {
+  private renderOverlayBoxBackground(origin: Vector2, size: Vector2, options: OverlayBoxOptions): void {
     this.ctx.fillStyle = options.fill;
     this.ctx.strokeStyle = options.stroke;
     this.ctx.beginPath();
@@ -553,7 +562,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       sizePx: boxSize,
       render: (origin: Vector2) => {
         // Origin is top left corner of the box.
-        this.renderBackground(origin, boxSize, this.overlayBoxOptions);
+        this.renderOverlayBoxBackground(origin, boxSize, this.overlayBoxOptions);
 
         // Get lower right corner for the scale bar
         const scaleBarOrigin = origin.clone().add(boxSize).sub(this.overlayBoxOptions.paddingPx);
@@ -587,8 +596,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     // Render feature label
     const featureLabelHeightPx = options.fontSizePx + 6;
     const categoryHeightPx = options.labelFontSizePx + options.categoryPaddingPx.y * 2;
-    const categoriesPerColumn = Math.min(featureData.categories.length, 4) * categoryHeightPx;
-    const heightPx = featureLabelHeightPx + categoriesPerColumn;
+    const maxColumnHeight = Math.min(featureData.categories.length, MAX_CATEGORIES_PER_COLUMN) * categoryHeightPx;
+    const heightPx = featureLabelHeightPx + maxColumnHeight;
 
     return {
       sizePx: new Vector2(maxWidthPx, heightPx),
