@@ -61,7 +61,7 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import { CorrelationPlotTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
@@ -1094,6 +1094,27 @@ function Viewer(): ReactElement {
                           viewerConfig={config}
                           scatterPlotConfig={scatterPlotConfig}
                           updateScatterPlotConfig={updateScatterPlotConfig}
+                          showAlert={showAlert}
+                        />
+                      </div>
+                    ),
+                  },
+                  {
+                    label: "Correlation plot",
+                    key: TabType.CORRELATION_PLOT,
+                    children: (
+                      <div className={styles.tabContent}>
+                        <CorrelationPlotTab
+                          dataset={dataset}
+                          isVisible={config.openTab === TabType.CORRELATION_PLOT}
+                          isPlaying={timeControls.isPlaying() || isRecording}
+                          colorRampMin={colorRampMin}
+                          colorRampMax={colorRampMax}
+                          colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
+                          inRangeIds={inRangeLUT}
+                          viewerConfig={config}
+                          correlationPlotConfig={scatterPlotConfig}
+                          updateCorrelationPlotConfig={updateScatterPlotConfig}
                           showAlert={showAlert}
                         />
                       </div>
