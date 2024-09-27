@@ -19,7 +19,7 @@ type TimestampOptions = FontStyleOptions & {
   visible: boolean;
 };
 
-type OverlayBoxOptions = {
+type InsetBoxOptions = {
   fill: string;
   stroke: string;
   paddingPx: Vector2;
@@ -32,10 +32,10 @@ type LegendOptions = FontStyleOptions & {
   labelFontSizePx: number;
   labelFontColor: string;
 
-  maxColorRampWidthPx: number;
   rampHeightPx: number;
   rampPaddingPx: number;
   rampRadiusPx: number;
+  maxColorRampWidthPx: number;
 
   categoryPaddingPx: Vector2;
   categoryLabelGapPx: number;
@@ -72,7 +72,7 @@ const defaultTimestampOptions: TimestampOptions = {
   visible: true,
 };
 
-const defaultOverlayBoxOptions: OverlayBoxOptions = {
+const defaultInsetBoxOptions: InsetBoxOptions = {
   fill: "rgba(255, 255, 255, 0.8)",
   stroke: "rgba(0, 0, 0, 0.2)",
   paddingPx: new Vector2(10, 10),
@@ -146,7 +146,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
   private scaleBarOptions: ScaleBarOptions;
   private timestampOptions: TimestampOptions;
-  private overlayBoxOptions: OverlayBoxOptions;
+  private insetBoxOptions: InsetBoxOptions;
   private legendOptions: LegendOptions;
   private headerOptions: HeaderOptions;
   private footerOptions: FooterOptions;
@@ -166,7 +166,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   constructor(options?: {
     scaleBar?: ScaleBarOptions;
     timestamp?: TimestampOptions;
-    overlayBox?: OverlayBoxOptions;
+    insetBox?: InsetBoxOptions;
     legend?: LegendOptions;
     header?: HeaderOptions;
     footer?: FooterOptions;
@@ -181,7 +181,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
     this.scaleBarOptions = options?.scaleBar || defaultScaleBarOptions;
     this.timestampOptions = options?.timestamp || defaultTimestampOptions;
-    this.overlayBoxOptions = options?.overlayBox || defaultOverlayBoxOptions;
+    this.insetBoxOptions = options?.insetBox || defaultInsetBoxOptions;
     this.legendOptions = options?.legend || defaultLegendOptions;
     this.headerOptions = options?.header || defaultHeaderOptions;
     this.footerOptions = options?.footer || defaultFooterOptions;
@@ -229,8 +229,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.timestampOptions = { ...this.timestampOptions, ...options };
   }
 
-  updateOverlayBoxOptions(options: Partial<OverlayBoxOptions>): void {
-    this.overlayBoxOptions = { ...this.overlayBoxOptions, ...options };
+  updateInsetBoxOptions(options: Partial<InsetBoxOptions>): void {
+    this.insetBoxOptions = { ...this.insetBoxOptions, ...options };
   }
 
   updateLegendOptions(options: Partial<LegendOptions>): void {
@@ -476,12 +476,12 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   }
 
   /**
-   * Draws the overlay box's background in the bottom right corner of the canvas.
+   * Draws the inset box's background, intended to be layered under the timestamp, scalebar, and other elements.
    * @param ctx Canvas context to render to.
-   * @param size Size of the background overlay.
-   * @param options Configuration for the background overlay.
+   * @param size Size of the inset, in pixels.
+   * @param options Configuration for the inset.
    */
-  private renderOverlayBoxBackground(origin: Vector2, size: Vector2, options: OverlayBoxOptions): void {
+  private renderInsetBoxBackground(origin: Vector2, size: Vector2, options: InsetBoxOptions): void {
     this.ctx.fillStyle = options.fill;
     this.ctx.strokeStyle = options.stroke;
     this.ctx.beginPath();
@@ -540,7 +540,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     };
   }
 
-  private getOverlayBoxRenderer(): RenderInfo {
+  private getInsetBoxRenderer(): RenderInfo {
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
     const { sizePx: scaleBarDimensions, render: renderScaleBar } = this.getScaleBarRenderer();
@@ -551,21 +551,21 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       return EMPTY_RENDER_INFO;
     }
 
-    // Draw background box behind the elements
+    // Get dimensions of the inset box to be rendered behind the elements
     const contentSize = new Vector2(
       Math.max(scaleBarDimensions.x, timestampDimensions.x),
       scaleBarDimensions.y + timestampDimensions.y
     );
-    const boxSize = contentSize.clone().add(this.overlayBoxOptions.paddingPx.clone().multiplyScalar(2.0));
+    const boxSize = contentSize.clone().add(this.insetBoxOptions.paddingPx.clone().multiplyScalar(2.0));
 
     return {
       sizePx: boxSize,
       render: (origin: Vector2) => {
         // Origin is top left corner of the box.
-        this.renderOverlayBoxBackground(origin, boxSize, this.overlayBoxOptions);
+        this.renderInsetBoxBackground(origin, boxSize, this.insetBoxOptions);
 
         // Get lower right corner for the scale bar
-        const scaleBarOrigin = origin.clone().add(boxSize).sub(this.overlayBoxOptions.paddingPx);
+        const scaleBarOrigin = origin.clone().add(boxSize).sub(this.insetBoxOptions.paddingPx);
         renderScaleBar(scaleBarOrigin);
 
         scaleBarOrigin.y -= scaleBarDimensions.y;
@@ -712,27 +712,27 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private getFooterRenderer(): RenderInfo {
     const options = this.footerOptions;
 
-    const { sizePx: overlaySize, render: renderOverlay } = this.getOverlayBoxRenderer();
+    const { sizePx: insetSize, render: renderInset } = this.getInsetBoxRenderer();
 
     if (!options.visibleOnExport || !this.isExporting) {
-      // If the footer is hidden, the overlay box floats in the bottom right corner of the viewport.
+      // If the footer is hidden, the inset box floats in the bottom right corner of the viewport.
       return {
         sizePx: new Vector2(0, 0),
         render: (origin = new Vector2(0, 0)) => {
           // Offset vertically by height + default margins
-          origin.y -= overlaySize.y + this.overlayBoxOptions.marginPx.y;
-          origin.x = this.canvasWidth - overlaySize.x - this.overlayBoxOptions.marginPx.x;
-          renderOverlay(origin);
+          origin.y -= insetSize.y + this.insetBoxOptions.marginPx.y;
+          origin.x = this.canvasWidth - insetSize.x - this.insetBoxOptions.marginPx.x;
+          renderInset(origin);
         },
       };
     }
 
     // Determine size of the footer based on the max height of the legend
-    // and the timestamp/scale bar areas.
-    let maxHeight = overlaySize.y;
+    // and the inset box.
+    let maxHeight = insetSize.y;
     let legendRenderer: RenderCallback = () => {};
-    const overlayMargin = overlaySize.x > 0 ? this.overlayBoxOptions.marginPx.x : 0;
-    const availableContentWidth = this.canvasWidth - options.paddingPx.x * 2 - overlaySize.x - overlayMargin;
+    const insetMargin = insetSize.x > 0 ? this.insetBoxOptions.marginPx.x : 0;
+    const availableContentWidth = this.canvasWidth - options.paddingPx.x * 2 - insetSize.x - insetMargin;
 
     if (this.dataset && this.featureKey) {
       // Update the max width
@@ -766,18 +766,19 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       render: (origin: Vector2) => {
         origin.x = Math.round(origin.x);
         origin.y = Math.round(origin.y) + 1;
+
         // Fill in the background of the footer
         this.ctx.fillStyle = options.fill;
         this.ctx.strokeStyle = options.stroke;
         this.ctx.fillRect(origin.x - 0.5, origin.y - 0.5, width, height);
         this.ctx.strokeRect(origin.x - 0.5, origin.y - 0.5, width, height);
 
-        // Render the overlay box, centering it vertically
-        const overlayOrigin = new Vector2(
-          this.canvasWidth - overlaySize.x - options.paddingPx.x,
-          origin.y + (height - overlaySize.y) / 2
+        // Render the inset box, centering it vertically
+        const insetOrigin = new Vector2(
+          this.canvasWidth - insetSize.x - options.paddingPx.x,
+          origin.y + (height - insetSize.y) / 2
         );
-        renderOverlay(overlayOrigin);
+        renderInset(insetOrigin);
 
         // Render the legend
         const legendOrigin = new Vector2(origin.x + options.paddingPx.x, origin.y + options.paddingPx.y);
@@ -787,7 +788,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   }
 
   /**
-   * Render the overlay to the canvas.
+   * Render the viewport canvas with overlay elements composited on top of it.
    */
   render(): void {
     // Expand size by header + footer, if rendering:

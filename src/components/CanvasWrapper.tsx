@@ -209,7 +209,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
     canv.updateScaleBarOptions(defaultTheme);
     canv.updateTimestampOptions(defaultTheme);
-    canv.updateOverlayBoxOptions({ stroke: theme.color.layout.borders });
+    canv.updateInsetBoxOptions({ stroke: theme.color.layout.borders });
     canv.updateLegendOptions(defaultTheme);
     canv.updateFooterOptions(sidebarTheme);
     canv.updateHeaderOptions(sidebarTheme);
