@@ -1,6 +1,7 @@
 import { Color, Vector2 } from "three";
 
-import { FontStyleOptions } from "./types";
+import { defaultHeaderOptions, getHeaderRenderer, HeaderOptions } from "./canvas/header";
+import { EMPTY_RENDER_INFO, FontStyleOptions, RenderCallback, RenderInfo } from "./canvas/types";
 import { configureCanvasText, renderCanvasText } from "./utils/canvas_utils";
 import { numberToSciNotation, numberToStringDecimal } from "./utils/math_utils";
 
@@ -43,13 +44,6 @@ type LegendOptions = FontStyleOptions & {
   maxCategoricalWidthPx: number;
 };
 
-type HeaderOptions = FontStyleOptions & {
-  fill: string;
-  stroke: string;
-  paddingPx: Vector2;
-  visibleOnExport: boolean;
-};
-
 type FooterOptions = HeaderOptions & {
   heightPx: number;
 };
@@ -80,15 +74,6 @@ const defaultInsetBoxOptions: InsetBoxOptions = {
   radiusPx: 4,
 };
 
-const defaultHeaderOptions: HeaderOptions = {
-  ...defaultStyleOptions,
-  fontSizePx: 16,
-  fill: "rgba(255, 255, 255, 1.0)",
-  stroke: "rgba(203, 203, 204, 1.0)",
-  paddingPx: new Vector2(10, 10),
-  visibleOnExport: false,
-};
-
 const defaultFooterOptions: FooterOptions = {
   ...defaultHeaderOptions,
   heightPx: 100,
@@ -111,26 +96,6 @@ const defaultLegendOptions: LegendOptions = {
   rampHeightPx: 28,
   rampRadiusPx: 4,
 };
-
-/**
- * Callback to render an element to the canvas.
- * @param origin Origin of the element, in canvas pixels.
- * Unless otherwise specified, the origin is the top left corner of the element.
- */
-type RenderCallback = (origin: Vector2) => void;
-
-type RenderInfo = {
-  /** Size of the element, in pixels. */
-  sizePx: Vector2;
-  /**
-   * Callback to render an element to the canvas.
-   * @param origin Origin of the element, in canvas pixels.
-   * Unless otherwise specified, the origin is the top left corner of the element.
-   */
-  render: RenderCallback;
-};
-
-const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () => {} };
 
 /**
  * Extends the ColorizeCanvas class by overlaying and compositing additional
@@ -495,49 +460,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.ctx.closePath();
   }
 
-  /**
-   * Gets the display name of the dataset and/or collection.
-   * @returns String or undefined:
-   * - `{Collection} - {Dataset}` if a collection name is present.
-   * - `{Dataset}` if no collection name is present.
-   * - `undefined` if no dataset or collection is currently set.
-   */
-  private getHeaderText(): string | undefined {
-    if (!this.dataset || !this.collection || !this.datasetKey) {
-      return undefined;
-    }
-    const datasetName = this.collection.getDatasetName(this.datasetKey);
-    if (this.collection.metadata.name) {
-      return `${this.collection.metadata.name} - ${datasetName}`;
-    }
-    return datasetName;
-  }
-
-  private getHeaderRenderer(): RenderInfo {
-    const headerText = this.getHeaderText();
-    const options = this.headerOptions;
-    if (!headerText || !options.visibleOnExport || !this.isExporting) {
-      return EMPTY_RENDER_INFO;
-    }
-
-    const height = options.fontSizePx + options.paddingPx.y * 2;
-    const width = this.canvasWidth;
-
-    return {
-      sizePx: new Vector2(width, height),
-      render: () => {
-        this.ctx.fillStyle = options.fill;
-        this.ctx.strokeStyle = options.stroke;
-        this.ctx.fillRect(-0.5, -0.5, this.canvasWidth + 1, height);
-        this.ctx.strokeRect(-0.5, -0.5, this.canvasWidth + 1, height);
-
-        const fontOptions = { maxWidth: this.canvasWidth - options.paddingPx.x * 2, ...options };
-        configureCanvasText(this.ctx, options, "center", "top");
-        renderCanvasText(this.ctx, this.canvasWidth / 2, options.paddingPx.y, headerText, fontOptions);
-      },
-    };
-  }
-
   private getInsetBoxRenderer(): RenderInfo {
     // Get dimensions + render methods for the elements, but don't render yet so we can draw the background
     // behind them.
@@ -783,6 +705,17 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
         legendRenderer(legendOrigin);
       },
     };
+  }
+
+  private getHeaderRenderer(): RenderInfo {
+    const params = {
+      canvasWidth: this.canvasWidth,
+      isExporting: this.isExporting,
+      dataset: this.dataset,
+      collection: this.collection,
+      datasetKey: this.datasetKey,
+    };
+    return getHeaderRenderer(this.ctx, params, this.headerOptions);
   }
 
   /**

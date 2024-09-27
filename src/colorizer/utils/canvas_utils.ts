@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import { FontStyleOptions } from "../types";
+import { FontStyleOptions } from "../canvas/types";
 
 /**
  * Configures the canvas rendering context with the given font options.
