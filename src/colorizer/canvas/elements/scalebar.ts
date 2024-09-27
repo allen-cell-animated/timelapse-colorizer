@@ -1,22 +1,21 @@
 import { Vector2 } from "three";
 
 import { numberToSciNotation } from "../../utils/math_utils";
-import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "../types";
+import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 import { configureCanvasText, getPixelRatio, renderCanvasText } from "../utils";
 
-export type ScaleBarOptions = FontStyleOptions & {
+export type ScaleBarStyle = FontStyle & {
   minWidthPx: number;
-  visible: boolean;
 };
 
 export type ScaleBarParams = BaseRenderParams & {
+  visible: boolean;
   frameSizeInCanvasCoordinates: Vector2;
 };
 
-export const defaultScaleBarOptions: ScaleBarOptions = {
-  ...defaultStyleOptions,
+export const defaultScaleBarStyle: ScaleBarStyle = {
+  ...defaultFontStyle,
   minWidthPx: 80,
-  visible: true,
 };
 
 /**
@@ -39,19 +38,19 @@ function formatScaleBarValue(value: number): string {
  * Determine a reasonable width for the scale bar, in units, and the corresponding width in pixels.
  * Unit widths will always have values `nx10^m`, where `n` is 1, 2, or 5, and `m` is an integer. Pixel widths
  * will always be greater than or equal to the `scaleBarOptions.minWidthPx`.
- * @param scaleBarOptions Configuration for the scale bar
+ * @param style Configuration for the scale bar
  * @param unitsPerScreenPixel The number of units per pixel on the screen.
  * @returns An object, containing keys for the width in pixels and units.
  */
 function getScaleBarWidth(
-  scaleBarOptions: ScaleBarOptions,
+  style: ScaleBarStyle,
   unitsPerScreenPixel: number
 ): {
   scaleBarWidthPx: number;
   scaleBarWidthInUnits: number;
 } {
   const devicePixelRatio = getPixelRatio();
-  const minWidthUnits = scaleBarOptions.minWidthPx * unitsPerScreenPixel * devicePixelRatio;
+  const minWidthUnits = style.minWidthPx * unitsPerScreenPixel * devicePixelRatio;
   // Here we get the power of the most significant digit (MSD) of the minimum width converted to units.
   const msdPower = Math.ceil(Math.log10(minWidthUnits));
 
@@ -79,12 +78,12 @@ function getScaleBarWidth(
 export function getScaleBarRenderer(
   ctx: CanvasRenderingContext2D,
   params: ScaleBarParams,
-  options: ScaleBarOptions
+  style: ScaleBarStyle
 ): RenderInfo {
   const frameDims = params.dataset?.metadata.frameDims;
   const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
 
-  if (!hasFrameDims || !options.visible) {
+  if (!hasFrameDims || !params.visible) {
     return EMPTY_RENDER_INFO;
   }
 
@@ -92,7 +91,7 @@ export function getScaleBarRenderer(
   const unitsPerScreenPixel = canvasWidthInUnits / params.canvasWidth / getPixelRatio();
 
   // Get scale bar width and unit label
-  const { scaleBarWidthPx, scaleBarWidthInUnits } = getScaleBarWidth(options, unitsPerScreenPixel);
+  const { scaleBarWidthPx, scaleBarWidthInUnits } = getScaleBarWidth(style, unitsPerScreenPixel);
   const textContent = `${formatScaleBarValue(scaleBarWidthInUnits)} ${frameDims.units}`;
 
   // Calculate the padding and origins for drawing and size
@@ -101,7 +100,7 @@ export function getScaleBarRenderer(
   const renderScaleBar = (bottomRightOrigin: Vector2): void => {
     // Render the scale bar
     ctx.beginPath();
-    ctx.strokeStyle = options.fontColor;
+    ctx.strokeStyle = style.fontColor;
     ctx.moveTo(bottomRightOrigin.x, bottomRightOrigin.y - scaleBarHeight);
     ctx.lineTo(bottomRightOrigin.x, bottomRightOrigin.y);
     ctx.lineTo(bottomRightOrigin.x - scaleBarWidthPx, bottomRightOrigin.y);
@@ -113,11 +112,11 @@ export function getScaleBarRenderer(
   const renderScaleBarText = (bottomRightOrigin: Vector2): void => {
     const textOriginPx = new Vector2(bottomRightOrigin.x - textPaddingPx.x, bottomRightOrigin.y - textPaddingPx.y);
 
-    configureCanvasText(ctx, options, "right", "bottom");
+    configureCanvasText(ctx, style, "right", "bottom");
     renderCanvasText(ctx, textOriginPx.x, textOriginPx.y, textContent);
   };
 
-  const sizePx = new Vector2(scaleBarWidthPx, options.fontSizePx + textPaddingPx.y * 2);
+  const sizePx = new Vector2(scaleBarWidthPx, style.fontSizePx + textPaddingPx.y * 2);
   return {
     sizePx,
     render: (origin = new Vector2(0, 0)) => {

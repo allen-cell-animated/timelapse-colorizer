@@ -1,8 +1,8 @@
 import { Vector2 } from "three";
 
-import { FontStyleOptions } from "./types";
+import { FontStyle } from "./types";
 
-export function getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: FontStyleOptions): Vector2 {
+export function getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: FontStyle): Vector2 {
   configureCanvasText(ctx, options);
   const textWidth = ctx.measureText(text).width;
   return new Vector2(textWidth, options.fontSizePx);
@@ -15,7 +15,7 @@ export function getPixelRatio(): number {
 /**
  * Configures the canvas rendering context with the given font options.
  * @param ctx CanvasRenderingContext2D or OffscreenCanvasRenderingContext2D.
- * @param options Font style options, including weight, size, family, and color.
+ * @param style Font style options, including weight, size, family, and color.
  * @param textAlign Text alignment. Default is "left". Valid values are "start", "end",
  *   "left", "right", and "center". See
  *   https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/textAlign
@@ -27,12 +27,12 @@ export function getPixelRatio(): number {
  */
 export function configureCanvasText(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-  options: FontStyleOptions,
+  style: FontStyle,
   textAlign: CanvasTextAlign = "left",
   textBaseline: CanvasTextBaseline = "alphabetic"
 ): void {
-  ctx.font = `${options.fontWeight} ${options.fontSizePx}px ${options.fontFamily}`;
-  ctx.fillStyle = options.fontColor;
+  ctx.font = `${style.fontWeight} ${style.fontSizePx}px ${style.fontFamily}`;
+  ctx.fillStyle = style.fontColor;
   ctx.textAlign = textAlign;
   ctx.textBaseline = textBaseline;
 }

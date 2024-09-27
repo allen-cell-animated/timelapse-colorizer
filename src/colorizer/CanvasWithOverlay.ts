@@ -1,21 +1,21 @@
 import { Vector2 } from "three";
 
 import {
-  defaultFooterOptions,
-  defaultHeaderOptions,
-  defaultInsetBoxOptions,
-  defaultLegendOptions,
-  defaultScaleBarOptions,
-  defaultTimestampOptions,
-  FooterOptions,
+  defaultFooterStyle,
+  defaultHeaderStyle,
+  defaultInsetBoxStyle,
+  defaultLegendStyle,
+  defaultScaleBarStyle,
+  defaultTimestampStyle,
   FooterParams,
+  FooterStyle,
   getFooterRenderer,
   getHeaderRenderer,
-  HeaderOptions,
-  InsetBoxOptions,
-  LegendOptions,
-  ScaleBarOptions,
-  TimestampOptions,
+  HeaderStyle,
+  InsetBoxStyle,
+  LegendStyle,
+  ScaleBarStyle,
+  TimestampStyle,
 } from "./canvas/elements";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
@@ -35,12 +35,12 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private collection: Collection | null;
   private datasetKey: string | null;
 
-  private scaleBarOptions: ScaleBarOptions;
-  private timestampOptions: TimestampOptions;
-  private insetBoxOptions: InsetBoxOptions;
-  private legendOptions: LegendOptions;
-  private headerOptions: HeaderOptions;
-  private footerOptions: FooterOptions;
+  private scaleBarStyle: ScaleBarStyle;
+  private timestampStyle: TimestampStyle;
+  private insetBoxStyle: InsetBoxStyle;
+  private legendStyle: LegendStyle;
+  private headerStyle: HeaderStyle;
+  private footerStyle: FooterStyle;
   private canvasWidth: number;
   private canvasHeight: number;
 
@@ -53,16 +53,18 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
    * additional optional elements like the header and footer.
    */
   private isExporting: boolean;
-  private isHeaderVisibleOnExport: boolean;
-  private isFooterVisibleOnExport: boolean;
+  public isHeaderVisibleOnExport: boolean;
+  public isFooterVisibleOnExport: boolean;
+  public isScaleBarVisible: boolean;
+  public isTimestampVisible: boolean;
 
-  constructor(options?: {
-    scaleBar?: ScaleBarOptions;
-    timestamp?: TimestampOptions;
-    insetBox?: InsetBoxOptions;
-    legend?: LegendOptions;
-    header?: HeaderOptions;
-    footer?: FooterOptions;
+  constructor(styles?: {
+    scaleBar?: ScaleBarStyle;
+    timestamp?: TimestampStyle;
+    insetBox?: InsetBoxStyle;
+    legend?: LegendStyle;
+    header?: HeaderStyle;
+    footer?: FooterStyle;
   }) {
     super();
 
@@ -72,12 +74,12 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.collection = null;
     this.datasetKey = null;
 
-    this.scaleBarOptions = options?.scaleBar || defaultScaleBarOptions;
-    this.timestampOptions = options?.timestamp || defaultTimestampOptions;
-    this.insetBoxOptions = options?.insetBox || defaultInsetBoxOptions;
-    this.legendOptions = options?.legend || defaultLegendOptions;
-    this.headerOptions = options?.header || defaultHeaderOptions;
-    this.footerOptions = options?.footer || defaultFooterOptions;
+    this.scaleBarStyle = styles?.scaleBar || defaultScaleBarStyle;
+    this.timestampStyle = styles?.timestamp || defaultTimestampStyle;
+    this.insetBoxStyle = styles?.insetBox || defaultInsetBoxStyle;
+    this.legendStyle = styles?.legend || defaultLegendStyle;
+    this.headerStyle = styles?.header || defaultHeaderStyle;
+    this.footerStyle = styles?.footer || defaultFooterStyle;
     this.canvasWidth = 1;
     this.canvasHeight = 1;
     this.headerSize = new Vector2(0, 0);
@@ -86,6 +88,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.isExporting = false;
     this.isHeaderVisibleOnExport = true;
     this.isFooterVisibleOnExport = true;
+    this.isScaleBarVisible = true;
+    this.isTimestampVisible = true;
 
     const canvasContext = this.canvas.getContext("2d") as CanvasRenderingContext2D;
     if (canvasContext === null) {
@@ -116,40 +120,32 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
   // Getters/Setters ////////////////////////////////
 
-  updateScaleBarOptions(options: Partial<ScaleBarOptions>): void {
-    this.scaleBarOptions = { ...this.scaleBarOptions, ...options };
+  updateScaleBarStyle(style: Partial<ScaleBarStyle>): void {
+    this.scaleBarStyle = { ...this.scaleBarStyle, ...style };
   }
 
-  updateTimestampOptions(options: Partial<TimestampOptions>): void {
-    this.timestampOptions = { ...this.timestampOptions, ...options };
+  updateTimestampStyle(style: Partial<TimestampStyle>): void {
+    this.timestampStyle = { ...this.timestampStyle, ...style };
   }
 
-  updateInsetBoxOptions(options: Partial<InsetBoxOptions>): void {
-    this.insetBoxOptions = { ...this.insetBoxOptions, ...options };
+  updateInsetBoxStyle(style: Partial<InsetBoxStyle>): void {
+    this.insetBoxStyle = { ...this.insetBoxStyle, ...style };
   }
 
-  updateLegendOptions(options: Partial<LegendOptions>): void {
-    this.legendOptions = { ...this.legendOptions, ...options };
+  updateLegendStyle(style: Partial<LegendStyle>): void {
+    this.legendStyle = { ...this.legendStyle, ...style };
   }
 
-  updateHeaderOptions(options: Partial<HeaderOptions>): void {
-    this.headerOptions = { ...this.headerOptions, ...options };
+  updateHeaderStyle(style: Partial<HeaderStyle>): void {
+    this.headerStyle = { ...this.headerStyle, ...style };
   }
 
-  updateFooterOptions(options: Partial<FooterOptions>): void {
-    this.footerOptions = { ...this.footerOptions, ...options };
+  updateFooterStyle(style: Partial<FooterStyle>): void {
+    this.footerStyle = { ...this.footerStyle, ...style };
   }
 
   setIsExporting(isExporting: boolean): void {
     this.isExporting = isExporting;
-  }
-
-  setIsHeaderVisibleOnExport(isVisible: boolean): void {
-    this.isHeaderVisibleOnExport = isVisible;
-  }
-
-  setIsFooterVisibleOnExport(isVisible: boolean): void {
-    this.isFooterVisibleOnExport = isVisible;
   }
 
   setCollection(collection: Collection | null): void {
@@ -178,7 +174,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       ...this.getBaseRendererParams(),
       visible,
     };
-    return getHeaderRenderer(this.ctx, params, this.headerOptions);
+    return getHeaderRenderer(this.ctx, params, this.headerStyle);
   }
 
   private getFooterRenderer(visible: boolean): RenderInfo {
@@ -186,11 +182,15 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     const params: FooterParams = {
       ...this.getBaseRendererParams(),
       visible,
-      timestamp: { ...baseParams, currentFrame: this.getCurrentFrame() },
-      timestampOptions: this.timestampOptions,
-      scalebar: { ...baseParams, frameSizeInCanvasCoordinates: this.frameSizeInCanvasCoordinates },
-      scalebarOptions: this.scaleBarOptions,
-      insetBoxOptions: this.insetBoxOptions,
+      timestamp: { ...baseParams, currentFrame: this.getCurrentFrame(), visible: this.isTimestampVisible },
+      timestampStyle: this.timestampStyle,
+      scalebar: {
+        ...baseParams,
+        frameSizeInCanvasCoordinates: this.frameSizeInCanvasCoordinates,
+        visible: this.isScaleBarVisible,
+      },
+      scalebarStyle: this.scaleBarStyle,
+      insetBoxStyle: this.insetBoxStyle,
       legend: {
         ...baseParams,
         colorRamp: this.colorRamp,
@@ -198,9 +198,9 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
         colorMapRangeMin: this.colorMapRangeMin,
         colorMapRangeMax: this.colorMapRangeMax,
       },
-      legendOptions: this.legendOptions,
+      legendStyle: this.legendStyle,
     };
-    return getFooterRenderer(this.ctx, params, this.footerOptions);
+    return getFooterRenderer(this.ctx, params, this.footerStyle);
   }
 
   /**

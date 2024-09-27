@@ -2,23 +2,23 @@ import { Vector2 } from "three";
 
 import {
   BaseRenderParams,
-  ContainerOptions,
-  defaultContainerOptions,
-  defaultStyleOptions,
+  ContainerStyle,
+  defaultContainerStyle,
+  defaultFontStyle,
   EMPTY_RENDER_INFO,
-  FontStyleOptions,
+  FontStyle,
   RenderInfo,
 } from "../types";
 import { configureCanvasText, renderCanvasText } from "../utils";
 
-export type HeaderOptions = ContainerOptions & FontStyleOptions;
+export type HeaderStyle = ContainerStyle & FontStyle;
 export type HeaderParams = BaseRenderParams & {
   visible: boolean;
 };
 
-export const defaultHeaderOptions: HeaderOptions = {
-  ...defaultStyleOptions,
-  ...defaultContainerOptions,
+export const defaultHeaderStyle: HeaderStyle = {
+  ...defaultFontStyle,
+  ...defaultContainerStyle,
   paddingPx: new Vector2(10, 10),
 };
 
@@ -48,29 +48,25 @@ function getHeaderText(params: HeaderParams): string | undefined {
  * @returns a RenderInfo object containing the size of the header and render
  * callback for the header. The size will be (0, 0) if the header is not visible.
  */
-export function getHeaderRenderer(
-  ctx: CanvasRenderingContext2D,
-  params: HeaderParams,
-  options: HeaderOptions
-): RenderInfo {
+export function getHeaderRenderer(ctx: CanvasRenderingContext2D, params: HeaderParams, style: HeaderStyle): RenderInfo {
   const headerText = getHeaderText(params);
   if (!headerText || !params.visible) {
     return EMPTY_RENDER_INFO;
   }
 
-  const height = options.fontSizePx + options.paddingPx.y * 2;
+  const height = style.fontSizePx + style.paddingPx.y * 2;
   const width = ctx.canvas.width;
   return {
     sizePx: new Vector2(width, height),
     render: (origin = new Vector2(0, 0)) => {
-      ctx.fillStyle = options.fill;
-      ctx.strokeStyle = options.stroke;
+      ctx.fillStyle = style.fill;
+      ctx.strokeStyle = style.stroke;
       ctx.fillRect(origin.x - 0.5, origin.y - 0.5, params.canvasWidth + 1, height);
       ctx.strokeRect(origin.x - 0.5, origin.y - 0.5, params.canvasWidth + 1, height);
 
-      const textOrigin = origin.clone().add(new Vector2(params.canvasWidth / 2, options.paddingPx.y));
-      const fontOptions = { maxWidth: params.canvasWidth - options.paddingPx.x * 2, ...options };
-      configureCanvasText(ctx, options, "center", "top");
+      const textOrigin = origin.clone().add(new Vector2(params.canvasWidth / 2, style.paddingPx.y));
+      const fontOptions = { maxWidth: params.canvasWidth - style.paddingPx.x * 2, ...style };
+      configureCanvasText(ctx, style, "center", "top");
       renderCanvasText(ctx, textOrigin.x, textOrigin.y, headerText, fontOptions);
     },
   };

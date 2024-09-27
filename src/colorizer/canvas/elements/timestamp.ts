@@ -1,19 +1,17 @@
 import { Vector2 } from "three";
 
-import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "../types";
+import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 import { configureCanvasText, getTextDimensions, renderCanvasText } from "../utils";
 
-export type TimestampOptions = FontStyleOptions & {
-  visible: boolean;
-};
+export type TimestampStyle = FontStyle;
 
 export type TimestampParams = BaseRenderParams & {
+  visible: boolean;
   currentFrame: number;
 };
 
-export const defaultTimestampOptions: TimestampOptions = {
-  ...defaultStyleOptions,
-  visible: true,
+export const defaultTimestampStyle: TimestampStyle = {
+  ...defaultFontStyle,
 };
 
 /**
@@ -81,9 +79,9 @@ export function getTimestampLabel(params: TimestampParams): string | undefined {
 export function getTimestampRenderer(
   ctx: CanvasRenderingContext2D,
   params: TimestampParams,
-  options: TimestampOptions
+  style: TimestampStyle
 ): RenderInfo {
-  if (!options.visible) {
+  if (!params.visible) {
     return EMPTY_RENDER_INFO;
   }
   const timestampFormatted = getTimestampLabel(params);
@@ -93,13 +91,13 @@ export function getTimestampRenderer(
 
   // Save the render function for later.
   const timestampPaddingPx = new Vector2(6, 2);
-  const sizePx = new Vector2(getTextDimensions(ctx, timestampFormatted, options).x, options.fontSizePx).add(
+  const sizePx = new Vector2(getTextDimensions(ctx, timestampFormatted, style).x, style.fontSizePx).add(
     timestampPaddingPx.clone().multiplyScalar(2)
   );
   const render = (origin: Vector2): void => {
     const bottomRightOrigin = origin.add(sizePx);
     const timestampOriginPx = bottomRightOrigin.clone().sub(timestampPaddingPx);
-    configureCanvasText(ctx, options, "right", "bottom");
+    configureCanvasText(ctx, style, "right", "bottom");
     renderCanvasText(ctx, timestampOriginPx.x, timestampOriginPx.y, timestampFormatted);
   };
 

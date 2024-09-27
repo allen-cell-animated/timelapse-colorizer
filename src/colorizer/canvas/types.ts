@@ -32,28 +32,28 @@ export type BaseRenderParams = {
   canvasHeight: number;
 };
 
-export type FontStyleOptions = {
+export type FontStyle = {
   fontSizePx: number;
   fontFamily: string;
   fontColor: string;
   fontWeight: string;
 };
 
-export type ContainerOptions = {
+export type ContainerStyle = {
   marginPx: Vector2;
   paddingPx: Vector2;
   fill: string;
   stroke: string;
 };
 
-export const defaultStyleOptions: FontStyleOptions = {
+export const defaultFontStyle: FontStyle = {
   fontColor: "black",
   fontSizePx: 14,
   fontFamily: "Lato",
   fontWeight: "400",
 };
 
-export const defaultContainerOptions: ContainerOptions = {
+export const defaultContainerStyle: ContainerStyle = {
   marginPx: new Vector2(0, 0),
   paddingPx: new Vector2(0, 0),
   fill: "rgba(255, 255, 255, 1.0)",

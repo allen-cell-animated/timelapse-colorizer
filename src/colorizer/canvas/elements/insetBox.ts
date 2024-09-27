@@ -2,7 +2,7 @@ import { Vector2 } from "three";
 
 import { EMPTY_RENDER_INFO, RenderInfo } from "../types";
 
-export type InsetBoxOptions = {
+export type InsetBoxStyle = {
   fill: string;
   stroke: string;
   paddingPx: Vector2;
@@ -11,7 +11,7 @@ export type InsetBoxOptions = {
   gap: number;
 };
 
-export const defaultInsetBoxOptions: InsetBoxOptions = {
+export const defaultInsetBoxStyle: InsetBoxStyle = {
   fill: "rgba(255, 255, 255, 0.8)",
   stroke: "rgba(0, 0, 0, 0.2)",
   paddingPx: new Vector2(10, 10),
@@ -31,7 +31,7 @@ function renderInsetBoxBackground(
   ctx: CanvasRenderingContext2D,
   origin: Vector2,
   size: Vector2,
-  options: InsetBoxOptions
+  options: InsetBoxStyle
 ): void {
   ctx.fillStyle = options.fill;
   ctx.strokeStyle = options.stroke;
@@ -57,7 +57,7 @@ function renderInsetBoxBackground(
  * @param ctx Rendering context to render to.
  * @param contents The RenderInfo of the elements to render inside the inset box, in order from
  *   top to bottom.
- * @param options Styling configuration for the inset box.
+ * @param style Styling configuration for the inset box.
  * @param contents: Array of elements to render inside the inset box.
  * @returns RenderInfo object containing the size of the inset box and render callback to render
  * it and its contents. The size will be (0, 0) if the inset box is not visible.
@@ -65,7 +65,7 @@ function renderInsetBoxBackground(
 export function getInsetBoxRenderer(
   ctx: CanvasRenderingContext2D,
   contents: RenderInfo[],
-  options: InsetBoxOptions
+  style: InsetBoxStyle
 ): RenderInfo {
   let contentSize = new Vector2(0, 0);
   for (let i = 0; i < contents.length; i++) {
@@ -74,7 +74,7 @@ export function getInsetBoxRenderer(
     contentSize.y += content.sizePx.y;
 
     if (i > 0 && content.sizePx.y > 0) {
-      contentSize.y += options.gap;
+      contentSize.y += style.gap;
     }
   }
 
@@ -83,16 +83,16 @@ export function getInsetBoxRenderer(
     return EMPTY_RENDER_INFO;
   }
 
-  const boxSize = contentSize.clone().add(options.paddingPx.clone().multiplyScalar(2.0));
+  const boxSize = contentSize.clone().add(style.paddingPx.clone().multiplyScalar(2.0));
 
   return {
     sizePx: boxSize,
     render: (origin: Vector2) => {
-      renderInsetBoxBackground(ctx, origin, boxSize, options);
+      renderInsetBoxBackground(ctx, origin, boxSize, style);
 
       // Render all the contents in order from top to bottom.
       // Contents should be rendered with a gap and aligned to the right.
-      const contentOrigin = origin.clone().add(options.paddingPx);
+      const contentOrigin = origin.clone().add(style.paddingPx);
       for (let i = 0; i < contents.length; i++) {
         const content = contents[i];
         const offsetOrigin = contentOrigin.clone();
@@ -101,7 +101,7 @@ export function getInsetBoxRenderer(
         content.render(offsetOrigin);
 
         if (content.sizePx.y > 0) {
-          contentOrigin.y += options.gap;
+          contentOrigin.y += style.gap;
         }
         contentOrigin.y += content.sizePx.y;
       }

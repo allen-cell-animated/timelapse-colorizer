@@ -207,12 +207,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       stroke: theme.color.layout.borders,
       fill: theme.color.layout.background,
     };
-    canv.updateScaleBarOptions(defaultTheme);
-    canv.updateTimestampOptions(defaultTheme);
-    canv.updateInsetBoxOptions({ stroke: theme.color.layout.borders });
-    canv.updateLegendOptions(defaultTheme);
-    canv.updateFooterOptions(sidebarTheme);
-    canv.updateHeaderOptions(sidebarTheme);
+    canv.updateScaleBarStyle(defaultTheme);
+    canv.updateTimestampStyle(defaultTheme);
+    canv.updateInsetBoxStyle({ stroke: theme.color.layout.borders });
+    canv.updateLegendStyle(defaultTheme);
+    canv.updateFooterStyle(sidebarTheme);
+    canv.updateHeaderStyle(sidebarTheme);
     canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
 
@@ -262,11 +262,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update overlay settings
   useMemo(() => {
-    canv.updateScaleBarOptions({ visible: props.config.showScaleBar });
+    canv.isScaleBarVisible = props.config.showScaleBar;
   }, [props.config.showScaleBar]);
 
   useMemo(() => {
-    canv.updateTimestampOptions({ visible: props.config.showTimestamp });
+    canv.isTimestampVisible = props.config.showTimestamp;
   }, [props.config.showTimestamp]);
 
   useMemo(() => {
@@ -279,8 +279,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
-    canv.setIsHeaderVisibleOnExport(props.config.showHeaderDuringExport);
-    canv.setIsFooterVisibleOnExport(props.config.showLegendDuringExport);
+    canv.isHeaderVisibleOnExport = props.config.showHeaderDuringExport;
+    canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
   }, [props.config.showLegendDuringExport, props.isRecording]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////

@@ -1,14 +1,14 @@
 import { Color, Vector2 } from "three";
 
 import { numberToStringDecimal } from "../../utils/math_utils";
-import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "../types";
+import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 import { configureCanvasText, renderCanvasText } from "../utils";
 
 import ColorRamp from "../../ColorRamp";
 
 const MAX_CATEGORIES_PER_COLUMN = 4;
 
-export type LegendOptions = FontStyleOptions & {
+export type LegendStyle = FontStyle & {
   stroke: string;
   labelFontSizePx: number;
   labelFontColor: string;
@@ -24,8 +24,8 @@ export type LegendOptions = FontStyleOptions & {
   maxCategoricalWidthPx: number;
 };
 
-export const defaultLegendOptions: LegendOptions = {
-  ...defaultStyleOptions,
+export const defaultLegendStyle: LegendStyle = {
+  ...defaultFontStyle,
   stroke: "rgba(203, 203, 204, 1.0)",
   labelFontSizePx: 12,
   labelFontColor: "black",
@@ -58,9 +58,9 @@ function getSelectedFeatureName(params: LegendParams): string | undefined {
 function getCategoricalKeyRenderer(
   ctx: CanvasRenderingContext2D,
   params: LegendParams,
-  options: LegendOptions
+  style: LegendStyle
 ): RenderInfo {
-  const maxWidthPx = options.maxCategoricalWidthPx;
+  const maxWidthPx = style.maxCategoricalWidthPx;
   if (!params.dataset || !params.featureKey) {
     return EMPTY_RENDER_INFO;
   }
@@ -72,8 +72,8 @@ function getCategoricalKeyRenderer(
   }
 
   // Render feature label
-  const featureLabelHeightPx = options.fontSizePx + 6;
-  const categoryHeightPx = options.labelFontSizePx + options.categoryPaddingPx.y * 2;
+  const featureLabelHeightPx = style.fontSizePx + 6;
+  const categoryHeightPx = style.labelFontSizePx + style.categoryPaddingPx.y * 2;
   const maxColumnHeight = Math.min(featureData.categories.length, MAX_CATEGORIES_PER_COLUMN) * categoryHeightPx;
   const heightPx = featureLabelHeightPx + maxColumnHeight;
 
@@ -81,7 +81,7 @@ function getCategoricalKeyRenderer(
     sizePx: new Vector2(maxWidthPx, heightPx),
     render: (origin: Vector2) => {
       // Render feature label
-      const featureLabelFontStyle: FontStyleOptions = { ...options };
+      const featureLabelFontStyle: FontStyle = { ...style };
       configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
       renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
       const labelHeight = featureLabelFontStyle.fontSizePx + 6; // Padding
@@ -90,8 +90,8 @@ function getCategoricalKeyRenderer(
       // Render categories
       const categories = featureData.categories || [];
       const numColumns = Math.ceil(categories.length / MAX_CATEGORIES_PER_COLUMN);
-      const categoryWidth = Math.floor(maxWidthPx / numColumns - options.categoryColGapPx);
-      const categoryHeight = options.labelFontSizePx + options.categoryPaddingPx.y * 2;
+      const categoryWidth = Math.floor(maxWidthPx / numColumns - style.categoryColGapPx);
+      const categoryHeight = style.labelFontSizePx + style.categoryPaddingPx.y * 2;
       const colOrigin = origin.clone();
 
       for (let colIndex = 0; colIndex < numColumns; colIndex++) {
@@ -114,69 +114,62 @@ function getCategoricalKeyRenderer(
           ctx.roundRect(
             currCategoryOrigin.x,
             currCategoryOrigin.y,
-            Math.round(options.labelFontSizePx),
-            Math.round(options.labelFontSizePx),
+            Math.round(style.labelFontSizePx),
+            Math.round(style.labelFontSizePx),
             2
           );
           ctx.closePath();
           ctx.fill();
 
           // Category label
-          configureCanvasText(ctx, options, "left", "top");
-          const maxTextWidth = categoryWidth - options.labelFontSizePx - options.categoryLabelGapPx;
-          const textX = currCategoryOrigin.x + options.labelFontSizePx + options.categoryLabelGapPx;
+          configureCanvasText(ctx, style, "left", "top");
+          const maxTextWidth = categoryWidth - style.labelFontSizePx - style.categoryLabelGapPx;
+          const textX = currCategoryOrigin.x + style.labelFontSizePx + style.categoryLabelGapPx;
           const textY = currCategoryOrigin.y - 1; // Fudge slightly to align with color label
           const textSize = renderCanvasText(ctx, textX, textY, category, {
             maxWidth: maxTextWidth,
           });
-          maxCategoryWidth = Math.max(
-            maxCategoryWidth,
-            options.labelFontSizePx + options.categoryLabelGapPx + textSize.x
-          );
+          maxCategoryWidth = Math.max(maxCategoryWidth, style.labelFontSizePx + style.categoryLabelGapPx + textSize.x);
           currCategoryOrigin.y += categoryHeight;
         }
 
-        colOrigin.x += maxCategoryWidth + options.categoryColGapPx;
+        colOrigin.x += maxCategoryWidth + style.categoryColGapPx;
       }
     },
   };
 }
 
-function getNumericKeyRenderer(
-  ctx: CanvasRenderingContext2D,
-  params: LegendParams,
-  options: LegendOptions
-): RenderInfo {
+function getNumericKeyRenderer(ctx: CanvasRenderingContext2D, params: LegendParams, style: LegendStyle): RenderInfo {
   const featureName = getSelectedFeatureName(params);
   if (!featureName) {
     return EMPTY_RENDER_INFO;
   }
-  const maxWidthPx = options.maxColorRampWidthPx;
-  const featureLabelFontStyle: FontStyleOptions = { ...options };
+  const maxWidthPx = style.maxColorRampWidthPx;
+  const featureLabelFontStyle: FontStyle = { ...style };
 
-  const height = options.fontSizePx + options.rampPaddingPx * 2 + options.rampHeightPx + options.labelFontSizePx;
+  const height = style.fontSizePx + style.rampPaddingPx * 2 + style.rampHeightPx + style.labelFontSizePx;
 
   return {
     sizePx: new Vector2(maxWidthPx, height),
     render: (origin: Vector2) => {
       configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
       renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
-      origin.y += featureLabelFontStyle.fontSizePx + options.rampPaddingPx;
+      origin.y += featureLabelFontStyle.fontSizePx + style.rampPaddingPx;
 
       // Render color ramp gradient
       const colorStops = params.colorRamp.colorStops.map((c) => new Color(c));
       const gradient = ColorRamp.linearGradientFromColors(ctx, colorStops, maxWidthPx, 0, origin.x, origin.y);
       ctx.fillStyle = gradient;
-      ctx.strokeStyle = options.stroke;
+      ctx.strokeStyle = style.stroke;
       ctx.beginPath();
-      ctx.roundRect(origin.x + 0.5, origin.y + 0.5, maxWidthPx - 2, options.rampHeightPx, options.rampRadiusPx);
+      ctx.roundRect(origin.x + 0.5, origin.y + 0.5, maxWidthPx - 2, style.rampHeightPx, style.rampRadiusPx);
       ctx.fill();
       ctx.stroke();
       ctx.closePath();
-      origin.y += options.rampHeightPx + options.rampPaddingPx;
+      origin.y += style.rampHeightPx + style.rampPaddingPx;
 
       // Render min/max labels under color ramp
-      const rangeLabelFontStyle: FontStyleOptions = { ...options, fontSizePx: options.labelFontSizePx };
+      const rangeLabelFontStyle: FontStyle = { ...style, fontSizePx: style.labelFontSizePx };
       const minLabel = numberToStringDecimal(params.colorMapRangeMin, 3, true);
       const maxLabel = numberToStringDecimal(params.colorMapRangeMax, 3, true);
       configureCanvasText(ctx, rangeLabelFontStyle, "left", "top");
@@ -187,16 +180,12 @@ function getNumericKeyRenderer(
   };
 }
 
-export function getLegendRenderer(
-  ctx: CanvasRenderingContext2D,
-  params: LegendParams,
-  options: LegendOptions
-): RenderInfo {
+export function getLegendRenderer(ctx: CanvasRenderingContext2D, params: LegendParams, style: LegendStyle): RenderInfo {
   if (params.dataset && params.featureKey) {
     if (params.dataset.isFeatureCategorical(params.featureKey)) {
-      return getCategoricalKeyRenderer(ctx, params, options);
+      return getCategoricalKeyRenderer(ctx, params, style);
     } else {
-      return getNumericKeyRenderer(ctx, params, options);
+      return getNumericKeyRenderer(ctx, params, style);
     }
   }
   return EMPTY_RENDER_INFO;
