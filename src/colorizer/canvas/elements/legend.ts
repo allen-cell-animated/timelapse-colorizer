@@ -18,6 +18,7 @@ export type LegendStyle = FontStyle & {
   rampRadiusPx: number;
   maxColorRampWidthPx: number;
 
+  categoryFeatureNameMarginPx: Vector2;
   categoryPaddingPx: Vector2;
   categoryLabelGapPx: number;
   categoryColGapPx: number;
@@ -31,6 +32,7 @@ export const defaultLegendStyle: LegendStyle = {
   labelFontColor: "black",
 
   categoryPaddingPx: new Vector2(2, 2),
+  categoryFeatureNameMarginPx: new Vector2(0, 6),
   categoryLabelGapPx: 6,
   categoryColGapPx: 32,
   maxCategoricalWidthPx: 800,
@@ -71,7 +73,6 @@ function getCategoricalKeyRenderer(
     return EMPTY_RENDER_INFO;
   }
 
-  // Render feature label
   const featureLabelHeightPx = style.fontSizePx + 6;
   const categoryHeightPx = style.labelFontSizePx + style.categoryPaddingPx.y * 2;
   const maxColumnHeight = Math.min(featureData.categories.length, MAX_CATEGORIES_PER_COLUMN) * categoryHeightPx;
@@ -84,10 +85,13 @@ function getCategoricalKeyRenderer(
       const featureLabelFontStyle: FontStyle = { ...style };
       configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
       renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
-      const labelHeight = featureLabelFontStyle.fontSizePx + 6; // Padding
-      origin.y += labelHeight; // Padding
+      const labelHeight = featureLabelFontStyle.fontSizePx + style.categoryFeatureNameMarginPx.y;
+      origin.y += labelHeight;
 
       // Render categories
+      // Categories are displayed as a rounded rectangle containing the color, and the category label
+      // in the smaller label font size. They are displayed in up to three columns, with a maximum of
+      // 4 categories per column.
       const categories = featureData.categories || [];
       const numColumns = Math.ceil(categories.length / MAX_CATEGORIES_PER_COLUMN);
       const categoryWidth = Math.floor(maxWidthPx / numColumns - style.categoryColGapPx);
@@ -95,7 +99,6 @@ function getCategoricalKeyRenderer(
       const colOrigin = origin.clone();
 
       for (let colIndex = 0; colIndex < numColumns; colIndex++) {
-        // Calculate starting point for the column
         const currCategoryOrigin = colOrigin.clone();
 
         let maxCategoryWidth = Number.NEGATIVE_INFINITY;
@@ -152,6 +155,7 @@ function getNumericKeyRenderer(ctx: CanvasRenderingContext2D, params: LegendPara
   return {
     sizePx: new Vector2(maxWidthPx, height),
     render: (origin: Vector2) => {
+      // Render feature name
       configureCanvasText(ctx, featureLabelFontStyle, "left", "top");
       renderCanvasText(ctx, origin.x, origin.y, featureName, { maxWidth: maxWidthPx });
       origin.y += featureLabelFontStyle.fontSizePx + style.rampPaddingPx;

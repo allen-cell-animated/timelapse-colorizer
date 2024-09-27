@@ -26,7 +26,7 @@ import ColorizeCanvas from "./ColorizeCanvas";
 /**
  * Extends the ColorizeCanvas class by overlaying and compositing additional
  * dynamic elements (like a scale bar, timestamp, etc.) on top of the
- * base colorized viewport.
+ * base colorized image.
  */
 export default class CanvasWithOverlay extends ColorizeCanvas {
   private canvas: HTMLCanvasElement;
@@ -178,7 +178,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private getFooterRenderer(visible: boolean): RenderInfo {
     const baseParams = this.getBaseRendererParams();
     const params: FooterParams = {
-      ...this.getBaseRendererParams(),
+      ...baseParams,
       visible,
       timestamp: { ...baseParams, currentFrame: this.getCurrentFrame(), visible: this.isTimestampVisible },
       timestampStyle: this.timestampStyle,
@@ -242,7 +242,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
     const devicePixelRatio = getPixelRatio();
     const canvasWidth = Math.round(this.canvasSize.x * devicePixelRatio);
-    const canvasHeight = Math.round((this.canvasSize.y, +this.headerSize.y + this.footerSize.y) * devicePixelRatio);
+    const canvasHeight = Math.round((this.canvasSize.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio);
     return [canvasWidth, canvasHeight];
   }
 }

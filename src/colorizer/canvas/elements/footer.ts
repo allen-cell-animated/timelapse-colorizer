@@ -42,7 +42,7 @@ export const defaultFooterStyle: FooterStyle = {
  * @param params Parameters and styling options for the timestamp, scale bar, legend, and inset box.
  * @param style Styling options for the footer.
  * @returns a RenderInfo object containing the size of the footer and render callback for the footer.
- * The origin should be the bottom left corner of the colorized viewport.
+ * The top left corner of the footer will be rendered at the provided `origin`.
  */
 export function getFooterRenderer(ctx: CanvasRenderingContext2D, params: FooterParams, style: FooterStyle): RenderInfo {
   const timestampInfo = getTimestampRenderer(ctx, params.timestamp, params.timestampStyle);
@@ -69,18 +69,18 @@ export function getFooterRenderer(ctx: CanvasRenderingContext2D, params: FooterP
   const insetMargin = insetSize.x > 0 ? params.insetBoxStyle.marginPx.x : 0;
   const availableContentWidth = params.canvasSize.x - style.paddingPx.x * 2 - insetSize.x - insetMargin;
   // Size legend based on available content width
-  const legendOptions = {
+  const legendStyle = {
     ...params.legendStyle,
     maxCategoricalWidthPx: availableContentWidth,
     maxColorRampWidthPx: Math.min(availableContentWidth, params.legendStyle.maxColorRampWidthPx),
   };
-  const { sizePx: legendSize, render: renderLegend } = getLegendRenderer(ctx, params.legend, legendOptions);
+  const { sizePx: legendSize, render: renderLegend } = getLegendRenderer(ctx, params.legend, legendStyle);
 
-  const maxHeight = Math.max(insetSize.y, legendSize.y);
-  if (maxHeight === 0) {
+  const maxContentHeight = Math.max(insetSize.y, legendSize.y);
+  if (maxContentHeight === 0) {
     return EMPTY_RENDER_INFO;
   }
-  const height = Math.round(maxHeight + style.paddingPx.y * 2);
+  const height = Math.round(maxContentHeight + style.paddingPx.y * 2);
   const width = Math.round(params.canvasSize.x + 1);
 
   return {

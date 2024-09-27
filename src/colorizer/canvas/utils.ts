@@ -2,10 +2,10 @@ import { Vector2 } from "three";
 
 import { FontStyle } from "./types";
 
-export function getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: FontStyle): Vector2 {
-  configureCanvasText(ctx, options);
+export function getTextDimensions(ctx: CanvasRenderingContext2D, text: string, style: FontStyle): Vector2 {
+  configureCanvasText(ctx, style);
   const textWidth = ctx.measureText(text).width;
-  return new Vector2(textWidth, options.fontSizePx);
+  return new Vector2(textWidth, style.fontSizePx);
 }
 
 export function getPixelRatio(): number {
@@ -13,7 +13,7 @@ export function getPixelRatio(): number {
 }
 
 /**
- * Configures the canvas rendering context with the given font options.
+ * Configures the canvas rendering context with the given font style.
  * @param ctx CanvasRenderingContext2D or OffscreenCanvasRenderingContext2D.
  * @param style Font style options, including weight, size, family, and color.
  * @param textAlign Text alignment. Default is "left". Valid values are "start", "end",

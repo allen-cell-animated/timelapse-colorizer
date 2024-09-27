@@ -21,27 +21,28 @@ export const defaultInsetBoxStyle: InsetBoxStyle = {
 };
 
 /**
- * Draws the inset box's background, intended to be layered under the content elements.
+ * Draws the inset box's background, intended to be layered under the inner
+ * content elements.
  * @param ctx Canvas context to render to.
  * @param origin The top left corner of the box, in pixels.
  * @param size Size of the inset, in pixels.
- * @param options Configuration for the inset.
+ * @param style Style config for the inset.
  */
 function renderInsetBoxBackground(
   ctx: CanvasRenderingContext2D,
   origin: Vector2,
   size: Vector2,
-  options: InsetBoxStyle
+  style: InsetBoxStyle
 ): void {
-  ctx.fillStyle = options.fill;
-  ctx.strokeStyle = options.stroke;
+  ctx.fillStyle = style.fill;
+  ctx.strokeStyle = style.stroke;
   ctx.beginPath();
   ctx.roundRect(
     Math.round(origin.x) + 0.5,
     Math.round(origin.y) + 0.5,
     Math.round(size.x),
     Math.round(size.y),
-    options.radiusPx
+    style.radiusPx
   );
   ctx.fill();
   ctx.stroke();
@@ -49,8 +50,8 @@ function renderInsetBoxBackground(
 }
 
 /**
- * Renders one or more elements stacked vertically inside an inset box.
- * Contents are rendered in order from top to bottom and aligned to the right.
+ * Renders one or more elements stacked vertically inside an inset box. Contents are
+ * rendered in order from top to bottom and aligned to the right.
  *
  * If all elements have size zero, the inset box will not be rendered.
  *
@@ -67,7 +68,7 @@ export function getInsetBoxRenderer(
   contents: RenderInfo[],
   style: InsetBoxStyle
 ): RenderInfo {
-  let contentSize = new Vector2(0, 0);
+  const contentSize = new Vector2(0, 0);
   for (let i = 0; i < contents.length; i++) {
     const content = contents[i];
     contentSize.x = Math.max(contentSize.x, content.sizePx.x);
