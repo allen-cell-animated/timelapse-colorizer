@@ -1,11 +1,22 @@
 import { Vector2 } from "three";
 
-import { defaultFooterOptions, FooterOptions, FooterParams, getFooterRenderer } from "./canvas/footer";
-import { defaultHeaderOptions, getHeaderRenderer, HeaderOptions } from "./canvas/header";
-import { defaultInsetBoxOptions, InsetBoxOptions } from "./canvas/insetBox";
-import { defaultLegendOptions, LegendOptions } from "./canvas/legend";
-import { defaultScaleBarOptions, ScaleBarOptions } from "./canvas/scalebar";
-import { defaultTimestampOptions, TimestampOptions } from "./canvas/timestamp";
+import {
+  defaultFooterOptions,
+  defaultHeaderOptions,
+  defaultInsetBoxOptions,
+  defaultLegendOptions,
+  defaultScaleBarOptions,
+  defaultTimestampOptions,
+  FooterOptions,
+  FooterParams,
+  getFooterRenderer,
+  getHeaderRenderer,
+  HeaderOptions,
+  InsetBoxOptions,
+  LegendOptions,
+  ScaleBarOptions,
+  TimestampOptions,
+} from "./canvas/elements";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
 

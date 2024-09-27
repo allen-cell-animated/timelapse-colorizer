@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
 
-import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "./types";
-import { configureCanvasText, getTextDimensions, renderCanvasText } from "./utils";
+import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "../types";
+import { configureCanvasText, getTextDimensions, renderCanvasText } from "../utils";
 
 export type TimestampOptions = FontStyleOptions & {
   visible: boolean;

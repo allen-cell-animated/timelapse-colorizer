@@ -1,10 +1,10 @@
 import { Color, Vector2 } from "three";
 
-import { numberToStringDecimal } from "../utils/math_utils";
-import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "./types";
-import { configureCanvasText, renderCanvasText } from "./utils";
+import { numberToStringDecimal } from "../../utils/math_utils";
+import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "../types";
+import { configureCanvasText, renderCanvasText } from "../utils";
 
-import ColorRamp from "../ColorRamp";
+import ColorRamp from "../../ColorRamp";
 
 const MAX_CATEGORIES_PER_COLUMN = 4;
 

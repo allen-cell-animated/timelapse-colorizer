@@ -1,9 +1,5 @@
 import { Vector2 } from "three";
 
-import { getInsetBoxRenderer, InsetBoxOptions } from "./insetBox";
-import { getLegendRenderer, LegendOptions, LegendParams } from "./legend";
-import { getScaleBarRenderer, ScaleBarOptions, ScaleBarParams } from "./scalebar";
-import { getTimestampRenderer, TimestampOptions, TimestampParams } from "./timestamp";
 import {
   BaseRenderParams,
   ContainerOptions,
@@ -12,7 +8,11 @@ import {
   EMPTY_RENDER_INFO,
   FontStyleOptions,
   RenderInfo,
-} from "./types";
+} from "../types";
+import { getInsetBoxRenderer, InsetBoxOptions } from "./insetBox";
+import { getLegendRenderer, LegendOptions, LegendParams } from "./legend";
+import { getScaleBarRenderer, ScaleBarOptions, ScaleBarParams } from "./scalebar";
+import { getTimestampRenderer, TimestampOptions, TimestampParams } from "./timestamp";
 
 export type FooterOptions = ContainerOptions &
   FontStyleOptions & {

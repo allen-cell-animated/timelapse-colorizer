@@ -1,8 +1,8 @@
 import { Vector2 } from "three";
 
-import { numberToSciNotation } from "../utils/math_utils";
-import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "./types";
-import { configureCanvasText, getPixelRatio, renderCanvasText } from "./utils";
+import { numberToSciNotation } from "../../utils/math_utils";
+import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "../types";
+import { configureCanvasText, getPixelRatio, renderCanvasText } from "../utils";
 
 export type ScaleBarOptions = FontStyleOptions & {
   minWidthPx: number;

@@ -8,8 +8,8 @@ import {
   EMPTY_RENDER_INFO,
   FontStyleOptions,
   RenderInfo,
-} from "./types";
-import { configureCanvasText, renderCanvasText } from "./utils";
+} from "../types";
+import { configureCanvasText, renderCanvasText } from "../utils";
 
 export type HeaderOptions = ContainerOptions & FontStyleOptions;
 export type HeaderParams = BaseRenderParams & {
