@@ -1,3 +1,14 @@
+// TODOs:
+// color choice
+// optimize calculation
+// optimize when recalculation needs to occur
+// selections of features
+// how to obey filtering
+// interaction with track selections?
+// click to go to scatterplot
+// other useful mouse interactions
+//
+////////////
 import chroma from "chroma-js";
 import * as d3 from "d3";
 import React, { memo, ReactElement, useEffect, useState, useTransition } from "react";
@@ -182,7 +193,25 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       return cols[i];
     });
 
-    svg.append("g").attr("class", "x axis").call(xAxis);
+    svg
+      .append("g")
+      .attr("class", "x axis")
+      .call(xAxis)
+      .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.9em")
+      .attr("dy", "1.2em")
+      .attr("transform", "rotate(90)");
+    // svg
+    // .append("g")
+    // .attr("class", "x axis")
+    // .attr("transform", "translate(0," + height + ")")
+    // .call(xAxis)
+    // .selectAll("text")
+    // .style("text-anchor", "end")
+    // .attr("dx", "-.8em")
+    // .attr("dy", ".15em")
+    // .attr("transform", "rotate(-65)");
 
     svg.append("g").attr("class", "y axis").call(yAxis);
 
@@ -220,7 +249,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
         d3.select(tooltipDivRef.current)
           .style("display", "block")
-          .html(cols[d.x] + ", " + cols[d.y] + ": " + d.value === undefined ? "undefined" : d.value.toFixed(2));
+          .html(cols[d.x] + ", " + cols[d.y] + ": " + (d.value === undefined ? "undefined" : d.value.toFixed(2)));
 
         var rowPos = y(d.y)!;
         var colPos = x(d.x)!;
