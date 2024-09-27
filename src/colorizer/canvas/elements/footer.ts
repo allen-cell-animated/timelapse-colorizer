@@ -11,21 +11,18 @@ import {
 } from "../types";
 import { getInsetBoxRenderer, InsetBoxStyle } from "./insetBox";
 import { getLegendRenderer, LegendParams, LegendStyle } from "./legend";
-import { getScaleBarRenderer, ScaleBarParams, ScaleBarStyle } from "./scalebar";
+import { getScaleBarRenderer, ScaleBarParams, ScaleBarStyle } from "./scaleBar";
 import { getTimestampRenderer, TimestampParams, TimestampStyle } from "./timestamp";
 
-export type FooterStyle = ContainerStyle &
-  FontStyle & {
-    heightPx: number;
-  };
+export type FooterStyle = ContainerStyle & FontStyle;
 
 export type FooterParams = BaseRenderParams & {
   visible: boolean;
 
   timestamp: TimestampParams;
   timestampStyle: TimestampStyle;
-  scalebar: ScaleBarParams;
-  scalebarStyle: ScaleBarStyle;
+  scaleBar: ScaleBarParams;
+  scaleBarStyle: ScaleBarStyle;
   insetBoxStyle: InsetBoxStyle;
   legend: LegendParams;
   legendStyle: LegendStyle;
@@ -34,7 +31,6 @@ export type FooterParams = BaseRenderParams & {
 export const defaultFooterStyle: FooterStyle = {
   ...defaultFontStyle,
   ...defaultContainerStyle,
-  heightPx: 100,
   paddingPx: new Vector2(10, 10),
 };
 
@@ -43,14 +39,14 @@ export const defaultFooterStyle: FooterStyle = {
  * the timestamp and scale bar inside. If the footer is not visible, the inset box is rendered in
  * the bottom right corner of the viewport.
  * @param ctx Canvas rendering context to render to.
- * @param params Parameters and styling options for the timestamp, scalebar, legend, and inset box.
+ * @param params Parameters and styling options for the timestamp, scale bar, legend, and inset box.
  * @param style Styling options for the footer.
  * @returns a RenderInfo object containing the size of the footer and render callback for the footer.
  * The origin should be the bottom left corner of the colorized viewport.
  */
 export function getFooterRenderer(ctx: CanvasRenderingContext2D, params: FooterParams, style: FooterStyle): RenderInfo {
   const timestampInfo = getTimestampRenderer(ctx, params.timestamp, params.timestampStyle);
-  const scaleBarInfo = getScaleBarRenderer(ctx, params.scalebar, params.scalebarStyle);
+  const scaleBarInfo = getScaleBarRenderer(ctx, params.scaleBar, params.scaleBarStyle);
   const { sizePx: insetSize, render: renderInset } = getInsetBoxRenderer(
     ctx,
     [timestampInfo, scaleBarInfo],

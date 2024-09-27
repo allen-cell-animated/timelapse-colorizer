@@ -184,12 +184,12 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       visible,
       timestamp: { ...baseParams, currentFrame: this.getCurrentFrame(), visible: this.isTimestampVisible },
       timestampStyle: this.timestampStyle,
-      scalebar: {
+      scaleBar: {
         ...baseParams,
         frameSizeInCanvasCoordinates: this.frameSizeInCanvasCoordinates,
         visible: this.isScaleBarVisible,
       },
-      scalebarStyle: this.scaleBarStyle,
+      scaleBarStyle: this.scaleBarStyle,
       insetBoxStyle: this.insetBoxStyle,
       legend: {
         ...baseParams,
