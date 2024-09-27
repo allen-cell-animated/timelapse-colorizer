@@ -349,20 +349,20 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     // Calculate the padding and origins for drawing and size
     const scaleBarHeight = 10;
 
-    const renderScaleBar = (scaleBarX: number, scaleBarY: number): void => {
+    const renderScaleBar = (bottomRightOrigin: Vector2): void => {
       // Render the scale bar
       this.ctx.beginPath();
       this.ctx.strokeStyle = this.scaleBarOptions.fontColor;
-      this.ctx.moveTo(scaleBarX, scaleBarY - scaleBarHeight);
-      this.ctx.lineTo(scaleBarX, scaleBarY);
-      this.ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY);
-      this.ctx.lineTo(scaleBarX - scaleBarWidthPx, scaleBarY - scaleBarHeight);
+      this.ctx.moveTo(bottomRightOrigin.x, bottomRightOrigin.y - scaleBarHeight);
+      this.ctx.lineTo(bottomRightOrigin.x, bottomRightOrigin.y);
+      this.ctx.lineTo(bottomRightOrigin.x - scaleBarWidthPx, bottomRightOrigin.y);
+      this.ctx.lineTo(bottomRightOrigin.x - scaleBarWidthPx, bottomRightOrigin.y - scaleBarHeight);
       this.ctx.stroke();
     };
 
     const textPaddingPx = new Vector2(6, 4);
-    const renderScaleBarText = (origin: Vector2): void => {
-      const textOriginPx = new Vector2(origin.x - textPaddingPx.x, origin.y - textPaddingPx.y);
+    const renderScaleBarText = (bottomRightOrigin: Vector2): void => {
+      const textOriginPx = new Vector2(bottomRightOrigin.x - textPaddingPx.x, bottomRightOrigin.y - textPaddingPx.y);
 
       configureCanvasText(this.ctx, this.scaleBarOptions, "right", "bottom");
       renderCanvasText(this.ctx, textOriginPx.x, textOriginPx.y, textContent);
@@ -370,12 +370,11 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
     return {
       sizePx: new Vector2(scaleBarWidthPx, this.scaleBarOptions.fontSizePx + textPaddingPx.y * 2),
-      render: (origin = new Vector2(0, 0)) => {
+      render: (bottomRightOrigin = new Vector2(0, 0)) => {
         // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
-        const scaleBarX = Math.round(origin.x) + 0.5;
-        const scaleBarY = Math.round(origin.y) + 0.5;
-        renderScaleBar(scaleBarX, scaleBarY);
-        renderScaleBarText(origin);
+        const scaleBarOrigin = bottomRightOrigin.clone().round().add(new Vector2(0.5, 0.5));
+        renderScaleBar(scaleBarOrigin);
+        renderScaleBarText(bottomRightOrigin);
       },
     };
   }
@@ -444,7 +443,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
    * @returns an object with two properties:
    *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
    *  - `render`: a callback that renders the scale bar to the canvas. Note that the origin is
-   *   the lower right corner of the timestamp.
+   *   the bottom right corner of the timestamp.
    */
   private getTimestampRenderer(): RenderInfo {
     if (!this.timestampOptions.visible) {
@@ -459,18 +458,17 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
     // Save the render function for later.
     const timestampPaddingPx = new Vector2(6, 2);
-    const render = (origin: Vector2): void => {
-      const timestampOriginPx = new Vector2(origin.x - timestampPaddingPx.x, origin.y - timestampPaddingPx.y);
+    const render = (bottomRightOrigin: Vector2): void => {
+      const timestampOriginPx = bottomRightOrigin.clone().sub(timestampPaddingPx);
       configureCanvasText(this.ctx, this.timestampOptions, "right", "bottom");
       renderCanvasText(this.ctx, timestampOriginPx.x, timestampOriginPx.y, timestampFormatted);
     };
 
     return {
       sizePx: new Vector2(
-        timestampPaddingPx.x * 2 +
-          CanvasWithOverlay.getTextDimensions(this.ctx, timestampFormatted, this.timestampOptions).x,
-        timestampPaddingPx.y * 2 + this.timestampOptions.fontSizePx
-      ),
+        CanvasWithOverlay.getTextDimensions(this.ctx, timestampFormatted, this.timestampOptions).x,
+        this.timestampOptions.fontSizePx
+      ).add(timestampPaddingPx.clone().multiplyScalar(2)),
       render,
     };
   }
