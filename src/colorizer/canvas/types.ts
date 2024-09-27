@@ -5,8 +5,8 @@ import Dataset from "../Dataset";
 
 /**
  * Callback to render an element to the canvas.
- * @param origin Origin of the element, in canvas pixels.
- * Unless otherwise specified, the origin is the top left corner of the element.
+ * @param origin Origin of the element, in canvas pixels. Unless otherwise
+ * specified, the top left corner of the element will be placed at the origin.
  */
 export type RenderCallback = (origin: Vector2) => void;
 
@@ -15,8 +15,8 @@ export type RenderInfo = {
   sizePx: Vector2;
   /**
    * Callback to render an element to the canvas.
-   * @param origin Origin of the element, in canvas pixels.
-   * Unless otherwise specified, the origin is the top left corner of the element.
+   * @param origin Origin of the element, in canvas pixels. Unless otherwise
+   * specified, the top left corner of the element will be placed at the origin.
    */
   render: RenderCallback;
 };
@@ -28,8 +28,8 @@ export type BaseRenderParams = {
   dataset: Dataset | null;
   datasetKey: string | null;
   featureKey: string | null;
-  canvasWidth: number;
-  canvasHeight: number;
+  /** Dimensions of the colorized canvas, in pixels. */
+  canvasSize: Vector2;
 };
 
 export type FontStyle = {

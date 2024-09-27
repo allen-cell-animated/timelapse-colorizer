@@ -26,7 +26,7 @@ import ColorizeCanvas from "./ColorizeCanvas";
 /**
  * Extends the ColorizeCanvas class by overlaying and compositing additional
  * dynamic elements (like a scale bar, timestamp, etc.) on top of the
- * base rendered image.
+ * base colorized viewport.
  */
 export default class CanvasWithOverlay extends ColorizeCanvas {
   private canvas: HTMLCanvasElement;
@@ -41,9 +41,9 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private legendStyle: LegendStyle;
   private headerStyle: HeaderStyle;
   private footerStyle: FooterStyle;
-  private canvasWidth: number;
-  private canvasHeight: number;
 
+  /** Size of the inner colorized canvas, in pixels. */
+  private canvasSize: Vector2;
   // Size of the header and footer as of the current render.
   private headerSize: Vector2;
   private footerSize: Vector2;
@@ -80,8 +80,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.legendStyle = styles?.legend || defaultLegendStyle;
     this.headerStyle = styles?.header || defaultHeaderStyle;
     this.footerStyle = styles?.footer || defaultFooterStyle;
-    this.canvasWidth = 1;
-    this.canvasHeight = 1;
+    this.canvasSize = new Vector2(1, 1);
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
 
@@ -108,8 +107,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   }
 
   public setSize(width: number, height: number): void {
-    this.canvasWidth = width;
-    this.canvasHeight = height;
+    this.canvasSize.x = width;
+    this.canvasSize.y = height;
     super.setSize(width, height);
   }
 
@@ -160,8 +159,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
   private getBaseRendererParams(): BaseRenderParams {
     return {
-      canvasWidth: this.canvasWidth,
-      canvasHeight: this.canvasHeight,
+      canvasSize: this.canvasSize,
       collection: this.collection,
       dataset: this.dataset,
       datasetKey: this.datasetKey,
@@ -214,8 +212,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.footerSize = footerRenderer.sizePx;
 
     const devicePixelRatio = getPixelRatio();
-    this.canvas.width = Math.round(this.canvasWidth * devicePixelRatio);
-    this.canvas.height = Math.round((this.canvasHeight + this.headerSize.y + this.footerSize.y) * devicePixelRatio);
+    this.canvas.width = Math.round(this.canvasSize.x * devicePixelRatio);
+    this.canvas.height = Math.round((this.canvasSize.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio);
 
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -229,7 +227,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
     headerRenderer.render(new Vector2(0, 0));
-    footerRenderer.render(new Vector2(0, this.canvasHeight + this.headerSize.y));
+    footerRenderer.render(new Vector2(0, this.canvasSize.y + this.headerSize.y));
   }
 
   /**
@@ -243,8 +241,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.footerSize = footerRenderer.sizePx;
 
     const devicePixelRatio = getPixelRatio();
-    const canvasWidth = Math.round(this.canvasWidth * devicePixelRatio);
-    const canvasHeight = Math.round((this.canvasHeight + this.headerSize.y + this.footerSize.y) * devicePixelRatio);
+    const canvasWidth = Math.round(this.canvasSize.x * devicePixelRatio);
+    const canvasHeight = Math.round((this.canvasSize.y, +this.headerSize.y + this.footerSize.y) * devicePixelRatio);
     return [canvasWidth, canvasHeight];
   }
 }

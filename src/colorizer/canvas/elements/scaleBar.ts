@@ -88,7 +88,7 @@ export function getScaleBarRenderer(
   }
 
   const canvasWidthInUnits = frameDims.width / params.frameSizeInCanvasCoordinates.x;
-  const unitsPerScreenPixel = canvasWidthInUnits / params.canvasWidth / getPixelRatio();
+  const unitsPerScreenPixel = canvasWidthInUnits / params.canvasSize.x / getPixelRatio();
 
   // Get scale bar width and unit label
   const { scaleBarWidthPx, scaleBarWidthInUnits } = getScaleBarWidth(style, unitsPerScreenPixel);

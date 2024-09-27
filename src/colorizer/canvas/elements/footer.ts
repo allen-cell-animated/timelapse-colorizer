@@ -60,28 +60,28 @@ export function getFooterRenderer(ctx: CanvasRenderingContext2D, params: FooterP
       render: (origin = new Vector2(0, 0)) => {
         // Offset vertically by height + default margins
         origin.y -= insetSize.y + params.insetBoxStyle.marginPx.y;
-        origin.x = params.canvasWidth - insetSize.x - params.insetBoxStyle.marginPx.x;
+        origin.x = params.canvasSize.x - insetSize.x - params.insetBoxStyle.marginPx.x;
         renderInset(origin);
       },
     };
   }
 
   const insetMargin = insetSize.x > 0 ? params.insetBoxStyle.marginPx.x : 0;
-  const availableContentWidth = params.canvasWidth - style.paddingPx.x * 2 - insetSize.x - insetMargin;
+  const availableContentWidth = params.canvasSize.x - style.paddingPx.x * 2 - insetSize.x - insetMargin;
   // Size legend based on available content width
   const legendOptions = {
     ...params.legendStyle,
-    maxCategoricalWidthPx: Math.min(availableContentWidth, params.legendStyle.maxCategoricalWidthPx),
+    maxCategoricalWidthPx: availableContentWidth,
     maxColorRampWidthPx: Math.min(availableContentWidth, params.legendStyle.maxColorRampWidthPx),
   };
-  const { sizePx: legendSize, render: legendRenderer } = getLegendRenderer(ctx, params.legend, legendOptions);
+  const { sizePx: legendSize, render: renderLegend } = getLegendRenderer(ctx, params.legend, legendOptions);
 
   const maxHeight = Math.max(insetSize.y, legendSize.y);
   if (maxHeight === 0) {
     return EMPTY_RENDER_INFO;
   }
   const height = Math.round(maxHeight + style.paddingPx.y * 2);
-  const width = Math.round(params.canvasWidth + 1);
+  const width = Math.round(params.canvasSize.x + 1);
 
   return {
     sizePx: new Vector2(width, height),
@@ -97,14 +97,14 @@ export function getFooterRenderer(ctx: CanvasRenderingContext2D, params: FooterP
 
       // Render the inset box, centering it vertically
       const insetOrigin = new Vector2(
-        params.canvasWidth - insetSize.x - style.paddingPx.x,
+        params.canvasSize.x - insetSize.x - style.paddingPx.x,
         origin.y + (height - insetSize.y) / 2
       );
       renderInset(insetOrigin);
 
       // Render the legend
       const legendOrigin = new Vector2(origin.x + style.paddingPx.x, origin.y + style.paddingPx.y);
-      legendRenderer(legendOrigin);
+      renderLegend(legendOrigin);
     },
   };
 }

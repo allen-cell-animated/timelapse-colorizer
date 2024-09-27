@@ -61,11 +61,11 @@ export function getHeaderRenderer(ctx: CanvasRenderingContext2D, params: HeaderP
     render: (origin = new Vector2(0, 0)) => {
       ctx.fillStyle = style.fill;
       ctx.strokeStyle = style.stroke;
-      ctx.fillRect(origin.x - 0.5, origin.y - 0.5, params.canvasWidth + 1, height);
-      ctx.strokeRect(origin.x - 0.5, origin.y - 0.5, params.canvasWidth + 1, height);
+      ctx.fillRect(origin.x - 0.5, origin.y - 0.5, params.canvasSize.x + 1, height);
+      ctx.strokeRect(origin.x - 0.5, origin.y - 0.5, params.canvasSize.x + 1, height);
 
-      const textOrigin = origin.clone().add(new Vector2(params.canvasWidth / 2, style.paddingPx.y));
-      const fontOptions = { maxWidth: params.canvasWidth - style.paddingPx.x * 2, ...style };
+      const textOrigin = origin.clone().add(new Vector2(params.canvasSize.x / 2, style.paddingPx.y));
+      const fontOptions = { maxWidth: params.canvasSize.x - style.paddingPx.x * 2, ...style };
       configureCanvasText(ctx, style, "center", "top");
       renderCanvasText(ctx, textOrigin.x, textOrigin.y, headerText, fontOptions);
     },
