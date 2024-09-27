@@ -97,17 +97,18 @@ export function getTimestampRenderer(
 
   // Save the render function for later.
   const timestampPaddingPx = new Vector2(6, 2);
-  const render = (bottomRightOrigin: Vector2): void => {
-    // TODO: Fix origin to be from top left
+  const sizePx = new Vector2(getTextDimensions(ctx, timestampFormatted, options).x, options.fontSizePx).add(
+    timestampPaddingPx.clone().multiplyScalar(2)
+  );
+  const render = (origin: Vector2): void => {
+    const bottomRightOrigin = origin.add(sizePx);
     const timestampOriginPx = bottomRightOrigin.clone().sub(timestampPaddingPx);
     configureCanvasText(ctx, options, "right", "bottom");
     renderCanvasText(ctx, timestampOriginPx.x, timestampOriginPx.y, timestampFormatted);
   };
 
   return {
-    sizePx: new Vector2(getTextDimensions(ctx, timestampFormatted, options).x, options.fontSizePx).add(
-      timestampPaddingPx.clone().multiplyScalar(2)
-    ),
+    sizePx,
     render,
   };
 }

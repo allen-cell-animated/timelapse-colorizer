@@ -101,6 +101,7 @@ export function getInsetBoxRenderer(
         if (content.sizePx.y > 0) {
           contentOrigin.y += options.gap;
         }
+        contentOrigin.y += content.sizePx.y;
       }
     },
   };

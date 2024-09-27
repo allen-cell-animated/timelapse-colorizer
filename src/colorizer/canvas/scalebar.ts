@@ -120,11 +120,13 @@ export function getScaleBarRenderer(
     renderCanvasText(ctx, textOriginPx.x, textOriginPx.y, textContent);
   };
 
+  const sizePx = new Vector2(scaleBarWidthPx, options.fontSizePx + textPaddingPx.y * 2);
   return {
-    sizePx: new Vector2(scaleBarWidthPx, options.fontSizePx + textPaddingPx.y * 2),
-    render: (bottomRightOrigin = new Vector2(0, 0)) => {
+    sizePx,
+    render: (origin = new Vector2(0, 0)) => {
       // TODO: Fix origin so it renders from top left
       // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
+      const bottomRightOrigin = origin.clone().add(sizePx);
       const scaleBarOrigin = bottomRightOrigin.clone().round().add(new Vector2(0.5, 0.5));
       renderScaleBar(scaleBarOrigin);
       renderScaleBarText(bottomRightOrigin);
