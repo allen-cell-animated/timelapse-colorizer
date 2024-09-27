@@ -98,6 +98,7 @@ export function getTimestampRenderer(
   // Save the render function for later.
   const timestampPaddingPx = new Vector2(6, 2);
   const render = (bottomRightOrigin: Vector2): void => {
+    // TODO: Fix origin to be from top left
     const timestampOriginPx = bottomRightOrigin.clone().sub(timestampPaddingPx);
     configureCanvasText(ctx, options, "right", "bottom");
     renderCanvasText(ctx, timestampOriginPx.x, timestampOriginPx.y, timestampFormatted);

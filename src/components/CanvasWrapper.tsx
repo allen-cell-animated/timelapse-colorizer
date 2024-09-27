@@ -279,8 +279,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
-    canv.updateHeaderOptions({ visibleOnExport: props.config.showHeaderDuringExport });
-    canv.updateFooterOptions({ visibleOnExport: props.config.showLegendDuringExport });
+    canv.setIsHeaderVisibleOnExport(props.config.showHeaderDuringExport);
+    canv.setIsFooterVisibleOnExport(props.config.showLegendDuringExport);
   }, [props.config.showLegendDuringExport, props.isRecording]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////

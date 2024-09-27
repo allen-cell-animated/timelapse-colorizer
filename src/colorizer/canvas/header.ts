@@ -1,26 +1,25 @@
 import { Vector2 } from "three";
 
-import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "./types";
+import {
+  BaseRenderParams,
+  ContainerOptions,
+  defaultContainerOptions,
+  defaultStyleOptions,
+  EMPTY_RENDER_INFO,
+  FontStyleOptions,
+  RenderInfo,
+} from "./types";
 import { configureCanvasText, renderCanvasText } from "./utils";
 
-export type HeaderOptions = FontStyleOptions & {
-  fill: string;
-  stroke: string;
-  paddingPx: Vector2;
-  visibleOnExport: boolean;
-};
-
+export type HeaderOptions = ContainerOptions & FontStyleOptions;
 export type HeaderParams = BaseRenderParams & {
-  isExporting: boolean;
+  visible: boolean;
 };
 
 export const defaultHeaderOptions: HeaderOptions = {
   ...defaultStyleOptions,
-  fontSizePx: 16,
-  fill: "rgba(255, 255, 255, 1.0)",
-  stroke: "rgba(203, 203, 204, 1.0)",
+  ...defaultContainerOptions,
   paddingPx: new Vector2(10, 10),
-  visibleOnExport: false,
 };
 
 /**
@@ -53,7 +52,7 @@ export function getHeaderRenderer(
   options: HeaderOptions
 ): RenderInfo {
   const headerText = getHeaderText(params);
-  if (!headerText || !options.visibleOnExport || !params.isExporting) {
+  if (!headerText || !params.visible) {
     return EMPTY_RENDER_INFO;
   }
 

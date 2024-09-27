@@ -48,8 +48,8 @@ function renderInsetBoxBackground(
 }
 
 /**
- * Renders one or more elements stacked vertically inside an inset box, aligned to the right.
- * Contents are rendered in order from top to bottom.
+ * Renders one or more elements stacked vertically inside an inset box.
+ * Contents are rendered in order from top to bottom and aligned to the right.
  *
  * If all elements have size zero, the inset box will return an empty RenderInfo.
  *
