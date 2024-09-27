@@ -1,6 +1,16 @@
 import { Vector2 } from "three";
 
-import { FontStyleOptions } from "../canvas/types";
+import { FontStyleOptions } from "./types";
+
+export function getTextDimensions(ctx: CanvasRenderingContext2D, text: string, options: FontStyleOptions): Vector2 {
+  configureCanvasText(ctx, options);
+  const textWidth = ctx.measureText(text).width;
+  return new Vector2(textWidth, options.fontSizePx);
+}
+
+export function getPixelRatio(): number {
+  return window.devicePixelRatio || 1;
+}
 
 /**
  * Configures the canvas rendering context with the given font options.

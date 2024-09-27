@@ -1,5 +1,8 @@
 import { Vector2 } from "three";
 
+import Collection from "../Collection";
+import Dataset from "../Dataset";
+
 /**
  * Callback to render an element to the canvas.
  * @param origin Origin of the element, in canvas pixels.
@@ -19,6 +22,14 @@ export type RenderInfo = {
 };
 
 export const EMPTY_RENDER_INFO: RenderInfo = { sizePx: new Vector2(0, 0), render: () => {} };
+
+export type BaseRenderParams = {
+  collection: Collection | null;
+  dataset: Dataset | null;
+  datasetKey: string | null;
+  canvasWidth: number;
+  canvasHeight: number;
+};
 
 export type FontStyleOptions = {
   fontSizePx: number;

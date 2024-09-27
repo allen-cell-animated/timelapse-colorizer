@@ -1,10 +1,7 @@
 import { Vector2 } from "three";
 
-import { configureCanvasText, renderCanvasText } from "../utils/canvas_utils";
-import { defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "./types";
-
-import Collection from "../Collection";
-import Dataset from "../Dataset";
+import { BaseRenderParams, defaultStyleOptions, EMPTY_RENDER_INFO, FontStyleOptions, RenderInfo } from "./types";
+import { configureCanvasText, renderCanvasText } from "./utils";
 
 export type HeaderOptions = FontStyleOptions & {
   fill: string;
@@ -13,12 +10,8 @@ export type HeaderOptions = FontStyleOptions & {
   visibleOnExport: boolean;
 };
 
-export type HeaderParams = {
-  canvasWidth: number;
+export type HeaderParams = BaseRenderParams & {
   isExporting: boolean;
-  dataset: Dataset | null;
-  collection: Collection | null;
-  datasetKey: string | null;
 };
 
 export const defaultHeaderOptions: HeaderOptions = {
