@@ -73,11 +73,8 @@ function getScaleBarWidth(
 }
 
 /**
- * Gets the size of the scale bar and a callback to render it to the canvas.
- * @returns an object with two properties:
- *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
- *  - `render`: a callback that renders the scale bar to the canvas. The origin is the lower right
- *    corner of the scalebar.
+ * Draws the scale bar, if visible, and returns a RenderInfo containing the dimensions and
+ * a callback to render it to the canvas.
  */
 export function getScaleBarRenderer(
   ctx: CanvasRenderingContext2D,
@@ -94,7 +91,7 @@ export function getScaleBarRenderer(
   const canvasWidthInUnits = frameDims.width / params.frameSizeInCanvasCoordinates.x;
   const unitsPerScreenPixel = canvasWidthInUnits / params.canvasWidth / getPixelRatio();
 
-  ///////// Get scale bar width and unit label /////////
+  // Get scale bar width and unit label
   const { scaleBarWidthPx, scaleBarWidthInUnits } = getScaleBarWidth(options, unitsPerScreenPixel);
   const textContent = `${formatScaleBarValue(scaleBarWidthInUnits)} ${frameDims.units}`;
 
@@ -124,7 +121,6 @@ export function getScaleBarRenderer(
   return {
     sizePx,
     render: (origin = new Vector2(0, 0)) => {
-      // TODO: Fix origin so it renders from top left
       // Nudge by 0.5 pixels so scale bar can render sharply at 1px wide
       const bottomRightOrigin = origin.clone().add(sizePx);
       const scaleBarOrigin = bottomRightOrigin.clone().round().add(new Vector2(0.5, 0.5));

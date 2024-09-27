@@ -23,6 +23,7 @@ export const defaultInsetBoxOptions: InsetBoxOptions = {
 /**
  * Draws the inset box's background, intended to be layered under the content elements.
  * @param ctx Canvas context to render to.
+ * @param origin The top left corner of the box, in pixels.
  * @param size Size of the inset, in pixels.
  * @param options Configuration for the inset.
  */
@@ -51,10 +52,11 @@ function renderInsetBoxBackground(
  * Renders one or more elements stacked vertically inside an inset box.
  * Contents are rendered in order from top to bottom and aligned to the right.
  *
- * If all elements have size zero, the inset box will return an empty RenderInfo.
+ * If all elements have size zero, the inset box will not be rendered.
  *
- * @param ctx Rendering context.
- * @param contents The RenderInfo of the elements to render inside the inset box.
+ * @param ctx Rendering context to render to.
+ * @param contents The RenderInfo of the elements to render inside the inset box, in order from
+ *   top to bottom.
  * @param options Styling configuration for the inset box.
  * @param contents: Array of elements to render inside the inset box.
  * @returns RenderInfo object containing the size of the inset box and render callback to render
@@ -94,8 +96,8 @@ export function getInsetBoxRenderer(
       for (let i = 0; i < contents.length; i++) {
         const content = contents[i];
         const offsetOrigin = contentOrigin.clone();
-
         offsetOrigin.x += contentSize.x - content.sizePx.x;
+
         content.render(offsetOrigin);
 
         if (content.sizePx.y > 0) {

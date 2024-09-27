@@ -75,12 +75,8 @@ export function getTimestampLabel(params: TimestampParams): string | undefined {
 }
 
 /**
- * Draws the timestamp, if visible, and returns the rendered height and width.
- * @param originPx The origin of the timestamp, from the lower right corner, in pixels.
- * @returns an object with two properties:
- *  - `size`: a vector representing the width and height of the rendered scale bar, in pixels.
- *  - `render`: a callback that renders the scale bar to the canvas. Note that the origin is
- *   the bottom right corner of the timestamp.
+ * Draws the timestamp, if visible, and returns a RenderInfo containing the dimensions and
+ * a callback to render it to the canvas.
  */
 export function getTimestampRenderer(
   ctx: CanvasRenderingContext2D,

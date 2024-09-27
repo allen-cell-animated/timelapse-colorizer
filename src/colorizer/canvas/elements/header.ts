@@ -41,8 +41,10 @@ function getHeaderText(params: HeaderParams): string | undefined {
 }
 
 /**
- * Renders the header text if it's enabled in export mode and there is a
- * dataset name/collection name to display.
+ * Renders the header text if visible and there is a valid dataset name (and optional collection name)
+ * to display. The header is rendered as a filled and outlined box around the text, set to the width
+ * of the canvas.
+ *
  * @returns a RenderInfo object containing the size of the header and render
  * callback for the header. The size will be (0, 0) if the header is not visible.
  */
@@ -60,15 +62,16 @@ export function getHeaderRenderer(
   const width = ctx.canvas.width;
   return {
     sizePx: new Vector2(width, height),
-    render: () => {
+    render: (origin = new Vector2(0, 0)) => {
       ctx.fillStyle = options.fill;
       ctx.strokeStyle = options.stroke;
-      ctx.fillRect(-0.5, -0.5, params.canvasWidth + 1, height);
-      ctx.strokeRect(-0.5, -0.5, params.canvasWidth + 1, height);
+      ctx.fillRect(origin.x - 0.5, origin.y - 0.5, params.canvasWidth + 1, height);
+      ctx.strokeRect(origin.x - 0.5, origin.y - 0.5, params.canvasWidth + 1, height);
 
+      const textOrigin = origin.clone().add(new Vector2(params.canvasWidth / 2, options.paddingPx.y));
       const fontOptions = { maxWidth: params.canvasWidth - options.paddingPx.x * 2, ...options };
       configureCanvasText(ctx, options, "center", "top");
-      renderCanvasText(ctx, params.canvasWidth / 2, options.paddingPx.y, headerText, fontOptions);
+      renderCanvasText(ctx, textOrigin.x, textOrigin.y, headerText, fontOptions);
     },
   };
 }

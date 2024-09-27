@@ -237,11 +237,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
    * canvas is being exported.
    */
   getExportDimensions(): [number, number] {
-    // Temporarily set is exporting to true and measure the dimensions of the header and footer.
-    const originalIsExportingFlag = this.isExporting;
-
-    this.isExporting = true;
-
     const headerRenderer = this.getHeaderRenderer(this.isHeaderVisibleOnExport);
     const footerRenderer = this.getFooterRenderer(this.isFooterVisibleOnExport);
     this.headerSize = headerRenderer.sizePx;
@@ -250,8 +245,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     const devicePixelRatio = getPixelRatio();
     const canvasWidth = Math.round(this.canvasWidth * devicePixelRatio);
     const canvasHeight = Math.round((this.canvasHeight + this.headerSize.y + this.footerSize.y) * devicePixelRatio);
-
-    this.isExporting = originalIsExportingFlag;
     return [canvasWidth, canvasHeight];
   }
 }
