@@ -688,10 +688,13 @@ function Viewer(): ReactElement {
   timeControls.setFrameCallback(setFrame);
 
   const handleKeyDown = useCallback(
-    ({ key }: KeyboardEvent): void => {
-      if (key === "ArrowLeft" || key === "Left") {
+    (e: KeyboardEvent): void => {
+      if (e.target instanceof HTMLInputElement) {
+        return;
+      }
+      if (e.key === "ArrowLeft" || e.key === "Left") {
         timeControls.advanceFrame(-1);
-      } else if (key === "ArrowRight" || key === "Right") {
+      } else if (e.key === "ArrowRight" || e.key === "Right") {
         timeControls.advanceFrame(1);
       }
     },
