@@ -362,6 +362,14 @@ function Viewer(): ReactElement {
     [featureThresholds, config.keepRangeBetweenDatasets]
   );
 
+  const openScatterPlotTab = useCallback(
+    (xAxis: string, yAxis: string) => {
+      updateConfig({ openTab: TabType.SCATTER_PLOT });
+      updateScatterPlotConfig({ xAxis, yAxis });
+    },
+    [updateConfig, updateScatterPlotConfig]
+  );
+
   // DATASET LOADING ///////////////////////////////////////////////////////
 
   const handleProgressUpdate = useCallback((complete: number, total: number): void => {
@@ -1105,6 +1113,7 @@ function Viewer(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <CorrelationPlotTab
+                          openScatterPlotTab={openScatterPlotTab}
                           dataset={dataset}
                           isVisible={config.openTab === TabType.CORRELATION_PLOT}
                           isPlaying={timeControls.isPlaying() || isRecording}

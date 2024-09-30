@@ -40,6 +40,7 @@ type CorrelationPlotTabProps = {
   correlationPlotConfig: CorrelationPlotConfig;
   updateCorrelationPlotConfig: (config: Partial<CorrelationPlotConfig>) => void;
   showAlert: ShowAlertBannerCallback;
+  openScatterPlotTab(xAxisFeatureKey: string, yAxisFeatureKey: string): void;
 };
 
 /**
@@ -283,7 +284,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         if (!d) {
           return;
         }
-        //console.log(cols[d.x] + ", " + cols[d.y] + ": " + d.value.toFixed(2));
+        props.openScatterPlotTab(cols[d.x], cols[d.y]);
       });
 
     // legend scale
