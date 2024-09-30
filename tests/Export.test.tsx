@@ -16,6 +16,7 @@ describe("ExportButton", () => {
             throw new Error("Function not implemented.");
           }}
           getCanvas={vi.fn()}
+          getCanvasExportDimensions={vi.fn()}
           currentFrame={0}
         />
       );
@@ -26,7 +27,7 @@ describe("ExportButton", () => {
       const exportButton = screen.getByRole("button");
       fireEvent.click(exportButton); // open modal
 
-      const prefixInput: HTMLInputElement = screen.getByLabelText(/[pP]refix/);
+      const prefixInput: HTMLInputElement = screen.getByLabelText(/[fF]ilename/);
       expect(prefixInput.value).to.equal("prefix-1-");
 
       rerender(makeExportButtonWithImagePrefix("prefix-2"));
@@ -38,7 +39,7 @@ describe("ExportButton", () => {
       const exportButton = screen.getByRole("button");
       fireEvent.click(exportButton); // open modal
 
-      const prefixInput: HTMLInputElement = screen.getByLabelText(/[pP]refix/);
+      const prefixInput: HTMLInputElement = screen.getByLabelText(/[fF]ilename/);
       fireEvent.input(prefixInput, { target: { value: "my new prefix" } });
       expect(prefixInput.value).to.equal("my new prefix");
 

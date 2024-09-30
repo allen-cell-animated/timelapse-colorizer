@@ -47,7 +47,7 @@ const theme = {
     text: {
       primary: palette.gray60,
       secondary: palette.gray50,
-      hint: palette.gray30,
+      hint: palette.gray40,
       disabled: palette.gray30,
       button: palette.gray0,
       error: palette.error,

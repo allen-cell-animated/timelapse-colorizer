@@ -18,6 +18,7 @@ type SpinBoxProps = {
    * will do nothing, and values will be clamped to the min/max.
    */
   wrapIncrement?: boolean;
+  width?: string;
 };
 
 const defaultProps: Partial<SpinBoxProps> = {
@@ -102,7 +103,10 @@ export default function SpinBox(propsInput: SpinBoxProps): ReactElement {
   }, []);
 
   return (
-    <div className={styles.spinBox + " " + (props.disabled ? styles.disabled : "")}>
+    <div
+      className={styles.spinBox + " " + (props.disabled ? styles.disabled : "")}
+      style={props.width ? { maxWidth: props.width } : undefined}
+    >
       <input
         type="number"
         min={props.min}
