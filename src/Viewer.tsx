@@ -535,11 +535,15 @@ function Viewer(): ReactElement {
 
       if (!datasetResult.loaded) {
         console.error(datasetResult.errorMessage);
-        notificationApi["error"]({
-          message: "Error loading dataset: ",
-          description: datasetResult.errorMessage,
-          placement: "bottomLeft",
-          duration: 4,
+        showAlert({
+          message: "Dataset could not be loaded.",
+          type: "error",
+          closable: false,
+          description: [
+            'Encountered the following error when loading the dataset: "' + datasetResult.errorMessage + '"',
+            "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
+          ],
+          action: <Link to="/">Return to homepage</Link>,
         });
         setIsDatasetLoading(false);
         return;
