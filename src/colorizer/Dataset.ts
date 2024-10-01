@@ -390,6 +390,8 @@ export default class Dataset {
     const startTime = new Date();
 
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
+    console.log(manifest);
+
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
@@ -402,9 +404,9 @@ export default class Dataset {
       for (const { name, key, frames } of manifest.backdrops) {
         this.backdropData.set(key, { name, frames });
         if (frames.length !== this.frameFiles.length || 0) {
-          // TODO: Show error message in the UI when this happens.
           throw new Error(
-            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'.`
+            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
+              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
           );
         }
       }
@@ -423,7 +425,9 @@ export default class Dataset {
 
     // Load feature data
     if (manifest.features.length === 0) {
-      throw new Error("No features found in dataset manifest. At least one feature must be defined.");
+      throw new Error(
+        "The dataset's manifest JSON was loaded but no features found were found. At least one feature must be defined."
+      );
     }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
       reportLoadProgress(this.loadFeature(data))

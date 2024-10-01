@@ -102,9 +102,31 @@ export function fetchWithTimeout(
  * Fetches a manifest JSON file from a given URL and returns the parsed JSON object.
  */
 export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
-  // TODO: Should this report error states if load failed?
-  const response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
-  return await JSON.parse(nanToNull(await response.text()));
+  let response;
+  try {
+    response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
+  } catch (error) {
+    console.error(`Failed to fetch manifest file from url '${url}':`, error);
+    throw new Error(
+      `Could not fetch expected manifest JSON file. Please check if the file exists and if you have network access to it, or see the developer console for more details.`
+    );
+  }
+
+  if (response.status !== 200) {
+    console.error(`Failed to fetch manifest file from url '${url}':`, response);
+    throw new Error(
+      `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. Please check if the file exists and if you have network access to it, or see the developer console for more details.`
+    );
+  }
+
+  try {
+    return await JSON.parse(nanToNull(await response.text()));
+  } catch (error) {
+    console.error(`Failed to parse manifest file from url '${url}':`, error);
+    throw new Error(
+      `Parsing failed for the manifest JSON file. Please check that the JSON syntax is correct: ` + error
+    );
+  }
 }
 
 /**

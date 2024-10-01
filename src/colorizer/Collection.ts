@@ -163,7 +163,7 @@ export default class Collection {
         return {
           loaded: false,
           dataset: null,
-          errorMessage: `Error: Could not load dataset manifest '${datasetKey}'. ("${e}")`,
+          errorMessage: e.message,
         };
       } else {
         return { loaded: false, dataset: null };
