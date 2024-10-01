@@ -246,10 +246,13 @@ export default class Collection {
     try {
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
-      throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
+      throw new Error(`Could not fetch expected collections JSON file from URL: ${absoluteCollectionUrl}`);
     }
     if (!response.ok) {
-      throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': Fetch failed.`);
+      console.error(`Failed to fetch collections JSON from url '${absoluteCollectionUrl}':`, response);
+      throw new Error(
+        `Received a ${response.status} (${response.statusText}) code from the server while retrieving collections JSON from url '${absoluteCollectionUrl}'.`
+      );
     }
 
     let collection: CollectionFile;
@@ -257,17 +260,23 @@ export default class Collection {
       const json = await response.json();
       collection = updateCollectionVersion(json);
     } catch (e) {
-      throw new Error(`Could not parse collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
+      throw new Error(
+        `Parsing failed for the collections JSON file. Please check that the JSON syntax is correct:` + e
+      );
     }
 
     // Convert JSON array into map
     if (collection.datasets.length === 0) {
       throw new Error(
-        `Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': No datasets found.`
+        `The collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.`
       );
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
     for (const entry of collection.datasets) {
+      if (collectionData.has(entry.name)) {
+        // TODO: Show a popup warning for this?
+        console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
+      }
       collectionData.set(entry.name, entry);
     }
 

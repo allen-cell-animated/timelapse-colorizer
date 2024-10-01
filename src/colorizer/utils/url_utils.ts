@@ -112,7 +112,7 @@ export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
     );
   }
 
-  if (response.status !== 200) {
+  if (!response.ok) {
     console.error(`Failed to fetch manifest file from url '${url}':`, response);
     throw new Error(
       `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. Please check if the file exists and if you have network access to it, or see the developer console for more details.`
