@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "antd";
 import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
-import React, { memo, ReactElement, useContext, useEffect, useRef, useState, useTransition } from "react";
+import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, HexColorString } from "three";
 
@@ -127,6 +127,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const dataset = useDebounce(props.dataset, 500);
   const colorRampMin = useDebounce(props.colorRampMin, 100);
   const colorRampMax = useDebounce(props.colorRampMax, 100);
+
+  useMemo(() => {
+    if (props.scatterPlotConfig.xAxis === null && props.scatterPlotConfig.yAxis === null && props.selectedFeatureKey) {
+      props.updateScatterPlotConfig({
+        yAxis: props.selectedFeatureKey,
+        xAxis: SCATTERPLOT_TIME_FEATURE.key,
+      });
+    }
+  }, [props.selectedFeatureKey]);
 
   // Trigger render spinner when playback starts, but only if the render is being delayed.
   // If a render is allowed to happen (such as in the current-track- or current-frame-only
