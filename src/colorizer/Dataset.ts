@@ -376,6 +376,7 @@ export default class Dataset {
       manifestLoader: typeof urlUtils.fetchManifestJson;
       onLoadStart?: () => void;
       onLoadComplete?: () => void;
+      reportWarning?: (message: string | string[]) => void;
     }> = {}
   ): Promise<void> {
     if (this.hasOpened) {
@@ -465,9 +466,15 @@ export default class Dataset {
     });
 
     if (this.features.size !== manifest.features.length) {
-      console.warn(
-        "One or more features could not be loaded. This may be because of an unsupported format or a missing file."
-      );
+      // Report the names of all features that could not be loaded.
+      const missingFeatures = manifest.features
+        .map((f) => f.name)
+        .filter((name) => !Array.from(this.features.values()).some((f) => f.name === name));
+      options.reportWarning?.([
+        "The following feature(s) could not be loaded and will not be shown: ",
+        ...missingFeatures,
+        "This may be because of an unsupported format or a missing file.",
+      ]);
     }
 
     // Analytics reporting
@@ -479,7 +486,6 @@ export default class Dataset {
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
-    // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
   }
 
