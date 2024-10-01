@@ -370,6 +370,40 @@ function Viewer(): ReactElement {
     });
   }, []);
 
+  const showDatasetLoadFailed = useCallback(
+    (errorMessage?: string): void => {
+      const description: string[] = [
+        errorMessage
+          ? 'Encountered the following error when loading the dataset: "' + errorMessage + '"'
+          : "Encountered an error when loading the dataset.",
+        "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
+      ];
+
+      showAlert({
+        message: "Dataset could not be loaded.",
+        type: "error",
+        closable: false,
+        description,
+        action: <Link to="/">Return to homepage</Link>,
+      });
+    },
+    [showAlert]
+  );
+
+  const handleDatasetLoadWarning = useCallback(
+    (message: string | string[]) => {
+      notificationApi["warning"]({
+        message: "Dataset load warning",
+        type: "warning",
+        description: Array.isArray(message) ? message : [message],
+        placement: "bottomLeft",
+        duration: 4,
+      });
+      console.warn("Encountered a problem while loading a dataset: " + message);
+    },
+    [notificationApi]
+  );
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -508,21 +542,13 @@ function Viewer(): ReactElement {
             return;
           }
           // Try loading the collection, with the default collection as a fallback.
+
           try {
             newCollection = await Collection.loadCollection(collectionUrlParam);
             datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
           } catch (error) {
             console.error(error);
-            showAlert({
-              message: "Dataset could not be loaded.",
-              type: "error",
-              closable: false,
-              description: [
-                'Encountered the following error when loading the dataset: "' + (error as Error).message + '"',
-                "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
-              ],
-              action: <Link to="/">Return to homepage</Link>,
-            });
+            showDatasetLoadFailed((error as Error).message);
             setIsDatasetLoading(false);
             return;
           }
@@ -531,16 +557,15 @@ function Viewer(): ReactElement {
 
       setCollection(newCollection);
       setDatasetLoadProgress(null);
-      const datasetResult = await newCollection.tryLoadDataset(datasetKey, handleProgressUpdate, arrayLoader);
+      const datasetResult = await newCollection.tryLoadDataset(datasetKey, {
+        onLoadProgress: handleProgressUpdate,
+        arrayLoader,
+        reportWarning: handleDatasetLoadWarning,
+      });
 
       if (!datasetResult.loaded) {
         console.error(datasetResult.errorMessage);
-        notificationApi["error"]({
-          message: "Error loading dataset: ",
-          description: datasetResult.errorMessage,
-          placement: "bottomLeft",
-          duration: 4,
-        });
+        showDatasetLoadFailed(datasetResult.errorMessage);
         setIsDatasetLoading(false);
         return;
       }
@@ -632,14 +657,18 @@ function Viewer(): ReactElement {
       if (newDatasetKey !== datasetKey && collection) {
         setIsDatasetLoading(true);
         setDatasetLoadProgress(null);
-        const result = await collection.tryLoadDataset(newDatasetKey, handleProgressUpdate, arrayLoader);
+        const result = await collection.tryLoadDataset(newDatasetKey, {
+          onLoadProgress: handleProgressUpdate,
+          arrayLoader,
+          reportWarning: handleDatasetLoadWarning,
+        });
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
         } else {
           // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
           console.error(result.errorMessage);
           notificationApi["error"]({
-            message: "Error loading dataset:",
+            message: "Dataset load failed",
             description: result.errorMessage,
             placement: "bottomLeft",
             duration: 4,

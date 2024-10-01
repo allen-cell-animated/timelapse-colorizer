@@ -1,3 +1,4 @@
+import { message } from "antd";
 import {
   Color,
   FloatType,
@@ -199,3 +200,5 @@ export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   yAxis: null,
   rangeType: PlotRangeType.ALL_TIME,
 });
+
+export type ReportWarningCallback = (message: string | string[]) => void;
