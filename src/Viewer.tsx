@@ -362,6 +362,21 @@ function Viewer(): ReactElement {
     [featureThresholds, config.keepRangeBetweenDatasets]
   );
 
+  /** Handle startup behaviors for tabs when changed. */
+  const onTabChanged = useCallback(
+    (key: string) => {
+      if (key === TabType.SCATTER_PLOT) {
+        // When opening scatterplot tab, plot the current feature against
+        // time if no x/y axis is set.
+        if (!scatterPlotConfig.xAxis && !scatterPlotConfig.yAxis) {
+          updateScatterPlotConfig({ xAxis: SCATTERPLOT_TIME_FEATURE.key, yAxis: featureKey });
+        }
+      }
+      updateConfig({ openTab: key as TabType });
+    },
+    [updateConfig, featureKey]
+  );
+
   // DATASET LOADING ///////////////////////////////////////////////////////
 
   const handleProgressUpdate = useCallback((complete: number, total: number): void => {
@@ -1055,7 +1070,7 @@ function Viewer(): ReactElement {
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
                 activeKey={config.openTab}
-                onChange={(key) => updateConfig({ openTab: key as TabType })}
+                onChange={onTabChanged}
                 items={[
                   {
                     label: "Track plot",
