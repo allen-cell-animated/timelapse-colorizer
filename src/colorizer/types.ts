@@ -1,4 +1,3 @@
-import { message } from "antd";
 import {
   Color,
   FloatType,
@@ -201,4 +200,9 @@ export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   rangeType: PlotRangeType.ALL_TIME,
 });
 
-export type ReportWarningCallback = (message: string | string[]) => void;
+/**
+ * Callback used to report warnings to the user. The message is the title
+ * of the warning, and the description is the body of the warning. If an array
+ * is provided for the description, each string should be displayed on a new line.
+ */
+export type ReportWarningCallback = (message: string, description: string | string[]) => void;

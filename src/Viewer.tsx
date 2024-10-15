@@ -23,6 +23,7 @@ import {
   FeatureThreshold,
   getDefaultScatterPlotConfig,
   isThresholdNumeric,
+  ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
   ViewerConfig,
@@ -160,6 +161,7 @@ function Viewer(): ReactElement {
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
   const { bannerElement, showAlert, clearBanners } = useAlertBanner();
+  const queuedAlerts = useRef<(() => void)[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -390,18 +392,18 @@ function Viewer(): ReactElement {
     [showAlert]
   );
 
-  const handleDatasetLoadWarning = useCallback(
-    (message: string | string[]) => {
-      notificationApi["warning"]({
-        message: "Dataset load warning",
-        type: "warning",
-        description: Array.isArray(message) ? message : [message],
-        placement: "bottomLeft",
-        duration: 4,
+  const handleDatasetLoadWarning: ReportWarningCallback = useCallback(
+    (message: string, description: string | string[]) => {
+      queuedAlerts.current.push(() => {
+        showAlert({
+          message: message,
+          description: description,
+          closable: true,
+          type: "warning",
+        });
       });
-      console.warn("Encountered a problem while loading a dataset: " + message);
     },
-    [notificationApi]
+    [notificationApi, showAlert]
   );
 
   /**
@@ -422,6 +424,12 @@ function Viewer(): ReactElement {
       }
       // State updates
       clearBanners();
+      if (queuedAlerts.current.length > 0) {
+        for (const alert of queuedAlerts.current) {
+          alert();
+        }
+        queuedAlerts.current = [];
+      }
       setDataset(newDataset);
       setDatasetKey(newDatasetKey);
 

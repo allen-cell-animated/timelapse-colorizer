@@ -1,7 +1,7 @@
 import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { FeatureArrayType, FeatureDataType } from "./types";
+import { FeatureArrayType, FeatureDataType, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { getKeyFromName } from "./utils/data_utils";
 import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
@@ -366,9 +366,11 @@ export default class Dataset {
 
   /**
    * Opens the dataset and loads all necessary files from the manifest.
-   * @param manifestLoader Optional. The function used to load the manifest JSON data. If undefined, uses a default fetch method.
-   * @param onLoadStart Called once for each data file (other than the manifest) that starts an async load process.
-   * @param onLoadComplete Called once when each data file finishes loading.
+   * @param options Configuration options for the dataset loader.
+   * - `manifestLoader` The function used to load the manifest JSON data. If undefined, uses a default fetch method.
+   * - `onLoadStart` Called once for each data file (other than the manifest) that starts an async load process.
+   * - `onLoadComplete` Called once when each data file finishes loading.
+   * - `reportWarning` Called with a string or array of strings to report warnings to the user. These are non-fatal errors.
    * @returns A Promise that resolves when loading completes.
    */
   public async open(
@@ -376,7 +378,7 @@ export default class Dataset {
       manifestLoader: typeof urlUtils.fetchManifestJson;
       onLoadStart?: () => void;
       onLoadComplete?: () => void;
-      reportWarning?: (message: string | string[]) => void;
+      reportWarning?: ReportWarningCallback;
     }> = {}
   ): Promise<void> {
     if (this.hasOpened) {
@@ -470,9 +472,9 @@ export default class Dataset {
       const missingFeatures = manifest.features
         .map((f) => f.name)
         .filter((name) => !Array.from(this.features.values()).some((f) => f.name === name));
-      options.reportWarning?.([
+      options.reportWarning?.("Some features failed to load.", [
         "The following feature(s) could not be loaded and will not be shown: ",
-        ...missingFeatures,
+        ...missingFeatures.map((name) => `  - ${name}`),
         "This may be because of an unsupported format or a missing file.",
       ]);
     }
