@@ -6,6 +6,7 @@ import styled from "styled-components";
 import { useClickAnyWhere } from "usehooks-ts";
 
 import { Dataset } from "../colorizer";
+import { ReportWarningCallback } from "../colorizer/types";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
 
@@ -24,6 +25,7 @@ type LoadDatasetButtonProps = {
   onLoad: (collection: Collection, datasetKey: string, dataset: Dataset) => void;
   /** The URL of the currently loaded resource, used to indicate it on the recent datasets dropdown. */
   currentResourceUrl: string;
+  reportWarning?: ReportWarningCallback;
 };
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
@@ -86,9 +88,13 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     if (typeof newErrorText === "string") {
       const splitText = newErrorText.split("\n");
       _setErrorText(
-        splitText.map((text) => {
+        splitText.map((text, index) => {
           const hasIndent = text.startsWith("\t");
-          return <p style={{ marginLeft: hasIndent ? "30px" : "" }}>{text}</p>;
+          return (
+            <p key={index} style={{ marginLeft: hasIndent ? "30px" : "" }}>
+              {text}
+            </p>
+          );
         })
       );
     } else {
@@ -131,7 +137,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
    */
   const handleLoadRequest = async (url: string): Promise<[string, Collection, Dataset]> => {
     console.log("Loading '" + url + "'.");
-    const newCollection = await Collection.loadFromAmbiguousUrl(url);
+    const newCollection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
     const newDatasetKey = newCollection.getDefaultDatasetKey();
     const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
     if (!loadResult.loaded) {

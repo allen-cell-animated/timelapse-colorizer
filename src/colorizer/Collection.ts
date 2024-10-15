@@ -246,11 +246,15 @@ export default class Collection {
    * @throws Error if the JSON could not be retrieved or is an unrecognized format.
    * @returns A new Collection object containing the retrieved data.
    */
-  public static async loadCollection(collectionParam: string, fetchMethod = fetchWithTimeout): Promise<Collection> {
+  public static async loadCollection(
+    collectionParam: string,
+    options: Partial<{ fetchMethod: typeof fetchWithTimeout; reportWarning: ReportWarningCallback }> = {}
+  ): Promise<Collection> {
     const absoluteCollectionUrl = Collection.formatAbsoluteCollectionPath(collectionParam);
 
     let response;
     try {
+      const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
       throw new Error(`Could not fetch expected collections JSON file from URL: ${absoluteCollectionUrl}`);
@@ -273,18 +277,27 @@ export default class Collection {
     }
 
     // Convert JSON array into map
-    if (collection.datasets.length === 0) {
+    if (!collection.datasets || collection.datasets.length === 0) {
       throw new Error(
         `The collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.`
       );
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
+    const duplicateCollectionNames = new Set<string>();
     for (const entry of collection.datasets) {
       if (collectionData.has(entry.name)) {
-        // TODO: Show a popup warning for this?
+        duplicateCollectionNames.add(entry.name);
         console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
       }
       collectionData.set(entry.name, entry);
+    }
+
+    if (duplicateCollectionNames.size > 0) {
+      options.reportWarning?.(`Duplicate dataset names were found in the collection.`, [
+        "The following dataset(s) had duplicate names and were skipped when loading the collection:",
+        ...Array.from(duplicateCollectionNames).map((name) => `- ${name}`),
+        "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
+      ]);
     }
 
     triggerAnalyticsEvent(AnalyticsEvent.COLLECTION_LOAD, {
@@ -314,15 +327,7 @@ export default class Collection {
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
 
-    const collection = new Collection(collectionData, null);
-    // Attempt to load the dataset to surface any loading errors.
-    const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
-    if (!loadResult.loaded) {
-      throw new Error(loadResult.errorMessage);
-    }
-    // Dummy collection copies metadata from the dataset.
-    collection.metadata = loadResult.dataset.metadata;
-    return collection;
+    return new Collection(collectionData, null);
   }
 
   /**
@@ -330,12 +335,17 @@ export default class Collection {
    * Collection representing its contents (either the loaded collection or a dummy collection
    * containing just the dataset).
    * @param url the URL resource to attempt to load.
-   * @param fetchMethod optional override for the fetch method.
+   * @param options optional configuration object containing any of the following properties:
+   *  - `fetchMethod` optional override for the fetch method.
+   *  - `reportWarning` optional callback for reporting warning messages during loading.
    * @throws an error if `url` is not a URL.
    * @returns a Promise of a new Collection object, either loaded from a collection JSON file or
    * generated as a wrapper around a single dataset.
    */
-  public static async loadFromAmbiguousUrl(url: string, fetchMethod = fetchWithTimeout): Promise<Collection> {
+  public static async loadFromAmbiguousUrl(
+    url: string,
+    options: Partial<{ fetchMethod: typeof fetchWithTimeout; reportWarning: ReportWarningCallback }> = {}
+  ): Promise<Collection> {
     // TODO: Also handle Nucmorph URLs that are pasted in? If website base URL matches, redirect?
 
     if (!isUrl(url)) {
@@ -345,7 +355,7 @@ export default class Collection {
     let collectionLoadError: Error | null = null;
     let datasetLoadError: Error | null = null;
     try {
-      return await Collection.loadCollection(url, fetchMethod);
+      return await Collection.loadCollection(url, options);
     } catch (e) {
       collectionLoadError = e as Error;
       console.warn(e);
@@ -354,7 +364,13 @@ export default class Collection {
 
     // Could not load as a collection, attempt to load as a dataset.
     try {
-      return await Collection.makeCollectionFromSingleDataset(url);
+      const collection = await Collection.makeCollectionFromSingleDataset(url);
+      // Attempt to load the default dataset immediately to surface any loading errors.
+      const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
+      if (!loadResult.loaded) {
+        throw new Error(loadResult.errorMessage);
+      }
+      return collection;
     } catch (e) {
       console.warn(e);
       datasetLoadError = e as Error;
