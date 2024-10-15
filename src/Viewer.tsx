@@ -403,7 +403,7 @@ function Viewer(): ReactElement {
         });
       });
     },
-    [notificationApi, showAlert]
+    [showAlert]
   );
 
   /**
@@ -552,7 +552,9 @@ function Viewer(): ReactElement {
           // Try loading the collection, with the default collection as a fallback.
 
           try {
-            newCollection = await Collection.loadCollection(collectionUrlParam);
+            newCollection = await Collection.loadCollection(collectionUrlParam, {
+              reportWarning: showDatasetLoadWarning,
+            });
             datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
           } catch (error) {
             console.error(error);
@@ -843,7 +845,11 @@ function Viewer(): ReactElement {
         <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
-            <LoadDatasetButton onLoad={handleDatasetLoad} currentResourceUrl={collection?.url || datasetKey} />
+            <LoadDatasetButton
+              onLoad={handleDatasetLoad}
+              currentResourceUrl={collection?.url || datasetKey}
+              reportWarning={showDatasetLoadWarning}
+            />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
