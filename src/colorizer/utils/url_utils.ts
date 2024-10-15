@@ -131,13 +131,13 @@ export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
 
 /**
  * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
- * TODO: Pass in a callback to handle the error case instead of just logging a warning.
  */
-export function getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
+export function getPromiseValue<T>(
+  promise: PromiseSettledResult<T>,
+  onFailure?: (rejectionReason: any) => void
+): T | null {
   if (promise.status === "rejected") {
-    if (failureWarning) {
-      console.warn(failureWarning, promise.reason);
-    }
+    onFailure?.(promise.reason);
     return null;
   }
   return promise.value;
