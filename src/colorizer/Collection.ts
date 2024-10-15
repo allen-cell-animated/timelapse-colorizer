@@ -277,7 +277,7 @@ export default class Collection {
     }
 
     // Convert JSON array into map
-    if (collection.datasets.length === 0) {
+    if (!collection.datasets || collection.datasets.length === 0) {
       throw new Error(
         `The collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.`
       );
@@ -293,7 +293,7 @@ export default class Collection {
     }
 
     if (duplicateCollectionNames.size > 0) {
-      options.reportWarning?.(`Duplicate dataset were found in the collection.`, [
+      options.reportWarning?.(`Duplicate dataset names were found in the collection.`, [
         "The following dataset(s) had duplicate names and were skipped when loading the collection:",
         ...Array.from(duplicateCollectionNames).map((name) => `- ${name}`),
         "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
