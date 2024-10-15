@@ -372,7 +372,7 @@ function Viewer(): ReactElement {
     });
   }, []);
 
-  const showDatasetLoadFailed = useCallback(
+  const showDatasetLoadError = useCallback(
     (errorMessage?: string): void => {
       const description: string[] = [
         errorMessage
@@ -392,14 +392,14 @@ function Viewer(): ReactElement {
     [showAlert]
   );
 
-  const handleDatasetLoadWarning: ReportWarningCallback = useCallback(
+  const showDatasetLoadWarning: ReportWarningCallback = useCallback(
     (message: string, description: string | string[]) => {
       queuedAlerts.current.push(() => {
         showAlert({
           message: message,
-          description: description,
-          closable: true,
           type: "warning",
+          closable: true,
+          description: description,
         });
       });
     },
@@ -531,7 +531,7 @@ function Viewer(): ReactElement {
         if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
           // Make a dummy collection that will include only this dataset
-          newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+          newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
           if (!collectionUrlParam) {
@@ -556,7 +556,7 @@ function Viewer(): ReactElement {
             datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
           } catch (error) {
             console.error(error);
-            showDatasetLoadFailed((error as Error).message);
+            showDatasetLoadError((error as Error).message);
             setIsDatasetLoading(false);
             return;
           }
@@ -568,12 +568,12 @@ function Viewer(): ReactElement {
       const datasetResult = await newCollection.tryLoadDataset(datasetKey, {
         onLoadProgress: handleProgressUpdate,
         arrayLoader,
-        reportWarning: handleDatasetLoadWarning,
+        reportWarning: showDatasetLoadWarning,
       });
 
       if (!datasetResult.loaded) {
         console.error(datasetResult.errorMessage);
-        showDatasetLoadFailed(datasetResult.errorMessage);
+        showDatasetLoadError(datasetResult.errorMessage);
         setIsDatasetLoading(false);
         return;
       }
@@ -668,7 +668,7 @@ function Viewer(): ReactElement {
         const result = await collection.tryLoadDataset(newDatasetKey, {
           onLoadProgress: handleProgressUpdate,
           arrayLoader,
-          reportWarning: handleDatasetLoadWarning,
+          reportWarning: showDatasetLoadWarning,
         });
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
