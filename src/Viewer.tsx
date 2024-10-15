@@ -681,7 +681,7 @@ function Viewer(): ReactElement {
             message: "Dataset load failed",
             description: result.errorMessage,
             placement: "bottomLeft",
-            duration: 4,
+            duration: 12,
           });
         }
         setIsDatasetLoading(false);
