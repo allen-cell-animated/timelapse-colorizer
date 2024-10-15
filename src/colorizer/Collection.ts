@@ -307,15 +307,22 @@ export default class Collection {
    * @returns a new Collection, where the only dataset is that of the provided `datasetUrl`.
    * The `url` field of the Collection will also be set to `null`.
    */
-  public static makeCollectionFromSingleDataset(datasetUrl: string): Collection {
+  public static async makeCollectionFromSingleDataset(datasetUrl: string): Promise<Collection> {
     // Add the default filename if the url is not a .JSON path.
     if (!isJson(datasetUrl)) {
       datasetUrl = formatPath(datasetUrl) + "/" + DEFAULT_DATASET_FILENAME;
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
 
-    // TODO: Should the dummy collection copy the dataset's metadata?
-    return new Collection(collectionData, null);
+    const collection = new Collection(collectionData, null);
+    // Attempt to load the dataset to surface any loading errors.
+    const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
+    if (!loadResult.loaded) {
+      throw new Error(loadResult.errorMessage);
+    }
+    // Dummy collection copies metadata from the dataset.
+    collection.metadata = loadResult.dataset.metadata;
+    return collection;
   }
 
   /**
@@ -335,13 +342,42 @@ export default class Collection {
       throw new Error(`Provided resource '${url}' is not a URL and cannot be loaded.`);
     }
 
+    let collectionLoadError: Error | null = null;
+    let datasetLoadError: Error | null = null;
     try {
       return await Collection.loadCollection(url, fetchMethod);
     } catch (e) {
+      collectionLoadError = e as Error;
+      console.warn(e);
       console.log("URL resource could not be parsed as a collection; attempting to make a single-database collection.");
     }
 
     // Could not load as a collection, attempt to load as a dataset.
-    return await Collection.makeCollectionFromSingleDataset(url);
+    try {
+      return await Collection.makeCollectionFromSingleDataset(url);
+    } catch (e) {
+      console.warn(e);
+      datasetLoadError = e as Error;
+    }
+
+    if (
+      collectionLoadError.message.includes("404 (Not Found)") &&
+      datasetLoadError.message.includes("404 (Not Found)")
+    ) {
+      throw new Error(
+        `Could not load the provided URL as either a collection or a dataset: server returned a 404 (Not Found) code.`
+      );
+    }
+
+    // Could not load as a dataset either; surface the errors.
+    console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
+    throw new Error(
+      `Could not load the provided URL as either a collection or a dataset.
+      \n
+      \nIf this is a collection:
+      \n\t${collectionLoadError?.message || "N/A"}
+      \nIf this is a dataset:
+      \n\t${datasetLoadError?.message || "N/A"}`
+    );
   }
 }

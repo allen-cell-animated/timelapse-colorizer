@@ -81,7 +81,20 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [recentCollections, registerCollection] = useRecentCollections();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [errorText, setErrorText] = useState<string>("");
+  const [errorText, _setErrorText] = useState<ReactNode>("");
+  const setErrorText = useCallback((newErrorText: ReactNode) => {
+    if (typeof newErrorText === "string") {
+      const splitText = newErrorText.split("\n");
+      _setErrorText(
+        splitText.map((text) => {
+          const hasIndent = text.startsWith("\t");
+          return <p style={{ marginLeft: hasIndent ? "30px" : "" }}>{text}</p>;
+        })
+      );
+    } else {
+      _setErrorText(newErrorText);
+    }
+  }, []);
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
 
