@@ -122,7 +122,8 @@ export default class Collection {
    * @param config Optional configuration, containing any of the following keys:
    *  - `onLoadProgress` optional callback for loading progress.
    *  - `arrayLoader` optional array loader to use for loading the dataset.
-   *  - `report
+   *  - `reportWarning` optional callback for reporting warning messages during loading (potential errors
+   * that are non-blocking).
    * @returns A promise of a `DatasetLoadResult`.
    * - On a success, returns an object with a Dataset `dataset` and the `loaded` flag set to true.
    * - On a failure, returns an object with a null `dataset` and `loaded` set to false, as well as
