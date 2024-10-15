@@ -279,7 +279,7 @@ export default class Collection {
     // Convert JSON array into map
     if (!collection.datasets || collection.datasets.length === 0) {
       throw new Error(
-        `The collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.`
+        `Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.`
       );
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
@@ -389,11 +389,8 @@ export default class Collection {
     console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
     throw new Error(
       `Could not load the provided URL as either a collection or a dataset.
-      \n
-      \nIf this is a collection:
-      \n\t${collectionLoadError?.message || "N/A"}
-      \nIf this is a dataset:
-      \n\t${datasetLoadError?.message || "N/A"}`
+      \nIf this is a collection: ${collectionLoadError?.message || "N/A"}
+      \nIf this is a dataset: ${datasetLoadError?.message || "N/A"}`
     );
   }
 }
