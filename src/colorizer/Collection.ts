@@ -327,15 +327,7 @@ export default class Collection {
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
 
-    const collection = new Collection(collectionData, null);
-    // Attempt to load the dataset to surface any loading errors.
-    const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
-    if (!loadResult.loaded) {
-      throw new Error(loadResult.errorMessage);
-    }
-    // Dummy collection copies metadata from the dataset.
-    collection.metadata = loadResult.dataset.metadata;
-    return collection;
+    return new Collection(collectionData, null);
   }
 
   /**
@@ -372,7 +364,13 @@ export default class Collection {
 
     // Could not load as a collection, attempt to load as a dataset.
     try {
-      return await Collection.makeCollectionFromSingleDataset(url);
+      const collection = await Collection.makeCollectionFromSingleDataset(url);
+      // Attempt to load the default dataset immediately to surface any loading errors.
+      const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
+      if (!loadResult.loaded) {
+        throw new Error(loadResult.errorMessage);
+      }
+      return collection;
     } catch (e) {
       console.warn(e);
       datasetLoadError = e as Error;
