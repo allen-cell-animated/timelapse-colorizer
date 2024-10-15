@@ -88,14 +88,11 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     if (typeof newErrorText === "string") {
       const splitText = newErrorText.split("\n");
       _setErrorText(
-        splitText.map((text, index) => {
-          const hasIndent = text.startsWith("\t");
-          return (
-            <p key={index} style={{ marginLeft: hasIndent ? "30px" : "" }}>
-              {text}
-            </p>
-          );
-        })
+        splitText.map((text, index) => (
+          <p key={index} style={{ marginBottom: "8px" }}>
+            {text}
+          </p>
+        ))
       );
     } else {
       _setErrorText(newErrorText);
