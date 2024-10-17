@@ -57,6 +57,36 @@ function getSelectedFeatureName(params: LegendParams): string | undefined {
   return params.dataset.getFeatureNameWithUnits(params.featureKey);
 }
 
+function renderCategory(
+  ctx: CanvasRenderingContext2D,
+  origin: Vector2,
+  style: LegendStyle,
+  color: Color,
+  label: string,
+  maxWidthPx: number
+): Vector2 {
+  origin = origin.clone();
+
+  ctx.fillStyle = color.getStyle();
+  ctx.beginPath();
+  ctx.roundRect(origin.x, origin.y, Math.round(style.labelFontSizePx), Math.round(style.labelFontSizePx), 2);
+  ctx.closePath();
+  ctx.fill();
+
+  const maxTextWidth = maxWidthPx - style.labelFontSizePx - style.categoryLabelGapPx;
+  const textX = origin.x + style.labelFontSizePx + style.categoryLabelGapPx;
+  const textY = origin.y - 1; // Fudge slightly to align with color label
+  configureCanvasText(ctx, style, "left", "top");
+  const textSize = renderCanvasText(ctx, textX, textY, label, {
+    maxWidth: maxTextWidth,
+  });
+
+  return new Vector2(
+    style.labelFontSizePx + style.categoryLabelGapPx + textSize.x,
+    style.labelFontSizePx + style.categoryPaddingPx.y * 2
+  );
+}
+
 function getCategoricalKeyRenderer(
   ctx: CanvasRenderingContext2D,
   params: LegendParams,
@@ -95,7 +125,6 @@ function getCategoricalKeyRenderer(
       const categories = featureData.categories || [];
       const numColumns = Math.ceil(categories.length / MAX_CATEGORIES_PER_COLUMN);
       const categoryWidth = Math.floor(maxWidthPx / numColumns - style.categoryColGapPx);
-      const categoryHeight = style.labelFontSizePx + style.categoryPaddingPx.y * 2;
       const colOrigin = origin.clone();
 
       for (let colIndex = 0; colIndex < numColumns; colIndex++) {
@@ -108,32 +137,13 @@ function getCategoricalKeyRenderer(
           categoryIndex++
         ) {
           const category = categories[categoryIndex];
+          const color = new Color(params.categoricalPalette.colorStops[categoryIndex]);
           currCategoryOrigin.round();
 
-          // Color label
-          const color = new Color(params.categoricalPalette.colorStops[categoryIndex]);
-          ctx.fillStyle = color.getStyle();
-          ctx.beginPath();
-          ctx.roundRect(
-            currCategoryOrigin.x,
-            currCategoryOrigin.y,
-            Math.round(style.labelFontSizePx),
-            Math.round(style.labelFontSizePx),
-            2
-          );
-          ctx.closePath();
-          ctx.fill();
+          const renderedSize = renderCategory(ctx, currCategoryOrigin, style, color, category, categoryWidth);
 
-          // Category label
-          configureCanvasText(ctx, style, "left", "top");
-          const maxTextWidth = categoryWidth - style.labelFontSizePx - style.categoryLabelGapPx;
-          const textX = currCategoryOrigin.x + style.labelFontSizePx + style.categoryLabelGapPx;
-          const textY = currCategoryOrigin.y - 1; // Fudge slightly to align with color label
-          const textSize = renderCanvasText(ctx, textX, textY, category, {
-            maxWidth: maxTextWidth,
-          });
-          maxCategoryWidth = Math.max(maxCategoryWidth, style.labelFontSizePx + style.categoryLabelGapPx + textSize.x);
-          currCategoryOrigin.y += categoryHeight;
+          maxCategoryWidth = Math.max(maxCategoryWidth, renderedSize.x);
+          currCategoryOrigin.y += renderedSize.y;
         }
 
         colOrigin.x += maxCategoryWidth + style.categoryColGapPx;
