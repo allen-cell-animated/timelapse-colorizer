@@ -286,7 +286,7 @@ export default class Collection {
     // Convert JSON array into map
     if (!collection.datasets || collection.datasets.length === 0) {
       throw new Error(
-        `Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.`
+        `Collection JSON was loaded but no list of datasets was provided. At least one dataset must be defined in the collection.`
       );
     }
     const collectionData: Map<string, CollectionEntry> = new Map();

@@ -463,7 +463,7 @@ export default class Dataset {
       // Report warning of all the files that couldn't be loaded and their associated errors.
       options.reportWarning?.("Some data files failed to load.", [
         "The following data file(s) failed to load, which may cause the viewer to behave unexpectedly:",
-        ...unloadableDataFiles.map((fileType) => `  - ${fileType}`),
+        ...unloadableDataFiles.map((fileType) => ` - ${fileType}`),
         "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",
       ]);
     }
