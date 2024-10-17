@@ -306,7 +306,6 @@ export default class Collection {
       throw new Error(LoadErrorMessage.COLLECTION_HAS_NO_DATASETS);
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
-    const duplicateDatasetNames = new Set<string>();
     for (const entry of collection.datasets) {
       collectionData.set(entry.name, entry);
     }

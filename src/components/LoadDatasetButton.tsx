@@ -9,6 +9,7 @@ import { Dataset } from "../colorizer";
 import { ReportWarningCallback } from "../colorizer/types";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
+import { renderStringArrayAsJsx } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
@@ -87,16 +88,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const setErrorText = useCallback((newErrorText: ReactNode) => {
     if (typeof newErrorText === "string") {
       const splitText = newErrorText.split("\n");
-      _setErrorText(
-        // TODO: Add parsing and formatting for bullet points as `ul` and `li` elements.
-        // This should be handled in all areas where we print error messages directly onscreen
-        // e.g. AlertBanner, popup handlers in Viewer, and here.
-        splitText.map((text, index) => (
-          <p key={index} style={{ marginBottom: "8px" }}>
-            {text}
-          </p>
-        ))
-      );
+      _setErrorText(renderStringArrayAsJsx(splitText));
     } else {
       _setErrorText(newErrorText);
     }
