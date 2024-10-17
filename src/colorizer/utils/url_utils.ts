@@ -106,16 +106,18 @@ export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
   try {
     response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
   } catch (error) {
-    console.error(`Failed to fetch manifest file from url '${url}':`, error);
+    console.error(`Fetching manifest JSON from url '${url}' failed with the following error:`, error);
     throw new Error(
-      `Could not fetch expected manifest JSON file. Please check if the file exists and if you have network access to it, or see the developer console for more details.`
+      `The expected manifest JSON file could not be reached. ` +
+        ` This may be due to a network issue, the server being unreachable, or a misconfigured URL.` +
+        ` Please check your network access.`
     );
   }
 
   if (!response.ok) {
     console.error(`Failed to fetch manifest file from url '${url}':`, response);
     throw new Error(
-      `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. Please check if the file exists and if you have network access to it, or see the developer console for more details.`
+      `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. Please check if the file exists and if you have access to it, or see the developer console for more details.`
     );
   }
 

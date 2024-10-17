@@ -7,6 +7,7 @@ import {
   CollectionFileMetadata,
   updateCollectionVersion,
 } from "./utils/collection_utils";
+import { uncapitalizeFirstLetter } from "./utils/data_utils";
 import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl } from "./utils/url_utils";
 
 import Dataset from "./Dataset";
@@ -56,11 +57,11 @@ export default class Collection {
     this.entries.forEach((value, key) => {
       if (!isJson(value.path)) {
         throw new Error(
-          `Expected dataset '${key}' to have an absolute JSON path; Collection was provided path '${value.path}'.`
+          `Expected dataset '${key}' to have an absolute JSON path; collection was provided path '${value.path}'.`
         );
       }
       if (!isUrl(value.path)) {
-        throw new Error(`Expected dataset '${key}' to have a URL path; Collection was provided path '${value.path}'.`);
+        throw new Error(`Expected dataset '${key}' to have a URL path; collection was provided path '${value.path}'.`);
       }
     });
   }
@@ -75,7 +76,7 @@ export default class Collection {
     if (this.hasDataset(datasetKey)) {
       return this.entries.get(datasetKey)!.path;
     }
-    throw new Error(`Collection does not contain dataset ${datasetKey}: Could not get path.`);
+    throw new Error(`Collection does not contain dataset ${datasetKey}. Could not get path.`);
   }
 
   /**
@@ -88,7 +89,7 @@ export default class Collection {
     if (this.hasDataset(datasetKey)) {
       return this.entries.get(datasetKey)!.name;
     }
-    throw new Error(`Collection does not contain dataset ${datasetKey}: Could not get name.`);
+    throw new Error(`Collection does not contain dataset ${datasetKey}. Could not get name.`);
   }
 
   public hasDataset(datasetKey: string): boolean {
@@ -257,7 +258,11 @@ export default class Collection {
       const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
-      throw new Error(`Could not fetch expected collections JSON file from URL: ${absoluteCollectionUrl}`);
+      throw new Error(
+        `The expected collection JSON file could not be reached. ` +
+          ` This may be due to a network issue, the server being unreachable, or a misconfigured URL.` +
+          ` Please check your network access.`
+      );
     }
     if (!response.ok) {
       console.error(`Failed to fetch collections JSON from url '${absoluteCollectionUrl}':`, response);
@@ -272,7 +277,7 @@ export default class Collection {
       collection = updateCollectionVersion(json);
     } catch (e) {
       throw new Error(
-        `Parsing failed for the collections JSON file. Please check that the JSON syntax is correct:` + e
+        `Parsing failed for the collections JSON file with the following error. Please check that the JSON syntax is correct: ${e}`
       );
     }
 
@@ -372,25 +377,48 @@ export default class Collection {
       }
       return collection;
     } catch (e) {
-      console.warn(e);
       datasetLoadError = e as Error;
     }
 
+    // Assumption: if both loads failed and the file matches one of the default filenames,
+    // show only the relevant load error.
+    if (url.endsWith(DEFAULT_COLLECTION_FILENAME)) {
+      throw collectionLoadError;
+    } else if (url.endsWith(DEFAULT_DATASET_FILENAME)) {
+      throw datasetLoadError;
+    }
+
+    // Handle TypeError from failed fetch -> likely due to server being unreachable.
+    if (
+      collectionLoadError.message.includes("JSON file could not be reached") &&
+      datasetLoadError.message.includes("JSON file could not be reached")
+    ) {
+      throw new Error(
+        `Could not access either a collection or a dataset JSON at the provided URL.` +
+          ` This may be due to a network issue, the server being unreachable, or a misconfigured URL.` +
+          ` Please check your network access.`
+      );
+    }
+
+    // Handle 404 errors from both collection and dataset fetches
     if (
       collectionLoadError.message.includes("404 (Not Found)") &&
       datasetLoadError.message.includes("404 (Not Found)")
     ) {
       throw new Error(
-        `Could not load the provided URL as either a collection or a dataset: server returned a 404 (Not Found) code.`
+        `Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code.`
       );
     }
 
     // Could not load as a dataset either; surface the errors.
     console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
+    const collectionMessage = uncapitalizeFirstLetter(collectionLoadError?.message) || "(no error message provided)";
+    const datasetMessage = uncapitalizeFirstLetter(datasetLoadError?.message) || "(no error message provided)";
+
     throw new Error(
       `Could not load the provided URL as either a collection or a dataset.
-      \nIf this is a collection: ${collectionLoadError?.message || "N/A"}
-      \nIf this is a dataset: ${datasetLoadError?.message || "N/A"}`
+      \n- If this is a collection, ${collectionMessage}
+      \n- If this is a dataset, ${datasetMessage}`
     );
   }
 }

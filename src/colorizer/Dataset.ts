@@ -427,7 +427,7 @@ export default class Dataset {
     // Load feature data
     if (manifest.features.length === 0) {
       throw new Error(
-        "The dataset's manifest JSON was loaded but no features found were found. At least one feature must be defined."
+        "The dataset's manifest JSON was loaded but no features were found. At least one feature must be defined."
       );
     }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
