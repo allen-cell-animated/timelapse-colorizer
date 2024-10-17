@@ -150,10 +150,10 @@ describe("Collection", () => {
     });
   });
 
-  describe("makeCollectionFromSingleDataset", async () => {
-    it("makes a collection with indirect dataset paths", async () => {
+  describe("makeCollectionFromSingleDataset", () => {
+    it("makes a collection with indirect dataset paths", () => {
       const datasetPath = "http://website.com/data";
-      const collection = await Collection.makeCollectionFromSingleDataset(datasetPath);
+      const collection = Collection.makeCollectionFromSingleDataset(datasetPath);
       const fullPath = datasetPath + "/" + DEFAULT_DATASET_FILENAME;
 
       expect(collection.getDatasetKeys().length).to.equal(1);
@@ -161,18 +161,18 @@ describe("Collection", () => {
       expect(collection.getAbsoluteDatasetPath(fullPath)).to.equal(fullPath);
     });
 
-    it("makes a collection with absolute dataset paths", async () => {
+    it("makes a collection with absolute dataset paths", () => {
       const datasetPath = "http://website.com/data/some-manifest.json";
-      const collection = await Collection.makeCollectionFromSingleDataset(datasetPath);
+      const collection = Collection.makeCollectionFromSingleDataset(datasetPath);
 
       expect(collection.getDatasetKeys().length).to.equal(1);
       expect(collection.hasDataset(datasetPath)).to.be.true;
       expect(collection.getAbsoluteDatasetPath(datasetPath)).to.equal(datasetPath);
     });
 
-    it("sets the URL to null", async () => {
+    it("sets the URL to null", () => {
       const datasetPath = "http://website.com/data/some-manifest.json";
-      const collection = await Collection.makeCollectionFromSingleDataset(datasetPath);
+      const collection = Collection.makeCollectionFromSingleDataset(datasetPath);
 
       expect(collection.url).to.be.null;
     });

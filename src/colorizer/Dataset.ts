@@ -3,7 +3,7 @@ import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { FeatureArrayType, FeatureDataType, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
-import { getKeyFromName } from "./utils/data_utils";
+import { formatAsBulletList, getKeyFromName } from "./utils/data_utils";
 import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
 
@@ -390,7 +390,6 @@ export default class Dataset {
     const startTime = new Date();
 
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
-    console.log(manifest);
 
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
@@ -445,33 +444,33 @@ export default class Dataset {
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
-    const unloadedDataFiles: string[] = [];
-    function makeOnDataLoadFailed(fileType: string, url?: string): (reason: any) => void {
+    const unloadableDataFiles: string[] = [];
+    function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
       return (reason: any) => {
         console.warn(`${fileType} data could not be loaded: ${reason}`);
-        unloadedDataFiles.push(`${fileType}: '${url || "N/A"}'`);
+        unloadableDataFiles.push(`${fileType}: '${url || "N/A"}'`);
       };
     }
-    this.outliers = urlUtils.getPromiseValue(outliers, makeOnDataLoadFailed("Outliers", this.outlierFile));
-    this.trackIds = urlUtils.getPromiseValue(tracks, makeOnDataLoadFailed("Tracks", this.tracksFile));
-    this.times = urlUtils.getPromiseValue(times, makeOnDataLoadFailed("Times", this.timesFile));
-    this.centroids = urlUtils.getPromiseValue(centroids, makeOnDataLoadFailed("Centroids", this.centroidsFile));
-    this.bounds = urlUtils.getPromiseValue(bounds, makeOnDataLoadFailed("Bounds", this.boundsFile));
 
-    if (unloadedDataFiles.length > 0) {
+    this.outliers = urlUtils.getPromiseValue(outliers, makeLoadFailedCallback("Outliers", this.outlierFile));
+    this.trackIds = urlUtils.getPromiseValue(tracks, makeLoadFailedCallback("Tracks", this.tracksFile));
+    this.times = urlUtils.getPromiseValue(times, makeLoadFailedCallback("Times", this.timesFile));
+    this.centroids = urlUtils.getPromiseValue(centroids, makeLoadFailedCallback("Centroids", this.centroidsFile));
+    this.bounds = urlUtils.getPromiseValue(bounds, makeLoadFailedCallback("Bounds", this.boundsFile));
+
+    if (unloadableDataFiles.length > 0) {
       // Report warning of all the files that couldn't be loaded and their associated errors.
       options.reportWarning?.("Some data files failed to load.", [
         "The following data file(s) failed to load, which may cause the viewer to behave unexpectedly:",
-        ...unloadedDataFiles.map((fileType) => `  - ${fileType}`),
-        "This may be because of an unsupported format or missing files. Please see the browser console for more details.",
+        ...unloadableDataFiles.map((fileType) => `  - ${fileType}`),
+        "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",
       ]);
     }
 
     // Keep original sorting order of features by inserting in promise order.
     featureResults.forEach((result, index) => {
-      const featureValue = urlUtils.getPromiseValue(result, (reason) => {
-        console.warn(`Feature ${index}: `, reason);
-      });
+      const onFeatureLoadFailed = (reason: any): void => console.warn(`Feature ${index}: `, reason);
+      const featureValue = urlUtils.getPromiseValue(result, onFeatureLoadFailed);
       if (featureValue) {
         const [key, data] = featureValue;
         this.features.set(key, data);
@@ -480,19 +479,12 @@ export default class Dataset {
 
     if (this.features.size !== manifest.features.length) {
       // Report the names of all features that could not be loaded.
-      const missingFeatures = manifest.features
-        .map((f) => f.name)
-        .filter((name) => !Array.from(this.features.values()).some((f) => f.name === name))
-        .map((name) => `  - ${name}`);
-      // Show a max of 5 missing feature in the warning message, otherwise the message box will extend indefinitely
-      if (missingFeatures.length > 5) {
-        const totalFeatures = missingFeatures.length;
-        missingFeatures.splice(5, missingFeatures.length - 5);
-        missingFeatures.push(`...and ${totalFeatures - 5} more`);
-      }
+      const loadedFeatureNames = new Set(Array.from(this.features.values()).map((f) => f.name));
+      const missingFeatureNames = manifest.features.filter((f) => !loadedFeatureNames.has(f.name)).map((f) => f.name);
+
       options.reportWarning?.("Some features failed to load.", [
         "The following feature(s) could not be loaded and will not be shown: ",
-        ...missingFeatures,
+        ...formatAsBulletList(missingFeatureNames, 5),
         "This may be because of an unsupported format or a missing file.",
       ]);
     }
