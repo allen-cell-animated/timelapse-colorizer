@@ -143,3 +143,11 @@ export function getInRangeLUT(dataset: Dataset, thresholds: FeatureThreshold[]):
 export function getKeyFromName(name: string): string {
   return name.toLowerCase().replaceAll(/[^a-z0-9_]/g, "_");
 }
+
+/** Changes the first letter of a string to lower case. */
+export function uncapitalizeFirstLetter(str: string): string {
+  if (!str) {
+    return str;
+  }
+  return str.charAt(0).toLowerCase() + str.slice(1);
+}

@@ -282,7 +282,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           <div ref={dropdownContextRef} style={{ position: "relative" }}>
             <p>
               <i>
-                <span style={{ color: theme.color.text.hint }}> Click below to show recent datasets</span>
+                <span style={{ color: theme.color.text.hint }}> Click to show recent datasets</span>
               </i>
             </p>
             <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
