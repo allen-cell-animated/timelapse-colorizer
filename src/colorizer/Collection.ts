@@ -7,7 +7,7 @@ import {
   CollectionFileMetadata,
   updateCollectionVersion,
 } from "./utils/collection_utils";
-import { uncapitalizeFirstLetter } from "./utils/data_utils";
+import { formatAsBulletList, uncapitalizeFirstLetter } from "./utils/data_utils";
 import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl } from "./utils/url_utils";
 
 import Dataset from "./Dataset";
@@ -120,7 +120,7 @@ export default class Collection {
   /**
    * Attempts to load and return the dataset specified by the key.
    * @param datasetKey string key of the dataset.
-   * @param config Optional configuration, containing any of the following keys:
+   * @param options Optional configuration, containing any of the following properties:
    *  - `onLoadProgress` optional callback for loading progress.
    *  - `arrayLoader` optional array loader to use for loading the dataset.
    *  - `reportWarning` optional callback for reporting warning messages during loading (potential errors
@@ -134,7 +134,7 @@ export default class Collection {
    */
   public async tryLoadDataset(
     datasetKey: string,
-    config: Partial<{
+    options: Partial<{
       onLoadProgress?: (complete: number, total: number) => void;
       arrayLoader?: IArrayLoader;
       reportWarning?: ReportWarningCallback;
@@ -155,13 +155,13 @@ export default class Collection {
     };
     const onLoadComplete = (): void => {
       completedLoadItems++;
-      config.onLoadProgress?.(completedLoadItems, totalLoadItems);
+      options.onLoadProgress?.(completedLoadItems, totalLoadItems);
     };
 
     // TODO: Override fetch method
     try {
-      const dataset = new Dataset(path, undefined, config.arrayLoader);
-      await dataset.open({ onLoadStart, onLoadComplete, reportWarning: config.reportWarning });
+      const dataset = new Dataset(path, undefined, options.arrayLoader);
+      await dataset.open({ onLoadStart, onLoadComplete, reportWarning: options.reportWarning });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {
@@ -243,7 +243,9 @@ export default class Collection {
    * Asynchronously loads a Collection object from the provided URL.
    * @param collectionParam The URL of the resource. This can either be a direct path to
    * collection JSON file or the path of a directory containing `collection.json`.
-   * @param fetchMethod Optional. The fetch command used to retrieve the URL.
+   * @param options Optional configuration, containing any of the following properties:
+   * - `fetchMethod` optional override for the fetch method, used to retrieve the URL.
+   * - `reportWarning` optional callback for reporting warning messages during loading.
    * @throws Error if the JSON could not be retrieved or is an unrecognized format.
    * @returns A new Collection object containing the retrieved data.
    */
@@ -288,19 +290,19 @@ export default class Collection {
       );
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
-    const duplicateCollectionNames = new Set<string>();
+    const duplicateDatasetNames = new Set<string>();
     for (const entry of collection.datasets) {
       if (collectionData.has(entry.name)) {
-        duplicateCollectionNames.add(entry.name);
+        duplicateDatasetNames.add(entry.name);
         console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
       }
       collectionData.set(entry.name, entry);
     }
 
-    if (duplicateCollectionNames.size > 0) {
+    if (duplicateDatasetNames.size > 0) {
       options.reportWarning?.(`Duplicate dataset names were found in the collection.`, [
         "The following dataset(s) had duplicate names and were skipped when loading the collection:",
-        ...Array.from(duplicateCollectionNames).map((name) => `- ${name}`),
+        ...formatAsBulletList(Array.from(duplicateDatasetNames), 5),
         "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
       ]);
     }
@@ -412,8 +414,12 @@ export default class Collection {
 
     // Could not load as a dataset either; surface the errors.
     console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
-    const collectionMessage = uncapitalizeFirstLetter(collectionLoadError?.message) || "(no error message provided)";
-    const datasetMessage = uncapitalizeFirstLetter(datasetLoadError?.message) || "(no error message provided)";
+    const collectionMessage =
+      uncapitalizeFirstLetter(collectionLoadError?.message) ||
+      "(no error message provided; this is likely a bug and should be reported)";
+    const datasetMessage =
+      uncapitalizeFirstLetter(datasetLoadError?.message) ||
+      "(no error message provided; this is likely a bug and should be reported)";
 
     throw new Error(
       `Could not load the provided URL as either a collection or a dataset.

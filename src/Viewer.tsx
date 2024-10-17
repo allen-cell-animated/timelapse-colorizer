@@ -161,7 +161,8 @@ function Viewer(): ReactElement {
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
   const { bannerElement, showAlert, clearBanners } = useAlertBanner();
-  const queuedAlerts = useRef<(() => void)[]>([]);
+  /** Alerts that should be shown for a dataset that is currently being loaded but is not yet displayed. */
+  const pendingAlerts = useRef<(() => void)[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -376,16 +377,17 @@ function Viewer(): ReactElement {
     (errorMessage?: string): void => {
       const description: string[] = [
         errorMessage
-          ? 'Encountered the following error when loading the dataset: "' + errorMessage + '"'
+          ? `Encountered the following error when loading the dataset: "${errorMessage}"`
           : "Encountered an error when loading the dataset.",
-        "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
+        "Check your network connection and access to the dataset path, or use the browser console to view details." +
+          " Otherwise, contact the dataset creator as there may be missing files.",
       ];
 
       showAlert({
-        message: "Dataset could not be loaded.",
         type: "error",
-        closable: false,
+        message: "Dataset could not be loaded.",
         description,
+        closable: false,
         action: <Link to="/">Return to homepage</Link>,
       });
     },
@@ -394,12 +396,12 @@ function Viewer(): ReactElement {
 
   const showDatasetLoadWarning: ReportWarningCallback = useCallback(
     (message: string, description: string | string[]) => {
-      queuedAlerts.current.push(() => {
+      pendingAlerts.current.push(() => {
         showAlert({
-          message: message,
           type: "warning",
-          closable: true,
+          message: message,
           description: description,
+          closable: true,
         });
       });
     },
@@ -422,14 +424,15 @@ function Viewer(): ReactElement {
       if (dataset !== null) {
         dataset.dispose();
       }
-      // State updates
+
+      // Manage dataset-related alert banners
       clearBanners();
-      if (queuedAlerts.current.length > 0) {
-        for (const alert of queuedAlerts.current) {
-          alert();
-        }
-        queuedAlerts.current = [];
+      for (const alert of pendingAlerts.current) {
+        alert();
       }
+      pendingAlerts.current = [];
+
+      // State updates
       setDataset(newDataset);
       setDatasetKey(newDatasetKey);
 
@@ -675,7 +678,7 @@ function Viewer(): ReactElement {
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
         } else {
-          // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
+          // Show notification popup for datasets that can't be loaded.
           console.error(result.errorMessage);
           notificationApi["error"]({
             message: "Dataset load failed",

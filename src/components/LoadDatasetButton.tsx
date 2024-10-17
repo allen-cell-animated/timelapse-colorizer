@@ -88,6 +88,9 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
     if (typeof newErrorText === "string") {
       const splitText = newErrorText.split("\n");
       _setErrorText(
+        // TODO: Add parsing and formatting for bullet points as `ul` and `li` elements.
+        // This should be handled in all areas where we print error messages directly onscreen
+        // e.g. AlertBanner, popup handlers in Viewer, and here.
         splitText.map((text, index) => (
           <p key={index} style={{ marginBottom: "8px" }}>
             {text}
