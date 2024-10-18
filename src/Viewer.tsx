@@ -685,6 +685,10 @@ function Viewer(): ReactElement {
             description: result.errorMessage,
             placement: "bottomLeft",
             duration: 12,
+            style: {
+              backgroundColor: theme.color.alert.fill.error,
+              border: `1px solid ${theme.color.alert.border.error}`,
+            },
           });
         }
         setIsDatasetLoading(false);
