@@ -7,12 +7,10 @@ function doElementsHaveSharedParent(elements: HTMLElement[]): boolean {
   if (elements.length === 0) {
     return false;
   }
-
   const parent = elements[0].parentElement;
   if (!parent) {
     return false;
   }
-
   return elements.every((element) => element.parentElement === parent);
 }
 
@@ -61,7 +59,7 @@ describe("renderStringArrayAsJsx", () => {
 
     const listItems = renderedElements.getAllByRole("listitem");
     expect(listItems.length).toBe(5);
-    // Should have two different unordered list elements
+    // Should have two different unordered lists
     expect(doElementsHaveSharedParent(listItems)).toBe(false);
     expect(listItems[0].parentElement!.nodeName).toBe("UL");
     expect(doElementsHaveSharedParent([listItems[0], listItems[1], listItems[2]])).toBe(true);
