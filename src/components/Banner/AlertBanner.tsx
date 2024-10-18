@@ -4,6 +4,7 @@ import styled, { css } from "styled-components";
 
 import { Spread } from "../../colorizer/utils/type_utils";
 import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
+import { renderStringArrayAsJsx } from "../../utils/formatting";
 
 // Adjusts alignment of items within the Alert.
 // Alerts are structured like this:
@@ -129,21 +130,7 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
     newProps.closable = true;
   }
 
-  const propsDescription = props.description;
-  let description: ReactElement | undefined = undefined;
-  if (Array.isArray(propsDescription) && propsDescription.length > 0) {
-    description = (
-      <>
-        {propsDescription.map((text: string, index: number) => (
-          <p key={index}>{text}</p>
-        ))}
-      </>
-    );
-  } else if (!Array.isArray(propsDescription) && propsDescription) {
-    // Ignore empty text or undefined
-    description = <p>{propsDescription}</p>;
-  }
-
+  const description = renderStringArrayAsJsx(props.description);
   const message = (
     <FlexColumn>
       <FlexRowAlignCenter $wrap={"wrap"} $gap={4}>
