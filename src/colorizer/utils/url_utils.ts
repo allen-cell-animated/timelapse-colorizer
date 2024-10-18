@@ -108,9 +108,9 @@ export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
   } catch (error) {
     console.error(`Fetching manifest JSON from url '${url}' failed with the following error:`, error);
     throw new Error(
-      `The expected manifest JSON file could not be reached. ` +
-        ` This may be due to a network issue, the server being unreachable, or a misconfigured URL.` +
-        ` Please check your network access.`
+      "The expected manifest JSON file could not be reached. " +
+        " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
+        " Please check your network access."
     );
   }
 
@@ -126,7 +126,7 @@ export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
   } catch (error) {
     console.error(`Failed to parse manifest file from url '${url}':`, error);
     throw new Error(
-      `Parsing failed for the manifest JSON file. Please check that the JSON syntax is correct: ` + error
+      "Parsing failed for the manifest JSON file. Please check that the JSON syntax is correct: " + error
     );
   }
 }

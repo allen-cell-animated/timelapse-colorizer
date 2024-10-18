@@ -261,9 +261,9 @@ export default class Collection {
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
       throw new Error(
-        `The expected collection JSON file could not be reached. ` +
-          ` This may be due to a network issue, the server being unreachable, or a misconfigured URL.` +
-          ` Please check your network access.`
+        "The expected collection JSON file could not be reached. " +
+          " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
+          " Please check your network access."
       );
     }
     if (!response.ok) {
@@ -286,7 +286,7 @@ export default class Collection {
     // Convert JSON array into map
     if (!collection.datasets || collection.datasets.length === 0) {
       throw new Error(
-        `Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.`
+        "Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection."
       );
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
@@ -300,7 +300,7 @@ export default class Collection {
     }
 
     if (duplicateDatasetNames.size > 0) {
-      options.reportWarning?.(`Duplicate dataset names were found in the collection.`, [
+      options.reportWarning?.("Duplicate dataset names were found in the collection.", [
         "The following dataset(s) had duplicate names and were skipped when loading the collection:",
         ...formatAsBulletList(Array.from(duplicateDatasetNames), 5),
         "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
@@ -396,9 +396,9 @@ export default class Collection {
       datasetLoadError.message.includes("JSON file could not be reached")
     ) {
       throw new Error(
-        `Could not access either a collection or a dataset JSON at the provided URL.` +
-          ` This may be due to a network issue, the server being unreachable, or a misconfigured URL.` +
-          ` Please check your network access.`
+        "Could not access either a collection or a dataset JSON at the provided URL." +
+          " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
+          " Please check your network access."
       );
     }
 
@@ -408,7 +408,7 @@ export default class Collection {
       datasetLoadError.message.includes("404 (Not Found)")
     ) {
       throw new Error(
-        `Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code.`
+        "Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code."
       );
     }
 
