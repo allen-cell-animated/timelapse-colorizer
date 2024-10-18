@@ -161,6 +161,7 @@ const CssContainer = styled.div`
   --color-text-theme: ${theme.color.theme};
   --color-text-theme-dark: ${theme.color.themeDark};
   --color-text-link: ${theme.color.text.link};
+  --color-text-link-hover: ${theme.color.text.linkHover};
 
   /* Layout */
   --color-background-alt: ${theme.color.layout.backgroundAlt};
@@ -264,9 +265,9 @@ const CssContainer = styled.div`
   color: var(--color-text-primary);
 
   a {
-    &:focus,
     &:focus-visible {
       text-decoration: underline;
+      box-shadow: 0 0 0 3px var(--color-text-link);
     }
   }
 
@@ -329,6 +330,9 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
 
       <ConfigProvider
         theme={{
+          // Removes the css-dev-only- prefixed CSS classes. Enabling hashing is only
+          // necessary if there are multiple version of Ant being used in the same app.
+          hashed: false,
           token: {
             colorPrimary: theme.color.theme,
             colorLink: theme.color.text.link,
