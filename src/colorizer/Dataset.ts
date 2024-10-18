@@ -390,7 +390,6 @@ export default class Dataset {
     const startTime = new Date();
 
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
-    console.log(manifest);
 
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;

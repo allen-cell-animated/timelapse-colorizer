@@ -327,7 +327,7 @@ export default class Collection {
    * @returns a new Collection, where the only dataset is that of the provided `datasetUrl`.
    * The `url` field of the Collection will also be set to `null`.
    */
-  public static async makeCollectionFromSingleDataset(datasetUrl: string): Promise<Collection> {
+  public static makeCollectionFromSingleDataset(datasetUrl: string): Collection {
     // Add the default filename if the url is not a .JSON path.
     if (!isJson(datasetUrl)) {
       datasetUrl = formatPath(datasetUrl) + "/" + DEFAULT_DATASET_FILENAME;
@@ -371,7 +371,7 @@ export default class Collection {
 
     // Could not load as a collection, attempt to load as a dataset.
     try {
-      const collection = await Collection.makeCollectionFromSingleDataset(url);
+      const collection = Collection.makeCollectionFromSingleDataset(url);
       // Attempt to load the default dataset immediately to surface any loading errors.
       const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
       if (!loadResult.loaded) {
