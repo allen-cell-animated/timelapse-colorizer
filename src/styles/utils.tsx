@@ -81,8 +81,7 @@ const StyledLink = styled.a`
   white-space: nowrap;
   text-decoration: underline;
 
-  &:focus-visible,
-  &:focus-within {
+  &:focus-visible {
     color: var(--color-text-link-hover);
   }
 `;
