@@ -77,12 +77,21 @@ export const VisuallyHidden = styled.span`
   border-width: 0;
 `;
 
+const StyledLink = styled.a`
+  white-space: nowrap;
+  text-decoration: underline;
+
+  &:focus-visible {
+    color: var(--color-text-link-hover);
+  }
+`;
+
 export function ExternalLink(props: { href: string; children: React.ReactNode }): ReactElement {
   return (
-    <a href={props.href} style={{ whiteSpace: "nowrap" }} rel="noopener noreferrer" target="_blank">
+    <StyledLink href={props.href} rel="noopener noreferrer" target="_blank">
       {props.children}
       <FontAwesomeIcon icon={faUpRightFromSquare} size="sm" style={{ marginBottom: "0px", marginLeft: "3px" }} />
       <VisuallyHidden>(opens in new tab)</VisuallyHidden>
-    </a>
+    </StyledLink>
   );
 }

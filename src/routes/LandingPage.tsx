@@ -225,10 +225,8 @@ export default function LandingPage(): ReactElement {
       <DatasetCard key={index}>
         <h3>{dataset.name}</h3>
         <p>{dataset.description}</p>
-        <Link to={viewerLink}>
-          <Button type="primary">
-            Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
-          </Button>
+        <Link to={viewerLink} className="ant-btn-primary ant-btn">
+          Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
         </Link>
       </DatasetCard>
     );
@@ -256,10 +254,8 @@ export default function LandingPage(): ReactElement {
     ) : null;
 
     const loadButton = project.loadParams ? (
-      <Link to={"viewer" + paramsToUrlQueryString(project.loadParams)}>
-        <Button type="primary">
-          Load<VisuallyHidden> dataset {project.name}</VisuallyHidden>
-        </Button>
+      <Link to={"viewer" + paramsToUrlQueryString(project.loadParams)} className="ant-btn-primary ant-btn">
+        Load<VisuallyHidden> dataset {project.name}</VisuallyHidden>
       </Link>
     ) : null;
 
