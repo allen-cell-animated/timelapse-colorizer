@@ -1,5 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
-import { ReportWarningCallback } from "./types";
+import { LoadErrorMessage, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
   CollectionEntry,
@@ -261,7 +261,7 @@ export default class Collection {
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
       throw new Error(
-        "The expected collection JSON file could not be reached. " +
+        LoadErrorMessage.UNREACHABLE_COLLECTION +
           " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
           " Please check your network access."
       );
@@ -392,8 +392,8 @@ export default class Collection {
 
     // Handle TypeError from failed fetch -> likely due to server being unreachable.
     if (
-      collectionLoadError.message.includes("JSON file could not be reached") &&
-      datasetLoadError.message.includes("JSON file could not be reached")
+      collectionLoadError.message.startsWith(LoadErrorMessage.UNREACHABLE_COLLECTION) &&
+      datasetLoadError.message.includes(LoadErrorMessage.UNREACHABLE_MANIFEST)
     ) {
       throw new Error(
         "Could not access either a collection or a dataset JSON at the provided URL." +

@@ -206,3 +206,8 @@ export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
  * is provided for the description, each string should be displayed on a new line.
  */
 export type ReportWarningCallback = (message: string, description: string | string[]) => void;
+
+export enum LoadErrorMessage {
+  UNREACHABLE_MANIFEST = "The expected manifest JSON file could not be reached.",
+  UNREACHABLE_COLLECTION = "The expected collection JSON file could not be reached.",
+}
