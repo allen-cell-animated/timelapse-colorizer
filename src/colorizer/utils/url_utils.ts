@@ -16,6 +16,7 @@ import {
   isDrawMode,
   isTabType,
   isThresholdCategorical,
+  LoadErrorMessage,
   PlotRangeType,
   ScatterPlotConfig,
   ThresholdType,
@@ -108,7 +109,7 @@ export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
   } catch (error) {
     console.error(`Fetching manifest JSON from url '${url}' failed with the following error:`, error);
     throw new Error(
-      "The expected manifest JSON file could not be reached. " +
+      LoadErrorMessage.UNREACHABLE_MANIFEST +
         " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
         " Please check your network access."
     );
