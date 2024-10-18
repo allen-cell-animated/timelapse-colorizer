@@ -95,7 +95,8 @@ export type AnyManifestFile = ManifestFileV0_0_0 | ManifestFileV1_0_0 | Manifest
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 function isV0_0_0(manifest: AnyManifestFile): manifest is ManifestFileV0_0_0 {
-  return typeof Object.values(manifest.features)[0] === "string";
+  const values = Object.values(manifest.features);
+  return values.length === 0 || typeof values[0] === "string";
 }
 
 /**
@@ -104,6 +105,9 @@ function isV0_0_0(manifest: AnyManifestFile): manifest is ManifestFileV0_0_0 {
  * @returns An object with fields reflecting the most recent ManifestFile spec.
  */
 export const updateManifestVersion = (manifest: AnyManifestFile): ManifestFile => {
+  if (!manifest.features) {
+    throw new Error("Manifest JSON is missing the required 'features' field.");
+  }
   if (isV0_0_0(manifest)) {
     // Parse feature metadata into the new features format
     const features: ManifestFile["features"] = [];

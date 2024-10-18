@@ -23,6 +23,11 @@ type LoadedData<T extends FeatureDataType> = {
 
 async function loadFromJsonUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
   const result = await fetch(url);
+
+  if (!result.ok) {
+    throw new Error(`Failed to load JSON data from URL '${url}': ${result.status} ${result.statusText}`);
+  }
+
   const text = await result.text();
   // JSON does not support `NaN` so we use `null` as a placeholder for it while parsing, then convert back.
   const parseResult: FeatureDataJson = JSON.parse(nanToNull(text));
@@ -52,6 +57,11 @@ async function loadFromJsonUrl<T extends FeatureDataType>(url: string, type: T):
 
 async function loadFromParquetUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
   const result = await fetch(url);
+
+  if (!result.ok) {
+    throw new Error(`Failed to load Parquet data from URL '${url}': ${result.status} ${result.statusText}`);
+  }
+
   const arrayBuffer = await result.arrayBuffer();
   let data: FeatureArrayType[T] = new featureTypeSpecs[type].ArrayConstructor(0);
   let dataMin: number = Number.POSITIVE_INFINITY;
