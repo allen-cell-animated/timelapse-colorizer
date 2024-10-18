@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactElement, ReactNode } from "react";
 import styled from "styled-components";
 
 export const RenderedStringContainer = styled.div`
@@ -22,9 +22,9 @@ export const RenderedStringContainer = styled.div`
  * will be wrapped in a unordered list (`ul`) element.
  * - Otherwise, the item is wrapped in a `p` element.
  */
-export function renderStringArrayAsJsx(items: string[] | string | undefined): ReactNode {
-  if (!items) {
-    return undefined;
+export function renderStringArrayAsJsx(items: string[] | string | undefined): ReactElement {
+  if (!items || items.length === 0) {
+    return <></>;
   }
   if (typeof items === "string") {
     return (
