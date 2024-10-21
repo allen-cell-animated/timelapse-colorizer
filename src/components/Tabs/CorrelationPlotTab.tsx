@@ -9,7 +9,7 @@
 // other useful mouse interactions
 //
 ////////////
-import { Select } from "antd";
+import { Button, Select } from "antd";
 import chroma from "chroma-js";
 import * as d3 from "d3";
 import React, { memo, ReactElement, useEffect, useState, useTransition } from "react";
@@ -18,7 +18,7 @@ import styled from "styled-components";
 import { ColorRamp, Dataset } from "../../colorizer";
 import { CorrelationPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter } from "../../styles/utils";
+import { FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
 
 import SharedWorkerPool from "../../colorizer/workers/SharedWorkerPool";
@@ -182,7 +182,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
     const c = chroma.scale(["tomato", "white", "steelblue"]).domain([extent[0]!, 0, extent[1]!]);
 
-    const cols: string[] = props.dataset?.featureKeys!;
+    const cols: string[] = selectedFeatures;
 
     const xAxis = d3.axisTop(y).tickFormat(function (_d, i) {
       return cols[i];
@@ -467,9 +467,35 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Component Rendering
   //////////////////////////////////
 
+  const featureOptions =
+    props.dataset?.featureKeys.map((key) => ({
+      label: props.dataset?.getFeatureNameWithUnits(key),
+      value: key,
+    })) || [];
+
   return (
     <FlexColumnAlignCenter $gap={10} style={{ height: "100%" }}>
-      {/* <Select style={{ width: "100%" }} allowClear mode="multiple" placeholder="Add features"></Select> */}
+      <FlexRowAlignCenter style={{ width: "100%" }} $gap={8}>
+        <Select
+          style={{ width: "100%" }}
+          allowClear
+          mode="multiple"
+          placeholder="Add features"
+          options={featureOptions}
+          value={selectedFeatures}
+          maxTagCount={"responsive"}
+          onClear={() => setSelectedFeatures([])}
+          disabled={!props.dataset}
+          // TODO: Maintain dataset order
+          onSelect={(value) => {
+            setSelectedFeatures([...selectedFeatures, value as string]);
+          }}
+          onDeselect={(value) => setSelectedFeatures(selectedFeatures.filter((f) => f !== value))}
+        ></Select>
+        <Button onClick={() => setSelectedFeatures(props.dataset?.featureKeys || [])} type="primary">
+          Select all
+        </Button>
+      </FlexRowAlignCenter>
       <LoadingSpinner loading={isRendering} style={{ height: "100%" }}>
         <FlexColumnAlignCenter $gap={5}>
           <div id="legend" style={{ position: "relative" }} ref={legendRef}></div>
