@@ -1,9 +1,9 @@
 import workerpool from "workerpool";
 import Transfer from "workerpool/types/transfer";
 
-import { FeatureDataType } from "../../types";
-import { LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "../../utils/data_load_utils";
-import { arrayToDataTextureInfo } from "../../utils/texture_utils";
+import { FeatureDataType } from "../types";
+import { LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "../utils/data_load_utils";
+import { arrayToDataTextureInfo } from "../utils/texture_utils";
 
 async function load(url: string, type: FeatureDataType): Promise<Transfer> {
   let result: LoadedData<typeof type>;

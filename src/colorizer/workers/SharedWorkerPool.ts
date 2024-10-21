@@ -1,10 +1,11 @@
-// Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
-// @ts-ignore Ignore missing file warning
-import WorkerUrl from "./workers/worker?url&worker";
 import workerpool from "workerpool";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
 import { DataTextureInfo } from "../utils/texture_utils";
+
+// Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
+// @ts-ignore Ignore missing file warning
+import WorkerUrl from "./worker?url&worker";
 
 export default class SharedWorkerPool {
   private workerPool: workerpool.Pool;

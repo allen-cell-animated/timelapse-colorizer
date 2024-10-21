@@ -1,11 +1,11 @@
-// sort-imports-ignore
 import { DataTexture } from "three";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
 import { infoToDataTexture } from "../utils/texture_utils";
 
-import { ArraySource, IArrayLoader } from "./ILoader";
+// sort-imports-ignore
 import SharedWorkerPool from "../workers/SharedWorkerPool";
+import { ArraySource, IArrayLoader } from "./ILoader";
 
 export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T> {
   array: FeatureArrayType[T];
@@ -41,10 +41,10 @@ export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T>
 
 export default class UrlArrayLoader implements IArrayLoader {
   private workerPool: SharedWorkerPool;
-  private disposeOfWorkerPool: boolean;
+  private cleanupWorkerPoolOnDispose: boolean;
 
   constructor(workerPool?: SharedWorkerPool) {
-    this.disposeOfWorkerPool = workerPool === undefined;
+    this.cleanupWorkerPoolOnDispose = workerPool === undefined;
     this.workerPool = workerPool ?? new SharedWorkerPool();
   }
 
@@ -72,7 +72,7 @@ export default class UrlArrayLoader implements IArrayLoader {
   }
 
   dispose(): void {
-    if (this.disposeOfWorkerPool) {
+    if (this.cleanupWorkerPoolOnDispose) {
       this.workerPool.terminate();
     }
   }
