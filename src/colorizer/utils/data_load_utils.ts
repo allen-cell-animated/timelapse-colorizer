@@ -3,6 +3,8 @@ import { compressors } from "hyparquet-compressors";
 
 import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
 
+const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
+
 type FeatureDataJson = {
   data: number[] | boolean[];
   min?: number;
@@ -14,8 +16,6 @@ export type LoadedData<T extends FeatureDataType> = {
   min: number;
   max: number;
 };
-
-const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
 /**
  * Replaces all NaN in string text (such as the string representation of a JSON

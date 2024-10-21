@@ -1,11 +1,10 @@
-// sort-imports-ignore
 import { DataTexture } from "three";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
 import { infoToDataTexture } from "../utils/texture_utils";
 
-import { ArraySource, IArrayLoader } from "./ILoader";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
+import { ArraySource, IArrayLoader } from "./ILoader";
 
 export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T> {
   array: FeatureArrayType[T];
@@ -41,10 +40,10 @@ export class UrlArraySource<T extends FeatureDataType> implements ArraySource<T>
 
 export default class UrlArrayLoader implements IArrayLoader {
   private workerPool: SharedWorkerPool;
-  private disposeOfWorkerPool: boolean;
+  private cleanupWorkerPoolOnDispose: boolean;
 
   constructor(workerPool?: SharedWorkerPool) {
-    this.disposeOfWorkerPool = workerPool === undefined;
+    this.cleanupWorkerPoolOnDispose = workerPool === undefined;
     this.workerPool = workerPool ?? new SharedWorkerPool();
   }
 
@@ -65,14 +64,14 @@ export default class UrlArrayLoader implements IArrayLoader {
         `Encountered unsupported file format when loading data. URL must end in '.parquet' or '.json': ${url}`
       );
     }
-    const { data, textureInfo, min: newMin, max: newMax } = await this.workerPool.load(url, type);
+    const { data, textureInfo, min: newMin, max: newMax } = await this.workerPool.loadUrlData(url, type);
 
     const tex = infoToDataTexture(textureInfo);
     return new UrlArraySource<T>(data, tex, type, min ?? newMin, max ?? newMax);
   }
 
   dispose(): void {
-    if (this.disposeOfWorkerPool) {
+    if (this.cleanupWorkerPoolOnDispose) {
       this.workerPool.terminate();
     }
   }

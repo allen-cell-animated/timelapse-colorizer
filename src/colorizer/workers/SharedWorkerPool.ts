@@ -1,10 +1,11 @@
-// Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
-// @ts-ignore Ignore missing file warning
-import WorkerUrl from "./workers/worker?url&worker";
 import workerpool from "workerpool";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
 import { DataTextureInfo } from "../utils/texture_utils";
+
+// Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
+// @ts-ignore Ignore missing file warning
+import WorkerUrl from "./worker?url&worker";
 
 export default class SharedWorkerPool {
   private workerPool: workerpool.Pool;
@@ -12,8 +13,8 @@ export default class SharedWorkerPool {
   constructor() {
     this.workerPool = workerpool.pool(WorkerUrl, {
       workerOpts: {
-        // Set worker type to undefined (classic) in production to fix a Vite issue where the application
-        // crashes when loading a module worker.
+        // Set worker type to undefined (classic) in production to fix a Vite issue where the
+        // application crashes when loading a module worker.
         // Copied from https://github.com/josdejong/workerpool/tree/master/examples/vite.
         type: import.meta.env.PROD ? undefined : "module",
       },
@@ -32,11 +33,11 @@ export default class SharedWorkerPool {
    *  - `min`: The minimum value in the data array.
    *  - `max`: The maximum value in the data array.
    */
-  async load<T extends FeatureDataType>(
+  async loadUrlData<T extends FeatureDataType>(
     url: string,
     type: T
   ): Promise<{ data: FeatureArrayType[T]; textureInfo: DataTextureInfo<T>; min: number; max: number }> {
-    return await this.workerPool.exec("load", [url, type]);
+    return await this.workerPool.exec("loadUrlData", [url, type]);
   }
 
   terminate(): void {
