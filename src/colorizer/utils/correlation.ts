@@ -1,5 +1,3 @@
-import { Dataset } from "../../colorizer";
-
 const sanitizeNumericDataArrays = (
   xData: Float32Array,
   yData: Float32Array
@@ -78,22 +76,24 @@ function pearson(x: Float32Array, y: Float32Array): number {
   return answer;
 }
 
-export function computeCorrelations(d: Dataset): number[][] {
-  // Given a data set (an array of objects)
-  // and a list of columns (an array with a list of numeric columns),
+/**
+ * Computes a correlation matrix between the provided array of feature data.
+ * @returns a 2D matrix of correlation values between each pair of features.
+ */
+export function computeCorrelations(featureData: Float32Array[]): number[][] {
+  // Given an array of feature values (Float32 arrays),
   // calculate the Pearson correlation coeffient for each pair of columns
   // and return a correlation matrix, where each object takes the form
   // {column_a, column_a, correlation}
   // Dependencies: pluck
-
   // number of features squared:
   const out: number[][] = [];
-  for (let colx = 0; colx < d.featureKeys.length; colx++) {
+  for (let colx = 0; colx < featureData.length; colx++) {
     const row = [];
     for (let coly = 0; coly < colx; coly++) {
       // get list of values for colx and coly
-      const xvals = d.getFeatureData(d.featureKeys[colx])?.data!;
-      const yvals = d.getFeatureData(d.featureKeys[coly])?.data!;
+      const xvals = featureData[colx];
+      const yvals = featureData[coly];
       const { xData, yData } = sanitizeNumericDataArrays(xvals, yvals);
       const val = pearson(xData, yData);
       row.push(val);

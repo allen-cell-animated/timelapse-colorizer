@@ -9,6 +9,7 @@
 // other useful mouse interactions
 //
 ////////////
+import { Select } from "antd";
 import chroma from "chroma-js";
 import * as d3 from "d3";
 import React, { memo, ReactElement, useEffect, useState, useTransition } from "react";
@@ -16,15 +17,12 @@ import styled from "styled-components";
 
 import { ColorRamp, Dataset } from "../../colorizer";
 import { CorrelationPlotConfig, ViewerConfig } from "../../colorizer/types";
-import { computeCorrelations } from "../../colorizer/utils/correlation";
 import { useDebounce } from "../../colorizer/utils/react_utils";
+import { FlexColumnAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
 
-//import { DataArray } from "./scatter_plot_data_utils";
-
-//import { AppThemeContext } from "../AppStyle";
-
-// TODO: Translate into seconds/minutes/hours for datasets where frame duration is known?
+import SharedWorkerPool from "../../colorizer/workers/SharedWorkerPool";
+import LoadingSpinner from "../LoadingSpinner";
 
 type CorrelationPlotTabProps = {
   dataset: Dataset | null;
@@ -36,12 +34,21 @@ type CorrelationPlotTabProps = {
   colorRamp: ColorRamp;
   inRangeIds: Uint8Array;
 
+  workerPool: SharedWorkerPool;
   viewerConfig: ViewerConfig;
   correlationPlotConfig: CorrelationPlotConfig;
   updateCorrelationPlotConfig: (config: Partial<CorrelationPlotConfig>) => void;
   showAlert: ShowAlertBannerCallback;
   openScatterPlotTab(xAxisFeatureKey: string, yAxisFeatureKey: string): void;
 };
+
+const TipDiv = styled.div`
+  position: absolute;
+  font-size: 0.8em;
+  text-align: center;
+  text-shadow: -1px -1px 1px #ffffff, -1px 0px 1px #ffffff, -1px 1px 1px #ffffff, 0px -1px 1px #ffffff,
+    0px 1px 1px #ffffff, 1px -1px 1px #ffffff, 1px 0px 1px #ffffff, 1px 1px 1px #ffffff;
+`;
 
 /**
  * A tab that displays an interactive scatter plot between two features in the dataset.
@@ -55,35 +62,24 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // update cycle. Plotly's rendering is synchronous and can freeze the state update render,
   // so we need to track completion with a separate flag.
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
-  const [_isRendering, setIsRendering] = useState(false);
+  const [isRendering, setIsRendering] = useState(false);
 
   const plotDivRef = React.useRef<HTMLDivElement>(null);
   const legendRef = React.useRef<HTMLDivElement>(null);
   const tooltipDivRef = React.useRef<HTMLDivElement>(null);
 
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (props.dataset && selectedFeatures.length === 0) {
+      setSelectedFeatures(props.dataset.featureKeys);
+    }
+  }, [props.dataset]);
+
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  const { isPlaying, isVisible, inRangeIds } = props;
+  const { isPlaying, isVisible } = props;
   const dataset = useDebounce(props.dataset, 500);
-
-  // Trigger render spinner when playback starts, but only if the render is being delayed.
-  // If a render is allowed to happen (such as in the current-track- or current-frame-only
-  // range types), `isRendering` will be set to false immediately and the spinner will be hidden again.
-  useEffect(() => {
-    if (isPlaying) {
-      setIsRendering(true);
-    }
-  }, [isPlaying]);
-
-  const [scatterConfig, _setScatterConfig] = useState(props.correlationPlotConfig);
-  useEffect(() => {
-    if (props.correlationPlotConfig !== scatterConfig) {
-      setIsRendering(true);
-      startTransition(() => {
-        _setScatterConfig(props.correlationPlotConfig);
-      });
-    }
-  }, [props.correlationPlotConfig]);
 
   // const _isDebouncePending =
   //   props.scatterPlotConfig !== scatterConfig ||
@@ -110,27 +106,28 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Plot Rendering
   //////////////////////////////////
 
-  const plotDependencies = [
-    dataset,
-    isVisible,
-    plotDivRef.current,
-    legendRef.current,
-    tooltipDivRef.current,
-    inRangeIds,
-  ];
+  const plotDependencies = [dataset, selectedFeatures];
 
-  const renderPlot = (_forceRelayout: boolean = false): void => {
-    var correlationData = computeCorrelations(props.dataset!);
+  const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
+    if (!props.dataset) {
+      return;
+    }
+    console.log("Re-render of correlation plot was triggered.");
+    console.time("compute correlations");
+    setIsRendering(true);
+    const correlationData = await props.workerPool.getCorrelations(props.dataset!, selectedFeatures);
+    console.timeEnd("compute correlations");
+    console.time("render plot");
     // explode into d3 compatible data:
-    var thedata: { x: number; y: number; value: number }[] = [];
-    for (var i = 0; i < correlationData.length; i++) {
-      for (var j = 0; j < correlationData[i].length; j++) {
+    const thedata: { x: number; y: number; value: number }[] = [];
+    for (let i = 0; i < correlationData.length; i++) {
+      for (let j = 0; j < correlationData[i].length; j++) {
         thedata.push({ x: i, y: j, value: correlationData[i][j] });
       }
     }
 
     /***************************/
-    var extent = d3.extent(
+    const extent = d3.extent(
       thedata
         .map(function (d) {
           return d.value;
@@ -140,20 +137,20 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         })
     );
 
-    var grid: { x: number; y: number; value: number }[] = thedata; //data2grid.grid(thedata);
-    var rows =
+    const grid: { x: number; y: number; value: number }[] = thedata; //data2grid.grid(thedata);
+    const rows =
       d3.max(grid, function (d) {
         return d.y;
       }) || 0;
 
-    var margin = { top: 20, bottom: 1, left: 20, right: 1 };
+    const margin = { top: 20, bottom: 1, left: 20, right: 1 };
 
     //const sizing = plotDivRef.current!.getBoundingClientRect();
-    //var dim = d3.min([sizing.width * 0.9, sizing.height * 0.9]) || 0;
-    //var dim = d3.min([plotDivRef.current!.clientWidth * 0.9, plotDivRef.current!.clientHeight * 0.9]) || 0;
-    // var dim = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]) || 0;
-    var dim = 450;
-    var width = dim - margin.left - margin.right,
+    //const dim = d3.min([sizing.width * 0.9, sizing.height * 0.9]) || 0;
+    //const dim = d3.min([plotDivRef.current!.clientWidth * 0.9, plotDivRef.current!.clientHeight * 0.9]) || 0;
+    // const dim = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]) || 0;
+    const dim = 450;
+    const width = dim - margin.left - margin.right,
       height = dim - margin.top - margin.bottom;
 
     // clear everything out!
@@ -161,7 +158,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     d3.select(legendRef.current).selectAll("*").remove();
     d3.select(tooltipDivRef.current).selectAll("*").remove();
 
-    var svg = d3
+    const svg = d3
       .select(plotDivRef.current)
       .append("svg")
       .attr("width", width + margin.left + margin.right)
@@ -169,28 +166,28 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .append("g")
       .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
 
-    var padding = 0.1;
+    const padding = 0.1;
 
-    var x = d3
+    const x = d3
       .scaleBand<number>()
       .range([0, width])
       .paddingInner(padding)
       .domain(d3.range(1, rows + 1));
 
-    var y = d3
+    const y = d3
       .scaleBand<number>()
       .range([0, height])
       .paddingInner(padding)
       .domain(d3.range(1, rows + 1));
 
-    var c = chroma.scale(["tomato", "white", "steelblue"]).domain([extent[0]!, 0, extent[1]!]);
+    const c = chroma.scale(["tomato", "white", "steelblue"]).domain([extent[0]!, 0, extent[1]!]);
 
-    var cols: string[] = props.dataset?.featureKeys!;
+    const cols: string[] = props.dataset?.featureKeys!;
 
-    var xAxis = d3.axisTop(y).tickFormat(function (_d, i) {
+    const xAxis = d3.axisTop(y).tickFormat(function (_d, i) {
       return cols[i];
     });
-    var yAxis = d3.axisLeft(x).tickFormat(function (_d, i) {
+    const yAxis = d3.axisLeft(x).tickFormat(function (_d, i) {
       return cols[i];
     });
 
@@ -452,13 +449,15 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .text("Pearson correlation of all features.");
 
      */
+    console.timeEnd("render plot");
+    setIsRendering(false);
   };
 
   /**
    * Re-render the plot when the relevant props change.
    */
   useEffect(() => {
-    if (shouldDelayRender()) {
+    if (shouldDelayRender() || isRendering) {
       return;
     }
     renderPlot();
@@ -468,19 +467,16 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // Component Rendering
   //////////////////////////////////
 
-  const TipDiv = styled.div`
-    position: absolute;
-    font-size: 0.8em;
-    text-align: center;
-    text-shadow: -1px -1px 1px #ffffff, -1px 0px 1px #ffffff, -1px 1px 1px #ffffff, 0px -1px 1px #ffffff,
-      0px 1px 1px #ffffff, 1px -1px 1px #ffffff, 1px 0px 1px #ffffff, 1px 1px 1px #ffffff;
-  `;
-
   return (
-    <>
-      <div id="legend" style={{ position: "relative" }} ref={legendRef}></div>
-      <div id="grid" style={{ position: "relative" }} ref={plotDivRef}></div>
-      <TipDiv style={{ display: "none" }} id="tip" ref={tooltipDivRef}></TipDiv>
-    </>
+    <FlexColumnAlignCenter $gap={10} style={{ height: "100%" }}>
+      {/* <Select style={{ width: "100%" }} allowClear mode="multiple" placeholder="Add features"></Select> */}
+      <LoadingSpinner loading={isRendering} style={{ height: "100%" }}>
+        <FlexColumnAlignCenter $gap={5}>
+          <div id="legend" style={{ position: "relative" }} ref={legendRef}></div>
+          <div id="grid" style={{ position: "relative" }} ref={plotDivRef}></div>
+          <TipDiv style={{ display: "none" }} id="tip" ref={tooltipDivRef}></TipDiv>
+        </FlexColumnAlignCenter>
+      </LoadingSpinner>
+    </FlexColumnAlignCenter>
   );
 });

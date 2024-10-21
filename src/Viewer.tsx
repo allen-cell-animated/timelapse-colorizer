@@ -1167,6 +1167,7 @@ function Viewer(): ReactElement {
                       <div className={styles.tabContent}>
                         <CorrelationPlotTab
                           openScatterPlotTab={openScatterPlotTab}
+                          workerPool={workerPool}
                           dataset={dataset}
                           isVisible={config.openTab === TabType.CORRELATION_PLOT}
                           isPlaying={timeControls.isPlaying() || isRecording}

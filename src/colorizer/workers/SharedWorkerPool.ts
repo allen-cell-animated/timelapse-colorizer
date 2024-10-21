@@ -3,6 +3,7 @@ import workerpool from "workerpool";
 import { FeatureArrayType, FeatureDataType } from "../types";
 import { DataTextureInfo } from "../utils/texture_utils";
 
+import Dataset from "../Dataset";
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
 // @ts-ignore Ignore missing file warning
 import WorkerUrl from "./worker?url&worker";
@@ -38,6 +39,17 @@ export default class SharedWorkerPool {
     type: T
   ): Promise<{ data: FeatureArrayType[T]; textureInfo: DataTextureInfo<T>; min: number; max: number }> {
     return await this.workerPool.exec("loadUrlData", [url, type]);
+  }
+
+  async getCorrelations(d: Dataset, featureKeys?: string[]): Promise<number[][]> {
+    const featureData: Float32Array[] = [];
+    featureKeys = featureKeys ?? d.featureKeys;
+    for (const key of featureKeys) {
+      if (d.hasFeatureKey(key)) {
+        featureData.push(d.getFeatureData(key)!.data);
+      }
+    }
+    return await this.workerPool.exec("getCorrelations", [featureData]);
   }
 
   terminate(): void {
