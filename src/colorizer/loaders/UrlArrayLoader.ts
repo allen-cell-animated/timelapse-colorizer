@@ -3,7 +3,6 @@ import { DataTexture } from "three";
 import { FeatureArrayType, FeatureDataType } from "../types";
 import { infoToDataTexture } from "../utils/texture_utils";
 
-// sort-imports-ignore
 import SharedWorkerPool from "../workers/SharedWorkerPool";
 import { ArraySource, IArrayLoader } from "./ILoader";
 
@@ -65,7 +64,7 @@ export default class UrlArrayLoader implements IArrayLoader {
         `Encountered unsupported file format when loading data. URL must end in '.parquet' or '.json': ${url}`
       );
     }
-    const { data, textureInfo, min: newMin, max: newMax } = await this.workerPool.load(url, type);
+    const { data, textureInfo, min: newMin, max: newMax } = await this.workerPool.loadUrlData(url, type);
 
     const tex = infoToDataTexture(textureInfo);
     return new UrlArraySource<T>(data, tex, type, min ?? newMin, max ?? newMax);

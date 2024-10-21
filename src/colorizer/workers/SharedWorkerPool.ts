@@ -13,8 +13,8 @@ export default class SharedWorkerPool {
   constructor() {
     this.workerPool = workerpool.pool(WorkerUrl, {
       workerOpts: {
-        // Set worker type to undefined (classic) in production to fix a Vite issue where the application
-        // crashes when loading a module worker.
+        // Set worker type to undefined (classic) in production to fix a Vite issue where the
+        // application crashes when loading a module worker.
         // Copied from https://github.com/josdejong/workerpool/tree/master/examples/vite.
         type: import.meta.env.PROD ? undefined : "module",
       },
@@ -33,11 +33,11 @@ export default class SharedWorkerPool {
    *  - `min`: The minimum value in the data array.
    *  - `max`: The maximum value in the data array.
    */
-  async load<T extends FeatureDataType>(
+  async loadUrlData<T extends FeatureDataType>(
     url: string,
     type: T
   ): Promise<{ data: FeatureArrayType[T]; textureInfo: DataTextureInfo<T>; min: number; max: number }> {
-    return await this.workerPool.exec("load", [url, type]);
+    return await this.workerPool.exec("loadUrlData", [url, type]);
   }
 
   terminate(): void {
