@@ -1,4 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
+import { LoadErrorMessage, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
   CollectionEntry,
@@ -6,6 +7,7 @@ import {
   CollectionFileMetadata,
   updateCollectionVersion,
 } from "./utils/collection_utils";
+import { formatAsBulletList, uncapitalizeFirstLetter } from "./utils/data_utils";
 import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl } from "./utils/url_utils";
 
 import Dataset from "./Dataset";
@@ -55,11 +57,11 @@ export default class Collection {
     this.entries.forEach((value, key) => {
       if (!isJson(value.path)) {
         throw new Error(
-          `Expected dataset '${key}' to have an absolute JSON path; Collection was provided path '${value.path}'.`
+          `Expected dataset '${key}' to have an absolute JSON path; collection was provided path '${value.path}'.`
         );
       }
       if (!isUrl(value.path)) {
-        throw new Error(`Expected dataset '${key}' to have a URL path; Collection was provided path '${value.path}'.`);
+        throw new Error(`Expected dataset '${key}' to have a URL path; collection was provided path '${value.path}'.`);
       }
     });
   }
@@ -74,7 +76,7 @@ export default class Collection {
     if (this.hasDataset(datasetKey)) {
       return this.entries.get(datasetKey)!.path;
     }
-    throw new Error(`Collection does not contain dataset ${datasetKey}: Could not get path.`);
+    throw new Error(`Collection does not contain dataset ${datasetKey}. Could not get path.`);
   }
 
   /**
@@ -87,7 +89,7 @@ export default class Collection {
     if (this.hasDataset(datasetKey)) {
       return this.entries.get(datasetKey)!.name;
     }
-    throw new Error(`Collection does not contain dataset ${datasetKey}: Could not get name.`);
+    throw new Error(`Collection does not contain dataset ${datasetKey}. Could not get name.`);
   }
 
   public hasDataset(datasetKey: string): boolean {
@@ -118,8 +120,11 @@ export default class Collection {
   /**
    * Attempts to load and return the dataset specified by the key.
    * @param datasetKey string key of the dataset.
-   * @param onLoadProgress optional callback for loading progress.
-   * @param arrayLoader optional array loader to use for loading the dataset.
+   * @param options Optional configuration, containing any of the following properties:
+   *  - `onLoadProgress` optional callback for loading progress.
+   *  - `arrayLoader` optional array loader to use for loading the dataset.
+   *  - `reportWarning` optional callback for reporting warning messages during loading (potential errors
+   * that are non-blocking).
    * @returns A promise of a `DatasetLoadResult`.
    * - On a success, returns an object with a Dataset `dataset` and the `loaded` flag set to true.
    * - On a failure, returns an object with a null `dataset` and `loaded` set to false, as well as
@@ -129,8 +134,11 @@ export default class Collection {
    */
   public async tryLoadDataset(
     datasetKey: string,
-    onLoadProgress?: (complete: number, total: number) => void,
-    arrayLoader?: IArrayLoader
+    options: Partial<{
+      onLoadProgress?: (complete: number, total: number) => void;
+      arrayLoader?: IArrayLoader;
+      reportWarning?: ReportWarningCallback;
+    }> = {}
   ): Promise<DatasetLoadResult> {
     console.time("loadDataset");
 
@@ -147,13 +155,13 @@ export default class Collection {
     };
     const onLoadComplete = (): void => {
       completedLoadItems++;
-      onLoadProgress?.(completedLoadItems, totalLoadItems);
+      options.onLoadProgress?.(completedLoadItems, totalLoadItems);
     };
 
     // TODO: Override fetch method
     try {
-      const dataset = new Dataset(path, undefined, arrayLoader);
-      await dataset.open({ onLoadStart, onLoadComplete });
+      const dataset = new Dataset(path, undefined, options.arrayLoader);
+      await dataset.open({ onLoadStart, onLoadComplete, reportWarning: options.reportWarning });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {
@@ -163,7 +171,7 @@ export default class Collection {
         return {
           loaded: false,
           dataset: null,
-          errorMessage: `Error: Could not load dataset manifest '${datasetKey}'. ("${e}")`,
+          errorMessage: e.message,
         };
       } else {
         return { loaded: false, dataset: null };
@@ -235,21 +243,34 @@ export default class Collection {
    * Asynchronously loads a Collection object from the provided URL.
    * @param collectionParam The URL of the resource. This can either be a direct path to
    * collection JSON file or the path of a directory containing `collection.json`.
-   * @param fetchMethod Optional. The fetch command used to retrieve the URL.
+   * @param options Optional configuration, containing any of the following properties:
+   * - `fetchMethod` optional override for the fetch method, used to retrieve the URL.
+   * - `reportWarning` optional callback for reporting warning messages during loading.
    * @throws Error if the JSON could not be retrieved or is an unrecognized format.
    * @returns A new Collection object containing the retrieved data.
    */
-  public static async loadCollection(collectionParam: string, fetchMethod = fetchWithTimeout): Promise<Collection> {
+  public static async loadCollection(
+    collectionParam: string,
+    options: Partial<{ fetchMethod: typeof fetchWithTimeout; reportWarning: ReportWarningCallback }> = {}
+  ): Promise<Collection> {
     const absoluteCollectionUrl = Collection.formatAbsoluteCollectionPath(collectionParam);
 
     let response;
     try {
+      const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
-      throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
+      throw new Error(
+        LoadErrorMessage.UNREACHABLE_COLLECTION +
+          " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
+          " Please check your network access."
+      );
     }
     if (!response.ok) {
-      throw new Error(`Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': Fetch failed.`);
+      console.error(`Failed to fetch collections JSON from url '${absoluteCollectionUrl}':`, response);
+      throw new Error(
+        `Received a ${response.status} (${response.statusText}) code from the server while retrieving collections JSON from url '${absoluteCollectionUrl}'.`
+      );
     }
 
     let collection: CollectionFile;
@@ -257,18 +278,33 @@ export default class Collection {
       const json = await response.json();
       collection = updateCollectionVersion(json);
     } catch (e) {
-      throw new Error(`Could not parse collections JSON data from url '${absoluteCollectionUrl}': '${e}'`);
+      throw new Error(
+        `Parsing failed for the collections JSON file with the following error. Please check that the JSON syntax is correct: ${e}`
+      );
     }
 
     // Convert JSON array into map
-    if (collection.datasets.length === 0) {
+    if (!collection.datasets || collection.datasets.length === 0) {
       throw new Error(
-        `Could not retrieve collections JSON data from url '${absoluteCollectionUrl}': No datasets found.`
+        "Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection."
       );
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
+    const duplicateDatasetNames = new Set<string>();
     for (const entry of collection.datasets) {
+      if (collectionData.has(entry.name)) {
+        duplicateDatasetNames.add(entry.name);
+        console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
+      }
       collectionData.set(entry.name, entry);
+    }
+
+    if (duplicateDatasetNames.size > 0) {
+      options.reportWarning?.("Duplicate dataset names were found in the collection.", [
+        "The following dataset(s) had duplicate names and were skipped when loading the collection:",
+        ...formatAsBulletList(Array.from(duplicateDatasetNames), 5),
+        "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
+      ]);
     }
 
     triggerAnalyticsEvent(AnalyticsEvent.COLLECTION_LOAD, {
@@ -298,7 +334,6 @@ export default class Collection {
     }
     const collectionData: CollectionData = new Map([[datasetUrl, { path: datasetUrl, name: datasetUrl }]]);
 
-    // TODO: Should the dummy collection copy the dataset's metadata?
     return new Collection(collectionData, null);
   }
 
@@ -307,25 +342,89 @@ export default class Collection {
    * Collection representing its contents (either the loaded collection or a dummy collection
    * containing just the dataset).
    * @param url the URL resource to attempt to load.
-   * @param fetchMethod optional override for the fetch method.
+   * @param options optional configuration object containing any of the following properties:
+   *  - `fetchMethod` optional override for the fetch method.
+   *  - `reportWarning` optional callback for reporting warning messages during loading.
    * @throws an error if `url` is not a URL.
    * @returns a Promise of a new Collection object, either loaded from a collection JSON file or
    * generated as a wrapper around a single dataset.
    */
-  public static async loadFromAmbiguousUrl(url: string, fetchMethod = fetchWithTimeout): Promise<Collection> {
+  public static async loadFromAmbiguousUrl(
+    url: string,
+    options: Partial<{ fetchMethod: typeof fetchWithTimeout; reportWarning: ReportWarningCallback }> = {}
+  ): Promise<Collection> {
     // TODO: Also handle Nucmorph URLs that are pasted in? If website base URL matches, redirect?
 
     if (!isUrl(url)) {
       throw new Error(`Provided resource '${url}' is not a URL and cannot be loaded.`);
     }
 
+    let collectionLoadError: Error | null = null;
+    let datasetLoadError: Error | null = null;
     try {
-      return await Collection.loadCollection(url, fetchMethod);
+      return await Collection.loadCollection(url, options);
     } catch (e) {
+      collectionLoadError = e as Error;
+      console.warn(e);
       console.log("URL resource could not be parsed as a collection; attempting to make a single-database collection.");
     }
 
     // Could not load as a collection, attempt to load as a dataset.
-    return await Collection.makeCollectionFromSingleDataset(url);
+    try {
+      const collection = Collection.makeCollectionFromSingleDataset(url);
+      // Attempt to load the default dataset immediately to surface any loading errors.
+      const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
+      if (!loadResult.loaded) {
+        throw new Error(loadResult.errorMessage);
+      }
+      return collection;
+    } catch (e) {
+      datasetLoadError = e as Error;
+    }
+
+    // Assumption: if both loads failed and the file matches one of the default filenames,
+    // show only the relevant load error.
+    if (url.endsWith(DEFAULT_COLLECTION_FILENAME)) {
+      throw collectionLoadError;
+    } else if (url.endsWith(DEFAULT_DATASET_FILENAME)) {
+      throw datasetLoadError;
+    }
+
+    // Handle TypeError from failed fetch -> likely due to server being unreachable.
+    if (
+      collectionLoadError.message.startsWith(LoadErrorMessage.UNREACHABLE_COLLECTION) &&
+      datasetLoadError.message.includes(LoadErrorMessage.UNREACHABLE_MANIFEST)
+    ) {
+      throw new Error(
+        "Could not access either a collection or a dataset JSON at the provided URL." +
+          " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
+          " Please check your network access."
+      );
+    }
+
+    // Handle 404 errors from both collection and dataset fetches
+    if (
+      collectionLoadError.message.includes("404 (Not Found)") &&
+      datasetLoadError.message.includes("404 (Not Found)")
+    ) {
+      throw new Error(
+        "Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code."
+      );
+    }
+
+    // Could not load as a dataset either; surface the errors.
+    console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
+    const collectionMessage =
+      uncapitalizeFirstLetter(collectionLoadError?.message) ||
+      "(no error message provided; this is likely a bug and should be reported)";
+    const datasetMessage =
+      uncapitalizeFirstLetter(datasetLoadError?.message) ||
+      "(no error message provided; this is likely a bug and should be reported)";
+
+    throw new Error(
+      `Could not load the provided URL as either a collection or a dataset.
+      \n- If this is a collection, ${collectionMessage}
+      \n- If this is a dataset, ${datasetMessage}`
+    );
   }
 }

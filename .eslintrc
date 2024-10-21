@@ -91,9 +91,9 @@
           // Relative imports - lowercase utilities and submodules
           ["^[.]+.*/[a-z]+[\\w]*$"],
           // Relative imports - other classes and components
-          ["^[./].*/[\\w]*$"],
+          ["^[./].*/[\\w?&]*$"],
           // Relative imports - resource files
-          ["^[.].*/[\\w?_\\-]*[.][\\w.?_\\-]*$"]
+          ["^[.].*/[\\w?_\\-]*[.][\\w.?&_\\-]*$"]
         ]
       }
     ],

@@ -66,6 +66,21 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
   }
 `;
 
+const ReadMoreButton = styled(Button)`
+  padding: 0px;
+  margin: 0 10px 0 0;
+  border: 0;
+  color: var(--color-text-link);
+
+  &:hover {
+    color: var(--color-text-link-hover);
+  }
+
+  &:focus {
+    text-decoration: underline;
+  }
+`;
+
 export type AlertBannerProps = Spread<
   Omit<AlertProps, "onClose" | "afterClose" | "message" | "description" | "banner"> & {
     message: string;
@@ -134,13 +149,9 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
       <FlexRowAlignCenter $wrap={"wrap"} $gap={4}>
         <h3 style={{ margin: 0 }}>{props.message}</h3>
         {!showFullContent && (
-          <Button
-            type="link"
-            style={{ padding: "0px", margin: "0 10px 0 0", border: 0, color: "var(--color-text-link)" }}
-            onClick={() => setShowFullContent(true)}
-          >
+          <ReadMoreButton type="link" onClick={() => setShowFullContent(true)}>
             <h3>Read More</h3>
-          </Button>
+          </ReadMoreButton>
         )}
       </FlexRowAlignCenter>
       {showFullContent && <FlexColumn>{description}</FlexColumn>}
