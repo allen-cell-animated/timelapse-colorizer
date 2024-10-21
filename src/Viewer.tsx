@@ -44,6 +44,7 @@ import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import TimeControls from "./colorizer/TimeControls";
+import SharedWorkerPool from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
@@ -84,8 +85,10 @@ function Viewer(): ReactElement {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetKey, setDatasetKey] = useState("");
   const [, addRecentCollection] = useRecentCollections();
-  // Shared array loader to manage worker pool
-  const arrayLoader = useConstructor(() => new UrlArrayLoader());
+
+  // Shared worker pool for background operations (e.g. loading data)
+  const workerPool = useConstructor(() => new SharedWorkerPool());
+  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
