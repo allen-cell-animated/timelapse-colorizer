@@ -17,6 +17,7 @@ import {
   isTabType,
   isThresholdCategorical,
   LoadErrorMessage,
+  LoadTroubleshooting,
   PlotRangeType,
   ScatterPlotConfig,
   ThresholdType,
@@ -108,17 +109,13 @@ export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
     response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
   } catch (error) {
     console.error(`Fetching manifest JSON from url '${url}' failed with the following error:`, error);
-    throw new Error(
-      LoadErrorMessage.UNREACHABLE_MANIFEST +
-        " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
-        " Please check your network access."
-    );
+    throw new Error(LoadErrorMessage.UNREACHABLE_MANIFEST + " " + LoadTroubleshooting.CHECK_NETWORK);
   }
 
   if (!response.ok) {
     console.error(`Failed to fetch manifest file from url '${url}':`, response);
     throw new Error(
-      `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. Please check if the file exists and if you have access to it, or see the developer console for more details.`
+      `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
     );
   }
 
@@ -126,9 +123,7 @@ export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
     return await JSON.parse(nanToNull(await response.text()));
   } catch (error) {
     console.error(`Failed to parse manifest file from url '${url}':`, error);
-    throw new Error(
-      "Parsing failed for the manifest JSON file. Please check that the JSON syntax is correct: " + error
-    );
+    throw new Error(LoadErrorMessage.MANIFEST_JSON_PARSE_FAILED + error);
   }
 }
 

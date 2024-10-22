@@ -1,7 +1,13 @@
 import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { FeatureArrayType, FeatureDataType, ReportWarningCallback } from "./types";
+import {
+  FeatureArrayType,
+  FeatureDataType,
+  LoadErrorMessage,
+  LoadTroubleshooting,
+  ReportWarningCallback,
+} from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { formatAsBulletList, getKeyFromName } from "./utils/data_utils";
 import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
@@ -425,9 +431,7 @@ export default class Dataset {
 
     // Load feature data
     if (manifest.features.length === 0) {
-      throw new Error(
-        "The dataset's manifest JSON was loaded but no features were found. At least one feature must be defined."
-      );
+      throw new Error(LoadErrorMessage.MANIFEST_HAS_NO_FEATURES);
     }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
       reportLoadProgress(this.loadFeature(data))
@@ -463,7 +467,7 @@ export default class Dataset {
       options.reportWarning?.("Some data files failed to load.", [
         "The following data file(s) failed to load, which may cause the viewer to behave unexpectedly:",
         ...unloadableDataFiles.map((fileType) => `  - ${fileType}`),
-        "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
       ]);
     }
 
@@ -485,7 +489,7 @@ export default class Dataset {
       options.reportWarning?.("Some features failed to load.", [
         "The following feature(s) could not be loaded and will not be shown: ",
         ...formatAsBulletList(missingFeatureNames, 5),
-        "This may be because of an unsupported format or a missing file.",
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
       ]);
     }
 

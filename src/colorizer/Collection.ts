@@ -1,5 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
-import { LoadErrorMessage, ReportWarningCallback } from "./types";
+import { LoadErrorMessage, LoadTroubleshooting, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
   CollectionEntry,
@@ -239,6 +239,30 @@ export default class Collection {
   // ===================================================================================
   // Static Loader Methods
 
+  private static checkForDuplicateDatasetNames(
+    datasets: CollectionEntry[],
+    reportWarning?: ReportWarningCallback
+  ): void {
+    const collectionData: Map<string, CollectionEntry> = new Map();
+    const duplicateDatasetNames = new Set<string>();
+
+    for (const entry of datasets) {
+      if (collectionData.has(entry.name)) {
+        duplicateDatasetNames.add(entry.name);
+        console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
+      }
+      collectionData.set(entry.name, entry);
+    }
+
+    if (duplicateDatasetNames.size > 0) {
+      reportWarning?.("Duplicate dataset names were found in the collection.", [
+        "The following dataset(s) had duplicate names and were skipped when loading the collection:",
+        ...formatAsBulletList(Array.from(duplicateDatasetNames), 5),
+        "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
+      ]);
+    }
+  }
+
   /**
    * Asynchronously loads a Collection object from the provided URL.
    * @param collectionParam The URL of the resource. This can either be a direct path to
@@ -260,16 +284,13 @@ export default class Collection {
       const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
-      throw new Error(
-        LoadErrorMessage.UNREACHABLE_COLLECTION +
-          " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
-          " Please check your network access."
-      );
+      throw new Error(LoadErrorMessage.UNREACHABLE_COLLECTION + " " + LoadTroubleshooting.CHECK_NETWORK);
     }
     if (!response.ok) {
-      console.error(`Failed to fetch collections JSON from url '${absoluteCollectionUrl}':`, response);
       throw new Error(
-        `Received a ${response.status} (${response.statusText}) code from the server while retrieving collections JSON from url '${absoluteCollectionUrl}'.`
+        `Received a ${response.status} (${response.statusText}) code from the server while retrieving collections JSON from url '${absoluteCollectionUrl}'.` +
+          " " +
+          LoadTroubleshooting.CHECK_FILE_EXISTS
       );
     }
 
@@ -278,34 +299,18 @@ export default class Collection {
       const json = await response.json();
       collection = updateCollectionVersion(json);
     } catch (e) {
-      throw new Error(
-        `Parsing failed for the collections JSON file with the following error. Please check that the JSON syntax is correct: ${e}`
-      );
+      throw new Error(LoadErrorMessage.COLLECTION_JSON_PARSE_FAILED + e);
     }
 
     // Convert JSON array into map
     if (!collection.datasets || collection.datasets.length === 0) {
-      throw new Error(
-        "Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection."
-      );
+      throw new Error(LoadErrorMessage.COLLECTION_HAS_NO_DATASETS);
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
-    const duplicateDatasetNames = new Set<string>();
     for (const entry of collection.datasets) {
-      if (collectionData.has(entry.name)) {
-        duplicateDatasetNames.add(entry.name);
-        console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
-      }
       collectionData.set(entry.name, entry);
     }
-
-    if (duplicateDatasetNames.size > 0) {
-      options.reportWarning?.("Duplicate dataset names were found in the collection.", [
-        "The following dataset(s) had duplicate names and were skipped when loading the collection:",
-        ...formatAsBulletList(Array.from(duplicateDatasetNames), 5),
-        "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
-      ]);
-    }
+    Collection.checkForDuplicateDatasetNames(collection.datasets, options.reportWarning);
 
     triggerAnalyticsEvent(AnalyticsEvent.COLLECTION_LOAD, {
       collectionWriterVersion: collection.metadata?.writerVersion || "N/A",
@@ -352,19 +357,13 @@ export default class Collection {
       datasetLoadError.message.includes(LoadErrorMessage.UNREACHABLE_MANIFEST)
     ) {
       // Handle TypeError from failed fetch, likely due to server being unreachable.
-      return new Error(
-        "Could not access either a collection or a dataset JSON at the provided URL." +
-          " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
-          " Please check your network access."
-      );
+      return new Error(LoadErrorMessage.BOTH_UNREACHABLE + " " + LoadTroubleshooting.CHECK_NETWORK);
     } else if (
       // Merge 404 errors from both collection and dataset fetches
       collectionLoadError.message.includes("404 (Not Found)") &&
       datasetLoadError.message.includes("404 (Not Found)")
     ) {
-      return new Error(
-        "Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code."
-      );
+      return new Error(LoadErrorMessage.BOTH_404);
     } else {
       // Format and return a message containing both errors.
       console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
