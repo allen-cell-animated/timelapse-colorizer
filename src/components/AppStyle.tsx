@@ -330,9 +330,6 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
 
       <ConfigProvider
         theme={{
-          // Removes the css-dev-only- prefixed CSS classes. Enabling hashing is only
-          // necessary if there are multiple version of Ant being used in the same app.
-          hashed: false,
           token: {
             colorPrimary: theme.color.theme,
             colorLink: theme.color.text.link,
