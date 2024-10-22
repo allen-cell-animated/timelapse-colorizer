@@ -77,7 +77,7 @@ describe("Collection", () => {
         it("collects datasets", async () => {
           const url = "https://e.com/collection.json";
           const mockFetch = makeMockFetchMethod(url, collectionJson);
-          const collection = await Collection.loadCollection(url, mockFetch);
+          const collection = await Collection.loadCollection(url, { fetchMethod: mockFetch });
 
           expect(collection.getDatasetKeys().length).to.equal(datasets.length);
           expect(collection.getDatasetKeys()).to.deep.equal([
@@ -92,7 +92,7 @@ describe("Collection", () => {
         it("should parse dataset paths correctly", async () => {
           const url = "https://e.com/collection.json/";
           const mockFetch = makeMockFetchMethod("https://e.com/collection.json", collectionJson);
-          const collection = await Collection.loadCollection(url, mockFetch);
+          const collection = await Collection.loadCollection(url, { fetchMethod: mockFetch });
 
           expect(collection.getAbsoluteDatasetPath("dataset1")).to.equal("https://e.com/dir1/manifest.json");
           expect(collection.getAbsoluteDatasetPath("dataset2")).to.equal(
@@ -106,7 +106,7 @@ describe("Collection", () => {
         it("retrieves metadata", async () => {
           const url = "https://e.com/collection.json";
           const mockFetch = makeMockFetchMethod(url, collectionJson);
-          const collection = await Collection.loadCollection(url, mockFetch);
+          const collection = await Collection.loadCollection(url, { fetchMethod: mockFetch });
 
           if (version === "v0.0.0") {
             expect(collection.metadata).deep.equals({});
@@ -129,7 +129,7 @@ describe("Collection", () => {
     it("returns an empty metadata object for v0.0.0", async () => {
       const url = "https://e.com/collection.json";
       const mockFetch = makeMockFetchMethod(url, collectionFormats[0].collectionJson);
-      const collection = await Collection.loadCollection(url, mockFetch);
+      const collection = await Collection.loadCollection(url, { fetchMethod: mockFetch });
 
       expect(collection.metadata).deep.equals({});
     });
@@ -139,13 +139,13 @@ describe("Collection", () => {
       // Will only allow this exact fetch URL or else it will throw an error
       const mockFetch = makeMockFetchMethod("https://e.com/" + DEFAULT_COLLECTION_FILENAME, [{ name: "", path: "" }]);
 
-      await Collection.loadCollection(url, mockFetch);
+      await Collection.loadCollection(url, { fetchMethod: mockFetch });
     });
 
     it("Throws an error when loading a collection with no datasets", async () => {
       const url = "https://e.com/collection.json";
       const mockFetch = makeMockFetchMethod(url, { datasets: [] });
-      const tryLoad = Collection.loadCollection(url, mockFetch);
+      const tryLoad = Collection.loadCollection(url, { fetchMethod: mockFetch });
       expect(tryLoad).rejects.toMatch(ANY_ERROR);
     });
   });

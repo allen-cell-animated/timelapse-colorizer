@@ -143,3 +143,29 @@ export function getInRangeLUT(dataset: Dataset, thresholds: FeatureThreshold[]):
 export function getKeyFromName(name: string): string {
   return name.toLowerCase().replaceAll(/[^a-z0-9_]/g, "_");
 }
+
+/** Changes the first letter of a string to lower case. */
+export function uncapitalizeFirstLetter(str: string): string {
+  if (!str) {
+    return str;
+  }
+  return str.charAt(0).toLowerCase() + str.slice(1);
+}
+
+/**
+ * Formats a list of string items as a bulleted list, with an optional maximum number of items to display.
+ * If the maximum count is exceeded, the list will be truncated and add a message indicating the number of items omitted.
+ * @param items String list of items to format.
+ * @param maxDisplayCount Maximum number of items to display. Default is `Number.POSITIVE_INFINITY`.
+ * @returns A list of string items formatted as a bulleted list, with the prefix " - ".
+ */
+export function formatAsBulletList(items: string[], maxDisplayCount: number = Number.POSITIVE_INFINITY): string[] {
+  const itemDisplayText = [];
+  for (let i = 0; i < Math.min(maxDisplayCount, items.length); i++) {
+    itemDisplayText.push(` - ${items[i]}`);
+  }
+  if (items.length > maxDisplayCount) {
+    itemDisplayText.push(` - ...and ${items.length - 5} more.`);
+  }
+  return itemDisplayText;
+}

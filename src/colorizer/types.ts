@@ -139,6 +139,7 @@ export enum TabType {
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
   SETTINGS = "settings",
+  CORRELATION_PLOT = "correlation_plot",
 }
 
 export const isTabType = (tab: string): tab is TabType => {
@@ -193,9 +194,23 @@ export type ScatterPlotConfig = {
   rangeType: PlotRangeType;
 };
 
+export type CorrelationPlotConfig = {};
+
 // Use a function instead of a constant to avoid sharing the same object reference.
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   xAxis: null,
   yAxis: null,
   rangeType: PlotRangeType.ALL_TIME,
 });
+
+/**
+ * Callback used to report warnings to the user. The message is the title
+ * of the warning, and the description is the body of the warning. If an array
+ * is provided for the description, each string should be displayed on a new line.
+ */
+export type ReportWarningCallback = (message: string, description: string | string[]) => void;
+
+export enum LoadErrorMessage {
+  UNREACHABLE_MANIFEST = "The expected manifest JSON file could not be reached.",
+  UNREACHABLE_COLLECTION = "The expected collection JSON file could not be reached.",
+}
