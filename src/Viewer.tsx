@@ -23,6 +23,7 @@ import {
   FeatureThreshold,
   getDefaultScatterPlotConfig,
   isThresholdNumeric,
+  LoadTroubleshooting,
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
@@ -379,8 +380,7 @@ function Viewer(): ReactElement {
         errorMessage
           ? `Encountered the following error when loading the dataset: "${errorMessage}"`
           : "Encountered an error when loading the dataset.",
-        "Check your network connection and access to the dataset path, or use the browser console to view details." +
-          " Otherwise, contact the dataset creator as there may be missing files.",
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
       ];
 
       showAlert({

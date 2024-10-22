@@ -288,9 +288,8 @@ export default class Collection {
     }
     if (!response.ok) {
       throw new Error(
-        `Received a ${response.status} (${response.statusText}) code from the server while retrieving collections JSON from url '${absoluteCollectionUrl}'.` +
-          " " +
-          LoadTroubleshooting.CHECK_FILE_EXISTS
+        `Received a ${response.status} (${response.statusText}) code from the server while retrieving` +
+          ` collections JSON from url '${absoluteCollectionUrl}'. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
       );
     }
 
