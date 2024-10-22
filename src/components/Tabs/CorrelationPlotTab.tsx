@@ -5,7 +5,6 @@
 // selections of features
 // how to obey filtering
 // interaction with track selections?
-// click to go to scatterplot
 // other useful mouse interactions
 //
 ////////////
@@ -18,7 +17,7 @@ import styled from "styled-components";
 import { ColorRamp, Dataset } from "../../colorizer";
 import { CorrelationPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
 
 import SharedWorkerPool from "../../colorizer/workers/SharedWorkerPool";
@@ -57,7 +56,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // ^ Memo prevents re-rendering if the props haven't changed.
   //const theme = useContext(AppThemeContext);
 
-  const [_isPending, startTransition] = useTransition();
+  const [_isPending, _startTransition] = useTransition();
   // This might seem redundant with `isPending`, but `useTransition` only works within React's
   // update cycle. Plotly's rendering is synchronous and can freeze the state update render,
   // so we need to track completion with a separate flag.
@@ -68,11 +67,11 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const legendRef = React.useRef<HTMLDivElement>(null);
   const tooltipDivRef = React.useRef<HTMLDivElement>(null);
 
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [selectedFeatures, setSelectedFeatures] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (props.dataset && selectedFeatures.length === 0) {
-      setSelectedFeatures(props.dataset.featureKeys);
+    if (props.dataset && selectedFeatures?.size === 0) {
+      setSelectedFeatures(new Set(props.dataset.featureKeys));
     }
   }, [props.dataset]);
 
@@ -99,7 +98,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const shouldDelayRender = (): boolean => {
     // Don't render when tab is not visible.
     // Also, don't render updates during playback, to prevent blocking the UI.
-    return !props.isVisible || isPlaying;
+    return !isVisible || isPlaying;
   };
 
   //////////////////////////////////
@@ -115,7 +114,8 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     console.log("Re-render of correlation plot was triggered.");
     console.time("compute correlations");
     setIsRendering(true);
-    const correlationData = await props.workerPool.getCorrelations(props.dataset!, selectedFeatures);
+    const features = dataset?.featureKeys.filter((f) => selectedFeatures.has(f)) || [];
+    const correlationData = await props.workerPool.getCorrelations(props.dataset!, features);
     console.timeEnd("compute correlations");
     console.time("render plot");
     // explode into d3 compatible data:
@@ -182,7 +182,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
     const c = chroma.scale(["tomato", "white", "steelblue"]).domain([extent[0]!, 0, extent[1]!]);
 
-    const cols: string[] = selectedFeatures;
+    const cols: string[] = features;
 
     const xAxis = d3.axisTop(y).tickFormat(function (_d, i) {
       return cols[i];
@@ -482,17 +482,16 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
           mode="multiple"
           placeholder="Add features"
           options={featureOptions}
-          value={selectedFeatures}
+          value={Array.from(selectedFeatures)}
           maxTagCount={"responsive"}
-          onClear={() => setSelectedFeatures([])}
+          onClear={() => setSelectedFeatures(new Set())}
           disabled={!props.dataset}
-          // TODO: Maintain dataset order
           onSelect={(value) => {
-            setSelectedFeatures([...selectedFeatures, value as string]);
+            setSelectedFeatures(selectedFeatures.union(new Set(value)));
           }}
-          onDeselect={(value) => setSelectedFeatures(selectedFeatures.filter((f) => f !== value))}
+          onDeselect={(value) => setSelectedFeatures(selectedFeatures.difference(new Set(value)))}
         ></Select>
-        <Button onClick={() => setSelectedFeatures(props.dataset?.featureKeys || [])} type="primary">
+        <Button onClick={() => setSelectedFeatures(new Set(props.dataset?.featureKeys || []))} type="primary">
           Select all
         </Button>
       </FlexRowAlignCenter>
