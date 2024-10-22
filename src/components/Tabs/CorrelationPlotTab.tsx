@@ -44,10 +44,17 @@ type CorrelationPlotTabProps = {
 
 const TipDiv = styled.div`
   position: absolute;
-  font-size: 0.8em;
   text-align: center;
-  text-shadow: -1px -1px 1px #ffffff, -1px 0px 1px #ffffff, -1px 1px 1px #ffffff, 0px -1px 1px #ffffff,
-    0px 1px 1px #ffffff, 1px -1px 1px #ffffff, 1px 0px 1px #ffffff, 1px 1px 1px #ffffff;
+
+  background-color: #ffffff;
+  border: 1px solid var(--color-borders);
+  border-radius: 6px;
+  padding: 8px 12px;
+  width: max-content;
+  z-index: 1000;
+
+  /* text-shadow: -1px -1px 1px #ffffff, -1px 0px 1px #ffffff, -1px 1px 1px #ffffff, 0px -1px 1px #ffffff,
+    0px 1px 1px #ffffff, 1px -1px 1px #ffffff, 1px 0px 1px #ffffff, 1px 1px 1px #ffffff; */
 `;
 
 /**
@@ -251,9 +258,14 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         }
         d3.select(this).classed("selected", true);
 
+        const xAxisName = dataset?.getFeatureNameWithUnits(cols[d.x]);
+        const yAxisName = dataset?.getFeatureNameWithUnits(cols[d.y]);
+
         d3.select(tooltipDivRef.current)
-          .style("display", "block")
-          .html(cols[d.x] + ", " + cols[d.y] + ": " + (d.value === undefined ? "undefined" : d.value.toFixed(2)));
+          .style("display", "flex")
+          .html(
+            xAxisName + " ×<br/>" + yAxisName + "<br/>" + (d.value === undefined ? "undefined" : d.value.toFixed(2))
+          );
 
         var rowPos = y(d.y)!;
         var colPos = x(d.x)!;
@@ -463,7 +475,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
    * Re-render the plot when the relevant props change.
    */
   useEffect(() => {
-    if (shouldDelayRender() || isRendering) {
+    if (shouldDelayRender()) {
       return;
     }
     renderPlot();
@@ -505,8 +517,10 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       <LoadingSpinner loading={isRendering} style={{ height: "100%" }}>
         <FlexColumnAlignCenter $gap={5}>
           <div id="legend" style={{ position: "relative" }} ref={legendRef}></div>
-          <div id="grid" style={{ position: "relative" }} ref={plotDivRef}></div>
-          <TipDiv style={{ display: "none" }} id="tip" ref={tooltipDivRef}></TipDiv>
+          <div style={{ position: "relative" }}>
+            <div id="grid" style={{ position: "relative" }} ref={plotDivRef}></div>
+            <TipDiv style={{ display: "none" }} id="tip" ref={tooltipDivRef}></TipDiv>
+          </div>
         </FlexColumnAlignCenter>
       </LoadingSpinner>
     </FlexColumnAlignCenter>
