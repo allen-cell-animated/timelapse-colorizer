@@ -12,13 +12,13 @@
 import { Button, Select } from "antd";
 import chroma from "chroma-js";
 import * as d3 from "d3";
-import React, { memo, ReactElement, useEffect, useState, useTransition } from "react";
+import React, { memo, ReactElement, useEffect, useMemo, useState, useTransition } from "react";
 import styled from "styled-components";
 
 import { ColorRamp, Dataset } from "../../colorizer";
 import { CorrelationPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../../styles/utils";
+import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
 
 import SharedWorkerPool from "../../colorizer/workers/SharedWorkerPool";
@@ -57,7 +57,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // ^ Memo prevents re-rendering if the props haven't changed.
   //const theme = useContext(AppThemeContext);
 
-  const [_isPending, startTransition] = useTransition();
+  const [_isPending, _startTransition] = useTransition();
   // This might seem redundant with `isPending`, but `useTransition` only works within React's
   // update cycle. Plotly's rendering is synchronous and can freeze the state update render,
   // so we need to track completion with a separate flag.
@@ -70,6 +70,12 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
+  const sortedSelectedFeatures = useMemo(() => {
+    // Keep in sorted order of the dataset
+    const featureSet = new Set(selectedFeatures);
+    return props.dataset?.featureKeys.filter((f) => featureSet.has(f)) || [];
+  }, [props.dataset, selectedFeatures]);
+
   useEffect(() => {
     if (props.dataset && selectedFeatures.length === 0) {
       setSelectedFeatures(props.dataset.featureKeys);
@@ -78,7 +84,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  const { isPlaying, isVisible } = props;
+  const { isPlaying } = props;
   const dataset = useDebounce(props.dataset, 500);
 
   // const _isDebouncePending =
@@ -115,7 +121,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     console.log("Re-render of correlation plot was triggered.");
     console.time("compute correlations");
     setIsRendering(true);
-    const correlationData = await props.workerPool.getCorrelations(props.dataset!, selectedFeatures);
+    const correlationData = await props.workerPool.getCorrelations(props.dataset!, sortedSelectedFeatures);
     console.timeEnd("compute correlations");
     console.time("render plot");
     // explode into d3 compatible data:
@@ -182,7 +188,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
     const c = chroma.scale(["tomato", "white", "steelblue"]).domain([extent[0]!, 0, extent[1]!]);
 
-    const cols: string[] = selectedFeatures;
+    const cols: string[] = sortedSelectedFeatures;
 
     const xAxis = d3.axisTop(y).tickFormat(function (_d, i) {
       return cols[i];
