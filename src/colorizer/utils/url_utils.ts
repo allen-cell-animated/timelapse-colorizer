@@ -16,6 +16,8 @@ import {
   isDrawMode,
   isTabType,
   isThresholdCategorical,
+  LoadErrorMessage,
+  LoadTroubleshooting,
   PlotRangeType,
   ScatterPlotConfig,
   ThresholdType,
@@ -102,20 +104,38 @@ export function fetchWithTimeout(
  * Fetches a manifest JSON file from a given URL and returns the parsed JSON object.
  */
 export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
-  // TODO: Should this report error states if load failed?
-  const response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
-  return await JSON.parse(nanToNull(await response.text()));
+  let response;
+  try {
+    response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
+  } catch (error) {
+    console.error(`Fetching manifest JSON from url '${url}' failed with the following error:`, error);
+    throw new Error(LoadErrorMessage.UNREACHABLE_MANIFEST + " " + LoadTroubleshooting.CHECK_NETWORK);
+  }
+
+  if (!response.ok) {
+    console.error(`Failed to fetch manifest file from url '${url}':`, response);
+    throw new Error(
+      `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
+    );
+  }
+
+  try {
+    return await JSON.parse(nanToNull(await response.text()));
+  } catch (error) {
+    console.error(`Failed to parse manifest file from url '${url}':`, error);
+    throw new Error(LoadErrorMessage.MANIFEST_JSON_PARSE_FAILED + error);
+  }
 }
 
 /**
  * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
- * TODO: Pass in a callback to handle the error case instead of just logging a warning.
  */
-export function getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
+export function getPromiseValue<T>(
+  promise: PromiseSettledResult<T>,
+  onFailure?: (rejectionReason: any) => void
+): T | null {
   if (promise.status === "rejected") {
-    if (failureWarning) {
-      console.warn(failureWarning, promise.reason);
-    }
+    onFailure?.(promise.reason);
     return null;
   }
   return promise.value;

@@ -199,3 +199,28 @@ export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   yAxis: null,
   rangeType: PlotRangeType.ALL_TIME,
 });
+
+/**
+ * Callback used to report warnings to the user. The message is the title
+ * of the warning, and the description is the body of the warning. If an array
+ * is provided for the description, each string should be displayed on a new line.
+ */
+export type ReportWarningCallback = (message: string, description: string | string[]) => void;
+
+export enum LoadTroubleshooting {
+  CHECK_NETWORK = "This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
+    " Please check your network access.",
+  CHECK_FILE_EXISTS = "Please check if the file exists and if you have access to it, or see the developer console for more details.",
+  CHECK_FILE_OR_NETWORK = "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",
+}
+
+export enum LoadErrorMessage {
+  UNREACHABLE_MANIFEST = "The expected manifest JSON file could not be reached.",
+  UNREACHABLE_COLLECTION = "The expected collection JSON file could not be reached.",
+  BOTH_UNREACHABLE = "Could not access either a collection or a dataset JSON at the provided URL.",
+  BOTH_404 = "Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code.",
+  COLLECTION_HAS_NO_DATASETS = "Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection.",
+  MANIFEST_HAS_NO_FEATURES = "The dataset's manifest JSON was loaded but no features were found. At least one feature must be defined.",
+  COLLECTION_JSON_PARSE_FAILED = "Parsing failed for the collections JSON file with the following error. Please check that the JSON syntax is correct: ",
+  MANIFEST_JSON_PARSE_FAILED = "Parsing failed for the manifest JSON file with the following error. Please check that the JSON syntax is correct: ",
+}

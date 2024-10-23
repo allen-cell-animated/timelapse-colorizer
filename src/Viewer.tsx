@@ -23,6 +23,8 @@ import {
   FeatureThreshold,
   getDefaultScatterPlotConfig,
   isThresholdNumeric,
+  LoadTroubleshooting,
+  ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
   ViewerConfig,
@@ -160,6 +162,8 @@ function Viewer(): ReactElement {
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
   const { bannerElement, showAlert, clearBanners } = useAlertBanner();
+  /** Alerts that should be shown for a dataset that is currently being loaded but is not yet displayed. */
+  const pendingAlerts = useRef<(() => void)[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -370,6 +374,40 @@ function Viewer(): ReactElement {
     });
   }, []);
 
+  const showDatasetLoadError = useCallback(
+    (errorMessage?: string): void => {
+      const description: string[] = [
+        errorMessage
+          ? `Encountered the following error when loading the dataset: "${errorMessage}"`
+          : "Encountered an error when loading the dataset.",
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+      ];
+
+      showAlert({
+        type: "error",
+        message: "Dataset could not be loaded.",
+        description,
+        closable: false,
+        action: <Link to="/">Return to homepage</Link>,
+      });
+    },
+    [showAlert]
+  );
+
+  const showDatasetLoadWarning: ReportWarningCallback = useCallback(
+    (message: string, description: string | string[]) => {
+      pendingAlerts.current.push(() => {
+        showAlert({
+          type: "warning",
+          message: message,
+          description: description,
+          closable: true,
+        });
+      });
+    },
+    [showAlert]
+  );
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -386,8 +424,15 @@ function Viewer(): ReactElement {
       if (dataset !== null) {
         dataset.dispose();
       }
-      // State updates
+
+      // Manage dataset-related alert banners
       clearBanners();
+      for (const alert of pendingAlerts.current) {
+        alert();
+      }
+      pendingAlerts.current = [];
+
+      // State updates
       setDataset(newDataset);
       setDatasetKey(newDatasetKey);
 
@@ -508,21 +553,15 @@ function Viewer(): ReactElement {
             return;
           }
           // Try loading the collection, with the default collection as a fallback.
+
           try {
-            newCollection = await Collection.loadCollection(collectionUrlParam);
+            newCollection = await Collection.loadCollection(collectionUrlParam, {
+              reportWarning: showDatasetLoadWarning,
+            });
             datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
           } catch (error) {
             console.error(error);
-            showAlert({
-              message: "Dataset could not be loaded.",
-              type: "error",
-              closable: false,
-              description: [
-                'Encountered the following error when loading the dataset: "' + (error as Error).message + '"',
-                "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
-              ],
-              action: <Link to="/">Return to homepage</Link>,
-            });
+            showDatasetLoadError((error as Error).message);
             setIsDatasetLoading(false);
             return;
           }
@@ -531,16 +570,15 @@ function Viewer(): ReactElement {
 
       setCollection(newCollection);
       setDatasetLoadProgress(null);
-      const datasetResult = await newCollection.tryLoadDataset(datasetKey, handleProgressUpdate, arrayLoader);
+      const datasetResult = await newCollection.tryLoadDataset(datasetKey, {
+        onLoadProgress: handleProgressUpdate,
+        arrayLoader,
+        reportWarning: showDatasetLoadWarning,
+      });
 
       if (!datasetResult.loaded) {
         console.error(datasetResult.errorMessage);
-        notificationApi["error"]({
-          message: "Error loading dataset: ",
-          description: datasetResult.errorMessage,
-          placement: "bottomLeft",
-          duration: 4,
-        });
+        showDatasetLoadError(datasetResult.errorMessage);
         setIsDatasetLoading(false);
         return;
       }
@@ -632,17 +670,21 @@ function Viewer(): ReactElement {
       if (newDatasetKey !== datasetKey && collection) {
         setIsDatasetLoading(true);
         setDatasetLoadProgress(null);
-        const result = await collection.tryLoadDataset(newDatasetKey, handleProgressUpdate, arrayLoader);
+        const result = await collection.tryLoadDataset(newDatasetKey, {
+          onLoadProgress: handleProgressUpdate,
+          arrayLoader,
+          reportWarning: showDatasetLoadWarning,
+        });
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
         } else {
-          // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
+          // Show notification popup for datasets that can't be loaded.
           console.error(result.errorMessage);
           notificationApi["error"]({
-            message: "Error loading dataset:",
+            message: "Dataset load failed",
             description: result.errorMessage,
             placement: "bottomLeft",
-            duration: 4,
+            duration: 12,
           });
         }
         setIsDatasetLoading(false);
@@ -806,7 +848,11 @@ function Viewer(): ReactElement {
         <h3>{collection?.metadata.name ?? null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
-            <LoadDatasetButton onLoad={handleDatasetLoad} currentResourceUrl={collection?.url || datasetKey} />
+            <LoadDatasetButton
+              onLoad={handleDatasetLoad}
+              currentResourceUrl={collection?.url || datasetKey}
+              reportWarning={showDatasetLoadWarning}
+            />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
