@@ -534,7 +534,7 @@ function Viewer(): ReactElement {
         if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
           // Make a dummy collection that will include only this dataset
-          newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+          newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
           if (!collectionUrlParam) {
@@ -685,6 +685,10 @@ function Viewer(): ReactElement {
             description: result.errorMessage,
             placement: "bottomLeft",
             duration: 12,
+            style: {
+              backgroundColor: theme.color.alert.fill.error,
+              border: `1px solid ${theme.color.alert.border.error}`,
+            },
           });
         }
         setIsDatasetLoading(false);
@@ -798,6 +802,10 @@ function Viewer(): ReactElement {
       placement: "bottomLeft",
       duration: 4,
       icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
+      style: {
+        backgroundColor: theme.color.alert.fill.success,
+        border: `1px solid ${theme.color.alert.border.success}`,
+      },
     });
   };
 
