@@ -1,6 +1,6 @@
 import { Button, Divider, Tooltip } from "antd";
 import React, { lazy, ReactElement, Suspense } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
 import { Dataset } from "../colorizer";
@@ -10,6 +10,7 @@ import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
 
 import Collection from "../colorizer/Collection";
+import { ButtonStyleLink } from "../components/Buttons/ButtonStyleLink";
 import HelpDropdown from "../components/Dropdowns/HelpDropdown";
 import Header from "../components/Header";
 import LoadDatasetButton from "../components/LoadDatasetButton";
@@ -137,6 +138,7 @@ const ProjectCard = styled.li`
   & a {
     // Add 2px margin to maintain the same visual gap that text has
     margin: 2px 0 0 0;
+    text-decoration: underline;
   }
 `;
 
@@ -225,11 +227,9 @@ export default function LandingPage(): ReactElement {
       <DatasetCard key={index}>
         <h3>{dataset.name}</h3>
         <p>{dataset.description}</p>
-        <Link to={viewerLink}>
-          <Button type="primary">
-            Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
-          </Button>
-        </Link>
+        <ButtonStyleLink to={viewerLink}>
+          Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
+        </ButtonStyleLink>
       </DatasetCard>
     );
   };
@@ -256,11 +256,9 @@ export default function LandingPage(): ReactElement {
     ) : null;
 
     const loadButton = project.loadParams ? (
-      <Link to={"viewer" + paramsToUrlQueryString(project.loadParams)}>
-        <Button type="primary">
-          Load<VisuallyHidden> dataset {project.name}</VisuallyHidden>
-        </Button>
-      </Link>
+      <ButtonStyleLink to={"viewer" + paramsToUrlQueryString(project.loadParams)}>
+        Load<VisuallyHidden> dataset {project.name}</VisuallyHidden>
+      </ButtonStyleLink>
     ) : null;
 
     // TODO: Break up list of datasets when too long and hide under collapsible section.
