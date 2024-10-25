@@ -1,3 +1,4 @@
+import { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
 import { Dataset, Plotting, Track } from "../colorizer";
@@ -7,6 +8,7 @@ type PlotWrapperProps = {
   dataset: Dataset | null;
   featureKey: string;
   selectedTrack: Track | null;
+  setFrame: (frame: number) => Promise<void>;
 };
 const defaultProps: Partial<PlotWrapperProps> = {};
 
@@ -65,6 +67,21 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     // window.addEventListener("resize", updatePlotSize);
     // return () => window.removeEventListener("resize", updatePlotSize);
   }, [plot, plotDivRef.current]);
+
+  useEffect(() => {
+    const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
+      if (eventData.points.length === 0) {
+        return;
+      }
+      const time = eventData.points[0].x as number;
+      props.setFrame(time);
+    };
+
+    (plotDivRef.current as PlotlyHTMLElement | null)?.on("plotly_click", onClickPlot);
+    return () => {
+      (plotDivRef.current as PlotlyHTMLElement | null)?.removeAllListeners("plotly_click");
+    };
+  }, [props.setFrame]);
 
   return <div ref={plotDivRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>;
 }
