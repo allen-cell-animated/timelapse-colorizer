@@ -448,7 +448,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     objectIds: number[],
     trackIds: number[],
     markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
-    overrideColor?: Color
+    overrideColor?: Color,
+    allowHover = true
   ): Partial<PlotData>[] => {
     if (selectedFeatureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
       return [];
@@ -583,7 +584,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             size: 4,
             ...bucket.marker,
           },
-          hovertemplate: getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey),
+          hoverinfo: allowHover ? "text" : "skip",
+          hovertemplate: allowHover ? getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey) : undefined,
         };
       });
 
@@ -640,7 +642,15 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key;
 
     // Configure traces
-    const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds, {}, markerBaseColor);
+    const traces = colorizeScatterplotPoints(
+      xData,
+      yData,
+      objectIds,
+      trackIds,
+      {},
+      markerBaseColor,
+      selectedTrack == null // disable hover for all points when a track is selected
+    );
 
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
@@ -669,10 +679,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
       // Render an extra trace for lines connecting the points in the current track when time is a feature.
       if (isUsingTime) {
-        const hovertemplate = getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey);
-        traces.push(
-          makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds, hovertemplate)
-        );
+        traces.push(makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds));
       }
       // Render track points
       const outOfRangeOutlineColor = viewerConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
