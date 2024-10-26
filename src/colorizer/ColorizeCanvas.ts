@@ -399,7 +399,7 @@ export default class ColorizeCanvas {
     // Tracks may be missing objects for some timepoints, so use the last known good value as a fallback
     let lastTrackIndex = 0;
     for (let i = 0; i < track.duration(); i++) {
-      const absTime = i + track.startTime();
+      const absTime = i + track.startTime;
 
       let trackIndex = track.times.findIndex((t) => t === absTime);
       if (trackIndex === -1) {
@@ -436,7 +436,7 @@ export default class ColorizeCanvas {
     }
 
     // Show path up to current frame
-    let range = this.currentFrame - this.track.startTime() + 1;
+    let range = this.currentFrame - this.track.startTime + 1;
 
     if (range > this.track.duration() || range < 0) {
       // Hide track if we are outside the track range

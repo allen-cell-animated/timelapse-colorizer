@@ -1,5 +1,7 @@
 import Plotly from "plotly.js-dist-min";
 
+import { drawCrosshair } from "../components/Tabs/scatter_plot_data_utils";
+
 import Dataset from "./Dataset";
 import Track from "./Track";
 
@@ -28,11 +30,9 @@ const CONFIG: Partial<Plotly.Config> = {
 export default class Plotting {
   private parentRef: HTMLElement;
   private dataset: Dataset | null;
-  private trace: Plotly.Data | null;
 
   constructor(parentRef: HTMLElement) {
     this.dataset = null;
-    this.trace = null;
     this.parentRef = parentRef;
     const layout: Partial<Plotly.Layout> = {
       xaxis: {
@@ -59,13 +59,21 @@ export default class Plotting {
       return;
     }
     const plotinfo = this.dataset?.buildTrackFeaturePlot(track, featureKey);
-    this.trace = {
+    const traces: Partial<Plotly.PlotData>[] = [];
+    traces.push({
       x: plotinfo.domain,
       y: plotinfo.range,
       type: "scatter",
-    };
+    });
+
+    // Crosshair shows currently selected object
+    if (time >= track.startTime && time <= track.endTime) {
+      const currentObjectId = track.times.indexOf(time);
+      traces.push(...drawCrosshair(plotinfo.domain[currentObjectId], plotinfo.range[currentObjectId]));
+    }
 
     const layout: Partial<Plotly.Layout> = {
+      showlegend: false,
       yaxis: {
         title: this.dataset.getFeatureNameWithUnits(featureKey),
       },
@@ -79,7 +87,7 @@ export default class Plotting {
       title: "track " + track.trackId,
     };
 
-    Plotly.react(this.parentRef, [this.trace], layout, CONFIG);
+    Plotly.react(this.parentRef, traces, layout, CONFIG);
   }
 
   setTime(t: number): void {

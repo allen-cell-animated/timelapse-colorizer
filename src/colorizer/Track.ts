@@ -52,7 +52,11 @@ export default class Track {
     return this.times[this.times.length - 1] - this.times[0] + 1;
   }
 
-  startTime(): number {
+  get startTime(): number {
     return this.times[0];
+  }
+
+  get endTime(): number {
+    return this.times[this.times.length - 1];
   }
 }

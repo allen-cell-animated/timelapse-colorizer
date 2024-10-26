@@ -31,7 +31,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
 
   // Update dataset when it changes
   useMemo(() => {
-    plot?.removePlot();
+    // plot?.removePlot();
     if (props.dataset) {
       plot?.setDataset(props.dataset);
     }
@@ -44,11 +44,11 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
-    plot?.removePlot();
+    // plot?.removePlot();
     if (props.selectedTrack) {
       plot?.plot(props.selectedTrack, props.featureKey, props.frame);
     }
-  }, [props.selectedTrack, props.featureKey]);
+  }, [props.selectedTrack, props.featureKey, props.frame]);
 
   const updatePlotSize = (): void => {
     if (!plotDivRef.current) {

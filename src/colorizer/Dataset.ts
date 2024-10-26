@@ -92,6 +92,9 @@ export default class Dataset {
   public manifestUrl: string;
   private hasOpened: boolean;
 
+  private lastTrackFeatureParams: { trackId: number; featureKey: string } | null;
+  private trackFeaturePlotData: { domain: number[]; range: number[] } | null;
+
   /**
    * Constructs a new Dataset using the provided manifest path.
    * @param manifestUrl Must be a path to a .json manifest file.
@@ -116,6 +119,8 @@ export default class Dataset {
     this.arrayLoader = arrayLoader || new UrlArrayLoader();
     this.features = new Map();
     this.metadata = defaultMetadata;
+    this.lastTrackFeatureParams = null;
+    this.trackFeaturePlotData = null;
   }
 
   private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
@@ -564,6 +569,16 @@ export default class Dataset {
    * this data is suitable to hand to d3 or plotly as two arrays of domain and range values
    */
   public buildTrackFeaturePlot(track: Track, featureKey: string): { domain: number[]; range: number[] } {
+    // Cache previous results and return as needed
+    // TODO: Just cache this in PlotWrapper
+    if (
+      this.lastTrackFeatureParams?.trackId === track.trackId &&
+      this.lastTrackFeatureParams?.featureKey === featureKey &&
+      this.trackFeaturePlotData
+    ) {
+      return this.trackFeaturePlotData;
+    }
+
     const featureData = this.getFeatureData(featureKey);
     if (!featureData) {
       throw new Error("Dataset.buildTrackFeaturePlot: Feature '" + featureKey + "' does not exist in dataset.");
