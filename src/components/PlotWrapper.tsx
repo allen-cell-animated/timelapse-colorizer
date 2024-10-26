@@ -1,4 +1,4 @@
-import { PlotlyHTMLElement } from "plotly.js-dist-min";
+import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
 import { Dataset, Plotting, Track } from "../colorizer";
