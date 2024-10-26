@@ -44,9 +44,10 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
-    plot?.removePlot();
     if (props.selectedTrack) {
       plot?.plot(props.selectedTrack, props.featureKey, props.frame);
+    } else {
+      plot?.removePlot();
     }
   }, [props.selectedTrack, props.featureKey]);
 
