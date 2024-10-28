@@ -167,7 +167,7 @@ export type ViewerConfig = {
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   /** Hex color, as integer. */
-  outlineColor: number;
+  outlineColor: Color;
   openTab: TabType;
 };
 
@@ -186,7 +186,7 @@ export const defaultViewerConfig: ViewerConfig = {
   objectOpacity: 100,
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
-  outlineColor: SELECTED_COLOR_DEFAULT,
+  outlineColor: new Color(SELECTED_COLOR_DEFAULT),
   openTab: TabType.TRACK_PLOT,
 };
 

@@ -1,7 +1,7 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Checkbox, ColorPicker } from "antd";
 import React, { ReactElement } from "react";
-import { Color } from "three";
+import { Color, ColorRepresentation } from "three";
 
 import { Dataset } from "../../colorizer";
 import { DrawMode, SELECTED_COLOR_DEFAULT, ViewerConfig } from "../../colorizer/types";
@@ -121,9 +121,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 disabledAlpha={true}
                 defaultValue={new AntdColor(SELECTED_COLOR_DEFAULT)}
                 onChange={(_color, hex) => {
-                  hex = hex.replace("#", "0x");
-                  props.updateConfig({ outlineColor: parseInt(hex, 16) });
+                  props.updateConfig({ outlineColor: new Color(hex as ColorRepresentation) });
                 }}
+                value={new AntdColor(props.config.outlineColor.getHexString())}
                 presets={outlineColorPresets}
               />
             </div>
