@@ -283,6 +283,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
   }, [props.config.showLegendDuringExport, props.isRecording]);
 
+  useMemo(() => {
+    console.log("Outline color changed to", props.config.outlineColor);
+    canv.setOutlineColor(new Color(props.config.outlineColor));
+  }, [props.config.outlineColor]);
+
   // CANVAS RESIZING /////////////////////////////////////////////////
 
   /**

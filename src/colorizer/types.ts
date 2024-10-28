@@ -11,6 +11,8 @@ import {
   UnsignedIntType,
 } from "three";
 
+export const BACKGROUND_COLOR_DEFAULT = 0xffffff;
+export const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
 
@@ -164,6 +166,8 @@ export type ViewerConfig = {
   objectOpacity: number;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
+  /** Hex color, as integer. */
+  outlineColor: number;
   openTab: TabType;
 };
 
@@ -182,6 +186,7 @@ export const defaultViewerConfig: ViewerConfig = {
   objectOpacity: 100,
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
+  outlineColor: SELECTED_COLOR_DEFAULT,
   openTab: TabType.TRACK_PLOT,
 };
 
