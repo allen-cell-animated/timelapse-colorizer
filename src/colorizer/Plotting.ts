@@ -20,9 +20,7 @@ const LINE_SPEC: Partial<Plotly.Shape> = {
   },
 };
 
-const CIRCLE_RADIUS = 4;
-
-const CROSSHAIR_RADIUS: number = 12;
+const CROSSHAIR_RADIUS: number = 12.5;
 const X_CROSSHAIR_SPEC: Partial<Plotly.Shape> = {
   ...LINE_SPEC,
   xsizemode: "pixel",
@@ -139,23 +137,6 @@ export default class Plotting {
           yanchor: config.hover.y,
         }
       );
-
-      shapes.push({
-        type: "circle",
-        xanchor: config.hover.x,
-        yanchor: config.hover.y,
-        layer: "above",
-        xsizemode: "pixel",
-        ysizemode: "pixel",
-        fillcolor: "rgba(31,119,180, 0.4)",
-        line: {
-          width: 0,
-        },
-        x0: -CIRCLE_RADIUS,
-        x1: CIRCLE_RADIUS,
-        y0: -CIRCLE_RADIUS,
-        y1: CIRCLE_RADIUS,
-      });
     }
     Plotly.relayout(this.parentRef, { shapes });
     //Plotly.react(this.parentDivId, this.trace ? [this.trace] : [], layout);
