@@ -57,7 +57,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
       }
     }
     plot?.updateLayout(config);
-  }, [props.frame, props.selectedTrack, props.featureKey, hoveredObjectId]);
+  }, [props.dataset, props.frame, props.selectedTrack, props.featureKey, hoveredObjectId]);
 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
