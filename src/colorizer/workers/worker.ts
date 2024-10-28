@@ -25,5 +25,5 @@ async function loadUrlData(url: string, type: FeatureDataType): Promise<Transfer
 }
 
 workerpool.worker({
-  loadUrlData: loadUrlData,
+  loadUrlData,
 });
