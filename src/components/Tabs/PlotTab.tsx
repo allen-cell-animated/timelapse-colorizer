@@ -28,6 +28,7 @@ type PlotTabProps = {
   findTrackInputText: string;
   setFindTrackInputText: (text: string) => void;
   findTrack: (trackId: number, seekToFrame?: boolean) => void;
+  setFrame: (frame: number) => Promise<void>;
   currentFrame: number;
   dataset: Dataset | null;
   featureKey: string;
@@ -67,6 +68,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
         </NoSpinnerContainer>
       </TrackTitleBar>
       <PlotWrapper
+        setFrame={props.setFrame}
         frame={props.currentFrame}
         dataset={props.dataset}
         featureKey={props.featureKey}

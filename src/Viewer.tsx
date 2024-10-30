@@ -1121,6 +1121,7 @@ function Viewer(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <PlotTab
+                          setFrame={setFrameAndRender}
                           findTrackInputText={findTrackInput}
                           setFindTrackInputText={setFindTrackInput}
                           findTrack={findTrack}
