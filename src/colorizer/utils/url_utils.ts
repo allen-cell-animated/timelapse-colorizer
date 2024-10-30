@@ -340,7 +340,6 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
     const outlineColor = "#" + params.get(UrlParam.OUTLINE_COLOR);
     if (isHexColor(outlineColor)) {
       newConfig.outlineColor = new Color(outlineColor);
-      console.log(new Color(outlineColor));
     }
   }
   const openTab = params.get(UrlParam.OPEN_TAB);

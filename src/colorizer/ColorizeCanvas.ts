@@ -28,7 +28,7 @@ import {
   FeatureDataType,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
-  SELECTED_COLOR_DEFAULT,
+  OUTLINE_COLOR_DEFAULT,
 } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -106,7 +106,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
-    outlineColor: new Uniform(new Color(SELECTED_COLOR_DEFAULT)),
+    outlineColor: new Uniform(new Color(OUTLINE_COLOR_DEFAULT)),
     canvasBackgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
@@ -196,7 +196,7 @@ export default class ColorizeCanvas {
     const lineGeometry = new BufferGeometry();
     lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
     const lineMaterial = new LineBasicMaterial({
-      color: SELECTED_COLOR_DEFAULT,
+      color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
 

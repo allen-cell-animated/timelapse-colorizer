@@ -4,7 +4,7 @@ import React, { ReactElement } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode, SELECTED_COLOR_DEFAULT, ViewerConfig } from "../../colorizer/types";
+import { DrawMode, OUTLINE_COLOR_DEFAULT, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 
 import CustomCollapse from "../CustomCollapse";
@@ -119,7 +119,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 style={{ width: "min-content" }}
                 size="small"
                 disabledAlpha={true}
-                defaultValue={new AntdColor(SELECTED_COLOR_DEFAULT)}
+                defaultValue={new AntdColor(OUTLINE_COLOR_DEFAULT)}
                 onChange={(_color, hex) => {
                   props.updateConfig({ outlineColor: new Color(hex as ColorRepresentation) });
                 }}
