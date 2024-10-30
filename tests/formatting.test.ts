@@ -17,24 +17,26 @@ function doElementsHaveSharedParent(elements: HTMLElement[]): boolean {
 describe("renderStringArrayAsJsx", () => {
   it("handles empty array", () => {
     const elements = renderStringArrayAsJsx([]);
-    render(elements);
+    expect(elements).toBeUndefined();
   });
 
   it("handles undefined", () => {
     const elements = renderStringArrayAsJsx(undefined);
-    render(elements);
+    expect(elements).toBeUndefined();
   });
 
   it("handles single text element", () => {
     const elements = renderStringArrayAsJsx("hi");
-    const renderedElements = render(elements);
+    expect(elements).not.toBeUndefined();
+    const renderedElements = render(elements!);
     expect(renderedElements.getByText("hi")).toBeInTheDocument();
     expect(renderedElements.getByText("hi").nodeName).toBe("P");
   });
 
   it("handles multiple text elements", () => {
     const elements = renderStringArrayAsJsx(["1", "2", "3"]);
-    const renderedElements = render(elements);
+    expect(elements).not.toBeUndefined();
+    const renderedElements = render(elements!);
     expect(renderedElements.getByText("1").nodeName).toBe("P");
     expect(renderedElements.getByText("2").nodeName).toBe("P");
     expect(renderedElements.getByText("3").nodeName).toBe("P");
@@ -42,7 +44,8 @@ describe("renderStringArrayAsJsx", () => {
 
   it("handles list elements", () => {
     const elements = renderStringArrayAsJsx(["- 1", "- 2", "- 3"]);
-    const renderedElements = render(elements);
+    expect(elements).not.toBeUndefined();
+    const renderedElements = render(elements!);
     const listItems = renderedElements.getAllByRole("listitem");
     expect(listItems.length).toBe(3);
     // Elements should all be grouped under one parent
@@ -52,7 +55,8 @@ describe("renderStringArrayAsJsx", () => {
 
   it("handles mixed list and text elements", () => {
     const elements = renderStringArrayAsJsx(["- 1", "- 2", "- 3", "a", "b", "- 4", "- 5"]);
-    const renderedElements = render(elements);
+    expect(elements).not.toBeUndefined();
+    const renderedElements = render(elements!);
 
     expect(renderedElements.getByText("a").nodeName).toBe("P");
     expect(renderedElements.getByText("b").nodeName).toBe("P");
