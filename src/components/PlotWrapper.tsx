@@ -78,9 +78,11 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
       props.setFrame(time);
     };
 
-    (plotDivRef.current as PlotlyHTMLElement | null)?.on("plotly_click", onClickPlot);
+    const plotDiv = plotDivRef.current as PlotlyHTMLElement | null;
+    plotDiv?.on("plotly_click", onClickPlot);
     return () => {
-      (plotDivRef.current as PlotlyHTMLElement | null)?.removeAllListeners("plotly_click");
+      const plotDiv = plotDivRef.current as PlotlyHTMLElement | null;
+      plotDiv?.removeAllListeners("plotly_click");
     };
   }, [props.setFrame]);
 
