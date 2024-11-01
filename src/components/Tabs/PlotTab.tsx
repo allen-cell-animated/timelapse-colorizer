@@ -52,6 +52,8 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
     pendingFrame.current = frame;
     setIsLoading(true);
     await props.setFrame(frame);
+    // Continue to show loading spinner if other frames were requested
+    // while this one was loading.
     if (pendingFrame.current === frame) {
       setIsLoading(false);
     }
