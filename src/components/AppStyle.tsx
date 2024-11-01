@@ -29,10 +29,14 @@ const palette = {
   link: "#0094FF",
   linkDark: "#007FD6",
   warning: "#faad14",
-  successLight: "#b7eb8f",
-  errorLight: "#ffa39e",
-  infoLight: "#91d5ff",
-  warningLight: "#ffe58f",
+  successMedium: "#b7eb8f",
+  successLight: "#f6ffed",
+  errorMedium: "#ffa39e",
+  errorLight: "#fff2f0",
+  infoMedium: "#91d5ff",
+  infoLight: "#e6f4ff",
+  warningMedium: "#ffe58f",
+  warningLight: "#fffbe6",
 };
 
 // Note: Some advanced version of this could swap different theme objects, and
@@ -93,10 +97,16 @@ const theme = {
     },
     alert: {
       border: {
-        info: palette.infoLight,
-        warning: palette.warningLight,
+        info: palette.infoMedium,
+        warning: palette.warningMedium,
+        error: palette.errorMedium,
+        success: palette.successMedium,
+      },
+      fill: {
         error: palette.errorLight,
+        warning: palette.warningLight,
         success: palette.successLight,
+        info: palette.infoLight,
       },
     },
   },
@@ -151,6 +161,7 @@ const CssContainer = styled.div`
   --color-text-theme: ${theme.color.theme};
   --color-text-theme-dark: ${theme.color.themeDark};
   --color-text-link: ${theme.color.text.link};
+  --color-text-link-hover: ${theme.color.text.linkHover};
 
   /* Layout */
   --color-background-alt: ${theme.color.layout.backgroundAlt};
@@ -191,6 +202,10 @@ const CssContainer = styled.div`
   --color-alert-warning-border: ${theme.color.alert.border.warning};
   --color-alert-error-border: ${theme.color.alert.border.error};
   --color-alert-success-border: ${theme.color.alert.border.success};
+  --color-alert-error-fill: ${theme.color.alert.fill.error};
+  --color-alert-warning-fill: ${theme.color.alert.fill.warning};
+  --color-alert-success-fill: ${theme.color.alert.fill.success};
+  --color-alert-info-fill: ${theme.color.alert.fill.info};
 
   /* Fonts */
   --default-font: ${theme.font.family};
@@ -250,9 +265,9 @@ const CssContainer = styled.div`
   color: var(--color-text-primary);
 
   a {
-    &:focus,
     &:focus-visible {
       text-decoration: underline;
+      box-shadow: 0 0 0 3px var(--color-text-link);
     }
   }
 

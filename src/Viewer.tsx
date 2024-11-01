@@ -23,6 +23,7 @@ import {
   FeatureThreshold,
   getDefaultScatterPlotConfig,
   isThresholdNumeric,
+  LoadTroubleshooting,
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
@@ -390,8 +391,7 @@ function Viewer(): ReactElement {
         errorMessage
           ? `Encountered the following error when loading the dataset: "${errorMessage}"`
           : "Encountered an error when loading the dataset.",
-        "Check your network connection and access to the dataset path, or use the browser console to view details." +
-          " Otherwise, contact the dataset creator as there may be missing files.",
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
       ];
 
       showAlert({
@@ -545,7 +545,7 @@ function Viewer(): ReactElement {
         if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
           // Make a dummy collection that will include only this dataset
-          newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+          newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
           if (!collectionUrlParam) {
@@ -696,6 +696,10 @@ function Viewer(): ReactElement {
             description: result.errorMessage,
             placement: "bottomLeft",
             duration: 12,
+            style: {
+              backgroundColor: theme.color.alert.fill.error,
+              border: `1px solid ${theme.color.alert.border.error}`,
+            },
           });
         }
         setIsDatasetLoading(false);
@@ -809,6 +813,10 @@ function Viewer(): ReactElement {
       placement: "bottomLeft",
       duration: 4,
       icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
+      style: {
+        backgroundColor: theme.color.alert.fill.success,
+        border: `1px solid ${theme.color.alert.border.success}`,
+      },
     });
   };
 
@@ -1121,6 +1129,7 @@ function Viewer(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <PlotTab
+                          setFrame={setFrameAndRender}
                           findTrackInputText={findTrackInput}
                           setFindTrackInputText={setFindTrackInput}
                           findTrack={findTrack}

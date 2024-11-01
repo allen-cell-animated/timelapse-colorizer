@@ -7,7 +7,7 @@ import { clamp } from "three/src/math/MathUtils";
 
 import { NoImageSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
-import { ViewerConfig } from "../colorizer/types";
+import { LoadTroubleshooting, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
@@ -169,8 +169,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.showAlert({
           type: "warning",
           message: "Warning: One or more frames failed to load.",
-          description:
-            "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
+          description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
           showDoNotShowAgainCheckbox: true,
           closable: true,
         });

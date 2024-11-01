@@ -1,5 +1,5 @@
 import { DEFAULT_COLLECTION_FILENAME, DEFAULT_DATASET_FILENAME } from "../constants";
-import { LoadErrorMessage, ReportWarningCallback } from "./types";
+import { LoadErrorMessage, LoadTroubleshooting, ReportWarningCallback } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import {
   CollectionEntry,
@@ -239,6 +239,30 @@ export default class Collection {
   // ===================================================================================
   // Static Loader Methods
 
+  private static checkForDuplicateDatasetNames(
+    datasets: CollectionEntry[],
+    reportWarning?: ReportWarningCallback
+  ): void {
+    const collectionData: Map<string, CollectionEntry> = new Map();
+    const duplicateDatasetNames = new Set<string>();
+
+    for (const entry of datasets) {
+      if (collectionData.has(entry.name)) {
+        duplicateDatasetNames.add(entry.name);
+        console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
+      }
+      collectionData.set(entry.name, entry);
+    }
+
+    if (duplicateDatasetNames.size > 0) {
+      reportWarning?.("Duplicate dataset names were found in the collection.", [
+        "The following dataset(s) had duplicate names and were skipped when loading the collection:",
+        ...formatAsBulletList(Array.from(duplicateDatasetNames), 5),
+        "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
+      ]);
+    }
+  }
+
   /**
    * Asynchronously loads a Collection object from the provided URL.
    * @param collectionParam The URL of the resource. This can either be a direct path to
@@ -260,16 +284,12 @@ export default class Collection {
       const fetchMethod = options.fetchMethod ?? fetchWithTimeout;
       response = await fetchMethod(absoluteCollectionUrl, DEFAULT_FETCH_TIMEOUT_MS);
     } catch (e) {
-      throw new Error(
-        LoadErrorMessage.UNREACHABLE_COLLECTION +
-          " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
-          " Please check your network access."
-      );
+      throw new Error(LoadErrorMessage.UNREACHABLE_COLLECTION + " " + LoadTroubleshooting.CHECK_NETWORK);
     }
     if (!response.ok) {
-      console.error(`Failed to fetch collections JSON from url '${absoluteCollectionUrl}':`, response);
       throw new Error(
-        `Received a ${response.status} (${response.statusText}) code from the server while retrieving collections JSON from url '${absoluteCollectionUrl}'.`
+        `Received a ${response.status} (${response.statusText}) code from the server while retrieving` +
+          ` collections JSON from url '${absoluteCollectionUrl}'. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
       );
     }
 
@@ -278,26 +298,19 @@ export default class Collection {
       const json = await response.json();
       collection = updateCollectionVersion(json);
     } catch (e) {
-      throw new Error(
-        `Parsing failed for the collections JSON file with the following error. Please check that the JSON syntax is correct: ${e}`
-      );
+      throw new Error(LoadErrorMessage.COLLECTION_JSON_PARSE_FAILED + e);
     }
 
     // Convert JSON array into map
     if (!collection.datasets || collection.datasets.length === 0) {
-      throw new Error(
-        "Collection JSON was loaded but no datasets were found. At least one dataset must be defined in the collection."
-      );
+      throw new Error(LoadErrorMessage.COLLECTION_HAS_NO_DATASETS);
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
     const duplicateDatasetNames = new Set<string>();
     for (const entry of collection.datasets) {
-      if (collectionData.has(entry.name)) {
-        duplicateDatasetNames.add(entry.name);
-        console.warn(`Duplicate dataset name ${entry.name} found in collection JSON; skipping.`);
-      }
       collectionData.set(entry.name, entry);
     }
+    Collection.checkForDuplicateDatasetNames(collection.datasets, options.reportWarning);
 
     if (duplicateDatasetNames.size > 0) {
       options.reportWarning?.("Duplicate dataset names were found in the collection.", [
@@ -338,6 +351,46 @@ export default class Collection {
   }
 
   /**
+   * Merges and formats error messages from a failed collection and dataset load.
+   */
+  private static formatLoadingError(url: string, collectionLoadError: Error, datasetLoadError: Error): Error {
+    if (url.endsWith(DEFAULT_COLLECTION_FILENAME)) {
+      // Assume that this was a collection because the URL ended with "collection.json."
+      return collectionLoadError;
+    } else if (url.endsWith(DEFAULT_DATASET_FILENAME)) {
+      // Assume that this was a dataset because the URL ended with "dataset.json."
+      return datasetLoadError;
+    } else if (
+      collectionLoadError.message.startsWith(LoadErrorMessage.UNREACHABLE_COLLECTION) &&
+      datasetLoadError.message.includes(LoadErrorMessage.UNREACHABLE_MANIFEST)
+    ) {
+      // Handle TypeError from failed fetch, likely due to server being unreachable.
+      return new Error(LoadErrorMessage.BOTH_UNREACHABLE + " " + LoadTroubleshooting.CHECK_NETWORK);
+    } else if (
+      // Merge 404 errors from both collection and dataset fetches
+      collectionLoadError.message.includes("404 (Not Found)") &&
+      datasetLoadError.message.includes("404 (Not Found)")
+    ) {
+      return new Error(LoadErrorMessage.BOTH_404);
+    } else {
+      // Format and return a message containing both errors.
+      console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
+      const collectionMessage =
+        uncapitalizeFirstLetter(collectionLoadError?.message) ||
+        "(no error message provided; this is likely a bug and should be reported)";
+      const datasetMessage =
+        uncapitalizeFirstLetter(datasetLoadError?.message) ||
+        "(no error message provided; this is likely a bug and should be reported)";
+
+      return new Error(
+        `Could not load the provided URL as either a collection or a dataset.
+        \n- If this is a collection, ${collectionMessage}
+        \n- If this is a dataset, ${datasetMessage}`
+      );
+    }
+  }
+
+  /**
    * Attempt to load an ambiguous URL as either a collection or dataset, and return a new
    * Collection representing its contents (either the loaded collection or a dummy collection
    * containing just the dataset).
@@ -359,10 +412,13 @@ export default class Collection {
       throw new Error(`Provided resource '${url}' is not a URL and cannot be loaded.`);
     }
 
+    let result: Collection | null = null;
     let collectionLoadError: Error | null = null;
     let datasetLoadError: Error | null = null;
+
+    // Try loading as a collection
     try {
-      return await Collection.loadCollection(url, options);
+      result = await Collection.loadCollection(url, options);
     } catch (e) {
       collectionLoadError = e as Error;
       console.warn(e);
@@ -370,61 +426,24 @@ export default class Collection {
     }
 
     // Could not load as a collection, attempt to load as a dataset.
-    try {
-      const collection = Collection.makeCollectionFromSingleDataset(url);
-      // Attempt to load the default dataset immediately to surface any loading errors.
-      const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
-      if (!loadResult.loaded) {
-        throw new Error(loadResult.errorMessage);
+    if (!result) {
+      try {
+        const collection = Collection.makeCollectionFromSingleDataset(url);
+        // Attempt to load the default dataset immediately to surface any loading errors.
+        const loadResult = await collection.tryLoadDataset(collection.getDefaultDatasetKey());
+        if (!loadResult.loaded) {
+          throw new Error(loadResult.errorMessage);
+        }
+        return collection;
+      } catch (e) {
+        datasetLoadError = e as Error;
       }
-      return collection;
-    } catch (e) {
-      datasetLoadError = e as Error;
     }
 
-    // Assumption: if both loads failed and the file matches one of the default filenames,
-    // show only the relevant load error.
-    if (url.endsWith(DEFAULT_COLLECTION_FILENAME)) {
-      throw collectionLoadError;
-    } else if (url.endsWith(DEFAULT_DATASET_FILENAME)) {
-      throw datasetLoadError;
+    if (!result) {
+      throw Collection.formatLoadingError(url, collectionLoadError!, datasetLoadError!);
     }
 
-    // Handle TypeError from failed fetch -> likely due to server being unreachable.
-    if (
-      collectionLoadError.message.startsWith(LoadErrorMessage.UNREACHABLE_COLLECTION) &&
-      datasetLoadError.message.includes(LoadErrorMessage.UNREACHABLE_MANIFEST)
-    ) {
-      throw new Error(
-        "Could not access either a collection or a dataset JSON at the provided URL." +
-          " This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
-          " Please check your network access."
-      );
-    }
-
-    // Handle 404 errors from both collection and dataset fetches
-    if (
-      collectionLoadError.message.includes("404 (Not Found)") &&
-      datasetLoadError.message.includes("404 (Not Found)")
-    ) {
-      throw new Error(
-        "Could not load the provided URL as either a collection or a dataset. Server returned a 404 (Not Found) code."
-      );
-    }
-
-    // Could not load as a dataset either; surface the errors.
-    console.error(`URL '${url}' could not be loaded as a collection or dataset.`);
-    const collectionMessage =
-      uncapitalizeFirstLetter(collectionLoadError?.message) ||
-      "(no error message provided; this is likely a bug and should be reported)";
-    const datasetMessage =
-      uncapitalizeFirstLetter(datasetLoadError?.message) ||
-      "(no error message provided; this is likely a bug and should be reported)";
-
-    throw new Error(
-      `Could not load the provided URL as either a collection or a dataset.
-      \n- If this is a collection, ${collectionMessage}
-      \n- If this is a dataset, ${datasetMessage}`
-    );
+    return result;
   }
 }
