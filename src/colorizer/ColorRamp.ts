@@ -53,8 +53,8 @@ export default class ColorRamp {
       ctx.fillStyle = `#${this.colorStops[0].getHexString()}`;
       ctx.fillRect(0, 0, width, height);
     } else if (this.type === ColorRampType.LINEAR) {
-      const gradientWidth: number = vertical ? 0 : width;
-      const gradientHeight: number = vertical ? height : 0;
+      const gradientWidth = vertical ? 0 : width;
+      const gradientHeight = vertical ? height : 0;
       const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);

@@ -60,8 +60,11 @@ export function renderCanvasText(
 ): Vector2 {
   const maxWidth = options?.maxWidth ?? Infinity;
   let textWidth = ctx.measureText(text).width;
-  // proxy for font size
-  const textHeight = ctx.measureText("M").width;
+
+  // Use placeholder text ("Hg") to keep ascending and descending text height consistent.
+  // This may be inaccurate for some fonts.
+  const textHeightMeasure = ctx.measureText("Hg");
+  const textHeight = textHeightMeasure.actualBoundingBoxAscent + textHeightMeasure.actualBoundingBoxDescent;
 
   if (textWidth > maxWidth) {
     const ellipsis = "...";

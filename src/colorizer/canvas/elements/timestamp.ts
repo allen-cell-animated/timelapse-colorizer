@@ -95,9 +95,8 @@ export function getTimestampRenderer(
     timestampPaddingPx.clone().multiplyScalar(2)
   );
   const render = (origin: Vector2): void => {
-    const bottomRightOrigin = origin.add(sizePx);
-    const timestampOriginPx = bottomRightOrigin.clone().sub(timestampPaddingPx);
-    configureCanvasText(ctx, style, "right", "bottom");
+    const timestampOriginPx = origin.clone().add(timestampPaddingPx);
+    configureCanvasText(ctx, style, "left", "top");
     renderCanvasText(ctx, timestampOriginPx.x, timestampOriginPx.y, timestampFormatted);
   };
 
