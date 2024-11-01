@@ -193,6 +193,26 @@ export type ScatterPlotConfig = {
   rangeType: PlotRangeType;
 };
 
+export enum VectorViewMode {
+  ALL = "all",
+  TRACK_ONLY = "track_only",
+  HIDE = "hide",
+}
+
+export type VectorConfig = {
+  mode: VectorViewMode;
+  timesteps: number;
+  color: Color;
+  amplitudePx: number;
+};
+
+export const getDefaultVectorConfig = (): VectorConfig => ({
+  mode: VectorViewMode.ALL,
+  timesteps: 1,
+  color: new Color(0x000000),
+  amplitudePx: 20,
+});
+
 // Use a function instead of a constant to avoid sharing the same object reference.
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   xAxis: null,
