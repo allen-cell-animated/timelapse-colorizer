@@ -45,6 +45,7 @@ import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import TimeControls from "./colorizer/TimeControls";
+import SharedWorkerPool from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
@@ -85,8 +86,10 @@ function Viewer(): ReactElement {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetKey, setDatasetKey] = useState("");
   const [, addRecentCollection] = useRecentCollections();
-  // Shared array loader to manage worker pool
-  const arrayLoader = useConstructor(() => new UrlArrayLoader());
+
+  // Shared worker pool for background operations (e.g. loading data)
+  const workerPool = useConstructor(() => new SharedWorkerPool());
+  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -534,7 +537,7 @@ function Viewer(): ReactElement {
         if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
           // Make a dummy collection that will include only this dataset
-          newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+          newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
           if (!collectionUrlParam) {
@@ -685,6 +688,10 @@ function Viewer(): ReactElement {
             description: result.errorMessage,
             placement: "bottomLeft",
             duration: 12,
+            style: {
+              backgroundColor: theme.color.alert.fill.error,
+              border: `1px solid ${theme.color.alert.border.error}`,
+            },
           });
         }
         setIsDatasetLoading(false);
@@ -798,6 +805,10 @@ function Viewer(): ReactElement {
       placement: "bottomLeft",
       duration: 4,
       icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
+      style: {
+        backgroundColor: theme.color.alert.fill.success,
+        border: `1px solid ${theme.color.alert.border.success}`,
+      },
     });
   };
 

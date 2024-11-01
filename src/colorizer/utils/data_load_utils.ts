@@ -1,11 +1,7 @@
 import { parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
-import workerpool from "workerpool";
-import Transfer from "workerpool/types/transfer";
 
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../../types";
-import { nanToNull } from "../../utils/json_utils";
-import { arrayToDataTextureInfo } from "../../utils/texture_utils";
+import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../types";
 
 const isBoolArray = (arr: number[] | boolean[]): arr is boolean[] => typeof arr[0] === "boolean";
 
@@ -15,13 +11,19 @@ type FeatureDataJson = {
   max?: number;
 };
 
-type LoadedData<T extends FeatureDataType> = {
+export type LoadedData<T extends FeatureDataType> = {
   data: FeatureArrayType[T];
   min: number;
   max: number;
 };
 
-async function loadFromJsonUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
+/**
+ * Replaces all NaN in string text (such as the string representation of a JSON
+ * object) with null. Can be used to safely parse JSON objects with NaN values.
+ */
+export const nanToNull = (json: string): string => json.replace(/NaN/g, "null");
+
+export async function loadFromJsonUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
   const result = await fetch(url);
 
   if (!result.ok) {
@@ -55,7 +57,7 @@ async function loadFromJsonUrl<T extends FeatureDataType>(url: string, type: T):
   return { data, min: min ?? dataMin, max: max ?? dataMax };
 }
 
-async function loadFromParquetUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
+export async function loadFromParquetUrl<T extends FeatureDataType>(url: string, type: T): Promise<LoadedData<T>> {
   const result = await fetch(url);
 
   if (!result.ok) {
@@ -85,26 +87,3 @@ async function loadFromParquetUrl<T extends FeatureDataType>(url: string, type: 
   });
   return { data, min: dataMin, max: dataMax };
 }
-
-async function load(url: string, type: FeatureDataType): Promise<Transfer> {
-  let result: LoadedData<typeof type>;
-  if (url.endsWith(".json")) {
-    result = await loadFromJsonUrl(url, type);
-  } else if (url.endsWith(".parquet")) {
-    result = await loadFromParquetUrl(url, type);
-  } else {
-    throw new Error(`Unsupported file format: ${url}`);
-  }
-
-  const { min, max, data } = result;
-  // Cannot directly transfer the DataTexture, since the class methods are not transferred.
-  // Instead, transfer the underlying image and reconstruct it on the main thread.
-  const textureInfo = arrayToDataTextureInfo(data, type);
-
-  // `Transfer` is used to transfer the data buffer to the main thread without copying.
-  return new workerpool.Transfer({ min, max, data, textureInfo }, [data.buffer, textureInfo.data.buffer]);
-}
-
-workerpool.worker({
-  load: load,
-});

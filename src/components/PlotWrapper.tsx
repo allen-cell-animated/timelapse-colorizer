@@ -111,15 +111,15 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
       setHoveredObjectId(null);
     };
 
-    const plotElement = plotDivRef.current as PlotlyHTMLElement | null;
-    plotElement?.on("plotly_click", onClickPlot);
-    plotElement?.on("plotly_hover", onHoverPlot);
-    plotElement?.on("plotly_unhover", onHoverExit);
+    const plotDiv = plotDivRef.current as PlotlyHTMLElement | null;
+    plotDiv?.on("plotly_click", onClickPlot);
+    plotDiv?.on("plotly_hover", onHoverPlot);
+    plotDiv?.on("plotly_unhover", onHoverExit);
     return () => {
-      const plotElement = plotDivRef.current as PlotlyHTMLElement | null;
-      plotElement?.removeAllListeners("plotly_click");
-      plotElement?.removeAllListeners("plotly_hover");
-      plotElement?.removeAllListeners("plotly_unhover");
+      const plotDiv = plotDivRef.current as PlotlyHTMLElement | null;
+      plotDiv?.removeAllListeners("plotly_click");
+      plotDiv?.removeAllListeners("plotly_hover");
+      plotDiv?.removeAllListeners("plotly_unhover");
     };
   }, [props.setFrame]);
 
