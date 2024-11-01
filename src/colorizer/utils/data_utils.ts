@@ -169,3 +169,94 @@ export function formatAsBulletList(items: string[], maxDisplayCount: number = Nu
   }
   return itemDisplayText;
 }
+
+export function getAllIdsAtTime(dataset: Dataset, time: number): number[] {
+  // TODO: Move this into dataset and cache results
+  const ids: number[] = [];
+  for (let i = 0; i < dataset.numObjects; i++) {
+    if (dataset.getTime(i) === time) {
+      ids.push(i);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Returns the motion deltas for the visible objects at a given timepoint. If multiple timesteps
+ * are requested, the deltas are averaged across the timesteps, skipping any timesteps where no
+ * object is present for the track.
+ * @param dataset The dataset to collect motion deltas from.
+ * @param time Frame number to get motion deltas for.
+ * @param numTimesteps The number of timesteps to average over. Default is 1.
+ * @returns A map of object IDs to their averaged motion deltas, as [dx, dy] tuples.
+ */
+export function getMotionDeltas(
+  dataset: Dataset,
+  time: number,
+  numTimesteps: number = 1
+): Map<number, [number, number] | undefined> {
+  const visibleIds = getAllIdsAtTime(dataset, time);
+  const visibleTracksToIds = new Map(visibleIds.map((id) => [dataset.getTrackId(id), id]));
+  const trackToDeltas = new Map<number, [number, number][]>();
+  for (let track of visibleTracksToIds.keys()) {
+    trackToDeltas.set(track, []);
+  }
+
+  let currentFrameIds = visibleIds;
+  // For each track, determine centroids at the previous timepoints and calculate the delta.
+  // Deltas are grouped by track ID and will be averaged at the end.
+  for (let i = 0; i < numTimesteps; i++) {
+    if (time - i < 0) {
+      break;
+    }
+
+    const currentTime = time - i;
+    const previousTime = currentTime - 1;
+    const previousIds = getAllIdsAtTime(dataset, previousTime);
+
+    for (let previousId of previousIds) {
+      // Get the two IDs of objects at current and previous timepoint.
+      const trackId = dataset.getTrackId(previousId);
+      const currentId = visibleTracksToIds.get(trackId);
+
+      if (!currentId || !trackToDeltas.has(trackId) || !dataset.centroids) {
+        continue;
+      }
+
+      // TODO: Generalize for 3D centroids
+      const previousCentroid = dataset.getCentroid(previousId);
+      const currentCentroid = dataset.getCentroid(currentId);
+      if (!previousCentroid || !currentCentroid) {
+        continue;
+      }
+
+      const delta: [number, number] = [
+        currentCentroid[0] - previousCentroid[0],
+        currentCentroid[1] - previousCentroid[1],
+      ];
+      trackToDeltas.get(trackId)?.push(delta);
+    }
+
+    currentFrameIds = previousIds;
+  }
+
+  // Average deltas per track, then map by object IDs.
+  const objectIdToAveragedDelta = new Map<number, [number, number] | undefined>();
+  for (const [track, deltas] of trackToDeltas) {
+    const objectId = visibleTracksToIds.get(track);
+    if (!objectId) {
+      continue;
+    }
+
+    if (deltas.length === 0) {
+      objectIdToAveragedDelta.set(objectId, undefined);
+    } else {
+      const averagedDelta: [number, number] = deltas.reduce(
+        (acc, delta) => [acc[0] + delta[0], acc[1] + delta[1]],
+        [0, 0]
+      );
+      objectIdToAveragedDelta.set(objectId, [averagedDelta[0] / deltas.length, averagedDelta[1] / deltas.length]);
+    }
+  }
+  return objectIdToAveragedDelta;
+}
