@@ -78,11 +78,16 @@ type CanvasWrapperProps = {
    * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
+  datasetKey: string | null;
+
+  featureKey: string | null;
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
+
   loading: boolean;
   loadingProgress: number | null;
+  isRecording: boolean;
 
   selectedBackdropKey: string | null;
 
@@ -196,9 +201,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       fontColor: theme.color.text.primary,
       fontFamily: theme.font.family,
     };
-    canv.updateScaleBarOptions(defaultTheme);
-    canv.updateTimestampOptions(defaultTheme);
-    canv.updateBackgroundOptions({ stroke: theme.color.layout.borders });
+    const sidebarTheme = {
+      ...defaultTheme,
+      stroke: theme.color.layout.borders,
+      fill: theme.color.layout.background,
+    };
+    canv.updateScaleBarStyle(defaultTheme);
+    canv.updateTimestampStyle(defaultTheme);
+    canv.updateInsetBoxStyle({ stroke: theme.color.layout.borders });
+    canv.updateLegendStyle(defaultTheme);
+    canv.updateFooterStyle(sidebarTheme);
+    canv.updateHeaderStyle(sidebarTheme);
     canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
 
@@ -219,7 +232,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Update categorical colors
   useMemo(() => {
     canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors]);
+  }, [props.categoricalColors, props.dataset, props.featureKey]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
@@ -248,12 +261,26 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update overlay settings
   useMemo(() => {
-    canv.updateScaleBarOptions({ visible: props.config.showScaleBar });
+    canv.isScaleBarVisible = props.config.showScaleBar;
   }, [props.config.showScaleBar]);
 
   useMemo(() => {
-    canv.updateTimestampOptions({ visible: props.config.showTimestamp });
+    canv.isTimestampVisible = props.config.showTimestamp;
   }, [props.config.showTimestamp]);
+
+  useMemo(() => {
+    canv.setCollection(props.collection);
+  }, [props.collection]);
+
+  useMemo(() => {
+    canv.setDatasetKey(props.datasetKey);
+  }, [props.datasetKey]);
+
+  useMemo(() => {
+    canv.setIsExporting(props.isRecording);
+    canv.isHeaderVisibleOnExport = props.config.showHeaderDuringExport;
+    canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
+  }, [props.config.showLegendDuringExport, props.isRecording]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -274,7 +301,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     const updateCanvasDimensions = (): void => {
       const canvasSizePx = getCanvasSizePx();
-      canv.setSize(canvasSizePx.x, canvasSizePx.y);
       canv.setSize(canvasSizePx.x, canvasSizePx.y);
     };
     updateCanvasDimensions(); // Initial size setting
