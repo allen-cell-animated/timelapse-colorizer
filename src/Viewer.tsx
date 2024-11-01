@@ -867,7 +867,7 @@ function Viewer(): ReactElement {
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
-              getCanvasExportDimensions={() => [canv.domElement.width, canv.domElement.height]}
+              getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
@@ -875,6 +875,8 @@ function Viewer(): ReactElement {
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
+              config={config}
+              updateConfig={updateConfig}
             />
             <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
@@ -1016,10 +1018,13 @@ function Viewer(): ReactElement {
                   canv={canv}
                   collection={collection || null}
                   dataset={dataset}
+                  datasetKey={datasetKey}
+                  featureKey={featureKey}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                   colorRampMin={colorRampMin}
                   colorRampMax={colorRampMax}
+                  isRecording={isRecording}
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
