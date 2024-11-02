@@ -17,8 +17,10 @@ import {
   ScaleBarStyle,
   TimestampStyle,
 } from "./canvas/elements";
+import { getVectorFieldRenderer, VectorFieldParams } from "./canvas/elements/vectorField";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
+import { getDefaultVectorConfig } from "./types";
 
 import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
@@ -201,6 +203,19 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     return getFooterRenderer(this.ctx, params, this.footerStyle);
   }
 
+  private getVectorFieldRenderer(): RenderInfo {
+    const params: VectorFieldParams = {
+      ...this.getBaseRendererParams(),
+      config: getDefaultVectorConfig(),
+      viewportSizePx: this.canvasSize,
+      currentFrame: this.getCurrentFrame(),
+      zoomMultiplier: this.zoomMultiplier,
+      panOffset: this.panOffset,
+      frameToCanvasCoordinates: this.frameToCanvasCoordinates,
+    };
+    return getVectorFieldRenderer(this.ctx, params);
+  }
+
   /**
    * Render the viewport canvas with overlay elements composited on top of it.
    */
@@ -225,6 +240,9 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.ctx.drawImage(super.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
+
+    // Draw the vector field
+    this.getVectorFieldRenderer().render(new Vector2(0, 0));
 
     headerRenderer.render(new Vector2(0, 0));
     footerRenderer.render(new Vector2(0, this.canvasSize.y + this.headerSize.y));

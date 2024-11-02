@@ -120,20 +120,20 @@ export default class ColorizeCanvas {
   private showTrackPath: boolean;
 
   protected frameSizeInCanvasCoordinates: Vector2;
-  private frameToCanvasCoordinates: Vector2;
+  protected frameToCanvasCoordinates: Vector2;
 
   /**
    * The zoom level of the frame in the canvas. At default zoom level 1, the frame will be
    * either the width or height of the canvas while maintaining the aspect ratio. A zoom level
    * of 2.0 means the frame will be twice that size.
    */
-  private zoomMultiplier: number;
+  protected zoomMultiplier: number;
   /**
    * The offset of the frame in the canvas, in normalized frame coordinates. [0, 0] means the
    * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
    * centered in the canvas view.
    */
-  private panOffset: Vector2;
+  protected panOffset: Vector2;
 
   private scene: Scene;
   private pickScene: Scene;
