@@ -3,7 +3,6 @@ import { Vector2 } from "three";
 import { VectorConfig } from "../../types";
 import { getMotionDeltas } from "../../utils/data_utils";
 import { BaseRenderParams, RenderInfo } from "../types";
-import { getPixelRatio } from "../utils";
 
 export type VectorFieldParams = BaseRenderParams & {
   config: VectorConfig;
@@ -17,10 +16,14 @@ export type VectorFieldParams = BaseRenderParams & {
 
 export type VectorFieldStyle = {
   lineWidth: number;
+  arrowHeadAngle: number;
+  arrowHeadLengthPx: number;
 };
 
 export const defaultVectorStyle = {
   lineWidth: 1,
+  arrowHeadAngle: 30,
+  arrowHeadLengthPx: 5,
 };
 
 /**
@@ -33,6 +36,7 @@ export const defaultVectorStyle = {
 function drawVector(
   ctx: CanvasRenderingContext2D,
   params: VectorFieldParams,
+  style: VectorFieldStyle,
   drawOrigin: Vector2,
   vectorOriginFramePx: Vector2,
   vectorComponents: Vector2
@@ -55,23 +59,35 @@ function drawVector(
   originInCanvasCoordsPx.add(params.viewportSizePx.clone().multiplyScalar(0.5));
 
   const vectorOriginPx = originInCanvasCoordsPx.clone().add(drawOrigin);
-  const vectorEndPx = vectorComponents
+  const vectorComponentsPx = vectorComponents
     .clone()
-    .multiplyScalar(params.zoomMultiplier) // keep length constant with zoom
-    .multiplyScalar(params.config.amplitudePx)
-    .add(vectorOriginPx);
+    .multiplyScalar(params.zoomMultiplier)
+    .multiplyScalar(params.config.amplitudePx);
+  const vectorEndPx = vectorComponentsPx.clone().add(vectorOriginPx);
 
   ctx.beginPath();
   ctx.moveTo(vectorOriginPx.x, vectorOriginPx.y);
   ctx.lineTo(vectorEndPx.x, vectorEndPx.y);
-  // ctx.moveTo(drawOrigin.x + vectorOriginFramePx.x, drawOrigin.y + vectorOriginFramePx.y);
-  // ctx.lineTo(
-  //   drawOrigin.x + vectorOriginFramePx.x + vectorComponents.x,
-  //   drawOrigin.y + vectorOriginFramePx.y + vectorComponents.y
-  // );
-  ctx.stroke();
-  // Draw arrowhead?
+
+  // Draw arrowhead
   ctx.moveTo(vectorEndPx.x, vectorEndPx.y);
+  const angle = Math.PI + Math.atan2(vectorComponents.y, vectorComponents.x);
+  const arrowAngle1 = angle + (Math.PI * style.arrowHeadAngle) / 180;
+  const arrowAngle2 = angle - (Math.PI * style.arrowHeadAngle) / 180;
+  const arrowHeadLength = style.arrowHeadLengthPx;
+  const arrowHead1 = new Vector2(
+    vectorEndPx.x + arrowHeadLength * Math.cos(arrowAngle1),
+    vectorEndPx.y + arrowHeadLength * Math.sin(arrowAngle1)
+  );
+  const arrowHead2 = new Vector2(
+    vectorEndPx.x + arrowHeadLength * Math.cos(arrowAngle2),
+    vectorEndPx.y + arrowHeadLength * Math.sin(arrowAngle2)
+  );
+  ctx.lineTo(arrowHead1.x, arrowHead1.y);
+  ctx.moveTo(vectorEndPx.x, vectorEndPx.y);
+  ctx.lineTo(arrowHead2.x, arrowHead2.y);
+
+  ctx.stroke();
   ctx.closePath();
 }
 
@@ -122,7 +138,7 @@ export class CachedVectorFieldRenderer {
 
       const vectorOriginFramePx = new Vector2(centroid[0], centroid[1]);
       const vectorComponents = new Vector2(delta[0], delta[1]).multiplyScalar(2.0);
-      drawVector(ctx, params, origin, vectorOriginFramePx, vectorComponents);
+      drawVector(ctx, params, style, origin, vectorOriginFramePx, vectorComponents);
     }
   }
 
