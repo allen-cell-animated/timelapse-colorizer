@@ -17,7 +17,7 @@ import {
   ScaleBarStyle,
   TimestampStyle,
 } from "./canvas/elements";
-import { getVectorFieldRenderer, VectorFieldParams } from "./canvas/elements/vectorField";
+import { CachedVectorFieldRenderer, VectorFieldParams } from "./canvas/elements/vectorField";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
 import { getDefaultVectorConfig } from "./types";
@@ -36,6 +36,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
   private collection: Collection | null;
   private datasetKey: string | null;
+  private vectorField: CachedVectorFieldRenderer;
 
   private scaleBarStyle: ScaleBarStyle;
   private timestampStyle: TimestampStyle;
@@ -85,6 +86,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.canvasSize = new Vector2(1, 1);
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
+    this.vectorField = new CachedVectorFieldRenderer();
 
     this.isExporting = false;
     this.isHeaderVisibleOnExport = true;
@@ -213,7 +215,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       panOffset: this.panOffset,
       frameToCanvasCoordinates: this.frameToCanvasCoordinates,
     };
-    return getVectorFieldRenderer(this.ctx, params);
+    return this.vectorField.getVectorFieldRenderer(this.ctx, params);
   }
 
   /**

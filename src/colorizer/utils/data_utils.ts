@@ -251,8 +251,9 @@ export function getMotionDeltas(
     if (deltas.length === 0) {
       objectIdToAveragedDelta.set(objectId, undefined);
     } else {
+      const numDeltas = deltas.length;
       const averagedDelta: [number, number] = deltas.reduce(
-        (acc, delta) => [acc[0] + delta[0], acc[1] + delta[1]],
+        (acc, delta) => [acc[0] + delta[0] / numDeltas, acc[1] + delta[1] / numDeltas],
         [0, 0]
       );
       objectIdToAveragedDelta.set(objectId, [averagedDelta[0] / deltas.length, averagedDelta[1] / deltas.length]);

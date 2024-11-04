@@ -3,6 +3,7 @@ import { Vector2 } from "three";
 import { VectorConfig } from "../../types";
 import { getMotionDeltas } from "../../utils/data_utils";
 import { BaseRenderParams, RenderInfo } from "../types";
+import { getPixelRatio } from "../utils";
 
 export type VectorFieldParams = BaseRenderParams & {
   config: VectorConfig;
@@ -54,8 +55,11 @@ function drawVector(
   originInCanvasCoordsPx.add(params.viewportSizePx.clone().multiplyScalar(0.5));
 
   const vectorOriginPx = originInCanvasCoordsPx.clone().add(drawOrigin);
-  // TODO: scale this by zoom level?? magnitude???
-  const vectorEndPx = vectorComponents.clone().add(vectorOriginPx);
+  const vectorEndPx = vectorComponents
+    .clone()
+    .multiplyScalar(params.zoomMultiplier) // keep length constant with zoom
+    .multiplyScalar(params.config.amplitudePx)
+    .add(vectorOriginPx);
 
   ctx.beginPath();
   ctx.moveTo(vectorOriginPx.x, vectorOriginPx.y);
@@ -66,49 +70,84 @@ function drawVector(
   //   drawOrigin.y + vectorOriginFramePx.y + vectorComponents.y
   // );
   ctx.stroke();
+  // Draw arrowhead?
+  ctx.moveTo(vectorEndPx.x, vectorEndPx.y);
   ctx.closePath();
 }
 
-function renderVectorField(
-  ctx: CanvasRenderingContext2D,
-  params: VectorFieldParams,
-  style: VectorFieldStyle,
-  origin: Vector2,
-  motionDeltas?: Map<number, [number, number]>
-): void {
-  if (!params.dataset) {
-    return;
+export class CachedVectorFieldRenderer {
+  private cachedMotionDeltas: Map<number, Map<number, [number, number] | undefined>>;
+  private cachedSettings: {
+    params?: VectorFieldParams;
+    style?: VectorFieldStyle;
+  };
+
+  constructor() {
+    this.cachedMotionDeltas = new Map();
+    this.cachedSettings = {};
+    this.getVectorFieldRenderer = this.getVectorFieldRenderer.bind(this);
   }
 
-  const visibleIdToVector =
-    motionDeltas ?? getMotionDeltas(params.dataset, params.currentFrame, params.config.timesteps);
-  // Render the vector field
-  ctx.lineWidth = style.lineWidth;
-  ctx.strokeStyle = params.config.color.getHexString();
-
-  for (const [id, delta] of visibleIdToVector) {
-    const centroid = params.dataset.getCentroid(id);
-    if (!centroid || !delta) {
-      continue;
+  private renderVectorField(
+    ctx: CanvasRenderingContext2D,
+    params: VectorFieldParams,
+    style: VectorFieldStyle,
+    origin: Vector2
+  ): void {
+    if (!params.dataset) {
+      return;
     }
 
-    const vectorOriginFramePx = new Vector2(centroid[0], centroid[1]);
-    const vectorComponents = new Vector2(delta[0], delta[1]).multiplyScalar(2.0);
-    drawVector(ctx, params, origin, vectorOriginFramePx, vectorComponents);
+    // Get cached results
+    let visibleIdToVector;
+    if (this.cachedMotionDeltas.has(params.currentFrame)) {
+      visibleIdToVector = this.cachedMotionDeltas.get(params.currentFrame);
+    } else {
+      visibleIdToVector = getMotionDeltas(params.dataset, params.currentFrame, params.config.timesteps);
+      this.cachedMotionDeltas.set(params.currentFrame, visibleIdToVector);
+    }
+    if (!visibleIdToVector) {
+      return;
+    }
+
+    // Render the vector field
+    ctx.lineWidth = style.lineWidth;
+    ctx.strokeStyle = params.config.color.getHexString();
+
+    for (const [id, delta] of visibleIdToVector) {
+      const centroid = params.dataset.getCentroid(id);
+      if (!centroid || !delta) {
+        continue;
+      }
+
+      const vectorOriginFramePx = new Vector2(centroid[0], centroid[1]);
+      const vectorComponents = new Vector2(delta[0], delta[1]).multiplyScalar(2.0);
+      drawVector(ctx, params, origin, vectorOriginFramePx, vectorComponents);
+    }
   }
-}
 
-export function getVectorFieldRenderer(
-  ctx: CanvasRenderingContext2D,
-  params: VectorFieldParams,
-  style: VectorFieldStyle = defaultVectorStyle
-): RenderInfo {
-  const sizePx = params.canvasSize.clone();
+  getVectorFieldRenderer(
+    ctx: CanvasRenderingContext2D,
+    params: VectorFieldParams,
+    style: VectorFieldStyle = defaultVectorStyle
+  ): RenderInfo {
+    const sizePx = params.canvasSize.clone();
 
-  return {
-    sizePx,
-    render: (origin = new Vector2(0, 0)) => {
-      renderVectorField(ctx, params, style, origin);
-    },
-  };
+    return {
+      sizePx,
+      render: (origin = new Vector2(0, 0)) => {
+        // Check if relevant values have changed and if so invalidate the cache :(
+        if (
+          this.cachedSettings.params?.dataset !== params.dataset ||
+          this.cachedSettings.params?.collection !== params.collection ||
+          this.cachedSettings.params?.config.timesteps !== params.config.timesteps
+        ) {
+          this.cachedMotionDeltas.clear();
+          this.cachedSettings = { params, style };
+        }
+        // get the motion deltas for the current frame
+        this.renderVectorField(ctx, params, style, origin);
+      },
+    };
+  }
 }

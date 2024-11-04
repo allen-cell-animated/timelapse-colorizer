@@ -212,9 +212,9 @@ export type VectorConfig = {
 
 export const getDefaultVectorConfig = (): VectorConfig => ({
   mode: VectorViewMode.ALL,
-  timesteps: 3,
+  timesteps: 5,
   color: new Color(0x000000),
-  amplitudePx: 20,
+  amplitudePx: 5,
 });
 
 // Use a function instead of a constant to avoid sharing the same object reference.
