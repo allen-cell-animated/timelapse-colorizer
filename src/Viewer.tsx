@@ -116,7 +116,7 @@ function Viewer(): ReactElement {
       setMotionDeltas(null);
       return;
     }
-    const updateMotionDeltas = async (vectorConfig: VectorConfig) => {
+    const updateMotionDeltas = async (vectorConfig: VectorConfig): Promise<void> => {
       pendingVectorConfig.current = config.vectorConfig;
       const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorConfig);
       // If this is still the most recent request
