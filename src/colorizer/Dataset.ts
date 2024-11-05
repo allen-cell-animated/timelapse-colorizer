@@ -80,6 +80,8 @@ export default class Dataset {
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
 
+  private timeToIds: Map<number, number[]> = new Map();
+
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
 
@@ -518,6 +520,23 @@ export default class Dataset {
   /** get frame index of a given cell id */
   public getTime(index: number): number {
     return this.times?.[index] || 0;
+  }
+
+  public getIdsAtTime(frame: number): number[] | undefined {
+    if (frame < 0 || frame >= this.numberOfFrames) {
+      return undefined;
+    }
+    if (this.timeToIds.has(frame)) {
+      return this.timeToIds.get(frame);
+    }
+    const ids = this.times?.reduce((arr: number[], time, index) => {
+      if (time === frame) {
+        arr.push(index);
+      }
+      return arr;
+    }, []) as number[];
+    this.timeToIds.set(frame, ids);
+    return ids;
   }
 
   /** get track id of a given cell id */

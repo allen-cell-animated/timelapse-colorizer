@@ -109,7 +109,7 @@ function Viewer(): ReactElement {
   );
 
   const [motionDeltas, setMotionDeltas] = useState<Float32Array | null>(null);
-  const debouncedVectorConfig = useDebounce(config.vectorConfig, 500);
+  const debouncedVectorConfig = useDebounce(config.vectorConfig, 100);
   const pendingVectorConfig = useRef<null | VectorConfig>(null);
   useEffect(() => {
     if (dataset === null) {

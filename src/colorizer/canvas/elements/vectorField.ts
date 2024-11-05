@@ -1,7 +1,6 @@
 import { Vector2 } from "three";
 
 import { VectorConfig } from "../../types";
-import { getAllIdsAtTime } from "../../utils/data_utils";
 import { BaseRenderParams, RenderInfo } from "../types";
 
 export type VectorFieldParams = BaseRenderParams & {
@@ -103,9 +102,11 @@ function renderVectorField(
   if (!params.dataset || vectors === null) {
     return;
   }
+  const visibleIds = params.dataset.getIdsAtTime(params.currentFrame);
+  if (!visibleIds) {
+    return;
+  }
 
-  // Get cached results
-  const visibleIds = getAllIdsAtTime(params.dataset, params.currentFrame);
   const visibleIdToVector: Map<number, [number, number]> = new Map(
     visibleIds.map((id): [number, [number, number]] => {
       const delta: [number, number] = [vectors[id * 2], vectors[id * 2 + 1]];

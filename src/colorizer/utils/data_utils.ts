@@ -171,17 +171,6 @@ export function formatAsBulletList(items: string[], maxDisplayCount: number = Nu
   return itemDisplayText;
 }
 
-export function getAllIdsAtTime(dataset: Dataset, time: number): number[] {
-  // TODO: Move this into dataset and cache results
-  const ids: number[] = [];
-  for (let i = 0; i < dataset.numObjects; i++) {
-    if (dataset.getTime(i) === time) {
-      ids.push(i);
-    }
-  }
-  return ids;
-}
-
 export type TrackData = {
   ids: number[];
   times: number[];
