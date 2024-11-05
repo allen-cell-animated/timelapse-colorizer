@@ -133,6 +133,28 @@ export type DrawSettings = {
   color: Color;
 };
 
+export enum VectorViewMode {
+  ALL = "all",
+  TRACK_ONLY = "track_only",
+  HIDE = "hide",
+}
+
+export type VectorConfig = {
+  mode: VectorViewMode;
+  timesteps: number;
+  timestepThreshold: number;
+  color: Color;
+  amplitudePx: number;
+};
+
+export const getDefaultVectorConfig = (): VectorConfig => ({
+  mode: VectorViewMode.ALL,
+  timesteps: 5,
+  timestepThreshold: 1,
+  color: new Color(0x000000),
+  amplitudePx: 5,
+});
+
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
   FILTERS = "filters",
@@ -165,6 +187,7 @@ export type ViewerConfig = {
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   openTab: TabType;
+  vectorSettings: VectorConfig;
 };
 
 export const defaultViewerConfig: ViewerConfig = {
@@ -183,6 +206,7 @@ export const defaultViewerConfig: ViewerConfig = {
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
   openTab: TabType.TRACK_PLOT,
+  vectorSettings: getDefaultVectorConfig(),
 };
 
 export enum PlotRangeType {
@@ -196,26 +220,6 @@ export type ScatterPlotConfig = {
   yAxis: string | null;
   rangeType: PlotRangeType;
 };
-
-export enum VectorViewMode {
-  ALL = "all",
-  TRACK_ONLY = "track_only",
-  HIDE = "hide",
-}
-
-export type VectorConfig = {
-  mode: VectorViewMode;
-  timesteps: number;
-  color: Color;
-  amplitudePx: number;
-};
-
-export const getDefaultVectorConfig = (): VectorConfig => ({
-  mode: VectorViewMode.ALL,
-  timesteps: 5,
-  color: new Color(0x000000),
-  amplitudePx: 5,
-});
 
 // Use a function instead of a constant to avoid sharing the same object reference.
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({

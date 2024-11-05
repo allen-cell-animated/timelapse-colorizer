@@ -282,6 +282,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
   }, [props.config.showLegendDuringExport, props.isRecording]);
 
+  useMemo(() => {
+    canv.setVectorFieldConfig(props.config.vectorSettings);
+  }, [props.config.vectorSettings]);
+
   // CANVAS RESIZING /////////////////////////////////////////////////
 
   /**

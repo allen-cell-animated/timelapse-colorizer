@@ -74,7 +74,7 @@ function drawVector(
   const angle = Math.PI + Math.atan2(vectorComponents.y, vectorComponents.x);
   const arrowAngle1 = angle + (Math.PI * style.arrowHeadAngle) / 180;
   const arrowAngle2 = angle - (Math.PI * style.arrowHeadAngle) / 180;
-  const arrowHeadLength = style.arrowHeadLengthPx;
+  const arrowHeadLength = Math.min(style.arrowHeadLengthPx, vectorComponentsPx.length());
   const arrowHead1 = new Vector2(
     vectorEndPx.x + arrowHeadLength * Math.cos(arrowAngle1),
     vectorEndPx.y + arrowHeadLength * Math.sin(arrowAngle1)
@@ -119,7 +119,12 @@ export class CachedVectorFieldRenderer {
     if (this.cachedMotionDeltas.has(params.currentFrame)) {
       visibleIdToVector = this.cachedMotionDeltas.get(params.currentFrame);
     } else {
-      visibleIdToVector = getMotionDeltas(params.dataset, params.currentFrame, params.config.timesteps);
+      visibleIdToVector = getMotionDeltas(
+        params.dataset,
+        params.currentFrame,
+        params.config.timesteps,
+        params.config.timestepThreshold
+      );
       this.cachedMotionDeltas.set(params.currentFrame, visibleIdToVector);
     }
     if (!visibleIdToVector) {
@@ -156,7 +161,8 @@ export class CachedVectorFieldRenderer {
         if (
           this.cachedSettings.params?.dataset !== params.dataset ||
           this.cachedSettings.params?.collection !== params.collection ||
-          this.cachedSettings.params?.config.timesteps !== params.config.timesteps
+          this.cachedSettings.params?.config.timesteps !== params.config.timesteps ||
+          this.cachedSettings.params?.config.timestepThreshold !== params.config.timestepThreshold
         ) {
           this.cachedMotionDeltas.clear();
           this.cachedSettings = { params, style };

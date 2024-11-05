@@ -23,6 +23,8 @@ type BaseLabeledSliderProps = {
   /** Minimum number of steps for the slider to use if integer steps cannot be used.
    * Default is 25. */
   minSteps?: number;
+  /** The step size for the slider. Overrides `minSteps` if set. */
+  step?: number;
   /** Marks to draw on the slider. */
   marks?: number[] | undefined;
   // TODO: Add a way to fetch significant figures for each feature. This is a temporary fix
@@ -188,7 +190,8 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     }
   };
 
-  let stepSize = (props.maxSliderBound - props.minSliderBound) / props.minSteps;
+  // TODO: Think about this more
+  let stepSize = props.step ? props.step : (props.maxSliderBound - props.minSliderBound) / props.minSteps;
   stepSize = clamp(stepSize, 0, 1);
   stepSize = setMaxDecimalPrecision(stepSize, 3);
 

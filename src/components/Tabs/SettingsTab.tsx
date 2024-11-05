@@ -162,6 +162,63 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
+      <CustomCollapse label="Vector arrows">
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+          <SettingsItem label="Smoothing steps">
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                step={1}
+                minSliderBound={0}
+                maxSliderBound={10}
+                minInputBound={0}
+                maxInputBound={100}
+                value={props.config.vectorSettings.timesteps}
+                onChange={(timesteps: number) =>
+                  props.updateConfig({ vectorSettings: { ...props.config.vectorSettings, timesteps } })
+                }
+              />
+            </div>
+          </SettingsItem>
+          <SettingsItem label="Minimum timesteps">
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                step={1}
+                minSliderBound={0}
+                maxSliderBound={10}
+                minInputBound={0}
+                value={props.config.vectorSettings.timestepThreshold}
+                onChange={(timestepThreshold: number) =>
+                  props.updateConfig({
+                    vectorSettings: {
+                      ...props.config.vectorSettings,
+                      timestepThreshold,
+                      timesteps: Math.max(timestepThreshold, props.config.vectorSettings.timesteps),
+                    },
+                  })
+                }
+              />
+            </div>
+          </SettingsItem>
+          <SettingsItem label={"Length multiplier"}>
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={10}
+                minInputBound={0}
+                maxInputBound={100}
+                value={props.config.vectorSettings.amplitudePx}
+                onChange={(amplitudePx: number) =>
+                  props.updateConfig({ vectorSettings: { ...props.config.vectorSettings, amplitudePx } })
+                }
+                marks={[1]}
+              />
+            </div>
+          </SettingsItem>
+        </SettingsContainer>
+      </CustomCollapse>
     </FlexColumn>
   );
 }

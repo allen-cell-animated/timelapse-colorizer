@@ -193,7 +193,8 @@ export function getAllIdsAtTime(dataset: Dataset, time: number): number[] {
 export function getMotionDeltas(
   dataset: Dataset,
   time: number,
-  numTimesteps: number = 1
+  numTimesteps: number = 3,
+  timestepThreshold: number = 1
 ): Map<number, [number, number] | undefined> {
   const visibleIds = getAllIdsAtTime(dataset, time);
   const visibleTracksToIds = new Map(visibleIds.map((id) => [dataset.getTrackId(id), id]));
@@ -244,7 +245,7 @@ export function getMotionDeltas(
   const objectIdToAveragedDelta = new Map<number, [number, number] | undefined>();
   for (const [track, deltas] of trackToDeltas) {
     const objectId = visibleTracksToIds.get(track);
-    if (!objectId) {
+    if (!objectId || deltas.length < timestepThreshold) {
       continue;
     }
 

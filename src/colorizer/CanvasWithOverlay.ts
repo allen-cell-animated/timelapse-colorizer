@@ -20,7 +20,7 @@ import {
 import { CachedVectorFieldRenderer, VectorFieldParams } from "./canvas/elements/vectorField";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
-import { getDefaultVectorConfig } from "./types";
+import { getDefaultVectorConfig, VectorConfig } from "./types";
 
 import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
@@ -44,6 +44,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private legendStyle: LegendStyle;
   private headerStyle: HeaderStyle;
   private footerStyle: FooterStyle;
+
+  private vectorFieldConfig: VectorConfig;
 
   /** Size of the inner colorized canvas, in pixels. */
   private canvasSize: Vector2;
@@ -87,6 +89,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
     this.vectorField = new CachedVectorFieldRenderer();
+    this.vectorFieldConfig = getDefaultVectorConfig();
 
     this.isExporting = false;
     this.isHeaderVisibleOnExport = true;
@@ -159,6 +162,10 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.datasetKey = datasetKey;
   }
 
+  setVectorFieldConfig(config: VectorConfig): void {
+    this.vectorFieldConfig = config;
+  }
+
   // Rendering functions ////////////////////////////
 
   private getBaseRendererParams(): BaseRenderParams {
@@ -208,7 +215,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private getVectorFieldRenderer(): RenderInfo {
     const params: VectorFieldParams = {
       ...this.getBaseRendererParams(),
-      config: getDefaultVectorConfig(),
+      config: this.vectorFieldConfig,
       viewportSizePx: this.canvasSize,
       currentFrame: this.getCurrentFrame(),
       zoomMultiplier: this.zoomMultiplier,
