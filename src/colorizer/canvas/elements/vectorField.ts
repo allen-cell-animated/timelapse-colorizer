@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
 
 import { VectorConfig } from "../../types";
-import { getMotionDeltas } from "../../utils/data_utils";
+import { getMotionDeltasForCurrentFrame } from "../../utils/data_utils";
 import { BaseRenderParams, RenderInfo } from "../types";
 
 export type VectorFieldParams = BaseRenderParams & {
@@ -119,7 +119,7 @@ export class CachedVectorFieldRenderer {
     if (this.cachedMotionDeltas.has(params.currentFrame)) {
       visibleIdToVector = this.cachedMotionDeltas.get(params.currentFrame);
     } else {
-      visibleIdToVector = getMotionDeltas(
+      visibleIdToVector = getMotionDeltasForCurrentFrame(
         params.dataset,
         params.currentFrame,
         params.config.timesteps,

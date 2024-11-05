@@ -1,9 +1,12 @@
+import { Vector2 } from "three";
+
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { ColorRampData } from "../colors/color_ramps";
 import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric, ThresholdType } from "../types";
 
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
+import Track from "../Track";
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
@@ -182,6 +185,90 @@ export function getAllIdsAtTime(dataset: Dataset, time: number): number[] {
 }
 
 /**
+ * Returns a list of centroid deltas for each object ID in the track. Deltas are calculated
+ * as the difference between the centroid at a timepoint and the centroid at the
+ * previous timepoint. Up to `numTimesteps` deltas are returned for each object ID.
+ * @param track
+ * @param numTimesteps
+ * @returns
+ */
+function getTrackMotionDeltas(track: Track, numTimesteps: number): { [key: number]: [number, number][] } {
+  const deltas: { [key: number]: [number, number][] } = {};
+
+  for (let i = 0; i < track.ids.length; i++) {
+    const objectId = track.ids[i];
+    const minTime = track.times[i] - numTimesteps;
+    deltas[objectId] = [];
+
+    for (let j = 0; j < numTimesteps; j++) {
+      // Note that `track.times` is only guaranteed to be ordered, not contiguous.
+      // Check for adjacent, contiguous timepoints that are within the time range.
+      const currentObjectTime = track.times[i - j];
+      const previousObjectTime = track.times[i - j - 1];
+
+      if (currentObjectTime - 1 !== previousObjectTime) {
+        continue;
+      } else if (previousObjectTime < minTime) {
+        break;
+      }
+
+      const currentCentroidX = track.centroids[(i - j) * 2];
+      const currentCentroidY = track.centroids[(i - j) * 2 + 1];
+      const prevCentroidX = track.centroids[(i - j - 1) * 2];
+      const prevCentroidY = track.centroids[(i - j - 1) * 2 + 1];
+      deltas[objectId].push([currentCentroidX - prevCentroidX, currentCentroidY - prevCentroidY]);
+    }
+  }
+  return deltas;
+}
+
+/**
+ * Calculates an array of motion deltas for each object in the dataset, averaged over the specified number of timesteps.
+ * @param dataset The dataset to calculate motion deltas for.
+ * @param numTimesteps The number of timepoints to average over.
+ * @param timestepThreshold The minimum number of timepoints the object must have available centroid data for (our of the last
+ * `numTimesteps` time points) to be included. For example, if `numTimesteps` is 3 and `timestepThreshold` is 2, the object must
+ * exist for at least 2 of the last 3 timepoints to be included in the output.
+ * @returns an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
+ * of its motion delta are stored at indices `2 * i` and `2 * i + 1`, respectively. If an object does not meet the
+ * `timestepThreshold`, both values will be `NaN`.
+ */
+export function calculateMotionDeltas(dataset: Dataset, numTimesteps: number, timestepThreshold: number): Float32Array {
+  // Indexed by object ID
+  const motionDeltas = new Float32Array(dataset.numObjects * 2);
+
+  // For each track in the dataset, calculate the motion deltas
+  // for each object. Doing this by track reduces the number of lookups
+  // we need to do by object ID across the whole dataset.
+  const uniqueTrackIds = new Set<number>(dataset.trackIds);
+  for (const trackId of uniqueTrackIds) {
+    const track = dataset.buildTrack(trackId);
+    const objectIdToDeltas = getTrackMotionDeltas(track, numTimesteps);
+
+    for (const [stringObjectId, deltas] of Object.entries(objectIdToDeltas)) {
+      const objectId = parseInt(stringObjectId, 10);
+
+      // Check that the object has enough deltas to meet the threshold; if so
+      // average and store the delta.
+      if (deltas.length >= timestepThreshold) {
+        const averagedDelta: [number, number] = deltas.reduce(
+          (acc, delta) => [acc[0] + delta[0] / deltas.length, acc[1] + delta[1] / deltas.length],
+          [0, 0]
+        );
+        motionDeltas[2 * objectId] = averagedDelta[0];
+        motionDeltas[2 * objectId + 1] = averagedDelta[1];
+      } else {
+        // TODO: These may need to become Infinity for shader compatibility
+        motionDeltas[2 * objectId] = NaN;
+        motionDeltas[2 * objectId + 1] = NaN;
+      }
+    }
+  }
+
+  return motionDeltas;
+}
+
+/**
  * Returns the motion deltas for the visible objects at a given timepoint. If multiple timesteps
  * are requested, the deltas are averaged across the timesteps, skipping any timesteps where no
  * object is present for the track.
@@ -190,7 +277,7 @@ export function getAllIdsAtTime(dataset: Dataset, time: number): number[] {
  * @param numTimesteps The number of timesteps to average over. Default is 1.
  * @returns A map of object IDs to their averaged motion deltas, as [dx, dy] tuples.
  */
-export function getMotionDeltas(
+export function getMotionDeltasForCurrentFrame(
   dataset: Dataset,
   time: number,
   numTimesteps: number = 3,
