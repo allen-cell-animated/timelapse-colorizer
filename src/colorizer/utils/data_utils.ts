@@ -4,7 +4,6 @@ import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric, Threshold
 
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
-import Track from "../Track";
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.

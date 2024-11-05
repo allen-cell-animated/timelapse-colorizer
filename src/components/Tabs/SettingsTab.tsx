@@ -3,7 +3,7 @@ import React, { ReactElement } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode, ViewerConfig } from "../../colorizer/types";
+import { DrawMode, VectorViewMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 
 import CustomCollapse from "../CustomCollapse";
@@ -227,6 +227,22 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 marks={[1]}
               />
             </div>
+          </SettingsItem>
+          <SettingsItem>
+            <Checkbox
+              type="checkbox"
+              checked={props.config.vectorConfig.mode === VectorViewMode.ALL}
+              onChange={(event) => {
+                props.updateConfig({
+                  vectorConfig: {
+                    ...props.config.vectorConfig,
+                    mode: event.target.checked ? VectorViewMode.ALL : VectorViewMode.HIDE,
+                  },
+                });
+              }}
+            >
+              Show vectors
+            </Checkbox>
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
