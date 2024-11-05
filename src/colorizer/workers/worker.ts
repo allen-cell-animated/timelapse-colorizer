@@ -3,7 +3,7 @@ import Transfer from "workerpool/types/transfer";
 
 import { FeatureDataType, VectorConfig } from "../types";
 import { LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "../utils/data_load_utils";
-import { calculateMotionDeltas, makeDataOnlyTracks } from "../utils/data_utils";
+import { calculateMotionDeltas, makeDataOnlyTracks } from "../utils/math_utils";
 import { arrayToDataTextureInfo } from "../utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<Transfer> {
