@@ -251,7 +251,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
     // Draw the vector field
-    this.getVectorFieldRenderer().render(new Vector2(0, 0));
+    this.getVectorFieldRenderer().render(new Vector2(0, this.headerSize.y));
 
     headerRenderer.render(new Vector2(0, 0));
     footerRenderer.render(new Vector2(0, this.canvasSize.y + this.headerSize.y));

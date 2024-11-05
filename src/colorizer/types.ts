@@ -150,7 +150,7 @@ export type VectorConfig = {
 export const getDefaultVectorConfig = (): VectorConfig => ({
   mode: VectorViewMode.ALL,
   timesteps: 5,
-  timestepThreshold: 1,
+  timestepThreshold: 3,
   color: new Color(0x000000),
   amplitudePx: 5,
 });

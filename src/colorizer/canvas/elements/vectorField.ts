@@ -58,7 +58,7 @@ function drawVector(
   // Re-normalize coordinates to 0,0 is the top left corner.
   originInCanvasCoordsPx.add(params.viewportSizePx.clone().multiplyScalar(0.5));
 
-  const vectorOriginPx = originInCanvasCoordsPx.clone().add(drawOrigin);
+  const vectorOriginPx = originInCanvasCoordsPx;
   const vectorComponentsPx = vectorComponents
     .clone()
     .multiplyScalar(params.zoomMultiplier)
@@ -66,11 +66,11 @@ function drawVector(
   const vectorEndPx = vectorComponentsPx.clone().add(vectorOriginPx);
 
   ctx.beginPath();
-  ctx.moveTo(vectorOriginPx.x, vectorOriginPx.y);
-  ctx.lineTo(vectorEndPx.x, vectorEndPx.y);
+  ctx.moveTo(vectorOriginPx.x + drawOrigin.x, vectorOriginPx.y + drawOrigin.y);
+  ctx.lineTo(vectorEndPx.x + drawOrigin.x, vectorEndPx.y + drawOrigin.y);
 
   // Draw arrowhead
-  ctx.moveTo(vectorEndPx.x, vectorEndPx.y);
+  ctx.moveTo(vectorEndPx.x + drawOrigin.x, vectorEndPx.y + drawOrigin.y);
   const angle = Math.PI + Math.atan2(vectorComponents.y, vectorComponents.x);
   const arrowAngle1 = angle + (Math.PI * style.arrowHeadAngle) / 180;
   const arrowAngle2 = angle - (Math.PI * style.arrowHeadAngle) / 180;
@@ -83,9 +83,9 @@ function drawVector(
     vectorEndPx.x + arrowHeadLength * Math.cos(arrowAngle2),
     vectorEndPx.y + arrowHeadLength * Math.sin(arrowAngle2)
   );
-  ctx.lineTo(arrowHead1.x, arrowHead1.y);
-  ctx.moveTo(vectorEndPx.x, vectorEndPx.y);
-  ctx.lineTo(arrowHead2.x, arrowHead2.y);
+  ctx.lineTo(arrowHead1.x + drawOrigin.x, arrowHead1.y + drawOrigin.y);
+  ctx.moveTo(vectorEndPx.x + drawOrigin.x, vectorEndPx.y + drawOrigin.y);
+  ctx.lineTo(arrowHead2.x + drawOrigin.x, arrowHead2.y + drawOrigin.y);
 
   ctx.stroke();
   ctx.closePath();
