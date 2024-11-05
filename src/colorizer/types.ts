@@ -187,7 +187,7 @@ export type ViewerConfig = {
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
   openTab: TabType;
-  vectorSettings: VectorConfig;
+  vectorConfig: VectorConfig;
 };
 
 export const defaultViewerConfig: ViewerConfig = {
@@ -206,7 +206,7 @@ export const defaultViewerConfig: ViewerConfig = {
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
   openTab: TabType.TRACK_PLOT,
-  vectorSettings: getDefaultVectorConfig(),
+  vectorConfig: getDefaultVectorConfig(),
 };
 
 export enum PlotRangeType {

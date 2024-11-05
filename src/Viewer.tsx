@@ -27,6 +27,7 @@ import {
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
+  VectorConfig,
   ViewerConfig,
 } from "./colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
@@ -106,6 +107,26 @@ function Viewer(): ReactElement {
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
     getDefaultScatterPlotConfig()
   );
+
+  const [motionDeltas, setMotionDeltas] = useState<Float32Array | null>(null);
+  const debouncedVectorConfig = useDebounce(config.vectorConfig, 500);
+  const pendingVectorConfig = useRef<null | VectorConfig>(null);
+  useEffect(() => {
+    if (dataset === null) {
+      setMotionDeltas(null);
+      return;
+    }
+    const updateMotionDeltas = async (vectorConfig: VectorConfig) => {
+      pendingVectorConfig.current = config.vectorConfig;
+      const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorConfig);
+      // If this is still the most recent request
+      if (vectorConfig === pendingVectorConfig.current) {
+        motionDeltas && setMotionDeltas(motionDeltas);
+        pendingVectorConfig.current = null;
+      }
+    };
+    updateMotionDeltas(config.vectorConfig);
+  }, [debouncedVectorConfig.timesteps, debouncedVectorConfig.timestepThreshold, dataset]);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -1017,6 +1038,7 @@ function Viewer(): ReactElement {
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   collection={collection || null}
+                  motionVectors={motionDeltas}
                   dataset={dataset}
                   datasetKey={datasetKey}
                   featureKey={featureKey}

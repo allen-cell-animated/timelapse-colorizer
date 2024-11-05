@@ -41,8 +41,16 @@ export default class SharedWorkerPool {
     return await this.workerPool.exec("loadUrlData", [url, type]);
   }
 
-  async getMotionDeltas(dataset: Dataset, config: VectorConfig): Promise<Float32Array> {
-    return await this.workerPool.exec("getMotionDeltas", [dataset, config]);
+  async getMotionDeltas(dataset: Dataset, config: VectorConfig): Promise<Float32Array | undefined> {
+    // We cannot directly pass the dataset, so instead pass the relevant data and have it
+    // construct the tracks on the worker side.
+    const trackIds = dataset.trackIds;
+    const times = dataset.times;
+    const centroids = dataset.centroids;
+    if (!trackIds || !times || !centroids) {
+      return undefined;
+    }
+    return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, config]);
   }
 
   terminate(): void {

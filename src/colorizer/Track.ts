@@ -24,12 +24,6 @@ export default class Track {
         return result;
       }, [] as number[]);
     }
-    console.log(
-      `Track ${trackId} has ${this.times.length} objects over ${this.duration()} timepoints starting from ${
-        this.times[0]
-      } to ${this.times[this.times.length - 1]}`
-    );
-    console.log(this.ids);
   }
 
   getIdAtTime(t: number): number {

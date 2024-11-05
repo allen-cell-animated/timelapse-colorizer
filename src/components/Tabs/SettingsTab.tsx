@@ -173,9 +173,15 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 maxSliderBound={10}
                 minInputBound={0}
                 maxInputBound={100}
-                value={props.config.vectorSettings.timesteps}
+                value={props.config.vectorConfig.timesteps}
                 onChange={(timesteps: number) =>
-                  props.updateConfig({ vectorSettings: { ...props.config.vectorSettings, timesteps } })
+                  props.updateConfig({
+                    vectorConfig: {
+                      ...props.config.vectorConfig,
+                      timesteps,
+                      timestepThreshold: Math.min(timesteps, props.config.vectorConfig.timestepThreshold),
+                    },
+                  })
                 }
               />
             </div>
@@ -193,13 +199,13 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 minSliderBound={0}
                 maxSliderBound={10}
                 minInputBound={0}
-                value={props.config.vectorSettings.timestepThreshold}
+                value={props.config.vectorConfig.timestepThreshold}
                 onChange={(timestepThreshold: number) =>
                   props.updateConfig({
-                    vectorSettings: {
-                      ...props.config.vectorSettings,
+                    vectorConfig: {
+                      ...props.config.vectorConfig,
                       timestepThreshold,
-                      timesteps: Math.max(timestepThreshold, props.config.vectorSettings.timesteps),
+                      timesteps: Math.max(timestepThreshold, props.config.vectorConfig.timesteps),
                     },
                   })
                 }
@@ -214,9 +220,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 maxSliderBound={10}
                 minInputBound={0}
                 maxInputBound={100}
-                value={props.config.vectorSettings.amplitudePx}
+                value={props.config.vectorConfig.amplitudePx}
                 onChange={(amplitudePx: number) =>
-                  props.updateConfig({ vectorSettings: { ...props.config.vectorSettings, amplitudePx } })
+                  props.updateConfig({ vectorConfig: { ...props.config.vectorConfig, amplitudePx } })
                 }
                 marks={[1]}
               />

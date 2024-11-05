@@ -1,5 +1,3 @@
-import { Vector2 } from "three";
-
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { ColorRampData } from "../colors/color_ramps";
 import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric, ThresholdType } from "../types";
@@ -184,6 +182,45 @@ export function getAllIdsAtTime(dataset: Dataset, time: number): number[] {
   return ids;
 }
 
+export type TrackData = {
+  ids: number[];
+  times: number[];
+  centroids: number[];
+};
+
+export function makeDataOnlyTracks(
+  trackIds: Uint32Array,
+  times: Uint32Array,
+  centroids: Uint16Array
+): Map<number, TrackData> {
+  const trackIdToTrackData = new Map<number, TrackData>();
+
+  for (let i = 0; i < trackIds.length; i++) {
+    const trackId = trackIds[i];
+    let trackData = trackIdToTrackData.get(trackId);
+    if (!trackData) {
+      trackData = { ids: [], times: [], centroids: [] };
+      trackIdToTrackData.set(trackId, trackData);
+    }
+    trackData.ids.push(i);
+    trackData.times.push(times[i]);
+    trackData.centroids.push(centroids[i * 2], centroids[i * 2 + 1]);
+  }
+
+  // Sort track data by time
+  for (const trackData of trackIdToTrackData.values()) {
+    const indices = [...trackData.times.keys()];
+    indices.sort((a, b) => trackData.times[a] - trackData.times[b]);
+    trackData.times = indices.map((i) => trackData.times[i]);
+    trackData.ids = indices.map((i) => trackData.ids[i]);
+    trackData.centroids = indices.reduce((result, i) => {
+      result.push(trackData.centroids[i * 2], trackData.centroids[i * 2 + 1]);
+      return result;
+    }, [] as number[]);
+  }
+  return trackIdToTrackData;
+}
+
 /**
  * Returns a list of centroid deltas for each object ID in the track. Deltas are calculated
  * as the difference between the centroid at a timepoint and the centroid at the
@@ -192,7 +229,7 @@ export function getAllIdsAtTime(dataset: Dataset, time: number): number[] {
  * @param numTimesteps
  * @returns
  */
-function getTrackMotionDeltas(track: Track, numTimesteps: number): { [key: number]: [number, number][] } {
+function getTrackMotionDeltas(track: TrackData, numTimesteps: number): { [key: number]: [number, number][] } {
   const deltas: { [key: number]: [number, number][] } = {};
 
   for (let i = 0; i < track.ids.length; i++) {
@@ -233,16 +270,19 @@ function getTrackMotionDeltas(track: Track, numTimesteps: number): { [key: numbe
  * of its motion delta are stored at indices `2 * i` and `2 * i + 1`, respectively. If an object does not meet the
  * `timestepThreshold`, both values will be `NaN`.
  */
-export function calculateMotionDeltas(dataset: Dataset, numTimesteps: number, timestepThreshold: number): Float32Array {
-  // Indexed by object ID
-  const motionDeltas = new Float32Array(dataset.numObjects * 2);
+export function calculateMotionDeltas(
+  tracks: TrackData[],
+  numTimesteps: number,
+  timestepThreshold: number
+): Float32Array {
+  // Count total objects to allocate the motion deltas array
+  let numObjects = 0;
+  for (const track of tracks) {
+    numObjects += track.ids.length;
+  }
+  const motionDeltas = new Float32Array(numObjects * 2);
 
-  // For each track in the dataset, calculate the motion deltas
-  // for each object. Doing this by track reduces the number of lookups
-  // we need to do by object ID across the whole dataset.
-  const uniqueTrackIds = new Set<number>(dataset.trackIds);
-  for (const trackId of uniqueTrackIds) {
-    const track = dataset.buildTrack(trackId);
+  for (const track of tracks) {
     const objectIdToDeltas = getTrackMotionDeltas(track, numTimesteps);
 
     for (const [stringObjectId, deltas] of Object.entries(objectIdToDeltas)) {
@@ -266,86 +306,4 @@ export function calculateMotionDeltas(dataset: Dataset, numTimesteps: number, ti
   }
 
   return motionDeltas;
-}
-
-/**
- * Returns the motion deltas for the visible objects at a given timepoint. If multiple timesteps
- * are requested, the deltas are averaged across the timesteps, skipping any timesteps where no
- * object is present for the track.
- * @param dataset The dataset to collect motion deltas from.
- * @param time Frame number to get motion deltas for.
- * @param numTimesteps The number of timesteps to average over. Default is 1.
- * @returns A map of object IDs to their averaged motion deltas, as [dx, dy] tuples.
- */
-export function getMotionDeltasForCurrentFrame(
-  dataset: Dataset,
-  time: number,
-  numTimesteps: number = 3,
-  timestepThreshold: number = 1
-): Map<number, [number, number] | undefined> {
-  const visibleIds = getAllIdsAtTime(dataset, time);
-  const visibleTracksToIds = new Map(visibleIds.map((id) => [dataset.getTrackId(id), id]));
-  const trackToDeltas = new Map<number, [number, number][]>();
-  for (let track of visibleTracksToIds.keys()) {
-    trackToDeltas.set(track, []);
-  }
-
-  let currentFrameIds = visibleIds;
-  // For each track, determine centroids at the previous timepoints and calculate the delta.
-  // Deltas are grouped by track ID and will be averaged at the end.
-  for (let i = 0; i < numTimesteps; i++) {
-    if (time - i < 0) {
-      break;
-    }
-
-    const currentTime = time - i;
-    const previousTime = currentTime - 1;
-    const previousIds = getAllIdsAtTime(dataset, previousTime);
-
-    for (let previousId of previousIds) {
-      // Get the two IDs of objects at current and previous timepoint.
-      const trackId = dataset.getTrackId(previousId);
-      const currentId = visibleTracksToIds.get(trackId);
-
-      if (!currentId || !trackToDeltas.has(trackId) || !dataset.centroids) {
-        continue;
-      }
-
-      // TODO: Generalize for 3D centroids
-      const previousCentroid = dataset.getCentroid(previousId);
-      const currentCentroid = dataset.getCentroid(currentId);
-      if (!previousCentroid || !currentCentroid) {
-        continue;
-      }
-
-      const delta: [number, number] = [
-        currentCentroid[0] - previousCentroid[0],
-        currentCentroid[1] - previousCentroid[1],
-      ];
-      trackToDeltas.get(trackId)?.push(delta);
-    }
-
-    currentFrameIds = previousIds;
-  }
-
-  // Average deltas per track, then map by object IDs.
-  const objectIdToAveragedDelta = new Map<number, [number, number] | undefined>();
-  for (const [track, deltas] of trackToDeltas) {
-    const objectId = visibleTracksToIds.get(track);
-    if (!objectId || deltas.length < timestepThreshold) {
-      continue;
-    }
-
-    if (deltas.length === 0) {
-      objectIdToAveragedDelta.set(objectId, undefined);
-    } else {
-      const numDeltas = deltas.length;
-      const averagedDelta: [number, number] = deltas.reduce(
-        (acc, delta) => [acc[0] + delta[0] / numDeltas, acc[1] + delta[1] / numDeltas],
-        [0, 0]
-      );
-      objectIdToAveragedDelta.set(objectId, [averagedDelta[0] / deltas.length, averagedDelta[1] / deltas.length]);
-    }
-  }
-  return objectIdToAveragedDelta;
 }

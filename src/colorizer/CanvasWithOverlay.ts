@@ -17,10 +17,10 @@ import {
   ScaleBarStyle,
   TimestampStyle,
 } from "./canvas/elements";
-import { CachedVectorFieldRenderer, VectorFieldParams } from "./canvas/elements/vectorField";
+import { getVectorFieldRenderer, VectorFieldParams } from "./canvas/elements/vectorField";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
-import { getDefaultVectorConfig, VectorConfig } from "./types";
+import { getDefaultVectorConfig, VectorConfig, VectorViewMode } from "./types";
 
 import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
@@ -36,7 +36,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
 
   private collection: Collection | null;
   private datasetKey: string | null;
-  private vectorField: CachedVectorFieldRenderer;
+
+  private motionVectors: Float32Array | null;
 
   private scaleBarStyle: ScaleBarStyle;
   private timestampStyle: TimestampStyle;
@@ -88,7 +89,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.canvasSize = new Vector2(1, 1);
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
-    this.vectorField = new CachedVectorFieldRenderer();
+    this.motionVectors = null;
     this.vectorFieldConfig = getDefaultVectorConfig();
 
     this.isExporting = false;
@@ -166,6 +167,10 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.vectorFieldConfig = config;
   }
 
+  setMotionVectors(vectors: Float32Array | null): void {
+    this.motionVectors = vectors;
+  }
+
   // Rendering functions ////////////////////////////
 
   private getBaseRendererParams(): BaseRenderParams {
@@ -216,13 +221,15 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     const params: VectorFieldParams = {
       ...this.getBaseRendererParams(),
       config: this.vectorFieldConfig,
+      vectors: this.motionVectors, // TODO:
       viewportSizePx: this.canvasSize,
       currentFrame: this.getCurrentFrame(),
       zoomMultiplier: this.zoomMultiplier,
       panOffset: this.panOffset,
       frameToCanvasCoordinates: this.frameToCanvasCoordinates,
+      visible: this.vectorFieldConfig.mode !== VectorViewMode.HIDE,
     };
-    return this.vectorField.getVectorFieldRenderer(this.ctx, params);
+    return getVectorFieldRenderer(this.ctx, params);
   }
 
   /**
