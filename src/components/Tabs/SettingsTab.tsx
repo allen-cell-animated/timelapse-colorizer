@@ -180,7 +180,12 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               />
             </div>
           </SettingsItem>
-          <SettingsItem label="Minimum timesteps">
+          <SettingsItem
+            label="Minimum timesteps"
+            tooltip={
+              "The minimum number of timesteps the tracked object must exist for before a vector motion arrow will be shown."
+            }
+          >
             <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 type="value"

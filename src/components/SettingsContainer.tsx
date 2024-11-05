@@ -1,3 +1,4 @@
+import { Tooltip } from "antd";
 import React from "react";
 import { PropsWithChildren, ReactElement } from "react";
 import styled, { css } from "styled-components";
@@ -5,6 +6,7 @@ import styled, { css } from "styled-components";
 type SettingsItemProps = {
   /** A string or ReactElement label. Strings will be displayed as `h3`. Defaults to empty string ("").*/
   label?: string | ReactElement;
+  tooltip?: string | ReactElement;
   /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
    * of the parent `SettingsContainer`. */
   labelFormatter?: (label: string | ReactElement) => string | ReactElement;
@@ -28,6 +30,14 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   }
 
   props.label = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
+
+  if (props.tooltip) {
+    props.label = (
+      <Tooltip title={props.tooltip} trigger={["focus", "hover"]} placement="left">
+        {props.label}
+      </Tooltip>
+    );
+  }
 
   return (
     <label>
