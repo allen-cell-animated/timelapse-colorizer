@@ -3,7 +3,7 @@ import React, { ReactElement } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode, VectorViewMode, ViewerConfig } from "../../colorizer/types";
+import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 
 import CustomCollapse from "../CustomCollapse";
@@ -11,14 +11,15 @@ import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+import VectorSettings from "./Settings/VectorSettings";
 
 const NO_BACKDROP = {
   key: "",
   label: "(None)",
 };
 
-const INDENT_PX = 24;
-const MAX_SLIDER_WIDTH = "250px";
+export const SETTINGS_INDENT_PX = 24;
+export const MAX_SLIDER_WIDTH = "250px";
 
 type SettingsTabProps = {
   config: ViewerConfig;
@@ -30,7 +31,7 @@ type SettingsTabProps = {
   dataset: Dataset | null;
 };
 
-const h3Wrapper = (label: string | ReactElement): ReactElement => {
+export const h3Wrapper = (label: string | ReactElement): ReactElement => {
   return <h3>{label}</h3>;
 };
 
@@ -47,7 +48,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} labelFormatter={h3Wrapper}>
           <SettingsItem label="Backdrop images">
             <SelectionDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
@@ -91,8 +92,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
+
       <CustomCollapse label="Objects">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} labelFormatter={h3Wrapper}>
           <SettingsItem label="Filtered object color">
             <DrawModeDropdown
               selected={props.config.outOfRangeDrawSettings.mode}
@@ -162,88 +164,10 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
+
       <CustomCollapse label="Vector arrows">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
-          <SettingsItem label="Smoothing steps">
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                type="value"
-                step={1}
-                minSliderBound={0}
-                maxSliderBound={10}
-                minInputBound={0}
-                maxInputBound={100}
-                value={props.config.vectorConfig.timesteps}
-                onChange={(timesteps: number) =>
-                  props.updateConfig({
-                    vectorConfig: {
-                      ...props.config.vectorConfig,
-                      timesteps,
-                      timestepThreshold: Math.min(timesteps, props.config.vectorConfig.timestepThreshold),
-                    },
-                  })
-                }
-              />
-            </div>
-          </SettingsItem>
-          <SettingsItem
-            label="Minimum timesteps"
-            tooltip={
-              "The minimum number of timesteps the tracked object must exist for before a vector motion arrow will be shown."
-            }
-          >
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                type="value"
-                step={1}
-                minSliderBound={0}
-                maxSliderBound={10}
-                minInputBound={0}
-                value={props.config.vectorConfig.timestepThreshold}
-                onChange={(timestepThreshold: number) =>
-                  props.updateConfig({
-                    vectorConfig: {
-                      ...props.config.vectorConfig,
-                      timestepThreshold,
-                      timesteps: Math.max(timestepThreshold, props.config.vectorConfig.timesteps),
-                    },
-                  })
-                }
-              />
-            </div>
-          </SettingsItem>
-          <SettingsItem label={"Length multiplier"}>
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={10}
-                minInputBound={0}
-                maxInputBound={100}
-                value={props.config.vectorConfig.amplitudePx}
-                onChange={(amplitudePx: number) =>
-                  props.updateConfig({ vectorConfig: { ...props.config.vectorConfig, amplitudePx } })
-                }
-                marks={[1]}
-              />
-            </div>
-          </SettingsItem>
-          <SettingsItem>
-            <Checkbox
-              type="checkbox"
-              checked={props.config.vectorConfig.mode === VectorViewMode.ALL}
-              onChange={(event) => {
-                props.updateConfig({
-                  vectorConfig: {
-                    ...props.config.vectorConfig,
-                    mode: event.target.checked ? VectorViewMode.ALL : VectorViewMode.HIDE,
-                  },
-                });
-              }}
-            >
-              Show vectors
-            </Checkbox>
-          </SettingsItem>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} labelFormatter={h3Wrapper}>
+          <VectorSettings config={props.config} updateConfig={props.updateConfig} />
         </SettingsContainer>
       </CustomCollapse>
     </FlexColumn>
