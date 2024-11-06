@@ -47,6 +47,7 @@ enum UrlParam {
   OUTLIER_COLOR = "outlier-color",
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
+  OUTLINE_COLOR = "outline-color",
   SHOW_PATH = "path",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
@@ -291,6 +292,12 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
     parameters.push(`${UrlParam.FILTERED_COLOR}=${config.outOfRangeDrawSettings.color.getHexString()}`);
     parameters.push(`${UrlParam.FILTERED_MODE}=${config.outOfRangeDrawSettings.mode}`);
   }
+
+  // Color config
+  if (config.outlineColor) {
+    parameters.push(`${UrlParam.OUTLINE_COLOR}=${config.outlineColor.getHexString()}`);
+  }
+
   if (config.openTab) {
     parameters.push(`${UrlParam.OPEN_TAB}=${config.openTab}`);
   }
@@ -348,6 +355,12 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
       params.get(UrlParam.FILTERED_MODE),
       defaultViewerConfig.outOfRangeDrawSettings
     );
+  }
+  if (params.get(UrlParam.OUTLINE_COLOR)) {
+    const outlineColor = "#" + params.get(UrlParam.OUTLINE_COLOR);
+    if (isHexColor(outlineColor)) {
+      newConfig.outlineColor = new Color(outlineColor);
+    }
   }
   const openTab = params.get(UrlParam.OPEN_TAB);
   if (openTab && isTabType(openTab)) {

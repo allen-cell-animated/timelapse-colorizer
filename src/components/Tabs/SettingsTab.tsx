@@ -1,9 +1,10 @@
-import { Checkbox } from "antd";
+import { Color as AntdColor } from "@rc-component/color-picker";
+import { Checkbox, ColorPicker } from "antd";
 import React, { ReactElement } from "react";
-import { Color } from "three";
+import { Color, ColorRepresentation } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode, ViewerConfig } from "../../colorizer/types";
+import { DrawMode, OUTLINE_COLOR_DEFAULT, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 
 import CustomCollapse from "../CustomCollapse";
@@ -19,6 +20,25 @@ const NO_BACKDROP = {
 
 const INDENT_PX = 24;
 const MAX_SLIDER_WIDTH = "250px";
+
+const defaultOutlinePresetColors = [
+  "#dddddd",
+  "#808080",
+  "#525252",
+  "#ff00ff",
+  "#ff0000",
+  "#ff8800",
+  "#ffcf00",
+  "#00ff00",
+  "#00ffff",
+  "#0048ff",
+];
+const outlineColorPresets = [
+  {
+    label: "Presets",
+    colors: defaultOutlinePresetColors,
+  },
+];
 
 type SettingsTabProps = {
   config: ViewerConfig;
@@ -47,7 +67,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper} gapPx={8}>
           <SettingsItem label="Backdrop images">
             <SelectionDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
@@ -92,7 +112,22 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         </SettingsContainer>
       </CustomCollapse>
       <CustomCollapse label="Objects">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper} gapPx={8}>
+          <SettingsItem label="Outline color">
+            <div>
+              <ColorPicker
+                style={{ width: "min-content" }}
+                size="small"
+                disabledAlpha={true}
+                defaultValue={new AntdColor(OUTLINE_COLOR_DEFAULT)}
+                onChange={(_color, hex) => {
+                  props.updateConfig({ outlineColor: new Color(hex as ColorRepresentation) });
+                }}
+                value={new AntdColor(props.config.outlineColor.getHexString())}
+                presets={outlineColorPresets}
+              />
+            </div>
+          </SettingsItem>
           <SettingsItem label="Filtered object color">
             <DrawModeDropdown
               selected={props.config.outOfRangeDrawSettings.mode}
