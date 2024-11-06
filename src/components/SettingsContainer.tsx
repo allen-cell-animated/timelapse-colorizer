@@ -10,10 +10,12 @@ type SettingsItemProps = {
   /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
    * of the parent `SettingsContainer`. */
   labelFormatter?: (label: string | ReactElement) => string | ReactElement;
+  labelStyle?: React.CSSProperties;
 };
 
 const defaultSettingsItemProps = {
   label: "",
+  align: "center",
 };
 
 /**
@@ -41,7 +43,7 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
 
   return (
     <label>
-      <span>{props.label}</span>
+      <span style={props.labelStyle}>{props.label}</span>
       {props.children}
     </label>
   );

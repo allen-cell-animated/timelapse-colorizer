@@ -63,7 +63,7 @@ function drawVector(
   const vectorComponentsPx = vectorComponents
     .clone()
     .multiplyScalar(params.zoomMultiplier)
-    .multiplyScalar(params.config.amplitudePx);
+    .multiplyScalar(params.config.scaleFactor);
   const vectorEndPx = vectorComponentsPx.clone().add(vectorOriginPx);
 
   ctx.beginPath();

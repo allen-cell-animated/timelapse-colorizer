@@ -144,7 +144,7 @@ export type VectorConfig = {
   timesteps: number;
   timestepThreshold: number;
   color: Color;
-  amplitudePx: number;
+  scaleFactor: number;
 };
 
 export const getDefaultVectorConfig = (): VectorConfig => ({
@@ -152,7 +152,7 @@ export const getDefaultVectorConfig = (): VectorConfig => ({
   timesteps: 5,
   timestepThreshold: 3,
   color: new Color(0x000000),
-  amplitudePx: 5,
+  scaleFactor: 4,
 });
 
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
