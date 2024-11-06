@@ -170,6 +170,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           <VectorSettings config={props.config} updateConfig={props.updateConfig} />
         </SettingsContainer>
       </CustomCollapse>
+      <div style={{ height: "100px" }}></div>
     </FlexColumn>
   );
 }
