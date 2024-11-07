@@ -20,7 +20,7 @@ import {
 import { getVectorFieldRenderer, VectorFieldParams } from "./canvas/elements/vectorField";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
-import { getDefaultVectorConfig, VectorConfig, VectorViewMode } from "./types";
+import { getDefaultVectorConfig, VectorConfig } from "./types";
 
 import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
@@ -164,10 +164,14 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   }
 
   setVectorFieldConfig(config: VectorConfig): void {
+    super.setVectorFieldConfig(config);
     this.vectorFieldConfig = config;
   }
 
   setMotionVectors(vectors: Float32Array | null): void {
+    if (vectors !== null) {
+      super.setMotionVectors(vectors);
+    }
     this.motionVectors = vectors;
   }
 
@@ -227,7 +231,8 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       zoomMultiplier: this.zoomMultiplier,
       panOffset: this.panOffset,
       frameToCanvasCoordinates: this.frameToCanvasCoordinates,
-      visible: this.vectorFieldConfig.mode !== VectorViewMode.HIDE,
+      visible: false,
+      // visible: this.vectorFieldConfig.mode !== VectorViewMode.HIDE,
     };
     return getVectorFieldRenderer(this.ctx, params);
   }

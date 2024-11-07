@@ -22,9 +22,10 @@ import {
 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./types";
+import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT, VectorConfig } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
+import CanvasVectorRenderer from "./CanvasVectorRenderer";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
 import Track from "./Track";
@@ -146,6 +147,8 @@ export default class ColorizeCanvas {
   private points: Float32Array;
   protected canvasResolution: Vector2 | null;
 
+  protected vectorRenderer: CanvasVectorRenderer;
+
   protected featureKey: string | null;
   protected selectedBackdropKey: string | null;
   protected colorRamp: ColorRamp;
@@ -182,6 +185,7 @@ export default class ColorizeCanvas {
     this.scene.add(this.mesh);
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
+    this.vectorRenderer = new CanvasVectorRenderer(this.scene);
 
     // Configure lines
     this.points = new Float32Array([0, 0, 0]);
@@ -279,6 +283,7 @@ export default class ColorizeCanvas {
       2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
+    this.vectorRenderer.setPosition(this.panOffset, this.frameToCanvasCoordinates);
     this.render();
   }
 
@@ -322,6 +327,9 @@ export default class ColorizeCanvas {
       2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
+    this.vectorRenderer.setFrame(this.currentFrame);
+    this.vectorRenderer.setPosition(this.panOffset, this.frameToCanvasCoordinates);
+    this.vectorRenderer.setScale(this.frameToCanvasCoordinates);
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -339,6 +347,7 @@ export default class ColorizeCanvas {
     this.currentFrame = -1;
     await this.setFrame(frame);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    this.vectorRenderer.setDataset(dataset);
     this.render();
   }
 
@@ -382,6 +391,14 @@ export default class ColorizeCanvas {
     if (mode === DrawMode.USE_COLOR && color) {
       this.setUniform("outOfRangeColor", color);
     }
+  }
+
+  setMotionVectors(motionVectors: Float32Array): void {
+    this.vectorRenderer.setMotionDeltas(motionVectors);
+  }
+
+  setVectorFieldConfig(config: VectorConfig): void {
+    this.vectorRenderer.setConfig(config);
   }
 
   setSelectedTrack(track: Track | null): void {
