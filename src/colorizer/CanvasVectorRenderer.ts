@@ -1,6 +1,6 @@
-import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, LineSegments, Scene, Vector2 } from "three";
+import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, LineSegments, Material, Vector2 } from "three";
 
-import { getDefaultVectorConfig, VectorConfig } from "./types";
+import { getDefaultVectorConfig, VectorConfig, VectorViewMode } from "./types";
 
 import Dataset from "./Dataset";
 
@@ -16,93 +16,89 @@ const arrowStyle = {
 type ArrayVector = [number, number, number];
 
 /**
- * Renders vector arrows as Three JS lines in scene provided at construction.
+ * Renders vector arrows as a Three JS object.
  */
 export default class VectorField {
   /**
    * The Three JS line object that will be rendered in the scene.
    *
    * Vertices of the vector lines for ALL objects across ALL timepoints are pre-calculated and
-   * stored in a geometry buffer, grouped by frame number.
+   * stored in the line's geometry buffer, grouped by frame number.
+   *
    * By changing the slice of the geometry buffer we are rendering with (see `timeToVertexIndexRange`),
    * we can render only the vectors for a specific frame (O(1)). This is a big optimization because we don't
    * need to re-calculate the vertices every frame or check what vectors are visible (O(N)).
    */
-  private line: Line;
+  private line: Line<BufferGeometry, Material>;
 
   // Stored parameters
   private dataset: Dataset | null;
-  private scene: Scene;
-  private lineConfig: VectorConfig;
+  private config: VectorConfig;
   private currentFrame: number;
+  /** Resolution of the canvas in onscreen pixels. */
   private canvasResolution: Vector2;
+  /**
+   * Scales relative frame coordinates ([0, 1] range) to
+   * relative canvas coordinates ([0, 1] range) based on the current
+   * zoom level.
+   */
   private frameToCanvasCoordinates: Vector2;
-
-  // Calculated data
   /**
    * Vector data for each object in the dataset, as an array.
    * For each object ID `i`, the vector components are `(motionDeltas[2*i], motionDeltas[2*i+1])`.
    */
   private idToVectorData: Float32Array;
-  /** Maps from a frame number to the range of vertices
-   * that should be drawn for that frame.
-   */
+
+  // Calculated data
+  /** Maps from a frame number to the range of vertices that should be drawn for that frame. */
   private timeToVertexIndexRange: Map<number, [number, number]>;
 
-  constructor(scene: Scene) {
+  constructor() {
     this.dataset = null;
-    this.scene = scene;
-    this.lineConfig = getDefaultVectorConfig();
+    this.config = getDefaultVectorConfig();
     this.currentFrame = 0;
     this.canvasResolution = new Vector2();
     this.frameToCanvasCoordinates = new Vector2();
+    this.idToVectorData = new Float32Array();
 
     const lineGeometry = new BufferGeometry();
-    // TODO: handle arrow length + arrow head size in the vertex shader
     const lineMaterial = new LineBasicMaterial({
-      color: this.lineConfig.color,
+      color: this.config.color,
       linewidth: 1,
     });
     this.line = new LineSegments(lineGeometry, lineMaterial);
     this.line.frustumCulled = false;
     this.timeToVertexIndexRange = new Map();
-
-    this.idToVectorData = new Float32Array();
-
-    this.scene.add(this.line);
   }
 
-  public setFrame(frame: number) {
-    // Update vertex geometry range to render.
-    this.currentFrame = frame;
-    const range = this.timeToVertexIndexRange.get(frame);
-    if (range) {
-      console.log("Setting draw range to " + range[0] + " to " + range[1]);
+  public get sceneObject(): Line<BufferGeometry, Material> {
+    return this.line;
+  }
 
+  public setFrame(frame: number): void {
+    this.currentFrame = frame;
+
+    // Update vertex geometry range to render.
+    const range = this.timeToVertexIndexRange.get(frame);
+    if (range && this.config.mode !== VectorViewMode.HIDE) {
       this.line.geometry.setDrawRange(range[0], range[1] - range[0]);
     } else {
       this.line.geometry.setDrawRange(0, 0);
     }
   }
 
-  private normalizeX(x: number): number {
+  private framePixelsToRelativeFrameCoords(vector: ArrayVector): ArrayVector {
     if (!this.dataset) {
-      return 0;
+      return [0, 0, 0];
     }
-    return (x / this.dataset.frameResolution.x) * 2.0 - 1.0;
-  }
-  private normalizeY(y: number): number {
-    if (!this.dataset) {
-      return 0;
-    }
-    return -(y / this.dataset.frameResolution.y) * 2.0 + 1.0;
+    return [
+      (vector[0] / this.dataset.frameResolution.x) * 2.0 - 1.0,
+      -(vector[1] / this.dataset.frameResolution.y) * 2.0 + 1.0,
+      vector[2],
+    ];
   }
 
-  private normPixelToRelativeFrameCoords(vector: ArrayVector): ArrayVector {
-    return [this.normalizeX(vector[0]), this.normalizeY(vector[1]), vector[2]];
-  }
-
-  private normRelFrameCoordsToScreenSpacePx(vector: ArrayVector): ArrayVector {
+  private relativeFrameCoordsToScreenSpacePx(vector: ArrayVector): ArrayVector {
     return [
       vector[0] * this.frameToCanvasCoordinates.x * this.canvasResolution.x,
       vector[1] * this.frameToCanvasCoordinates.y * this.canvasResolution.y,
@@ -148,27 +144,26 @@ export default class VectorField {
         const centroid = this.dataset.getCentroid(id);
         const delta = [this.idToVectorData[id * 2], this.idToVectorData[id * 2 + 1]];
         if (centroid) {
-          // Origin
+          // Draw the main vector line segment from centroid to centroid + delta.
           // TODO: Make these all vectors
           // TODO: Perform scaling as a step in the vertex shader.
           const vectorStart: ArrayVector = [centroid[0], centroid[1], 0];
           const vectorEnd: ArrayVector = [
-            centroid[0] + delta[0] * this.lineConfig.scaleFactor,
-            centroid[1] + delta[1] * this.lineConfig.scaleFactor,
+            centroid[0] + delta[0] * this.config.scaleFactor,
+            centroid[1] + delta[1] * this.config.scaleFactor,
             0,
           ];
-          const normVectorEnd = this.normPixelToRelativeFrameCoords(vectorEnd);
-          const normVectorStart = this.normPixelToRelativeFrameCoords(vectorStart);
+          const normVectorEnd = this.framePixelsToRelativeFrameCoords(vectorEnd);
+          const normVectorStart = this.framePixelsToRelativeFrameCoords(vectorStart);
           vertices.set(normVectorStart, nextEmptyIndex * 3);
           vertices.set(normVectorEnd, (nextEmptyIndex + 1) * 3);
 
           // Draw the arrow heads. These are two line segments for each, so there's a total of four additional vertices we need to add.
-          // There's a bunch of extra work being done here to keep the arrow head length constant with zoom, but it also
+          // TODO: Handle scaling and arrow head length in a vertex shader.
+          // There's extra work being done here to keep the arrow head length constant with zoom, but it also
           // means that currently this is recalculated EVERY time the zoom changes.
-          // TODO: All of this could be done in a vertex shader
-          // Vertices for the two arrow heads
-          const screenSpaceStartPx = this.normRelFrameCoordsToScreenSpacePx(normVectorStart);
-          const screenSpaceEndPx = this.normRelFrameCoordsToScreenSpacePx(normVectorEnd);
+          const screenSpaceStartPx = this.relativeFrameCoordsToScreenSpacePx(normVectorStart);
+          const screenSpaceEndPx = this.relativeFrameCoordsToScreenSpacePx(normVectorEnd);
           const screenSpaceDeltaPx = [
             screenSpaceEndPx[0] - screenSpaceStartPx[0],
             screenSpaceEndPx[1] - screenSpaceStartPx[1],
@@ -180,17 +175,12 @@ export default class VectorField {
           const vectorAngle = Math.atan2(screenSpaceDeltaPx[1], screenSpaceDeltaPx[0]) + Math.PI;
           const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
           const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
-
-          // Keep arrow head length constant relative to onscreen pixels
           const arrowHead1: ArrayVector = [Math.cos(arrowAngle1), Math.sin(arrowAngle1), 0];
           const arrowHead2: ArrayVector = [Math.cos(arrowAngle2), Math.sin(arrowAngle2), 0];
 
-          // Scale to keep arrow head length constant.
           const lengthPx = Math.min(arrowStyle.maxHeadLengthPx, vectorLengthPx);
-          if (id === 10000) {
-            console.log("Delta: " + screenSpaceDeltaPx);
-            console.log("Length: " + vectorLengthPx);
-          }
+
+          // Keep arrow head length constant relative to onscreen pixels
           // Arrow heads are in screen space pixel coordinates, so we divide by canvas resolution to get relative canvas coordinates,
           // and then divide again by frameToCanvasCoordinates to get relative frame coordinates.
           arrowHead1[0] =
@@ -221,14 +211,20 @@ export default class VectorField {
     this.setFrame(this.currentFrame);
   }
 
-  public setDataset(dataset: Dataset) {
+  public setDataset(dataset: Dataset): void {
     if (this.dataset !== dataset) {
       this.dataset = dataset;
       this.updateLineVertices();
     }
   }
 
-  public setScale(frameToCanvasCoordinates: Vector2, canvasResolution: Vector2) {
+  /**
+   * Updates the scale of the vector field.
+   * @param frameToCanvasCoordinates
+   * @param canvasResolution
+   * @returns
+   */
+  public setScale(frameToCanvasCoordinates: Vector2, canvasResolution: Vector2): void {
     if (
       this.canvasResolution.equals(canvasResolution) &&
       this.frameToCanvasCoordinates.equals(frameToCanvasCoordinates)
@@ -242,7 +238,7 @@ export default class VectorField {
     this.updateLineVertices();
   }
 
-  public setPosition(panOffset: Vector2, frameToCanvasCoordinates: Vector2) {
+  public setPosition(panOffset: Vector2, frameToCanvasCoordinates: Vector2): void {
     this.line.position.set(
       2 * panOffset.x * frameToCanvasCoordinates.x,
       2 * panOffset.y * frameToCanvasCoordinates.y,
@@ -250,18 +246,18 @@ export default class VectorField {
     );
   }
 
-  public setConfig(config: VectorConfig) {
-    this.lineConfig = config;
+  public setConfig(config: VectorConfig): void {
+    this.config = config;
     // If new config changes vector length or mode, re-render all lines.
     // Update all line colors
-    (this.line.material as LineBasicMaterial).color = this.lineConfig.color;
-    // Compare config?
+    (this.line.material as LineBasicMaterial).color = this.config.color;
+    // TODO: Only update the config if view mode changes?
     this.updateLineVertices();
   }
 
-  public setVectorData(motionDeltas: Float32Array) {
-    if (this.idToVectorData !== motionDeltas) {
-      this.idToVectorData = motionDeltas;
+  public setVectorData(vectorData: Float32Array): void {
+    if (this.idToVectorData !== vectorData) {
+      this.idToVectorData = vectorData;
       this.updateLineVertices();
     }
   }

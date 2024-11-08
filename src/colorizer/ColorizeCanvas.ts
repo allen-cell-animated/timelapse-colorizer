@@ -116,8 +116,10 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  private vectorField: VectorField;
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
+  private trackPoints: Float32Array;
   private showTrackPath: boolean;
 
   protected frameSizeInCanvasCoordinates: Vector2;
@@ -144,10 +146,7 @@ export default class ColorizeCanvas {
 
   protected dataset: Dataset | null;
   protected track: Track | null;
-  private points: Float32Array;
   protected canvasResolution: Vector2 | null;
-
-  protected vectorRenderer: VectorField;
 
   protected featureKey: string | null;
   protected selectedBackdropKey: string | null;
@@ -183,15 +182,18 @@ export default class ColorizeCanvas {
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.scene = new Scene();
     this.scene.add(this.mesh);
+
+    this.vectorField = new VectorField();
+    this.scene.add(this.vectorField.sceneObject);
+
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
-    this.vectorRenderer = new VectorField(this.scene);
 
-    // Configure lines
-    this.points = new Float32Array([0, 0, 0]);
+    // Configure track lines
+    this.trackPoints = new Float32Array([0, 0, 0]);
 
     const lineGeometry = new BufferGeometry();
-    lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
+    lineGeometry.setAttribute("position", new BufferAttribute(this.trackPoints, 3));
     const lineMaterial = new LineBasicMaterial({
       color: SELECTED_COLOR_DEFAULT,
       linewidth: 1.0,
@@ -283,7 +285,7 @@ export default class ColorizeCanvas {
       2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
-    this.vectorRenderer.setPosition(this.panOffset, this.frameToCanvasCoordinates);
+    this.vectorField.setPosition(this.panOffset, this.frameToCanvasCoordinates);
     this.render();
   }
 
@@ -327,9 +329,8 @@ export default class ColorizeCanvas {
       2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
-    this.vectorRenderer.setFrame(this.currentFrame);
-    this.vectorRenderer.setPosition(this.panOffset, this.frameToCanvasCoordinates);
-    this.vectorRenderer.setScale(this.frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
+    this.vectorField.setPosition(this.panOffset, this.frameToCanvasCoordinates);
+    this.vectorField.setScale(this.frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -347,7 +348,7 @@ export default class ColorizeCanvas {
     this.currentFrame = -1;
     await this.setFrame(frame);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
-    this.vectorRenderer.setDataset(dataset);
+    this.vectorField.setDataset(dataset);
     this.render();
   }
 
@@ -394,11 +395,11 @@ export default class ColorizeCanvas {
   }
 
   setMotionVectors(motionVectors: Float32Array): void {
-    this.vectorRenderer.setVectorData(motionVectors);
+    this.vectorField.setVectorData(motionVectors);
   }
 
   setVectorFieldConfig(config: VectorConfig): void {
-    this.vectorRenderer.setConfig(config);
+    this.vectorField.setConfig(config);
   }
 
   setSelectedTrack(track: Track | null): void {
@@ -411,7 +412,7 @@ export default class ColorizeCanvas {
     }
     // Make a new array of the centroid positions in pixel coordinates.
     // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
-    this.points = new Float32Array(track.duration() * 3);
+    this.trackPoints = new Float32Array(track.duration() * 3);
 
     // Tracks may be missing objects for some timepoints, so use the last known good value as a fallback
     let lastTrackIndex = 0;
@@ -427,12 +428,15 @@ export default class ColorizeCanvas {
       }
 
       // Normalize from pixel coordinates to canvas space [-1, 1]
-      this.points[3 * i + 0] = (track.centroids[2 * trackIndex] / this.dataset.frameResolution.x) * 2.0 - 1.0;
-      this.points[3 * i + 1] = -((track.centroids[2 * trackIndex + 1] / this.dataset.frameResolution.y) * 2.0 - 1.0);
-      this.points[3 * i + 2] = 0;
+      this.trackPoints[3 * i + 0] = (track.centroids[2 * trackIndex] / this.dataset.frameResolution.x) * 2.0 - 1.0;
+      this.trackPoints[3 * i + 1] = -(
+        (track.centroids[2 * trackIndex + 1] / this.dataset.frameResolution.y) * 2.0 -
+        1.0
+      );
+      this.trackPoints[3 * i + 2] = 0;
     }
     // Assign new BufferAttribute because the old array has been discarded.
-    this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
+    this.line.geometry.setAttribute("position", new BufferAttribute(this.trackPoints, 3));
     this.line.geometry.getAttribute("position").needsUpdate = true;
     this.updateTrackRange();
   }
@@ -624,6 +628,7 @@ export default class ColorizeCanvas {
     this.onFrameChangeCallback(isMissingFile);
     // Force rescale in case frame dimensions changed
     this.updateScaling(this.dataset?.frameResolution || null, this.canvasResolution);
+    this.vectorField.setFrame(this.currentFrame);
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently
