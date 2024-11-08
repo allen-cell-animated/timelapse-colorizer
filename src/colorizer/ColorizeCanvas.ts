@@ -207,7 +207,7 @@ export default class ColorizeCanvas {
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
     });
-    this.renderer = new WebGLRenderer();
+    this.renderer = new WebGLRenderer({ antialias: true });
     this.checkPixelRatio();
 
     this.dataset = null;

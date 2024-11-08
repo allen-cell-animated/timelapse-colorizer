@@ -5,7 +5,13 @@ import { getDefaultVectorConfig, VectorConfig } from "./types";
 import Dataset from "./Dataset";
 
 // TODO: eventually increase this to 6 when adding arrow heads.
-const VERTICES_PER_VECTOR_LINE = 2;
+const VERTICES_PER_VECTOR_LINE = 6;
+const ANGLE_TO_RADIANS = Math.PI / 180;
+
+const arrowStyle = {
+  headAngleRads: 30 * ANGLE_TO_RADIANS,
+  maxHeadLengthPx: 5,
+};
 
 export default class CanvasVectorRenderer {
   private dataset: Dataset | null;
@@ -24,6 +30,7 @@ export default class CanvasVectorRenderer {
     this.currentFrame = 0;
 
     const lineGeometry = new BufferGeometry();
+    // TODO: handle arrow length + arrow head size in the vertex shader
     const lineMaterial = new LineBasicMaterial({
       color: this.lineConfig.color,
       linewidth: 1,
@@ -63,6 +70,10 @@ export default class CanvasVectorRenderer {
     return -(y / this.dataset.frameResolution.y) * 2.0 + 1.0;
   }
 
+  private normalizeVector(vector: [number, number, number]): [number, number, number] {
+    return [this.normalizeX(vector[0]), this.normalizeY(vector[1]), vector[2]];
+  }
+
   public updateLineVertices() {
     if (!this.dataset) {
       this.timeToVertexIndexRange.clear();
@@ -99,14 +110,38 @@ export default class CanvasVectorRenderer {
         const delta = [this.motionDeltas[id * 2], this.motionDeltas[id * 2 + 1]];
         if (centroid) {
           // Origin
-          vertices[nextEmptyIndex * 3] = this.normalizeX(centroid[0]);
-          vertices[nextEmptyIndex * 3 + 1] = this.normalizeY(centroid[1]);
-          vertices[nextEmptyIndex * 3 + 2] = 0;
-          // End
-          vertices[nextEmptyIndex * 3 + 3] = this.normalizeX(centroid[0] + delta[0] * this.lineConfig.scaleFactor);
-          vertices[nextEmptyIndex * 3 + 4] = this.normalizeY(centroid[1] + delta[1] * this.lineConfig.scaleFactor);
-          vertices[nextEmptyIndex * 3 + 5] = 0;
+          const startX = centroid[0];
+          const startY = centroid[1];
+          const endX = centroid[0] + delta[0] * this.lineConfig.scaleFactor;
+          const endY = centroid[1] + delta[1] * this.lineConfig.scaleFactor;
+
+          vertices.set(this.normalizeVector([startX, startY, 0]), nextEmptyIndex * 3);
+          vertices.set(this.normalizeVector([endX, endY, 0]), (nextEmptyIndex + 1) * 3);
+
+          // Vertices for the two arrow heads
+          // TODO: this should actually operate after vector normalization, since the
+          // arrow head length is in terms of screen space coords.
+          const vectorAngle = Math.atan2(delta[1], delta[0]) + Math.PI;
+          const vectorLength = Math.sqrt(delta[0] ** 2 + delta[1] ** 2);
+          const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
+          const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
+          const arrowHeadLength = Math.min(arrowStyle.maxHeadLengthPx, vectorLength);
+          const arrowHead1: [number, number, number] = [
+            endX + arrowHeadLength * Math.cos(arrowAngle1),
+            endY + arrowHeadLength * Math.sin(arrowAngle1),
+            0,
+          ];
+          const arrowHead2: [number, number, number] = [
+            endX + arrowHeadLength * Math.cos(arrowAngle2),
+            endY + arrowHeadLength * Math.sin(arrowAngle2),
+            0,
+          ];
+          vertices.set(this.normalizeVector([endX, endY, 0]), (nextEmptyIndex + 2) * 3);
+          vertices.set(this.normalizeVector(arrowHead1), (nextEmptyIndex + 3) * 3);
+          vertices.set(this.normalizeVector([endX, endY, 0]), (nextEmptyIndex + 4) * 3);
+          vertices.set(this.normalizeVector(arrowHead2), (nextEmptyIndex + 5) * 3);
         }
+
         nextEmptyIndex += VERTICES_PER_VECTOR_LINE;
       }
     }
