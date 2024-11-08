@@ -18,12 +18,12 @@ const VECTOR_OPTION_MOTION = {
   label: "Motion delta (auto-calculated)",
 };
 
-type VectorSettingsProps = {
+type VectorFieldSettingsProps = {
   config: ViewerConfig;
   updateConfig(settings: Partial<ViewerConfig>): void;
 };
 
-export default function VectorSettings(props: VectorSettingsProps): ReactElement {
+export default function VectorFieldSettings(props: VectorFieldSettingsProps): ReactElement {
   const updateVectorConfig = (config: Partial<VectorConfig>) => {
     props.updateConfig({ vectorConfig: { ...props.config.vectorConfig, ...config } });
   };
@@ -93,6 +93,11 @@ export default function VectorSettings(props: VectorSettingsProps): ReactElement
           </SettingsContainer>
         )}
       </SettingsItem>
+      {/* TODO: Make this a logarithmic scale from 0 to 100, since we don't know what
+       * the max value will be. Alternatively, make this an onscreen pixel radius,
+       * and normalize all vectors to that length?
+       * See examples in https://github.com/react-component/slider/issues/393.
+       */}
       <SettingsItem label={"Scale factor"}>
         <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
           <LabeledSlider

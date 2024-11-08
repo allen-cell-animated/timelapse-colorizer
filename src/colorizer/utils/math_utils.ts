@@ -1,5 +1,7 @@
 import { Vector2 } from "three";
 
+import Track from "../Track";
+
 /**
  * Formats a number as a string decimal with a defined number of digits
  * after the decimal place. Optionally ignores integers and returns them as-is.
@@ -163,62 +165,61 @@ export function getBuildDisplayDateString(): string {
   return getDisplayDateString(new Date(Number.parseInt(import.meta.env.VITE_BUILD_TIME_UTC, 10)));
 }
 
-export type TrackData = {
+type TrackData = {
   ids: number[];
   times: number[];
   centroids: number[];
 };
 
-export function makeDataOnlyTracks(
-  trackIds: Uint32Array,
-  times: Uint32Array,
-  centroids: Uint16Array
-): Map<number, TrackData> {
+/**
+ * Constructs an array of tracks from the given data.
+ */
+export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32Array, centroids: Uint16Array): Track[] {
   const trackIdToTrackData = new Map<number, TrackData>();
 
-  for (let i = 0; i < trackIds.length; i++) {
-    const trackId = trackIds[i];
+  for (let id = 0; id < trackIds.length; id++) {
+    const trackId = trackIds[id];
     let trackData = trackIdToTrackData.get(trackId);
     if (!trackData) {
       trackData = { ids: [], times: [], centroids: [] };
       trackIdToTrackData.set(trackId, trackData);
     }
-    trackData.ids.push(i);
-    trackData.times.push(times[i]);
-    trackData.centroids.push(centroids[i * 2], centroids[i * 2 + 1]);
+    trackData.ids.push(id);
+    trackData.times.push(times[id]);
+    trackData.centroids.push(centroids[id * 2], centroids[id * 2 + 1]);
   }
 
-  // Sort track data by time
-  for (const trackData of trackIdToTrackData.values()) {
-    const indices = [...trackData.times.keys()];
-    indices.sort((a, b) => trackData.times[a] - trackData.times[b]);
-    trackData.times = indices.map((i) => trackData.times[i]);
-    trackData.ids = indices.map((i) => trackData.ids[i]);
-    trackData.centroids = indices.reduce((result, i) => {
-      result.push(trackData.centroids[i * 2], trackData.centroids[i * 2 + 1]);
-      return result;
-    }, [] as number[]);
-  }
-  return trackIdToTrackData;
+  // Construct and return tracks. (Tracks will also automatically sort their data by time.)
+  const tracks = Array.from(
+    trackIdToTrackData.entries().map(([trackId, trackData]) => {
+      return new Track(trackId, trackData.times, trackData.ids, trackData.centroids, []);
+    })
+  );
+  return tracks;
 }
 
 /**
- * Returns a list of centroid deltas for each object ID in the track. Deltas are calculated
- * as the difference between the centroid at a timepoint and the centroid at the
- * previous timepoint. Up to `numTimesteps` deltas are returned for each object ID.
- * @param track
- * @param numTimesteps
- * @returns
+ * For each object ID in the track, returns a list of centroid deltas. Deltas are calculated
+ * as the difference between the centroid at a timepoint `t` and the centroid at `t-1`.
+ *
+ * Up to `numDeltas` deltas are returned for each object ID. Fewer deltas are returned if the
+ * track does not exist for all timepoints `t` to `t - numDeltas`.
+ *
+ * @param track track to calculate deltas for.
+ * @param numDeltas the maximum number of deltas to calculate for each object ID. Checks timepoints
+ * `t` to `t - numDeltas`.
+ * @returns an object where the keys are object IDs and the values are lists of centroid deltas
+ * for that object.
  */
-function getTrackMotionDeltas(track: TrackData, numTimesteps: number): { [key: number]: [number, number][] } {
+function getIdToMotionDeltas(track: Track, numDeltas: number): { [key: number]: [number, number][] } {
   const deltas: { [key: number]: [number, number][] } = {};
 
   for (let i = 0; i < track.ids.length; i++) {
     const objectId = track.ids[i];
-    const minTime = track.times[i] - numTimesteps;
+    const minTime = track.times[i] - numDeltas;
     deltas[objectId] = [];
 
-    for (let j = 0; j < numTimesteps; j++) {
+    for (let j = 0; j < numDeltas; j++) {
       // Note that `track.times` is only guaranteed to be ordered, not contiguous.
       // Check for adjacent, contiguous timepoints that are within the time range.
       const currentObjectTime = track.times[i - j];
@@ -242,7 +243,7 @@ function getTrackMotionDeltas(track: TrackData, numTimesteps: number): { [key: n
 
 /**
  * Calculates an array of motion deltas for each object in the dataset, averaged over the specified number of timesteps.
- * @param dataset The dataset to calculate motion deltas for.
+ * @param tracks .
  * @param numTimesteps The number of timepoints to average over.
  * @param timestepThreshold The minimum number of timepoints the object must have available centroid data for (our of the last
  * `numTimesteps` time points) to be included. For example, if `numTimesteps` is 3 and `timestepThreshold` is 2, the object must
@@ -251,11 +252,7 @@ function getTrackMotionDeltas(track: TrackData, numTimesteps: number): { [key: n
  * of its motion delta are stored at indices `2 * i` and `2 * i + 1`, respectively. If an object does not meet the
  * `timestepThreshold`, both values will be `NaN`.
  */
-export function calculateMotionDeltas(
-  tracks: TrackData[],
-  numTimesteps: number,
-  timestepThreshold: number
-): Float32Array {
+export function calculateMotionDeltas(tracks: Track[], numTimesteps: number, timestepThreshold: number): Float32Array {
   // Count total objects to allocate the motion deltas array
   let numObjects = 0;
   for (const track of tracks) {
@@ -264,7 +261,7 @@ export function calculateMotionDeltas(
   const motionDeltas = new Float32Array(numObjects * 2);
 
   for (const track of tracks) {
-    const objectIdToDeltas = getTrackMotionDeltas(track, numTimesteps);
+    const objectIdToDeltas = getIdToMotionDeltas(track, numTimesteps);
 
     for (const [stringObjectId, deltas] of Object.entries(objectIdToDeltas)) {
       const objectId = parseInt(stringObjectId, 10);

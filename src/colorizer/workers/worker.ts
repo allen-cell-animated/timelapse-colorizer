@@ -3,7 +3,7 @@ import Transfer from "workerpool/types/transfer";
 
 import { FeatureDataType, VectorConfig } from "../types";
 import { LoadedData, loadFromJsonUrl, loadFromParquetUrl } from "../utils/data_load_utils";
-import { calculateMotionDeltas, makeDataOnlyTracks } from "../utils/math_utils";
+import { calculateMotionDeltas, constructAllTracksFromData } from "../utils/math_utils";
 import { arrayToDataTextureInfo } from "../utils/texture_utils";
 
 async function loadUrlData(url: string, type: FeatureDataType): Promise<Transfer> {
@@ -31,8 +31,8 @@ async function getMotionDeltas(
   centroids: Uint16Array,
   config: VectorConfig
 ): Promise<Transfer> {
-  const tracks = makeDataOnlyTracks(trackIds, times, centroids);
-  const motionDeltas = calculateMotionDeltas(Array.from(tracks.values()), config.timesteps, config.timestepThreshold);
+  const tracks = constructAllTracksFromData(trackIds, times, centroids);
+  const motionDeltas = calculateMotionDeltas(tracks, config.timesteps, config.timestepThreshold);
   return new workerpool.Transfer(motionDeltas, [motionDeltas.buffer]);
 }
 

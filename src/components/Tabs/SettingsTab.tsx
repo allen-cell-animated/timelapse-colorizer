@@ -11,7 +11,7 @@ import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
-import VectorSettings from "./Settings/VectorSettings";
+import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
 const NO_BACKDROP = {
   key: "",
@@ -167,7 +167,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
 
       <CustomCollapse label="Vector arrows">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} labelFormatter={h3Wrapper}>
-          <VectorSettings config={props.config} updateConfig={props.updateConfig} />
+          <VectorFieldSettings config={props.config} updateConfig={props.updateConfig} />
         </SettingsContainer>
       </CustomCollapse>
       <div style={{ height: "100px" }}></div>
