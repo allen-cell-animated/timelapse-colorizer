@@ -25,7 +25,7 @@ import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT, VectorConfig } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
-import CanvasVectorRenderer from "./CanvasVectorRenderer";
+import VectorField from "./CanvasVectorRenderer";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
 import Track from "./Track";
@@ -147,7 +147,7 @@ export default class ColorizeCanvas {
   private points: Float32Array;
   protected canvasResolution: Vector2 | null;
 
-  protected vectorRenderer: CanvasVectorRenderer;
+  protected vectorRenderer: VectorField;
 
   protected featureKey: string | null;
   protected selectedBackdropKey: string | null;
@@ -185,7 +185,7 @@ export default class ColorizeCanvas {
     this.scene.add(this.mesh);
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
-    this.vectorRenderer = new CanvasVectorRenderer(this.scene);
+    this.vectorRenderer = new VectorField(this.scene);
 
     // Configure lines
     this.points = new Float32Array([0, 0, 0]);
@@ -394,7 +394,7 @@ export default class ColorizeCanvas {
   }
 
   setMotionVectors(motionVectors: Float32Array): void {
-    this.vectorRenderer.setMotionDeltas(motionVectors);
+    this.vectorRenderer.setVectorData(motionVectors);
   }
 
   setVectorFieldConfig(config: VectorConfig): void {

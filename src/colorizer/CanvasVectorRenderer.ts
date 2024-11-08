@@ -10,22 +10,44 @@ const ANGLE_TO_RADIANS = Math.PI / 180;
 
 const arrowStyle = {
   headAngleRads: 30 * ANGLE_TO_RADIANS,
-  maxHeadLengthPx: 8,
+  maxHeadLengthPx: 10,
 };
 
 type ArrayVector = [number, number, number];
 
-export default class CanvasVectorRenderer {
+/**
+ * Renders vector arrows as Three JS lines in scene provided at construction.
+ */
+export default class VectorField {
+  /**
+   * The Three JS line object that will be rendered in the scene.
+   *
+   * Vertices of the vector lines for ALL objects across ALL timepoints are pre-calculated and
+   * stored in a geometry buffer, grouped by frame number.
+   * By changing the slice of the geometry buffer we are rendering with (see `timeToVertexIndexRange`),
+   * we can render only the vectors for a specific frame (O(1)). This is a big optimization because we don't
+   * need to re-calculate the vertices every frame or check what vectors are visible (O(N)).
+   */
+  private line: Line;
+
+  // Stored parameters
   private dataset: Dataset | null;
   private scene: Scene;
-  // Recycles line objects to avoid creating new ones every frame.
-  private line: Line;
   private lineConfig: VectorConfig;
-  private motionDeltas: Float32Array;
-  private timeToVertexIndexRange: Map<number, [number, number]>;
   private currentFrame: number;
   private canvasResolution: Vector2;
   private frameToCanvasCoordinates: Vector2;
+
+  // Calculated data
+  /**
+   * Vector data for each object in the dataset, as an array.
+   * For each object ID `i`, the vector components are `(motionDeltas[2*i], motionDeltas[2*i+1])`.
+   */
+  private idToVectorData: Float32Array;
+  /** Maps from a frame number to the range of vertices
+   * that should be drawn for that frame.
+   */
+  private timeToVertexIndexRange: Map<number, [number, number]>;
 
   constructor(scene: Scene) {
     this.dataset = null;
@@ -45,7 +67,7 @@ export default class CanvasVectorRenderer {
     this.line.frustumCulled = false;
     this.timeToVertexIndexRange = new Map();
 
-    this.motionDeltas = new Float32Array();
+    this.idToVectorData = new Float32Array();
 
     this.scene.add(this.line);
   }
@@ -76,21 +98,28 @@ export default class CanvasVectorRenderer {
     return -(y / this.dataset.frameResolution.y) * 2.0 + 1.0;
   }
 
-  private normFrameCoordsToRelCanvasCoords(vector: ArrayVector): ArrayVector {
+  private normPixelToRelativeFrameCoords(vector: ArrayVector): ArrayVector {
     return [this.normalizeX(vector[0]), this.normalizeY(vector[1]), vector[2]];
   }
 
-  private normRelCanvasCoordsToScreenSpaceCoords(vector: ArrayVector): ArrayVector {
-    return [vector[0] * this.canvasResolution.x, vector[1] * this.canvasResolution.y, vector[2]];
+  private normRelFrameCoordsToScreenSpacePx(vector: ArrayVector): ArrayVector {
+    return [
+      vector[0] * this.frameToCanvasCoordinates.x * this.canvasResolution.x,
+      vector[1] * this.frameToCanvasCoordinates.y * this.canvasResolution.y,
+      vector[2],
+    ];
   }
 
+  /**
+   * Calculates the vertices for the vector lines for ALL objects in the dataset.
+   * @returns
+   */
   public updateLineVertices() {
     if (!this.dataset) {
       this.timeToVertexIndexRange.clear();
       this.line.geometry.setDrawRange(0, 0);
       return;
     }
-    console.time("updateLineVertices");
 
     // Sort object IDs into buckets by time. Drop any IDs whose deltas are invalid (NaN).
     const timeToIds = new Map<number, number[]>();
@@ -100,7 +129,7 @@ export default class CanvasVectorRenderer {
       if (!timeToIds.has(time)) {
         timeToIds.set(time, []);
       }
-      if (Number.isNaN(this.motionDeltas[i * 2]) || Number.isNaN(this.motionDeltas[i * 2 + 1])) {
+      if (Number.isNaN(this.idToVectorData[i * 2]) || Number.isNaN(this.idToVectorData[i * 2 + 1])) {
         continue;
       }
       timeToIds.get(time)!.push(i);
@@ -117,25 +146,29 @@ export default class CanvasVectorRenderer {
 
       for (const id of ids) {
         const centroid = this.dataset.getCentroid(id);
-        const delta = [this.motionDeltas[id * 2], this.motionDeltas[id * 2 + 1]];
+        const delta = [this.idToVectorData[id * 2], this.idToVectorData[id * 2 + 1]];
         if (centroid) {
           // Origin
+          // TODO: Make these all vectors
+          // TODO: Perform scaling as a step in the vertex shader.
           const vectorStart: ArrayVector = [centroid[0], centroid[1], 0];
           const vectorEnd: ArrayVector = [
             centroid[0] + delta[0] * this.lineConfig.scaleFactor,
             centroid[1] + delta[1] * this.lineConfig.scaleFactor,
             0,
           ];
-          const normVectorEnd = this.normFrameCoordsToRelCanvasCoords(vectorEnd);
-          const normVectorStart = this.normFrameCoordsToRelCanvasCoords(vectorStart);
+          const normVectorEnd = this.normPixelToRelativeFrameCoords(vectorEnd);
+          const normVectorStart = this.normPixelToRelativeFrameCoords(vectorStart);
           vertices.set(normVectorStart, nextEmptyIndex * 3);
           vertices.set(normVectorEnd, (nextEmptyIndex + 1) * 3);
 
+          // Draw the arrow heads. These are two line segments for each, so there's a total of four additional vertices we need to add.
+          // There's a bunch of extra work being done here to keep the arrow head length constant with zoom, but it also
+          // means that currently this is recalculated EVERY time the zoom changes.
+          // TODO: All of this could be done in a vertex shader
           // Vertices for the two arrow heads
-          // TODO: this should actually operate after vector normalization, since the
-          // arrow head length is in terms of screen space coords.
-          const screenSpaceStartPx = this.normRelCanvasCoordsToScreenSpaceCoords(normVectorStart);
-          const screenSpaceEndPx = this.normRelCanvasCoordsToScreenSpaceCoords(normVectorEnd);
+          const screenSpaceStartPx = this.normRelFrameCoordsToScreenSpacePx(normVectorStart);
+          const screenSpaceEndPx = this.normRelFrameCoordsToScreenSpacePx(normVectorEnd);
           const screenSpaceDeltaPx = [
             screenSpaceEndPx[0] - screenSpaceStartPx[0],
             screenSpaceEndPx[1] - screenSpaceStartPx[1],
@@ -144,37 +177,35 @@ export default class CanvasVectorRenderer {
             screenSpaceDeltaPx[0] * screenSpaceDeltaPx[0] + screenSpaceDeltaPx[1] * screenSpaceDeltaPx[1]
           );
 
-          const vectorAngle = Math.atan2(delta[1], delta[0]) + Math.PI;
+          const vectorAngle = Math.atan2(screenSpaceDeltaPx[1], screenSpaceDeltaPx[0]) + Math.PI;
           const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
           const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
+
           // Keep arrow head length constant relative to onscreen pixels
-          // const arrowHeadLength =
           const arrowHead1: ArrayVector = [Math.cos(arrowAngle1), Math.sin(arrowAngle1), 0];
           const arrowHead2: ArrayVector = [Math.cos(arrowAngle2), Math.sin(arrowAngle2), 0];
 
           // Scale to keep arrow head length constant.
           const lengthPx = Math.min(arrowStyle.maxHeadLengthPx, vectorLengthPx);
+          if (id === 10000) {
+            console.log("Delta: " + screenSpaceDeltaPx);
+            console.log("Length: " + vectorLengthPx);
+          }
+          // Arrow heads are in screen space pixel coordinates, so we divide by canvas resolution to get relative canvas coordinates,
+          // and then divide again by frameToCanvasCoordinates to get relative frame coordinates.
           arrowHead1[0] =
-            ((arrowHead1[0] / this.frameToCanvasCoordinates.x) * this.canvasResolution.x * lengthPx) /
-              this.canvasResolution.x +
-            vectorEnd[0];
+            (arrowHead1[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
           arrowHead1[1] =
-            ((arrowHead1[1] / this.frameToCanvasCoordinates.y) * this.canvasResolution.y * lengthPx) /
-              this.canvasResolution.y +
-            vectorEnd[1];
+            (arrowHead1[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
           arrowHead2[0] =
-            ((arrowHead2[0] / this.frameToCanvasCoordinates.x) * this.canvasResolution.x * lengthPx) /
-              this.canvasResolution.x +
-            vectorEnd[0];
+            (arrowHead2[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
           arrowHead2[1] =
-            ((arrowHead2[1] / this.frameToCanvasCoordinates.y) * this.canvasResolution.y * lengthPx) /
-              this.canvasResolution.y +
-            vectorEnd[1];
+            (arrowHead2[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
 
           vertices.set(normVectorEnd, (nextEmptyIndex + 2) * 3);
-          vertices.set(this.normFrameCoordsToRelCanvasCoords(arrowHead1), (nextEmptyIndex + 3) * 3);
+          vertices.set(arrowHead1, (nextEmptyIndex + 3) * 3);
           vertices.set(normVectorEnd, (nextEmptyIndex + 4) * 3);
-          vertices.set(this.normFrameCoordsToRelCanvasCoords(arrowHead2), (nextEmptyIndex + 5) * 3);
+          vertices.set(arrowHead2, (nextEmptyIndex + 5) * 3);
         }
 
         nextEmptyIndex += VERTICES_PER_VECTOR_LINE;
@@ -182,16 +213,12 @@ export default class CanvasVectorRenderer {
     }
 
     // Update line buffer geometry
-    console.log("Line has " + numVertices + " vertices.");
-    const lineGeometry = this.line.geometry as BufferGeometry;
+    const lineGeometry = this.line.geometry;
     lineGeometry.setAttribute("position", new BufferAttribute(vertices, 3));
-    // lineGeometry.setAttribute("position", new BufferAttribute(new Float32Array([0, 0, 0, 0.5, 0.5, 0]), 3));
-    // lineGeometry.setDrawRange(0, 2);
     lineGeometry.getAttribute("position").needsUpdate = true;
 
-    // Update frame range
+    // Update draw range to render the current frame.
     this.setFrame(this.currentFrame);
-    console.timeEnd("updateLineVertices");
   }
 
   public setDataset(dataset: Dataset) {
@@ -232,9 +259,9 @@ export default class CanvasVectorRenderer {
     this.updateLineVertices();
   }
 
-  public setMotionDeltas(motionDeltas: Float32Array) {
-    if (this.motionDeltas !== motionDeltas) {
-      this.motionDeltas = motionDeltas;
+  public setVectorData(motionDeltas: Float32Array) {
+    if (this.idToVectorData !== motionDeltas) {
+      this.idToVectorData = motionDeltas;
       this.updateLineVertices();
     }
   }
