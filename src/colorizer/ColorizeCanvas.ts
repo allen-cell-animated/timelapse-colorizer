@@ -329,7 +329,7 @@ export default class ColorizeCanvas {
     );
     this.vectorRenderer.setFrame(this.currentFrame);
     this.vectorRenderer.setPosition(this.panOffset, this.frameToCanvasCoordinates);
-    this.vectorRenderer.setScale(this.frameToCanvasCoordinates);
+    this.vectorRenderer.setScale(this.frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {

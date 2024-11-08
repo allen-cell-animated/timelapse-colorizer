@@ -10,8 +10,10 @@ const ANGLE_TO_RADIANS = Math.PI / 180;
 
 const arrowStyle = {
   headAngleRads: 30 * ANGLE_TO_RADIANS,
-  maxHeadLengthPx: 5,
+  maxHeadLengthPx: 8,
 };
+
+type ArrayVector = [number, number, number];
 
 export default class CanvasVectorRenderer {
   private dataset: Dataset | null;
@@ -22,12 +24,16 @@ export default class CanvasVectorRenderer {
   private motionDeltas: Float32Array;
   private timeToVertexIndexRange: Map<number, [number, number]>;
   private currentFrame: number;
+  private canvasResolution: Vector2;
+  private frameToCanvasCoordinates: Vector2;
 
   constructor(scene: Scene) {
     this.dataset = null;
     this.scene = scene;
     this.lineConfig = getDefaultVectorConfig();
     this.currentFrame = 0;
+    this.canvasResolution = new Vector2();
+    this.frameToCanvasCoordinates = new Vector2();
 
     const lineGeometry = new BufferGeometry();
     // TODO: handle arrow length + arrow head size in the vertex shader
@@ -70,8 +76,12 @@ export default class CanvasVectorRenderer {
     return -(y / this.dataset.frameResolution.y) * 2.0 + 1.0;
   }
 
-  private normalizeVector(vector: [number, number, number]): [number, number, number] {
+  private normFrameCoordsToRelCanvasCoords(vector: ArrayVector): ArrayVector {
     return [this.normalizeX(vector[0]), this.normalizeY(vector[1]), vector[2]];
+  }
+
+  private normRelCanvasCoordsToScreenSpaceCoords(vector: ArrayVector): ArrayVector {
+    return [vector[0] * this.canvasResolution.x, vector[1] * this.canvasResolution.y, vector[2]];
   }
 
   public updateLineVertices() {
@@ -110,36 +120,61 @@ export default class CanvasVectorRenderer {
         const delta = [this.motionDeltas[id * 2], this.motionDeltas[id * 2 + 1]];
         if (centroid) {
           // Origin
-          const startX = centroid[0];
-          const startY = centroid[1];
-          const endX = centroid[0] + delta[0] * this.lineConfig.scaleFactor;
-          const endY = centroid[1] + delta[1] * this.lineConfig.scaleFactor;
-
-          vertices.set(this.normalizeVector([startX, startY, 0]), nextEmptyIndex * 3);
-          vertices.set(this.normalizeVector([endX, endY, 0]), (nextEmptyIndex + 1) * 3);
+          const vectorStart: ArrayVector = [centroid[0], centroid[1], 0];
+          const vectorEnd: ArrayVector = [
+            centroid[0] + delta[0] * this.lineConfig.scaleFactor,
+            centroid[1] + delta[1] * this.lineConfig.scaleFactor,
+            0,
+          ];
+          const normVectorEnd = this.normFrameCoordsToRelCanvasCoords(vectorEnd);
+          const normVectorStart = this.normFrameCoordsToRelCanvasCoords(vectorStart);
+          vertices.set(normVectorStart, nextEmptyIndex * 3);
+          vertices.set(normVectorEnd, (nextEmptyIndex + 1) * 3);
 
           // Vertices for the two arrow heads
           // TODO: this should actually operate after vector normalization, since the
           // arrow head length is in terms of screen space coords.
+          const screenSpaceStartPx = this.normRelCanvasCoordsToScreenSpaceCoords(normVectorStart);
+          const screenSpaceEndPx = this.normRelCanvasCoordsToScreenSpaceCoords(normVectorEnd);
+          const screenSpaceDeltaPx = [
+            screenSpaceEndPx[0] - screenSpaceStartPx[0],
+            screenSpaceEndPx[1] - screenSpaceStartPx[1],
+          ];
+          const vectorLengthPx = Math.sqrt(
+            screenSpaceDeltaPx[0] * screenSpaceDeltaPx[0] + screenSpaceDeltaPx[1] * screenSpaceDeltaPx[1]
+          );
+
           const vectorAngle = Math.atan2(delta[1], delta[0]) + Math.PI;
-          const vectorLength = Math.sqrt(delta[0] ** 2 + delta[1] ** 2);
           const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
           const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
-          const arrowHeadLength = Math.min(arrowStyle.maxHeadLengthPx, vectorLength);
-          const arrowHead1: [number, number, number] = [
-            endX + arrowHeadLength * Math.cos(arrowAngle1),
-            endY + arrowHeadLength * Math.sin(arrowAngle1),
-            0,
-          ];
-          const arrowHead2: [number, number, number] = [
-            endX + arrowHeadLength * Math.cos(arrowAngle2),
-            endY + arrowHeadLength * Math.sin(arrowAngle2),
-            0,
-          ];
-          vertices.set(this.normalizeVector([endX, endY, 0]), (nextEmptyIndex + 2) * 3);
-          vertices.set(this.normalizeVector(arrowHead1), (nextEmptyIndex + 3) * 3);
-          vertices.set(this.normalizeVector([endX, endY, 0]), (nextEmptyIndex + 4) * 3);
-          vertices.set(this.normalizeVector(arrowHead2), (nextEmptyIndex + 5) * 3);
+          // Keep arrow head length constant relative to onscreen pixels
+          // const arrowHeadLength =
+          const arrowHead1: ArrayVector = [Math.cos(arrowAngle1), Math.sin(arrowAngle1), 0];
+          const arrowHead2: ArrayVector = [Math.cos(arrowAngle2), Math.sin(arrowAngle2), 0];
+
+          // Scale to keep arrow head length constant.
+          const lengthPx = Math.min(arrowStyle.maxHeadLengthPx, vectorLengthPx);
+          arrowHead1[0] =
+            ((arrowHead1[0] / this.frameToCanvasCoordinates.x) * this.canvasResolution.x * lengthPx) /
+              this.canvasResolution.x +
+            vectorEnd[0];
+          arrowHead1[1] =
+            ((arrowHead1[1] / this.frameToCanvasCoordinates.y) * this.canvasResolution.y * lengthPx) /
+              this.canvasResolution.y +
+            vectorEnd[1];
+          arrowHead2[0] =
+            ((arrowHead2[0] / this.frameToCanvasCoordinates.x) * this.canvasResolution.x * lengthPx) /
+              this.canvasResolution.x +
+            vectorEnd[0];
+          arrowHead2[1] =
+            ((arrowHead2[1] / this.frameToCanvasCoordinates.y) * this.canvasResolution.y * lengthPx) /
+              this.canvasResolution.y +
+            vectorEnd[1];
+
+          vertices.set(normVectorEnd, (nextEmptyIndex + 2) * 3);
+          vertices.set(this.normFrameCoordsToRelCanvasCoords(arrowHead1), (nextEmptyIndex + 3) * 3);
+          vertices.set(normVectorEnd, (nextEmptyIndex + 4) * 3);
+          vertices.set(this.normFrameCoordsToRelCanvasCoords(arrowHead2), (nextEmptyIndex + 5) * 3);
         }
 
         nextEmptyIndex += VERTICES_PER_VECTOR_LINE;
@@ -166,8 +201,18 @@ export default class CanvasVectorRenderer {
     }
   }
 
-  public setScale(frameToCanvasCoordinates: Vector2) {
+  public setScale(frameToCanvasCoordinates: Vector2, canvasResolution: Vector2) {
+    if (
+      this.canvasResolution.equals(canvasResolution) &&
+      this.frameToCanvasCoordinates.equals(frameToCanvasCoordinates)
+    ) {
+      return;
+    }
+
+    this.canvasResolution.copy(canvasResolution);
+    this.frameToCanvasCoordinates.copy(frameToCanvasCoordinates);
     this.line.scale.set(frameToCanvasCoordinates.x, frameToCanvasCoordinates.y, 1);
+    this.updateLineVertices();
   }
 
   public setPosition(panOffset: Vector2, frameToCanvasCoordinates: Vector2) {

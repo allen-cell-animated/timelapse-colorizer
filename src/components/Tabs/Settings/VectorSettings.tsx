@@ -98,7 +98,7 @@ export default function VectorSettings(props: VectorSettingsProps): ReactElement
           <LabeledSlider
             type="value"
             minSliderBound={0}
-            maxSliderBound={10}
+            maxSliderBound={50}
             minInputBound={0}
             maxInputBound={100}
             value={props.config.vectorConfig.scaleFactor}
