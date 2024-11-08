@@ -4,7 +4,6 @@ import { getDefaultVectorConfig, VectorConfig, VectorViewMode } from "./types";
 
 import Dataset from "./Dataset";
 
-// TODO: eventually increase this to 6 when adding arrow heads.
 const VERTICES_PER_VECTOR_LINE = 6;
 const ANGLE_TO_RADIANS = Math.PI / 180;
 
@@ -47,7 +46,7 @@ export default class VectorField {
    * Vector data for each object in the dataset, as an array.
    * For each object ID `i`, the vector components are `(motionDeltas[2*i], motionDeltas[2*i+1])`.
    */
-  private idToVectorData: Float32Array;
+  private vectorData: Float32Array | null;
 
   // Calculated data
   /** Maps from a frame number to the range of vertices that should be drawn for that frame. */
@@ -59,7 +58,7 @@ export default class VectorField {
     this.currentFrame = 0;
     this.canvasResolution = new Vector2();
     this.frameToCanvasCoordinates = new Vector2();
-    this.idToVectorData = new Float32Array();
+    this.vectorData = new Float32Array();
 
     const lineGeometry = new BufferGeometry();
     const lineMaterial = new LineBasicMaterial({
@@ -107,11 +106,11 @@ export default class VectorField {
   }
 
   /**
-   * Calculates the vertices for the vector lines for ALL objects in the dataset.
-   * @returns
+   * Calculates the vertices for the vector lines for ALL objects in the dataset,
+   * across all timesteps.
    */
-  public updateLineVertices() {
-    if (!this.dataset) {
+  public updateLineVertices(): void {
+    if (!this.dataset || !this.vectorData) {
       this.timeToVertexIndexRange.clear();
       this.line.geometry.setDrawRange(0, 0);
       return;
@@ -125,7 +124,7 @@ export default class VectorField {
       if (!timeToIds.has(time)) {
         timeToIds.set(time, []);
       }
-      if (Number.isNaN(this.idToVectorData[i * 2]) || Number.isNaN(this.idToVectorData[i * 2 + 1])) {
+      if (Number.isNaN(this.vectorData[i * 2]) || Number.isNaN(this.vectorData[i * 2 + 1])) {
         continue;
       }
       timeToIds.get(time)!.push(i);
@@ -142,7 +141,7 @@ export default class VectorField {
 
       for (const id of ids) {
         const centroid = this.dataset.getCentroid(id);
-        const delta = [this.idToVectorData[id * 2], this.idToVectorData[id * 2 + 1]];
+        const delta = [this.vectorData[id * 2], this.vectorData[id * 2 + 1]];
         if (centroid) {
           // Draw the main vector line segment from centroid to centroid + delta.
           // TODO: Make these all vectors
@@ -255,9 +254,9 @@ export default class VectorField {
     this.updateLineVertices();
   }
 
-  public setVectorData(vectorData: Float32Array): void {
-    if (this.idToVectorData !== vectorData) {
-      this.idToVectorData = vectorData;
+  public setVectorData(vectorData: Float32Array | null): void {
+    if (this.vectorData !== vectorData) {
+      this.vectorData = vectorData;
       this.updateLineVertices();
     }
   }

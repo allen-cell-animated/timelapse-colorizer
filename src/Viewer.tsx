@@ -108,6 +108,7 @@ function Viewer(): ReactElement {
     getDefaultScatterPlotConfig()
   );
 
+  // TODO: make this into a hook
   const [motionDeltas, setMotionDeltas] = useState<Float32Array | null>(null);
   const debouncedVectorConfig = useDebounce(config.vectorConfig, 100);
   const pendingVectorConfig = useRef<null | VectorConfig>(null);
@@ -1038,7 +1039,7 @@ function Viewer(): ReactElement {
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   collection={collection || null}
-                  motionVectors={motionDeltas}
+                  vectorData={motionDeltas}
                   dataset={dataset}
                   datasetKey={datasetKey}
                   featureKey={featureKey}

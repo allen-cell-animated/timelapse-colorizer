@@ -17,10 +17,8 @@ import {
   ScaleBarStyle,
   TimestampStyle,
 } from "./canvas/elements";
-import { getVectorFieldRenderer, VectorFieldParams } from "./canvas/elements/vectorField";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
-import { getDefaultVectorConfig, VectorConfig } from "./types";
 
 import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
@@ -37,16 +35,12 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private collection: Collection | null;
   private datasetKey: string | null;
 
-  private motionVectors: Float32Array | null;
-
   private scaleBarStyle: ScaleBarStyle;
   private timestampStyle: TimestampStyle;
   private insetBoxStyle: InsetBoxStyle;
   private legendStyle: LegendStyle;
   private headerStyle: HeaderStyle;
   private footerStyle: FooterStyle;
-
-  private vectorFieldConfig: VectorConfig;
 
   /** Size of the inner colorized canvas, in pixels. */
   private canvasSize: Vector2;
@@ -89,8 +83,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.canvasSize = new Vector2(1, 1);
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
-    this.motionVectors = null;
-    this.vectorFieldConfig = getDefaultVectorConfig();
 
     this.isExporting = false;
     this.isHeaderVisibleOnExport = true;
@@ -163,18 +155,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.datasetKey = datasetKey;
   }
 
-  setVectorFieldConfig(config: VectorConfig): void {
-    super.setVectorFieldConfig(config);
-    this.vectorFieldConfig = config;
-  }
-
-  setMotionVectors(vectors: Float32Array | null): void {
-    if (vectors !== null) {
-      super.setMotionVectors(vectors);
-    }
-    this.motionVectors = vectors;
-  }
-
   // Rendering functions ////////////////////////////
 
   private getBaseRendererParams(): BaseRenderParams {
@@ -221,22 +201,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     return getFooterRenderer(this.ctx, params, this.footerStyle);
   }
 
-  private getVectorFieldRenderer(): RenderInfo {
-    const params: VectorFieldParams = {
-      ...this.getBaseRendererParams(),
-      config: this.vectorFieldConfig,
-      vectors: this.motionVectors, // TODO:
-      viewportSizePx: this.canvasSize,
-      currentFrame: this.getCurrentFrame(),
-      zoomMultiplier: this.zoomMultiplier,
-      panOffset: this.panOffset,
-      frameToCanvasCoordinates: this.frameToCanvasCoordinates,
-      visible: false,
-      // visible: this.vectorFieldConfig.mode !== VectorViewMode.HIDE,
-    };
-    return getVectorFieldRenderer(this.ctx, params);
-  }
-
   /**
    * Render the viewport canvas with overlay elements composited on top of it.
    */
@@ -261,9 +225,6 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.ctx.drawImage(super.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
-
-    // Draw the vector field
-    this.getVectorFieldRenderer().render(new Vector2(0, this.headerSize.y));
 
     headerRenderer.render(new Vector2(0, 0));
     footerRenderer.render(new Vector2(0, this.canvasSize.y + this.headerSize.y));

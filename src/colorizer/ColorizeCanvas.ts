@@ -25,10 +25,10 @@ import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT, VectorConfig } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
-import VectorField from "./CanvasVectorRenderer";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
 import Track from "./Track";
+import VectorField from "./VectorField";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
@@ -394,8 +394,8 @@ export default class ColorizeCanvas {
     }
   }
 
-  setMotionVectors(motionVectors: Float32Array): void {
-    this.vectorField.setVectorData(motionVectors);
+  setVectorData(vectorData: Float32Array | null): void {
+    this.vectorField.setVectorData(vectorData);
   }
 
   setVectorFieldConfig(config: VectorConfig): void {

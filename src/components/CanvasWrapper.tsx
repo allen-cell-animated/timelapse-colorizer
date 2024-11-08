@@ -84,7 +84,7 @@ type CanvasWrapperProps = {
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
-  motionVectors: Float32Array | null;
+  vectorData: Float32Array | null;
 
   loading: boolean;
   loadingProgress: number | null;
@@ -288,8 +288,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.vectorConfig]);
 
   useMemo(() => {
-    canv.setMotionVectors(props.motionVectors);
-  }, [props.motionVectors]);
+    canv.setVectorData(props.vectorData);
+  }, [props.vectorData]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
