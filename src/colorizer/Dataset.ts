@@ -80,8 +80,6 @@ export default class Dataset {
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
 
-  private timeToIds: Map<number, number[]> = new Map();
-
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
 

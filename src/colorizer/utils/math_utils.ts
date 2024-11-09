@@ -199,60 +199,48 @@ export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32A
 }
 
 /**
- * For each object ID in the track, returns a list of centroid deltas. Deltas are calculated
- * as the difference between the centroid at a timepoint `t` and the centroid at `t-1`.
- *
- * Up to `numDeltas` deltas are returned for each object ID. Fewer deltas are returned if the
- * track does not exist for all timepoints `t` to `t - numDeltas`.
- *
- * @param track track to calculate deltas for.
- * @param numDeltas the maximum number of deltas to calculate for each object ID. Checks timepoints
- * `t` to `t - numDeltas`.
- * @returns an object where the keys are object IDs and the values are lists of centroid deltas
- * for that object.
+ * Returns a lookup from all timepoints `t` in the track to the centroid delta `t` and
+ * `t-1`. If the track does not exist at timepoint `t-1`, the delta is undefined.
  */
-function getIdToMotionDeltas(track: Track, numDeltas: number): { [key: number]: [number, number][] } {
-  const deltas: { [key: number]: [number, number][] } = {};
+function timeToMotionDelta(track: Track): { [key: number]: [number, number] | undefined } {
+  const deltas: { [key: number]: [number, number] | undefined } = {};
 
   for (let i = 0; i < track.ids.length; i++) {
-    const objectId = track.ids[i];
-    const minTime = track.times[i] - numDeltas;
-    deltas[objectId] = [];
-
-    for (let j = 0; j < numDeltas; j++) {
-      // Note that `track.times` is only guaranteed to be ordered, not contiguous.
-      // Check for adjacent, contiguous timepoints that are within the time range.
-      const currentObjectTime = track.times[i - j];
-      const previousObjectTime = track.times[i - j - 1];
-
-      if (currentObjectTime - 1 !== previousObjectTime) {
-        continue;
-      } else if (previousObjectTime < minTime) {
-        break;
-      }
-
-      const currentCentroidX = track.centroids[(i - j) * 2];
-      const currentCentroidY = track.centroids[(i - j) * 2 + 1];
-      const prevCentroidX = track.centroids[(i - j - 1) * 2];
-      const prevCentroidY = track.centroids[(i - j - 1) * 2 + 1];
-      deltas[objectId].push([currentCentroidX - prevCentroidX, currentCentroidY - prevCentroidY]);
+    const time = track.times[i];
+    const prevTime = track.times[i - 1];
+    if (i === 0 || prevTime !== time - 1) {
+      deltas[time] = undefined;
     }
+
+    const currentCentroidX = track.centroids[i * 2];
+    const currentCentroidY = track.centroids[i * 2 + 1];
+    const prevCentroidX = track.centroids[(i - 1) * 2];
+    const prevCentroidY = track.centroids[(i - 1) * 2 + 1];
+    deltas[time] = [currentCentroidX - prevCentroidX, currentCentroidY - prevCentroidY];
   }
+
   return deltas;
 }
 
 /**
  * Calculates an array of motion deltas for each object in the dataset, averaged over the specified number of timesteps.
- * @param tracks .
- * @param numTimesteps The number of timepoints to average over.
- * @param timestepThreshold The minimum number of timepoints the object must have available centroid data for (our of the last
- * `numTimesteps` time points) to be included. For example, if `numTimesteps` is 3 and `timestepThreshold` is 2, the object must
- * exist for at least 2 of the last 3 timepoints to be included in the output.
+ * @param tracks An array of all tracks in the dataset to calculate motion deltas for.
+ * @param numTimesteps The number of timesteps to average over. For an object at time `t`, the motion delta will be calculated
+ * over time `t` to `t - numTimesteps`.
+ * @param timestepThreshold The minimum number of timesteps the object must have centroid data for (over the span from time `t`
+ * to `t - numTimesteps`). Objects that do not meet this threshold will the motion deltas set to `NaN`.
  * @returns an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
- * of its motion delta are stored at indices `2 * i` and `2 * i + 1`, respectively. If an object does not meet the
- * `timestepThreshold`, both values will be `NaN`.
+ * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not meet the
+ * the timestep threshold, both values will be `NaN`.
  */
 export function calculateMotionDeltas(tracks: Track[], numTimesteps: number, timestepThreshold: number): Float32Array {
+  numTimesteps = Math.max(numTimesteps, 0);
+  timestepThreshold = Math.max(timestepThreshold, 0);
+
+  if (numTimesteps < 1 || numTimesteps < timestepThreshold) {
+    return new Float32Array();
+  }
+
   // Count total objects to allocate the motion deltas array
   let numObjects = 0;
   for (const track of tracks) {
@@ -261,13 +249,23 @@ export function calculateMotionDeltas(tracks: Track[], numTimesteps: number, tim
   const motionDeltas = new Float32Array(numObjects * 2);
 
   for (const track of tracks) {
-    const objectIdToDeltas = getIdToMotionDeltas(track, numTimesteps);
+    const timeToDelta = timeToMotionDelta(track);
 
-    for (const [stringObjectId, deltas] of Object.entries(objectIdToDeltas)) {
-      const objectId = parseInt(stringObjectId, 10);
+    for (let i = 0; i < track.ids.length; i++) {
+      const objectId = track.ids[i];
+      const timestamp = track.times[i];
 
-      // Check that the object has enough deltas to meet the threshold; if so
-      // average and store the delta.
+      // Get all valid deltas for timepoints `t` to `t - numTimesteps`.
+      const deltas: [number, number][] = [];
+      for (let j = 0; j < numTimesteps; j++) {
+        const delta = timeToDelta[timestamp - j];
+        if (delta) {
+          deltas.push(delta);
+        }
+      }
+
+      // Check that the object has enough valid deltas to meet the threshold;
+      // if so average and store the delta.
       if (deltas.length >= timestepThreshold) {
         const averagedDelta: [number, number] = deltas.reduce(
           (acc, delta) => [acc[0] + delta[0] / deltas.length, acc[1] + delta[1] / deltas.length],
