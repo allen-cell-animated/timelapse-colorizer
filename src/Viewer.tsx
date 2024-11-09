@@ -27,13 +27,12 @@ import {
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
-  VectorConfig,
   ViewerConfig,
 } from "./colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
-import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
+import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
@@ -108,26 +107,7 @@ function Viewer(): ReactElement {
     getDefaultScatterPlotConfig()
   );
 
-  // TODO: make this into a hook
-  const [motionDeltas, setMotionDeltas] = useState<Float32Array | null>(null);
-  const debouncedVectorConfig = useDebounce(config.vectorConfig, 100);
-  const pendingVectorConfig = useRef<null | VectorConfig>(null);
-  useEffect(() => {
-    if (dataset === null) {
-      setMotionDeltas(null);
-      return;
-    }
-    const updateMotionDeltas = async (vectorConfig: VectorConfig): Promise<void> => {
-      pendingVectorConfig.current = config.vectorConfig;
-      const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorConfig);
-      // If this is still the most recent request
-      if (vectorConfig === pendingVectorConfig.current) {
-        motionDeltas && setMotionDeltas(motionDeltas);
-        pendingVectorConfig.current = null;
-      }
-    };
-    updateMotionDeltas(config.vectorConfig);
-  }, [debouncedVectorConfig.timesteps, debouncedVectorConfig.timestepThreshold, dataset]);
+  const motionDeltas = useMotionDeltas(dataset, workerPool, config.vectorConfig);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);

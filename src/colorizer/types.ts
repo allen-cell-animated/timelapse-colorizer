@@ -133,22 +133,20 @@ export type DrawSettings = {
   color: Color;
 };
 
-export enum VectorViewMode {
-  ALL = "all",
-  TRACK_ONLY = "track_only",
-  HIDE = "hide",
-}
-
 export type VectorConfig = {
-  mode: VectorViewMode;
+  visible: boolean;
+  key: string;
   timesteps: number;
   timestepThreshold: number;
   color: Color;
   scaleFactor: number;
 };
 
+export const VECTOR_KEY_MOTION = "_motion_";
+
 export const getDefaultVectorConfig = (): VectorConfig => ({
-  mode: VectorViewMode.ALL,
+  visible: false,
+  key: VECTOR_KEY_MOTION,
   timesteps: 5,
   timestepThreshold: 3,
   color: new Color(0x000000),

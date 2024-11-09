@@ -2,6 +2,11 @@ import React, { EventHandler, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
+import { VectorConfig } from "../types";
+
+import Dataset from "../Dataset";
+import SharedWorkerPool from "../workers/SharedWorkerPool";
+
 /**
  * Delays changes to a value until no changes have occurred for the
  * set delay period, in milliseconds. This is useful for delaying changes to state
@@ -242,4 +247,50 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
     }
   };
   return [recentCollections, addRecentCollection];
+};
+
+/**
+ * Returns a debounced motion delta array for the given dataset and vector field configuration.
+ * @param dataset The dataset to calculate motion deltas for.
+ * @param workerPool The worker pool to use for calculations.
+ * @param config The vector field configuration to use.
+ * @param debounceMs The debounce time in milliseconds. Defaults to 100ms.
+ * @returns The motion delta array or `null` if the dataset is invalid. Data will be
+ * asynchronously updated as calculations complete.
+ */
+export const useMotionDeltas = (
+  dataset: Dataset | null,
+  workerPool: SharedWorkerPool,
+  config: VectorConfig,
+  debounceMs = 100
+): Float32Array | null => {
+  const [motionDeltas, setMotionDeltas] = useState<Float32Array | null>(null);
+  const pendingVectorConfig = useRef<null | VectorConfig>(null);
+  const pendingDataset = useRef<null | Dataset>(null);
+
+  const debouncedVectorConfig = useDebounce(config, debounceMs);
+
+  useEffect(() => {
+    if (dataset === null) {
+      setMotionDeltas(null);
+      return;
+    }
+
+    const updateMotionDeltas = async (vectorConfig: VectorConfig): Promise<void> => {
+      pendingVectorConfig.current = config;
+      pendingDataset.current = dataset;
+
+      const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorConfig);
+
+      // Check that this is still the most recent request before updating state.
+      if (vectorConfig === pendingVectorConfig.current && dataset === pendingDataset.current) {
+        motionDeltas && setMotionDeltas(motionDeltas);
+        pendingVectorConfig.current = null;
+        pendingDataset.current = null;
+      }
+    };
+    updateMotionDeltas(config);
+  }, [debouncedVectorConfig.timesteps, debouncedVectorConfig.timestepThreshold, dataset]);
+
+  return motionDeltas;
 };

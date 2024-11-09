@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, LineSegments, Material, Vector2 } from "three";
 
-import { getDefaultVectorConfig, VectorConfig, VectorViewMode } from "./types";
+import { getDefaultVectorConfig, VectorConfig } from "./types";
 
 import Dataset from "./Dataset";
 
@@ -79,7 +79,7 @@ export default class VectorField {
 
     // Update vertex geometry range to render.
     const range = this.timeToVertexIndexRange.get(frame);
-    if (range && this.config.mode !== VectorViewMode.HIDE) {
+    if (range && this.config.visible) {
       this.line.geometry.setDrawRange(range[0], range[1] - range[0]);
     } else {
       this.line.geometry.setDrawRange(0, 0);
@@ -132,8 +132,7 @@ export default class VectorField {
    * number to the range of vertices that should be drawn for that frame.
    */
   public updateLineVertices(): void {
-    if (!this.dataset || !this.vectorData) {
-      this.timeToVertexIndexRange.clear();
+    if (!this.dataset || !this.vectorData || !this.config.visible) {
       this.line.geometry.setDrawRange(0, 0);
       return;
     }
@@ -268,7 +267,7 @@ export default class VectorField {
 
   public setConfig(config: VectorConfig): void {
     // TODO: will not need update if scaling is controlled by vertex shader
-    const needsUpdate = this.config.scaleFactor !== config.scaleFactor;
+    const needsUpdate = this.config.scaleFactor !== config.scaleFactor || (!this.config.visible && config.visible);
 
     this.config = config;
     (this.line.material as LineBasicMaterial).color = this.config.color;
