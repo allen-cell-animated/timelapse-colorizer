@@ -21,7 +21,7 @@ type VectorFieldSettingsProps = {
 };
 
 export default function VectorFieldSettings(props: VectorFieldSettingsProps): ReactElement {
-  const updateVectorConfig = (config: Partial<VectorConfig>) => {
+  const updateVectorConfig = (config: Partial<VectorConfig>): void => {
     props.updateConfig({ vectorConfig: { ...props.config.vectorConfig, ...config } });
   };
 

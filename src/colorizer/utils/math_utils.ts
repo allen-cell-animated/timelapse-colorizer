@@ -190,11 +190,9 @@ export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32A
   }
 
   // Construct and return tracks. (Tracks will also automatically sort their data by time.)
-  const tracks = Array.from(
-    trackIdToTrackData.entries().map(([trackId, trackData]) => {
-      return new Track(trackId, trackData.times, trackData.ids, trackData.centroids, []);
-    })
-  );
+  const tracks = Array.from(trackIdToTrackData.entries()).map(([trackId, trackData]) => {
+    return new Track(trackId, trackData.times, trackData.ids, trackData.centroids, [] as number[]);
+  });
   return tracks;
 }
 

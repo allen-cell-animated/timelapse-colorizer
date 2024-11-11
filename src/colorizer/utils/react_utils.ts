@@ -273,7 +273,7 @@ export const useMotionDeltas = (
 
   const debouncedVectorConfig = useDebounce(config, debounceMs);
 
-  const clearPendingConfig = () => {
+  const clearPendingConfig = (): void => {
     pendingVectorConfig.current = null;
     pendingDataset.current = null;
   };
