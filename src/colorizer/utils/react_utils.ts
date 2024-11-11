@@ -298,7 +298,7 @@ export const useMotionDeltas = (
       }
     };
     updateMotionDeltas(config);
-  }, [debouncedVectorConfig.timesteps, debouncedVectorConfig.timestepThreshold, dataset]);
+  }, [debouncedVectorConfig.timeIntervals, dataset]);
 
   return motionDeltas;
 };

@@ -225,25 +225,18 @@ function timeToMotionDelta(track: Track): { [key: number]: [number, number] | un
 /**
  * Calculates an array of motion deltas for each object in the dataset, averaged over the specified number of timesteps.
  * @param tracks An array of all tracks in the dataset to calculate motion deltas for.
- * @param numTimesteps The number of timesteps to average over. For an object at time `t`, the motion delta will be calculated
- * over time `t` to `t - numTimesteps`.
- * @param timestepThreshold The minimum number of timesteps the object must have centroid data for (over the span from time `t`
- * to `t - numTimesteps`). Objects that do not meet this threshold will have the motion deltas set to `NaN`.
+ * @param numTimeIntervals The number of time intervals to average over. For an object at time `t`, the motion delta will be calculated
+ * over time `t` to `t - numTimeIntervals`. If the object is not present for all of the timepoints, the motion deltas are set to `NaN`.
  * @returns one of the following:
- * - `undefined` if `numTimesteps < 1` or `numTimesteps < timestepThreshold`.
+ * - `undefined` if `numTimeIntervals < 1`.
  * - an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
- * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not meet the
- * the timestep threshold, both values will be `NaN`.
+ * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not exist for the specified number
+ * of time intervals, both values will be `NaN`.
  */
-export function calculateMotionDeltas(
-  tracks: Track[],
-  numTimesteps: number,
-  timestepThreshold: number
-): Float32Array | undefined {
-  numTimesteps = Math.max(numTimesteps, 0);
-  timestepThreshold = Math.max(timestepThreshold, 0);
+export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number): Float32Array | undefined {
+  numTimeIntervals = Math.max(numTimeIntervals, 0);
 
-  if (numTimesteps < 1 || numTimesteps < timestepThreshold) {
+  if (numTimeIntervals < 1) {
     return undefined;
   }
 
@@ -263,7 +256,7 @@ export function calculateMotionDeltas(
 
       // Get all valid deltas for timepoints `t` to `t - numTimesteps`.
       const deltas: [number, number][] = [];
-      for (let j = 0; j < numTimesteps; j++) {
+      for (let j = 0; j < numTimeIntervals; j++) {
         const delta = timeToDelta[timestamp - j];
         if (delta) {
           deltas.push(delta);
@@ -272,7 +265,7 @@ export function calculateMotionDeltas(
 
       // Check that the object has enough valid deltas to meet the threshold;
       // if so average and store the delta.
-      if (deltas.length >= timestepThreshold) {
+      if (deltas.length === numTimeIntervals) {
         const averagedDelta: [number, number] = deltas.reduce(
           (acc, delta) => [acc[0] + delta[0] / deltas.length, acc[1] + delta[1] / deltas.length],
           [0, 0]

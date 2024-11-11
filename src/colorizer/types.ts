@@ -139,8 +139,8 @@ export type DrawSettings = {
 export type VectorConfig = {
   visible: boolean;
   key: string;
-  timesteps: number;
-  timestepThreshold: number;
+  /** Number of time intervals to average over when calculating motion deltas. 5 by default. */
+  timeIntervals: number;
   color: Color;
   scaleFactor: number;
 };
@@ -150,8 +150,7 @@ export const VECTOR_KEY_MOTION_DELTA = "_motion_";
 export const getDefaultVectorConfig = (): VectorConfig => ({
   visible: false,
   key: VECTOR_KEY_MOTION_DELTA,
-  timesteps: 5,
-  timestepThreshold: 5,
+  timeIntervals: 5,
   color: new Color(0x000000),
   scaleFactor: 4,
 });

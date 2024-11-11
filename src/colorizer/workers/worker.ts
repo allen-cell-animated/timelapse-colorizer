@@ -32,7 +32,7 @@ async function getMotionDeltas(
   config: VectorConfig
 ): Promise<Transfer | undefined> {
   const tracks = constructAllTracksFromData(trackIds, times, centroids);
-  const motionDeltas = calculateMotionDeltas(tracks, config.timesteps, config.timestepThreshold);
+  const motionDeltas = calculateMotionDeltas(tracks, config.timeIntervals);
   if (motionDeltas === undefined) {
     return;
   }

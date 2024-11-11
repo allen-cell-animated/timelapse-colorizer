@@ -45,7 +45,7 @@ export default class SharedWorkerPool {
    * Calculates and averages the motion deltas for objects in the dataset as a flat array of
    * vector coordinates.
    * @param dataset The dataset to calculate motion deltas for.
-   * @param config Vector configuration settings, including the number of deltas to average over.
+   * @param config Vector configuration settings, including the number of time intervals to average over.
    * @returns one of the following:
    * - `undefined` if the configuration is invalid or the dataset is missing required data.
    * - `Float32Array` of motion deltas for each object in the dataset, with length equal to `2 * dataset.numObjects`.

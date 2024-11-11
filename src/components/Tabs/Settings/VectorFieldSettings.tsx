@@ -51,24 +51,18 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
         {props.config.vectorConfig.key === VECTOR_KEY_MOTION_DELTA && props.config.vectorConfig.visible && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
             <SettingsContainer>
-              <SettingsItem label="Average over # movement deltas">
+              <SettingsItem label="Average over # time intervals">
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     type="value"
                     disabled={!props.config.vectorConfig.visible}
                     step={1}
-                    minSliderBound={0}
-                    maxSliderBound={10}
-                    minInputBound={0}
+                    minSliderBound={1}
+                    maxSliderBound={20}
+                    minInputBound={1}
                     maxInputBound={100}
-                    value={props.config.vectorConfig.timesteps}
-                    onChange={(timesteps: number) =>
-                      updateVectorConfig({
-                        timesteps,
-                        // timestepThreshold: Math.min(timesteps, props.config.vectorConfig.timestepThreshold),
-                        timestepThreshold: timesteps,
-                      })
-                    }
+                    value={props.config.vectorConfig.timeIntervals}
+                    onChange={(timeIntervals: number) => updateVectorConfig({ timeIntervals })}
                   />
                 </div>
               </SettingsItem>
