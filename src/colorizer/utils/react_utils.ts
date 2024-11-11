@@ -250,9 +250,10 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
 };
 
 /**
- * Returns a debounced motion delta array for the given dataset and vector field configuration.
+ * Wrapper around the SharedWorkerPool method `getMotionDeltas`. Returns a debounced motion
+ * delta array for the given dataset and vector field configuration.
  * @param dataset The dataset to calculate motion deltas for.
- * @param workerPool The worker pool to use for calculations.
+ * @param workerPool The worker pool to use for asynchronous calculations.
  * @param config The vector field configuration to use.
  * @param debounceMs The debounce time in milliseconds. Defaults to 100ms.
  * @returns The motion delta array or `null` if the dataset is invalid. Data will be
@@ -265,14 +266,22 @@ export const useMotionDeltas = (
   debounceMs = 100
 ): Float32Array | null => {
   const [motionDeltas, setMotionDeltas] = useState<Float32Array | null>(null);
+  // Stores the last config + dataset that was requested. Motion deltas will only be updated
+  // if the config and dataset match the most recent request.
   const pendingVectorConfig = useRef<null | VectorConfig>(null);
   const pendingDataset = useRef<null | Dataset>(null);
 
   const debouncedVectorConfig = useDebounce(config, debounceMs);
 
+  const clearPendingConfig = () => {
+    pendingVectorConfig.current = null;
+    pendingDataset.current = null;
+  };
+
   useEffect(() => {
     if (dataset === null) {
       setMotionDeltas(null);
+      clearPendingConfig();
       return;
     }
 
@@ -284,9 +293,8 @@ export const useMotionDeltas = (
 
       // Check that this is still the most recent request before updating state.
       if (vectorConfig === pendingVectorConfig.current && dataset === pendingDataset.current) {
-        motionDeltas && setMotionDeltas(motionDeltas);
-        pendingVectorConfig.current = null;
-        pendingDataset.current = null;
+        setMotionDeltas(motionDeltas ?? null);
+        clearPendingConfig();
       }
     };
     updateMotionDeltas(config);

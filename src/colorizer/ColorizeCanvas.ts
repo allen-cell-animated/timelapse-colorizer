@@ -127,7 +127,7 @@ export default class ColorizeCanvas {
   private vectorField: VectorField;
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
-  private trackPoints: Float32Array;
+  private points: Float32Array;
   private showTrackPath: boolean;
 
   protected frameSizeInCanvasCoordinates: Vector2;
@@ -198,10 +198,10 @@ export default class ColorizeCanvas {
     this.pickScene.add(this.pickMesh);
 
     // Configure track lines
-    this.trackPoints = new Float32Array([0, 0, 0]);
+    this.points = new Float32Array([0, 0, 0]);
 
     const lineGeometry = new BufferGeometry();
-    lineGeometry.setAttribute("position", new BufferAttribute(this.trackPoints, 3));
+    lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
     const lineMaterial = new LineBasicMaterial({
       color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
@@ -433,7 +433,7 @@ export default class ColorizeCanvas {
     }
     // Make a new array of the centroid positions in pixel coordinates.
     // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
-    this.trackPoints = new Float32Array(track.duration() * 3);
+    this.points = new Float32Array(track.duration() * 3);
 
     // Tracks may be missing objects for some timepoints, so use the last known good value as a fallback
     let lastTrackIndex = 0;
@@ -449,15 +449,12 @@ export default class ColorizeCanvas {
       }
 
       // Normalize from pixel coordinates to canvas space [-1, 1]
-      this.trackPoints[3 * i + 0] = (track.centroids[2 * trackIndex] / this.dataset.frameResolution.x) * 2.0 - 1.0;
-      this.trackPoints[3 * i + 1] = -(
-        (track.centroids[2 * trackIndex + 1] / this.dataset.frameResolution.y) * 2.0 -
-        1.0
-      );
-      this.trackPoints[3 * i + 2] = 0;
+      this.points[3 * i + 0] = (track.centroids[2 * trackIndex] / this.dataset.frameResolution.x) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((track.centroids[2 * trackIndex + 1] / this.dataset.frameResolution.y) * 2.0 - 1.0);
+      this.points[3 * i + 2] = 0;
     }
     // Assign new BufferAttribute because the old array has been discarded.
-    this.line.geometry.setAttribute("position", new BufferAttribute(this.trackPoints, 3));
+    this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
     this.line.geometry.getAttribute("position").needsUpdate = true;
     this.updateTrackRange();
   }

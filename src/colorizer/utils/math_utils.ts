@@ -229,16 +229,22 @@ function timeToMotionDelta(track: Track): { [key: number]: [number, number] | un
  * over time `t` to `t - numTimesteps`.
  * @param timestepThreshold The minimum number of timesteps the object must have centroid data for (over the span from time `t`
  * to `t - numTimesteps`). Objects that do not meet this threshold will the motion deltas set to `NaN`.
- * @returns an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
+ * @returns
+ * - `undefined` if `numTimesteps < 1` or `numTimesteps < timestepThreshold`.
+ * - an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
  * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not meet the
  * the timestep threshold, both values will be `NaN`.
  */
-export function calculateMotionDeltas(tracks: Track[], numTimesteps: number, timestepThreshold: number): Float32Array {
+export function calculateMotionDeltas(
+  tracks: Track[],
+  numTimesteps: number,
+  timestepThreshold: number
+): Float32Array | undefined {
   numTimesteps = Math.max(numTimesteps, 0);
   timestepThreshold = Math.max(timestepThreshold, 0);
 
   if (numTimesteps < 1 || numTimesteps < timestepThreshold) {
-    return new Float32Array();
+    return undefined;
   }
 
   // Count total objects to allocate the motion deltas array

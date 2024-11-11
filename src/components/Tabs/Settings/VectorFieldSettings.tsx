@@ -3,7 +3,7 @@ import { Card, ColorPicker, Switch } from "antd";
 import React, { ReactElement } from "react";
 import { Color, ColorRepresentation } from "three";
 
-import { VECTOR_KEY_MOTION, VectorConfig, ViewerConfig } from "../../../colorizer/types";
+import { VECTOR_KEY_MOTION_DELTA, VectorConfig, ViewerConfig } from "../../../colorizer/types";
 
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../../LabeledSlider";
@@ -11,7 +11,7 @@ import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import { MAX_SLIDER_WIDTH } from "../SettingsTab";
 
 const VECTOR_OPTION_MOTION = {
-  key: VECTOR_KEY_MOTION,
+  key: VECTOR_KEY_MOTION_DELTA,
   label: "Avg. movement delta (auto-calculated)",
 };
 
@@ -30,7 +30,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
 
   return (
     <>
-      <SettingsItem label={"Show vectors"} align="top">
+      <SettingsItem label={"Show vectors"}>
         <div>
           <Switch
             checked={props.config.vectorConfig.visible}
@@ -39,14 +39,14 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
         </div>
       </SettingsItem>
 
-      <SettingsItem label="Vector visualization" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
+      <SettingsItem label="Vector to visualize" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
         <SelectionDropdown
           disabled={!props.config.vectorConfig.visible}
           selected={props.config.vectorConfig.key}
           items={vectorOptions}
           onChange={(key) => updateVectorConfig({ key })}
         ></SelectionDropdown>
-        {props.config.vectorConfig.key === VECTOR_KEY_MOTION && (
+        {props.config.vectorConfig.key === VECTOR_KEY_MOTION_DELTA && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
             <SettingsContainer>
               <SettingsItem label="Average over # movement deltas">

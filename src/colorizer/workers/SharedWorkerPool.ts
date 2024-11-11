@@ -41,9 +41,20 @@ export default class SharedWorkerPool {
     return await this.workerPool.exec("loadUrlData", [url, type]);
   }
 
+  /**
+   * Calculates and averages the motion deltas for objects in the dataset as a flat array of
+   * vector coordinates.
+   * @param dataset The dataset to calculate motion deltas for.
+   * @param config Vector configuration settings, including the number of deltas to average over.
+   * @returns one of the following:
+   * - `undefined` if the configuration is invalid or the dataset is missing required data.
+   * - `Float32Array` of motion deltas for each object in the dataset, with length equal to `2 * dataset.numObjects`.
+   * For each object ID `i`, the motion delta is stored at `[2i, 2i + 1]`. If the delta cannot be calculated
+   * for the object (ex: because it has not existed for enough timesteps), the values will be `NaN`.
+   */
   async getMotionDeltas(dataset: Dataset, config: VectorConfig): Promise<Float32Array | undefined> {
-    // We cannot directly pass the dataset, so instead pass the relevant data and have it
-    // construct the tracks on the worker side.
+    // We cannot directly pass the Dataset due to textures not being transferable to workers.
+    // Instead, pass the relevant data and reconstruct the tracks on the worker side.
     const trackIds = dataset.trackIds;
     const times = dataset.times;
     const centroids = dataset.centroids;

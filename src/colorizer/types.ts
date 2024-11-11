@@ -145,13 +145,13 @@ export type VectorConfig = {
   scaleFactor: number;
 };
 
-export const VECTOR_KEY_MOTION = "_motion_";
+export const VECTOR_KEY_MOTION_DELTA = "_motion_";
 
 export const getDefaultVectorConfig = (): VectorConfig => ({
   visible: false,
-  key: VECTOR_KEY_MOTION,
+  key: VECTOR_KEY_MOTION_DELTA,
   timesteps: 5,
-  timestepThreshold: 3,
+  timestepThreshold: 5,
   color: new Color(0x000000),
   scaleFactor: 4,
 });

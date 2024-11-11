@@ -30,9 +30,12 @@ async function getMotionDeltas(
   times: Uint32Array,
   centroids: Uint16Array,
   config: VectorConfig
-): Promise<Transfer> {
+): Promise<Transfer | undefined> {
   const tracks = constructAllTracksFromData(trackIds, times, centroids);
   const motionDeltas = calculateMotionDeltas(tracks, config.timesteps, config.timestepThreshold);
+  if (motionDeltas === undefined) {
+    return;
+  }
   return new workerpool.Transfer(motionDeltas, [motionDeltas.buffer]);
 }
 

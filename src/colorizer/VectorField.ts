@@ -267,7 +267,7 @@ export default class VectorField {
 
   public setConfig(config: VectorConfig): void {
     // TODO: will not need update if scaling is controlled by vertex shader
-    const needsUpdate = this.config.scaleFactor !== config.scaleFactor || (!this.config.visible && config.visible);
+    const needsUpdate = this.config.scaleFactor !== config.scaleFactor || this.config.visible !== config.visible;
 
     this.config = config;
     (this.line.material as LineBasicMaterial).color = this.config.color;
