@@ -1,5 +1,5 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Card, ColorPicker, Radio } from "antd";
+import { Card, ColorPicker, Switch } from "antd";
 import React, { ReactElement } from "react";
 import { Color, ColorRepresentation } from "three";
 
@@ -12,7 +12,7 @@ import { MAX_SLIDER_WIDTH } from "../SettingsTab";
 
 const VECTOR_OPTION_MOTION = {
   key: VECTOR_KEY_MOTION,
-  label: "Motion delta (auto-calculated)",
+  label: "Avg. movement delta (auto-calculated)",
 };
 
 type VectorFieldSettingsProps = {
@@ -31,18 +31,17 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
   return (
     <>
       <SettingsItem label={"Show vectors"} align="top">
-        <Radio.Group
-          style={{ width: "fit-content" }}
-          value={props.config.vectorConfig.visible}
-          onChange={(e) => updateVectorConfig({ visible: e.target.value })}
-        >
-          <Radio value={true}>Show</Radio>
-          <Radio value={false}>Hide</Radio>
-        </Radio.Group>
+        <div>
+          <Switch
+            checked={props.config.vectorConfig.visible}
+            onChange={(checked) => updateVectorConfig({ visible: checked })}
+          />
+        </div>
       </SettingsItem>
 
       <SettingsItem label="Vector visualization" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
         <SelectionDropdown
+          disabled={!props.config.vectorConfig.visible}
           selected={props.config.vectorConfig.key}
           items={vectorOptions}
           onChange={(key) => updateVectorConfig({ key })}
@@ -50,10 +49,11 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
         {props.config.vectorConfig.key === VECTOR_KEY_MOTION && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
             <SettingsContainer>
-              <SettingsItem label="Smoothing steps">
+              <SettingsItem label="Average over # movement deltas">
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     type="value"
+                    disabled={!props.config.vectorConfig.visible}
                     step={1}
                     minSliderBound={0}
                     maxSliderBound={10}
@@ -63,17 +63,18 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
                     onChange={(timesteps: number) =>
                       updateVectorConfig({
                         timesteps,
-                        timestepThreshold: Math.min(timesteps, props.config.vectorConfig.timestepThreshold),
+                        // timestepThreshold: Math.min(timesteps, props.config.vectorConfig.timestepThreshold),
+                        timestepThreshold: timesteps,
                       })
                     }
                   />
                 </div>
               </SettingsItem>
-              <SettingsItem
+              {/* <SettingsItem
                 label="Min timesteps"
-                tooltip={
-                  "The minimum number of timesteps the tracked object must exist for before a vector motion arrow will be shown."
-                }
+                // tooltip={
+                //   "The minimum number of timesteps the tracked object must exist for before a vector motion arrow will be shown."
+                // }
               >
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
@@ -92,7 +93,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
                     }
                   />
                 </div>
-              </SettingsItem>
+              </SettingsItem> */}
             </SettingsContainer>
           </Card>
         )}
@@ -106,6 +107,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
       <SettingsItem label={"Scale factor"}>
         <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
           <LabeledSlider
+            disabled={!props.config.vectorConfig.visible}
             type="value"
             minSliderBound={0}
             maxSliderBound={50}
@@ -120,6 +122,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
       <SettingsItem label="Arrow color">
         <div>
           <ColorPicker
+            disabled={!props.config.vectorConfig.visible}
             disabledAlpha={true}
             size="small"
             value={new AntdColor(props.config.vectorConfig.color.getHexString())}

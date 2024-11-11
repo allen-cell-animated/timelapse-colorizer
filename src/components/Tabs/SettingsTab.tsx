@@ -31,10 +31,6 @@ type SettingsTabProps = {
   dataset: Dataset | null;
 };
 
-export const h3Wrapper = (label: string | ReactElement): ReactElement => {
-  return <h3>{label}</h3>;
-};
-
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
     ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
@@ -48,7 +44,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} labelFormatter={h3Wrapper}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX}>
           <SettingsItem label="Backdrop images">
             <SelectionDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
@@ -94,7 +90,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       </CustomCollapse>
 
       <CustomCollapse label="Objects">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} labelFormatter={h3Wrapper}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX}>
           <SettingsItem label="Filtered object color">
             <DrawModeDropdown
               selected={props.config.outOfRangeDrawSettings.mode}
@@ -166,7 +162,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       </CustomCollapse>
 
       <CustomCollapse label="Vector arrows">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} labelFormatter={h3Wrapper}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX}>
           <VectorFieldSettings config={props.config} updateConfig={props.updateConfig} />
         </SettingsContainer>
       </CustomCollapse>
