@@ -163,6 +163,7 @@ export default class VectorField {
 
     // For each ID, fill in the vertex information (centroid + delta).
     // Save the starting and ending index for each time.
+    this.timeToVertexIndexRange.clear();
     let nextEmptyIndex = 0;
     for (const [time, ids] of timeToIds) {
       this.timeToVertexIndexRange.set(time, [nextEmptyIndex, nextEmptyIndex + ids.length * VERTICES_PER_VECTOR_LINE]);
