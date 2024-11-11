@@ -189,7 +189,7 @@ export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32A
     trackData.centroids.push(centroids[id * 2], centroids[id * 2 + 1]);
   }
 
-  // Construct and return tracks. (Tracks will also automatically sort their data by time.)
+  // Construct and return tracks. Tracks will automatically sort their data by time.
   const tracks = Array.from(trackIdToTrackData.entries()).map(([trackId, trackData]) => {
     return new Track(trackId, trackData.times, trackData.ids, trackData.centroids, [] as number[]);
   });
@@ -197,12 +197,14 @@ export function constructAllTracksFromData(trackIds: Uint32Array, times: Uint32A
 }
 
 /**
- * Returns a lookup from all timepoints `t` in the track to the centroid delta `t` and
- * `t-1`. If the track does not exist at timepoint `t-1`, the delta is undefined.
+ * Returns a lookup from any timepoints `t` in the track to the position delta between the centroid
+ * at time `t` and `t-1`. If the track does not exist at timepoint `t-1`, the delta is undefined.
  */
 function timeToMotionDelta(track: Track): { [key: number]: [number, number] | undefined } {
   const deltas: { [key: number]: [number, number] | undefined } = {};
 
+  // Track IDs are sorted by time, but are not guaranteed to be contiguous.
+  // For each time `t`, check if `t-1` exists and then calculate the delta.
   for (let i = 0; i < track.ids.length; i++) {
     const time = track.times[i];
     const prevTime = track.times[i - 1];
@@ -226,8 +228,8 @@ function timeToMotionDelta(track: Track): { [key: number]: [number, number] | un
  * @param numTimesteps The number of timesteps to average over. For an object at time `t`, the motion delta will be calculated
  * over time `t` to `t - numTimesteps`.
  * @param timestepThreshold The minimum number of timesteps the object must have centroid data for (over the span from time `t`
- * to `t - numTimesteps`). Objects that do not meet this threshold will the motion deltas set to `NaN`.
- * @returns
+ * to `t - numTimesteps`). Objects that do not meet this threshold will have the motion deltas set to `NaN`.
+ * @returns one of the following:
  * - `undefined` if `numTimesteps < 1` or `numTimesteps < timestepThreshold`.
  * - an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
  * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not meet the
@@ -278,7 +280,7 @@ export function calculateMotionDeltas(
         motionDeltas[2 * objectId] = averagedDelta[0];
         motionDeltas[2 * objectId + 1] = averagedDelta[1];
       } else {
-        // TODO: These may need to become Infinity for shader compatibility
+        // NOTE: These may need to become Infinity for shader compatibility
         motionDeltas[2 * objectId] = NaN;
         motionDeltas[2 * objectId + 1] = NaN;
       }

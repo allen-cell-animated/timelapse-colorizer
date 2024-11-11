@@ -6,6 +6,7 @@ import { Color, ColorRepresentation } from "three";
 import { Dataset } from "../../colorizer";
 import { DrawMode, OUTLINE_COLOR_DEFAULT, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
@@ -21,25 +22,6 @@ const NO_BACKDROP = {
 
 export const SETTINGS_INDENT_PX = 24;
 export const MAX_SLIDER_WIDTH = "250px";
-
-const defaultOutlinePresetColors = [
-  "#dddddd",
-  "#808080",
-  "#525252",
-  "#ff00ff",
-  "#ff0000",
-  "#ff8800",
-  "#ffcf00",
-  "#00ff00",
-  "#00ffff",
-  "#0048ff",
-];
-const outlineColorPresets = [
-  {
-    label: "Presets",
-    colors: defaultOutlinePresetColors,
-  },
-];
 
 type SettingsTabProps = {
   config: ViewerConfig;
@@ -122,7 +104,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                   props.updateConfig({ outlineColor: new Color(hex as ColorRepresentation) });
                 }}
                 value={new AntdColor(props.config.outlineColor.getHexString())}
-                presets={outlineColorPresets}
+                presets={DEFAULT_OUTLINE_COLOR_PRESETS}
               />
             </div>
           </SettingsItem>

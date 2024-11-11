@@ -4,6 +4,7 @@ import React, { ReactElement } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { VECTOR_KEY_MOTION_DELTA, VectorConfig, ViewerConfig } from "../../../colorizer/types";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
 
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../../LabeledSlider";
@@ -30,8 +31,9 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
 
   return (
     <>
-      <SettingsItem label={"Show vectors"}>
+      <SettingsItem label={"Show vector arrows"}>
         <div>
+          {/* TODO: Replace with a top-level checkbox for Vector arrows when Collapse menus are removed */}
           <Switch
             checked={props.config.vectorConfig.visible}
             onChange={(checked) => updateVectorConfig({ visible: checked })}
@@ -39,14 +41,14 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
         </div>
       </SettingsItem>
 
-      <SettingsItem label="Vector to visualize" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
+      <SettingsItem label="Vector" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
         <SelectionDropdown
           disabled={!props.config.vectorConfig.visible}
           selected={props.config.vectorConfig.key}
           items={vectorOptions}
           onChange={(key) => updateVectorConfig({ key })}
         ></SelectionDropdown>
-        {props.config.vectorConfig.key === VECTOR_KEY_MOTION_DELTA && (
+        {props.config.vectorConfig.key === VECTOR_KEY_MOTION_DELTA && props.config.vectorConfig.visible && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
             <SettingsContainer>
               <SettingsItem label="Average over # movement deltas">
@@ -129,6 +131,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
             onChange={(_color, hex) => {
               updateVectorConfig({ color: new Color(hex as ColorRepresentation) });
             }}
+            presets={DEFAULT_OUTLINE_COLOR_PRESETS}
           ></ColorPicker>
         </div>
       </SettingsItem>

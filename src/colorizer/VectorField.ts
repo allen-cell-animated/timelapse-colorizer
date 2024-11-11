@@ -25,12 +25,13 @@ export default class VectorField {
    * stored in the line's geometry buffer, grouped by frame number.
    *
    * By changing the slice of the geometry buffer we are rendering with (see `timeToVertexIndexRange`),
-   * we can render only the vectors for a specific frame (O(1)). This is a big optimization because we don't
-   * need to re-calculate the vertices every frame or check what vectors are visible (O(N)).
+   * we can render only the vectors for a specific frame. This is a big optimization because we don't
+   * need to re-calculate the vertices every frame or check what vectors are visible
+   * (amortized O(1) vs. O(N)).
    */
   private line: Line<BufferGeometry, Material>;
 
-  // Stored parameters
+  ///// Stored parameters /////
   private dataset: Dataset | null;
   private config: VectorConfig;
   private currentFrame: number;
@@ -39,7 +40,7 @@ export default class VectorField {
   /**
    * Scales relative frame coordinates ([0, 1] range) to
    * relative canvas coordinates ([0, 1] range) based on the current
-   * zoom level.
+   * zoom level. (Doesn't account for panning.)
    */
   private frameToCanvasCoordinates: Vector2;
   /**
@@ -48,7 +49,7 @@ export default class VectorField {
    */
   private vectorData: Float32Array | null;
 
-  // Calculated data
+  ///// Calculated data /////
   /** Maps from a frame number to the range of vertices that should be drawn for that frame. */
   private timeToVertexIndexRange: Map<number, [number, number]>;
 
@@ -63,8 +64,11 @@ export default class VectorField {
     const lineGeometry = new BufferGeometry();
     const lineMaterial = new LineBasicMaterial({
       color: this.config.color,
+      // Note: setting line width to anything other than 1.0 is unreliable.
+      // See https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/lineWidth
       linewidth: 1,
     });
+
     this.line = new LineSegments(lineGeometry, lineMaterial);
     this.line.frustumCulled = false;
     this.timeToVertexIndexRange = new Map();
@@ -124,14 +128,14 @@ export default class VectorField {
    * grouped by frame number. Each pair of vertices represents a line segment.
    *
    * Currently, each vector line takes up 6 vertices, two for the main line segment
-   * and four for the arrow heads' two sides.
+   * and four for the arrow heads' two lines.
    * For a vertex at index `i`, the vertex's XY components are stored at
-   * at `2i` and `2i + 1`, respectively.
+   * at `(2i, 2i + 1)`.
    *
-   * This method updates the `timeToVertexIndexRange` map, which maps from a frame
-   * number to the range of vertices that should be drawn for that frame.
+   * This method updates vertices and the `timeToVertexIndexRange` map, which maps from
+   * a frame number to the range of vertices that should be drawn for that frame.
    */
-  public updateLineVertices(): void {
+  private updateLineVertices(): void {
     if (!this.dataset || !this.vectorData || !this.config.visible) {
       this.line.geometry.setDrawRange(0, 0);
       return;
@@ -142,13 +146,16 @@ export default class VectorField {
     let totalValidIds = 0;
     for (let i = 0; i < this.dataset.numObjects; i++) {
       const time = this.dataset.getTime(i);
-      if (!timeToIds.has(time)) {
-        timeToIds.set(time, []);
-      }
-      if (Number.isNaN(this.vectorData[i * 2]) || Number.isNaN(this.vectorData[i * 2 + 1])) {
+      const ids = timeToIds.get(time) ?? [];
+      if (
+        Number.isNaN(this.vectorData[i * 2]) ||
+        Number.isNaN(this.vectorData[i * 2 + 1]) ||
+        this.dataset.getCentroid(i) === undefined
+      ) {
         continue;
       }
-      timeToIds.get(time)!.push(i);
+      ids.push(i);
+      timeToIds.set(time, ids);
       totalValidIds++;
     }
     const numVertices = totalValidIds * VERTICES_PER_VECTOR_LINE;
@@ -161,61 +168,60 @@ export default class VectorField {
       this.timeToVertexIndexRange.set(time, [nextEmptyIndex, nextEmptyIndex + ids.length * VERTICES_PER_VECTOR_LINE]);
 
       for (const objectId of ids) {
-        const centroid = this.dataset.getCentroid(objectId);
+        const centroid = this.dataset.getCentroid(objectId)!;
         const delta = [this.vectorData[objectId * 2], this.vectorData[objectId * 2 + 1]];
-        if (centroid) {
-          // Draw the main vector line segment from centroid to centroid + delta.
-          // TODO: Perform scaling as a step in a vertex shader.
-          const vectorStart: ArrayVector3 = [centroid[0], centroid[1], 0];
-          const vectorEnd: ArrayVector3 = [
-            centroid[0] + delta[0] * this.config.scaleFactor,
-            centroid[1] + delta[1] * this.config.scaleFactor,
-            0,
-          ];
-          const normVectorEnd = this.framePixelsToRelativeFrameCoords(vectorEnd);
-          const normVectorStart = this.framePixelsToRelativeFrameCoords(vectorStart);
-          vertices.set(normVectorStart, nextEmptyIndex * 3);
-          vertices.set(normVectorEnd, (nextEmptyIndex + 1) * 3);
 
-          // Draw the arrow heads. These are two line segments for each, so there's a total of four additional vertices we need to add.
-          // TODO: Handle scaling and arrow head length in a vertex shader.
-          // There's extra work being done here to keep the arrow head length constant with zoom, but it also
-          // means that currently this is recalculated EVERY time the zoom changes.
-          const screenSpaceStartPx = this.relativeFrameCoordsToScreenSpacePx(normVectorStart);
-          const screenSpaceEndPx = this.relativeFrameCoordsToScreenSpacePx(normVectorEnd);
-          const screenSpaceDeltaPx = [
-            screenSpaceEndPx[0] - screenSpaceStartPx[0],
-            screenSpaceEndPx[1] - screenSpaceStartPx[1],
-          ];
-          const vectorLengthPx = Math.sqrt(
-            screenSpaceDeltaPx[0] * screenSpaceDeltaPx[0] + screenSpaceDeltaPx[1] * screenSpaceDeltaPx[1]
-          );
+        // Draw the main vector line segment from centroid to centroid + delta.
+        // TODO: Perform scaling as a step in a vertex shader.
+        const vectorStart: ArrayVector3 = [centroid[0], centroid[1], 0];
+        const vectorEnd: ArrayVector3 = [
+          centroid[0] + delta[0] * this.config.scaleFactor,
+          centroid[1] + delta[1] * this.config.scaleFactor,
+          0,
+        ];
+        const normVectorEnd = this.framePixelsToRelativeFrameCoords(vectorEnd);
+        const normVectorStart = this.framePixelsToRelativeFrameCoords(vectorStart);
+        vertices.set(normVectorStart, nextEmptyIndex * 3);
+        vertices.set(normVectorEnd, (nextEmptyIndex + 1) * 3);
 
-          const vectorAngle = Math.atan2(screenSpaceDeltaPx[1], screenSpaceDeltaPx[0]) + Math.PI;
-          const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
-          const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
-          const arrowHead1: ArrayVector3 = [Math.cos(arrowAngle1), Math.sin(arrowAngle1), 0];
-          const arrowHead2: ArrayVector3 = [Math.cos(arrowAngle2), Math.sin(arrowAngle2), 0];
+        // Draw the arrow heads. These are two line segments for each, so there's a total of four additional vertices we need to add.
+        // TODO: Handle scaling and arrow head length in a vertex shader.
+        // There's extra work being done here to keep the arrow head length constant with zoom, but it also
+        // means that currently this is recalculated EVERY time the zoom changes.
+        const screenSpaceStartPx = this.relativeFrameCoordsToScreenSpacePx(normVectorStart);
+        const screenSpaceEndPx = this.relativeFrameCoordsToScreenSpacePx(normVectorEnd);
+        const screenSpaceDeltaPx = [
+          screenSpaceEndPx[0] - screenSpaceStartPx[0],
+          screenSpaceEndPx[1] - screenSpaceStartPx[1],
+        ];
+        const vectorLengthPx = Math.sqrt(
+          screenSpaceDeltaPx[0] * screenSpaceDeltaPx[0] + screenSpaceDeltaPx[1] * screenSpaceDeltaPx[1]
+        );
 
-          const lengthPx = Math.min(arrowStyle.maxHeadLengthPx, vectorLengthPx);
+        const vectorAngle = Math.atan2(screenSpaceDeltaPx[1], screenSpaceDeltaPx[0]) + Math.PI;
+        const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
+        const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
+        const arrowHead1: ArrayVector3 = [Math.cos(arrowAngle1), Math.sin(arrowAngle1), 0];
+        const arrowHead2: ArrayVector3 = [Math.cos(arrowAngle2), Math.sin(arrowAngle2), 0];
 
-          // Keep arrow head length constant relative to onscreen pixels
-          // Arrow heads are in screen space pixel coordinates, so we divide by canvas resolution to get relative canvas coordinates,
-          // and then divide again by `frameToCanvasCoordinates` to get relative frame coordinates.
-          arrowHead1[0] =
-            (arrowHead1[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
-          arrowHead1[1] =
-            (arrowHead1[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
-          arrowHead2[0] =
-            (arrowHead2[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
-          arrowHead2[1] =
-            (arrowHead2[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
+        const lengthPx = Math.min(arrowStyle.maxHeadLengthPx, vectorLengthPx);
 
-          vertices.set(normVectorEnd, (nextEmptyIndex + 2) * 3);
-          vertices.set(arrowHead1, (nextEmptyIndex + 3) * 3);
-          vertices.set(normVectorEnd, (nextEmptyIndex + 4) * 3);
-          vertices.set(arrowHead2, (nextEmptyIndex + 5) * 3);
-        }
+        // Keep arrow head length constant relative to onscreen pixels
+        // Arrow heads are in screen space pixel coordinates, so we divide by canvas resolution to get relative canvas coordinates,
+        // and then divide again by `frameToCanvasCoordinates` to get relative frame coordinates.
+        arrowHead1[0] =
+          (arrowHead1[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
+        arrowHead1[1] =
+          (arrowHead1[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
+        arrowHead2[0] =
+          (arrowHead2[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
+        arrowHead2[1] =
+          (arrowHead2[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
+
+        vertices.set(normVectorEnd, (nextEmptyIndex + 2) * 3);
+        vertices.set(arrowHead1, (nextEmptyIndex + 3) * 3);
+        vertices.set(normVectorEnd, (nextEmptyIndex + 4) * 3);
+        vertices.set(arrowHead2, (nextEmptyIndex + 5) * 3);
 
         nextEmptyIndex += VERTICES_PER_VECTOR_LINE;
       }
@@ -237,12 +243,6 @@ export default class VectorField {
     }
   }
 
-  /**
-   * Updates the scale of the vector field.
-   * @param frameToCanvasCoordinates
-   * @param canvasResolution
-   * @returns
-   */
   public setScale(frameToCanvasCoordinates: Vector2, canvasResolution: Vector2): void {
     if (
       this.canvasResolution.equals(canvasResolution) &&
