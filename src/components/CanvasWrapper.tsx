@@ -291,6 +291,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setVectorData(props.vectorData);
   }, [props.vectorData]);
 
+  useMemo(() => {
+    canv.setOutlineColor(props.config.outlineColor);
+  }, [props.config.outlineColor]);
+
   // CANVAS RESIZING /////////////////////////////////////////////////
 
   /**

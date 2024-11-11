@@ -22,7 +22,15 @@ import {
 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT, VectorConfig } from "./types";
+import {
+  BACKGROUND_COLOR_DEFAULT,
+  DrawMode,
+  FeatureDataType,
+  OUT_OF_RANGE_COLOR_DEFAULT,
+  OUTLIER_COLOR_DEFAULT,
+  OUTLINE_COLOR_DEFAULT,
+  VectorConfig,
+} from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";
@@ -34,8 +42,6 @@ import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 
-const BACKGROUND_COLOR_DEFAULT = 0xffffff;
-const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
@@ -63,6 +69,7 @@ type ColorizeUniformTypes = {
   canvasBackgroundColor: Color;
   outlierColor: Color;
   outOfRangeColor: Color;
+  outlineColor: Color;
   highlightedId: number;
   hideOutOfRange: boolean;
   outlierDrawMode: number;
@@ -101,6 +108,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
+    outlineColor: new Uniform(new Color(OUTLINE_COLOR_DEFAULT)),
     canvasBackgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
@@ -122,8 +130,8 @@ export default class ColorizeCanvas {
   private trackPoints: Float32Array;
   private showTrackPath: boolean;
 
-  private frameSizeInCanvasCoordinates: Vector2;
-  private frameToCanvasCoordinates: Vector2;
+  protected frameSizeInCanvasCoordinates: Vector2;
+  protected frameToCanvasCoordinates: Vector2;
 
   /**
    * The zoom level of the frame in the canvas. At default zoom level 1, the frame will be
@@ -195,7 +203,7 @@ export default class ColorizeCanvas {
     const lineGeometry = new BufferGeometry();
     lineGeometry.setAttribute("position", new BufferAttribute(this.trackPoints, 3));
     const lineMaterial = new LineBasicMaterial({
-      color: SELECTED_COLOR_DEFAULT,
+      color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
 
@@ -369,6 +377,19 @@ export default class ColorizeCanvas {
   setCategoricalColors(colors: Color[]): void {
     this.categoricalPalette.dispose();
     this.categoricalPalette = new ColorRamp(colors);
+  }
+
+  setOutlineColor(color: Color): void {
+    this.setUniform("outlineColor", color);
+
+    // Update line color
+    if (Array.isArray(this.line.material)) {
+      this.line.material.forEach((mat) => {
+        (mat as LineBasicMaterial).color = color;
+      });
+    } else {
+      (this.line.material as LineBasicMaterial).color = color;
+    }
   }
 
   setBackgroundColor(color: Color): void {

@@ -24,6 +24,7 @@ uniform float backdropBrightness;
 uniform float objectOpacity;
 
 uniform vec3 backgroundColor;
+uniform vec3 outlineColor;
 // Background color for the canvas, anywhere where the frame is not drawn.
 uniform vec3 canvasBackgroundColor;
 
@@ -161,7 +162,7 @@ vec4 getObjectColor(vec2 sUv) {
   ivec2 frameDims = textureSize(frame, 0);
   if (int(id) - 1 == highlightedId) {
     if (isEdge(sUv, frameDims)) {
-      return vec4(1.0, 0.0, 1.0, 1.0);
+      return vec4(outlineColor, 1.0);
     }
   }
 
