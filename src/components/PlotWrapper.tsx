@@ -3,6 +3,8 @@ import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react
 
 import { Dataset, Plotting, Track } from "../colorizer";
 
+import type { TrackPlotLayoutConfig } from "../colorizer/Plotting";
+
 type PlotWrapperProps = {
   frame: number;
   dataset: Dataset | null;
@@ -21,6 +23,7 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
 
   const plotDivRef = useRef<HTMLDivElement>(null);
   const [plot, setPlot] = useState<Plotting | null>(null);
+  const [hoveredObjectId, setHoveredObjectId] = useState<number | null>(null);
 
   // Setup for plot after initial render, since it replaces a DOM element.
   useEffect(() => {
@@ -37,10 +40,26 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
   }, [props.dataset]);
 
-  // Update time in plot
+  // Update time and hovered value in plot
   useMemo(() => {
-    plot?.setTime(props.frame);
-  }, [props.frame]);
+    let hover;
+    if (hoveredObjectId) {
+      const featureData = props.dataset?.getFeatureData(props.featureKey);
+      const hoveredObjectTime = props.dataset?.getTime(hoveredObjectId);
+      if (featureData && hoveredObjectTime) {
+        const featureValue = featureData.data[hoveredObjectId];
+        hover = {
+          x: hoveredObjectTime,
+          y: featureValue,
+        };
+      }
+    }
+    const config: TrackPlotLayoutConfig = {
+      time: props.frame,
+      hover,
+    };
+    plot?.updateLayout(config);
+  }, [props.dataset, props.frame, props.selectedTrack, props.featureKey, hoveredObjectId]);
 
   // Handle updates to selected track and feature, updating/clearing the plot accordingly.
   useMemo(() => {
@@ -78,11 +97,31 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
       props.setFrame(time);
     };
 
+    const onHoverPlot = (eventData: Plotly.PlotMouseEvent): void => {
+      if (eventData.points.length === 0) {
+        setHoveredObjectId(null);
+        return;
+      }
+      const time = eventData.points[0].x;
+      if (time) {
+        const objectId = props.selectedTrack?.getIdAtTime(time as number);
+        objectId && setHoveredObjectId(objectId);
+      }
+    };
+
+    const onHoverExit = (): void => {
+      setHoveredObjectId(null);
+    };
+
     const plotDiv = plotDivRef.current as PlotlyHTMLElement | null;
     plotDiv?.on("plotly_click", onClickPlot);
+    plotDiv?.on("plotly_hover", onHoverPlot);
+    plotDiv?.on("plotly_unhover", onHoverExit);
     return () => {
       const plotDiv = plotDivRef.current as PlotlyHTMLElement | null;
       plotDiv?.removeAllListeners("plotly_click");
+      plotDiv?.removeAllListeners("plotly_hover");
+      plotDiv?.removeAllListeners("plotly_unhover");
     };
   }, [props.setFrame]);
 
