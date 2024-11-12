@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { getBuildDisplayDateString } from "./colorizer/utils/math_utils";
+import { INTERNAL_BUILD } from "./constants";
 import { ErrorPage, LandingPage } from "./routes";
 import { decodeGitHubPagesUrl, isEncodedPathUrl, tryRemoveHashRouting } from "./utils/gh_routing";
 
@@ -22,12 +23,11 @@ if (locationUrl.hash !== "" || isEncodedPathUrl(locationUrl)) {
 
 const version = import.meta.env.VITE_APP_VERSION;
 const basename = import.meta.env.BASE_URL;
-const internalBuild = import.meta.env.VITE_INTERNAL_BUILD === "true";
 
 console.log(`Timelapse Feature Explorer - Version ${version}`);
 console.log(`Timelapse Feature Explorer - Basename ${basename}`);
 console.log(`Timelapse Feature Explorer - Last built ${getBuildDisplayDateString()}`);
-console.log(`Timelapse Feature Explorer - Internal build: ${internalBuild}`);
+INTERNAL_BUILD && console.log("Timelapse Feature Explorer - --INTERNAL BUILD--");
 
 // Set up react router
 const router = createBrowserRouter(
