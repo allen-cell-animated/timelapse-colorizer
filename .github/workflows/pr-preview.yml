@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
         # Must override default vite build base so that assets can still be accessed
         # when not placed in the root directory of gh-pages branch.
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Install and Build
         run: npm ci && npx vite build --base=/timelapse-colorizer/pr-preview-internal/pr-${PR_NUMBER}/ --config config/vite.config.internal.js
