@@ -3,7 +3,7 @@ import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react
 
 import { Dataset, Plotting, Track } from "../colorizer";
 
-import { TrackPlotLayoutConfig } from "../colorizer/Plotting";
+import type { TrackPlotLayoutConfig } from "../colorizer/Plotting";
 
 type PlotWrapperProps = {
   frame: number;
@@ -42,20 +42,22 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
 
   // Update time and hovered value in plot
   useMemo(() => {
-    const config: TrackPlotLayoutConfig = {
-      time: props.frame,
-    };
+    let hover;
     if (hoveredObjectId) {
       const featureData = props.dataset?.getFeatureData(props.featureKey);
       const hoveredObjectTime = props.dataset?.getTime(hoveredObjectId);
       if (featureData && hoveredObjectTime) {
         const featureValue = featureData.data[hoveredObjectId];
-        config.hover = {
+        hover = {
           x: hoveredObjectTime,
           y: featureValue,
         };
       }
     }
+    const config: TrackPlotLayoutConfig = {
+      time: props.frame,
+      hover,
+    };
     plot?.updateLayout(config);
   }, [props.dataset, props.frame, props.selectedTrack, props.featureKey, hoveredObjectId]);
 
