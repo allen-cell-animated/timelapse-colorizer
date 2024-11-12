@@ -50,7 +50,7 @@ export default class SharedWorkerPool {
    * - `undefined` if the configuration is invalid or the dataset is missing required data.
    * - `Float32Array` of motion deltas for each object in the dataset, with length equal to `2 * dataset.numObjects`.
    * For each object ID `i`, the motion delta is stored at `[2i, 2i + 1]`. If the delta cannot be calculated
-   * for the object (ex: because it has not existed for enough timesteps), the values will be `NaN`.
+   * for the object (e.g. it does not exist for part or all of the  the time interval), the values will be `NaN`.
    */
   async getMotionDeltas(dataset: Dataset, config: VectorConfig): Promise<Float32Array | undefined> {
     // We cannot directly pass the Dataset due to textures not being transferable to workers.

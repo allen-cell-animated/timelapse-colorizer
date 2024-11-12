@@ -66,35 +66,12 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
                   />
                 </div>
               </SettingsItem>
-              {/* <SettingsItem
-                label="Min timesteps"
-                // tooltip={
-                //   "The minimum number of timesteps the tracked object must exist for before a vector motion arrow will be shown."
-                // }
-              >
-                <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-                  <LabeledSlider
-                    type="value"
-                    step={1}
-                    minSliderBound={0}
-                    maxSliderBound={10}
-                    minInputBound={0}
-                    value={props.config.vectorConfig.timestepThreshold}
-                    onChange={(timestepThreshold: number) =>
-                      updateVectorConfig({
-                        ...props.config.vectorConfig,
-                        timestepThreshold,
-                        timesteps: Math.max(timestepThreshold, props.config.vectorConfig.timesteps),
-                      })
-                    }
-                  />
-                </div>
-              </SettingsItem> */}
             </SettingsContainer>
           </Card>
         )}
       </SettingsItem>
-      {/* TODO: Make this a logarithmic scale from 0 to 100, since we don't know what
+      {/*
+       * TODO: Make this a logarithmic scale from 0 to 100, since we don't know what
        * the max value will be. Alternatively, make this an onscreen pixel radius,
        * and normalize all vectors to that length? -> this is possible since we precalculate
        * all deltas.

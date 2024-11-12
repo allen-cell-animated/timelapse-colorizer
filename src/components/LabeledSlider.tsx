@@ -190,7 +190,6 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     }
   };
 
-  // TODO: Think about this more
   let stepSize = props.step ? props.step : (props.maxSliderBound - props.minSliderBound) / props.minSteps;
   stepSize = clamp(stepSize, 0, 1);
   stepSize = setMaxDecimalPrecision(stepSize, 3);

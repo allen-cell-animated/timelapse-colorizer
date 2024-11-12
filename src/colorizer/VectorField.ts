@@ -141,7 +141,7 @@ export default class VectorField {
       return;
     }
 
-    // Sort object IDs into buckets by time. Drop any IDs whose deltas are invalid (NaN).
+    // Sort object IDs into buckets by time. Drop any IDs whose vectors are invalid (NaN).
     const timeToIds = new Map<number, number[]>();
     let totalValidIds = 0;
     for (let i = 0; i < this.dataset.numObjects; i++) {

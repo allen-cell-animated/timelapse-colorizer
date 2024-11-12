@@ -225,8 +225,9 @@ function timeToMotionDelta(track: Track): { [key: number]: [number, number] | un
 /**
  * Calculates an array of motion deltas for each object in the dataset, averaged over the specified number of timesteps.
  * @param tracks An array of all tracks in the dataset to calculate motion deltas for.
- * @param numTimeIntervals The number of time intervals to average over. For an object at time `t`, the motion delta will be calculated
- * over time `t` to `t - numTimeIntervals`. If the object is not present for all of the timepoints, the motion deltas are set to `NaN`.
+ * @param numTimeIntervals The number of time intervals to average over. For an object at time `t`, the motion delta will
+ * be calculated over time `t` to `t - numTimeIntervals`. If the object is not present for any or all timepoints in the
+ * range, the motion deltas will be `NaN`.
  * @returns one of the following:
  * - `undefined` if `numTimeIntervals < 1`.
  * - an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
