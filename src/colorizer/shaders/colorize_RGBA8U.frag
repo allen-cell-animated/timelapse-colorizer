@@ -144,7 +144,7 @@ vec4 getBackdropColor(vec2 sUv) {
   return vec4(backdropRgb, backdropColor.a);
 }
 
-vec4 getObjectColor(vec2 sUv) {
+vec4 getObjectColor(vec2 sUv, float opacity) {
   // This pixel is background if, after scaling uv, it is outside the frame
   if (isOutsideBounds(sUv)) {
     return vec4(canvasBackgroundColor, 1.0);
@@ -162,6 +162,7 @@ vec4 getObjectColor(vec2 sUv) {
   ivec2 frameDims = textureSize(frame, 0);
   if (int(id) - 1 == highlightedId) {
     if (isEdge(sUv, frameDims)) {
+      // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
     }
   }
@@ -178,15 +179,18 @@ vec4 getObjectColor(vec2 sUv) {
 
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
+  vec4 color;
   if (isInRange) {
     if (isOutlier) {
-      return getColorFromDrawMode(outlierDrawMode, outlierColor);
+      color = getColorFromDrawMode(outlierDrawMode, outlierColor);
     } else {
-      return getColorRamp(normFeatureVal);
+      color = getColorRamp(normFeatureVal);
     }
   } else {
-    return getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
+    color = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
   }
+  color.a *= opacity;
+  return color;
 }
 
 void main() {
@@ -197,8 +201,7 @@ void main() {
   vec4 backdropColor = getBackdropColor(sUv);
 
   // Segmentation colors
-  vec4 mainColor = getObjectColor(sUv);
-  mainColor.a *= objectOpacity;
+  vec4 mainColor = getObjectColor(sUv, objectOpacity);
 
   // Overlays for timestamp/scale bar
   vec4 overlayColor = texture(overlay, vUv).rgba;  // Unscaled UVs, because it is sized to the canvas
