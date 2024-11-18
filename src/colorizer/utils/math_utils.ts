@@ -225,21 +225,16 @@ function timeToMotionDelta(track: Track): { [key: number]: [number, number] | un
 /**
  * Calculates an array of motion deltas for each object in the dataset, averaged over the specified number of timesteps.
  * @param tracks An array of all tracks in the dataset to calculate motion deltas for.
- * @param numTimeIntervals The number of time intervals to average over. For an object at time `t`, the motion delta will
- * be calculated over time `t` to `t - numTimeIntervals`. If the object is not present for any or all timepoints in the
- * range, the motion deltas will be `NaN`.
+ * @param numTimeIntervals The number of time intervals to average over (minimum 1). For an object at time `t`, the motion
+ * delta will be calculated over time `t` to `t - numTimeIntervals`. If the object is not present for any or all timepoints
+ * in the range, the motion deltas will be `NaN`.
  * @returns one of the following:
- * - `undefined` if `numTimeIntervals < 1`.
  * - an array of motion deltas, with length equal to `dataset.numObjects * 2`. For each object id `i`, the x and y components
  * of its motion delta are stored at indices `2i` and `2i + 1`, respectively. If an object does not exist for the specified number
  * of time intervals, both values will be `NaN`.
  */
-export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number): Float32Array | undefined {
-  numTimeIntervals = Math.max(numTimeIntervals, 0);
-
-  if (numTimeIntervals < 1) {
-    return undefined;
-  }
+export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number): Float32Array {
+  numTimeIntervals = Math.max(numTimeIntervals, 1);
 
   // Count total objects to allocate the motion deltas array
   let numObjects = 0;

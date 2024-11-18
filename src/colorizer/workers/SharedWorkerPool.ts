@@ -58,7 +58,7 @@ export default class SharedWorkerPool {
     const trackIds = dataset.trackIds;
     const times = dataset.times;
     const centroids = dataset.centroids;
-    if (!trackIds || !times || !centroids) {
+    if (!trackIds || !times || !centroids || config.timeIntervals < 1) {
       return undefined;
     }
     return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, config]);
