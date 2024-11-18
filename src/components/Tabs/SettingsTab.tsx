@@ -142,38 +142,32 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             </div>
           </SettingsItem>
 
-          <SettingsItem>
+          <SettingsItem label={"Show track path"}>
             <Checkbox
               type="checkbox"
               checked={props.config.showTrackPath}
               onChange={(event) => {
                 props.updateConfig({ showTrackPath: event.target.checked });
               }}
-            >
-              Show track path
-            </Checkbox>
+            />
           </SettingsItem>
-          <SettingsItem>
+          <SettingsItem label="Show scale bar">
             <Checkbox
               type="checkbox"
               checked={props.config.showScaleBar}
               onChange={(event) => {
                 props.updateConfig({ showScaleBar: event.target.checked });
               }}
-            >
-              Show scale bar
-            </Checkbox>
+            />
           </SettingsItem>
-          <SettingsItem>
+          <SettingsItem label="Show timestamp">
             <Checkbox
               type="checkbox"
               checked={props.config.showTimestamp}
               onChange={(event) => {
                 props.updateConfig({ showTimestamp: event.target.checked });
               }}
-            >
-              Show timestamp
-            </Checkbox>
+            />
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>

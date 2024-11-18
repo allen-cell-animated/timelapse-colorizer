@@ -1,5 +1,5 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Card, ColorPicker, Switch } from "antd";
+import { Card, Checkbox, ColorPicker } from "antd";
 import React, { ReactElement } from "react";
 import { Color, ColorRepresentation } from "three";
 
@@ -34,9 +34,9 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
       <SettingsItem label={"Show vector arrows"}>
         <div>
           {/* TODO: Replace with a top-level checkbox for Vector arrows when Collapse menus are removed */}
-          <Switch
+          <Checkbox
             checked={props.config.vectorConfig.visible}
-            onChange={(checked) => updateVectorConfig({ visible: checked })}
+            onChange={(e) => updateVectorConfig({ visible: e.target.checked })}
           />
         </div>
       </SettingsItem>

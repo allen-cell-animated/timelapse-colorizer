@@ -627,25 +627,23 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 </Button>
               </FlexRow>
             </SettingsItem>
-            <SettingsItem>
+            <SettingsItem label={"Show feature legend"}>
               <Checkbox
                 checked={props.config.showLegendDuringExport}
                 onChange={(e) => {
                   props.updateConfig({ showLegendDuringExport: e.target.checked });
                 }}
-              >
-                Include feature legend
-              </Checkbox>
+              />
             </SettingsItem>
-            <SettingsItem>
-              <Checkbox
-                checked={props.config.showHeaderDuringExport}
-                onChange={(e) => {
-                  props.updateConfig({ showHeaderDuringExport: e.target.checked });
-                }}
-              >
-                Include dataset and collection name
-              </Checkbox>
+            <SettingsItem label="Show dataset name">
+              <div>
+                <Checkbox
+                  checked={props.config.showHeaderDuringExport}
+                  onChange={(e) => {
+                    props.updateConfig({ showHeaderDuringExport: e.target.checked });
+                  }}
+                />
+              </div>
             </SettingsItem>
           </SettingsContainer>
 
