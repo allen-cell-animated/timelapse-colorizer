@@ -5,11 +5,12 @@ import { getDefaultVectorConfig, VectorConfig } from "./types";
 import Dataset from "./Dataset";
 
 const VERTICES_PER_VECTOR_LINE = 6;
+const VERTEX_LENGTH = 3;
 const ANGLE_TO_RADIANS = Math.PI / 180;
 
 const arrowStyle = {
   headAngleRads: 30 * ANGLE_TO_RADIANS,
-  maxHeadLengthPx: 10,
+  maxHeadLengthPx: 6,
 };
 
 type ArrayVector3 = [number, number, number];
@@ -122,6 +123,80 @@ export default class VectorField {
     ];
   }
 
+  private getArrowHeadVertices(normVectorStart: ArrayVector3, normVectorEnd: ArrayVector3): Float32Array {
+    //    o <- normVectorEnd
+    //   /|\
+    //  / | \  <- arrow head maintains onscreen pixel length with zoom
+    //    |
+    //    |
+    //    o <- normVectorStart
+
+    // Draw the arrow heads. These are two line segments for each, so there's a total of four additional vertices we need to add.
+    const vertices = new Float32Array((VERTICES_PER_VECTOR_LINE - 2) * VERTEX_LENGTH);
+
+    // TODO: Handle scaling and arrow head length in a vertex shader.
+    // There's extra work being done here to keep the arrow head length constant with zoom, but it also
+    // means that currently this is recalculated EVERY time the zoom changes.
+    const screenSpaceStartPx = this.relativeFrameCoordsToScreenSpacePx(normVectorStart);
+    const screenSpaceEndPx = this.relativeFrameCoordsToScreenSpacePx(normVectorEnd);
+    const screenSpaceDeltaPx = [
+      screenSpaceEndPx[0] - screenSpaceStartPx[0],
+      screenSpaceEndPx[1] - screenSpaceStartPx[1],
+    ];
+    const vectorLengthPx = Math.sqrt(
+      screenSpaceDeltaPx[0] * screenSpaceDeltaPx[0] + screenSpaceDeltaPx[1] * screenSpaceDeltaPx[1]
+    );
+
+    const vectorAngle = Math.atan2(screenSpaceDeltaPx[1], screenSpaceDeltaPx[0]) + Math.PI;
+    const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
+    const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
+    const arrowHead1: ArrayVector3 = [Math.cos(arrowAngle1), Math.sin(arrowAngle1), 0];
+    const arrowHead2: ArrayVector3 = [Math.cos(arrowAngle2), Math.sin(arrowAngle2), 0];
+
+    const lengthPx = Math.min(arrowStyle.maxHeadLengthPx * 2, vectorLengthPx);
+
+    // Keep arrow head length constant relative to onscreen pixels
+    // Arrow heads are in screen space pixel coordinates, so we divide by canvas resolution to get relative canvas coordinates,
+    // and then divide again by `frameToCanvasCoordinates` to get relative frame coordinates.
+    arrowHead1[0] =
+      (arrowHead1[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
+    arrowHead1[1] =
+      (arrowHead1[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
+    arrowHead2[0] =
+      (arrowHead2[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
+    arrowHead2[1] =
+      (arrowHead2[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
+
+    vertices.set(normVectorEnd, 0 * VERTEX_LENGTH);
+    vertices.set(arrowHead1, 1 * VERTEX_LENGTH);
+    vertices.set(normVectorEnd, 2 * VERTEX_LENGTH);
+    vertices.set(arrowHead2, 3 * VERTEX_LENGTH);
+
+    return vertices;
+  }
+
+  private getArrowVertices(centroid: [number, number], delta: [number, number]): Float32Array {
+    // Draw the main vector line segment from centroid to centroid + delta.
+    // TODO: Perform scaling as a step in a vertex shader.
+    const vertices = new Float32Array(VERTICES_PER_VECTOR_LINE * VERTEX_LENGTH);
+
+    const vectorStart: ArrayVector3 = [centroid[0], centroid[1], 0];
+    const vectorEnd: ArrayVector3 = [
+      centroid[0] + delta[0] * this.config.scaleFactor,
+      centroid[1] + delta[1] * this.config.scaleFactor,
+      0,
+    ];
+    const normVectorEnd = this.framePixelsToRelativeFrameCoords(vectorEnd);
+    const normVectorStart = this.framePixelsToRelativeFrameCoords(vectorStart);
+    vertices.set(normVectorStart, 0 * VERTEX_LENGTH);
+    vertices.set(normVectorEnd, 1 * VERTEX_LENGTH);
+
+    // Draw arrow head
+    vertices.set(this.getArrowHeadVertices(normVectorStart, normVectorEnd), 2 * VERTEX_LENGTH);
+
+    return vertices;
+  }
+
   /**
    * Calculates the vertices for the vector lines for ALL objects in the dataset,
    * across ALL timepoints. Vertices are stored in the line's geometry buffer,
@@ -170,59 +245,10 @@ export default class VectorField {
 
       for (const objectId of ids) {
         const centroid = this.dataset.getCentroid(objectId)!;
-        const delta = [this.vectorData[objectId * 2], this.vectorData[objectId * 2 + 1]];
+        const delta: [number, number] = [this.vectorData[objectId * 2], this.vectorData[objectId * 2 + 1]];
 
-        // Draw the main vector line segment from centroid to centroid + delta.
-        // TODO: Perform scaling as a step in a vertex shader.
-        const vectorStart: ArrayVector3 = [centroid[0], centroid[1], 0];
-        const vectorEnd: ArrayVector3 = [
-          centroid[0] + delta[0] * this.config.scaleFactor,
-          centroid[1] + delta[1] * this.config.scaleFactor,
-          0,
-        ];
-        const normVectorEnd = this.framePixelsToRelativeFrameCoords(vectorEnd);
-        const normVectorStart = this.framePixelsToRelativeFrameCoords(vectorStart);
-        vertices.set(normVectorStart, nextEmptyIndex * 3);
-        vertices.set(normVectorEnd, (nextEmptyIndex + 1) * 3);
-
-        // Draw the arrow heads. These are two line segments for each, so there's a total of four additional vertices we need to add.
-        // TODO: Handle scaling and arrow head length in a vertex shader.
-        // There's extra work being done here to keep the arrow head length constant with zoom, but it also
-        // means that currently this is recalculated EVERY time the zoom changes.
-        const screenSpaceStartPx = this.relativeFrameCoordsToScreenSpacePx(normVectorStart);
-        const screenSpaceEndPx = this.relativeFrameCoordsToScreenSpacePx(normVectorEnd);
-        const screenSpaceDeltaPx = [
-          screenSpaceEndPx[0] - screenSpaceStartPx[0],
-          screenSpaceEndPx[1] - screenSpaceStartPx[1],
-        ];
-        const vectorLengthPx = Math.sqrt(
-          screenSpaceDeltaPx[0] * screenSpaceDeltaPx[0] + screenSpaceDeltaPx[1] * screenSpaceDeltaPx[1]
-        );
-
-        const vectorAngle = Math.atan2(screenSpaceDeltaPx[1], screenSpaceDeltaPx[0]) + Math.PI;
-        const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
-        const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
-        const arrowHead1: ArrayVector3 = [Math.cos(arrowAngle1), Math.sin(arrowAngle1), 0];
-        const arrowHead2: ArrayVector3 = [Math.cos(arrowAngle2), Math.sin(arrowAngle2), 0];
-
-        const lengthPx = Math.min(arrowStyle.maxHeadLengthPx, vectorLengthPx);
-
-        // Keep arrow head length constant relative to onscreen pixels
-        // Arrow heads are in screen space pixel coordinates, so we divide by canvas resolution to get relative canvas coordinates,
-        // and then divide again by `frameToCanvasCoordinates` to get relative frame coordinates.
-        arrowHead1[0] =
-          (arrowHead1[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
-        arrowHead1[1] =
-          (arrowHead1[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
-        arrowHead2[0] =
-          (arrowHead2[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
-        arrowHead2[1] =
-          (arrowHead2[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
-
-        vertices.set(normVectorEnd, (nextEmptyIndex + 2) * 3);
-        vertices.set(arrowHead1, (nextEmptyIndex + 3) * 3);
-        vertices.set(normVectorEnd, (nextEmptyIndex + 4) * 3);
-        vertices.set(arrowHead2, (nextEmptyIndex + 5) * 3);
+        const arrowVertices = this.getArrowVertices(centroid, delta);
+        vertices.set(arrowVertices, nextEmptyIndex * VERTEX_LENGTH);
 
         nextEmptyIndex += VERTICES_PER_VECTOR_LINE;
       }
