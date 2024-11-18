@@ -7,6 +7,7 @@
     "start": "vite",
     "start-internal": "vite --config config/vite.config.internal.js",
     "dev": "vite",
+    "dev-internal": "vite --config config/vite.config.internal.js",
     "test": "vitest",
     "checks": "npm run lint & npm run typeCheck & npx vitest run",
     "build": "vite build",

@@ -1,17 +1,13 @@
-# Timelapse Feature Explorer 🔬🎨
-
-#### A web-based, time-series visualizer for tracked segmented data
-
-## Description
+# Timelapse Feature Explorer
 
 **Timelapse Feature Explorer is a web tool for interacting with and visualizing features in time-series segmented data**. You can apply color maps and ranges,
-switch between features in your dataset, play through your data to observe motion, and view plots showing how feature data change over time!
+switch between features in your dataset, play through your data to observe motion, and view plots showing how feature data change over time.
 
 This project originated from the [Allen Institute for Cell Science (AICS)](https://alleninstitute.org/division/cell-science/) Nuclear Morphogenesis
 project and is being updated to support broader use cases. View our [Issues page](https://github.com/allen-cell-animated/timelapse-colorizer/issues)
 for more details about potential future features!
 
-### Builds
+## Builds
 
 **Stable build: [timelapse.allencell.org](https://timelapse.allencell.org)**
 
@@ -31,8 +27,8 @@ Note: If your dataset is hosted via **HTTP** rather than HTTPS, you'll need to i
 
 ## Installation
 
-Installing is optional! You can use the [hosted version of Timelapse Feature Explorer](https://timelapse.allencell.org)
-to access our existing HTTPS-hosted datasets without installing the project.
+Installation is optional and is only necessary for accessing datasets via HTTP. You can use the [hosted version of Timelapse Feature Explorer](https://timelapse.allencell.org)
+to access HTTPS-hosted datasets without installing the project.
 
 **Prerequisites:**
 
@@ -49,6 +45,8 @@ npm run dev
 ```
 
 This will start a development server you can access from your browser. By default, the server will be hosted at `http://localhost:5173/`.
+
+You can also access our internal build (which may have some additional experimental features) by running `npm run dev-internal`.
 
 ### Uploading datasets
 
