@@ -525,6 +525,19 @@ export default class Dataset {
     return this.trackIds?.[index] || 0;
   }
 
+  /**
+   * Returns the 2D centroid of a given object id.
+   */
+  public getCentroid(objectId: number): [number, number] | undefined {
+    const index = objectId * 2;
+    const x = this.centroids?.[index];
+    const y = this.centroids?.[index + 1];
+    if (x && y) {
+      return [x, y];
+    }
+    return undefined;
+  }
+
   private getIdsOfTrack(trackId: number): number[] {
     return this.trackIds?.reduce((arr: number[], elem: number, ind: number) => {
       if (elem === trackId) arr.push(ind);

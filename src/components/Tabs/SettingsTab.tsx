@@ -6,39 +6,22 @@ import { Color, ColorRepresentation } from "three";
 import { Dataset } from "../../colorizer";
 import { DrawMode, OUTLINE_COLOR_DEFAULT, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
 const NO_BACKDROP = {
   key: "",
   label: "(None)",
 };
 
-const INDENT_PX = 24;
-const MAX_SLIDER_WIDTH = "250px";
-
-const defaultOutlinePresetColors = [
-  "#dddddd",
-  "#808080",
-  "#525252",
-  "#ff00ff",
-  "#ff0000",
-  "#ff8800",
-  "#ffcf00",
-  "#00ff00",
-  "#00ffff",
-  "#0048ff",
-];
-const outlineColorPresets = [
-  {
-    label: "Presets",
-    colors: defaultOutlinePresetColors,
-  },
-];
+export const SETTINGS_INDENT_PX = 24;
+export const MAX_SLIDER_WIDTH = "250px";
 
 type SettingsTabProps = {
   config: ViewerConfig;
@@ -48,10 +31,6 @@ type SettingsTabProps = {
   setSelectedBackdropKey: (key: string | null) => void;
 
   dataset: Dataset | null;
-};
-
-const h3Wrapper = (label: string | ReactElement): ReactElement => {
-  return <h3>{label}</h3>;
 };
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
@@ -67,7 +46,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper} gapPx={8}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={8}>
           <SettingsItem label="Backdrop images">
             <SelectionDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
@@ -111,8 +90,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
+
       <CustomCollapse label="Objects">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper} gapPx={8}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={8}>
           <SettingsItem label="Outline color">
             <div>
               <ColorPicker
@@ -124,7 +104,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                   props.updateConfig({ outlineColor: new Color(hex as ColorRepresentation) });
                 }}
                 value={new AntdColor(props.config.outlineColor.getHexString())}
-                presets={outlineColorPresets}
+                presets={DEFAULT_OUTLINE_COLOR_PRESETS}
               />
             </div>
           </SettingsItem>
@@ -162,41 +142,42 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             </div>
           </SettingsItem>
 
-          <SettingsItem>
+          <SettingsItem label={"Show track path"}>
             <Checkbox
               type="checkbox"
               checked={props.config.showTrackPath}
               onChange={(event) => {
                 props.updateConfig({ showTrackPath: event.target.checked });
               }}
-            >
-              Show track path
-            </Checkbox>
+            />
           </SettingsItem>
-          <SettingsItem>
+          <SettingsItem label="Show scale bar">
             <Checkbox
               type="checkbox"
               checked={props.config.showScaleBar}
               onChange={(event) => {
                 props.updateConfig({ showScaleBar: event.target.checked });
               }}
-            >
-              Show scale bar
-            </Checkbox>
+            />
           </SettingsItem>
-          <SettingsItem>
+          <SettingsItem label="Show timestamp">
             <Checkbox
               type="checkbox"
               checked={props.config.showTimestamp}
               onChange={(event) => {
                 props.updateConfig({ showTimestamp: event.target.checked });
               }}
-            >
-              Show timestamp
-            </Checkbox>
+            />
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
+
+      <CustomCollapse label="Vector arrows">
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX}>
+          <VectorFieldSettings config={props.config} updateConfig={props.updateConfig} />
+        </SettingsContainer>
+      </CustomCollapse>
+      <div style={{ height: "100px" }}></div>
     </FlexColumn>
   );
 }

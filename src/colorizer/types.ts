@@ -136,6 +136,25 @@ export type DrawSettings = {
   color: Color;
 };
 
+export type VectorConfig = {
+  visible: boolean;
+  key: string;
+  /** Number of time intervals to average over when calculating motion deltas. 5 by default. */
+  timeIntervals: number;
+  color: Color;
+  scaleFactor: number;
+};
+
+export const VECTOR_KEY_MOTION_DELTA = "_motion_";
+
+export const getDefaultVectorConfig = (): VectorConfig => ({
+  visible: false,
+  key: VECTOR_KEY_MOTION_DELTA,
+  timeIntervals: 5,
+  color: new Color(0x000000),
+  scaleFactor: 4,
+});
+
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
   FILTERS = "filters",
@@ -169,6 +188,7 @@ export type ViewerConfig = {
   outlierDrawSettings: DrawSettings;
   outlineColor: Color;
   openTab: TabType;
+  vectorConfig: VectorConfig;
 };
 
 export const defaultViewerConfig: ViewerConfig = {
@@ -188,6 +208,7 @@ export const defaultViewerConfig: ViewerConfig = {
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
   openTab: TabType.TRACK_PLOT,
+  vectorConfig: getDefaultVectorConfig(),
 };
 
 export enum PlotRangeType {

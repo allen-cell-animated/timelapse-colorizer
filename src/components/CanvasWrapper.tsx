@@ -84,6 +84,7 @@ type CanvasWrapperProps = {
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
+  vectorData: Float32Array | null;
 
   loading: boolean;
   loadingProgress: number | null;
@@ -281,6 +282,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.isHeaderVisibleOnExport = props.config.showHeaderDuringExport;
     canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
   }, [props.config.showLegendDuringExport, props.isRecording]);
+
+  useMemo(() => {
+    canv.setVectorFieldConfig(props.config.vectorConfig);
+  }, [props.config.vectorConfig]);
+
+  useMemo(() => {
+    canv.setVectorData(props.vectorData);
+  }, [props.vectorData]);
 
   useMemo(() => {
     canv.setOutlineColor(props.config.outlineColor);

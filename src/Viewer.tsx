@@ -32,7 +32,7 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
-import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
+import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
@@ -106,6 +106,8 @@ function Viewer(): ReactElement {
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
     getDefaultScatterPlotConfig()
   );
+
+  const motionDeltas = useMotionDeltas(dataset, workerPool, config.vectorConfig);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -1017,6 +1019,7 @@ function Viewer(): ReactElement {
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   collection={collection || null}
+                  vectorData={motionDeltas}
                   dataset={dataset}
                   datasetKey={datasetKey}
                   featureKey={featureKey}
