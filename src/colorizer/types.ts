@@ -136,6 +136,11 @@ export type DrawSettings = {
   color: Color;
 };
 
+export enum VectorTooltipMode {
+  MAGNITUDE = "m",
+  COMPONENTS = "c",
+}
+
 export type VectorConfig = {
   visible: boolean;
   key: string;
@@ -143,6 +148,7 @@ export type VectorConfig = {
   timeIntervals: number;
   color: Color;
   scaleFactor: number;
+  tooltipMode: VectorTooltipMode;
 };
 
 export const VECTOR_KEY_MOTION_DELTA = "_motion_";
@@ -153,6 +159,7 @@ export const getDefaultVectorConfig = (): VectorConfig => ({
   timeIntervals: 5,
   color: new Color(0x000000),
   scaleFactor: 4,
+  tooltipMode: VectorTooltipMode.COMPONENTS,
 });
 
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
