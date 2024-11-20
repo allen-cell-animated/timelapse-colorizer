@@ -148,29 +148,29 @@ export default class VectorField {
     );
 
     const vectorAngle = Math.atan2(screenSpaceDeltaPx[1], screenSpaceDeltaPx[0]) + Math.PI;
-    const arrowAngle1 = vectorAngle + arrowStyle.headAngleRads;
-    const arrowAngle2 = vectorAngle - arrowStyle.headAngleRads;
-    const arrowHead1: ArrayVector3 = [Math.cos(arrowAngle1), Math.sin(arrowAngle1), 0];
-    const arrowHead2: ArrayVector3 = [Math.cos(arrowAngle2), Math.sin(arrowAngle2), 0];
+    const lArrowAngle = vectorAngle + arrowStyle.headAngleRads;
+    const rArrowAngle = vectorAngle - arrowStyle.headAngleRads;
+    const lArrowHead: ArrayVector3 = [Math.cos(lArrowAngle), Math.sin(lArrowAngle), 0];
+    const rArrowHead: ArrayVector3 = [Math.cos(rArrowAngle), Math.sin(rArrowAngle), 0];
 
     const lengthPx = Math.min(arrowStyle.maxHeadLengthPx * 2, vectorLengthPx);
 
     // Keep arrow head length constant relative to onscreen pixels
     // Arrow heads are in screen space pixel coordinates, so we divide by canvas resolution to get relative canvas coordinates,
     // and then divide again by `frameToCanvasCoordinates` to get relative frame coordinates.
-    arrowHead1[0] =
-      (arrowHead1[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
-    arrowHead1[1] =
-      (arrowHead1[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
-    arrowHead2[0] =
-      (arrowHead2[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
-    arrowHead2[1] =
-      (arrowHead2[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
+    lArrowHead[0] =
+      (lArrowHead[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
+    lArrowHead[1] =
+      (lArrowHead[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
+    rArrowHead[0] =
+      (rArrowHead[0] * lengthPx) / this.frameToCanvasCoordinates.x / this.canvasResolution.x + normVectorEnd[0];
+    rArrowHead[1] =
+      (rArrowHead[1] * lengthPx) / this.frameToCanvasCoordinates.y / this.canvasResolution.y + normVectorEnd[1];
 
     vertices.set(normVectorEnd, 0 * VERTEX_LENGTH);
-    vertices.set(arrowHead1, 1 * VERTEX_LENGTH);
+    vertices.set(lArrowHead, 1 * VERTEX_LENGTH);
     vertices.set(normVectorEnd, 2 * VERTEX_LENGTH);
-    vertices.set(arrowHead2, 3 * VERTEX_LENGTH);
+    vertices.set(rArrowHead, 3 * VERTEX_LENGTH);
 
     return vertices;
   }
