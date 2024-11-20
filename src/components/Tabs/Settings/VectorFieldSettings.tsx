@@ -1,9 +1,9 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Card, Checkbox, ColorPicker } from "antd";
+import { Card, Checkbox, ColorPicker, Radio } from "antd";
 import React, { ReactElement } from "react";
 import { Color, ColorRepresentation } from "three";
 
-import { VECTOR_KEY_MOTION_DELTA, VectorConfig, ViewerConfig } from "../../../colorizer/types";
+import { VECTOR_KEY_MOTION_DELTA, VectorConfig, VectorTooltipMode, ViewerConfig } from "../../../colorizer/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
 
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
@@ -104,6 +104,18 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
             }}
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
           ></ColorPicker>
+        </div>
+      </SettingsItem>
+      <SettingsItem label="Show value in tooltips as" labelStyle={{ height: "fit-content" }}>
+        <div style={{ width: "fit-content" }}>
+          <Radio.Group
+            value={props.config.vectorConfig.tooltipMode}
+            onChange={(e) => updateVectorConfig({ tooltipMode: e.target.value })}
+            disabled={!props.config.vectorConfig.visible}
+          >
+            <Radio value={VectorTooltipMode.MAGNITUDE}>Magnitude and angle</Radio>
+            <Radio value={VectorTooltipMode.COMPONENTS}>XY components</Radio>
+          </Radio.Group>
         </div>
       </SettingsItem>
     </>

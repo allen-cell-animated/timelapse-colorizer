@@ -159,7 +159,7 @@ export const getDefaultVectorConfig = (): VectorConfig => ({
   timeIntervals: 5,
   color: new Color(0x000000),
   scaleFactor: 4,
-  tooltipMode: VectorTooltipMode.COMPONENTS,
+  tooltipMode: VectorTooltipMode.MAGNITUDE,
 });
 
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
