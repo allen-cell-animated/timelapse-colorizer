@@ -854,6 +854,7 @@ function Viewer(): ReactElement {
     }
   }
 
+  // TODO: Move to a separate component?
   const hoverTooltipContent = [
     <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
     <p key="feature_value">
@@ -866,20 +867,26 @@ function Viewer(): ReactElement {
     const vectorKey = config.vectorConfig.key;
     const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
     const motionDelta = [motionDeltas[2 * lastHoveredId], motionDeltas[2 * lastHoveredId + 1]];
-    if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
+    if (Number.isNaN(motionDelta[0]) || Number.isNaN(motionDelta[1])) {
+      // {vector}:
+      hoverTooltipContent.push(<p key="vector_empty">{vectorName}:</p>);
+    } else if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
       const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
-      const angleDegrees = (Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
+      const angleDegrees = (360 + Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
 
+      // {vector}: {magnitude} {unit}, {angle}°
       hoverTooltipContent.push(
         <p key="vector_magnitude">
-          {vectorName}: {numberToStringDecimal(magnitude, 3)} px, {numberToStringDecimal(angleDegrees, 3)}°
+          {vectorName}: {numberToStringDecimal(magnitude, 3)} px, {numberToStringDecimal(angleDegrees, 1)}°
         </p>
       );
     } else {
+      // {vector}: ({x}, {y}) {unit}
+      const allowIntegerTruncation = Number.isInteger(motionDelta[0]) && Number.isInteger(motionDelta[1]);
       hoverTooltipContent.push(
         <p key="vector_components">
-          {vectorName}: ({numberToStringDecimal(motionDelta[0], 3, false)},{" "}
-          {numberToStringDecimal(motionDelta[1], 3, false)}) px
+          {vectorName}: ({numberToStringDecimal(motionDelta[0], 3, allowIntegerTruncation)},{" "}
+          {numberToStringDecimal(motionDelta[1], 3, allowIntegerTruncation)}) px
         </p>
       );
     }

@@ -106,7 +106,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
           ></ColorPicker>
         </div>
       </SettingsItem>
-      <SettingsItem label="Show value in tooltips as" labelStyle={{ height: "fit-content" }}>
+      <SettingsItem label="Show vector in tooltip as" labelStyle={{ height: "fit-content" }}>
         <div style={{ width: "fit-content" }}>
           <Radio.Group
             value={props.config.vectorConfig.tooltipMode}
