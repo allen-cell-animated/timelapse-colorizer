@@ -18,7 +18,7 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
 } from "./colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
-import { defaultViewerConfig } from "./colorizer/constants";
+import { getDefaultViewerConfig } from "./colorizer/constants";
 import { getDefaultScatterPlotConfig } from "./colorizer/constants";
 import {
   FeatureThreshold,
@@ -100,7 +100,7 @@ function Viewer(): ReactElement {
   // Use reducer here in case multiple updates happen simultaneously
   const [config, updateConfig] = useReducer(
     (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
-    defaultViewerConfig
+    getDefaultViewerConfig()
   );
   const [scatterPlotConfig, updateScatterPlotConfig] = useReducer(
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),

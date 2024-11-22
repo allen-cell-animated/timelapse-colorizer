@@ -12,7 +12,7 @@ import {
 } from "../colors/categorical_palettes";
 import { isDrawMode } from "../constants";
 import { isTabType } from "../constants";
-import { defaultViewerConfig } from "../constants";
+import { getDefaultViewerConfig } from "../constants";
 import {
   DrawSettings,
   FeatureThreshold,
@@ -346,14 +346,14 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
     newConfig.outlierDrawSettings = parseDrawSettings(
       params.get(UrlParam.OUTLIER_COLOR),
       params.get(UrlParam.OUTLIER_MODE),
-      defaultViewerConfig.outlierDrawSettings
+      getDefaultViewerConfig().outlierDrawSettings
     );
   }
   if (params.get(UrlParam.FILTERED_COLOR) || params.get(UrlParam.FILTERED_MODE)) {
     newConfig.outOfRangeDrawSettings = parseDrawSettings(
       params.get(UrlParam.FILTERED_COLOR),
       params.get(UrlParam.FILTERED_MODE),
-      defaultViewerConfig.outOfRangeDrawSettings
+      getDefaultViewerConfig().outOfRangeDrawSettings
     );
   }
   if (params.get(UrlParam.OUTLINE_COLOR)) {

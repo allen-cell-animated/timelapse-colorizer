@@ -45,7 +45,7 @@ export const isTabType = (tab: string): tab is TabType => {
   return Object.values(TabType).includes(tab as TabType);
 };
 
-export const defaultViewerConfig: ViewerConfig = {
+export const getDefaultViewerConfig = (): ViewerConfig => ({
   showTrackPath: true,
   showScaleBar: true,
   showTimestamp: true,
@@ -63,7 +63,7 @@ export const defaultViewerConfig: ViewerConfig = {
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
   openTab: TabType.TRACK_PLOT,
   vectorConfig: getDefaultVectorConfig(),
-}; // Use a function instead of a constant to avoid sharing the same object reference.
+}); // Use a function instead of a constant to avoid sharing the same object reference.
 
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   xAxis: null,
