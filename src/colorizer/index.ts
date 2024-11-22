@@ -11,5 +11,5 @@ export { ColorRamp, ColorRampType, Dataset, ImageFrameLoader, UrlArrayLoader as 
 
 export * from "./colors/categorical_palettes";
 export * from "./colors/color_ramps";
-export * from "./types";
 export * from "./constants";
+export * from "./types";

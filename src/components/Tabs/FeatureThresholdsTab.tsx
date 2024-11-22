@@ -9,12 +9,13 @@ import { Dataset } from "../../colorizer";
 import {
   CategoricalFeatureThreshold,
   FeatureThreshold,
+  isThresholdCategorical,
+  isThresholdNumeric,
   NumericFeatureThreshold,
   ThresholdType,
 } from "../../colorizer/types";
 import { thresholdMatchFinder } from "../../colorizer/utils/data_utils";
 import { ScrollShadowContainer, useScrollShadow } from "../../colorizer/utils/react_utils";
-import { isThresholdCategorical, isThresholdNumeric } from "../../constants";
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
 
