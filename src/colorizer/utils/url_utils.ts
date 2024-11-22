@@ -4,18 +4,18 @@
 import { Color, ColorRepresentation, HexColorString } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
+import { isThresholdCategorical } from "../../constants";
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
   getKeyFromPalette,
   KNOWN_CATEGORICAL_PALETTES,
 } from "../colors/categorical_palettes";
+import { isDrawMode } from "../constants";
+import { isTabType } from "../constants";
+import { defaultViewerConfig } from "../constants";
 import {
-  defaultViewerConfig,
   DrawSettings,
   FeatureThreshold,
-  isDrawMode,
-  isTabType,
-  isThresholdCategorical,
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,

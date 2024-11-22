@@ -18,11 +18,10 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
 } from "./colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
+import { defaultViewerConfig } from "./colorizer/constants";
+import { getDefaultScatterPlotConfig } from "./colorizer/constants";
 import {
-  defaultViewerConfig,
   FeatureThreshold,
-  getDefaultScatterPlotConfig,
-  isThresholdNumeric,
   LoadTroubleshooting,
   ReportWarningCallback,
   ScatterPlotConfig,
@@ -35,6 +34,7 @@ import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
+import { isThresholdNumeric } from "./constants";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";

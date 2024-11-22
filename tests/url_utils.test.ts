@@ -2,14 +2,8 @@ import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../src/colorizer";
-import {
-  defaultViewerConfig,
-  DrawMode,
-  DrawSettings,
-  PlotRangeType,
-  TabType,
-  ThresholdType,
-} from "../src/colorizer/types";
+import { defaultViewerConfig } from "../src/colorizer/constants";
+import { DrawMode, DrawSettings, PlotRangeType, TabType, ThresholdType } from "../src/colorizer/types";
 import {
   isAllenPath,
   isHexColor,

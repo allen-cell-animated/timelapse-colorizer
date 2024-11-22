@@ -11,12 +11,6 @@ import {
   UnsignedIntType,
 } from "three";
 
-// TODO: Move to dedicated constants file
-export const BACKGROUND_COLOR_DEFAULT = 0xffffff;
-export const OUTLINE_COLOR_DEFAULT = 0xff00ff;
-export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
-export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
-
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
 
 /** Available types for data loading (features, tracks, outliers, etc.), as a CPU buffer or a GPU texture */
@@ -92,10 +86,6 @@ export enum DrawMode {
   USE_COLOR = 1,
 }
 
-export const isDrawMode = (mode: number): mode is DrawMode => {
-  return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
-};
-
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
 // to numeric data. Numeric thresholds do not track if their source feature is integer
 // (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
@@ -123,14 +113,6 @@ export type CategoricalFeatureThreshold = BaseFeatureThreshold & {
 
 export type FeatureThreshold = NumericFeatureThreshold | CategoricalFeatureThreshold;
 
-export const isThresholdCategorical = (threshold: FeatureThreshold): threshold is CategoricalFeatureThreshold => {
-  return threshold.type === ThresholdType.CATEGORICAL;
-};
-
-export const isThresholdNumeric = (threshold: FeatureThreshold): threshold is NumericFeatureThreshold => {
-  return threshold.type === ThresholdType.NUMERIC;
-};
-
 export type DrawSettings = {
   mode: DrawMode;
   color: Color;
@@ -145,16 +127,6 @@ export type VectorConfig = {
   scaleFactor: number;
 };
 
-export const VECTOR_KEY_MOTION_DELTA = "_motion_";
-
-export const getDefaultVectorConfig = (): VectorConfig => ({
-  visible: false,
-  key: VECTOR_KEY_MOTION_DELTA,
-  timeIntervals: 5,
-  color: new Color(0x000000),
-  scaleFactor: 4,
-});
-
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
   FILTERS = "filters",
@@ -162,10 +134,6 @@ export enum TabType {
   SCATTER_PLOT = "scatter_plot",
   SETTINGS = "settings",
 }
-
-export const isTabType = (tab: string): tab is TabType => {
-  return Object.values(TabType).includes(tab as TabType);
-};
 
 /**
  * Configuration for the viewer. These are high-level settings
@@ -191,26 +159,6 @@ export type ViewerConfig = {
   vectorConfig: VectorConfig;
 };
 
-export const defaultViewerConfig: ViewerConfig = {
-  showTrackPath: true,
-  showScaleBar: true,
-  showTimestamp: true,
-  showLegendDuringExport: true,
-  showHeaderDuringExport: true,
-  keepRangeBetweenDatasets: false,
-  /** Brightness, as an integer percentage. */
-  backdropBrightness: 100,
-  /** Saturation, as an integer percentage. */
-  backdropSaturation: 100,
-  /** Opacity, as an integer percentage. */
-  objectOpacity: 100,
-  outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
-  outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
-  outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
-  openTab: TabType.TRACK_PLOT,
-  vectorConfig: getDefaultVectorConfig(),
-};
-
 export enum PlotRangeType {
   ALL_TIME = "All time",
   CURRENT_TRACK = "Current track",
@@ -222,13 +170,6 @@ export type ScatterPlotConfig = {
   yAxis: string | null;
   rangeType: PlotRangeType;
 };
-
-// Use a function instead of a constant to avoid sharing the same object reference.
-export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
-  xAxis: null,
-  yAxis: null,
-  rangeType: PlotRangeType.ALL_TIME,
-});
 
 /**
  * Callback used to report warnings to the user. The message is the title
