@@ -11,30 +11,31 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
-import { Dataset, Track } from "./colorizer";
 import {
+  Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  KNOWN_CATEGORICAL_PALETTES,
-} from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
-import { getDefaultViewerConfig } from "./colorizer/constants";
-import { getDefaultScatterPlotConfig } from "./colorizer/constants";
-import {
+  DISPLAY_COLOR_RAMP_KEYS,
   FeatureThreshold,
+  getDefaultScatterPlotConfig,
+  getDefaultViewerConfig,
+  isThresholdNumeric,
+  KNOWN_CATEGORICAL_PALETTES,
+  KNOWN_COLOR_RAMPS,
   LoadTroubleshooting,
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
+  Track,
   ViewerConfig,
-} from "./colorizer/types";
+} from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
-import { isThresholdNumeric } from "./constants";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";

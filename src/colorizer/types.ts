@@ -86,6 +86,10 @@ export enum DrawMode {
   USE_COLOR = 1,
 }
 
+export const isDrawMode = (mode: number): mode is DrawMode => {
+  return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
+};
+
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
 // to numeric data. Numeric thresholds do not track if their source feature is integer
 // (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
@@ -113,6 +117,14 @@ export type CategoricalFeatureThreshold = BaseFeatureThreshold & {
 
 export type FeatureThreshold = NumericFeatureThreshold | CategoricalFeatureThreshold;
 
+export const isThresholdCategorical = (threshold: FeatureThreshold): threshold is CategoricalFeatureThreshold => {
+  return threshold.type === ThresholdType.CATEGORICAL;
+};
+
+export const isThresholdNumeric = (threshold: FeatureThreshold): threshold is NumericFeatureThreshold => {
+  return threshold.type === ThresholdType.NUMERIC;
+};
+
 export type DrawSettings = {
   mode: DrawMode;
   color: Color;
@@ -127,6 +139,7 @@ export type VectorConfig = {
   scaleFactor: number;
 };
 
+// TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
   FILTERS = "filters",
@@ -134,6 +147,10 @@ export enum TabType {
   SCATTER_PLOT = "scatter_plot",
   SETTINGS = "settings",
 }
+
+export const isTabType = (tab: string): tab is TabType => {
+  return Object.values(TabType).includes(tab as TabType);
+};
 
 /**
  * Configuration for the viewer. These are high-level settings
