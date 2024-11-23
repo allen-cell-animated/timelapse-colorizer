@@ -32,16 +32,6 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
 
   return (
     <>
-      <SettingsItem label={"Show vector arrows"}>
-        <div>
-          {/* TODO: Replace with a top-level checkbox for Vector arrows when Collapse menus are removed */}
-          <Checkbox
-            checked={props.config.vectorConfig.visible}
-            onChange={(e) => updateVectorConfig({ visible: e.target.checked })}
-          />
-        </div>
-      </SettingsItem>
-
       <SettingsItem label="Vector" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
         <SelectionDropdown
           disabled={!props.config.vectorConfig.visible}

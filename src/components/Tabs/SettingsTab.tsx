@@ -9,10 +9,10 @@ import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
-import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../LabeledSlider";
+import SettingsCategory from "../SettingsCategory";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
@@ -46,53 +46,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
 
   return (
     <FlexColumn $gap={5}>
-      <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={8}>
-          <SettingsItem label="Backdrop images">
-            <SelectionDropdown
-              selected={props.selectedBackdropKey || NO_BACKDROP.key}
-              items={backdropOptions}
-              onChange={props.setSelectedBackdropKey}
-              disabled={backdropOptions.length === 1}
-            />
-          </SettingsItem>
-          <SettingsItem label="Brightness">
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={200}
-                minInputBound={0}
-                maxInputBound={200}
-                value={props.config.backdropBrightness}
-                onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropDisabled}
-              />
-            </div>
-          </SettingsItem>
-
-          <SettingsItem label="Saturation">
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={100}
-                minInputBound={0}
-                maxInputBound={100}
-                value={props.config.backdropSaturation}
-                onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropDisabled}
-              />
-            </div>
-          </SettingsItem>
-        </SettingsContainer>
-      </CustomCollapse>
-
-      <CustomCollapse label="Objects">
+      <SettingsCategory label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={8}>
           <SettingsItem label="Outline color">
             <div>
@@ -171,13 +125,67 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             />
           </SettingsItem>
         </SettingsContainer>
-      </CustomCollapse>
+      </SettingsCategory>
 
-      <CustomCollapse label="Vector arrows">
+      <SettingsCategory label="Backdrop" subtitle="Show a backdrop image sequence behind objects">
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={8}>
+          <SettingsItem label="Backdrop images">
+            <SelectionDropdown
+              selected={props.selectedBackdropKey || NO_BACKDROP.key}
+              items={backdropOptions}
+              onChange={props.setSelectedBackdropKey}
+              disabled={backdropOptions.length === 1}
+            />
+          </SettingsItem>
+          <SettingsItem label="Brightness">
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={200}
+                minInputBound={0}
+                maxInputBound={200}
+                value={props.config.backdropBrightness}
+                onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropDisabled}
+              />
+            </div>
+          </SettingsItem>
+
+          <SettingsItem label="Saturation">
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={props.config.backdropSaturation}
+                onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
+                disabled={isBackdropDisabled}
+              />
+            </div>
+          </SettingsItem>
+        </SettingsContainer>
+      </SettingsCategory>
+
+      <SettingsCategory
+        label="Vector arrows"
+        subtitle="Draw motion vectors on onscreen objects"
+        showToggle={true}
+        checked={props.config.vectorConfig.visible}
+        onToggle={(checked) => {
+          props.updateConfig({ ...props.config, vectorConfig: { ...props.config.vectorConfig, visible: checked } });
+        }}
+      >
         <SettingsContainer indentPx={SETTINGS_INDENT_PX}>
           <VectorFieldSettings config={props.config} updateConfig={props.updateConfig} />
         </SettingsContainer>
-      </CustomCollapse>
+      </SettingsCategory>
       <div style={{ height: "100px" }}></div>
     </FlexColumn>
   );
