@@ -9,13 +9,12 @@ import {
   getKeyFromPalette,
   KNOWN_CATEGORICAL_PALETTES,
 } from "../colors/categorical_palettes";
+import { getDefaultViewerConfig } from "../constants";
+import { isTabType, isThresholdCategorical } from "../types";
 import {
-  defaultViewerConfig,
   DrawSettings,
   FeatureThreshold,
   isDrawMode,
-  isTabType,
-  isThresholdCategorical,
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,
@@ -346,14 +345,14 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
     newConfig.outlierDrawSettings = parseDrawSettings(
       params.get(UrlParam.OUTLIER_COLOR),
       params.get(UrlParam.OUTLIER_MODE),
-      defaultViewerConfig.outlierDrawSettings
+      getDefaultViewerConfig().outlierDrawSettings
     );
   }
   if (params.get(UrlParam.FILTERED_COLOR) || params.get(UrlParam.FILTERED_MODE)) {
     newConfig.outOfRangeDrawSettings = parseDrawSettings(
       params.get(UrlParam.FILTERED_COLOR),
       params.get(UrlParam.FILTERED_MODE),
-      defaultViewerConfig.outOfRangeDrawSettings
+      getDefaultViewerConfig().outOfRangeDrawSettings
     );
   }
   if (params.get(UrlParam.OUTLINE_COLOR)) {

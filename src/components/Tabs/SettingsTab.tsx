@@ -4,7 +4,8 @@ import React, { ReactElement } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { Dataset } from "../../colorizer";
-import { DrawMode, OUTLINE_COLOR_DEFAULT, ViewerConfig } from "../../colorizer/types";
+import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
+import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 

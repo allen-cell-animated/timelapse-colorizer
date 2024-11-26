@@ -17,7 +17,8 @@ import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
-import { defaultViewerConfig, ViewerConfig } from "../colorizer/types";
+import { getDefaultViewerConfig } from "../colorizer/constants";
+import { ViewerConfig } from "../colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow } from "../styles/utils";
 
@@ -53,7 +54,7 @@ const defaultProps: Partial<ExportButtonProps> = {
   defaultImagePrefix: "image",
   disabled: false,
   onClick: () => {},
-  config: defaultViewerConfig,
+  config: getDefaultViewerConfig(),
   updateConfig: () => {},
 };
 

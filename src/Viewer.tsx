@@ -11,24 +11,25 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
-import { Dataset, Track } from "./colorizer";
 import {
+  Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  KNOWN_CATEGORICAL_PALETTES,
-} from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
-import {
-  defaultViewerConfig,
+  DISPLAY_COLOR_RAMP_KEYS,
   FeatureThreshold,
   getDefaultScatterPlotConfig,
+  getDefaultViewerConfig,
   isThresholdNumeric,
+  KNOWN_CATEGORICAL_PALETTES,
+  KNOWN_COLOR_RAMPS,
   LoadTroubleshooting,
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
+  Track,
   ViewerConfig,
-} from "./colorizer/types";
+} from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
@@ -100,7 +101,7 @@ function Viewer(): ReactElement {
   // Use reducer here in case multiple updates happen simultaneously
   const [config, updateConfig] = useReducer(
     (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
-    defaultViewerConfig
+    getDefaultViewerConfig()
   );
   const [scatterPlotConfig, updateScatterPlotConfig] = useReducer(
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
