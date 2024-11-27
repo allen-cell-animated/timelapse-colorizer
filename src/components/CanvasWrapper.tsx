@@ -1,4 +1,4 @@
-import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { ExpandOutlined, HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -84,6 +84,7 @@ type CanvasWrapperProps = {
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
+  updateConfig: (settings: Partial<ViewerConfig>) => void;
   vectorData: Float32Array | null;
 
   loading: boolean;
@@ -638,6 +639,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           >
             <ZoomOutOutlined />
             <VisuallyHidden>Zoom out</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtext>
+        <TooltipWithSubtext
+          title={"Show backdrop"}
+          placement="right"
+          subtext="Settings > Backdrop"
+          trigger={["hover", "focus"]}
+        >
+          <IconButton
+            type={props.config.backdropVisible ? "primary" : "link"}
+            onClick={() => {
+              props.updateConfig({ backdropVisible: !props.config.backdropVisible });
+            }}
+            disabled={props.selectedBackdropKey === null}
+          >
+            <ExpandOutlined />
+            <VisuallyHidden>Show backdrop</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
       </CanvasControlsContainer>

@@ -1032,6 +1032,7 @@ function Viewer(): ReactElement {
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
+                  updateConfig={updateConfig}
                   onTrackClicked={(track) => {
                     setFindTrackInput(track?.trackId.toString() || "");
                     setSelectedTrack(track);
