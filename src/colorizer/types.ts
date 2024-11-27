@@ -163,11 +163,12 @@ export type ViewerConfig = {
   showLegendDuringExport: boolean;
   showHeaderDuringExport: boolean;
   keepRangeBetweenDatasets: boolean;
+  backdropVisible: boolean;
   /** Brightness, as an integer percentage. */
   backdropBrightness: number;
   /** Saturation, as an integer percentage. */
   backdropSaturation: number;
-  /** Opacity, as an integer percentage. */
+  /** Object opacity when backdrop is visible, as an integer percentage. */
   objectOpacity: number;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;

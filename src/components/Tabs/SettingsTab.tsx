@@ -40,20 +40,35 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         return { key, label: data.name };
       })
     : [];
-  backdropOptions.unshift(NO_BACKDROP);
 
-  const isBackdropDisabled = backdropOptions.length === 1 || !props.selectedBackdropKey;
+  let isBackdropDisabled = false;
+  const selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.key;
+  if (backdropOptions.length === 0 || props.selectedBackdropKey === null) {
+    // Add placeholder for no backdrop.
+    isBackdropDisabled = true;
+    backdropOptions.push(NO_BACKDROP);
+  }
 
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={8}>
-          <SettingsItem label="Backdrop images">
+          <SettingsItem label={"Show backdrops"}>
+            <Checkbox
+              type="checkbox"
+              disabled={isBackdropDisabled}
+              checked={props.config.backdropVisible}
+              onChange={(event) => {
+                props.updateConfig({ backdropVisible: event.target.checked });
+              }}
+            />
+          </SettingsItem>
+          <SettingsItem label="Backdrop">
             <SelectionDropdown
-              selected={props.selectedBackdropKey || NO_BACKDROP.key}
+              selected={selectedBackdropKey}
               items={backdropOptions}
               onChange={props.setSelectedBackdropKey}
-              disabled={backdropOptions.length === 1}
+              disabled={!props.config.backdropVisible || isBackdropDisabled}
             />
           </SettingsItem>
           <SettingsItem label="Brightness">
@@ -68,7 +83,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropDisabled}
+                disabled={!props.config.backdropVisible || isBackdropDisabled}
               />
             </div>
           </SettingsItem>
@@ -85,7 +100,23 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropDisabled}
+                disabled={!props.config.backdropVisible || isBackdropDisabled}
+              />
+            </div>
+          </SettingsItem>
+          <SettingsItem label="Object opacity">
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                disabled={!props.config.backdropVisible || isBackdropDisabled}
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={props.config.objectOpacity}
+                onChange={(objectOpacity: number) => props.updateConfig({ objectOpacity: objectOpacity })}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
               />
             </div>
           </SettingsItem>
@@ -126,21 +157,6 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 props.updateConfig({ outlierDrawSettings: { mode, color } });
               }}
             />
-          </SettingsItem>
-          <SettingsItem label="Opacity">
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={100}
-                minInputBound={0}
-                maxInputBound={100}
-                value={props.config.objectOpacity}
-                onChange={(objectOpacity: number) => props.updateConfig({ objectOpacity: objectOpacity })}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-              />
-            </div>
           </SettingsItem>
 
           <SettingsItem label={"Show track path"}>

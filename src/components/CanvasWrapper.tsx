@@ -225,10 +225,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    canv.setBackdropKey(props.selectedBackdropKey);
-    canv.setBackdropBrightness(props.config.backdropBrightness);
-    canv.setBackdropSaturation(props.config.backdropSaturation);
-  }, [props.selectedBackdropKey, props.config.backdropBrightness, props.config.backdropSaturation]);
+    if (props.selectedBackdropKey !== null && props.config.backdropVisible) {
+      canv.setBackdropKey(props.selectedBackdropKey);
+      canv.setBackdropBrightness(props.config.backdropBrightness);
+      canv.setBackdropSaturation(props.config.backdropSaturation);
+      canv.setObjectOpacity(props.config.objectOpacity);
+    } else {
+      canv.setBackdropKey(null);
+      canv.setObjectOpacity(100);
+    }
+  }, [
+    props.selectedBackdropKey,
+    props.config.backdropVisible,
+    props.config.backdropBrightness,
+    props.config.backdropSaturation,
+    props.config.objectOpacity,
+  ]);
 
   // Update categorical colors
   useMemo(() => {
@@ -245,10 +257,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const settings = props.config.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
   }, [props.config.outlierDrawSettings]);
-
-  useMemo(() => {
-    canv.setObjectOpacity(props.config.objectOpacity);
-  }, [props.config.objectOpacity]);
 
   useMemo(() => {
     canv.setInRangeLUT(props.inRangeLUT);
