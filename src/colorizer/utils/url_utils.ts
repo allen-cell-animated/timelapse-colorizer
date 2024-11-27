@@ -38,6 +38,7 @@ enum UrlParam {
   COLOR_RAMP_REVERSED_SUFFIX = "!",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
+  SHOW_BACKDROP = "bg",
   BACKDROP_KEY = "bg-key",
   BACKDROP_BRIGHTNESS = "bg-brightness",
   BACKDROP_SATURATION = "bg-sat",
@@ -301,6 +302,7 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
     parameters.push(`${UrlParam.OPEN_TAB}=${config.openTab}`);
   }
 
+  tryAddBooleanParam(parameters, config.backdropVisible, UrlParam.SHOW_BACKDROP);
   tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
   tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
   tryAddBooleanParam(parameters, config.showTrackPath, UrlParam.SHOW_PATH);
@@ -366,6 +368,7 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
     newConfig.openTab = openTab;
   }
 
+  newConfig.backdropVisible = getBooleanParam(params.get(UrlParam.SHOW_BACKDROP));
   newConfig.showScaleBar = getBooleanParam(params.get(UrlParam.SHOW_SCALEBAR));
   newConfig.showTimestamp = getBooleanParam(params.get(UrlParam.SHOW_TIMESTAMP));
   newConfig.showTrackPath = getBooleanParam(params.get(UrlParam.SHOW_PATH));
