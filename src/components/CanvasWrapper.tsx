@@ -1,11 +1,11 @@
-import { ExpandOutlined, HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { NoImageSVG } from "../assets";
+import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
 import { LoadTroubleshooting, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
@@ -642,9 +642,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           </IconButton>
         </TooltipWithSubtext>
         <TooltipWithSubtext
-          title={"Show backdrop"}
+          title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
-          subtext="Settings > Backdrop"
+          subtext="Viewer settings > Backdrop"
           trigger={["hover", "focus"]}
         >
           <IconButton
@@ -654,7 +654,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             }}
             disabled={props.selectedBackdropKey === null}
           >
-            <ExpandOutlined />
+            {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
             <VisuallyHidden>Show backdrop</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
