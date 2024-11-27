@@ -33,6 +33,7 @@ const palette = {
   successLight: "#f6ffed",
   errorMedium: "#ffa39e",
   errorLight: "#fff2f0",
+  infoDark: "#69c0ff",
   infoMedium: "#91d5ff",
   infoLight: "#e6f4ff",
   warningMedium: "#ffe58f",
@@ -59,6 +60,8 @@ const theme = {
       theme: palette.theme,
       link: palette.link,
       linkHover: palette.linkDark,
+      darkLink: palette.infoMedium,
+      darkLinkHover: palette.infoDark,
     },
     layout: {
       background: palette.gray0,
@@ -162,6 +165,8 @@ const CssContainer = styled.div`
   --color-text-theme-dark: ${theme.color.themeDark};
   --color-text-link: ${theme.color.text.link};
   --color-text-link-hover: ${theme.color.text.linkHover};
+  --color-text-dark-link: ${theme.color.text.darkLink};
+  --color-text-dark-link-hover: ${theme.color.text.darkLinkHover};
 
   /* Layout */
   --color-background-alt: ${theme.color.layout.backgroundAlt};

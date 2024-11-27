@@ -7,7 +7,7 @@ import { clamp } from "three/src/math/MathUtils";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
-import { LoadTroubleshooting, ViewerConfig } from "../colorizer/types";
+import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
@@ -15,6 +15,7 @@ import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
+import { LinkStyleButton } from "./Buttons/LinkStyleButton";
 import IconButton from "./IconButton";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -30,19 +31,32 @@ const RIGHT_CLICK_BUTTON = 2;
 const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
 
-function TooltipWithSubtext(props: TooltipProps & { title: ReactNode; subtext: ReactNode }): ReactElement {
+function TooltipWithSubtext(
+  props: TooltipProps & { title: ReactNode; subtext?: ReactNode; subtextList?: ReactNode[] }
+): ReactElement {
+  const divRef = useRef<HTMLDivElement>(null);
   return (
-    <Tooltip
-      {...props}
-      title={
-        <>
-          <p style={{ margin: 0 }}>{props.title}</p>
-          <p style={{ margin: 0, fontSize: "12px" }}>{props.subtext}</p>
-        </>
-      }
-    >
-      {props.children}
-    </Tooltip>
+    <div ref={divRef}>
+      <Tooltip
+        {...props}
+        trigger={["hover", "focus"]}
+        title={
+          <>
+            <p style={{ margin: 0 }}>{props.title}</p>
+            {props.subtext && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtext}</p>}
+            {props.subtextList &&
+              props.subtextList.map((subtext, i) => (
+                <p key={i} style={{ margin: 0, fontSize: "12px" }}>
+                  {subtext}
+                </p>
+              ))}
+          </>
+        }
+        getPopupContainer={() => divRef.current ?? document.body}
+      >
+        {props.children}
+      </Tooltip>
+    </div>
   );
 }
 
@@ -583,7 +597,25 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.dataset, canv]);
 
   // RENDERING /////////////////////////////////////////////////
+
   canv.render();
+
+  const onViewerSettingsLinkClicked = (): void => {
+    props.updateConfig({ openTab: TabType.SETTINGS });
+  };
+  const backdropTooltipContents: ReactNode[] = [
+    props.selectedBackdropKey === null
+      ? "(No backdrops available)"
+      : props.dataset?.getBackdropData().get(props.selectedBackdropKey)?.name,
+    <LinkStyleButton
+      $color="var(--color-text-dark-link)"
+      $hoverColor="var(--color-text-dark-link-hover)"
+      onClick={onViewerSettingsLinkClicked}
+    >
+      Viewer settings {">"} Backdrop
+    </LinkStyleButton>,
+  ];
+
   return (
     <FlexColumnAlignCenter
       style={{
@@ -644,7 +676,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         <TooltipWithSubtext
           title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
-          subtext="Viewer settings > Backdrop"
+          subtextList={backdropTooltipContents}
           trigger={["hover", "focus"]}
         >
           <IconButton
