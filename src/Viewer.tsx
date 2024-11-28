@@ -460,9 +460,11 @@ function Viewer(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
-        setSelectedBackdropKey(null);
+
+      if (!selectedBackdropKey || (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey))) {
+        setSelectedBackdropKey(newDataset.getDefaultBackdropKey());
       }
+
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
