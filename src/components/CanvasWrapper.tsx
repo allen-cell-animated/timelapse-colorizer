@@ -1,4 +1,4 @@
-import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { HomeOutlined, SettingOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -603,18 +603,27 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const onViewerSettingsLinkClicked = (): void => {
     props.updateConfig({ openTab: TabType.SETTINGS });
   };
-  const backdropTooltipContents: ReactNode[] = [
-    props.selectedBackdropKey === null
-      ? "(No backdrops available)"
-      : props.dataset?.getBackdropData().get(props.selectedBackdropKey)?.name,
+
+  const backdropTooltipContents: ReactNode[] = [];
+  backdropTooltipContents.push(
+    <span key="backdrop-name">
+      {props.selectedBackdropKey === null
+        ? "(No backdrops available)"
+        : props.dataset?.getBackdropData().get(props.selectedBackdropKey)?.name}
+    </span>
+  );
+  // Link to viewer settings
+  backdropTooltipContents.push(
     <LinkStyleButton
-      $color="var(--color-text-dark-link)"
-      $hoverColor="var(--color-text-dark-link-hover)"
+      key="backdrop-viewer-settings-link"
+      $color={theme.color.text.darkLink}
+      $hoverColor={theme.color.text.darkLinkHover}
       onClick={onViewerSettingsLinkClicked}
     >
-      Viewer settings {">"} Backdrop
-    </LinkStyleButton>,
-  ];
+      <SettingOutlined />
+      {" Viewer settings > Backdrop"}
+    </LinkStyleButton>
+  );
 
   return (
     <FlexColumnAlignCenter
