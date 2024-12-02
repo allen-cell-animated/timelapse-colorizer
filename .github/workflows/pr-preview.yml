@@ -16,15 +16,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-        # Must override default vite build base so that assets can still be accessed when not placed in the root directory of gh-pages branch.
+        # Must override default vite build base so that assets can still be accessed
+        # when not placed in the root directory of gh-pages branch.
       - name: Install and Build
         run: npm ci && npx vite build --base=/timelapse-colorizer/pr-preview/pr-${PR_NUMBER}/
         env:
           PR_NUMBER: ${{ github.event.number }}
 
       - name: Deploy preview
-        uses: rossjrw/pr-preview-action@v1
+        uses: rossjrw/pr-preview-action@430e3dfc1de8a8ae77e77d862d25676ef9db55d1
         with:
           source-dir: ./dist/
+
+  deploy-preview-internal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Install and Build
+        run: npm ci && npx vite build --base=/timelapse-colorizer/pr-preview-internal/pr-${PR_NUMBER}/ --config config/vite.internal-build.config.js
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+
+      - name: Deploy internal preview
+        uses: rossjrw/pr-preview-action@430e3dfc1de8a8ae77e77d862d25676ef9db55d1
+        with:
+          source-dir: ./dist/
+          umbrella-dir: pr-preview-internal

@@ -3,7 +3,8 @@ import { Card, Checkbox, ColorPicker, Radio } from "antd";
 import React, { ReactElement } from "react";
 import { Color, ColorRepresentation } from "three";
 
-import { VECTOR_KEY_MOTION_DELTA, VectorConfig, VectorTooltipMode, ViewerConfig } from "../../../colorizer/types";
+import { VECTOR_KEY_MOTION_DELTA } from "../../../colorizer/constants";
+import { VectorConfig, VectorTooltipMode, ViewerConfig } from "../../../colorizer/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./constants";
 
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";

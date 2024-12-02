@@ -2,14 +2,8 @@ import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../src/colorizer";
-import {
-  defaultViewerConfig,
-  DrawMode,
-  DrawSettings,
-  PlotRangeType,
-  TabType,
-  ThresholdType,
-} from "../src/colorizer/types";
+import { getDefaultViewerConfig } from "../src/colorizer/constants";
+import { DrawMode, DrawSettings, PlotRangeType, TabType, ThresholdType } from "../src/colorizer/types";
 import {
   isAllenPath,
   isHexColor,
@@ -413,11 +407,11 @@ describe("Loading + saving from URL query strings", () => {
         config: {
           outlierDrawSettings: {
             mode: DrawMode.HIDE,
-            color: defaultViewerConfig.outlierDrawSettings.color,
+            color: getDefaultViewerConfig().outlierDrawSettings.color,
           },
           outOfRangeDrawSettings: {
             mode: DrawMode.USE_COLOR,
-            color: defaultViewerConfig.outOfRangeDrawSettings.color,
+            color: getDefaultViewerConfig().outOfRangeDrawSettings.color,
           },
         },
       });

@@ -24,13 +24,11 @@ import {
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
   BACKGROUND_COLOR_DEFAULT,
-  DrawMode,
-  FeatureDataType,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
-  VectorConfig,
-} from "./types";
+} from "./constants";
+import { DrawMode, FeatureDataType, VectorConfig } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";

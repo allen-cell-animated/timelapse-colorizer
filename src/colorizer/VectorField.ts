@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, LineSegments, Material, Vector2 } from "three";
 
-import { getDefaultVectorConfig, VectorConfig } from "./types";
+import { getDefaultVectorConfig } from "./constants";
+import { VectorConfig } from "./types";
 
 import Dataset from "./Dataset";
 
