@@ -95,7 +95,21 @@ function Viewer(): ReactElement {
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+  /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Switch to default backdrop if the dataset has one and none is currently selected.
+    // If the dataset has no backdrops, hide the backdrop.
+    if (dataset && selectedBackdropKey === null) {
+      const defaultBackdropKey = dataset.getDefaultBackdropKey();
+      if (defaultBackdropKey) {
+        setSelectedBackdropKey(defaultBackdropKey);
+      } else {
+        updateConfig({ backdropVisible: false });
+      }
+    }
+  });
 
   // TODO: Save these settings in local storage
   // Use reducer here in case multiple updates happen simultaneously
@@ -461,7 +475,12 @@ function Viewer(): ReactElement {
 
       setFindTrackInput("");
 
-      if (!selectedBackdropKey || (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey))) {
+      // Switch to the new dataset's default backdrop if the current one is not in the
+      // new dataset. `selectedBackdropKey` is null only if the current dataset has no backdrops.
+      if (
+        selectedBackdropKey === null ||
+        (selectedBackdropKey !== null && !newDataset.hasBackdrop(selectedBackdropKey))
+      ) {
         setSelectedBackdropKey(newDataset.getDefaultBackdropKey());
       }
 
