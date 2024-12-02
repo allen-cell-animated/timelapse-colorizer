@@ -1,5 +1,9 @@
 import styled, { css } from "styled-components";
 
+/**
+ * A button styled to remove default styles and visually resemble a link.
+ * This ensures the button still follows accessibility semantics.
+ */
 export const LinkStyleButton = styled.button<{
   $color?: string;
   $hoverColor?: string;

@@ -33,7 +33,6 @@ const palette = {
   successLight: "#f6ffed",
   errorMedium: "#ffa39e",
   errorLight: "#fff2f0",
-  infoDark: "#69c0ff",
   infoMedium: "#91d5ff",
   infoLight: "#e6f4ff",
   warningMedium: "#ffe58f",
@@ -60,8 +59,8 @@ const theme = {
       theme: palette.theme,
       link: palette.link,
       linkHover: palette.linkDark,
-      darkLink: palette.infoMedium,
-      darkLinkHover: palette.infoDark,
+      darkLink: palette.gray20,
+      darkLinkHover: palette.gray10,
     },
     layout: {
       background: palette.gray0,

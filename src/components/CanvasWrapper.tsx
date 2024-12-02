@@ -1,4 +1,4 @@
-import { HomeOutlined, SettingOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -32,7 +32,7 @@ const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
 
 function TooltipWithSubtext(
-  props: TooltipProps & { title: ReactNode; subtext?: ReactNode; subtextList?: ReactNode[] }
+  props: TooltipProps & { title: ReactNode; subtitle?: ReactNode; subtitleList?: ReactNode[] }
 ): ReactElement {
   const divRef = useRef<HTMLDivElement>(null);
   return (
@@ -43,11 +43,11 @@ function TooltipWithSubtext(
         title={
           <>
             <p style={{ margin: 0 }}>{props.title}</p>
-            {props.subtext && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtext}</p>}
-            {props.subtextList &&
-              props.subtextList.map((subtext, i) => (
+            {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
+            {props.subtitleList &&
+              props.subtitleList.map((text, i) => (
                 <p key={i} style={{ margin: 0, fontSize: "12px" }}>
-                  {subtext}
+                  {text}
                 </p>
               ))}
           </>
@@ -620,7 +620,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       $hoverColor={theme.color.text.darkLinkHover}
       onClick={onViewerSettingsLinkClicked}
     >
-      <SettingOutlined />
       {" Viewer settings > Backdrop"}
     </LinkStyleButton>
   );
@@ -657,7 +656,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <TooltipWithSubtext title={"Zoom in"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtext title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -668,7 +667,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
-        <TooltipWithSubtext title={"Zoom out"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtext title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -685,7 +684,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         <TooltipWithSubtext
           title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
-          subtextList={backdropTooltipContents}
+          subtitleList={backdropTooltipContents}
           trigger={["hover", "focus"]}
         >
           <IconButton
