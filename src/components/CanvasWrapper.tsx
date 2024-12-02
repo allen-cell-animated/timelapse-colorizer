@@ -620,7 +620,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       $hoverColor={theme.color.text.darkLinkHover}
       onClick={onViewerSettingsLinkClicked}
     >
-      {" Viewer settings > Backdrop"}
+      {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
     </LinkStyleButton>
   );
 

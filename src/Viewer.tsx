@@ -103,13 +103,12 @@ function Viewer(): ReactElement {
     // If the dataset has no backdrops, hide the backdrop.
     if (dataset && (selectedBackdropKey === null || !dataset.hasBackdrop(selectedBackdropKey))) {
       const defaultBackdropKey = dataset.getDefaultBackdropKey();
-      if (defaultBackdropKey) {
-        setSelectedBackdropKey(defaultBackdropKey);
-      } else {
+      setSelectedBackdropKey(defaultBackdropKey);
+      if (!defaultBackdropKey) {
         updateConfig({ backdropVisible: false });
       }
     }
-  });
+  }, [dataset, selectedBackdropKey]);
 
   // TODO: Save these settings in local storage
   // Use reducer here in case multiple updates happen simultaneously

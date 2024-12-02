@@ -46,6 +46,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   let selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.key;
   if (isBackdropDisabled) {
     backdropOptions.push(NO_BACKDROP);
+    selectedBackdropKey = NO_BACKDROP.key;
   }
 
   return (
