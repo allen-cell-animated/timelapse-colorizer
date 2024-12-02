@@ -695,7 +695,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             disabled={props.selectedBackdropKey === null}
           >
             {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
-            <VisuallyHidden>Show backdrop</VisuallyHidden>
+            <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
       </CanvasControlsContainer>

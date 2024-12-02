@@ -41,11 +41,10 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       })
     : [];
 
-  let isBackdropDisabled = false;
-  const selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.key;
-  if (backdropOptions.length === 0 || props.selectedBackdropKey === null) {
-    // Add placeholder for no backdrop.
-    isBackdropDisabled = true;
+  const isBackdropDisabled = backdropOptions.length === 0 || props.selectedBackdropKey === null;
+  const isBackdropOptionsDisabled = isBackdropDisabled || !props.config.backdropVisible;
+  let selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.key;
+  if (isBackdropDisabled) {
     backdropOptions.push(NO_BACKDROP);
   }
 
@@ -68,7 +67,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               selected={selectedBackdropKey}
               items={backdropOptions}
               onChange={props.setSelectedBackdropKey}
-              disabled={!props.config.backdropVisible || isBackdropDisabled}
+              disabled={isBackdropOptionsDisabled}
             />
           </SettingsItem>
           <SettingsItem label="Brightness">
@@ -83,7 +82,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                disabled={!props.config.backdropVisible || isBackdropDisabled}
+                disabled={isBackdropOptionsDisabled}
               />
             </div>
           </SettingsItem>
@@ -100,7 +99,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                disabled={!props.config.backdropVisible || isBackdropDisabled}
+                disabled={isBackdropOptionsDisabled}
               />
             </div>
           </SettingsItem>
@@ -108,7 +107,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
               <LabeledSlider
                 type="value"
-                disabled={!props.config.backdropVisible || isBackdropDisabled}
+                disabled={isBackdropOptionsDisabled}
                 minSliderBound={0}
                 maxSliderBound={100}
                 minInputBound={0}

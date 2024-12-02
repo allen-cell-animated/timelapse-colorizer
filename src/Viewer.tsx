@@ -101,7 +101,7 @@ function Viewer(): ReactElement {
   useEffect(() => {
     // Switch to default backdrop if the dataset has one and none is currently selected.
     // If the dataset has no backdrops, hide the backdrop.
-    if (dataset && selectedBackdropKey === null) {
+    if (dataset && (selectedBackdropKey === null || !dataset.hasBackdrop(selectedBackdropKey))) {
       const defaultBackdropKey = dataset.getDefaultBackdropKey();
       if (defaultBackdropKey) {
         setSelectedBackdropKey(defaultBackdropKey);
