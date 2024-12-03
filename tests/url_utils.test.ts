@@ -182,7 +182,7 @@ describe("Loading + saving from URL query strings", () => {
       "&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25" +
       "&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0" +
       "&tab=filters" +
-      "&vc=1&vc=1&vc-color=ff00ff&vc-key=key&vc-scale=5&vc-time-int=18&vc-tooltip=c" +
+      "&vc=1&vc-color=ff00ff&vc-key=key&vc-scale=5&vc-time-int=18&vc-tooltip=c" +
       "&bg=1&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop" +
       "&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
     expect(queryString).equals(expectedQueryString);
