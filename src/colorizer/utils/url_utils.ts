@@ -26,6 +26,9 @@ import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
 import { numberToStringDecimal } from "./math_utils";
 
+// TODO: This file needs to be split up for easier reading and unit testing.
+// This could also be a great opportunity to reconsider how we store and manage state.
+
 enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
@@ -389,7 +392,7 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
   newConfig.keepRangeBetweenDatasets = decodeBoolean(params.get(UrlParam.KEEP_RANGE));
 
   const vectorConfig = deserializeVectorConfig(params);
-  if (vectorConfig) {
+  if (vectorConfig && Object.keys(vectorConfig).length > 0) {
     newConfig.vectorConfig = { ...getDefaultVectorConfig(), ...vectorConfig };
   }
 
