@@ -451,7 +451,7 @@ function deserializeVectorConfig(params: URLSearchParams): Partial<VectorConfig>
   const newConfig: Partial<VectorConfig> = {};
   newConfig.visible = decodeBoolean(params.get(UrlParam.SHOW_VECTOR));
   newConfig.color = decodeHexColor(params.get(UrlParam.VECTOR_COLOR));
-  newConfig.key = decodeString(params.get(UrlParam.VECTOR_KEY)) ?? undefined;
+  newConfig.key = decodeString(params.get(UrlParam.VECTOR_KEY));
   newConfig.scaleFactor = decodeFloat(params.get(UrlParam.VECTOR_SCALE));
   newConfig.timeIntervals = decodeInt(params.get(UrlParam.VECTOR_TIME_INTERVALS));
 
