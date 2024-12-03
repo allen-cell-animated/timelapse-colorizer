@@ -28,6 +28,8 @@ import {
   ScatterPlotConfig,
   TabType,
   Track,
+  VECTOR_KEY_MOTION_DELTA,
+  VectorTooltipMode,
   ViewerConfig,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
@@ -873,6 +875,44 @@ function Viewer(): ReactElement {
     }
   }
 
+  const getVectorTooltipText = (): string | null => {
+    if (!config.vectorConfig.visible || lastHoveredId === null || !motionDeltas) {
+      return null;
+    }
+    const motionDelta = [motionDeltas[2 * lastHoveredId], motionDeltas[2 * lastHoveredId + 1]];
+
+    if (Number.isNaN(motionDelta[0]) || Number.isNaN(motionDelta[1])) {
+      return null;
+    }
+
+    const vectorKey = config.vectorConfig.key;
+    const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
+    if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
+      const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
+      const angleDegrees = (360 + Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
+      const magnitudeText = numberToStringDecimal(magnitude, 3);
+      const angleText = numberToStringDecimal(angleDegrees, 1);
+      return `${vectorName}: ${magnitudeText} px, ${angleText}°`;
+    } else {
+      const allowIntegerTruncation = Number.isInteger(motionDelta[0]) && Number.isInteger(motionDelta[1]);
+      const x = numberToStringDecimal(motionDelta[0], 3, allowIntegerTruncation);
+      const y = numberToStringDecimal(motionDelta[1], 3, allowIntegerTruncation);
+      return `${vectorName}: (${x}, ${y}) px
+     `;
+    }
+  };
+
+  // TODO: Move to a separate component?
+  const vectorTooltipText = getVectorTooltipText();
+  const hoverTooltipContent = [
+    <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
+    <p key="feature_value">
+      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
+      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
+    </p>,
+    vectorTooltipText ? <p key="vector">{vectorTooltipText}</p> : null,
+  ];
+
   return (
     <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
@@ -1023,18 +1063,7 @@ function Viewer(): ReactElement {
                   </div>
                 </FlexRowAlignCenter>
               </div>
-              <HoverTooltip
-                tooltipContent={
-                  <>
-                    <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
-                    <p>
-                      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
-                      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
-                    </p>
-                  </>
-                }
-                disabled={!showHoveredId}
-              >
+              <HoverTooltip tooltipContent={hoverTooltipContent} disabled={!showHoveredId}>
                 <CanvasWrapper
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
