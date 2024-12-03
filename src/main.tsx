@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { getBuildDisplayDateString } from "./colorizer/utils/math_utils";
+import { INTERNAL_BUILD } from "./constants";
 import { ErrorPage, LandingPage } from "./routes";
 import { decodeGitHubPagesUrl, isEncodedPathUrl, tryRemoveHashRouting } from "./utils/gh_routing";
 
@@ -26,6 +27,7 @@ const basename = import.meta.env.BASE_URL;
 console.log(`Timelapse Feature Explorer - Version ${version}`);
 console.log(`Timelapse Feature Explorer - Basename ${basename}`);
 console.log(`Timelapse Feature Explorer - Last built ${getBuildDisplayDateString()}`);
+INTERNAL_BUILD && console.log("Timelapse Feature Explorer - --INTERNAL BUILD--");
 
 // Set up react router
 const router = createBrowserRouter(

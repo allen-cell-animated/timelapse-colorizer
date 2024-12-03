@@ -130,6 +130,11 @@ export type DrawSettings = {
   color: Color;
 };
 
+export enum VectorTooltipMode {
+  MAGNITUDE = "m",
+  COMPONENTS = "c",
+}
+
 export type VectorConfig = {
   visible: boolean;
   key: string;
@@ -137,6 +142,7 @@ export type VectorConfig = {
   timeIntervals: number;
   color: Color;
   scaleFactor: number;
+  tooltipMode: VectorTooltipMode;
 };
 
 // TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.

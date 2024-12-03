@@ -1,6 +1,14 @@
 import { Color } from "three";
 
-import { DrawMode, PlotRangeType, ScatterPlotConfig, TabType, VectorConfig, ViewerConfig } from "./types";
+import {
+  DrawMode,
+  PlotRangeType,
+  ScatterPlotConfig,
+  TabType,
+  VectorConfig,
+  VectorTooltipMode,
+  ViewerConfig,
+} from "./types";
 
 export const BACKGROUND_COLOR_DEFAULT = 0xffffff;
 export const OUTLINE_COLOR_DEFAULT = 0xff00ff;
@@ -15,6 +23,7 @@ export const getDefaultVectorConfig = (): VectorConfig => ({
   timeIntervals: 5,
   color: new Color(0x000000),
   scaleFactor: 4,
+  tooltipMode: VectorTooltipMode.MAGNITUDE,
 });
 
 export const getDefaultViewerConfig = (): ViewerConfig => ({
