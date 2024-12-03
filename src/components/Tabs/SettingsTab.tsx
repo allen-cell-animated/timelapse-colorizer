@@ -22,6 +22,7 @@ const NO_BACKDROP = {
 };
 
 export const SETTINGS_INDENT_PX = 24;
+const SETTINGS_GAP_PX = 8;
 export const MAX_SLIDER_WIDTH = "250px";
 
 type SettingsTabProps = {
@@ -47,7 +48,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={8}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Backdrop images">
             <SelectionDropdown
               selected={props.selectedBackdropKey || NO_BACKDROP.key}
@@ -93,7 +94,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       </CustomCollapse>
 
       <CustomCollapse label="Objects">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={8}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <SettingsItem label="Outline color">
             <div>
               <ColorPicker
@@ -174,7 +175,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
       </CustomCollapse>
 
       <CustomCollapse label="Vector arrows">
-        <SettingsContainer indentPx={SETTINGS_INDENT_PX}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
           <VectorFieldSettings config={props.config} updateConfig={props.updateConfig} />
         </SettingsContainer>
       </CustomCollapse>
