@@ -899,7 +899,7 @@ function Viewer(): ReactElement {
       <SmallScreenWarning />
 
       <Header alertElement={bannerElement} headerOpensInNewTab={true}>
-        <h3>{collection?.metadata.name ?? dataset?.metadata.name ?? null}</h3>
+        <h3>{collection?.metadata.name ?? dataset?.metadata.name ?? dataset ? "Unnamed dataset" : null}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
             <LoadDatasetButton
