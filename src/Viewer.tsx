@@ -8,7 +8,17 @@ import {
 } from "@ant-design/icons";
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import React, {
+  ReactElement,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
 import {
@@ -913,13 +923,24 @@ function Viewer(): ReactElement {
     vectorTooltipText ? <p key="vector">{vectorTooltipText}</p> : null,
   ];
 
+  let datasetHeader: ReactNode = null;
+  if (collection && collection.metadata.name) {
+    datasetHeader = collection.metadata.name;
+  } else if (dataset && dataset.metadata.name) {
+    datasetHeader = dataset.metadata.name;
+  } else if (dataset) {
+    datasetHeader = <span style={{ color: theme.color.text.hint }}>Untitled dataset</span>;
+  } else {
+    datasetHeader = null;
+  }
+
   return (
     <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
       <SmallScreenWarning />
 
       <Header alertElement={bannerElement} headerOpensInNewTab={true}>
-        <h3>{collection?.metadata.name ?? null}</h3>
+        <h3>{datasetHeader}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
             <LoadDatasetButton
