@@ -1,11 +1,10 @@
-import React, { EventHandler, Ref, useEffect, useRef, useState } from "react";
+import React, { EventHandler, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color } from "three";
 import { useLocalStorage } from "usehooks-ts";
 
-import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../colors/categorical_palettes";
 import { VectorConfig } from "../types";
 
+import { AnnotationData, AnnotationDataInterface } from "../AnnotationData";
 import Dataset from "../Dataset";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
 
@@ -308,57 +307,46 @@ export const useMotionDeltas = (
   return motionDeltas;
 };
 
-export type LabelData = {
-  name: string;
-  color: Color;
-  ids: Set<number>;
-};
-
 export type AnnotationState = {
-  labelDataRef: Ref<LabelData[]>;
-
+  // Viewer state
   currentLabelIdx: number | null;
-  setCurrentLabelIdx: (index: number) => void;
+  setCurrentLabelIdx: (labelIdx: number) => void;
   isAnnotationEnabled: boolean;
   setIsAnnotationEnabled: (enabled: boolean) => void;
-
-  flagNeedsUpdate: () => void;
-};
+} & AnnotationDataInterface;
 
 export const useAnnotations = (): AnnotationState => {
-  // TODO: Depending on how annotations are used, we may need to use a class
-  // instead of a hook for some state. This would give better control over
-  // caching of data/results, but also means there's more boilerplate.
+  const annotationData = useConstructor(() => new AnnotationData());
 
-  const labelData = useRef([] as LabelData[]);
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
-  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
+  const [isAnnotationEnabled, setIsAnnotationEnabled] = useState<boolean>(false);
 
-  const numLabelsCreated = useRef(0);
+  /** Increments every time a state update is required. */
+  const [, setDataUpdateCounter] = useState(0);
 
-  const setIsAnnotationEnabled = (enabled: boolean) => {
-    if (labelData.current.length === 0) {
-      // Initialize the first label if none exists
-      labelData.current.push({
-        name: `Label ${numLabelsCreated.current}`,
-        color: new Color(KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops[0]),
-        ids: new Set<number>(),
-      });
-      numLabelsCreated.current += 1;
-      setCurrentLabelIdx(0);
+  const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
+    return <F>function (...args: any[]) {
+      const result = fn(...args);
+      setDataUpdateCounter((value) => {return value + 1});
+      return result;
     }
-
-    _setIsAnnotationEnabled(enabled);
   };
 
-  const [updateFlag, setUpdateFlag] = useState(0);
-
   return {
-    labelDataRef: labelData,
     currentLabelIdx,
     setCurrentLabelIdx,
     isAnnotationEnabled,
     setIsAnnotationEnabled,
-    flagNeedsUpdate: () => setUpdateFlag(updateFlag + 1),
+    getLabelIdxById: annotationData.getLabelIdxById,
+    getIdsByLabelIdx: annotationData.getIdsByLabelIdx,
+    getIdsByTime: annotationData.getIdsByTime,
+    getLabels: annotationData.getLabels,
+    // Wrap state mutators
+    createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
+    setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
+    setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
+    deleteLabel: wrapFunctionInUpdate(annotationData.deleteLabel),
+    applyLabelToId: wrapFunctionInUpdate(annotationData.applyLabelToId),
+    removeLabelFromId: wrapFunctionInUpdate(annotationData.removeLabelFromId),
   };
 };
