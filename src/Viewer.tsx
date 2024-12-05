@@ -97,7 +97,20 @@ function Viewer(): ReactElement {
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+  /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Switch to default backdrop if the dataset has one and none is currently selected.
+    // If the dataset has no backdrops, hide the backdrop.
+    if (dataset && (selectedBackdropKey === null || !dataset.hasBackdrop(selectedBackdropKey))) {
+      const defaultBackdropKey = dataset.getDefaultBackdropKey();
+      setSelectedBackdropKey(defaultBackdropKey);
+      if (!defaultBackdropKey) {
+        updateConfig({ backdropVisible: false });
+      }
+    }
+  }, [dataset, selectedBackdropKey]);
 
   // TODO: Save these settings in local storage
   // Use reducer here in case multiple updates happen simultaneously
@@ -462,9 +475,16 @@ function Viewer(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
-        setSelectedBackdropKey(null);
+
+      // Switch to the new dataset's default backdrop if the current one is not in the
+      // new dataset. `selectedBackdropKey` is null only if the current dataset has no backdrops.
+      if (
+        selectedBackdropKey === null ||
+        (selectedBackdropKey !== null && !newDataset.hasBackdrop(selectedBackdropKey))
+      ) {
+        setSelectedBackdropKey(newDataset.getDefaultBackdropKey());
       }
+
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
@@ -1061,6 +1081,7 @@ function Viewer(): ReactElement {
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
+                  updateConfig={updateConfig}
                   onTrackClicked={(track) => {
                     setFindTrackInput(track?.trackId.toString() || "");
                     setSelectedTrack(track);

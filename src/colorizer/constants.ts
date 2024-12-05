@@ -33,12 +33,13 @@ export const getDefaultViewerConfig = (): ViewerConfig => ({
   showLegendDuringExport: true,
   showHeaderDuringExport: true,
   keepRangeBetweenDatasets: false,
+  backdropVisible: false,
   /** Brightness, as an integer percentage. */
   backdropBrightness: 100,
   /** Saturation, as an integer percentage. */
   backdropSaturation: 100,
-  /** Opacity, as an integer percentage. */
-  objectOpacity: 100,
+  /** Opacity when backdrops are visible, as an integer percentage. */
+  objectOpacity: 50,
   outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
   outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),

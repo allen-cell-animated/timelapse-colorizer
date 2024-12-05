@@ -330,6 +330,10 @@ export default class Dataset {
     return loadedFrame;
   }
 
+  public getDefaultBackdropKey(): string | null {
+    return this.backdropData.keys().next().value ?? null;
+  }
+
   public hasBackdrop(key: string): boolean {
     return this.backdropData.has(key);
   }

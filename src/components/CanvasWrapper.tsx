@@ -5,9 +5,9 @@ import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { NoImageSVG } from "../assets";
+import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
-import { LoadTroubleshooting, ViewerConfig } from "../colorizer/types";
+import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
@@ -15,6 +15,7 @@ import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
+import { LinkStyleButton } from "./Buttons/LinkStyleButton";
 import IconButton from "./IconButton";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -30,19 +31,32 @@ const RIGHT_CLICK_BUTTON = 2;
 const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
 
-function TooltipWithSubtext(props: TooltipProps & { title: ReactNode; subtext: ReactNode }): ReactElement {
+function TooltipWithSubtext(
+  props: TooltipProps & { title: ReactNode; subtitle?: ReactNode; subtitleList?: ReactNode[] }
+): ReactElement {
+  const divRef = useRef<HTMLDivElement>(null);
   return (
-    <Tooltip
-      {...props}
-      title={
-        <>
-          <p style={{ margin: 0 }}>{props.title}</p>
-          <p style={{ margin: 0, fontSize: "12px" }}>{props.subtext}</p>
-        </>
-      }
-    >
-      {props.children}
-    </Tooltip>
+    <div ref={divRef}>
+      <Tooltip
+        {...props}
+        trigger={["hover", "focus"]}
+        title={
+          <>
+            <p style={{ margin: 0 }}>{props.title}</p>
+            {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
+            {props.subtitleList &&
+              props.subtitleList.map((text, i) => (
+                <p key={i} style={{ margin: 0, fontSize: "12px" }}>
+                  {text}
+                </p>
+              ))}
+          </>
+        }
+        getPopupContainer={() => divRef.current ?? document.body}
+      >
+        {props.children}
+      </Tooltip>
+    </div>
   );
 }
 
@@ -84,6 +98,7 @@ type CanvasWrapperProps = {
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
+  updateConfig: (settings: Partial<ViewerConfig>) => void;
   vectorData: Float32Array | null;
 
   loading: boolean;
@@ -225,10 +240,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    canv.setBackdropKey(props.selectedBackdropKey);
-    canv.setBackdropBrightness(props.config.backdropBrightness);
-    canv.setBackdropSaturation(props.config.backdropSaturation);
-  }, [props.selectedBackdropKey, props.config.backdropBrightness, props.config.backdropSaturation]);
+    if (props.selectedBackdropKey !== null && props.config.backdropVisible) {
+      canv.setBackdropKey(props.selectedBackdropKey);
+      canv.setBackdropBrightness(props.config.backdropBrightness);
+      canv.setBackdropSaturation(props.config.backdropSaturation);
+      canv.setObjectOpacity(props.config.objectOpacity);
+    } else {
+      canv.setBackdropKey(null);
+      canv.setObjectOpacity(100);
+    }
+  }, [
+    props.selectedBackdropKey,
+    props.config.backdropVisible,
+    props.config.backdropBrightness,
+    props.config.backdropSaturation,
+    props.config.objectOpacity,
+  ]);
 
   // Update categorical colors
   useMemo(() => {
@@ -245,10 +272,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const settings = props.config.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
   }, [props.config.outlierDrawSettings]);
-
-  useMemo(() => {
-    canv.setObjectOpacity(props.config.objectOpacity);
-  }, [props.config.objectOpacity]);
 
   useMemo(() => {
     canv.setInRangeLUT(props.inRangeLUT);
@@ -574,7 +597,33 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.dataset, canv]);
 
   // RENDERING /////////////////////////////////////////////////
+
   canv.render();
+
+  const onViewerSettingsLinkClicked = (): void => {
+    props.updateConfig({ openTab: TabType.SETTINGS });
+  };
+
+  const backdropTooltipContents: ReactNode[] = [];
+  backdropTooltipContents.push(
+    <span key="backdrop-name">
+      {props.selectedBackdropKey === null
+        ? "(No backdrops available)"
+        : props.dataset?.getBackdropData().get(props.selectedBackdropKey)?.name}
+    </span>
+  );
+  // Link to viewer settings
+  backdropTooltipContents.push(
+    <LinkStyleButton
+      key="backdrop-viewer-settings-link"
+      $color={theme.color.text.darkLink}
+      $hoverColor={theme.color.text.darkLinkHover}
+      onClick={onViewerSettingsLinkClicked}
+    >
+      {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+    </LinkStyleButton>
+  );
+
   return (
     <FlexColumnAlignCenter
       style={{
@@ -607,7 +656,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <TooltipWithSubtext title={"Zoom in"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtext title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -618,7 +667,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
-        <TooltipWithSubtext title={"Zoom out"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtext title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -630,6 +679,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           >
             <ZoomOutOutlined />
             <VisuallyHidden>Zoom out</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtext>
+        <TooltipWithSubtext
+          title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
+          placement="right"
+          subtitleList={backdropTooltipContents}
+          trigger={["hover", "focus"]}
+        >
+          <IconButton
+            type={props.config.backdropVisible ? "primary" : "link"}
+            onClick={() => {
+              props.updateConfig({ backdropVisible: !props.config.backdropVisible });
+            }}
+            disabled={props.selectedBackdropKey === null}
+          >
+            {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+            <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
       </CanvasControlsContainer>
