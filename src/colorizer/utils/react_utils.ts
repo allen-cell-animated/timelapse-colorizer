@@ -1,11 +1,16 @@
-import React, { EventHandler, useEffect, useRef, useState } from "react";
+import React, { EventHandler, Ref, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
+import { Color } from "three";
 import { useLocalStorage } from "usehooks-ts";
 
+import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../colors/categorical_palettes";
 import { VectorConfig } from "../types";
 
 import Dataset from "../Dataset";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
+
+// TODO: Move this to a folder outside of `colorizer`.
+// TODO: Split this up into multiple files.
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -301,4 +306,59 @@ export const useMotionDeltas = (
   }, [debouncedVectorConfig.timeIntervals, dataset]);
 
   return motionDeltas;
+};
+
+export type LabelData = {
+  name: string;
+  color: Color;
+  ids: Set<number>;
+};
+
+export type AnnotationState = {
+  labelDataRef: Ref<LabelData[]>;
+
+  currentLabelIdx: number | null;
+  setCurrentLabelIdx: (index: number) => void;
+  isAnnotationEnabled: boolean;
+  setIsAnnotationEnabled: (enabled: boolean) => void;
+
+  flagNeedsUpdate: () => void;
+};
+
+export const useAnnotations = (): AnnotationState => {
+  // TODO: Depending on how annotations are used, we may need to use a class
+  // instead of a hook for some state. This would give better control over
+  // caching of data/results, but also means there's more boilerplate.
+
+  const labelData = useRef([] as LabelData[]);
+  const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
+  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
+
+  const numLabelsCreated = useRef(0);
+
+  const setIsAnnotationEnabled = (enabled: boolean) => {
+    if (labelData.current.length === 0) {
+      // Initialize the first label if none exists
+      labelData.current.push({
+        name: `Label ${numLabelsCreated.current}`,
+        color: new Color(KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colorStops[0]),
+        ids: new Set<number>(),
+      });
+      numLabelsCreated.current += 1;
+      setCurrentLabelIdx(0);
+    }
+
+    _setIsAnnotationEnabled(enabled);
+  };
+
+  const [updateFlag, setUpdateFlag] = useState(0);
+
+  return {
+    labelDataRef: labelData,
+    currentLabelIdx,
+    setCurrentLabelIdx,
+    isAnnotationEnabled,
+    setIsAnnotationEnabled,
+    flagNeedsUpdate: () => setUpdateFlag(updateFlag + 1),
+  };
 };
