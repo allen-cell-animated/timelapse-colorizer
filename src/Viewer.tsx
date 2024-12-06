@@ -41,7 +41,7 @@ import {
 } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
-import { DEFAULT_PLAYBACK_FPS } from "./constants";
+import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
@@ -69,7 +69,7 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import { AnnotationTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
 import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
@@ -940,6 +940,31 @@ function Viewer(): ReactElement {
       ),
     },
   ];
+
+  if (INTERNAL_BUILD) {
+    tabItems.push({
+      label: "Annotations",
+      key: TabType.ANNOTATION,
+      children: (
+        <div className={styles.tabContent}>
+          <AnnotationTab
+            annotationState={annotationState}
+            setTrackAndFrame={(track, frame) => {
+              findTrack(track);
+              setFrameAndRender(frame);
+            }}
+            dataset={dataset}
+          />
+        </div>
+      ),
+    });
+  }
+
+  useEffect(() => {
+    if (annotationState.isAnnotationEnabled) {
+      updateConfig({ openTab: TabType.ANNOTATION });
+    }
+  }, [annotationState.isAnnotationEnabled]);
 
   return (
     <div>

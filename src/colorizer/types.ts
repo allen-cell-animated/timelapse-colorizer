@@ -148,6 +148,7 @@ export type VectorConfig = {
 // TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
+  ANNOTATION = "annotation",
   FILTERS = "filters",
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",

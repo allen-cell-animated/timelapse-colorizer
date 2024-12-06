@@ -10,6 +10,7 @@ import { ColorRamp, Dataset, Track } from "../colorizer";
 import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
+import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
@@ -708,21 +709,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         </TooltipWithSubtext>
 
         {/* Annotation mode toggle */}
-        <TooltipWithSubtext
-          title={props.annotationState.isAnnotationEnabled ? "Disable annotation mode" : "Enable annotation mode"}
-          placement="right"
-          trigger={["hover", "focus"]}
-        >
-          <IconButton
-            type={props.annotationState.isAnnotationEnabled ? "primary" : "link"}
-            onClick={() => {
-              props.annotationState.setIsAnnotationEnabled(!props.annotationState.isAnnotationEnabled);
-            }}
+        {INTERNAL_BUILD && (
+          <TooltipWithSubtext
+            title={props.annotationState.isAnnotationEnabled ? "Disable annotation mode" : "Enable annotation mode"}
+            placement="right"
+            trigger={["hover", "focus"]}
           >
-            <TagOutlined />
-            <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
-          </IconButton>
-        </TooltipWithSubtext>
+            <IconButton
+              type={props.annotationState.isAnnotationEnabled ? "primary" : "link"}
+              onClick={() => {
+                props.annotationState.setIsAnnotationEnabled(!props.annotationState.isAnnotationEnabled);
+              }}
+            >
+              <TagOutlined />
+              <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
+            </IconButton>
+          </TooltipWithSubtext>
+        )}
       </CanvasControlsContainer>
     </FlexColumnAlignCenter>
   );
