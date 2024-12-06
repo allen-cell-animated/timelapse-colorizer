@@ -3,6 +3,7 @@ import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { getBuildDisplayDateString } from "../../colorizer/utils/math_utils";
+import { INTERNAL_BUILD } from "../../constants";
 import { VisuallyHidden } from "../../styles/utils";
 
 import StyledModal from "../Modals/StyledModal";
@@ -82,6 +83,11 @@ export default function HelpDropdown(): ReactElement {
       >
         <p>Timelapse Feature Explorer v{import.meta.env.VITE_APP_VERSION}</p>
         <p>Last built on {getBuildDisplayDateString()}</p>
+        {INTERNAL_BUILD && (
+          <p>
+            <b>--INTERNAL BUILD--</b>
+          </p>
+        )}
       </StyledModal>
     </div>
   );

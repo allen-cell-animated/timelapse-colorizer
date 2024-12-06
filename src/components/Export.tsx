@@ -1,10 +1,24 @@
 import { CheckCircleOutlined } from "@ant-design/icons";
-import { App, Button, Card, Input, InputNumber, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
+import {
+  App,
+  Button,
+  Card,
+  Checkbox,
+  Input,
+  InputNumber,
+  Progress,
+  Radio,
+  RadioChangeEvent,
+  Space,
+  Tooltip,
+} from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
+import { getDefaultViewerConfig } from "../colorizer/constants";
+import { ViewerConfig } from "../colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow } from "../styles/utils";
 
@@ -20,7 +34,7 @@ import SpinBox from "./SpinBox";
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
-  getCanvasExportDimensions: () => [number, number];
+  getCanvasExportDimensions?: () => [number, number];
   getCanvas: () => HTMLCanvasElement;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick?: () => void;
@@ -29,6 +43,8 @@ type ExportButtonProps = {
   setIsRecording?: (recording: boolean) => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
+  config?: ViewerConfig;
+  updateConfig?: (settings: Partial<ViewerConfig>) => void;
 };
 
 const FRAME_RANGE_RADIO_LABEL_ID = "export-modal-frame-range-label";
@@ -38,6 +54,8 @@ const defaultProps: Partial<ExportButtonProps> = {
   defaultImagePrefix: "image",
   disabled: false,
   onClick: () => {},
+  config: getDefaultViewerConfig(),
+  updateConfig: () => {},
 };
 
 const HorizontalDiv = styled.div`
@@ -379,9 +397,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // (475 MB predicted vs. 70 MB actual)
     // TODO: Is there a way to concretely determine this?
     const compressionRatioBitsPerPixel = 3.5; // Actual value 2.7-3.0, overshooting to be safe
-    const canvasExportDimensions = props.getCanvasExportDimensions();
-    const maxVideoBitsResolution =
-      canvasExportDimensions[0] * canvasExportDimensions[1] * totalFrames * compressionRatioBitsPerPixel;
+    // Use current canvas dimensions as an approximation (instead of the export dimensions)
+    const canvas = props.getCanvas();
+    const maxVideoBitsResolution = canvas.width * canvas.height * totalFrames * compressionRatioBitsPerPixel;
 
     const sizeInMb = Math.min(maxVideoBitsResolution, maxVideoBitsDuration) / 8_000_000; // bits to MB
 
@@ -564,7 +582,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </MaxWidthRadioGroup>
           </Card>
 
-          <SettingsContainer gapPx={10}>
+          <SettingsContainer gapPx={6}>
             {recordingMode === RecordingMode.VIDEO_MP4 && (
               <>
                 <SettingsItem label="Frames per second">
@@ -609,6 +627,24 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                   Reset
                 </Button>
               </FlexRow>
+            </SettingsItem>
+            <SettingsItem label={"Show feature legend"}>
+              <Checkbox
+                checked={props.config.showLegendDuringExport}
+                onChange={(e) => {
+                  props.updateConfig({ showLegendDuringExport: e.target.checked });
+                }}
+              />
+            </SettingsItem>
+            <SettingsItem label="Show dataset name">
+              <div>
+                <Checkbox
+                  checked={props.config.showHeaderDuringExport}
+                  onChange={(e) => {
+                    props.updateConfig({ showHeaderDuringExport: e.target.checked });
+                  }}
+                />
+              </div>
             </SettingsItem>
           </SettingsContainer>
 

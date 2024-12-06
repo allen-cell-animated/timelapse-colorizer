@@ -11,28 +11,31 @@ import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
-import { Dataset, Track } from "./colorizer";
 import {
+  Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  KNOWN_CATEGORICAL_PALETTES,
-} from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
-import {
-  defaultViewerConfig,
+  DISPLAY_COLOR_RAMP_KEYS,
   FeatureThreshold,
   getDefaultScatterPlotConfig,
+  getDefaultViewerConfig,
   isThresholdNumeric,
+  KNOWN_CATEGORICAL_PALETTES,
+  KNOWN_COLOR_RAMPS,
   LoadTroubleshooting,
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
+  Track,
+  VECTOR_KEY_MOTION_DELTA,
+  VectorTooltipMode,
   ViewerConfig,
-} from "./colorizer/types";
+} from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
-import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
+import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
@@ -45,6 +48,7 @@ import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import TimeControls from "./colorizer/TimeControls";
+import SharedWorkerPool from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
@@ -85,24 +89,41 @@ function Viewer(): ReactElement {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetKey, setDatasetKey] = useState("");
   const [, addRecentCollection] = useRecentCollections();
-  // Shared array loader to manage worker pool
-  const arrayLoader = useConstructor(() => new UrlArrayLoader());
+
+  // Shared worker pool for background operations (e.g. loading data)
+  const workerPool = useConstructor(() => new SharedWorkerPool());
+  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+  /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Switch to default backdrop if the dataset has one and none is currently selected.
+    // If the dataset has no backdrops, hide the backdrop.
+    if (dataset && (selectedBackdropKey === null || !dataset.hasBackdrop(selectedBackdropKey))) {
+      const defaultBackdropKey = dataset.getDefaultBackdropKey();
+      setSelectedBackdropKey(defaultBackdropKey);
+      if (!defaultBackdropKey) {
+        updateConfig({ backdropVisible: false });
+      }
+    }
+  }, [dataset, selectedBackdropKey]);
 
   // TODO: Save these settings in local storage
   // Use reducer here in case multiple updates happen simultaneously
   const [config, updateConfig] = useReducer(
     (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
-    defaultViewerConfig
+    getDefaultViewerConfig()
   );
   const [scatterPlotConfig, updateScatterPlotConfig] = useReducer(
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
     getDefaultScatterPlotConfig()
   );
+
+  const motionDeltas = useMotionDeltas(dataset, workerPool, config.vectorConfig);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -454,9 +475,16 @@ function Viewer(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
-        setSelectedBackdropKey(null);
+
+      // Switch to the new dataset's default backdrop if the current one is not in the
+      // new dataset. `selectedBackdropKey` is null only if the current dataset has no backdrops.
+      if (
+        selectedBackdropKey === null ||
+        (selectedBackdropKey !== null && !newDataset.hasBackdrop(selectedBackdropKey))
+      ) {
+        setSelectedBackdropKey(newDataset.getDefaultBackdropKey());
       }
+
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
@@ -534,7 +562,7 @@ function Viewer(): ReactElement {
         if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
           // Make a dummy collection that will include only this dataset
-          newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+          newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
           if (!collectionUrlParam) {
@@ -685,6 +713,10 @@ function Viewer(): ReactElement {
             description: result.errorMessage,
             placement: "bottomLeft",
             duration: 12,
+            style: {
+              backgroundColor: theme.color.alert.fill.error,
+              border: `1px solid ${theme.color.alert.border.error}`,
+            },
           });
         }
         setIsDatasetLoading(false);
@@ -798,6 +830,10 @@ function Viewer(): ReactElement {
       placement: "bottomLeft",
       duration: 4,
       icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
+      style: {
+        backgroundColor: theme.color.alert.fill.success,
+        border: `1px solid ${theme.color.alert.border.success}`,
+      },
     });
   };
 
@@ -839,6 +875,44 @@ function Viewer(): ReactElement {
     }
   }
 
+  const getVectorTooltipText = (): string | null => {
+    if (!config.vectorConfig.visible || lastHoveredId === null || !motionDeltas) {
+      return null;
+    }
+    const motionDelta = [motionDeltas[2 * lastHoveredId], motionDeltas[2 * lastHoveredId + 1]];
+
+    if (Number.isNaN(motionDelta[0]) || Number.isNaN(motionDelta[1])) {
+      return null;
+    }
+
+    const vectorKey = config.vectorConfig.key;
+    const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
+    if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
+      const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
+      const angleDegrees = (360 + Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
+      const magnitudeText = numberToStringDecimal(magnitude, 3);
+      const angleText = numberToStringDecimal(angleDegrees, 1);
+      return `${vectorName}: ${magnitudeText} px, ${angleText}°`;
+    } else {
+      const allowIntegerTruncation = Number.isInteger(motionDelta[0]) && Number.isInteger(motionDelta[1]);
+      const x = numberToStringDecimal(motionDelta[0], 3, allowIntegerTruncation);
+      const y = numberToStringDecimal(motionDelta[1], 3, allowIntegerTruncation);
+      return `${vectorName}: (${x}, ${y}) px
+     `;
+    }
+  };
+
+  // TODO: Move to a separate component?
+  const vectorTooltipText = getVectorTooltipText();
+  const hoverTooltipContent = [
+    <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
+    <p key="feature_value">
+      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
+      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
+    </p>,
+    vectorTooltipText ? <p key="vector">{vectorTooltipText}</p> : null,
+  ];
+
   return (
     <div>
       <div ref={notificationContainer}>{notificationContextHolder}</div>
@@ -856,7 +930,7 @@ function Viewer(): ReactElement {
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
-              getCanvasExportDimensions={() => [canv.domElement.width, canv.domElement.height]}
+              getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
@@ -864,6 +938,8 @@ function Viewer(): ReactElement {
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
+              config={config}
+              updateConfig={updateConfig}
             />
             <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
@@ -987,31 +1063,25 @@ function Viewer(): ReactElement {
                   </div>
                 </FlexRowAlignCenter>
               </div>
-              <HoverTooltip
-                tooltipContent={
-                  <>
-                    <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
-                    <p>
-                      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
-                      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
-                    </p>
-                  </>
-                }
-                disabled={!showHoveredId}
-              >
+              <HoverTooltip tooltipContent={hoverTooltipContent} disabled={!showHoveredId}>
                 <CanvasWrapper
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   collection={collection || null}
+                  vectorData={motionDeltas}
                   dataset={dataset}
+                  datasetKey={datasetKey}
+                  featureKey={featureKey}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                   colorRampMin={colorRampMin}
                   colorRampMax={colorRampMax}
+                  isRecording={isRecording}
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
+                  updateConfig={updateConfig}
                   onTrackClicked={(track) => {
                     setFindTrackInput(track?.trackId.toString() || "");
                     setSelectedTrack(track);

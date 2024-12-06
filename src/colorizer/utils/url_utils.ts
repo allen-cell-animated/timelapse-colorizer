@@ -9,13 +9,12 @@ import {
   getKeyFromPalette,
   KNOWN_CATEGORICAL_PALETTES,
 } from "../colors/categorical_palettes";
+import { getDefaultViewerConfig } from "../constants";
+import { isTabType, isThresholdCategorical } from "../types";
 import {
-  defaultViewerConfig,
   DrawSettings,
   FeatureThreshold,
   isDrawMode,
-  isTabType,
-  isThresholdCategorical,
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,
@@ -23,8 +22,8 @@ import {
   ThresholdType,
   ViewerConfig,
 } from "../types";
+import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
-import { nanToNull } from "./json_utils";
 import { numberToStringDecimal } from "./math_utils";
 
 enum UrlParam {
@@ -39,6 +38,7 @@ enum UrlParam {
   COLOR_RAMP_REVERSED_SUFFIX = "!",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
+  SHOW_BACKDROP = "bg",
   BACKDROP_KEY = "bg-key",
   BACKDROP_BRIGHTNESS = "bg-brightness",
   BACKDROP_SATURATION = "bg-sat",
@@ -47,6 +47,7 @@ enum UrlParam {
   OUTLIER_COLOR = "outlier-color",
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
+  OUTLINE_COLOR = "outline-color",
   SHOW_PATH = "path",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
@@ -291,10 +292,17 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
     parameters.push(`${UrlParam.FILTERED_COLOR}=${config.outOfRangeDrawSettings.color.getHexString()}`);
     parameters.push(`${UrlParam.FILTERED_MODE}=${config.outOfRangeDrawSettings.mode}`);
   }
+
+  // Color config
+  if (config.outlineColor) {
+    parameters.push(`${UrlParam.OUTLINE_COLOR}=${config.outlineColor.getHexString()}`);
+  }
+
   if (config.openTab) {
     parameters.push(`${UrlParam.OPEN_TAB}=${config.openTab}`);
   }
 
+  tryAddBooleanParam(parameters, config.backdropVisible, UrlParam.SHOW_BACKDROP);
   tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
   tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
   tryAddBooleanParam(parameters, config.showTrackPath, UrlParam.SHOW_PATH);
@@ -339,21 +347,28 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
     newConfig.outlierDrawSettings = parseDrawSettings(
       params.get(UrlParam.OUTLIER_COLOR),
       params.get(UrlParam.OUTLIER_MODE),
-      defaultViewerConfig.outlierDrawSettings
+      getDefaultViewerConfig().outlierDrawSettings
     );
   }
   if (params.get(UrlParam.FILTERED_COLOR) || params.get(UrlParam.FILTERED_MODE)) {
     newConfig.outOfRangeDrawSettings = parseDrawSettings(
       params.get(UrlParam.FILTERED_COLOR),
       params.get(UrlParam.FILTERED_MODE),
-      defaultViewerConfig.outOfRangeDrawSettings
+      getDefaultViewerConfig().outOfRangeDrawSettings
     );
+  }
+  if (params.get(UrlParam.OUTLINE_COLOR)) {
+    const outlineColor = "#" + params.get(UrlParam.OUTLINE_COLOR);
+    if (isHexColor(outlineColor)) {
+      newConfig.outlineColor = new Color(outlineColor);
+    }
   }
   const openTab = params.get(UrlParam.OPEN_TAB);
   if (openTab && isTabType(openTab)) {
     newConfig.openTab = openTab;
   }
 
+  newConfig.backdropVisible = getBooleanParam(params.get(UrlParam.SHOW_BACKDROP));
   newConfig.showScaleBar = getBooleanParam(params.get(UrlParam.SHOW_SCALEBAR));
   newConfig.showTimestamp = getBooleanParam(params.get(UrlParam.SHOW_TIMESTAMP));
   newConfig.showTrackPath = getBooleanParam(params.get(UrlParam.SHOW_PATH));

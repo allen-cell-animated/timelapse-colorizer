@@ -19,7 +19,9 @@ npm install
 npm run dev
 ```
 
-2. To do all code static analysis checks: (DO THIS BEFORE PUSHING COMMITS)
+Optionally, you can run our internal build (which may have some additional experimental features) by running `npm run dev-internal`.
+
+1. To do all code static analysis checks: (DO THIS BEFORE PUSHING COMMITS)
 
 ```cmd
 npm run lint

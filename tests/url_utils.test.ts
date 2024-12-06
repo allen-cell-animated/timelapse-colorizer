@@ -2,14 +2,8 @@ import { Color, ColorRepresentation } from "three";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../src/colorizer";
-import {
-  defaultViewerConfig,
-  DrawMode,
-  DrawSettings,
-  PlotRangeType,
-  TabType,
-  ThresholdType,
-} from "../src/colorizer/types";
+import { getDefaultViewerConfig } from "../src/colorizer/constants";
+import { DrawMode, DrawSettings, PlotRangeType, TabType, ThresholdType } from "../src/colorizer/types";
 import {
   isAllenPath,
   isHexColor,
@@ -151,6 +145,7 @@ describe("Loading + saving from URL query strings", () => {
         showScaleBar: true,
         showTimestamp: false,
         keepRangeBetweenDatasets: true,
+        backdropVisible: true,
         backdropBrightness: 75,
         backdropSaturation: 50,
         objectOpacity: 25,
@@ -167,7 +162,7 @@ describe("Loading + saving from URL query strings", () => {
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
-      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&tab=filters&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&tab=filters&bg=1&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
     expect(queryString).equals(expectedQueryString);
 
     const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
@@ -413,11 +408,11 @@ describe("Loading + saving from URL query strings", () => {
         config: {
           outlierDrawSettings: {
             mode: DrawMode.HIDE,
-            color: defaultViewerConfig.outlierDrawSettings.color,
+            color: getDefaultViewerConfig().outlierDrawSettings.color,
           },
           outOfRangeDrawSettings: {
             mode: DrawMode.USE_COLOR,
-            color: defaultViewerConfig.outOfRangeDrawSettings.color,
+            color: getDefaultViewerConfig().outOfRangeDrawSettings.color,
           },
         },
       });

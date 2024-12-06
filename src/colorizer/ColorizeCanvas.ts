@@ -22,19 +22,24 @@ import {
 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./types";
+import {
+  BACKGROUND_COLOR_DEFAULT,
+  OUT_OF_RANGE_COLOR_DEFAULT,
+  OUTLIER_COLOR_DEFAULT,
+  OUTLINE_COLOR_DEFAULT,
+} from "./constants";
+import { DrawMode, FeatureDataType, VectorConfig } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
 import Track from "./Track";
+import VectorField from "./VectorField";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 
-const BACKGROUND_COLOR_DEFAULT = 0xffffff;
-const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
@@ -62,6 +67,7 @@ type ColorizeUniformTypes = {
   canvasBackgroundColor: Color;
   outlierColor: Color;
   outOfRangeColor: Color;
+  outlineColor: Color;
   highlightedId: number;
   hideOutOfRange: boolean;
   outlierDrawMode: number;
@@ -100,6 +106,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
+    outlineColor: new Uniform(new Color(OUTLINE_COLOR_DEFAULT)),
     canvasBackgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
@@ -115,12 +122,14 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
+  private vectorField: VectorField;
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
+  private points: Float32Array;
   private showTrackPath: boolean;
 
   protected frameSizeInCanvasCoordinates: Vector2;
-  private frameToCanvasCoordinates: Vector2;
+  protected frameToCanvasCoordinates: Vector2;
 
   /**
    * The zoom level of the frame in the canvas. At default zoom level 1, the frame will be
@@ -143,7 +152,6 @@ export default class ColorizeCanvas {
 
   protected dataset: Dataset | null;
   protected track: Track | null;
-  private points: Float32Array;
   protected canvasResolution: Vector2 | null;
 
   protected featureKey: string | null;
@@ -180,16 +188,20 @@ export default class ColorizeCanvas {
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.scene = new Scene();
     this.scene.add(this.mesh);
+
+    this.vectorField = new VectorField();
+    this.scene.add(this.vectorField.sceneObject);
+
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
 
-    // Configure lines
+    // Configure track lines
     this.points = new Float32Array([0, 0, 0]);
 
     const lineGeometry = new BufferGeometry();
     lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
     const lineMaterial = new LineBasicMaterial({
-      color: SELECTED_COLOR_DEFAULT,
+      color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
 
@@ -203,7 +215,7 @@ export default class ColorizeCanvas {
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
     });
-    this.renderer = new WebGLRenderer();
+    this.renderer = new WebGLRenderer({ antialias: true });
     this.checkPixelRatio();
 
     this.dataset = null;
@@ -279,6 +291,7 @@ export default class ColorizeCanvas {
       2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
+    this.vectorField.setPosition(this.panOffset, this.frameToCanvasCoordinates);
     this.render();
   }
 
@@ -322,6 +335,8 @@ export default class ColorizeCanvas {
       2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
+    this.vectorField.setPosition(this.panOffset, this.frameToCanvasCoordinates);
+    this.vectorField.setScale(this.frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -339,6 +354,7 @@ export default class ColorizeCanvas {
     this.currentFrame = -1;
     await this.setFrame(frame);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    this.vectorField.setDataset(dataset);
     this.render();
   }
 
@@ -359,6 +375,19 @@ export default class ColorizeCanvas {
   setCategoricalColors(colors: Color[]): void {
     this.categoricalPalette.dispose();
     this.categoricalPalette = new ColorRamp(colors);
+  }
+
+  setOutlineColor(color: Color): void {
+    this.setUniform("outlineColor", color);
+
+    // Update line color
+    if (Array.isArray(this.line.material)) {
+      this.line.material.forEach((mat) => {
+        (mat as LineBasicMaterial).color = color;
+      });
+    } else {
+      (this.line.material as LineBasicMaterial).color = color;
+    }
   }
 
   setBackgroundColor(color: Color): void {
@@ -382,6 +411,14 @@ export default class ColorizeCanvas {
     if (mode === DrawMode.USE_COLOR && color) {
       this.setUniform("outOfRangeColor", color);
     }
+  }
+
+  setVectorData(vectorData: Float32Array | null): void {
+    this.vectorField.setVectorData(vectorData);
+  }
+
+  setVectorFieldConfig(config: VectorConfig): void {
+    this.vectorField.setConfig(config);
   }
 
   setSelectedTrack(track: Track | null): void {
@@ -607,6 +644,7 @@ export default class ColorizeCanvas {
     this.onFrameChangeCallback(isMissingFile);
     // Force rescale in case frame dimensions changed
     this.updateScaling(this.dataset?.frameResolution || null, this.canvasResolution);
+    this.vectorField.setFrame(this.currentFrame);
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently

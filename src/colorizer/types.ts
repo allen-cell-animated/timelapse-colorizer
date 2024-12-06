@@ -11,9 +11,6 @@ import {
   UnsignedIntType,
 } from "three";
 
-export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
-export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
-
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
 
 /** Available types for data loading (features, tracks, outliers, etc.), as a CPU buffer or a GPU texture */
@@ -133,6 +130,22 @@ export type DrawSettings = {
   color: Color;
 };
 
+export enum VectorTooltipMode {
+  MAGNITUDE = "m",
+  COMPONENTS = "c",
+}
+
+export type VectorConfig = {
+  visible: boolean;
+  key: string;
+  /** Number of time intervals to average over when calculating motion deltas. 5 by default. */
+  timeIntervals: number;
+  color: Color;
+  scaleFactor: number;
+  tooltipMode: VectorTooltipMode;
+};
+
+// TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
   FILTERS = "filters",
@@ -153,32 +166,21 @@ export type ViewerConfig = {
   showTrackPath: boolean;
   showScaleBar: boolean;
   showTimestamp: boolean;
+  showLegendDuringExport: boolean;
+  showHeaderDuringExport: boolean;
   keepRangeBetweenDatasets: boolean;
+  backdropVisible: boolean;
   /** Brightness, as an integer percentage. */
   backdropBrightness: number;
   /** Saturation, as an integer percentage. */
   backdropSaturation: number;
-  /** Opacity, as an integer percentage. */
+  /** Object opacity when backdrop is visible, as an integer percentage. */
   objectOpacity: number;
   outOfRangeDrawSettings: DrawSettings;
   outlierDrawSettings: DrawSettings;
+  outlineColor: Color;
   openTab: TabType;
-};
-
-export const defaultViewerConfig: ViewerConfig = {
-  showTrackPath: true,
-  showScaleBar: true,
-  showTimestamp: true,
-  keepRangeBetweenDatasets: false,
-  /** Brightness, as an integer percentage. */
-  backdropBrightness: 100,
-  /** Saturation, as an integer percentage. */
-  backdropSaturation: 100,
-  /** Opacity, as an integer percentage. */
-  objectOpacity: 100,
-  outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
-  outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
-  openTab: TabType.TRACK_PLOT,
+  vectorConfig: VectorConfig;
 };
 
 export enum PlotRangeType {
@@ -192,13 +194,6 @@ export type ScatterPlotConfig = {
   yAxis: string | null;
   rangeType: PlotRangeType;
 };
-
-// Use a function instead of a constant to avoid sharing the same object reference.
-export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
-  xAxis: null,
-  yAxis: null,
-  rangeType: PlotRangeType.ALL_TIME,
-});
 
 /**
  * Callback used to report warnings to the user. The message is the title

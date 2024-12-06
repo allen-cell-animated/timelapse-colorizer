@@ -69,6 +69,7 @@
     ],
     "no-unused-vars": 0, // Rely on typescript-eslint rule above
     "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
+    "@typescript-eslint/no-duplicate-enum-values": "error",
     "@typescript-eslint/typedef": ["error", { "parameters": true }],
     "prefer-const": 1,
     "radix": 1,
@@ -91,9 +92,9 @@
           // Relative imports - lowercase utilities and submodules
           ["^[.]+.*/[a-z]+[\\w]*$"],
           // Relative imports - other classes and components
-          ["^[./].*/[\\w]*$"],
+          ["^[./].*/[\\w?&]*$"],
           // Relative imports - resource files
-          ["^[.].*/[\\w?_\\-]*[.][\\w.?_\\-]*$"]
+          ["^[.].*/[\\w?_\\-]*[.][\\w.?&_\\-]*$"]
         ]
       }
     ],
