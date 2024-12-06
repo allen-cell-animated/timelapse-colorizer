@@ -18,16 +18,8 @@ const defaultProps: Partial<HoverTooltipProps> = {
   maxWidthPx: 250,
 };
 
-// Styling for the tooltip
 const TooltipDiv = styled.div`
   position: fixed;
-  font-family: var(--default-font);
-
-  border-radius: var(--radius-control-small);
-  border: 1px solid var(--color-dividers);
-  background-color: var(--color-background);
-  padding: 6px 8px;
-  overflow-wrap: break-word;
 
   transition: opacity 300ms;
   z-index: 1;

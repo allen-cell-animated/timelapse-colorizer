@@ -1,4 +1,5 @@
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
+import styled from "styled-components";
 
 import { Dataset, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode, ViewerConfig } from "../../colorizer";
 import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
@@ -8,11 +9,24 @@ import HoverTooltip from "./HoverTooltip";
 type CanvasHoverTooltipProps = {
   dataset: Dataset | null;
   featureKey: string;
-  lastHoveredId: number | null;
-  showHoveredId: boolean;
+  lastValidHoveredId: number;
+  showObjectHoverInfo: boolean;
   motionDeltas: Float32Array | null;
   config: ViewerConfig;
 };
+
+// Styling for the tooltip
+const TooltipCard = styled.div`
+  font-family: var(--default-font);
+
+  border-radius: var(--radius-control-small);
+  border: 1px solid var(--color-dividers);
+  background-color: var(--color-background);
+  padding: 6px 8px;
+  overflow-wrap: break-word;
+
+  transition: opacity 300ms;
+`;
 
 /**
  * Sets up and configures the hover tooltip for the main viewport canvas.
@@ -22,7 +36,7 @@ type CanvasHoverTooltipProps = {
  * - If vectors are enabled, the vector value (either magnitude or components) will be displayed.
  */
 export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverTooltipProps>): ReactElement {
-  const { dataset, featureKey, lastHoveredId, motionDeltas, config } = props;
+  const { dataset, featureKey, lastValidHoveredId: lastHoveredId, motionDeltas, config } = props;
 
   const getFeatureValue = useCallback(
     (id: number): string => {
@@ -79,8 +93,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
        `;
     }
   };
-
   const vectorTooltipText = getVectorTooltipText();
+
   const hoverTooltipContent = [
     <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
     <p key="feature_value">
@@ -90,9 +104,9 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     vectorTooltipText ? <p key="vector">{vectorTooltipText}</p> : null,
   ];
 
-  return (
-    <HoverTooltip tooltipContent={hoverTooltipContent} disabled={!props.showHoveredId}>
-      {props.children}
-    </HoverTooltip>
+  const tooltipContent = (
+    <TooltipCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{hoverTooltipContent}</TooltipCard>
   );
+
+  return <HoverTooltip tooltipContent={tooltipContent}>{props.children}</HoverTooltip>;
 }
