@@ -50,24 +50,26 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       let featureValue = featureData?.data[id] ?? -1;
       featureValue = isFinite(featureValue) ? featureValue : NaN;
       const unitsLabel = featureData?.unit ? ` ${featureData?.unit}` : "";
-      // Check if int, otherwise return float
       return numberToStringDecimal(featureValue, 3) + unitsLabel;
     },
     [featureKey, dataset]
   );
 
-  let hoveredFeatureValue = "";
-  if (lastHoveredId !== null && dataset) {
-    const featureVal = getFeatureValue(lastHoveredId);
-    const categories = dataset.getFeatureCategories(featureKey);
-    if (categories !== null) {
-      hoveredFeatureValue = categories[Number.parseInt(featureVal, 10)];
-    } else {
-      hoveredFeatureValue = featureVal;
+  const getHoveredFeatureValue = useCallback((): string => {
+    if (lastHoveredId !== null && dataset) {
+      const featureVal = getFeatureValue(lastHoveredId);
+      const categories = dataset.getFeatureCategories(featureKey);
+      if (categories !== null) {
+        return categories[Number.parseInt(featureVal, 10)];
+      } else {
+        return featureVal;
+      }
     }
-  }
+    return "";
+  }, [lastHoveredId, dataset, getFeatureValue, featureKey]);
+  const hoveredFeatureValue = getHoveredFeatureValue();
 
-  const getVectorTooltipText = (): string | null => {
+  const getVectorTooltipText = useCallback((): string | null => {
     if (!config.vectorConfig.visible || lastHoveredId === null || !motionDeltas) {
       return null;
     }
@@ -78,6 +80,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     }
 
     const vectorKey = config.vectorConfig.key;
+    // TODO: If support for user vector data is added, this will need to get the vector's display name from
+    // the dataset.
     const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
     if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
       const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
@@ -92,20 +96,23 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       return `${vectorName}: (${x}, ${y}) px
        `;
     }
-  };
+  }, [config, lastHoveredId, motionDeltas]);
   const vectorTooltipText = getVectorTooltipText();
 
-  const hoverTooltipContent = [
+  const objectInfoContent = [
     <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
     <p key="feature_value">
       {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
       <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
-    vectorTooltipText ? <p key="vector">{vectorTooltipText}</p> : null,
   ];
+  if (vectorTooltipText) {
+    objectInfoContent.push(<p key="vector">{vectorTooltipText}</p>);
+  }
 
+  // TODO: Eventually this will also show the current annotation tag when annotation mode is enabled.
   const tooltipContent = (
-    <TooltipCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{hoverTooltipContent}</TooltipCard>
+    <TooltipCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</TooltipCard>
   );
 
   return <HoverTooltip tooltipContent={tooltipContent}>{props.children}</HoverTooltip>;
