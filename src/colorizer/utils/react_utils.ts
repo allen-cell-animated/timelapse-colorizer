@@ -332,6 +332,25 @@ export const useAnnotations = (): AnnotationState => {
     }
   };
 
+  const onDeleteLabel = (labelIdx: number): void => {
+    if (!currentLabelIdx) {
+      return;
+    }
+    if (currentLabelIdx === labelIdx) {
+      // Get next default label
+      const labels = annotationData.getLabels();
+      if (labels.length > 0) {
+        setCurrentLabelIdx(0);
+      } else {
+        setCurrentLabelIdx(null);
+      }
+    } else if (currentLabelIdx > labelIdx) {
+      // Decrement because all indices will shift over
+      setCurrentLabelIdx(currentLabelIdx - 1);
+    }
+    return annotationData.deleteLabel(labelIdx);
+  };
+
   return {
     currentLabelIdx,
     setCurrentLabelIdx,
@@ -345,7 +364,7 @@ export const useAnnotations = (): AnnotationState => {
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
     setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
-    deleteLabel: wrapFunctionInUpdate(annotationData.deleteLabel),
+    deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
     applyLabelToId: wrapFunctionInUpdate(annotationData.applyLabelToId),
     removeLabelFromId: wrapFunctionInUpdate(annotationData.removeLabelFromId),
   };
