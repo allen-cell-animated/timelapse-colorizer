@@ -200,9 +200,8 @@ function Viewer(): ReactElement {
    */
   const [frameInput, setFrameInput] = useState(0);
   const [findTrackInput, setFindTrackInput] = useState("");
-  // Prevent jarring jumps in the hover tooltip by using the last non-null value
-  const [lastHoveredId, setLastHoveredId] = useState<number | null>(null);
-  const [showHoveredId, setShowHoveredId] = useState(false);
+  const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
+  const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
@@ -996,8 +995,8 @@ function Viewer(): ReactElement {
               <CanvasHoverTooltip
                 dataset={dataset}
                 featureKey={featureKey}
-                lastHoveredId={lastHoveredId}
-                showHoveredId={showHoveredId}
+                lastValidHoveredId={lastValidHoveredId}
+                showObjectHoverInfo={showObjectHoverInfo}
                 motionDeltas={motionDeltas}
                 config={config}
               >
@@ -1026,12 +1025,12 @@ function Viewer(): ReactElement {
                   inRangeLUT={inRangeLUT}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
-                    setShowHoveredId(isObject);
+                    setShowObjectHoverInfo(isObject);
                     if (isObject) {
-                      setLastHoveredId(id);
+                      setLastValidHoveredId(id);
                     }
                   }}
-                  onMouseLeave={() => setShowHoveredId(false)}
+                  onMouseLeave={() => setShowObjectHoverInfo(false)}
                   showAlert={isInitialDatasetLoaded ? showAlert : undefined}
                 />
               </CanvasHoverTooltip>
