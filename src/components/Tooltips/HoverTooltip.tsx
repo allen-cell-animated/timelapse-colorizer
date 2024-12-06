@@ -20,8 +20,7 @@ const defaultProps: Partial<HoverTooltipProps> = {
 
 const TooltipDiv = styled.div`
   position: fixed;
-
-  transition: opacity 300ms;
+  transition: opacity 300ms ease-in-out;
   z-index: 1;
 `;
 

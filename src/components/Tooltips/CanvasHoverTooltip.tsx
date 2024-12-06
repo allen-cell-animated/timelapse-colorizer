@@ -15,8 +15,7 @@ type CanvasHoverTooltipProps = {
   config: ViewerConfig;
 };
 
-// Styling for the tooltip
-const TooltipCard = styled.div`
+const ObjectInfoCard = styled.div`
   font-family: var(--default-font);
 
   border-radius: var(--radius-control-small);
@@ -25,7 +24,7 @@ const TooltipCard = styled.div`
   padding: 6px 8px;
   overflow-wrap: break-word;
 
-  transition: opacity 300ms;
+  transition: opacity 300ms ease-in-out;
 `;
 
 /**
@@ -80,8 +79,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     }
 
     const vectorKey = config.vectorConfig.key;
-    // TODO: If support for user vector data is added, this will need to get the vector's display name from
-    // the dataset.
+    // TODO: If/when support for user vector data is added, this will need to get the vector's
+    // display name from the dataset.
     const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
     if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
       const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
@@ -112,7 +111,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
   // TODO: Eventually this will also show the current annotation tag when annotation mode is enabled.
   const tooltipContent = (
-    <TooltipCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</TooltipCard>
+    <ObjectInfoCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</ObjectInfoCard>
   );
 
   return <HoverTooltip tooltipContent={tooltipContent}>{props.children}</HoverTooltip>;
