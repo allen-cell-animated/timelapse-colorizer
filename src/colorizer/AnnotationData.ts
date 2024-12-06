@@ -10,7 +10,7 @@ export type LabelData = {
   ids: Set<number>;
 };
 
-export interface AnnotationDataInterface {
+export interface IAnnotationData {
   createNewLabel(name?: string, color?: Color): number;
   getLabelIdxById(id: number): number[];
   getIdsByLabelIdx(labelIdx: number): number[];

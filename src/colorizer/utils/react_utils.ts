@@ -4,7 +4,7 @@ import { useLocalStorage } from "usehooks-ts";
 
 import { VectorConfig } from "../types";
 
-import { AnnotationData, AnnotationDataInterface } from "../AnnotationData";
+import { AnnotationData, IAnnotationData } from "../AnnotationData";
 import Dataset from "../Dataset";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
 
@@ -313,7 +313,7 @@ export type AnnotationState = {
   setCurrentLabelIdx: (labelIdx: number) => void;
   isAnnotationEnabled: boolean;
   setIsAnnotationEnabled: (enabled: boolean) => void;
-} & AnnotationDataInterface;
+} & IAnnotationData;
 
 export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
@@ -352,10 +352,12 @@ export const useAnnotations = (): AnnotationState => {
   };
 
   return {
+    // UI state
     currentLabelIdx,
     setCurrentLabelIdx,
     isAnnotationEnabled,
     setIsAnnotationEnabled,
+    // Data getters
     getLabelIdxById: annotationData.getLabelIdxById,
     getIdsByLabelIdx: annotationData.getIdsByLabelIdx,
     getIdsByTime: annotationData.getIdsByTime,
