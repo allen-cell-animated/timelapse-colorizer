@@ -30,6 +30,16 @@ export class AnnotationData {
   constructor() {
     this.labelData = [];
     this.numLabelsCreated = 0;
+
+    this.getLabelIdxById = this.getLabelIdxById.bind(this);
+    this.getIdsByLabelIdx = this.getIdsByLabelIdx.bind(this);
+    this.getLabels = this.getLabels.bind(this);
+    this.createNewLabel = this.createNewLabel.bind(this);
+    this.setLabelName = this.setLabelName.bind(this);
+    this.setLabelColor = this.setLabelColor.bind(this);
+    this.deleteLabel = this.deleteLabel.bind(this);
+    this.applyLabelToId = this.applyLabelToId.bind(this);
+    this.removeLabelFromId = this.removeLabelFromId.bind(this);
   }
 
   // Getters
