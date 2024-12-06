@@ -1,4 +1,4 @@
-import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { HomeOutlined, TagOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -9,6 +9,7 @@ import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
 import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
+import { AnnotationState } from "../colorizer/utils/react_utils";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
@@ -110,6 +111,8 @@ type CanvasWrapperProps = {
   colorRamp: ColorRamp;
   colorRampMin: number;
   colorRampMax: number;
+
+  annotationState: AnnotationState;
 
   selectedTrack: Track | null;
   categoricalColors: Color[];
@@ -629,6 +632,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       style={{
         position: "relative",
         backgroundColor: theme.color.viewport.background,
+        outline: props.annotationState.isAnnotationEnabled
+          ? `2px solid ${theme.color.viewport.annotationOutline}`
+          : undefined,
       }}
       ref={containerRef}
     >
@@ -681,6 +687,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
+
+        {/* Backdrop toggle */}
         <TooltipWithSubtext
           title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
@@ -695,6 +703,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             disabled={props.selectedBackdropKey === null}
           >
             {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+            <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtext>
+
+        {/* Annotation mode toggle */}
+        <TooltipWithSubtext
+          title={props.annotationState.isAnnotationEnabled ? "Disable annotation mode" : "Enable annotation mode"}
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
+          <IconButton
+            type={props.annotationState.isAnnotationEnabled ? "primary" : "link"}
+            onClick={() => {
+              props.annotationState.setIsAnnotationEnabled(!props.annotationState.isAnnotationEnabled);
+            }}
+          >
+            <TagOutlined />
             <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>

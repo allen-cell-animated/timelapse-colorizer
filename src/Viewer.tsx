@@ -35,7 +35,13 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import { numberToStringDecimal } from "./colorizer/utils/math_utils";
-import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
+import {
+  useAnnotations,
+  useConstructor,
+  useDebounce,
+  useMotionDeltas,
+  useRecentCollections,
+} from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
@@ -99,6 +105,7 @@ function Viewer(): ReactElement {
   const [currentFrame, setCurrentFrame] = useState<number>(0);
   /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+  const annotationState = useAnnotations();
 
   useEffect(() => {
     // Switch to default backdrop if the dataset has one and none is currently selected.
@@ -1096,6 +1103,7 @@ function Viewer(): ReactElement {
                   }}
                   onMouseLeave={() => setShowHoveredId(false)}
                   showAlert={isInitialDatasetLoaded ? showAlert : undefined}
+                  annotationState={annotationState}
                 />
               </HoverTooltip>
             </div>
