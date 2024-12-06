@@ -28,13 +28,10 @@ import {
   ScatterPlotConfig,
   TabType,
   Track,
-  VECTOR_KEY_MOTION_DELTA,
-  VectorTooltipMode,
   ViewerConfig,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
-import { numberToStringDecimal } from "./colorizer/utils/math_utils";
 import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
@@ -60,7 +57,6 @@ import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
 import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
-import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledSlider from "./components/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
@@ -68,6 +64,7 @@ import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
@@ -740,24 +737,6 @@ function Viewer(): ReactElement {
     [replaceDataset]
   );
 
-  const getFeatureValue = useCallback(
-    (id: number): string => {
-      if (!featureKey || !dataset) {
-        return "";
-      }
-      // Look up feature value from id
-      const featureData = dataset.getFeatureData(featureKey);
-      // ?? is a nullish coalescing operator; it checks for null + undefined values
-      // (safe for falsy values like 0 or NaN, which are valid feature values)
-      let featureValue = featureData?.data[id] ?? -1;
-      featureValue = isFinite(featureValue) ? featureValue : NaN;
-      const unitsLabel = featureData?.unit ? ` ${featureData?.unit}` : "";
-      // Check if int, otherwise return float
-      return numberToStringDecimal(featureValue, 3) + unitsLabel;
-    },
-    [featureKey, dataset]
-  );
-
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
   timeControls.setFrameCallback(setFrame);
 
@@ -863,55 +842,6 @@ function Viewer(): ReactElement {
     }
     return [threshold.min, threshold.max];
   };
-
-  let hoveredFeatureValue = "";
-  if (lastHoveredId !== null && dataset) {
-    const featureVal = getFeatureValue(lastHoveredId);
-    const categories = dataset.getFeatureCategories(featureKey);
-    if (categories !== null) {
-      hoveredFeatureValue = categories[Number.parseInt(featureVal, 10)];
-    } else {
-      hoveredFeatureValue = featureVal;
-    }
-  }
-
-  const getVectorTooltipText = (): string | null => {
-    if (!config.vectorConfig.visible || lastHoveredId === null || !motionDeltas) {
-      return null;
-    }
-    const motionDelta = [motionDeltas[2 * lastHoveredId], motionDeltas[2 * lastHoveredId + 1]];
-
-    if (Number.isNaN(motionDelta[0]) || Number.isNaN(motionDelta[1])) {
-      return null;
-    }
-
-    const vectorKey = config.vectorConfig.key;
-    const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
-    if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
-      const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
-      const angleDegrees = (360 + Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
-      const magnitudeText = numberToStringDecimal(magnitude, 3);
-      const angleText = numberToStringDecimal(angleDegrees, 1);
-      return `${vectorName}: ${magnitudeText} px, ${angleText}°`;
-    } else {
-      const allowIntegerTruncation = Number.isInteger(motionDelta[0]) && Number.isInteger(motionDelta[1]);
-      const x = numberToStringDecimal(motionDelta[0], 3, allowIntegerTruncation);
-      const y = numberToStringDecimal(motionDelta[1], 3, allowIntegerTruncation);
-      return `${vectorName}: (${x}, ${y}) px
-     `;
-    }
-  };
-
-  // TODO: Move to a separate component?
-  const vectorTooltipText = getVectorTooltipText();
-  const hoverTooltipContent = [
-    <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
-    <p key="feature_value">
-      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
-      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
-    </p>,
-    vectorTooltipText ? <p key="vector">{vectorTooltipText}</p> : null,
-  ];
 
   return (
     <div>
@@ -1063,7 +993,14 @@ function Viewer(): ReactElement {
                   </div>
                 </FlexRowAlignCenter>
               </div>
-              <HoverTooltip tooltipContent={hoverTooltipContent} disabled={!showHoveredId}>
+              <CanvasHoverTooltip
+                dataset={dataset}
+                featureKey={featureKey}
+                lastHoveredId={lastHoveredId}
+                showHoveredId={showHoveredId}
+                motionDeltas={motionDeltas}
+                config={config}
+              >
                 <CanvasWrapper
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
@@ -1097,7 +1034,7 @@ function Viewer(): ReactElement {
                   onMouseLeave={() => setShowHoveredId(false)}
                   showAlert={isInitialDatasetLoaded ? showAlert : undefined}
                 />
-              </HoverTooltip>
+              </CanvasHoverTooltip>
             </div>
 
             {/** Time Control Bar */}
