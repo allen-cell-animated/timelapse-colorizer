@@ -44,6 +44,7 @@ const COLOR_RAMP_SUBSAMPLES = 100;
 const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
+const PLOTLY_CLICK_TIMEOUT_MS = 10;
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
@@ -111,6 +112,35 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   /** Incrementing UI revision number. Updated whenever a breaking UI change happens and the view must be reset. */
   const uiRevision = useRef(0);
 
+  // Plotly doesn't report click events if empty parts of the canvas are clicked. See
+  // https://github.com/plotly/plotly.js/issues/2696. To detect clicks on blank areas of the plot,
+  // we have to detect ANY click event and see if a plotly click event is reported within a short
+  // time frame. This can happen before OR after plotly reports it, so we need to handle both cases.
+  // If no plotly click event was reported, we assume the click was on a blank area of the plot.
+  const timeOfLastPointClicked = useRef<number>(0);
+  const checkForEmptyClickTimeout = useRef<number | null>(null);
+  useEffect(() => {
+    const onClick = (): void => {
+      // A point was recently clicked so ignore the click event.
+      if (timeOfLastPointClicked.current + PLOTLY_CLICK_TIMEOUT_MS > Date.now()) {
+        return;
+      }
+      // Start a timeout to clear the track, which will be cleared if a plotly
+      // click event occurs.
+      checkForEmptyClickTimeout.current = window.setTimeout(() => {
+        // If the timeout is not cancelled, clear the track.
+        props.findTrack(null, false);
+      }, PLOTLY_CLICK_TIMEOUT_MS);
+    };
+
+    // Attach listener to the XY plot only (and not the histogram or axes)
+    const xyPlotDiv = plotDivRef.current?.querySelector(".plot-container .xy");
+    xyPlotDiv?.addEventListener("click", onClick);
+    return () => {
+      xyPlotDiv?.removeEventListener("click", onClick);
+    };
+  }, [plotDivRef.current, props.findTrack]);
+
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
   const {
@@ -171,27 +201,18 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // that frame.
   useEffect(() => {
     const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
-      if (!dataset || eventData.points.length === 0 || isHistogramEvent(eventData)) {
+      if (!dataset || eventData.points.length === 0) {
         return;
       }
 
-      // When a track is selected, the hover distance is set to infinity so we can detect
-      // mouse events that are on blank areas of the plot (otherwise Plotly does not report
-      // click events if no point is clicked). This way, we can detect if the cursor is very far
-      // from the clicked point and deselect the track.
-      // TODO: Revisit if Plotly adds 'catch-all' click events: https://github.com/plotly/plotly.js/issues/2696
-      const distanceThreshold = 50;
-      const clickedPoint = eventData.points[0];
-      // @ts-ignore
-      const clickedPointXPx = clickedPoint.xaxis.l2p(clickedPoint.x) + clickedPoint.xaxis._offset;
-      // @ts-ignore
-      const clickedPointYPx = clickedPoint.yaxis.l2p(clickedPoint.y) + clickedPoint.yaxis._offset;
+      // Clear any timeouts for detecting clicks on blank areas of the plot.
+      if (checkForEmptyClickTimeout.current) {
+        clearTimeout(checkForEmptyClickTimeout.current);
+        checkForEmptyClickTimeout.current = null;
+      }
+      timeOfLastPointClicked.current = Date.now();
 
-      const xDistance = Math.abs(eventData.event.layerX - clickedPointXPx);
-      const yDistance = Math.abs(eventData.event.layerY - clickedPointYPx);
-      const distance = Math.sqrt(xDistance ** 2 + yDistance ** 2);
-      if (selectedTrack !== null && distance > distanceThreshold) {
-        props.findTrack(null, false);
+      if (isHistogramEvent(eventData)) {
         return;
       }
 
@@ -761,9 +782,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xaxis2: histogramXAxis,
       yaxis2: histogramYAxis,
       margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
-      // If a track is selected, set hoverdistance to infinite so we can detect click events that
-      // are on blank areas of the track.
-      hoverdistance: props.selectedTrack === null ? undefined : -1,
       font: {
         // Unfortunately using the Lato font family causes the text to render with SEVERE
         // aliasing. Using the default plotly font family causes the X and Y axes to be
