@@ -175,6 +175,26 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         return;
       }
 
+      // When a track is selected, the hover distance is set to infinity so we can detect
+      // mouse events that are on blank areas of the plot (otherwise Plotly does not report
+      // click events if no point is clicked). This way, we can detect if the cursor is very far
+      // from the clicked point and deselect the track.
+      // TODO: Revisit if Plotly adds 'catch-all' click events: https://github.com/plotly/plotly.js/issues/2696
+      const distanceThreshold = 50;
+      const clickedPoint = eventData.points[0];
+      // @ts-ignore
+      const clickedPointXPx = clickedPoint.xaxis.l2p(clickedPoint.x) + clickedPoint.xaxis._offset;
+      // @ts-ignore
+      const clickedPointYPx = clickedPoint.yaxis.l2p(clickedPoint.y) + clickedPoint.yaxis._offset;
+
+      const xDistance = Math.abs(eventData.event.layerX - clickedPointXPx);
+      const yDistance = Math.abs(eventData.event.layerY - clickedPointYPx);
+      const distance = Math.sqrt(xDistance ** 2 + yDistance ** 2);
+      if (selectedTrack !== null && distance > distanceThreshold) {
+        props.findTrack(null, false);
+        return;
+      }
+
       const point = eventData.points[0];
       const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
       const trackId = dataset.getTrackId(objectId);
@@ -741,6 +761,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xaxis2: histogramXAxis,
       yaxis2: histogramYAxis,
       margin: { l: leftMarginPx, r: 50, b: 50, t: 20, pad: 4 },
+      // If a track is selected, set hoverdistance to infinite so we can detect click events that
+      // are on blank areas of the track.
+      hoverdistance: props.selectedTrack === null ? undefined : -1,
       font: {
         // Unfortunately using the Lato font family causes the text to render with SEVERE
         // aliasing. Using the default plotly font family causes the X and Y axes to be
