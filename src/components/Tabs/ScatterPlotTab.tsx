@@ -485,7 +485,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     trackIds: number[],
     markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
     overrideColor?: Color,
-    allowHover = true
+    allowHover = true,
+    spreadXAxisPx = 0,
+    spreadYAxisPx = 0
   ): Partial<PlotData>[] => {
     if (selectedFeatureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
       return [];
@@ -619,6 +621,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             color: bucket.color,
             size: 4,
             ...bucket.marker,
+            angle: 90,
+            standoff: Math.floor(Math.random() * 100 + 3),
           },
           hoverinfo: allowHover ? "text" : "skip",
           hovertemplate: allowHover ? getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey) : undefined,
@@ -688,6 +692,26 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // disable hover for all points other than the track when one is selected
       selectedTrack === null
     );
+
+    const isXAxisCategorical = dataset.isFeatureCategorical(xAxisFeatureKey);
+    const isYAxisCategorical = dataset.isFeatureCategorical(yAxisFeatureKey);
+    if (isXAxisCategorical && isYAxisCategorical) {
+      // Both axes are categorical; render a bubble plot
+      // TODO: Use standoff + angle to vary points
+    } else if (isXAxisCategorical || isYAxisCategorical) {
+      // Render a violin plot + add scatter along opposite axis
+      // TODO: Color violines by categorical color w/ some transparency
+      traces.push({
+        type: "violin",
+        x: xData,
+        y: yData,
+        jitter: 0.1,
+        marker: {
+          size: 4,
+        },
+      });
+    } else {
+    }
 
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
