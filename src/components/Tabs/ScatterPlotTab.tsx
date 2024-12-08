@@ -118,7 +118,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // time frame. This can happen before OR after plotly reports it, so we need to handle both cases.
   // If no plotly click event was reported, we assume the click was on a blank area of the plot.
   const timeOfLastPointClicked = useRef<number>(0);
-  const checkForEmptyClickTimeout = useRef<number | null>(null);
+  const emptyClickTimeout = useRef<number | null>(null);
   useEffect(() => {
     const onClick = (): void => {
       // A point was recently clicked so ignore the click event.
@@ -127,8 +127,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
       // Start a timeout to clear the track, which will be cleared if a plotly
       // click event occurs.
-      checkForEmptyClickTimeout.current = window.setTimeout(() => {
-        // If the timeout is not cancelled, clear the track.
+      emptyClickTimeout.current = window.setTimeout(() => {
         props.findTrack(null, false);
       }, PLOTLY_CLICK_TIMEOUT_MS);
     };
@@ -201,20 +200,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // that frame.
   useEffect(() => {
     const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
-      if (!dataset || eventData.points.length === 0) {
+      if (!dataset || eventData.points.length === 0 || isHistogramEvent(eventData)) {
         return;
       }
 
       // Clear any timeouts for detecting clicks on blank areas of the plot.
-      if (checkForEmptyClickTimeout.current) {
-        clearTimeout(checkForEmptyClickTimeout.current);
-        checkForEmptyClickTimeout.current = null;
+      if (emptyClickTimeout.current) {
+        clearTimeout(emptyClickTimeout.current);
+        emptyClickTimeout.current = null;
       }
       timeOfLastPointClicked.current = Date.now();
-
-      if (isHistogramEvent(eventData)) {
-        return;
-      }
 
       const point = eventData.points[0];
       const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
@@ -690,7 +685,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       trackIds,
       {},
       markerBaseColor,
-      selectedTrack == null // disable hover for all points when a track is selected
+      // disable hover for all points other than the track when one is selected
+      selectedTrack === null
     );
 
     const xHistogram: Partial<Plotly.PlotData> = {
