@@ -119,6 +119,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // If no plotly click event was reported, we assume the click was on a blank area of the plot.
   const timeOfLastPointClicked = useRef<number>(0);
   const emptyClickTimeout = useRef<number | null>(null);
+  const currentRangeType = useRef<PlotRangeType>(props.scatterPlotConfig.rangeType);
+  currentRangeType.current = props.scatterPlotConfig.rangeType;
+
   useEffect(() => {
     const onClick = (): void => {
       // A point was recently clicked so ignore the click event.
@@ -128,7 +131,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // Start a timeout to clear the track, which will be cleared if a plotly
       // click event occurs.
       emptyClickTimeout.current = window.setTimeout(() => {
-        props.findTrack(null, false);
+        if (currentRangeType.current !== PlotRangeType.CURRENT_TRACK) {
+          props.findTrack(null, false);
+        }
       }, PLOTLY_CLICK_TIMEOUT_MS);
     };
 
