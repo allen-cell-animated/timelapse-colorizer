@@ -1,10 +1,11 @@
 import { CloseOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Input, Table, TableProps } from "antd";
 import React, { ReactElement, useMemo } from "react";
+import styled from "styled-components";
 
 import { Dataset } from "../../colorizer";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../styles/utils";
+import { FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
 
 import { LabelData } from "../../colorizer/AnnotationData";
 import IconButton from "../IconButton";
@@ -21,6 +22,12 @@ type TableDataType = {
   track: number;
   time: number;
 };
+
+const StyledAntTable = styled(Table)`
+  .ant-table-row {
+    cursor: pointer;
+  }
+`;
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const {
@@ -59,21 +66,18 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       dataIndex: "id",
       key: "id",
       sorter: (a, b) => a.id - b.id,
-      render: makeLabelButtonRenderer("id"),
     },
     {
       title: "Track ID",
       dataIndex: "track",
       key: "track",
       sorter: (a, b) => a.track - b.track,
-      render: makeLabelButtonRenderer("track"),
     },
     {
       title: "Time",
       dataIndex: "time",
       key: "time",
       sorter: (a, b) => a.time - b.time,
-      render: makeLabelButtonRenderer("time"),
     },
     {
       title: "",
@@ -87,6 +91,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           }}
         >
           <CloseOutlined />
+          <VisuallyHidden>
+            Remove ID {record.id} (track {record.track})
+          </VisuallyHidden>
         </IconButton>
       ),
     },
@@ -103,11 +110,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     }
   };
 
-  const onClickObjectRow = (event: React.MouseEvent<any, MouseEvent>, record: TableDataType) => {
+  const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType) => {
     props.setTrackAndFrame(record.track, record.time);
   };
-
-  const onClickDeleteObjectRow = (id: number) => {};
 
   const tableData: TableDataType[] = useMemo(() => {
     const dataset = props.dataset;
@@ -141,10 +146,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         </IconButton>
       </FlexRowAlignCenter>
       <div style={{ width: "100%" }}>
-        <Table
+        <StyledAntTable
           dataSource={tableData}
           columns={tableColumns}
           size="small"
+          pagination={false}
           onRow={(record) => {
             return {
               onClick: (event) => {
@@ -152,7 +158,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               },
             };
           }}
-        ></Table>
+        ></StyledAntTable>
       </div>
     </FlexColumnAlignCenter>
   );

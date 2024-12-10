@@ -501,11 +501,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
+      } else if (props.annotationState.isAnnotationEnabled) {
+        canv.domElement.style.cursor = "crosshair";
       } else {
         canv.domElement.style.cursor = "auto";
       }
     },
-    [handlePan]
+    [handlePan, props.annotationState.isAnnotationEnabled]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {

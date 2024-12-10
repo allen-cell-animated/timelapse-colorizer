@@ -1,8 +1,11 @@
+import { Tag } from "antd";
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
 
 import { Dataset, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode, ViewerConfig } from "../../colorizer";
 import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
+import { AnnotationState } from "../../colorizer/utils/react_utils";
+import { FlexColumn } from "../../styles/utils";
 
 import HoverTooltip from "./HoverTooltip";
 
@@ -13,6 +16,7 @@ type CanvasHoverTooltipProps = {
   showObjectHoverInfo: boolean;
   motionDeltas: Float32Array | null;
   config: ViewerConfig;
+  annotationState: AnnotationState;
 };
 
 const ObjectInfoCard = styled.div`
@@ -109,9 +113,23 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     objectInfoContent.push(<p key="vector">{vectorTooltipText}</p>);
   }
 
+  let annotationLabel: React.ReactNode;
+  let currentLabelIdx = props.annotationState.currentLabelIdx;
+  if (props.annotationState.isAnnotationEnabled && currentLabelIdx !== null) {
+    const labelData = props.annotationState.getLabels()[currentLabelIdx];
+    annotationLabel = (
+      <Tag style={{ width: "fit-content" }} color={"#" + labelData.color.getHexString()} bordered={true}>
+        {labelData.name}
+      </Tag>
+    );
+  }
+
   // TODO: Eventually this will also show the current annotation tag when annotation mode is enabled.
   const tooltipContent = (
-    <ObjectInfoCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</ObjectInfoCard>
+    <FlexColumn $gap={6}>
+      {annotationLabel}
+      <ObjectInfoCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</ObjectInfoCard>
+    </FlexColumn>
   );
 
   return <HoverTooltip tooltipContent={tooltipContent}>{props.children}</HoverTooltip>;

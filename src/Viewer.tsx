@@ -1135,6 +1135,7 @@ function Viewer(): ReactElement {
                 showObjectHoverInfo={showObjectHoverInfo}
                 motionDeltas={motionDeltas}
                 config={config}
+                annotationState={annotationState}
               >
                 <CanvasWrapper
                   loading={isDatasetLoading}
