@@ -962,7 +962,7 @@ function Viewer(): ReactElement {
           <AnnotationTab
             annotationState={annotationState}
             setTrackAndFrame={(track, frame) => {
-              findTrack(track);
+              findTrack(track, false);
               setFrameAndRender(frame);
             }}
             dataset={dataset}

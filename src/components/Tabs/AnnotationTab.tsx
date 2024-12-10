@@ -1,5 +1,5 @@
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Table, TableProps } from "antd";
+import { CloseOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Input, Table, TableProps } from "antd";
 import React, { ReactElement, useMemo } from "react";
 
 import { Dataset } from "../../colorizer";
@@ -22,13 +22,6 @@ type TableDataType = {
   time: number;
 };
 
-const tableColumns: TableProps<TableDataType>["columns"] = [
-  { title: "Object ID", dataIndex: "id", key: "id", sorter: (a, b) => a.id - b.id },
-  { title: "Track ID", dataIndex: "track", key: "track", sorter: (a, b) => a.track - b.track },
-  { title: "Time", dataIndex: "time", key: "time", sorter: (a, b) => a.time - b.time },
-  { title: "Action", key: "action", render: () => <a>Delete</a> },
-];
-
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const {
     currentLabelIdx,
@@ -39,6 +32,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     annotationDataVersion,
     getIdsByLabelIdx,
     setLabelName,
+    removeLabelFromId,
   } = props.annotationState;
 
   const labels = getLabels();
@@ -46,14 +40,72 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onSelectLabel = (labelIdx: number) => {};
 
+  function makeLabelButtonRenderer(key: keyof TableDataType): (_text: string, record: TableDataType) => ReactElement {
+    return (_text: string, record: TableDataType) => (
+      <Button
+        type="text"
+        onClick={() => {
+          props.setTrackAndFrame(record.track, record.time);
+        }}
+      >
+        {record[key]}
+      </Button>
+    );
+  }
+
+  const tableColumns: TableProps<TableDataType>["columns"] = [
+    {
+      title: "Object ID",
+      dataIndex: "id",
+      key: "id",
+      sorter: (a, b) => a.id - b.id,
+      render: makeLabelButtonRenderer("id"),
+    },
+    {
+      title: "Track ID",
+      dataIndex: "track",
+      key: "track",
+      sorter: (a, b) => a.track - b.track,
+      render: makeLabelButtonRenderer("track"),
+    },
+    {
+      title: "Time",
+      dataIndex: "time",
+      key: "time",
+      sorter: (a, b) => a.time - b.time,
+      render: makeLabelButtonRenderer("time"),
+    },
+    {
+      title: "",
+      key: "action",
+      render: (_, record) => (
+        <IconButton
+          type="text"
+          onClick={(event) => {
+            event.stopPropagation();
+            removeLabelFromId(currentLabelIdx!, record.id);
+          }}
+        >
+          <CloseOutlined />
+        </IconButton>
+      ),
+    },
+  ];
+
   const onCreateNewLabel = () => {
     const index = createNewLabel();
     setCurrentLabelIdx(index);
   };
 
-  const onDeleteLabel = () => {};
+  const onDeleteLabel = () => {
+    if (currentLabelIdx !== null) {
+      deleteLabel(currentLabelIdx);
+    }
+  };
 
-  const onClickObjectRow = (id: number) => {};
+  const onClickObjectRow = (event: React.MouseEvent<any, MouseEvent>, record: TableDataType) => {
+    props.setTrackAndFrame(record.track, record.time);
+  };
 
   const onClickDeleteObjectRow = (id: number) => {};
 
@@ -73,18 +125,34 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRowAlignCenter $gap={10}>
-        <p>label name: {selectedLabel?.name}</p>
+        <Input
+          onChange={(event) => {
+            currentLabelIdx !== null && setLabelName(currentLabelIdx, event.target.value || "");
+          }}
+          value={selectedLabel?.name}
+        ></Input>
         <p>label idx: {currentLabelIdx}</p>
         <p>version: {annotationDataVersion}</p>
         <IconButton onClick={onCreateNewLabel}>
           <PlusOutlined />
         </IconButton>
-        <IconButton>
+        <IconButton onClick={onDeleteLabel}>
           <DeleteOutlined />
         </IconButton>
       </FlexRowAlignCenter>
       <div style={{ width: "100%" }}>
-        <Table dataSource={tableData} columns={tableColumns}></Table>
+        <Table
+          dataSource={tableData}
+          columns={tableColumns}
+          size="small"
+          onRow={(record) => {
+            return {
+              onClick: (event) => {
+                onClickObjectRow(event, record);
+              },
+            };
+          }}
+        ></Table>
       </div>
     </FlexColumnAlignCenter>
   );
