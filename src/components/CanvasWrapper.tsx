@@ -379,7 +379,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.onTrackClicked(newTrack);
       }
     },
-    [canv, props.dataset]
+    [canv, props.dataset, props.onTrackClicked]
   );
 
   /**

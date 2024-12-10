@@ -1,6 +1,6 @@
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Table } from "antd";
-import React, { ReactElement } from "react";
+import { Table, TableProps } from "antd";
+import React, { ReactElement, useMemo } from "react";
 
 import { Dataset } from "../../colorizer";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
@@ -16,7 +16,17 @@ type AnnotationTabProps = {
 
 type TableDataType = {
   key: string;
+  id: number;
+  track: number;
+  time: number;
 };
+
+const tableColumns: TableProps<TableDataType>["columns"] = [
+  { title: "Object ID", dataIndex: "id", key: "id", sorter: (a, b) => a.id - b.id },
+  { title: "Track ID", dataIndex: "track", key: "track", sorter: (a, b) => a.track - b.track },
+  { title: "Time", dataIndex: "time", key: "time", sorter: (a, b) => a.time - b.time },
+  { title: "Action", key: "action", render: () => <a>Delete</a> },
+];
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const {
@@ -25,6 +35,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     getLabels,
     createNewLabel,
     deleteLabel,
+    annotationDataVersion,
     getIdsByLabelIdx,
     setLabelName,
   } = props.annotationState;
@@ -45,9 +56,24 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickDeleteObjectRow = (id: number) => {};
 
+  const tableData: TableDataType[] = useMemo(() => {
+    const dataset = props.dataset;
+    if (currentLabelIdx !== null && dataset) {
+      const ids = getIdsByLabelIdx(currentLabelIdx);
+      return ids.map((id) => {
+        const track = dataset.getTrackId(id);
+        const time = dataset.getTime(id);
+        return { key: id.toString(), id, track, time };
+      });
+    }
+    return [];
+  }, [annotationDataVersion, currentLabelIdx, props.dataset]);
+
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRowAlignCenter $gap={10}>
+        <p>label idx: {currentLabelIdx}</p>
+        <p>version: {annotationDataVersion}</p>
         <IconButton onClick={onCreateNewLabel}>
           <PlusOutlined />
         </IconButton>
@@ -56,7 +82,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         </IconButton>
       </FlexRowAlignCenter>
       <div style={{ width: "100%" }}>
-        <Table></Table>
+        <Table dataSource={tableData} columns={tableColumns}></Table>
       </div>
     </FlexColumnAlignCenter>
   );

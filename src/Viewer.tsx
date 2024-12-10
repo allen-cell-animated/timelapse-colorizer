@@ -805,6 +805,18 @@ function Viewer(): ReactElement {
     };
   });
 
+  const onTrackClicked = useCallback(
+    (track: Track | null) => {
+      setFindTrackInput(track?.trackId.toString() || "");
+      setSelectedTrack(track);
+      if (track && annotationState.isAnnotationEnabled && annotationState.currentLabelIdx !== null) {
+        console.log("Applying label to track", annotationState.currentLabelIdx, track.getIdAtTime(currentFrame));
+        annotationState.applyLabelToId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame));
+      }
+    },
+    [annotationState.isAnnotationEnabled, annotationState.currentLabelIdx, currentFrame]
+  );
+
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
   // Update the callback for TimeControls and RecordingControls if it changes.
@@ -1142,10 +1154,7 @@ function Viewer(): ReactElement {
                   selectedTrack={selectedTrack}
                   config={config}
                   updateConfig={updateConfig}
-                  onTrackClicked={(track) => {
-                    setFindTrackInput(track?.trackId.toString() || "");
-                    setSelectedTrack(track);
-                  }}
+                  onTrackClicked={onTrackClicked}
                   inRangeLUT={inRangeLUT}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;

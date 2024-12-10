@@ -313,6 +313,8 @@ export type AnnotationState = {
   setCurrentLabelIdx: (labelIdx: number) => void;
   isAnnotationEnabled: boolean;
   setIsAnnotationEnabled: (enabled: boolean) => void;
+  /* Increments every time the annotation data has changed. Use for caching.*/
+  annotationDataVersion: number;
 } & IAnnotationData;
 
 export const useAnnotations = (): AnnotationState => {
@@ -322,10 +324,11 @@ export const useAnnotations = (): AnnotationState => {
   const [isAnnotationEnabled, setIsAnnotationEnabled] = useState<boolean>(false);
 
   /** Increments every time a state update is required. */
-  const [, setDataUpdateCounter] = useState(0);
+  const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
 
   const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
     return <F>function (...args: any[]) {
+      console.log("Update");
       const result = fn(...args);
       setDataUpdateCounter((value) => {return value + 1});
       return result;
@@ -353,6 +356,7 @@ export const useAnnotations = (): AnnotationState => {
 
   return {
     // UI state
+    annotationDataVersion: dataUpdateCounter,
     currentLabelIdx,
     setCurrentLabelIdx,
     isAnnotationEnabled,
