@@ -1,4 +1,4 @@
-import React, { EventHandler, useCallback, useEffect, useRef, useState } from "react";
+import React, { EventHandler, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -254,14 +254,15 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
 };
 
 /**
- * Wrapper around the SharedWorkerPool method `getMotionDeltas`. Returns a debounced motion
- * delta array for the given dataset and vector field configuration.
+ * Wrapper around the SharedWorkerPool method `getMotionDeltas`. Returns a
+ * debounced motion delta array for the given dataset and vector field
+ * configuration.
  * @param dataset The dataset to calculate motion deltas for.
  * @param workerPool The worker pool to use for asynchronous calculations.
  * @param config The vector field configuration to use.
  * @param debounceMs The debounce time in milliseconds. Defaults to 100ms.
- * @returns The motion delta array or `null` if the dataset is invalid. Data will be
- * asynchronously updated as calculations complete.
+ * @returns The motion delta array or `null` if the dataset is invalid. Data
+ * will be asynchronously updated as calculations complete.
  */
 export const useMotionDeltas = (
   dataset: Dataset | null,
@@ -344,16 +345,17 @@ export const useAnnotations = (): AnnotationState => {
   };
 
   const onDeleteLabel = (labelIdx: number): void => {
-    if (!currentLabelIdx) {
+    if (currentLabelIdx === null) {
       return;
     }
     if (currentLabelIdx === labelIdx) {
       // Get next default label
       const labels = annotationData.getLabels();
-      if (labels.length > 0) {
-        setCurrentLabelIdx(0);
+      if (labels.length > 1) {
+        setCurrentLabelIdx(Math.max(currentLabelIdx - 1, 0));
       } else {
         setCurrentLabelIdx(null);
+        setIsAnnotationEnabled(false);
       }
     } else if (currentLabelIdx > labelIdx) {
       // Decrement because all indices will shift over
