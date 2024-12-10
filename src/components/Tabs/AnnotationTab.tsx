@@ -6,6 +6,7 @@ import { Dataset } from "../../colorizer";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../styles/utils";
 
+import { LabelData } from "../../colorizer/AnnotationData";
 import IconButton from "../IconButton";
 
 type AnnotationTabProps = {
@@ -41,7 +42,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
 
   const labels = getLabels();
-  const selectedLabel = labels[currentLabelIdx ?? -1];
+  const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
   const onSelectLabel = (labelIdx: number) => {};
 
@@ -72,6 +73,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRowAlignCenter $gap={10}>
+        <p>label name: {selectedLabel?.name}</p>
         <p>label idx: {currentLabelIdx}</p>
         <p>version: {annotationDataVersion}</p>
         <IconButton onClick={onCreateNewLabel}>

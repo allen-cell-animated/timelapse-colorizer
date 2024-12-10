@@ -15,7 +15,7 @@ export interface IAnnotationData {
   getLabelIdxById(id: number): number[];
   getIdsByLabelIdx(labelIdx: number): number[];
   getIdsByTime(labelIdx: number, dataset: Dataset, time: number): number[];
-  getLabels(): Omit<LabelData, "ids">[];
+  getLabels(): LabelData[];
   setLabelName(labelIdx: number, name: string): void;
   setLabelColor(labelIdx: number, color: Color): void;
   deleteLabel(labelIdx: number): void;
@@ -70,8 +70,9 @@ export class AnnotationData {
     return ids;
   }
 
-  getLabels(): Omit<LabelData, "ids">[] {
-    return this.labelData.map((label) => ({ name: label.name, color: label.color }));
+  getLabels(): LabelData[] {
+    // TODO: Is a shallow copy okay here?
+    return [...this.labelData];
   }
 
   // Setters

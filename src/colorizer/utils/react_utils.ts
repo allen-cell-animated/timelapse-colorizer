@@ -1,4 +1,4 @@
-import React, { EventHandler, useEffect, useRef, useState } from "react";
+import React, { EventHandler, useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -321,7 +321,7 @@ export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
-  const [isAnnotationEnabled, setIsAnnotationEnabled] = useState<boolean>(false);
+  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
 
   /** Increments every time a state update is required. */
   const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
@@ -333,6 +333,14 @@ export const useAnnotations = (): AnnotationState => {
       setDataUpdateCounter((value) => {return value + 1});
       return result;
     }
+  };
+
+  const setIsAnnotationEnabled = (enabled: boolean) => {
+    if (enabled && annotationData.getLabels().length === 0) {
+      const newLabelIdx = annotationData.createNewLabel();
+      setCurrentLabelIdx(newLabelIdx);
+    }
+    _setIsAnnotationEnabled(enabled);
   };
 
   const onDeleteLabel = (labelIdx: number): void => {
