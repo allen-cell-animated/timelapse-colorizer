@@ -173,6 +173,7 @@ export function makeLineTrace(
     },
     ids: objectIds.map((id) => id.toString()),
     customdata: trackIds.map((id) => id.toString()),
+    hoverinfo: "skip", // will be overridden if hovertemplate is provided
     hovertemplate,
   };
 }
