@@ -15,11 +15,11 @@ for more details about potential future features!
 
 ![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/81130299-7e75-4fc2-a344-19aba7aae8a5)
 
-### Opening New Datasets
+## Viewing Custom Datasets
 
-Timelapse Feature Explorer-compatible datasets hosted over HTTPS can be loaded directly from the interface! More details can be found in the [data format specification](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/DATA_FORMAT.md).
+Datasets must be preprocessed for viewing in Timelapse Feature Explorer. We provide the [`colorizer-data` Python package](https://github.com/allen-cell-animated/colorizer-data), which includes tutorials and documentation about the data specification. See our [getting started guide](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb) for more details.
 
-Click the **Load** button in the top right to open a URL.
+Compatible datasets hosted over HTTPS can be loaded directly from the interface. Click the **Load** button in the top right to open a URL.
 
 ![image](https://github.com/allen-cell-animated/timelapse-colorizer/assets/30200665/e2631a78-b0d6-49fc-bb93-cefc94a91a53)
 
@@ -37,22 +37,23 @@ to access HTTPS-hosted datasets without installing the project.
 
 ### Web tool
 
-Clone the project and navigate to the project's root directory in a terminal window or VSCode. Then run:
+Open a command terminal and run the following commands. Installation may take a few minutes.
 
 ```bash
+git clone https://github.com/allen-cell-animated/timelapse-colorizer.git
+cd timelapse-colorizer
 npm install
+```
+
+To start the development server, run:
+
+```bash
 npm run dev
 ```
 
-This will start a development server you can access from your browser. By default, the server will be hosted at `http://localhost:5173/`.
+This will allow you to access the viewer from your browser. By default, the server will be hosted at `http://localhost:5173/`.
 
 You can also access our internal build (which may have some additional experimental features) by running `npm run dev-internal`.
-
-### Uploading datasets
-
-Data must be preprocessed to work with Timelapse Feature Explorer. We provide a Python package and example scripts in the [`colorizer-data` GitHub repository](https://github.com/allen-cell-animated/colorizer-data).
-
- You can read more about the [data format specification](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/DATA_FORMAT.md) or follow our [data preprocessing tutorial](https://github.com/allen-cell-animated/colorizer-data/blob/main/documentation/getting_started_guide/GETTING_STARTED.ipynb) for more details on how to load your own datasets.
 
 ## Development
 
