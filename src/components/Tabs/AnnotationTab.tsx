@@ -1,5 +1,6 @@
-import { CloseOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Input, Table, TableProps } from "antd";
+import { CloseOutlined, DeleteOutlined, DownOutlined, PlusOutlined } from "@ant-design/icons";
+import { Color as AntdColor } from "@rc-component/color-picker";
+import { Button, ColorPicker, Input, Table, TableProps } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
 
@@ -127,17 +128,24 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return [];
   }, [annotationDataVersion, currentLabelIdx, props.dataset]);
 
+  const labelColor = new AntdColor(selectedLabel?.color.getHexString() || "ff00ff");
+  console.log(labelColor);
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRowAlignCenter $gap={10}>
+        <div>
+          <ColorPicker size="small" value={labelColor} onChange={() => {}} disabledAlpha={true} />
+        </div>
         <Input
           onChange={(event) => {
             currentLabelIdx !== null && setLabelName(currentLabelIdx, event.target.value || "");
           }}
           value={selectedLabel?.name}
         ></Input>
+        <IconButton type="text">
+          <DownOutlined />
+        </IconButton>
         <p>label idx: {currentLabelIdx}</p>
-        <p>version: {annotationDataVersion}</p>
         <IconButton onClick={onCreateNewLabel}>
           <PlusOutlined />
         </IconButton>
