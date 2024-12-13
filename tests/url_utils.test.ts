@@ -116,6 +116,7 @@ describe("Loading + saving from URL query strings", () => {
     expect(parsedParams).deep.equals(originalParams);
   });
 
+  // TODO: Make a copy of this test to test alternate values for each parameter
   it("Saves and retrieves URL params correctly", () => {
     // This will need to be updated for any new URL params.
     // The use of `Required` makes sure that we don't forget to update this test :)

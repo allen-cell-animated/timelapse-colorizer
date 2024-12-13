@@ -438,7 +438,7 @@ function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterP
 
 function serializeVectorConfig(config: Partial<VectorConfig>): string[] {
   const parameters: string[] = [];
-  config.visible !== undefined && parameters.push(`${UrlParam.SHOW_VECTOR}=1`);
+  tryAddBooleanParam(parameters, config.visible, UrlParam.SHOW_VECTOR);
   config.color !== undefined && parameters.push(`${UrlParam.VECTOR_COLOR}=${config.color.getHexString()}`);
   config.key !== undefined && parameters.push(`${UrlParam.VECTOR_KEY}=${encodeURIComponent(config.key)}`);
   config.scaleFactor !== undefined && parameters.push(`${UrlParam.VECTOR_SCALE}=${config.scaleFactor}`);
