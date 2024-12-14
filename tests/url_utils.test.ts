@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../src/colorizer";
 import { getDefaultViewerConfig } from "../src/colorizer/constants";
-import { DrawMode, DrawSettings, PlotRangeType, TabType, ThresholdType } from "../src/colorizer/types";
+import {
+  DrawMode,
+  DrawSettings,
+  PlotRangeType,
+  TabType,
+  ThresholdType,
+  VectorTooltipMode,
+} from "../src/colorizer/types";
 import {
   isAllenPath,
   isHexColor,
@@ -109,6 +116,7 @@ describe("Loading + saving from URL query strings", () => {
     expect(parsedParams).deep.equals(originalParams);
   });
 
+  // TODO: Make a copy of this test to test alternate values for each parameter
   it("Saves and retrieves URL params correctly", () => {
     // This will need to be updated for any new URL params.
     // The use of `Required` makes sure that we don't forget to update this test :)
@@ -152,6 +160,14 @@ describe("Loading + saving from URL query strings", () => {
         openTab: TabType.FILTERS,
         outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
         outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
+        vectorConfig: {
+          visible: true,
+          key: "key",
+          timeIntervals: 18,
+          color: new Color("#ff00ff"),
+          scaleFactor: 5,
+          tooltipMode: VectorTooltipMode.COMPONENTS,
+        },
       },
       selectedBackdropKey: "some_backdrop",
       scatterPlotConfig: {
@@ -162,7 +178,14 @@ describe("Loading + saving from URL query strings", () => {
     };
     const queryString = paramsToUrlQueryString(originalParams);
     const expectedQueryString =
-      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0&tab=filters&bg=1&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
+      "?collection=collection&dataset=dataset&feature=feature&track=25&t=14" +
+      "&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11" +
+      "&range=21.433%2C89.400&color=myMap-1!&palette-key=adobe&bg-sat=50&bg-brightness=75&fg-alpha=25" +
+      "&outlier-color=00ff00&outlier-mode=1&filter-color=ff0000&filter-mode=0" +
+      "&tab=filters" +
+      "&vc=1&vc-color=ff00ff&vc-key=key&vc-scale=5&vc-time-int=18&vc-tooltip=c" +
+      "&bg=1&scalebar=1&timestamp=0&path=1&keep-range=1&bg-key=some_backdrop" +
+      "&scatter-range=all&scatter-x=x%20axis%20name&scatter-y=y%20axis%20name";
     expect(queryString).equals(expectedQueryString);
 
     const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
