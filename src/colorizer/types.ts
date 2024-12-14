@@ -135,6 +135,10 @@ export enum VectorTooltipMode {
   COMPONENTS = "c",
 }
 
+export const isVectorTooltipMode = (mode: string): mode is VectorTooltipMode => {
+  return Object.values(VectorTooltipMode).includes(mode as VectorTooltipMode);
+};
+
 export type VectorConfig = {
   visible: boolean;
   key: string;
