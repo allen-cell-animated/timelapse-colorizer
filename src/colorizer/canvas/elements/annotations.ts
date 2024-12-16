@@ -18,11 +18,13 @@ export type AnnotationParams = BaseRenderParams & {
 export type AnnotationStyle = {
   markerSizePx: number;
   borderColor: string;
+  additionalItemsOffsetPx: number;
 };
 
 export const defaultAnnotationStyle = {
   markerSizePx: 5,
   borderColor: "white",
+  additionalItemsOffsetPx: 2,
 };
 
 function drawAnnotation(
@@ -50,11 +52,23 @@ function drawAnnotation(
   pos.multiply(params.canvasSize); // to canvas pixel coordinates
   pos.add(params.canvasSize.clone().multiplyScalar(0.5)); // Move origin to top left corner
 
-  // Draw the marker at the new position.
+  const renderPos = new Vector2(pos.x + origin.x, pos.y + origin.y);
+
   ctx.fillStyle = "#" + labelData.color.getHexString();
   ctx.strokeStyle = style.borderColor;
+
+  // Render an extra outline if multiple labels are present.
+  if (labelIdx.length > 1) {
+    const offsetRenderPos = renderPos.clone().addScalar(style.additionalItemsOffsetPx);
+    ctx.beginPath();
+    ctx.arc(offsetRenderPos.x, offsetRenderPos.y, style.markerSizePx, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  // Draw the marker at the new position.
   ctx.beginPath();
-  ctx.arc(pos.x + origin.x, pos.y + origin.y, style.markerSizePx, 0, 2 * Math.PI);
+  ctx.arc(renderPos.x, renderPos.y, style.markerSizePx, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
