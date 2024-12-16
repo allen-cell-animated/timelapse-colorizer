@@ -309,12 +309,17 @@ export const useMotionDeltas = (
 };
 
 export type AnnotationState = {
-  // Viewer state
+  // Viewer state that lives outside the annotation data itself
   currentLabelIdx: number | null;
   setCurrentLabelIdx: (labelIdx: number) => void;
   isAnnotationEnabled: boolean;
   setIsAnnotationEnabled: (enabled: boolean) => void;
-  /* Increments every time the annotation data has changed. Use for caching.*/
+  /*
+  * Increments every time the annotation data has changed (both label metadata
+  * and IDs the labels are applied to). Can be used as a dependency in React
+  * hooks like `useEffect` or `useMemo` to trigger updates when the annotation
+  * data changes.
+  */
   annotationDataVersion: number;
 } & IAnnotationData;
 

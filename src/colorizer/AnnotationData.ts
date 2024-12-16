@@ -68,13 +68,20 @@ export interface IAnnotationData {
   removeLabelFromId(labelIdx: number, id: number): void;
 }
 
-export class AnnotationData {
+export class AnnotationData implements IAnnotationData {
   private labelData: LabelData[];
   private numLabelsCreated: number;
+  /**
+   * Cached mapping from time to label indices to IDs. Must be invalidated when
+   * labels are removed, or if annotations are applied to or removed from
+   * objects.
+   */
+  private timeToLabelIds: Map<number, Record<number, number[]>> | null;
 
   constructor() {
     this.labelData = [];
     this.numLabelsCreated = 0;
+    this.timeToLabelIds = null;
 
     this.getLabelIdxById = this.getLabelIdxById.bind(this);
     this.getIdsByLabelIdx = this.getIdsByLabelIdx.bind(this);
@@ -107,7 +114,10 @@ export class AnnotationData {
   }
 
   getTimeToLabelIds(dataset: Dataset): Map<number, Record<number, number[]>> {
-    // Maps from time to a map of label indices to the IDs.
+    if (this.timeToLabelIds !== null) {
+      return this.timeToLabelIds;
+    }
+
     const timeToLabelIds = new Map<number, Record<number, number[]>>();
 
     for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
@@ -125,22 +135,11 @@ export class AnnotationData {
         timeToLabelIds.get(time)![labelIdx].push(id);
       }
     }
+    this.timeToLabelIds = timeToLabelIds;
     return timeToLabelIds;
   }
 
-  getIdsByTime(labelIdx: number, dataset: Dataset, time: number): number[] {
-    this.validateIndex(labelIdx);
-    const ids: number[] = [];
-    for (const id of this.labelData[labelIdx].ids) {
-      if (dataset.times && dataset.times[id] === time) {
-        ids.push(id);
-      }
-    }
-    return ids;
-  }
-
   getLabels(): LabelData[] {
-    // TODO: Is a shallow copy okay here?
     return [...this.labelData];
   }
 
@@ -161,9 +160,11 @@ export class AnnotationData {
       color: color,
       ids: new Set(),
     });
+
     this.numLabelsCreated++;
     return this.labelData.length - 1;
   }
+
   private validateIndex(idx: number): void {
     if (idx < 0 || idx >= this.labelData.length) {
       throw new Error(`Invalid label index: ${idx}`);
@@ -183,20 +184,22 @@ export class AnnotationData {
   deleteLabel(labelIdx: number): void {
     this.validateIndex(labelIdx);
     this.labelData.splice(labelIdx, 1);
+    this.timeToLabelIds = null;
   }
 
   applyLabelToId(labelIdx: number, id: number): void {
     this.validateIndex(labelIdx);
     this.labelData[labelIdx].ids.add(id);
+    this.timeToLabelIds = null;
   }
 
   removeLabelFromId(labelIdx: number, id: number): void {
     this.validateIndex(labelIdx);
     this.labelData[labelIdx].ids.delete(id);
+    this.timeToLabelIds = null;
   }
 
   toggleLabelOnId(labelIdx: number, id: number): void {
-    this.validateIndex(labelIdx);
     if (!this.labelData[labelIdx].ids.has(id)) {
       this.applyLabelToId(labelIdx, id);
     } else {
