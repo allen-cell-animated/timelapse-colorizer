@@ -4,8 +4,12 @@ import { useLocalStorage } from "usehooks-ts";
 
 import { VectorConfig } from "../types";
 
+import { AnnotationData, IAnnotationData } from "../AnnotationData";
 import Dataset from "../Dataset";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
+
+// TODO: Move this to a folder outside of `colorizer`.
+// TODO: Split this up into multiple files.
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -250,14 +254,15 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
 };
 
 /**
- * Wrapper around the SharedWorkerPool method `getMotionDeltas`. Returns a debounced motion
- * delta array for the given dataset and vector field configuration.
+ * Wrapper around the SharedWorkerPool method `getMotionDeltas`. Returns a
+ * debounced motion delta array for the given dataset and vector field
+ * configuration.
  * @param dataset The dataset to calculate motion deltas for.
  * @param workerPool The worker pool to use for asynchronous calculations.
  * @param config The vector field configuration to use.
  * @param debounceMs The debounce time in milliseconds. Defaults to 100ms.
- * @returns The motion delta array or `null` if the dataset is invalid. Data will be
- * asynchronously updated as calculations complete.
+ * @returns The motion delta array or `null` if the dataset is invalid. Data
+ * will be asynchronously updated as calculations complete.
  */
 export const useMotionDeltas = (
   dataset: Dataset | null,
@@ -301,4 +306,82 @@ export const useMotionDeltas = (
   }, [debouncedVectorConfig.timeIntervals, dataset]);
 
   return motionDeltas;
+};
+
+export type AnnotationState = {
+  // Viewer state
+  currentLabelIdx: number | null;
+  setCurrentLabelIdx: (labelIdx: number) => void;
+  isAnnotationEnabled: boolean;
+  setIsAnnotationEnabled: (enabled: boolean) => void;
+  /* Increments every time the annotation data has changed. Use for caching.*/
+  annotationDataVersion: number;
+} & IAnnotationData;
+
+export const useAnnotations = (): AnnotationState => {
+  const annotationData = useConstructor(() => new AnnotationData());
+
+  const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
+  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
+
+  /** Increments every time a state update is required. */
+  const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
+
+  const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
+    return <F>function (...args: any[]) {
+      console.log("Update");
+      const result = fn(...args);
+      setDataUpdateCounter((value) => {return value + 1});
+      return result;
+    }
+  };
+
+  const setIsAnnotationEnabled = (enabled: boolean) => {
+    if (enabled && annotationData.getLabels().length === 0) {
+      const newLabelIdx = annotationData.createNewLabel();
+      setCurrentLabelIdx(newLabelIdx);
+    }
+    _setIsAnnotationEnabled(enabled);
+  };
+
+  const onDeleteLabel = (labelIdx: number): void => {
+    if (currentLabelIdx === null) {
+      return;
+    }
+    if (currentLabelIdx === labelIdx) {
+      // Get next default label
+      const labels = annotationData.getLabels();
+      if (labels.length > 1) {
+        setCurrentLabelIdx(Math.max(currentLabelIdx - 1, 0));
+      } else {
+        setCurrentLabelIdx(null);
+        setIsAnnotationEnabled(false);
+      }
+    } else if (currentLabelIdx > labelIdx) {
+      // Decrement because all indices will shift over
+      setCurrentLabelIdx(currentLabelIdx - 1);
+    }
+    return annotationData.deleteLabel(labelIdx);
+  };
+
+  return {
+    // UI state
+    annotationDataVersion: dataUpdateCounter,
+    currentLabelIdx,
+    setCurrentLabelIdx,
+    isAnnotationEnabled,
+    setIsAnnotationEnabled,
+    // Data getters
+    getLabelIdxById: annotationData.getLabelIdxById,
+    getIdsByLabelIdx: annotationData.getIdsByLabelIdx,
+    getTimeToLabelIds: annotationData.getTimeToLabelIds,
+    getLabels: annotationData.getLabels,
+    // Wrap state mutators
+    createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
+    setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
+    setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
+    deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
+    toggleLabelOnId: wrapFunctionInUpdate(annotationData.toggleLabelOnId),
+    removeLabelFromId: wrapFunctionInUpdate(annotationData.removeLabelFromId),
+  };
 };
