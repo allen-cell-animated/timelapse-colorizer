@@ -1,5 +1,5 @@
 import { HomeOutlined, TagOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
-import { Tooltip, TooltipProps } from "antd";
+import { Tag, Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
@@ -638,6 +638,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     </LinkStyleButton>
   );
 
+  const selectedLabelIdx = props.annotationState.currentLabelIdx;
+  const selectedLabel = selectedLabelIdx !== null ? props.annotationState.getLabels()[selectedLabelIdx] : null;
+
   return (
     <FlexColumnAlignCenter
       style={{
@@ -722,6 +725,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         {INTERNAL_BUILD && (
           <TooltipWithSubtext
             title={props.annotationState.isAnnotationEnabled ? "Disable annotation mode" : "Enable annotation mode"}
+            subtitle={
+              selectedLabel ? <Tag color={"#" + selectedLabel.color.getHexString()}>{selectedLabel.name}</Tag> : null
+            }
             placement="right"
             trigger={["hover", "focus"]}
           >
