@@ -109,17 +109,40 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
   ];
+
   if (vectorTooltipText) {
     objectInfoContent.push(<p key="vector">{vectorTooltipText}</p>);
+  }
+
+  const labels = props.annotationState.getLabelIdxById(lastHoveredId);
+  const labelData = props.annotationState.getLabels();
+  if (labels.length > 0) {
+    objectInfoContent.push(
+      <div style={{ lineHeight: "28px" }}>
+        {labels.map((labelIdx) => {
+          const label = labelData[labelIdx];
+          return (
+            <Tag
+              key={labelIdx}
+              style={{ width: "fit-content", margin: "0 2px" }}
+              color={"#" + label.color.getHexString()}
+              bordered={true}
+            >
+              {label.name}
+            </Tag>
+          );
+        })}
+      </div>
+    );
   }
 
   let annotationLabel: React.ReactNode;
   let currentLabelIdx = props.annotationState.currentLabelIdx;
   if (props.annotationState.isAnnotationEnabled && currentLabelIdx !== null) {
-    const labelData = props.annotationState.getLabels()[currentLabelIdx];
+    const currentLabelData = labelData[currentLabelIdx];
     annotationLabel = (
-      <Tag style={{ width: "fit-content" }} color={"#" + labelData.color.getHexString()} bordered={true}>
-        {labelData.name}
+      <Tag style={{ width: "fit-content" }} color={"#" + currentLabelData.color.getHexString()} bordered={true}>
+        {currentLabelData.name}
       </Tag>
     );
   }
