@@ -1,6 +1,6 @@
 import { CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Input, Popover, Table, TableProps } from "antd";
+import { Button, ColorPicker, Input, Popover, Table, TableProps, Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -48,8 +48,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
 
   const [showEditPopover, setShowEditPopover] = useState(false);
-  const [editPopoverName, setEditPopoverName] = useState("");
-  const popoverContainerRef = useRef<HTMLDivElement>(null);
+  const [editPopoverNameInput, setEditPopoverNameInput] = useState("");
+  const editPopoverContainerRef = useRef<HTMLDivElement>(null);
 
   const labels = getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
@@ -135,7 +135,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickEditButton = () => {
     setShowEditPopover(true);
-    setEditPopoverName(selectedLabel?.name || "");
+    setEditPopoverNameInput(selectedLabel?.name || "");
   };
 
   const onClickEditCancel = () => {
@@ -144,7 +144,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickEditSave = () => {
     if (currentLabelIdx !== null) {
-      setLabelName(currentLabelIdx, editPopoverName);
+      setLabelName(currentLabelIdx, editPopoverNameInput);
     }
     setShowEditPopover(false);
   };
@@ -153,7 +153,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     <FlexColumn style={{ width: "250px" }} $gap={10}>
       <label style={{ gap: "10px", display: "flex", flexDirection: "row" }}>
         <span>Name</span>
-        <Input value={editPopoverName} onChange={(e) => setEditPopoverName(e.target.value)}></Input>
+        <Input value={editPopoverNameInput} onChange={(e) => setEditPopoverNameInput(e.target.value)}></Input>
       </label>
       <label style={{ gap: "10px", display: "flex", flexDirection: "row" }}>
         <span>Color</span>
@@ -198,23 +198,30 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onSelectLabel(index);
           }}
         ></SelectionDropdown>
-        <IconButton onClick={onCreateNewLabel}>
-          <PlusOutlined />
-        </IconButton>
-        <IconButton onClick={onDeleteLabel} disabled={currentLabelIdx === null}>
-          <DeleteOutlined />
-        </IconButton>
+        <Tooltip title="Create new label" placement="bottom">
+          <IconButton onClick={onCreateNewLabel}>
+            <PlusOutlined />
+          </IconButton>
+        </Tooltip>
+        {/* TODO: Show confirmation popup before deleting. */}
+        <Tooltip title="Delete label" placement="bottom">
+          <IconButton onClick={onDeleteLabel} disabled={currentLabelIdx === null}>
+            <DeleteOutlined />
+          </IconButton>
+        </Tooltip>
         <Popover
           placement="bottom"
           content={editPopoverContents}
           open={showEditPopover}
-          getPopupContainer={() => popoverContainerRef.current!}
+          getPopupContainer={() => editPopoverContainerRef.current!}
           style={{ zIndex: "1000" }}
         >
-          <div ref={popoverContainerRef}>
-            <IconButton disabled={currentLabelIdx === null} onClick={onClickEditButton}>
-              <EditOutlined />
-            </IconButton>
+          <div ref={editPopoverContainerRef}>
+            <Tooltip title="Edit label" placement="bottom">
+              <IconButton disabled={currentLabelIdx === null} onClick={onClickEditButton}>
+                <EditOutlined />
+              </IconButton>
+            </Tooltip>
           </div>
         </Popover>
       </FlexRowAlignCenter>
