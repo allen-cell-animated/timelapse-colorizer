@@ -1,14 +1,17 @@
-import { CloseOutlined, DeleteOutlined, DownOutlined, PlusOutlined } from "@ant-design/icons";
+import { CloseOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Button, ColorPicker, Input, Table, TableProps } from "antd";
+import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
+import { Color, HexColorString } from "three";
 
 import { Dataset } from "../../colorizer";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
 
 import { LabelData } from "../../colorizer/AnnotationData";
+import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
 
 type AnnotationTabProps = {
@@ -40,26 +43,16 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     annotationDataVersion,
     getIdsByLabelIdx,
     setLabelName,
+    setLabelColor,
     removeLabelFromId,
   } = props.annotationState;
 
   const labels = getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
-  const onSelectLabel = (labelIdx: number) => {};
-
-  function makeLabelButtonRenderer(key: keyof TableDataType): (_text: string, record: TableDataType) => ReactElement {
-    return (_text: string, record: TableDataType) => (
-      <Button
-        type="text"
-        onClick={() => {
-          props.setTrackAndFrame(record.track, record.time);
-        }}
-      >
-        {record[key]}
-      </Button>
-    );
-  }
+  const onSelectLabel = (labelIdx: number) => {
+    props.annotationState.setCurrentLabelIdx(labelIdx);
+  };
 
   const tableColumns: TableProps<TableDataType>["columns"] = [
     {
@@ -128,23 +121,37 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return [];
   }, [annotationDataVersion, currentLabelIdx, props.dataset]);
 
+  const selectLabelOptions: ItemType[] = labels.map((label, index) => {
+    return {
+      key: index.toString(),
+      label: label.name,
+      icon: <span style={{ color: "#" + label.color.getHexString() }}>⬤</span>,
+    };
+  });
+
   const labelColor = new AntdColor(selectedLabel?.color.getHexString() || "ff00ff");
   console.log(labelColor);
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRowAlignCenter $gap={10}>
         <div>
-          <ColorPicker size="small" value={labelColor} onChange={() => {}} disabledAlpha={true} />
+          <ColorPicker
+            size="small"
+            value={labelColor}
+            onChange={(_, hex) => {
+              currentLabelIdx !== null && setLabelColor(currentLabelIdx, new Color(hex as HexColorString));
+            }}
+            disabledAlpha={true}
+          />
         </div>
-        <Input
-          onChange={(event) => {
-            currentLabelIdx !== null && setLabelName(currentLabelIdx, event.target.value || "");
+        <SelectionDropdown
+          selected={(currentLabelIdx ?? -1).toString()}
+          items={selectLabelOptions}
+          onChange={function (key: string): void {
+            const index = parseInt(key, 10);
+            onSelectLabel(index);
           }}
-          value={selectedLabel?.name}
-        ></Input>
-        <IconButton type="text">
-          <DownOutlined />
-        </IconButton>
+        ></SelectionDropdown>
         <IconButton onClick={onCreateNewLabel}>
           <PlusOutlined />
         </IconButton>
