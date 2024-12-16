@@ -322,13 +322,21 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setOutlineColor(props.config.outlineColor);
   }, [props.config.outlineColor]);
 
-  useMemo(() => {
+  // Memoize because mapping from time to annotation labels is potentially expensive
+  const timeToAnnotationLabelIds = useMemo(() => {
     if (props.dataset) {
-      const timeToLabelIds = props.annotationState.getTimeToLabelIds(props.dataset);
-      const labels = props.annotationState.getLabels();
-      canv.setAnnotationData(labels, timeToLabelIds, props.annotationState.currentLabelIdx);
+      return props.annotationState.getTimeToLabelIds(props.dataset);
+    } else {
+      return new Map<number, Record<number, number[]>>();
     }
-  }, [props.annotationState.annotationDataVersion, props.dataset]);
+  }, [props.dataset, props.annotationState.annotationDataVersion]);
+  const annotationLabels = useMemo(
+    () => props.annotationState.getLabels(),
+    [props.annotationState.annotationDataVersion]
+  );
+  useMemo(() => {
+    canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
+  }, [timeToAnnotationLabelIds, annotationLabels, props.annotationState.currentLabelIdx]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
