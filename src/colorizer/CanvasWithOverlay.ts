@@ -17,9 +17,16 @@ import {
   ScaleBarStyle,
   TimestampStyle,
 } from "./canvas/elements";
+import {
+  AnnotationParams,
+  AnnotationStyle,
+  defaultAnnotationStyle,
+  getAnnotationRenderer,
+} from "./canvas/elements/annotations";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
 
+import { LabelData } from "./AnnotationData";
 import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
 
@@ -35,12 +42,17 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private collection: Collection | null;
   private datasetKey: string | null;
 
+  private labelData: LabelData[];
+  private timeToLabelIds: Map<number, Record<number, number[]>>;
+  private selectedLabelIdx: number | null;
+
   private scaleBarStyle: ScaleBarStyle;
   private timestampStyle: TimestampStyle;
   private insetBoxStyle: InsetBoxStyle;
   private legendStyle: LegendStyle;
   private headerStyle: HeaderStyle;
   private footerStyle: FooterStyle;
+  private annotationStyle: AnnotationStyle;
 
   /** Size of the inner colorized canvas, in pixels. */
   private canvasSize: Vector2;
@@ -74,12 +86,17 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.collection = null;
     this.datasetKey = null;
 
+    this.labelData = [];
+    this.timeToLabelIds = new Map();
+    this.selectedLabelIdx = null;
+
     this.scaleBarStyle = styles?.scaleBar || defaultScaleBarStyle;
     this.timestampStyle = styles?.timestamp || defaultTimestampStyle;
     this.insetBoxStyle = styles?.insetBox || defaultInsetBoxStyle;
     this.legendStyle = styles?.legend || defaultLegendStyle;
     this.headerStyle = styles?.header || defaultHeaderStyle;
     this.footerStyle = styles?.footer || defaultFooterStyle;
+    this.annotationStyle = defaultAnnotationStyle;
     this.canvasSize = new Vector2(1, 1);
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
@@ -155,6 +172,16 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.datasetKey = datasetKey;
   }
 
+  setAnnotationData(
+    labelData: LabelData[],
+    timeToLabelIds: Map<number, Record<number, number[]>>,
+    selectedLabelIdx: number | null
+  ): void {
+    this.labelData = labelData;
+    this.timeToLabelIds = timeToLabelIds;
+    this.selectedLabelIdx = selectedLabelIdx;
+  }
+
   // Rendering functions ////////////////////////////
 
   private getBaseRendererParams(): BaseRenderParams {
@@ -165,6 +192,21 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       datasetKey: this.datasetKey,
       featureKey: this.featureKey,
     };
+  }
+
+  private getAnnotationRenderer(): RenderInfo {
+    const params: AnnotationParams = {
+      ...this.getBaseRendererParams(),
+      visible: true,
+      labelData: this.labelData,
+      timeToLabelIds: this.timeToLabelIds,
+      selectedLabelIdx: this.selectedLabelIdx,
+
+      frameToCanvasCoordinates: this.frameToCanvasCoordinates,
+      frame: this.getCurrentFrame(),
+      panOffset: this.panOffset,
+    };
+    return getAnnotationRenderer(this.ctx, params, this.annotationStyle);
   }
 
   private getHeaderRenderer(visible: boolean): RenderInfo {
@@ -227,6 +269,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
     headerRenderer.render(new Vector2(0, 0));
+    this.getAnnotationRenderer().render(new Vector2(0, this.headerSize.y));
     footerRenderer.render(new Vector2(0, this.canvasSize.y + this.headerSize.y));
   }
 

@@ -322,6 +322,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setOutlineColor(props.config.outlineColor);
   }, [props.config.outlineColor]);
 
+  useMemo(() => {
+    if (props.dataset) {
+      const timeToLabelIds = props.annotationState.getTimeToLabelIds(props.dataset);
+      const labels = props.annotationState.getLabels();
+      canv.setAnnotationData(labels, timeToLabelIds, props.annotationState.currentLabelIdx);
+    }
+  }, [props.annotationState.annotationDataVersion, props.dataset]);
+
   // CANVAS RESIZING /////////////////////////////////////////////////
 
   /**
