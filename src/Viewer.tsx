@@ -820,8 +820,7 @@ function Viewer(): ReactElement {
       setFindTrackInput(track?.trackId.toString() || "");
       setSelectedTrack(track);
       if (track && annotationState.isAnnotationEnabled && annotationState.currentLabelIdx !== null) {
-        console.log("Applying label to track", annotationState.currentLabelIdx, track.getIdAtTime(currentFrame));
-        annotationState.applyLabelToId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame));
+        annotationState.toggleLabelOnId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame));
       }
     },
     [annotationState.isAnnotationEnabled, annotationState.currentLabelIdx, currentFrame]

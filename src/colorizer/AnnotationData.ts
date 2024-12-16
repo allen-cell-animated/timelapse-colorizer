@@ -19,7 +19,7 @@ export interface IAnnotationData {
   setLabelName(labelIdx: number, name: string): void;
   setLabelColor(labelIdx: number, color: Color): void;
   deleteLabel(labelIdx: number): void;
-  applyLabelToId(labelIdx: number, id: number): void;
+  toggleLabelOnId(labelIdx: number, id: number): void;
   removeLabelFromId(labelIdx: number, id: number): void;
 }
 
@@ -39,7 +39,7 @@ export class AnnotationData {
     this.setLabelName = this.setLabelName.bind(this);
     this.setLabelColor = this.setLabelColor.bind(this);
     this.deleteLabel = this.deleteLabel.bind(this);
-    this.applyLabelToId = this.applyLabelToId.bind(this);
+    this.toggleLabelOnId = this.toggleLabelOnId.bind(this);
     this.removeLabelFromId = this.removeLabelFromId.bind(this);
   }
 
@@ -139,9 +139,13 @@ export class AnnotationData {
     this.labelData.splice(labelIdx, 1);
   }
 
-  applyLabelToId(labelIdx: number, id: number): void {
+  toggleLabelOnId(labelIdx: number, id: number): void {
     this.validateIndex(labelIdx);
-    this.labelData[labelIdx].ids.add(id);
+    if (!this.labelData[labelIdx].ids.has(id)) {
+      this.labelData[labelIdx].ids.add(id);
+    } else {
+      this.labelData[labelIdx].ids.delete(id);
+    }
   }
 
   removeLabelFromId(labelIdx: number, id: number): void {

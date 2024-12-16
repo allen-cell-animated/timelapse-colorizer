@@ -145,7 +145,6 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         <IconButton type="text">
           <DownOutlined />
         </IconButton>
-        <p>label idx: {currentLabelIdx}</p>
         <IconButton onClick={onCreateNewLabel}>
           <PlusOutlined />
         </IconButton>
