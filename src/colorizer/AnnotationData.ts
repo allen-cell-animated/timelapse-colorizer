@@ -14,7 +14,7 @@ export interface IAnnotationData {
   createNewLabel(name?: string, color?: Color): number;
   getLabelIdxById(id: number): number[];
   getIdsByLabelIdx(labelIdx: number): number[];
-  getIdsByTime(labelIdx: number, dataset: Dataset, time: number): number[];
+  getTimeToLabelIds(dataset: Dataset): Map<number, Record<number, number[]>>;
   getLabels(): LabelData[];
   setLabelName(labelIdx: number, name: string): void;
   setLabelColor(labelIdx: number, color: Color): void;
@@ -33,6 +33,7 @@ export class AnnotationData {
 
     this.getLabelIdxById = this.getLabelIdxById.bind(this);
     this.getIdsByLabelIdx = this.getIdsByLabelIdx.bind(this);
+    this.getTimeToLabelIds = this.getTimeToLabelIds.bind(this);
     this.getLabels = this.getLabels.bind(this);
     this.createNewLabel = this.createNewLabel.bind(this);
     this.setLabelName = this.setLabelName.bind(this);
@@ -57,6 +58,28 @@ export class AnnotationData {
   getIdsByLabelIdx(labelIdx: number): number[] {
     this.validateIndex(labelIdx);
     return Array.from(this.labelData[labelIdx].ids);
+  }
+
+  getTimeToLabelIds(dataset: Dataset): Map<number, Record<number, number[]>> {
+    // Maps from time to a map of label indices to the IDs.
+    const timeToLabelIds = new Map<number, Record<number, number[]>>();
+
+    for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
+      for (const id of this.labelData[labelIdx].ids) {
+        const time = dataset.times?.[id];
+        if (time === undefined) {
+          continue;
+        }
+        if (!timeToLabelIds.has(time)) {
+          timeToLabelIds.set(time, {});
+        }
+        if (!timeToLabelIds.get(time)![labelIdx]) {
+          timeToLabelIds.get(time)![labelIdx] = [];
+        }
+        timeToLabelIds.get(time)![labelIdx].push(id);
+      }
+    }
+    return timeToLabelIds;
   }
 
   getIdsByTime(labelIdx: number, dataset: Dataset, time: number): number[] {

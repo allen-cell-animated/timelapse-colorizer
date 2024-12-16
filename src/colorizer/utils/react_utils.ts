@@ -374,7 +374,7 @@ export const useAnnotations = (): AnnotationState => {
     // Data getters
     getLabelIdxById: annotationData.getLabelIdxById,
     getIdsByLabelIdx: annotationData.getIdsByLabelIdx,
-    getIdsByTime: annotationData.getIdsByTime,
+    getTimeToLabelIds: annotationData.getTimeToLabelIds,
     getLabels: annotationData.getLabels,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
