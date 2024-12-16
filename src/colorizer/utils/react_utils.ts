@@ -329,14 +329,13 @@ export const useAnnotations = (): AnnotationState => {
 
   const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
     return <F>function (...args: any[]) {
-      console.log("Update");
       const result = fn(...args);
-      setDataUpdateCounter((value) => {return value + 1});
+      setDataUpdateCounter((value) => {return value + 1;});
       return result;
-    }
+    };
   };
 
-  const setIsAnnotationEnabled = (enabled: boolean) => {
+  const setIsAnnotationEnabled = (enabled: boolean): void => {
     if (enabled && annotationData.getLabels().length === 0) {
       const newLabelIdx = annotationData.createNewLabel();
       setCurrentLabelIdx(newLabelIdx);
@@ -381,7 +380,8 @@ export const useAnnotations = (): AnnotationState => {
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
     setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
     deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
-    toggleLabelOnId: wrapFunctionInUpdate(annotationData.toggleLabelOnId),
+    applyLabelToId: wrapFunctionInUpdate(annotationData.applyLabelToId),
     removeLabelFromId: wrapFunctionInUpdate(annotationData.removeLabelFromId),
+    toggleLabelOnId: wrapFunctionInUpdate(annotationData.toggleLabelOnId),
   };
 };
