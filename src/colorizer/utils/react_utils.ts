@@ -308,7 +308,7 @@ export const useMotionDeltas = (
   return motionDeltas;
 };
 
-export type AnnotationState = {
+export type AnnotationState = IAnnotationData &  {
   // Viewer state that lives outside the annotation data itself
   currentLabelIdx: number | null;
   setCurrentLabelIdx: (labelIdx: number) => void;
@@ -321,14 +321,21 @@ export type AnnotationState = {
   * data changes.
   */
   annotationDataVersion: number;
-} & IAnnotationData;
+} ;
 
 export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
-
+  const setIsAnnotationEnabled = (enabled: boolean): void => {
+    if (enabled && annotationData.getLabels().length === 0) {
+      const newLabelIdx = annotationData.createNewLabel();
+      setCurrentLabelIdx(newLabelIdx);
+    }
+    _setIsAnnotationEnabled(enabled);
+  };
+  
   /** Increments every time a state update is required. */
   const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
 
@@ -340,28 +347,20 @@ export const useAnnotations = (): AnnotationState => {
     };
   };
 
-  const setIsAnnotationEnabled = (enabled: boolean): void => {
-    if (enabled && annotationData.getLabels().length === 0) {
-      const newLabelIdx = annotationData.createNewLabel();
-      setCurrentLabelIdx(newLabelIdx);
-    }
-    _setIsAnnotationEnabled(enabled);
-  };
+
 
   const onDeleteLabel = (labelIdx: number): void => {
     if (currentLabelIdx === null) {
       return;
     }
-    if (currentLabelIdx === labelIdx) {
-      // Get next default label
-      const labels = annotationData.getLabels();
-      if (labels.length > 1) {
-        setCurrentLabelIdx(Math.max(currentLabelIdx - 1, 0));
-      } else {
-        setCurrentLabelIdx(null);
-        setIsAnnotationEnabled(false);
-      }
-    } else if (currentLabelIdx > labelIdx) {
+    // Update selected label index if necessary.
+    const labels = annotationData.getLabels();
+    if (currentLabelIdx === labelIdx && labels.length > 1) {
+      setCurrentLabelIdx(Math.max(currentLabelIdx - 1, 0));
+    } else if (currentLabelIdx === labelIdx) {
+      setCurrentLabelIdx(null);
+      setIsAnnotationEnabled(false);
+    }else if (currentLabelIdx > labelIdx) {
       // Decrement because all indices will shift over
       setCurrentLabelIdx(currentLabelIdx - 1);
     }
@@ -376,15 +375,16 @@ export const useAnnotations = (): AnnotationState => {
     isAnnotationEnabled,
     setIsAnnotationEnabled,
     // Data getters
-    getLabelIdxById: annotationData.getLabelIdxById,
-    getIdsByLabelIdx: annotationData.getIdsByLabelIdx,
-    getTimeToLabelIds: annotationData.getTimeToLabelIds,
     getLabels: annotationData.getLabels,
+    getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
+    getLabeledIds: annotationData.getLabeledIds,
+    getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
     setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
     deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
+
     applyLabelToId: wrapFunctionInUpdate(annotationData.applyLabelToId),
     removeLabelFromId: wrapFunctionInUpdate(annotationData.removeLabelFromId),
     toggleLabelOnId: wrapFunctionInUpdate(annotationData.toggleLabelOnId),

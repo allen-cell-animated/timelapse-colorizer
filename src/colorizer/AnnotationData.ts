@@ -11,6 +11,16 @@ export type LabelData = {
 };
 
 export interface IAnnotationData {
+  /**
+   * Returns the array of label data objects.
+   * @returns an array of `LabelData` objects, containing:
+   * - `name`: The name of the label.
+   * - `color`: The color of the label.
+   * - `ids`: A set of object IDs that have the label applied.
+   * Object properties SHOULD NOT be modified directly.
+   */
+  getLabels(): LabelData[];
+
   /** Creates a new label and returns its index in the array of labels (as
    * returned by `getLabels()`).
    * @param name The name of the label. If no name is provided, a default name
@@ -21,21 +31,21 @@ export interface IAnnotationData {
   createNewLabel(name?: string, color?: Color): number;
 
   /**
-   * Returns the indices of all labels that have been applied to the provided
-   * object id. (Indices are ordered as returned by `getLabels()`.)
+   * Returns the indices of all labels that have been applied to the object id.
+   * (Indices are ordered as returned by `getLabels()`.)
    * @param id The object ID to look up label indices for.
    * @returns an array of label indices. Empty if no labels have been applied to
    * the ID.
    */
-  getLabelIdxById(id: number): number[];
+  getLabelsAppliedToId(id: number): number[];
 
   /**
-   * Returns all object IDs that have the given label (by index) applied.
+   * Returns all object IDs that the label has been applied to.
    * @param labelIdx The index of the label to look up object IDs for.
    * @returns an array of object IDs. Empty if the label has not been applied to
    * any object IDs.
    */
-  getIdsByLabelIdx(labelIdx: number): number[];
+  getLabeledIds(labelIdx: number): number[];
 
   /**
    * Returns a map from a frame number to the labeled object IDs present at that
@@ -47,25 +57,27 @@ export interface IAnnotationData {
    *
    * @param dataset The dataset to use for time information.
    * @returns a map from time to a record of label indices to IDs.
+   * @example
+   * ```typescript
+   * // Let's say we have two labels (0 and 1). There are objects with IDs 1, 2,
+   * // and 3 at time 0, and IDs 4 and 5 at time 1.
+   * // Label 0 has been applied to objects 1, 2, 3, and 4.
+   * // Label 1 has been applied to objects 3 and 5.
+   *
+   * const timeToLabelMap = getTimeToLabelIdMap(some_dataset);
+   * timeToLabelMap.get(0); // { 0: [1, 2, 3], 1: [3] }
+   * timeToLabelMap.get(1); // { 0: [4], 1: [5]}
+   * ```
    * */
-  getTimeToLabelIds(dataset: Dataset): Map<number, Record<number, number[]>>;
+  getTimeToLabelIdMap(dataset: Dataset): Map<number, Record<number, number[]>>;
 
-  /**
-   * Returns the array of labels and their associated data (name, color, labeled
-   * IDs), in index order.
-   * @returns an array of label data objects, containing:
-   * - `name`: The name of the label.
-   * - `color`: The color of the label.
-   * - `ids`: A set of object IDs that have the label applied.
-   */
-  getLabels(): LabelData[];
   setLabelName(labelIdx: number, name: string): void;
   setLabelColor(labelIdx: number, color: Color): void;
   deleteLabel(labelIdx: number): void;
 
-  toggleLabelOnId(labelIdx: number, id: number): void;
   applyLabelToId(labelIdx: number, id: number): void;
   removeLabelFromId(labelIdx: number, id: number): void;
+  toggleLabelOnId(labelIdx: number, id: number): void;
 }
 
 export class AnnotationData implements IAnnotationData {
@@ -76,16 +88,16 @@ export class AnnotationData implements IAnnotationData {
    * labels are removed, or if annotations are applied to or removed from
    * objects.
    */
-  private timeToLabelIds: Map<number, Record<number, number[]>> | null;
+  private timeToLabelIdMap: Map<number, Record<number, number[]>> | null;
 
   constructor() {
     this.labelData = [];
     this.numLabelsCreated = 0;
-    this.timeToLabelIds = null;
+    this.timeToLabelIdMap = null;
 
-    this.getLabelIdxById = this.getLabelIdxById.bind(this);
-    this.getIdsByLabelIdx = this.getIdsByLabelIdx.bind(this);
-    this.getTimeToLabelIds = this.getTimeToLabelIds.bind(this);
+    this.getLabelsAppliedToId = this.getLabelsAppliedToId.bind(this);
+    this.getLabeledIds = this.getLabeledIds.bind(this);
+    this.getTimeToLabelIdMap = this.getTimeToLabelIdMap.bind(this);
     this.getLabels = this.getLabels.bind(this);
     this.createNewLabel = this.createNewLabel.bind(this);
     this.setLabelName = this.setLabelName.bind(this);
@@ -98,7 +110,11 @@ export class AnnotationData implements IAnnotationData {
 
   // Getters
 
-  getLabelIdxById(id: number): number[] {
+  getLabels(): LabelData[] {
+    return [...this.labelData];
+  }
+
+  getLabelsAppliedToId(id: number): number[] {
     const labelIdxs: number[] = [];
     for (let i = 0; i < this.labelData.length; i++) {
       if (this.labelData[i].ids.has(id)) {
@@ -108,39 +124,36 @@ export class AnnotationData implements IAnnotationData {
     return labelIdxs;
   }
 
-  getIdsByLabelIdx(labelIdx: number): number[] {
+  getLabeledIds(labelIdx: number): number[] {
     this.validateIndex(labelIdx);
     return Array.from(this.labelData[labelIdx].ids);
   }
 
-  getTimeToLabelIds(dataset: Dataset): Map<number, Record<number, number[]>> {
-    if (this.timeToLabelIds !== null) {
-      return this.timeToLabelIds;
+  getTimeToLabelIdMap(dataset: Dataset): Map<number, Record<number, number[]>> {
+    if (this.timeToLabelIdMap !== null) {
+      return this.timeToLabelIdMap;
     }
 
-    const timeToLabelIds = new Map<number, Record<number, number[]>>();
+    const timeToLabelIdMap = new Map<number, Record<number, number[]>>();
 
     for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
-      for (const id of this.labelData[labelIdx].ids) {
+      const ids = this.labelData[labelIdx].ids;
+      for (const id of ids) {
         const time = dataset.times?.[id];
         if (time === undefined) {
           continue;
         }
-        if (!timeToLabelIds.has(time)) {
-          timeToLabelIds.set(time, {});
+        if (!timeToLabelIdMap.has(time)) {
+          timeToLabelIdMap.set(time, {});
         }
-        if (!timeToLabelIds.get(time)![labelIdx]) {
-          timeToLabelIds.get(time)![labelIdx] = [];
+        if (!timeToLabelIdMap.get(time)![labelIdx]) {
+          timeToLabelIdMap.get(time)![labelIdx] = [];
         }
-        timeToLabelIds.get(time)![labelIdx].push(id);
+        timeToLabelIdMap.get(time)![labelIdx].push(id);
       }
     }
-    this.timeToLabelIds = timeToLabelIds;
-    return timeToLabelIds;
-  }
-
-  getLabels(): LabelData[] {
-    return [...this.labelData];
+    this.timeToLabelIdMap = timeToLabelIdMap;
+    return timeToLabelIdMap;
   }
 
   // Setters
@@ -184,19 +197,19 @@ export class AnnotationData implements IAnnotationData {
   deleteLabel(labelIdx: number): void {
     this.validateIndex(labelIdx);
     this.labelData.splice(labelIdx, 1);
-    this.timeToLabelIds = null;
+    this.timeToLabelIdMap = null;
   }
 
   applyLabelToId(labelIdx: number, id: number): void {
     this.validateIndex(labelIdx);
     this.labelData[labelIdx].ids.add(id);
-    this.timeToLabelIds = null;
+    this.timeToLabelIdMap = null;
   }
 
   removeLabelFromId(labelIdx: number, id: number): void {
     this.validateIndex(labelIdx);
     this.labelData[labelIdx].ids.delete(id);
-    this.timeToLabelIds = null;
+    this.timeToLabelIdMap = null;
   }
 
   toggleLabelOnId(labelIdx: number, id: number): void {
