@@ -12,7 +12,7 @@
     "checks": "npm run lint & npm run typeCheck & npx vitest run",
     "build": "vite build",
     "build-internal": "vite build --base=/nucmorph-colorizer/ --config config/vite.internal-build.config.js",
-    "build-documentation": "vite build --base=/viewer/",
+    "build-colorizer-data-docs": "vite build --base=/viewer/",
     "preview": "vite preview",
     "deploy": "vite build --base=/timelapse-colorizer/ && gh-pages -d dist -a -m \"New gh-pages build; deployed via `deploy` script in `package.json`.\"",
     "lint": "eslint --config ./.eslintrc --ext .ts --ext .tsx --ext .js --ext .jsx .",
