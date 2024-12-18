@@ -325,7 +325,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Memoize because mapping from time to annotation labels is potentially expensive
   const timeToAnnotationLabelIds = useMemo(() => {
     if (props.dataset) {
-      return props.annotationState.getTimeToLabelIds(props.dataset);
+      return props.annotationState.getTimeToLabelIdMap(props.dataset);
     } else {
       return new Map<number, Record<number, number[]>>();
     }

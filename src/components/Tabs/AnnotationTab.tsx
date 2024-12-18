@@ -41,7 +41,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     createNewLabel,
     deleteLabel,
     annotationDataVersion,
-    getIdsByLabelIdx,
+    getLabeledIds,
     setLabelName,
     setLabelColor,
     removeLabelFromId,
@@ -115,7 +115,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const tableData: TableDataType[] = useMemo(() => {
     const dataset = props.dataset;
     if (currentLabelIdx !== null && dataset) {
-      const ids = getIdsByLabelIdx(currentLabelIdx);
+      const ids = getLabeledIds(currentLabelIdx);
       return ids.map((id) => {
         const track = dataset.getTrackId(id);
         const time = dataset.getTime(id);

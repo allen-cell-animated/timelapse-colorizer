@@ -114,7 +114,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     objectInfoContent.push(<p key="vector">{vectorTooltipText}</p>);
   }
 
-  const labels = props.annotationState.getLabelIdxById(lastHoveredId);
+  const labels = props.annotationState.getLabelsAppliedToId(lastHoveredId);
   const labelData = props.annotationState.getLabels();
   if (labels.length > 0) {
     objectInfoContent.push(
