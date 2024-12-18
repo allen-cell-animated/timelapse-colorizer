@@ -74,7 +74,7 @@ const theme = {
       background: palette.gray7,
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
-      annotationOutline: palette.warning,
+      annotationOutline: palette.themeLight,
     },
     button: {
       backgroundPrimary: palette.theme,

@@ -1,4 +1,4 @@
-import { CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined, TagOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Button, ColorPicker, Input, InputRef, Popover, Table, TableProps, Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
@@ -8,7 +8,7 @@ import { Color, HexColorString } from "three";
 
 import { Dataset } from "../../colorizer";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../styles/utils";
 
 import { LabelData } from "../../colorizer/AnnotationData";
 import { AppThemeContext } from "../AppStyle";
@@ -193,7 +193,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   return (
     <FlexColumnAlignCenter $gap={10}>
-      <FlexRowAlignCenter $gap={10}>
+      <FlexRow $gap={10} style={{ width: "100%" }}>
         <div>
           <ColorPicker
             size="small"
@@ -211,6 +211,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             const index = parseInt(key, 10);
             onSelectLabel(index);
           }}
+          disabled={currentLabelIdx === null}
+          showTooltip={false}
         ></SelectionDropdown>
         <Tooltip title="Create new label" placement="bottom">
           <IconButton onClick={onCreateNewLabel}>
@@ -240,7 +242,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             <DeleteOutlined />
           </IconButton>
         </Tooltip>
-      </FlexRowAlignCenter>
+      </FlexRow>
       <div style={{ width: "100%" }}>
         <StyledAntTable
           dataSource={tableData}
@@ -253,6 +255,16 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
                 onClickObjectRow(event, record);
               },
             };
+          }}
+          locale={{
+            emptyText: (
+              <FlexColumnAlignCenter>
+                <span style={{ fontSize: "24px", marginBottom: 0 }}>
+                  <TagOutlined />
+                </span>
+                <p>No annotated IDs</p>
+              </FlexColumnAlignCenter>
+            ),
           }}
         ></StyledAntTable>
       </div>

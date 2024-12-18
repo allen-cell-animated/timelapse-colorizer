@@ -655,7 +655,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         position: "relative",
         backgroundColor: theme.color.viewport.background,
         outline: props.annotationState.isAnnotationEnabled
-          ? `2px solid ${theme.color.viewport.annotationOutline}`
+          ? `1px solid ${theme.color.viewport.annotationOutline}`
+          : undefined,
+        boxShadow: props.annotationState.isAnnotationEnabled
+          ? `0 0 8px 2px ${theme.color.viewport.annotationOutline}`
           : undefined,
       }}
       ref={containerRef}
