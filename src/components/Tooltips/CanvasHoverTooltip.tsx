@@ -137,7 +137,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   }
 
   let annotationLabel: React.ReactNode;
-  let currentLabelIdx = props.annotationState.currentLabelIdx;
+  const currentLabelIdx = props.annotationState.currentLabelIdx;
   if (props.annotationState.isAnnotationEnabled && currentLabelIdx !== null) {
     const currentLabelData = labelData[currentLabelIdx];
     annotationLabel = (

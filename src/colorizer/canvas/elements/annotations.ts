@@ -34,7 +34,7 @@ function drawAnnotation(
   style: AnnotationStyle,
   id: number,
   labelIdx: number[]
-) {
+): void {
   const labelData = params.labelData[labelIdx[0]];
   const centroid = params.dataset?.getCentroid(id);
   const frameResolution = params.dataset?.frameResolution;

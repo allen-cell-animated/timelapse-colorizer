@@ -54,7 +54,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const labels = getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
-  const onSelectLabel = (labelIdx: number) => {
+  const onSelectLabel = (labelIdx: number): void => {
     props.annotationState.setCurrentLabelIdx(labelIdx);
   };
 
@@ -97,18 +97,18 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     },
   ];
 
-  const onCreateNewLabel = () => {
+  const onCreateNewLabel = (): void => {
     const index = createNewLabel();
     setCurrentLabelIdx(index);
   };
 
-  const onDeleteLabel = () => {
+  const onDeleteLabel = (): void => {
     if (currentLabelIdx !== null) {
       deleteLabel(currentLabelIdx);
     }
   };
 
-  const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType) => {
+  const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType): void => {
     props.setTrackAndFrame(record.track, record.time);
   };
 
@@ -133,16 +133,16 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     };
   });
 
-  const onClickEditButton = () => {
+  const onClickEditButton = (): void => {
     setShowEditPopover(true);
     setEditPopoverNameInput(selectedLabel?.name || "");
   };
 
-  const onClickEditCancel = () => {
+  const onClickEditCancel = (): void => {
     setShowEditPopover(false);
   };
 
-  const onClickEditSave = () => {
+  const onClickEditSave = (): void => {
     if (currentLabelIdx !== null) {
       setLabelName(currentLabelIdx, editPopoverNameInput);
     }
