@@ -204,6 +204,7 @@ const CssContainer = styled.div`
 
   --color-viewport-overlay-background: ${theme.color.viewport.overlayBackground};
   --color-viewport-overlay-outline: ${theme.color.viewport.overlayOutline};
+  --color-viewport-annotation-outline: ${theme.color.viewport.annotationOutline};
 
   --color-alert-info-border: ${theme.color.alert.border.info};
   --color-alert-warning-border: ${theme.color.alert.border.warning};
@@ -383,6 +384,9 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               railHoverBg: theme.color.slider.rail,
               controlHeightSM: 20,
               trackHoverBg: theme.color.themeLight,
+            },
+            Table: {
+              paddingContentVerticalSM: 4,
             },
             Tabs: {
               itemColor: theme.color.text.primary,

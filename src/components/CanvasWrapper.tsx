@@ -1,5 +1,5 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
-import { Tag, Tooltip, TooltipProps } from "antd";
+import { Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
@@ -61,6 +61,18 @@ function TooltipWithSubtext(
     </div>
   );
 }
+
+const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: boolean }>`
+  position: relative;
+  background-color: var(--color-viewport-background);
+
+  outline: 1px solid
+    ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
+  box-shadow: 0 0 8px 2px
+    ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
+
+  transition: box-shadow 0.1s ease-in, outline 0.1s ease-in;
+`;
 
 const CanvasControlsContainer = styled(FlexColumn)`
   position: absolute;
@@ -638,12 +650,30 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [props.dataset, canv]);
 
+  const makeTooltipLinkStyleButton = (key: string, content: ReactNode, onClick: () => void): ReactNode => {
+    return (
+      <LinkStyleButton
+        key={key}
+        onClick={onClick}
+        $color={theme.color.text.darkLink}
+        $hoverColor={theme.color.text.darkLinkHover}
+        tabIndex={-1}
+      >
+        {content}
+      </LinkStyleButton>
+    );
+  };
+
   // RENDERING /////////////////////////////////////////////////
 
   canv.render();
 
   const onViewerSettingsLinkClicked = (): void => {
     props.updateConfig({ openTab: TabType.SETTINGS });
+  };
+
+  const onAnnotationLinkClicked = (): void => {
+    props.updateConfig({ openTab: TabType.ANNOTATION });
   };
 
   const backdropTooltipContents: ReactNode[] = [];
@@ -656,34 +686,34 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
   // Link to viewer settings
   backdropTooltipContents.push(
-    <LinkStyleButton
-      key="backdrop-viewer-settings-link"
-      $color={theme.color.text.darkLink}
-      $hoverColor={theme.color.text.darkLinkHover}
-      onClick={onViewerSettingsLinkClicked}
-    >
-      {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-    </LinkStyleButton>
+    makeTooltipLinkStyleButton(
+      "backdrop-viewer-settings-link",
+      <span>
+        {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+      </span>,
+      onViewerSettingsLinkClicked
+    )
   );
 
-  const selectedLabelIdx = props.annotationState.currentLabelIdx;
-  const selectedLabel = selectedLabelIdx !== null ? props.annotationState.getLabels()[selectedLabelIdx] : null;
+  const labels = props.annotationState.getLabels();
+  const annotationTooltipContents: ReactNode[] = [];
+  annotationTooltipContents.push(
+    <span key="annotation-count">
+      {labels.length > 0 ? (labels.length === 1 ? "1 label" : `${labels.length} labels`) : "(No labels)"}
+    </span>
+  );
+  annotationTooltipContents.push(
+    makeTooltipLinkStyleButton(
+      "annotation-link",
+      <span>
+        View and edit annotations <VisuallyHidden>(opens annotations tab)</VisuallyHidden>
+      </span>,
+      onAnnotationLinkClicked
+    )
+  );
 
   return (
-    <FlexColumnAlignCenter
-      style={{
-        position: "relative",
-        backgroundColor: theme.color.viewport.background,
-        outline: props.annotationState.isAnnotationModeEnabled
-          ? `1px solid ${theme.color.viewport.annotationOutline}`
-          : "1px solid transparent",
-        boxShadow: props.annotationState.isAnnotationModeEnabled
-          ? `0 0 8px 2px ${theme.color.viewport.annotationOutline}`
-          : "none",
-        transition: "box-shadow 0.1s ease-in, outline 0.1s ease-in",
-      }}
-      ref={containerRef}
-    >
+    <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {props.annotationState.isAnnotationModeEnabled && (
         <AnnotationModeContainer>Annotation edit mode enabled</AnnotationModeContainer>
       )}
@@ -760,9 +790,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         {INTERNAL_BUILD && (
           <TooltipWithSubtext
             title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
-            subtitle={
-              selectedLabel ? <Tag color={"#" + selectedLabel.color.getHexString()}>{selectedLabel.name}</Tag> : null
-            }
+            subtitleList={annotationTooltipContents}
             placement="right"
             trigger={["hover", "focus"]}
           >
@@ -778,6 +806,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           </TooltipWithSubtext>
         )}
       </CanvasControlsContainer>
-    </FlexColumnAlignCenter>
+    </CanvasContainer>
   );
 }

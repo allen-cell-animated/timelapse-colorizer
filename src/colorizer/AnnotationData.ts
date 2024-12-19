@@ -165,7 +165,7 @@ export class AnnotationData implements IAnnotationData {
       color = new Color(palette.colorStops[this.numLabelsCreated % palette.colorStops.length]);
     }
     if (!name) {
-      name = `Label ${this.numLabelsCreated}`;
+      name = `Label ${this.numLabelsCreated + 1}`;
     }
 
     this.labelData.push({
