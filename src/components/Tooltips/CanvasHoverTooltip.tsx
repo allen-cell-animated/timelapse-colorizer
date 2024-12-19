@@ -138,7 +138,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
   let annotationLabel: React.ReactNode;
   const currentLabelIdx = props.annotationState.currentLabelIdx;
-  if (props.annotationState.isAnnotationEnabled && currentLabelIdx !== null) {
+  if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
     const currentLabelData = labelData[currentLabelIdx];
     annotationLabel = (
       <Tag style={{ width: "fit-content" }} color={"#" + currentLabelData.color.getHexString()} bordered={true}>

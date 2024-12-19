@@ -819,11 +819,11 @@ function Viewer(): ReactElement {
     (track: Track | null) => {
       setFindTrackInput(track?.trackId.toString() || "");
       setSelectedTrack(track);
-      if (track && annotationState.isAnnotationEnabled && annotationState.currentLabelIdx !== null) {
+      if (track && annotationState.isAnnotationModeEnabled && annotationState.currentLabelIdx !== null) {
         annotationState.toggleLabelOnId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame));
       }
     },
-    [annotationState.isAnnotationEnabled, annotationState.currentLabelIdx, currentFrame]
+    [annotationState.isAnnotationModeEnabled, annotationState.currentLabelIdx, currentFrame]
   );
 
   // RECORDING CONTROLS ////////////////////////////////////////////////////
@@ -982,10 +982,10 @@ function Viewer(): ReactElement {
   }
 
   useEffect(() => {
-    if (annotationState.isAnnotationEnabled) {
+    if (annotationState.isAnnotationModeEnabled) {
       updateConfig({ openTab: TabType.ANNOTATION });
     }
-  }, [annotationState.isAnnotationEnabled]);
+  }, [annotationState.isAnnotationModeEnabled]);
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {

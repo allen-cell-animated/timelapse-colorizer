@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG } from "../assets";
+import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
 import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
@@ -530,13 +530,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
-      } else if (props.annotationState.isAnnotationEnabled) {
+      } else if (props.annotationState.isAnnotationModeEnabled) {
         canv.domElement.style.cursor = "crosshair";
       } else {
         canv.domElement.style.cursor = "auto";
       }
     },
-    [handlePan, props.annotationState.isAnnotationEnabled]
+    [handlePan, props.annotationState.isAnnotationModeEnabled]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -667,17 +667,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       style={{
         position: "relative",
         backgroundColor: theme.color.viewport.background,
-        outline: props.annotationState.isAnnotationEnabled
+        outline: props.annotationState.isAnnotationModeEnabled
           ? `1px solid ${theme.color.viewport.annotationOutline}`
           : "1px solid transparent",
-        boxShadow: props.annotationState.isAnnotationEnabled
+        boxShadow: props.annotationState.isAnnotationModeEnabled
           ? `0 0 8px 2px ${theme.color.viewport.annotationOutline}`
           : "none",
         transition: "box-shadow 0.1s ease-in, outline 0.1s ease-in",
       }}
       ref={containerRef}
     >
-      {props.annotationState.isAnnotationEnabled && (
+      {props.annotationState.isAnnotationModeEnabled && (
         <AnnotationModeContainer>Annotation mode enabled</AnnotationModeContainer>
       )}
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
@@ -752,7 +752,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         {/* Annotation mode toggle */}
         {INTERNAL_BUILD && (
           <TooltipWithSubtext
-            title={props.annotationState.isAnnotationEnabled ? "Disable annotation mode" : "Enable annotation mode"}
+            title={props.annotationState.isAnnotationModeEnabled ? "Disable annotation mode" : "Enable annotation mode"}
             subtitle={
               selectedLabel ? <Tag color={"#" + selectedLabel.color.getHexString()}>{selectedLabel.name}</Tag> : null
             }
@@ -760,13 +760,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             trigger={["hover", "focus"]}
           >
             <IconButton
-              type={props.annotationState.isAnnotationEnabled ? "primary" : "link"}
+              type={props.annotationState.isAnnotationModeEnabled ? "primary" : "link"}
               onClick={() => {
-                props.annotationState.setIsAnnotationEnabled(!props.annotationState.isAnnotationEnabled);
+                props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
               }}
             >
-              <TagOutlined />
-              <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
+              {props.annotationState.isAnnotationModeEnabled ? <TagSlashIconSVG /> : <TagIconSVG />}
+              <VisuallyHidden>
+                {props.annotationState.isAnnotationModeEnabled ? "Hide annotations" : "Show annotations"}
+              </VisuallyHidden>
             </IconButton>
           </TooltipWithSubtext>
         )}

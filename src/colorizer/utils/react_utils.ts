@@ -312,8 +312,10 @@ export type AnnotationState = IAnnotationData &  {
   // Viewer state that lives outside the annotation data itself
   currentLabelIdx: number | null;
   setCurrentLabelIdx: (labelIdx: number) => void;
-  isAnnotationEnabled: boolean;
-  setIsAnnotationEnabled: (enabled: boolean) => void;
+  isAnnotationModeEnabled: boolean;
+  setIsAnnotationModeEnabled: (enabled: boolean) => void;
+  visible: boolean;
+  setVisibility: (visible: boolean) => void;
   /*
   * Increments every time the annotation data has changed (both label metadata
   * and IDs the labels are applied to). Can be used as a dependency in React
@@ -336,6 +338,7 @@ export const useAnnotations = (): AnnotationState => {
     _setIsAnnotationEnabled(enabled);
   };
   
+  const [visible, setVisibility] = useState<boolean>(true);
   /** Increments every time a state update is required. */
   const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
 
@@ -372,8 +375,10 @@ export const useAnnotations = (): AnnotationState => {
     annotationDataVersion: dataUpdateCounter,
     currentLabelIdx,
     setCurrentLabelIdx,
-    isAnnotationEnabled,
-    setIsAnnotationEnabled,
+    isAnnotationModeEnabled: isAnnotationEnabled,
+    setIsAnnotationModeEnabled: setIsAnnotationEnabled,
+    visible,
+    setVisibility,
     // Data getters
     getLabels: annotationData.getLabels,
     getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
