@@ -375,7 +375,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.onTrackClicked(newTrack);
       }
     },
-    [canv, props.dataset]
+    [canv, props.dataset, props.onTrackClicked]
   );
 
   /**
@@ -681,6 +681,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
+
+        {/* Backdrop toggle */}
         <TooltipWithSubtext
           title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
