@@ -75,6 +75,7 @@ const theme = {
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
       annotationOutline: palette.themeLight,
+      modePopupBackground: "rgba(0, 0, 0, 0.7)",
     },
     button: {
       backgroundPrimary: palette.theme,
@@ -172,6 +173,9 @@ const CssContainer = styled.div`
   --color-dividers: ${theme.color.layout.dividers};
   --color-borders: ${theme.color.layout.borders};
   --color-modal-overlay: ${theme.color.layout.modalOverlay};
+
+  /* Viewport */
+  --color-viewport-mode-popup-background: ${theme.color.viewport.modePopupBackground};
 
   /* Controls */
   /* TODO: Possible issue with hover/active colors because the UI design

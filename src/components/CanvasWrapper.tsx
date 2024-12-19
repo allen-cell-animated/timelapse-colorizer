@@ -87,6 +87,19 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   pointer-events: none;
 `;
 
+const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+
+  color: var(--color-text-button);
+  background-color: var(--color-viewport-mode-popup-background);
+  z-index: 200;
+  padding: 8px 12px;
+  border-radius: 4px;
+  pointer-events: none;
+`;
+
 type CanvasWrapperProps = {
   canv: CanvasUIOverlay;
   /** Dataset to look up track and ID information in.
@@ -656,13 +669,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         backgroundColor: theme.color.viewport.background,
         outline: props.annotationState.isAnnotationEnabled
           ? `1px solid ${theme.color.viewport.annotationOutline}`
-          : undefined,
+          : "1px solid transparent",
         boxShadow: props.annotationState.isAnnotationEnabled
           ? `0 0 8px 2px ${theme.color.viewport.annotationOutline}`
-          : undefined,
+          : "none",
+        transition: "box-shadow 0.1s ease-in, outline 0.1s ease-in",
       }}
       ref={containerRef}
     >
+      {props.annotationState.isAnnotationEnabled && (
+        <AnnotationModeContainer>Annotation mode enabled</AnnotationModeContainer>
+      )}
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
         <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
