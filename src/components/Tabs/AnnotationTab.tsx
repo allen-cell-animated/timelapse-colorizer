@@ -32,6 +32,10 @@ const StyledAntTable = styled(Table)`
   .ant-table-row {
     cursor: pointer;
   }
+
+  &&&& .ant-table-cell {
+    padding: 4px 8px;
+  }
 `;
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
@@ -281,9 +285,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           }}
         ></StyledAntTable>
       </div>
-      <p>
-        <i>Click a row to jump to that object.</i>
-      </p>
+      <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>
     </FlexColumnAlignCenter>
   );
 }
