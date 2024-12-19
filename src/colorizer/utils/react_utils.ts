@@ -312,8 +312,10 @@ export type AnnotationState = IAnnotationData &  {
   // Viewer state that lives outside the annotation data itself
   currentLabelIdx: number | null;
   setCurrentLabelIdx: (labelIdx: number) => void;
-  isAnnotationEnabled: boolean;
-  setIsAnnotationEnabled: (enabled: boolean) => void;
+  isAnnotationModeEnabled: boolean;
+  setIsAnnotationModeEnabled: (enabled: boolean) => void;
+  visible: boolean;
+  setVisibility: (visible: boolean) => void;
   /*
   * Increments every time the annotation data has changed (both label metadata
   * and IDs the labels are applied to). Can be used as a dependency in React
@@ -327,15 +329,28 @@ export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
-  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
+  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);  
+  const [visible, _setVisibility] = useState<boolean>(true);
+
+  // Annotation mode can only be enabled if there is at least one label, so create
+  // one if necessary.
   const setIsAnnotationEnabled = (enabled: boolean): void => {
-    if (enabled && annotationData.getLabels().length === 0) {
-      const newLabelIdx = annotationData.createNewLabel();
-      setCurrentLabelIdx(newLabelIdx);
+    if (enabled) {
+      _setVisibility(true);
+      if (annotationData.getLabels().length === 0) {
+        const newLabelIdx = annotationData.createNewLabel();
+        setCurrentLabelIdx(newLabelIdx);
+      }
     }
     _setIsAnnotationEnabled(enabled);
   };
-  
+
+  const setVisibility = (visible: boolean): void => {
+    _setVisibility(visible);
+    if (!visible) {
+      setIsAnnotationEnabled(false);
+    }
+  };
   /** Increments every time a state update is required. */
   const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
 
@@ -372,8 +387,10 @@ export const useAnnotations = (): AnnotationState => {
     annotationDataVersion: dataUpdateCounter,
     currentLabelIdx,
     setCurrentLabelIdx,
-    isAnnotationEnabled,
-    setIsAnnotationEnabled,
+    isAnnotationModeEnabled: isAnnotationEnabled,
+    setIsAnnotationModeEnabled: setIsAnnotationEnabled,
+    visible,
+    setVisibility,
     // Data getters
     getLabels: annotationData.getLabels,
     getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
