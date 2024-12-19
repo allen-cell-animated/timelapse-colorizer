@@ -142,7 +142,7 @@ export default class ColorizeCanvas {
    * frame will be centered, while [-0.5, -0.5] means the top right corner of the frame will be
    * centered in the canvas view.
    */
-  private panOffset: Vector2;
+  protected panOffset: Vector2;
 
   private scene: Scene;
   private pickScene: Scene;

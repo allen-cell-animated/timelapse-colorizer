@@ -1,14 +1,16 @@
-import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
-import { Tooltip, TooltipProps } from "antd";
+import { HomeOutlined, TagOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { Tag, Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG } from "../assets";
+import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
 import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
+import { AnnotationState } from "../colorizer/utils/react_utils";
+import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
@@ -85,6 +87,19 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   pointer-events: none;
 `;
 
+const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+
+  color: var(--color-text-button);
+  background-color: var(--color-viewport-mode-popup-background);
+  z-index: 200;
+  padding: 8px 12px;
+  border-radius: 4px;
+  pointer-events: none;
+`;
+
 type CanvasWrapperProps = {
   canv: CanvasUIOverlay;
   /** Dataset to look up track and ID information in.
@@ -110,6 +125,8 @@ type CanvasWrapperProps = {
   colorRamp: ColorRamp;
   colorRampMin: number;
   colorRampMax: number;
+
+  annotationState: AnnotationState;
 
   selectedTrack: Track | null;
   categoricalColors: Color[];
@@ -318,6 +335,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setOutlineColor(props.config.outlineColor);
   }, [props.config.outlineColor]);
 
+  // Memoize because mapping from time to annotation labels is potentially expensive
+  const timeToAnnotationLabelIds = useMemo(() => {
+    if (props.dataset) {
+      return props.annotationState.getTimeToLabelIdMap(props.dataset);
+    } else {
+      return new Map<number, Record<number, number[]>>();
+    }
+  }, [props.dataset, props.annotationState.annotationDataVersion]);
+  const annotationLabels = useMemo(
+    () => props.annotationState.getLabels(),
+    [props.annotationState.annotationDataVersion]
+  );
+  useMemo(() => {
+    canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
+  }, [timeToAnnotationLabelIds, annotationLabels, props.annotationState.currentLabelIdx]);
+
   // CANVAS RESIZING /////////////////////////////////////////////////
 
   /**
@@ -375,7 +408,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.onTrackClicked(newTrack);
       }
     },
-    [canv, props.dataset]
+    [canv, props.dataset, props.onTrackClicked]
   );
 
   /**
@@ -497,11 +530,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
+      } else if (props.annotationState.isAnnotationModeEnabled) {
+        canv.domElement.style.cursor = "crosshair";
       } else {
         canv.domElement.style.cursor = "auto";
       }
     },
-    [handlePan]
+    [handlePan, props.annotationState.isAnnotationModeEnabled]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -624,14 +659,27 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     </LinkStyleButton>
   );
 
+  const selectedLabelIdx = props.annotationState.currentLabelIdx;
+  const selectedLabel = selectedLabelIdx !== null ? props.annotationState.getLabels()[selectedLabelIdx] : null;
+
   return (
     <FlexColumnAlignCenter
       style={{
         position: "relative",
         backgroundColor: theme.color.viewport.background,
+        outline: props.annotationState.isAnnotationModeEnabled
+          ? `1px solid ${theme.color.viewport.annotationOutline}`
+          : "1px solid transparent",
+        boxShadow: props.annotationState.isAnnotationModeEnabled
+          ? `0 0 8px 2px ${theme.color.viewport.annotationOutline}`
+          : "none",
+        transition: "box-shadow 0.1s ease-in, outline 0.1s ease-in",
       }}
       ref={containerRef}
     >
+      {props.annotationState.isAnnotationModeEnabled && (
+        <AnnotationModeContainer>Annotation mode enabled</AnnotationModeContainer>
+      )}
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
         <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
@@ -681,6 +729,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
+
+        {/* Backdrop toggle */}
         <TooltipWithSubtext
           title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
@@ -698,6 +748,30 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
+
+        {/* Annotation mode toggle */}
+        {INTERNAL_BUILD && (
+          <TooltipWithSubtext
+            title={props.annotationState.isAnnotationModeEnabled ? "Disable annotation mode" : "Enable annotation mode"}
+            subtitle={
+              selectedLabel ? <Tag color={"#" + selectedLabel.color.getHexString()}>{selectedLabel.name}</Tag> : null
+            }
+            placement="right"
+            trigger={["hover", "focus"]}
+          >
+            <IconButton
+              type={props.annotationState.isAnnotationModeEnabled ? "primary" : "link"}
+              onClick={() => {
+                props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+              }}
+            >
+              {props.annotationState.isAnnotationModeEnabled ? <TagSlashIconSVG /> : <TagIconSVG />}
+              <VisuallyHidden>
+                {props.annotationState.isAnnotationModeEnabled ? "Hide annotations" : "Show annotations"}
+              </VisuallyHidden>
+            </IconButton>
+          </TooltipWithSubtext>
+        )}
       </CanvasControlsContainer>
     </FlexColumnAlignCenter>
   );
