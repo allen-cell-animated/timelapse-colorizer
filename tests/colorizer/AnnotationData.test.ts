@@ -25,9 +25,9 @@ describe("AnnotationData", () => {
     annotationData.createNewLabel();
 
     expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 0", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 1", color: defaultPalette.colors[1], ids: new Set() },
-      { name: "Label 2", color: defaultPalette.colors[2], ids: new Set() },
+      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
+      { name: "Label 2", color: defaultPalette.colors[1], ids: new Set() },
+      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
     ]);
   });
 
@@ -44,7 +44,7 @@ describe("AnnotationData", () => {
 
     expect(annotationData.getLabels()).to.deep.equal([
       { name: "New Label Name", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 1", color: new Color("#FF0000"), ids: new Set() },
+      { name: "Label 2", color: new Color("#FF0000"), ids: new Set() },
       { name: "Another New Label Name", color: new Color("#00FF00"), ids: new Set() },
     ]);
   });
@@ -57,16 +57,16 @@ describe("AnnotationData", () => {
 
     annotationData.deleteLabel(1);
     expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 0", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 2", color: defaultPalette.colors[2], ids: new Set() },
+      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
+      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
     ]);
 
     // Creating new label should reuse deleted index and increment name by 1
     annotationData.createNewLabel();
     expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 0", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 2", color: defaultPalette.colors[2], ids: new Set() },
-      { name: "Label 3", color: defaultPalette.colors[3], ids: new Set() },
+      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
+      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
+      { name: "Label 4", color: defaultPalette.colors[3], ids: new Set() },
     ]);
   });
 
