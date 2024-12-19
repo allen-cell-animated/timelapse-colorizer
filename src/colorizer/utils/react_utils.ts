@@ -329,16 +329,28 @@ export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
-  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
+  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);  
+  const [visible, _setVisibility] = useState<boolean>(true);
+
+  // Annotation mode can only be enabled if there is at least one label, so create
+  // one if necessary.
   const setIsAnnotationEnabled = (enabled: boolean): void => {
-    if (enabled && annotationData.getLabels().length === 0) {
-      const newLabelIdx = annotationData.createNewLabel();
-      setCurrentLabelIdx(newLabelIdx);
+    if (enabled) {
+      _setVisibility(true);
+      if (annotationData.getLabels().length === 0) {
+        const newLabelIdx = annotationData.createNewLabel();
+        setCurrentLabelIdx(newLabelIdx);
+      }
     }
     _setIsAnnotationEnabled(enabled);
   };
-  
-  const [visible, setVisibility] = useState<boolean>(true);
+
+  const setVisibility = (visible: boolean): void => {
+    _setVisibility(visible);
+    if (!visible) {
+      setIsAnnotationEnabled(false);
+    }
+  };
   /** Increments every time a state update is required. */
   const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
 

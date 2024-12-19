@@ -116,7 +116,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
   const labels = props.annotationState.getLabelsAppliedToId(lastHoveredId);
   const labelData = props.annotationState.getLabels();
-  if (labels.length > 0) {
+  if (labels.length > 0 && props.annotationState.visible) {
     objectInfoContent.push(
       <div style={{ lineHeight: "28px" }}>
         {labels.map((labelIdx) => {

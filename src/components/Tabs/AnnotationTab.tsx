@@ -1,6 +1,6 @@
 import { CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined, TagOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Input, InputRef, Popover, Table, TableProps, Tooltip } from "antd";
+import { Button, ColorPicker, Input, InputRef, Popover, Switch, Table, TableProps, Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -37,6 +37,8 @@ const StyledAntTable = styled(Table)`
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const theme = useContext(AppThemeContext);
   const {
+    isAnnotationModeEnabled,
+    setIsAnnotationModeEnabled,
     currentLabelIdx,
     setCurrentLabelIdx,
     getLabels,
@@ -193,8 +195,15 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   return (
     <FlexColumnAlignCenter $gap={10}>
+      <div style={{ width: "100%" }}>
+        <label style={{ gap: "5px" }}>
+          <span style={{ fontSize: theme.font.size.label }}>Edit annotations</span>
+          <Switch checked={isAnnotationModeEnabled} onChange={setIsAnnotationModeEnabled} />
+        </label>
+      </div>
       <FlexRow $gap={10} style={{ width: "100%" }}>
         <div>
+          {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
           <ColorPicker
             size="small"
             value={new AntdColor(selectedLabel?.color.getHexString() || "ffffff")}
@@ -202,20 +211,24 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               currentLabelIdx !== null && setLabelColor(currentLabelIdx, new Color(hex as HexColorString));
             }}
             disabledAlpha={true}
+            disabled={!isAnnotationModeEnabled}
           />
         </div>
-        <SelectionDropdown
-          selected={(currentLabelIdx ?? -1).toString()}
-          items={selectLabelOptions}
-          onChange={function (key: string): void {
-            const index = parseInt(key, 10);
-            onSelectLabel(index);
-          }}
-          disabled={currentLabelIdx === null}
-          showTooltip={false}
-        ></SelectionDropdown>
+        <label style={{ gap: "5px" }}>
+          <SelectionDropdown
+            selected={(currentLabelIdx ?? -1).toString()}
+            items={selectLabelOptions}
+            onChange={function (key: string): void {
+              const index = parseInt(key, 10);
+              onSelectLabel(index);
+            }}
+            disabled={currentLabelIdx === null}
+            showTooltip={false}
+          ></SelectionDropdown>
+        </label>
+
         <Tooltip title="Create new label" placement="bottom">
-          <IconButton onClick={onCreateNewLabel}>
+          <IconButton onClick={onCreateNewLabel} disabled={!isAnnotationModeEnabled}>
             <PlusOutlined />
           </IconButton>
         </Tooltip>
@@ -230,7 +243,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         >
           <div ref={editPopoverContainerRef}>
             <Tooltip title="Edit label" placement="bottom">
-              <IconButton disabled={currentLabelIdx === null} onClick={onClickEditButton}>
+              <IconButton disabled={currentLabelIdx === null || !isAnnotationModeEnabled} onClick={onClickEditButton}>
                 <EditOutlined />
               </IconButton>
             </Tooltip>
@@ -238,12 +251,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         </Popover>
         {/* TODO: Show confirmation popup before deleting. */}
         <Tooltip title="Delete label" placement="bottom">
-          <IconButton onClick={onDeleteLabel} disabled={currentLabelIdx === null}>
+          <IconButton onClick={onDeleteLabel} disabled={currentLabelIdx === null || !isAnnotationModeEnabled}>
             <DeleteOutlined />
           </IconButton>
         </Tooltip>
       </FlexRow>
-      <div style={{ width: "100%" }}>
+      <div style={{ width: "100%", marginTop: "10px" }}>
         <StyledAntTable
           dataSource={tableData}
           columns={tableColumns}
@@ -268,6 +281,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           }}
         ></StyledAntTable>
       </div>
+      <p>
+        <i>Click a row to jump to that object.</i>
+      </p>
     </FlexColumnAlignCenter>
   );
 }

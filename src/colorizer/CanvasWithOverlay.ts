@@ -69,6 +69,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   public isFooterVisibleOnExport: boolean;
   public isScaleBarVisible: boolean;
   public isTimestampVisible: boolean;
+  public isAnnotationVisible: boolean;
 
   constructor(styles?: {
     scaleBar?: ScaleBarStyle;
@@ -106,6 +107,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.isFooterVisibleOnExport = true;
     this.isScaleBarVisible = true;
     this.isTimestampVisible = true;
+    this.isAnnotationVisible = true;
 
     const canvasContext = this.canvas.getContext("2d") as CanvasRenderingContext2D;
     if (canvasContext === null) {
@@ -197,11 +199,10 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private getAnnotationRenderer(): RenderInfo {
     const params: AnnotationParams = {
       ...this.getBaseRendererParams(),
-      visible: true,
+      visible: this.isAnnotationVisible,
       labelData: this.labelData,
       timeToLabelIds: this.timeToLabelIds,
       selectedLabelIdx: this.selectedLabelIdx,
-
       frameToCanvasCoordinates: this.frameToCanvasCoordinates,
       frame: this.getCurrentFrame(),
       panOffset: this.panOffset,

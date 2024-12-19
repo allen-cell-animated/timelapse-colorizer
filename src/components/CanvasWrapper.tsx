@@ -1,4 +1,4 @@
-import { HomeOutlined, TagOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
+import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tag, Tooltip, TooltipProps } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -347,9 +347,16 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     () => props.annotationState.getLabels(),
     [props.annotationState.annotationDataVersion]
   );
+
   useMemo(() => {
     canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
-  }, [timeToAnnotationLabelIds, annotationLabels, props.annotationState.currentLabelIdx]);
+    canv.isAnnotationVisible = props.annotationState.visible;
+  }, [
+    timeToAnnotationLabelIds,
+    annotationLabels,
+    props.annotationState.currentLabelIdx,
+    props.annotationState.visible,
+  ]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -678,7 +685,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       ref={containerRef}
     >
       {props.annotationState.isAnnotationModeEnabled && (
-        <AnnotationModeContainer>Annotation mode enabled</AnnotationModeContainer>
+        <AnnotationModeContainer>Annotation edit mode enabled</AnnotationModeContainer>
       )}
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
         <div ref={canvasPlaceholderRef}></div>
@@ -752,7 +759,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         {/* Annotation mode toggle */}
         {INTERNAL_BUILD && (
           <TooltipWithSubtext
-            title={props.annotationState.isAnnotationModeEnabled ? "Disable annotation mode" : "Enable annotation mode"}
+            title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
             subtitle={
               selectedLabel ? <Tag color={"#" + selectedLabel.color.getHexString()}>{selectedLabel.name}</Tag> : null
             }
@@ -760,15 +767,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             trigger={["hover", "focus"]}
           >
             <IconButton
-              type={props.annotationState.isAnnotationModeEnabled ? "primary" : "link"}
+              type={props.annotationState.visible ? "primary" : "link"}
               onClick={() => {
-                props.annotationState.setIsAnnotationModeEnabled(!props.annotationState.isAnnotationModeEnabled);
+                props.annotationState.setVisibility(!props.annotationState.visible);
               }}
             >
-              {props.annotationState.isAnnotationModeEnabled ? <TagSlashIconSVG /> : <TagIconSVG />}
-              <VisuallyHidden>
-                {props.annotationState.isAnnotationModeEnabled ? "Hide annotations" : "Show annotations"}
-              </VisuallyHidden>
+              {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
+              <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
             </IconButton>
           </TooltipWithSubtext>
         )}
