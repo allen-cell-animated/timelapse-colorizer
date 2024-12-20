@@ -104,12 +104,14 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const onCreateNewLabel = (): void => {
     const index = createNewLabel();
     setCurrentLabelIdx(index);
+    setShowEditPopover(false);
   };
 
   const onDeleteLabel = (): void => {
     if (currentLabelIdx !== null) {
       deleteLabel(currentLabelIdx);
     }
+    setShowEditPopover(false);
   };
 
   const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType): void => {
@@ -194,7 +196,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return [];
   }, [annotationDataVersion, currentLabelIdx, props.dataset]);
 
-  //
+  // Options for the selection dropdown
   const selectLabelOptions: ItemType[] = labels.map((label, index) => {
     return {
       key: index.toString(),
