@@ -76,6 +76,7 @@ const theme = {
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
     },
+    // TODO: Reorganize the button colors by primary/default/secondary etc.
     button: {
       backgroundPrimary: palette.theme,
       backgroundDisabled: palette.gray10,
@@ -85,7 +86,7 @@ const theme = {
       active: palette.themeDark,
       focusShadow: "rgba(137, 98, 211, 0.06)",
       success: {
-        backgroundPrimary: palette.success,
+        background: palette.success,
         hover: palette.successHeavy,
       },
     },
@@ -187,7 +188,7 @@ const CssContainer = styled.div`
   --color-button-active: ${theme.color.button.active};
   --color-button-disabled: ${theme.color.button.backgroundDisabled};
 
-  --color-button-success-bg: ${theme.color.button.success.backgroundPrimary};
+  --color-button-success-bg: ${theme.color.button.success.background};
   --color-button-success-hover: ${theme.color.button.success.hover};
 
   --button-height: ${theme.controls.height}px;
