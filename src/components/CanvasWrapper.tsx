@@ -706,7 +706,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {props.annotationState.isAnnotationModeEnabled && (
-        <AnnotationModeContainer>Annotation edit mode enabled</AnnotationModeContainer>
+        <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
       )}
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
         <div ref={canvasPlaceholderRef}></div>
