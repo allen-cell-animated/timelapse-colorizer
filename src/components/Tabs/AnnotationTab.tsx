@@ -1,9 +1,16 @@
-import { CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined, TagOutlined } from "@ant-design/icons";
+import {
+  CheckOutlined,
+  CloseOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  TagOutlined,
+} from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Input, InputRef, Popover, Switch, Table, TableProps, Tooltip } from "antd";
+import { Button, ColorPicker, Input, InputRef, Popover, Table, TableProps, Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { Color, HexColorString } from "three";
 
 import { Dataset } from "../../colorizer";
@@ -27,6 +34,28 @@ type TableDataType = {
   track: number;
   time: number;
 };
+
+const AnnotationModeButton = styled(Button)<{ $color: "success" | "default" }>`
+  ${(props) => {
+    if (props.$color === "success") {
+      return css`
+        background-color: var(--color-button-success-bg);
+        border: 1px solid var(--color-button-success-bg);
+
+        &&&&:hover {
+          border: 1px solid var(--color-button-success-hover);
+          background-color: var(--color-button-success-hover);
+        }
+
+        &&&&:active {
+          background-color: var(--color-button-success-hover);
+          border: 1px solid var(--color-button-success-bg);
+        }
+      `;
+    }
+    return;
+  }}
+`;
 
 const StyledAntTable = styled(Table)`
   .ant-table-row {
@@ -87,6 +116,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       key: "time",
       sorter: (a, b) => a.time - b.time,
     },
+    // Column that contains a remove button for the ID.
     {
       title: "",
       key: "action",
@@ -94,6 +124,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         <IconButton
           type="text"
           onClick={(event) => {
+            // Rows have their own behavior on click (jumping to a timestamp),
+            // so we need to stop event propagation so that the row click event
+            // doesn't fire.
             event.stopPropagation();
             removeLabelFromId(currentLabelIdx!, record.id);
           }}
@@ -199,25 +232,24 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   return (
     <FlexColumnAlignCenter $gap={10}>
-      <div style={{ width: "100%" }}>
-        <label style={{ gap: "5px" }}>
-          <span style={{ fontSize: theme.font.size.label }}>Edit annotations</span>
-          <Switch checked={isAnnotationModeEnabled} onChange={setIsAnnotationModeEnabled} />
-        </label>
-      </div>
+      <FlexRow style={{ width: "100%" }} $gap={6}>
+        <AnnotationModeButton
+          type="primary"
+          $color={isAnnotationModeEnabled ? "success" : "default"}
+          color="success"
+          style={{ paddingLeft: "10px" }}
+          onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
+        >
+          {isAnnotationModeEnabled ? <CheckOutlined /> : <TagOutlined />}
+          {isAnnotationModeEnabled ? "Done editing" : "Create and edit"}
+        </AnnotationModeButton>
+        {isAnnotationModeEnabled && (
+          <p style={{ color: theme.color.text.hint }}>
+            <i>Editing in progress...</i>
+          </p>
+        )}
+      </FlexRow>
       <FlexRow $gap={10} style={{ width: "100%" }}>
-        <div>
-          {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
-          <ColorPicker
-            size="small"
-            value={new AntdColor(selectedLabel?.color.getHexString() || "ffffff")}
-            onChange={(_, hex) => {
-              currentLabelIdx !== null && setLabelColor(currentLabelIdx, new Color(hex as HexColorString));
-            }}
-            disabledAlpha={true}
-            disabled={!isAnnotationModeEnabled}
-          />
-        </div>
         <label style={{ gap: "5px" }}>
           <SelectionDropdown
             selected={(currentLabelIdx ?? -1).toString()}
@@ -230,6 +262,18 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             showTooltip={false}
           ></SelectionDropdown>
         </label>
+        <div>
+          {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
+          <ColorPicker
+            size="small"
+            value={new AntdColor(selectedLabel?.color.getHexString() || "ffffff")}
+            onChange={(_, hex) => {
+              currentLabelIdx !== null && setLabelColor(currentLabelIdx, new Color(hex as HexColorString));
+            }}
+            disabledAlpha={true}
+            disabled={!isAnnotationModeEnabled}
+          />
+        </div>
 
         <Tooltip title="Create new label" placement="bottom">
           <IconButton onClick={onCreateNewLabel} disabled={!isAnnotationModeEnabled}>
@@ -266,6 +310,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           columns={tableColumns}
           size="small"
           pagination={false}
+          // TODO: Rows aren't actually buttons, which means that they are not
+          // keyboard accessible. Either find a way to make them tab indexable
+          // or add a button that is equivalent to click?
           onRow={(record) => {
             return {
               onClick: (event) => {
