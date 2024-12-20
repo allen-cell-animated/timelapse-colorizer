@@ -157,6 +157,7 @@ export enum TabType {
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
   SETTINGS = "settings",
+  ANNOTATION = "annotation",
 }
 
 export const isTabType = (tab: string): tab is TabType => {

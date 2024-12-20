@@ -29,6 +29,7 @@ const palette = {
   link: "#0094FF",
   linkDark: "#007FD6",
   warning: "#faad14",
+  successHeavy: "#6BD352",
   successMedium: "#b7eb8f",
   successLight: "#f6ffed",
   errorMedium: "#ffa39e",
@@ -85,6 +86,10 @@ const theme = {
       hover: palette.themeLight,
       active: palette.themeDark,
       focusShadow: "rgba(137, 98, 211, 0.06)",
+      success: {
+        backgroundPrimary: palette.success,
+        hover: palette.successHeavy,
+      },
     },
     dropdown: {
       backgroundHover: palette.gray10,
@@ -186,6 +191,9 @@ const CssContainer = styled.div`
   --color-button-hover: ${theme.color.button.hover};
   --color-button-active: ${theme.color.button.active};
   --color-button-disabled: ${theme.color.button.backgroundDisabled};
+
+  --color-button-success-bg: ${theme.color.button.success.backgroundPrimary};
+  --color-button-success-hover: ${theme.color.button.success.hover};
 
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;
