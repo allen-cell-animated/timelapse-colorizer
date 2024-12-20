@@ -1,11 +1,4 @@
-import {
-  CheckOutlined,
-  CloseOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-  TagOutlined,
-} from "@ant-design/icons";
+import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Button, ColorPicker, Input, InputRef, Popover, Table, TableProps, Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
@@ -13,9 +6,10 @@ import React, { ReactElement, useContext, useEffect, useMemo, useRef, useState }
 import styled, { css } from "styled-components";
 import { Color, HexColorString } from "three";
 
+import { TagIconSVG } from "../../assets";
 import { Dataset } from "../../colorizer";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
 
 import { LabelData } from "../../colorizer/AnnotationData";
 import { AppThemeContext } from "../AppStyle";
@@ -247,8 +241,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           style={{ paddingLeft: "10px" }}
           onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
         >
-          {isAnnotationModeEnabled ? <CheckOutlined /> : <TagOutlined />}
-          {isAnnotationModeEnabled ? "Done editing" : "Create and edit"}
+          <FlexRowAlignCenter $gap={6}>
+            {isAnnotationModeEnabled ? <CheckOutlined /> : <TagIconSVG />}
+            {isAnnotationModeEnabled ? "Done editing" : "Create and edit"}
+          </FlexRowAlignCenter>
         </AnnotationModeButton>
         {isAnnotationModeEnabled && (
           <p style={{ color: theme.color.text.hint }}>
@@ -346,10 +342,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           }}
           locale={{
             emptyText: (
-              <FlexColumnAlignCenter>
-                <span style={{ fontSize: "24px", marginBottom: 0 }}>
-                  <TagOutlined />
-                </span>
+              <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0" }}>
+                <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
                 <p>No annotated IDs</p>
               </FlexColumnAlignCenter>
             ),
