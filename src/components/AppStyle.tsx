@@ -29,7 +29,7 @@ const palette = {
   link: "#0094FF",
   linkDark: "#007FD6",
   warning: "#faad14",
-  successHeavy: "#6BD352",
+  successMediumDark: "#6BD352",
   successMedium: "#b7eb8f",
   successLight: "#f6ffed",
   errorMedium: "#ffa39e",
@@ -87,7 +87,7 @@ const theme = {
       focusShadow: "rgba(137, 98, 211, 0.06)",
       success: {
         background: palette.success,
-        hover: palette.successHeavy,
+        hover: palette.successMediumDark,
       },
     },
     dropdown: {
