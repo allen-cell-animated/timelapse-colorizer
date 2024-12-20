@@ -35,6 +35,10 @@ type TableDataType = {
   time: number;
 };
 
+/**
+ * Overrides the default button color with a green 'success' color
+ * when the color type changes.
+ */
 const AnnotationModeButton = styled(Button)<{ $color: "success" | "default" }>`
   ${(props) => {
     if (props.$color === "success") {
@@ -97,6 +101,43 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     setShowEditPopover(false);
   };
 
+  const onCreateNewLabel = (): void => {
+    const index = createNewLabel();
+    setCurrentLabelIdx(index);
+  };
+
+  const onDeleteLabel = (): void => {
+    if (currentLabelIdx !== null) {
+      deleteLabel(currentLabelIdx);
+    }
+  };
+
+  const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType): void => {
+    props.setTrackAndFrame(record.track, record.time);
+  };
+
+  const onClickEditButton = (): void => {
+    setShowEditPopover(true);
+    setEditPopoverNameInput(selectedLabel?.name || "");
+  };
+
+  useEffect(() => {
+    if (showEditPopover) {
+      editPopoverInputRef.current?.focus();
+    }
+  }, [showEditPopover]);
+
+  const onClickEditCancel = (): void => {
+    setShowEditPopover(false);
+  };
+
+  const onClickEditSave = (): void => {
+    if (currentLabelIdx !== null) {
+      setLabelName(currentLabelIdx, editPopoverNameInput);
+    }
+    setShowEditPopover(false);
+  };
+
   const tableColumns: TableProps<TableDataType>["columns"] = [
     {
       title: "Object ID",
@@ -140,21 +181,6 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     },
   ];
 
-  const onCreateNewLabel = (): void => {
-    const index = createNewLabel();
-    setCurrentLabelIdx(index);
-  };
-
-  const onDeleteLabel = (): void => {
-    if (currentLabelIdx !== null) {
-      deleteLabel(currentLabelIdx);
-    }
-  };
-
-  const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType): void => {
-    props.setTrackAndFrame(record.track, record.time);
-  };
-
   const tableData: TableDataType[] = useMemo(() => {
     const dataset = props.dataset;
     if (currentLabelIdx !== null && dataset) {
@@ -168,36 +194,15 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return [];
   }, [annotationDataVersion, currentLabelIdx, props.dataset]);
 
+  //
   const selectLabelOptions: ItemType[] = labels.map((label, index) => {
     return {
       key: index.toString(),
       label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
-      icon: <span style={{ color: "#" + label.color.getHexString() }}>⬤</span>,
     };
   });
 
-  const onClickEditButton = (): void => {
-    setShowEditPopover(true);
-    setEditPopoverNameInput(selectedLabel?.name || "");
-  };
-
-  useEffect(() => {
-    if (showEditPopover) {
-      editPopoverInputRef.current?.focus();
-    }
-  }, [showEditPopover]);
-
-  const onClickEditCancel = (): void => {
-    setShowEditPopover(false);
-  };
-
-  const onClickEditSave = (): void => {
-    if (currentLabelIdx !== null) {
-      setLabelName(currentLabelIdx, editPopoverNameInput);
-    }
-    setShowEditPopover(false);
-  };
-
+  // A small popup that appears when you press the edit button.
   const editPopoverContents = (
     <FlexColumn style={{ width: "250px" }} $gap={10}>
       <label style={{ gap: "10px", display: "flex", flexDirection: "row" }}>
@@ -232,11 +237,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   return (
     <FlexColumnAlignCenter $gap={10}>
+      {/* Top-level annotation edit toggle */}
       <FlexRow style={{ width: "100%" }} $gap={6}>
         <AnnotationModeButton
           type="primary"
           $color={isAnnotationModeEnabled ? "success" : "default"}
-          color="success"
           style={{ paddingLeft: "10px" }}
           onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
         >
@@ -249,6 +254,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           </p>
         )}
       </FlexRow>
+
+      {/* Label selection and edit/create/delete buttons */}
       <FlexRow $gap={10} style={{ width: "100%" }}>
         <label style={{ gap: "5px" }}>
           <SelectionDropdown
@@ -304,6 +311,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           </IconButton>
         </Tooltip>
       </FlexRow>
+
+      {/* Table */}
       <div style={{ width: "100%", marginTop: "10px" }}>
         <StyledAntTable
           dataSource={tableData}
