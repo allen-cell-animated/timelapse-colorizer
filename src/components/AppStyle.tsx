@@ -29,6 +29,7 @@ const palette = {
   link: "#0094FF",
   linkDark: "#007FD6",
   warning: "#faad14",
+  successMediumDark: "#6BD352",
   successMedium: "#b7eb8f",
   successLight: "#f6ffed",
   errorMedium: "#ffa39e",
@@ -75,6 +76,7 @@ const theme = {
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
     },
+    // TODO: Reorganize the button colors by primary/default/secondary etc.
     button: {
       backgroundPrimary: palette.theme,
       backgroundDisabled: palette.gray10,
@@ -83,6 +85,10 @@ const theme = {
       hover: palette.themeLight,
       active: palette.themeDark,
       focusShadow: "rgba(137, 98, 211, 0.06)",
+      success: {
+        background: palette.success,
+        hover: palette.successMediumDark,
+      },
     },
     dropdown: {
       backgroundHover: palette.gray10,
@@ -181,6 +187,9 @@ const CssContainer = styled.div`
   --color-button-hover: ${theme.color.button.hover};
   --color-button-active: ${theme.color.button.active};
   --color-button-disabled: ${theme.color.button.backgroundDisabled};
+
+  --color-button-success-bg: ${theme.color.button.success.background};
+  --color-button-success-hover: ${theme.color.button.success.hover};
 
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;
