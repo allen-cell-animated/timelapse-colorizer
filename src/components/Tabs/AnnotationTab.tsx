@@ -104,12 +104,14 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const onCreateNewLabel = (): void => {
     const index = createNewLabel();
     setCurrentLabelIdx(index);
+    setShowEditPopover(false);
   };
 
   const onDeleteLabel = (): void => {
     if (currentLabelIdx !== null) {
       deleteLabel(currentLabelIdx);
     }
+    setShowEditPopover(false);
   };
 
   const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType): void => {
@@ -117,7 +119,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   };
 
   const onClickEditButton = (): void => {
-    setShowEditPopover(true);
+    setShowEditPopover(!showEditPopover);
     setEditPopoverNameInput(selectedLabel?.name || "");
   };
 
@@ -194,7 +196,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return [];
   }, [annotationDataVersion, currentLabelIdx, props.dataset]);
 
-  //
+  // Options for the selection dropdown
   const selectLabelOptions: ItemType[] = labels.map((label, index) => {
     return {
       key: index.toString(),
@@ -282,34 +284,47 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           />
         </div>
 
-        <Tooltip title="Create new label" placement="bottom">
-          <IconButton onClick={onCreateNewLabel} disabled={!isAnnotationModeEnabled}>
-            <PlusOutlined />
-          </IconButton>
-        </Tooltip>
-        <Popover
-          title={<p style={{ fontSize: theme.font.size.label }}>Edit label</p>}
-          trigger={["click"]}
-          placement="bottom"
-          content={editPopoverContents}
-          open={showEditPopover}
-          getPopupContainer={() => editPopoverContainerRef.current!}
-          style={{ zIndex: "1000" }}
-        >
-          <div ref={editPopoverContainerRef}>
-            <Tooltip title="Edit label" placement="bottom">
-              <IconButton disabled={currentLabelIdx === null || !isAnnotationModeEnabled} onClick={onClickEditButton}>
-                <EditOutlined />
+        {/* Hide edit-related buttons until edit mode is enabled */}
+        {isAnnotationModeEnabled && (
+          <>
+            <Tooltip title="Create new label" placement="bottom">
+              <IconButton onClick={onCreateNewLabel} disabled={!isAnnotationModeEnabled} type="outlined">
+                <PlusOutlined />
               </IconButton>
             </Tooltip>
-          </div>
-        </Popover>
-        {/* TODO: Show confirmation popup before deleting. */}
-        <Tooltip title="Delete label" placement="bottom">
-          <IconButton onClick={onDeleteLabel} disabled={currentLabelIdx === null || !isAnnotationModeEnabled}>
-            <DeleteOutlined />
-          </IconButton>
-        </Tooltip>
+            <Popover
+              title={<p style={{ fontSize: theme.font.size.label }}>Edit label</p>}
+              trigger={["click"]}
+              placement="bottom"
+              content={editPopoverContents}
+              open={showEditPopover}
+              getPopupContainer={() => editPopoverContainerRef.current!}
+              style={{ zIndex: "1000" }}
+            >
+              <div ref={editPopoverContainerRef}>
+                <Tooltip title="Edit label" placement="bottom">
+                  <IconButton
+                    disabled={currentLabelIdx === null || !isAnnotationModeEnabled}
+                    onClick={onClickEditButton}
+                    type={showEditPopover ? "primary" : "outlined"}
+                  >
+                    <EditOutlined />
+                  </IconButton>
+                </Tooltip>
+              </div>
+            </Popover>
+            {/* TODO: Show confirmation popup before deleting. */}
+            <Tooltip title="Delete label" placement="bottom">
+              <IconButton
+                onClick={onDeleteLabel}
+                disabled={currentLabelIdx === null || !isAnnotationModeEnabled}
+                type="outlined"
+              >
+                <DeleteOutlined />
+              </IconButton>
+            </Tooltip>
+          </>
+        )}
       </FlexRow>
 
       {/* Table */}

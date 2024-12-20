@@ -29,7 +29,7 @@ const palette = {
   link: "#0094FF",
   linkDark: "#007FD6",
   warning: "#faad14",
-  successHeavy: "#6BD352",
+  successMediumDark: "#6BD352",
   successMedium: "#b7eb8f",
   successLight: "#f6ffed",
   errorMedium: "#ffa39e",
@@ -78,6 +78,7 @@ const theme = {
       annotationOutline: palette.themeLight,
       modePopupBackground: "rgba(0, 0, 0, 0.7)",
     },
+    // TODO: Reorganize the button colors by primary/default/secondary etc.
     button: {
       backgroundPrimary: palette.theme,
       backgroundDisabled: palette.gray10,
@@ -87,8 +88,8 @@ const theme = {
       active: palette.themeDark,
       focusShadow: "rgba(137, 98, 211, 0.06)",
       success: {
-        backgroundPrimary: palette.success,
-        hover: palette.successHeavy,
+        background: palette.success,
+        hover: palette.successMediumDark,
       },
     },
     dropdown: {
@@ -192,7 +193,7 @@ const CssContainer = styled.div`
   --color-button-active: ${theme.color.button.active};
   --color-button-disabled: ${theme.color.button.backgroundDisabled};
 
-  --color-button-success-bg: ${theme.color.button.success.backgroundPrimary};
+  --color-button-success-bg: ${theme.color.button.success.background};
   --color-button-success-hover: ${theme.color.button.success.hover};
 
   --button-height: ${theme.controls.height}px;
