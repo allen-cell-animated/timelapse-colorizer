@@ -117,7 +117,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   };
 
   const onClickEditButton = (): void => {
-    setShowEditPopover(true);
+    setShowEditPopover(!showEditPopover);
     setEditPopoverNameInput(selectedLabel?.name || "");
   };
 
@@ -286,7 +286,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         {isAnnotationModeEnabled && (
           <>
             <Tooltip title="Create new label" placement="bottom">
-              <IconButton onClick={onCreateNewLabel} disabled={!isAnnotationModeEnabled}>
+              <IconButton onClick={onCreateNewLabel} disabled={!isAnnotationModeEnabled} type="outlined">
                 <PlusOutlined />
               </IconButton>
             </Tooltip>
@@ -304,6 +304,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
                   <IconButton
                     disabled={currentLabelIdx === null || !isAnnotationModeEnabled}
                     onClick={onClickEditButton}
+                    type={showEditPopover ? "primary" : "outlined"}
                   >
                     <EditOutlined />
                   </IconButton>
@@ -312,7 +313,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             </Popover>
             {/* TODO: Show confirmation popup before deleting. */}
             <Tooltip title="Delete label" placement="bottom">
-              <IconButton onClick={onDeleteLabel} disabled={currentLabelIdx === null || !isAnnotationModeEnabled}>
+              <IconButton
+                onClick={onDeleteLabel}
+                disabled={currentLabelIdx === null || !isAnnotationModeEnabled}
+                type="outlined"
+              >
                 <DeleteOutlined />
               </IconButton>
             </Tooltip>

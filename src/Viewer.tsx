@@ -126,18 +126,6 @@ function Viewer(): ReactElement {
     }
   }, [dataset, selectedBackdropKey]);
 
-  useEffect(() => {
-    // Switch to default backdrop if the dataset has one and none is currently selected.
-    // If the dataset has no backdrops, hide the backdrop.
-    if (dataset && (selectedBackdropKey === null || !dataset.hasBackdrop(selectedBackdropKey))) {
-      const defaultBackdropKey = dataset.getDefaultBackdropKey();
-      setSelectedBackdropKey(defaultBackdropKey);
-      if (!defaultBackdropKey) {
-        updateConfig({ backdropVisible: false });
-      }
-    }
-  }, [dataset, selectedBackdropKey]);
-
   // TODO: Save these settings in local storage
   // Use reducer here in case multiple updates happen simultaneously
   const [config, updateConfig] = useReducer(
@@ -980,12 +968,6 @@ function Viewer(): ReactElement {
       ),
     });
   }
-
-  useEffect(() => {
-    if (annotationState.isAnnotationModeEnabled) {
-      updateConfig({ openTab: TabType.ANNOTATION });
-    }
-  }, [annotationState.isAnnotationModeEnabled]);
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {
