@@ -10,6 +10,7 @@ import { TagIconSVG } from "../../assets";
 import { Dataset } from "../../colorizer";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
+import { download } from "../../utils/file_io";
 
 import { LabelData } from "../../colorizer/AnnotationData";
 import { AppThemeContext } from "../AppStyle";
@@ -234,23 +235,34 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   return (
     <FlexColumnAlignCenter $gap={10}>
       {/* Top-level annotation edit toggle */}
-      <FlexRow style={{ width: "100%" }} $gap={6}>
-        <AnnotationModeButton
-          type="primary"
-          $color={isAnnotationModeEnabled ? "success" : "default"}
-          style={{ paddingLeft: "10px" }}
-          onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
+      <FlexRow style={{ width: "100%", justifyContent: "space-between" }}>
+        <FlexRow $gap={6}>
+          <AnnotationModeButton
+            type="primary"
+            $color={isAnnotationModeEnabled ? "success" : "default"}
+            style={{ paddingLeft: "10px" }}
+            onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
+          >
+            <FlexRowAlignCenter $gap={6}>
+              {isAnnotationModeEnabled ? <CheckOutlined /> : <TagIconSVG />}
+              {isAnnotationModeEnabled ? "Done editing" : "Create and edit"}
+            </FlexRowAlignCenter>
+          </AnnotationModeButton>
+          {isAnnotationModeEnabled && (
+            <p style={{ color: theme.color.text.hint }}>
+              <i>Editing in progress...</i>
+            </p>
+          )}
+        </FlexRow>
+        <Button
+          onClick={() => {
+            const csvData = props.annotationState.toCsv(props.dataset!);
+            download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+            console.log(csvData);
+          }}
         >
-          <FlexRowAlignCenter $gap={6}>
-            {isAnnotationModeEnabled ? <CheckOutlined /> : <TagIconSVG />}
-            {isAnnotationModeEnabled ? "Done editing" : "Create and edit"}
-          </FlexRowAlignCenter>
-        </AnnotationModeButton>
-        {isAnnotationModeEnabled && (
-          <p style={{ color: theme.color.text.hint }}>
-            <i>Editing in progress...</i>
-          </p>
-        )}
+          Export as CSV
+        </Button>
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
