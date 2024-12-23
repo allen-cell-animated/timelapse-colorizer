@@ -396,6 +396,7 @@ export const useAnnotations = (): AnnotationState => {
     getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
     getLabeledIds: annotationData.getLabeledIds,
     getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
+    toCsv: annotationData.toCsv,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),

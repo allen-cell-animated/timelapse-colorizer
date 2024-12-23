@@ -4,6 +4,10 @@ import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./c
 
 import Dataset from "./Dataset";
 
+const CSV_COL_ID = "ID";
+const CSV_COL_TIME = "Frame";
+const CSV_COL_TRACK = "Track";
+
 export type LabelData = {
   name: string;
   color: Color;
@@ -78,6 +82,8 @@ export interface IAnnotationData {
   applyLabelToId(labelIdx: number, id: number): void;
   removeLabelFromId(labelIdx: number, id: number): void;
   toggleLabelOnId(labelIdx: number, id: number): void;
+
+  toCsv(dataset: Dataset, separator?: string): string;
 }
 
 export class AnnotationData implements IAnnotationData {
@@ -106,6 +112,7 @@ export class AnnotationData implements IAnnotationData {
     this.toggleLabelOnId = this.toggleLabelOnId.bind(this);
     this.applyLabelToId = this.applyLabelToId.bind(this);
     this.removeLabelFromId = this.removeLabelFromId.bind(this);
+    this.toCsv = this.toCsv.bind(this);
   }
 
   // Getters
@@ -154,6 +161,19 @@ export class AnnotationData implements IAnnotationData {
     }
     this.timeToLabelIdMap = timeToLabelIdMap;
     return timeToLabelIdMap;
+  }
+
+  getIdsToLabels(): Map<number, number[]> {
+    const idsToLabels = new Map<number, number[]>();
+    for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
+      for (const id of this.labelData[labelIdx].ids) {
+        if (!idsToLabels.has(id)) {
+          idsToLabels.set(id, []);
+        }
+        idsToLabels.get(id)!.push(labelIdx);
+      }
+    }
+    return idsToLabels;
   }
 
   // Setters
@@ -218,5 +238,35 @@ export class AnnotationData implements IAnnotationData {
     } else {
       this.removeLabelFromId(labelIdx, id);
     }
+  }
+
+  toCsv(dataset: Dataset, separator: string = ","): string {
+    const idsToLabels = this.getIdsToLabels();
+
+    // TODO: Sanitizing and parsing CSV data is pretty complex.
+    // Consider using `papaparse` or another library.
+    const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
+    headerRow.push(...this.labelData.map((label) => `"${label.name}"`));
+
+    const csvRows: string[] = [];
+    for (const [id, labels] of idsToLabels) {
+      const track = dataset.getTrackId(id);
+      const time = dataset.getTime(id);
+
+      const row = [id.toString(), track, time.toString()];
+      for (let i = 0; i < this.labelData.length; i++) {
+        row.push(labels.includes(i) ? "1" : "0");
+      }
+      csvRows.push(row.join(separator));
+    }
+
+    // TODO: Add additional metadata when we add support for importing
+    // annotation data.
+    // Add comment metadata for label name + colors
+    // const metadataRows = this.labelData.map((label) => {
+    //   return `# ${label.name},#${label.color.getHexString()}`;
+    // });
+
+    return [headerRow.join(separator), ...csvRows].join("\n");
   }
 }
