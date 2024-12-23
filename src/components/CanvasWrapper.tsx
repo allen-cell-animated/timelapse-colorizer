@@ -347,25 +347,16 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setOutlineColor(props.config.outlineColor);
   }, [props.config.outlineColor]);
 
-  // Memoize because mapping from time to annotation labels is potentially expensive
-  const timeToAnnotationLabelIds = useMemo(() => {
-    if (props.dataset) {
-      return props.annotationState.getTimeToLabelIdMap(props.dataset);
-    } else {
-      return new Map<number, Record<number, number[]>>();
-    }
-  }, [props.dataset, props.annotationState.annotationDataVersion]);
-  const annotationLabels = useMemo(
-    () => props.annotationState.getLabels(),
-    [props.annotationState.annotationDataVersion]
-  );
-
   useMemo(() => {
+    const annotationLabels = props.annotationState.getLabels();
+    const timeToAnnotationLabelIds = props.dataset
+      ? props.annotationState.getTimeToLabelIdMap(props.dataset)
+      : new Map();
     canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
     canv.isAnnotationVisible = props.annotationState.visible;
   }, [
-    timeToAnnotationLabelIds,
-    annotationLabels,
+    props.dataset,
+    props.annotationState.annotationDataVersion,
     props.annotationState.currentLabelIdx,
     props.annotationState.visible,
   ]);
@@ -650,7 +641,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [props.dataset, canv]);
 
-  const makeTooltipLinkStyleButton = (key: string, content: ReactNode, onClick: () => void): ReactNode => {
+  const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
     return (
       <LinkStyleButton
         key={key}
@@ -686,12 +677,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
   // Link to viewer settings
   backdropTooltipContents.push(
-    makeTooltipLinkStyleButton(
+    makeLinkStyleButton(
       "backdrop-viewer-settings-link",
+      onViewerSettingsLinkClicked,
       <span>
         {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-      </span>,
-      onViewerSettingsLinkClicked
+      </span>
     )
   );
 
@@ -703,19 +694,19 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     </span>
   );
   annotationTooltipContents.push(
-    makeTooltipLinkStyleButton(
+    makeLinkStyleButton(
       "annotation-link",
+      onAnnotationLinkClicked,
       <span>
         View and edit annotations <VisuallyHidden>(opens annotations tab)</VisuallyHidden>
-      </span>,
-      onAnnotationLinkClicked
+      </span>
     )
   );
 
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {props.annotationState.isAnnotationModeEnabled && (
-        <AnnotationModeContainer>Annotation edit mode enabled</AnnotationModeContainer>
+        <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
       )}
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
         <div ref={canvasPlaceholderRef}></div>

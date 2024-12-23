@@ -114,6 +114,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     objectInfoContent.push(<p key="vector">{vectorTooltipText}</p>);
   }
 
+  // Show all current labels applied to the hovered object
   const labels = props.annotationState.getLabelsAppliedToId(lastHoveredId);
   const labelData = props.annotationState.getLabels();
   if (labels.length > 0 && props.annotationState.visible) {
@@ -122,11 +123,13 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
         {labels.map((labelIdx) => {
           const label = labelData[labelIdx];
           return (
+            // TODO: Tags do not change their text color based on the background color.
+            // Make a custom wrapper for Tag that does this; see
+            // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
             <Tag
               key={labelIdx}
               style={{ width: "fit-content", margin: "0 2px" }}
               color={"#" + label.color.getHexString()}
-              bordered={true}
             >
               {label.name}
             </Tag>
@@ -136,6 +139,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     );
   }
 
+  // If editing annotations, also show the current label being applied
   let annotationLabel: React.ReactNode;
   const currentLabelIdx = props.annotationState.currentLabelIdx;
   if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
@@ -147,7 +151,6 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     );
   }
 
-  // TODO: Eventually this will also show the current annotation tag when annotation mode is enabled.
   const tooltipContent = (
     <FlexColumn $gap={6}>
       {annotationLabel}
