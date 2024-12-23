@@ -34,7 +34,40 @@ export const defaultAnnotationStyle = {
   scaleWithZoomPct: 0.25,
 };
 
-function drawAnnotation(
+/** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
+ * accounting for panning and zooming. For both, (0,0) is the top left corner.
+ */
+function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationParams): Vector2 {
+  // Position is in pixel coordinates of the frame. Transform to relative frame coordinates,
+  // then to relative canvas coordinates, and finally into canvas pixel coordinates.
+  const frameResolution = params.dataset?.frameResolution;
+  if (!frameResolution) {
+    return new Vector2(0, 0);
+  }
+  pos = pos.clone();
+  pos.divide(frameResolution); // to relative frame coordinates
+  pos.sub(new Vector2(0.5, 0.5)); // Center (0,0) at center of frame
+  pos.add(params.panOffset.clone().multiply(new Vector2(1, -1))); // apply panning offset
+  pos.multiply(params.frameToCanvasCoordinates); // to relative canvas coordinates
+  pos.multiply(params.canvasSize); // to canvas pixel coordinates
+  pos.add(params.canvasSize.clone().multiplyScalar(0.5)); // Move origin to top left corner
+  return pos;
+}
+
+/**
+ * Draws an annotation marker over the given object ID, handling zooming,
+ * panning, and multiple labels.
+ * @param origin Origin of the parent annotation component (should be the top
+ * left corner of the canvas viewport).
+ * @param ctx 2D canvas rendering context.
+ * @param params The annotation parameters.
+ * @param style The annotation styling.
+ * @param id The object ID to render. The object's centroid will be used as the
+ * marker position.
+ * @param labelIdx The indices of all labels to render for this object ID. The
+ * first label index in the list will be rendered as the main marker.
+ */
+function drawAnnotationMarker(
   origin: Vector2,
   ctx: CanvasRenderingContext2D,
   params: AnnotationParams,
@@ -44,44 +77,34 @@ function drawAnnotation(
 ): void {
   const labelData = params.labelData[labelIdx[0]];
   const centroid = params.dataset?.getCentroid(id);
-  const frameResolution = params.dataset?.frameResolution;
-  if (!centroid || !frameResolution) {
+  if (!centroid || !params.dataset) {
     return;
   }
 
-  // Position is in pixel coordinates of the frame. Transform to relative frame coordinates,
-  // then to relative canvas coordinates, and finally into canvas pixel coordinates.
-  const pos = new Vector2(centroid[0], centroid[1]);
-  pos.divide(frameResolution); // to relative frame coordinates
-  pos.sub(new Vector2(0.5, 0.5)); // Center (0,0) at center of frame
-  pos.add(params.panOffset.clone().multiply(new Vector2(1, -1))); // apply panning offset
-  pos.multiply(params.frameToCanvasCoordinates); // to relative canvas coordinates
-  pos.multiply(params.canvasSize); // to canvas pixel coordinates
-  pos.add(params.canvasSize.clone().multiplyScalar(0.5)); // Move origin to top left corner
-
-  const renderPos = new Vector2(pos.x + origin.x, pos.y + origin.y);
+  const pos = framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
+  pos.add(origin);
   ctx.strokeStyle = style.borderColor;
 
-  // Scale icons by the zoom level.
+  // Scale markers by the zoom level.
   const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
   const dampenedZoomScale = zoomScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
   const scaledMarkerSizePx = style.markerSizePx * dampenedZoomScale;
 
-  // Render an extra outline if multiple labels are present.
+  // Draw an additional marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {
     ctx.fillStyle = "#" + params.labelData[labelIdx[1]].color.getHexString();
-    const offsetRenderPos = renderPos.clone().addScalar(style.additionalItemsOffsetPx * dampenedZoomScale);
+    const offsetPos = pos.clone().addScalar(style.additionalItemsOffsetPx * dampenedZoomScale);
     ctx.beginPath();
-    ctx.arc(offsetRenderPos.x, offsetRenderPos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
+    ctx.arc(offsetPos.x, offsetPos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
 
-  // Draw the marker at the new position.
+  // Draw the main marker.
   ctx.fillStyle = "#" + labelData.color.getHexString();
   ctx.beginPath();
-  ctx.arc(renderPos.x, renderPos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
+  ctx.arc(pos.x, pos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -121,7 +144,7 @@ export function getAnnotationRenderer(
       }
 
       for (const [id, labelIdxs] of idsToLabels) {
-        drawAnnotation(origin, ctx, params, style, id, labelIdxs);
+        drawAnnotationMarker(origin, ctx, params, style, id, labelIdxs);
       }
     },
   };

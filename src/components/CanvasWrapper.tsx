@@ -641,7 +641,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [props.dataset, canv]);
 
-  const makeTooltipLinkStyleButton = (key: string, content: ReactNode, onClick: () => void): ReactNode => {
+  const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
     return (
       <LinkStyleButton
         key={key}
@@ -677,12 +677,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
   // Link to viewer settings
   backdropTooltipContents.push(
-    makeTooltipLinkStyleButton(
+    makeLinkStyleButton(
       "backdrop-viewer-settings-link",
+      onViewerSettingsLinkClicked,
       <span>
         {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-      </span>,
-      onViewerSettingsLinkClicked
+      </span>
     )
   );
 
@@ -694,12 +694,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     </span>
   );
   annotationTooltipContents.push(
-    makeTooltipLinkStyleButton(
+    makeLinkStyleButton(
       "annotation-link",
+      onAnnotationLinkClicked,
       <span>
         View and edit annotations <VisuallyHidden>(opens annotations tab)</VisuallyHidden>
-      </span>,
-      onAnnotationLinkClicked
+      </span>
     )
   );
 
