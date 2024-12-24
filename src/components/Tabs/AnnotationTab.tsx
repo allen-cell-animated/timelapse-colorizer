@@ -130,7 +130,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickEditSave = (): void => {
     if (currentLabelIdx !== null) {
-      setLabelName(currentLabelIdx, editPopoverNameInput);
+      setLabelName(currentLabelIdx, editPopoverNameInput.trim());
     }
     setShowEditPopover(false);
   };

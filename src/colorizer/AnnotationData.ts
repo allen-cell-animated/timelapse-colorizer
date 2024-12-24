@@ -269,7 +269,7 @@ export class AnnotationData implements IAnnotationData {
     const idsToLabels = this.getIdsToLabels();
     const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
 
-    headerRow.push(...this.labelData.map((label) => label.name));
+    headerRow.push(...this.labelData.map((label) => label.name.trim()));
 
     const csvRows: number[][] = [];
     for (const [id, labels] of idsToLabels) {
