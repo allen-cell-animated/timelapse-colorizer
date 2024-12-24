@@ -257,13 +257,13 @@ export class AnnotationData implements IAnnotationData {
    * Label names will be enclosed in double quotes, and special characters will
    * be escaped. Double quotes will be escaped with another double quote, and
    * special characters at the start of the label name that could be interpreted
-   * as equations (`+`, `-`, `=`, `@`, `\t`, `\r`) will be escaped with a
-   * leading single quote.
+   * as equations (`+`, `-`, `=`, `@`) will be escaped with a leading single
+   * quote. Whitespace will be trimmed from the label names.
    *
    * Each object ID that has been labeled will be a row in the CSV. For label
-   * columns, the cell value will be 0 if the label is not applied to the
-   * object, and 1 if it is. Rows end with `\r\n` and cells are separated by
-   * commas by default.
+   * columns, the cell value will be 1 if the label is applied to the object,
+   * and 0 if it is not. Rows end with `\r\n` and cells are separated by commas
+   * by default.
    */
   toCsv(dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels();
@@ -283,16 +283,14 @@ export class AnnotationData implements IAnnotationData {
       csvRows.push(row);
     }
 
-    // TODO: If we add support for comments, add the property `quotes:true` to
-    // the options object specifically for comment columns. (You can do this
-    // selectively via a boolean array in Papaparse.)
     const csvString = Papa.unparse(
       { fields: headerRow, data: csvRows },
       { delimiter: delimiter, header: true, escapeFormulae: true }
     );
 
-    // TODO: Prepend additional metadata when we add support for importing
-    // annotation data?
+    // TODO: Prepend additional metadata (e.g. label colors) when we add support
+    // for importing annotation data?
+
     // // Add comment metadata for label name + colors
     // const metadataRows = this.labelData.map((label) => {
     //   return `# ${label.name},#${label.color.getHexString()}`;
