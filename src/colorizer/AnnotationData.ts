@@ -1,3 +1,4 @@
+import Papa from "papaparse";
 import { Color } from "three";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
@@ -240,33 +241,63 @@ export class AnnotationData implements IAnnotationData {
     }
   }
 
-  toCsv(dataset: Dataset, separator: string = ","): string {
+  /**
+   * Converts the annotation data to a CSV string.
+   *
+   * @param dataset
+   * @param delimiter The delimiter to use between cells. Default is a comma
+   * (",").
+   * @returns Returns a comma-separated value (CSV) string representation of the
+   * annotation data, including a header. The header will contain the columns:
+   *   - ID (object ID)
+   *   - Track (track ID)
+   *   - Frame (time)
+   *   - ...and one column for each label.
+   *
+   * Label names will be enclosed in double quotes, and special characters will
+   * be escaped. Double quotes will be escaped with another double quote, and
+   * special characters at the start of the label name that could be interpreted
+   * as equations (`+`, `-`, `=`, `@`, `\t`, `\r`) will be escaped with a
+   * leading single quote.
+   *
+   * Each object ID that has been labeled will be a row in the CSV. For label
+   * columns, the cell value will be 0 if the label is not applied to the
+   * object, and 1 if it is. Rows end with `\r\n` and cells are separated by
+   * commas by default.
+   */
+  toCsv(dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels();
-
-    // TODO: Sanitizing and parsing CSV data is pretty complex.
-    // Consider using `papaparse` or another library.
     const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
-    headerRow.push(...this.labelData.map((label) => `"${label.name}"`));
 
-    const csvRows: string[] = [];
+    headerRow.push(...this.labelData.map((label) => label.name));
+
+    const csvRows: number[][] = [];
     for (const [id, labels] of idsToLabels) {
       const track = dataset.getTrackId(id);
       const time = dataset.getTime(id);
 
-      const row = [id.toString(), track, time.toString()];
+      const row = [id, track, time];
       for (let i = 0; i < this.labelData.length; i++) {
-        row.push(labels.includes(i) ? "1" : "0");
+        row.push(labels.includes(i) ? 1 : 0);
       }
-      csvRows.push(row.join(separator));
+      csvRows.push(row);
     }
 
-    // TODO: Add additional metadata when we add support for importing
-    // annotation data.
-    // Add comment metadata for label name + colors
+    // TODO: If we add support for comments, add the property `quotes:true` to
+    // the options object specifically for comment columns. (You can do this
+    // selectively via a boolean array in Papaparse.)
+    const csvString = Papa.unparse(
+      { fields: headerRow, data: csvRows },
+      { delimiter: delimiter, header: true, escapeFormulae: true }
+    );
+
+    // TODO: Prepend additional metadata when we add support for importing
+    // annotation data?
+    // // Add comment metadata for label name + colors
     // const metadataRows = this.labelData.map((label) => {
     //   return `# ${label.name},#${label.color.getHexString()}`;
     // });
 
-    return [headerRow.join(separator), ...csvRows].join("\n");
+    return csvString;
   }
 }
