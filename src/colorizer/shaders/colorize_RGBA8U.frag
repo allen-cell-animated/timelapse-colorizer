@@ -97,8 +97,6 @@ bool isEdge(vec2 uv, ivec2 frameDims) {
   float wStep = 1.0 / float(canvasSizePx.x) * float(canvasToFrameScale.x);
   float hStep = 1.0 / float(canvasSizePx.y) * float(canvasToFrameScale.y);        
   // sample around the pixel to see if we are on an edge
-  // TODO: Fix this so it samples using canvas pixel offsets instead of frame pixel offsets.
-  // Currently, the edge detection is sparser when loading high-resolution frames.
   int R = int(combineColor(texture(frame, uv + vec2(thickness * wStep, 0)))) - 1;
   int L = int(combineColor(texture(frame, uv + vec2(-thickness * wStep, 0)))) - 1;
   int T = int(combineColor(texture(frame, uv + vec2(0, thickness * hStep)))) - 1;
