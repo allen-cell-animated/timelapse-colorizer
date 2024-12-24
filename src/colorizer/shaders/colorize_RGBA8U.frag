@@ -15,6 +15,7 @@ uniform float featureColorRampMin;
 uniform float featureColorRampMax;
 
 uniform vec2 canvasToFrameScale;
+uniform vec2 canvasSizePx;
 uniform vec2 panOffset;
 uniform sampler2D colorRamp;
 uniform sampler2D overlay;
@@ -25,6 +26,7 @@ uniform float objectOpacity;
 
 uniform vec3 backgroundColor;
 uniform vec3 outlineColor;
+uniform float outlineWidthPx;
 // Background color for the canvas, anywhere where the frame is not drawn.
 uniform vec3 canvasBackgroundColor;
 
@@ -91,8 +93,9 @@ vec4 getColorRamp(float val) {
 
 bool isEdge(vec2 uv, ivec2 frameDims) {
   float thickness = 2.0;
-  float wStep = 1.0 / float(frameDims.x);
-  float hStep = 1.0 / float(frameDims.y);        
+  // step size is equal to 1 onscreen canvas pixel     
+  float wStep = 1.0 / float(canvasSizePx.x) * float(canvasToFrameScale.x);
+  float hStep = 1.0 / float(canvasSizePx.y) * float(canvasToFrameScale.y);        
   // sample around the pixel to see if we are on an edge
   // TODO: Fix this so it samples using canvas pixel offsets instead of frame pixel offsets.
   // Currently, the edge detection is sparser when loading high-resolution frames.
