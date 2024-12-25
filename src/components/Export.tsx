@@ -1,12 +1,26 @@
 import { CheckCircleOutlined } from "@ant-design/icons";
-import { App, Button, Card, Input, InputNumber, Progress, Radio, RadioChangeEvent, Space, Tooltip } from "antd";
+import {
+  App,
+  Button,
+  Card,
+  Checkbox,
+  Input,
+  InputNumber,
+  Progress,
+  Radio,
+  RadioChangeEvent,
+  Space,
+  Tooltip,
+} from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
+import { getDefaultViewerConfig } from "../colorizer/constants";
+import { ViewerConfig } from "../colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
-import { FlexRow } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow } from "../styles/utils";
 
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
 import ImageSequenceRecorder from "../colorizer/recorders/ImageSequenceRecorder";
@@ -20,6 +34,7 @@ import SpinBox from "./SpinBox";
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
+  getCanvasExportDimensions?: () => [number, number];
   getCanvas: () => HTMLCanvasElement;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
   onClick?: () => void;
@@ -28,13 +43,19 @@ type ExportButtonProps = {
   setIsRecording?: (recording: boolean) => void;
   defaultImagePrefix?: string;
   disabled?: boolean;
+  config?: ViewerConfig;
+  updateConfig?: (settings: Partial<ViewerConfig>) => void;
 };
+
+const FRAME_RANGE_RADIO_LABEL_ID = "export-modal-frame-range-label";
 
 const defaultProps: Partial<ExportButtonProps> = {
   setIsRecording: () => {},
   defaultImagePrefix: "image",
   disabled: false,
   onClick: () => {},
+  config: getDefaultViewerConfig(),
+  updateConfig: () => {},
 };
 
 const HorizontalDiv = styled.div`
@@ -274,6 +295,8 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     }
 
     // Copy configuration to options object
+    // Note that different codecs will be selected by the browser based on the canvas dimensions.
+    const canvasDims = props.getCanvasExportDimensions();
     const recordingOptions: Partial<RecordingOptions> = {
       min: min,
       max: max,
@@ -284,6 +307,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
       frameIncrement: frameIncrement,
       fps: fps,
       bitrate: videoBitsPerSecond,
+      outputSize: [canvasDims[0], canvasDims[1]],
       onCompleted: async () => {
         // Close modal once recording finishes and show completion notification
         setPercentComplete(100);
@@ -373,8 +397,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
     // (475 MB predicted vs. 70 MB actual)
     // TODO: Is there a way to concretely determine this?
     const compressionRatioBitsPerPixel = 3.5; // Actual value 2.7-3.0, overshooting to be safe
-    const maxVideoBitsResolution =
-      props.getCanvas().width * props.getCanvas().height * totalFrames * compressionRatioBitsPerPixel;
+    // Use current canvas dimensions as an approximation (instead of the export dimensions)
+    const canvas = props.getCanvas();
+    const maxVideoBitsResolution = canvas.width * canvas.height * totalFrames * compressionRatioBitsPerPixel;
 
     const sizeInMb = Math.min(maxVideoBitsResolution, maxVideoBitsDuration) / 8_000_000; // bits to MB
 
@@ -455,9 +480,9 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         maskClosable={!isRecording}
         footer={modalFooter}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px", marginTop: "15px" }}>
+        <FlexColumn $gap={20} style={{ marginTop: "15px" }}>
           {/* Recording type (image/video) radio */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <FlexColumnAlignCenter>
             <ExportModeRadioGroup
               value={recordingMode}
               buttonStyle="solid"
@@ -483,16 +508,17 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                 </CustomRadio>
               </Tooltip>
             </ExportModeRadioGroup>
-          </div>
+          </FlexColumnAlignCenter>
 
           {/* Range options (All/Current Frame/Custom) */}
-          <Card size="small">
+          <Card size="small" title={<p id={FRAME_RANGE_RADIO_LABEL_ID}>Frame range</p>}>
             <MaxWidthRadioGroup
               value={rangeMode}
               onChange={(e: RadioChangeEvent) => {
                 setRangeMode(e.target.value);
               }}
               disabled={isRecording}
+              aria-labelledby={FRAME_RANGE_RADIO_LABEL_ID}
             >
               <Space direction="vertical">
                 <Radio value={RangeMode.ALL}>
@@ -545,6 +571,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                           min={1}
                           max={props.totalFrames - 1}
                           disabled={isRecording}
+                          width="140px"
                         />
                         <p style={{ color: theme.color.text.hint }}>({customRangeFrames} frames total)</p>
                       </FlexRow>
@@ -555,12 +582,12 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </MaxWidthRadioGroup>
           </Card>
 
-          {recordingMode === RecordingMode.VIDEO_MP4 && (
-            <Card size="small" title={<p>Video settings</p>}>
-              <SettingsContainer>
+          <SettingsContainer gapPx={6}>
+            {recordingMode === RecordingMode.VIDEO_MP4 && (
+              <>
                 <SettingsItem label="Frames per second">
                   <FlexRow $gap={6}>
-                    <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} />
+                    <SpinBox value={fps} onChange={setFps} min={1} max={120} disabled={isRecording} width="175px" />
                     <p style={{ color: theme.color.text.hint }}>({getDurationLabel()})</p>
                   </FlexRow>
                 </SettingsItem>
@@ -576,44 +603,58 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
                     <p style={{ color: theme.color.text.hint }}>(~{getApproximateVideoFilesizeMb()})</p>
                   </FlexRow>
                 </SettingsItem>
-              </SettingsContainer>
-            </Card>
-          )}
+              </>
+            )}
+            {/* Filename prefix */}
+            <SettingsItem label={"Filename"}>
+              <FlexRow $gap={6}>
+                <Input
+                  onChange={(event) => {
+                    setImagePrefix(event.target.value);
+                    setUseDefaultImagePrefix(false);
+                  }}
+                  size="small"
+                  value={getImagePrefix()}
+                  disabled={isRecording}
+                />
+                <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "#.png" : ".mp4"}</p>
+                <Button
+                  disabled={isRecording || useDefaultImagePrefix}
+                  onClick={() => {
+                    setUseDefaultImagePrefix(true);
+                  }}
+                >
+                  Reset
+                </Button>
+              </FlexRow>
+            </SettingsItem>
+            <SettingsItem label={"Show feature legend"}>
+              <Checkbox
+                checked={props.config.showLegendDuringExport}
+                onChange={(e) => {
+                  props.updateConfig({ showLegendDuringExport: e.target.checked });
+                }}
+              />
+            </SettingsItem>
+            <SettingsItem label="Show dataset name">
+              <div>
+                <Checkbox
+                  checked={props.config.showHeaderDuringExport}
+                  onChange={(e) => {
+                    props.updateConfig({ showHeaderDuringExport: e.target.checked });
+                  }}
+                />
+              </div>
+            </SettingsItem>
+          </SettingsContainer>
 
           <div>
-            <p>Helpful tips:</p>
-            <div style={{ paddingLeft: "4px" }}>
-              <p>1. Set your default download location </p>
-              <p>2. Turn off &quot;Ask where to save each file before downloading&quot; in your browser settings</p>
-              <p>3. For best results, keep this page open while exporting</p>
-            </div>
+            <p>
+              <b>Recommended browser settings:</b> disable &quot;Ask where to save each file before downloading&quot;
+              and set the default download location.
+            </p>
           </div>
-
-          {/* Filename prefix */}
-          <HorizontalDiv style={{ flexWrap: "nowrap" }}>
-            <label style={{ width: "100%" }}>
-              <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "Prefix:" : "Filename:"}</p>
-              <Input
-                onChange={(event) => {
-                  setImagePrefix(event.target.value);
-                  setUseDefaultImagePrefix(false);
-                }}
-                size="small"
-                value={getImagePrefix()}
-                disabled={isRecording}
-              />
-            </label>
-            <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "#.png" : ".mp4"}</p>
-            <Button
-              disabled={isRecording || useDefaultImagePrefix}
-              onClick={() => {
-                setUseDefaultImagePrefix(true);
-              }}
-            >
-              Reset
-            </Button>
-          </HorizontalDiv>
-        </div>
+        </FlexColumn>
       </StyledModal>
     </div>
   );

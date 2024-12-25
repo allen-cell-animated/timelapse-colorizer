@@ -20,9 +20,49 @@ const LINE_SPEC: Partial<Plotly.Shape> = {
   },
 };
 
+// TODO: Color the plot with the current color ramp?
+// TODO: Style the crosshair like the one in the Scatterplot?
+
+const CROSSHAIR_RADIUS: number = 12.5;
+const BASE_CROSSHAIR_SPEC: Partial<Plotly.Shape> = {
+  ...LINE_SPEC,
+  xsizemode: "pixel",
+  ysizemode: "pixel",
+  yref: undefined,
+  y0: 0,
+  y1: 0,
+  x0: 0,
+  x1: 0,
+  layer: "above",
+  opacity: 0.5,
+  line: {
+    color: "rgb(31,119,180)", // default plotly color
+    width: 2,
+    dash: "solid",
+  },
+};
+const X_CROSSHAIR_SPEC: Partial<Plotly.Shape> = {
+  ...BASE_CROSSHAIR_SPEC,
+  x0: -CROSSHAIR_RADIUS,
+  x1: CROSSHAIR_RADIUS,
+};
+const Y_CROSSHAIR_SPEC: Partial<Plotly.Shape> = {
+  ...BASE_CROSSHAIR_SPEC,
+  y0: -CROSSHAIR_RADIUS,
+  y1: CROSSHAIR_RADIUS,
+};
+
 const CONFIG: Partial<Plotly.Config> = {
   displayModeBar: false,
   responsive: true,
+};
+
+export type TrackPlotLayoutConfig = {
+  time: number;
+  hover?: {
+    x: number;
+    y: number;
+  };
 };
 
 export default class Plotting {
@@ -82,17 +122,29 @@ export default class Plotting {
     Plotly.react(this.parentRef, [this.trace], layout, CONFIG);
   }
 
-  setTime(t: number): void {
-    const layout: Partial<Plotly.Layout> = {
-      shapes: [
+  updateLayout(config: TrackPlotLayoutConfig): void {
+    const shapes: Partial<Plotly.Shape>[] = [
+      {
+        ...LINE_SPEC,
+        x0: config.time,
+        x1: config.time,
+      },
+    ];
+    if (config.hover) {
+      shapes.push(
         {
-          ...LINE_SPEC,
-          x0: t,
-          x1: t,
+          ...X_CROSSHAIR_SPEC,
+          xanchor: config.hover.x,
+          yanchor: config.hover.y,
         },
-      ],
-    };
-    Plotly.relayout(this.parentRef, layout);
+        {
+          ...Y_CROSSHAIR_SPEC,
+          xanchor: config.hover.x,
+          yanchor: config.hover.y,
+        }
+      );
+    }
+    Plotly.relayout(this.parentRef, { shapes });
     //Plotly.react(this.parentDivId, this.trace ? [this.trace] : [], layout);
   }
 

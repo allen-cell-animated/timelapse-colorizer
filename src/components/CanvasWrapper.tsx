@@ -5,15 +5,17 @@ import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { NoImageSVG } from "../assets";
-import { ColorizeCanvas, ColorRamp, Dataset, Track } from "../colorizer";
-import { ViewerConfig } from "../colorizer/types";
+import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG } from "../assets";
+import { ColorRamp, Dataset, Track } from "../colorizer";
+import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
+import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
+import { LinkStyleButton } from "./Buttons/LinkStyleButton";
 import IconButton from "./IconButton";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -29,19 +31,32 @@ const RIGHT_CLICK_BUTTON = 2;
 const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
 
-function TooltipWithSubtext(props: TooltipProps & { title: ReactNode; subtext: ReactNode }): ReactElement {
+function TooltipWithSubtext(
+  props: TooltipProps & { title: ReactNode; subtitle?: ReactNode; subtitleList?: ReactNode[] }
+): ReactElement {
+  const divRef = useRef<HTMLDivElement>(null);
   return (
-    <Tooltip
-      {...props}
-      title={
-        <>
-          <p style={{ margin: 0 }}>{props.title}</p>
-          <p style={{ margin: 0, fontSize: "12px" }}>{props.subtext}</p>
-        </>
-      }
-    >
-      {props.children}
-    </Tooltip>
+    <div ref={divRef}>
+      <Tooltip
+        {...props}
+        trigger={["hover", "focus"]}
+        title={
+          <>
+            <p style={{ margin: 0 }}>{props.title}</p>
+            {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
+            {props.subtitleList &&
+              props.subtitleList.map((text, i) => (
+                <p key={i} style={{ margin: 0, fontSize: "12px" }}>
+                  {text}
+                </p>
+              ))}
+          </>
+        }
+        getPopupContainer={() => divRef.current ?? document.body}
+      >
+        {props.children}
+      </Tooltip>
+    </div>
   );
 }
 
@@ -71,17 +86,24 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
 `;
 
 type CanvasWrapperProps = {
-  canv: ColorizeCanvas;
+  canv: CanvasUIOverlay;
   /** Dataset to look up track and ID information in.
    * Changing this does NOT update the canvas dataset; do so
    * directly by calling `canv.setDataset()`.
    */
   dataset: Dataset | null;
+  datasetKey: string | null;
+
+  featureKey: string | null;
   /** Pan and zoom will be reset on collection change. */
   collection: Collection | null;
   config: ViewerConfig;
+  updateConfig: (settings: Partial<ViewerConfig>) => void;
+  vectorData: Float32Array | null;
+
   loading: boolean;
   loadingProgress: number | null;
+  isRecording: boolean;
 
   selectedBackdropKey: string | null;
 
@@ -128,7 +150,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canv = props.canv;
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasPlaceholderRef = useRef<HTMLDivElement>(null);
 
   /**
    * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
@@ -168,8 +190,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.showAlert({
           type: "warning",
           message: "Warning: One or more frames failed to load.",
-          description:
-            "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
+          description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
           showDoNotShowAgainCheckbox: true,
           closable: true,
         });
@@ -180,9 +201,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   canv.setOnFrameChangeCallback(onFrameChangedCallback);
 
-  // Mount the canvas to the wrapper's location in the document.
+  // Mount the canvas to the placeholder's location in the document.
   useEffect(() => {
-    canvasRef.current?.parentNode?.replaceChild(canv.domElement, canvasRef.current);
+    canvasPlaceholderRef.current?.parentNode?.replaceChild(canv.domElement, canvasPlaceholderRef.current);
   }, []);
 
   // These are all useMemo calls because the updates to the canvas must happen in the same render;
@@ -196,9 +217,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       fontColor: theme.color.text.primary,
       fontFamily: theme.font.family,
     };
-    canv.overlay.updateScaleBarOptions(defaultTheme);
-    canv.overlay.updateTimestampOptions(defaultTheme);
-    canv.overlay.updateBackgroundOptions({ stroke: theme.color.layout.borders });
+    const sidebarTheme = {
+      ...defaultTheme,
+      stroke: theme.color.layout.borders,
+      fill: theme.color.layout.background,
+    };
+    canv.updateScaleBarStyle(defaultTheme);
+    canv.updateTimestampStyle(defaultTheme);
+    canv.updateInsetBoxStyle({ stroke: theme.color.layout.borders });
+    canv.updateLegendStyle(defaultTheme);
+    canv.updateFooterStyle(sidebarTheme);
+    canv.updateHeaderStyle(sidebarTheme);
     canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
 
@@ -211,15 +240,27 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    canv.setBackdropKey(props.selectedBackdropKey);
-    canv.setBackdropBrightness(props.config.backdropBrightness);
-    canv.setBackdropSaturation(props.config.backdropSaturation);
-  }, [props.selectedBackdropKey, props.config.backdropBrightness, props.config.backdropSaturation]);
+    if (props.selectedBackdropKey !== null && props.config.backdropVisible) {
+      canv.setBackdropKey(props.selectedBackdropKey);
+      canv.setBackdropBrightness(props.config.backdropBrightness);
+      canv.setBackdropSaturation(props.config.backdropSaturation);
+      canv.setObjectOpacity(props.config.objectOpacity);
+    } else {
+      canv.setBackdropKey(null);
+      canv.setObjectOpacity(100);
+    }
+  }, [
+    props.selectedBackdropKey,
+    props.config.backdropVisible,
+    props.config.backdropBrightness,
+    props.config.backdropSaturation,
+    props.config.objectOpacity,
+  ]);
 
   // Update categorical colors
   useMemo(() => {
     canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors]);
+  }, [props.categoricalColors, props.dataset, props.featureKey]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
@@ -233,10 +274,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.outlierDrawSettings]);
 
   useMemo(() => {
-    canv.setObjectOpacity(props.config.objectOpacity);
-  }, [props.config.objectOpacity]);
-
-  useMemo(() => {
     canv.setInRangeLUT(props.inRangeLUT);
   }, [props.inRangeLUT]);
 
@@ -248,12 +285,38 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update overlay settings
   useMemo(() => {
-    canv.setScaleBarVisibility(props.config.showScaleBar);
+    canv.isScaleBarVisible = props.config.showScaleBar;
   }, [props.config.showScaleBar]);
 
   useMemo(() => {
-    canv.setTimestampVisibility(props.config.showTimestamp);
+    canv.isTimestampVisible = props.config.showTimestamp;
   }, [props.config.showTimestamp]);
+
+  useMemo(() => {
+    canv.setCollection(props.collection);
+  }, [props.collection]);
+
+  useMemo(() => {
+    canv.setDatasetKey(props.datasetKey);
+  }, [props.datasetKey]);
+
+  useMemo(() => {
+    canv.setIsExporting(props.isRecording);
+    canv.isHeaderVisibleOnExport = props.config.showHeaderDuringExport;
+    canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
+  }, [props.config.showLegendDuringExport, props.isRecording]);
+
+  useMemo(() => {
+    canv.setVectorFieldConfig(props.config.vectorConfig);
+  }, [props.config.vectorConfig]);
+
+  useMemo(() => {
+    canv.setVectorData(props.vectorData);
+  }, [props.vectorData]);
+
+  useMemo(() => {
+    canv.setOutlineColor(props.config.outlineColor);
+  }, [props.config.outlineColor]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -534,19 +597,43 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.dataset, canv]);
 
   // RENDERING /////////////////////////////////////////////////
+
   canv.render();
+
+  const onViewerSettingsLinkClicked = (): void => {
+    props.updateConfig({ openTab: TabType.SETTINGS });
+  };
+
+  const backdropTooltipContents: ReactNode[] = [];
+  backdropTooltipContents.push(
+    <span key="backdrop-name">
+      {props.selectedBackdropKey === null
+        ? "(No backdrops available)"
+        : props.dataset?.getBackdropData().get(props.selectedBackdropKey)?.name}
+    </span>
+  );
+  // Link to viewer settings
+  backdropTooltipContents.push(
+    <LinkStyleButton
+      key="backdrop-viewer-settings-link"
+      $color={theme.color.text.darkLink}
+      $hoverColor={theme.color.text.darkLinkHover}
+      onClick={onViewerSettingsLinkClicked}
+    >
+      {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+    </LinkStyleButton>
+  );
+
   return (
     <FlexColumnAlignCenter
       style={{
         position: "relative",
-        width: "100%",
-        height: "100%",
         backgroundColor: theme.color.viewport.background,
       }}
       ref={containerRef}
     >
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
-        <div ref={canvasRef}></div>
+        <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
       <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
@@ -569,7 +656,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <TooltipWithSubtext title={"Zoom in"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtext title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -580,7 +667,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
-        <TooltipWithSubtext title={"Zoom out"} subtext="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtext title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -592,6 +679,23 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           >
             <ZoomOutOutlined />
             <VisuallyHidden>Zoom out</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtext>
+        <TooltipWithSubtext
+          title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
+          placement="right"
+          subtitleList={backdropTooltipContents}
+          trigger={["hover", "focus"]}
+        >
+          <IconButton
+            type={props.config.backdropVisible ? "primary" : "link"}
+            onClick={() => {
+              props.updateConfig({ backdropVisible: !props.config.backdropVisible });
+            }}
+            disabled={props.selectedBackdropKey === null}
+          >
+            {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+            <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
       </CanvasControlsContainer>

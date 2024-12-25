@@ -6,8 +6,10 @@ import styled from "styled-components";
 import { useClickAnyWhere } from "usehooks-ts";
 
 import { Dataset } from "../colorizer";
+import { ReportWarningCallback } from "../colorizer/types";
 import { useRecentCollections } from "../colorizer/utils/react_utils";
 import { convertAllenPathToHttps, isAllenPath } from "../colorizer/utils/url_utils";
+import { renderStringArrayAsJsx } from "../utils/formatting";
 
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
@@ -24,6 +26,7 @@ type LoadDatasetButtonProps = {
   onLoad: (collection: Collection, datasetKey: string, dataset: Dataset) => void;
   /** The URL of the currently loaded resource, used to indicate it on the recent datasets dropdown. */
   currentResourceUrl: string;
+  reportWarning?: ReportWarningCallback;
 };
 
 const defaultProps: Partial<LoadDatasetButtonProps> = {};
@@ -81,7 +84,15 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [recentCollections, registerCollection] = useRecentCollections();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [errorText, setErrorText] = useState<string>("");
+  const [errorText, _setErrorText] = useState<ReactNode>("");
+  const setErrorText = useCallback((newErrorText: ReactNode) => {
+    if (typeof newErrorText === "string") {
+      const splitText = newErrorText.split("\n");
+      _setErrorText(renderStringArrayAsJsx(splitText));
+    } else {
+      _setErrorText(newErrorText);
+    }
+  }, []);
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
 
@@ -118,7 +129,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
    */
   const handleLoadRequest = async (url: string): Promise<[string, Collection, Dataset]> => {
     console.log("Loading '" + url + "'.");
-    const newCollection = await Collection.loadFromAmbiguousUrl(url);
+    const newCollection = await Collection.loadFromAmbiguousUrl(url, { reportWarning: props.reportWarning });
     const newDatasetKey = newCollection.getDefaultDatasetKey();
     const loadResult = await newCollection.tryLoadDataset(newDatasetKey);
     if (!loadResult.loaded) {
@@ -266,7 +277,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           <div ref={dropdownContextRef} style={{ position: "relative" }}>
             <p>
               <i>
-                <span style={{ color: theme.color.text.hint }}> Click below to show recent datasets</span>
+                <span style={{ color: theme.color.text.hint }}> Click to show recent datasets</span>
               </i>
             </p>
             <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>

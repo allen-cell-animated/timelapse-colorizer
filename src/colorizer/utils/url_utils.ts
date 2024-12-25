@@ -9,21 +9,25 @@ import {
   getKeyFromPalette,
   KNOWN_CATEGORICAL_PALETTES,
 } from "../colors/categorical_palettes";
+import { getDefaultVectorConfig, getDefaultViewerConfig } from "../constants";
+import { isTabType, isThresholdCategorical, isVectorTooltipMode, VectorConfig } from "../types";
 import {
-  defaultViewerConfig,
   DrawSettings,
   FeatureThreshold,
   isDrawMode,
-  isTabType,
-  isThresholdCategorical,
+  LoadErrorMessage,
+  LoadTroubleshooting,
   PlotRangeType,
   ScatterPlotConfig,
   ThresholdType,
   ViewerConfig,
 } from "../types";
+import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
-import { nanToNull } from "./json_utils";
 import { numberToStringDecimal } from "./math_utils";
+
+// TODO: This file needs to be split up for easier reading and unit testing.
+// This could also be a great opportunity to reconsider how we store and manage state.
 
 enum UrlParam {
   TRACK = "track",
@@ -37,6 +41,7 @@ enum UrlParam {
   COLOR_RAMP_REVERSED_SUFFIX = "!",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
+  SHOW_BACKDROP = "bg",
   BACKDROP_KEY = "bg-key",
   BACKDROP_BRIGHTNESS = "bg-brightness",
   BACKDROP_SATURATION = "bg-sat",
@@ -45,6 +50,7 @@ enum UrlParam {
   OUTLIER_COLOR = "outlier-color",
   FILTERED_MODE = "filter-mode",
   FILTERED_COLOR = "filter-color",
+  OUTLINE_COLOR = "outline-color",
   SHOW_PATH = "path",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
@@ -53,6 +59,12 @@ enum UrlParam {
   SCATTERPLOT_Y_AXIS = "scatter-y",
   SCATTERPLOT_RANGE_MODE = "scatter-range",
   OPEN_TAB = "tab",
+  SHOW_VECTOR = "vc",
+  VECTOR_KEY = "vc-key",
+  VECTOR_COLOR = "vc-color",
+  VECTOR_SCALE = "vc-scale",
+  VECTOR_TOOLTIP_MODE = "vc-tooltip",
+  VECTOR_TIME_INTERVALS = "vc-time-int",
 }
 
 const ALLEN_FILE_PREFIX = "/allen/";
@@ -102,20 +114,38 @@ export function fetchWithTimeout(
  * Fetches a manifest JSON file from a given URL and returns the parsed JSON object.
  */
 export async function fetchManifestJson(url: string): Promise<AnyManifestFile> {
-  // TODO: Should this report error states if load failed?
-  const response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
-  return await JSON.parse(nanToNull(await response.text()));
+  let response;
+  try {
+    response = await fetchWithTimeout(url, DEFAULT_FETCH_TIMEOUT_MS);
+  } catch (error) {
+    console.error(`Fetching manifest JSON from url '${url}' failed with the following error:`, error);
+    throw new Error(LoadErrorMessage.UNREACHABLE_MANIFEST + " " + LoadTroubleshooting.CHECK_NETWORK);
+  }
+
+  if (!response.ok) {
+    console.error(`Failed to fetch manifest file from url '${url}':`, response);
+    throw new Error(
+      `Received a ${response.status} (${response.statusText}) code from the server while retrieving manifest JSON. ${LoadTroubleshooting.CHECK_FILE_EXISTS}`
+    );
+  }
+
+  try {
+    return await JSON.parse(nanToNull(await response.text()));
+  } catch (error) {
+    console.error(`Failed to parse manifest file from url '${url}':`, error);
+    throw new Error(LoadErrorMessage.MANIFEST_JSON_PARSE_FAILED + error);
+  }
 }
 
 /**
  * Returns the value of a promise if it was resolved, or logs a warning and returns null if it was rejected.
- * TODO: Pass in a callback to handle the error case instead of just logging a warning.
  */
-export function getPromiseValue<T>(promise: PromiseSettledResult<T>, failureWarning?: string): T | null {
+export function getPromiseValue<T>(
+  promise: PromiseSettledResult<T>,
+  onFailure?: (rejectionReason: any) => void
+): T | null {
   if (promise.status === "rejected") {
-    if (failureWarning) {
-      console.warn(failureWarning, promise.reason);
-    }
+    onFailure?.(promise.reason);
     return null;
   }
   return promise.value;
@@ -271,10 +301,21 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
     parameters.push(`${UrlParam.FILTERED_COLOR}=${config.outOfRangeDrawSettings.color.getHexString()}`);
     parameters.push(`${UrlParam.FILTERED_MODE}=${config.outOfRangeDrawSettings.mode}`);
   }
+
+  // Color config
+  if (config.outlineColor) {
+    parameters.push(`${UrlParam.OUTLINE_COLOR}=${config.outlineColor.getHexString()}`);
+  }
+
   if (config.openTab) {
     parameters.push(`${UrlParam.OPEN_TAB}=${config.openTab}`);
   }
 
+  if (config.vectorConfig) {
+    parameters.push(...serializeVectorConfig(config.vectorConfig));
+  }
+
+  tryAddBooleanParam(parameters, config.backdropVisible, UrlParam.SHOW_BACKDROP);
   tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
   tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
   tryAddBooleanParam(parameters, config.showTrackPath, UrlParam.SHOW_PATH);
@@ -288,6 +329,19 @@ export function isHexColor(value: string | null): value is HexColorString {
   return value !== null && hexRegex.test(value);
 }
 
+function decodeHexColor(value: string | null): Color | undefined {
+  value = value?.startsWith("#") ? value : "#" + value;
+  return isHexColor(value) ? new Color(value) : undefined;
+}
+
+function decodeFloat(value: string | null): number | undefined {
+  return value === null ? undefined : parseFloat(value);
+}
+
+function decodeInt(value: string | null): number | undefined {
+  return value === null ? undefined : parseInt(value, 10);
+}
+
 function parseDrawSettings(color: string | null, mode: string | null, defaultSettings: DrawSettings): DrawSettings {
   const modeInt = parseInt(mode || "-1", 10);
   const hexColor = "#" + color;
@@ -297,7 +351,7 @@ function parseDrawSettings(color: string | null, mode: string | null, defaultSet
   };
 }
 
-function getBooleanParam(value: string | null): boolean | undefined {
+function decodeBoolean(value: string | null): boolean | undefined {
   if (value === null) {
     return undefined;
   }
@@ -306,38 +360,41 @@ function getBooleanParam(value: string | null): boolean | undefined {
 
 function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig> | undefined {
   const newConfig: Partial<ViewerConfig> = {};
-  if (params.get(UrlParam.BACKDROP_SATURATION)) {
-    newConfig.backdropSaturation = parseInt(params.get(UrlParam.BACKDROP_SATURATION)!, 10);
-  }
-  if (params.get(UrlParam.BACKDROP_BRIGHTNESS)) {
-    newConfig.backdropBrightness = parseInt(params.get(UrlParam.BACKDROP_BRIGHTNESS)!, 10);
-  }
-  if (params.get(UrlParam.FOREGROUND_ALPHA)) {
-    newConfig.objectOpacity = parseInt(params.get(UrlParam.FOREGROUND_ALPHA)!, 10);
-  }
+  newConfig.backdropSaturation = decodeInt(params.get(UrlParam.BACKDROP_SATURATION));
+  newConfig.backdropBrightness = decodeInt(params.get(UrlParam.BACKDROP_BRIGHTNESS));
+  newConfig.objectOpacity = decodeInt(params.get(UrlParam.FOREGROUND_ALPHA));
+
   if (params.get(UrlParam.OUTLIER_COLOR) || params.get(UrlParam.OUTLIER_MODE)) {
     newConfig.outlierDrawSettings = parseDrawSettings(
       params.get(UrlParam.OUTLIER_COLOR),
       params.get(UrlParam.OUTLIER_MODE),
-      defaultViewerConfig.outlierDrawSettings
+      getDefaultViewerConfig().outlierDrawSettings
     );
   }
   if (params.get(UrlParam.FILTERED_COLOR) || params.get(UrlParam.FILTERED_MODE)) {
     newConfig.outOfRangeDrawSettings = parseDrawSettings(
       params.get(UrlParam.FILTERED_COLOR),
       params.get(UrlParam.FILTERED_MODE),
-      defaultViewerConfig.outOfRangeDrawSettings
+      getDefaultViewerConfig().outOfRangeDrawSettings
     );
   }
+  newConfig.outlineColor = decodeHexColor(params.get(UrlParam.OUTLINE_COLOR));
+
   const openTab = params.get(UrlParam.OPEN_TAB);
   if (openTab && isTabType(openTab)) {
     newConfig.openTab = openTab;
   }
 
-  newConfig.showScaleBar = getBooleanParam(params.get(UrlParam.SHOW_SCALEBAR));
-  newConfig.showTimestamp = getBooleanParam(params.get(UrlParam.SHOW_TIMESTAMP));
-  newConfig.showTrackPath = getBooleanParam(params.get(UrlParam.SHOW_PATH));
-  newConfig.keepRangeBetweenDatasets = getBooleanParam(params.get(UrlParam.KEEP_RANGE));
+  newConfig.backdropVisible = decodeBoolean(params.get(UrlParam.SHOW_BACKDROP));
+  newConfig.showScaleBar = decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR));
+  newConfig.showTimestamp = decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP));
+  newConfig.showTrackPath = decodeBoolean(params.get(UrlParam.SHOW_PATH));
+  newConfig.keepRangeBetweenDatasets = decodeBoolean(params.get(UrlParam.KEEP_RANGE));
+
+  const vectorConfig = deserializeVectorConfig(params);
+  if (vectorConfig && Object.keys(vectorConfig).length > 0) {
+    newConfig.vectorConfig = { ...getDefaultVectorConfig(), ...vectorConfig };
+  }
 
   const finalConfig = removeUndefinedProperties(newConfig);
   return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
@@ -372,16 +429,38 @@ function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterP
   if (rangeString && urlParamToRangeType[rangeString]) {
     newConfig.rangeType = urlParamToRangeType[rangeString];
   }
-  const xAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_X_AXIS));
-  const yAxis = decodePossiblyNullString(params.get(UrlParam.SCATTERPLOT_Y_AXIS));
-  if (xAxis) {
-    newConfig.xAxis = xAxis;
-  }
-  if (yAxis) {
-    newConfig.yAxis = yAxis;
-  }
+  newConfig.xAxis = decodeString(params.get(UrlParam.SCATTERPLOT_X_AXIS));
+  newConfig.yAxis = decodeString(params.get(UrlParam.SCATTERPLOT_Y_AXIS));
+
   const finalConfig = removeUndefinedProperties(newConfig);
   return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
+}
+
+function serializeVectorConfig(config: Partial<VectorConfig>): string[] {
+  const parameters: string[] = [];
+  tryAddBooleanParam(parameters, config.visible, UrlParam.SHOW_VECTOR);
+  config.color !== undefined && parameters.push(`${UrlParam.VECTOR_COLOR}=${config.color.getHexString()}`);
+  config.key !== undefined && parameters.push(`${UrlParam.VECTOR_KEY}=${encodeURIComponent(config.key)}`);
+  config.scaleFactor !== undefined && parameters.push(`${UrlParam.VECTOR_SCALE}=${config.scaleFactor}`);
+  config.timeIntervals !== undefined && parameters.push(`${UrlParam.VECTOR_TIME_INTERVALS}=${config.timeIntervals}`);
+  config.tooltipMode !== undefined && parameters.push(`${UrlParam.VECTOR_TOOLTIP_MODE}=${config.tooltipMode}`);
+  return parameters;
+}
+
+function deserializeVectorConfig(params: URLSearchParams): Partial<VectorConfig> | undefined {
+  const newConfig: Partial<VectorConfig> = {};
+  newConfig.visible = decodeBoolean(params.get(UrlParam.SHOW_VECTOR));
+  newConfig.color = decodeHexColor(params.get(UrlParam.VECTOR_COLOR));
+  newConfig.key = decodeString(params.get(UrlParam.VECTOR_KEY));
+  newConfig.scaleFactor = decodeFloat(params.get(UrlParam.VECTOR_SCALE));
+  newConfig.timeIntervals = decodeInt(params.get(UrlParam.VECTOR_TIME_INTERVALS));
+
+  const tooltip = params.get(UrlParam.VECTOR_TOOLTIP_MODE);
+  if (tooltip && isVectorTooltipMode(tooltip)) {
+    newConfig.tooltipMode = tooltip;
+  }
+
+  return removeUndefinedProperties(newConfig);
 }
 
 /**
@@ -514,8 +593,8 @@ export function convertAllenPathToHttps(input: string): string | null {
 /**
  * Decodes strings using `decodeURIComponent`, handling null inputs.
  */
-function decodePossiblyNullString(input: string | null): string | null {
-  return input === null ? null : decodeURIComponent(input);
+function decodeString(input: string | null): string | undefined {
+  return input === null ? undefined : decodeURIComponent(input);
 }
 
 /**
@@ -573,7 +652,7 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
   const thresholdsParam = deserializeThresholds(urlParams.get(UrlParam.THRESHOLDS));
 
   let rangeParam: [number, number] | undefined = undefined;
-  const rawRangeParam = decodePossiblyNullString(urlParams.get(UrlParam.RANGE));
+  const rawRangeParam = decodeString(urlParams.get(UrlParam.RANGE));
   if (rawRangeParam) {
     const [min, max] = rawRangeParam.split(",");
     rangeParam = [parseFloat(min), parseFloat(max)];
@@ -617,7 +696,7 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
   }
 
   const config = deserializeViewerConfig(urlParams);
-  const selectedBackdropKey = decodePossiblyNullString(urlParams.get(UrlParam.BACKDROP_KEY)) ?? undefined;
+  const selectedBackdropKey = decodeString(urlParams.get(UrlParam.BACKDROP_KEY));
   const scatterPlotConfig = deserializeScatterPlotConfig(urlParams);
 
   // Remove undefined entries from the object for a cleaner return value

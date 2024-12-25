@@ -4,6 +4,7 @@ import styled, { css } from "styled-components";
 
 import { Spread } from "../../colorizer/utils/type_utils";
 import { FlexColumn, FlexRowAlignCenter } from "../../styles/utils";
+import { renderStringArrayAsJsx } from "../../utils/formatting";
 
 // Adjusts alignment of items within the Alert.
 // Alerts are structured like this:
@@ -66,6 +67,21 @@ const StyledAlert = styled(Alert)<{ type: "info" | "warning" | "error" | "succes
   }
 `;
 
+const ReadMoreButton = styled(Button)`
+  padding: 0px;
+  margin: 0 10px 0 0;
+  border: 0;
+  color: var(--color-text-link);
+
+  &:hover {
+    color: var(--color-text-link-hover);
+  }
+
+  &:focus {
+    text-decoration: underline;
+  }
+`;
+
 export type AlertBannerProps = Spread<
   Omit<AlertProps, "onClose" | "afterClose" | "message" | "description" | "banner"> & {
     message: string;
@@ -114,33 +130,15 @@ export default function AlertBanner(props: AlertBannerProps): ReactElement {
     newProps.closable = true;
   }
 
-  const propsDescription = props.description;
-  let description: ReactElement | undefined = undefined;
-  if (Array.isArray(propsDescription) && propsDescription.length > 0) {
-    description = (
-      <>
-        {propsDescription.map((text: string, index: number) => (
-          <p key={index}>{text}</p>
-        ))}
-      </>
-    );
-  } else if (!Array.isArray(propsDescription) && propsDescription) {
-    // Ignore empty text or undefined
-    description = <p>{propsDescription}</p>;
-  }
-
+  const description = renderStringArrayAsJsx(props.description);
   const message = (
     <FlexColumn>
       <FlexRowAlignCenter $wrap={"wrap"} $gap={4}>
         <h3 style={{ margin: 0 }}>{props.message}</h3>
         {!showFullContent && (
-          <Button
-            type="link"
-            style={{ padding: "0px", margin: "0 10px 0 0", border: 0, color: "var(--color-text-link)" }}
-            onClick={() => setShowFullContent(true)}
-          >
+          <ReadMoreButton type="link" onClick={() => setShowFullContent(true)}>
             <h3>Read More</h3>
-          </Button>
+          </ReadMoreButton>
         )}
       </FlexRowAlignCenter>
       {showFullContent && <FlexColumn>{description}</FlexColumn>}

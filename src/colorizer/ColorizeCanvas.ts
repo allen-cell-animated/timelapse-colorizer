@@ -1,7 +1,6 @@
 import {
   BufferAttribute,
   BufferGeometry,
-  CanvasTexture,
   Color,
   DataTexture,
   GLSL3,
@@ -23,20 +22,24 @@ import {
 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { DrawMode, FeatureDataType, OUT_OF_RANGE_COLOR_DEFAULT, OUTLIER_COLOR_DEFAULT } from "./types";
+import {
+  BACKGROUND_COLOR_DEFAULT,
+  OUT_OF_RANGE_COLOR_DEFAULT,
+  OUTLIER_COLOR_DEFAULT,
+  OUTLINE_COLOR_DEFAULT,
+} from "./constants";
+import { DrawMode, FeatureDataType, VectorConfig } from "./types";
 import { packDataTexture } from "./utils/texture_utils";
 
-import CanvasOverlay from "./CanvasUIOverlay";
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
 import Track from "./Track";
+import VectorField from "./VectorField";
 
 import pickFragmentShader from "./shaders/cellId_RGBA8U.frag";
 import vertexShader from "./shaders/colorize.vert";
 import fragmentShader from "./shaders/colorize_RGBA8U.frag";
 
-const BACKGROUND_COLOR_DEFAULT = 0xffffff;
-const SELECTED_COLOR_DEFAULT = 0xff00ff;
 export const BACKGROUND_ID = -1;
 
 type ColorizeUniformTypes = {
@@ -64,6 +67,7 @@ type ColorizeUniformTypes = {
   canvasBackgroundColor: Color;
   outlierColor: Color;
   outOfRangeColor: Color;
+  outlineColor: Color;
   highlightedId: number;
   hideOutOfRange: boolean;
   outlierDrawMode: number;
@@ -102,6 +106,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
     backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
+    outlineColor: new Uniform(new Color(OUTLINE_COLOR_DEFAULT)),
     canvasBackgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
@@ -117,17 +122,14 @@ export default class ColorizeCanvas {
   private mesh: Mesh;
   private pickMesh: Mesh;
 
-  /** UI overlay for scale bars, timestamps, and other information. */
-  public overlay: CanvasOverlay;
-
+  private vectorField: VectorField;
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
+  private points: Float32Array;
   private showTrackPath: boolean;
 
-  private showTimestamp: boolean;
-  private showScaleBar: boolean;
-  private frameSizeInCanvasCoordinates: Vector2;
-  private frameToCanvasCoordinates: Vector2;
+  protected frameSizeInCanvasCoordinates: Vector2;
+  protected frameToCanvasCoordinates: Vector2;
 
   /**
    * The zoom level of the frame in the canvas. At default zoom level 1, the frame will be
@@ -148,17 +150,16 @@ export default class ColorizeCanvas {
   private renderer: WebGLRenderer;
   private pickRenderTarget: WebGLRenderTarget;
 
-  private dataset: Dataset | null;
-  private track: Track | null;
-  private points: Float32Array;
-  private canvasResolution: Vector2 | null;
+  protected dataset: Dataset | null;
+  protected track: Track | null;
+  protected canvasResolution: Vector2 | null;
 
-  private featureKey: string | null;
-  private selectedBackdropKey: string | null;
-  private colorRamp: ColorRamp;
-  private colorMapRangeMin: number;
-  private colorMapRangeMax: number;
-  private categoricalPalette: ColorRamp;
+  protected featureKey: string | null;
+  protected selectedBackdropKey: string | null;
+  protected colorRamp: ColorRamp;
+  protected colorMapRangeMin: number;
+  protected colorMapRangeMax: number;
+  protected categoricalPalette: ColorRamp;
   private currentFrame: number;
 
   private onFrameChangeCallback: (isMissing: boolean) => void;
@@ -187,16 +188,20 @@ export default class ColorizeCanvas {
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.scene = new Scene();
     this.scene.add(this.mesh);
+
+    this.vectorField = new VectorField();
+    this.scene.add(this.vectorField.sceneObject);
+
     this.pickScene = new Scene();
     this.pickScene.add(this.pickMesh);
 
-    // Configure lines
+    // Configure track lines
     this.points = new Float32Array([0, 0, 0]);
 
     const lineGeometry = new BufferGeometry();
     lineGeometry.setAttribute("position", new BufferAttribute(this.points, 3));
     const lineMaterial = new LineBasicMaterial({
-      color: SELECTED_COLOR_DEFAULT,
+      color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
 
@@ -210,7 +215,7 @@ export default class ColorizeCanvas {
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
     });
-    this.renderer = new WebGLRenderer();
+    this.renderer = new WebGLRenderer({ antialias: true });
     this.checkPixelRatio();
 
     this.dataset = null;
@@ -226,9 +231,6 @@ export default class ColorizeCanvas {
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
 
-    this.overlay = new CanvasOverlay();
-    this.showScaleBar = false;
-    this.showTimestamp = false;
     this.frameSizeInCanvasCoordinates = new Vector2(1, 1);
     this.frameToCanvasCoordinates = new Vector2(1, 1);
     this.zoomMultiplier = 1;
@@ -256,7 +258,6 @@ export default class ColorizeCanvas {
     this.checkPixelRatio();
 
     this.renderer.setSize(width, height);
-    this.overlay.setSize(width, height);
     // TODO: either make this a 1x1 target and draw it with a new camera every time we pick,
     // or keep it up to date with the canvas on each redraw (and don't draw to it when we pick!)
     this.pickRenderTarget.setSize(width, height);
@@ -290,64 +291,8 @@ export default class ColorizeCanvas {
       2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
+    this.vectorField.setPosition(this.panOffset, this.frameToCanvasCoordinates);
     this.render();
-  }
-
-  private updateScaleBar(): void {
-    // Update the scale bar units
-    const frameDims = this.dataset?.metadata.frameDims;
-    // Ignore cases where dimensions have size 0
-    const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
-    if (this.showScaleBar && hasFrameDims && this.canvasResolution !== null) {
-      // `frameDims` are already in the provided unit scaling, so we figure out the current
-      // size of the frame relative to the canvas to determine the canvas' width in units.
-      // We only consider X scaling here because the scale bar is always horizontal.
-      const canvasWidthInUnits = frameDims.width / this.frameSizeInCanvasCoordinates.x;
-      const unitsPerScreenPixel = canvasWidthInUnits / this.canvasResolution.x;
-      this.overlay.updateScaleBarOptions({ unitsPerScreenPixel, units: frameDims.units, visible: true });
-    } else {
-      this.overlay.updateScaleBarOptions({ visible: false });
-    }
-  }
-
-  setScaleBarVisibility(visible: boolean): void {
-    this.showScaleBar = visible;
-    this.updateScaleBar();
-    this.overlay.render();
-  }
-
-  private updateTimestamp(): void {
-    // Calculate the current time stamp based on the current frame and the frame duration provided
-    // by the dataset (optionally, hide the timestamp if the frame duration is not provided).
-    // Pass along to the overlay as parameters.
-    if (this.showTimestamp && this.dataset) {
-      const frameDurationSec = this.dataset.metadata.frameDurationSeconds;
-      if (frameDurationSec) {
-        const startTimeSec = this.dataset.metadata.startTimeSeconds;
-        // Note: there's some semi-redundant information here, since the current timestamp and max
-        // timestamp could be calculated from the frame duration if we passed in the current + max
-        // frames instead. For now, it's ok to keep those calculations here in ColorizeCanvas so the
-        // overlay doesn't need to know frame numbers. The duration + start time are needed for
-        // time display calculations, however.
-        this.overlay.updateTimestampOptions({
-          visible: true,
-          frameDurationSec,
-          startTimeSec,
-          currTimeSec: this.currentFrame * frameDurationSec + startTimeSec,
-          maxTimeSec: this.dataset.numberOfFrames * frameDurationSec + startTimeSec,
-        });
-        return;
-      }
-    }
-
-    // Hide the timestamp if configuration is invalid or it's disabled.
-    this.overlay.updateTimestampOptions({ visible: false });
-  }
-
-  setTimestampVisibility(visible: boolean): void {
-    this.showTimestamp = visible;
-    this.updateTimestamp();
-    this.overlay.render();
   }
 
   private updateScaling(frameResolution: Vector2 | null, canvasResolution: Vector2 | null): void {
@@ -390,7 +335,8 @@ export default class ColorizeCanvas {
       2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
       0
     );
-    this.updateScaleBar();
+    this.vectorField.setPosition(this.panOffset, this.frameToCanvasCoordinates);
+    this.vectorField.setScale(this.frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
 
   public async setDataset(dataset: Dataset): Promise<void> {
@@ -408,6 +354,7 @@ export default class ColorizeCanvas {
     this.currentFrame = -1;
     await this.setFrame(frame);
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    this.vectorField.setDataset(dataset);
     this.render();
   }
 
@@ -428,6 +375,19 @@ export default class ColorizeCanvas {
   setCategoricalColors(colors: Color[]): void {
     this.categoricalPalette.dispose();
     this.categoricalPalette = new ColorRamp(colors);
+  }
+
+  setOutlineColor(color: Color): void {
+    this.setUniform("outlineColor", color);
+
+    // Update line color
+    if (Array.isArray(this.line.material)) {
+      this.line.material.forEach((mat) => {
+        (mat as LineBasicMaterial).color = color;
+      });
+    } else {
+      (this.line.material as LineBasicMaterial).color = color;
+    }
   }
 
   setBackgroundColor(color: Color): void {
@@ -451,6 +411,14 @@ export default class ColorizeCanvas {
     if (mode === DrawMode.USE_COLOR && color) {
       this.setUniform("outOfRangeColor", color);
     }
+  }
+
+  setVectorData(vectorData: Float32Array | null): void {
+    this.vectorField.setVectorData(vectorData);
+  }
+
+  setVectorFieldConfig(config: VectorConfig): void {
+    this.vectorField.setConfig(config);
   }
 
   setSelectedTrack(track: Track | null): void {
@@ -676,6 +644,7 @@ export default class ColorizeCanvas {
     this.onFrameChangeCallback(isMissingFile);
     // Force rescale in case frame dimensions changed
     this.updateScaling(this.dataset?.frameResolution || null, this.canvasResolution);
+    this.vectorField.setFrame(this.currentFrame);
   }
 
   /** Switches the coloring between the categorical and color ramps depending on the currently
@@ -697,15 +666,6 @@ export default class ColorizeCanvas {
     this.updateHighlightedId();
     this.updateTrackRange();
     this.updateRamp();
-
-    // Overlay updates
-    this.updateScaleBar();
-    this.updateTimestamp();
-
-    // Draw the overlay, and pass the resulting image as a texture to the shader.
-    this.overlay.render();
-    const overlayTexture = new CanvasTexture(this.overlay.canvas);
-    this.setUniform("overlay", overlayTexture);
 
     this.renderer.render(this.scene, this.camera);
   }

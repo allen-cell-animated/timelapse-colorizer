@@ -8,40 +8,54 @@ import {
 } from "@ant-design/icons";
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import React, {
+  ReactElement,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
-import { ColorizeCanvas, Dataset, Track } from "./colorizer";
 import {
+  Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  KNOWN_CATEGORICAL_PALETTES,
-} from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
-import {
-  defaultViewerConfig,
+  DISPLAY_COLOR_RAMP_KEYS,
   FeatureThreshold,
   getDefaultScatterPlotConfig,
+  getDefaultViewerConfig,
   isThresholdNumeric,
+  KNOWN_CATEGORICAL_PALETTES,
+  KNOWN_COLOR_RAMPS,
+  LoadTroubleshooting,
+  ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
+  Track,
   ViewerConfig,
-} from "./colorizer/types";
+} from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
-import { numberToStringDecimal } from "./colorizer/utils/math_utils";
-import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
+import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
+import CanvasWithOverlay from "./colorizer/CanvasWithOverlay";
 import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import TimeControls from "./colorizer/TimeControls";
+import SharedWorkerPool from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
@@ -53,7 +67,6 @@ import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
 import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
-import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledSlider from "./components/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
@@ -61,6 +74,7 @@ import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
 import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
@@ -73,7 +87,7 @@ function Viewer(): ReactElement {
   const [, startTransition] = React.useTransition();
 
   const canv = useConstructor(() => {
-    const canvas = new ColorizeCanvas();
+    const canvas = new CanvasWithOverlay();
     canvas.domElement.className = styles.colorizeCanvas;
     return canvas;
   });
@@ -82,24 +96,41 @@ function Viewer(): ReactElement {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [datasetKey, setDatasetKey] = useState("");
   const [, addRecentCollection] = useRecentCollections();
-  // Shared array loader to manage worker pool
-  const arrayLoader = useConstructor(() => new UrlArrayLoader());
+
+  // Shared worker pool for background operations (e.g. loading data)
+  const workerPool = useConstructor(() => new SharedWorkerPool());
+  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+  /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Switch to default backdrop if the dataset has one and none is currently selected.
+    // If the dataset has no backdrops, hide the backdrop.
+    if (dataset && (selectedBackdropKey === null || !dataset.hasBackdrop(selectedBackdropKey))) {
+      const defaultBackdropKey = dataset.getDefaultBackdropKey();
+      setSelectedBackdropKey(defaultBackdropKey);
+      if (!defaultBackdropKey) {
+        updateConfig({ backdropVisible: false });
+      }
+    }
+  }, [dataset, selectedBackdropKey]);
 
   // TODO: Save these settings in local storage
   // Use reducer here in case multiple updates happen simultaneously
   const [config, updateConfig] = useReducer(
     (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
-    defaultViewerConfig
+    getDefaultViewerConfig()
   );
   const [scatterPlotConfig, updateScatterPlotConfig] = useReducer(
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
     getDefaultScatterPlotConfig()
   );
+
+  const motionDeltas = useMotionDeltas(dataset, workerPool, config.vectorConfig);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -159,6 +190,8 @@ function Viewer(): ReactElement {
   const [notificationApi, notificationContextHolder] = notification.useNotification(notificationConfig);
 
   const { bannerElement, showAlert, clearBanners } = useAlertBanner();
+  /** Alerts that should be shown for a dataset that is currently being loaded but is not yet displayed. */
+  const pendingAlerts = useRef<(() => void)[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
@@ -177,9 +210,8 @@ function Viewer(): ReactElement {
    */
   const [frameInput, setFrameInput] = useState(0);
   const [findTrackInput, setFindTrackInput] = useState("");
-  // Prevent jarring jumps in the hover tooltip by using the last non-null value
-  const [lastHoveredId, setLastHoveredId] = useState<number | null>(null);
-  const [showHoveredId, setShowHoveredId] = useState(false);
+  const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
+  const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
@@ -369,6 +401,40 @@ function Viewer(): ReactElement {
     });
   }, []);
 
+  const showDatasetLoadError = useCallback(
+    (errorMessage?: string): void => {
+      const description: string[] = [
+        errorMessage
+          ? `Encountered the following error when loading the dataset: "${errorMessage}"`
+          : "Encountered an error when loading the dataset.",
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+      ];
+
+      showAlert({
+        type: "error",
+        message: "Dataset could not be loaded.",
+        description,
+        closable: false,
+        action: <Link to="/">Return to homepage</Link>,
+      });
+    },
+    [showAlert]
+  );
+
+  const showDatasetLoadWarning: ReportWarningCallback = useCallback(
+    (message: string, description: string | string[]) => {
+      pendingAlerts.current.push(() => {
+        showAlert({
+          type: "warning",
+          message: message,
+          description: description,
+          closable: true,
+        });
+      });
+    },
+    [showAlert]
+  );
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -385,8 +451,15 @@ function Viewer(): ReactElement {
       if (dataset !== null) {
         dataset.dispose();
       }
-      // State updates
+
+      // Manage dataset-related alert banners
       clearBanners();
+      for (const alert of pendingAlerts.current) {
+        alert();
+      }
+      pendingAlerts.current = [];
+
+      // State updates
       setDataset(newDataset);
       setDatasetKey(newDatasetKey);
 
@@ -408,9 +481,16 @@ function Viewer(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
-        setSelectedBackdropKey(null);
+
+      // Switch to the new dataset's default backdrop if the current one is not in the
+      // new dataset. `selectedBackdropKey` is null only if the current dataset has no backdrops.
+      if (
+        selectedBackdropKey === null ||
+        (selectedBackdropKey !== null && !newDataset.hasBackdrop(selectedBackdropKey))
+      ) {
+        setSelectedBackdropKey(newDataset.getDefaultBackdropKey());
       }
+
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
@@ -488,7 +568,7 @@ function Viewer(): ReactElement {
         if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
           // Make a dummy collection that will include only this dataset
-          newCollection = Collection.makeCollectionFromSingleDataset(datasetParam);
+          newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
           datasetKey = newCollection.getDefaultDatasetKey();
         } else {
           if (!collectionUrlParam) {
@@ -507,21 +587,15 @@ function Viewer(): ReactElement {
             return;
           }
           // Try loading the collection, with the default collection as a fallback.
+
           try {
-            newCollection = await Collection.loadCollection(collectionUrlParam);
+            newCollection = await Collection.loadCollection(collectionUrlParam, {
+              reportWarning: showDatasetLoadWarning,
+            });
             datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
           } catch (error) {
             console.error(error);
-            showAlert({
-              message: "Dataset could not be loaded.",
-              type: "error",
-              closable: false,
-              description: [
-                'Encountered the following error when loading the dataset: "' + (error as Error).message + '"',
-                "Check your network connection and access to the dataset path, or use the browser console to view details. Otherwise, contact the dataset creator as there may be missing files.",
-              ],
-              action: <Link to="/">Return to homepage</Link>,
-            });
+            showDatasetLoadError((error as Error).message);
             setIsDatasetLoading(false);
             return;
           }
@@ -530,16 +604,15 @@ function Viewer(): ReactElement {
 
       setCollection(newCollection);
       setDatasetLoadProgress(null);
-      const datasetResult = await newCollection.tryLoadDataset(datasetKey, handleProgressUpdate, arrayLoader);
+      const datasetResult = await newCollection.tryLoadDataset(datasetKey, {
+        onLoadProgress: handleProgressUpdate,
+        arrayLoader,
+        reportWarning: showDatasetLoadWarning,
+      });
 
       if (!datasetResult.loaded) {
         console.error(datasetResult.errorMessage);
-        notificationApi["error"]({
-          message: "Error loading dataset: ",
-          description: datasetResult.errorMessage,
-          placement: "bottomLeft",
-          duration: 4,
-        });
+        showDatasetLoadError(datasetResult.errorMessage);
         setIsDatasetLoading(false);
         return;
       }
@@ -631,17 +704,25 @@ function Viewer(): ReactElement {
       if (newDatasetKey !== datasetKey && collection) {
         setIsDatasetLoading(true);
         setDatasetLoadProgress(null);
-        const result = await collection.tryLoadDataset(newDatasetKey, handleProgressUpdate, arrayLoader);
+        const result = await collection.tryLoadDataset(newDatasetKey, {
+          onLoadProgress: handleProgressUpdate,
+          arrayLoader,
+          reportWarning: showDatasetLoadWarning,
+        });
         if (result.loaded) {
           await replaceDataset(result.dataset, newDatasetKey);
         } else {
-          // TODO: What happens when you try to load a bad dataset from the dropdown? Notifications?
+          // Show notification popup for datasets that can't be loaded.
           console.error(result.errorMessage);
           notificationApi["error"]({
-            message: "Error loading dataset:",
+            message: "Dataset load failed",
             description: result.errorMessage,
             placement: "bottomLeft",
-            duration: 4,
+            duration: 12,
+            style: {
+              backgroundColor: theme.color.alert.fill.error,
+              border: `1px solid ${theme.color.alert.border.error}`,
+            },
           });
         }
         setIsDatasetLoading(false);
@@ -665,32 +746,17 @@ function Viewer(): ReactElement {
     [replaceDataset]
   );
 
-  const getFeatureValue = useCallback(
-    (id: number): string => {
-      if (!featureKey || !dataset) {
-        return "";
-      }
-      // Look up feature value from id
-      const featureData = dataset.getFeatureData(featureKey);
-      // ?? is a nullish coalescing operator; it checks for null + undefined values
-      // (safe for falsy values like 0 or NaN, which are valid feature values)
-      let featureValue = featureData?.data[id] ?? -1;
-      featureValue = isFinite(featureValue) ? featureValue : NaN;
-      const unitsLabel = featureData?.unit ? ` ${featureData?.unit}` : "";
-      // Check if int, otherwise return float
-      return numberToStringDecimal(featureValue, 3) + unitsLabel;
-    },
-    [featureKey, dataset]
-  );
-
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
   timeControls.setFrameCallback(setFrame);
 
   const handleKeyDown = useCallback(
-    ({ key }: KeyboardEvent): void => {
-      if (key === "ArrowLeft" || key === "Left") {
+    (e: KeyboardEvent): void => {
+      if (e.target instanceof HTMLInputElement) {
+        return;
+      }
+      if (e.key === "ArrowLeft" || e.key === "Left") {
         timeControls.advanceFrame(-1);
-      } else if (key === "ArrowRight" || key === "Right") {
+      } else if (e.key === "ArrowRight" || e.key === "Right") {
         timeControls.advanceFrame(1);
       }
     },
@@ -752,6 +818,10 @@ function Viewer(): ReactElement {
       placement: "bottomLeft",
       duration: 4,
       icon: <CheckCircleOutlined style={{ color: theme.color.text.success }} />,
+      style: {
+        backgroundColor: theme.color.alert.fill.success,
+        border: `1px solid ${theme.color.alert.border.success}`,
+      },
     });
   };
 
@@ -782,15 +852,15 @@ function Viewer(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
-  let hoveredFeatureValue = "";
-  if (lastHoveredId !== null && dataset) {
-    const featureVal = getFeatureValue(lastHoveredId);
-    const categories = dataset.getFeatureCategories(featureKey);
-    if (categories !== null) {
-      hoveredFeatureValue = categories[Number.parseInt(featureVal, 10)];
-    } else {
-      hoveredFeatureValue = featureVal;
-    }
+  let datasetHeader: ReactNode = null;
+  if (collection && collection.metadata.name) {
+    datasetHeader = collection.metadata.name;
+  } else if (dataset && dataset.metadata.name) {
+    datasetHeader = dataset.metadata.name;
+  } else if (dataset) {
+    datasetHeader = <span style={{ color: theme.color.text.hint }}>Untitled dataset</span>;
+  } else {
+    datasetHeader = null;
   }
 
   return (
@@ -799,13 +869,18 @@ function Viewer(): ReactElement {
       <SmallScreenWarning />
 
       <Header alertElement={bannerElement} headerOpensInNewTab={true}>
-        <h3>{collection?.metadata.name ?? null}</h3>
+        <h3>{datasetHeader}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
-            <LoadDatasetButton onLoad={handleDatasetLoad} currentResourceUrl={collection?.url || datasetKey} />
+            <LoadDatasetButton
+              onLoad={handleDatasetLoad}
+              currentResourceUrl={collection?.url || datasetKey}
+              reportWarning={showDatasetLoadWarning}
+            />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
+              getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
@@ -813,6 +888,8 @@ function Viewer(): ReactElement {
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
+              config={config}
+              updateConfig={updateConfig}
             />
             <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
@@ -935,31 +1012,32 @@ function Viewer(): ReactElement {
                   </div>
                 </FlexRowAlignCenter>
               </div>
-              <HoverTooltip
-                tooltipContent={
-                  <>
-                    <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
-                    <p>
-                      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
-                      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
-                    </p>
-                  </>
-                }
-                disabled={!showHoveredId}
+              <CanvasHoverTooltip
+                dataset={dataset}
+                featureKey={featureKey}
+                lastValidHoveredId={lastValidHoveredId}
+                showObjectHoverInfo={showObjectHoverInfo}
+                motionDeltas={motionDeltas}
+                config={config}
               >
                 <CanvasWrapper
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   collection={collection || null}
+                  vectorData={motionDeltas}
                   dataset={dataset}
+                  datasetKey={datasetKey}
+                  featureKey={featureKey}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                   colorRampMin={colorRampMin}
                   colorRampMax={colorRampMax}
+                  isRecording={isRecording}
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
+                  updateConfig={updateConfig}
                   onTrackClicked={(track) => {
                     setFindTrackInput(track?.trackId.toString() || "");
                     setSelectedTrack(track);
@@ -967,15 +1045,15 @@ function Viewer(): ReactElement {
                   inRangeLUT={inRangeLUT}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
-                    setShowHoveredId(isObject);
+                    setShowObjectHoverInfo(isObject);
                     if (isObject) {
-                      setLastHoveredId(id);
+                      setLastValidHoveredId(id);
                     }
                   }}
-                  onMouseLeave={() => setShowHoveredId(false)}
+                  onMouseLeave={() => setShowObjectHoverInfo(false)}
                   showAlert={isInitialDatasetLoaded ? showAlert : undefined}
                 />
-              </HoverTooltip>
+              </CanvasHoverTooltip>
             </div>
 
             {/** Time Control Bar */}
@@ -1058,6 +1136,7 @@ function Viewer(): ReactElement {
                     children: (
                       <div className={styles.tabContent}>
                         <PlotTab
+                          setFrame={setFrameAndRender}
                           findTrackInputText={findTrackInput}
                           setFindTrackInputText={setFindTrackInput}
                           findTrack={findTrack}

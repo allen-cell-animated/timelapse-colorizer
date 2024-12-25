@@ -1,9 +1,15 @@
 import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { FeatureArrayType, FeatureDataType } from "./types";
+import {
+  FeatureArrayType,
+  FeatureDataType,
+  LoadErrorMessage,
+  LoadTroubleshooting,
+  ReportWarningCallback,
+} from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
-import { getKeyFromName } from "./utils/data_utils";
+import { formatAsBulletList, getKeyFromName } from "./utils/data_utils";
 import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import * as urlUtils from "./utils/url_utils";
 
@@ -266,7 +272,7 @@ export default class Dataset {
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
    * @param dataType The expected format of the data.
    * @param fileUrl String url of the file to be loaded.
-   * @throws An error if `fileUrl` is not undefined and the data cannot be loaded from the file.
+   * @throws An error if the data cannot be loaded from the file.
    * @returns Promise of a TypedArray loaded from the file. If `fileUrl` is undefined, returns null.
    */
   private async loadToBuffer<T extends FeatureDataType>(
@@ -276,13 +282,10 @@ export default class Dataset {
     if (!fileUrl) {
       return null;
     }
-    try {
-      const url = this.resolveUrl(fileUrl);
-      const source = await this.arrayLoader.load(url, dataType);
-      return source.getBuffer();
-    } catch (e) {
-      return null;
-    }
+
+    const url = this.resolveUrl(fileUrl);
+    const source = await this.arrayLoader.load(url, dataType);
+    return source.getBuffer();
   }
 
   public get numberOfFrames(): number {
@@ -327,6 +330,10 @@ export default class Dataset {
     return loadedFrame;
   }
 
+  public getDefaultBackdropKey(): string | null {
+    return this.backdropData.keys().next().value ?? null;
+  }
+
   public hasBackdrop(key: string): boolean {
     return this.backdropData.has(key);
   }
@@ -366,9 +373,11 @@ export default class Dataset {
 
   /**
    * Opens the dataset and loads all necessary files from the manifest.
-   * @param manifestLoader Optional. The function used to load the manifest JSON data. If undefined, uses a default fetch method.
-   * @param onLoadStart Called once for each data file (other than the manifest) that starts an async load process.
-   * @param onLoadComplete Called once when each data file finishes loading.
+   * @param options Configuration options for the dataset loader.
+   * - `manifestLoader` The function used to load the manifest JSON data. If undefined, uses a default fetch method.
+   * - `onLoadStart` Called once for each data file (other than the manifest) that starts an async load process.
+   * - `onLoadComplete` Called once when each data file finishes loading.
+   * - `reportWarning` Called with a string or array of strings to report warnings to the user. These are non-fatal errors.
    * @returns A Promise that resolves when loading completes.
    */
   public async open(
@@ -376,6 +385,7 @@ export default class Dataset {
       manifestLoader: typeof urlUtils.fetchManifestJson;
       onLoadStart?: () => void;
       onLoadComplete?: () => void;
+      reportWarning?: ReportWarningCallback;
     }> = {}
   ): Promise<void> {
     if (this.hasOpened) {
@@ -390,6 +400,7 @@ export default class Dataset {
     const startTime = new Date();
 
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
+
     this.frameFiles = manifest.frames;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
@@ -397,14 +408,15 @@ export default class Dataset {
     this.tracksFile = manifest.tracks;
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
+    this.boundsFile = manifest.bounds;
 
     if (manifest.backdrops) {
       for (const { name, key, frames } of manifest.backdrops) {
         this.backdropData.set(key, { name, frames });
         if (frames.length !== this.frameFiles.length || 0) {
-          // TODO: Show error message in the UI when this happens.
           throw new Error(
-            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'.`
+            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
+              ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
           );
         }
       }
@@ -423,7 +435,7 @@ export default class Dataset {
 
     // Load feature data
     if (manifest.features.length === 0) {
-      throw new Error("No features found in dataset manifest. At least one feature must be defined.");
+      throw new Error(LoadErrorMessage.MANIFEST_HAS_NO_FEATURES);
     }
     const featuresPromises: Promise<[string, FeatureData]>[] = Array.from(manifest.features).map((data) =>
       reportLoadProgress(this.loadFeature(data))
@@ -440,20 +452,33 @@ export default class Dataset {
     ]);
     const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
 
-    // TODO: Improve error reporting for Dataset.load
-    this.outliers = urlUtils.getPromiseValue(outliers, "Failed to load outliers: ");
-    this.trackIds = urlUtils.getPromiseValue(tracks, "Failed to load tracks: ");
-    this.times = urlUtils.getPromiseValue(times, "Failed to load times: ");
-    this.centroids = urlUtils.getPromiseValue(centroids, "Failed to load centroids: ");
-    this.bounds = urlUtils.getPromiseValue(bounds, "Failed to load bounds: ");
+    const unloadableDataFiles: string[] = [];
+    function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
+      return (reason: any) => {
+        console.warn(`${fileType} data could not be loaded: ${reason}`);
+        unloadableDataFiles.push(`${fileType}: '${url || "N/A"}'`);
+      };
+    }
 
-    if (times.status === "rejected") {
-      throw new Error("Time data could not be loaded. Is the dataset manifest file valid?");
+    this.outliers = urlUtils.getPromiseValue(outliers, makeLoadFailedCallback("Outliers", this.outlierFile));
+    this.trackIds = urlUtils.getPromiseValue(tracks, makeLoadFailedCallback("Tracks", this.tracksFile));
+    this.times = urlUtils.getPromiseValue(times, makeLoadFailedCallback("Times", this.timesFile));
+    this.centroids = urlUtils.getPromiseValue(centroids, makeLoadFailedCallback("Centroids", this.centroidsFile));
+    this.bounds = urlUtils.getPromiseValue(bounds, makeLoadFailedCallback("Bounds", this.boundsFile));
+
+    if (unloadableDataFiles.length > 0) {
+      // Report warning of all the files that couldn't be loaded and their associated errors.
+      options.reportWarning?.("Some data files failed to load.", [
+        "The following data file(s) failed to load, which may cause the viewer to behave unexpectedly:",
+        ...unloadableDataFiles.map((fileType) => ` - ${fileType}`),
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+      ]);
     }
 
     // Keep original sorting order of features by inserting in promise order.
     featureResults.forEach((result, index) => {
-      const featureValue = urlUtils.getPromiseValue(result, `Failed to load feature ${index}`);
+      const onFeatureLoadFailed = (reason: any): void => console.warn(`Feature ${index}: `, reason);
+      const featureValue = urlUtils.getPromiseValue(result, onFeatureLoadFailed);
       if (featureValue) {
         const [key, data] = featureValue;
         this.features.set(key, data);
@@ -461,9 +486,15 @@ export default class Dataset {
     });
 
     if (this.features.size !== manifest.features.length) {
-      console.warn(
-        "One or more features could not be loaded. This may be because of an unsupported format or a missing file."
-      );
+      // Report the names of all features that could not be loaded.
+      const loadedFeatureNames = new Set(Array.from(this.features.values()).map((f) => f.name));
+      const missingFeatureNames = manifest.features.filter((f) => !loadedFeatureNames.has(f.name)).map((f) => f.name);
+
+      options.reportWarning?.("Some features failed to load.", [
+        "The following feature(s) could not be loaded and will not be shown: ",
+        ...formatAsBulletList(missingFeatureNames, 5),
+        LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+      ]);
     }
 
     // Analytics reporting
@@ -475,7 +506,6 @@ export default class Dataset {
       datasetLoadTimeMs: new Date().getTime() - startTime.getTime(),
     });
 
-    // TODO: Dynamically fetch features
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
   }
 
@@ -497,6 +527,19 @@ export default class Dataset {
   /** get track id of a given cell id */
   public getTrackId(index: number): number {
     return this.trackIds?.[index] || 0;
+  }
+
+  /**
+   * Returns the 2D centroid of a given object id.
+   */
+  public getCentroid(objectId: number): [number, number] | undefined {
+    const index = objectId * 2;
+    const x = this.centroids?.[index];
+    const y = this.centroids?.[index + 1];
+    if (x && y) {
+      return [x, y];
+    }
+    return undefined;
   }
 
   private getIdsOfTrack(trackId: number): number[] {

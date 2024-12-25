@@ -29,6 +29,30 @@ const HorizontalDiv = styled(FlexRowAlignCenter)`
   flex-wrap: wrap;
 `;
 
+const defaultPresetColors = [
+  "#ffffff",
+  "#f0f0f0",
+  "#dddddd",
+  "#c0c0c0",
+  "#9d9d9d",
+  "#808080",
+  "#525252",
+  "#393939",
+  "#191919",
+  "#000000",
+];
+const presets: PresetsItem[] = [
+  {
+    label: "Presets",
+    colors: defaultPresetColors,
+  },
+];
+
+const items = [
+  { value: DrawMode.HIDE.toString(), label: "Hide" },
+  { value: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
+];
+
 /**
  * UI element for choosing between different drawing modes, and provides callbacks for when
  * changes are made to selections.
@@ -39,31 +63,6 @@ export default function DrawModeSelector(propsInput: DrawModeSelectorProps): Rea
   const props = { ...defaultProps, ...propsInput } as Required<DrawModeSelectorProps>;
 
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
-
-  const items = [
-    { value: DrawMode.HIDE.toString(), label: "Hide" },
-    { value: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
-  ];
-
-  const defaultPresetColors = [
-    "#ffffff",
-    "#f0f0f0",
-    "#dddddd",
-    "#c0c0c0",
-    "#9d9d9d",
-    "#808080",
-    "#525252",
-    "#393939",
-    "#191919",
-    "#000000",
-  ];
-  const presets: PresetsItem[] = [
-    {
-      label: "Presets",
-      colors: defaultPresetColors,
-    },
-  ];
-
   const showColorPicker = props.selected === DrawMode.USE_COLOR;
 
   return (
