@@ -1,10 +1,10 @@
-import React, { EventHandler, useEffect, useRef, useState } from "react";
+import React, { EventHandler, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
 import { VectorConfig } from "../types";
 
-import { AnnotationData, IAnnotationData } from "../AnnotationData";
+import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters } from "../AnnotationData";
 import Dataset from "../Dataset";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
 
@@ -308,7 +308,7 @@ export const useMotionDeltas = (
   return motionDeltas;
 };
 
-export type AnnotationState = IAnnotationData &  {
+export type AnnotationState =  {
   // Viewer state that lives outside the annotation data itself
   currentLabelIdx: number | null;
   setCurrentLabelIdx: (labelIdx: number) => void;
@@ -316,14 +316,13 @@ export type AnnotationState = IAnnotationData &  {
   setIsAnnotationModeEnabled: (enabled: boolean) => void;
   visible: boolean;
   setVisibility: (visible: boolean) => void;
-  /*
-  * Increments every time the annotation data has changed (both label metadata
-  * and IDs the labels are applied to). Can be used as a dependency in React
-  * hooks like `useEffect` or `useMemo` to trigger updates when the annotation
-  * data changes.
-  */
-  annotationDataVersion: number;
-} ;
+  /**
+   * Contains annotation data getters. Use this object directly as a dependency
+   * in `useMemo` or `useCallback` to trigger updates when the underlying data
+   * changes.
+   */
+  data: IAnnotationDataGetters;
+} & IAnnotationDataSetters;
 
 export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
@@ -362,8 +361,6 @@ export const useAnnotations = (): AnnotationState => {
     };
   };
 
-
-
   const onDeleteLabel = (labelIdx: number): void => {
     if (currentLabelIdx === null) {
       return;
@@ -382,20 +379,25 @@ export const useAnnotations = (): AnnotationState => {
     return annotationData.deleteLabel(labelIdx);
   };
 
+  const data = useMemo(() => ({
+      // Data getters
+      getLabels: annotationData.getLabels,
+      getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
+      getLabeledIds: annotationData.getLabeledIds,
+      getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
+    })
+  , [dataUpdateCounter]);
+
   return {
     // UI state
-    annotationDataVersion: dataUpdateCounter,
     currentLabelIdx,
     setCurrentLabelIdx,
     isAnnotationModeEnabled: isAnnotationEnabled,
     setIsAnnotationModeEnabled: setIsAnnotationEnabled,
     visible,
     setVisibility,
-    // Data getters
-    getLabels: annotationData.getLabels,
-    getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
-    getLabeledIds: annotationData.getLabeledIds,
-    getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
+
+    data,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
