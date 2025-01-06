@@ -148,6 +148,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
             aria-label={name}
           >
             <img
+              alt={name}
               style={{ pointerEvents: "none" }}
               src={colorRampData[i].colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()}
             />
@@ -231,7 +232,7 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
             disabled={props.disabled}
             onClick={() => setForceOpen(!forceOpen)}
           >
-            <img src={dropdownButtonImgSrc} />
+            <img src={dropdownButtonImgSrc} alt={currentSelectionName} />
           </Button>
         </Tooltip>
         <div className={dropdownContainerClassName}>{dropdownContents}</div>
