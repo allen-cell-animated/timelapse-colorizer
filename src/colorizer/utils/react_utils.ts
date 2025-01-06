@@ -385,7 +385,7 @@ export const useAnnotations = (): AnnotationState => {
       getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
-      getLabelOnId: annotationData.getLabelOnId,
+      isLabelOnId: annotationData.isLabelOnId,
     })
   , [dataUpdateCounter]);
 
