@@ -348,18 +348,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.outlineColor]);
 
   useMemo(() => {
-    const annotationLabels = props.annotationState.getLabels();
+    const annotationLabels = props.annotationState.data.getLabels();
     const timeToAnnotationLabelIds = props.dataset
-      ? props.annotationState.getTimeToLabelIdMap(props.dataset)
+      ? props.annotationState.data.getTimeToLabelIdMap(props.dataset)
       : new Map();
     canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
     canv.isAnnotationVisible = props.annotationState.visible;
-  }, [
-    props.dataset,
-    props.annotationState.annotationDataVersion,
-    props.annotationState.currentLabelIdx,
-    props.annotationState.visible,
-  ]);
+  }, [props.dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -686,7 +681,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     )
   );
 
-  const labels = props.annotationState.getLabels();
+  const labels = props.annotationState.data.getLabels();
   const annotationTooltipContents: ReactNode[] = [];
   annotationTooltipContents.push(
     <span key="annotation-count">

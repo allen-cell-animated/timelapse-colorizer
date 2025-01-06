@@ -115,8 +115,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   }
 
   // Show all current labels applied to the hovered object
-  const labels = props.annotationState.getLabelsAppliedToId(lastHoveredId);
-  const labelData = props.annotationState.getLabels();
+  const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredId);
+  const labelData = props.annotationState.data.getLabels();
   if (labels.length > 0 && props.annotationState.visible) {
     objectInfoContent.push(
       <div style={{ lineHeight: "28px" }}>
