@@ -31,6 +31,15 @@ export interface IAnnotationDataGetters {
   getLabelsAppliedToId(id: number): number[];
 
   /**
+   * Returns whether the label has been applied to the object ID.
+   * @param labelIdx The index of the label to look up.
+   * @param id The object ID.
+   * @returns `true` if the label has been applied to the object ID, `false`
+   * otherwise.
+   */
+  getLabelOnId(labelIdx: number, id: number): boolean;
+
+  /**
    * Returns all object IDs that the label has been applied to.
    * @param labelIdx The index of the label to look up object IDs for.
    * @returns an array of object IDs. Empty if the label has not been applied to
@@ -83,9 +92,7 @@ export interface IAnnotationDataSetters {
   setLabelColor(labelIdx: number, color: Color): void;
   deleteLabel(labelIdx: number): void;
 
-  applyLabelToId(labelIdx: number, id: number): void;
-  removeLabelFromId(labelIdx: number, id: number): void;
-  toggleLabelOnId(labelIdx: number, id: number): void;
+  setLabelOnId(labelIdx: number, id: number, value: boolean): void;
 }
 
 export type IAnnotationData = IAnnotationDataGetters & IAnnotationDataSetters;
@@ -113,15 +120,19 @@ export class AnnotationData implements IAnnotationDataGetters, IAnnotationDataSe
     this.setLabelName = this.setLabelName.bind(this);
     this.setLabelColor = this.setLabelColor.bind(this);
     this.deleteLabel = this.deleteLabel.bind(this);
-    this.toggleLabelOnId = this.toggleLabelOnId.bind(this);
-    this.applyLabelToId = this.applyLabelToId.bind(this);
-    this.removeLabelFromId = this.removeLabelFromId.bind(this);
+    this.getLabelOnId = this.getLabelOnId.bind(this);
+    this.setLabelOnId = this.setLabelOnId.bind(this);
   }
 
   // Getters
 
   getLabels(): LabelData[] {
     return [...this.labelData];
+  }
+
+  getLabelOnId(labelIdx: number, id: number): boolean {
+    this.validateIndex(labelIdx);
+    return this.labelData[labelIdx].ids.has(id);
   }
 
   getLabelsAppliedToId(id: number): number[] {
@@ -210,23 +221,13 @@ export class AnnotationData implements IAnnotationDataGetters, IAnnotationDataSe
     this.timeToLabelIdMap = null;
   }
 
-  applyLabelToId(labelIdx: number, id: number): void {
+  setLabelOnId(labelIdx: number, id: number, value: boolean): void {
     this.validateIndex(labelIdx);
-    this.labelData[labelIdx].ids.add(id);
-    this.timeToLabelIdMap = null;
-  }
-
-  removeLabelFromId(labelIdx: number, id: number): void {
-    this.validateIndex(labelIdx);
-    this.labelData[labelIdx].ids.delete(id);
-    this.timeToLabelIdMap = null;
-  }
-
-  toggleLabelOnId(labelIdx: number, id: number): void {
-    if (!this.labelData[labelIdx].ids.has(id)) {
-      this.applyLabelToId(labelIdx, id);
+    if (value) {
+      this.labelData[labelIdx].ids.add(id);
     } else {
-      this.removeLabelFromId(labelIdx, id);
+      this.labelData[labelIdx].ids.delete(id);
     }
+    this.timeToLabelIdMap = null;
   }
 }

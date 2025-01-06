@@ -372,7 +372,7 @@ export const useAnnotations = (): AnnotationState => {
     } else if (currentLabelIdx === labelIdx) {
       setCurrentLabelIdx(null);
       setIsAnnotationEnabled(false);
-    }else if (currentLabelIdx > labelIdx) {
+    } else if (currentLabelIdx > labelIdx) {
       // Decrement because all indices will shift over
       setCurrentLabelIdx(currentLabelIdx - 1);
     }
@@ -385,6 +385,7 @@ export const useAnnotations = (): AnnotationState => {
       getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
+      getLabelOnId: annotationData.getLabelOnId,
     })
   , [dataUpdateCounter]);
 
@@ -403,9 +404,6 @@ export const useAnnotations = (): AnnotationState => {
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
     setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
     deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
-
-    applyLabelToId: wrapFunctionInUpdate(annotationData.applyLabelToId),
-    removeLabelFromId: wrapFunctionInUpdate(annotationData.removeLabelFromId),
-    toggleLabelOnId: wrapFunctionInUpdate(annotationData.toggleLabelOnId),
+    setLabelOnId: wrapFunctionInUpdate(annotationData.setLabelOnId),
   };
 };
