@@ -808,7 +808,9 @@ function Viewer(): ReactElement {
       setFindTrackInput(track?.trackId.toString() || "");
       setSelectedTrack(track);
       if (track && annotationState.isAnnotationModeEnabled && annotationState.currentLabelIdx !== null) {
-        annotationState.toggleLabelOnId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame));
+        const id = track.getIdAtTime(currentFrame);
+        const isLabeled = annotationState.data.isLabelOnId(annotationState.currentLabelIdx, id);
+        annotationState.setLabelOnId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame), !isLabeled);
       }
     },
     [annotationState.isAnnotationModeEnabled, annotationState.currentLabelIdx, currentFrame]

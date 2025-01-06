@@ -74,35 +74,42 @@ describe("AnnotationData", () => {
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
     annotationData.createNewLabel();
-    annotationData.applyLabelToId(0, 0);
-    annotationData.applyLabelToId(0, 35);
-    annotationData.applyLabelToId(0, 458);
-    annotationData.applyLabelToId(1, 35);
+    annotationData.setLabelOnId(0, 0, true);
+    annotationData.setLabelOnId(0, 35, true);
+    annotationData.setLabelOnId(0, 458, true);
+    annotationData.setLabelOnId(1, 35, true);
 
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
     expect(annotationData.getLabelsAppliedToId(35)).to.deep.equal([0, 1]);
     expect(annotationData.getLabelsAppliedToId(458)).to.deep.equal([0]);
 
-    annotationData.removeLabelFromId(0, 35);
+    annotationData.setLabelOnId(0, 35, false);
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
     expect(annotationData.getLabelsAppliedToId(35)).to.deep.equal([1]);
     expect(annotationData.getLabelsAppliedToId(458)).to.deep.equal([0]);
   });
 
-  it("can toggle labels on IDs", () => {
+  it("ignores duplicate calls to setLabelOnId", () => {
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
-    annotationData.toggleLabelOnId(0, 0);
-    annotationData.toggleLabelOnId(0, 45);
-    annotationData.toggleLabelOnId(0, 872);
-    expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
-    expect(annotationData.getLabelsAppliedToId(45)).to.deep.equal([0]);
-    expect(annotationData.getLabelsAppliedToId(872)).to.deep.equal([0]);
+    annotationData.createNewLabel();
+    annotationData.setLabelOnId(0, 0, true);
+    annotationData.setLabelOnId(0, 0, true);
+    annotationData.setLabelOnId(0, 1, true);
 
-    annotationData.toggleLabelOnId(0, 45);
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
-    expect(annotationData.getLabelsAppliedToId(45)).to.deep.equal([]);
-    expect(annotationData.getLabelsAppliedToId(872)).to.deep.equal([0]);
+    expect(annotationData.isLabelOnId(0, 0)).toBe(true);
+    expect(annotationData.getLabelsAppliedToId(1)).to.deep.equal([0]);
+    expect(annotationData.isLabelOnId(0, 1)).toBe(true);
+
+    annotationData.setLabelOnId(0, 0, false);
+    annotationData.setLabelOnId(0, 0, false);
+    annotationData.setLabelOnId(0, 1, false);
+
+    expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([]);
+    expect(annotationData.isLabelOnId(0, 0)).toBe(false);
+    expect(annotationData.getLabelsAppliedToId(1)).to.deep.equal([]);
+    expect(annotationData.isLabelOnId(0, 1)).toBe(false);
   });
 
   it("can return mapping from time to labeled IDs", () => {
@@ -111,15 +118,15 @@ describe("AnnotationData", () => {
     };
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
-    annotationData.toggleLabelOnId(0, 0);
-    annotationData.toggleLabelOnId(0, 1);
-    annotationData.toggleLabelOnId(0, 2);
-    annotationData.toggleLabelOnId(0, 3);
-    annotationData.toggleLabelOnId(0, 4);
-    annotationData.toggleLabelOnId(0, 5);
+    annotationData.setLabelOnId(0, 0, true);
+    annotationData.setLabelOnId(0, 1, true);
+    annotationData.setLabelOnId(0, 2, true);
+    annotationData.setLabelOnId(0, 3, true);
+    annotationData.setLabelOnId(0, 4, true);
+    annotationData.setLabelOnId(0, 5, true);
 
     annotationData.createNewLabel();
-    annotationData.toggleLabelOnId(1, 2);
+    annotationData.setLabelOnId(1, 2, true);
 
     /* eslint-disable @typescript-eslint/naming-convention */
     // ESLint doesn't like "0" and "1" being property keys.
@@ -147,9 +154,9 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel("Label 2");
       annotationData.createNewLabel("Label 3");
 
-      annotationData.toggleLabelOnId(0, 0);
-      annotationData.toggleLabelOnId(1, 1);
-      annotationData.toggleLabelOnId(2, 2);
+      annotationData.setLabelOnId(0, 0, true);
+      annotationData.setLabelOnId(1, 1, true);
+      annotationData.setLabelOnId(2, 2, true);
 
       const csv = annotationData.toCsv(mockDataset);
       expect(csv).to.equal(
@@ -164,10 +171,10 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel('a","fake label');
       annotationData.createNewLabel('","');
 
-      annotationData.toggleLabelOnId(0, 0);
-      annotationData.toggleLabelOnId(1, 1);
-      annotationData.toggleLabelOnId(2, 2);
-      annotationData.toggleLabelOnId(3, 3);
+      annotationData.setLabelOnId(0, 0, true);
+      annotationData.setLabelOnId(1, 1, true);
+      annotationData.setLabelOnId(2, 2, true);
+      annotationData.setLabelOnId(3, 3, true);
 
       const csv = annotationData.toCsv(mockDataset);
 
