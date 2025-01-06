@@ -82,6 +82,30 @@ export interface IAnnotationDataGetters {
    * */
   getTimeToLabelIdMap(dataset: Dataset): Map<number, Record<number, number[]>>;
 
+  /**
+   * Converts the annotation data to a CSV string.
+   *
+   * @param dataset Dataset object to use for time and track information.
+   * @param delimiter The delimiter to use between cells. Default is a comma
+   * (",").
+   * @returns Returns a comma-separated value (CSV) string representation of the
+   * annotation data, including a header. The header will contain the columns:
+   *   - ID (object ID)
+   *   - Track (track ID)
+   *   - Frame (time)
+   *   - ...and one column for each label.
+   *
+   * Label names will be enclosed in double quotes, and special characters will
+   * be escaped. Double quotes will be escaped with another double quote, and
+   * special characters at the start of the label name that could be interpreted
+   * as equations (`+`, `-`, `=`, `@`) will be escaped with a leading single
+   * quote. Whitespace will be trimmed from the label names.
+   *
+   * Each object ID that has been labeled will be a row in the CSV. For label
+   * columns, the cell value will be 1 if the label is applied to the object,
+   * and 0 if it is not. Rows end with `\r\n` and cells are separated by commas
+   * by default.
+   */
   toCsv(dataset: Dataset, separator?: string): string;
 }
 
@@ -252,30 +276,6 @@ export class AnnotationData implements IAnnotationDataGetters, IAnnotationDataSe
     this.timeToLabelIdMap = null;
   }
 
-  /**
-   * Converts the annotation data to a CSV string.
-   *
-   * @param dataset
-   * @param delimiter The delimiter to use between cells. Default is a comma
-   * (",").
-   * @returns Returns a comma-separated value (CSV) string representation of the
-   * annotation data, including a header. The header will contain the columns:
-   *   - ID (object ID)
-   *   - Track (track ID)
-   *   - Frame (time)
-   *   - ...and one column for each label.
-   *
-   * Label names will be enclosed in double quotes, and special characters will
-   * be escaped. Double quotes will be escaped with another double quote, and
-   * special characters at the start of the label name that could be interpreted
-   * as equations (`+`, `-`, `=`, `@`) will be escaped with a leading single
-   * quote. Whitespace will be trimmed from the label names.
-   *
-   * Each object ID that has been labeled will be a row in the CSV. For label
-   * columns, the cell value will be 1 if the label is applied to the object,
-   * and 0 if it is not. Rows end with `\r\n` and cells are separated by commas
-   * by default.
-   */
   toCsv(dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels();
     const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];

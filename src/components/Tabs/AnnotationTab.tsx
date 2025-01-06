@@ -254,7 +254,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         </FlexRow>
         <Button
           onClick={() => {
-            const csvData = props.annotationState.toCsv(props.dataset!);
+            const csvData = props.annotationState.data.toCsv(props.dataset!);
             download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
             console.log(csvData);
           }}
