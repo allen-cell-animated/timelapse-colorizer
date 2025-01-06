@@ -357,7 +357,7 @@ export const useAnnotations = (): AnnotationState => {
   const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
     return <F>function (...args: any[]) {
       const result = fn(...args);
-      setDataUpdateCounter((value) => {return value + 1;});
+      setDataUpdateCounter((value) => value + 1);
       return result;
     };
   };
