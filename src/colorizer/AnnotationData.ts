@@ -37,7 +37,7 @@ export interface IAnnotationDataGetters {
    * @returns `true` if the label has been applied to the object ID, `false`
    * otherwise.
    */
-  getLabelOnId(labelIdx: number, id: number): boolean;
+  isLabelOnId(labelIdx: number, id: number): boolean;
 
   /**
    * Returns all object IDs that the label has been applied to.
@@ -120,7 +120,7 @@ export class AnnotationData implements IAnnotationDataGetters, IAnnotationDataSe
     this.setLabelName = this.setLabelName.bind(this);
     this.setLabelColor = this.setLabelColor.bind(this);
     this.deleteLabel = this.deleteLabel.bind(this);
-    this.getLabelOnId = this.getLabelOnId.bind(this);
+    this.isLabelOnId = this.isLabelOnId.bind(this);
     this.setLabelOnId = this.setLabelOnId.bind(this);
   }
 
@@ -130,7 +130,7 @@ export class AnnotationData implements IAnnotationDataGetters, IAnnotationDataSe
     return [...this.labelData];
   }
 
-  getLabelOnId(labelIdx: number, id: number): boolean {
+  isLabelOnId(labelIdx: number, id: number): boolean {
     this.validateIndex(labelIdx);
     return this.labelData[labelIdx].ids.has(id);
   }
