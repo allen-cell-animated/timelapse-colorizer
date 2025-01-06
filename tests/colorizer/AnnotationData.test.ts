@@ -89,6 +89,29 @@ describe("AnnotationData", () => {
     expect(annotationData.getLabelsAppliedToId(458)).to.deep.equal([0]);
   });
 
+  it("ignores duplicate calls to setLabelOnId", () => {
+    const annotationData = new AnnotationData();
+    annotationData.createNewLabel();
+    annotationData.createNewLabel();
+    annotationData.setLabelOnId(0, 0, true);
+    annotationData.setLabelOnId(0, 0, true);
+    annotationData.setLabelOnId(0, 1, true);
+
+    expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
+    expect(annotationData.isLabelOnId(0, 0)).toBe(true);
+    expect(annotationData.getLabelsAppliedToId(1)).to.deep.equal([0]);
+    expect(annotationData.isLabelOnId(0, 1)).toBe(true);
+
+    annotationData.setLabelOnId(0, 0, false);
+    annotationData.setLabelOnId(0, 0, false);
+    annotationData.setLabelOnId(0, 1, false);
+
+    expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([]);
+    expect(annotationData.isLabelOnId(0, 0)).toBe(false);
+    expect(annotationData.getLabelsAppliedToId(1)).to.deep.equal([]);
+    expect(annotationData.isLabelOnId(0, 1)).toBe(false);
+  });
+
   it("can return mapping from time to labeled IDs", () => {
     const mockDataset = {
       times: [0, 1, 1, 2, 3, 4],
