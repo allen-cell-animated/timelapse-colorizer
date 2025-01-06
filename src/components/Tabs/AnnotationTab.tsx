@@ -78,14 +78,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     setIsAnnotationModeEnabled,
     currentLabelIdx,
     setCurrentLabelIdx,
-    getLabels,
+    data: annotationData,
     createNewLabel,
     deleteLabel,
-    annotationDataVersion,
-    getLabeledIds,
     setLabelName,
     setLabelColor,
-    removeLabelFromId,
+    setLabelOnId,
   } = props.annotationState;
 
   const [showEditPopover, setShowEditPopover] = useState(false);
@@ -93,7 +91,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
   const editPopoverInputRef = useRef<InputRef>(null);
 
-  const labels = getLabels();
+  const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
   const onSelectLabel = (labelIdx: number): void => {
@@ -171,7 +169,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             // so we need to stop event propagation so that the row click event
             // doesn't fire.
             event.stopPropagation();
-            removeLabelFromId(currentLabelIdx!, record.id);
+            setLabelOnId(currentLabelIdx!, record.id, false);
           }}
         >
           <CloseOutlined />
@@ -186,7 +184,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const tableData: TableDataType[] = useMemo(() => {
     const dataset = props.dataset;
     if (currentLabelIdx !== null && dataset) {
-      const ids = getLabeledIds(currentLabelIdx);
+      const ids = annotationData.getLabeledIds(currentLabelIdx);
       return ids.map((id) => {
         const track = dataset.getTrackId(id);
         const time = dataset.getTime(id);
@@ -194,7 +192,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       });
     }
     return [];
-  }, [annotationDataVersion, currentLabelIdx, props.dataset]);
+  }, [annotationData, currentLabelIdx, props.dataset]);
 
   // Options for the selection dropdown
   const selectLabelOptions: ItemType[] = labels.map((label, index) => {
