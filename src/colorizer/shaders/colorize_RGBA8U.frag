@@ -91,7 +91,7 @@ vec4 getColorRamp(float val) {
   return texture(colorRamp, vec2(adjustedVal, 0.5));
 }
 
-bool isEdge(vec2 uv, ivec2 frameDims) {
+bool isEdge(vec2 uv) {
   float thickness = 2.0;
   // step size is equal to 1 onscreen canvas pixel     
   float wStep = 1.0 / float(canvasSizePx.x) * float(canvasToFrameScale.x);
@@ -160,9 +160,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // do an outline around highlighted object
-  ivec2 frameDims = textureSize(frame, 0);
   if (int(id) - 1 == highlightedId) {
-    if (isEdge(sUv, frameDims)) {
+    if (isEdge(sUv)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
     }
