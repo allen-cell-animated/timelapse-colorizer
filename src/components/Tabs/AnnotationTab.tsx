@@ -1,4 +1,4 @@
-import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Button, ColorPicker, Input, InputRef, Popover, Table, TableProps, Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
@@ -6,7 +6,7 @@ import React, { ReactElement, useContext, useEffect, useMemo, useRef, useState }
 import styled, { css } from "styled-components";
 import { Color, HexColorString } from "three";
 
-import { TagIconSVG } from "../../assets";
+import { TagAddIconSVG, TagIconSVG } from "../../assets";
 import { Dataset } from "../../colorizer";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../styles/utils";
@@ -243,12 +243,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           >
             <FlexRowAlignCenter $gap={6}>
               {isAnnotationModeEnabled ? <CheckOutlined /> : <TagIconSVG />}
-              {isAnnotationModeEnabled ? "Done editing" : "Create and edit"}
+              {isAnnotationModeEnabled ? "Done editing" : "Edit and apply labels"}
             </FlexRowAlignCenter>
           </AnnotationModeButton>
           {isAnnotationModeEnabled && (
             <p style={{ color: theme.color.text.hint }}>
-              <i>Editing in progress...</i>
+              <i>Editing in progress; click any object to apply</i>
             </p>
           )}
         </FlexRow>
@@ -295,7 +295,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <>
             <Tooltip title="Create new label" placement="bottom">
               <IconButton onClick={onCreateNewLabel} disabled={!isAnnotationModeEnabled} type="outlined">
-                <PlusOutlined />
+                <TagAddIconSVG />
               </IconButton>
             </Tooltip>
             <Popover
