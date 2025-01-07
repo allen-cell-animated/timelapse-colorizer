@@ -1,11 +1,15 @@
-import React, { EventHandler, useEffect, useRef, useState } from "react";
+import React, { EventHandler, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
 import { VectorConfig } from "../types";
 
+import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters } from "../AnnotationData";
 import Dataset from "../Dataset";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
+
+// TODO: Move this to a folder outside of `colorizer`.
+// TODO: Split this up into multiple files.
 
 /**
  * Delays changes to a value until no changes have occurred for the
@@ -250,14 +254,15 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
 };
 
 /**
- * Wrapper around the SharedWorkerPool method `getMotionDeltas`. Returns a debounced motion
- * delta array for the given dataset and vector field configuration.
+ * Wrapper around the SharedWorkerPool method `getMotionDeltas`. Returns a
+ * debounced motion delta array for the given dataset and vector field
+ * configuration.
  * @param dataset The dataset to calculate motion deltas for.
  * @param workerPool The worker pool to use for asynchronous calculations.
  * @param config The vector field configuration to use.
  * @param debounceMs The debounce time in milliseconds. Defaults to 100ms.
- * @returns The motion delta array or `null` if the dataset is invalid. Data will be
- * asynchronously updated as calculations complete.
+ * @returns The motion delta array or `null` if the dataset is invalid. Data
+ * will be asynchronously updated as calculations complete.
  */
 export const useMotionDeltas = (
   dataset: Dataset | null,
@@ -301,4 +306,104 @@ export const useMotionDeltas = (
   }, [debouncedVectorConfig.timeIntervals, dataset]);
 
   return motionDeltas;
+};
+
+export type AnnotationState =  {
+  // Viewer state that lives outside the annotation data itself
+  currentLabelIdx: number | null;
+  setCurrentLabelIdx: (labelIdx: number) => void;
+  isAnnotationModeEnabled: boolean;
+  setIsAnnotationModeEnabled: (enabled: boolean) => void;
+  visible: boolean;
+  setVisibility: (visible: boolean) => void;
+  /**
+   * Contains annotation data getters. Use this object directly as a dependency
+   * in `useMemo` or `useCallback` to trigger updates when the underlying data
+   * changes.
+   */
+  data: IAnnotationDataGetters;
+} & IAnnotationDataSetters;
+
+export const useAnnotations = (): AnnotationState => {
+  const annotationData = useConstructor(() => new AnnotationData());
+
+  const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
+  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);  
+  const [visible, _setVisibility] = useState<boolean>(true);
+
+  // Annotation mode can only be enabled if there is at least one label, so create
+  // one if necessary.
+  const setIsAnnotationEnabled = (enabled: boolean): void => {
+    if (enabled) {
+      _setVisibility(true);
+      if (annotationData.getLabels().length === 0) {
+        const newLabelIdx = annotationData.createNewLabel();
+        setCurrentLabelIdx(newLabelIdx);
+      }
+    }
+    _setIsAnnotationEnabled(enabled);
+  };
+
+  const setVisibility = (visible: boolean): void => {
+    _setVisibility(visible);
+    if (!visible) {
+      setIsAnnotationEnabled(false);
+    }
+  };
+  /** Increments every time a state update is required. */
+  const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
+
+  const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
+    return <F>function (...args: any[]) {
+      const result = fn(...args);
+      setDataUpdateCounter((value) => value + 1);
+      return result;
+    };
+  };
+
+  const onDeleteLabel = (labelIdx: number): void => {
+    if (currentLabelIdx === null) {
+      return;
+    }
+    // Update selected label index if necessary.
+    const labels = annotationData.getLabels();
+    if (currentLabelIdx === labelIdx && labels.length > 1) {
+      setCurrentLabelIdx(Math.max(currentLabelIdx - 1, 0));
+    } else if (currentLabelIdx === labelIdx) {
+      setCurrentLabelIdx(null);
+      setIsAnnotationEnabled(false);
+    } else if (currentLabelIdx > labelIdx) {
+      // Decrement because all indices will shift over
+      setCurrentLabelIdx(currentLabelIdx - 1);
+    }
+    return annotationData.deleteLabel(labelIdx);
+  };
+
+  const data = useMemo(() => ({
+      // Data getters
+      getLabels: annotationData.getLabels,
+      getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
+      getLabeledIds: annotationData.getLabeledIds,
+      getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
+      isLabelOnId: annotationData.isLabelOnId,
+    })
+  , [dataUpdateCounter]);
+
+  return {
+    // UI state
+    currentLabelIdx,
+    setCurrentLabelIdx,
+    isAnnotationModeEnabled: isAnnotationEnabled,
+    setIsAnnotationModeEnabled: setIsAnnotationEnabled,
+    visible,
+    setVisibility,
+
+    data,
+    // Wrap state mutators
+    createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
+    setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
+    setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
+    deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
+    setLabelOnId: wrapFunctionInUpdate(annotationData.setLabelOnId),
+  };
 };
