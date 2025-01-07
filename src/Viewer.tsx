@@ -228,9 +228,9 @@ function Viewer(): ReactElement {
         return;
       }
       event.preventDefault();
-      let message = "You have unsaved annotations. Are you sure you want to leave?";
-      event.returnValue = message;
-      return message;
+      // Note that `event.returnValue` is deprecated for most (but not all) browsers.
+      // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
+      event.returnValue = "You have unsaved annotations. Are you sure you want to leave?";
     };
 
     window.addEventListener("beforeunload", beforeUnloadHandler);
