@@ -32,7 +32,7 @@ const EXAMPLE_DATA = [
   [8.93, 8.97, 8.97, 9.18, 9.2, 9.18],
 ];
 
-const EXAMPLE_XY_POINTS = [
+const EXAMPLE_XY_POINTS_1 = [
   [5, 11],
   [5, 10],
   [5, 9],
@@ -47,6 +47,30 @@ const EXAMPLE_XY_POINTS = [
   [2, 7],
   [2, 8],
 ];
+
+const EXAMPLE_XY_POINTS_2 = [
+  [4, 1],
+  [3, 1],
+  [3, 2],
+  [3, 3],
+  [3, 4],
+  [3, 5],
+  [3, 6],
+  [2, 6],
+  [1, 6],
+  [0, 6],
+];
+
+const EXAMPLE_XY_POINTS_3 = [
+  [4, 11],
+  [3, 11],
+  [2, 11],
+  [1, 10],
+  [0, 9],
+  [0, 8],
+];
+
+const EXAMPLE_XY_POINTS = [EXAMPLE_XY_POINTS_1, EXAMPLE_XY_POINTS_2, EXAMPLE_XY_POINTS_3];
 
 type Plot3DTabProps = {
   dataset: Dataset | null;
@@ -73,7 +97,7 @@ class Plot3d {
   plot(time: number): void {
     const traces: Plotly.Data[] = [];
     const surfaceTrace: Plotly.Data = { z: EXAMPLE_DATA, type: "surface" };
-    const xyPoints = EXAMPLE_XY_POINTS;
+    const xyPoints = EXAMPLE_XY_POINTS[(this.track?.trackId ?? 0) % EXAMPLE_XY_POINTS.length];
     const xyzPoints = xyPoints.map((point) => [point[0], point[1], EXAMPLE_DATA[point[1]][point[0]] + 0.01]);
 
     const scatterPlotTrace: Plotly.Data = {
@@ -85,7 +109,7 @@ class Plot3d {
       opacity: 1,
       line: {
         width: 4,
-        color: "rgb(220, 220, 220)",
+        color: "rgb(80, 80, 80)",
       },
     };
     traces.push(surfaceTrace, scatterPlotTrace);
