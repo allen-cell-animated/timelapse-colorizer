@@ -128,7 +128,7 @@ export interface IAnnotationDataSetters {
 
 export type IAnnotationData = IAnnotationDataGetters & IAnnotationDataSetters;
 
-export class AnnotationData implements IAnnotationDataGetters, IAnnotationDataSetters {
+export class AnnotationData implements IAnnotationData {
   private labelData: LabelData[];
   private numLabelsCreated: number;
   /**
