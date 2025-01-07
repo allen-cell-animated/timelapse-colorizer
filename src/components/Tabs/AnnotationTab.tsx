@@ -1,6 +1,6 @@
 import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Input, InputRef, Popover, Table, TableProps, Tooltip } from "antd";
+import { Button, ColorPicker, Input, InputRef, Popconfirm, Popover, Table, TableProps, Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
@@ -86,6 +86,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
   const editPopoverInputRef = useRef<InputRef>(null);
 
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
@@ -105,6 +107,19 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       deleteLabel(currentLabelIdx);
     }
     setShowEditPopover(false);
+    setShowDeleteConfirmation(false);
+  };
+
+  const onClickDeleteButton = (opening: boolean) => {
+    if (!opening) {
+      setShowDeleteConfirmation(false);
+      return;
+    }
+    if (currentLabelIdx !== null && selectedLabel.ids.size > 0) {
+      setShowDeleteConfirmation(true);
+    } else {
+      onDeleteLabel();
+    }
   };
 
   const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType): void => {
@@ -319,16 +334,22 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
                 </Tooltip>
               </div>
             </Popover>
-            {/* TODO: Show confirmation popup before deleting. */}
-            <Tooltip title="Delete label" placement="bottom">
-              <IconButton
-                onClick={onDeleteLabel}
-                disabled={currentLabelIdx === null || !isAnnotationModeEnabled}
-                type="outlined"
-              >
-                <DeleteOutlined />
-              </IconButton>
-            </Tooltip>
+            <Popconfirm
+              title={`Delete label with ${selectedLabel.ids.size} object(s)?`}
+              description={"This cannot be undone."}
+              onOpenChange={onClickDeleteButton}
+              open={showDeleteConfirmation}
+              onConfirm={onDeleteLabel}
+              onCancel={() => setShowDeleteConfirmation(false)}
+              placement="bottom"
+              getPopupContainer={() => editPopoverContainerRef.current!}
+            >
+              <Tooltip title="Delete label" placement="bottom">
+                <IconButton disabled={currentLabelIdx === null || !isAnnotationModeEnabled} type="outlined">
+                  <DeleteOutlined />
+                </IconButton>
+              </Tooltip>
+            </Popconfirm>
           </>
         )}
       </FlexRow>
