@@ -220,6 +220,25 @@ function Viewer(): ReactElement {
   const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
 
+  // EVENT LISTENERS ////////////////////////////////////////////////////////
+
+  useEffect(() => {
+    const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
+      if (annotationState.isDataSaved) {
+        return;
+      }
+      event.preventDefault();
+      let message = "You have unsaved annotations. Are you sure you want to leave?";
+      event.returnValue = message;
+      return message;
+    };
+
+    window.addEventListener("beforeunload", beforeUnloadHandler);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnloadHandler);
+    };
+  }, [annotationState.isDataSaved]);
+
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
   /**

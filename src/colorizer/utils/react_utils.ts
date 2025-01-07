@@ -316,6 +316,7 @@ export type AnnotationState =  {
   setIsAnnotationModeEnabled: (enabled: boolean) => void;
   visible: boolean;
   setVisibility: (visible: boolean) => void;
+  isDataSaved: boolean;
   /**
    * Contains annotation data getters. Use this object directly as a dependency
    * in `useMemo` or `useCallback` to trigger updates when the underlying data
@@ -352,6 +353,7 @@ export const useAnnotations = (): AnnotationState => {
   };
   /** Increments every time a state update is required. */
   const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
+  const [lastSavedVersion, setLastSavedVersion] = useState(0);
 
   const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
     return <F>function (...args: any[]) {
@@ -379,16 +381,21 @@ export const useAnnotations = (): AnnotationState => {
     return annotationData.deleteLabel(labelIdx);
   };
 
-  const data = useMemo(() => ({
+  const data = useMemo((): IAnnotationDataGetters => ({
       // Data getters
       getLabels: annotationData.getLabels,
       getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
       isLabelOnId: annotationData.isLabelOnId,
-      toCsv: annotationData.toCsv,
+      toCsv: (dataset, delimiter) => {
+        setLastSavedVersion(dataUpdateCounter);
+        return annotationData.toCsv(dataset, delimiter);
+      },
     })
   , [dataUpdateCounter]);
+
+  const isDataSaved = lastSavedVersion === dataUpdateCounter || annotationData.getLabels().length === 0;
 
   return {
     // UI state
@@ -398,6 +405,7 @@ export const useAnnotations = (): AnnotationState => {
     setIsAnnotationModeEnabled: setIsAnnotationEnabled,
     visible,
     setVisibility,
+    isDataSaved,
     data,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
