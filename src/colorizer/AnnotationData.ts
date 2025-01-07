@@ -300,12 +300,8 @@ export class AnnotationData implements IAnnotationDataGetters, IAnnotationDataSe
     );
 
     // TODO: Prepend additional metadata (e.g. label colors) when we add support
-    // for importing annotation data?
-
-    // // Add comment metadata for label name + colors
-    // const metadataRows = this.labelData.map((label) => {
-    //   return `# ${label.name},#${label.color.getHexString()}`;
-    // });
+    // for importing annotation data? Some CSV parsers support adding comments
+    // prefixed with `#`.
 
     return csvString;
   }
