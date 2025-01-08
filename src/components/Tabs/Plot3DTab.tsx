@@ -1,4 +1,4 @@
-import Plotly from "plotly.js-dist-min";
+import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useRef } from "react";
 import { clamp, lerp } from "three/src/math/MathUtils";
 
@@ -12,6 +12,12 @@ const CONFIG: Partial<Plotly.Config> = {
 
 const LAYOUT: Partial<Plotly.Layout> = {
   uirevision: "a",
+  margin: {
+    l: 0,
+    r: 0,
+    b: 0,
+    t: 0,
+  },
 };
 
 const EXAMPLE_DATA = [
@@ -91,28 +97,42 @@ class Plot3d {
     Plotly.newPlot(this.parentRef, [], {}, CONFIG);
 
     this.plot = this.plot.bind(this);
-    this.updateLayout = this.updateLayout.bind(this);
   }
 
   plot(time: number): void {
     const traces: Plotly.Data[] = [];
-    const surfaceTrace: Plotly.Data = { z: EXAMPLE_DATA, type: "surface" };
+
+    // Plotly has a bug where the hoverinfo="skip" attribute still causes 3D surfaces
+    // to block hover events on other traces.
+    // Here's a few unresolved community issues:
+    // https://community.plotly.com/t/completely-excluding-a-trace-from-hover-info-snapping/35854/17
+    // https://community.plotly.com/t/hover-info-of-scatter-points-through-3d-mesh/39973/6
+    const surfaceTrace: Plotly.Data = {
+      z: EXAMPLE_DATA,
+      type: "surface",
+      opacity: 0.7,
+      name: "surface",
+      hoverinfo: "skip",
+    };
+    traces.push(surfaceTrace);
     const xyPoints = EXAMPLE_XY_POINTS[(this.track?.trackId ?? 0) % EXAMPLE_XY_POINTS.length];
-    const xyzPoints = xyPoints.map((point) => [point[0], point[1], EXAMPLE_DATA[point[1]][point[0]] + 0.01]);
+    const xyzPoints = xyPoints.map((point) => [point[0], point[1], EXAMPLE_DATA[point[1]][point[0]]]);
 
     const scatterPlotTrace: Plotly.Data = {
       x: xyzPoints.map((point) => point[0]),
       y: xyzPoints.map((point) => point[1]),
       z: xyzPoints.map((point) => point[2]),
+      // TODO: use customdata to store time?
       mode: "lines",
       type: "scatter3d",
       opacity: 1,
       line: {
-        width: 4,
+        width: 8,
         color: "rgb(80, 80, 80)",
       },
+      showlegend: false,
     };
-    traces.push(surfaceTrace, scatterPlotTrace);
+    traces.push(scatterPlotTrace);
 
     // Move a scatterplot point along the surface of the 3D plot based on the current track's lifespan
     if (this.track) {
@@ -135,22 +155,12 @@ class Plot3d {
           size: 6,
           color: "rgb(255, 0, 0)",
         },
+        showlegend: false,
       };
       traces.push(currentPointTrace);
     }
 
     if (this.track) Plotly.react(this.parentRef, traces, LAYOUT, CONFIG);
-  }
-
-  updateLayout(time: number): void {
-    // const shapes: Partial<Plotly.Shape>[] = [
-    //   {
-    //     xanchor: 5,
-    //     yanchor: 5,
-    //     zanchor: 8,
-    //   },
-    // ];
-    // Plotly.relayout(this.parentRef, { shapes });
   }
 }
 
@@ -169,6 +179,24 @@ export default function Plot3dTab(props: Plot3DTabProps): ReactElement {
       plot3dRef.current.plot(props.currentFrame);
     }
   }, [props.dataset, props.selectedTrack, props.currentFrame]);
+
+  useEffect(() => {
+    const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
+      if (eventData.points.length === 0) {
+        return;
+      }
+      console.log(eventData.points[0]);
+      // const time = eventData.points[0].x as number;
+      // props.setFrame(time);
+    };
+
+    const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
+    plotDiv?.on("plotly_click", onClickPlot);
+    return () => {
+      const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
+      plotDiv?.removeAllListeners("plotly_click");
+    };
+  });
 
   return <div ref={plotContainerRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>;
 }
