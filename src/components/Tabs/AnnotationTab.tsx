@@ -258,12 +258,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           >
             <FlexRowAlignCenter $gap={6}>
               {isAnnotationModeEnabled ? <CheckOutlined /> : <TagIconSVG />}
-              {isAnnotationModeEnabled ? "Done editing" : "Edit and apply labels"}
+              {isAnnotationModeEnabled ? "Done" : "Apply and edit labels"}
             </FlexRowAlignCenter>
           </AnnotationModeButton>
           {isAnnotationModeEnabled && (
             <p style={{ color: theme.color.text.hint }}>
-              <i>Editing in progress; click any object to apply</i>
+              <i>Editing in progress; click to apply label</i>
             </p>
           )}
         </FlexRow>

@@ -103,9 +103,9 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
   position: absolute;
   top: 10px;
   left: 10px;
-
-  color: var(--color-text-button);
-  background-color: var(--color-viewport-mode-popup-background);
+  font-weight: bold;
+  background-color: var(--color-viewport-overlay-background);
+  border: 1px solid var(--color-viewport-overlay-outline);
   z-index: 200;
   padding: 8px 12px;
   border-radius: 4px;
