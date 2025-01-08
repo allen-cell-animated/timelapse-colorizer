@@ -222,9 +222,10 @@ function Viewer(): ReactElement {
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
 
+  // Warn on tab close if there is annotation data.
   useEffect(() => {
-    const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
-      if (annotationState.isDataSaved) {
+    const beforeUnloadHandler = (event: BeforeUnloadEvent): void => {
+      if (annotationState.data.getLabels().length === 0) {
         return;
       }
       event.preventDefault();
@@ -237,7 +238,7 @@ function Viewer(): ReactElement {
     return () => {
       window.removeEventListener("beforeunload", beforeUnloadHandler);
     };
-  }, [annotationState.isDataSaved]);
+  }, [annotationState.data]);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 

@@ -396,12 +396,16 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               colorBorder: theme.color.layout.borders,
               colorBorderSecondary: theme.color.layout.borders,
             },
-            Tooltip: {
-              zIndexPopup: 2000,
-            },
             Divider: {
               colorSplit: theme.color.layout.dividers,
               marginLG: 0,
+            },
+            Tooltip: {
+              zIndexPopup: 2000,
+            },
+            Popconfirm: {
+              zIndexPopup: 2050,
+              colorText: theme.color.text.secondary,
             },
             Modal: {
               // Set z-index to 2100 here because Ant sets popups to 1050 by default, and modals to 1000.

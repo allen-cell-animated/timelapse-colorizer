@@ -86,7 +86,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
   const editPopoverInputRef = useRef<InputRef>(null);
 
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
 
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
@@ -102,23 +102,23 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     setShowEditPopover(false);
   };
 
-  const onDeleteLabel = (): void => {
+  const deleteCurrentLabel = (): void => {
     if (currentLabelIdx !== null) {
       deleteLabel(currentLabelIdx);
     }
     setShowEditPopover(false);
-    setShowDeleteConfirmation(false);
+    setShowDeletePopup(false);
   };
 
-  const onClickDeleteButton = (opening: boolean) => {
-    if (!opening) {
-      setShowDeleteConfirmation(false);
+  const onDeletePopupOpenChange = (open: boolean): void => {
+    if (!open) {
+      setShowDeletePopup(false);
       return;
     }
     if (currentLabelIdx !== null && selectedLabel.ids.size > 0) {
-      setShowDeleteConfirmation(true);
+      setShowDeletePopup(true);
     } else {
-      onDeleteLabel();
+      deleteCurrentLabel();
     }
   };
 
@@ -337,10 +337,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             <Popconfirm
               title={`Delete label with ${selectedLabel.ids.size} object(s)?`}
               description={"This cannot be undone."}
-              onOpenChange={onClickDeleteButton}
-              open={showDeleteConfirmation}
-              onConfirm={onDeleteLabel}
-              onCancel={() => setShowDeleteConfirmation(false)}
+              onOpenChange={onDeletePopupOpenChange}
+              open={showDeletePopup}
+              onConfirm={deleteCurrentLabel}
+              onCancel={() => setShowDeletePopup(false)}
               placement="bottom"
               getPopupContainer={() => editPopoverContainerRef.current!}
             >
