@@ -16,7 +16,7 @@ const LAYOUT: Partial<Plotly.Layout> = {
     l: 0,
     r: 0,
     b: 0,
-    t: 0,
+    t: 15,
   },
 };
 
@@ -82,6 +82,7 @@ type Plot3DTabProps = {
   dataset: Dataset | null;
   selectedTrack: Track | null;
   currentFrame: number;
+  setFrame: (frame: number) => void;
 };
 
 class Plot3d {
@@ -118,28 +119,32 @@ class Plot3d {
     const xyPoints = EXAMPLE_XY_POINTS[(this.track?.trackId ?? 0) % EXAMPLE_XY_POINTS.length];
     const xyzPoints = xyPoints.map((point) => [point[0], point[1], EXAMPLE_DATA[point[1]][point[0]]]);
 
-    const scatterPlotTrace: Plotly.Data = {
-      x: xyzPoints.map((point) => point[0]),
-      y: xyzPoints.map((point) => point[1]),
-      z: xyzPoints.map((point) => point[2]),
-      // TODO: use customdata to store time?
-      mode: "lines",
-      type: "scatter3d",
-      opacity: 1,
-      line: {
-        width: 8,
-        color: "rgb(80, 80, 80)",
-      },
-      showlegend: false,
-    };
-    traces.push(scatterPlotTrace);
-
-    // Move a scatterplot point along the surface of the 3D plot based on the current track's lifespan
+    // Move a scatterplot point along the surface of the 3D plot based on the current track's lifespan.
+    // This is currently just PoC and is not linked to real data.
     if (this.track) {
-      let trackProgress = (time - this.track.startTime()) / this.track.times.length;
-      trackProgress = clamp(trackProgress, 0, 1);
+      const trackDuration = this.track.endTime() - this.track.startTime();
+      // As a hack, store the time in the customdata field of the line plot.
+      const scatterPlotTrace: Plotly.Data = {
+        x: xyzPoints.map((point) => point[0]),
+        y: xyzPoints.map((point) => point[1]),
+        z: xyzPoints.map((point) => point[2]),
+        // TODO: use customdata to store time?
+        customdata: xyzPoints.map(
+          (_, i) => this.track!.startTime() + Math.floor((trackDuration / (xyzPoints.length - 1)) * i)
+        ),
+        mode: "lines",
+        type: "scatter3d",
+        opacity: 1,
+        line: {
+          width: 8,
+          color: "rgb(80, 80, 80)",
+        },
+        showlegend: false,
+      };
+      traces.push(scatterPlotTrace);
 
       // Indices of the two closest points
+      const trackProgress = clamp((time - this.track.startTime()) / trackDuration, 0, 1);
       const idx0 = Math.floor(trackProgress * (xyzPoints.length - 1));
       const idx1 = Math.ceil(trackProgress * (xyzPoints.length - 1));
       const idxLerp = trackProgress * (xyzPoints.length - 1) - idx0;
@@ -156,11 +161,12 @@ class Plot3d {
           color: "rgb(255, 0, 0)",
         },
         showlegend: false,
+        customdata: [time],
       };
       traces.push(currentPointTrace);
     }
 
-    if (this.track) Plotly.react(this.parentRef, traces, LAYOUT, CONFIG);
+    Plotly.react(this.parentRef, traces, LAYOUT, CONFIG);
   }
 }
 
@@ -185,9 +191,7 @@ export default function Plot3dTab(props: Plot3DTabProps): ReactElement {
       if (eventData.points.length === 0) {
         return;
       }
-      console.log(eventData.points[0]);
-      // const time = eventData.points[0].x as number;
-      // props.setFrame(time);
+      props.setFrame((eventData.points[0].customdata as number) ?? props.currentFrame);
     };
 
     const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
@@ -196,7 +200,7 @@ export default function Plot3dTab(props: Plot3DTabProps): ReactElement {
       const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
       plotDiv?.removeAllListeners("plotly_click");
     };
-  });
+  }, [props.setFrame]);
 
   return <div ref={plotContainerRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>;
 }

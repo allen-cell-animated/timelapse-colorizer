@@ -59,4 +59,8 @@ export default class Track {
   startTime(): number {
     return this.times[0];
   }
+
+  endTime(): number {
+    return this.times[this.times.length - 1];
+  }
 }

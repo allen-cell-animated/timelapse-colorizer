@@ -944,7 +944,12 @@ function Viewer(): ReactElement {
       key: TabType.PLOT_3D,
       children: (
         <div className={styles.tabContent}>
-          <Plot3dTab dataset={dataset} selectedTrack={selectedTrack} currentFrame={currentFrame}></Plot3dTab>
+          <Plot3dTab
+            dataset={dataset}
+            selectedTrack={selectedTrack}
+            currentFrame={currentFrame}
+            setFrame={setFrame}
+          ></Plot3dTab>
         </div>
       ),
     });
