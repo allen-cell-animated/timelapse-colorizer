@@ -45,6 +45,7 @@ export const BACKGROUND_ID = -1;
 type ColorizeUniformTypes = {
   /** Scales from canvas coordinates to frame coordinates. */
   canvasToFrameScale: Vector2;
+  canvasSizePx: Vector2;
   /** XY offset of the frame, in normalized frame coordinates. [-0.5, 0.5] range. */
   panOffset: Vector2;
   /** Image, mapping each pixel to an object ID using the RGBA values. */
@@ -91,6 +92,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   return {
     panOffset: new Uniform(new Vector2(0, 0)),
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
+    canvasSizePx: new Uniform(new Vector2(1, 1)),
     frame: new Uniform(emptyFrame),
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
@@ -299,6 +301,7 @@ export default class ColorizeCanvas {
     if (!frameResolution || !canvasResolution) {
       return;
     }
+    this.setUniform("canvasSizePx", canvasResolution);
     // Both the frame and the canvas have coordinates in a range of [0, 1] in the x and y axis.
     // However, the canvas may have a different aspect ratio than the frame, so we need to scale
     // the frame to fit within the canvas while maintaining the aspect ratio.
