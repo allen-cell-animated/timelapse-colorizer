@@ -131,7 +131,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (props.scatterPlotConfig.xAxis === null && props.scatterPlotConfig.yAxis === null && props.selectedFeatureKey) {
       props.updateScatterPlotConfig({
         yAxis: props.selectedFeatureKey,
-        xAxis: SCATTERPLOT_TIME_FEATURE.key,
+        xAxis: SCATTERPLOT_TIME_FEATURE.value,
       });
     }
   }, [props.selectedFeatureKey]);
