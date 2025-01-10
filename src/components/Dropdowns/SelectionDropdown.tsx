@@ -75,11 +75,7 @@ const Option = (props: OptionProps): ReactElement | undefined => {
 
   if ((props.data as SelectItem).image) {
     copiedProps.children = (
-      <img
-        src={copiedProps.data.image}
-        alt={copiedProps.data.label}
-        style={{ width: "100%", height: "100%", position: "relative" }}
-      ></img>
+      <img src={copiedProps.data.image} alt={copiedProps.data.label} style={{ width: "100%", height: "100%" }}></img>
     );
   }
 

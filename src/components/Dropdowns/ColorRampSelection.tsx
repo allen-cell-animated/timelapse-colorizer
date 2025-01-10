@@ -21,9 +21,18 @@ import SelectionDropdown, { SelectItem } from "./SelectionDropdown";
 const SELECTED_RAMP_ITEM_KEY = "__selected_ramp__";
 const CUSTOM_PALETTE_ITEM_KEY = "__custom__";
 
-const DropdownStyleContainer = styled.div`
+const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
+  --width: 120px;
+  --border-width: 1px;
+  --radius: 6px;
+  --button-radius: calc(var(--radius) - var(--border-width));
+  --outline-width-selected: ${(props) => (props.$categorical ? "2px" : "1px")};
+  --outline-width-unselected: ${(props) => (props.$categorical ? "1px" : "0px")};
+
   & .react-select__control > img {
-    border-radius: 4px;
+    border-radius: 5px;
+    outline: var(--outline-width-unselected) solid var(--color-text-button);
+    outline-offset: calc(0px - var(--outline-width-unselected));
   }
 
   & .react-select__control--is-disabled > img {
@@ -31,12 +40,53 @@ const DropdownStyleContainer = styled.div`
   }
 
   & .react-select__single-value {
+    /* Hides the text label for the selected item under the gradient. */
     z-index: -1;
   }
 
   & .react-select__indicator {
     z-index: 100;
     color: white;
+  }
+
+  & .react-select__menu {
+    height: unset;
+  }
+
+  & .react-select__menu-list {
+    background-color: var(--color-button);
+    max-height: max-content;
+
+    padding: 0;
+    gap: 1px;
+    overflow: hidden;
+
+    padding: var(--border-width) var(--border-width);
+    gap: var(--border-width);
+    border-radius: var(--radius);
+
+    & .react-select__option {
+      padding: 0;
+      height: 28px;
+      border-radius: 0;
+      overflow: clip;
+      outline: var(--outline-width-unselected) solid var(--color-text-button);
+      outline-offset: calc(0px - var(--outline-width-unselected));
+    }
+
+    & :first-child > .react-select__option {
+      border-radius: var(--button-radius) var(--button-radius) 0 0;
+    }
+
+    & :last-child > .react-select__option {
+      border-radius: 0 0 var(--button-radius) var(--button-radius);
+    }
+
+    & .react-select__option:hover,
+    & .react-select__option--is-focused {
+      outline: var(--outline-width-selected) solid var(--color-text-button);
+      outline-offset: calc(0px - var(--outline-width-selected));
+    }
   }
 `;
 
@@ -220,7 +270,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
 
   return (
     <FlexRowAlignCenter>
-      <DropdownStyleContainer>
+      <DropdownStyleContainer $categorical={props.useCategoricalPalettes}>
         <SelectionDropdown
           disabled={props.disabled}
           items={props.useCategoricalPalettes ? paletteItems : rampItems}
