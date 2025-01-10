@@ -193,7 +193,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   );
 
   // Create an ID for the HTML label element if one is provided.
-  const id = props.label ? `dropdown-label-${props.label.toLowerCase()}` : undefined;
+  const id = props.label ? `dropdown-label-${props.label.toLowerCase().replaceAll(" ", "_")}` : undefined;
 
   return (
     <FlexRowAlignCenter $gap={6}>
