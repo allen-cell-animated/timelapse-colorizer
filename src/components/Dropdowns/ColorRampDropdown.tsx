@@ -29,6 +29,20 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
   --outline-width-selected: ${(props) => (props.$categorical ? "2px" : "1px")};
   --outline-width-unselected: ${(props) => (props.$categorical ? "1px" : "0px")};
 
+  & img {
+    /* Copied from
+    * https://stackoverflow.com/questions/7615009/disable-interpolation-when-scaling-a-canvas.  
+    * Prevents color ramps (especially hard-stop categorical ones) from being
+    * pixelated when scaled.  
+    */
+    image-rendering: optimizeSpeed; /* Older versions of FF */
+    image-rendering: -moz-crisp-edges; /* FF 6.0+ */
+    image-rendering: -webkit-optimize-contrast; /* Safari */
+    image-rendering: -o-crisp-edges; /* OS X & Windows Opera (12.02) */
+    image-rendering: pixelated; /* Awesome future-browsers */
+    -ms-interpolation-mode: nearest-neighbor; /* IE */
+  }
+
   & .react-select__control > img {
     border-radius: 5px;
     outline: var(--outline-width-unselected) solid var(--color-text-button);
@@ -203,7 +217,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   const paletteImgSrc = useMemo(() => {
     const visibleColors = props.selectedPalette.slice(0, Math.max(1, props.numCategories));
     const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
-    return colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
+    return colorRamp.createGradientCanvas(120 - 2, theme.controls.height).toDataURL();
   }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
 
   // Check if palette colors match an existing one; otherwise, mark it as being
