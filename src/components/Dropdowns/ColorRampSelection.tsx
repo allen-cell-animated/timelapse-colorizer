@@ -265,7 +265,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   };
 
   const onChangeRamp = (key: string): void => {
-    props.onChangeRamp(key, props.reversed);
+    props.onChangeRamp(key, false);
   };
 
   return (
