@@ -15,7 +15,9 @@ type AntStyledSelectProps = StateManagerProps & {
 
 // Styling is done via both styled-components and react-select's `styles` prop.
 const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
-  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width;
+  & {
+    transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s linear;
+  }
 
   & .react-select--is-disabled {
     cursor: not-allowed;
@@ -53,6 +55,11 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
 
             &:not(.react-select__control--is-disabled) {
               color: var(--color-text-button);
+
+              & .react-select__single-value,
+              & .react-select__input-container {
+                color: var(--color-text-button);
+              }
             }
 
             &:not(.react-select__control--menu-is-open):not(.react-select__control--is-disabled) {
@@ -67,13 +74,9 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
               color: var(--color-theme-light);
             }
 
-            & .react-select__single-value,
-            & .react-select__input-container {
-              color: var(--color-text-button);
-            }
-
             &:disabled {
               fill: var(--color-text-disabled);
+              color: var(--color-text-disabled);
             }
           `;
       }
