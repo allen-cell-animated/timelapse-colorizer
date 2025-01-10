@@ -61,7 +61,7 @@ import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
 import CanvasWrapper from "./components/CanvasWrapper";
 import CategoricalColorPicker from "./components/CategoricalColorPicker";
-import ColorRampSelection from "./components/Dropdowns/ColorRampSelection";
+import ColorRampDropdown from "./components/Dropdowns/ColorRampDropdown";
 import HelpDropdown from "./components/Dropdowns/HelpDropdown";
 import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
@@ -943,7 +943,7 @@ function Viewer(): ReactElement {
             />
             <GlossaryPanel dataset={dataset} />
           </FlexRow>
-          <ColorRampSelection
+          <ColorRampDropdown
             knownColorRamps={KNOWN_COLOR_RAMPS}
             colorRampsToDisplay={DISPLAY_COLOR_RAMP_KEYS}
             selectedRamp={colorRampKey}
@@ -960,7 +960,7 @@ function Viewer(): ReactElement {
             numCategories={dataset?.getFeatureCategories(featureKey)?.length || 1}
             selectedPalette={categoricalPalette}
             onChangePalette={setCategoricalPalette}
-          ></ColorRampSelection>
+          ></ColorRampDropdown>
         </FlexRowAlignCenter>
 
         {/* Organize the main content areas */}
