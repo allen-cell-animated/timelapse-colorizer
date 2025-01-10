@@ -31,15 +31,13 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
     props.children = <div>{props.children}</div>;
   }
 
-  props.label = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
-  let labelElement = props.label;
-  if (typeof props.label === "string") {
-    labelElement = <p id={props.id}>{props.label}</p>;
-  }
+  const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
 
   return (
     <label>
-      <span style={props.labelStyle}>{props.label}</span>
+      <span style={props.labelStyle} id={props.id}>
+        {formattedLabel}
+      </span>
       {props.children}
     </label>
   );
