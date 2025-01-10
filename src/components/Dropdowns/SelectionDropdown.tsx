@@ -23,8 +23,6 @@ export type SelectItem = {
    * shown only as alt text for the image.
    */
   image?: string;
-  /** If false, the option will be hidden from the dropdown. */
-  visible?: boolean;
 };
 
 type SelectionDropdownProps = {
@@ -35,7 +33,7 @@ type SelectionDropdownProps = {
    */
   htmlLabelId?: string;
   /** The value of the item that is currently selected. */
-  selected: string;
+  selected: string | SelectItem;
   /** An array of SelectItems that describes the item properties (`{value, label}`),
    * or an array of strings. Dropdown items will be presented in the provided array order.
    *
@@ -64,16 +62,12 @@ const defaultProps: Partial<SelectionDropdownProps> = {
 };
 
 // Override options in the menu list to include tooltips and, optionally, image content.
-const Option = (props: OptionProps): ReactElement | undefined => {
+const Option = (props: OptionProps): ReactElement => {
   // Debounce the tooltip so it only shows after a short delay when focusing/hovering over it.
   const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
   const title = (props as OptionProps<SelectItem>).data.tooltip;
 
   const copiedProps = { ...props, data: { ...(props.data as SelectItem) } };
-
-  if ((props.data as SelectItem).visible === false) {
-    return undefined;
-  }
 
   if ((props.data as SelectItem).image) {
     copiedProps.children = (
@@ -124,8 +118,13 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   const [searchInput, setSearchInput] = useState("");
   const [filteredValues, setFilteredValues] = useState<Set<string>>(new Set(options.map((item) => item.value)));
 
-  // Find the full options object corresponding with the selected object
-  const selectedOption = options.find((option) => option.value === props.selected);
+  let selectedOption: SelectItem | undefined;
+  if (typeof props.selected === "string") {
+    // Find the full options object corresponding with the selected object
+    selectedOption = options.find((option) => option.value === props.selected);
+  } else {
+    selectedOption = props.selected;
+  }
 
   // Warn if no labelling component/ID is provided for the component.
   useEffect(() => {

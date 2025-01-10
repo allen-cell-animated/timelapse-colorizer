@@ -906,7 +906,6 @@ function Viewer(): ReactElement {
         <FlexRowAlignCenter $gap={20} style={{ margin: "16px 0", flexWrap: "wrap" }}>
           <SelectionDropdown
             disabled={disableUi}
-            // disabled={true}
             label="Dataset"
             selected={datasetKey}
             buttonType="primary"
@@ -943,6 +942,7 @@ function Viewer(): ReactElement {
             />
             <GlossaryPanel dataset={dataset} />
           </FlexRow>
+
           <ColorRampDropdown
             knownColorRamps={KNOWN_COLOR_RAMPS}
             colorRampsToDisplay={DISPLAY_COLOR_RAMP_KEYS}
@@ -953,14 +953,13 @@ function Viewer(): ReactElement {
               setColorRampReversed(reversed);
             }}
             disabled={disableUi}
-            // disabled={true}
             knownCategoricalPalettes={KNOWN_CATEGORICAL_PALETTES}
             categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
             useCategoricalPalettes={dataset?.isFeatureCategorical(featureKey) || false}
             numCategories={dataset?.getFeatureCategories(featureKey)?.length || 1}
             selectedPalette={categoricalPalette}
             onChangePalette={setCategoricalPalette}
-          ></ColorRampDropdown>
+          />
         </FlexRowAlignCenter>
 
         {/* Organize the main content areas */}
