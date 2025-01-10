@@ -279,6 +279,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
           width={"120px"}
           isSearchable={false}
+          controlTooltipPlacement="top"
         ></SelectionDropdown>
       </DropdownStyleContainer>
 

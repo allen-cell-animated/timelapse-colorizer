@@ -42,6 +42,7 @@ type SelectionDropdownProps = {
    * If a string array is provided, SelectItems objects will be
    * auto-generated with `value` and `label` values set to the string.*/
   items: SelectItem[] | string[];
+  controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   disabled?: boolean;
   isSearchable?: boolean;
   /** The type of button to render for the dropdown. See Antd's button types:
@@ -59,6 +60,7 @@ type SelectionDropdownProps = {
 
 const defaultProps: Partial<SelectionDropdownProps> = {
   showSelectedItemTooltip: true,
+  controlTooltipPlacement: "right",
 };
 
 // Override options in the menu list to include tooltips and, optionally, image content.
@@ -170,7 +172,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
         <Tooltip
           title={selectedOption?.label}
           trigger={["hover", "focus"]}
-          placement="right"
+          placement={props.controlTooltipPlacement}
           open={props.showSelectedItemTooltip ? undefined : false}
         >
           <div>
@@ -188,7 +190,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
         </Tooltip>
       );
     },
-    [props.showSelectedItemTooltip]
+    [props.showSelectedItemTooltip, props.controlTooltipPlacement]
   );
 
   // Create an ID for the HTML label element if one is provided.
