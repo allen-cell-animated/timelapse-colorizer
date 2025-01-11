@@ -60,7 +60,7 @@ const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
 
   & .react-select__indicator {
     z-index: 100;
-    color: white;
+    color: var(--color-text-button);
   }
 
   & .react-select__menu {
@@ -122,6 +122,8 @@ type ColorRampSelectionProps = {
   categoricalPalettesToDisplay: string[];
   knownCategoricalPalettes?: Map<string, PaletteData>;
 
+  /** If true, shows the categorical palettes and selected palette instead of
+   * the color ramps. */
   useCategoricalPalettes?: boolean;
   disabled?: boolean;
   reversed?: boolean;
@@ -192,9 +194,8 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
 
   // Create a selected item for both the ramp and palette, since they might not
   // be an option in the dropdown list. This can happen for the ramp if it's a
-  // deprecated ramp that's no longer shown on the UI, or for the palette if
-  // it's a custom palette.
-
+  // deprecated ramp that's no longer shown on the UI or if it's been reversed,
+  // or for the palette if it's a custom palette.
   const selectedRampData = props.knownColorRamps.get(props.selectedRamp);
   if (!selectedRampData || !selectedRampData.colorRamp) {
     throw new Error(`Selected color ramp name '${props.selectedRamp}' is invalid.`);
