@@ -6,7 +6,7 @@ export enum ColorRampType {
 }
 
 export default class ColorRamp {
-  private colorStops: Color[];
+  public readonly colorStops: Color[];
   public readonly texture: DataTexture;
   private type: ColorRampType;
 
@@ -26,6 +26,22 @@ export default class ColorRamp {
     this.texture.needsUpdate = true;
   }
 
+  public static linearGradientFromColors(
+    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+    colorStops: Color[],
+    width: number,
+    height: number,
+    x: number = 0,
+    y: number = 0
+  ): CanvasGradient {
+    const gradient = ctx.createLinearGradient(x, y, width + x, height + y);
+    const step = 1 / (colorStops.length - 1);
+    colorStops.forEach((color, idx) => {
+      gradient.addColorStop(step * idx, `#${color.getHexString()}`);
+    });
+    return gradient;
+  }
+
   /** Creates a canvas filled in with this color ramp, to present as an option in a menu e.g. */
   public createGradientCanvas(width: number, height: number, vertical = false): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
@@ -37,11 +53,9 @@ export default class ColorRamp {
       ctx.fillStyle = `#${this.colorStops[0].getHexString()}`;
       ctx.fillRect(0, 0, width, height);
     } else if (this.type === ColorRampType.LINEAR) {
-      const gradient = ctx.createLinearGradient(0, 0, vertical ? 0 : width, vertical ? height : 0);
-      const step = 1 / (this.colorStops.length - 1);
-      this.colorStops.forEach((color, idx) => {
-        gradient.addColorStop(step * idx, `#${color.getHexString()}`);
-      });
+      const gradientWidth = vertical ? 0 : width;
+      const gradientHeight = vertical ? height : 0;
+      const gradient = ColorRamp.linearGradientFromColors(ctx, this.colorStops, gradientWidth, gradientHeight);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
     } else {

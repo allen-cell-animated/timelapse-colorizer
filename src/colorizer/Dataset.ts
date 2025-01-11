@@ -330,6 +330,10 @@ export default class Dataset {
     return loadedFrame;
   }
 
+  public getDefaultBackdropKey(): string | null {
+    return this.backdropData.keys().next().value ?? null;
+  }
+
   public hasBackdrop(key: string): boolean {
     return this.backdropData.has(key);
   }
@@ -523,6 +527,19 @@ export default class Dataset {
   /** get track id of a given cell id */
   public getTrackId(index: number): number {
     return this.trackIds?.[index] || 0;
+  }
+
+  /**
+   * Returns the 2D centroid of a given object id.
+   */
+  public getCentroid(objectId: number): [number, number] | undefined {
+    const index = objectId * 2;
+    const x = this.centroids?.[index];
+    const y = this.centroids?.[index + 1];
+    if (x && y) {
+      return [x, y];
+    }
+    return undefined;
   }
 
   private getIdsOfTrack(trackId: number): number[] {

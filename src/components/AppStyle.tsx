@@ -59,6 +59,8 @@ const theme = {
       theme: palette.theme,
       link: palette.link,
       linkHover: palette.linkDark,
+      darkLink: palette.gray20,
+      darkLinkHover: palette.gray10,
     },
     layout: {
       background: palette.gray0,

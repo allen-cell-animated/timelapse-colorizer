@@ -8,34 +8,44 @@ import {
 } from "@ant-design/icons";
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
-import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import React, {
+  ReactElement,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
-import { Dataset, Track } from "./colorizer";
 import {
+  Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
-  KNOWN_CATEGORICAL_PALETTES,
-} from "./colorizer/colors/categorical_palettes";
-import { DEFAULT_COLOR_RAMP_KEY, DISPLAY_COLOR_RAMP_KEYS, KNOWN_COLOR_RAMPS } from "./colorizer/colors/color_ramps";
-import {
-  defaultViewerConfig,
+  DISPLAY_COLOR_RAMP_KEYS,
   FeatureThreshold,
   getDefaultScatterPlotConfig,
+  getDefaultViewerConfig,
   isThresholdNumeric,
+  KNOWN_CATEGORICAL_PALETTES,
+  KNOWN_COLOR_RAMPS,
   LoadTroubleshooting,
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
+  Track,
   ViewerConfig,
-} from "./colorizer/types";
+} from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
-import { numberToStringDecimal } from "./colorizer/utils/math_utils";
-import { useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
+import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
-import { DEFAULT_PLAYBACK_FPS } from "./constants";
+import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
@@ -57,7 +67,6 @@ import SelectionDropdown from "./components/Dropdowns/SelectionDropdown";
 import Export from "./components/Export";
 import GlossaryPanel from "./components/GlossaryPanel";
 import Header from "./components/Header";
-import HoverTooltip from "./components/HoverTooltip";
 import IconButton from "./components/IconButton";
 import LabeledSlider from "./components/LabeledSlider";
 import LoadDatasetButton from "./components/LoadDatasetButton";
@@ -65,6 +74,7 @@ import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
 import { CorrelationPlotTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
@@ -94,18 +104,33 @@ function Viewer(): ReactElement {
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+  /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Switch to default backdrop if the dataset has one and none is currently selected.
+    // If the dataset has no backdrops, hide the backdrop.
+    if (dataset && (selectedBackdropKey === null || !dataset.hasBackdrop(selectedBackdropKey))) {
+      const defaultBackdropKey = dataset.getDefaultBackdropKey();
+      setSelectedBackdropKey(defaultBackdropKey);
+      if (!defaultBackdropKey) {
+        updateConfig({ backdropVisible: false });
+      }
+    }
+  }, [dataset, selectedBackdropKey]);
 
   // TODO: Save these settings in local storage
   // Use reducer here in case multiple updates happen simultaneously
   const [config, updateConfig] = useReducer(
     (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
-    defaultViewerConfig
+    getDefaultViewerConfig()
   );
   const [scatterPlotConfig, updateScatterPlotConfig] = useReducer(
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
     getDefaultScatterPlotConfig()
   );
+
+  const motionDeltas = useMotionDeltas(dataset, workerPool, config.vectorConfig);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -185,9 +210,8 @@ function Viewer(): ReactElement {
    */
   const [frameInput, setFrameInput] = useState(0);
   const [findTrackInput, setFindTrackInput] = useState("");
-  // Prevent jarring jumps in the hover tooltip by using the last non-null value
-  const [lastHoveredId, setLastHoveredId] = useState<number | null>(null);
-  const [showHoveredId, setShowHoveredId] = useState(false);
+  const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
+  const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
@@ -465,9 +489,16 @@ function Viewer(): ReactElement {
       await setFrame(newFrame);
 
       setFindTrackInput("");
-      if (selectedBackdropKey && !newDataset.hasBackdrop(selectedBackdropKey)) {
-        setSelectedBackdropKey(null);
+
+      // Switch to the new dataset's default backdrop if the current one is not in the
+      // new dataset. `selectedBackdropKey` is null only if the current dataset has no backdrops.
+      if (
+        selectedBackdropKey === null ||
+        (selectedBackdropKey !== null && !newDataset.hasBackdrop(selectedBackdropKey))
+      ) {
+        setSelectedBackdropKey(newDataset.getDefaultBackdropKey());
       }
+
       setSelectedTrack(null);
       setDatasetOpen(true);
       setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
@@ -723,24 +754,6 @@ function Viewer(): ReactElement {
     [replaceDataset]
   );
 
-  const getFeatureValue = useCallback(
-    (id: number): string => {
-      if (!featureKey || !dataset) {
-        return "";
-      }
-      // Look up feature value from id
-      const featureData = dataset.getFeatureData(featureKey);
-      // ?? is a nullish coalescing operator; it checks for null + undefined values
-      // (safe for falsy values like 0 or NaN, which are valid feature values)
-      let featureValue = featureData?.data[id] ?? -1;
-      featureValue = isFinite(featureValue) ? featureValue : NaN;
-      const unitsLabel = featureData?.unit ? ` ${featureData?.unit}` : "";
-      // Check if int, otherwise return float
-      return numberToStringDecimal(featureValue, 3) + unitsLabel;
-    },
-    [featureKey, dataset]
-  );
-
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
   timeControls.setFrameCallback(setFrame);
 
@@ -847,15 +860,126 @@ function Viewer(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
-  let hoveredFeatureValue = "";
-  if (lastHoveredId !== null && dataset) {
-    const featureVal = getFeatureValue(lastHoveredId);
-    const categories = dataset.getFeatureCategories(featureKey);
-    if (categories !== null) {
-      hoveredFeatureValue = categories[Number.parseInt(featureVal, 10)];
-    } else {
-      hoveredFeatureValue = featureVal;
-    }
+  const tabItems = [
+    {
+      label: "Track plot",
+      key: TabType.TRACK_PLOT,
+      children: (
+        <div className={styles.tabContent}>
+          <PlotTab
+            setFrame={setFrameAndRender}
+            findTrackInputText={findTrackInput}
+            setFindTrackInputText={setFindTrackInput}
+            findTrack={findTrack}
+            currentFrame={currentFrame}
+            dataset={dataset}
+            featureKey={featureKey}
+            selectedTrack={selectedTrack}
+            disabled={disableUi}
+          />
+        </div>
+      ),
+    },
+    {
+      label: "Scatter plot",
+      key: TabType.SCATTER_PLOT,
+      children: (
+        <div className={styles.tabContent}>
+          <ScatterPlotTab
+            dataset={dataset}
+            currentFrame={currentFrame}
+            selectedTrack={selectedTrack}
+            findTrack={findTrack}
+            setFrame={setFrameAndRender}
+            isVisible={config.openTab === TabType.SCATTER_PLOT}
+            isPlaying={timeControls.isPlaying() || isRecording}
+            selectedFeatureKey={featureKey}
+            colorRampMin={colorRampMin}
+            colorRampMax={colorRampMax}
+            colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
+            categoricalPalette={categoricalPalette}
+            inRangeIds={inRangeLUT}
+            viewerConfig={config}
+            scatterPlotConfig={scatterPlotConfig}
+            updateScatterPlotConfig={updateScatterPlotConfig}
+            showAlert={showAlert}
+          />
+        </div>
+      ),
+    },
+    {
+      label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
+      key: TabType.FILTERS,
+      children: (
+        <div className={styles.tabContent}>
+          <FeatureThresholdsTab
+            featureThresholds={featureThresholds}
+            onChange={setFeatureThresholds}
+            dataset={dataset}
+            disabled={disableUi}
+            categoricalPalette={categoricalPalette}
+          />
+        </div>
+      ),
+    },
+    {
+      label: "Viewer settings",
+      key: TabType.SETTINGS,
+      children: (
+        <div className={styles.tabContent}>
+          <SettingsTab
+            config={config}
+            updateConfig={updateConfig}
+            dataset={dataset}
+            // TODO: This could be part of a dataset-specific settings object
+            selectedBackdropKey={selectedBackdropKey}
+            setSelectedBackdropKey={setSelectedBackdropKey}
+          />
+        </div>
+      ),
+    },
+    {
+      label: "Correlation plot",
+      key: TabType.CORRELATION_PLOT,
+      children: (
+        <div className={styles.tabContent}>
+          <CorrelationPlotTab
+            openScatterPlotTab={openScatterPlotTab}
+            workerPool={workerPool}
+            dataset={dataset}
+            isVisible={config.openTab === TabType.CORRELATION_PLOT}
+            isPlaying={timeControls.isPlaying() || isRecording}
+            colorRampMin={colorRampMin}
+            colorRampMax={colorRampMax}
+            colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
+            inRangeIds={inRangeLUT}
+            viewerConfig={config}
+            correlationPlotConfig={scatterPlotConfig}
+            updateCorrelationPlotConfig={updateScatterPlotConfig}
+            showAlert={showAlert}
+          />
+        </div>
+      ),
+    },
+  ];
+
+  if (INTERNAL_BUILD) {
+    tabItems.push({
+      label: "Annotations",
+      key: TabType.ANNOTATION,
+      children: <div className={styles.tabContent}>Coming soon</div>,
+    });
+  }
+
+  let datasetHeader: ReactNode = null;
+  if (collection && collection.metadata.name) {
+    datasetHeader = collection.metadata.name;
+  } else if (dataset && dataset.metadata.name) {
+    datasetHeader = dataset.metadata.name;
+  } else if (dataset) {
+    datasetHeader = <span style={{ color: theme.color.text.hint }}>Untitled dataset</span>;
+  } else {
+    datasetHeader = null;
   }
 
   return (
@@ -864,7 +988,7 @@ function Viewer(): ReactElement {
       <SmallScreenWarning />
 
       <Header alertElement={bannerElement} headerOpensInNewTab={true}>
-        <h3>{collection?.metadata.name ?? null}</h3>
+        <h3>{datasetHeader}</h3>
         <FlexRowAlignCenter $gap={12} $wrap="wrap">
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
             <LoadDatasetButton
@@ -875,7 +999,7 @@ function Viewer(): ReactElement {
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrameAndRender}
-              getCanvasExportDimensions={() => [canv.domElement.width, canv.domElement.height]}
+              getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
@@ -883,6 +1007,8 @@ function Viewer(): ReactElement {
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
+              config={config}
+              updateConfig={updateConfig}
             />
             <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
@@ -1006,31 +1132,32 @@ function Viewer(): ReactElement {
                   </div>
                 </FlexRowAlignCenter>
               </div>
-              <HoverTooltip
-                tooltipContent={
-                  <>
-                    <p>Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>
-                    <p>
-                      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
-                      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
-                    </p>
-                  </>
-                }
-                disabled={!showHoveredId}
+              <CanvasHoverTooltip
+                dataset={dataset}
+                featureKey={featureKey}
+                lastValidHoveredId={lastValidHoveredId}
+                showObjectHoverInfo={showObjectHoverInfo}
+                motionDeltas={motionDeltas}
+                config={config}
               >
                 <CanvasWrapper
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   collection={collection || null}
+                  vectorData={motionDeltas}
                   dataset={dataset}
+                  datasetKey={datasetKey}
+                  featureKey={featureKey}
                   selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                   colorRampMin={colorRampMin}
                   colorRampMax={colorRampMax}
+                  isRecording={isRecording}
                   categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
+                  updateConfig={updateConfig}
                   onTrackClicked={(track) => {
                     setFindTrackInput(track?.trackId.toString() || "");
                     setSelectedTrack(track);
@@ -1038,15 +1165,15 @@ function Viewer(): ReactElement {
                   inRangeLUT={inRangeLUT}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
-                    setShowHoveredId(isObject);
+                    setShowObjectHoverInfo(isObject);
                     if (isObject) {
-                      setLastHoveredId(id);
+                      setLastValidHoveredId(id);
                     }
                   }}
-                  onMouseLeave={() => setShowHoveredId(false)}
+                  onMouseLeave={() => setShowObjectHoverInfo(false)}
                   showAlert={isInitialDatasetLoaded ? showAlert : undefined}
                 />
-              </HoverTooltip>
+              </CanvasHoverTooltip>
             </div>
 
             {/** Time Control Bar */}
@@ -1122,108 +1249,7 @@ function Viewer(): ReactElement {
                 size="large"
                 activeKey={config.openTab}
                 onChange={(key) => updateConfig({ openTab: key as TabType })}
-                items={[
-                  {
-                    label: "Track plot",
-                    key: TabType.TRACK_PLOT,
-                    children: (
-                      <div className={styles.tabContent}>
-                        <PlotTab
-                          setFrame={setFrameAndRender}
-                          findTrackInputText={findTrackInput}
-                          setFindTrackInputText={setFindTrackInput}
-                          findTrack={findTrack}
-                          currentFrame={currentFrame}
-                          dataset={dataset}
-                          featureKey={featureKey}
-                          selectedTrack={selectedTrack}
-                          disabled={disableUi}
-                        />
-                      </div>
-                    ),
-                  },
-                  {
-                    label: "Scatter plot",
-                    key: TabType.SCATTER_PLOT,
-                    children: (
-                      <div className={styles.tabContent}>
-                        <ScatterPlotTab
-                          dataset={dataset}
-                          currentFrame={currentFrame}
-                          selectedTrack={selectedTrack}
-                          findTrack={findTrack}
-                          setFrame={setFrameAndRender}
-                          isVisible={config.openTab === TabType.SCATTER_PLOT}
-                          isPlaying={timeControls.isPlaying() || isRecording}
-                          selectedFeatureKey={featureKey}
-                          colorRampMin={colorRampMin}
-                          colorRampMax={colorRampMax}
-                          colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
-                          categoricalPalette={categoricalPalette}
-                          inRangeIds={inRangeLUT}
-                          viewerConfig={config}
-                          scatterPlotConfig={scatterPlotConfig}
-                          updateScatterPlotConfig={updateScatterPlotConfig}
-                          showAlert={showAlert}
-                        />
-                      </div>
-                    ),
-                  },
-                  {
-                    label: "Correlation plot",
-                    key: TabType.CORRELATION_PLOT,
-                    children: (
-                      <div className={styles.tabContent}>
-                        <CorrelationPlotTab
-                          openScatterPlotTab={openScatterPlotTab}
-                          workerPool={workerPool}
-                          dataset={dataset}
-                          isVisible={config.openTab === TabType.CORRELATION_PLOT}
-                          isPlaying={timeControls.isPlaying() || isRecording}
-                          colorRampMin={colorRampMin}
-                          colorRampMax={colorRampMax}
-                          colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
-                          inRangeIds={inRangeLUT}
-                          viewerConfig={config}
-                          correlationPlotConfig={scatterPlotConfig}
-                          updateCorrelationPlotConfig={updateScatterPlotConfig}
-                          showAlert={showAlert}
-                        />
-                      </div>
-                    ),
-                  },
-                  {
-                    label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
-                    key: TabType.FILTERS,
-                    children: (
-                      <div className={styles.tabContent}>
-                        <FeatureThresholdsTab
-                          featureThresholds={featureThresholds}
-                          onChange={setFeatureThresholds}
-                          dataset={dataset}
-                          disabled={disableUi}
-                          categoricalPalette={categoricalPalette}
-                        />
-                      </div>
-                    ),
-                  },
-                  {
-                    label: "Viewer settings",
-                    key: TabType.SETTINGS,
-                    children: (
-                      <div className={styles.tabContent}>
-                        <SettingsTab
-                          config={config}
-                          updateConfig={updateConfig}
-                          dataset={dataset}
-                          // TODO: This could be part of a dataset-specific settings object
-                          selectedBackdropKey={selectedBackdropKey}
-                          setSelectedBackdropKey={setSelectedBackdropKey}
-                        />
-                      </div>
-                    ),
-                  },
-                ]}
+                items={tabItems}
               />
             </div>
           </div>

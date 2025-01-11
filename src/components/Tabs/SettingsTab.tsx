@@ -1,24 +1,29 @@
-import { Checkbox } from "antd";
+import { Color as AntdColor } from "@rc-component/color-picker";
+import { Checkbox, ColorPicker } from "antd";
 import React, { ReactElement } from "react";
-import { Color } from "three";
+import { Color, ColorRepresentation } from "three";
 
 import { Dataset } from "../../colorizer";
+import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
+import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
+import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
 const NO_BACKDROP = {
   key: "",
   label: "(None)",
 };
 
-const INDENT_PX = 24;
-const MAX_SLIDER_WIDTH = "250px";
+export const SETTINGS_INDENT_PX = 24;
+const SETTINGS_GAP_PX = 8;
+export const MAX_SLIDER_WIDTH = "250px";
 
 type SettingsTabProps = {
   config: ViewerConfig;
@@ -30,30 +35,41 @@ type SettingsTabProps = {
   dataset: Dataset | null;
 };
 
-const h3Wrapper = (label: string | ReactElement): ReactElement => {
-  return <h3>{label}</h3>;
-};
-
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
     ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
         return { key, label: data.name };
       })
     : [];
-  backdropOptions.unshift(NO_BACKDROP);
 
-  const isBackdropDisabled = backdropOptions.length === 1 || !props.selectedBackdropKey;
+  const isBackdropDisabled = backdropOptions.length === 0 || props.selectedBackdropKey === null;
+  const isBackdropOptionsDisabled = isBackdropDisabled || !props.config.backdropVisible;
+  let selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.key;
+  if (isBackdropDisabled) {
+    backdropOptions.push(NO_BACKDROP);
+    selectedBackdropKey = NO_BACKDROP.key;
+  }
 
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
-          <SettingsItem label="Backdrop images">
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+          <SettingsItem label={"Show backdrops"}>
+            <Checkbox
+              type="checkbox"
+              disabled={isBackdropDisabled}
+              checked={props.config.backdropVisible}
+              onChange={(event) => {
+                props.updateConfig({ backdropVisible: event.target.checked });
+              }}
+            />
+          </SettingsItem>
+          <SettingsItem label="Backdrop">
             <SelectionDropdown
-              selected={props.selectedBackdropKey || NO_BACKDROP.key}
+              selected={selectedBackdropKey}
               items={backdropOptions}
               onChange={props.setSelectedBackdropKey}
-              disabled={backdropOptions.length === 1}
+              disabled={isBackdropOptionsDisabled}
             />
           </SettingsItem>
           <SettingsItem label="Brightness">
@@ -68,7 +84,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropDisabled}
+                disabled={isBackdropOptionsDisabled}
               />
             </div>
           </SettingsItem>
@@ -85,14 +101,46 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
-                disabled={isBackdropDisabled}
+                disabled={isBackdropOptionsDisabled}
+              />
+            </div>
+          </SettingsItem>
+          <SettingsItem label="Object opacity">
+            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+              <LabeledSlider
+                type="value"
+                disabled={isBackdropOptionsDisabled}
+                minSliderBound={0}
+                maxSliderBound={100}
+                minInputBound={0}
+                maxInputBound={100}
+                value={props.config.objectOpacity}
+                onChange={(objectOpacity: number) => props.updateConfig({ objectOpacity: objectOpacity })}
+                marks={[100]}
+                numberFormatter={(value?: number) => `${value}%`}
               />
             </div>
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
+
       <CustomCollapse label="Objects">
-        <SettingsContainer indentPx={INDENT_PX} labelFormatter={h3Wrapper}>
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+          <SettingsItem label="Outline color">
+            <div>
+              <ColorPicker
+                style={{ width: "min-content" }}
+                size="small"
+                disabledAlpha={true}
+                defaultValue={new AntdColor(OUTLINE_COLOR_DEFAULT)}
+                onChange={(_color, hex) => {
+                  props.updateConfig({ outlineColor: new Color(hex as ColorRepresentation) });
+                }}
+                value={new AntdColor(props.config.outlineColor.getHexString())}
+                presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+              />
+            </div>
+          </SettingsItem>
           <SettingsItem label="Filtered object color">
             <DrawModeDropdown
               selected={props.config.outOfRangeDrawSettings.mode}
@@ -111,57 +159,43 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               }}
             />
           </SettingsItem>
-          <SettingsItem label="Opacity">
-            <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
-              <LabeledSlider
-                type="value"
-                minSliderBound={0}
-                maxSliderBound={100}
-                minInputBound={0}
-                maxInputBound={100}
-                value={props.config.objectOpacity}
-                onChange={(objectOpacity: number) => props.updateConfig({ objectOpacity: objectOpacity })}
-                marks={[100]}
-                numberFormatter={(value?: number) => `${value}%`}
-              />
-            </div>
-          </SettingsItem>
 
-          <SettingsItem>
+          <SettingsItem label={"Show track path"}>
             <Checkbox
               type="checkbox"
               checked={props.config.showTrackPath}
               onChange={(event) => {
                 props.updateConfig({ showTrackPath: event.target.checked });
               }}
-            >
-              Show track path
-            </Checkbox>
+            />
           </SettingsItem>
-          <SettingsItem>
+          <SettingsItem label="Show scale bar">
             <Checkbox
               type="checkbox"
               checked={props.config.showScaleBar}
               onChange={(event) => {
                 props.updateConfig({ showScaleBar: event.target.checked });
               }}
-            >
-              Show scale bar
-            </Checkbox>
+            />
           </SettingsItem>
-          <SettingsItem>
+          <SettingsItem label="Show timestamp">
             <Checkbox
               type="checkbox"
               checked={props.config.showTimestamp}
               onChange={(event) => {
                 props.updateConfig({ showTimestamp: event.target.checked });
               }}
-            >
-              Show timestamp
-            </Checkbox>
+            />
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
+
+      <CustomCollapse label="Vector arrows">
+        <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
+          <VectorFieldSettings config={props.config} updateConfig={props.updateConfig} />
+        </SettingsContainer>
+      </CustomCollapse>
+      <div style={{ height: "100px" }}></div>
     </FlexColumn>
   );
 }

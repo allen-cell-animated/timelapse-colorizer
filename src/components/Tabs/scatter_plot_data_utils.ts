@@ -173,10 +173,14 @@ export function makeLineTrace(
     },
     ids: objectIds.map((id) => id.toString()),
     customdata: trackIds.map((id) => id.toString()),
+    hoverinfo: "skip", // will be overridden if hovertemplate is provided
     hovertemplate,
   };
 }
 
+// TODO: Crosshairs can be rendered using Plotly's layout shapes instead of traces,
+// which means time playback can run faster (assuming other plot params don't change).
+// See `Plotting.ts` for an example, and also https://plotly.com/javascript/reference/layout/shapes/.
 /**
  * Returns an array of Plotly traces that render a crosshair at the X,Y coordinates.
  */
