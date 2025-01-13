@@ -1,6 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { ColorPicker, Table, TableProps } from "antd";
+import { Button, ColorPicker, Table, TableProps } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
@@ -10,6 +10,7 @@ import { TagIconSVG } from "../../../assets";
 import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
+import { download } from "../../../utils/file_io";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
@@ -150,10 +151,21 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   return (
     <FlexColumnAlignCenter $gap={10}>
-      <AnnotationModeButton
-        active={isAnnotationModeEnabled}
-        onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
-      />
+      <FlexRow style={{ width: "100%", justifyContent: "space-between" }}>
+        <AnnotationModeButton
+          active={isAnnotationModeEnabled}
+          onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
+        />
+        <Button
+          onClick={() => {
+            const csvData = props.annotationState.data.toCsv(props.dataset!);
+            download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+            console.log(csvData);
+          }}
+        >
+          Export as CSV
+        </Button>
+      </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
       <FlexRow $gap={10} style={{ width: "100%" }}>

@@ -36,7 +36,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   };
 
   const onClickEditSave = (): void => {
-    props.setLabelName(editPopoverNameInput);
+    props.setLabelName(editPopoverNameInput.trim());
     setShowEditPopover(false);
   };
 

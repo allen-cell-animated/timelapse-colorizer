@@ -386,6 +386,7 @@ export const useAnnotations = (): AnnotationState => {
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
       isLabelOnId: annotationData.isLabelOnId,
+      toCsv: annotationData.toCsv,
     })
   , [dataUpdateCounter]);
 
@@ -397,7 +398,6 @@ export const useAnnotations = (): AnnotationState => {
     setIsAnnotationModeEnabled: setIsAnnotationEnabled,
     visible,
     setVisibility,
-
     data,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),

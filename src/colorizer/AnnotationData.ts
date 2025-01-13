@@ -1,8 +1,13 @@
+import Papa from "papaparse";
 import { Color } from "three";
 
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
 
 import Dataset from "./Dataset";
+
+const CSV_COL_ID = "ID";
+const CSV_COL_TIME = "Frame";
+const CSV_COL_TRACK = "Track";
 
 export type LabelData = {
   name: string;
@@ -76,6 +81,32 @@ export interface IAnnotationDataGetters {
    * ```
    * */
   getTimeToLabelIdMap(dataset: Dataset): Map<number, Record<number, number[]>>;
+
+  /**
+   * Converts the annotation data to a CSV string.
+   *
+   * @param dataset Dataset object to use for time and track information.
+   * @param delimiter The delimiter to use between cells. Default is a comma
+   * (",").
+   * @returns Returns a comma-separated value (CSV) string representation of the
+   * annotation data, including a header. The header will contain the columns:
+   *   - ID (object ID)
+   *   - Track (track ID)
+   *   - Frame (time)
+   *   - ...and one column for each label.
+   *
+   * Label names will be enclosed in double quotes, and special characters will
+   * be escaped. Double quotes will be escaped with another double quote, and
+   * special characters at the start of the label name that could be interpreted
+   * as equations (`+`, `-`, `=`, `@`) will be escaped with a leading single
+   * quote. Whitespace will be trimmed from the label names.
+   *
+   * Each object ID that has been labeled will be a row in the CSV. For label
+   * columns, the cell value will be 1 if the label is applied to the object,
+   * and 0 if it is not. Rows end with `\r\n` and cells are separated by commas
+   * by default.
+   */
+  toCsv(dataset: Dataset, separator?: string): string;
 }
 
 export interface IAnnotationDataSetters {
@@ -122,6 +153,7 @@ export class AnnotationData implements IAnnotationData {
     this.deleteLabel = this.deleteLabel.bind(this);
     this.isLabelOnId = this.isLabelOnId.bind(this);
     this.setLabelOnId = this.setLabelOnId.bind(this);
+    this.toCsv = this.toCsv.bind(this);
   }
 
   // Getters
@@ -177,6 +209,19 @@ export class AnnotationData implements IAnnotationData {
     return timeToLabelIdMap;
   }
 
+  getIdsToLabels(): Map<number, number[]> {
+    const idsToLabels = new Map<number, number[]>();
+    for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
+      for (const id of this.labelData[labelIdx].ids) {
+        if (!idsToLabels.has(id)) {
+          idsToLabels.set(id, []);
+        }
+        idsToLabels.get(id)!.push(labelIdx);
+      }
+    }
+    return idsToLabels;
+  }
+
   // Setters
 
   /** Creates a new label and returns its index. */
@@ -229,5 +274,35 @@ export class AnnotationData implements IAnnotationData {
       this.labelData[labelIdx].ids.delete(id);
     }
     this.timeToLabelIdMap = null;
+  }
+
+  toCsv(dataset: Dataset, delimiter: string = ","): string {
+    const idsToLabels = this.getIdsToLabels();
+    const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
+
+    headerRow.push(...this.labelData.map((label) => label.name.trim()));
+
+    const csvRows: number[][] = [];
+    for (const [id, labels] of idsToLabels) {
+      const track = dataset.getTrackId(id);
+      const time = dataset.getTime(id);
+
+      const row = [id, track, time];
+      for (let i = 0; i < this.labelData.length; i++) {
+        row.push(labels.includes(i) ? 1 : 0);
+      }
+      csvRows.push(row);
+    }
+
+    const csvString = Papa.unparse(
+      { fields: headerRow, data: csvRows },
+      { delimiter: delimiter, header: true, escapeFormulae: true }
+    );
+
+    // TODO: Prepend additional metadata (e.g. label colors) when we add support
+    // for importing annotation data? Some CSV parsers support adding comments
+    // prefixed with `#`.
+
+    return csvString;
   }
 }
