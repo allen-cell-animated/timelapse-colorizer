@@ -26,7 +26,7 @@ jobs:
         run: npm ci && npx vite build --base=/timelapse-colorizer/
 
       - name: Upload build files
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b
         with:
           name: production-files
           path: ./dist
