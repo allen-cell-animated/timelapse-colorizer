@@ -75,6 +75,8 @@ const theme = {
       background: palette.gray7,
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
+      annotationOutline: palette.themeLight,
+      modePopupBackground: "rgba(0, 0, 0, 0.7)",
     },
     // TODO: Reorganize the button colors by primary/default/secondary etc.
     button: {
@@ -178,6 +180,9 @@ const CssContainer = styled.div`
   --color-borders: ${theme.color.layout.borders};
   --color-modal-overlay: ${theme.color.layout.modalOverlay};
 
+  /* Viewport */
+  --color-viewport-mode-popup-background: ${theme.color.viewport.modePopupBackground};
+
   /* Controls */
   /* TODO: Possible issue with hover/active colors because the UI design
   styling has the same active and hover colors (just with different outlines).
@@ -208,6 +213,7 @@ const CssContainer = styled.div`
 
   --color-viewport-overlay-background: ${theme.color.viewport.overlayBackground};
   --color-viewport-overlay-outline: ${theme.color.viewport.overlayOutline};
+  --color-viewport-annotation-outline: ${theme.color.viewport.annotationOutline};
 
   --color-alert-info-border: ${theme.color.alert.border.info};
   --color-alert-warning-border: ${theme.color.alert.border.warning};

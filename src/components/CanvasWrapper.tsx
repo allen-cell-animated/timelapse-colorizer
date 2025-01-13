@@ -5,10 +5,12 @@ import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
-import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG } from "../assets";
+import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
 import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
+import { AnnotationState } from "../colorizer/utils/react_utils";
+import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
@@ -60,6 +62,18 @@ function TooltipWithSubtext(
   );
 }
 
+const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: boolean }>`
+  position: relative;
+  background-color: var(--color-viewport-background);
+
+  outline: 1px solid
+    ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
+  box-shadow: 0 0 8px 2px
+    ${(props) => (props.$annotationModeEnabled ? "var(--color-viewport-annotation-outline)" : "transparent")};
+
+  transition: box-shadow 0.1s ease-in, outline 0.1s ease-in;
+`;
+
 const CanvasControlsContainer = styled(FlexColumn)`
   position: absolute;
   top: 12px;
@@ -82,6 +96,19 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   --fill-color: #0006;
   fill: var(--fill-color);
   color: var(--fill-color);
+  pointer-events: none;
+`;
+
+const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+
+  color: var(--color-text-button);
+  background-color: var(--color-viewport-mode-popup-background);
+  z-index: 200;
+  padding: 8px 12px;
+  border-radius: 4px;
   pointer-events: none;
 `;
 
@@ -110,6 +137,8 @@ type CanvasWrapperProps = {
   colorRamp: ColorRamp;
   colorRampMin: number;
   colorRampMax: number;
+
+  annotationState: AnnotationState;
 
   selectedTrack: Track | null;
   categoricalColors: Color[];
@@ -318,6 +347,15 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setOutlineColor(props.config.outlineColor);
   }, [props.config.outlineColor]);
 
+  useMemo(() => {
+    const annotationLabels = props.annotationState.data.getLabels();
+    const timeToAnnotationLabelIds = props.dataset
+      ? props.annotationState.data.getTimeToLabelIdMap(props.dataset)
+      : new Map();
+    canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
+    canv.isAnnotationVisible = props.annotationState.visible;
+  }, [props.dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
+
   // CANVAS RESIZING /////////////////////////////////////////////////
 
   /**
@@ -497,11 +535,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
+      } else if (props.annotationState.isAnnotationModeEnabled) {
+        canv.domElement.style.cursor = "crosshair";
       } else {
         canv.domElement.style.cursor = "auto";
       }
     },
-    [handlePan]
+    [handlePan, props.annotationState.isAnnotationModeEnabled]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -596,12 +636,30 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     };
   }, [props.dataset, canv]);
 
+  const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
+    return (
+      <LinkStyleButton
+        key={key}
+        onClick={onClick}
+        $color={theme.color.text.darkLink}
+        $hoverColor={theme.color.text.darkLinkHover}
+        tabIndex={-1}
+      >
+        {content}
+      </LinkStyleButton>
+    );
+  };
+
   // RENDERING /////////////////////////////////////////////////
 
   canv.render();
 
   const onViewerSettingsLinkClicked = (): void => {
     props.updateConfig({ openTab: TabType.SETTINGS });
+  };
+
+  const onAnnotationLinkClicked = (): void => {
+    props.updateConfig({ openTab: TabType.ANNOTATION });
   };
 
   const backdropTooltipContents: ReactNode[] = [];
@@ -614,24 +672,37 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
   // Link to viewer settings
   backdropTooltipContents.push(
-    <LinkStyleButton
-      key="backdrop-viewer-settings-link"
-      $color={theme.color.text.darkLink}
-      $hoverColor={theme.color.text.darkLinkHover}
-      onClick={onViewerSettingsLinkClicked}
-    >
-      {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
-    </LinkStyleButton>
+    makeLinkStyleButton(
+      "backdrop-viewer-settings-link",
+      onViewerSettingsLinkClicked,
+      <span>
+        {"Viewer settings > Backdrop"} <VisuallyHidden>(opens settings tab)</VisuallyHidden>
+      </span>
+    )
+  );
+
+  const labels = props.annotationState.data.getLabels();
+  const annotationTooltipContents: ReactNode[] = [];
+  annotationTooltipContents.push(
+    <span key="annotation-count">
+      {labels.length > 0 ? (labels.length === 1 ? "1 label" : `${labels.length} labels`) : "(No labels)"}
+    </span>
+  );
+  annotationTooltipContents.push(
+    makeLinkStyleButton(
+      "annotation-link",
+      onAnnotationLinkClicked,
+      <span>
+        View and edit annotations <VisuallyHidden>(opens annotations tab)</VisuallyHidden>
+      </span>
+    )
   );
 
   return (
-    <FlexColumnAlignCenter
-      style={{
-        position: "relative",
-        backgroundColor: theme.color.viewport.background,
-      }}
-      ref={containerRef}
-    >
+    <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
+      {props.annotationState.isAnnotationModeEnabled && (
+        <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
+      )}
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
         <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
@@ -700,7 +771,27 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtext>
+
+        {/* Annotation mode toggle */}
+        {INTERNAL_BUILD && (
+          <TooltipWithSubtext
+            title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
+            subtitleList={annotationTooltipContents}
+            placement="right"
+            trigger={["hover", "focus"]}
+          >
+            <IconButton
+              type={props.annotationState.visible ? "primary" : "link"}
+              onClick={() => {
+                props.annotationState.setVisibility(!props.annotationState.visible);
+              }}
+            >
+              {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
+              <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
+            </IconButton>
+          </TooltipWithSubtext>
+        )}
       </CanvasControlsContainer>
-    </FlexColumnAlignCenter>
+    </CanvasContainer>
   );
 }

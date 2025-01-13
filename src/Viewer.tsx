@@ -1139,6 +1139,7 @@ function Viewer(): ReactElement {
                 showObjectHoverInfo={showObjectHoverInfo}
                 motionDeltas={motionDeltas}
                 config={config}
+                annotationState={annotationState}
               >
                 <CanvasWrapper
                   loading={isDatasetLoading}
@@ -1169,6 +1170,7 @@ function Viewer(): ReactElement {
                   }}
                   onMouseLeave={() => setShowObjectHoverInfo(false)}
                   showAlert={isInitialDatasetLoaded ? showAlert : undefined}
+                  annotationState={annotationState}
                 />
               </CanvasHoverTooltip>
             </div>

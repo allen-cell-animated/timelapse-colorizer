@@ -1,4 +1,4 @@
-import { CloseOutlined, TagOutlined } from "@ant-design/icons";
+import { CloseOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { ColorPicker, Table, TableProps } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
@@ -6,6 +6,7 @@ import React, { ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
+import { TagIconSVG } from "../../../assets";
 import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
@@ -167,7 +168,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
           <ColorPicker
             size="small"
-            value={new AntdColor(selectedLabel.color.getHexString())}
+            value={new AntdColor(selectedLabel?.color.getHexString() || "#ffffff")}
             onChange={onColorPickerChange}
             disabledAlpha={true}
             disabled={!isAnnotationModeEnabled}
@@ -209,10 +210,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           }}
           locale={{
             emptyText: (
-              <FlexColumnAlignCenter>
-                <span style={{ fontSize: "24px", marginBottom: 0 }}>
-                  <TagOutlined />
-                </span>
+              <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0" }}>
+                <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
                 <p>No annotated IDs</p>
               </FlexColumnAlignCenter>
             ),

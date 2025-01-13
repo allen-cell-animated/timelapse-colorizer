@@ -17,6 +17,7 @@ export const LinkStyleButton = styled.button<{
   font: inherit;
   font-size: inherit;
   border: none;
+  cursor: pointer;
 
   text-decoration: underline;
 

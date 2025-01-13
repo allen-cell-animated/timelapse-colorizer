@@ -1,9 +1,10 @@
-import { CheckOutlined, TagOutlined } from "@ant-design/icons";
+import { CheckOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import React, { ReactElement, useContext } from "react";
 import styled, { css } from "styled-components";
 
-import { FlexRow } from "../../../styles/utils";
+import { TagIconSVG } from "../../../assets";
+import { FlexRow, FlexRowAlignCenter } from "../../../styles/utils";
 
 import { AppThemeContext } from "../../AppStyle";
 
@@ -50,13 +51,13 @@ export default function AnnotationModeButton(props: AnnotationModeButtonProps): 
         onClick={props.onClick}
       >
         {props.active ? (
-          <>
+          <FlexRowAlignCenter $gap={6}>
             <CheckOutlined /> Done editing
-          </>
+          </FlexRowAlignCenter>
         ) : (
-          <>
-            <TagOutlined /> Create and edit
-          </>
+          <FlexRowAlignCenter $gap={6}>
+            <TagIconSVG /> Create and edit
+          </FlexRowAlignCenter>
         )}
       </AnnotationModeStyledButton>
       {props.active && (

@@ -329,7 +329,7 @@ export const useAnnotations = (): AnnotationState => {
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);  
-  const [visible, _setVisibility] = useState<boolean>(true);
+  const [visible, _setVisibility] = useState<boolean>(false);
 
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
