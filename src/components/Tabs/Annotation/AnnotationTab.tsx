@@ -1,9 +1,9 @@
-import { CheckOutlined, CloseOutlined, TagOutlined } from "@ant-design/icons";
+import { CloseOutlined, TagOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Table, TableProps } from "antd";
+import { ColorPicker, Table, TableProps } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useContext, useMemo } from "react";
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
 
 import { Dataset } from "../../../colorizer";
@@ -14,6 +14,7 @@ import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import IconButton from "../../IconButton";
+import AnnotationModeButton from "./AnnotationModeButton";
 import LabelEditControls from "./LabelEditControls";
 
 type AnnotationTabProps = {
@@ -28,32 +29,6 @@ type TableDataType = {
   track: number;
   time: number;
 };
-
-/**
- * Overrides the default button color with a green 'success' color
- * when the button is active.
- */
-const AnnotationModeButton = styled(Button)<{ $active: boolean }>`
-  ${(props) => {
-    if (props.$active) {
-      return css`
-        background-color: var(--color-button-success-bg);
-        border: 1px solid var(--color-button-success-bg);
-
-        &&&&:hover {
-          border: 1px solid var(--color-button-success-hover);
-          background-color: var(--color-button-success-hover);
-        }
-
-        &&&&:active {
-          background-color: var(--color-button-success-hover);
-          border: 1px solid var(--color-button-success-bg);
-        }
-      `;
-    }
-    return;
-  }}
-`;
 
 const StyledAntTable = styled(Table)`
   .ant-table-row {
@@ -174,35 +149,20 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   return (
     <FlexColumnAlignCenter $gap={10}>
-      {/* Top-level annotation edit toggle */}
-      <FlexRow style={{ width: "100%" }} $gap={6}>
-        <AnnotationModeButton
-          type="primary"
-          $active={isAnnotationModeEnabled}
-          style={{ paddingLeft: "10px" }}
-          onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
-        >
-          {isAnnotationModeEnabled ? <CheckOutlined /> : <TagOutlined />}
-          {isAnnotationModeEnabled ? "Done editing" : "Create and edit"}
-        </AnnotationModeButton>
-        {isAnnotationModeEnabled && (
-          <p style={{ color: theme.color.text.hint }}>
-            <i>Editing in progress...</i>
-          </p>
-        )}
-      </FlexRow>
+      <AnnotationModeButton
+        active={isAnnotationModeEnabled}
+        onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
+      />
 
       {/* Label selection and edit/create/delete buttons */}
       <FlexRow $gap={10} style={{ width: "100%" }}>
-        <label style={{ gap: "5px" }}>
-          <SelectionDropdown
-            selected={(currentLabelIdx ?? -1).toString()}
-            items={selectLabelOptions}
-            onChange={onSelectLabelIdx}
-            disabled={currentLabelIdx === null}
-            showTooltip={false}
-          ></SelectionDropdown>
-        </label>
+        <SelectionDropdown
+          selected={(currentLabelIdx ?? -1).toString()}
+          items={selectLabelOptions}
+          onChange={onSelectLabelIdx}
+          disabled={currentLabelIdx === null}
+          showTooltip={false}
+        ></SelectionDropdown>
         <div>
           {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
           <ColorPicker
