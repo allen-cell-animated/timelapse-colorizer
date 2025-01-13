@@ -42,7 +42,13 @@ import {
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
-import { useConstructor, useDebounce, useMotionDeltas, useRecentCollections } from "./colorizer/utils/react_utils";
+import {
+  useAnnotations,
+  useConstructor,
+  useDebounce,
+  useMotionDeltas,
+  useRecentCollections,
+} from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
@@ -73,7 +79,7 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import { AnnotationTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
 import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
@@ -106,6 +112,7 @@ function Viewer(): ReactElement {
   const [currentFrame, setCurrentFrame] = useState<number>(0);
   /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
+  const annotationState = useAnnotations();
 
   useEffect(() => {
     // Switch to default backdrop if the dataset has one and none is currently selected.
@@ -796,6 +803,19 @@ function Viewer(): ReactElement {
     };
   });
 
+  const onTrackClicked = useCallback(
+    (track: Track | null) => {
+      setFindTrackInput(track?.trackId.toString() || "");
+      setSelectedTrack(track);
+      if (track && annotationState.isAnnotationModeEnabled && annotationState.currentLabelIdx !== null) {
+        const id = track.getIdAtTime(currentFrame);
+        const isLabeled = annotationState.data.isLabelOnId(annotationState.currentLabelIdx, id);
+        annotationState.setLabelOnId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame), !isLabeled);
+      }
+    },
+    [annotationState.isAnnotationModeEnabled, annotationState.currentLabelIdx, currentFrame]
+  );
+
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
   // Update the callback for TimeControls and RecordingControls if it changes.
@@ -936,7 +956,18 @@ function Viewer(): ReactElement {
     tabItems.push({
       label: "Annotations",
       key: TabType.ANNOTATION,
-      children: <div className={styles.tabContent}>Coming soon</div>,
+      children: (
+        <div className={styles.tabContent}>
+          <AnnotationTab
+            annotationState={annotationState}
+            setTrackAndFrame={(track, frame) => {
+              findTrack(track, false);
+              setFrameAndRender(frame);
+            }}
+            dataset={dataset}
+          />
+        </div>
+      ),
     });
   }
 
@@ -1127,10 +1158,7 @@ function Viewer(): ReactElement {
                   selectedTrack={selectedTrack}
                   config={config}
                   updateConfig={updateConfig}
-                  onTrackClicked={(track) => {
-                    setFindTrackInput(track?.trackId.toString() || "");
-                    setSelectedTrack(track);
-                  }}
+                  onTrackClicked={onTrackClicked}
                   inRangeLUT={inRangeLUT}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
