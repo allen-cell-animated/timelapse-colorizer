@@ -4,7 +4,7 @@ import { Button, ColorPicker, Table, TableProps } from "antd";
 import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useContext, useMemo } from "react";
 import styled, { css } from "styled-components";
-import { Color, HexColorString } from "three";
+import { Color, ColorRepresentation } from "three";
 
 import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
@@ -31,11 +31,11 @@ type TableDataType = {
 
 /**
  * Overrides the default button color with a green 'success' color
- * when the color type changes.
+ * when the button is active.
  */
-const AnnotationModeButton = styled(Button)<{ $color: "success" | "default" }>`
+const AnnotationModeButton = styled(Button)<{ $active: boolean }>`
   ${(props) => {
-    if (props.$color === "success") {
+    if (props.$active) {
       return css`
         background-color: var(--color-button-success-bg);
         border: 1px solid var(--color-button-success-bg);
@@ -83,8 +83,14 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
-  const onSelectLabel = (labelIdx: number): void => {
-    props.annotationState.setCurrentLabelIdx(labelIdx);
+  const onSelectLabelIdx = (idx: string): void => {
+    props.annotationState.setCurrentLabelIdx(parseInt(idx, 10));
+  };
+
+  const onColorPickerChange = (_value: any, hex: string): void => {
+    if (currentLabelIdx !== null) {
+      setLabelColor(currentLabelIdx, new Color(hex as ColorRepresentation));
+    }
   };
 
   const onCreateNewLabel = (): void => {
@@ -172,7 +178,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       <FlexRow style={{ width: "100%" }} $gap={6}>
         <AnnotationModeButton
           type="primary"
-          $color={isAnnotationModeEnabled ? "success" : "default"}
+          $active={isAnnotationModeEnabled}
           style={{ paddingLeft: "10px" }}
           onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
         >
@@ -192,10 +198,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <SelectionDropdown
             selected={(currentLabelIdx ?? -1).toString()}
             items={selectLabelOptions}
-            onChange={function (key: string): void {
-              const index = parseInt(key, 10);
-              onSelectLabel(index);
-            }}
+            onChange={onSelectLabelIdx}
             disabled={currentLabelIdx === null}
             showTooltip={false}
           ></SelectionDropdown>
@@ -205,9 +208,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <ColorPicker
             size="small"
             value={new AntdColor(selectedLabel?.color.getHexString() || "ffffff")}
-            onChange={(_, hex) => {
-              currentLabelIdx !== null && setLabelColor(currentLabelIdx, new Color(hex as HexColorString));
-            }}
+            onChange={onColorPickerChange}
             disabledAlpha={true}
             disabled={!isAnnotationModeEnabled}
           />

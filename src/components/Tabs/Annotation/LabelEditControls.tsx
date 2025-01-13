@@ -2,7 +2,7 @@ import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Button, ColorPicker, Input, InputRef, Popover, Tooltip } from "antd";
 import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
-import { Color, HexColorString } from "three";
+import { Color, ColorRepresentation } from "three";
 
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
@@ -50,6 +50,10 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
     props.onDeleteLabel();
   };
 
+  const onColorPickerChange = (_color: any, hex: string): void => {
+    props.setLabelColor(new Color(hex as ColorRepresentation));
+  };
+
   useEffect(() => {
     // Focus input when popover is shown.
     if (showEditPopover) {
@@ -79,9 +83,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
           <ColorPicker
             size="small"
             value={new AntdColor(props.selectedLabel.color.getHexString() || "ff00ff")}
-            onChange={(_, hex) => {
-              props.setLabelColor(new Color(hex as HexColorString));
-            }}
+            onChange={onColorPickerChange}
             disabledAlpha={true}
           />
         </div>
