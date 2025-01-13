@@ -938,7 +938,11 @@ function Viewer(): ReactElement {
         </div>
       ),
     },
-    {
+  ];
+
+  if (INTERNAL_BUILD) {
+    // Insert correlation tab after scatter plot tab
+    tabItems.splice(2, 0, {
       label: "Correlation plot",
       key: TabType.CORRELATION_PLOT,
       children: (
@@ -960,11 +964,8 @@ function Viewer(): ReactElement {
           />
         </div>
       ),
-    },
-  ];
-
-  if (INTERNAL_BUILD) {
-    tabItems.push({
+    });
+    tabItems.splice(4, 0, {
       label: "Annotations",
       key: TabType.ANNOTATION,
       children: <div className={styles.tabContent}>Coming soon</div>,
