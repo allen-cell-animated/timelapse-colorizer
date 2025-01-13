@@ -263,7 +263,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           </AnnotationModeButton>
           {isAnnotationModeEnabled && (
             <p style={{ color: theme.color.text.hint }}>
-              <i>Editing in progress; click to apply label</i>
+              <i>Editing in progress; click objects to apply label</i>
             </p>
           )}
         </FlexRow>
