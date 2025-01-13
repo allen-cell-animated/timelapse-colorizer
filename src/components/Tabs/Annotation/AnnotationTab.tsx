@@ -168,7 +168,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
           <ColorPicker
             size="small"
-            value={new AntdColor(selectedLabel.color.getHexString())}
+            value={new AntdColor(selectedLabel?.color.getHexString() || "#ffffff")}
             onChange={onColorPickerChange}
             disabledAlpha={true}
             disabled={!isAnnotationModeEnabled}
