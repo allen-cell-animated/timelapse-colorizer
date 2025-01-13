@@ -82,7 +82,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         <div>
           <ColorPicker
             size="small"
-            value={new AntdColor(props.selectedLabel.color.getHexString() || "ff00ff")}
+            value={new AntdColor(props.selectedLabel.color.getHexString())}
             onChange={onColorPickerChange}
             disabledAlpha={true}
           />
