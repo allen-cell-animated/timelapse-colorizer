@@ -224,6 +224,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             setLabelColor={(color: Color) => setLabelColor(currentLabelIdx, color)}
             setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
             selectedLabel={selectedLabel}
+            selectedLabelIdx={currentLabelIdx}
           />
         )}
       </FlexRow>

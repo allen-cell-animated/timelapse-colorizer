@@ -16,6 +16,7 @@ type LabelEditControlsProps = {
   setLabelColor: (color: Color) => void;
   setLabelName: (name: string) => void;
   selectedLabel: LabelData;
+  selectedLabelIdx: number;
 };
 
 export default function LabelEditControls(props: LabelEditControlsProps): ReactElement {
@@ -50,10 +51,16 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   };
 
   useEffect(() => {
+    // Focus input when popover is shown.
     if (showEditPopover) {
       editPopoverInputRef.current?.focus();
     }
   }, [showEditPopover]);
+
+  useEffect(() => {
+    // If the selection changes, close the edit popover.
+    setShowEditPopover(false);
+  }, [props.selectedLabelIdx]);
 
   // A small popup that appears when you press the edit button.
   const editPopoverContents = (
