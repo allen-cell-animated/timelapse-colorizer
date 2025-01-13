@@ -24,6 +24,8 @@ import { ShowAlertBannerCallback } from "../Banner/hooks";
 import SharedWorkerPool from "../../colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "../LoadingSpinner";
 
+const NAN_COLOR = "#aaaaaa";
+
 type CorrelationPlotTabProps = {
   dataset: Dataset | null;
   isVisible: boolean;
@@ -101,10 +103,6 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   //   colorRampMax !== props.colorRampMax;
 
   //////////////////////////////////
-  // Click Handlers
-  //////////////////////////////////
-
-  //////////////////////////////////
   // Helper Methods
   //////////////////////////////////
 
@@ -125,12 +123,8 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     if (!props.dataset) {
       return;
     }
-    console.log("Re-render of correlation plot was triggered.");
-    console.time("compute correlations");
     setIsRendering(true);
     const correlationData = await props.workerPool.getCorrelations(props.dataset!, sortedSelectedFeatures);
-    console.timeEnd("compute correlations");
-    console.time("render plot");
     // explode into d3 compatible data:
     const thedata: { x: number; y: number; value: number }[] = [];
     for (let i = 0; i < correlationData.length; i++) {
@@ -139,7 +133,6 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       }
     }
 
-    /***************************/
     const extent = d3.extent(
       thedata
         .map(function (d) {
@@ -150,21 +143,21 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         })
     );
 
-    const grid: { x: number; y: number; value: number }[] = thedata; //data2grid.grid(thedata);
+    const grid: { x: number; y: number; value: number }[] = thedata;
     const rows =
       d3.max(grid, function (d) {
         return d.y;
       }) || 0;
 
-    const margin = { top: 20, bottom: 1, left: 20, right: 1 };
+    const margin = { top: 50, bottom: 1, left: 170, right: 1 };
 
     //const sizing = plotDivRef.current!.getBoundingClientRect();
     //const dim = d3.min([sizing.width * 0.9, sizing.height * 0.9]) || 0;
     //const dim = d3.min([plotDivRef.current!.clientWidth * 0.9, plotDivRef.current!.clientHeight * 0.9]) || 0;
     // const dim = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]) || 0;
-    const dim = 450;
-    const width = dim - margin.left - margin.right,
-      height = dim - margin.top - margin.bottom;
+    const dims = [600, 450];
+    const width = dims[0] - margin.left - margin.right,
+      height = dims[1] - margin.top - margin.bottom;
 
     // clear everything out!
     d3.select(plotDivRef.current).selectAll("*").remove();
@@ -185,25 +178,34 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .scaleBand<number>()
       .range([0, width])
       .paddingInner(padding)
-      .domain(d3.range(1, rows + 1));
+      .domain(d3.range(0, rows + 1));
 
     const y = d3
       .scaleBand<number>()
       .range([0, height])
       .paddingInner(padding)
-      .domain(d3.range(1, rows + 1));
+      .domain(d3.range(0, rows + 1));
 
-    const c = chroma.scale(["tomato", "white", "steelblue"]).domain([extent[0]!, 0, extent[1]!]);
+    const c = chroma.scale(["steelblue", "white", "tomato"]).domain([extent[0]!, 0, extent[1]!]);
 
-    const cols: string[] = sortedSelectedFeatures;
+    const featureKeys: string[] = sortedSelectedFeatures;
+    const featureNames: string[] = sortedSelectedFeatures.map((key) => dataset?.getFeatureName(key) || key);
 
+    const excludedWords = ["the", "and", "of", "in", "a", "an", "to", "for", "with", "on", "by", "as", "at", "from"];
     const xAxis = d3.axisTop(y).tickFormat(function (_d, i) {
-      return cols[i];
+      return featureNames[i]
+        ? featureNames[i]
+            .trim()
+            .split(" ")
+            .map((s) => (excludedWords.includes(s) ? "" : s[0].toUpperCase()))
+            .join("")
+        : "";
     });
     const yAxis = d3.axisLeft(x).tickFormat(function (_d, i) {
-      return cols[i];
+      return featureNames[i];
     });
 
+    // Add X and Y axis labels.
     svg
       .append("g")
       .attr("class", "x axis")
@@ -213,23 +215,13 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .attr("dx", "-.9em")
       .attr("dy", "1.2em")
       .attr("transform", "rotate(90)");
-    // svg
-    // .append("g")
-    // .attr("class", "x axis")
-    // .attr("transform", "translate(0," + height + ")")
-    // .call(xAxis)
-    // .selectAll("text")
-    // .style("text-anchor", "end")
-    // .attr("dx", "-.8em")
-    // .attr("dy", ".15em")
-    // .attr("transform", "rotate(-65)");
 
     svg.append("g").attr("class", "y axis").call(yAxis);
 
     svg
       .selectAll("rect")
       .data(grid, function (d: { x: number; y: number; value: number }) {
-        return cols[d.x] + cols[d.y];
+        return featureKeys[d.x] + featureKeys[d.y];
       } as any)
       .enter()
       .append("rect")
@@ -242,6 +234,9 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .attr("width", x.bandwidth())
       .attr("height", y.bandwidth())
       .style("fill", function (d) {
+        if (Number.isNaN(d.value) || d.x === d.y) {
+          return NAN_COLOR;
+        }
         return c(d.value).hex();
       })
       .style("opacity", 1e-6)
@@ -250,16 +245,18 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
     svg.selectAll("rect");
 
+    // Mouse interactions
     d3.selectAll("rect")
       .on("mouseover", function (event) {
+        // Show tooltip on hover
         const d = event.target.__data__;
         if (!d) {
           return;
         }
         d3.select(this).classed("selected", true);
 
-        const xAxisName = dataset?.getFeatureNameWithUnits(cols[d.x]);
-        const yAxisName = dataset?.getFeatureNameWithUnits(cols[d.y]);
+        const xAxisName = dataset?.getFeatureNameWithUnits(featureKeys[d.x]);
+        const yAxisName = dataset?.getFeatureNameWithUnits(featureKeys[d.y]);
 
         d3.select(tooltipDivRef.current)
           .style("display", "flex")
@@ -295,11 +292,12 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         d3.selectAll(".axis .tick line").classed("selected", false);
       })
       .on("click", function (event) {
+        // Open scatter plot tab on click with the specified features as X/Y axes.
         const d = event.target.__data__;
         if (!d) {
           return;
         }
-        props.openScatterPlotTab(cols[d.x], cols[d.y]);
+        props.openScatterPlotTab(featureKeys[d.x], featureKeys[d.y]);
       });
 
     // legend scale
@@ -319,9 +317,9 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     var gradient = defs.append("linearGradient").attr("id", "linear-gradient");
 
     var stops = [
-      { offset: 0, color: "tomato", value: extent[0] },
+      { offset: 0, color: "steelblue", value: extent[0] },
       { offset: 0.5, color: "white", value: 0 },
-      { offset: 1, color: "steelblue", value: extent[1] },
+      { offset: 1, color: "tomato", value: extent[1] },
     ];
 
     gradient
@@ -351,123 +349,12 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         return i === 0 ? "start" : i === 1 ? "middle" : "end";
       })
       .text(function (d, i) {
+        if (d.value === undefined) {
+          return "--";
+        }
         return d.value?.toFixed(2) + (i === 2 ? ">" : "");
       });
-    /*************************/
-    /******************** 
-    // set the dimensions and margins of the graph
-    var margin = { top: 80, right: 25, bottom: 30, left: 40 },
-      width = 450 - margin.left - margin.right,
-      height = 450 - margin.top - margin.bottom;
 
-    // append the svg object to the body of the page
-    var svg = d3
-      .select(plotDivRef.current)
-      .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    // Labels of row and columns -> unique identifier of the column called 'group' and 'variable'
-    var myGroups = props.dataset?.featureKeys!;
-    var myVars = props.dataset?.featureKeys!;
-
-    // Build X scales and axis:
-    var x = d3.scaleBand().range([0, width]).domain(myGroups).padding(0.05);
-    svg
-      .append("g")
-      .style("font-size", 15)
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x).tickSize(0))
-      .select(".domain")
-      .remove();
-
-    // Build Y scales and axis:
-    var y = d3.scaleBand().range([height, 0]).domain(myVars).padding(0.05);
-    svg.append("g").style("font-size", 15).call(d3.axisLeft(y).tickSize(0)).select(".domain").remove();
-
-    // Build color scale
-    var myColor = d3.scaleSequential().interpolator(d3.interpolateInferno).domain([-1, 1]);
-
-    // create a tooltip
-    var tooltip = d3
-      .select(plotDivRef.current)
-      .append("div")
-      .style("opacity", 0)
-      .attr("class", "tooltip")
-      .style("background-color", "white")
-      .style("border", "solid")
-      .style("border-width", "2px")
-      .style("border-radius", "5px")
-      .style("padding", "5px");
-
-    // Three function that change the tooltip when user hover / move / leave a cell
-    var mouseover = function (this: SVGRectElement, _event: any): void {
-      tooltip.style("opacity", 1);
-      d3.select(this).style("stroke", "black").style("opacity", 1);
-    };
-    var mousemove = function (this: SVGRectElement, _event: any): void {
-      tooltip
-        .html("The exact value of<br>this cell is: " + _event.target.__data__.value)
-        .style("left", _event.pageX + 70 + "px")
-        .style("top", _event.pageY + "px");
-    };
-    var mouseleave = function (this: SVGRectElement, _event: any): void {
-      tooltip.style("opacity", 0);
-      d3.select(this).style("stroke", "none").style("opacity", 0.8);
-    };
-
-    // add the squares
-    svg
-      .selectAll()
-      .data(thedata, function (d) {
-        return "" + myGroups[d!.x] + ":" + myVars[d!.y];
-      })
-      .enter()
-      .append("rect")
-      .attr("x", function (d) {
-        return x(myGroups[d.x])!;
-      })
-      .attr("y", function (d) {
-        return y(myVars[d.y])!;
-      })
-      .attr("rx", 4)
-      .attr("ry", 4)
-      .attr("width", x.bandwidth())
-      .attr("height", y.bandwidth())
-      .style("fill", function (d) {
-        return myColor(d.value);
-      })
-      .style("stroke-width", 4)
-      .style("stroke", "none")
-      .style("opacity", 0.8)
-      .on("mouseover", mouseover)
-      .on("mousemove", mousemove)
-      .on("mouseleave", mouseleave);
-
-    // Add title to graph
-    svg
-      .append("text")
-      .attr("x", 0)
-      .attr("y", -50)
-      .attr("text-anchor", "left")
-      .style("font-size", "22px")
-      .text("Correlation Matrix");
-
-    // Add subtitle to graph
-    svg
-      .append("text")
-      .attr("x", 0)
-      .attr("y", -20)
-      .attr("text-anchor", "left")
-      .style("font-size", "14px")
-      .style("fill", "grey")
-      .style("max-width", 400)
-      .text("Pearson correlation of all features.");
-
-     */
-    console.timeEnd("render plot");
     setIsRendering(false);
   };
 
