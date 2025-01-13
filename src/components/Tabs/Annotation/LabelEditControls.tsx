@@ -93,6 +93,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         <Input
           value={editPopoverNameInput}
           onChange={(e) => setEditPopoverNameInput(e.target.value)}
+          onPressEnter={onClickEditSave}
           ref={editPopoverInputRef}
         ></Input>
       </label>
