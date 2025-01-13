@@ -13,14 +13,14 @@ import React, { ReactElement, useContext, useEffect, useMemo, useRef, useState }
 import styled, { css } from "styled-components";
 import { Color, HexColorString } from "three";
 
-import { Dataset } from "../../colorizer";
-import { AnnotationState } from "../../colorizer/utils/react_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../styles/utils";
+import { Dataset } from "../../../colorizer";
+import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 
-import { LabelData } from "../../colorizer/AnnotationData";
-import { AppThemeContext } from "../AppStyle";
-import SelectionDropdown from "../Dropdowns/SelectionDropdown";
-import IconButton from "../IconButton";
+import { LabelData } from "../../../colorizer/AnnotationData";
+import { AppThemeContext } from "../../AppStyle";
+import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
+import IconButton from "../../IconButton";
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;

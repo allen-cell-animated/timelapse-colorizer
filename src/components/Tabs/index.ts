@@ -1,4 +1,4 @@
-import AnnotationTab from "./AnnotationTab";
+import AnnotationTab from "./Annotation/AnnotationTab";
 import FeatureThresholdsTab from "./FeatureThresholdsTab";
 import PlotTab from "./PlotTab";
 import ScatterPlotTab from "./ScatterPlotTab";
