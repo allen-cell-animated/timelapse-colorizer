@@ -119,7 +119,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
 
   return (
     <FlexRow $gap={10}>
-      <Tooltip title="Create new label" placement="bottom">
+      <Tooltip title="Create new label" placement="top">
         <IconButton onClick={onClickCreateNewLabel} type="outlined">
           <TagAddIconSVG />
         </IconButton>
@@ -134,7 +134,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         style={{ zIndex: "1000" }}
       >
         <div ref={editPopoverContainerRef}>
-          <Tooltip title="Edit label" placement="bottom">
+          <Tooltip title="Edit label" placement="top">
             <IconButton onClick={onClickEditButton} type={showEditPopover ? "primary" : "outlined"}>
               <EditOutlined />
             </IconButton>
@@ -151,7 +151,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         placement="bottom"
         getPopupContainer={() => editPopoverContainerRef.current!}
       >
-        <Tooltip title="Delete label" placement="bottom">
+        <Tooltip title="Delete label" placement="top">
           <IconButton type="outlined">
             <DeleteOutlined />
           </IconButton>
