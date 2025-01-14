@@ -41,6 +41,17 @@ export default class SharedWorkerPool {
     return await this.workerPool.exec("loadUrlData", [url, type]);
   }
 
+  async getCorrelations(d: Dataset, featureKeys?: string[]): Promise<number[][]> {
+    const featureData: Float32Array[] = [];
+    featureKeys = featureKeys ?? d.featureKeys;
+    for (const key of featureKeys) {
+      if (d.hasFeatureKey(key)) {
+        featureData.push(d.getFeatureData(key)!.data);
+      }
+    }
+    return await this.workerPool.exec("getCorrelations", [featureData]);
+  }
+
   /**
    * Calculates and averages the motion deltas for objects in the dataset as a flat array of
    * vector coordinates.
