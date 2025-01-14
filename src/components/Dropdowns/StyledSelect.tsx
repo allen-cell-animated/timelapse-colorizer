@@ -3,14 +3,38 @@ import React, { ReactElement, useMemo } from "react";
 import Select, { components, DropdownIndicatorProps, StylesConfig } from "react-select";
 import { StateManagerProps } from "react-select/dist/declarations/src/useStateManager";
 import styled, { css } from "styled-components";
+import { Color } from "three";
 
 import { DropdownSVG } from "../../assets";
 
 import { AppTheme, AppThemeContext } from "../AppStyle";
 
+type OptionWithColor = unknown & { color?: Color };
+
 type AntStyledSelectProps = StateManagerProps & {
   type?: ButtonProps["type"] | "outlined";
   width?: string;
+  styles?: StylesConfig;
+};
+
+const addOptionalColorIndicator = (color: Color | undefined) => {
+  if (color) {
+    return {
+      alignItems: "center",
+      display: "flex",
+
+      ":before": {
+        backgroundColor: "#" + color.getHexString(),
+        borderRadius: 10,
+        content: '" "',
+        display: "block",
+        marginRight: 8,
+        height: 10,
+        width: 10,
+      },
+    };
+  }
+  return {};
 };
 
 // Styling is done via both styled-components and react-select's `styles` prop.
@@ -165,7 +189,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
     flexDirection: "column",
     gap: 4,
   }),
-  option: (styles, { isFocused, isSelected, isDisabled }) => ({
+  option: (styles, { data, isFocused, isSelected, isDisabled }) => ({
     ...styles,
     // Style to match Ant dropdowns
     borderRadius: 4,
@@ -188,6 +212,11 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
           : theme.color.dropdown.backgroundHover
         : undefined,
     },
+    ...addOptionalColorIndicator((data as OptionWithColor)?.color),
+  }),
+  singleValue: (styles, { data }) => ({
+    ...styles,
+    ...addOptionalColorIndicator((data as OptionWithColor)?.color),
   }),
 });
 
