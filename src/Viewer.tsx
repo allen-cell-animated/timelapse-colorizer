@@ -80,6 +80,7 @@ import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
 import { AnnotationTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import Plot3dTab from "./components/Tabs/Plot3DTab";
 import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
@@ -986,6 +987,20 @@ function Viewer(): ReactElement {
             }}
             dataset={dataset}
           />
+        </div>
+      ),
+    });
+    tabItems.push({
+      label: "3D Plot",
+      key: TabType.PLOT_3D,
+      children: (
+        <div className={styles.tabContent}>
+          <Plot3dTab
+            dataset={dataset}
+            selectedTrack={selectedTrack}
+            currentFrame={currentFrame}
+            setFrame={setFrame}
+          ></Plot3dTab>
         </div>
       ),
     });
