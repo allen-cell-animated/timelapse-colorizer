@@ -5,7 +5,6 @@ import { clamp, lerp } from "three/src/math/MathUtils";
 import { Dataset, Track } from "../../colorizer";
 
 const CONFIG: Partial<Plotly.Config> = {
-  // displayModeBar: false,
   responsive: true,
   frameMargins: 0,
 };
