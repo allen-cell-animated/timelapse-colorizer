@@ -17,12 +17,16 @@ type AntStyledSelectProps = StateManagerProps & {
   styles?: StylesConfig;
 };
 
-const addOptionalColorIndicator = (color: Color | undefined) => {
+/**
+ * If `color` is defined, adds style config properties  that add a colored
+ * pseudo-element indicator to the left of an option text in the dropdown.
+ */
+const addOptionalColorIndicator = (color: Color | undefined): Partial<StylesConfig["option"]> => {
   if (color) {
     return {
       alignItems: "center",
       display: "flex",
-
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       ":before": {
         backgroundColor: "#" + color.getHexString(),
         borderRadius: 10,
