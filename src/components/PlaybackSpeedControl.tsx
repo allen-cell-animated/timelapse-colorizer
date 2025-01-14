@@ -45,6 +45,7 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
       selected={sliderValue.toFixed(2)}
       items={dropdownItems}
       onChange={(key: string) => onSliderChange(parseFloat(key))}
+      showSelectedItemTooltip={false}
     ></SelectionDropdown>
   );
 }
