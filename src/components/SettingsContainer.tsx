@@ -3,8 +3,10 @@ import { PropsWithChildren, ReactElement } from "react";
 import styled, { css } from "styled-components";
 
 type SettingsItemProps = {
-  /** A string or ReactElement label. Strings will be displayed as `h3`. Defaults to empty string ("").*/
+  /** A string or ReactElement label. Strings will be displayed as `p`. Defaults to empty string ("").*/
   label?: string | ReactElement;
+  /** HTML ID applied to the `label` element, if `label` is a string. */
+  id?: string;
   /** A formatting function that will be applied to the label. If defined, overrides `labelFormatter`
    * of the parent `SettingsContainer`. */
   labelFormatter?: (label: string | ReactElement) => string | ReactElement;
@@ -29,11 +31,13 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
     props.children = <div>{props.children}</div>;
   }
 
-  props.label = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
+  const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
 
   return (
     <label>
-      <span style={props.labelStyle}>{props.label}</span>
+      <span style={props.labelStyle} id={props.id}>
+        {formattedLabel}
+      </span>
       {props.children}
     </label>
   );

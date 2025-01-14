@@ -711,12 +711,12 @@ function Viewer(): ReactElement {
         if (newScatterPlotConfig.xAxis) {
           const xAxis = newScatterPlotConfig.xAxis;
           newScatterPlotConfig.xAxis =
-            xAxis === SCATTERPLOT_TIME_FEATURE.key ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
+            xAxis === SCATTERPLOT_TIME_FEATURE.value ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
         }
         if (newScatterPlotConfig.yAxis) {
           const yAxis = newScatterPlotConfig.yAxis;
           newScatterPlotConfig.yAxis =
-            yAxis === SCATTERPLOT_TIME_FEATURE.key ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
+            yAxis === SCATTERPLOT_TIME_FEATURE.value ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
         }
         updateScatterPlotConfig(newScatterPlotConfig);
       }
@@ -865,13 +865,13 @@ function Viewer(): ReactElement {
     });
   };
 
-  const getFeatureDropdownData = useCallback((): string[] | { key: string; label: string }[] => {
+  const getFeatureDropdownData = useCallback((): { value: string; label: string }[] => {
     if (!dataset) {
       return [];
     }
     // Add units to the dataset feature names if present
     return dataset.featureKeys.map((key) => {
-      return { key, label: dataset.getFeatureNameWithUnits(key) };
+      return { value: key, label: dataset.getFeatureNameWithUnits(key) };
     });
   }, [dataset]);
 
@@ -1055,7 +1055,6 @@ function Viewer(): ReactElement {
             <SelectionDropdown
               disabled={disableUi}
               label="Feature"
-              showTooltip={true}
               // TODO: Once dropdowns are refactored, add description into tooltips
               // dataset?.getFeatureData(featureKey)?.description ? (
               //   // Show as larger element with subtitle if description is given
