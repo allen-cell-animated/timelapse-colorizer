@@ -1,8 +1,11 @@
+import { Tag } from "antd";
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
 
 import { Dataset, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode, ViewerConfig } from "../../colorizer";
 import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
+import { AnnotationState } from "../../colorizer/utils/react_utils";
+import { FlexColumn } from "../../styles/utils";
 
 import HoverTooltip from "./HoverTooltip";
 
@@ -13,6 +16,7 @@ type CanvasHoverTooltipProps = {
   showObjectHoverInfo: boolean;
   motionDeltas: Float32Array | null;
   config: ViewerConfig;
+  annotationState: AnnotationState;
 };
 
 const ObjectInfoCard = styled.div`
@@ -105,13 +109,53 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
   ];
+
   if (vectorTooltipText) {
     objectInfoContent.push(<p key="vector">{vectorTooltipText}</p>);
   }
 
-  // TODO: Eventually this will also show the current annotation tag when annotation mode is enabled.
+  // Show all current labels applied to the hovered object
+  const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredId);
+  const labelData = props.annotationState.data.getLabels();
+  if (labels.length > 0 && props.annotationState.visible) {
+    objectInfoContent.push(
+      <div style={{ lineHeight: "28px" }}>
+        {labels.map((labelIdx) => {
+          const label = labelData[labelIdx];
+          return (
+            // TODO: Tags do not change their text color based on the background color.
+            // Make a custom wrapper for Tag that does this; see
+            // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+            <Tag
+              key={labelIdx}
+              style={{ width: "fit-content", margin: "0 2px" }}
+              color={"#" + label.color.getHexString()}
+            >
+              {label.name}
+            </Tag>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // If editing annotations, also show the current label being applied
+  let annotationLabel: React.ReactNode;
+  const currentLabelIdx = props.annotationState.currentLabelIdx;
+  if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
+    const currentLabelData = labelData[currentLabelIdx];
+    annotationLabel = (
+      <Tag style={{ width: "fit-content" }} color={"#" + currentLabelData.color.getHexString()} bordered={true}>
+        {currentLabelData.name}
+      </Tag>
+    );
+  }
+
   const tooltipContent = (
-    <ObjectInfoCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</ObjectInfoCard>
+    <FlexColumn $gap={6}>
+      {annotationLabel}
+      <ObjectInfoCard style={{ opacity: props.showObjectHoverInfo ? 1 : 0 }}>{objectInfoContent}</ObjectInfoCard>
+    </FlexColumn>
   );
 
   return <HoverTooltip tooltipContent={tooltipContent}>{props.children}</HoverTooltip>;

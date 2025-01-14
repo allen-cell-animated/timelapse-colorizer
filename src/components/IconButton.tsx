@@ -5,7 +5,7 @@ import styled, { css } from "styled-components";
 import { AppThemeContext } from "./AppStyle";
 
 type IconButtonProps = {
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLElement>;
   disabled?: boolean;
   style?: React.CSSProperties;
   type?: "outlined" | "primary" | "link" | "text";
