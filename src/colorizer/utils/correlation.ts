@@ -62,6 +62,9 @@ function pearson(x: Float32Array, y: Float32Array): number {
  */
 export function computeCorrelations(featureData: Float32Array[]): number[][] {
   const out: number[][] = [];
+  // Optimization: Only calculate coefficients for [x][y] where y < x. [x][x] is
+  // always 1, and [x][y] == [y][x], so we only need to calculate it once for
+  // each x, y pair.
   for (let colx = 0; colx < featureData.length; colx++) {
     const row = [];
     for (let coly = 0; coly < colx; coly++) {
@@ -73,10 +76,11 @@ export function computeCorrelations(featureData: Float32Array[]): number[][] {
     }
     out.push(row);
   }
+
+  // fill in remainder of diagonal with transposed values
   for (let i = 0; i < out.length; i++) {
-    // fill in remainder of diagonal with transposed values
-    for (let j = 1; j < out.length; j++) {
-      out[i][j] = out[j][i];
+    for (let j = i + 1; j < out.length; j++) {
+      out[j][i] = out[i][j];
     }
     out[i][i] = 1;
   }
