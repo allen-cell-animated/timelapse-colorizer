@@ -79,7 +79,14 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { AnnotationTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import {
+  AnnotationTab,
+  CorrelationPlotTab,
+  FeatureThresholdsTab,
+  PlotTab,
+  ScatterPlotTab,
+  SettingsTab,
+} from "./components/Tabs";
 import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
@@ -418,6 +425,14 @@ function Viewer(): ReactElement {
       }
     },
     [featureThresholds, config.keepRangeBetweenDatasets]
+  );
+
+  const openScatterPlotTab = useCallback(
+    (xAxis: string, yAxis: string) => {
+      updateConfig({ openTab: TabType.SCATTER_PLOT });
+      updateScatterPlotConfig({ xAxis, yAxis });
+    },
+    [updateConfig, updateScatterPlotConfig]
   );
 
   // DATASET LOADING ///////////////////////////////////////////////////////
@@ -973,7 +988,31 @@ function Viewer(): ReactElement {
   ];
 
   if (INTERNAL_BUILD) {
-    tabItems.push({
+    // Insert correlation tab after scatter plot tab
+    tabItems.splice(2, 0, {
+      label: "Correlation plot",
+      key: TabType.CORRELATION_PLOT,
+      children: (
+        <div className={styles.tabContent}>
+          <CorrelationPlotTab
+            openScatterPlotTab={openScatterPlotTab}
+            workerPool={workerPool}
+            dataset={dataset}
+            isVisible={config.openTab === TabType.CORRELATION_PLOT}
+            isPlaying={timeControls.isPlaying() || isRecording}
+            colorRampMin={colorRampMin}
+            colorRampMax={colorRampMax}
+            colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
+            inRangeIds={inRangeLUT}
+            viewerConfig={config}
+            correlationPlotConfig={scatterPlotConfig}
+            updateCorrelationPlotConfig={updateScatterPlotConfig}
+            showAlert={showAlert}
+          />
+        </div>
+      ),
+    });
+    tabItems.splice(4, 0, {
       label: "Annotations",
       key: TabType.ANNOTATION,
       children: (

@@ -156,6 +156,7 @@ export enum TabType {
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
   SETTINGS = "settings",
+  CORRELATION_PLOT = "correlation_plot",
   ANNOTATION = "annotation",
 }
 
@@ -199,6 +200,8 @@ export type ScatterPlotConfig = {
   yAxis: string | null;
   rangeType: PlotRangeType;
 };
+
+export type CorrelationPlotConfig = {};
 
 /**
  * Callback used to report warnings to the user. The message is the title
