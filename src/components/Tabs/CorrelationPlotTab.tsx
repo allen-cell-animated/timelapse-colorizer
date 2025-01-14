@@ -1,12 +1,8 @@
 // TODOs:
-// color choice
-// optimize calculation
-// optimize when recalculation needs to occur
-// selections of features
 // how to obey filtering
 // interaction with track selections?
-// click to go to scatterplot
 // other useful mouse interactions
+// highlight current row/column on hover
 //
 ////////////
 import { Button, Select } from "antd";
@@ -101,7 +97,6 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   // This might seem redundant with `isPending`, but `useTransition` only works within React's
   // update cycle. Plotly's rendering is synchronous and can freeze the state update render,
   // so we need to track completion with a separate flag.
-  // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
 
   const plotDivRef = React.useRef<HTMLDivElement>(null);
@@ -109,7 +104,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const tooltipDivRef = React.useRef<HTMLDivElement>(null);
 
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const lastRequestedPlotFeatures = useRef<Set<string>>(new Set());
+  const lastRenderedPlotFeatures = useRef<Set<string>>(new Set());
 
   const sortedSelectedFeatures = useMemo(() => {
     // Keep in sorted order of the dataset
@@ -125,19 +120,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  const { isPlaying } = props;
   const dataset = useDebounce(props.dataset, 500);
-
-  //////////////////////////////////
-  // Helper Methods
-  //////////////////////////////////
-
-  /** Whether to ignore the render request until later (but continue to show as pending.) */
-  const shouldDelayRender = (): boolean => {
-    // Don't render when tab is not visible.
-    // Also, don't render updates during playback, to prevent blocking the UI.
-    return !props.isVisible || isPlaying;
-  };
 
   //////////////////////////////////
   // Plot Rendering
@@ -150,11 +133,11 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       return;
     }
     setIsRendering(true);
-    lastRequestedPlotFeatures.current = new Set(sortedSelectedFeatures);
+    lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
     const correlationData = await props.workerPool.getCorrelations(props.dataset!, sortedSelectedFeatures);
 
-    // Stop and discard correlation data that is not from our most recent render request.
-    if (!areSetsEqual(lastRequestedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
+    // Stop and discard correlation calculations that are not from our most recent render request.
+    if (!areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
       return;
     }
 
@@ -179,18 +162,20 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     const grid: { x: number; y: number; value: number }[] = thedata;
     const rows =
       d3.max(grid, function (d) {
-        return d.y;
+        return d.y + 1;
       }) || 0;
 
+    // TODO: Resize dynamically with container size
     //const sizing = plotDivRef.current!.getBoundingClientRect();
     //const dim = d3.min([sizing.width * 0.9, sizing.height * 0.9]) || 0;
     //const dim = d3.min([plotDivRef.current!.clientWidth * 0.9, plotDivRef.current!.clientHeight * 0.9]) || 0;
     // const dim = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]) || 0;
-    const margin = { top: 20, bottom: 1, left: 150, right: 1 };
-    const plotDim = 450;
+    const margin = { top: 50, bottom: 1, left: 150, right: 150 };
+    const plotDim = 415;
     const plotWidth = plotDim,
       plotHeight = plotDim;
-    const dims = [plotDim + margin.left + margin.right, plotDim + margin.top + margin.bottom];
+    const svgDims = [plotDim + margin.left + margin.right, plotDim + margin.top + margin.bottom];
+    const padding = 0.1;
 
     // clear everything out!
     d3.select(plotDivRef.current).selectAll("*").remove();
@@ -200,25 +185,14 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     const svg = d3
       .select(plotDivRef.current)
       .append("svg")
-      .attr("width", dims[0])
-      .attr("height", dims[1])
+      .attr("width", svgDims[0])
+      .attr("height", svgDims[1])
       .append("g")
       .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
 
-    const padding = 0.1;
-
-    const x = d3
-      .scaleBand<number>()
-      .range([0, plotWidth])
-      .paddingInner(padding)
-      .domain(d3.range(0, rows + 1));
-
-    const y = d3
-      .scaleBand<number>()
-      .range([0, plotHeight])
-      .paddingInner(padding)
-      .domain(d3.range(0, rows + 1));
-
+    const x = d3.scaleBand<number>().range([0, plotWidth]).paddingInner(padding).domain(d3.range(0, rows));
+    const y = d3.scaleBand<number>().range([0, plotHeight]).paddingInner(padding).domain(d3.range(0, rows));
+    // TODO: Make color ramp swappable
     const c = chroma.scale(["steelblue", "white", "tomato"]).domain([extent[0]!, 0, extent[1]!]);
 
     const featureKeys: string[] = sortedSelectedFeatures;
@@ -235,11 +209,12 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         : "";
     });
 
-    function textEllipses(textEl: SVGTextElement, text: string, width: number): void {
+    function truncateText(textEl: SVGTextElement, widthPx: number): void {
       const d3Node = d3.select(textEl);
+      let text = d3Node.text();
       let textLength = textEl.getComputedTextLength();
 
-      while (textLength > width - 2 * padding && text.length > 0) {
+      while (textLength > widthPx - 2 * padding && text.length > 0) {
         text = text.slice(0, -1);
         d3Node.text(text + "...");
         textLength = d3Node.node()?.getComputedTextLength() ?? 0;
@@ -263,12 +238,19 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
 
     svg.append("g").attr("class", "y axis").call(yAxis);
     svg
+      .select(".x.axis")
+      .selectAll("text")
+      .each(function (): void {
+        truncateText(this as SVGTextElement, margin.top - 10);
+      });
+    svg
       .select(".y.axis")
       .selectAll("text")
-      .each(function (d, i) {
-        textEllipses(this as SVGTextElement, featureNames[i], 120);
+      .each(function (): void {
+        truncateText(this as SVGTextElement, margin.left - 20);
       });
 
+    // Draw grid
     svg
       .selectAll("rect")
       .data(grid, function (d: { x: number; y: number; value: number }) {
@@ -293,8 +275,6 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .style("opacity", 1e-6)
       .transition()
       .style("opacity", 1);
-
-    svg.selectAll("rect");
 
     // Mouse interactions
     d3.selectAll("rect")
@@ -352,7 +332,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         props.openScatterPlotTab(featureKeys[d.x], featureKeys[d.y]);
       });
 
-    // legend scale
+    // Legend scale
     var legendTop = 15;
     var legendHeight = 15;
 
@@ -414,15 +394,10 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     setIsRendering(false);
   };
 
-  /**
-   * Re-render the plot when the relevant props change.
-   */
+  // Re-render plot when the dataset or selected features change.
   useEffect(() => {
-    if (shouldDelayRender()) {
-      return;
-    }
     renderPlot();
-  }, plotDependencies);
+  }, [...plotDependencies]);
 
   //////////////////////////////////
   // Component Rendering
