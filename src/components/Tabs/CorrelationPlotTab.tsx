@@ -1,49 +1,32 @@
 // TODOs:
 // how to obey filtering
 // interaction with track selections?
-// other useful mouse interactions
 // highlight current row/column on hover
-//
-////////////
 import { Button, Select } from "antd";
 import chroma from "chroma-js";
 import * as d3 from "d3";
 import React, { memo, ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { ColorRamp, Dataset } from "../../colorizer";
-import { CorrelationPlotConfig, ViewerConfig } from "../../colorizer/types";
+import { Dataset } from "../../colorizer";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../styles/utils";
-import { ShowAlertBannerCallback } from "../Banner/hooks";
 
 import SharedWorkerPool from "../../colorizer/workers/SharedWorkerPool";
 import LoadingSpinner from "../LoadingSpinner";
 
 const NAN_COLOR = "#aaaaaa";
+const SVG_TEXT_PADDING = 0.1;
 
 type CorrelationPlotTabProps = {
   dataset: Dataset | null;
-  isVisible: boolean;
-  isPlaying: boolean;
-
-  colorRampMin: number;
-  colorRampMax: number;
-  colorRamp: ColorRamp;
-  inRangeIds: Uint8Array;
-
   workerPool: SharedWorkerPool;
-  viewerConfig: ViewerConfig;
-  correlationPlotConfig: CorrelationPlotConfig;
-  updateCorrelationPlotConfig: (config: Partial<CorrelationPlotConfig>) => void;
-  showAlert: ShowAlertBannerCallback;
   openScatterPlotTab(xAxisFeatureKey: string, yAxisFeatureKey: string): void;
 };
 
 const TipDiv = styled.div`
   position: absolute;
   text-align: center;
-
   background-color: #ffffff;
   border: 1px solid var(--color-borders);
   border-radius: 6px;
@@ -53,19 +36,7 @@ const TipDiv = styled.div`
 `;
 
 const PlotDiv = styled.div`
-  /* 
-  Highlight columns:
-  & rect:nth-of-type(48n + 3),
-  & rect:nth-of-type(n + 48):nth-of-type(-n + 96) {
-    outline: 1px solid #ccc;
-  }
-  */
-
-  & .y.axis .tick text {
-    text-overflow: ellipsis;
-    max-width: 100px;
-  }
-
+  /* Add hover styling to grid tile and axis labels */
   & line.selected {
     stroke-width: 2px;
   }
@@ -79,16 +50,27 @@ const PlotDiv = styled.div`
   }
 `;
 
-const areSetsEqual = (a: Set<any>, b: Set<any>): boolean => {
+function areSetsEqual(a: Set<any>, b: Set<any>): boolean {
   return a.size === b.size && [...a].every((value) => b.has(value));
-};
+}
+
+/** Truncates an SVG text element to a target pixel width. */
+function truncateText(textEl: SVGTextElement, widthPx: number): void {
+  const d3Node = d3.select(textEl);
+  let text = d3Node.text();
+  let textLength = textEl.getComputedTextLength();
+
+  while (textLength > widthPx - 2 * SVG_TEXT_PADDING && text.length > 0) {
+    text = text.slice(0, -1);
+    d3Node.text(text + "...");
+    textLength = d3Node.node()?.getComputedTextLength() ?? 0;
+  }
+}
 
 /**
- * A tab that displays an interactive scatter plot between two features in the dataset.
+ * A tab that displays an interactive correlation plot between selected features in the dataset.
  */
 export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps): ReactElement {
-  // ^ Memo prevents re-rendering if the props haven't changed.
-
   const [isRendering, setIsRendering] = useState(false);
 
   const plotDivRef = React.useRef<HTMLDivElement>(null);
@@ -105,6 +87,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   }, [props.dataset, selectedFeatures]);
 
   useEffect(() => {
+    // Selects all features from the dataset on initial load.
     if (props.dataset && selectedFeatures.length === 0) {
       setSelectedFeatures(props.dataset.featureKeys);
     }
@@ -126,54 +109,51 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     }
     setIsRendering(true);
     lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
-    const correlationData = await props.workerPool.getCorrelations(props.dataset!, sortedSelectedFeatures);
 
-    // Stop and discard correlation calculations that are not from our most recent render request.
+    const correlationData = await props.workerPool.getCorrelations(props.dataset!, sortedSelectedFeatures);
+    // Stop and discard correlation calculations that are not from our most
+    // recent render request.
     if (!areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
       return;
     }
 
-    // explode into d3 compatible data:
-    const thedata: { x: number; y: number; value: number }[] = [];
+    // Explode into d3 compatible data
+    const gridData: { x: number; y: number; value: number }[] = [];
     for (let i = 0; i < correlationData.length; i++) {
       for (let j = 0; j < correlationData[i].length; j++) {
-        thedata.push({ x: i, y: j, value: correlationData[i][j] });
+        gridData.push({ x: i, y: j, value: correlationData[i][j] });
       }
     }
-
+    // Get min/max values that aren't along the diagonal (which always has a
+    // correlation score of 1)
     const extent = d3.extent(
-      thedata
+      gridData
+        .filter(function (d) {
+          return d.x !== d.y;
+        })
         .map(function (d) {
           return d.value;
         })
-        .filter(function (d) {
-          return d !== 1;
-        })
-    );
-
-    const grid: { x: number; y: number; value: number }[] = thedata;
-    const rows =
-      d3.max(grid, function (d) {
+    ) as [number, number];
+    const numRows =
+      d3.max(gridData, function (d) {
         return d.y + 1;
       }) || 0;
 
     // TODO: Resize dynamically with container size
-    //const sizing = plotDivRef.current!.getBoundingClientRect();
-    //const dim = d3.min([sizing.width * 0.9, sizing.height * 0.9]) || 0;
-    //const dim = d3.min([plotDivRef.current!.clientWidth * 0.9, plotDivRef.current!.clientHeight * 0.9]) || 0;
-    // const dim = d3.min([window.innerWidth * 0.9, window.innerHeight * 0.9]) || 0;
     const margin = { top: 50, bottom: 1, left: 150, right: 150 };
     const plotDim = 415;
     const plotWidth = plotDim,
       plotHeight = plotDim;
     const svgDims = [plotDim + margin.left + margin.right, plotDim + margin.top + margin.bottom];
-    const padding = 0.1;
+    const padding = SVG_TEXT_PADDING;
 
     // clear everything out!
     d3.select(plotDivRef.current).selectAll("*").remove();
     d3.select(legendRef.current).selectAll("*").remove();
     d3.select(tooltipDivRef.current).selectAll("*").remove();
 
+    // Create new SVG element
     const svg = d3
       .select(plotDivRef.current)
       .append("svg")
@@ -181,37 +161,27 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .attr("height", svgDims[1])
       .append("g")
       .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
-
-    const x = d3.scaleBand<number>().range([0, plotWidth]).paddingInner(padding).domain(d3.range(0, rows));
-    const y = d3.scaleBand<number>().range([0, plotHeight]).paddingInner(padding).domain(d3.range(0, rows));
+    // Create scales
+    const x = d3.scaleBand<number>().range([0, plotWidth]).paddingInner(padding).domain(d3.range(0, numRows));
+    const y = d3.scaleBand<number>().range([0, plotHeight]).paddingInner(padding).domain(d3.range(0, numRows));
     // TODO: Make color ramp swappable
-    const c = chroma.scale(["steelblue", "white", "tomato"]).domain([extent[0]!, 0, extent[1]!]);
+    const c = chroma.scale(["steelblue", "white", "tomato"]).domain([extent[0], 0, extent[1]]);
 
-    const featureKeys: string[] = sortedSelectedFeatures;
     const featureNames: string[] = sortedSelectedFeatures.map((key) => dataset?.getFeatureName(key) || key);
 
-    const excludedWords = ["the", "and", "of", "in", "a", "an", "to", "for", "with", "on", "by", "as", "at", "from"];
+    // Space is limited for the X-axis, so turn feature names into an acronym
+    // with the first letter of each word. Articles and other common words will
+    // not be capitalized. (For example, "Volume at Start of Growth" -> "VaSoG")
+    const lowercaseWords = ["the", "and", "of", "in", "a", "an", "to", "for", "with", "on", "by", "as", "at", "from"];
     const xAxis = d3.axisTop(y).tickFormat(function (_d, i) {
       return featureNames[i]
         ? featureNames[i]
             .trim()
             .split(" ")
-            .map((s) => (excludedWords.includes(s) ? s[0] : s[0].toUpperCase()))
+            .map((s) => (lowercaseWords.includes(s) ? s[0].toLowerCase() : s[0].toUpperCase()))
             .join("")
         : "";
     });
-
-    function truncateText(textEl: SVGTextElement, widthPx: number): void {
-      const d3Node = d3.select(textEl);
-      let text = d3Node.text();
-      let textLength = textEl.getComputedTextLength();
-
-      while (textLength > widthPx - 2 * padding && text.length > 0) {
-        text = text.slice(0, -1);
-        d3Node.text(text + "...");
-        textLength = d3Node.node()?.getComputedTextLength() ?? 0;
-      }
-    }
 
     const yAxis = d3.axisLeft(x).tickFormat(function (_d, i) {
       return featureNames[i];
@@ -227,8 +197,9 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .attr("dx", "-.9em")
       .attr("dy", "1.2em")
       .attr("transform", "rotate(90)");
-
     svg.append("g").attr("class", "y axis").call(yAxis);
+
+    // Truncate axis labels to fit in margins
     svg
       .select(".x.axis")
       .selectAll("text")
@@ -245,8 +216,8 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     // Draw grid
     svg
       .selectAll("rect")
-      .data(grid, function (d: { x: number; y: number; value: number }) {
-        return featureKeys[d.x] + featureKeys[d.y];
+      .data(gridData, function (d: { x: number; y: number; value: number }) {
+        return sortedSelectedFeatures[d.x] + sortedSelectedFeatures[d.y];
       } as any)
       .enter()
       .append("rect")
@@ -264,6 +235,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         }
         return c(d.value).hex();
       })
+      // Add fade-in transition
       .style("opacity", 1e-6)
       .transition()
       .style("opacity", 1);
@@ -279,26 +251,26 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         // Highlight the selected cell
         d3.select(this).classed("selected", true);
 
-        const xAxisName = dataset?.getFeatureNameWithUnits(featureKeys[d.x]);
-        const yAxisName = dataset?.getFeatureNameWithUnits(featureKeys[d.y]);
-
+        // Update tooltip text with feature names and values
+        const xAxisName = dataset?.getFeatureNameWithUnits(sortedSelectedFeatures[d.x]);
+        const yAxisName = dataset?.getFeatureNameWithUnits(sortedSelectedFeatures[d.y]);
         d3.select(tooltipDivRef.current)
           .style("display", "flex")
           .html(
             xAxisName + " ×<br/>" + yAxisName + "<br/>" + (d.value === undefined ? "undefined" : d.value.toFixed(2))
           );
 
-        var rowPos = y(d.y)!;
-        var colPos = x(d.x)!;
-        var tipPos = (d3.select(tooltipDivRef.current).node() as HTMLElement).getBoundingClientRect();
-        var tipWidth = tipPos.width;
-        var tipHeight = tipPos.height;
-        //var gridPos = (d3.select(plotDivRef.current).node() as HTMLElement).getBoundingClientRect();
-        var gridLeft = 0; //gridPos.left;
-        var gridTop = 0; //gridPos.top;
+        // Position tooltip based on the selected cell
+        const rowPos = y(d.y)!;
+        const colPos = x(d.x)!;
+        const tipPos = (d3.select(tooltipDivRef.current).node() as HTMLElement).getBoundingClientRect();
+        const tipWidth = tipPos.width;
+        const tipHeight = tipPos.height;
+        const gridLeft = 0;
+        const gridTop = 0;
 
-        var left = gridLeft + colPos + margin.left + x.bandwidth() / 2 - tipWidth / 2;
-        var top = gridTop + rowPos + margin.top - tipHeight - 5;
+        const left = gridLeft + colPos + margin.left + x.bandwidth() / 2 - tipWidth / 2;
+        const top = gridTop + rowPos + margin.top - tipHeight - 5;
 
         d3.select(tooltipDivRef.current)
           .style("left", left + "px")
@@ -321,14 +293,13 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
         if (!d) {
           return;
         }
-        props.openScatterPlotTab(featureKeys[d.x], featureKeys[d.y]);
+        props.openScatterPlotTab(sortedSelectedFeatures[d.x], sortedSelectedFeatures[d.y]);
       });
 
-    // Legend scale
-    var legendTop = 15;
-    var legendHeight = 15;
-
-    var legendSvg = d3
+    // Draw legend (color gradient + min/max extent)
+    const legendTop = 15;
+    const legendHeight = 15;
+    const legendSvg = d3
       .select(legendRef.current)
       .append("svg")
       .attr("width", plotWidth + margin.left + margin.right)
@@ -336,16 +307,14 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .append("g")
       .attr("transform", "translate(" + margin.left + ", " + legendTop + ")");
 
-    var defs = legendSvg.append("defs");
+    const defs = legendSvg.append("defs");
 
-    var gradient = defs.append("linearGradient").attr("id", "linear-gradient");
-
-    var stops = [
+    const gradient = defs.append("linearGradient").attr("id", "linear-gradient");
+    const stops = [
       { offset: 0, color: "steelblue", value: extent[0] },
       { offset: 0.5, color: "white", value: 0 },
       { offset: 1, color: "tomato", value: extent[1] },
     ];
-
     gradient
       .selectAll("stop")
       .data(stops)
@@ -363,7 +332,6 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .attr("width", plotWidth)
       .attr("height", legendHeight)
       .style("fill", "url(#linear-gradient)");
-
     legendSvg
       .selectAll("text")
       .data(stops)

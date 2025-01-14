@@ -994,21 +994,7 @@ function Viewer(): ReactElement {
       key: TabType.CORRELATION_PLOT,
       children: (
         <div className={styles.tabContent}>
-          <CorrelationPlotTab
-            openScatterPlotTab={openScatterPlotTab}
-            workerPool={workerPool}
-            dataset={dataset}
-            isVisible={config.openTab === TabType.CORRELATION_PLOT}
-            isPlaying={timeControls.isPlaying() || isRecording}
-            colorRampMin={colorRampMin}
-            colorRampMax={colorRampMax}
-            colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
-            inRangeIds={inRangeLUT}
-            viewerConfig={config}
-            correlationPlotConfig={scatterPlotConfig}
-            updateCorrelationPlotConfig={updateScatterPlotConfig}
-            showAlert={showAlert}
-          />
+          <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
         </div>
       ),
     });

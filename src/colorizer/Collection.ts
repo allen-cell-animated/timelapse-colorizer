@@ -306,19 +306,10 @@ export default class Collection {
       throw new Error(LoadErrorMessage.COLLECTION_HAS_NO_DATASETS);
     }
     const collectionData: Map<string, CollectionEntry> = new Map();
-    const duplicateDatasetNames = new Set<string>();
     for (const entry of collection.datasets) {
       collectionData.set(entry.name, entry);
     }
     Collection.checkForDuplicateDatasetNames(collection.datasets, options.reportWarning);
-
-    if (duplicateDatasetNames.size > 0) {
-      options.reportWarning?.("Duplicate dataset names were found in the collection.", [
-        "The following dataset(s) had duplicate names and were skipped when loading the collection:",
-        ...formatAsBulletList(Array.from(duplicateDatasetNames), 5),
-        "If you are the dataset author, please ensure that every dataset has a unique name in the collection.",
-      ]);
-    }
 
     triggerAnalyticsEvent(AnalyticsEvent.COLLECTION_LOAD, {
       collectionWriterVersion: collection.metadata?.writerVersion || "N/A",
