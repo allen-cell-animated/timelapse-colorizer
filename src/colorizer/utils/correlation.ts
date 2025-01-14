@@ -80,7 +80,7 @@ export function computeCorrelations(featureData: Float32Array[]): number[][] {
   // fill in remainder of diagonal with transposed values
   for (let i = 0; i < out.length; i++) {
     for (let j = i + 1; j < out.length; j++) {
-      out[j][i] = out[i][j];
+      out[i][j] = out[j][i];
     }
     out[i][i] = 1;
   }
