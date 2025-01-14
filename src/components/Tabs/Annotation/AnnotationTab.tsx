@@ -1,7 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Button, ColorPicker, Table, TableProps } from "antd";
-import { ItemType } from "antd/es/menu/hooks/useItems";
 import React, { ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
@@ -14,7 +13,7 @@ import { download } from "../../../utils/file_io";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
-import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
+import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
 import IconButton from "../../IconButton";
 import AnnotationModeButton from "./AnnotationModeButton";
 import LabelEditControls from "./LabelEditControls";
@@ -142,9 +141,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   }, [annotationData, currentLabelIdx, props.dataset]);
 
   // Options for the selection dropdown
-  const selectLabelOptions: ItemType[] = labels.map((label, index) => {
+  const selectLabelOptions: SelectItem[] = labels.map((label, index) => {
     return {
-      key: index.toString(),
+      value: index.toString(),
       label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
     };
   });
@@ -174,7 +173,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           items={selectLabelOptions}
           onChange={onSelectLabelIdx}
           disabled={currentLabelIdx === null}
-          showTooltip={false}
+          showSelectedItemTooltip={false}
         ></SelectionDropdown>
         <div>
           {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
