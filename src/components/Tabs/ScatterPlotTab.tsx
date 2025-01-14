@@ -1,5 +1,4 @@
 import { Button, Tooltip } from "antd";
-import { MenuItemType } from "antd/es/menu/hooks/useItems";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
@@ -28,7 +27,7 @@ import {
 } from "./scatter_plot_data_utils";
 
 import { AppThemeContext } from "../AppStyle";
-import SelectionDropdown from "../Dropdowns/SelectionDropdown";
+import SelectionDropdown, { SelectItem } from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
 import LoadingSpinner from "../LoadingSpinner";
 
@@ -44,6 +43,7 @@ const COLOR_RAMP_SUBSAMPLES = 100;
 const NUM_RESERVED_BUCKETS = 2;
 const BUCKET_INDEX_OUTOFRANGE = 0;
 const BUCKET_INDEX_OUTLIERS = 1;
+const PLOTLY_CLICK_TIMEOUT_MS = 10;
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
@@ -111,6 +111,39 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   /** Incrementing UI revision number. Updated whenever a breaking UI change happens and the view must be reset. */
   const uiRevision = useRef(0);
 
+  // Plotly doesn't report click events if empty parts of the canvas are clicked. See
+  // https://github.com/plotly/plotly.js/issues/2696. To detect clicks on blank areas of the plot,
+  // we have to detect ANY click event and see if a plotly click event is reported within a short
+  // time frame. This can happen before OR after plotly reports it, so we need to handle both cases.
+  // If no plotly click event was reported, we assume the click was on a blank area of the plot.
+  const timeOfLastPointClicked = useRef<number>(0);
+  const emptyClickTimeout = useRef<number | null>(null);
+  const currentRangeType = useRef<PlotRangeType>(props.scatterPlotConfig.rangeType);
+  currentRangeType.current = props.scatterPlotConfig.rangeType;
+
+  useEffect(() => {
+    const onClick = (): void => {
+      // A point was recently clicked so ignore the click event.
+      if (timeOfLastPointClicked.current + PLOTLY_CLICK_TIMEOUT_MS > Date.now()) {
+        return;
+      }
+      // Start a timeout to clear the track, which will be cleared if a plotly
+      // click event occurs.
+      emptyClickTimeout.current = window.setTimeout(() => {
+        if (currentRangeType.current !== PlotRangeType.CURRENT_TRACK) {
+          props.findTrack(null, false);
+        }
+      }, PLOTLY_CLICK_TIMEOUT_MS);
+    };
+
+    // Attach listener to the XY plot only (and not the histogram or axes)
+    const xyPlotDiv = plotDivRef.current?.querySelector(".plot-container .xy");
+    xyPlotDiv?.addEventListener("click", onClick);
+    return () => {
+      xyPlotDiv?.removeEventListener("click", onClick);
+    };
+  }, [plotDivRef.current, props.findTrack]);
+
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
   const {
@@ -132,7 +165,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (props.scatterPlotConfig.xAxis === null && props.scatterPlotConfig.yAxis === null && props.selectedFeatureKey) {
       props.updateScatterPlotConfig({
         yAxis: props.selectedFeatureKey,
-        xAxis: SCATTERPLOT_TIME_FEATURE.key,
+        xAxis: SCATTERPLOT_TIME_FEATURE.value,
       });
     }
   }, [props.selectedFeatureKey]);
@@ -175,6 +208,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         return;
       }
 
+      // Clear any timeouts for detecting clicks on blank areas of the plot.
+      if (emptyClickTimeout.current) {
+        clearTimeout(emptyClickTimeout.current);
+        emptyClickTimeout.current = null;
+      }
+      timeOfLastPointClicked.current = Date.now();
+
       const point = eventData.points[0];
       const objectId = Number.parseInt(point.data.ids[point.pointNumber], 10);
       const trackId = dataset.getTrackId(objectId);
@@ -204,7 +244,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (featureKey === null || dataset === null) {
       return undefined;
     }
-    if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
+    if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
       return dataset.times || undefined;
     }
     return dataset.getFeatureData(featureKey)?.data;
@@ -371,7 +411,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
 
     // Special case for time feature, which isn't in the dataset
-    if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
+    if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
       min = 0;
       max = dataset?.numberOfFrames || 0;
     }
@@ -448,7 +488,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     objectIds: number[],
     trackIds: number[],
     markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
-    overrideColor?: Color
+    overrideColor?: Color,
+    allowHover = true
   ): Partial<PlotData>[] => {
     if (selectedFeatureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
       return [];
@@ -583,7 +624,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             size: 4,
             ...bucket.marker,
           },
-          hovertemplate: getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey),
+          hoverinfo: allowHover ? "text" : "skip",
+          hovertemplate: allowHover ? getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey) : undefined,
         };
       });
 
@@ -637,10 +679,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     const isUsingTime =
-      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.key;
+      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value;
 
     // Configure traces
-    const traces = colorizeScatterplotPoints(xData, yData, objectIds, trackIds, {}, markerBaseColor);
+    const traces = colorizeScatterplotPoints(
+      xData,
+      yData,
+      objectIds,
+      trackIds,
+      {},
+      markerBaseColor,
+      // disable hover for all points other than the track when one is selected
+      selectedTrack === null || rangeType !== PlotRangeType.ALL_TIME
+    );
 
     const xHistogram: Partial<Plotly.PlotData> = {
       x: xData,
@@ -669,10 +720,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
       // Render an extra trace for lines connecting the points in the current track when time is a feature.
       if (isUsingTime) {
-        const hovertemplate = getHoverTemplate(dataset, xAxisFeatureKey, yAxisFeatureKey);
-        traces.push(
-          makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds, hovertemplate)
-        );
+        traces.push(makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds));
       }
       // Render track points
       const outOfRangeOutlineColor = viewerConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
@@ -796,8 +844,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const makeControlBar = (): ReactElement => {
     const featureKeys = dataset ? dataset.featureKeys : [];
-    const menuItems: MenuItemType[] = featureKeys.map((key: string) => {
-      return { key, label: dataset?.getFeatureNameWithUnits(key) };
+    const menuItems: SelectItem[] = featureKeys.map((key: string) => {
+      return { value: key, label: dataset?.getFeatureNameWithUnits(key) ?? key };
     });
     menuItems.push(SCATTERPLOT_TIME_FEATURE);
 
@@ -807,7 +855,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           label={"X"}
           selected={xAxisFeatureKey || ""}
           items={menuItems}
-          onChange={(key) => props.updateScatterPlotConfig({ xAxis: key })}
+          onChange={(key: string) => props.updateScatterPlotConfig({ xAxis: key })}
         />
         <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
           <IconButton
@@ -826,7 +874,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           label={"Y"}
           selected={yAxisFeatureKey || ""}
           items={menuItems}
-          onChange={(key) => props.updateScatterPlotConfig({ yAxis: key })}
+          onChange={(key: string) => props.updateScatterPlotConfig({ yAxis: key })}
         />
 
         <div style={{ marginLeft: "10px" }}>
@@ -835,7 +883,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             selected={rangeType}
             items={Object.values(PlotRangeType)}
             width={"120px"}
-            onChange={(value) => props.updateScatterPlotConfig({ rangeType: value as PlotRangeType })}
+            onChange={(value: string) => props.updateScatterPlotConfig({ rangeType: value as PlotRangeType })}
           ></SelectionDropdown>
         </div>
       </FlexRowAlignCenter>

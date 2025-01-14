@@ -126,5 +126,5 @@
   border-top: 0;
   width: auto;
   height: var(--height);
-  overflow-y: auto;
+  overflow-y: scroll;
 }

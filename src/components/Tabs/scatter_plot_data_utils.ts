@@ -5,7 +5,7 @@ import { ColorRamp, Dataset } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 
 /** Extra feature added to the dropdowns representing the frame number. */
-export const SCATTERPLOT_TIME_FEATURE = { key: "scatterplot_time", label: "Time" };
+export const SCATTERPLOT_TIME_FEATURE = { value: "scatterplot_time", label: "Time" };
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -126,7 +126,7 @@ export const getFeatureOrTimeName = (featureKey: string | null, dataset: Dataset
   if (featureKey === null || dataset === null) {
     return "";
   }
-  if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
+  if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
     return SCATTERPLOT_TIME_FEATURE.label;
   }
   return dataset.getFeatureName(featureKey) || "";
@@ -137,7 +137,7 @@ export const getFeatureOrTimeNameWithUnits = (featureKey: string | null, dataset
   if (featureKey === null || dataset === null) {
     return "";
   }
-  if (featureKey === SCATTERPLOT_TIME_FEATURE.key) {
+  if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
     return SCATTERPLOT_TIME_FEATURE.label;
   }
   return dataset.getFeatureNameWithUnits(featureKey) || "";
@@ -173,6 +173,7 @@ export function makeLineTrace(
     },
     ids: objectIds.map((id) => id.toString()),
     customdata: trackIds.map((id) => id.toString()),
+    hoverinfo: "skip", // will be overridden if hovertemplate is provided
     hovertemplate,
   };
 }

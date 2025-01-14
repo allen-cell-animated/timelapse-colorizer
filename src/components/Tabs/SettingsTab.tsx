@@ -17,7 +17,7 @@ import { SettingsContainer, SettingsItem } from "../SettingsContainer";
 import VectorFieldSettings from "./Settings/VectorFieldSettings";
 
 const NO_BACKDROP = {
-  key: "",
+  value: "",
   label: "(None)",
 };
 
@@ -38,16 +38,16 @@ type SettingsTabProps = {
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = props.dataset
     ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
-        return { key, label: data.name };
+        return { value: key, label: data.name };
       })
     : [];
 
   const isBackdropDisabled = backdropOptions.length === 0 || props.selectedBackdropKey === null;
   const isBackdropOptionsDisabled = isBackdropDisabled || !props.config.backdropVisible;
-  let selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.key;
+  let selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.value;
   if (isBackdropDisabled) {
     backdropOptions.push(NO_BACKDROP);
-    selectedBackdropKey = NO_BACKDROP.key;
+    selectedBackdropKey = NO_BACKDROP.value;
   }
 
   return (
@@ -143,6 +143,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           </SettingsItem>
           <SettingsItem label="Filtered object color">
             <DrawModeDropdown
+              htmlLabelId="filtered-object-color-label"
               selected={props.config.outOfRangeDrawSettings.mode}
               color={props.config.outOfRangeDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
@@ -150,8 +151,9 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
               }}
             />
           </SettingsItem>
-          <SettingsItem label="Outlier object color">
+          <SettingsItem label="Outlier object color" id="outlier-object-color-label">
             <DrawModeDropdown
+              htmlLabelId="outlier-object-color-label"
               selected={props.config.outlierDrawSettings.mode}
               color={props.config.outlierDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {

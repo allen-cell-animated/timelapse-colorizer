@@ -329,7 +329,7 @@ export const useAnnotations = (): AnnotationState => {
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);  
-  const [visible, _setVisibility] = useState<boolean>(true);
+  const [visible, _setVisibility] = useState<boolean>(false);
 
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
@@ -379,13 +379,14 @@ export const useAnnotations = (): AnnotationState => {
     return annotationData.deleteLabel(labelIdx);
   };
 
-  const data = useMemo(() => ({
+  const data = useMemo((): IAnnotationDataGetters => ({
       // Data getters
       getLabels: annotationData.getLabels,
       getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
       isLabelOnId: annotationData.isLabelOnId,
+      toCsv: annotationData.toCsv
     })
   , [dataUpdateCounter]);
 
@@ -397,7 +398,6 @@ export const useAnnotations = (): AnnotationState => {
     setIsAnnotationModeEnabled: setIsAnnotationEnabled,
     visible,
     setVisibility,
-
     data,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),

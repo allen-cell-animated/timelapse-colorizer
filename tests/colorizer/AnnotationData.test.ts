@@ -141,4 +141,76 @@ describe("AnnotationData", () => {
     );
     /* eslint-enable @typescript-eslint/naming-convention */
   });
+
+  describe("toCsv", () => {
+    const mockDataset = {
+      getTime: (id: number): number => [0, 1, 2, 3][id],
+      getTrackId: (id: number) => [0, 1, 2, 3][id],
+    } as unknown as Dataset;
+
+    it("exports to CSV", () => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel("Label 1");
+      annotationData.createNewLabel("Label 2");
+      annotationData.createNewLabel("Label 3");
+
+      annotationData.setLabelOnId(0, 0, true);
+      annotationData.setLabelOnId(1, 1, true);
+      annotationData.setLabelOnId(2, 2, true);
+
+      const csv = annotationData.toCsv(mockDataset);
+      expect(csv).to.equal(
+        `ID,Track,Frame,Label 1,Label 2,Label 3\r\n` + "0,0,0,1,0,0\r\n" + "1,1,1,0,1,0\r\n" + "2,2,2,0,0,1"
+      );
+    });
+
+    it("handles labels with quote and comma characters", () => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel('"label');
+      annotationData.createNewLabel(",,,,,");
+      annotationData.createNewLabel('a","fake label');
+      annotationData.createNewLabel('","');
+
+      annotationData.setLabelOnId(0, 0, true);
+      annotationData.setLabelOnId(1, 1, true);
+      annotationData.setLabelOnId(2, 2, true);
+      annotationData.setLabelOnId(3, 3, true);
+
+      const csv = annotationData.toCsv(mockDataset);
+
+      // Check csv contents here.
+      // Single quotes are escaped as double quotes.
+      expect(csv).to.equal(
+        `ID,Track,Frame,"""label",",,,,,","a"",""fake label",""","""\r\n` +
+          "0,0,0,1,0,0,0\r\n" +
+          "1,1,1,0,1,0,0\r\n" +
+          "2,2,2,0,0,1,0\r\n" +
+          "3,3,3,0,0,0,1"
+      );
+    });
+
+    it("trims column name whitespace on export", () => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel(" \t Label 1");
+      annotationData.createNewLabel("\tLabel 2  ");
+      annotationData.createNewLabel("\t\tLabel 3 \t ");
+
+      const csv = annotationData.toCsv(mockDataset);
+      expect(csv).to.equal(`ID,Track,Frame,Label 1,Label 2,Label 3\r\n`);
+    });
+
+    it("escapes column names starting with special characters", () => {
+      // See https://owasp.org/www-community/attacks/CSV_Injection
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel("=SUM(A2:A5)");
+      annotationData.createNewLabel("@label");
+      annotationData.createNewLabel("+label");
+      annotationData.createNewLabel("-label");
+      annotationData.createNewLabel("\tlabel 1");
+      annotationData.createNewLabel("\rlabel 2");
+
+      const csv = annotationData.toCsv(mockDataset);
+      expect(csv).to.equal(`ID,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`);
+    });
+  });
 });

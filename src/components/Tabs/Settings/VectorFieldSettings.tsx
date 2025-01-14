@@ -13,7 +13,7 @@ import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import { MAX_SLIDER_WIDTH } from "../SettingsTab";
 
 const VECTOR_OPTION_MOTION = {
-  key: VECTOR_KEY_MOTION_DELTA,
+  value: VECTOR_KEY_MOTION_DELTA,
   label: "Avg. movement delta (auto-calculated)",
 };
 
