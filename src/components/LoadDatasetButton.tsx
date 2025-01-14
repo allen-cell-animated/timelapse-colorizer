@@ -297,6 +297,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
                     onChange={(event) => setUrlInput(event.target.value)}
                     allowClear
                     disabled={isLoading}
+                    onPressEnter={handleLoadClicked}
                   />
                 </Dropdown>
                 <Button type="primary" onClick={handleLoadClicked} loading={isLoading}>

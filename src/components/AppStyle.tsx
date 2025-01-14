@@ -29,6 +29,7 @@ const palette = {
   link: "#0094FF",
   linkDark: "#007FD6",
   warning: "#faad14",
+  successMediumDark: "#6BD352",
   successMedium: "#b7eb8f",
   successLight: "#f6ffed",
   errorMedium: "#ffa39e",
@@ -74,7 +75,9 @@ const theme = {
       background: palette.gray7,
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
+      annotationOutline: palette.themeLight,
     },
+    // TODO: Reorganize the button colors by primary/default/secondary etc.
     button: {
       backgroundPrimary: palette.theme,
       backgroundDisabled: palette.gray10,
@@ -83,6 +86,10 @@ const theme = {
       hover: palette.themeLight,
       active: palette.themeDark,
       focusShadow: "rgba(137, 98, 211, 0.06)",
+      success: {
+        background: palette.success,
+        hover: palette.successMediumDark,
+      },
     },
     dropdown: {
       backgroundHover: palette.gray10,
@@ -187,6 +194,9 @@ const CssContainer = styled.div`
   --color-button-outline: ${theme.color.button.outline};
   --color-button-outline-active: ${theme.color.button.outlineActive};
 
+  --color-button-success-bg: ${theme.color.button.success.background};
+  --color-button-success-hover: ${theme.color.button.success.hover};
+
   --button-height: ${theme.controls.height}px;
   --button-height-small: ${theme.controls.heightSmall}px;
   --radius-control-small: ${theme.controls.radius}px;
@@ -205,6 +215,7 @@ const CssContainer = styled.div`
 
   --color-viewport-overlay-background: ${theme.color.viewport.overlayBackground};
   --color-viewport-overlay-outline: ${theme.color.viewport.overlayOutline};
+  --color-viewport-annotation-outline: ${theme.color.viewport.annotationOutline};
 
   --color-alert-info-border: ${theme.color.alert.border.info};
   --color-alert-warning-border: ${theme.color.alert.border.warning};
@@ -391,12 +402,16 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               colorBorder: theme.color.layout.borders,
               colorBorderSecondary: theme.color.layout.borders,
             },
-            Tooltip: {
-              zIndexPopup: 2000,
-            },
             Divider: {
               colorSplit: theme.color.layout.dividers,
               marginLG: 0,
+            },
+            Tooltip: {
+              zIndexPopup: 2000,
+            },
+            Popconfirm: {
+              zIndexPopup: 2050,
+              colorText: theme.color.text.secondary,
             },
             Modal: {
               // Set z-index to 2100 here because Ant sets popups to 1050 by default, and modals to 1000.

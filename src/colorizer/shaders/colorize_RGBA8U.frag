@@ -15,6 +15,7 @@ uniform float featureColorRampMin;
 uniform float featureColorRampMax;
 
 uniform vec2 canvasToFrameScale;
+uniform vec2 canvasSizePx;
 uniform vec2 panOffset;
 uniform sampler2D colorRamp;
 uniform sampler2D overlay;
@@ -25,6 +26,7 @@ uniform float objectOpacity;
 
 uniform vec3 backgroundColor;
 uniform vec3 outlineColor;
+uniform float outlineWidthPx;
 // Background color for the canvas, anywhere where the frame is not drawn.
 uniform vec3 canvasBackgroundColor;
 
@@ -89,13 +91,12 @@ vec4 getColorRamp(float val) {
   return texture(colorRamp, vec2(adjustedVal, 0.5));
 }
 
-bool isEdge(vec2 uv, ivec2 frameDims) {
+bool isEdge(vec2 uv) {
   float thickness = 2.0;
-  float wStep = 1.0 / float(frameDims.x);
-  float hStep = 1.0 / float(frameDims.y);        
+  // step size is equal to 1 onscreen canvas pixel     
+  float wStep = 1.0 / float(canvasSizePx.x) * float(canvasToFrameScale.x);
+  float hStep = 1.0 / float(canvasSizePx.y) * float(canvasToFrameScale.y);        
   // sample around the pixel to see if we are on an edge
-  // TODO: Fix this so it samples using canvas pixel offsets instead of frame pixel offsets.
-  // Currently, the edge detection is sparser when loading high-resolution frames.
   int R = int(combineColor(texture(frame, uv + vec2(thickness * wStep, 0)))) - 1;
   int L = int(combineColor(texture(frame, uv + vec2(-thickness * wStep, 0)))) - 1;
   int T = int(combineColor(texture(frame, uv + vec2(0, thickness * hStep)))) - 1;
@@ -159,9 +160,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // do an outline around highlighted object
-  ivec2 frameDims = textureSize(frame, 0);
   if (int(id) - 1 == highlightedId) {
-    if (isEdge(sUv, frameDims)) {
+    if (isEdge(sUv)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
     }
