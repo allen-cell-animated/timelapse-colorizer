@@ -1,9 +1,10 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Input, InputRef, Popover, Tooltip } from "antd";
+import { Button, ColorPicker, Input, InputRef, Popconfirm, Popover, Tooltip } from "antd";
 import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
 import { Color, ColorRepresentation } from "three";
 
+import { TagAddIconSVG } from "../../../assets";
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
@@ -21,14 +22,17 @@ type LabelEditControlsProps = {
 
 export default function LabelEditControls(props: LabelEditControlsProps): ReactElement {
   const theme = useContext(AppThemeContext);
+
   const [showEditPopover, setShowEditPopover] = useState(false);
   const [editPopoverNameInput, setEditPopoverNameInput] = useState("");
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
   const editPopoverInputRef = useRef<InputRef>(null);
 
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+
   const onClickEditButton = (): void => {
-    setShowEditPopover(!showEditPopover);
     setEditPopoverNameInput(props.selectedLabel.name);
+    setShowEditPopover(!showEditPopover);
   };
 
   const onClickEditCancel = (): void => {
@@ -41,13 +45,27 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   };
 
   const onClickCreateNewLabel = (): void => {
-    setShowEditPopover(false);
     props.onCreateNewLabel();
+    setShowEditPopover(false);
   };
 
-  const onClickDelete = (): void => {
-    setShowEditPopover(false);
+  const deleteLabel = (): void => {
     props.onDeleteLabel();
+    setShowEditPopover(false);
+    setShowDeletePopup(false);
+  };
+
+  const onDeletePopupOpenChange = (open: boolean): void => {
+    if (!open) {
+      setShowDeletePopup(false);
+      return;
+    }
+    if (props.selectedLabel.ids.size > 0) {
+      setShowDeletePopup(true);
+      setShowEditPopover(false);
+    } else {
+      deleteLabel();
+    }
   };
 
   const onColorPickerChange = (_color: any, hex: string): void => {
@@ -62,8 +80,9 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   }, [showEditPopover]);
 
   useEffect(() => {
-    // If the selection changes, close the edit popover.
+    // If the selection changes, close the edit/delete popovers.
     setShowEditPopover(false);
+    setShowDeletePopup(false);
   }, [props.selectedLabelIdx]);
 
   // A small popup that appears when you press the edit button.
@@ -74,6 +93,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         <Input
           value={editPopoverNameInput}
           onChange={(e) => setEditPopoverNameInput(e.target.value)}
+          onPressEnter={onClickEditSave}
           ref={editPopoverInputRef}
         ></Input>
       </label>
@@ -99,9 +119,9 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
 
   return (
     <FlexRow $gap={10}>
-      <Tooltip title="Create new label" placement="bottom">
+      <Tooltip title="Create new label" placement="top">
         <IconButton onClick={onClickCreateNewLabel} type="outlined">
-          <PlusOutlined />
+          <TagAddIconSVG />
         </IconButton>
       </Tooltip>
       <Popover
@@ -114,19 +134,29 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         style={{ zIndex: "1000" }}
       >
         <div ref={editPopoverContainerRef}>
-          <Tooltip title="Edit label" placement="bottom">
+          <Tooltip title="Edit label" placement="top">
             <IconButton onClick={onClickEditButton} type={showEditPopover ? "primary" : "outlined"}>
               <EditOutlined />
             </IconButton>
           </Tooltip>
         </div>
       </Popover>
-      {/* TODO: Show confirmation popup before deleting. */}
-      <Tooltip title="Delete label" placement="bottom">
-        <IconButton onClick={onClickDelete} type="outlined">
-          <DeleteOutlined />
-        </IconButton>
-      </Tooltip>
+      <Popconfirm
+        title={`Delete label with ${props.selectedLabel.ids.size} object(s)?`}
+        description={"This cannot be undone."}
+        onOpenChange={onDeletePopupOpenChange}
+        open={showDeletePopup}
+        onConfirm={deleteLabel}
+        onCancel={() => setShowDeletePopup(false)}
+        placement="bottom"
+        getPopupContainer={() => editPopoverContainerRef.current!}
+      >
+        <Tooltip title="Delete label" placement="top">
+          <IconButton type="outlined">
+            <DeleteOutlined />
+          </IconButton>
+        </Tooltip>
+      </Popconfirm>
     </FlexRow>
   );
 }

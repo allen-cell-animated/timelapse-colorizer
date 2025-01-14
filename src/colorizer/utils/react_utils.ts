@@ -379,14 +379,14 @@ export const useAnnotations = (): AnnotationState => {
     return annotationData.deleteLabel(labelIdx);
   };
 
-  const data = useMemo(() => ({
+  const data = useMemo((): IAnnotationDataGetters => ({
       // Data getters
       getLabels: annotationData.getLabels,
       getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
       isLabelOnId: annotationData.isLabelOnId,
-      toCsv: annotationData.toCsv,
+      toCsv: annotationData.toCsv
     })
   , [dataUpdateCounter]);
 

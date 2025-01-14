@@ -76,7 +76,6 @@ const theme = {
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
       annotationOutline: palette.themeLight,
-      modePopupBackground: "rgba(0, 0, 0, 0.7)",
     },
     // TODO: Reorganize the button colors by primary/default/secondary etc.
     button: {
@@ -179,9 +178,6 @@ const CssContainer = styled.div`
   --color-dividers: ${theme.color.layout.dividers};
   --color-borders: ${theme.color.layout.borders};
   --color-modal-overlay: ${theme.color.layout.modalOverlay};
-
-  /* Viewport */
-  --color-viewport-mode-popup-background: ${theme.color.viewport.modePopupBackground};
 
   /* Controls */
   /* TODO: Possible issue with hover/active colors because the UI design
@@ -400,12 +396,16 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               colorBorder: theme.color.layout.borders,
               colorBorderSecondary: theme.color.layout.borders,
             },
-            Tooltip: {
-              zIndexPopup: 2000,
-            },
             Divider: {
               colorSplit: theme.color.layout.dividers,
               marginLG: 0,
+            },
+            Tooltip: {
+              zIndexPopup: 2000,
+            },
+            Popconfirm: {
+              zIndexPopup: 2050,
+              colorText: theme.color.text.secondary,
             },
             Modal: {
               // Set z-index to 2100 here because Ant sets popups to 1050 by default, and modals to 1000.

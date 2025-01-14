@@ -220,6 +220,26 @@ function Viewer(): ReactElement {
   const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
 
+  // EVENT LISTENERS ////////////////////////////////////////////////////////
+
+  // Warn on tab close if there is annotation data.
+  useEffect(() => {
+    const beforeUnloadHandler = (event: BeforeUnloadEvent): void => {
+      if (annotationState.data.getLabels().length === 0) {
+        return;
+      }
+      event.preventDefault();
+      // Note that `event.returnValue` is deprecated for most (but not all) browsers.
+      // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
+      event.returnValue = "You have unsaved annotations. Are you sure you want to leave?";
+    };
+
+    window.addEventListener("beforeunload", beforeUnloadHandler);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnloadHandler);
+    };
+  }, [annotationState.data]);
+
   // UTILITY METHODS /////////////////////////////////////////////////////////////
 
   /**
