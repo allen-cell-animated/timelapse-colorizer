@@ -1,20 +1,17 @@
-import { CloseOutlined } from "@ant-design/icons";
-import { Button, Table, TableProps } from "antd";
+import { Button } from "antd";
 import React, { ReactElement, useContext, useMemo } from "react";
-import styled from "styled-components";
 import { Color } from "three";
 
-import { TagIconSVG } from "../../../assets";
 import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
+import { FlexColumnAlignCenter, FlexRow } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
-import IconButton from "../../IconButton";
 import AnnotationModeButton from "./AnnotationModeButton";
+import AnnotationTable, { TableDataType } from "./AnnotationTable";
 import LabelEditControls from "./LabelEditControls";
 
 type AnnotationTabProps = {
@@ -22,23 +19,6 @@ type AnnotationTabProps = {
   setTrackAndFrame: (track: number, frame: number) => void;
   dataset: Dataset | null;
 };
-
-type TableDataType = {
-  key: string;
-  id: number;
-  track: number;
-  time: number;
-};
-
-const StyledAntTable = styled(Table)`
-  .ant-table-row {
-    cursor: pointer;
-  }
-
-  &&&& .ant-table-cell {
-    padding: 4px 8px;
-  }
-`;
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const theme = useContext(AppThemeContext);
@@ -73,65 +53,15 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     }
   };
 
-  const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType): void => {
+  const onClickObjectRow = (record: TableDataType): void => {
     props.setTrackAndFrame(record.track, record.time);
   };
 
-  const tableColumns: TableProps<TableDataType>["columns"] = [
-    {
-      title: "Object ID",
-      dataIndex: "id",
-      key: "id",
-      sorter: (a, b) => a.id - b.id,
-    },
-    {
-      title: "Track ID",
-      dataIndex: "track",
-      key: "track",
-      sorter: (a, b) => a.track - b.track,
-    },
-    {
-      title: "Time",
-      dataIndex: "time",
-      key: "time",
-      sorter: (a, b) => a.time - b.time,
-    },
-    // Column that contains a remove button for the ID.
-    {
-      title: "",
-      key: "action",
-      render: (_, record) => (
-        <IconButton
-          type="text"
-          onClick={(event) => {
-            // Rows have their own behavior on click (jumping to a timestamp),
-            // so we need to stop event propagation so that the row click event
-            // doesn't fire.
-            event.stopPropagation();
-            setLabelOnId(currentLabelIdx!, record.id, false);
-          }}
-        >
-          <CloseOutlined />
-          <VisuallyHidden>
-            Remove ID {record.id} (track {record.track})
-          </VisuallyHidden>
-        </IconButton>
-      ),
-    },
-  ];
-
-  const tableData: TableDataType[] = useMemo(() => {
-    const dataset = props.dataset;
-    if (currentLabelIdx !== null && dataset) {
-      const ids = annotationData.getLabeledIds(currentLabelIdx);
-      return ids.map((id) => {
-        const track = dataset.getTrackId(id);
-        const time = dataset.getTime(id);
-        return { key: id.toString(), id, track, time };
-      });
+  const onClickDeleteObject = (record: TableDataType): void => {
+    if (currentLabelIdx) {
+      setLabelOnId(record.id, currentLabelIdx, false);
     }
-    return [];
-  }, [annotationData, currentLabelIdx, props.dataset]);
+  };
 
   // Options for the selection dropdown
   const selectLabelOptions: SelectItem[] = labels.map((label, index) => {
@@ -141,6 +71,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       color: label.color,
     };
   });
+
+  const tableIds = useMemo(() => {
+    return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
+  }, [annotationData]);
 
   return (
     <FlexColumnAlignCenter $gap={10}>
@@ -188,32 +122,14 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
       {/* Table */}
       <div style={{ width: "100%", marginTop: "10px" }}>
-        <StyledAntTable
-          dataSource={tableData}
-          columns={tableColumns}
-          size="small"
-          pagination={false}
-          // TODO: Rows aren't actually buttons, which means that they are not
-          // keyboard accessible. Either find a way to make them tab indexable
-          // or add a button that is equivalent to click?
-          onRow={(record) => {
-            return {
-              onClick: (event) => {
-                onClickObjectRow(event, record);
-              },
-            };
-          }}
-          locale={{
-            emptyText: (
-              <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0" }}>
-                <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
-                <p>No annotated IDs</p>
-              </FlexColumnAlignCenter>
-            ),
-          }}
-        ></StyledAntTable>
+        <AnnotationTable
+          onClickObjectRow={onClickObjectRow}
+          onClickDeleteObject={onClickDeleteObject}
+          dataset={props.dataset}
+          ids={tableIds}
+        />
       </div>
-      {tableData.length > 0 && <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>}
+      {tableIds.length > 0 && <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>}
     </FlexColumnAlignCenter>
   );
 }
