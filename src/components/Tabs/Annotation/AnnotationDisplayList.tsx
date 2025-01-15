@@ -1,8 +1,8 @@
 import { Collapse } from "antd";
-import React, { ReactElement, useMemo } from "react";
+import React, { ReactElement, useMemo, useRef } from "react";
 import styled from "styled-components";
 
-import { Dataset, Track } from "../../../colorizer";
+import { Dataset } from "../../../colorizer";
 import { FlexColumn } from "../../../styles/utils";
 
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
@@ -33,6 +33,8 @@ const StyledCollapse = styled(Collapse)`
 `;
 
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
+  const trackToLength = useRef<Record<string, number>>({});
+
   // Organize ids by track
   const trackToIds: Record<number, number[]> = useMemo(() => {
     if (!props.dataset) {
@@ -50,24 +52,32 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     return trackToIdsMap;
   }, [props.dataset, props.ids]);
 
-  const tracks: Record<string, Track> = useMemo(() => {
-    if (!props.dataset) {
-      return {};
-    }
-    const map: Record<string, Track> = {};
-    for (const trackId of Object.keys(trackToIds)) {
-      map[trackId] = props.dataset.buildTrack(Number.parseInt(trackId, 10));
-    }
-    return map;
+  const tracksSorted = useMemo(() => {
+    return Object.keys(trackToIds)
+      .map((trackId) => parseInt(trackId, 10))
+      .sort();
   }, [trackToIds]);
+
+  const getTrackLength = (trackId: number): number => {
+    if (trackToLength.current[trackId] !== undefined) {
+      return trackToLength.current[trackId];
+    } else {
+      const track = props.dataset?.buildTrack(trackId);
+      trackToLength.current[trackId] = track?.ids.length ?? 0;
+      return track?.ids.length ?? 0;
+    }
+  };
+
+  // TODO: Sort track numbers
 
   return (
     <FlexColumn style={{ width: "100%" }}>
       <StyledCollapse size="small" ghost>
-        {Object.entries(trackToIds).map(([trackId, ids]) => {
-          const totalIds = tracks[trackId].ids.length;
+        {tracksSorted.map((trackId) => {
+          const ids = trackToIds[trackId];
+          const trackLength = getTrackLength(trackId);
           return (
-            <Collapse.Panel header={`Track ${trackId} (${ids.length}/${totalIds})`} key={trackId}>
+            <Collapse.Panel header={`Track ${trackId} (${ids.length}/${trackLength})`} key={trackId}>
               <AnnotationDisplayTable
                 ids={ids}
                 dataset={props.dataset}

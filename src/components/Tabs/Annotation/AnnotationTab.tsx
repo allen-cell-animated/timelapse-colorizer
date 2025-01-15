@@ -1,10 +1,11 @@
-import { Button } from "antd";
+import { MenuOutlined, TableOutlined } from "@ant-design/icons";
+import { Button, Radio, Tooltip } from "antd";
 import React, { ReactElement, useContext, useMemo } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRow } from "../../../styles/utils";
+import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
@@ -14,6 +15,11 @@ import AnnotationDisplayList from "./AnnotationDisplayList";
 import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
 import LabelEditControls from "./LabelEditControls";
+
+const enum AnnotationViewType {
+  TABLE,
+  LIST,
+}
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
@@ -36,6 +42,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     setLabelOnId,
   } = props.annotationState;
 
+  const [viewMode, setViewMode] = React.useState<AnnotationViewType>(AnnotationViewType.TABLE);
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
@@ -84,15 +91,38 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           active={isAnnotationModeEnabled}
           onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
         />
-        <Button
-          onClick={() => {
-            const csvData = props.annotationState.data.toCsv(props.dataset!);
-            download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
-            console.log(csvData);
-          }}
-        >
-          Export as CSV
-        </Button>
+
+        <FlexRow $gap={8}>
+          <Button
+            onClick={() => {
+              const csvData = props.annotationState.data.toCsv(props.dataset!);
+              download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+              console.log(csvData);
+            }}
+          >
+            Export as CSV
+          </Button>
+
+          <Radio.Group
+            buttonStyle="solid"
+            style={{ display: "flex", flexDirection: "row" }}
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value)}
+          >
+            <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
+              <Radio.Button value={AnnotationViewType.TABLE}>
+                <TableOutlined />
+                <VisuallyHidden>Table view {viewMode === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
+              </Radio.Button>
+            </Tooltip>
+            <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
+              <Radio.Button value={AnnotationViewType.LIST}>
+                <MenuOutlined />
+                <VisuallyHidden>List view {viewMode === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
+              </Radio.Button>
+            </Tooltip>
+          </Radio.Group>
+        </FlexRow>
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
@@ -121,22 +151,25 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         )}
       </FlexRow>
 
-      {/* Table */}
-      <AnnotationDisplayList
-        onClickObjectRow={onClickObjectRow}
-        onClickDeleteObject={onClickDeleteObject}
-        dataset={props.dataset}
-        ids={tableIds}
-      ></AnnotationDisplayList>
-      <div style={{ width: "100%", marginTop: "10px" }}>
-        <AnnotationTable
+      {/* Table or list view */}
+      {viewMode === AnnotationViewType.TABLE ? (
+        <div style={{ width: "100%", marginTop: "10px" }}>
+          <AnnotationTable
+            onClickObjectRow={onClickObjectRow}
+            onClickDeleteObject={onClickDeleteObject}
+            dataset={props.dataset}
+            ids={tableIds}
+            height={395}
+          />
+        </div>
+      ) : (
+        <AnnotationDisplayList
           onClickObjectRow={onClickObjectRow}
           onClickDeleteObject={onClickDeleteObject}
           dataset={props.dataset}
           ids={tableIds}
-          height={395}
-        />
-      </div>
+        ></AnnotationDisplayList>
+      )}
       {tableIds.length > 0 && <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>}
     </FlexColumnAlignCenter>
   );
