@@ -127,6 +127,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           onClickDeleteObject={onClickDeleteObject}
           dataset={props.dataset}
           ids={tableIds}
+          height={395}
         />
       </div>
       {tableIds.length > 0 && <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>}

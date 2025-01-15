@@ -31,6 +31,7 @@ type AnnotationTableProps = {
   onClickDeleteObject: (record: TableDataType) => void;
   dataset: Dataset | null;
   ids: number[];
+  height?: number | string;
 };
 
 /**
@@ -99,6 +100,7 @@ export default function AnnotationTable(props: AnnotationTableProps): ReactEleme
       columns={tableColumns}
       size="small"
       pagination={false}
+      scroll={{ y: props.height }}
       // TODO: Rows aren't actually buttons, which means that they are not
       // keyboard accessible. Either find a way to make them tab indexable
       // or add a button that is equivalent to click?
