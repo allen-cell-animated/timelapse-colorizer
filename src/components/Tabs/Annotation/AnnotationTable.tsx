@@ -33,6 +33,10 @@ type AnnotationTableProps = {
   ids: number[];
 };
 
+/**
+ * Renders a list of annotated IDs in a table format, with click and delete
+ * interactions.
+ */
 export default function AnnotationTable(props: AnnotationTableProps): ReactElement {
   const tableColumns: TableProps<TableDataType>["columns"] = [
     {
