@@ -1,6 +1,6 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Button, Radio, Tooltip } from "antd";
-import React, { ReactElement, useContext, useMemo } from "react";
+import React, { ReactElement, useContext, useMemo, useTransition } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../../colorizer";
@@ -11,6 +11,7 @@ import { download } from "../../../utils/file_io";
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
+import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
 import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
@@ -42,12 +43,15 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     setLabelOnId,
   } = props.annotationState;
 
+  const [isPending, startTransition] = useTransition();
   const [viewMode, setViewMode] = React.useState<AnnotationViewType>(AnnotationViewType.TABLE);
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
   const onSelectLabelIdx = (idx: string): void => {
-    props.annotationState.setCurrentLabelIdx(parseInt(idx, 10));
+    startTransition(() => {
+      props.annotationState.setCurrentLabelIdx(parseInt(idx, 10));
+    });
   };
 
   const onCreateNewLabel = (): void => {
@@ -57,7 +61,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onDeleteLabel = (): void => {
     if (currentLabelIdx !== null) {
-      deleteLabel(currentLabelIdx);
+      startTransition(() => {
+        deleteLabel(currentLabelIdx);
+      });
     }
   };
 
@@ -82,7 +88,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
-  }, [annotationData]);
+  }, [currentLabelIdx, annotationData]);
 
   return (
     <FlexColumnAlignCenter $gap={10}>
@@ -107,7 +113,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             buttonStyle="solid"
             style={{ display: "flex", flexDirection: "row" }}
             value={viewMode}
-            onChange={(e) => setViewMode(e.target.value)}
+            onChange={(e) => startTransition(() => setViewMode(e.target.value))}
           >
             <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
               <Radio.Button value={AnnotationViewType.TABLE}>
@@ -152,8 +158,14 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       </FlexRow>
 
       {/* Table or list view */}
-      {viewMode === AnnotationViewType.TABLE ? (
-        <div style={{ width: "100%", marginTop: "10px" }}>
+      <LoadingSpinner loading={isPending}>
+        <div
+          style={{
+            width: "100%",
+            marginTop: "10px",
+            display: viewMode === AnnotationViewType.TABLE ? "block" : "none",
+          }}
+        >
           <AnnotationTable
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
@@ -162,14 +174,21 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             height={395}
           />
         </div>
-      ) : (
-        <AnnotationDisplayList
-          onClickObjectRow={onClickObjectRow}
-          onClickDeleteObject={onClickDeleteObject}
-          dataset={props.dataset}
-          ids={tableIds}
-        ></AnnotationDisplayList>
-      )}
+        <div
+          style={{
+            width: "100%",
+            marginTop: "10px",
+            display: viewMode === AnnotationViewType.LIST ? "block" : "none",
+          }}
+        >
+          <AnnotationDisplayList
+            onClickObjectRow={onClickObjectRow}
+            onClickDeleteObject={onClickDeleteObject}
+            dataset={props.dataset}
+            ids={tableIds}
+          ></AnnotationDisplayList>
+        </div>
+      </LoadingSpinner>
       {tableIds.length > 0 && <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>}
     </FlexColumnAlignCenter>
   );
