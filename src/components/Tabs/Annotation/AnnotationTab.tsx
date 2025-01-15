@@ -10,6 +10,7 @@ import { download } from "../../../utils/file_io";
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
+import AnnotationDisplayList from "./AnnotationDisplayList";
 import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
 import LabelEditControls from "./LabelEditControls";
@@ -121,6 +122,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       </FlexRow>
 
       {/* Table */}
+      <AnnotationDisplayList
+        onClickObjectRow={onClickObjectRow}
+        onClickDeleteObject={onClickDeleteObject}
+        dataset={props.dataset}
+        ids={tableIds}
+      ></AnnotationDisplayList>
       <div style={{ width: "100%", marginTop: "10px" }}>
         <AnnotationTable
           onClickObjectRow={onClickObjectRow}
