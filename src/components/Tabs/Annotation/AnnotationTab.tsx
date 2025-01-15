@@ -10,8 +10,8 @@ import { download } from "../../../utils/file_io";
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
+import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
-import AnnotationTable, { TableDataType } from "./AnnotationTable";
 import LabelEditControls from "./LabelEditControls";
 
 type AnnotationTabProps = {
