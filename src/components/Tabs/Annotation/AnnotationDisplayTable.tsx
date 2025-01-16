@@ -1,12 +1,13 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Table, TableProps } from "antd";
-import React, { ReactElement, useMemo } from "react";
+import React, { memo, ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 
 import { TagIconSVG } from "../../../assets";
 import { Dataset } from "../../../colorizer";
 import { FlexColumnAlignCenter, VisuallyHidden } from "../../../styles/utils";
 
+import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
 
 export type TableDataType = {
@@ -24,6 +25,13 @@ const StyledAntTable = styled(Table)`
   &&&& .ant-table-cell {
     padding: 4px 8px;
   }
+
+  &&& :not(.ant-table-header) > .rc-virtual-list .ant-table-cell:not(:has(.ant-btn)) {
+    /* Correction for a bug in virtual lists where text elements were not
+     * centered vertically */
+    display: flex;
+    align-items: center;
+  }
 `;
 
 type AnnotationTableProps = {
@@ -31,9 +39,23 @@ type AnnotationTableProps = {
   onClickDeleteObject: (record: TableDataType) => void;
   dataset: Dataset | null;
   ids: number[];
+  height?: number | string;
+  hideTrackColumn?: boolean;
 };
 
-export default function AnnotationTable(props: AnnotationTableProps): ReactElement {
+const defaultProps = {
+  height: "100%",
+  hideTrackColumn: false,
+};
+
+/**
+ * Renders a list of annotated IDs in a table format, with click and delete
+ * interactions.
+ */
+const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: AnnotationTableProps): ReactElement {
+  const props: Required<AnnotationTableProps> = { ...defaultProps, ...inputProps };
+  const theme = useContext(AppThemeContext);
+
   const tableColumns: TableProps<TableDataType>["columns"] = [
     {
       title: "Object ID",
@@ -77,6 +99,10 @@ export default function AnnotationTable(props: AnnotationTableProps): ReactEleme
     },
   ];
 
+  if (props.hideTrackColumn) {
+    tableColumns.splice(1, 1);
+  }
+
   const tableData: TableDataType[] = useMemo(() => {
     const dataset = props.dataset;
     if (dataset) {
@@ -95,6 +121,8 @@ export default function AnnotationTable(props: AnnotationTableProps): ReactEleme
       columns={tableColumns}
       size="small"
       pagination={false}
+      virtual={true}
+      scroll={{ y: props.height }}
       // TODO: Rows aren't actually buttons, which means that they are not
       // keyboard accessible. Either find a way to make them tab indexable
       // or add a button that is equivalent to click?
@@ -107,7 +135,7 @@ export default function AnnotationTable(props: AnnotationTableProps): ReactEleme
       }}
       locale={{
         emptyText: (
-          <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0" }}>
+          <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", color: theme.color.text.disabled }}>
             <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
             <p>No annotated IDs</p>
           </FlexColumnAlignCenter>
@@ -115,4 +143,6 @@ export default function AnnotationTable(props: AnnotationTableProps): ReactEleme
       }}
     ></StyledAntTable>
   );
-}
+});
+
+export default AnnotationDisplayTable;
