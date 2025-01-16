@@ -1,11 +1,11 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Button, Radio, Tooltip } from "antd";
-import React, { ReactElement, useCallback, useContext, useMemo, useTransition } from "react";
+import React, { ReactElement, useCallback, useContext, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
 
-import { Dataset } from "../../../colorizer";
+import { AnnotationSelectionMode, Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
+import { FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
 
@@ -45,7 +45,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
 
   const [isPending, startTransition] = useTransition();
-  const [viewType, setViewType] = React.useState<AnnotationViewType>(AnnotationViewType.TABLE);
+  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.TABLE);
+
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
@@ -139,30 +140,46 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
-      <FlexRow $gap={10} style={{ width: "100%" }}>
-        <SelectionDropdown
-          selected={(currentLabelIdx ?? -1).toString()}
-          items={selectLabelOptions}
-          onChange={onSelectLabelIdx}
-          disabled={currentLabelIdx === null}
-          showSelectedItemTooltip={false}
-          label="Label"
-        ></SelectionDropdown>
+      <FlexRow style={{ justifyContent: "space-between", width: "100%" }}>
+        <FlexRow $gap={10}>
+          <SelectionDropdown
+            selected={(currentLabelIdx ?? -1).toString()}
+            items={selectLabelOptions}
+            onChange={onSelectLabelIdx}
+            disabled={currentLabelIdx === null}
+            showSelectedItemTooltip={false}
+            label="Label"
+          ></SelectionDropdown>
 
-        {/*
-         * Hide edit-related buttons until edit mode is enabled.
-         * Note that currentLabelIdx will never be null when edit mode is enabled.
-         */}
-        {isAnnotationModeEnabled && currentLabelIdx !== null && (
-          <LabelEditControls
-            onCreateNewLabel={onCreateNewLabel}
-            onDeleteLabel={onDeleteLabel}
-            setLabelColor={(color: Color) => setLabelColor(currentLabelIdx, color)}
-            setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
-            selectedLabel={selectedLabel}
-            selectedLabelIdx={currentLabelIdx}
-          />
-        )}
+          {/*
+           * Hide edit-related buttons until edit mode is enabled.
+           * Note that currentLabelIdx will never be null when edit mode is enabled.
+           */}
+          {isAnnotationModeEnabled && currentLabelIdx !== null && (
+            <LabelEditControls
+              onCreateNewLabel={onCreateNewLabel}
+              onDeleteLabel={onDeleteLabel}
+              setLabelColor={(color: Color) => setLabelColor(currentLabelIdx, color)}
+              setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
+              selectedLabel={selectedLabel}
+              selectedLabelIdx={currentLabelIdx}
+            />
+          )}
+        </FlexRow>
+
+        {/* Mode selection */}
+        <FlexRowAlignCenter $gap={6}>
+          <span style={{ fontSize: theme.font.size.label }}>Select by </span>
+          <Radio.Group
+            // buttonStyle="solid"
+            style={{ display: "flex", flexDirection: "row" }}
+            value={props.annotationState.selectionMode}
+            onChange={(e) => props.annotationState.setSelectionMode(e.target.value)}
+          >
+            <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
+            <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
+          </Radio.Group>
+        </FlexRowAlignCenter>
       </FlexRow>
 
       {/* Table or list view */}
