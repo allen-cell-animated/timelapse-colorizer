@@ -75,7 +75,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
-  }, [annotationData]);
+  }, [annotationData, currentLabelIdx]);
 
   return (
     <FlexColumnAlignCenter $gap={10}>
