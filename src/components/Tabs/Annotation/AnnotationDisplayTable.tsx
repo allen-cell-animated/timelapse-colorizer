@@ -1,6 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Table, TableProps } from "antd";
-import React, { ReactElement, useMemo } from "react";
+import React, { memo, ReactElement, useMemo } from "react";
 import styled from "styled-components";
 
 import { TagIconSVG } from "../../../assets";
@@ -44,7 +44,7 @@ const defaultProps = {
  * Renders a list of annotated IDs in a table format, with click and delete
  * interactions.
  */
-export default function AnnotationTable(inputProps: AnnotationTableProps): ReactElement {
+const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: AnnotationTableProps): ReactElement {
   const props: Required<AnnotationTableProps> = { ...defaultProps, ...inputProps };
 
   const tableColumns: TableProps<TableDataType>["columns"] = [
@@ -112,6 +112,7 @@ export default function AnnotationTable(inputProps: AnnotationTableProps): React
       columns={tableColumns}
       size="small"
       pagination={false}
+      virtual={true}
       scroll={{ y: props.height }}
       // TODO: Rows aren't actually buttons, which means that they are not
       // keyboard accessible. Either find a way to make them tab indexable
@@ -133,4 +134,6 @@ export default function AnnotationTable(inputProps: AnnotationTableProps): React
       }}
     ></StyledAntTable>
   );
-}
+});
+
+export default AnnotationDisplayTable;
