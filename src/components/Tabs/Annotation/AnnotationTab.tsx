@@ -6,10 +6,11 @@ import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRow } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
+import { SelectItem } from "../../Dropdowns/types";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
-import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
+import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import AnnotationModeButton from "./AnnotationModeButton";
 import AnnotationTable, { TableDataType } from "./AnnotationTable";
 import LabelEditControls from "./LabelEditControls";
