@@ -32,13 +32,21 @@ type AnnotationTableProps = {
   dataset: Dataset | null;
   ids: number[];
   height?: number | string;
+  hideTrackColumn?: boolean;
+};
+
+const defaultProps = {
+  height: "100%",
+  hideTrackColumn: false,
 };
 
 /**
  * Renders a list of annotated IDs in a table format, with click and delete
  * interactions.
  */
-export default function AnnotationTable(props: AnnotationTableProps): ReactElement {
+export default function AnnotationTable(inputProps: AnnotationTableProps): ReactElement {
+  const props: Required<AnnotationTableProps> = { ...defaultProps, ...inputProps };
+
   const tableColumns: TableProps<TableDataType>["columns"] = [
     {
       title: "Object ID",
@@ -81,6 +89,10 @@ export default function AnnotationTable(props: AnnotationTableProps): ReactEleme
       ),
     },
   ];
+
+  if (props.hideTrackColumn) {
+    tableColumns.splice(1, 1);
+  }
 
   const tableData: TableDataType[] = useMemo(() => {
     const dataset = props.dataset;

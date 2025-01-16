@@ -1,6 +1,6 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Button, Radio, Tooltip } from "antd";
-import React, { ReactElement, useContext, useMemo, useTransition } from "react";
+import React, { ReactElement, useCallback, useContext, useMemo, useTransition } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../../colorizer";
@@ -59,23 +59,29 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     setCurrentLabelIdx(index);
   };
 
-  const onDeleteLabel = (): void => {
+  const onDeleteLabel = useCallback(() => {
     if (currentLabelIdx !== null) {
       startTransition(() => {
         deleteLabel(currentLabelIdx);
       });
     }
-  };
+  }, [currentLabelIdx]);
 
-  const onClickObjectRow = (record: TableDataType): void => {
-    props.setTrackAndFrame(record.track, record.time);
-  };
+  const onClickObjectRow = useCallback(
+    (record: TableDataType): void => {
+      props.setTrackAndFrame(record.track, record.time);
+    },
+    [currentLabelIdx]
+  );
 
-  const onClickDeleteObject = (record: TableDataType): void => {
-    if (currentLabelIdx) {
-      setLabelOnId(record.id, currentLabelIdx, false);
-    }
-  };
+  const onClickDeleteObject = useCallback(
+    (record: TableDataType): void => {
+      if (currentLabelIdx) {
+        setLabelOnId(currentLabelIdx, record.id, false);
+      }
+    },
+    [currentLabelIdx]
+  );
 
   // Options for the selection dropdown
   const selectLabelOptions: SelectItem[] = labels.map((label, index) => {

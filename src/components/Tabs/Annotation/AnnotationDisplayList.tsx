@@ -1,10 +1,12 @@
 import { Collapse } from "antd";
-import React, { ReactElement, useMemo, useRef } from "react";
+import React, { ReactElement, useContext, useMemo, useRef } from "react";
 import styled from "styled-components";
 
+import { TagIconSVG } from "../../../assets";
 import { Dataset } from "../../../colorizer";
-import { FlexColumn } from "../../../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
 
+import { AppThemeContext } from "../../AppStyle";
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
 
 type AnnotationDisplayListProps = {
@@ -16,6 +18,10 @@ type AnnotationDisplayListProps = {
 
 const StyledCollapse = styled(Collapse)`
   &&&& .ant-collapse-header {
+    align-items: center;
+    padding-top: 4px;
+    padding-bottom: 4px;
+
     &:hover {
       color: var(--color-collapse-hover);
     }
@@ -33,6 +39,7 @@ const StyledCollapse = styled(Collapse)`
 `;
 
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
+  const theme = useContext(AppThemeContext);
   const trackToLength = useRef<Record<string, number>>({});
 
   // Organize ids by track
@@ -58,6 +65,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       .sort();
   }, [trackToIds]);
 
+  // Building the track is an expensive operation (takes O(N) for each track)
+  // so cache the length of all tracks in the dataset.
   const getTrackLength = (trackId: number): number => {
     if (trackToLength.current[trackId] !== undefined) {
       return trackToLength.current[trackId];
@@ -68,27 +77,54 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     }
   };
 
-  // TODO: Sort track numbers
+  let listContents = (
+    <StyledCollapse size="small" ghost>
+      {tracksSorted.map((trackId) => {
+        const ids = trackToIds[trackId];
+        const trackLength = getTrackLength(trackId);
+        return (
+          <Collapse.Panel
+            header={
+              <p>
+                Track {trackId}{" "}
+                <span style={{ color: theme.color.text.hint }}>
+                  ({ids.length}/{trackLength})
+                </span>
+              </p>
+            }
+            key={trackId}
+          >
+            <AnnotationDisplayTable
+              ids={ids}
+              dataset={props.dataset}
+              onClickObjectRow={props.onClickObjectRow}
+              onClickDeleteObject={props.onClickDeleteObject}
+              height={200}
+              hideTrackColumn={true}
+            />
+          </Collapse.Panel>
+        );
+      })}
+    </StyledCollapse>
+  );
+
+  // Show placeholder if there are no elements
+  if (props.ids.length === 0) {
+    listContents = (
+      // Margin here keeps the icon aligned with the table view
+      <FlexRowAlignCenter style={{ width: "calc(100% - 15px)", height: "100px", paddingRight: "24px" }}>
+        <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: theme.color.text.disabled }}>
+          <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
+          <p>No annotated IDs</p>
+        </FlexColumnAlignCenter>
+      </FlexRowAlignCenter>
+    );
+  }
 
   return (
     <FlexColumn style={{ width: "100%" }}>
-      <StyledCollapse size="small" ghost>
-        {tracksSorted.map((trackId) => {
-          const ids = trackToIds[trackId];
-          const trackLength = getTrackLength(trackId);
-          return (
-            <Collapse.Panel header={`Track ${trackId} (${ids.length}/${trackLength})`} key={trackId}>
-              <AnnotationDisplayTable
-                ids={ids}
-                dataset={props.dataset}
-                onClickObjectRow={props.onClickObjectRow}
-                onClickDeleteObject={props.onClickDeleteObject}
-                height={200}
-              />
-            </Collapse.Panel>
-          );
-        })}
-      </StyledCollapse>
+      <p style={{ fontSize: theme.font.size.label }}>{tracksSorted.length} track(s) selected</p>
+      {listContents}
     </FlexColumn>
   );
 }
