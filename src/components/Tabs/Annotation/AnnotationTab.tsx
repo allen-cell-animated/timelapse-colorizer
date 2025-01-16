@@ -77,11 +77,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickDeleteObject = useCallback(
     (record: TableDataType): void => {
-      if (currentLabelIdx) {
+      if (currentLabelIdx !== null) {
         setLabelOnId(currentLabelIdx, record.id, false);
       }
     },
-    [currentLabelIdx]
+    [currentLabelIdx, setLabelOnId]
   );
 
   // Options for the selection dropdown
@@ -146,6 +146,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           onChange={onSelectLabelIdx}
           disabled={currentLabelIdx === null}
           showSelectedItemTooltip={false}
+          label="Label"
         ></SelectionDropdown>
 
         {/*
