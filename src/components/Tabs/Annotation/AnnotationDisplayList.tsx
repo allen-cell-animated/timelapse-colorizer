@@ -1,5 +1,5 @@
 import { Collapse } from "antd";
-import React, { ReactElement, useContext, useMemo, useRef } from "react";
+import React, { ReactElement, useContext, useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
 
 import { TagIconSVG } from "../../../assets";
@@ -40,30 +40,12 @@ const StyledCollapse = styled(Collapse)`
 
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
+
   const trackToLength = useRef<Record<string, number>>({});
 
-  // Organize ids by track
-  const trackToIds: Record<number, number[]> = useMemo(() => {
-    if (!props.dataset) {
-      return {};
-    }
-    const trackToIdsMap: Record<string, number[]> = {};
-    for (const id of props.ids) {
-      const trackId: string = props.dataset.getTrackId(id).toString();
-      if (trackId in trackToIdsMap) {
-        trackToIdsMap[trackId].push(id);
-      } else {
-        trackToIdsMap[trackId] = [id];
-      }
-    }
-    return trackToIdsMap;
-  }, [props.dataset, props.ids]);
-
-  const tracksSorted = useMemo(() => {
-    return Object.keys(trackToIds)
-      .map((trackId) => parseInt(trackId, 10))
-      .sort((a, b) => a - b);
-  }, [trackToIds]);
+  useEffect(() => {
+    trackToLength.current = {};
+  }, [props.dataset]);
 
   // Building the track is an expensive operation (takes O(N) for each track)
   // so cache the length of all tracks in the dataset.
@@ -77,53 +59,77 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     }
   };
 
-  let listContents = (
-    <StyledCollapse size="small" ghost>
-      {tracksSorted.map((trackId) => {
-        const ids = trackToIds[trackId];
-        const trackLength = getTrackLength(trackId);
-        return (
-          <Collapse.Panel
-            header={
-              <p>
-                Track {trackId}{" "}
-                <span style={{ color: theme.color.text.hint }}>
-                  ({ids.length}/{trackLength})
-                </span>
-              </p>
-            }
-            key={trackId}
-          >
-            <AnnotationDisplayTable
-              ids={ids}
-              dataset={props.dataset}
-              onClickObjectRow={props.onClickObjectRow}
-              onClickDeleteObject={props.onClickDeleteObject}
-              height={200}
-              hideTrackColumn={true}
-            />
-          </Collapse.Panel>
-        );
-      })}
-    </StyledCollapse>
-  );
+  // Organize ids by track
+  const trackToIds: Record<string, number[]> = useMemo(() => {
+    if (!props.dataset) {
+      return {};
+    }
+    const map: Record<string, number[]> = {};
+    for (const id of props.ids) {
+      const trackId: string = props.dataset.getTrackId(id).toString();
+      if (trackId in map) {
+        map[trackId].push(id);
+      } else {
+        map[trackId] = [id];
+      }
+    }
+    return map;
+  }, [props.dataset, props.ids]);
 
-  // Show placeholder if there are no elements
+  const trackIdsSorted = useMemo(() => {
+    return Object.keys(trackToIds)
+      .map((trackId) => parseInt(trackId, 10))
+      .sort((a, b) => a - b);
+  }, [trackToIds]);
+
+  let listContents;
   if (props.ids.length === 0) {
+    // Show placeholder if there are no elements
     listContents = (
-      // Margin here keeps the icon aligned with the table view
-      <FlexRowAlignCenter style={{ width: "calc(100% - 15px)", height: "100px", paddingRight: "24px" }}>
+      // Padding here keeps the icon aligned with the table view
+      <FlexRowAlignCenter style={{ width: "100% ", height: "100px", paddingRight: "24px" }}>
         <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: theme.color.text.disabled }}>
           <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
           <p>No annotated IDs</p>
         </FlexColumnAlignCenter>
       </FlexRowAlignCenter>
     );
+  } else {
+    listContents = (
+      <StyledCollapse size="small" ghost>
+        {trackIdsSorted.map((trackId) => {
+          const ids = trackToIds[trackId.toString()];
+          const trackLength = getTrackLength(trackId);
+          return (
+            <Collapse.Panel
+              header={
+                <p>
+                  Track {trackId}{" "}
+                  <span style={{ color: theme.color.text.hint }}>
+                    ({ids.length}/{trackLength})
+                  </span>
+                </p>
+              }
+              key={trackId}
+            >
+              <AnnotationDisplayTable
+                ids={ids}
+                dataset={props.dataset}
+                onClickObjectRow={props.onClickObjectRow}
+                onClickDeleteObject={props.onClickDeleteObject}
+                height={200}
+                hideTrackColumn={true}
+              />
+            </Collapse.Panel>
+          );
+        })}
+      </StyledCollapse>
+    );
   }
 
   return (
     <FlexColumn style={{ width: "100%" }}>
-      <p style={{ fontSize: theme.font.size.label }}>{tracksSorted.length} track(s) selected</p>
+      <p style={{ fontSize: theme.font.size.label }}>{trackIdsSorted.length} track(s) selected</p>
       {listContents}
     </FlexColumn>
   );

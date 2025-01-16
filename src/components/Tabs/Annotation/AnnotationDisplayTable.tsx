@@ -1,12 +1,13 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Table, TableProps } from "antd";
-import React, { memo, ReactElement, useMemo } from "react";
+import React, { memo, ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 
 import { TagIconSVG } from "../../../assets";
 import { Dataset } from "../../../colorizer";
 import { FlexColumnAlignCenter, VisuallyHidden } from "../../../styles/utils";
 
+import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
 
 export type TableDataType = {
@@ -23,6 +24,13 @@ const StyledAntTable = styled(Table)`
 
   &&&& .ant-table-cell {
     padding: 4px 8px;
+  }
+
+  &&& :not(.ant-table-header) > .rc-virtual-list .ant-table-cell:not(:has(.ant-btn)) {
+    /* Correction for a bug in virtual lists where text elements were not
+     * centered vertically */
+    display: flex;
+    align-items: center;
   }
 `;
 
@@ -46,6 +54,7 @@ const defaultProps = {
  */
 const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: AnnotationTableProps): ReactElement {
   const props: Required<AnnotationTableProps> = { ...defaultProps, ...inputProps };
+  const theme = useContext(AppThemeContext);
 
   const tableColumns: TableProps<TableDataType>["columns"] = [
     {
@@ -126,7 +135,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       }}
       locale={{
         emptyText: (
-          <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0" }}>
+          <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", color: theme.color.text.disabled }}>
             <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
             <p>No annotated IDs</p>
           </FlexColumnAlignCenter>
