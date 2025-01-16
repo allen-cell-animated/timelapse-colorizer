@@ -45,7 +45,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
 
   const [isPending, startTransition] = useTransition();
-  const [viewMode, setViewMode] = React.useState<AnnotationViewType>(AnnotationViewType.TABLE);
+  const [viewType, setViewType] = React.useState<AnnotationViewType>(AnnotationViewType.TABLE);
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
@@ -72,7 +72,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     (record: TableDataType): void => {
       props.setTrackAndFrame(record.track, record.time);
     },
-    [currentLabelIdx]
+    [props.setTrackAndFrame]
   );
 
   const onClickDeleteObject = useCallback(
@@ -119,19 +119,19 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <Radio.Group
             buttonStyle="solid"
             style={{ display: "flex", flexDirection: "row" }}
-            value={viewMode}
-            onChange={(e) => startTransition(() => setViewMode(e.target.value))}
+            value={viewType}
+            onChange={(e) => startTransition(() => setViewType(e.target.value))}
           >
             <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
               <Radio.Button value={AnnotationViewType.TABLE}>
                 <TableOutlined />
-                <VisuallyHidden>Table view {viewMode === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
+                <VisuallyHidden>Table view {viewType === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>
             <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
               <Radio.Button value={AnnotationViewType.LIST}>
                 <MenuOutlined />
-                <VisuallyHidden>List view {viewMode === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
+                <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>
           </Radio.Group>
@@ -170,8 +170,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           style={{
             width: "100%",
             marginTop: "10px",
-            visibility: viewMode === AnnotationViewType.TABLE ? "visible" : "collapse",
-            display: viewMode === AnnotationViewType.TABLE ? "block" : "none",
+            visibility: viewType === AnnotationViewType.TABLE ? "visible" : "collapse",
+            display: viewType === AnnotationViewType.TABLE ? "block" : "none",
           }}
         >
           <AnnotationTable
@@ -191,8 +191,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           style={{
             width: "100%",
             marginTop: "10px",
-            visibility: viewMode === AnnotationViewType.LIST ? "visible" : "collapse",
-            display: viewMode === AnnotationViewType.LIST ? "block" : "none",
+            visibility: viewType === AnnotationViewType.LIST ? "visible" : "collapse",
+            display: viewType === AnnotationViewType.LIST ? "block" : "none",
           }}
         >
           <AnnotationDisplayList
