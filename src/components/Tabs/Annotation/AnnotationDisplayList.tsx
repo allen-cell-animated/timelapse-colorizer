@@ -49,11 +49,11 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     }
     const trackToIdsMap: Record<string, number[]> = {};
     for (const id of props.ids) {
-      const track = props.dataset.getTrackId(id);
-      if (track in trackToIdsMap) {
-        trackToIdsMap[track].push(id);
+      const trackId: string = props.dataset.getTrackId(id).toString();
+      if (trackId in trackToIdsMap) {
+        trackToIdsMap[trackId].push(id);
       } else {
-        trackToIdsMap[track] = [id];
+        trackToIdsMap[trackId] = [id];
       }
     }
     return trackToIdsMap;
