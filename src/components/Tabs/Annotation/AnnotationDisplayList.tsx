@@ -62,7 +62,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const tracksSorted = useMemo(() => {
     return Object.keys(trackToIds)
       .map((trackId) => parseInt(trackId, 10))
-      .sort();
+      .sort((a, b) => a - b);
   }, [trackToIds]);
 
   // Building the track is an expensive operation (takes O(N) for each track)

@@ -170,6 +170,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           style={{
             width: "100%",
             marginTop: "10px",
+            visibility: viewMode === AnnotationViewType.TABLE ? "visible" : "collapse",
             display: viewMode === AnnotationViewType.TABLE ? "block" : "none",
           }}
         >
@@ -181,10 +182,16 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             height={395}
           />
         </div>
+        {/*
+         * AnnotationDisplayList has some internal optimizations for fetching track data.
+         * Changing visibility/display instead of removing it from the DOM keeps
+         * its internal state.
+         */}
         <div
           style={{
             width: "100%",
             marginTop: "10px",
+            visibility: viewMode === AnnotationViewType.LIST ? "visible" : "collapse",
             display: viewMode === AnnotationViewType.LIST ? "block" : "none",
           }}
         >
