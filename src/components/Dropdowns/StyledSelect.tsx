@@ -1,16 +1,46 @@
 import { ButtonProps } from "antd";
 import React, { ReactElement, useMemo } from "react";
-import Select, { components, DropdownIndicatorProps, StylesConfig } from "react-select";
+import Select, { components, DropdownIndicatorProps, GroupBase, StylesConfig } from "react-select";
 import { StateManagerProps } from "react-select/dist/declarations/src/useStateManager";
 import styled, { css } from "styled-components";
+import { Color } from "three";
 
 import { DropdownSVG } from "../../assets";
+import { SelectItem } from "./types";
 
 import { AppTheme, AppThemeContext } from "../AppStyle";
 
-type AntStyledSelectProps = StateManagerProps & {
+type AntStyledSelectProps<
+  IsMulti extends boolean = false,
+  Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
+> = StateManagerProps<SelectItem, IsMulti, Group> & {
   type?: ButtonProps["type"] | "outlined";
   width?: string;
+  styles?: StylesConfig<SelectItem, IsMulti, Group>;
+};
+
+/**
+ * If `color` is defined, adds style config properties  that add a colored
+ * pseudo-element indicator to the left of an option text in the dropdown.
+ */
+const addOptionalColorIndicator = (color: Color | undefined): Partial<StylesConfig["option"]> => {
+  if (color) {
+    return {
+      alignItems: "center",
+      display: "flex",
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      ":before": {
+        backgroundColor: "#" + color.getHexString(),
+        borderRadius: 10,
+        content: '" "',
+        display: "block",
+        marginRight: 8,
+        height: 10,
+        width: 10,
+      },
+    };
+  }
+  return {};
 };
 
 // Styling is done via both styled-components and react-select's `styles` prop.
@@ -110,7 +140,7 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
   }
 `;
 
-const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
+const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectItem, false, GroupBase<SelectItem>> => ({
   control: (base, { isFocused }) => ({
     ...base,
     height: theme.controls.height,
@@ -165,7 +195,7 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
     flexDirection: "column",
     gap: 4,
   }),
-  option: (styles, { isFocused, isSelected, isDisabled }) => ({
+  option: (styles, { data, isFocused, isSelected, isDisabled }) => ({
     ...styles,
     // Style to match Ant dropdowns
     borderRadius: 4,
@@ -188,12 +218,17 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig => ({
           : theme.color.dropdown.backgroundHover
         : undefined,
     },
+    ...addOptionalColorIndicator(data?.color),
+  }),
+  singleValue: (styles, { data }) => ({
+    ...styles,
+    ...addOptionalColorIndicator(data?.color),
   }),
 });
 
 // Replace existing dropdown with custom dropdown arrow
 // TODO: Show loading indicator here?
-const DropdownIndicator = (props: DropdownIndicatorProps): ReactElement => {
+const DropdownIndicator = (props: DropdownIndicatorProps<SelectItem>): ReactElement => {
   return (
     <components.DropdownIndicator {...props}>
       <DropdownSVG style={{ width: "12px", height: "12px" }} viewBox="0 0 12 12" />
@@ -211,7 +246,10 @@ const DropdownIndicator = (props: DropdownIndicatorProps): ReactElement => {
  * Note that providing a `styles` prop may cause conflicts with existing style overrides
  * in this component.
  */
-export default function AntStyledSelect(props: AntStyledSelectProps): ReactElement {
+export default function AntStyledSelect<
+  IsMulti extends boolean = false,
+  Group extends GroupBase<SelectItem> = GroupBase<SelectItem>
+>(props: AntStyledSelectProps<IsMulti, Group>): ReactElement {
   const theme = React.useContext(AppThemeContext);
   const customStyles = useMemo(() => getCustomStyles(theme, props.width ?? "15vw"), [theme]);
 
@@ -221,7 +259,7 @@ export default function AntStyledSelect(props: AntStyledSelectProps): ReactEleme
         {...props}
         menuPlacement={props.menuPlacement || "auto"}
         components={{ DropdownIndicator, ...props.components }}
-        styles={{ ...customStyles, ...props.styles }}
+        styles={{ ...(customStyles as unknown as StylesConfig<SelectItem, IsMulti, Group>), ...props.styles }}
       />
     </SelectContainer>
   );

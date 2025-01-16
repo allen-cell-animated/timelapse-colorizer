@@ -10,6 +10,7 @@ import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
+import { SelectItem } from "../Dropdowns/types";
 import {
   DataArray,
   drawCrosshair,
@@ -27,7 +28,7 @@ import {
 } from "./scatter_plot_data_utils";
 
 import { AppThemeContext } from "../AppStyle";
-import SelectionDropdown, { SelectItem } from "../Dropdowns/SelectionDropdown";
+import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
 import LoadingSpinner from "../LoadingSpinner";
 

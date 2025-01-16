@@ -1,19 +1,19 @@
 import { CloseOutlined } from "@ant-design/icons";
-import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Table, TableProps } from "antd";
+import { Button, Table, TableProps } from "antd";
 import React, { ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation } from "three";
+import { Color } from "three";
 
 import { TagIconSVG } from "../../../assets";
 import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
+import { SelectItem } from "../../Dropdowns/types";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
-import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
+import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import IconButton from "../../IconButton";
 import AnnotationModeButton from "./AnnotationModeButton";
 import LabelEditControls from "./LabelEditControls";
@@ -61,12 +61,6 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onSelectLabelIdx = (idx: string): void => {
     props.annotationState.setCurrentLabelIdx(parseInt(idx, 10));
-  };
-
-  const onColorPickerChange = (_value: any, hex: string): void => {
-    if (currentLabelIdx !== null) {
-      setLabelColor(currentLabelIdx, new Color(hex as ColorRepresentation));
-    }
   };
 
   const onCreateNewLabel = (): void => {
@@ -145,6 +139,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return {
       value: index.toString(),
       label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
+      color: label.color,
     };
   });
 
@@ -175,16 +170,6 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           disabled={currentLabelIdx === null}
           showSelectedItemTooltip={false}
         ></SelectionDropdown>
-        <div>
-          {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
-          <ColorPicker
-            size="small"
-            value={new AntdColor(selectedLabel?.color.getHexString() || "#ffffff")}
-            onChange={onColorPickerChange}
-            disabledAlpha={true}
-            disabled={!isAnnotationModeEnabled}
-          />
-        </div>
 
         {/*
          * Hide edit-related buttons until edit mode is enabled.
