@@ -7,10 +7,11 @@ import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
+import { SelectItem } from "../../Dropdowns/types";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
-import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
+import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
 import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
