@@ -1,11 +1,12 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Button, Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useMemo, useState, useTransition } from "react";
+import styled from "styled-components";
 import { Color } from "three";
 
-import { AnnotationSelectionMode, Dataset } from "../../../colorizer";
+import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../../styles/utils";
+import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
 
@@ -22,6 +23,10 @@ const enum AnnotationViewType {
   TABLE,
   LIST,
 }
+
+const ViewModeRadioButton = styled(Radio.Button)`
+  padding: 0px 8px 0px 8px;
+`;
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
@@ -106,37 +111,15 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
         />
 
-        <FlexRow $gap={8}>
-          <Button
-            onClick={() => {
-              const csvData = props.annotationState.data.toCsv(props.dataset!);
-              download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
-              console.log(csvData);
-            }}
-          >
-            Export as CSV
-          </Button>
-
-          <Radio.Group
-            buttonStyle="solid"
-            style={{ display: "flex", flexDirection: "row" }}
-            value={viewType}
-            onChange={(e) => startTransition(() => setViewType(e.target.value))}
-          >
-            <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
-              <Radio.Button value={AnnotationViewType.TABLE}>
-                <TableOutlined />
-                <VisuallyHidden>Table view {viewType === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
-              </Radio.Button>
-            </Tooltip>
-            <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
-              <Radio.Button value={AnnotationViewType.LIST}>
-                <MenuOutlined />
-                <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
-              </Radio.Button>
-            </Tooltip>
-          </Radio.Group>
-        </FlexRow>
+        <Button
+          onClick={() => {
+            const csvData = props.annotationState.data.toCsv(props.dataset!);
+            download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+            console.log(csvData);
+          }}
+        >
+          Export as CSV
+        </Button>
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
@@ -163,23 +146,35 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
               selectedLabel={selectedLabel}
               selectedLabelIdx={currentLabelIdx}
+              selectionMode={props.annotationState.selectionMode}
+              setSelectionMode={props.annotationState.setSelectionMode}
             />
           )}
         </FlexRow>
 
-        {/* Mode selection */}
-        <FlexRowAlignCenter $gap={6}>
-          <span style={{ fontSize: theme.font.size.label }}>Select by </span>
+        {/* View mode selection */}
+        <label style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
+          <span style={{ fontSize: theme.font.size.label }}>View </span>
           <Radio.Group
             // buttonStyle="solid"
             style={{ display: "flex", flexDirection: "row" }}
-            value={props.annotationState.selectionMode}
-            onChange={(e) => props.annotationState.setSelectionMode(e.target.value)}
+            value={viewType}
+            onChange={(e) => startTransition(() => setViewType(e.target.value))}
           >
-            <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
-            <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
+            <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
+              <ViewModeRadioButton value={AnnotationViewType.TABLE}>
+                <TableOutlined />
+                <VisuallyHidden>Table view {viewType === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
+              </ViewModeRadioButton>
+            </Tooltip>
+            <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
+              <ViewModeRadioButton value={AnnotationViewType.LIST}>
+                <MenuOutlined />
+                <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
+              </ViewModeRadioButton>
+            </Tooltip>
           </Radio.Group>
-        </FlexRowAlignCenter>
+        </label>
       </FlexRow>
 
       {/* Table or list view */}
