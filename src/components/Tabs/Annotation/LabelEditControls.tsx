@@ -121,7 +121,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   );
 
   return (
-    <FlexRow $gap={10}>
+    <FlexRow $gap={6}>
       <Tooltip title="Create new label" placement="top">
         <IconButton onClick={onClickCreateNewLabel} type="outlined">
           <TagAddIconSVG />
@@ -161,18 +161,17 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         </Tooltip>
       </Popconfirm>
 
-      <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "4px" }}>
-        <span style={{ fontSize: theme.font.size.label }}>Select by </span>
+      <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
+        <span style={{ fontSize: theme.font.size.label }}>Apply to </span>
         <Radio.Group
-          // buttonStyle="solid"
           style={{ display: "flex", flexDirection: "row" }}
           value={props.selectionMode}
           onChange={(e) => props.setSelectionMode(e.target.value)}
         >
-          <Tooltip trigger={["hover", "focus"]} title="Select only at the current time" placement="top">
+          <Tooltip trigger={["hover", "focus"]} title="Apply only at the current time" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
           </Tooltip>
-          <Tooltip trigger={["hover", "focus"]} title="Select entire track" placement="top">
+          <Tooltip trigger={["hover", "focus"]} title="Apply to entire track" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
           </Tooltip>
         </Radio.Group>

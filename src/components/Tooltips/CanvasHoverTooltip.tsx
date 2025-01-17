@@ -11,7 +11,7 @@ import {
 } from "../../colorizer";
 import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
-import { FlexColumn } from "../../styles/utils";
+import { FlexColumn, FlexRow } from "../../styles/utils";
 
 import HoverTooltip from "./HoverTooltip";
 
@@ -158,12 +158,12 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
     if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
       annotationLabel = (
-        <FlexColumn $gap={4}>
+        <FlexRow>
           {annotationLabel}
           <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
-            ✦ Selecting tracks
+            ✦ Applying to track
           </Tag>
-        </FlexColumn>
+        </FlexRow>
       );
     }
   }

@@ -1,7 +1,6 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
-import { Button, Radio, Tooltip } from "antd";
+import { Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useMemo, useState, useTransition } from "react";
-import styled from "styled-components";
 import { Color } from "three";
 
 import { Dataset } from "../../../colorizer";
@@ -12,6 +11,7 @@ import { SelectItem } from "../../Dropdowns/types";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
+import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
@@ -19,14 +19,11 @@ import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
 import LabelEditControls from "./LabelEditControls";
 
+const LABEL_DROPDOWN_LABEL_ID = "label-dropdown-label";
 const enum AnnotationViewType {
   TABLE,
   LIST,
 }
-
-const ViewModeRadioButton = styled(Radio.Button)`
-  padding: 0px 8px 0px 8px;
-`;
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
@@ -111,27 +108,28 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
         />
 
-        <Button
+        <TextButton
           onClick={() => {
             const csvData = props.annotationState.data.toCsv(props.dataset!);
             download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
             console.log(csvData);
           }}
         >
-          Export as CSV
-        </Button>
+          Export CSV
+        </TextButton>
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
-      <FlexRow style={{ justifyContent: "space-between", width: "100%" }}>
-        <FlexRow $gap={10}>
+      <FlexRow $gap={6} style={{ width: "100%" }}>
+        <FlexRow $gap={6}>
+          <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
           <SelectionDropdown
             selected={(currentLabelIdx ?? -1).toString()}
             items={selectLabelOptions}
             onChange={onSelectLabelIdx}
             disabled={currentLabelIdx === null}
             showSelectedItemTooltip={false}
-            label="Label"
+            htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
           ></SelectionDropdown>
 
           {/*
@@ -153,25 +151,24 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         </FlexRow>
 
         {/* View mode selection */}
-        <label style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
-          <span style={{ fontSize: theme.font.size.label }}>View </span>
+        <label>
+          <VisuallyHidden>View mode</VisuallyHidden>
           <Radio.Group
-            // buttonStyle="solid"
             style={{ display: "flex", flexDirection: "row" }}
             value={viewType}
             onChange={(e) => startTransition(() => setViewType(e.target.value))}
           >
             <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
-              <ViewModeRadioButton value={AnnotationViewType.TABLE}>
+              <Radio.Button value={AnnotationViewType.TABLE} style={{ padding: "0 8px" }}>
                 <TableOutlined />
                 <VisuallyHidden>Table view {viewType === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
-              </ViewModeRadioButton>
+              </Radio.Button>
             </Tooltip>
             <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
-              <ViewModeRadioButton value={AnnotationViewType.LIST}>
+              <Radio.Button value={AnnotationViewType.LIST} style={{ padding: "0 8px" }}>
                 <MenuOutlined />
                 <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
-              </ViewModeRadioButton>
+              </Radio.Button>
             </Tooltip>
           </Radio.Group>
         </label>
