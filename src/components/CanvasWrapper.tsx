@@ -7,7 +7,7 @@ import { clamp } from "three/src/math/MathUtils";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { ColorRamp, Dataset, Track } from "../colorizer";
-import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
+import { AnnotationSelectionMode, LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
@@ -536,12 +536,16 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
       } else if (props.annotationState.isAnnotationModeEnabled) {
-        canv.domElement.style.cursor = "crosshair";
+        if (props.annotationState.selectionMode === AnnotationSelectionMode.TIME) {
+          canv.domElement.style.cursor = "crosshair";
+        } else {
+          canv.domElement.style.cursor = "cell";
+        }
       } else {
         canv.domElement.style.cursor = "auto";
       }
     },
-    [handlePan, props.annotationState.isAnnotationModeEnabled]
+    [handlePan, props.annotationState.isAnnotationModeEnabled, props.annotationState.selectionMode]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {

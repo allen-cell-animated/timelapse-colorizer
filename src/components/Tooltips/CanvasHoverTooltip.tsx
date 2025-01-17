@@ -2,10 +2,16 @@ import { Tag } from "antd";
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
 
-import { Dataset, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode, ViewerConfig } from "../../colorizer";
+import {
+  AnnotationSelectionMode,
+  Dataset,
+  VECTOR_KEY_MOTION_DELTA,
+  VectorTooltipMode,
+  ViewerConfig,
+} from "../../colorizer";
 import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
-import { FlexColumn } from "../../styles/utils";
+import { FlexColumn, FlexRow } from "../../styles/utils";
 
 import HoverTooltip from "./HoverTooltip";
 
@@ -149,6 +155,17 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
         {currentLabelData.name}
       </Tag>
     );
+
+    if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
+      annotationLabel = (
+        <FlexRow>
+          {annotationLabel}
+          <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
+            ✦ Applying to track
+          </Tag>
+        </FlexRow>
+      );
+    }
   }
 
   const tooltipContent = (
