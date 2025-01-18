@@ -156,6 +156,7 @@ export enum TabType {
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
   SETTINGS = "settings",
+  CORRELATION_PLOT = "correlation_plot",
   ANNOTATION = "annotation",
 }
 
