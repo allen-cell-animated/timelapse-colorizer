@@ -2,8 +2,11 @@
  * Calculates the Pearson correlation coefficient (a measurement of linear
  * correlation) between two arrays of numbers. See
  * https://en.wikipedia.org/wiki/Pearson_correlation_coefficient.
+ * @returns
+ * A number between -1 and 1 representing the correlation. Returns 0 if there
+ * are no finite values in the input arrays.
  */
-function pearson(x: Float32Array, y: Float32Array): number {
+export function pearson(x: Float32Array, y: Float32Array): number {
   // Adapted from: https://memory.psych.mun.ca/tech/js/correlation.shtml
   if (x.length !== y.length) {
     throw new Error(
@@ -27,6 +30,10 @@ function pearson(x: Float32Array, y: Float32Array): number {
     totalFiniteElements++;
   }
 
+  if (totalFiniteElements === 0) {
+    return 0;
+  }
+
   let sumx = 0;
   let sumy = 0;
   let sumxy = 0;
@@ -48,6 +55,13 @@ function pearson(x: Float32Array, y: Float32Array): number {
   const step2 = totalFiniteElements * sumx2 - sumx * sumx;
   const step3 = totalFiniteElements * sumy2 - sumy * sumy;
   const step4 = Math.sqrt(step2 * step3);
+
+  // Both numerator and denominator are 0, which occurs if one
+  // (or both) arrays have no variance. In this case, the correlation is 0.
+  if (Math.abs(step1) < 1e-6 && Math.abs(step4) < 1e-6) {
+    return 0;
+  }
+
   const answer = step1 / step4;
   return answer;
 }
