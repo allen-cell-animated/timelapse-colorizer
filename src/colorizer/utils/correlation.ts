@@ -15,6 +15,8 @@ export function pearson(x: Float32Array, y: Float32Array): number {
   }
 
   const arrayLength = x.length;
+  // TODO: Could potentially optimize here by not re-initializing the arrays on
+  // every call.
   const xy = new Float32Array(arrayLength);
   const x2 = new Float32Array(arrayLength);
   const y2 = new Float32Array(arrayLength);
@@ -79,6 +81,7 @@ export function computeCorrelations(featureData: Float32Array[]): number[][] {
   // Optimization: Only calculate coefficients for [x][y] where y < x. [x][x] is
   // always 1, and [x][y] == [y][x], so we only need to calculate it once for
   // each x, y pair.
+  // TODO: Potential optimization by parallelizing this using shared memory.
   for (let colx = 0; colx < featureData.length; colx++) {
     const row = [];
     for (let coly = 0; coly < colx; coly++) {
