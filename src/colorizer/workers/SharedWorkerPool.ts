@@ -42,6 +42,26 @@ export default class SharedWorkerPool {
   }
 
   /**
+   * Computes a matrix of Pearson correlation coefficients between the provided feature keys.
+   * @param d The Dataset to retrieve feature data from.
+   * @param featureKeys An optional array of feature keys to compute correlations for.
+   * If not provided, correlations will be computed for all features in the dataset.
+   * @returns a 2D matrix of correlation values between each pair of features. For
+   * any indices `i` and `j`, the value at `[i][j]` (or `[j][i]`) is the
+   * correlation coefficient between the `i`th and `j`th features.
+   */
+  async getCorrelations(d: Dataset, featureKeys?: string[]): Promise<number[][]> {
+    const featureData: Float32Array[] = [];
+    featureKeys = featureKeys ?? d.featureKeys;
+    for (const key of featureKeys) {
+      if (d.hasFeatureKey(key)) {
+        featureData.push(d.getFeatureData(key)!.data);
+      }
+    }
+    return await this.workerPool.exec("getCorrelations", [featureData]);
+  }
+
+  /**
    * Calculates and averages the motion deltas for objects in the dataset as a flat array of
    * vector coordinates.
    * @param dataset The dataset to calculate motion deltas for.
