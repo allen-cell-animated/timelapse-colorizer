@@ -13,10 +13,11 @@ import {
   PaletteData,
 } from "../../colorizer";
 import { FlexRowAlignCenter } from "../../styles/utils";
+import { SelectItem } from "./types";
 
 import { AppThemeContext } from "../AppStyle";
 import IconButton from "../IconButton";
-import SelectionDropdown, { SelectItem } from "./SelectionDropdown";
+import SelectionDropdown from "./SelectionDropdown";
 
 const SELECTED_RAMP_ITEM_KEY = "__selected_ramp__";
 const CUSTOM_PALETTE_ITEM_KEY = "__custom__";

@@ -1,10 +1,11 @@
 import { ButtonProps, Tooltip } from "antd";
 import Fuse from "fuse.js";
-import React, { ReactElement, ReactNode, useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { components, ControlProps, OptionProps } from "react-select";
 
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
+import { SelectItem } from "./types";
 
 import StyledSelect from "./StyledSelect";
 
@@ -12,18 +13,6 @@ import StyledSelect from "./StyledSelect";
 // but before the prop value updates. -> this is especially noticeable when slow datasets.
 // Is there a way we can do this using async promises, maybe? If the promise rejects,
 // discard the changed value?
-
-export type SelectItem = {
-  value: string;
-  label: string;
-  /** Optional tooltip for an option. If set, a tooltip will be shown when
-   * the option is hovered or focused in the dropdown. */
-  tooltip?: string | ReactNode;
-  /** Optional image source instead of a text label. If used, the label will be
-   * shown only as alt text for the image.
-   */
-  image?: string;
-};
 
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -62,7 +51,7 @@ const defaultProps: Partial<SelectionDropdownProps> = {
 };
 
 // Override options in the menu list to include tooltips and, optionally, image content.
-const Option = (props: OptionProps): ReactElement => {
+const Option = (props: OptionProps<SelectItem>): ReactElement => {
   // Debounce the tooltip so it only shows after a short delay when focusing/hovering over it.
   const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
   const title = (props as OptionProps<SelectItem>).data.tooltip;
@@ -164,7 +153,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   // Fixes a bug where the tooltip would show when hovering anywhere over the dropdown, including
   // other options.
   const Control = useCallback(
-    (controlProps: ControlProps): ReactElement => {
+    (controlProps: ControlProps<SelectItem>): ReactElement => {
       const selectedOption = controlProps.getValue()[0] as SelectItem | undefined;
 
       return (
@@ -201,6 +190,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       <StyledSelect
         aria-labelledby={id}
         classNamePrefix="react-select"
+        isMulti={false}
         placeholder=""
         type={props.buttonType ?? "outlined"}
         value={selectedOption}
@@ -211,8 +201,8 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
         isClearable={false}
         isSearchable={props.isSearchable}
         onChange={(value) => {
-          if (value && (value as SelectItem).value) {
-            props.onChange((value as SelectItem).value);
+          if (value && value.value) {
+            props.onChange(value.value);
           }
           startTransition(() => {
             setSearchInput("");
