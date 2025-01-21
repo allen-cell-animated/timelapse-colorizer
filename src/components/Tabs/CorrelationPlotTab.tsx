@@ -24,6 +24,18 @@ type CorrelationPlotTabProps = {
   openScatterPlotTab(xAxisFeatureKey: string, yAxisFeatureKey: string): void;
 };
 
+type CellDatum = {
+  x: number;
+  y: number;
+  value: number;
+};
+
+type GradientStop = {
+  offset: number;
+  color: string;
+  value: number;
+};
+
 const TipDiv = styled.div`
   position: absolute;
   text-align: center;
@@ -118,7 +130,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     }
 
     // Explode into d3 compatible data
-    const gridData: { x: number; y: number; value: number }[] = [];
+    const gridData: CellDatum[] = [];
     for (let i = 0; i < correlationData.length; i++) {
       for (let j = 0; j < correlationData[i].length; j++) {
         gridData.push({ x: i, y: j, value: correlationData[i][j] });
@@ -128,15 +140,15 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     // correlation score of 1)
     const extent = d3.extent(
       gridData
-        .filter(function (d) {
+        .filter(function (d: CellDatum) {
           return d.x !== d.y;
         })
-        .map(function (d) {
+        .map(function (d: CellDatum) {
           return d.value;
         })
     ) as [number, number];
     const numRows =
-      d3.max(gridData, function (d) {
+      d3.max(gridData, function (d: CellDatum) {
         return d.y + 1;
       }) || 0;
 
@@ -216,20 +228,20 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     // Draw grid
     svg
       .selectAll("rect")
-      .data(gridData, function (d: { x: number; y: number; value: number }) {
+      .data(gridData, function (d: CellDatum) {
         return sortedSelectedFeatures[d.x] + sortedSelectedFeatures[d.y];
       } as any)
       .enter()
       .append("rect")
-      .attr("x", function (d) {
+      .attr("x", function (d: CellDatum) {
         return x(d.x)!;
       })
-      .attr("y", function (d) {
+      .attr("y", function (d: CellDatum) {
         return y(d.y)!;
       })
       .attr("width", x.bandwidth())
       .attr("height", y.bandwidth())
-      .style("fill", function (d) {
+      .style("fill", function (d: CellDatum) {
         if (Number.isNaN(d.value) || d.x === d.y) {
           return NAN_COLOR;
         }
@@ -244,7 +256,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     d3.selectAll("rect")
       .on("mouseover", function (event) {
         // Show tooltip on hover
-        const d = event.target.__data__;
+        const d = event.target.__data__ as CellDatum | undefined;
         if (!d) {
           return;
         }
@@ -310,7 +322,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     const defs = legendSvg.append("defs");
 
     const gradient = defs.append("linearGradient").attr("id", "linear-gradient");
-    const stops = [
+    const stops: GradientStop[] = [
       { offset: 0, color: "steelblue", value: extent[0] },
       { offset: 0.5, color: "white", value: 0 },
       { offset: 1, color: "tomato", value: extent[1] },
@@ -320,10 +332,10 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .data(stops)
       .enter()
       .append("stop")
-      .attr("offset", function (d) {
+      .attr("offset", function (d: GradientStop) {
         return 100 * d.offset + "%";
       })
-      .attr("stop-color", function (d) {
+      .attr("stop-color", function (d: GradientStop) {
         return d.color;
       });
 
@@ -337,14 +349,14 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       .data(stops)
       .enter()
       .append("text")
-      .attr("x", function (d) {
+      .attr("x", function (d: GradientStop) {
         return plotWidth * d.offset;
       })
       .attr("dy", -3)
       .style("text-anchor", function (_d, i) {
         return i === 0 ? "start" : i === 1 ? "middle" : "end";
       })
-      .text(function (d, i) {
+      .text(function (d: GradientStop, i) {
         if (d.value === undefined) {
           return "--";
         }
