@@ -1,6 +1,7 @@
 import { RetweetOutlined } from "@ant-design/icons";
-import { Button, Tooltip } from "antd";
-import React, { ReactElement, useContext, useEffect, useMemo, useState } from "react";
+import { Tooltip } from "antd";
+import React, { ReactElement, useContext, useMemo } from "react";
+import styled from "styled-components";
 import { Color } from "three";
 
 import {
@@ -11,34 +12,128 @@ import {
   KNOWN_COLOR_RAMPS,
   PaletteData,
 } from "../../colorizer";
+import { FlexRowAlignCenter } from "../../styles/utils";
 
 import { AppThemeContext } from "../AppStyle";
 import IconButton from "../IconButton";
+import SelectionDropdown, { SelectItem } from "./SelectionDropdown";
 
-import styles from "./ColorRampDropdown.module.css";
+const SELECTED_RAMP_ITEM_KEY = "__selected_ramp__";
+const CUSTOM_PALETTE_ITEM_KEY = "__custom__";
+const DROPDOWN_WIDTH_PX = 120;
+const DROPDOWN_DEFAULT_BORDER_PX = 1;
+const DROPDOWN_CATEGORICAL_BORDER_PX = 2;
 
-const COLOR_RAMP_BUTTON_CLASS = "color-ramp-button";
-const COLOR_PALETTE_BUTTON_CLASS = "color-palette-button";
+const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
+  --width: ${DROPDOWN_WIDTH_PX}px;
+  --border-width: 1px;
+  --radius: 6px;
+  --button-radius: calc(var(--radius) - var(--border-width));
+  --outline-width-selected: ${(props) =>
+    props.$categorical ? DROPDOWN_CATEGORICAL_BORDER_PX : DROPDOWN_DEFAULT_BORDER_PX}px;
+  --outline-width-unselected: calc(var(--outline-width-selected) - 1px);
 
-type ColorRampSelectorProps = {
+  & img {
+    /* Copied from
+    * https://stackoverflow.com/questions/7615009/disable-interpolation-when-scaling-a-canvas.  
+    * Prevents color ramps (especially hard-stop categorical ones) from being
+    * pixelated when scaled.  
+    */
+    image-rendering: optimizeSpeed; /* Older versions of FF */
+    image-rendering: -moz-crisp-edges; /* FF 6.0+ */
+    image-rendering: -webkit-optimize-contrast; /* Safari */
+    image-rendering: -o-crisp-edges; /* OS X & Windows Opera (12.02) */
+    image-rendering: pixelated; /* Awesome future-browsers */
+    -ms-interpolation-mode: nearest-neighbor; /* IE */
+  }
+
+  & .react-select__control > img {
+    border-radius: 5px;
+    outline: var(--outline-width-unselected) solid var(--color-text-button);
+    outline-offset: calc(0px - var(--outline-width-unselected));
+  }
+
+  & .react-select__control--is-disabled > img {
+    filter: grayscale(100%);
+  }
+
+  & .react-select__single-value {
+    /* Hides the text label for the selected item under the gradient. */
+    z-index: -1;
+  }
+
+  & .react-select__indicator {
+    z-index: 100;
+    color: var(--color-text-button);
+  }
+
+  & .react-select__menu {
+    height: unset;
+  }
+
+  & .react-select__menu-list {
+    background-color: var(--color-button);
+    max-height: max-content;
+
+    padding: 0;
+    gap: 1px;
+    overflow: hidden;
+
+    padding: var(--border-width) var(--border-width);
+    gap: var(--border-width);
+    border-radius: var(--radius);
+
+    & .react-select__option {
+      padding: 0;
+      height: 28px;
+      border-radius: 0;
+      overflow: clip;
+      outline: var(--outline-width-unselected) solid var(--color-text-button);
+      outline-offset: calc(0px - var(--outline-width-unselected));
+    }
+
+    & :first-child > .react-select__option {
+      border-radius: var(--button-radius) var(--button-radius) 0 0;
+    }
+
+    & :last-child > .react-select__option {
+      border-radius: 0 0 var(--button-radius) var(--button-radius);
+    }
+
+    & .react-select__option:hover,
+    & .react-select__option--is-focused {
+      outline: var(--outline-width-selected) solid var(--color-text-button);
+      outline-offset: calc(0px - var(--outline-width-selected));
+    }
+  }
+`;
+
+type ColorRampSelectionProps = {
   selectedRamp: string;
   onChangeRamp: (colorRampKey: string, reversed: boolean) => void;
   /** The keys of the color ramps to display, in order. */
   colorRampsToDisplay: string[];
+  /**
+   * All known and displayable color ramps. This is a superset of
+   * `colorRampsToDisplay` and may include additional ramps, such as deprecated
+   * ramps that are hidden on the UI.
+   */
   knownColorRamps?: Map<string, ColorRampData>;
 
-  useCategoricalPalettes?: boolean;
-  knownCategoricalPalettes?: Map<string, PaletteData>;
-  categoricalPalettesToDisplay: string[];
-  numCategories: number;
   selectedPalette: Color[];
   onChangePalette: (newPalette: Color[]) => void;
+  numCategories: number;
+  categoricalPalettesToDisplay: string[];
+  knownCategoricalPalettes?: Map<string, PaletteData>;
 
+  /** If true, shows the categorical palettes and selected palette instead of
+   * the color ramps. */
+  useCategoricalPalettes?: boolean;
   disabled?: boolean;
   reversed?: boolean;
 };
 
-const defaultProps: Partial<ColorRampSelectorProps> = {
+const defaultProps: Partial<ColorRampSelectionProps> = {
   knownColorRamps: KNOWN_COLOR_RAMPS,
   disabled: false,
   useCategoricalPalettes: false,
@@ -58,184 +153,121 @@ function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
   return true;
 }
 
-/** A dropdown selector for color ramp gradients. */
-const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactElement => {
-  const props = { ...defaultProps, ...propsInput } as Required<ColorRampSelectorProps>;
+export default function ColorRampSelection(inputProps: ColorRampSelectionProps): ReactElement {
+  const props = { ...defaultProps, ...inputProps } as Required<ColorRampSelectionProps>;
   const theme = useContext(AppThemeContext);
 
   const { colorRampsToDisplay, categoricalPalettesToDisplay } = props;
 
-  // TODO: Consider refactoring this into a shared hook if this behavior is repeated again.
-  // Override the open/close behavior for the dropdown so it's compatible with keyboard navigation.
-  const [forceOpen, setForceOpen] = useState(false);
-  const componentContainerRef = React.useRef<HTMLDivElement>(null);
+  ///////// Generate dropdown contents
 
-  // If open, close the dropdown when focus is lost.
-  useEffect(() => {
-    if (!forceOpen) {
-      return;
-    }
-    const doesContainTarget = (target: EventTarget | null): boolean => {
-      return (
-        (target instanceof Element &&
-          componentContainerRef.current &&
-          componentContainerRef.current.contains(target)) ||
-        false
-      );
-    };
-    // Handle focus loss for tab navigation
-    const handleFocusLoss = (event: FocusEvent): void => {
-      if (!doesContainTarget(event.relatedTarget)) {
-        setForceOpen(false);
+  const rampItems: SelectItem[] = useMemo(() => {
+    return colorRampsToDisplay.map((key) => {
+      const rampData = props.knownColorRamps.get(key);
+      if (!rampData) {
+        throw new Error(`Invalid color ramp key '${key}'`);
       }
-    };
+      return {
+        value: key,
+        label: rampData.name,
+        image: rampData.colorRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL(),
+        tooltip: rampData.name,
+      };
+    });
+  }, [colorRampsToDisplay, props.knownColorRamps]);
+  const paletteItems: SelectItem[] = useMemo(() => {
+    return categoricalPalettesToDisplay.map((key) => {
+      const paletteData = props.knownCategoricalPalettes?.get(key);
+      if (!paletteData) {
+        throw new Error(`Invalid categorical palette key '${key}'`);
+      }
+      const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
+      const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
+      return {
+        value: key,
+        label: paletteData.name,
+        image: colorRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL(),
+        tooltip: paletteData.name,
+      };
+    });
+  }, [categoricalPalettesToDisplay, props.numCategories, props.knownCategoricalPalettes]);
 
-    componentContainerRef.current?.addEventListener("focusout", handleFocusLoss);
-    return () => {
-      componentContainerRef.current?.removeEventListener("focusout", handleFocusLoss);
-    };
-  }, [forceOpen]);
-
+  // Create a selected item for both the ramp and palette, since they might not
+  // be an option in the dropdown list. This can happen for the ramp if it's a
+  // deprecated ramp that's no longer shown on the UI or if it's been reversed,
+  // or for the palette if it's a custom palette.
   const selectedRampData = props.knownColorRamps.get(props.selectedRamp);
-
   if (!selectedRampData || !selectedRampData.colorRamp) {
     throw new Error(`Selected color ramp name '${props.selectedRamp}' is invalid.`);
   }
-
-  // Only regenerate the gradient canvas URL if the selected ramp changes!
   const rampImgSrc = useMemo(() => {
     let selectedRamp = selectedRampData.colorRamp;
     if (props.reversed) {
       selectedRamp = selectedRamp.reverse();
     }
-    return selectedRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
+    return selectedRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL();
   }, [props.selectedRamp, props.reversed]);
+
+  const selectedRampItem = {
+    value: SELECTED_RAMP_ITEM_KEY,
+    label: selectedRampData.name + (props.reversed ? " (reversed)" : ""),
+    image: rampImgSrc,
+    tooltip: selectedRampData.name + (props.reversed ? " (reversed)" : ""),
+  };
 
   const paletteImgSrc = useMemo(() => {
     const visibleColors = props.selectedPalette.slice(0, Math.max(1, props.numCategories));
     const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
-    return colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
+    return colorRamp
+      .createGradientCanvas(DROPDOWN_WIDTH_PX - DROPDOWN_CATEGORICAL_BORDER_PX, theme.controls.height)
+      .toDataURL();
   }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
 
-  // Determine if we're currently using a preset palette; otherwise show the "Custom" tooltip.
-  let selectedPaletteName = "Custom";
-  for (const [, paletteData] of props.knownCategoricalPalettes) {
+  // Check if palette colors match an existing one; otherwise, mark it as being
+  // custom.
+  let selectedPaletteKey = CUSTOM_PALETTE_ITEM_KEY;
+  for (const [key, paletteData] of props.knownCategoricalPalettes) {
     if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
-      selectedPaletteName = paletteData.name;
+      selectedPaletteKey = key;
       break;
     }
   }
-
-  ///////// Generate dropdown contents
-
-  /** Generates a list of tooltip-wrapped buttons containing color ramp gradients. */
-  const makeRampButtonList = (
-    colorRampData: ColorRampData[],
-    onClick: (rampData: ColorRampData) => void,
-    isPalette: boolean
-  ): ReactElement[] => {
-    const contents: ReactElement[] = [];
-    for (let i = 0; i < colorRampData.length; i++) {
-      const key = colorRampData[i].key;
-      const name = colorRampData[i].name;
-      contents.push(
-        <Tooltip title={name} placement="right" key={i} trigger={["hover", "focus"]}>
-          <Button
-            onClick={() => onClick(colorRampData[i])}
-            rootClassName={styles.dropdownButton}
-            className={isPalette ? COLOR_PALETTE_BUTTON_CLASS : COLOR_RAMP_BUTTON_CLASS}
-            id={key} // Save ID in button for GA tracking
-            aria-label={name}
-          >
-            <img
-              style={{ pointerEvents: "none" }}
-              src={colorRampData[i].colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL()}
-            />
-          </Button>
-        </Tooltip>
-      );
-    }
-    return contents;
+  const paletteData = props.knownCategoricalPalettes.get(selectedPaletteKey);
+  const selectedPaletteItem = {
+    value: selectedPaletteKey,
+    label: paletteData?.name || "Custom",
+    image: paletteImgSrc,
+    tooltip: paletteData?.name || "Custom",
   };
 
-  /** The contents of the dropdown that appears when you hover over the button */
-  const dropdownContents = useMemo(() => {
-    if (props.useCategoricalPalettes) {
-      // Make categorical palettes by converting them into color ramps.
-      const onClick = (paletteData: ColorRampData): void => {
-        const colors = props.knownCategoricalPalettes.get(paletteData.key)?.colors;
-        if (colors) {
-          props.onChangePalette(colors);
-        }
-      };
-      // Generate color ramps from the palettes.
-
-      const paletteData = categoricalPalettesToDisplay.map((key) => props.knownCategoricalPalettes.get(key)!);
-      // Append the missing ColorRamp into the palette data so it can be handled as a ColorRampData.
-      const colorRampData = paletteData.map((data) => {
-        const visibleColors = data.colors.slice(0, Math.max(1, props.numCategories));
-        return { ...data, colorRamp: new ColorRamp(visibleColors, ColorRampType.HARD_STOP) };
-      });
-      return makeRampButtonList(colorRampData, onClick, true);
-    } else {
-      // Make gradient ramps instead
-      return makeRampButtonList(
-        colorRampsToDisplay.map((key) => props.knownColorRamps.get(key)!),
-        (rampData) => {
-          props.onChangeRamp(rampData.key, false);
-        },
-        false
-      );
+  // Handlers
+  const onChangePalette = (key: string): void => {
+    const paletteData = props.knownCategoricalPalettes?.get(key);
+    if (!paletteData) {
+      throw new Error(`Invalid categorical palette key '${key}'`);
     }
-  }, [
-    props.knownColorRamps,
-    props.colorRampsToDisplay,
-    props.useCategoricalPalettes,
-    props.knownCategoricalPalettes,
-    props.categoricalPalettesToDisplay,
-    props.numCategories,
-  ]);
+    props.onChangePalette(paletteData.colors);
+  };
 
-  /// Rendering
+  const onChangeRamp = (key: string): void => {
+    props.onChangeRamp(key, false);
+  };
 
-  // Swap between two image sources as needed
-  const dropdownButtonImgSrc = props.useCategoricalPalettes ? paletteImgSrc : rampImgSrc;
-
-  const buttonDivClassName = styles.buttonContainer + (props.disabled ? ` ${styles.disabled}` : "");
-
-  const dropdownClassNames = [styles.dropdownContainer];
-  if (props.useCategoricalPalettes) {
-    dropdownClassNames.push(styles.categorical);
-  }
-  if (forceOpen) {
-    dropdownClassNames.push(styles.forceOpen);
-  }
-  const dropdownContainerClassName = dropdownClassNames.join(" ");
-
-  const currentSelectionName = props.useCategoricalPalettes ? selectedPaletteName : selectedRampData.name;
   return (
-    <div className={styles.colorRampSelector} ref={componentContainerRef}>
-      <h3>Color map</h3>
-      <div className={buttonDivClassName} style={{ marginLeft: "6px" }}>
-        <Tooltip
-          // Force the tooltip to be hidden (open=false) when disabled
-          open={props.disabled ? false : undefined}
-          title={currentSelectionName}
-          placement="top"
-          trigger={["focus", "hover"]}
-        >
-          <Button
-            aria-label={"Change color map (currently selected: " + currentSelectionName + ".)"}
-            id={styles.selectorButton}
-            className={props.useCategoricalPalettes ? styles.categorical : ""}
-            disabled={props.disabled}
-            onClick={() => setForceOpen(!forceOpen)}
-          >
-            <img src={dropdownButtonImgSrc} />
-          </Button>
-        </Tooltip>
-        <div className={dropdownContainerClassName}>{dropdownContents}</div>
-      </div>
+    <FlexRowAlignCenter>
+      <DropdownStyleContainer $categorical={props.useCategoricalPalettes}>
+        <SelectionDropdown
+          disabled={props.disabled}
+          items={props.useCategoricalPalettes ? paletteItems : rampItems}
+          label="Color map"
+          selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
+          onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
+          width={`${DROPDOWN_WIDTH_PX}px`}
+          isSearchable={false}
+          controlTooltipPlacement="top"
+        ></SelectionDropdown>
+      </DropdownStyleContainer>
+
       {/** Reverse map button */}
       <Tooltip title="Reverse color map" open={props.disabled || props.useCategoricalPalettes ? false : undefined}>
         <IconButton
@@ -250,7 +282,6 @@ const ColorRampSelector: React.FC<ColorRampSelectorProps> = (propsInput): ReactE
           <RetweetOutlined />
         </IconButton>
       </Tooltip>
-    </div>
+    </FlexRowAlignCenter>
   );
-};
-export default ColorRampSelector;
+}

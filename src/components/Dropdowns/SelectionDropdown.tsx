@@ -19,6 +19,10 @@ export type SelectItem = {
   /** Optional tooltip for an option. If set, a tooltip will be shown when
    * the option is hovered or focused in the dropdown. */
   tooltip?: string | ReactNode;
+  /** Optional image source instead of a text label. If used, the label will be
+   * shown only as alt text for the image.
+   */
+  image?: string;
 };
 
 type SelectionDropdownProps = {
@@ -29,14 +33,16 @@ type SelectionDropdownProps = {
    */
   htmlLabelId?: string;
   /** The value of the item that is currently selected. */
-  selected: string;
+  selected: string | SelectItem;
   /** An array of SelectItems that describes the item properties (`{value, label}`),
    * or an array of strings. Dropdown items will be presented in the provided array order.
    *
    * If a string array is provided, SelectItems objects will be
    * auto-generated with `value` and `label` values set to the string.*/
   items: SelectItem[] | string[];
+  controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   disabled?: boolean;
+  isSearchable?: boolean;
   /** The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic */
   buttonType?: ButtonProps["type"] | "outlined";
@@ -52,16 +58,26 @@ type SelectionDropdownProps = {
 
 const defaultProps: Partial<SelectionDropdownProps> = {
   showSelectedItemTooltip: true,
+  controlTooltipPlacement: "right",
 };
 
-// Override options in the menu list to include tooltips.
+// Override options in the menu list to include tooltips and, optionally, image content.
 const Option = (props: OptionProps): ReactElement => {
   // Debounce the tooltip so it only shows after a short delay when focusing/hovering over it.
   const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
   const title = (props as OptionProps<SelectItem>).data.tooltip;
+
+  const copiedProps = { ...props, data: { ...(props.data as SelectItem) } };
+
+  if ((props.data as SelectItem).image) {
+    copiedProps.children = (
+      <img src={copiedProps.data.image} alt={copiedProps.data.label} style={{ width: "100%", height: "100%" }}></img>
+    );
+  }
+
   return (
     <Tooltip
-      title={(props as OptionProps<SelectItem>).data.tooltip}
+      title={(copiedProps as OptionProps<SelectItem>).data.tooltip}
       trigger={["hover", "focus"]}
       placement="right"
       open={title !== undefined && isFocused ? true : undefined}
@@ -69,7 +85,7 @@ const Option = (props: OptionProps): ReactElement => {
       mouseLeaveDelay={0}
     >
       <div>
-        <components.Option {...props} />
+        <components.Option {...copiedProps} />
       </div>
     </Tooltip>
   );
@@ -102,8 +118,13 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   const [searchInput, setSearchInput] = useState("");
   const [filteredValues, setFilteredValues] = useState<Set<string>>(new Set(options.map((item) => item.value)));
 
-  // Find the full options object corresponding with the selected object
-  const selectedOption = options.find((option) => option.value === props.selected);
+  let selectedOption: SelectItem | undefined;
+  if (typeof props.selected === "string") {
+    // Find the full options object corresponding with the selected object
+    selectedOption = options.find((option) => option.value === props.selected);
+  } else {
+    selectedOption = props.selected;
+  }
 
   // Warn if no labelling component/ID is provided for the component.
   useEffect(() => {
@@ -144,26 +165,35 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   // other options.
   const Control = useCallback(
     (controlProps: ControlProps): ReactElement => {
-      const selectedOption = controlProps.getValue()[0] as OptionProps<SelectItem> | undefined;
+      const selectedOption = controlProps.getValue()[0] as SelectItem | undefined;
 
       return (
         <Tooltip
           title={selectedOption?.label}
           trigger={["hover", "focus"]}
-          placement="right"
+          placement={props.controlTooltipPlacement}
           open={props.showSelectedItemTooltip ? undefined : false}
         >
           <div>
-            <components.Control {...controlProps} />
+            <components.Control {...controlProps}>
+              {selectedOption?.image && (
+                <img
+                  src={selectedOption.image}
+                  alt={selectedOption.label}
+                  style={{ width: "100%", height: "100%", position: "absolute", pointerEvents: "none" }}
+                ></img>
+              )}
+              {controlProps.children}
+            </components.Control>
           </div>
         </Tooltip>
       );
     },
-    [props.showSelectedItemTooltip]
+    [props.showSelectedItemTooltip, props.controlTooltipPlacement]
   );
 
   // Create an ID for the HTML label element if one is provided.
-  const id = props.label ? `dropdown-label-${props.label.toLowerCase()}` : undefined;
+  const id = props.label ? `dropdown-label-${props.label.toLowerCase().replaceAll(" ", "_")}` : undefined;
 
   return (
     <FlexRowAlignCenter $gap={6}>
@@ -179,6 +209,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
         filterOption={(option) => filteredValues.has(option.value)}
         isDisabled={props.disabled}
         isClearable={false}
+        isSearchable={props.isSearchable}
         onChange={(value) => {
           if (value && (value as SelectItem).value) {
             props.onChange((value as SelectItem).value);
