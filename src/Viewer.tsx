@@ -907,7 +907,7 @@ function Viewer(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
-  const tabItems = [
+  const allTabItems = [
     {
       label: "Track plot",
       key: TabType.TRACK_PLOT,
@@ -955,6 +955,16 @@ function Viewer(): ReactElement {
       ),
     },
     {
+      label: "Correlation plot",
+      key: TabType.CORRELATION_PLOT,
+      visible: INTERNAL_BUILD,
+      children: (
+        <div className={styles.tabContent}>
+          <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
+        </div>
+      ),
+    },
+    {
       label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
       key: TabType.FILTERS,
       children: (
@@ -965,6 +975,23 @@ function Viewer(): ReactElement {
             dataset={dataset}
             disabled={disableUi}
             categoricalPalette={categoricalPalette}
+          />
+        </div>
+      ),
+    },
+    {
+      label: "Annotations",
+      key: TabType.ANNOTATION,
+      visible: INTERNAL_BUILD,
+      children: (
+        <div className={styles.tabContent}>
+          <AnnotationTab
+            annotationState={annotationState}
+            setTrackAndFrame={(track, frame) => {
+              findTrack(track, false);
+              setFrameAndRender(frame);
+            }}
+            dataset={dataset}
           />
         </div>
       ),
@@ -986,35 +1013,7 @@ function Viewer(): ReactElement {
       ),
     },
   ];
-
-  if (INTERNAL_BUILD) {
-    // Insert correlation tab after scatter plot tab
-    tabItems.splice(2, 0, {
-      label: "Correlation plot",
-      key: TabType.CORRELATION_PLOT,
-      children: (
-        <div className={styles.tabContent}>
-          <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
-        </div>
-      ),
-    });
-    tabItems.splice(4, 0, {
-      label: "Annotations",
-      key: TabType.ANNOTATION,
-      children: (
-        <div className={styles.tabContent}>
-          <AnnotationTab
-            annotationState={annotationState}
-            setTrackAndFrame={(track, frame) => {
-              findTrack(track, false);
-              setFrameAndRender(frame);
-            }}
-            dataset={dataset}
-          />
-        </div>
-      ),
-    });
-  }
+  const tabItems = allTabItems.filter((item) => item.visible !== false);
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {
