@@ -16,7 +16,9 @@ import {
   CellDatum,
   correlationDataToCellDatum,
   CorrelationPlotConfig,
+  createScales,
   drawAxesLabels,
+  drawBaseSvg,
   drawGrid,
   drawLegend,
   SVG_TEXT_PADDING,
@@ -94,23 +96,23 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const plotDependencies = [dataset, selectedFeatures];
 
   const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
-    if (!props.dataset || !legendRef.current) {
+    if (!props.dataset || !legendRef.current || !plotDivRef.current) {
       return;
     }
     setIsRendering(true);
-    lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
 
-    const correlationData = await props.workerPool.getCorrelations(props.dataset!, sortedSelectedFeatures);
-
-    // Stop and discard correlation calculations that are not from our most
+    // Calculating correlations is async-- it's possible that another render request will
+    // come in before a previous one finishes. Discard any results that are not from the most
     // recent render request.
+    lastRenderedPlotFeatures.current = new Set(sortedSelectedFeatures);
+    const correlationData = await props.workerPool.getCorrelations(props.dataset!, sortedSelectedFeatures);
     if (!areSetsEqual(lastRenderedPlotFeatures.current, new Set(sortedSelectedFeatures))) {
+      // Another request happened in the meantime, discard this result.
       return;
     }
 
-    // Explode into d3 compatible data
     const { gridData, extent, numRows } = correlationDataToCellDatum(correlationData);
-
+    const featureNames: string[] = sortedSelectedFeatures.map((key) => dataset?.getFeatureName(key) || key);
     // TODO: Resize dynamically with container size
     const plotDim = 415;
     const config: CorrelationPlotConfig = {
@@ -124,33 +126,11 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
       colorMap: chroma.scale(["steelblue", "white", "tomato"]).domain([extent[0], 0, extent[1]]),
     };
 
-    // clear everything out!
-    d3.select(plotDivRef.current).selectAll("*").remove();
-    d3.select(legendRef.current).selectAll("*").remove();
     d3.select(tooltipDivRef.current).selectAll("*").remove();
 
-    // Create new SVG element
-    const svg = d3
-      .select(plotDivRef.current)
-      .append("svg")
-      .attr("width", config.plotWidth + config.margin.left + config.margin.right)
-      .attr("height", config.plotHeight + config.margin.top + config.margin.bottom)
-      .append("g")
-      .attr("transform", "translate(" + config.margin.left + ", " + config.margin.top + ")");
-    // Create scales
-    const x = d3
-      .scaleBand<number>()
-      .range([0, config.plotWidth])
-      .paddingInner(config.padding)
-      .domain(d3.range(0, numRows));
-    const y = d3
-      .scaleBand<number>()
-      .range([0, config.plotHeight])
-      .paddingInner(config.padding)
-      .domain(d3.range(0, numRows));
-
-    const featureNames: string[] = sortedSelectedFeatures.map((key) => dataset?.getFeatureName(key) || key);
-
+    // Draw SVG elements
+    const svg = drawBaseSvg(plotDivRef.current, config);
+    const { x, y } = createScales(numRows, config);
     drawAxesLabels(svg, featureNames, x, y, config);
     drawGrid(svg, gridData, x, y, config);
     drawLegend(legendRef.current, extent, config);

@@ -89,6 +89,30 @@ export function truncateText(textEl: SVGTextElement, widthPx: number): void {
 
 /////// Drawing SVG elements ////////////////////////////////
 
+export function drawBaseSvg(plotDiv: HTMLDivElement, config: CorrelationPlotConfig): SelectedSvg<SVGGElement> {
+  // clear everything out!
+  d3.select(plotDiv).selectAll("*").remove();
+
+  // Create new SVG element
+  return d3
+    .select(plotDiv)
+    .append("svg")
+    .attr("width", config.plotWidth + config.margin.left + config.margin.right)
+    .attr("height", config.plotHeight + config.margin.top + config.margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + config.margin.left + ", " + config.margin.top + ")");
+}
+
+export function createScales(
+  numRows: number,
+  config: CorrelationPlotConfig
+): { x: d3.ScaleBand<number>; y: d3.ScaleBand<number> } {
+  return {
+    x: d3.scaleBand<number>().range([0, config.plotWidth]).paddingInner(config.padding).domain(d3.range(0, numRows)),
+    y: d3.scaleBand<number>().range([0, config.plotHeight]).paddingInner(config.padding).domain(d3.range(0, numRows)),
+  };
+}
+
 /**
  * Draws the X and Y axis labels, which are the (optionally truncated) feature
  * names.
@@ -178,6 +202,8 @@ export function drawGrid(
 }
 
 export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], config: CorrelationPlotConfig) {
+  d3.select(legendDiv).selectAll("*").remove();
+
   const legendSvg = d3
     .select(legendDiv)
     .append("svg")
