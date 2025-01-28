@@ -1,3 +1,4 @@
+import chroma from "chroma-js";
 import * as d3 from "d3";
 
 export const SVG_TEXT_PADDING = 0.1;
@@ -175,7 +176,7 @@ export function drawGrid(
   x: d3.ScaleBand<number>,
   y: d3.ScaleBand<number>,
   config: CorrelationPlotConfig
-) {
+): void {
   svg
     .selectAll("rect")
     .data(gridData)
@@ -201,7 +202,7 @@ export function drawGrid(
     .style("opacity", 1);
 }
 
-export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], config: CorrelationPlotConfig) {
+export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], config: CorrelationPlotConfig): void {
   d3.select(legendDiv).selectAll("*").remove();
 
   const legendSvg = d3
@@ -266,7 +267,7 @@ export function setupMouseInteraction(
   dataset: any,
   onClick: (xAxisFeatureKey: string, yAxisFeatureKey: string) => void,
   config: CorrelationPlotConfig
-) {
+): void {
   d3.select(tooltipDiv).selectAll("*").remove();
   d3.select(plotDiv)
     .selectAll("rect")
