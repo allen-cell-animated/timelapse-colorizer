@@ -1,5 +1,5 @@
 import AnnotationTab from "./Annotation/AnnotationTab";
-import CorrelationPlotTab from "./CorrelationPlotTab";
+import CorrelationPlotTab from "./CorrelationPlot/CorrelationPlotTab";
 import FeatureThresholdsTab from "./FeatureThresholdsTab";
 import PlotTab from "./PlotTab";
 import ScatterPlotTab from "./ScatterPlotTab";

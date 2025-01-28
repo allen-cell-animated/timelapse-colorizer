@@ -8,12 +8,12 @@ import * as d3 from "d3";
 import React, { memo, ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { Dataset } from "../../colorizer";
-import { useDebounce } from "../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../styles/utils";
+import { Dataset } from "../../../colorizer";
+import { useDebounce } from "../../../colorizer/utils/react_utils";
+import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
 
-import SharedWorkerPool from "../../colorizer/workers/SharedWorkerPool";
-import LoadingSpinner from "../LoadingSpinner";
+import SharedWorkerPool from "../../../colorizer/workers/SharedWorkerPool";
+import LoadingSpinner from "../../LoadingSpinner";
 
 const NAN_COLOR = "#aaaaaa";
 const SVG_TEXT_PADDING = 0.1;
