@@ -256,3 +256,68 @@ export function drawLegend(legendDiv: HTMLDivElement, extent: [number, number], 
       return d.value?.toFixed(2) + (i === 2 ? ">" : "");
     });
 }
+
+export function setupMouseInteraction(
+  plotDiv: HTMLDivElement,
+  tooltipDiv: HTMLDivElement,
+  x: d3.ScaleBand<number>,
+  y: d3.ScaleBand<number>,
+  featureNames: string[],
+  dataset: any,
+  onClick: (xAxisFeatureKey: string, yAxisFeatureKey: string) => void,
+  config: CorrelationPlotConfig
+) {
+  d3.select(tooltipDiv).selectAll("*").remove();
+  d3.select(plotDiv)
+    .selectAll("rect")
+    .on("mouseover", function (event) {
+      // Show tooltip on hover
+      const d = event.target.__data__ as CellDatum | undefined;
+      if (!d) {
+        return;
+      }
+      // Highlight the selected cell
+      d3.select(this).classed("selected", true);
+
+      // Update tooltip text with feature names and values
+      const xAxisName = dataset?.getFeatureNameWithUnits(featureNames[d.x]);
+      const yAxisName = dataset?.getFeatureNameWithUnits(featureNames[d.y]);
+      d3.select(tooltipDiv)
+        .style("display", "flex")
+        .html(xAxisName + " ×<br/>" + yAxisName + "<br/>" + (d.value === undefined ? "undefined" : d.value.toFixed(2)));
+
+      // Position tooltip based on the selected cell
+      const rowPos = y(d.y)!;
+      const colPos = x(d.x)!;
+      const tipPos = (d3.select(tooltipDiv).node() as HTMLElement).getBoundingClientRect();
+      const tipWidth = tipPos.width;
+      const tipHeight = tipPos.height;
+      const gridLeft = 0;
+      const gridTop = 0;
+
+      const left = gridLeft + colPos + config.margin.left + x.bandwidth() / 2 - tipWidth / 2;
+      const top = gridTop + rowPos + config.margin.top - tipHeight - 5;
+
+      d3.select(tooltipDiv)
+        .style("left", left + "px")
+        .style("top", top + "px");
+
+      d3.select(".x.axis .tick:nth-of-type(" + (d.x + 1) + ") text").classed("selected", true);
+      d3.select(".y.axis .tick:nth-of-type(" + (d.y + 1) + ") text").classed("selected", true);
+      d3.select(".x.axis .tick:nth-of-type(" + (d.x + 1) + ") line").classed("selected", true);
+      d3.select(".y.axis .tick:nth-of-type(" + (d.y + 1) + ") line").classed("selected", true);
+    })
+    .on("mouseout", function () {
+      d3.selectAll("rect").classed("selected", false);
+      d3.select(tooltipDiv).style("display", "none");
+      d3.selectAll(".axis .tick text").classed("selected", false);
+      d3.selectAll(".axis .tick line").classed("selected", false);
+    })
+    .on("click", function (event) {
+      const d = event.target.__data__;
+      if (!d) {
+        return;
+      }
+      onClick(featureNames[d.x], featureNames[d.y]);
+    });
+}

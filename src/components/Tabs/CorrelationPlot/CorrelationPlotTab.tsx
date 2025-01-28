@@ -13,7 +13,6 @@ import { useDebounce } from "../../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
 import {
   areSetsEqual,
-  CellDatum,
   correlationDataToCellDatum,
   CorrelationPlotConfig,
   createScales,
@@ -21,6 +20,7 @@ import {
   drawBaseSvg,
   drawGrid,
   drawLegend,
+  setupMouseInteraction,
   SVG_TEXT_PADDING,
 } from "./correlation_plot_data_utils";
 
@@ -96,7 +96,7 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
   const plotDependencies = [dataset, selectedFeatures];
 
   const renderPlot = async (_forceRelayout: boolean = false): Promise<void> => {
-    if (!props.dataset || !legendRef.current || !plotDivRef.current) {
+    if (!props.dataset || !legendRef.current || !plotDivRef.current || !tooltipDivRef.current) {
       return;
     }
     setIsRendering(true);
@@ -135,61 +135,16 @@ export default memo(function CorrelationPlotTab(props: CorrelationPlotTabProps):
     drawGrid(svg, gridData, x, y, config);
     drawLegend(legendRef.current, extent, config);
 
-    // Mouse interactions
-    d3.selectAll("rect")
-      .on("mouseover", function (event) {
-        // Show tooltip on hover
-        const d = event.target.__data__ as CellDatum | undefined;
-        if (!d) {
-          return;
-        }
-        // Highlight the selected cell
-        d3.select(this).classed("selected", true);
-
-        // Update tooltip text with feature names and values
-        const xAxisName = dataset?.getFeatureNameWithUnits(sortedSelectedFeatures[d.x]);
-        const yAxisName = dataset?.getFeatureNameWithUnits(sortedSelectedFeatures[d.y]);
-        d3.select(tooltipDivRef.current)
-          .style("display", "flex")
-          .html(
-            xAxisName + " ×<br/>" + yAxisName + "<br/>" + (d.value === undefined ? "undefined" : d.value.toFixed(2))
-          );
-
-        // Position tooltip based on the selected cell
-        const rowPos = y(d.y)!;
-        const colPos = x(d.x)!;
-        const tipPos = (d3.select(tooltipDivRef.current).node() as HTMLElement).getBoundingClientRect();
-        const tipWidth = tipPos.width;
-        const tipHeight = tipPos.height;
-        const gridLeft = 0;
-        const gridTop = 0;
-
-        const left = gridLeft + colPos + config.margin.left + x.bandwidth() / 2 - tipWidth / 2;
-        const top = gridTop + rowPos + config.margin.top - tipHeight - 5;
-
-        d3.select(tooltipDivRef.current)
-          .style("left", left + "px")
-          .style("top", top + "px");
-
-        d3.select(".x.axis .tick:nth-of-type(" + (d.x + 1) + ") text").classed("selected", true);
-        d3.select(".y.axis .tick:nth-of-type(" + (d.y + 1) + ") text").classed("selected", true);
-        d3.select(".x.axis .tick:nth-of-type(" + (d.x + 1) + ") line").classed("selected", true);
-        d3.select(".y.axis .tick:nth-of-type(" + (d.y + 1) + ") line").classed("selected", true);
-      })
-      .on("mouseout", function () {
-        d3.selectAll("rect").classed("selected", false);
-        d3.select(tooltipDivRef.current).style("display", "none");
-        d3.selectAll(".axis .tick text").classed("selected", false);
-        d3.selectAll(".axis .tick line").classed("selected", false);
-      })
-      .on("click", function (event) {
-        // Open scatter plot tab on click with the specified features as X/Y axes.
-        const d = event.target.__data__;
-        if (!d) {
-          return;
-        }
-        props.openScatterPlotTab(sortedSelectedFeatures[d.x], sortedSelectedFeatures[d.y]);
-      });
+    setupMouseInteraction(
+      plotDivRef.current,
+      tooltipDivRef.current,
+      x,
+      y,
+      sortedSelectedFeatures,
+      dataset,
+      props.openScatterPlotTab,
+      config
+    );
 
     setIsRendering(false);
   };
