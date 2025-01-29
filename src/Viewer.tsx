@@ -79,7 +79,14 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { AnnotationTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import {
+  AnnotationTab,
+  CorrelationPlotTab,
+  FeatureThresholdsTab,
+  PlotTab,
+  ScatterPlotTab,
+  SettingsTab,
+} from "./components/Tabs";
 import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
@@ -418,6 +425,14 @@ function Viewer(): ReactElement {
       }
     },
     [featureThresholds, config.keepRangeBetweenDatasets]
+  );
+
+  const openScatterPlotTab = useCallback(
+    (xAxis: string, yAxis: string) => {
+      updateConfig({ openTab: TabType.SCATTER_PLOT });
+      updateScatterPlotConfig({ xAxis, yAxis });
+    },
+    [updateConfig, updateScatterPlotConfig]
   );
 
   // DATASET LOADING ///////////////////////////////////////////////////////
@@ -892,7 +907,7 @@ function Viewer(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
-  const tabItems = [
+  const allTabItems = [
     {
       label: "Track plot",
       key: TabType.TRACK_PLOT,
@@ -940,6 +955,16 @@ function Viewer(): ReactElement {
       ),
     },
     {
+      label: "Correlation plot",
+      key: TabType.CORRELATION_PLOT,
+      visible: INTERNAL_BUILD,
+      children: (
+        <div className={styles.tabContent}>
+          <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
+        </div>
+      ),
+    },
+    {
       label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
       key: TabType.FILTERS,
       children: (
@@ -950,6 +975,23 @@ function Viewer(): ReactElement {
             dataset={dataset}
             disabled={disableUi}
             categoricalPalette={categoricalPalette}
+          />
+        </div>
+      ),
+    },
+    {
+      label: "Annotations",
+      key: TabType.ANNOTATION,
+      visible: INTERNAL_BUILD,
+      children: (
+        <div className={styles.tabContent}>
+          <AnnotationTab
+            annotationState={annotationState}
+            setTrackAndFrame={(track, frame) => {
+              findTrack(track, false);
+              setFrameAndRender(frame);
+            }}
+            dataset={dataset}
           />
         </div>
       ),
@@ -971,25 +1013,7 @@ function Viewer(): ReactElement {
       ),
     },
   ];
-
-  if (INTERNAL_BUILD) {
-    tabItems.push({
-      label: "Annotations",
-      key: TabType.ANNOTATION,
-      children: (
-        <div className={styles.tabContent}>
-          <AnnotationTab
-            annotationState={annotationState}
-            setTrackAndFrame={(track, frame) => {
-              findTrack(track, false);
-              setFrameAndRender(frame);
-            }}
-            dataset={dataset}
-          />
-        </div>
-      ),
-    });
-  }
+  const tabItems = allTabItems.filter((item) => item.visible !== false);
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {
