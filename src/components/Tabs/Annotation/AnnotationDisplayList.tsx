@@ -1,5 +1,5 @@
-import { Collapse } from "antd";
-import React, { ReactElement, useContext, useEffect, useMemo, useRef } from "react";
+import { Checkbox, Collapse } from "antd";
+import React, { ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { TagIconSVG } from "../../../assets";
@@ -44,11 +44,19 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const theme = useContext(AppThemeContext);
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
+  const [scrollToTrackRow, setScrollToTrackRow] = useState(true);
   const trackToLength = useRef<Record<string, number>>({});
+  const selectedTrackRowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     trackToLength.current = {};
   }, [props.dataset]);
+
+  useEffect(() => {
+    if (selectedTrackRowRef.current && scrollToTrackRow) {
+      selectedTrackRowRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [props.selectedTrack, scrollToTrackRow]);
 
   // Building the track is an expensive operation (takes O(N) for each track)
   // so cache the length of all tracks in the dataset.
@@ -103,18 +111,18 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
         {trackIdsSorted.map((trackId) => {
           const ids = trackToIds[trackId.toString()];
           const trackLength = getTrackLength(trackId);
+          const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
             <Collapse.Panel
               header={
                 <p>
-                  <span style={{ fontWeight: props.selectedTrack?.trackId === trackId ? "600" : "400" }}>
-                    Track {trackId}{" "}
-                  </span>
+                  <span style={{ fontWeight: isSelectedTrack ? "600" : "400" }}>Track {trackId} </span>
                   <span style={{ color: theme.color.text.hint }}>
                     ({ids.length}/{trackLength})
                   </span>
                 </p>
               }
+              ref={isSelectedTrack ? selectedTrackRowRef : undefined}
               key={trackId}
             >
               <AnnotationDisplayTable
@@ -134,8 +142,20 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   return (
     <FlexColumn style={{ width: "100%", height: "100%" }}>
-      <p style={{ fontSize: theme.font.size.label }}>{trackIdsSorted.length} track(s) selected</p>
-      <div style={{ position: "relative" }}>
+      <FlexRowAlignCenter style={{ justifyContent: "space-between" }}>
+        <p style={{ fontSize: theme.font.size.label, marginTop: 0, marginBottom: "5px" }}>
+          {trackIdsSorted.length} track(s) selected
+        </p>
+        <Checkbox
+          checked={scrollToTrackRow}
+          onChange={(e) => {
+            setScrollToTrackRow(e.target.checked);
+          }}
+        >
+          Auto-scroll to track
+        </Checkbox>
+      </FlexRowAlignCenter>
+      <div style={{ position: "relative", border: "1px solid var(--color-borders)" }}>
         <div
           style={{ maxHeight: "400px", height: "100%", overflowY: "scroll" }}
           ref={scrollRef}
