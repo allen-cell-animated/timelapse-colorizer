@@ -157,7 +157,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           Auto-scroll to track
         </Checkbox>
       </FlexRowAlignCenter>
-      <div style={{ position: "relative", border: "1px solid var(--color-borders)" }}>
+      <div style={{ position: "relative" }}>
         <div
           style={{ maxHeight: "400px", height: "100%", overflowY: "scroll" }}
           ref={scrollRef}
