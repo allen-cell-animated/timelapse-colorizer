@@ -43,10 +43,11 @@ const StyledCollapse = styled(Collapse)`
 
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
-  const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
-  const [scrollToTrackRow, setScrollToTrackRow] = useState(true);
   const trackToLength = useRef<Record<string, number>>({});
+
+  const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
+  const [allowScrollToTrackRow, setAllowScrollToTrackRow] = useState(true);
   const selectedTrackRowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,13 +55,14 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   }, [props.dataset]);
 
   useEffect(() => {
-    if (selectedTrackRowRef.current && scrollToTrackRow) {
+    if (selectedTrackRowRef.current && allowScrollToTrackRow) {
       selectedTrackRowRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [props.selectedTrack, scrollToTrackRow]);
+  }, [props.selectedTrack, allowScrollToTrackRow]);
 
-  // Building the track is an expensive operation (takes O(N) for each track)
-  // so cache the length of all tracks in the dataset.
+  // Building the track is an expensive operation (takes O(N) where N is the
+  // size of the dataset for each track), so cache the length of all tracks in
+  // the dataset.
   const getTrackLength = (trackId: number): number => {
     if (trackToLength.current[trackId] !== undefined) {
       return trackToLength.current[trackId];
@@ -99,7 +101,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     // Show placeholder if there are no elements
     listContents = (
       // Padding here keeps the icon aligned with the table view
-      <FlexRowAlignCenter style={{ width: "100% ", height: "100px", paddingRight: "24px" }}>
+      <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
         <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: theme.color.text.disabled }}>
           <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
           <p>No annotated IDs</p>
@@ -149,20 +151,16 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           {trackIdsSorted.length} track(s) selected
         </p>
         <Checkbox
-          checked={scrollToTrackRow}
+          checked={allowScrollToTrackRow}
           onChange={(e) => {
-            setScrollToTrackRow(e.target.checked);
+            setAllowScrollToTrackRow(e.target.checked);
           }}
         >
           Auto-scroll to track
         </Checkbox>
       </FlexRowAlignCenter>
       <div style={{ position: "relative" }}>
-        <div
-          style={{ maxHeight: "400px", height: "100%", overflowY: "scroll" }}
-          ref={scrollRef}
-          onScroll={onScrollHandler}
-        >
+        <div style={{ height: "400px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
           {listContents}
         </div>
         <ScrollShadowContainer style={scrollShadowStyle} />
