@@ -3,7 +3,7 @@ import { Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useContext, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
 
-import { Dataset } from "../../../colorizer";
+import { Dataset, Track } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
@@ -29,6 +29,7 @@ const enum AnnotationViewType {
 type AnnotationTabProps = {
   annotationState: AnnotationState;
   setTrackAndFrame: (track: number, frame: number) => void;
+  selectedTrack: Track | null;
   dataset: Dataset | null;
 };
 
@@ -211,6 +212,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickDeleteObject={onClickDeleteObject}
             dataset={props.dataset}
             ids={tableIds}
+            selectedTrack={props.selectedTrack}
           ></AnnotationDisplayList>
         </div>
       </LoadingSpinner>

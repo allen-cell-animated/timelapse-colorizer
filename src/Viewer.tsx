@@ -995,6 +995,7 @@ function Viewer(): ReactElement {
               setFrameAndRender(frame);
             }}
             dataset={dataset}
+            selectedTrack={selectedTrack}
           />
         </div>
       ),

@@ -3,7 +3,7 @@ import React, { ReactElement, useContext, useEffect, useMemo, useRef } from "rea
 import styled from "styled-components";
 
 import { TagIconSVG } from "../../../assets";
-import { Dataset } from "../../../colorizer";
+import { Dataset, Track } from "../../../colorizer";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
 
 import { AppThemeContext } from "../../AppStyle";
@@ -14,6 +14,7 @@ type AnnotationDisplayListProps = {
   ids: number[];
   onClickObjectRow: (record: TableDataType) => void;
   onClickDeleteObject: (record: TableDataType) => void;
+  selectedTrack: Track | null;
 };
 
 const StyledCollapse = styled(Collapse)`
@@ -104,7 +105,9 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             <Collapse.Panel
               header={
                 <p>
-                  Track {trackId}{" "}
+                  <span style={{ fontWeight: props.selectedTrack?.trackId === trackId ? "600" : "400" }}>
+                    Track {trackId}{" "}
+                  </span>
                   <span style={{ color: theme.color.text.hint }}>
                     ({ids.length}/{trackLength})
                   </span>
