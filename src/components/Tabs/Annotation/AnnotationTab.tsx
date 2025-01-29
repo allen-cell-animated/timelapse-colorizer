@@ -216,7 +216,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           ></AnnotationDisplayList>
         </div>
       </LoadingSpinner>
-      {tableIds.length > 0 && <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>}
+      {tableIds.length > 0 && (
+        <p style={{ color: theme.color.text.hint, margin: 0 }}>Click a row to jump to that object.</p>
+      )}
     </FlexColumnAlignCenter>
   );
 }

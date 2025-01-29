@@ -4,6 +4,7 @@ import styled from "styled-components";
 
 import { TagIconSVG } from "../../../assets";
 import { Dataset, Track } from "../../../colorizer";
+import { ScrollShadowContainer, useScrollShadow } from "../../../colorizer/utils/react_utils";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
 
 import { AppThemeContext } from "../../AppStyle";
@@ -41,6 +42,7 @@ const StyledCollapse = styled(Collapse)`
 
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
+  const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
   const trackToLength = useRef<Record<string, number>>({});
 
@@ -131,9 +133,18 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   }
 
   return (
-    <FlexColumn style={{ width: "100%" }}>
+    <FlexColumn style={{ width: "100%", height: "100%" }}>
       <p style={{ fontSize: theme.font.size.label }}>{trackIdsSorted.length} track(s) selected</p>
-      {listContents}
+      <div style={{ position: "relative" }}>
+        <div
+          style={{ maxHeight: "400px", height: "100%", overflowY: "scroll" }}
+          ref={scrollRef}
+          onScroll={onScrollHandler}
+        >
+          {listContents}
+        </div>
+        <ScrollShadowContainer style={scrollShadowStyle} />
+      </div>
     </FlexColumn>
   );
 }
