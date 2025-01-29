@@ -5,6 +5,7 @@ import { Color } from "three";
 
 import { Dataset } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
@@ -153,7 +154,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         {/* View mode selection */}
         <label>
           <VisuallyHidden>View mode</VisuallyHidden>
-          <Radio.Group
+          <StyledRadioGroup
             style={{ display: "flex", flexDirection: "row" }}
             value={viewType}
             onChange={(e) => startTransition(() => setViewType(e.target.value))}
@@ -170,7 +171,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
                 <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>
-          </Radio.Group>
+          </StyledRadioGroup>
         </label>
       </FlexRow>
 

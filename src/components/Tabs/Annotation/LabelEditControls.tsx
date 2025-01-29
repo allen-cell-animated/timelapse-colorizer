@@ -6,6 +6,7 @@ import { Color, ColorRepresentation } from "three";
 
 import { TagAddIconSVG } from "../../../assets";
 import { AnnotationSelectionMode } from "../../../colorizer";
+import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
@@ -163,7 +164,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
 
       <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
         <span style={{ fontSize: theme.font.size.label }}>Apply to </span>
-        <Radio.Group
+        <StyledRadioGroup
           style={{ display: "flex", flexDirection: "row" }}
           value={props.selectionMode}
           onChange={(e) => props.setSelectionMode(e.target.value)}
@@ -174,7 +175,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
           <Tooltip trigger={["hover", "focus"]} title="Apply to entire track" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
           </Tooltip>
-        </Radio.Group>
+        </StyledRadioGroup>
       </label>
     </FlexRow>
   );
