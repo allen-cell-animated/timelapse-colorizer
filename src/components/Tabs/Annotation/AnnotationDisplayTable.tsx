@@ -10,6 +10,8 @@ import { FlexColumnAlignCenter, VisuallyHidden } from "../../../styles/utils";
 import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
 
+const SELECTED_ROW_CLASSNAME = "selected-row";
+
 export type TableDataType = {
   key: string;
   id: number;
@@ -26,11 +28,18 @@ const StyledAntTable = styled(Table)`
     padding: 4px 8px;
   }
 
-  &&& :not(.ant-table-header) > .rc-virtual-list .ant-table-cell:not(:has(.ant-btn)) {
-    /* Correction for a bug in virtual lists where text elements were not
-     * centered vertically */
-    display: flex;
-    align-items: center;
+  &&& :not(.ant-table-header) > .rc-virtual-list {
+    & .ant-table-row.${SELECTED_ROW_CLASSNAME} {
+      font-weight: bold;
+      background-color: var(--color-background-alt);
+    }
+
+    & .ant-table-cell:not(:has(.ant-btn)) {
+      /* Correction for a bug in virtual lists where text elements were not
+      * centered vertically */
+      display: flex;
+      align-items: center;
+    }
   }
 `;
 
@@ -41,11 +50,13 @@ type AnnotationTableProps = {
   ids: number[];
   height?: number | string;
   hideTrackColumn?: boolean;
+  selectedId?: number;
 };
 
 const defaultProps = {
   height: "100%",
   hideTrackColumn: false,
+  selectedId: -1,
 };
 
 /**
@@ -117,6 +128,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
 
   return (
     <StyledAntTable
+      rowClassName={(record) => (record.id === props.selectedId ? SELECTED_ROW_CLASSNAME : "")}
       dataSource={tableData}
       columns={tableColumns}
       size="small"

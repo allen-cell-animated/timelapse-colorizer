@@ -996,6 +996,7 @@ function Viewer(): ReactElement {
             }}
             dataset={dataset}
             selectedTrack={selectedTrack}
+            time={currentFrame}
           />
         </div>
       ),

@@ -16,6 +16,7 @@ type AnnotationDisplayListProps = {
   onClickObjectRow: (record: TableDataType) => void;
   onClickDeleteObject: (record: TableDataType) => void;
   selectedTrack: Track | null;
+  selectedId?: number;
 };
 
 const StyledCollapse = styled(Collapse)`
@@ -127,6 +128,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             >
               <AnnotationDisplayTable
                 ids={ids}
+                selectedId={props.selectedId}
                 dataset={props.dataset}
                 onClickObjectRow={props.onClickObjectRow}
                 onClickDeleteObject={props.onClickDeleteObject}
