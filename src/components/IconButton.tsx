@@ -8,7 +8,7 @@ type IconButtonProps = {
   onClick?: React.MouseEventHandler<HTMLElement>;
   disabled?: boolean;
   style?: React.CSSProperties;
-  type?: "outlined" | "primary" | "link" | "text";
+  type?: "outlined" | "primary" | "link" | "text" | "hint";
   sizePx?: number;
   // Adds compatibility with Ant Tooltip
   onMouseEnter?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
@@ -71,6 +71,7 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"]; $sizePx?: 
           }
         `;
       case "text":
+      case "hint":
         return css`
           border: 1px solid transparent;
           background-color: transparent;
@@ -89,17 +90,35 @@ const StyledButton = styled(Button)<{ $type: IconButtonProps["type"]; $sizePx?: 
     }
   }}
 
-  &:not(:disabled):hover {
-    border-color: var(--color-button-hover);
-    color: var(--color-text-button);
-    fill: var(--color-text-button);
-  }
+  ${(props) => {
+    if (props.$type === "hint") {
+      return css`
+        &&&:not(:disabled):hover {
+          color: var(--color-button-hover);
+          background-color: transparent;
+        }
+        &&&:not(:disabled):active {
+          color: var(--color-button-hover);
+          background-color: transparent;
+          border-color: var(--color-button);
+        }
+      `;
+    } else {
+      return css`
+        &:not(:disabled):hover {
+          border-color: var(--color-button-hover);
+          color: var(--color-text-button);
+          fill: var(--color-text-button);
+        }
 
-  &:not(:disabled):active {
-    border-color: var(--color-button);
-  }
-
-  & span {
+        &:not(:disabled):active {
+          border-color: var(--color-button);
+        }
+      `;
+    }
+  }}
+  
+    & span {
     display: flex;
     justify-content: center;
     vertical-align: middle;

@@ -97,7 +97,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       render: (_, record) => (
         <div style={{ display: "flex", justifyContent: "right" }}>
           <IconButton
-            type="link"
+            type="hint"
             sizePx={20}
             onClick={(event) => {
               // Rows have their own behavior on click (jumping to a timestamp),
