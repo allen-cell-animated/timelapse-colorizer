@@ -92,7 +92,6 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   if (props.ids.length === 0) {
     // Show placeholder if there are no elements
     listContents = (
-      // Padding here keeps the icon aligned with the table view
       <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
         <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: theme.color.text.disabled }}>
           <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
@@ -111,7 +110,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           const trackLength = getTrackLength(trackId);
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
-            <li>
+            <li key={trackId}>
               <DropdownItem
                 key={""}
                 onClick={() => {
@@ -149,6 +148,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       >
         <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks labeled"}</b>
       </p>
+      {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
         <FlexColumn style={{ height: "100%", width: "40%" }}>
           <div style={{ position: "relative" }}>
@@ -158,6 +158,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             <ScrollShadowContainer style={scrollShadowStyle} />
           </div>
         </FlexColumn>
+        {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}
         <div
           style={{
             width: "calc(60% + 5px)",
@@ -186,6 +187,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             dataset={props.dataset}
             ids={selectedTrackId ? trackToIds.get(selectedTrackId) ?? [] : []}
             height={412}
+            selectedId={props.selectedId}
+            hideTrackColumn={true}
           ></AnnotationDisplayTable>
         </div>
       </ListLayoutContainer>

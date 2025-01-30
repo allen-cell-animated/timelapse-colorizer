@@ -30,8 +30,13 @@ const StyledAntTable = styled(Table)`
 
   &&& :not(.ant-table-header) > .rc-virtual-list {
     & .ant-table-row.${SELECTED_ROW_CLASSNAME} {
-      font-weight: bold;
-      background-color: var(--color-background-alt);
+      background-color: var(--color-dropdown-selected);
+      color: var(--color-button);
+
+      & > .ant-table-cell {
+        /* Prevent hovering from changing background color */
+        background-color: transparent;
+      }
     }
 
     & .ant-table-cell:not(:has(.ant-btn)) {
