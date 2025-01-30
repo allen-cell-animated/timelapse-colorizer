@@ -146,7 +146,6 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       size="small"
       pagination={false}
       virtual={true}
-      tableLayout="auto"
       scroll={{ y: props.height }}
       // TODO: Rows aren't actually buttons, which means that they are not
       // keyboard accessible. Either find a way to make them tab indexable

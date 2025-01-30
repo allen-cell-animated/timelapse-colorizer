@@ -991,7 +991,7 @@ function Viewer(): ReactElement {
           <AnnotationTab
             annotationState={annotationState}
             setTrackAndFrame={(track, frame) => {
-              let isPlaying = timeControls.isPlaying();
+              const isPlaying = timeControls.isPlaying();
               if (isPlaying) {
                 timeControls.pause();
               }

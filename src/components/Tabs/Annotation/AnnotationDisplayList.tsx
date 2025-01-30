@@ -23,16 +23,9 @@ type AnnotationDisplayListProps = {
 const ListLayoutContainer = styled.div`
   display: flex;
   flex-direction: row;
-  /* flex-wrap: nowrap; */
   width: 100%;
   height: 100%;
   gap: 10px;
-
-  & > div {
-    /* width: 50%; */
-    height: 100%;
-    flex-grow: 2;
-  }
 `;
 
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
@@ -47,9 +40,10 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     trackToLength.current = {};
   }, [props.dataset]);
 
-  // Building the track is an expensive operation (takes O(N) where N is the
-  // size of the dataset for each track), so cache the length of all tracks in
-  // the dataset.
+  // Building a track is an expensive operation (takes O(N) where N is the
+  // size of the dataset), so cache the length of tracks.
+  // TODO: This could be optimized by having the dataset perform this once
+  // and save the results in a lookup table.
   const getTrackLength = (trackId: number): number => {
     if (trackToLength.current[trackId] !== undefined) {
       return trackToLength.current[trackId];
@@ -80,8 +74,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     return map;
   }, [props.dataset, props.ids]);
 
-  // Track IDs, in order of appearance in the ID list. The newest track ID will
-  // be added to the bottom of the list.
+  // Track IDs, in order of appearance in the ID list. The track that was last
+  // added will be at the top of the list.
   const trackIds = useMemo(() => {
     return Array.from(trackToIds.keys())
       .map((trackId) => parseInt(trackId, 10))
@@ -89,7 +83,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   }, [trackToIds]);
 
   let listContents;
-  if (props.ids.length === 0) {
+  if (props.ids.length === 0 || props.dataset === null) {
     // Show placeholder if there are no elements
     listContents = (
       <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
@@ -103,16 +97,13 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     listContents = (
       <ul style={{ marginTop: 0 }}>
         {trackIds.map((trackId) => {
-          const ids = trackToIds.get(trackId.toString()) ?? [];
-          if (!props.dataset || ids.length === 0) {
-            return null;
-          }
+          const ids = trackToIds.get(trackId.toString())!;
           const trackLength = getTrackLength(trackId);
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
             <li key={trackId}>
               <DropdownItem
-                key={""}
+                key={trackId}
                 onClick={() => {
                   props.onClickTrack(trackId);
                 }}
