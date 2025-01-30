@@ -28,6 +28,7 @@ const enum AnnotationViewType {
 type AnnotationTabProps = {
   annotationState: AnnotationState;
   setTrackAndFrame: (track: number, frame: number) => void;
+  setTrack: (track: number) => void;
   selectedTrack: Track | null;
   dataset: Dataset | null;
   time: number;
@@ -213,6 +214,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <AnnotationDisplayList
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
+            onClickTrack={props.setTrack}
             dataset={props.dataset}
             ids={tableIds}
             selectedTrack={props.selectedTrack}

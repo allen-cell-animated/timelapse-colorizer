@@ -994,6 +994,7 @@ function Viewer(): ReactElement {
               findTrack(track, false);
               setFrameAndRender(frame);
             }}
+            setTrack={(track) => findTrack(track, false)}
             dataset={dataset}
             selectedTrack={selectedTrack}
             time={currentFrame}
