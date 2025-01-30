@@ -9,6 +9,7 @@ type IconButtonProps = {
   disabled?: boolean;
   style?: React.CSSProperties;
   type?: "outlined" | "primary" | "link" | "text";
+  sizePx?: number;
   // Adds compatibility with Ant Tooltip
   onMouseEnter?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   onMouseLeave?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
@@ -19,7 +20,17 @@ type IconButtonProps = {
 };
 
 // Button styling varies based on the type (outlined vs. primary)
-const StyledButton = styled(Button)<{ $type: IconButtonProps["type"] }>`
+const StyledButton = styled(Button)<{ $type: IconButtonProps["type"]; $sizePx?: number }>`
+  ${(props) => {
+    // Override default button size if a custom size is provided
+    if (props.$sizePx) {
+      return css`
+        --button-height-small: ${props.$sizePx}px;
+      `;
+    }
+    return;
+  }}
+
   height: var(--button-height-small);
   width: var(--button-height-small);
   min-width: var(--button-height-small);
@@ -119,6 +130,7 @@ export default function IconButton(props: PropsWithChildren<IconButtonProps>): R
       <StyledButton
         type="primary"
         $type={props.type || "primary"}
+        $sizePx={props.sizePx}
         disabled={props.disabled}
         onClick={props.onClick}
         style={props.style}

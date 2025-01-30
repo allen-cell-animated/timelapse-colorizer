@@ -165,14 +165,14 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onChange={(e) => startTransition(() => setViewType(e.target.value))}
           >
             <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
-              <Radio.Button value={AnnotationViewType.TABLE} style={{ padding: "0 8px" }}>
-                <TableOutlined />
+              <Radio.Button value={AnnotationViewType.TABLE} style={{ padding: "1px 6px 0 7px" }}>
+                <TableOutlined style={{ fontSize: 18 }} />
                 <VisuallyHidden>Table view {viewType === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>
             <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
-              <Radio.Button value={AnnotationViewType.LIST} style={{ padding: "0 8px" }}>
-                <MenuOutlined />
+              <Radio.Button value={AnnotationViewType.LIST} style={{ padding: "1px 7px 0 6px" }}>
+                <MenuOutlined style={{ fontSize: 18 }} />
                 <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>

@@ -72,40 +72,47 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       title: "Object ID",
       dataIndex: "id",
       key: "id",
+      width: "30%",
       sorter: (a, b) => a.id - b.id,
     },
     {
       title: "Track ID",
       dataIndex: "track",
       key: "track",
+      width: "30%",
       sorter: (a, b) => a.track - b.track,
     },
     {
       title: "Time",
       dataIndex: "time",
       key: "time",
+      width: "30%",
       sorter: (a, b) => a.time - b.time,
     },
     // Column that contains a remove button for the ID.
     {
       title: "",
       key: "action",
+      width: "10%",
       render: (_, record) => (
-        <IconButton
-          type="text"
-          onClick={(event) => {
-            // Rows have their own behavior on click (jumping to a timestamp),
-            // so we need to stop event propagation so that the row click event
-            // doesn't fire.
-            event.stopPropagation();
-            props.onClickDeleteObject(record);
-          }}
-        >
-          <CloseOutlined />
-          <VisuallyHidden>
-            Remove ID {record.id} (track {record.track})
-          </VisuallyHidden>
-        </IconButton>
+        <div style={{ display: "flex", justifyContent: "right" }}>
+          <IconButton
+            type="link"
+            sizePx={20}
+            onClick={(event) => {
+              // Rows have their own behavior on click (jumping to a timestamp),
+              // so we need to stop event propagation so that the row click event
+              // doesn't fire.
+              event.stopPropagation();
+              props.onClickDeleteObject(record);
+            }}
+          >
+            <CloseOutlined style={{ width: "12px" }} />
+            <VisuallyHidden>
+              Remove ID {record.id} (track {record.track})
+            </VisuallyHidden>
+          </IconButton>
+        </div>
       ),
     },
   ];
@@ -134,6 +141,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       size="small"
       pagination={false}
       virtual={true}
+      tableLayout="auto"
       scroll={{ y: props.height }}
       // TODO: Rows aren't actually buttons, which means that they are not
       // keyboard accessible. Either find a way to make them tab indexable
