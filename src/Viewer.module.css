@@ -92,7 +92,10 @@
   flex-basis: 300px;
   min-width: 300px;
 
-  --height: 550px;
+  /* Magic number; aligns side view with viewport on 1920x1080
+   * monitors.
+   */
+  --height: 606px;
   height: var(--height);
 }
 

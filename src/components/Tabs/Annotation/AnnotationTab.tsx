@@ -1,6 +1,6 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Radio, Tooltip } from "antd";
-import React, { ReactElement, useCallback, useContext, useMemo, useState, useTransition } from "react";
+import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
 
 import { Dataset, Track } from "../../../colorizer";
@@ -11,7 +11,6 @@ import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
-import { AppThemeContext } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
@@ -35,7 +34,6 @@ type AnnotationTabProps = {
 };
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
-  const theme = useContext(AppThemeContext);
   const {
     isAnnotationModeEnabled,
     setIsAnnotationModeEnabled,
@@ -195,7 +193,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickDeleteObject={onClickDeleteObject}
             dataset={props.dataset}
             ids={tableIds}
-            height={395}
+            height={480}
             selectedId={selectedId}
           />
         </div>
@@ -222,9 +220,6 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           ></AnnotationDisplayList>
         </div>
       </LoadingSpinner>
-      {tableIds.length > 0 && (
-        <p style={{ color: theme.color.text.hint, margin: 0 }}>Click a row to jump to that object.</p>
-      )}
     </FlexColumnAlignCenter>
   );
 }

@@ -160,7 +160,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
         </Checkbox>
       </FlexRowAlignCenter>
       <div style={{ position: "relative" }}>
-        <div style={{ height: "400px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
+        <div style={{ height: "490px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
           {listContents}
         </div>
         <ScrollShadowContainer style={scrollShadowStyle} />
