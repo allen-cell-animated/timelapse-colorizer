@@ -1,5 +1,6 @@
 import React, { ReactElement, useContext, useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
+import { Color } from "three";
 
 import { TagIconSVG } from "../../../assets";
 import { Dataset, Track } from "../../../colorizer";
@@ -9,6 +10,7 @@ import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../
 import { AppThemeContext } from "../../AppStyle";
 import DropdownItem from "../../Dropdowns/DropdownItem";
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
@@ -18,6 +20,7 @@ type AnnotationDisplayListProps = {
   onClickDeleteObject: (record: TableDataType) => void;
   selectedTrack: Track | null;
   selectedId?: number;
+  labelColor: Color;
 };
 
 const ListLayoutContainer = styled.div`
@@ -109,12 +112,22 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 }}
                 selected={isSelectedTrack}
               >
-                <p style={{ margin: 0 }}>
-                  {trackId}{" "}
-                  <span style={{ color: theme.color.text.hint }}>
-                    ({ids.length}/{trackLength})
-                  </span>
-                </p>
+                <FlexRowAlignCenter $gap={5}>
+                  <AnnotationTrackThumbnail
+                    widthPx={75}
+                    heightPx={14}
+                    ids={ids}
+                    track={props.dataset?.buildTrack(trackId) ?? null}
+                    dataset={props.dataset}
+                    color={props.labelColor}
+                  ></AnnotationTrackThumbnail>
+                  <p style={{ margin: 0 }}>
+                    {trackId}{" "}
+                    <span style={{ color: theme.color.text.hint }}>
+                      ({ids.length}/{trackLength})
+                    </span>
+                  </p>
+                </FlexRowAlignCenter>
               </DropdownItem>
             </li>
           );
@@ -160,18 +173,27 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             flexGrow: 2,
           }}
         >
-          <p style={{ fontSize: theme.font.size.label, marginTop: 0, marginBottom: "5px" }}>
-            {selectedTrackId ? (
-              <span>
-                Track {selectedTrackId}{" "}
-                <span style={{ color: theme.color.text.hint }}>
-                  ({selectedTrackIds.length}/{selectedTrackLength})
+          <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
+            <AnnotationTrackThumbnail
+              ids={selectedTrackIds}
+              track={props.selectedTrack}
+              dataset={props.dataset}
+              color={props.labelColor}
+            ></AnnotationTrackThumbnail>
+
+            <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
+              {selectedTrackId ? (
+                <span>
+                  Track {selectedTrackId}{" "}
+                  <span style={{ color: theme.color.text.hint }}>
+                    ({selectedTrackIds.length}/{selectedTrackLength})
+                  </span>
                 </span>
-              </span>
-            ) : (
-              `No track selected`
-            )}
-          </p>
+              ) : (
+                `No track selected`
+              )}
+            </p>
+          </FlexRowAlignCenter>
           <AnnotationDisplayTable
             onClickObjectRow={props.onClickObjectRow}
             onClickDeleteObject={props.onClickDeleteObject}

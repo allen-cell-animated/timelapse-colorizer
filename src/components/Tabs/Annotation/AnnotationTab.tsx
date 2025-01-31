@@ -219,6 +219,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             ids={tableIds}
             selectedTrack={props.selectedTrack}
             selectedId={selectedId}
+            labelColor={selectedLabel?.color}
           ></AnnotationDisplayList>
         </div>
       </LoadingSpinner>
