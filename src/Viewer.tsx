@@ -1004,7 +1004,7 @@ function Viewer(): ReactElement {
             setTrack={(track) => findTrack(track, false)}
             dataset={dataset}
             selectedTrack={selectedTrack}
-            time={currentFrame}
+            frame={currentFrame}
           />
         </div>
       ),

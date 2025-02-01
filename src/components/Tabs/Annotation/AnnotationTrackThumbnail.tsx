@@ -7,6 +7,7 @@ import { getIntervals } from "../../../colorizer/utils/data_utils";
 import { AppThemeContext } from "../../AppStyle";
 
 type AnnotationTrackThumbnailProps = {
+  frame?: number;
   ids: number[];
   track: Track | null;
   dataset: Dataset | null;
@@ -43,44 +44,50 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       return;
     }
 
-    const idsAsTimes = ids.map((id) => dataset.getTime(id));
+    const selectedTimes = ids.map((id) => dataset.getTime(id));
     const minTime = track.times[0];
     const maxTime = track.times[track.times.length - 1];
     const duration = maxTime - minTime + 1;
 
     // The indices of subregions of the times array that are selected
-    const intervals = getIntervals(idsAsTimes);
+    const selectedIntervals = getIntervals(selectedTimes);
     const indexToCanvasScale = props.widthPx / duration;
 
     // Check for time intervals where there are no objects present for the track
     const missingIntervals = getIntervals(track.getMissingTimes());
 
+    const drawInterval = (interval: [number, number], color: string) => {
+      const intervalMin = interval[0] - minTime;
+      const intervalMax = interval[1] - minTime;
+      ctx.fillStyle = color;
+      ctx.fillRect(
+        intervalMin * indexToCanvasScale,
+        0,
+        (intervalMax - intervalMin + 1) * indexToCanvasScale,
+        props.heightPx
+      );
+    };
+
     // Draw missing time intervals on the canvas
     for (const interval of missingIntervals) {
-      const intervalMin = interval[0] - minTime;
-      const intervalMax = interval[1] - minTime;
-      ctx.fillStyle = theme.color.layout.borders;
-      ctx.fillRect(
-        intervalMin * indexToCanvasScale,
-        0,
-        (intervalMax - intervalMin + 1) * indexToCanvasScale,
-        props.heightPx
-      );
+      drawInterval(interval, theme.color.layout.borders);
+    }
+    // Draw selected intervals on the canvas
+    for (const interval of selectedIntervals) {
+      drawInterval(interval, "#" + props.color.getHexString());
     }
 
-    // Draw selected intervals on the canvas
-    for (const interval of intervals) {
-      const intervalMin = interval[0] - minTime;
-      const intervalMax = interval[1] - minTime;
-      ctx.fillStyle = "#" + props.color.getHexString();
-      ctx.fillRect(
-        intervalMin * indexToCanvasScale,
-        0,
-        (intervalMax - intervalMin + 1) * indexToCanvasScale,
-        props.heightPx
-      );
+    // Draw the current time on the canvas
+    if (props.frame !== undefined && props.frame >= minTime && props.frame <= maxTime) {
+      const currentTimeNorm = (props.frame - minTime) * indexToCanvasScale;
+      ctx.strokeStyle = theme.color.text.primary;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(currentTimeNorm, 0);
+      ctx.lineTo(currentTimeNorm, props.heightPx);
+      ctx.stroke();
     }
-  }, [ids, track, props.widthPx, props.heightPx]);
+  }, [ids, track, props.frame, props.widthPx, props.heightPx]);
 
   return (
     <div

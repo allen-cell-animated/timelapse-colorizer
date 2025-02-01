@@ -20,6 +20,7 @@ type AnnotationDisplayListProps = {
   onClickDeleteObject: (record: TableDataType) => void;
   selectedTrack: Track | null;
   selectedId?: number;
+  frame: number;
   labelColor: Color;
 };
 
@@ -175,6 +176,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
         >
           <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
             <AnnotationTrackThumbnail
+              frame={props.frame}
               ids={selectedTrackIds}
               track={props.selectedTrack}
               dataset={props.dataset}

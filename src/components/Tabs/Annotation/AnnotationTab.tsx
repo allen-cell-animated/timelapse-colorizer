@@ -31,7 +31,7 @@ type AnnotationTabProps = {
   setTrack: (track: number) => void;
   selectedTrack: Track | null;
   dataset: Dataset | null;
-  time: number;
+  frame: number;
 };
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
@@ -54,8 +54,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
   const selectedId = useMemo(() => {
-    return props.selectedTrack?.getIdAtTime(props.time) ?? -1;
-  }, [props.time, props.selectedTrack]);
+    return props.selectedTrack?.getIdAtTime(props.frame) ?? -1;
+  }, [props.frame, props.selectedTrack]);
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -219,6 +219,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             ids={tableIds}
             selectedTrack={props.selectedTrack}
             selectedId={selectedId}
+            frame={props.frame}
             labelColor={selectedLabel?.color}
           ></AnnotationDisplayList>
         </div>
