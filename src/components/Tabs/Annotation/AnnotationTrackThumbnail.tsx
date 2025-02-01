@@ -80,7 +80,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
         props.heightPx
       );
     }
-  }, [ids, track]);
+  }, [ids, track, props.widthPx, props.heightPx]);
 
   return (
     <div
@@ -90,6 +90,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
         overflow: "hidden",
         width: "fit-content",
         height: `${props.heightPx}px`,
+        display: "flex",
       }}
     >
       <canvas ref={canvasRef} width={props.widthPx} height={props.heightPx}></canvas>

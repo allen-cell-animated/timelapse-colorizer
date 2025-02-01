@@ -34,26 +34,27 @@ const ListLayoutContainer = styled.div`
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
-  const trackToLength = useRef<Record<string, number>>({});
+  const cachedTracks = useRef<Map<string, Track | undefined>>(new Map());
   const selectedTrackId = props.selectedTrack?.trackId.toString();
 
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
   useEffect(() => {
-    trackToLength.current = {};
+    cachedTracks.current.clear();
   }, [props.dataset]);
 
   // Building a track is an expensive operation (takes O(N) where N is the
   // size of the dataset), so cache the length of tracks.
   // TODO: This could be optimized by having the dataset perform this once
   // and save the results in a lookup table.
-  const getTrackLength = (trackId: number): number => {
-    if (trackToLength.current[trackId] !== undefined) {
-      return trackToLength.current[trackId];
+  const getTrack = (trackId: number): Track | undefined => {
+    const cachedTrack = cachedTracks.current.get(trackId.toString());
+    if (cachedTrack !== undefined) {
+      return cachedTrack;
     } else {
       const track = props.dataset?.buildTrack(trackId);
-      trackToLength.current[trackId] = track?.ids.length ?? 0;
-      return track?.ids.length ?? 0;
+      cachedTracks.current.set(trackId.toString(), track);
+      return track;
     }
   };
 
@@ -100,8 +101,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     listContents = (
       <ul style={{ marginTop: 0 }}>
         {trackIds.map((trackId) => {
+          const track = getTrack(trackId);
           const ids = trackToIds.get(trackId.toString())!;
-          const trackLength = getTrackLength(trackId);
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
             <li key={trackId}>
@@ -117,14 +118,14 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                     widthPx={75}
                     heightPx={14}
                     ids={ids}
-                    track={props.dataset?.buildTrack(trackId) ?? null}
+                    track={track ?? null}
                     dataset={props.dataset}
                     color={props.labelColor}
                   ></AnnotationTrackThumbnail>
                   <p style={{ margin: 0 }}>
                     {trackId}{" "}
                     <span style={{ color: theme.color.text.hint }}>
-                      ({ids.length}/{trackLength})
+                      ({ids.length}/{track?.times.length})
                     </span>
                   </p>
                 </FlexRowAlignCenter>
@@ -136,7 +137,6 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     );
   }
 
-  const selectedTrackLength = getTrackLength(selectedTrackId ? parseInt(selectedTrackId, 10) : 0);
   const selectedTrackIds = trackToIds.get(selectedTrackId ?? "") ?? [];
 
   return (
@@ -186,7 +186,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 <span>
                   Track {selectedTrackId}{" "}
                   <span style={{ color: theme.color.text.hint }}>
-                    ({selectedTrackIds.length}/{selectedTrackLength})
+                    ({selectedTrackIds.length}/{props.selectedTrack?.times.length})
                   </span>
                 </span>
               ) : (
