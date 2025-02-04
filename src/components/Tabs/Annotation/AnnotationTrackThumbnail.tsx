@@ -23,7 +23,7 @@ const defaultProps = {
   widthPx: 150,
 };
 
-const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $theme: AppTheme }>`
+const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $interactive: boolean; $theme: AppTheme }>`
   position: relative;
   border-radius: 4px;
   border: 1px solid ${(props) => props.$theme.color.layout.borders};
@@ -31,6 +31,7 @@ const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $th
   width: ${(props) => props.$widthPx}px;
   height: ${(props) => props.$heightPx}px;
   display: flex;
+  cursor: ${(props) => (props.$interactive ? "pointer" : "auto")};
 
   & > canvas {
     position: absolute;
@@ -81,7 +82,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     const onMouseMove = (event: MouseEvent): void => setHoveredCanvasX(getXCoord(event));
     const onMouseLeave = (): void => setHoveredCanvasX(null);
     const onMouseClick = async (event: MouseEvent): Promise<void> => {
-      if (props.setFrame) {
+      if (props.setFrame && props.track) {
         const frame = xCoordToTime(getXCoord(event));
         setAwaitingFrame(frame);
         await props.setFrame(frame);
@@ -97,7 +98,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       timeCanvasRef.current?.removeEventListener("mouseleave", onMouseLeave);
       timeCanvasRef.current?.removeEventListener("click", onMouseClick);
     };
-  }, [props.setFrame, xCoordToTime]);
+  }, [props.setFrame, props.track, xCoordToTime]);
 
   // Update time canvas
   useEffect(() => {
@@ -170,7 +171,12 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   }, [ids, track, props.frame, props.widthPx, props.heightPx]);
 
   return (
-    <ThumbnailContainer $theme={theme} $heightPx={props.heightPx} $widthPx={props.widthPx}>
+    <ThumbnailContainer
+      $theme={theme}
+      $heightPx={props.heightPx}
+      $widthPx={props.widthPx}
+      $interactive={props.track !== null}
+    >
       <canvas ref={baseCanvasRef} width={props.widthPx} height={props.heightPx}></canvas>
       <canvas ref={timeCanvasRef} width={props.widthPx} height={props.heightPx}></canvas>
     </ThumbnailContainer>
