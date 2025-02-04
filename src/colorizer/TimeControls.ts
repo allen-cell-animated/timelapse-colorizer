@@ -78,8 +78,9 @@ export default class TimeControls {
       const timeElapsed = endTime - startTime;
       onNewFrameCallback();
 
-      if (!this.isPlaying()) {
-        // The timer was stopped while the frame was loading, so stop playback.
+      if (this.mostRecentPlayRequestId !== requestId || !this.isPlaying()) {
+        // The timer was stopped while the frame was loading or a different
+        // request was started, so stop playback.
         return;
       }
 
