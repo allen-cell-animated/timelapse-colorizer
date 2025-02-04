@@ -328,10 +328,17 @@ function Viewer(): ReactElement {
 
   const setFrame = useCallback(
     async (frame: number) => {
+      let isPlaying = timeControls.isPlaying();
+      if (isPlaying) {
+        timeControls.pause();
+      }
       await canv.setFrame(frame);
       setCurrentFrame(frame);
       setFrameInput(frame);
       canv.render();
+      if (isPlaying) {
+        timeControls.play();
+      }
     },
     [canv]
   );
@@ -991,16 +998,7 @@ function Viewer(): ReactElement {
           <AnnotationTab
             annotationState={annotationState}
             setTrack={(track) => findTrack(track, false)}
-            setFrame={async (frame) => {
-              const isPlaying = timeControls.isPlaying();
-              if (isPlaying) {
-                timeControls.pause();
-              }
-              await setFrameAndRender(frame);
-              if (isPlaying) {
-                timeControls.play();
-              }
-            }}
+            setFrame={setFrame}
             dataset={dataset}
             selectedTrack={selectedTrack}
             frame={currentFrame}

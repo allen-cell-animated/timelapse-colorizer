@@ -15,7 +15,7 @@ import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
   ids: number[];
-  setFrame: (frame: number) => void;
+  setFrame: (frame: number) => Promise<void>;
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
   onClickDeleteObject: (record: TableDataType) => void;

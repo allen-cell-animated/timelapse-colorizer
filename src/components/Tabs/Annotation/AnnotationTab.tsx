@@ -27,7 +27,7 @@ const enum AnnotationViewType {
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
-  setFrame: (frame: number) => void;
+  setFrame: (frame: number) => Promise<void>;
   setTrack: (track: number) => void;
   selectedTrack: Track | null;
   dataset: Dataset | null;

@@ -14,7 +14,7 @@ type AnnotationTrackThumbnailProps = {
   color: Color;
   heightPx?: number;
   widthPx?: number;
-  setFrame?: (frame: number) => void;
+  setFrame?: (frame: number) => Promise<void>;
   frame?: number;
 };
 
@@ -54,6 +54,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   const duration = maxTime - minTime + 1;
   const indexToCanvasScale = props.widthPx / duration;
 
+  // Add event listeners
   useEffect(() => {
     const onMouseMove = (event: MouseEvent) => {
       const canvas = timeCanvasRef.current;
@@ -67,10 +68,12 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     const onMouseLeave = () => {
       setHoveredCanvasX(null);
     };
-    const onMouseClick = (_event: MouseEvent) => {
+    const onMouseClick = async (_event: MouseEvent): Promise<void> => {
       if (props.setFrame && hoveredCanvasX !== null) {
         const frame = Math.floor(hoveredCanvasX / indexToCanvasScale + minTime);
-        props.setFrame(frame);
+        setAwaitingFrame(frame);
+        await props.setFrame(frame);
+        setAwaitingFrame(null);
       }
     };
 
@@ -93,9 +96,13 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw hovered time on canvas
+    // Draw hovered time on canvas.
+    // Replace with awaiting time if it is set.
     if (props.frame && hoveredCanvasX !== null) {
-      const hoveredTime = Math.floor(hoveredCanvasX / indexToCanvasScale + minTime);
+      let hoveredTime = Math.floor(hoveredCanvasX / indexToCanvasScale + minTime);
+      if (awaitingFrame !== null) {
+        hoveredTime = awaitingFrame;
+      }
       const hoveredCanvasTimeX = (hoveredTime - minTime) * indexToCanvasScale;
       ctx.strokeStyle = theme.color.text.hint;
       ctx.setLineDash([2, 2]);
@@ -114,7 +121,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       ctx.lineTo(currentTimeNorm, props.heightPx);
       ctx.stroke();
     }
-  }, [track, dataset, props.widthPx, props.heightPx, props.frame, hoveredCanvasX]);
+  }, [track, dataset, props.widthPx, props.heightPx, props.frame, hoveredCanvasX, awaitingFrame]);
 
   // Update base canvas
   useEffect(() => {
@@ -128,12 +135,9 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     if (track === null || dataset === null) {
       return;
     }
-
     const selectedTimes = ids.map((id) => dataset.getTime(id));
-
     // The indices of subregions of the times array that are selected
     const selectedIntervals = getIntervals(selectedTimes);
-
     // Check for time intervals where there are no objects present for the track
     const missingIntervals = getIntervals(track.getMissingTimes());
 
