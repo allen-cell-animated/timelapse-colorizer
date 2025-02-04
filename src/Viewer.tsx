@@ -333,7 +333,7 @@ function Viewer(): ReactElement {
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
-  const setFrame = useCallback(
+  const setFrameCallback = useCallback(
     async (frame: number) => {
       await canv.setFrame(frame);
       setCurrentFrame(frame);
@@ -343,18 +343,18 @@ function Viewer(): ReactElement {
     [canv]
   );
 
-  const pauseAndSetFrame = useCallback(
+  const setFrame = useCallback(
     async (frame: number) => {
-      let isPlaying = timeControls.isPlaying();
+      const isPlaying = timeControls.isPlaying();
       if (isPlaying) {
         timeControls.pause();
       }
-      await setFrame(frame);
+      await setFrameCallback(frame);
       if (isPlaying) {
         timeControls.play();
       }
     },
-    [setFrame]
+    [setFrameCallback]
   );
 
   const findTrack = useCallback(
@@ -804,8 +804,6 @@ function Viewer(): ReactElement {
   );
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
-  timeControls.setFrameCallback(setFrame);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent): void => {
       if (e.target instanceof HTMLInputElement) {
@@ -831,7 +829,7 @@ function Viewer(): ReactElement {
   // the frame using a debounced value to prevent constant updates as it moves.
   const debouncedFrameInput = useDebounce(frameInput, 250);
   useEffect(() => {
-    pauseAndSetFrame(debouncedFrameInput);
+    setFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
 
   // When the slider is released, check if playback was occurring and resume it.
@@ -875,7 +873,7 @@ function Viewer(): ReactElement {
   // RECORDING CONTROLS ////////////////////////////////////////////////////
 
   // Update the callback for TimeControls and RecordingControls if it changes.
-  timeControls.setFrameCallback(setFrame);
+  timeControls.setFrameCallback(setFrameCallback);
 
   const setFrameAndRender = useCallback(
     async (frame: number) => {
@@ -935,7 +933,7 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <PlotTab
-            setFrame={pauseAndSetFrame}
+            setFrame={setFrame}
             findTrackInputText={findTrackInput}
             setFindTrackInputText={setFindTrackInput}
             findTrack={findTrack}
@@ -958,7 +956,7 @@ function Viewer(): ReactElement {
             currentFrame={currentFrame}
             selectedTrack={selectedTrack}
             findTrack={findTrack}
-            setFrame={pauseAndSetFrame}
+            setFrame={setFrame}
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
             selectedFeatureKey={featureKey}
@@ -1009,7 +1007,7 @@ function Viewer(): ReactElement {
           <AnnotationTab
             annotationState={annotationState}
             setTrack={(track) => findTrack(track, false)}
-            setFrame={pauseAndSetFrame}
+            setFrame={setFrame}
             dataset={dataset}
             selectedTrack={selectedTrack}
             frame={currentFrame}

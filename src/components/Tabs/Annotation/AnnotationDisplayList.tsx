@@ -46,18 +46,15 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   }, [props.dataset]);
 
   // Building a track is an expensive operation (takes O(N) where N is the
-  // size of the dataset), so cache the length of tracks.
+  // size of the dataset), so cache the tracks.
   // TODO: This could be optimized by having the dataset perform this once
   // and save the results in a lookup table.
   const getTrack = (trackId: number): Track | undefined => {
-    const cachedTrack = cachedTracks.current.get(trackId.toString());
-    if (cachedTrack !== undefined) {
-      return cachedTrack;
-    } else {
+    if (!cachedTracks.current.has(trackId.toString())) {
       const track = props.dataset?.buildTrack(trackId);
       cachedTracks.current.set(trackId.toString(), track);
-      return track;
     }
+    return cachedTracks.current.get(trackId.toString());
   };
 
   // Organize ids by track
