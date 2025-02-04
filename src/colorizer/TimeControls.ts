@@ -19,6 +19,10 @@ export default class TimeControls {
     this.timerId = NO_TIMER_ID;
     this.pauseCallbacks = [];
     this.playbackFps = playbackFps;
+
+    this.isPlaying = this.isPlaying.bind(this);
+    this.play = this.play.bind(this);
+    this.pause = this.pause.bind(this);
   }
 
   /**

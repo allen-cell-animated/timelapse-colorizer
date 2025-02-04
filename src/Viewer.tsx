@@ -328,19 +328,26 @@ function Viewer(): ReactElement {
 
   const setFrame = useCallback(
     async (frame: number) => {
-      let isPlaying = timeControls.isPlaying();
-      if (isPlaying) {
-        timeControls.pause();
-      }
       await canv.setFrame(frame);
       setCurrentFrame(frame);
       setFrameInput(frame);
       canv.render();
+    },
+    [canv]
+  );
+
+  const pauseAndSetFrame = useCallback(
+    async (frame: number) => {
+      let isPlaying = timeControls.isPlaying();
+      if (isPlaying) {
+        timeControls.pause();
+      }
+      await setFrame(frame);
       if (isPlaying) {
         timeControls.play();
       }
     },
-    [canv]
+    [setFrame]
   );
 
   const findTrack = useCallback(
@@ -916,7 +923,7 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <PlotTab
-            setFrame={setFrameAndRender}
+            setFrame={pauseAndSetFrame}
             findTrackInputText={findTrackInput}
             setFindTrackInputText={setFindTrackInput}
             findTrack={findTrack}
@@ -939,7 +946,7 @@ function Viewer(): ReactElement {
             currentFrame={currentFrame}
             selectedTrack={selectedTrack}
             findTrack={findTrack}
-            setFrame={setFrameAndRender}
+            setFrame={pauseAndSetFrame}
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
             selectedFeatureKey={featureKey}
@@ -998,7 +1005,7 @@ function Viewer(): ReactElement {
           <AnnotationTab
             annotationState={annotationState}
             setTrack={(track) => findTrack(track, false)}
-            setFrame={setFrame}
+            setFrame={pauseAndSetFrame}
             dataset={dataset}
             selectedTrack={selectedTrack}
             frame={currentFrame}
