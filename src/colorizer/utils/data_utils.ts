@@ -184,12 +184,8 @@ export function getIntervals(values: number[]): [number, number][] {
   let min = values[0];
   let max = values[0];
   for (const value of values) {
-    if (value < min) {
-      min = value;
-    }
-    if (value > max) {
-      max = value;
-    }
+    min = Math.min(min, value);
+    max = Math.max(max, value);
   }
 
   const intervals: [number, number][] = [];

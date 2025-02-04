@@ -27,7 +27,7 @@ const enum AnnotationViewType {
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
-  setTrackAndFrame: (track: number, frame: number) => void;
+  setFrame: (frame: number) => void;
   setTrack: (track: number) => void;
   selectedTrack: Track | null;
   dataset: Dataset | null;
@@ -78,9 +78,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickObjectRow = useCallback(
     (record: TableDataType): void => {
-      props.setTrackAndFrame(record.track, record.time);
+      props.setTrack(record.track);
+      props.setFrame(record.time);
     },
-    [props.setTrackAndFrame]
+    [props.setTrack, props.setFrame]
   );
 
   const onClickDeleteObject = useCallback(
@@ -215,6 +216,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
             onClickTrack={props.setTrack}
+            setFrame={props.setFrame}
             dataset={props.dataset}
             ids={tableIds}
             selectedTrack={props.selectedTrack}

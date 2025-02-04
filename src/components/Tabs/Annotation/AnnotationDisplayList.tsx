@@ -15,6 +15,7 @@ import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
   ids: number[];
+  setFrame: (frame: number) => void;
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
   onClickDeleteObject: (record: TableDataType) => void;
@@ -177,6 +178,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
             <AnnotationTrackThumbnail
               frame={props.frame}
+              setFrame={props.setFrame}
               ids={selectedTrackIds}
               track={props.selectedTrack}
               dataset={props.dataset}

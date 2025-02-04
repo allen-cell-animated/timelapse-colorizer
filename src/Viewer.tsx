@@ -990,18 +990,17 @@ function Viewer(): ReactElement {
         <div className={styles.tabContent}>
           <AnnotationTab
             annotationState={annotationState}
-            setTrackAndFrame={(track, frame) => {
+            setTrack={(track) => findTrack(track, false)}
+            setFrame={async (frame) => {
               const isPlaying = timeControls.isPlaying();
               if (isPlaying) {
                 timeControls.pause();
               }
-              findTrack(track, false);
-              setFrameAndRender(frame);
+              await setFrameAndRender(frame);
               if (isPlaying) {
                 timeControls.play();
               }
             }}
-            setTrack={(track) => findTrack(track, false)}
             dataset={dataset}
             selectedTrack={selectedTrack}
             frame={currentFrame}
