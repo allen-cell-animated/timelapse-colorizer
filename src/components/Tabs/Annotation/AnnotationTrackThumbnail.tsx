@@ -1,4 +1,4 @@
-import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
 
@@ -46,6 +46,10 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
 
   const [hoveredCanvasX, setHoveredCanvasX] = useState<number | null>(null);
   const [awaitingFrame, setAwaitingFrame] = useState<number | null>(null);
+
+  // The thumbnail uses two layered canvases. The time canvas on top just draws
+  // lines for the current and hovered time, while the base canvas draws the
+  // labeled intervals.
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);
   const timeCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -54,28 +58,31 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   const duration = maxTime - minTime + 1;
   const indexToCanvasScale = props.widthPx / duration;
 
-  const xCoordToTime = (x: number): number => Math.floor(x / indexToCanvasScale + minTime);
-  const timeToXCoord = (time: number): number => (time - minTime) * indexToCanvasScale;
+  const xCoordToTime = useCallback(
+    (x: number): number => Math.floor(x / indexToCanvasScale + minTime),
+    [minTime, indexToCanvasScale]
+  );
+  const timeToXCoord = useCallback(
+    (time: number): number => (time - minTime) * indexToCanvasScale,
+    [minTime, indexToCanvasScale]
+  );
 
   // Add event listeners
   useEffect(() => {
-    const onMouseMove = (event: MouseEvent) => {
+    const getXCoord = (event: MouseEvent): number => {
       const canvas = timeCanvasRef.current;
       if (!canvas) {
-        return;
+        return 0;
       }
       const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      setHoveredCanvasX(x);
+      return event.clientX - rect.left;
     };
 
-    const onMouseLeave = () => {
-      setHoveredCanvasX(null);
-    };
-
-    const onMouseClick = async (_event: MouseEvent): Promise<void> => {
-      if (props.setFrame && hoveredCanvasX !== null) {
-        const frame = xCoordToTime(hoveredCanvasX);
+    const onMouseMove = (event: MouseEvent): void => setHoveredCanvasX(getXCoord(event));
+    const onMouseLeave = (): void => setHoveredCanvasX(null);
+    const onMouseClick = async (event: MouseEvent): Promise<void> => {
+      if (props.setFrame) {
+        const frame = xCoordToTime(getXCoord(event));
         setAwaitingFrame(frame);
         await props.setFrame(frame);
         setAwaitingFrame(null);
@@ -90,7 +97,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       timeCanvasRef.current?.removeEventListener("mouseleave", onMouseLeave);
       timeCanvasRef.current?.removeEventListener("click", onMouseClick);
     };
-  });
+  }, [props.setFrame, xCoordToTime]);
 
   // Update time canvas
   useEffect(() => {
@@ -104,19 +111,20 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       return;
     }
 
-    const drawDashedLine = (x: number, color: string) => {
+    const drawDashedLine = (x: number, color: string): void => {
       ctx.strokeStyle = color;
       ctx.setLineDash([2, 2]);
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, props.heightPx);
       ctx.stroke();
+      ctx.closePath();
     };
 
     // Draw hovered time on canvas.
     if (props.frame && hoveredCanvasX !== null) {
       const hoveredTime = xCoordToTime(hoveredCanvasX);
-      const x = timeToXCoord(hoveredTime + 0.5); // center of the time interval
+      const x = timeToXCoord(hoveredTime + 0.5);
       drawDashedLine(x, theme.color.text.hint);
     }
     // Draw the current time on the canvas. Replace with awaiting time if it is
@@ -144,7 +152,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     // Check for time intervals where there are no objects present for the track
     const missingIntervals = getIntervals(track.getMissingTimes());
 
-    const drawInterval = (interval: [number, number], color: string) => {
+    const drawInterval = (interval: [number, number], color: string): void => {
       const minX = timeToXCoord(interval[0]);
       const maxX = timeToXCoord(interval[1] + 1);
       ctx.fillStyle = color;
