@@ -831,7 +831,7 @@ function Viewer(): ReactElement {
   // the frame using a debounced value to prevent constant updates as it moves.
   const debouncedFrameInput = useDebounce(frameInput, 250);
   useEffect(() => {
-    setFrame(debouncedFrameInput);
+    pauseAndSetFrame(debouncedFrameInput);
   }, [debouncedFrameInput]);
 
   // When the slider is released, check if playback was occurring and resume it.
