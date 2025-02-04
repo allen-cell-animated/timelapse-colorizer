@@ -1,6 +1,6 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
-import { Button, Radio, Tooltip } from "antd";
-import React, { ReactElement, useCallback, useContext, useMemo, useTransition } from "react";
+import { Radio, Tooltip } from "antd";
+import React, { ReactElement, useCallback, useContext, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
 
 import { Dataset } from "../../../colorizer";
@@ -11,6 +11,7 @@ import { SelectItem } from "../../Dropdowns/types";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
+import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
@@ -18,6 +19,7 @@ import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
 import LabelEditControls from "./LabelEditControls";
 
+const LABEL_DROPDOWN_LABEL_ID = "label-dropdown-label";
 const enum AnnotationViewType {
   TABLE,
   LIST,
@@ -41,11 +43,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     deleteLabel,
     setLabelName,
     setLabelColor,
-    setLabelOnId,
+    setLabelOnIds,
   } = props.annotationState;
 
   const [isPending, startTransition] = useTransition();
-  const [viewType, setViewType] = React.useState<AnnotationViewType>(AnnotationViewType.TABLE);
+  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.TABLE);
+
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
 
@@ -78,10 +81,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const onClickDeleteObject = useCallback(
     (record: TableDataType): void => {
       if (currentLabelIdx !== null) {
-        setLabelOnId(currentLabelIdx, record.id, false);
+        setLabelOnIds(currentLabelIdx, [record.id], false);
       }
     },
-    [currentLabelIdx, setLabelOnId]
+    [currentLabelIdx, setLabelOnIds]
   );
 
   // Options for the selection dropdown
@@ -105,64 +108,70 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
         />
 
-        <FlexRow $gap={8}>
-          <Button
-            onClick={() => {
-              const csvData = props.annotationState.data.toCsv(props.dataset!);
-              download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
-              console.log(csvData);
-            }}
-          >
-            Export as CSV
-          </Button>
+        <TextButton
+          onClick={() => {
+            const csvData = props.annotationState.data.toCsv(props.dataset!);
+            download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+            console.log(csvData);
+          }}
+        >
+          Export CSV
+        </TextButton>
+      </FlexRow>
 
+      {/* Label selection and edit/create/delete buttons */}
+      <FlexRow $gap={6} style={{ width: "100%" }}>
+        <FlexRow $gap={6}>
+          <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
+          <SelectionDropdown
+            selected={(currentLabelIdx ?? -1).toString()}
+            items={selectLabelOptions}
+            onChange={onSelectLabelIdx}
+            disabled={currentLabelIdx === null}
+            showSelectedItemTooltip={false}
+            htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
+          ></SelectionDropdown>
+
+          {/*
+           * Hide edit-related buttons until edit mode is enabled.
+           * Note that currentLabelIdx will never be null when edit mode is enabled.
+           */}
+          {isAnnotationModeEnabled && currentLabelIdx !== null && (
+            <LabelEditControls
+              onCreateNewLabel={onCreateNewLabel}
+              onDeleteLabel={onDeleteLabel}
+              setLabelColor={(color: Color) => setLabelColor(currentLabelIdx, color)}
+              setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
+              selectedLabel={selectedLabel}
+              selectedLabelIdx={currentLabelIdx}
+              selectionMode={props.annotationState.selectionMode}
+              setSelectionMode={props.annotationState.setSelectionMode}
+            />
+          )}
+        </FlexRow>
+
+        {/* View mode selection */}
+        <label>
+          <VisuallyHidden>View mode</VisuallyHidden>
           <Radio.Group
-            buttonStyle="solid"
             style={{ display: "flex", flexDirection: "row" }}
             value={viewType}
             onChange={(e) => startTransition(() => setViewType(e.target.value))}
           >
             <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
-              <Radio.Button value={AnnotationViewType.TABLE}>
+              <Radio.Button value={AnnotationViewType.TABLE} style={{ padding: "0 8px" }}>
                 <TableOutlined />
                 <VisuallyHidden>Table view {viewType === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>
             <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
-              <Radio.Button value={AnnotationViewType.LIST}>
+              <Radio.Button value={AnnotationViewType.LIST} style={{ padding: "0 8px" }}>
                 <MenuOutlined />
                 <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>
           </Radio.Group>
-        </FlexRow>
-      </FlexRow>
-
-      {/* Label selection and edit/create/delete buttons */}
-      <FlexRow $gap={10} style={{ width: "100%" }}>
-        <SelectionDropdown
-          selected={(currentLabelIdx ?? -1).toString()}
-          items={selectLabelOptions}
-          onChange={onSelectLabelIdx}
-          disabled={currentLabelIdx === null}
-          showSelectedItemTooltip={false}
-          label="Label"
-        ></SelectionDropdown>
-
-        {/*
-         * Hide edit-related buttons until edit mode is enabled.
-         * Note that currentLabelIdx will never be null when edit mode is enabled.
-         */}
-        {isAnnotationModeEnabled && currentLabelIdx !== null && (
-          <LabelEditControls
-            onCreateNewLabel={onCreateNewLabel}
-            onDeleteLabel={onDeleteLabel}
-            setLabelColor={(color: Color) => setLabelColor(currentLabelIdx, color)}
-            setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
-            selectedLabel={selectedLabel}
-            selectedLabelIdx={currentLabelIdx}
-          />
-        )}
+        </label>
       </FlexRow>
 
       {/* Table or list view */}

@@ -201,6 +201,11 @@ export type ScatterPlotConfig = {
   rangeType: PlotRangeType;
 };
 
+export enum AnnotationSelectionMode {
+  TIME,
+  TRACK,
+}
+
 /**
  * Callback used to report warnings to the user. The message is the title
  * of the warning, and the description is the body of the warning. If an array

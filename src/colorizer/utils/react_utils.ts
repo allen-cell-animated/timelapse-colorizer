@@ -2,7 +2,7 @@ import React, { EventHandler, useEffect, useMemo, useRef, useState } from "react
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
-import { VectorConfig } from "../types";
+import { AnnotationSelectionMode, VectorConfig } from "../types";
 
 import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters } from "../AnnotationData";
 import Dataset from "../Dataset";
@@ -316,6 +316,8 @@ export type AnnotationState =  {
   setIsAnnotationModeEnabled: (enabled: boolean) => void;
   visible: boolean;
   setVisibility: (visible: boolean) => void;
+  selectionMode: AnnotationSelectionMode;
+  setSelectionMode: (mode: AnnotationSelectionMode) => void;
   /**
    * Contains annotation data getters. Use this object directly as a dependency
    * in `useMemo` or `useCallback` to trigger updates when the underlying data
@@ -329,6 +331,7 @@ export const useAnnotations = (): AnnotationState => {
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);  
+  const [selectionMode, setSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
   const [visible, _setVisibility] = useState<boolean>(false);
 
   // Annotation mode can only be enabled if there is at least one label, so create
@@ -398,12 +401,14 @@ export const useAnnotations = (): AnnotationState => {
     setIsAnnotationModeEnabled: setIsAnnotationEnabled,
     visible,
     setVisibility,
+    selectionMode,
+    setSelectionMode,
     data,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
     setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
     deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
-    setLabelOnId: wrapFunctionInUpdate(annotationData.setLabelOnId),
+    setLabelOnIds: wrapFunctionInUpdate(annotationData.setLabelOnIds),
   };
 };

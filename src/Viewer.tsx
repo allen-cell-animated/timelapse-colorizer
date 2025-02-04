@@ -22,6 +22,7 @@ import React, {
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
 import {
+  AnnotationSelectionMode,
   Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
   DEFAULT_COLOR_RAMP_KEY,
@@ -845,10 +846,16 @@ function Viewer(): ReactElement {
       if (track && annotationState.isAnnotationModeEnabled && annotationState.currentLabelIdx !== null) {
         const id = track.getIdAtTime(currentFrame);
         const isLabeled = annotationState.data.isLabelOnId(annotationState.currentLabelIdx, id);
-        annotationState.setLabelOnId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame), !isLabeled);
+        const ids = annotationState.selectionMode === AnnotationSelectionMode.TIME ? [id] : track.ids;
+        annotationState.setLabelOnIds(annotationState.currentLabelIdx, ids, !isLabeled);
       }
     },
-    [annotationState.isAnnotationModeEnabled, annotationState.currentLabelIdx, currentFrame]
+    [
+      annotationState.isAnnotationModeEnabled,
+      annotationState.selectionMode,
+      annotationState.currentLabelIdx,
+      currentFrame,
+    ]
   );
 
   // RECORDING CONTROLS ////////////////////////////////////////////////////

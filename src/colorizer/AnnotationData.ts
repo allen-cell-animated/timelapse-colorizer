@@ -123,7 +123,7 @@ export interface IAnnotationDataSetters {
   setLabelColor(labelIdx: number, color: Color): void;
   deleteLabel(labelIdx: number): void;
 
-  setLabelOnId(labelIdx: number, id: number, value: boolean): void;
+  setLabelOnIds(labelIdx: number, ids: number[], value: boolean): void;
 }
 
 export type IAnnotationData = IAnnotationDataGetters & IAnnotationDataSetters;
@@ -153,6 +153,7 @@ export class AnnotationData implements IAnnotationData {
     this.deleteLabel = this.deleteLabel.bind(this);
     this.isLabelOnId = this.isLabelOnId.bind(this);
     this.setLabelOnId = this.setLabelOnId.bind(this);
+    this.setLabelOnIds = this.setLabelOnIds.bind(this);
     this.toCsv = this.toCsv.bind(this);
   }
 
@@ -266,12 +267,20 @@ export class AnnotationData implements IAnnotationData {
     this.timeToLabelIdMap = null;
   }
 
-  setLabelOnId(labelIdx: number, id: number, value: boolean): void {
+  private setLabelOnId(labelIdx: number, id: number, value: boolean): void {
     this.validateIndex(labelIdx);
     if (value) {
       this.labelData[labelIdx].ids.add(id);
     } else {
       this.labelData[labelIdx].ids.delete(id);
+    }
+    this.timeToLabelIdMap = null;
+  }
+
+  setLabelOnIds(labelIdx: number, ids: number[], value: boolean): void {
+    this.validateIndex(labelIdx);
+    for (const id of ids) {
+      this.setLabelOnId(labelIdx, id, value);
     }
     this.timeToLabelIdMap = null;
   }
