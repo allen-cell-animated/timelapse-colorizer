@@ -80,7 +80,14 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { AnnotationTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import {
+  AnnotationTab,
+  CorrelationPlotTab,
+  FeatureThresholdsTab,
+  PlotTab,
+  ScatterPlotTab,
+  SettingsTab,
+} from "./components/Tabs";
 import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
@@ -419,6 +426,14 @@ function Viewer(): ReactElement {
       }
     },
     [featureThresholds, config.keepRangeBetweenDatasets]
+  );
+
+  const openScatterPlotTab = useCallback(
+    (xAxis: string, yAxis: string) => {
+      updateConfig({ openTab: TabType.SCATTER_PLOT });
+      updateScatterPlotConfig({ xAxis, yAxis });
+    },
+    [updateConfig, updateScatterPlotConfig]
   );
 
   // DATASET LOADING ///////////////////////////////////////////////////////
@@ -902,7 +917,7 @@ function Viewer(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
-  const tabItems = [
+  const allTabItems = [
     {
       label: "Track plot",
       key: TabType.TRACK_PLOT,
@@ -950,6 +965,16 @@ function Viewer(): ReactElement {
       ),
     },
     {
+      label: "Correlation plot",
+      key: TabType.CORRELATION_PLOT,
+      visible: INTERNAL_BUILD,
+      children: (
+        <div className={styles.tabContent}>
+          <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
+        </div>
+      ),
+    },
+    {
       label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
       key: TabType.FILTERS,
       children: (
@@ -965,27 +990,9 @@ function Viewer(): ReactElement {
       ),
     },
     {
-      label: "Viewer settings",
-      key: TabType.SETTINGS,
-      children: (
-        <div className={styles.tabContent}>
-          <SettingsTab
-            config={config}
-            updateConfig={updateConfig}
-            dataset={dataset}
-            // TODO: This could be part of a dataset-specific settings object
-            selectedBackdropKey={selectedBackdropKey}
-            setSelectedBackdropKey={setSelectedBackdropKey}
-          />
-        </div>
-      ),
-    },
-  ];
-
-  if (INTERNAL_BUILD) {
-    tabItems.push({
       label: "Annotations",
       key: TabType.ANNOTATION,
+      visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
           <AnnotationTab
@@ -1008,8 +1015,25 @@ function Viewer(): ReactElement {
           />
         </div>
       ),
-    });
-  }
+    },
+    {
+      label: "Viewer settings",
+      key: TabType.SETTINGS,
+      children: (
+        <div className={styles.tabContent}>
+          <SettingsTab
+            config={config}
+            updateConfig={updateConfig}
+            dataset={dataset}
+            // TODO: This could be part of a dataset-specific settings object
+            selectedBackdropKey={selectedBackdropKey}
+            setSelectedBackdropKey={setSelectedBackdropKey}
+          />
+        </div>
+      ),
+    },
+  ];
+  const tabItems = allTabItems.filter((item) => item.visible !== false);
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {

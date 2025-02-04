@@ -21,14 +21,18 @@ import SelectionDropdown from "./SelectionDropdown";
 
 const SELECTED_RAMP_ITEM_KEY = "__selected_ramp__";
 const CUSTOM_PALETTE_ITEM_KEY = "__custom__";
+const DROPDOWN_WIDTH_PX = 120;
+const DROPDOWN_DEFAULT_BORDER_PX = 1;
+const DROPDOWN_CATEGORICAL_BORDER_PX = 2;
 
 const DropdownStyleContainer = styled.div<{ $categorical: boolean }>`
-  --width: 120px;
+  --width: ${DROPDOWN_WIDTH_PX}px;
   --border-width: 1px;
   --radius: 6px;
   --button-radius: calc(var(--radius) - var(--border-width));
-  --outline-width-selected: ${(props) => (props.$categorical ? "2px" : "1px")};
-  --outline-width-unselected: ${(props) => (props.$categorical ? "1px" : "0px")};
+  --outline-width-selected: ${(props) =>
+    props.$categorical ? DROPDOWN_CATEGORICAL_BORDER_PX : DROPDOWN_DEFAULT_BORDER_PX}px;
+  --outline-width-unselected: calc(var(--outline-width-selected) - 1px);
 
   & img {
     /* Copied from
@@ -158,40 +162,36 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
 
   ///////// Generate dropdown contents
 
-  const rampItems: SelectItem[] = useMemo(
-    () =>
-      colorRampsToDisplay.map((key) => {
-        const rampData = props.knownColorRamps.get(key);
-        if (!rampData) {
-          throw new Error(`Invalid color ramp key '${key}'`);
-        }
-        return {
-          value: key,
-          label: rampData.name,
-          image: rampData.colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL(),
-          tooltip: rampData.name,
-        };
-      }),
-    [colorRampsToDisplay, props.knownColorRamps]
-  );
-  const paletteItems: SelectItem[] = useMemo(
-    () =>
-      categoricalPalettesToDisplay.map((key) => {
-        const paletteData = props.knownCategoricalPalettes?.get(key);
-        if (!paletteData) {
-          throw new Error(`Invalid categorical palette key '${key}'`);
-        }
-        const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
-        const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
-        return {
-          value: key,
-          label: paletteData.name,
-          image: colorRamp.createGradientCanvas(120, theme.controls.height).toDataURL(),
-          tooltip: paletteData.name,
-        };
-      }),
-    [categoricalPalettesToDisplay, props.numCategories, props.knownCategoricalPalettes]
-  );
+  const rampItems: SelectItem[] = useMemo(() => {
+    return colorRampsToDisplay.map((key) => {
+      const rampData = props.knownColorRamps.get(key);
+      if (!rampData) {
+        throw new Error(`Invalid color ramp key '${key}'`);
+      }
+      return {
+        value: key,
+        label: rampData.name,
+        image: rampData.colorRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL(),
+        tooltip: rampData.name,
+      };
+    });
+  }, [colorRampsToDisplay, props.knownColorRamps]);
+  const paletteItems: SelectItem[] = useMemo(() => {
+    return categoricalPalettesToDisplay.map((key) => {
+      const paletteData = props.knownCategoricalPalettes?.get(key);
+      if (!paletteData) {
+        throw new Error(`Invalid categorical palette key '${key}'`);
+      }
+      const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
+      const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
+      return {
+        value: key,
+        label: paletteData.name,
+        image: colorRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL(),
+        tooltip: paletteData.name,
+      };
+    });
+  }, [categoricalPalettesToDisplay, props.numCategories, props.knownCategoricalPalettes]);
 
   // Create a selected item for both the ramp and palette, since they might not
   // be an option in the dropdown list. This can happen for the ramp if it's a
@@ -206,7 +206,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
     if (props.reversed) {
       selectedRamp = selectedRamp.reverse();
     }
-    return selectedRamp.createGradientCanvas(120, theme.controls.height).toDataURL();
+    return selectedRamp.createGradientCanvas(DROPDOWN_WIDTH_PX, theme.controls.height).toDataURL();
   }, [props.selectedRamp, props.reversed]);
 
   const selectedRampItem = {
@@ -219,7 +219,9 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
   const paletteImgSrc = useMemo(() => {
     const visibleColors = props.selectedPalette.slice(0, Math.max(1, props.numCategories));
     const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
-    return colorRamp.createGradientCanvas(120 - 2, theme.controls.height).toDataURL();
+    return colorRamp
+      .createGradientCanvas(DROPDOWN_WIDTH_PX - DROPDOWN_CATEGORICAL_BORDER_PX, theme.controls.height)
+      .toDataURL();
   }, [props.useCategoricalPalettes, props.numCategories, props.selectedPalette]);
 
   // Check if palette colors match an existing one; otherwise, mark it as being
@@ -261,7 +263,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
           label="Color map"
           selected={props.useCategoricalPalettes ? selectedPaletteItem : selectedRampItem}
           onChange={props.useCategoricalPalettes ? onChangePalette : onChangeRamp}
-          width={"120px"}
+          width={`${DROPDOWN_WIDTH_PX}px`}
           isSearchable={false}
           controlTooltipPlacement="top"
         ></SelectionDropdown>

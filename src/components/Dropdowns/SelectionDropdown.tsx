@@ -190,6 +190,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       <StyledSelect
         aria-labelledby={id}
         classNamePrefix="react-select"
+        isMulti={false}
         placeholder=""
         type={props.buttonType ?? "outlined"}
         value={selectedOption}
@@ -200,8 +201,8 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
         isClearable={false}
         isSearchable={props.isSearchable}
         onChange={(value) => {
-          if (value && (value as SelectItem).value) {
-            props.onChange((value as SelectItem).value);
+          if (value && value.value) {
+            props.onChange(value.value);
           }
           startTransition(() => {
             setSearchInput("");
