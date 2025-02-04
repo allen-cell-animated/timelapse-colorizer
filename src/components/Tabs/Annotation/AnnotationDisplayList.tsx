@@ -203,7 +203,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             onClickDeleteObject={props.onClickDeleteObject}
             dataset={props.dataset}
             ids={selectedTrackId ? trackToIds.get(selectedTrackId) ?? [] : []}
-            height={412}
+            height={410}
             selectedId={props.selectedId}
             hideTrackColumn={true}
           ></AnnotationDisplayTable>

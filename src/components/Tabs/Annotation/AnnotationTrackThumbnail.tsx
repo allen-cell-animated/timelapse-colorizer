@@ -54,6 +54,9 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   const duration = maxTime - minTime + 1;
   const indexToCanvasScale = props.widthPx / duration;
 
+  const xCoordToTime = (x: number): number => Math.floor(x / indexToCanvasScale + minTime);
+  const timeToXCoord = (time: number): number => (time - minTime) * indexToCanvasScale;
+
   // Add event listeners
   useEffect(() => {
     const onMouseMove = (event: MouseEvent) => {
@@ -65,12 +68,14 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       const x = event.clientX - rect.left;
       setHoveredCanvasX(x);
     };
+
     const onMouseLeave = () => {
       setHoveredCanvasX(null);
     };
+
     const onMouseClick = async (_event: MouseEvent): Promise<void> => {
       if (props.setFrame && hoveredCanvasX !== null) {
-        const frame = Math.floor(hoveredCanvasX / indexToCanvasScale + minTime);
+        const frame = xCoordToTime(hoveredCanvasX);
         setAwaitingFrame(frame);
         await props.setFrame(frame);
         setAwaitingFrame(null);
@@ -95,31 +100,31 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       return;
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!track || !dataset) {
+      return;
+    }
+
+    const drawDashedLine = (x: number, color: string) => {
+      ctx.strokeStyle = color;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, props.heightPx);
+      ctx.stroke();
+    };
 
     // Draw hovered time on canvas.
-    // Replace with awaiting time if it is set.
     if (props.frame && hoveredCanvasX !== null) {
-      let hoveredTime = Math.floor(hoveredCanvasX / indexToCanvasScale + minTime);
-      if (awaitingFrame !== null) {
-        hoveredTime = awaitingFrame;
-      }
-      const hoveredCanvasTimeX = (hoveredTime - minTime) * indexToCanvasScale;
-      ctx.strokeStyle = theme.color.text.hint;
-      ctx.setLineDash([2, 2]);
-      ctx.beginPath();
-      ctx.moveTo(hoveredCanvasTimeX, 0);
-      ctx.lineTo(hoveredCanvasTimeX, props.heightPx);
-      ctx.stroke();
+      const hoveredTime = xCoordToTime(hoveredCanvasX);
+      const x = timeToXCoord(hoveredTime + 0.5); // center of the time interval
+      drawDashedLine(x, theme.color.text.hint);
     }
-    // Draw the current time on the canvas
+    // Draw the current time on the canvas. Replace with awaiting time if it is
+    // set for optimistic updates
     if (props.frame !== undefined && props.frame >= minTime && props.frame <= maxTime) {
-      const currentTimeNorm = (props.frame - minTime) * indexToCanvasScale;
-      ctx.strokeStyle = theme.color.text.primary;
-      ctx.setLineDash([2, 2]);
-      ctx.beginPath();
-      ctx.moveTo(currentTimeNorm, 0);
-      ctx.lineTo(currentTimeNorm, props.heightPx);
-      ctx.stroke();
+      const frame = awaitingFrame !== null ? awaitingFrame : props.frame;
+      const x = timeToXCoord(frame + 0.5);
+      drawDashedLine(x, theme.color.text.primary);
     }
   }, [track, dataset, props.widthPx, props.heightPx, props.frame, hoveredCanvasX, awaitingFrame]);
 
@@ -131,26 +136,19 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       return;
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     if (track === null || dataset === null) {
       return;
     }
     const selectedTimes = ids.map((id) => dataset.getTime(id));
-    // The indices of subregions of the times array that are selected
     const selectedIntervals = getIntervals(selectedTimes);
     // Check for time intervals where there are no objects present for the track
     const missingIntervals = getIntervals(track.getMissingTimes());
 
     const drawInterval = (interval: [number, number], color: string) => {
-      const intervalMin = interval[0] - minTime;
-      const intervalMax = interval[1] - minTime;
+      const minX = timeToXCoord(interval[0]);
+      const maxX = timeToXCoord(interval[1] + 1);
       ctx.fillStyle = color;
-      ctx.fillRect(
-        intervalMin * indexToCanvasScale,
-        0,
-        (intervalMax - intervalMin + 1) * indexToCanvasScale,
-        props.heightPx
-      );
+      ctx.fillRect(minX, 0, maxX - minX, props.heightPx);
     };
 
     // Draw missing time intervals on the canvas

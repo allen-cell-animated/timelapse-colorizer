@@ -49,7 +49,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
 
   const [isPending, startTransition] = useTransition();
-  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.TABLE);
+  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
 
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
