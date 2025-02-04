@@ -489,9 +489,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const onMouseClick = useCallback(
     (event: MouseEvent): void => {
-      // Note that click events won't fire until the mouse is released. We need to check
-      // if the mouse was dragged before treating the click as a track selection; otherwise
-      // the track selection gets changed unexpectedly.
+      // Note that click events won't fire until the mouse is released. We need
+      // to check if the mouse was dragged before treating the click as a track
+      // selection; otherwise the track selection gets changed unexpectedly.
       if (!isMouseDragging.current) {
         handleTrackSelection(event);
       }
@@ -506,7 +506,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, []);
 
   const onMouseDown = useCallback((event: MouseEvent): void => {
-    event.preventDefault(); // Prevent text selection
+    // Prevent the default behavior for mouse clicks that would cause text
+    // selection, but keep the behavior where focus is removed from other
+    // elements.
+    event.preventDefault();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     isMouseDragging.current = false;
 
     if (event.button === MIDDLE_CLICK_BUTTON) {
