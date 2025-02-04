@@ -110,27 +110,20 @@ describe("data_utils", () => {
       expect(getIntervals(values)).deep.equals([[0, 5]]);
     });
 
-    it("returns interval missing start", () => {
+    it("returns interval missing zero", () => {
       const values = [2, 3, 4, 5];
       expect(getIntervals(values)).deep.equals([[2, 5]]);
     });
 
-    it("returns intervals missing end", () => {
-      const values = [0, 1, 2, 3];
-      expect(getIntervals(values)).deep.equals([[0, 3]]);
-    });
-
     it("returns multiple intervals", () => {
-      const values = [1, 3, 4, 5];
-      expect(getIntervals(values)).deep.equals([
+      const values1 = [1, 3, 4, 5];
+      expect(getIntervals(values1)).deep.equals([
         [1, 1],
         [3, 5],
       ]);
-    });
 
-    it("returns intervals as values and not indices", () => {
-      const values = [5, 6, 7, 9, 10, 14];
-      expect(getIntervals(values)).deep.equals([
+      const values2 = [5, 6, 7, 9, 10, 14];
+      expect(getIntervals(values2)).deep.equals([
         [5, 7],
         [9, 10],
         [14, 14],
