@@ -831,11 +831,8 @@ function Viewer(): ReactElement {
       if (track && annotationState.isAnnotationModeEnabled && annotationState.currentLabelIdx !== null) {
         const id = track.getIdAtTime(currentFrame);
         const isLabeled = annotationState.data.isLabelOnId(annotationState.currentLabelIdx, id);
-        if (annotationState.selectionMode === AnnotationSelectionMode.TIME) {
-          annotationState.setLabelOnId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame), !isLabeled);
-        } else {
-          annotationState.setLabelOnIds(annotationState.currentLabelIdx, track.ids, !isLabeled);
-        }
+        const ids = annotationState.selectionMode === AnnotationSelectionMode.TIME ? [id] : track.ids;
+        annotationState.setLabelOnIds(annotationState.currentLabelIdx, ids, !isLabeled);
       }
     },
     [

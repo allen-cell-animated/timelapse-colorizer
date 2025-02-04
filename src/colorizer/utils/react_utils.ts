@@ -409,7 +409,6 @@ export const useAnnotations = (): AnnotationState => {
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
     setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
     deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
-    setLabelOnId: wrapFunctionInUpdate(annotationData.setLabelOnId),
     setLabelOnIds: wrapFunctionInUpdate(annotationData.setLabelOnIds),
   };
 };
