@@ -45,7 +45,7 @@ const addOptionalColorIndicator = (color: Color | undefined): Partial<StylesConf
 
 // Styling is done via both styled-components and react-select's `styles` prop.
 const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
-  & {
+  :not(.react-select__option) {
     transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0s linear;
   }
 

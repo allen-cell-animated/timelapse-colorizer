@@ -80,7 +80,14 @@ import LoadDatasetButton from "./components/LoadDatasetButton";
 import SmallScreenWarning from "./components/Modals/SmallScreenWarning";
 import PlaybackSpeedControl from "./components/PlaybackSpeedControl";
 import SpinBox from "./components/SpinBox";
-import { AnnotationTab, FeatureThresholdsTab, PlotTab, ScatterPlotTab, SettingsTab } from "./components/Tabs";
+import {
+  AnnotationTab,
+  CorrelationPlotTab,
+  FeatureThresholdsTab,
+  PlotTab,
+  ScatterPlotTab,
+  SettingsTab,
+} from "./components/Tabs";
 import CanvasHoverTooltip from "./components/Tooltips/CanvasHoverTooltip";
 
 // TODO: Refactor with styled-components
@@ -433,6 +440,14 @@ function Viewer(): ReactElement {
       }
     },
     [featureThresholds, config.keepRangeBetweenDatasets]
+  );
+
+  const openScatterPlotTab = useCallback(
+    (xAxis: string, yAxis: string) => {
+      updateConfig({ openTab: TabType.SCATTER_PLOT });
+      updateScatterPlotConfig({ xAxis, yAxis });
+    },
+    [updateConfig, updateScatterPlotConfig]
   );
 
   // DATASET LOADING ///////////////////////////////////////////////////////
@@ -845,11 +860,8 @@ function Viewer(): ReactElement {
       if (track && annotationState.isAnnotationModeEnabled && annotationState.currentLabelIdx !== null) {
         const id = track.getIdAtTime(currentFrame);
         const isLabeled = annotationState.data.isLabelOnId(annotationState.currentLabelIdx, id);
-        if (annotationState.selectionMode === AnnotationSelectionMode.TIME) {
-          annotationState.setLabelOnId(annotationState.currentLabelIdx, track.getIdAtTime(currentFrame), !isLabeled);
-        } else {
-          annotationState.setLabelOnIds(annotationState.currentLabelIdx, track.ids, !isLabeled);
-        }
+        const ids = annotationState.selectionMode === AnnotationSelectionMode.TIME ? [id] : track.ids;
+        annotationState.setLabelOnIds(annotationState.currentLabelIdx, ids, !isLabeled);
       }
     },
     [
@@ -916,7 +928,7 @@ function Viewer(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
-  const tabItems = [
+  const allTabItems = [
     {
       label: "Track plot",
       key: TabType.TRACK_PLOT,
@@ -964,6 +976,16 @@ function Viewer(): ReactElement {
       ),
     },
     {
+      label: "Correlation plot",
+      key: TabType.CORRELATION_PLOT,
+      visible: INTERNAL_BUILD,
+      children: (
+        <div className={styles.tabContent}>
+          <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
+        </div>
+      ),
+    },
+    {
       label: `Filters ${featureThresholds.length > 0 ? `(${featureThresholds.length})` : ""}`,
       key: TabType.FILTERS,
       children: (
@@ -974,6 +996,23 @@ function Viewer(): ReactElement {
             dataset={dataset}
             disabled={disableUi}
             categoricalPalette={categoricalPalette}
+          />
+        </div>
+      ),
+    },
+    {
+      label: "Annotations",
+      key: TabType.ANNOTATION,
+      visible: INTERNAL_BUILD,
+      children: (
+        <div className={styles.tabContent}>
+          <AnnotationTab
+            annotationState={annotationState}
+            setTrack={(track) => findTrack(track, false)}
+            setFrame={pauseAndSetFrame}
+            dataset={dataset}
+            selectedTrack={selectedTrack}
+            frame={currentFrame}
           />
         </div>
       ),
@@ -995,25 +1034,7 @@ function Viewer(): ReactElement {
       ),
     },
   ];
-
-  if (INTERNAL_BUILD) {
-    tabItems.push({
-      label: "Annotations",
-      key: TabType.ANNOTATION,
-      children: (
-        <div className={styles.tabContent}>
-          <AnnotationTab
-            annotationState={annotationState}
-            setTrack={(track) => findTrack(track, false)}
-            setFrame={pauseAndSetFrame}
-            dataset={dataset}
-            selectedTrack={selectedTrack}
-            frame={currentFrame}
-          />
-        </div>
-      ),
-    });
-  }
+  const tabItems = allTabItems.filter((item) => item.visible !== false);
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {
