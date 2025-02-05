@@ -145,6 +145,9 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       return;
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = theme.color.layout.background;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     if (track === null || dataset === null) {
       return;
     }
