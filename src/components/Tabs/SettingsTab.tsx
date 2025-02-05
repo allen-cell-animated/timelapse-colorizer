@@ -39,9 +39,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const backdropOptions = useMemo(
     () =>
       props.dataset
-        ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
-            return { value: key, label: data.name };
-          })
+        ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => ({ value: key, label: data.name }))
         : [],
     [props.dataset]
   );

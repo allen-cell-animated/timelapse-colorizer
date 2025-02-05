@@ -88,15 +88,15 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   );
 
   // Options for the selection dropdown
-  const selectLabelOptions: SelectItem[] = useMemo(() => {
-    return labels.map((label, index) => {
-      return {
+  const selectLabelOptions: SelectItem[] = useMemo(
+    () =>
+      labels.map((label, index) => ({
         value: index.toString(),
         label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
         color: label.color,
-      };
-    });
-  }, [annotationData]);
+      })),
+    [annotationData]
+  );
 
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
