@@ -96,11 +96,14 @@ function formatAsSelectItems(items: string[] | SelectItem[]): SelectItem[] {
  * Options can be searched by typing in the dropdown input.
  *
  * Uses react-select internally but mimics the style of Ant Design for consistency.
+ *
+ * NOTE: Items must be memoized or else flickering may occur when the page is rapidly
+ * re-rendered (e.g. during playback).
  */
 export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
-  const options = formatAsSelectItems(props.items);
+  const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
 
   // TODO: Show loading spinner?
   const [_isPending, startTransition] = useTransition();

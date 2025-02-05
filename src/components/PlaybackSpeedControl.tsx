@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, useMemo } from "react";
 
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
 
@@ -13,6 +13,7 @@ type PlaybackSpeedControlProps = {
   max?: number;
   step?: number;
 };
+
 const defaultProps: Partial<PlaybackSpeedControlProps> = {
   baselineFps: DEFAULT_PLAYBACK_FPS,
   disabled: false,
@@ -30,10 +31,13 @@ export default function PlaybackSpeedControl(inputProps: PlaybackSpeedControlPro
   };
 
   // Generate values for the dropdown
-  const dropdownItems = [];
-  for (let i = props.min; i < props.max; i += props.step) {
-    dropdownItems.push({ value: i.toFixed(2), label: i.toFixed(2) + "x" });
-  }
+  const dropdownItems = useMemo(() => {
+    const dropdownItems = [];
+    for (let i = props.min; i < props.max; i += props.step) {
+      dropdownItems.push({ value: i.toFixed(2), label: i.toFixed(2) + "x" });
+    }
+    return dropdownItems;
+  }, [props.min, props.max, props.step]);
 
   // Convert from raw fps to slider values
   const sliderValue = props.fps / props.baselineFps;

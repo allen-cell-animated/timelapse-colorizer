@@ -48,6 +48,8 @@ const PLOTLY_CLICK_TIMEOUT_MS = 10;
 
 const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 
+const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
+
 type ScatterPlotTabProps = {
   dataset: Dataset | null;
   currentFrame: number;
@@ -843,13 +845,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // Component Rendering
   //////////////////////////////////
 
-  const makeControlBar = (): ReactElement => {
+  const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
     const menuItems: SelectItem[] = featureKeys.map((key: string) => {
       return { value: key, label: dataset?.getFeatureNameWithUnits(key) ?? key };
     });
     menuItems.push(SCATTERPLOT_TIME_FEATURE);
+    return menuItems;
+  }, [dataset]);
 
+  const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
     return (
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
         <SelectionDropdown
@@ -882,7 +887,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           <SelectionDropdown
             label={"Show objects from"}
             selected={rangeType}
-            items={Object.values(PlotRangeType)}
+            items={PLOT_RANGE_SELECT_ITEMS}
             width={"120px"}
             onChange={(value: string) => props.updateScatterPlotConfig({ rangeType: value as PlotRangeType })}
           ></SelectionDropdown>
@@ -919,7 +924,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   return (
     <>
-      {makeControlBar()}
+      {makeControlBar(menuItems)}
       <div style={{ position: "relative" }}>
         <LoadingSpinner loading={isPending || isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}

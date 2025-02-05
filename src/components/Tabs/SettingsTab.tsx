@@ -1,6 +1,6 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Checkbox, ColorPicker } from "antd";
-import React, { ReactElement } from "react";
+import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { Dataset } from "../../colorizer";
@@ -36,11 +36,15 @@ type SettingsTabProps = {
 };
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
-  const backdropOptions = props.dataset
-    ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
-        return { value: key, label: data.name };
-      })
-    : [];
+  const backdropOptions = useMemo(
+    () =>
+      props.dataset
+        ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => {
+            return { value: key, label: data.name };
+          })
+        : [],
+    [props.dataset]
+  );
 
   const isBackdropDisabled = backdropOptions.length === 0 || props.selectedBackdropKey === null;
   const isBackdropOptionsDisabled = isBackdropDisabled || !props.config.backdropVisible;
