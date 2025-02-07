@@ -42,7 +42,6 @@ import {
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
-import { useShortcutKey } from "./colorizer/utils/hooks";
 import {
   useAnnotations,
   useConstructor,
@@ -227,7 +226,6 @@ function Viewer(): ReactElement {
   const [findTrackInput, setFindTrackInput] = useState("");
   const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
-  const isShiftPressed = useShortcutKey("Shift");
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
 
@@ -847,10 +845,10 @@ function Viewer(): ReactElement {
       if (dataset && track) {
         const id = track.getIdAtTime(currentFrame);
         // TODO: Check for shift key held
-        annotationState.handleAnnotationClick(dataset, id, isShiftPressed);
+        annotationState.handleAnnotationClick(dataset, id);
       }
     },
-    [annotationState.handleAnnotationClick, isShiftPressed, currentFrame]
+    [dataset, currentFrame, annotationState.handleAnnotationClick]
   );
 
   // RECORDING CONTROLS ////////////////////////////////////////////////////

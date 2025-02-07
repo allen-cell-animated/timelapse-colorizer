@@ -35,6 +35,7 @@ const ObjectInfoCard = styled.div`
   overflow-wrap: break-word;
 
   transition: opacity 300ms ease-in-out;
+  width: fit-content;
 `;
 
 /**
@@ -165,6 +166,23 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
           </Tag>
         </FlexRow>
       );
+    } else if (props.annotationState.isRangeSelectHotkeyPressed && dataset) {
+      const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHoveredId);
+      if (hoveredRange !== null && hoveredRange.length > 1) {
+        // Get min and max track IDs
+        const id0 = hoveredRange[0];
+        const id1 = hoveredRange[hoveredRange.length - 1];
+        const t0 = dataset.getTime(id0);
+        const t1 = dataset.getTime(id1);
+        annotationLabel = (
+          <FlexRow>
+            {annotationLabel}
+            <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
+              ✦ Applying to {hoveredRange.length} objects from time {t0} to {t1}
+            </Tag>
+          </FlexRow>
+        );
+      }
     }
   }
 

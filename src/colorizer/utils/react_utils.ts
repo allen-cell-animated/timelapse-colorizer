@@ -7,6 +7,7 @@ import { AnnotationSelectionMode, VectorConfig } from "../types";
 import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters } from "../AnnotationData";
 import Dataset from "../Dataset";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
+import { useShortcutKey } from "./hooks";
 
 // TODO: Move this to a folder outside of `colorizer`.
 // TODO: Split this up into multiple files.
@@ -318,6 +319,8 @@ export type AnnotationState =  {
   setVisibility: (visible: boolean) => void;
   selectionMode: AnnotationSelectionMode;
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
+  isRangeSelectHotkeyPressed: boolean;
+  getSelectRangeFromId: (dataset: Dataset, id: number) => number[] | null;
   handleAnnotationClick: (dataset: Dataset, id: number, selectRange?: boolean) => void;
   /**
    * Contains annotation data getters. Use this object directly as a dependency
@@ -335,6 +338,7 @@ export const useAnnotations = (): AnnotationState => {
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);  
   const [selectionMode, setSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
   const [visible, _setVisibility] = useState<boolean>(false);
+  const isRangeSelectHotkeyPressed = useShortcutKey("Shift");
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [lastEditedRange, setLastEditedRange] = useState<number[] | null>(null);
@@ -390,9 +394,9 @@ export const useAnnotations = (): AnnotationState => {
   
   const getSelectRangeFromId = (dataset: Dataset, id: number): number[] | null => {
     const firstIdInRange = lastEditedRange ? lastEditedRange[0] : -1;
-    const lastIdInRange = lastEditedRange ? lastEditedRange[1] : -1;
+    const lastIdInRange = lastEditedRange ? lastEditedRange[lastEditedRange.length - 1] : -1;
 
-    if (lastEditedRange && id === firstIdInRange || id === lastIdInRange) {
+    if (lastEditedRange !== null && (id === firstIdInRange || id === lastIdInRange)) {
       // If this ID is one of the endpoints of the last range clicked, 
       // return the same range.
       return lastEditedRange;
@@ -417,7 +421,7 @@ export const useAnnotations = (): AnnotationState => {
     return track.ids.slice(startIdx, endIdx + 1);
   }
 
-  const handleAnnotationClick = (dataset: Dataset, id: number, selectRange: boolean = false): void => {
+  const handleAnnotationClick = (dataset: Dataset, id: number): void => {
     if (!isAnnotationEnabled || currentLabelIdx === null) {
       setLastClickedId(id);
       return;
@@ -431,7 +435,8 @@ export const useAnnotations = (): AnnotationState => {
     } else {
       // Time-based selection
       const idRange = getSelectRangeFromId(dataset, id);
-      if (selectRange && idRange !== null) {
+      if (isRangeSelectHotkeyPressed && idRange !== null) {
+        console.log("New ID Range", idRange);
         setLastEditedRange(idRange);
         annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
       } else {
@@ -473,6 +478,8 @@ export const useAnnotations = (): AnnotationState => {
     setSelectionMode,
     data,
     handleAnnotationClick,
+    isRangeSelectHotkeyPressed,
+    getSelectRangeFromId,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
     setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
