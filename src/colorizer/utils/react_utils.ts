@@ -3,11 +3,11 @@ import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
 import { AnnotationSelectionMode, VectorConfig } from "../types";
+import { useShortcutKey } from "./hooks";
 
 import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters } from "../AnnotationData";
 import Dataset from "../Dataset";
 import SharedWorkerPool from "../workers/SharedWorkerPool";
-import { useShortcutKey } from "./hooks";
 
 // TODO: Move this to a folder outside of `colorizer`.
 // TODO: Split this up into multiple files.
@@ -309,7 +309,7 @@ export const useMotionDeltas = (
   return motionDeltas;
 };
 
-export type AnnotationState =  {
+export type AnnotationState = {
   // Viewer state that lives outside the annotation data itself
   currentLabelIdx: number | null;
   setCurrentLabelIdx: (labelIdx: number) => void;
@@ -328,14 +328,13 @@ export type AnnotationState =  {
    * changes.
    */
   data: IAnnotationDataGetters;
-} & IAnnotationDataSetters & {
-};
+} & IAnnotationDataSetters & {};
 
 export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
-  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);  
+  const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
   const [selectionMode, setSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
   const [visible, _setVisibility] = useState<boolean>(false);
   const isRangeSelectHotkeyPressed = useShortcutKey("Shift");
@@ -391,13 +390,12 @@ export const useAnnotations = (): AnnotationState => {
     return annotationData.deleteLabel(labelIdx);
   };
 
-  
   const getSelectRangeFromId = (dataset: Dataset, id: number): number[] | null => {
     const firstIdInRange = lastEditedRange ? lastEditedRange[0] : -1;
     const lastIdInRange = lastEditedRange ? lastEditedRange[lastEditedRange.length - 1] : -1;
 
     if (lastEditedRange !== null && (id === firstIdInRange || id === lastIdInRange)) {
-      // If this ID is one of the endpoints of the last range clicked, 
+      // If this ID is one of the endpoints of the last range clicked,
       // return the same range.
       return lastEditedRange;
     } else if (dataset && lastClickedId !== null) {
@@ -410,7 +408,7 @@ export const useAnnotations = (): AnnotationState => {
       }
     }
     return null;
-  }  
+  };
 
   const getIdsInRange = (dataset: Dataset, id1: number, id2: number): number[] => {
     const track = dataset.buildTrack(dataset.getTrackId(id1));
@@ -419,7 +417,7 @@ export const useAnnotations = (): AnnotationState => {
     const startIdx = Math.min(idx0, idx1);
     const endIdx = Math.max(idx0, idx1);
     return track.ids.slice(startIdx, endIdx + 1);
-  }
+  };
 
   const handleAnnotationClick = (dataset: Dataset, id: number): void => {
     if (!isAnnotationEnabled || currentLabelIdx === null) {
@@ -445,7 +443,7 @@ export const useAnnotations = (): AnnotationState => {
     }
     setLastClickedId(id);
     setDataUpdateCounter((value) => value + 1);
-  }
+  };
 
   const clear = (): void => {
     annotationData.clear();
@@ -453,18 +451,20 @@ export const useAnnotations = (): AnnotationState => {
     setLastEditedRange(null);
     setLastClickedId(null);
     setIsAnnotationEnabled(false);
-  }
+  };
 
-  const data = useMemo((): IAnnotationDataGetters => ({
+  const data = useMemo(
+    (): IAnnotationDataGetters => ({
       // Data getters
       getLabels: annotationData.getLabels,
       getLabelsAppliedToId: annotationData.getLabelsAppliedToId,
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
       isLabelOnId: annotationData.isLabelOnId,
-      toCsv: annotationData.toCsv
-    })
-  , [dataUpdateCounter]);
+      toCsv: annotationData.toCsv,
+    }),
+    [dataUpdateCounter]
+  );
 
   return {
     // UI state
