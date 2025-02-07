@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, ThresholdType } from "../src/colorizer/types";
-import { getKeyFromName, validateThresholds } from "../src/colorizer/utils/data_utils";
+import { getIntervals, getKeyFromName, validateThresholds } from "../src/colorizer/utils/data_utils";
 
 import { makeMockDataset } from "./Dataset.test";
 
@@ -100,6 +100,33 @@ describe("data_utils", () => {
           type: ThresholdType.CATEGORICAL,
           enabledCategories: [true, false, false],
         },
+      ]);
+    });
+  });
+
+  describe("getSubsetSubregions", () => {
+    it("returns interval over whole range", () => {
+      const values = [0, 1, 2, 3, 4, 5];
+      expect(getIntervals(values)).deep.equals([[0, 5]]);
+    });
+
+    it("returns interval missing zero", () => {
+      const values = [2, 3, 4, 5];
+      expect(getIntervals(values)).deep.equals([[2, 5]]);
+    });
+
+    it("returns multiple intervals", () => {
+      const values1 = [1, 3, 4, 5];
+      expect(getIntervals(values1)).deep.equals([
+        [1, 1],
+        [3, 5],
+      ]);
+
+      const values2 = [5, 6, 7, 9, 10, 14];
+      expect(getIntervals(values2)).deep.equals([
+        [5, 7],
+        [9, 10],
+        [14, 14],
       ]);
     });
   });

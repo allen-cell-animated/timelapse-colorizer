@@ -1,5 +1,6 @@
 import React, { ReactElement, useContext, useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
+import { Color } from "three";
 
 import { TagIconSVG } from "../../../assets";
 import { Dataset, Track } from "../../../colorizer";
@@ -9,15 +10,19 @@ import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../
 import { AppThemeContext } from "../../AppStyle";
 import DropdownItem from "../../Dropdowns/DropdownItem";
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
   ids: number[];
+  setFrame: (frame: number) => Promise<void>;
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
   onClickDeleteObject: (record: TableDataType) => void;
   selectedTrack: Track | null;
   selectedId?: number;
+  frame: number;
+  labelColor: Color;
 };
 
 const ListLayoutContainer = styled.div`
@@ -31,27 +36,25 @@ const ListLayoutContainer = styled.div`
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
-  const trackToLength = useRef<Record<string, number>>({});
+  const cachedTracks = useRef<Map<string, Track | undefined>>(new Map());
   const selectedTrackId = props.selectedTrack?.trackId.toString();
 
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
   useEffect(() => {
-    trackToLength.current = {};
+    cachedTracks.current.clear();
   }, [props.dataset]);
 
   // Building a track is an expensive operation (takes O(N) where N is the
-  // size of the dataset), so cache the length of tracks.
+  // size of the dataset), so cache the tracks.
   // TODO: This could be optimized by having the dataset perform this once
   // and save the results in a lookup table.
-  const getTrackLength = (trackId: number): number => {
-    if (trackToLength.current[trackId] !== undefined) {
-      return trackToLength.current[trackId];
-    } else {
+  const getTrack = (trackId: number): Track | undefined => {
+    if (!cachedTracks.current.has(trackId.toString())) {
       const track = props.dataset?.buildTrack(trackId);
-      trackToLength.current[trackId] = track?.ids.length ?? 0;
-      return track?.ids.length ?? 0;
+      cachedTracks.current.set(trackId.toString(), track);
     }
+    return cachedTracks.current.get(trackId.toString());
   };
 
   // Organize ids by track
@@ -97,8 +100,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     listContents = (
       <ul style={{ marginTop: 0 }}>
         {trackIds.map((trackId) => {
-          const ids = trackToIds.get(trackId.toString());
-          const trackLength = getTrackLength(trackId);
+          const track = getTrack(trackId);
+          const ids = trackToIds.get(trackId.toString())!;
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
             <li key={trackId}>
@@ -109,12 +112,22 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 }}
                 selected={isSelectedTrack}
               >
-                <p style={{ margin: 0 }}>
-                  {trackId}{" "}
-                  <span style={{ color: theme.color.text.hint }}>
-                    ({ids?.length ?? 0}/{trackLength})
-                  </span>
-                </p>
+                <FlexRowAlignCenter $gap={5}>
+                  <AnnotationTrackThumbnail
+                    widthPx={75}
+                    heightPx={14}
+                    ids={ids}
+                    track={track ?? null}
+                    dataset={props.dataset}
+                    color={props.labelColor}
+                  ></AnnotationTrackThumbnail>
+                  <p style={{ margin: 0 }}>
+                    {trackId}{" "}
+                    <span style={{ color: theme.color.text.hint }}>
+                      ({ids.length}/{track?.times.length})
+                    </span>
+                  </p>
+                </FlexRowAlignCenter>
               </DropdownItem>
             </li>
           );
@@ -123,7 +136,6 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     );
   }
 
-  const selectedTrackLength = getTrackLength(selectedTrackId ? parseInt(selectedTrackId, 10) : 0);
   const selectedTrackIds = trackToIds.get(selectedTrackId ?? "") ?? [];
 
   return (
@@ -160,24 +172,35 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             flexGrow: 2,
           }}
         >
-          <p style={{ fontSize: theme.font.size.label, marginTop: 0, marginBottom: "5px" }}>
-            {selectedTrackId ? (
-              <span>
-                Track {selectedTrackId}{" "}
-                <span style={{ color: theme.color.text.hint }}>
-                  ({selectedTrackIds.length}/{selectedTrackLength})
+          <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
+            <AnnotationTrackThumbnail
+              frame={props.frame}
+              setFrame={props.setFrame}
+              ids={selectedTrackIds}
+              track={props.selectedTrack}
+              dataset={props.dataset}
+              color={props.labelColor}
+            ></AnnotationTrackThumbnail>
+
+            <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
+              {selectedTrackId ? (
+                <span>
+                  Track {selectedTrackId}{" "}
+                  <span style={{ color: theme.color.text.hint }}>
+                    ({selectedTrackIds.length}/{props.selectedTrack?.times.length})
+                  </span>
                 </span>
-              </span>
-            ) : (
-              `No track selected`
-            )}
-          </p>
+              ) : (
+                `No track selected`
+              )}
+            </p>
+          </FlexRowAlignCenter>
           <AnnotationDisplayTable
             onClickObjectRow={props.onClickObjectRow}
             onClickDeleteObject={props.onClickDeleteObject}
             dataset={props.dataset}
             ids={selectedTrackId ? trackToIds.get(selectedTrackId) ?? [] : []}
-            height={412}
+            height={410}
             selectedId={props.selectedId}
             hideTrackColumn={true}
           ></AnnotationDisplayTable>

@@ -27,11 +27,11 @@ const enum AnnotationViewType {
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
-  setTrackAndFrame: (track: number, frame: number) => void;
+  setFrame: (frame: number) => Promise<void>;
   setTrack: (track: number) => void;
   selectedTrack: Track | null;
   dataset: Dataset | null;
-  time: number;
+  frame: number;
 };
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
@@ -49,13 +49,13 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
 
   const [isPending, startTransition] = useTransition();
-  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.TABLE);
+  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
 
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
   const selectedId = useMemo(() => {
-    return props.selectedTrack?.getIdAtTime(props.time) ?? -1;
-  }, [props.time, props.selectedTrack]);
+    return props.selectedTrack?.getIdAtTime(props.frame) ?? -1;
+  }, [props.frame, props.selectedTrack]);
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -78,9 +78,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickObjectRow = useCallback(
     (record: TableDataType): void => {
-      props.setTrackAndFrame(record.track, record.time);
+      props.setTrack(record.track);
+      props.setFrame(record.time);
     },
-    [props.setTrackAndFrame]
+    [props.setTrack, props.setFrame]
   );
 
   const onClickDeleteObject = useCallback(
@@ -215,10 +216,13 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
             onClickTrack={props.setTrack}
+            setFrame={props.setFrame}
             dataset={props.dataset}
             ids={tableIds}
             selectedTrack={props.selectedTrack}
             selectedId={selectedId}
+            frame={props.frame}
+            labelColor={selectedLabel?.color}
           ></AnnotationDisplayList>
         </div>
       </LoadingSpinner>
