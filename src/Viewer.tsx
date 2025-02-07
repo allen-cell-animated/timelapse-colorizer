@@ -995,10 +995,20 @@ function Viewer(): ReactElement {
           <AnnotationTab
             annotationState={annotationState}
             setTrackAndFrame={(track, frame) => {
+              const isPlaying = timeControls.isPlaying();
+              if (isPlaying) {
+                timeControls.pause();
+              }
               findTrack(track, false);
               setFrameAndRender(frame);
+              if (isPlaying) {
+                timeControls.play();
+              }
             }}
+            setTrack={(track) => findTrack(track, false)}
             dataset={dataset}
+            selectedTrack={selectedTrack}
+            time={currentFrame}
           />
         </div>
       ),
