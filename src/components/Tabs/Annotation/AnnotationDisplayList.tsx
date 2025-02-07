@@ -97,7 +97,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     listContents = (
       <ul style={{ marginTop: 0 }}>
         {trackIds.map((trackId) => {
-          const ids = trackToIds.get(trackId.toString())!;
+          const ids = trackToIds.get(trackId.toString());
           const trackLength = getTrackLength(trackId);
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
@@ -112,7 +112,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 <p style={{ margin: 0 }}>
                   {trackId}{" "}
                   <span style={{ color: theme.color.text.hint }}>
-                    ({ids.length}/{trackLength})
+                    ({ids?.length ?? 0}/{trackLength})
                   </span>
                 </p>
               </DropdownItem>
