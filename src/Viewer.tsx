@@ -22,7 +22,6 @@ import React, {
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 
 import {
-  AnnotationSelectionMode,
   Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
   DEFAULT_COLOR_RAMP_KEY,
@@ -843,11 +842,10 @@ function Viewer(): ReactElement {
     (track: Track | null) => {
       setFindTrackInput(track?.trackId.toString() || "");
       setSelectedTrack(track);
-      if (track && annotationState.isAnnotationModeEnabled && annotationState.currentLabelIdx !== null) {
+      if (dataset && track) {
         const id = track.getIdAtTime(currentFrame);
-        const isLabeled = annotationState.data.isLabelOnId(annotationState.currentLabelIdx, id);
-        const ids = annotationState.selectionMode === AnnotationSelectionMode.TIME ? [id] : track.ids;
-        annotationState.setLabelOnIds(annotationState.currentLabelIdx, ids, !isLabeled);
+        // TODO: Check for shift key held
+        annotationState.handleAnnotationClick(dataset, id, false);
       }
     },
     [
