@@ -319,7 +319,17 @@ export type AnnotationState = {
   setVisibility: (visible: boolean) => void;
   selectionMode: AnnotationSelectionMode;
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
-  isRangeSelectHotkeyPressed: boolean;
+  /** Whether the range selection hotkey is currently pressed. (Shift by default.) */
+  isSelectRangeHotkeyPressed: boolean;
+  /**
+   * For a given ID, returns the range of IDs that would be selected if the ID
+   * is clicked with range selection mode turned on.
+   * @param dataset The dataset to look up track information from.
+   * @param id The ID of an object to select with range rules applied.
+   * @returns One of the following:
+   * - Returns `null` if no range would be selected.
+   * - A list of IDs to select if this ID is clicked with range selection mode turned on.
+   */
   getSelectRangeFromId: (dataset: Dataset, id: number) => number[] | null;
   handleAnnotationClick: (dataset: Dataset, id: number, selectRange?: boolean) => void;
   /**
@@ -328,7 +338,7 @@ export type AnnotationState = {
    * changes.
    */
   data: IAnnotationDataGetters;
-} & IAnnotationDataSetters & {};
+} & IAnnotationDataSetters;
 
 export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
@@ -337,7 +347,7 @@ export const useAnnotations = (): AnnotationState => {
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
   const [selectionMode, setSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
   const [visible, _setVisibility] = useState<boolean>(false);
-  const isRangeSelectHotkeyPressed = useShortcutKey("Shift");
+  const isSelectRangeHotkeyPressed = useShortcutKey("Shift");
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [lastEditedRange, setLastEditedRange] = useState<number[] | null>(null);
@@ -390,33 +400,42 @@ export const useAnnotations = (): AnnotationState => {
     return annotationData.deleteLabel(labelIdx);
   };
 
-  const getSelectRangeFromId = (dataset: Dataset, id: number): number[] | null => {
-    const firstIdInRange = lastEditedRange ? lastEditedRange[0] : -1;
-    const lastIdInRange = lastEditedRange ? lastEditedRange[lastEditedRange.length - 1] : -1;
-
-    if (lastEditedRange !== null && (id === firstIdInRange || id === lastIdInRange)) {
-      // If this ID is one of the endpoints of the last range clicked,
-      // return the same range.
-      return lastEditedRange;
-    } else if (dataset && lastClickedId !== null) {
-      // Otherwise, check if both IDs are in the same track. If so,
-      // return a list of the IDs between the two of them.
-      const trackOfLastClickedId = dataset.getTrackId(lastClickedId);
-      const trackOfCurrentId = dataset.getTrackId(id);
-      if (trackOfLastClickedId === trackOfCurrentId) {
-        return getIdsInRange(dataset, lastClickedId, id);
-      }
-    }
-    return null;
-  };
-
+  /** Returns a list of IDs between two objects in the same track. */
   const getIdsInRange = (dataset: Dataset, id1: number, id2: number): number[] => {
+    if (dataset.getTrackId(id1) !== dataset.getTrackId(id2)) {
+      throw new Error(`useAnnotations:getIdsInRange: IDs ${id1} and ${id2} are not in the same track.`);
+    }
     const track = dataset.buildTrack(dataset.getTrackId(id1));
     const idx0 = track.ids.indexOf(id1);
     const idx1 = track.ids.indexOf(id2);
     const startIdx = Math.min(idx0, idx1);
     const endIdx = Math.max(idx0, idx1);
     return track.ids.slice(startIdx, endIdx + 1);
+  };
+
+  // Return a list of IDs that would be selected if the ID was clicked with
+  // range selection mode turned on.
+  const getSelectRangeFromId = (dataset: Dataset, id: number): number[] | null => {
+    // If this ID is one of the endpoints of the last range clicked,
+    // return the same range.
+    if (lastEditedRange !== null) {
+      const firstIdInRange = lastEditedRange[0];
+      const lastIdInRange = lastEditedRange[lastEditedRange.length - 1];
+      if (id === firstIdInRange || id === lastIdInRange) {
+        return lastEditedRange;
+      }
+    }
+    // Otherwise, check if both IDs are in the same track. If so,
+    // return a list of the IDs between the two of them.
+    if (dataset && lastClickedId !== null) {
+      const trackOfLastClickedId = dataset.getTrackId(lastClickedId);
+      const trackOfCurrentId = dataset.getTrackId(id);
+      if (trackOfLastClickedId === trackOfCurrentId) {
+        return getIdsInRange(dataset, lastClickedId, id);
+      }
+    }
+    // IDs are not in the same track.
+    return null;
   };
 
   const handleAnnotationClick = (dataset: Dataset, id: number): void => {
@@ -433,8 +452,7 @@ export const useAnnotations = (): AnnotationState => {
     } else {
       // Time-based selection
       const idRange = getSelectRangeFromId(dataset, id);
-      if (isRangeSelectHotkeyPressed && idRange !== null) {
-        console.log("New ID Range", idRange);
+      if (isSelectRangeHotkeyPressed && idRange !== null) {
         setLastEditedRange(idRange);
         annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
       } else {
@@ -478,7 +496,7 @@ export const useAnnotations = (): AnnotationState => {
     setSelectionMode,
     data,
     handleAnnotationClick,
-    isRangeSelectHotkeyPressed,
+    isSelectRangeHotkeyPressed,
     getSelectRangeFromId,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),

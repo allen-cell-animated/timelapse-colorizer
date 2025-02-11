@@ -844,7 +844,6 @@ function Viewer(): ReactElement {
       setSelectedTrack(track);
       if (dataset && track) {
         const id = track.getIdAtTime(currentFrame);
-        // TODO: Check for shift key held
         annotationState.handleAnnotationClick(dataset, id);
       }
     },
