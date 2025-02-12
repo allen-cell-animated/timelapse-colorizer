@@ -1,4 +1,4 @@
-import React, { EventHandler, useEffect, useMemo, useRef, useState } from "react";
+import React, { EventHandler, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -434,7 +434,7 @@ export const useAnnotations = (): AnnotationState => {
 
   // Return a list of IDs that would be selected if the ID was clicked with
   // range selection mode turned on.
-  const getSelectRangeFromId = (dataset: Dataset, id: number): number[] | null => {
+  const getSelectRangeFromId = useCallback((dataset: Dataset, id: number): number[] | null => {
     // If this ID is one of the endpoints of the last range clicked,
     // return the same range.
     if (lastEditedRange !== null) {
@@ -455,9 +455,9 @@ export const useAnnotations = (): AnnotationState => {
     }
     // IDs are not in the same track.
     return null;
-  };
+  }, [lastEditedRange, lastClickedId]);
 
-  const handleAnnotationClick = (dataset: Dataset, id: number): void => {
+  const handleAnnotationClick = useCallback((dataset: Dataset, id: number): void => {
     if (!isAnnotationEnabled || currentLabelIdx === null) {
       setLastClickedId(id);
       return;
@@ -485,7 +485,7 @@ export const useAnnotations = (): AnnotationState => {
         setLastClickedId(id);
     }
     setDataUpdateCounter((value) => value + 1);
-  };
+  }, [selectionMode, currentLabelIdx, getSelectRangeFromId]);
 
   const clear = (): void => {
     annotationData.clear();
