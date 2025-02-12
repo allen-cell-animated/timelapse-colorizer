@@ -166,7 +166,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
           </Tag>
         </FlexRow>
       );
-    } else if (props.annotationState.isSelectRangeHotkeyPressed && dataset) {
+    } else if (props.annotationState.selectionMode === AnnotationSelectionMode.RANGE && dataset) {
       const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHoveredId);
       if (hoveredRange !== null && hoveredRange.length > 1) {
         // Get min and max track IDs

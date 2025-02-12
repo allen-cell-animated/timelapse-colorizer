@@ -319,8 +319,6 @@ export type AnnotationState = {
   setVisibility: (visible: boolean) => void;
   selectionMode: AnnotationSelectionMode;
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
-  /** Whether the range selection hotkey is currently pressed. (Shift by default.) */
-  isSelectRangeHotkeyPressed: boolean;
   /**
    * For a given ID, returns the range of IDs that would be selected if the ID
    * is clicked with range selection mode turned on.
@@ -346,12 +344,33 @@ export const useAnnotations = (): AnnotationState => {
 
   const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
-  const [selectionMode, setSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
   const [visible, _setVisibility] = useState<boolean>(false);
+  
+  const [baseSelectionMode, setBaseSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
+  
   const isSelectRangeHotkeyPressed = useShortcutKey("Shift");
-
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [lastEditedRange, setLastEditedRange] = useState<number[] | null>(null);
+  
+  // When in time mode, allow hotkeys to temporarily change to range mode.
+  let selectionMode = baseSelectionMode;
+  if (baseSelectionMode === AnnotationSelectionMode.TIME && isSelectRangeHotkeyPressed) {
+    selectionMode = AnnotationSelectionMode.RANGE;
+  }
+  
+  const setSelectionMode = (newMode: AnnotationSelectionMode): void => {
+    if (newMode === baseSelectionMode) {
+      return;
+    }
+    if (newMode === AnnotationSelectionMode.RANGE) {
+      // Clear the range-related data when switching, since otherwise
+      // it can be confusing to have a previously interacted-with object
+      // become part of a selected range.
+      setLastClickedId(null);
+      setLastEditedRange(null);
+    }
+    setBaseSelectionMode(newMode);
+  }
 
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
@@ -447,18 +466,22 @@ export const useAnnotations = (): AnnotationState => {
     const track = dataset.buildTrack(dataset.getTrackId(id));
     const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
 
-    if (selectionMode === AnnotationSelectionMode.TRACK) {
-      // Toggle entire track
-      annotationData.setLabelOnIds(currentLabelIdx, track.ids, !isLabeled);
-    } else {
-      // Time-based selection
-      const idRange = getSelectRangeFromId(dataset, id);
-      if (isSelectRangeHotkeyPressed && idRange !== null) {
-        setLastEditedRange(idRange);
-        annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
-      } else {
+    switch (selectionMode) {
+      case AnnotationSelectionMode.TRACK:
+        // Toggle entire track
+        annotationData.setLabelOnIds(currentLabelIdx, track.ids, !isLabeled);
+        break;
+      case AnnotationSelectionMode.RANGE:
+        const idRange = getSelectRangeFromId(dataset, id);
+        if (idRange !== null) {
+          setLastEditedRange(idRange);
+          annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
+          break;
+        }
+        // If no range is selected, select at a single time.
+      case AnnotationSelectionMode.TIME:
+      default:
         annotationData.setLabelOnIds(currentLabelIdx, [id], !isLabeled);
-      }
     }
     setLastClickedId(id);
     setDataUpdateCounter((value) => value + 1);
@@ -497,7 +520,6 @@ export const useAnnotations = (): AnnotationState => {
     setSelectionMode,
     data,
     handleAnnotationClick,
-    isSelectRangeHotkeyPressed,
     lastClickedId,
     getSelectRangeFromId,
     // Wrap state mutators

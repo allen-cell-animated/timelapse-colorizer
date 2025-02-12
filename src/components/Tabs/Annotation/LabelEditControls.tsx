@@ -170,14 +170,17 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
           value={props.selectionMode}
           onChange={(e) => props.setSelectionMode(e.target.value)}
         >
+          <Tooltip trigger={["hover", "focus"]} title="Select by current timepoint" placement="top">
+            <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
+          </Tooltip>
           <TooltipWithSubtitle
             trigger={["hover", "focus"]}
-            title="Select by current timepoint or range"
-            subtitle="Select a time range with Shift"
+            title="Select by range"
+            subtitleList={["Click on two timepoints in a track to change the range between them."]}
             autoAdjustOverflow={false}
             placement="top"
           >
-            <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
+            <Radio.Button value={AnnotationSelectionMode.RANGE}>Range</Radio.Button>
           </TooltipWithSubtitle>
           <Tooltip trigger={["hover", "focus"]} title="Select entire track" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
