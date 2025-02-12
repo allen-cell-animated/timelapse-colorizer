@@ -369,7 +369,7 @@ export const useAnnotations = (): AnnotationState => {
       setLastEditedRange(null);
     }
     setBaseSelectionMode(newMode);
-  }
+  };
 
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
@@ -465,20 +465,21 @@ export const useAnnotations = (): AnnotationState => {
     const track = dataset.buildTrack(dataset.getTrackId(id));
     const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
 
+    const idRange = getSelectRangeFromId(dataset, id);
     switch (selectionMode) {
       case AnnotationSelectionMode.TRACK:
         // Toggle entire track
         annotationData.setLabelOnIds(currentLabelIdx, track.ids, !isLabeled);
         break;
       case AnnotationSelectionMode.RANGE:
-        const idRange = getSelectRangeFromId(dataset, id);
         if (idRange !== null) {
           setLastEditedRange(idRange);
           annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
           setLastClickedId(null);
-          break;
+        } else {
+          setLastClickedId(id);
         }
-        // If no range is selected, continue to default to select at a single time.
+        break;
       case AnnotationSelectionMode.TIME:
       default:
         annotationData.setLabelOnIds(currentLabelIdx, [id], !isLabeled);
