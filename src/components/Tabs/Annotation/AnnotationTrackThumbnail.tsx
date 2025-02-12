@@ -7,7 +7,7 @@ import { getIntervals } from "../../../colorizer/utils/data_utils";
 
 import { AppTheme, AppThemeContext } from "../../AppStyle";
 
-const CANVAS_PULSE_CLASSNAME = "pulse";
+const FADE_CLASSNAME = "pulse";
 
 type AnnotationTrackThumbnailProps = {
   ids: number[];
@@ -45,11 +45,24 @@ const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $in
     left: 0;
   }
 
-  & > .${CANVAS_PULSE_CLASSNAME} {
-    animation: dissolve 1.5s infinite;
+  & > .${FADE_CLASSNAME} {
+    animation-name: fade;
+    animation-duration: 0.5s;
+    animation-fill-mode: both;
+    animation-timing-function: ease-in;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
   }
 
-  /* @keyframes  */
+  @keyframes fade {
+    0% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0.25;
+    }
+  }
 `;
 
 const drawMark = (ctx: CanvasRenderingContext2D, x: number, color: string): void => {
@@ -175,6 +188,24 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     }
   }, [track, dataset, props.mark, props.widthPx, props.heightPx, props.frame, hoveredCanvasX, awaitingFrame]);
 
+  // Update highlight canvas
+  useEffect(() => {
+    const canvas = highlightCanvasRef.current;
+    const ctx = highlightCanvasRef.current?.getContext("2d");
+    if (!canvas || !ctx) {
+      return;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (props.highlightedIds && dataset) {
+      const highlightedTimes = props.highlightedIds.map((id) => dataset.getTime(id));
+      const highlightIntervals = getIntervals(highlightedTimes);
+      for (const interval of highlightIntervals) {
+        const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
+        drawInterval(ctx, xInterval, props.heightPx, "#ebc88d9f");
+      }
+    }
+  }, [dataset, props.highlightedIds, props.widthPx, props.heightPx]);
+
   // Update base canvas
   useEffect(() => {
     const canvas = baseCanvasRef.current;
@@ -204,15 +235,6 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
       drawInterval(ctx, xInterval, props.heightPx, "#" + props.color.getHexString());
     }
-
-    if (props.highlightedIds) {
-      const highlightedTimes = props.highlightedIds.map((id) => dataset.getTime(id));
-      const highlightIntervals = getIntervals(highlightedTimes);
-      for (const interval of highlightIntervals) {
-        const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
-        drawInterval(ctx, xInterval, props.heightPx, "#ffff00a0");
-      }
-    }
   }, [ids, track, props.highlightedIds, props.frame, props.widthPx, props.heightPx]);
 
   return (
@@ -223,7 +245,14 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       $interactive={props.track !== null}
     >
       <canvas ref={baseCanvasRef} width={props.widthPx} height={props.heightPx}></canvas>
-      {props.highlightedIds && <canvas ref={highlightCanvasRef} width={props.widthPx} height={props.heightPx}></canvas>}
+      {props.highlightedIds && (
+        <canvas
+          ref={highlightCanvasRef}
+          className={FADE_CLASSNAME}
+          width={props.widthPx}
+          height={props.heightPx}
+        ></canvas>
+      )}
       <canvas ref={timeCanvasRef} width={props.widthPx} height={props.heightPx}></canvas>
     </ThumbnailContainer>
   );
