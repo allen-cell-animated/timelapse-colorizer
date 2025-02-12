@@ -992,6 +992,7 @@ function Viewer(): ReactElement {
             dataset={dataset}
             selectedTrack={selectedTrack}
             frame={currentFrame}
+            hoveredId={lastValidHoveredId}
           />
         </div>
       ),

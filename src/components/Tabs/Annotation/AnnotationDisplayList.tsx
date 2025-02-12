@@ -21,6 +21,8 @@ type AnnotationDisplayListProps = {
   onClickDeleteObject: (record: TableDataType) => void;
   selectedTrack: Track | null;
   selectedId?: number;
+  highlightRange: number[] | null;
+  lastClickedId: number | null;
   frame: number;
   labelColor: Color;
 };
@@ -36,7 +38,7 @@ const ListLayoutContainer = styled.div`
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
-  const selectedTrackId = props.selectedTrack?.trackId.toString();
+  const selectedTrackId = props.selectedTrack?.trackId;
 
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
@@ -119,7 +121,25 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     );
   }
 
-  const selectedTrackIds = trackToIds.get(selectedTrackId ?? "") ?? [];
+  const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
+
+  // Show highlight + last clicked ID if provided.
+  let markedTime;
+  if (props.lastClickedId !== null && props.dataset) {
+    const id = props.lastClickedId;
+    const lastClickedTime = props.dataset.getTime(id);
+    const isSelectedTrack = props.dataset.getTrackId(id) === selectedTrackId;
+    if (lastClickedTime !== undefined && isSelectedTrack) {
+      markedTime = lastClickedTime;
+    }
+  }
+  let highlightRange;
+  if (props.highlightRange && props.highlightRange.length > 0) {
+    const track = props.dataset?.getTrackId(props.highlightRange[0]);
+    if (track === selectedTrackId) {
+      highlightRange = props.highlightRange;
+    }
+  }
 
   return (
     <FlexColumn>
@@ -163,6 +183,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
               track={props.selectedTrack}
               dataset={props.dataset}
               color={props.labelColor}
+              mark={markedTime}
+              highlightedIds={highlightRange}
             ></AnnotationTrackThumbnail>
 
             <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
@@ -182,7 +204,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             onClickObjectRow={props.onClickObjectRow}
             onClickDeleteObject={props.onClickDeleteObject}
             dataset={props.dataset}
-            ids={selectedTrackId ? trackToIds.get(selectedTrackId) ?? [] : []}
+            ids={selectedTrackId ? trackToIds.get(selectedTrackId?.toString()) ?? [] : []}
             height={410}
             selectedId={props.selectedId}
             hideTrackColumn={true}

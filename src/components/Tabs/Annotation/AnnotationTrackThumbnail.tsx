@@ -7,6 +7,8 @@ import { getIntervals } from "../../../colorizer/utils/data_utils";
 
 import { AppTheme, AppThemeContext } from "../../AppStyle";
 
+const CANVAS_PULSE_CLASSNAME = "pulse";
+
 type AnnotationTrackThumbnailProps = {
   ids: number[];
   track: Track | null;
@@ -16,6 +18,10 @@ type AnnotationTrackThumbnailProps = {
   widthPx?: number;
   setFrame?: (frame: number) => Promise<void>;
   frame?: number;
+  /** Draws a optional additional mark (and a text label) at the provided time. */
+  mark?: number;
+  /** Highlights a range of IDs */
+  highlightedIds?: number[];
 };
 
 const defaultProps = {
@@ -38,7 +44,43 @@ const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $in
     top: 0;
     left: 0;
   }
+
+  & > .${CANVAS_PULSE_CLASSNAME} {
+    animation: dissolve 1.5s infinite;
+  }
+
+  /* @keyframes  */
 `;
+
+const drawMark = (ctx: CanvasRenderingContext2D, x: number, color: string): void => {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x - 3, 0);
+  ctx.lineTo(x, 3);
+  ctx.lineTo(x + 3, 0);
+  ctx.fill();
+  ctx.closePath();
+};
+
+const drawDashedLine = (ctx: CanvasRenderingContext2D, x: number, height: number, color: string): void => {
+  ctx.strokeStyle = color;
+  ctx.setLineDash([2, 2]);
+  ctx.beginPath();
+  ctx.moveTo(x, 0);
+  ctx.lineTo(x, height);
+  ctx.stroke();
+  ctx.closePath();
+};
+
+const drawInterval = (
+  ctx: CanvasRenderingContext2D,
+  interval: [number, number],
+  height: number,
+  color: string
+): void => {
+  ctx.fillStyle = color;
+  ctx.fillRect(interval[0], 0, interval[1] - interval[0], height);
+};
 
 export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThumbnailProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
@@ -52,6 +94,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   // lines for the current and hovered time, while the base canvas draws the
   // labeled intervals.
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);
+  const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
   const timeCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const minTime = track ? track.times[0] : 0;
@@ -112,30 +155,25 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       return;
     }
 
-    const drawDashedLine = (x: number, color: string): void => {
-      ctx.strokeStyle = color;
-      ctx.setLineDash([2, 2]);
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, props.heightPx);
-      ctx.stroke();
-      ctx.closePath();
-    };
-
     // Draw hovered time on canvas.
     if (props.frame && hoveredCanvasX !== null) {
       const hoveredTime = xCoordToTime(hoveredCanvasX);
       const x = timeToXCoord(hoveredTime + 0.5);
-      drawDashedLine(x, theme.color.text.hint);
+      drawDashedLine(ctx, x, props.heightPx, theme.color.text.hint);
     }
     // Draw the current time on the canvas. Replace with awaiting time if it is
     // set for optimistic updates
     if (props.frame !== undefined && props.frame >= minTime && props.frame <= maxTime) {
       const frame = awaitingFrame !== null ? awaitingFrame : props.frame;
       const x = timeToXCoord(frame + 0.5);
-      drawDashedLine(x, theme.color.text.primary);
+      drawDashedLine(ctx, x, props.heightPx, theme.color.text.primary);
     }
-  }, [track, dataset, props.widthPx, props.heightPx, props.frame, hoveredCanvasX, awaitingFrame]);
+
+    if (props.mark !== undefined) {
+      const x = timeToXCoord(props.mark + 0.5);
+      drawMark(ctx, x, theme.color.text.primary);
+    }
+  }, [track, dataset, props.mark, props.widthPx, props.heightPx, props.frame, hoveredCanvasX, awaitingFrame]);
 
   // Update base canvas
   useEffect(() => {
@@ -156,22 +194,26 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     // Check for time intervals where there are no objects present for the track
     const missingIntervals = getIntervals(track.getMissingTimes());
 
-    const drawInterval = (interval: [number, number], color: string): void => {
-      const minX = timeToXCoord(interval[0]);
-      const maxX = timeToXCoord(interval[1] + 1);
-      ctx.fillStyle = color;
-      ctx.fillRect(minX, 0, maxX - minX, props.heightPx);
-    };
-
     // Draw missing time intervals on the canvas
     for (const interval of missingIntervals) {
-      drawInterval(interval, theme.color.layout.borders);
+      const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
+      drawInterval(ctx, xInterval, props.heightPx, theme.color.layout.borders);
     }
     // Draw selected intervals on the canvas
     for (const interval of selectedIntervals) {
-      drawInterval(interval, "#" + props.color.getHexString());
+      const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
+      drawInterval(ctx, xInterval, props.heightPx, "#" + props.color.getHexString());
     }
-  }, [ids, track, props.frame, props.widthPx, props.heightPx]);
+
+    if (props.highlightedIds) {
+      const highlightedTimes = props.highlightedIds.map((id) => dataset.getTime(id));
+      const highlightIntervals = getIntervals(highlightedTimes);
+      for (const interval of highlightIntervals) {
+        const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
+        drawInterval(ctx, xInterval, props.heightPx, "#ffff00a0");
+      }
+    }
+  }, [ids, track, props.highlightedIds, props.frame, props.widthPx, props.heightPx]);
 
   return (
     <ThumbnailContainer
@@ -181,6 +223,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       $interactive={props.track !== null}
     >
       <canvas ref={baseCanvasRef} width={props.widthPx} height={props.heightPx}></canvas>
+      {props.highlightedIds && <canvas ref={highlightCanvasRef} width={props.widthPx} height={props.heightPx}></canvas>}
       <canvas ref={timeCanvasRef} width={props.widthPx} height={props.heightPx}></canvas>
     </ThumbnailContainer>
   );

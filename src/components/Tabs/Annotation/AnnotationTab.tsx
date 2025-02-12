@@ -32,6 +32,7 @@ type AnnotationTabProps = {
   selectedTrack: Track | null;
   dataset: Dataset | null;
   frame: number;
+  hoveredId: number | null;
 };
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
@@ -56,6 +57,20 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const selectedId = useMemo(() => {
     return props.selectedTrack?.getIdAtTime(props.frame) ?? -1;
   }, [props.frame, props.selectedTrack]);
+
+  // Highlight the range of IDs that would be selected if the user clicks with
+  // the select range hotkey pressed. Null if the hotkey is not pressed.
+  const highlightedIds = useMemo(() => {
+    if (props.annotationState.isSelectRangeHotkeyPressed && props.hoveredId !== null && props.dataset) {
+      return props.annotationState.getSelectRangeFromId(props.dataset, props.hoveredId);
+    }
+    return null;
+  }, [
+    props.hoveredId,
+    props.dataset,
+    props.annotationState.isSelectRangeHotkeyPressed,
+    props.annotationState.getSelectRangeFromId,
+  ]);
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -219,6 +234,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             setFrame={props.setFrame}
             dataset={props.dataset}
             ids={tableIds}
+            highlightRange={highlightedIds}
+            lastClickedId={props.annotationState.lastClickedId}
             selectedTrack={props.selectedTrack}
             selectedId={selectedId}
             frame={props.frame}

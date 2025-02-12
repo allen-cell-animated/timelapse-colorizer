@@ -12,6 +12,7 @@ import { FlexColumn, FlexRow } from "../../../styles/utils";
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
+import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
 
 type LabelEditControlsProps = {
   onCreateNewLabel: () => void;
@@ -163,16 +164,22 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
       </Popconfirm>
 
       <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
-        <span style={{ fontSize: theme.font.size.label }}>Apply to </span>
+        <span style={{ fontSize: theme.font.size.label }}>Select by </span>
         <StyledRadioGroup
           style={{ display: "flex", flexDirection: "row" }}
           value={props.selectionMode}
           onChange={(e) => props.setSelectionMode(e.target.value)}
         >
-          <Tooltip trigger={["hover", "focus"]} title="Apply only at the current time" placement="top">
+          <TooltipWithSubtitle
+            trigger={["hover", "focus"]}
+            title="Select by current timepoint or range"
+            subtitle="Select a time range with Shift"
+            autoAdjustOverflow={false}
+            placement="top"
+          >
             <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
-          </Tooltip>
-          <Tooltip trigger={["hover", "focus"]} title="Apply to entire track" placement="top">
+          </TooltipWithSubtitle>
+          <Tooltip trigger={["hover", "focus"]} title="Select entire track" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
           </Tooltip>
         </StyledRadioGroup>
