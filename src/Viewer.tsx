@@ -332,7 +332,8 @@ function Viewer(): ReactElement {
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
-  const setFrame = useCallback(
+  // Callback for setting time, to be used only with timeControls.
+  const setFrameCallback = useCallback(
     async (frame: number) => {
       await canv.setFrame(frame);
       setCurrentFrame(frame);
@@ -340,6 +341,21 @@ function Viewer(): ReactElement {
       canv.render();
     },
     [canv]
+  );
+  timeControls.setFrameCallback(setFrameCallback);
+
+  const setFrame = useCallback(
+    async (frame: number) => {
+      const isPlaying = timeControls.isPlaying();
+      if (isPlaying) {
+        timeControls.pause();
+      }
+      await setFrameCallback(frame);
+      if (isPlaying) {
+        timeControls.play();
+      }
+    },
+    [setFrameCallback]
   );
 
   const findTrack = useCallback(
@@ -789,8 +805,6 @@ function Viewer(): ReactElement {
   );
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
-  timeControls.setFrameCallback(setFrame);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent): void => {
       if (e.target instanceof HTMLInputElement) {
@@ -850,19 +864,6 @@ function Viewer(): ReactElement {
     [dataset, currentFrame, annotationState.handleAnnotationClick]
   );
 
-  // RECORDING CONTROLS ////////////////////////////////////////////////////
-
-  // Update the callback for TimeControls and RecordingControls if it changes.
-  timeControls.setFrameCallback(setFrame);
-
-  const setFrameAndRender = useCallback(
-    async (frame: number) => {
-      await setFrame(frame);
-      canv.render();
-    },
-    [setFrame, canv]
-  );
-
   // RENDERING /////////////////////////////////////////////////////////////
 
   const openCopyNotification = (): void => {
@@ -913,7 +914,7 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <PlotTab
-            setFrame={setFrameAndRender}
+            setFrame={setFrame}
             findTrackInputText={findTrackInput}
             setFindTrackInputText={setFindTrackInput}
             findTrack={findTrack}
@@ -936,7 +937,7 @@ function Viewer(): ReactElement {
             currentFrame={currentFrame}
             selectedTrack={selectedTrack}
             findTrack={findTrack}
-            setFrame={setFrameAndRender}
+            setFrame={setFrame}
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
             selectedFeatureKey={featureKey}
@@ -986,16 +987,7 @@ function Viewer(): ReactElement {
         <div className={styles.tabContent}>
           <AnnotationTab
             annotationState={annotationState}
-            setFrame={async (frame) => {
-              const isPlaying = timeControls.isPlaying();
-              if (isPlaying) {
-                timeControls.pause();
-              }
-              await setFrameAndRender(frame);
-              if (isPlaying) {
-                timeControls.play();
-              }
-            }}
+            setFrame={setFrame}
             setTrack={(track) => findTrack(track, false)}
             dataset={dataset}
             selectedTrack={selectedTrack}
@@ -1050,7 +1042,7 @@ function Viewer(): ReactElement {
             />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
-              setFrame={setFrameAndRender}
+              setFrame={setFrame}
               getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting
