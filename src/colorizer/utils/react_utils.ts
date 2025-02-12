@@ -475,14 +475,15 @@ export const useAnnotations = (): AnnotationState => {
         if (idRange !== null) {
           setLastEditedRange(idRange);
           annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
+          setLastClickedId(null);
           break;
         }
-        // If no range is selected, select at a single time.
+        // If no range is selected, continue to default to select at a single time.
       case AnnotationSelectionMode.TIME:
       default:
         annotationData.setLabelOnIds(currentLabelIdx, [id], !isLabeled);
+        setLastClickedId(id);
     }
-    setLastClickedId(id);
     setDataUpdateCounter((value) => value + 1);
   };
 
