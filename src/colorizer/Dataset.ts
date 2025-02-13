@@ -79,6 +79,7 @@ export default class Dataset {
   private timesFile?: string;
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
+  private cachedTracks: Map<number, Track>;
 
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
@@ -115,6 +116,7 @@ export default class Dataset {
     this.cleanupArrayLoaderOnDispose = !arrayLoader;
     this.arrayLoader = arrayLoader || new UrlArrayLoader();
     this.features = new Map();
+    this.cachedTracks = new Map();
     this.metadata = defaultMetadata;
   }
 
@@ -550,6 +552,11 @@ export default class Dataset {
   }
 
   public buildTrack(trackId: number): Track {
+    const cachedTrack = this.cachedTracks.get(trackId);
+    if (cachedTrack) {
+      return cachedTrack;
+    }
+
     // trackIds contains a track id for every cell id in order.
     // get all cell ids for given track
     const ids = this.trackIds ? this.getIdsOfTrack(trackId) : [];
@@ -573,7 +580,9 @@ export default class Dataset {
       }, [] as number[]);
     }
 
-    return new Track(trackId, times, ids, centroids, bounds);
+    const track = new Track(trackId, times, ids, centroids, bounds);
+    this.cachedTracks.set(trackId, track);
+    return track;
   }
 
   /*
