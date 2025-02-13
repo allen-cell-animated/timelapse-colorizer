@@ -50,7 +50,7 @@
     "vitest-canvas-mock": "^0.3.3"
   },
   "dependencies": {
-    "@aics/vole-core": "^3.12.4",
+    "@aics/vole-core": "^3.13.0",
     "@ant-design/icons": "^5.2.5",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
