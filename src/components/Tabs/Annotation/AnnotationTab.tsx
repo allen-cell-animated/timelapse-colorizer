@@ -3,7 +3,7 @@ import { Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../colorizer";
+import { AnnotationSelectionMode, Dataset, Track } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
@@ -58,19 +58,17 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return props.selectedTrack?.getIdAtTime(props.frame) ?? -1;
   }, [props.frame, props.selectedTrack]);
 
-  // Highlight the range of IDs that would be selected if the user clicks with
-  // the select range hotkey pressed. Null if the hotkey is not pressed.
+  // Highlight the range of IDs that will be selected in range mode.
   const highlightedIds = useMemo(() => {
-    if (props.annotationState.isSelectRangeHotkeyPressed && props.hoveredId !== null && props.dataset) {
+    if (
+      props.annotationState.selectionMode === AnnotationSelectionMode.RANGE &&
+      props.hoveredId !== null &&
+      props.dataset
+    ) {
       return props.annotationState.getSelectRangeFromId(props.dataset, props.hoveredId);
     }
     return null;
-  }, [
-    props.hoveredId,
-    props.dataset,
-    props.annotationState.isSelectRangeHotkeyPressed,
-    props.annotationState.getSelectRangeFromId,
-  ]);
+  }, [props.hoveredId, props.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
