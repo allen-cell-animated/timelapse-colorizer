@@ -12,6 +12,7 @@ import { FlexColumn, FlexRow } from "../../../styles/utils";
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
+import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
 
 type LabelEditControlsProps = {
   onCreateNewLabel: () => void;
@@ -163,24 +164,30 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
       </Popconfirm>
 
       <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
-        <span style={{ fontSize: theme.font.size.label }}>Apply to </span>
+        <span style={{ fontSize: theme.font.size.label }}>Select by </span>
         <StyledRadioGroup
           style={{ display: "flex", flexDirection: "row" }}
           value={props.selectionMode}
           onChange={(e) => props.setSelectionMode(e.target.value)}
         >
-          <Tooltip trigger={["hover", "focus"]} title="Apply only at the current time" placement="top">
+          <TooltipWithSubtitle
+            trigger={["hover", "focus"]}
+            title="Select a single timepoint"
+            subtitle="(Hold Shift to select a range)"
+            placement="top"
+            autoAdjustOverflow={false}
+          >
             <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
-          </Tooltip>
+          </TooltipWithSubtitle>
           <Tooltip
             trigger={["hover", "focus"]}
-            title="Select range between two timepoints in a track"
+            title="Selects range between two timepoints in a track"
             autoAdjustOverflow={false}
             placement="top"
           >
             <Radio.Button value={AnnotationSelectionMode.RANGE}>Range</Radio.Button>
           </Tooltip>
-          <Tooltip trigger={["hover", "focus"]} title="Apply to entire track" placement="top">
+          <Tooltip trigger={["hover", "focus"]} title="Selects entire track" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
           </Tooltip>
         </StyledRadioGroup>

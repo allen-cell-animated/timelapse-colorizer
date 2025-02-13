@@ -3,7 +3,7 @@ import { Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../colorizer";
+import { AnnotationSelectionMode, Dataset, Track } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
@@ -32,6 +32,7 @@ type AnnotationTabProps = {
   selectedTrack: Track | null;
   dataset: Dataset | null;
   frame: number;
+  hoveredId: number | null;
 };
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
@@ -56,6 +57,19 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const selectedId = useMemo(() => {
     return props.selectedTrack?.getIdAtTime(props.frame) ?? -1;
   }, [props.frame, props.selectedTrack]);
+
+  // If range mode is enabled, highlight the range of IDs that would be selected
+  // if the user clicks on the currently hovered ID.
+  const highlightedIds = useMemo(() => {
+    if (
+      props.annotationState.selectionMode === AnnotationSelectionMode.RANGE &&
+      props.hoveredId !== null &&
+      props.dataset
+    ) {
+      return props.annotationState.getSelectRangeFromId(props.dataset, props.hoveredId);
+    }
+    return null;
+  }, [props.hoveredId, props.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -221,6 +235,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             setFrame={props.setFrame}
             dataset={props.dataset}
             ids={tableIds}
+            highlightRange={highlightedIds}
+            lastClickedId={props.annotationState.lastClickedId}
             selectedTrack={props.selectedTrack}
             selectedId={selectedId}
             frame={props.frame}

@@ -328,6 +328,7 @@ export type AnnotationState = {
    * - Returns `null` if no range would be selected.
    * - A list of IDs to select if this ID is clicked with range selection mode turned on.
    */
+  lastClickedId: number | null;
   getSelectRangeFromId: (dataset: Dataset, id: number) => number[] | null;
   handleAnnotationClick: (dataset: Dataset, id: number, selectRange?: boolean) => void;
   /**
@@ -523,6 +524,7 @@ export const useAnnotations = (): AnnotationState => {
     setSelectionMode,
     data,
     handleAnnotationClick,
+    lastClickedId,
     getSelectRangeFromId,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
