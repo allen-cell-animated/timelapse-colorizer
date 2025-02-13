@@ -12,7 +12,6 @@ import { FlexColumn, FlexRow } from "../../../styles/utils";
 import { LabelData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
-import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
 
 type LabelEditControlsProps = {
   onCreateNewLabel: () => void;
@@ -173,15 +172,14 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
           <Tooltip trigger={["hover", "focus"]} title="Select by current timepoint" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
           </Tooltip>
-          <TooltipWithSubtitle
+          <Tooltip
             trigger={["hover", "focus"]}
-            title="Select by range"
-            subtitleList={["Click on two timepoints in a track to change the range between them."]}
+            title="Select range between two timepoints in a track"
             autoAdjustOverflow={false}
             placement="top"
           >
             <Radio.Button value={AnnotationSelectionMode.RANGE}>Range</Radio.Button>
-          </TooltipWithSubtitle>
+          </Tooltip>
           <Tooltip trigger={["hover", "focus"]} title="Select entire track" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
           </Tooltip>

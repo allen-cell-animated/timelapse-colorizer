@@ -1,4 +1,4 @@
-import React, { EventHandler, useEffect, useMemo, useRef, useState } from "react";
+import React, { EventHandler, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -370,7 +370,7 @@ export const useAnnotations = (): AnnotationState => {
       setLastEditedRange(null);
     }
     setBaseSelectionMode(newMode);
-  }
+  };
 
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
@@ -435,7 +435,7 @@ export const useAnnotations = (): AnnotationState => {
 
   // Return a list of IDs that would be selected if the ID was clicked with
   // range selection mode turned on.
-  const getSelectRangeFromId = (dataset: Dataset, id: number): number[] | null => {
+  const getSelectRangeFromId = useCallback((dataset: Dataset, id: number): number[] | null => {
     // If this ID is one of the endpoints of the last range clicked,
     // return the same range.
     if (lastEditedRange !== null) {
@@ -456,9 +456,9 @@ export const useAnnotations = (): AnnotationState => {
     }
     // IDs are not in the same track.
     return null;
-  };
+  }, [lastEditedRange, lastClickedId]);
 
-  const handleAnnotationClick = (dataset: Dataset, id: number): void => {
+  const handleAnnotationClick = useCallback((dataset: Dataset, id: number): void => {
     if (!isAnnotationEnabled || currentLabelIdx === null) {
       setLastClickedId(id);
       return;
@@ -466,26 +466,28 @@ export const useAnnotations = (): AnnotationState => {
     const track = dataset.buildTrack(dataset.getTrackId(id));
     const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
 
+    const idRange = getSelectRangeFromId(dataset, id);
     switch (selectionMode) {
       case AnnotationSelectionMode.TRACK:
         // Toggle entire track
         annotationData.setLabelOnIds(currentLabelIdx, track.ids, !isLabeled);
         break;
       case AnnotationSelectionMode.RANGE:
-        const idRange = getSelectRangeFromId(dataset, id);
         if (idRange !== null) {
           setLastEditedRange(idRange);
           annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
-          break;
+          setLastClickedId(null);
+        } else {
+          setLastClickedId(id);
         }
-        // If no range is selected, select at a single time.
+        break;
       case AnnotationSelectionMode.TIME:
       default:
         annotationData.setLabelOnIds(currentLabelIdx, [id], !isLabeled);
+        setLastClickedId(id);
     }
-    setLastClickedId(id);
     setDataUpdateCounter((value) => value + 1);
-  };
+  }, [selectionMode, currentLabelIdx, getSelectRangeFromId]);
 
   const clear = (): void => {
     annotationData.clear();
