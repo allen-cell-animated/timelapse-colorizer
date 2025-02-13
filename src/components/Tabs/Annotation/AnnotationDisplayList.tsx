@@ -123,8 +123,9 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
 
-  // Show highlight + last clicked ID if provided.
-  let markedTime;
+  // Show a marker in the selected track thumbnail if the last clicked ID is
+  // part of it
+  let markedTime: number | undefined;
   if (props.lastClickedId !== null && props.dataset) {
     const id = props.lastClickedId;
     const lastClickedTime = props.dataset.getTime(id);
@@ -133,10 +134,11 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       markedTime = lastClickedTime;
     }
   }
-  let highlightRange;
+  // Highlight a range of objects in the selected track thumbnail if provided
+  let highlightRange: number[] | undefined;
   if (props.highlightRange && props.highlightRange.length > 0) {
-    const track = props.dataset?.getTrackId(props.highlightRange[0]);
-    if (track === selectedTrackId) {
+    const trackId = props.dataset?.getTrackId(props.highlightRange[0]);
+    if (trackId === selectedTrackId) {
       highlightRange = props.highlightRange;
     }
   }

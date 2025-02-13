@@ -58,7 +58,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return props.selectedTrack?.getIdAtTime(props.frame) ?? -1;
   }, [props.frame, props.selectedTrack]);
 
-  // Highlight the range of IDs that will be selected in range mode.
+  // If range mode is enabled, highlight the range of IDs that would be selected
+  // if the user clicks on the currently hovered ID.
   const highlightedIds = useMemo(() => {
     if (
       props.annotationState.selectionMode === AnnotationSelectionMode.RANGE &&

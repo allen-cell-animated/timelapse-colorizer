@@ -55,6 +55,21 @@ function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationPar
   return pos;
 }
 
+/**
+ * For a given object ID, returns its centroid in canvas pixel coordinates if
+ * it's visible in the current frame. Otherwise, returns null.
+ */
+function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams): Vector2 | null {
+  if (id === null) {
+    return null;
+  }
+  const centroid = params.dataset?.getCentroid(id);
+  if (!centroid || !params.dataset || params.dataset.getTime(id) !== params.frame) {
+    return null;
+  }
+  return framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
+}
+
 function getMarkerScale(params: AnnotationParams, style: AnnotationStyle): number {
   const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
   const dampenedZoomScale = zoomScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
@@ -67,16 +82,10 @@ function drawLastClickedId(
   params: AnnotationParams,
   style: AnnotationStyle
 ): void {
-  const id = params.lastSelectedId;
-  if (id === null) {
+  const pos = getCanvasPixelCoordsFromId(params.lastSelectedId, params);
+  if (pos === null) {
     return;
   }
-  const centroid = params.dataset?.getCentroid(id);
-  if (!centroid || !params.dataset || params.dataset.getTime(id) !== params.frame) {
-    return;
-  }
-
-  const pos = framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
   pos.add(origin);
   ctx.strokeStyle = style.borderColor;
   const zoomScale = getMarkerScale(params, style);
@@ -109,12 +118,10 @@ function drawAnnotationMarker(
   labelIdx: number[]
 ): void {
   const labelData = params.labelData[labelIdx[0]];
-  const centroid = params.dataset?.getCentroid(id);
-  if (!centroid || !params.dataset) {
+  const pos = getCanvasPixelCoordsFromId(id, params);
+  if (pos === null) {
     return;
   }
-
-  const pos = framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
   pos.add(origin);
   ctx.strokeStyle = style.borderColor;
 

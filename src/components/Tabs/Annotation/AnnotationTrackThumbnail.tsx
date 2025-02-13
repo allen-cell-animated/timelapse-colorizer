@@ -7,7 +7,7 @@ import { getIntervals } from "../../../colorizer/utils/data_utils";
 
 import { AppTheme, AppThemeContext } from "../../AppStyle";
 
-const FADE_CLASSNAME = "pulse";
+const HIGHLIGHT_CANVAS_CLASSNAME = "pulse";
 
 type AnnotationTrackThumbnailProps = {
   ids: number[];
@@ -18,10 +18,12 @@ type AnnotationTrackThumbnailProps = {
   widthPx?: number;
   setFrame?: (frame: number) => Promise<void>;
   frame?: number;
-  /** Draws a optional additional mark (and a text label) at the provided time. */
+  /** Draws a optional mark at the provided time. */
   mark?: number;
   /** Highlights a range of IDs */
   highlightedIds?: number[];
+  // TODO: Add an option to show time labels to the thumbnail for the two
+  // endpoints of the range and for the mark if included.
 };
 
 const defaultProps = {
@@ -39,13 +41,15 @@ const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $in
   display: flex;
   cursor: ${(props) => (props.$interactive ? "pointer" : "auto")};
 
+  /* Layers all the canvases on top of one another */
   & > canvas {
     position: absolute;
     top: 0;
     left: 0;
   }
 
-  & > .${FADE_CLASSNAME} {
+  /* Pulsing/fade animation for the canvas that renders highlighted ranges */
+  & > .${HIGHLIGHT_CANVAS_CLASSNAME} {
     animation-name: fade;
     animation-duration: 0.5s;
     animation-fill-mode: both;
@@ -103,9 +107,13 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   const [hoveredCanvasX, setHoveredCanvasX] = useState<number | null>(null);
   const [awaitingFrame, setAwaitingFrame] = useState<number | null>(null);
 
-  // The thumbnail uses two layered canvases. The time canvas on top just draws
-  // lines for the current and hovered time, while the base canvas draws the
-  // labeled intervals.
+  // The thumbnail uses three layered canvases. The time canvas on top just
+  // draws lines for the current and hovered time, while the base canvas draws
+  // the labeled intervals. An optional animated highlight canvas draws a
+  // highlighted range of IDs if provided.
+  //
+  // Splitting up the layers mminimizes the number of elements that need to be
+  // redrawn when the current time or highlighted range changes.
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
   const timeCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -248,7 +256,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       {props.highlightedIds && (
         <canvas
           ref={highlightCanvasRef}
-          className={FADE_CLASSNAME}
+          className={HIGHLIGHT_CANVAS_CLASSNAME}
           width={props.widthPx}
           height={props.heightPx}
         ></canvas>
