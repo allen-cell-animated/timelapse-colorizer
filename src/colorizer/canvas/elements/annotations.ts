@@ -66,7 +66,7 @@ function drawLastClickedId(
   ctx: CanvasRenderingContext2D,
   params: AnnotationParams,
   style: AnnotationStyle
-) {
+): void {
   const id = params.lastSelectedId;
   if (id === null) {
     return;
