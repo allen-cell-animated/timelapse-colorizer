@@ -23,11 +23,18 @@ type SelectionDropdownProps = {
   htmlLabelId?: string;
   /** The value of the item that is currently selected. */
   selected: string | SelectItem;
-  /** An array of SelectItems that describes the item properties (`{value, label}`),
-   * or an array of strings. Dropdown items will be presented in the provided array order.
+  /** An array of SelectItems that describes the item properties (`{value,
+   * label}`), or an array of strings. Dropdown items will be presented in the
+   * provided array order.
    *
-   * If a string array is provided, SelectItems objects will be
-   * auto-generated with `value` and `label` values set to the string.*/
+   * If a string array is provided, SelectItems objects will be auto-generated
+   * with `value` and `label` values set to the string.
+   *
+   * NOTE: Items should be memoized to prevent unnecessary re-renders. Without
+   * memoization, react-select will re-render dropdown options based on the
+   * `items` property on every render, which can cause unexpected or unwanted
+   * behavior such as flickering on hover during rapid page updates.
+   */
   items: SelectItem[] | string[];
   controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   disabled?: boolean;
@@ -92,15 +99,21 @@ function formatAsSelectItems(items: string[] | SelectItem[]): SelectItem[] {
 }
 
 /**
- * A Select component that supports web accessibility guidelines for keyboard controls.
- * Options can be searched by typing in the dropdown input.
+ * A Select component that supports web accessibility guidelines for keyboard
+ * controls. Options can be searched by typing in the dropdown input.
  *
- * Uses react-select internally but mimics the style of Ant Design for consistency.
+ * Uses react-select internally but mimics the style of Ant Design for
+ * consistency.
+ *
+ * NOTE: The `items` prop should be memoized to prevent unnecessary re-renders.
+ * Without memoization, react-select will re-render dropdown options based on
+ * the `items` property on every render, which can cause unexpected or unwanted
+ * behavior such as flickering on hover during rapid page updates.
  */
 export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
-  const options = formatAsSelectItems(props.items);
+  const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
 
   // TODO: Show loading spinner?
   const [_isPending, startTransition] = useTransition();
