@@ -9,6 +9,7 @@ export type AnnotationParams = BaseRenderParams & {
   labelData: LabelData[];
   timeToLabelIds: Map<number, Record<number, number[]>>;
   selectedLabelIdx: number | null;
+  lastSelectedId: number | null;
 
   frameToCanvasCoordinates: Vector2;
   frame: number;
@@ -54,6 +55,38 @@ function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationPar
   return pos;
 }
 
+function getMarkerScale(params: AnnotationParams, style: AnnotationStyle): number {
+  const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
+  const dampenedZoomScale = zoomScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
+  return dampenedZoomScale;
+}
+
+function drawLastClickedId(
+  origin: Vector2,
+  ctx: CanvasRenderingContext2D,
+  params: AnnotationParams,
+  style: AnnotationStyle
+) {
+  const id = params.lastSelectedId;
+  if (id === null) {
+    return;
+  }
+  const centroid = params.dataset?.getCentroid(id);
+  if (!centroid || !params.dataset || params.dataset.getTime(id) !== params.frame) {
+    return;
+  }
+
+  const pos = framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
+  pos.add(origin);
+  ctx.strokeStyle = style.borderColor;
+  const zoomScale = getMarkerScale(params, style);
+  ctx.setLineDash([3, 2]);
+  ctx.beginPath();
+  ctx.arc(pos.x, pos.y, style.markerSizePx * zoomScale, 0, 2 * Math.PI);
+  ctx.closePath();
+  ctx.stroke();
+}
+
 /**
  * Draws an annotation marker over the given object ID, handling zooming,
  * panning, and multiple labels.
@@ -86,8 +119,7 @@ function drawAnnotationMarker(
   ctx.strokeStyle = style.borderColor;
 
   // Scale markers by the zoom level.
-  const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
-  const dampenedZoomScale = zoomScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
+  const dampenedZoomScale = getMarkerScale(params, style);
   const scaledMarkerSizePx = style.markerSizePx * dampenedZoomScale;
 
   // Draw an additional marker behind the main one if there are multiple labels.
@@ -146,6 +178,8 @@ export function getAnnotationRenderer(
       for (const [id, labelIdxs] of idsToLabels) {
         drawAnnotationMarker(origin, ctx, params, style, id, labelIdxs);
       }
+
+      drawLastClickedId(origin, ctx, params, style);
     },
   };
 }
