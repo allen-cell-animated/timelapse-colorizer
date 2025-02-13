@@ -10,27 +10,26 @@ export function TooltipWithSubtitle(
 ): ReactElement {
   const divRef = useRef<HTMLDivElement>(null);
   return (
-    <div ref={divRef}>
-      <Tooltip
-        {...props}
-        trigger={["hover", "focus"]}
-        title={
-          <>
-            <p style={{ margin: 0 }}>{props.title}</p>
-            {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
-            {props.subtitleList &&
-              props.subtitleList.map((text, i) => (
-                <p key={i} style={{ margin: 0, fontSize: "12px" }}>
-                  {text}
-                </p>
-              ))}
-          </>
-        }
-        getPopupContainer={() => divRef.current ?? document.body}
-      >
-        {props.children}
-        {/* TODO: include invisible text here copying the tooltip */}
-      </Tooltip>
-    </div>
+    <Tooltip
+      {...props}
+      trigger={["hover", "focus"]}
+      title={
+        <>
+          <p style={{ margin: 0 }}>{props.title}</p>
+          {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
+          {props.subtitleList &&
+            props.subtitleList.map((text, i) => (
+              <p key={i} style={{ margin: 0, fontSize: "12px" }}>
+                {text}
+              </p>
+            ))}
+        </>
+      }
+      getPopupContainer={() => divRef.current ?? document.body}
+    >
+      {props.children}
+      {/* TODO: include invisible text here copying the tooltip? */}
+      <div ref={divRef}></div>
+    </Tooltip>
   );
 }

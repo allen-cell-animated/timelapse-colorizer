@@ -372,6 +372,9 @@ export const useAnnotations = (): AnnotationState => {
     setBaseSelectionMode(newMode);
   };
 
+  /** Increments every time a state update is required. */
+  const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
+  
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
   const setIsAnnotationEnabled = (enabled: boolean): void => {
@@ -380,6 +383,7 @@ export const useAnnotations = (): AnnotationState => {
       if (annotationData.getLabels().length === 0) {
         const newLabelIdx = annotationData.createNewLabel();
         setCurrentLabelIdx(newLabelIdx);
+        setDataUpdateCounter((value) => value + 1);
       }
     }
     _setIsAnnotationEnabled(enabled);
@@ -391,8 +395,6 @@ export const useAnnotations = (): AnnotationState => {
       setIsAnnotationEnabled(false);
     }
   };
-  /** Increments every time a state update is required. */
-  const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
 
   const wrapFunctionInUpdate = <F extends (...args: any[]) => void>(fn: F): F => {
     return <F>function (...args: any[]) {

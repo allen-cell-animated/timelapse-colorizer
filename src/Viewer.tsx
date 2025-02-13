@@ -50,6 +50,7 @@ import {
   useRecentCollections,
 } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
+import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
@@ -881,7 +882,8 @@ function Viewer(): ReactElement {
     });
   };
 
-  const getFeatureDropdownData = useCallback((): { value: string; label: string }[] => {
+  const datasetDropdownData = useMemo(() => collection?.getDatasetKeys() || [], [collection]);
+  const featureDropdownData = useMemo((): SelectItem[] => {
     if (!dataset) {
       return [];
     }
@@ -1074,7 +1076,7 @@ function Viewer(): ReactElement {
             label="Dataset"
             selected={datasetKey}
             buttonType="primary"
-            items={collection?.getDatasetKeys() || []}
+            items={datasetDropdownData}
             onChange={handleDatasetChange}
           />
           <FlexRow $gap={6}>
@@ -1096,7 +1098,7 @@ function Viewer(): ReactElement {
               //   dataset?.getFeatureNameWithUnits(featureKey)
               // )
               selected={featureKey}
-              items={getFeatureDropdownData()}
+              items={featureDropdownData}
               onChange={(value) => {
                 if (value !== featureKey && dataset) {
                   replaceFeature(dataset, value);
