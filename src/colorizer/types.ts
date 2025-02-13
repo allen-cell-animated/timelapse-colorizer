@@ -203,6 +203,7 @@ export type ScatterPlotConfig = {
 
 export enum AnnotationSelectionMode {
   TIME,
+  RANGE,
   TRACK,
 }
 

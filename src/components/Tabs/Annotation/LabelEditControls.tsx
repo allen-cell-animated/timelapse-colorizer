@@ -172,6 +172,14 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
           <Tooltip trigger={["hover", "focus"]} title="Apply only at the current time" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
           </Tooltip>
+          <Tooltip
+            trigger={["hover", "focus"]}
+            title="Select range between two timepoints in a track"
+            autoAdjustOverflow={false}
+            placement="top"
+          >
+            <Radio.Button value={AnnotationSelectionMode.RANGE}>Range</Radio.Button>
+          </Tooltip>
           <Tooltip trigger={["hover", "focus"]} title="Apply to entire track" placement="top">
             <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
           </Tooltip>
