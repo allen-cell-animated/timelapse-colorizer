@@ -60,11 +60,11 @@ function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationPar
  * it's visible in the current frame. Otherwise, returns null.
  */
 function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams): Vector2 | null {
-  if (id === null) {
+  if (id === null || params.dataset === null || params.dataset.getTime(id) !== params.frame) {
     return null;
   }
-  const centroid = params.dataset?.getCentroid(id);
-  if (!centroid || !params.dataset || params.dataset.getTime(id) !== params.frame) {
+  const centroid = params.dataset.getCentroid(id);
+  if (!centroid) {
     return null;
   }
   return framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
@@ -94,6 +94,7 @@ function drawLastClickedId(
   ctx.arc(pos.x, pos.y, style.markerSizePx * zoomScale, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 /**

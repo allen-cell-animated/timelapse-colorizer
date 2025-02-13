@@ -123,6 +123,8 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   const duration = maxTime - minTime + 1;
   const indexToCanvasScale = props.widthPx / duration;
 
+  // TODO: Scale canvas based on screen zoom level to keep lines sharp.
+
   const xCoordToTime = useCallback(
     (x: number): number => Math.floor(x / indexToCanvasScale + minTime),
     [minTime, indexToCanvasScale]

@@ -124,7 +124,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
 
   // Show a marker in the selected track thumbnail if the last clicked ID is
-  // part of it
+  // part of the selected track.
   let markedTime: number | undefined;
   if (props.lastClickedId !== null && props.dataset) {
     const id = props.lastClickedId;
