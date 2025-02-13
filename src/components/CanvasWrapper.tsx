@@ -331,7 +331,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       props.annotationState.lastClickedId
     );
     canv.isAnnotationVisible = props.annotationState.visible;
-  }, [props.dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
+  }, [
+    props.dataset,
+    props.annotationState.data,
+    props.annotationState.lastClickedId,
+    props.annotationState.currentLabelIdx,
+    props.annotationState.visible,
+  ]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
