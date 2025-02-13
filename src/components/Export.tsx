@@ -20,6 +20,7 @@ import { ExportIconSVG } from "../assets";
 import { getDefaultViewerConfig } from "../colorizer/constants";
 import { ViewerConfig } from "../colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
+import { StyledRadioGroup } from "../styles/components";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow } from "../styles/utils";
 
 import CanvasRecorder, { RecordingOptions } from "../colorizer/recorders/CanvasRecorder";
@@ -86,7 +87,7 @@ const CustomRadio = styled(Radio)`
   }
 `;
 
-const ExportModeRadioGroup = styled(Radio.Group)`
+const ExportModeRadioGroup = styled(StyledRadioGroup)`
   & {
     // Use standard 40px of padding, unless the view is too narrow and it needs to shrink
     padding: 0 calc(min(40px, 5vw));
@@ -107,7 +108,7 @@ const MaxWidthRadioGroup = styled(Radio.Group)`
   }
 `;
 
-const VideoQualityRadioGroup = styled(Radio.Group)`
+const VideoQualityRadioGroup = styled(StyledRadioGroup)`
   & {
     display: flex;
     flex-direction: row;

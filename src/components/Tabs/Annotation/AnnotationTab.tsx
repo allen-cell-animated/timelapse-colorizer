@@ -1,16 +1,16 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Radio, Tooltip } from "antd";
-import React, { ReactElement, useCallback, useContext, useMemo, useState, useTransition } from "react";
+import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
 
-import { Dataset } from "../../../colorizer";
+import { Dataset, Track } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
 
 import { LabelData } from "../../../colorizer/AnnotationData";
-import { AppThemeContext } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
@@ -27,12 +27,14 @@ const enum AnnotationViewType {
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
-  setTrackAndFrame: (track: number, frame: number) => void;
+  setFrame: (frame: number) => Promise<void>;
+  setTrack: (track: number) => void;
+  selectedTrack: Track | null;
   dataset: Dataset | null;
+  frame: number;
 };
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
-  const theme = useContext(AppThemeContext);
   const {
     isAnnotationModeEnabled,
     setIsAnnotationModeEnabled,
@@ -47,10 +49,13 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   } = props.annotationState;
 
   const [isPending, startTransition] = useTransition();
-  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.TABLE);
+  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
 
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
+  const selectedId = useMemo(() => {
+    return props.selectedTrack?.getIdAtTime(props.frame) ?? -1;
+  }, [props.frame, props.selectedTrack]);
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -73,9 +78,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickObjectRow = useCallback(
     (record: TableDataType): void => {
-      props.setTrackAndFrame(record.track, record.time);
+      props.setTrack(record.track);
+      props.setFrame(record.time);
     },
-    [props.setTrackAndFrame]
+    [props.setTrack, props.setFrame]
   );
 
   const onClickDeleteObject = useCallback(
@@ -88,13 +94,15 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   );
 
   // Options for the selection dropdown
-  const selectLabelOptions: SelectItem[] = labels.map((label, index) => {
-    return {
-      value: index.toString(),
-      label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
-      color: label.color,
-    };
-  });
+  const selectLabelOptions: SelectItem[] = useMemo(
+    () =>
+      labels.map((label, index) => ({
+        value: index.toString(),
+        label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
+        color: label.color,
+      })),
+    [annotationData]
+  );
 
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
@@ -153,24 +161,24 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
         {/* View mode selection */}
         <label>
           <VisuallyHidden>View mode</VisuallyHidden>
-          <Radio.Group
+          <StyledRadioGroup
             style={{ display: "flex", flexDirection: "row" }}
             value={viewType}
             onChange={(e) => startTransition(() => setViewType(e.target.value))}
           >
             <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
-              <Radio.Button value={AnnotationViewType.TABLE} style={{ padding: "0 8px" }}>
-                <TableOutlined />
+              <Radio.Button value={AnnotationViewType.TABLE} style={{ padding: "2px 6px 2px 7px" }}>
+                <TableOutlined style={{ fontSize: 18 }} />
                 <VisuallyHidden>Table view {viewType === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>
             <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
-              <Radio.Button value={AnnotationViewType.LIST} style={{ padding: "0 8px" }}>
-                <MenuOutlined />
+              <Radio.Button value={AnnotationViewType.LIST} style={{ padding: "2px 7px 2px 6px" }}>
+                <MenuOutlined style={{ fontSize: 18 }} />
                 <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
               </Radio.Button>
             </Tooltip>
-          </Radio.Group>
+          </StyledRadioGroup>
         </label>
       </FlexRow>
 
@@ -189,7 +197,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickDeleteObject={onClickDeleteObject}
             dataset={props.dataset}
             ids={tableIds}
-            height={395}
+            height={480}
+            selectedId={selectedId}
           />
         </div>
         {/*
@@ -208,12 +217,17 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <AnnotationDisplayList
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
+            onClickTrack={props.setTrack}
+            setFrame={props.setFrame}
             dataset={props.dataset}
             ids={tableIds}
+            selectedTrack={props.selectedTrack}
+            selectedId={selectedId}
+            frame={props.frame}
+            labelColor={selectedLabel?.color}
           ></AnnotationDisplayList>
         </div>
       </LoadingSpinner>
-      {tableIds.length > 0 && <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>}
     </FlexColumnAlignCenter>
   );
 }

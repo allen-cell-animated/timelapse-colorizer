@@ -169,3 +169,43 @@ export function formatAsBulletList(items: string[], maxDisplayCount: number = Nu
   }
   return itemDisplayText;
 }
+
+/**
+ * For a list of integers, returns a list of inclusive `[min, max]` value
+ * intervals where the integers are contiguous.
+ *
+ * @example
+ * ```
+ * const result = getIntervals([5, 6, 7, 9, 10, 14])
+ * // result = [[5, 7], [9, 10], [14, 14]]
+ * ```
+ */
+export function getIntervals(values: number[]): [number, number][] {
+  let min = values[0];
+  let max = values[0];
+  for (const value of values) {
+    min = Math.min(min, value);
+    max = Math.max(max, value);
+  }
+
+  const intervals: [number, number][] = [];
+  const valuesAsSet = new Set(values);
+  let lastIntervalStart = -1;
+
+  for (let i = min; i <= max; i++) {
+    if (valuesAsSet.has(i)) {
+      if (lastIntervalStart === -1) {
+        lastIntervalStart = i;
+      }
+    } else {
+      if (lastIntervalStart !== -1) {
+        intervals.push([lastIntervalStart, i - 1]);
+        lastIntervalStart = -1;
+      }
+    }
+  }
+  if (lastIntervalStart !== -1) {
+    intervals.push([lastIntervalStart, max]);
+  }
+  return intervals;
+}

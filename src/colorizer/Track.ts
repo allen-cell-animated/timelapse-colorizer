@@ -59,4 +59,16 @@ export default class Track {
   startTime(): number {
     return this.times[0];
   }
+
+  getMissingTimes(): number[] {
+    const missingTimes = [];
+    const startTime = this.startTime();
+    const timesSet = new Set(this.times);
+    for (let i = startTime; i < startTime + this.duration(); i++) {
+      if (!timesSet.has(i)) {
+        missingTimes.push(i);
+      }
+    }
+    return missingTimes;
+  }
 }

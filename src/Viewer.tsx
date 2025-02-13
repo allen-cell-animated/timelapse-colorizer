@@ -51,6 +51,7 @@ import {
   useRecentCollections,
 } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
+import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
@@ -333,7 +334,8 @@ function Viewer(): ReactElement {
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
-  const setFrame = useCallback(
+  // Callback for setting time, to be used only with timeControls.
+  const setFrameCallback = useCallback(
     async (frame: number) => {
       await canv.setFrame(frame);
       setCurrentFrame(frame);
@@ -341,6 +343,21 @@ function Viewer(): ReactElement {
       canv.render();
     },
     [canv]
+  );
+  timeControls.setFrameCallback(setFrameCallback);
+
+  const setFrame = useCallback(
+    async (frame: number) => {
+      const isPlaying = timeControls.isPlaying();
+      if (isPlaying) {
+        timeControls.pause();
+      }
+      await setFrameCallback(frame);
+      if (isPlaying) {
+        timeControls.play();
+      }
+    },
+    [setFrameCallback]
   );
 
   const findTrack = useCallback(
@@ -790,8 +807,6 @@ function Viewer(): ReactElement {
   );
 
   // SCRUBBING CONTROLS ////////////////////////////////////////////////////
-  timeControls.setFrameCallback(setFrame);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent): void => {
       if (e.target instanceof HTMLInputElement) {
@@ -858,19 +873,6 @@ function Viewer(): ReactElement {
     ]
   );
 
-  // RECORDING CONTROLS ////////////////////////////////////////////////////
-
-  // Update the callback for TimeControls and RecordingControls if it changes.
-  timeControls.setFrameCallback(setFrame);
-
-  const setFrameAndRender = useCallback(
-    async (frame: number) => {
-      await setFrame(frame);
-      canv.render();
-    },
-    [setFrame, canv]
-  );
-
   // RENDERING /////////////////////////////////////////////////////////////
 
   const openCopyNotification = (): void => {
@@ -887,7 +889,8 @@ function Viewer(): ReactElement {
     });
   };
 
-  const getFeatureDropdownData = useCallback((): { value: string; label: string }[] => {
+  const datasetDropdownData = useMemo(() => collection?.getDatasetKeys() || [], [collection]);
+  const featureDropdownData = useMemo((): SelectItem[] => {
     if (!dataset) {
       return [];
     }
@@ -921,7 +924,7 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <PlotTab
-            setFrame={setFrameAndRender}
+            setFrame={setFrame}
             findTrackInputText={findTrackInput}
             setFindTrackInputText={setFindTrackInput}
             findTrack={findTrack}
@@ -944,7 +947,7 @@ function Viewer(): ReactElement {
             currentFrame={currentFrame}
             selectedTrack={selectedTrack}
             findTrack={findTrack}
-            setFrame={setFrameAndRender}
+            setFrame={setFrame}
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
             selectedFeatureKey={featureKey}
@@ -994,11 +997,11 @@ function Viewer(): ReactElement {
         <div className={styles.tabContent}>
           <AnnotationTab
             annotationState={annotationState}
-            setTrackAndFrame={(track, frame) => {
-              findTrack(track, false);
-              setFrameAndRender(frame);
-            }}
+            setFrame={setFrame}
+            setTrack={(track) => findTrack(track, false)}
             dataset={dataset}
+            selectedTrack={selectedTrack}
+            frame={currentFrame}
           />
         </div>
       ),
@@ -1049,7 +1052,7 @@ function Viewer(): ReactElement {
             />
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
-              setFrame={setFrameAndRender}
+              setFrame={setFrame}
               getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting
@@ -1079,7 +1082,7 @@ function Viewer(): ReactElement {
             label="Dataset"
             selected={datasetKey}
             buttonType="primary"
-            items={collection?.getDatasetKeys() || []}
+            items={datasetDropdownData}
             onChange={handleDatasetChange}
           />
           <FlexRow $gap={6}>
@@ -1101,7 +1104,7 @@ function Viewer(): ReactElement {
               //   dataset?.getFeatureNameWithUnits(featureKey)
               // )
               selected={featureKey}
-              items={getFeatureDropdownData()}
+              items={featureDropdownData}
               onChange={(value) => {
                 if (value !== featureKey && dataset) {
                   replaceFeature(dataset, value);

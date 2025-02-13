@@ -7,6 +7,7 @@ const NO_TIMER_ID = -1;
 
 export default class TimeControls {
   private timerId: number;
+  private mostRecentPlayRequestId: number;
   private setFrameFn?: (frame: number) => Promise<void>;
   private playbackFps: number;
 
@@ -19,6 +20,11 @@ export default class TimeControls {
     this.timerId = NO_TIMER_ID;
     this.pauseCallbacks = [];
     this.playbackFps = playbackFps;
+    this.mostRecentPlayRequestId = 0;
+
+    this.isPlaying = this.isPlaying.bind(this);
+    this.play = this.play.bind(this);
+    this.pause = this.pause.bind(this);
   }
 
   /**
@@ -43,13 +49,14 @@ export default class TimeControls {
     if (this.isPlaying()) {
       return;
     }
+    this.mostRecentPlayRequestId += 1;
 
     // TODO: Fix this function so that it doesn't stop the slider from also operating
 
     // `lastFrameNum` is a parameter here because relying on `ColorizeCanvas.getCurrentFrame()` can
     // lead to race conditions that lead to frames getting loaded more than once.
-    const loadNextFrame = async (lastFrameNum: number): Promise<void> => {
-      if (!this.isPlaying()) {
+    const loadNextFrame = async (lastFrameNum: number, requestId: number): Promise<void> => {
+      if (this.mostRecentPlayRequestId !== requestId || !this.isPlaying()) {
         return;
       }
 
@@ -71,18 +78,22 @@ export default class TimeControls {
       const timeElapsed = endTime - startTime;
       onNewFrameCallback();
 
-      if (!this.isPlaying()) {
-        // The timer was stopped while the frame was loading, so stop playback.
+      if (this.mostRecentPlayRequestId !== requestId || !this.isPlaying()) {
+        // The timer was stopped while the frame was loading or a different
+        // request was started, so stop playback.
         return;
       }
 
       // Add additional delay, if needed, to maintain playback fps.
       // TODO: Could add some sort of smoothing here to make the playback more consistent.
       const delayMs = Math.max(0, 1000 / this.playbackFps - timeElapsed);
-      this.timerId = window.setTimeout(() => loadNextFrame(nextFrame), delayMs);
+      this.timerId = window.setTimeout(() => loadNextFrame(nextFrame, requestId), delayMs);
     };
 
-    this.timerId = window.setTimeout(() => loadNextFrame(this.canvas.getCurrentFrame()), 0);
+    this.timerId = window.setTimeout(
+      () => loadNextFrame(this.canvas.getCurrentFrame(), this.mostRecentPlayRequestId),
+      0
+    );
   }
 
   /**

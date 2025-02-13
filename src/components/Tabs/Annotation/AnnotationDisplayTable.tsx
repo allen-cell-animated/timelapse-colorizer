@@ -10,6 +10,8 @@ import { FlexColumnAlignCenter, VisuallyHidden } from "../../../styles/utils";
 import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
 
+const SELECTED_ROW_CLASSNAME = "selected-row";
+
 export type TableDataType = {
   key: string;
   id: number;
@@ -26,11 +28,23 @@ const StyledAntTable = styled(Table)`
     padding: 4px 8px;
   }
 
-  &&& :not(.ant-table-header) > .rc-virtual-list .ant-table-cell:not(:has(.ant-btn)) {
-    /* Correction for a bug in virtual lists where text elements were not
-     * centered vertically */
-    display: flex;
-    align-items: center;
+  &&& :not(.ant-table-header) > .rc-virtual-list {
+    & .ant-table-row.${SELECTED_ROW_CLASSNAME} {
+      background-color: var(--color-dropdown-selected);
+      color: var(--color-button);
+
+      & > .ant-table-cell {
+        /* Prevent hovering from changing background color */
+        background-color: transparent;
+      }
+    }
+
+    & .ant-table-cell:not(:has(.ant-btn)) {
+      /* Correction for a bug in virtual lists where text elements were not
+      * centered vertically */
+      display: flex;
+      align-items: center;
+    }
   }
 `;
 
@@ -41,11 +55,13 @@ type AnnotationTableProps = {
   ids: number[];
   height?: number | string;
   hideTrackColumn?: boolean;
+  selectedId?: number;
 };
 
 const defaultProps = {
   height: "100%",
   hideTrackColumn: false,
+  selectedId: -1,
 };
 
 /**
@@ -61,40 +77,47 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       title: "Object ID",
       dataIndex: "id",
       key: "id",
+      width: "30%",
       sorter: (a, b) => a.id - b.id,
     },
     {
       title: "Track ID",
       dataIndex: "track",
       key: "track",
+      width: "30%",
       sorter: (a, b) => a.track - b.track,
     },
     {
       title: "Time",
       dataIndex: "time",
       key: "time",
+      width: "30%",
       sorter: (a, b) => a.time - b.time,
     },
     // Column that contains a remove button for the ID.
     {
       title: "",
       key: "action",
+      width: "10%",
       render: (_, record) => (
-        <IconButton
-          type="text"
-          onClick={(event) => {
-            // Rows have their own behavior on click (jumping to a timestamp),
-            // so we need to stop event propagation so that the row click event
-            // doesn't fire.
-            event.stopPropagation();
-            props.onClickDeleteObject(record);
-          }}
-        >
-          <CloseOutlined />
-          <VisuallyHidden>
-            Remove ID {record.id} (track {record.track})
-          </VisuallyHidden>
-        </IconButton>
+        <div style={{ display: "flex", justifyContent: "right" }}>
+          <IconButton
+            type="hint"
+            sizePx={20}
+            onClick={(event) => {
+              // Rows have their own behavior on click (jumping to a timestamp),
+              // so we need to stop event propagation so that the row click event
+              // doesn't fire.
+              event.stopPropagation();
+              props.onClickDeleteObject(record);
+            }}
+          >
+            <CloseOutlined style={{ width: "12px" }} />
+            <VisuallyHidden>
+              Remove ID {record.id} (track {record.track})
+            </VisuallyHidden>
+          </IconButton>
+        </div>
       ),
     },
   ];
@@ -117,6 +140,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
 
   return (
     <StyledAntTable
+      rowClassName={(record) => (record.id === props.selectedId ? SELECTED_ROW_CLASSNAME : "")}
       dataSource={tableData}
       columns={tableColumns}
       size="small"
