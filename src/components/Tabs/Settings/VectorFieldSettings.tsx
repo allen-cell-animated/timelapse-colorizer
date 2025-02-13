@@ -1,6 +1,6 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Card, Checkbox, ColorPicker, Radio } from "antd";
-import React, { ReactElement } from "react";
+import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { VECTOR_KEY_MOTION_DELTA } from "../../../colorizer/constants";
@@ -28,7 +28,7 @@ export default function VectorFieldSettings(props: VectorFieldSettingsProps): Re
   };
 
   // TODO: Add additional vectors here when support for user vector data is added.
-  const vectorOptions = [VECTOR_OPTION_MOTION];
+  const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
 
   return (
     <>
