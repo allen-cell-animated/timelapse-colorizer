@@ -4,6 +4,7 @@ import { StateCreator } from "zustand";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../../colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "../../colors/color_ramps";
 import { arrayDeepEquals, getColorMap } from "../../utils/data_utils";
+import { computed } from "../utils/store_utils";
 
 import ColorRamp from "../../ColorRamp";
 
@@ -13,13 +14,14 @@ export type ColorRampSliceState = {
   colorRampMin: number;
   colorRampMax: number;
   categoricalPalette: Color[];
+};
 
-  // Derived values
+export type ColorRampSliceSelectors = {
+  /** The current ColorRamp, based on the selected key and optionally reversed. */
+  colorRamp: () => ColorRamp;
   /** The key of the categorical palette, if it matches a known palette. `null`
    * if the palette does not match. */
-  categoricalPaletteKey: string | null;
-  /** The current ColorRamp, based on the selected key and optionally reversed. */
-  colorRamp: ColorRamp;
+  categoricalPaletteKey: () => string | null;
 };
 
 export type ColorRampSliceActions = {
@@ -28,12 +30,13 @@ export type ColorRampSliceActions = {
    */
   setColorRampKey: (key: string) => void;
   setColorRampReversed: (reversed: boolean) => void;
+  // TODO: Merge into a single range
   setColorRampMin: (min: number) => void;
   setColorRampMax: (max: number) => void;
   setCategoricalPalette: (palette: Color[]) => void;
 };
 
-export type ColorRampSlice = ColorRampSliceState & ColorRampSliceActions;
+export type ColorRampSlice = ColorRampSliceState & ColorRampSliceSelectors & ColorRampSliceActions;
 
 const getPaletteKey = (palette: Color[]): string | null => {
   for (const [key, paletteData] of KNOWN_CATEGORICAL_PALETTES) {
@@ -44,16 +47,21 @@ const getPaletteKey = (palette: Color[]): string | null => {
   return null;
 };
 
-export const createColorRampSlice: StateCreator<ColorRampSlice> = (set) => ({
+export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, get) => ({
   // State
   colorRampKey: DEFAULT_COLOR_RAMP_KEY,
   isColorRampReversed: false,
   colorRampMin: 0,
   colorRampMax: 1,
   categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
-  // Derived values
-  categoricalPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
-  colorRamp: KNOWN_COLOR_RAMPS.get(DEFAULT_COLOR_RAMP_KEY)!.colorRamp,
+
+  // Selectors
+  categoricalPaletteKey: computed(() => [get().categoricalPalette], getPaletteKey),
+  colorRamp: computed(
+    () => [get().colorRampKey, get().isColorRampReversed],
+    (key, reversed) => getColorMap(KNOWN_COLOR_RAMPS, key, reversed)
+  ),
+
   // Actions
   setColorRampKey: (key: string) =>
     set((state) => {
@@ -66,13 +74,11 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set) => ({
       return {
         colorRampKey: key,
         isColorRampReversed: false,
-        colorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, false),
       };
     }),
   setColorRampReversed: (reversed: boolean) =>
-    set((state) => ({
+    set((_state) => ({
       isColorRampReversed: reversed,
-      colorRamp: getColorMap(KNOWN_COLOR_RAMPS, state.colorRampKey, reversed),
     })),
   // Enforce min/max
   setColorRampMin: (min: number) =>
@@ -87,8 +93,6 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set) => ({
     })),
   setCategoricalPalette: (palette: Color[]) =>
     set((_state) => ({
-      // Check if the new palette matches a known palette key.
-      categoricalPaletteKey: getPaletteKey(palette),
       categoricalPalette: palette,
     })),
 });
