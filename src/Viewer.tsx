@@ -62,6 +62,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
+import { useViewerStateStore } from "./colorizer/state/ViewerState";
 import TimeControls from "./colorizer/TimeControls";
 import SharedWorkerPool from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
@@ -107,9 +108,15 @@ function Viewer(): ReactElement {
     return canvas;
   });
 
-  const [collection, setCollection] = useState<Collection | undefined>();
-  const [dataset, setDataset] = useState<Dataset | null>(null);
-  const [datasetKey, setDatasetKey] = useState("");
+  const collection = useViewerStateStore((state) => state.collection);
+  const setCollection = useViewerStateStore((state) => state.setCollection);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
+  const setDataset = useViewerStateStore((state) => state.setDataset);
+  /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
+  const selectedBackdropKey = useViewerStateStore((state) => state.backdropKey);
+  const setSelectedBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
+
   const [, addRecentCollection] = useRecentCollections();
 
   // Shared worker pool for background operations (e.g. loading data)
@@ -119,8 +126,6 @@ function Viewer(): ReactElement {
   const [featureKey, setFeatureKey] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
-  /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
-  const [selectedBackdropKey, setSelectedBackdropKey] = useState<string | null>(null);
   const annotationState = useAnnotations();
 
   useEffect(() => {
@@ -154,6 +159,7 @@ function Viewer(): ReactElement {
   const [datasetOpen, setDatasetOpen] = useState(false);
 
   const colorRampData = KNOWN_COLOR_RAMPS;
+
   const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_KEY);
   const [colorRampReversed, setColorRampReversed] = useState(false);
   const [colorRampMin, setColorRampMin] = useState(0);
@@ -262,7 +268,7 @@ function Viewer(): ReactElement {
       // A single dataset was loaded, so there's no collection URL. Use the dataset URL instead.
       return { datasetParam: dataset?.manifestUrl, collectionParam: undefined };
     } else {
-      return { datasetParam: datasetKey, collectionParam: collection?.url };
+      return { datasetParam: datasetKey ?? undefined, collectionParam: collection?.url };
     }
   }, [datasetKey, dataset, collection]);
 
@@ -520,8 +526,7 @@ function Viewer(): ReactElement {
       pendingAlerts.current = [];
 
       // State updates
-      setDataset(newDataset);
-      setDatasetKey(newDatasetKey);
+      setDataset(newDatasetKey, newDataset);
 
       // Only change the feature if there's no equivalent in the new dataset
       let newFeatureKey = featureKey;
@@ -1047,7 +1052,7 @@ function Viewer(): ReactElement {
           <FlexRowAlignCenter $gap={2} $wrap="wrap">
             <LoadDatasetButton
               onLoad={handleDatasetLoad}
-              currentResourceUrl={collection?.url || datasetKey}
+              currentResourceUrl={collection?.url ?? datasetKey ?? ""}
               reportWarning={showDatasetLoadWarning}
             />
             <Export
@@ -1080,7 +1085,7 @@ function Viewer(): ReactElement {
           <SelectionDropdown
             disabled={disableUi}
             label="Dataset"
-            selected={datasetKey}
+            selected={datasetKey ?? ""}
             buttonType="primary"
             items={datasetDropdownData}
             onChange={handleDatasetChange}
