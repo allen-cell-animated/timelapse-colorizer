@@ -11,13 +11,6 @@ import {
   UnsignedIntType,
 } from "three";
 
-import { AnnotationState } from "./utils/react_utils";
-
-import Collection from "./Collection";
-import ColorRamp from "./ColorRamp";
-import Dataset from "./Dataset";
-import Track from "./Track";
-
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
 
 /** Available types for data loading (features, tracks, outliers, etc.), as a CPU buffer or a GPU texture */
@@ -169,27 +162,6 @@ export enum TabType {
 
 export const isTabType = (tab: string): tab is TabType => {
   return Object.values(TabType).includes(tab as TabType);
-};
-
-export type ViewerState = {
-  collection: Collection | null;
-  dataset: Dataset | null;
-  datasetKey: string;
-  selectedTrack: Track | null;
-  currentFrame: number;
-  featureKey: string;
-  categoricalPalette: Color[];
-
-  colorRamp: ColorRamp;
-  colorRampKey: string;
-  isColorRampReversed: boolean;
-  colorRampMin: number;
-  colorRampMax: number;
-
-  backdropKey: string | null;
-  annotationState: AnnotationState;
-  inRangeLut: Uint8Array;
-  featureThresholds: FeatureThreshold[];
 };
 
 /**
