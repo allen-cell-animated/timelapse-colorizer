@@ -25,9 +25,13 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
   dataset: null,
 
   setDataset: (key: string, dataset: Dataset) => {
-    // Validate dataset-dependent state values
+    ///// Validate dataset-dependent state values /////
+
+    // Switch to new dataset's default backdrop if the current one is not in the new dataset.
     let backdropKey = get().backdropKey;
-    backdropKey = backdropKey !== null && dataset.hasBackdrop(backdropKey) ? backdropKey : null;
+    if (backdropKey === null || !dataset.hasBackdrop(backdropKey)) {
+      backdropKey = dataset.getDefaultBackdropKey();
+    }
 
     set({ datasetKey: key, dataset, backdropKey });
   },
