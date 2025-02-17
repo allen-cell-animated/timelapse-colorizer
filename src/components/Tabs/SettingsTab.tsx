@@ -9,6 +9,7 @@ import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
+import { useViewerStateStore } from "../../colorizer/state/ViewerState";
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
@@ -29,9 +30,6 @@ type SettingsTabProps = {
   config: ViewerConfig;
   updateConfig(settings: Partial<ViewerConfig>): void;
 
-  selectedBackdropKey: string | null;
-  setSelectedBackdropKey: (key: string | null) => void;
-
   dataset: Dataset | null;
 };
 
@@ -44,9 +42,12 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
     [props.dataset]
   );
 
-  const isBackdropDisabled = backdropOptions.length === 0 || props.selectedBackdropKey === null;
+  const backdropKey = useViewerStateStore((state) => state.backdropKey) ?? NO_BACKDROP.value;
+  const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
+
+  const isBackdropDisabled = backdropOptions.length === 0 || backdropKey === null;
   const isBackdropOptionsDisabled = isBackdropDisabled || !props.config.backdropVisible;
-  let selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.value;
+  let selectedBackdropKey = backdropKey ?? NO_BACKDROP.value;
   if (isBackdropDisabled) {
     backdropOptions.push(NO_BACKDROP);
     selectedBackdropKey = NO_BACKDROP.value;
@@ -70,7 +71,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <SelectionDropdown
               selected={selectedBackdropKey}
               items={backdropOptions}
-              onChange={props.setSelectedBackdropKey}
+              onChange={setBackdropKey}
               disabled={isBackdropOptionsDisabled}
             />
           </SettingsItem>

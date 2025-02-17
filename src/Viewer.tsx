@@ -997,14 +997,7 @@ function Viewer(): ReactElement {
       key: TabType.SETTINGS,
       children: (
         <div className={styles.tabContent}>
-          <SettingsTab
-            config={config}
-            updateConfig={updateConfig}
-            dataset={dataset}
-            // TODO: This could be part of a dataset-specific settings object
-            selectedBackdropKey={selectedBackdropKey}
-            setSelectedBackdropKey={setSelectedBackdropKey}
-          />
+          <SettingsTab config={config} updateConfig={updateConfig} dataset={dataset} />
         </div>
       ),
     },
@@ -1184,12 +1177,8 @@ function Viewer(): ReactElement {
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
-                  collection={collection || null}
                   vectorData={motionDeltas}
-                  dataset={dataset}
-                  datasetKey={datasetKey}
                   featureKey={featureKey}
-                  selectedBackdropKey={selectedBackdropKey}
                   colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
                   colorRampMin={colorRampMin}
                   colorRampMax={colorRampMax}
