@@ -32,6 +32,10 @@ type SettingsTabProps = {
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
+  // TODO: Other backdrop settings do not yet use `useViewerStateStore`. Replace
+  // here once ViewerConfig can be updated through the store.
+  const backdropKey = useViewerStateStore((state) => state.backdropKey) ?? NO_BACKDROP.value;
+  const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
 
   const backdropOptions = useMemo(
     () =>
@@ -40,11 +44,6 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
         : [],
     [dataset]
   );
-
-  // TODO: Other backdrop settings do not yet use `useViewerStateStore`. Replace
-  // here once ViewerConfig can be updated through the store.
-  const backdropKey = useViewerStateStore((state) => state.backdropKey) ?? NO_BACKDROP.value;
-  const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
 
   const isBackdropDisabled = backdropOptions.length === 0 || backdropKey === null;
   const isBackdropOptionsDisabled = isBackdropDisabled || !props.config.backdropVisible;
