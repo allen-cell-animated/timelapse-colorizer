@@ -108,11 +108,14 @@ function Viewer(): ReactElement {
     return canvas;
   });
 
+  // TODO: Merge these into a single state slice call?
   const collection = useViewerStateStore((state) => state.collection);
   const setCollection = useViewerStateStore((state) => state.setCollection);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const setDataset = useViewerStateStore((state) => state.setDataset);
+  // TODO: Remove these when URL parameter initialization and updating is moved
+  // into a helper method/out of the component
   /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const selectedBackdropKey = useViewerStateStore((state) => state.backdropKey);
   const setSelectedBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
@@ -997,7 +1000,7 @@ function Viewer(): ReactElement {
       key: TabType.SETTINGS,
       children: (
         <div className={styles.tabContent}>
-          <SettingsTab config={config} updateConfig={updateConfig} dataset={dataset} />
+          <SettingsTab config={config} updateConfig={updateConfig} />
         </div>
       ),
     },

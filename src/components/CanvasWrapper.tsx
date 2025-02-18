@@ -4,6 +4,7 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
+import { useShallow } from "zustand/shallow";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { ColorRamp, Track } from "../colorizer";
@@ -166,10 +167,14 @@ const defaultProps: Partial<CanvasWrapperProps> = {
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
-  const dataset = useViewerStateStore((state) => state.dataset);
-  const datasetKey = useViewerStateStore((state) => state.datasetKey);
-  const collection = useViewerStateStore((state) => state.collection);
-  const selectedBackdropKey = useViewerStateStore((state) => state.backdropKey);
+  const state = useViewerStateStore(
+    useShallow((state) => ({
+      dataset: state.dataset,
+      datasetKey: state.datasetKey,
+      collection: state.collection,
+      backdropKey: state.backdropKey,
+    }))
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -264,8 +269,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    if (selectedBackdropKey !== null && props.config.backdropVisible) {
-      canv.setBackdropKey(selectedBackdropKey);
+    if (state.backdropKey !== null && props.config.backdropVisible) {
+      canv.setBackdropKey(state.backdropKey);
       canv.setBackdropBrightness(props.config.backdropBrightness);
       canv.setBackdropSaturation(props.config.backdropSaturation);
       canv.setObjectOpacity(props.config.objectOpacity);
@@ -274,7 +279,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.setObjectOpacity(100);
     }
   }, [
-    selectedBackdropKey,
+    state.backdropKey,
     props.config.backdropVisible,
     props.config.backdropBrightness,
     props.config.backdropSaturation,
@@ -284,7 +289,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Update categorical colors
   useMemo(() => {
     canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors, dataset, props.featureKey]);
+  }, [props.categoricalColors, state.dataset, props.featureKey]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
@@ -317,12 +322,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.showTimestamp]);
 
   useMemo(() => {
-    canv.setCollection(collection);
-  }, [collection]);
+    canv.setCollection(state.collection);
+  }, [state.collection]);
 
   useMemo(() => {
-    canv.setDatasetKey(datasetKey);
-  }, [datasetKey]);
+    canv.setDatasetKey(state.datasetKey);
+  }, [state.datasetKey]);
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
@@ -344,10 +349,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
-    const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
+    const timeToAnnotationLabelIds = state.dataset
+      ? props.annotationState.data.getTimeToLabelIdMap(state.dataset)
+      : new Map();
     canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
     canv.isAnnotationVisible = props.annotationState.visible;
-  }, [dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
+  }, [state.dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -391,22 +398,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canvasPanOffset.current = new Vector2(0, 0);
     canv.setZoom(1.0);
     canv.setPan(0, 0);
-  }, [collection]);
+  }, [state.collection]);
 
   /** Report clicked tracks via the passed callback. */
   const handleTrackSelection = useCallback(
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (id < 0 || dataset === null) {
+      if (id < 0 || state.dataset === null) {
         props.onTrackClicked(null);
       } else {
-        const trackId = dataset.getTrackId(id);
-        const newTrack = dataset.buildTrack(trackId);
+        const trackId = state.dataset.getTrackId(id);
+        const newTrack = state.dataset.buildTrack(trackId);
         props.onTrackClicked(newTrack);
       }
     },
-    [canv, dataset, props.onTrackClicked]
+    [canv, state.dataset, props.onTrackClicked]
   );
 
   /**
@@ -414,10 +421,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const getFrameSizeInScreenPx = useCallback((): Vector2 => {
     const canvasSizePx = getCanvasSizePx();
-    const frameResolution = dataset ? dataset.frameResolution : canvasSizePx;
+    const frameResolution = state.dataset ? state.dataset.frameResolution : canvasSizePx;
     const canvasZoom = 1 / canvasZoomInverse.current;
     return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
-  }, [dataset?.frameResolution, getCanvasSizePx]);
+  }, [state.dataset?.frameResolution, getCanvasSizePx]);
 
   /** Change zoom by some delta factor. */
   const handleZoom = useCallback(
@@ -475,7 +482,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
       canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
-    [canv, getCanvasSizePx, dataset]
+    [canv, getCanvasSizePx, state.dataset]
   );
 
   // Mouse event handlers
@@ -602,13 +609,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Report hovered id via the passed callback. */
   const reportHoveredIdAtPixel = useCallback(
     (x: number, y: number): void => {
-      if (!dataset) {
+      if (!state.dataset) {
         return;
       }
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [dataset, canv]
+    [state.dataset, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
@@ -638,7 +645,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [dataset, canv]);
+  }, [state.dataset, canv]);
 
   const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
     return (
@@ -669,9 +676,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const backdropTooltipContents: ReactNode[] = [];
   backdropTooltipContents.push(
     <span key="backdrop-name">
-      {selectedBackdropKey === null
+      {state.backdropKey === null
         ? "(No backdrops available)"
-        : dataset?.getBackdropData().get(selectedBackdropKey)?.name}
+        : state.dataset?.getBackdropData().get(state.backdropKey)?.name}
     </span>
   );
   // Link to viewer settings
@@ -769,7 +776,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             onClick={() => {
               props.updateConfig({ backdropVisible: !props.config.backdropVisible });
             }}
-            disabled={selectedBackdropKey === null}
+            disabled={state.backdropKey === null}
           >
             {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
             <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>

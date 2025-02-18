@@ -33,6 +33,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
       backdropKey = dataset.getDefaultBackdropKey();
     }
 
+    // TODO: Dispose of old dataset?
     set({ datasetKey: key, dataset, backdropKey });
   },
   clearDataset: () => set({ datasetKey: null, dataset: null, backdropKey: null }),
