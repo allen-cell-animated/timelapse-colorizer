@@ -3,12 +3,12 @@ import { Checkbox, ColorPicker } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
-import { Dataset } from "../../colorizer";
 import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
 import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
+import { useViewerStateStore } from "../../colorizer/state/ViewerState";
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
@@ -28,25 +28,27 @@ export const MAX_SLIDER_WIDTH = "250px";
 type SettingsTabProps = {
   config: ViewerConfig;
   updateConfig(settings: Partial<ViewerConfig>): void;
-
-  selectedBackdropKey: string | null;
-  setSelectedBackdropKey: (key: string | null) => void;
-
-  dataset: Dataset | null;
 };
 
 export default function SettingsTab(props: SettingsTabProps): ReactElement {
+  const dataset = useViewerStateStore((state) => state.dataset);
+
   const backdropOptions = useMemo(
     () =>
-      props.dataset
-        ? Array.from(props.dataset.getBackdropData().entries()).map(([key, data]) => ({ value: key, label: data.name }))
+      dataset
+        ? Array.from(dataset.getBackdropData().entries()).map(([key, data]) => ({ value: key, label: data.name }))
         : [],
-    [props.dataset]
+    [dataset]
   );
 
-  const isBackdropDisabled = backdropOptions.length === 0 || props.selectedBackdropKey === null;
+  // TODO: Other backdrop settings do not yet use `useViewerStateStore`. Replace
+  // here once ViewerConfig can be updated through the store.
+  const backdropKey = useViewerStateStore((state) => state.backdropKey) ?? NO_BACKDROP.value;
+  const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
+
+  const isBackdropDisabled = backdropOptions.length === 0 || backdropKey === null;
   const isBackdropOptionsDisabled = isBackdropDisabled || !props.config.backdropVisible;
-  let selectedBackdropKey = props.selectedBackdropKey ?? NO_BACKDROP.value;
+  let selectedBackdropKey = backdropKey ?? NO_BACKDROP.value;
   if (isBackdropDisabled) {
     backdropOptions.push(NO_BACKDROP);
     selectedBackdropKey = NO_BACKDROP.value;
@@ -70,7 +72,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <SelectionDropdown
               selected={selectedBackdropKey}
               items={backdropOptions}
-              onChange={props.setSelectedBackdropKey}
+              onChange={setBackdropKey}
               disabled={isBackdropOptionsDisabled}
             />
           </SettingsItem>
