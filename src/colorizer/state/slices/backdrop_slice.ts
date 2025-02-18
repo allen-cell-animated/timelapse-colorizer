@@ -30,6 +30,7 @@ type BackdropSliceActions = {
   setBackdropVisible: (visible: boolean) => void;
   setBackdropBrightness: (brightness: number) => void;
   setBackdropSaturation: (saturation: number) => void;
+  setObjectOpacity: (opacity: number) => void;
 };
 
 export type BackdropSlice = BackdropSliceState & BackdropSliceActions;
