@@ -12,7 +12,9 @@ const { create: actualCreate, createStore: actualCreateStore } = await vi.import
 // a variable to hold reset functions for all stores declared in the app
 export const storeResetFns = new Set<() => void>();
 
-const createUncurried = <T>(stateCreator: ZustandExportedTypes.StateCreator<T>) => {
+const createUncurried = <T>(
+  stateCreator: ZustandExportedTypes.StateCreator<T>
+): ZustandExportedTypes.UseBoundStore<ZustandExportedTypes.StoreApi<T>> => {
   const store = actualCreate(stateCreator);
   const initialState = store.getInitialState();
   storeResetFns.add(() => {
@@ -27,7 +29,9 @@ export const create = (<T>(stateCreator: ZustandExportedTypes.StateCreator<T>) =
   return typeof stateCreator === "function" ? createUncurried(stateCreator) : createUncurried;
 }) as typeof ZustandExportedTypes.create;
 
-const createStoreUncurried = <T>(stateCreator: ZustandExportedTypes.StateCreator<T>) => {
+const createStoreUncurried = <T>(
+  stateCreator: ZustandExportedTypes.StateCreator<T>
+): ZustandExportedTypes.StoreApi<T> => {
   const store = actualCreateStore(stateCreator);
   const initialState = store.getInitialState();
   storeResetFns.add(() => {
