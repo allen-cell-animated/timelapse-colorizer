@@ -45,8 +45,10 @@ export const createBackdropSlice: StateCreator<BackdropSlice & DatasetSlice, [],
   setBackdropKey: (key: string | null) => {
     const dataset = get().dataset;
     // Ignore request if backdrop is non-null but is not in the dataset
-    if (key !== null && dataset && !dataset.hasBackdrop(key)) {
-      throw new Error(`Backdrop key '${key}' was not found in the dataset.`);
+    if (!dataset) {
+      return;
+    } else if (key !== null && !dataset.hasBackdrop(key)) {
+      return;
     }
     // Optionally toggle backdrop visibility if the key is null
     set({ backdropKey: key, backdropVisible: get().backdropVisible && key !== null });
