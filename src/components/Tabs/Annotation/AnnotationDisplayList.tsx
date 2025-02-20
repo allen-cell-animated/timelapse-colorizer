@@ -83,7 +83,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     listContents = (
       <ul style={{ marginTop: 0 }}>
         {trackIds.map((trackId) => {
-          const track = props.dataset?.buildTrack(trackId);
+          const track = props.dataset?.getTrack(trackId);
           const ids = trackToIds.get(trackId.toString())!;
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (

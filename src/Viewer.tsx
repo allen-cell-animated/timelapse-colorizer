@@ -366,7 +366,7 @@ function Viewer(): ReactElement {
         return;
       }
 
-      const newTrack = dataset!.buildTrack(trackId);
+      const newTrack = dataset!.getTrack(trackId);
 
       if (newTrack.ids.length < 1) {
         // Check track validity
