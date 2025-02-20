@@ -1,7 +1,7 @@
 import { clamp } from "three/src/math/MathUtils";
 import { StateCreator } from "zustand";
 
-import { DatasetSlice } from "./dataset_slice";
+import Dataset from "../../Dataset";
 
 type BackdropSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there
@@ -19,10 +19,9 @@ type BackdropSliceState = {
 
 type BackdropSliceActions = {
   /**
-   * Sets the backdrop key. A string key value will be ignored if it does not
-   * exist in the current dataset.
+   * Sets the backdrop key. Will be ignored if it does not exist in the dataset.
    */
-  setBackdropKey: (key: string | null) => void;
+  setBackdropKey: (dataset: Dataset, key: string) => void;
   /**
    * Sets the visibility of the backdrop layer. The backdrop will be hidden if
    * the current backdrop key is `null`.
@@ -35,20 +34,16 @@ type BackdropSliceActions = {
 
 export type BackdropSlice = BackdropSliceState & BackdropSliceActions;
 
-export const createBackdropSlice: StateCreator<BackdropSlice & DatasetSlice, [], [], BackdropSlice> = (set, get) => ({
+export const createBackdropSlice: StateCreator<BackdropSlice, [], [], BackdropSlice> = (set, get) => ({
   backdropKey: null,
   backdropVisible: false,
   backdropBrightness: 100,
   backdropSaturation: 100,
   objectOpacity: 50,
 
-  setBackdropKey: (key: string | null) => {
-    const dataset = get().dataset;
-    if (!dataset) {
-      // Ignore if there is no dataset
-      return;
-    } else if (key !== null && !dataset.hasBackdrop(key)) {
-      // Ignore if dataset is non-null but key is not in the dataset
+  setBackdropKey: (dataset: Dataset, key: string) => {
+    if (key !== null && !dataset.hasBackdrop(key)) {
+      // Ignore if key is not in the dataset
       return;
     }
     const backdropVisible = get().backdropVisible && key !== null;

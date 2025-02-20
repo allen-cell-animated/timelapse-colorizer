@@ -721,7 +721,7 @@ function Viewer(): ReactElement {
       const backdropKey = initialUrlParams.selectedBackdropKey;
       if (backdropKey) {
         if (dataset?.hasBackdrop(backdropKey)) {
-          setSelectedBackdropKey(backdropKey);
+          setSelectedBackdropKey(dataset, backdropKey);
         }
       }
       if (initialUrlParams.config) {

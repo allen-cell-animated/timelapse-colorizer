@@ -71,7 +71,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <SelectionDropdown
               selected={selectedBackdropKey}
               items={backdropOptions}
-              onChange={setBackdropKey}
+              onChange={(key) => dataset && setBackdropKey(dataset, key)}
               disabled={isBackdropOptionsDisabled}
             />
           </SettingsItem>
