@@ -1,4 +1,4 @@
-import React, { ReactElement, useContext, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { Color } from "three";
 
@@ -36,26 +36,9 @@ const ListLayoutContainer = styled.div`
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
-  const cachedTracks = useRef<Map<string, Track | undefined>>(new Map());
   const selectedTrackId = props.selectedTrack?.trackId.toString();
 
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
-
-  useEffect(() => {
-    cachedTracks.current.clear();
-  }, [props.dataset]);
-
-  // Building a track is an expensive operation (takes O(N) where N is the
-  // size of the dataset), so cache the tracks.
-  // TODO: This could be optimized by having the dataset perform this once
-  // and save the results in a lookup table.
-  const getTrack = (trackId: number): Track | undefined => {
-    if (!cachedTracks.current.has(trackId.toString())) {
-      const track = props.dataset?.buildTrack(trackId);
-      cachedTracks.current.set(trackId.toString(), track);
-    }
-    return cachedTracks.current.get(trackId.toString());
-  };
 
   // Organize ids by track
   const trackToIds: Map<string, number[]> = useMemo(() => {
@@ -100,7 +83,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     listContents = (
       <ul style={{ marginTop: 0 }}>
         {trackIds.map((trackId) => {
-          const track = getTrack(trackId);
+          const track = props.dataset?.getTrack(trackId);
           const ids = trackToIds.get(trackId.toString())!;
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
@@ -124,7 +107,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                   <p style={{ margin: 0 }}>
                     {trackId}{" "}
                     <span style={{ color: theme.color.text.hint }}>
-                      ({ids.length}/{track?.times.length})
+                      ({ids.length}/{track?.times.length ?? 0})
                     </span>
                   </p>
                 </FlexRowAlignCenter>

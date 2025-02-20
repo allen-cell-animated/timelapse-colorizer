@@ -409,7 +409,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.onTrackClicked(null);
       } else {
         const trackId = props.dataset.getTrackId(id);
-        const newTrack = props.dataset.buildTrack(trackId);
+        const newTrack = props.dataset.getTrack(trackId);
         props.onTrackClicked(newTrack);
       }
     },
@@ -543,10 +543,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
       } else if (props.annotationState.isAnnotationModeEnabled) {
-        if (props.annotationState.selectionMode === AnnotationSelectionMode.TIME) {
-          canv.domElement.style.cursor = "crosshair";
-        } else {
+        if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
           canv.domElement.style.cursor = "cell";
+        } else {
+          canv.domElement.style.cursor = "crosshair";
         }
       } else {
         canv.domElement.style.cursor = "auto";
