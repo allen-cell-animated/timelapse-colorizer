@@ -426,7 +426,7 @@ export const useAnnotations = (): AnnotationState => {
     if (dataset.getTrackId(id1) !== dataset.getTrackId(id2)) {
       throw new Error(`useAnnotations:getIdsInRange: IDs ${id1} and ${id2} are not in the same track.`);
     }
-    const track = dataset.buildTrack(dataset.getTrackId(id1));
+    const track = dataset.getTrack(dataset.getTrackId(id1));
     const idx0 = track.ids.indexOf(id1);
     const idx1 = track.ids.indexOf(id2);
     const startIdx = Math.min(idx0, idx1);
@@ -464,7 +464,7 @@ export const useAnnotations = (): AnnotationState => {
       setLastClickedId(id);
       return;
     }
-    const track = dataset.buildTrack(dataset.getTrackId(id));
+    const track = dataset.getTrack(dataset.getTrackId(id));
     const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
 
     const idRange = getSelectRangeFromId(dataset, id);

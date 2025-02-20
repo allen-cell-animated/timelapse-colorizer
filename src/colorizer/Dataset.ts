@@ -519,6 +519,7 @@ export default class Dataset {
     if (this.cleanupArrayLoaderOnDispose) {
       this.arrayLoader.dispose();
     }
+    this.cachedTracks.clear();
   }
 
   /** get frame index of a given cell id */
@@ -551,7 +552,7 @@ export default class Dataset {
     }, []) as number[];
   }
 
-  public buildTrack(trackId: number): Track {
+  public getTrack(trackId: number): Track {
     const cachedTrack = this.cachedTracks.get(trackId);
     if (cachedTrack) {
       return cachedTrack;

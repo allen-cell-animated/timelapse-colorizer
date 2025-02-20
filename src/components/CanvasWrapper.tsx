@@ -381,7 +381,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.onTrackClicked(null);
       } else {
         const trackId = props.dataset.getTrackId(id);
-        const newTrack = props.dataset.buildTrack(trackId);
+        const newTrack = props.dataset.getTrack(trackId);
         props.onTrackClicked(newTrack);
       }
     },
