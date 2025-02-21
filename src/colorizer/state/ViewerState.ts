@@ -53,22 +53,22 @@ export const useViewerStateStore = create<ViewerState>()(viewerStateStoreCreator
 // Adapted from https://github.com/pmndrs/zustand/discussions/827#discussioncomment-9843290
 declare global {
   interface Window {
-    __store: ViewerState;
+    _store: ViewerState;
   }
 }
 
 if (import.meta.hot) {
   useViewerStateStore.subscribe((state) => {
     if (typeof window !== "undefined") {
-      window.__store = state;
+      window._store = state;
     }
   });
   import.meta.hot!.accept((newModule) => {
     if (!newModule) return;
     const newStore = newModule.useViewerStateStore;
     if (!newStore) return;
-    if (window.__store) {
-      newStore.setState(window.__store, true);
+    if (window._store) {
+      newStore.setState(window._store, true);
     }
   });
 }
