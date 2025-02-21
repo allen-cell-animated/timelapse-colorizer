@@ -129,6 +129,14 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     (x: number): number => Math.floor(x / indexToCanvasScale + minTime),
     [minTime, indexToCanvasScale]
   );
+  /**
+   * Maps a time value (`t=0`, `t=1`, etc.) to an x-coordinate on the canvas.
+   * The `t=minTime` will return the left edge of the canvas, and `t=maxTime`
+   * will return the right edge of the canvas.
+   *
+   * To color the interval for a single timepoint `t=N`, a rectangle is drawn
+   * from `timeToXCoord(N)` to `timeToXCoord(N + 1)`.
+   */
   const timeToXCoord = useCallback(
     (time: number): number => (time - minTime) * indexToCanvasScale,
     [minTime, indexToCanvasScale]
@@ -211,10 +219,10 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       const highlightIntervals = getIntervals(highlightedTimes);
       for (const interval of highlightIntervals) {
         const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
-        drawInterval(ctx, xInterval, props.heightPx, "#ebc88d9f");
+        drawInterval(ctx, xInterval, props.heightPx, theme.color.annotation.selectedRange);
       }
     }
-  }, [dataset, props.highlightedIds, props.widthPx, props.heightPx]);
+  }, [dataset, props.highlightedIds, props.widthPx, props.heightPx, theme.color.annotation.selectedRange]);
 
   // Update base canvas
   useEffect(() => {
