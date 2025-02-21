@@ -227,6 +227,7 @@ function Viewer(): ReactElement {
   const [findTrackInput, setFindTrackInput] = useState("");
   const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
+  const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
 
@@ -994,6 +995,7 @@ function Viewer(): ReactElement {
             dataset={dataset}
             selectedTrack={selectedTrack}
             frame={currentFrame}
+            hoveredId={currentHoveredId}
           />
         </div>
       ),

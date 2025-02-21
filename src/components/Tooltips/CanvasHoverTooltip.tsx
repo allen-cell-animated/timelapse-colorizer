@@ -169,22 +169,24 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
         </FlexRow>
       );
     } else if (props.annotationState.selectionMode === AnnotationSelectionMode.RANGE && dataset) {
-      const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHoveredId);
-      if (hoveredRange !== null && hoveredRange.length > 1) {
-        // Get min and max track IDs
-        const id0 = hoveredRange[0];
-        const id1 = hoveredRange[hoveredRange.length - 1];
-        const t0 = dataset.getTime(id0);
-        const t1 = dataset.getTime(id1);
-        const verb = isHoveredIdLabeled ? "unlabel" : "label";
-        annotationLabel = (
-          <FlexRow>
-            {annotationLabel}
-            <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
-              ✦ Click to {verb} {hoveredRange.length} objects from time {t0} to {t1}
-            </Tag>
-          </FlexRow>
-        );
+      if (props.showObjectHoverInfo) {
+        const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHoveredId);
+        if (hoveredRange !== null && hoveredRange.length > 1) {
+          // Get min and max track IDs
+          const id0 = hoveredRange[0];
+          const id1 = hoveredRange[hoveredRange.length - 1];
+          const t0 = dataset.getTime(id0);
+          const t1 = dataset.getTime(id1);
+          const verb = isHoveredIdLabeled ? "unlabel" : "label";
+          annotationLabel = (
+            <FlexRow>
+              {annotationLabel}
+              <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
+                ✦ Click to {verb} {hoveredRange.length} objects from time {t0} to {t1}
+              </Tag>
+            </FlexRow>
+          );
+        }
       }
     }
   }
