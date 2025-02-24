@@ -1,7 +1,7 @@
 import { clamp } from "three/src/math/MathUtils";
 import { StateCreator } from "zustand";
 
-import { DatasetSlice } from "./dataset_slice";
+import Dataset from "../../Dataset";
 
 type BackdropSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there
@@ -19,10 +19,9 @@ type BackdropSliceState = {
 
 type BackdropSliceActions = {
   /**
-   * Sets the backdrop key. A string key value will be ignored if it does not
-   * exist in the current dataset.
+   * Sets the backdrop key. Will be ignored if it does not exist in the dataset.
    */
-  setBackdropKey: (key: string | null) => void;
+  setBackdropKey: (dataset: Dataset, key: string) => void;
   /**
    * Sets the visibility of the backdrop layer. The backdrop will be hidden if
    * the current backdrop key is `null`.
@@ -57,23 +56,20 @@ const clampPercentage = (value: number, min: number, max: number): number => {
   return clamp(value, min, max);
 };
 
-export const createBackdropSlice: StateCreator<BackdropSlice & DatasetSlice, [], [], BackdropSlice> = (set, get) => ({
+export const createBackdropSlice: StateCreator<BackdropSlice, [], [], BackdropSlice> = (set, get) => ({
   backdropKey: null,
   backdropVisible: false,
   backdropBrightness: 100,
   backdropSaturation: 100,
   objectOpacity: 50,
 
-  setBackdropKey: (key: string | null) => {
-    const dataset = get().dataset;
-    // Ignore request if backdrop is non-null but is not in the dataset
-    if (!dataset) {
-      return;
-    } else if (key !== null && !dataset.hasBackdrop(key)) {
+  setBackdropKey: (dataset: Dataset, key: string) => {
+    if (key !== null && !dataset.hasBackdrop(key)) {
+      // Ignore if key is not in the dataset
       return;
     }
-    // Optionally toggle backdrop visibility if the key is null
-    set({ backdropKey: key, backdropVisible: get().backdropVisible && key !== null });
+    const backdropVisible = get().backdropVisible && key !== null;
+    set({ backdropKey: key, backdropVisible });
   },
   // Only enable when backdrop key is not null
   setBackdropVisible: (visible: boolean) => set({ backdropVisible: visible && get().backdropKey !== null }),
