@@ -12,6 +12,7 @@ import {
   KNOWN_COLOR_RAMPS,
   PaletteData,
 } from "../../colorizer";
+import { arrayDeepEquals } from "../../colorizer/utils/data_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
 import { SelectItem } from "./types";
 
@@ -140,19 +141,6 @@ const defaultProps: Partial<ColorRampSelectionProps> = {
   useCategoricalPalettes: false,
   knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
 };
-
-/** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
-function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
-  if (arr1.length !== arr2.length) {
-    return false;
-  }
-  for (let i = 0; i < arr2.length; i++) {
-    if (arr1[i] !== arr2[i]) {
-      return false;
-    }
-  }
-  return true;
-}
 
 export default function ColorRampSelection(inputProps: ColorRampSelectionProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ColorRampSelectionProps>;

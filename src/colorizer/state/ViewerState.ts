@@ -4,18 +4,20 @@ import { StateCreator } from "zustand";
 import { Spread } from "../utils/type_utils";
 import { BackdropSlice, createBackdropSlice } from "./slices/backdrop_slice";
 import { CollectionSlice, createCollectionSlice } from "./slices/collection_slice";
+import { ColorRampSlice, createColorRampSlice } from "./slices/color_ramp_slice";
 import { createDatasetSlice, DatasetSlice } from "./slices/dataset_slice";
 
 // The ViewerState is composed of many smaller slices, modules of related state,
 // actions, and selectors. See
 // https://github.com/pmndrs/zustand/blob/main/docs/guides/typescript.md#slices-pattern
 // for more details on the pattern.
-export type ViewerState = Spread<CollectionSlice & DatasetSlice & BackdropSlice>;
+export type ViewerState = Spread<CollectionSlice & DatasetSlice & BackdropSlice & ColorRampSlice>;
 
 export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
   ...createCollectionSlice(...a),
   ...createDatasetSlice(...a),
   ...createBackdropSlice(...a),
+  ...createColorRampSlice(...a),
 });
 
 /**

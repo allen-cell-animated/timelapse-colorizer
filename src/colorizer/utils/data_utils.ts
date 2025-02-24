@@ -5,6 +5,19 @@ import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric, Threshold
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
 
+/** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
+export function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  for (let i = 0; i < arr2.length; i++) {
+    if (arr1[i] !== arr2[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
  * @param featureKey String feature key to match on.
