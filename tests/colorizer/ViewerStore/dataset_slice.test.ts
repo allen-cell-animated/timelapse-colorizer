@@ -54,4 +54,23 @@ describe("useViewerStateStore: DatasetSlice", () => {
       expect(result.current.backdropVisible).toBe(false);
     });
   });
+
+  describe("clearDataset", () => {
+    it("clears backdrop key and visibility", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setDataset("some-key", MOCK_DATASET_WITH_BACKDROP);
+        result.current.setBackdropVisible(true);
+      });
+      expect(result.current.backdropKey).toBe(DEFAULT_BACKDROP_KEY);
+      expect(result.current.backdropVisible).toBe(true);
+
+      act(() => {
+        result.current.clearDataset();
+      });
+      expect(result.current.dataset).toBeNull();
+      expect(result.current.backdropKey).toBeNull();
+      expect(result.current.backdropVisible).toBe(false);
+    });
+  });
 });

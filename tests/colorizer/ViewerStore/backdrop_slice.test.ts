@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { Dataset } from "../../../src/colorizer";
+import { ANY_ERROR } from "../../test_utils";
 
 import { useViewerStateStore } from "../../../src/colorizer/state/ViewerState";
 
@@ -78,73 +79,46 @@ describe("useViewerStateStore: BackdropSlice", () => {
     });
   });
 
-  describe("setBackdropBrightness", () => {
-    it("sets brightness", () => {
-      const { result } = renderHook(() => useViewerStateStore());
-
-      act(() => {
-        result.current.setBackdropBrightness(75);
-      });
-      expect(result.current.backdropBrightness).toBe(75);
-      act(() => {
-        result.current.setBackdropBrightness(220);
-      });
-      expect(result.current.backdropBrightness).toBe(200);
-      act(() => {
-        result.current.setBackdropBrightness(-10);
-      });
-      expect(result.current.backdropBrightness).toBe(0);
+  it("can set backdrop properties with clamping", () => {
+    const { result } = renderHook(() => useViewerStateStore());
+    act(() => {
+      result.current.setBackdropBrightness(75);
+      result.current.setBackdropSaturation(50);
+      result.current.setObjectOpacity(25);
     });
+    expect(result.current.backdropBrightness).toBe(75);
+    expect(result.current.backdropSaturation).toBe(50);
+    expect(result.current.objectOpacity).toBe(25);
 
-    describe("setBackdropSaturation", () => {
-      it("sets saturation", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-
-        act(() => {
-          result.current.setBackdropSaturation(75);
-        });
-        expect(result.current.backdropSaturation).toBe(75);
-        act(() => {
-          result.current.setBackdropSaturation(220);
-        });
-        expect(result.current.backdropSaturation).toBe(100);
-        act(() => {
-          result.current.setBackdropSaturation(-10);
-        });
-        expect(result.current.backdropSaturation).toBe(0);
-      });
+    act(() => {
+      result.current.setBackdropBrightness(220);
+      result.current.setBackdropSaturation(150);
+      result.current.setObjectOpacity(120);
     });
+    expect(result.current.backdropBrightness).toBe(200);
+    expect(result.current.backdropSaturation).toBe(100);
+    expect(result.current.objectOpacity).toBe(100);
 
-    describe("setObjectOpacity", () => {
-      it("sets object opacity", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-
-        act(() => {
-          result.current.setObjectOpacity(100);
-        });
-        expect(result.current.objectOpacity).toBe(100);
-        act(() => {
-          result.current.setObjectOpacity(45.5);
-        });
-        expect(result.current.objectOpacity).toBe(45.5);
-        act(() => {
-          result.current.setObjectOpacity(0);
-        });
-        expect(result.current.objectOpacity).toBe(0);
-      });
-
-      it("clamps object opacity", () => {
-        const { result } = renderHook(() => useViewerStateStore());
-
-        act(() => {
-          result.current.setObjectOpacity(120);
-        });
-        expect(result.current.objectOpacity).toBe(100);
-        act(() => {
-          result.current.setObjectOpacity(-1.5);
-        });
-        expect(result.current.objectOpacity).toBe(0);
-      });
+    act(() => {
+      result.current.setBackdropBrightness(-10);
+      result.current.setBackdropSaturation(-10);
+      result.current.setObjectOpacity(-10);
     });
+    expect(result.current.backdropBrightness).toBe(0);
+    expect(result.current.backdropSaturation).toBe(0);
+    expect(result.current.objectOpacity).toBe(0);
+  });
+
+  it("throws error if NaN passed to backdrop property setters", () => {
+    const { result } = renderHook(() => useViewerStateStore());
+    expect(() => {
+      result.current.setBackdropBrightness(NaN);
+    }).toThrowError(ANY_ERROR);
+    expect(() => {
+      result.current.setBackdropSaturation(NaN);
+    }).toThrowError(ANY_ERROR);
+    expect(() => {
+      result.current.setObjectOpacity(NaN);
+    }).toThrowError(ANY_ERROR);
   });
 });

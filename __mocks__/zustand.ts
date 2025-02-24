@@ -1,4 +1,8 @@
-// Adapted from https://github.com/pmndrs/zustand/blob/HEAD/docs/guides/testing.md
+// Adapted from
+// https://github.com/pmndrs/zustand/blob/HEAD/docs/guides/testing.md
+//
+// Mocks the `create` and `createStore` functions in the `zustand` package so
+// stores are reset and will not persist state between test runs.
 import { act } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 import type * as ZustandExportedTypes from "zustand";

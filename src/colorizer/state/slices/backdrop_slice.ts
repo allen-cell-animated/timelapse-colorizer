@@ -28,12 +28,34 @@ type BackdropSliceActions = {
    * the current backdrop key is `null`.
    */
   setBackdropVisible: (visible: boolean) => void;
+  /**
+   * Sets the brightness of the backdrop image, clamped to a percentage in the
+   * `[0, 200]` range.
+   * @throws {Error} If the brightness is `NaN`.
+   */
   setBackdropBrightness: (brightness: number) => void;
+  /**
+   * Sets the saturation of the backdrop image, clamped to a percentage in the `[0,
+   * 100]` range.
+   * @throws {Error} If the saturation is `NaN`.
+   */
   setBackdropSaturation: (saturation: number) => void;
+  /**
+   * Sets the opacity of objects when the backdrop is visible, clamped to a
+   * percentage in the `[0, 100]` range.
+   * @throws {Error} If the opacity is `NaN`.
+   */
   setObjectOpacity: (opacity: number) => void;
 };
 
 export type BackdropSlice = BackdropSliceState & BackdropSliceActions;
+
+const clampPercentage = (value: number, min: number, max: number): number => {
+  if (Number.isNaN(value)) {
+    throw new Error(`Invalid percentage value: ${value}`);
+  }
+  return clamp(value, min, max);
+};
 
 export const createBackdropSlice: StateCreator<BackdropSlice & DatasetSlice, [], [], BackdropSlice> = (set, get) => ({
   backdropKey: null,
@@ -55,7 +77,7 @@ export const createBackdropSlice: StateCreator<BackdropSlice & DatasetSlice, [],
   },
   // Only enable when backdrop key is not null
   setBackdropVisible: (visible: boolean) => set({ backdropVisible: visible && get().backdropKey !== null }),
-  setBackdropBrightness: (brightness: number) => set({ backdropBrightness: clamp(brightness, 0, 200) }),
-  setBackdropSaturation: (saturation: number) => set({ backdropSaturation: clamp(saturation, 0, 100) }),
-  setObjectOpacity: (opacity: number) => set({ objectOpacity: clamp(opacity, 0, 100) }),
+  setBackdropBrightness: (brightness: number) => set({ backdropBrightness: clampPercentage(brightness, 0, 200) }),
+  setBackdropSaturation: (saturation: number) => set({ backdropSaturation: clampPercentage(saturation, 0, 100) }),
+  setObjectOpacity: (opacity: number) => set({ objectOpacity: clampPercentage(opacity, 0, 100) }),
 });
