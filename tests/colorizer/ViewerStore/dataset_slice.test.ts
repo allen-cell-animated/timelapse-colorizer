@@ -1,23 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { Dataset } from "../../../src/colorizer";
+import { DEFAULT_BACKDROP_KEY, MOCK_DATASET_WITH_BACKDROP, MOCK_DATASET_WITHOUT_BACKDROP } from "./constants";
 
 import { useViewerStateStore } from "../../../src/colorizer/state/ViewerState";
-
-const DEFAULT_BACKDROP_KEY = "test";
-
-// TODO: This will likely need to be an actual dataset object at some point
-// as changing the dataset has more side effects.
-const MOCK_DATASET_WITH_BACKDROP = {
-  getDefaultBackdropKey: () => DEFAULT_BACKDROP_KEY,
-  hasBackdrop: (key: string) => key === DEFAULT_BACKDROP_KEY,
-} as unknown as Dataset;
-
-const MOCK_DATASET_WITHOUT_BACKDROP = {
-  getDefaultBackdropKey: () => null,
-  hasBackdrop: () => false,
-} as unknown as Dataset;
 
 describe("useViewerStateStore: DatasetSlice", () => {
   describe("setDataset", () => {

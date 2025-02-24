@@ -3,20 +3,20 @@ import { describe, expect, it } from "vitest";
 
 import { Dataset } from "../../../src/colorizer";
 import { ANY_ERROR } from "../../test_utils";
+import { MOCK_DATASET_WITHOUT_BACKDROP } from "./constants";
 
 import { useViewerStateStore } from "../../../src/colorizer/state/ViewerState";
 
 describe("useViewerStateStore: BackdropSlice", () => {
   describe("setBackdropKey", () => {
-    it("does not allow backdrop slice to be set when Dataset is null", () => {
+    it("does not allow backdrop slice to be set when provided Dataset has no backdrops", () => {
       const { result } = renderHook(() => useViewerStateStore());
 
       // Initialized as null
-      expect(result.current.dataset).toBeNull();
       expect(result.current.backdropKey).toBeNull();
 
       act(() => {
-        result.current.setBackdropKey("test");
+        result.current.setBackdropKey(MOCK_DATASET_WITHOUT_BACKDROP, "test");
       });
       expect(result.current.backdropKey).toBeNull();
     });
@@ -28,22 +28,21 @@ describe("useViewerStateStore: BackdropSlice", () => {
       } as unknown as Dataset;
       const { result } = renderHook(() => useViewerStateStore());
 
-      act(() => {
-        result.current.setDataset("some-key", mockDataset);
-      });
-
       // Should initialize to default backdrop key
+      act(() => {
+        result.current.setBackdropKey(mockDataset, "test1");
+      });
       expect(result.current.backdropKey).toBe("test1");
 
       // Can set another valid backdrop key
       act(() => {
-        result.current.setBackdropKey("test2");
+        result.current.setBackdropKey(mockDataset, "test2");
       });
       expect(result.current.backdropKey).toBe("test2");
 
       // Ignores keys that do not exist
       act(() => {
-        result.current.setBackdropKey("test3");
+        result.current.setBackdropKey(mockDataset, "test3");
       });
       expect(result.current.backdropKey).toBe("test2");
     });
