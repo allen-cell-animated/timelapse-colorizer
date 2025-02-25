@@ -88,13 +88,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     useShallow((state) => ({
       dataset: state.dataset,
       colorRampRange: state.colorRampRange,
-      // getColorRamp: state.getColorRamp,
+      colorRamp: state.colorRamp,
       categoricalPalette: state.categoricalPalette,
     }))
   );
 
   const dataset = useDebounce(store.dataset, 500);
-  const colorRamp = useViewerStateStore((state) => state.getColorRamp)();
+  const colorRamp = store.colorRamp;
   const categoricalPalette = useDebounce(store.categoricalPalette, 100);
   const [colorRampMin, colorRampMax] = useDebounce(store.colorRampRange, 100);
 

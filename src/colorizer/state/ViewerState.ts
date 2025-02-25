@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { StateCreator } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 
 import { Spread } from "../utils/type_utils";
 import { BackdropSlice, createBackdropSlice } from "./slices/backdrop_slice";
 import { CollectionSlice, createCollectionSlice } from "./slices/collection_slice";
-import { ColorRampSlice, createColorRampSlice } from "./slices/color_ramp_slice";
+import { addColorRampDerivedStateSubscribers, ColorRampSlice, createColorRampSlice } from "./slices/color_ramp_slice";
 import { createDatasetSlice, DatasetSlice } from "./slices/dataset_slice";
 
 // The ViewerState is composed of many smaller slices, modules of related state,
@@ -49,7 +50,7 @@ export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
  * console.log(store.dataset);
  * ```
  */
-export const useViewerStateStore = create<ViewerState>()(viewerStateStoreCreator);
+export const useViewerStateStore = create<ViewerState>()(subscribeWithSelector(viewerStateStoreCreator));
 
 // Adds compatibility with hot module reloading.
 // Adapted from https://github.com/pmndrs/zustand/discussions/827#discussioncomment-9843290
@@ -74,3 +75,5 @@ if (import.meta.hot) {
     }
   });
 }
+
+addColorRampDerivedStateSubscribers(useViewerStateStore);

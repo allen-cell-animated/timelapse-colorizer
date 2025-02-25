@@ -1,42 +1,51 @@
+import { StoreApi, UseBoundStore } from "zustand";
 import { shallow } from "zustand/shallow";
 
-/**
- * Creates a selector function that computes a value based on a set of dependencies.
- * The selector will only recompute the value when the dependencies change.
- * @param depsFn A function that returns the dependencies (as an array). Values are compared using
- * shallow equality (`zustand/shallow`).
- * @param computeFn A function that computes and returns the value based on the dependencies.
- * @returns A selector function that returns a computed value, caching the result unless
- * the dependencies change.
- *
- * @example
- * ```
- * const useStore = create((set, get) => ({
- *   first: "John",
- *   last: "Doe",
- *   fullName: computed(
- *     // Dependencies:
- *     () => [get().first, get().last],
- *     // Computation (only computed when first accessed and only recomputed if a dependency value changes):
- *     (first, last) => `${first} ${last}`,
- *   ),
- * }));
- * ```
- *
- * Adapted from https://github.com/pmndrs/zustand/issues/108#issuecomment-2197556875
- */
-export function computed<const TDeps extends readonly unknown[] = unknown[], TResult = unknown>(
-  depsFn: () => TDeps,
-  computeFn: (...deps: TDeps) => TResult
-): () => TResult {
-  let prevDeps: TDeps;
-  let cachedResult: TResult;
-  return () => {
-    const deps = depsFn();
-    if (prevDeps === undefined || !shallow(prevDeps, deps)) {
-      prevDeps = deps;
-      cachedResult = computeFn(...deps);
-    }
-    return cachedResult;
+// Copied this out of Zustand's typing
+type StoreSubscribeWithSelector<T> = {
+  subscribe: {
+    (listener: (selectedState: T, previousSelectedState: T) => void): () => void;
+    <U>(
+      selector: (state: T) => U,
+      listener: (selectedState: U, previousSelectedState: U) => void,
+      options?: {
+        equalityFn?: (a: U, b: U) => boolean;
+        fireImmediately?: boolean;
+      }
+    ): () => void;
   };
-}
+};
+/**
+ * A Zustand store wrapped in the `subscribeWithSelector` middleware, allowing
+ * it to be subscribed to with a listener that will only be called when the
+ * dependencies specified by the selector function change.
+ */
+export type SubscribableStore<T> = UseBoundStore<StoreApi<T> & StoreSubscribeWithSelector<T>>;
+
+/**
+ * Adds a subscriber that updates a calculated/derived value in the store
+ * whenever its dependencies change.
+ * @param store The store to add the subscriber to. The store must be wrapped in
+ * the `subscribeWithSelector` middleware. Changes are made using
+ * `store.setState()`.
+ * @param selectorFn The selector function that returns the dependencies for the
+ * derived value.
+ * @param listenerFn The listener function that computes and returns the new
+ * derived value, called when the selected dependencies change.
+ */
+export const addDerivedStateSubscriber = <T, const U = [keyof T][]>(
+  store: SubscribableStore<T>,
+  selectorFn: (state: T) => U,
+  listenerFn: (state: U) => Partial<T>
+): void => {
+  store.subscribe(
+    selectorFn,
+    (selectedState) => {
+      store.setState(listenerFn(selectedState));
+    },
+    {
+      fireImmediately: true,
+      equalityFn: shallow,
+    }
+  );
+};

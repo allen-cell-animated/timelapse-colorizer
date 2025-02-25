@@ -4,7 +4,7 @@ import { StateCreator } from "zustand";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../../colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "../../colors/color_ramps";
 import { arrayDeepEquals, getColorMap } from "../../utils/data_utils";
-import { computed } from "../utils/store_utils";
+import { addDerivedStateSubscriber, SubscribableStore } from "../utils/store_utils";
 
 import ColorRamp from "../../ColorRamp";
 
@@ -13,14 +13,10 @@ export type ColorRampSliceState = {
   isColorRampReversed: boolean;
   colorRampRange: [number, number];
   categoricalPalette: Color[];
-};
 
-export type ColorRampSliceSelectors = {
-  /** The current ColorRamp, based on the selected key and optionally reversed. */
-  getColorRamp: () => ColorRamp;
-  /** The key of the categorical palette, if it matches a known palette. `null`
-   * if the palette does not match. */
-  getCategoricalPaletteKey: () => string | null;
+  // Derived values
+  colorRamp: ColorRamp;
+  categoricalPaletteKey: string | null;
 };
 
 export type ColorRampSliceActions = {
@@ -35,7 +31,7 @@ export type ColorRampSliceActions = {
   setCategoricalPalette: (palette: Color[]) => void;
 };
 
-export type ColorRampSlice = ColorRampSliceState & ColorRampSliceSelectors & ColorRampSliceActions;
+export type ColorRampSlice = ColorRampSliceState & ColorRampSliceActions;
 
 const getPaletteKey = (palette: Color[]): string | null => {
   for (const [key, paletteData] of KNOWN_CATEGORICAL_PALETTES) {
@@ -46,19 +42,16 @@ const getPaletteKey = (palette: Color[]): string | null => {
   return null;
 };
 
-export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, get) => ({
+export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, _get) => ({
   // State
   colorRampKey: DEFAULT_COLOR_RAMP_KEY,
   isColorRampReversed: false,
   colorRampRange: [0, 0],
   categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
 
-  // Selectors
-  getCategoricalPaletteKey: computed(() => [get().categoricalPalette], getPaletteKey),
-  getColorRamp: computed(
-    () => [get().colorRampKey, get().isColorRampReversed],
-    (key, reversed) => getColorMap(KNOWN_COLOR_RAMPS, key, reversed)
-  ),
+  // Derived state
+  colorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY, false),
+  categoricalPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
 
   // Actions
   setColorRampKey: (key: string) =>
@@ -92,3 +85,20 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, get) => 
       categoricalPalette: palette,
     })),
 });
+
+export const addColorRampDerivedStateSubscribers = (store: SubscribableStore<ColorRampSlice>): void => {
+  addDerivedStateSubscriber(
+    store,
+    (state) => [state.categoricalPalette],
+    ([palette]) => ({
+      categoricalPaletteKey: getPaletteKey(palette),
+    })
+  );
+  addDerivedStateSubscriber(
+    store,
+    (state) => [state.colorRampKey, state.isColorRampReversed],
+    ([key, reversed]) => ({
+      colorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, reversed),
+    })
+  );
+};
