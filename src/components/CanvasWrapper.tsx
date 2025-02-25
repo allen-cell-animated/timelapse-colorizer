@@ -7,7 +7,7 @@ import { clamp } from "three/src/math/MathUtils";
 import { useShallow } from "zustand/shallow";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { ColorRamp, Track } from "../colorizer";
+import { Track } from "../colorizer";
 import { AnnotationSelectionMode, LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
@@ -125,14 +125,9 @@ type CanvasWrapperProps = {
   loadingProgress: number | null;
   isRecording: boolean;
 
-  colorRamp: ColorRamp;
-  colorRampMin: number;
-  colorRampMax: number;
-
   annotationState: AnnotationState;
 
   selectedTrack: Track | null;
-  categoricalColors: Color[];
 
   inRangeLUT?: Uint8Array;
 
@@ -173,6 +168,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       datasetKey: state.datasetKey,
       collection: state.collection,
       backdropKey: state.backdropKey,
+      colorRamp: state.colorRamp,
+      colorRampRange: state.colorRampRange,
+      categoricalPalette: state.categoricalPalette,
     }))
   );
 
@@ -262,10 +260,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update canvas color ramp
   useMemo(() => {
-    canv.setColorRamp(props.colorRamp);
-    canv.setColorMapRangeMin(props.colorRampMin);
-    canv.setColorMapRangeMax(props.colorRampMax);
-  }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
+    canv.setColorRamp(store.colorRamp);
+    canv.setColorMapRangeMin(store.colorRampRange[0]);
+    canv.setColorMapRangeMax(store.colorRampRange[1]);
+  }, [store.colorRamp, store.colorRampRange]);
 
   // Update backdrops
   useMemo(() => {
@@ -288,8 +286,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update categorical colors
   useMemo(() => {
-    canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors, store.dataset, props.featureKey]);
+    canv.setCategoricalColors(store.categoricalPalette);
+  }, [store.categoricalPalette]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {

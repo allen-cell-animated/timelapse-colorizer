@@ -2,7 +2,6 @@ import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons
 import { Checkbox, List, Select } from "antd";
 import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
-import { Color } from "three";
 
 import { DropdownSVG } from "../../assets";
 import { Dataset } from "../../colorizer";
@@ -109,7 +108,6 @@ type FeatureThresholdsTabProps = {
   onChange: (thresholds: FeatureThreshold[]) => void;
   dataset: Dataset | null;
   disabled?: boolean;
-  categoricalPalette: Color[];
 };
 
 const defaultProps: Partial<FeatureThresholdsTabProps> = {

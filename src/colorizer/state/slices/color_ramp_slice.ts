@@ -11,11 +11,19 @@ import ColorRamp from "../../ColorRamp";
 export type ColorRampSliceState = {
   colorRampKey: string;
   isColorRampReversed: boolean;
+  /**
+   * Range of feature values over which the color ramp is applied, as `[min,
+   * max]`.
+   */
   colorRampRange: [number, number];
   categoricalPalette: Color[];
 
   // Derived values
+  /** The current `ColorRamp`, calculated from the selected `colorRampKey` and
+   * optionally reversed. */
   colorRamp: ColorRamp;
+  /** The key of the categorical palette, if its color stops match an entry in
+   * `KNOWN_CATEGORICAL_PALETTES`. `null` if the palette has no match. */
   categoricalPaletteKey: string | null;
 };
 
@@ -25,17 +33,21 @@ export type ColorRampSliceActions = {
    */
   setColorRampKey: (key: string) => void;
   setColorRampReversed: (reversed: boolean) => void;
-  // TODO: Merge into a single range?
-  setColorRampMin: (min: number) => void;
-  setColorRampMax: (max: number) => void;
+  setColorRampRange: (range: [number, number]) => void;
   setCategoricalPalette: (palette: Color[]) => void;
 };
 
 export type ColorRampSlice = ColorRampSliceState & ColorRampSliceActions;
 
+const mapColorToHex = (color: Color): string => {
+  return `#${color.getHexString()}`;
+};
+
 const getPaletteKey = (palette: Color[]): string | null => {
+  const colorStops = palette.map(mapColorToHex);
   for (const [key, paletteData] of KNOWN_CATEGORICAL_PALETTES) {
-    if (arrayDeepEquals(paletteData.colors, palette)) {
+    const paletteColorStops = paletteData.colors.map(mapColorToHex);
+    if (arrayDeepEquals(paletteColorStops, colorStops)) {
       return key;
     }
   }
@@ -72,14 +84,16 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, _get) =>
       isColorRampReversed: reversed,
     })),
   // Enforce min/max
-  setColorRampMin: (min: number) =>
-    set((state) => ({
-      colorRampRange: [Math.min(min, state.colorRampRange[1]), Math.max(min, state.colorRampRange[1])],
-    })),
-  setColorRampMax: (max: number) =>
-    set((state) => ({
-      colorRampRange: [Math.min(max, state.colorRampRange[0]), Math.max(max, state.colorRampRange[0])],
-    })),
+  setColorRampRange: (range: [number, number]) =>
+    set((_state) => {
+      const [min, max] = [Math.min(...range), Math.max(...range)];
+      if (!Number.isFinite(min) || !Number.isFinite(max)) {
+        throw new Error(`Color ramp range must be a finite number (received [${min}, ${max}])`);
+      }
+      return {
+        colorRampRange: [min, max],
+      };
+    }),
   setCategoricalPalette: (palette: Color[]) =>
     set((_state) => ({
       categoricalPalette: palette,

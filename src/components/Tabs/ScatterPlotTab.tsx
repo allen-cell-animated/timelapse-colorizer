@@ -61,7 +61,6 @@ type ScatterPlotTabProps = {
   isPlaying: boolean;
 
   selectedFeatureKey: string | null;
-  categoricalPalette: Color[];
   inRangeIds: Uint8Array;
 
   viewerConfig: ViewerConfig;
