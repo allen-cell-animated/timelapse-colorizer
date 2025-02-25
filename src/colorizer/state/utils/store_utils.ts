@@ -1,26 +1,6 @@
-import { StoreApi, UseBoundStore } from "zustand";
 import { shallow } from "zustand/shallow";
 
-// Copied this out of Zustand's typing
-type StoreSubscribeWithSelector<T> = {
-  subscribe: {
-    (listener: (selectedState: T, previousSelectedState: T) => void): () => void;
-    <U>(
-      selector: (state: T) => U,
-      listener: (selectedState: U, previousSelectedState: U) => void,
-      options?: {
-        equalityFn?: (a: U, b: U) => boolean;
-        fireImmediately?: boolean;
-      }
-    ): () => void;
-  };
-};
-/**
- * A Zustand store wrapped in the `subscribeWithSelector` middleware, allowing
- * it to be subscribed to with a listener that will only be called when the
- * dependencies specified by the selector function change.
- */
-export type SubscribableStore<T> = UseBoundStore<StoreApi<T> & StoreSubscribeWithSelector<T>>;
+import { SubscribableStore } from "../types";
 
 /**
  * Adds a subscriber that updates a calculated/derived value in the store

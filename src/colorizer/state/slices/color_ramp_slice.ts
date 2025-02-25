@@ -4,7 +4,8 @@ import { StateCreator } from "zustand";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../../colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "../../colors/color_ramps";
 import { arrayDeepEquals, getColorMap } from "../../utils/data_utils";
-import { addDerivedStateSubscriber, SubscribableStore } from "../utils/store_utils";
+import { SubscribableStore } from "../types";
+import { addDerivedStateSubscriber } from "../utils/store_utils";
 
 import ColorRamp from "../../ColorRamp";
 
@@ -18,7 +19,7 @@ export type ColorRampSliceState = {
   colorRampRange: [number, number];
   categoricalPalette: Color[];
 
-  // Derived values
+  //// Derived values ////
   /** The current `ColorRamp`, calculated from the selected `colorRampKey` and
    * optionally reversed. */
   colorRamp: ColorRamp;
