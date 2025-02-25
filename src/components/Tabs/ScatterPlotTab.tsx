@@ -3,9 +3,10 @@ import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, HexColorString } from "three";
+import { useShallow } from "zustand/shallow";
 
 import { SwitchIconSVG } from "../../assets";
-import { ColorRamp, Dataset, Track } from "../../colorizer";
+import { Dataset, Track } from "../../colorizer";
 import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
@@ -27,6 +28,7 @@ import {
   TraceData,
 } from "./scatter_plot_data_utils";
 
+import { useViewerStateStore } from "../../colorizer/state/ViewerState";
 import { AppThemeContext } from "../AppStyle";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
@@ -51,7 +53,6 @@ const DEFAULT_RANGE_TYPE = PlotRangeType.ALL_TIME;
 const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
 
 type ScatterPlotTabProps = {
-  dataset: Dataset | null;
   currentFrame: number;
   selectedTrack: Track | null;
   findTrack: (trackId: number | null, seekToFrame: boolean) => void;
@@ -60,9 +61,6 @@ type ScatterPlotTabProps = {
   isPlaying: boolean;
 
   selectedFeatureKey: string | null;
-  colorRampMin: number;
-  colorRampMax: number;
-  colorRamp: ColorRamp;
   categoricalPalette: Color[];
   inRangeIds: Uint8Array;
 
@@ -85,6 +83,20 @@ const ScatterPlotContainer = styled.div`
 export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactElement {
   // ^ Memo prevents re-rendering if the props haven't changed.
   const theme = useContext(AppThemeContext);
+
+  const store = useViewerStateStore(
+    useShallow((state) => ({
+      dataset: state.dataset,
+      colorRampRange: state.colorRampRange,
+      // getColorRamp: state.getColorRamp,
+      categoricalPalette: state.categoricalPalette,
+    }))
+  );
+
+  const dataset = useDebounce(store.dataset, 500);
+  const colorRamp = useViewerStateStore((state) => state.getColorRamp)();
+  const categoricalPalette = useDebounce(store.categoricalPalette, 100);
+  const [colorRampMin, colorRampMax] = useDebounce(store.colorRampRange, 100);
 
   const [isPending, startTransition] = useTransition();
   // This might seem redundant with `isPending`, but `useTransition` only works within React's
@@ -124,6 +136,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const currentRangeType = useRef<PlotRangeType>(props.scatterPlotConfig.rangeType);
   currentRangeType.current = props.scatterPlotConfig.rangeType;
 
+  // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
+  // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
+  const { selectedTrack, currentFrame, selectedFeatureKey, isPlaying, isVisible, inRangeIds, viewerConfig } = props;
+
   useEffect(() => {
     const onClick = (): void => {
       // A point was recently clicked so ignore the click event.
@@ -146,23 +162,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xyPlotDiv?.removeEventListener("click", onClick);
     };
   }, [plotDivRef.current, props.findTrack]);
-
-  // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
-  // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  const {
-    selectedTrack,
-    currentFrame,
-    colorRamp,
-    categoricalPalette,
-    selectedFeatureKey,
-    isPlaying,
-    isVisible,
-    inRangeIds,
-    viewerConfig,
-  } = props;
-  const dataset = useDebounce(props.dataset, 500);
-  const colorRampMin = useDebounce(props.colorRampMin, 100);
-  const colorRampMax = useDebounce(props.colorRampMax, 100);
 
   useMemo(() => {
     if (props.scatterPlotConfig.xAxis === null && props.scatterPlotConfig.yAxis === null && props.selectedFeatureKey) {
@@ -195,9 +194,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const isDebouncePending =
     props.scatterPlotConfig !== scatterConfig ||
-    dataset !== props.dataset ||
-    colorRampMin !== props.colorRampMin ||
-    colorRampMax !== props.colorRampMax;
+    dataset !== store.dataset ||
+    colorRampMin !== store.colorRampRange[0] ||
+    colorRampMax !== store.colorRampRange[1];
 
   //////////////////////////////////
   // Click Handlers
@@ -258,13 +257,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     rangeType: PlotRangeType;
     xAxisFeatureKey: string | null;
     yAxisFeatureKey: string | null;
-  } & ScatterPlotTabProps;
+    dataset: Dataset | null;
+  };
 
   const lastRenderedState = useRef<LastRenderedState>({
     rangeType: DEFAULT_RANGE_TYPE,
     xAxisFeatureKey: null,
     yAxisFeatureKey: null,
-    ...props,
+    dataset: dataset,
   });
 
   /** Returns whether the changes would result in a new plot, requiring the zoom and UI to reset. */
@@ -811,7 +811,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
           xAxisFeatureKey,
           yAxisFeatureKey,
           rangeType,
-          ...props,
+          dataset,
         };
       });
     } catch (error) {

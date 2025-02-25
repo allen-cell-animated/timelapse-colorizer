@@ -17,10 +17,10 @@ export type ColorRampSliceState = {
 
 export type ColorRampSliceSelectors = {
   /** The current ColorRamp, based on the selected key and optionally reversed. */
-  colorRamp: () => ColorRamp;
+  getColorRamp: () => ColorRamp;
   /** The key of the categorical palette, if it matches a known palette. `null`
    * if the palette does not match. */
-  categoricalPaletteKey: () => string | null;
+  getCategoricalPaletteKey: () => string | null;
 };
 
 export type ColorRampSliceActions = {
@@ -50,12 +50,12 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, get) => 
   // State
   colorRampKey: DEFAULT_COLOR_RAMP_KEY,
   isColorRampReversed: false,
-  colorRampRange: [0, 1],
+  colorRampRange: [0, 0],
   categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
 
   // Selectors
-  categoricalPaletteKey: computed(() => [get().categoricalPalette], getPaletteKey),
-  colorRamp: computed(
+  getCategoricalPaletteKey: computed(() => [get().categoricalPalette], getPaletteKey),
+  getColorRamp: computed(
     () => [get().colorRampKey, get().isColorRampReversed],
     (key, reversed) => getColorMap(KNOWN_COLOR_RAMPS, key, reversed)
   ),

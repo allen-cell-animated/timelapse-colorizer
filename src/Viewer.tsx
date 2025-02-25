@@ -25,7 +25,6 @@ import {
   AnnotationSelectionMode,
   Dataset,
   DEFAULT_CATEGORICAL_PALETTE_KEY,
-  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
   FeatureThreshold,
@@ -151,10 +150,13 @@ function Viewer(): ReactElement {
 
   const colorRampData = KNOWN_COLOR_RAMPS;
 
-  const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_KEY);
-  const [colorRampReversed, setColorRampReversed] = useState(false);
-  const [colorRampMin, setColorRampMin] = useState(0);
-  const [colorRampMax, setColorRampMax] = useState(0);
+  const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
+  const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
+  const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
+  const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
+  const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
+  const setColorRampMin = useViewerStateStore((state) => state.setColorRampMin);
+  const setColorRampMax = useViewerStateStore((state) => state.setColorRampMax);
 
   const [categoricalPalette, setCategoricalPalette] = useState(
     KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors
@@ -932,7 +934,6 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <ScatterPlotTab
-            dataset={dataset}
             currentFrame={currentFrame}
             selectedTrack={selectedTrack}
             findTrack={findTrack}
@@ -940,9 +941,6 @@ function Viewer(): ReactElement {
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
             selectedFeatureKey={featureKey}
-            colorRampMin={colorRampMin}
-            colorRampMax={colorRampMax}
-            colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
             categoricalPalette={categoricalPalette}
             inRangeIds={inRangeLUT}
             viewerConfig={config}
