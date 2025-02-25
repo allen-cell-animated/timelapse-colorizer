@@ -24,7 +24,6 @@ import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 import {
   AnnotationSelectionMode,
   Dataset,
-  DEFAULT_CATEGORICAL_PALETTE_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
   FeatureThreshold,
@@ -158,10 +157,8 @@ function Viewer(): ReactElement {
   const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
   const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
   const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
-
-  const [categoricalPalette, setCategoricalPalette] = useState(
-    KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors
-  );
+  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
+  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
 
   const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
   const setFeatureThresholds = useCallback(
@@ -1127,8 +1124,6 @@ function Viewer(): ReactElement {
                       dataset?.isFeatureCategorical(featureKey) ? (
                         <CategoricalColorPicker
                           categories={dataset.getFeatureCategories(featureKey) || []}
-                          selectedPalette={categoricalPalette}
-                          onChangePalette={setCategoricalPalette}
                           disabled={disableUi}
                         />
                       ) : (
