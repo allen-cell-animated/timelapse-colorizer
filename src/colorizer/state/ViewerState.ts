@@ -48,9 +48,19 @@ export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
  * // will rerender on any state change):
  * const store = useViewerStateStore();
  * console.log(store.dataset);
+ *
+ * // Subscribing to changes in the store:
+ * useViewerStateStore.subscribe(
+ *   (state) => [state.dataset, state.collection],
+ *   ([dataset, collection]): void => {
+ *    console.log("Dataset or collection changed:", dataset, collection);
+ *   }
+ * );
  * ```
  */
 export const useViewerStateStore = create<ViewerState>()(subscribeWithSelector(viewerStateStoreCreator));
+
+addColorRampDerivedStateSubscribers(useViewerStateStore);
 
 // Adds compatibility with hot module reloading.
 // Adapted from https://github.com/pmndrs/zustand/discussions/827#discussioncomment-9843290
@@ -75,5 +85,3 @@ if (import.meta.hot) {
     }
   });
 }
-
-addColorRampDerivedStateSubscribers(useViewerStateStore);

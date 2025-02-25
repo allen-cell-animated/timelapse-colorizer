@@ -17,8 +17,9 @@ type StoreSubscribeWithSelector<T> = {
 
 /**
  * A Zustand store wrapped in the `subscribeWithSelector` middleware. This
- * allows it to be subscribed to with a listener that will only be called when
- * the dependencies specified by a selector function change, rather than on
- * every state change.
+ * allows subscribers to provide a selector function that returns a subset of
+ * the state. The provided listener function will only be called when the
+ * dependencies specified by selector function change, rather than on every
+ * state change.
  */
 export type SubscribableStore<T> = UseBoundStore<StoreApi<T> & StoreSubscribeWithSelector<T>>;

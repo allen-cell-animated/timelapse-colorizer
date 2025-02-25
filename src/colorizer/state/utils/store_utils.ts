@@ -3,7 +3,7 @@ import { shallow } from "zustand/shallow";
 import { SubscribableStore } from "../types";
 
 /**
- * Adds a subscriber that updates a calculated/derived value in the store
+ * Adds a subscriber that updates a derived (calculated) value in the store
  * whenever its dependencies change.
  * @param store The store to add the subscriber to. The store must be wrapped in
  * the `subscribeWithSelector` middleware. Changes are made using

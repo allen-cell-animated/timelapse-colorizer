@@ -19,21 +19,28 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       }
     });
 
-    it("throws error if invalid color ramp keys are used", () => {
+    it("throws error if color ramp key is invalid", () => {
       const { result } = renderHook(() => useViewerStateStore());
       expect(() => {
         act(() => {
           result.current.setColorRampKey("invalid-key");
         });
       }).toThrowError(ANY_ERROR);
+
+      expect(() => {
+        act(() => {
+          result.current.setColorRampKey("");
+        });
+      }).toThrowError(ANY_ERROR);
     });
 
-    it("resets range reversed when set", () => {
+    it("resets reverse flag when new key is set", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
         result.current.setColorRampReversed(true);
       });
       expect(result.current.isColorRampReversed).toBe(true);
+
       act(() => {
         result.current.setColorRampKey(Array.from(KNOWN_COLOR_RAMPS.keys())[2]);
       });
@@ -42,10 +49,12 @@ describe("useViewerStateStore: ColorRampSlice", () => {
 
     it("updates colorRamp when set", () => {
       const { result } = renderHook(() => useViewerStateStore());
+      const originalColorRamp = result.current.colorRamp;
       const colorRampData = Array.from(KNOWN_COLOR_RAMPS.values())[2];
       act(() => {
         result.current.setColorRampKey(colorRampData.key);
       });
+      expect(result.current.colorRamp).not.toStrictEqual(originalColorRamp);
       expect(result.current.colorRamp).toStrictEqual(colorRampData.colorRamp);
     });
   });

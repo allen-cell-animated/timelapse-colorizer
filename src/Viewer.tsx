@@ -157,6 +157,7 @@ function Viewer(): ReactElement {
   const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
   const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
   const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
+  const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
 
   const [categoricalPalette, setCategoricalPalette] = useState(
     KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors
@@ -1105,6 +1106,7 @@ function Viewer(): ReactElement {
             useCategoricalPalettes={dataset?.isFeatureCategorical(featureKey) || false}
             numCategories={dataset?.getFeatureCategories(featureKey)?.length || 1}
             selectedPalette={categoricalPalette}
+            selectedPaletteKey={selectedPaletteKey}
             onChangePalette={setCategoricalPalette}
           />
         </FlexRowAlignCenter>

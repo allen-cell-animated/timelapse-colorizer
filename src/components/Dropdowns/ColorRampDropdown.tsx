@@ -12,7 +12,6 @@ import {
   KNOWN_COLOR_RAMPS,
   PaletteData,
 } from "../../colorizer";
-import { arrayDeepEquals } from "../../colorizer/utils/data_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
 import { SelectItem } from "./types";
 
@@ -123,6 +122,7 @@ type ColorRampSelectionProps = {
   knownColorRamps?: Map<string, ColorRampData>;
 
   selectedPalette: Color[];
+  selectedPaletteKey: string | null;
   onChangePalette: (newPalette: Color[]) => void;
   numCategories: number;
   categoricalPalettesToDisplay: string[];
@@ -214,13 +214,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
 
   // Check if palette colors match an existing one; otherwise, mark it as being
   // custom.
-  let selectedPaletteKey = CUSTOM_PALETTE_ITEM_KEY;
-  for (const [key, paletteData] of props.knownCategoricalPalettes) {
-    if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
-      selectedPaletteKey = key;
-      break;
-    }
-  }
+  const selectedPaletteKey = props.selectedPaletteKey ?? CUSTOM_PALETTE_ITEM_KEY;
   const paletteData = props.knownCategoricalPalettes.get(selectedPaletteKey);
   const selectedPaletteItem = {
     value: selectedPaletteKey,
