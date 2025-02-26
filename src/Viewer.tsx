@@ -832,7 +832,11 @@ function Viewer(): ReactElement {
   // the frame using a debounced value to prevent constant updates as it moves.
   const debouncedFrameInput = useDebounce(frameInput, 250);
   useEffect(() => {
-    setFrame(debouncedFrameInput);
+    if (!timeControls.isPlaying() && currentFrame !== debouncedFrameInput) {
+      setFrame(debouncedFrameInput);
+    }
+    // Dependency only contains debouncedFrameInput to prevent time from jumping back
+    // to old debounced values when time playback is paused.
   }, [debouncedFrameInput]);
 
   // When the slider is released, check if playback was occurring and resume it.
@@ -840,9 +844,9 @@ function Viewer(): ReactElement {
   // if the user releases the pointer outside of the slider.
   useEffect(() => {
     const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
-      setFrame(frameInput);
       if (isTimeSliderDraggedDuringPlayback) {
-        // Update the frame and optionally unpause playback when the slider is released.
+        setFrame(frameInput);
+        // Update the frame and unpause playback when the slider is released.
         setIsTimeSliderDraggedDuringPlayback(false);
         timeControls.play(); // resume playing
       }
@@ -1226,7 +1230,14 @@ function Viewer(): ReactElement {
             <div className={styles.timeControls}>
               {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
                 // Swap between play and pause button
-                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
+                <IconButton
+                  type="primary"
+                  disabled={disableTimeControlsUi}
+                  onClick={() => {
+                    timeControls.pause();
+                    setFrameInput(currentFrame);
+                  }}
+                >
                   <PauseOutlined />
                 </IconButton>
               ) : (
