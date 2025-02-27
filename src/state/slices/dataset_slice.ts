@@ -3,7 +3,7 @@ import { StateCreator } from "zustand";
 import { BackdropSlice } from "./backdrop_slice";
 import { CollectionSlice } from "./collection_slice";
 
-import Dataset from "../../Dataset";
+import Dataset from "../../colorizer/Dataset";
 
 type DatasetSliceState = {
   datasetKey: string | null;

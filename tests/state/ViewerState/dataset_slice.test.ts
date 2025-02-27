@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_BACKDROP_KEY, MOCK_DATASET_WITH_BACKDROP, MOCK_DATASET_WITHOUT_BACKDROP } from "./constants";
 
-import { useViewerStateStore } from "../../../src/colorizer/state/ViewerState";
+import { useViewerStateStore } from "../../../src/state/ViewerState";
 
 describe("useViewerStateStore: DatasetSlice", () => {
   describe("setDataset", () => {

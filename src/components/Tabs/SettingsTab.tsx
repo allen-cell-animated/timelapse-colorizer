@@ -8,7 +8,7 @@ import { DrawMode, ViewerConfig } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
-import { useViewerStateStore } from "../../colorizer/state/ViewerState";
+import { useViewerStateStore } from "../../state/ViewerState";
 import CustomCollapse from "../CustomCollapse";
 import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";

@@ -2,7 +2,7 @@ import { StateCreator } from "zustand";
 
 import { DatasetSlice } from "./dataset_slice";
 
-import Collection from "../../Collection";
+import Collection from "../../colorizer/Collection";
 
 type CollectionSliceState = {
   collection: Collection | null;
