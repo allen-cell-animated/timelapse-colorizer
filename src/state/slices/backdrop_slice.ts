@@ -51,7 +51,7 @@ export type BackdropSlice = BackdropSliceState & BackdropSliceActions;
 
 const clampPercentage = (value: number, min: number, max: number): number => {
   if (Number.isNaN(value)) {
-    throw new Error(`Invalid percentage value: ${value}`);
+    throw new Error(`Invalid value to clamp: ${value}`);
   }
   return clamp(value, min, max);
 };
