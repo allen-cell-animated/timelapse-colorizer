@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { StateCreator } from "zustand";
 
-import { Spread } from "../utils/type_utils";
+import { Spread } from "../colorizer/utils/type_utils";
 import { BackdropSlice, createBackdropSlice } from "./slices/backdrop_slice";
 import { CollectionSlice, createCollectionSlice } from "./slices/collection_slice";
 import { createDatasetSlice, DatasetSlice } from "./slices/dataset_slice";

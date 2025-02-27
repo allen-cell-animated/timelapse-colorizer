@@ -1,7 +1,7 @@
 import { clamp } from "three/src/math/MathUtils";
 import { StateCreator } from "zustand";
 
-import Dataset from "../../Dataset";
+import Dataset from "../../colorizer/Dataset";
 
 type BackdropSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there

@@ -15,7 +15,7 @@ import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
-import { useViewerStateStore } from "../colorizer/state/ViewerState";
+import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 import { LinkStyleButton } from "./Buttons/LinkStyleButton";
