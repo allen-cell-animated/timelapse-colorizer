@@ -7,7 +7,7 @@ import { useShallow } from "zustand/shallow";
 
 import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
 
-import { useViewerStateStore } from "../colorizer/state/ViewerState";
+import { useViewerStateStore } from "../state/ViewerState";
 
 type CategoricalColorPickerProps = {
   categories: string[];

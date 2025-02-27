@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../../../src/colorizer";
 import { ANY_ERROR } from "../../test_utils";
 
-import { useViewerStateStore } from "../../../src/colorizer/state/ViewerState";
+import { useViewerStateStore } from "../../../src/state/ViewerState";
 
 describe("useViewerStateStore: ColorRampSlice", () => {
   describe("setColorRampKey", () => {

@@ -28,7 +28,7 @@ import {
   TraceData,
 } from "./scatter_plot_data_utils";
 
-import { useViewerStateStore } from "../../colorizer/state/ViewerState";
+import { useViewerStateStore } from "../../state/ViewerState";
 import { AppThemeContext } from "../AppStyle";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import IconButton from "../IconButton";
