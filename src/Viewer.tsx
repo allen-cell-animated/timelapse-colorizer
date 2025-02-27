@@ -220,6 +220,7 @@ function Viewer(): ReactElement {
     }
   }, [timeControls.isPlaying()]);
 
+  const timeSliderContainerRef = useRef<HTMLDivElement>(null);
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
    */
@@ -843,7 +844,13 @@ function Viewer(): ReactElement {
   // We need to attach the pointerup event listener to the document because it will not fire
   // if the user releases the pointer outside of the slider.
   useEffect(() => {
-    const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
+    const checkIfPlaybackShouldUnpause = async (event: PointerEvent): Promise<void> => {
+      const target = event.target;
+      if (target && timeSliderContainerRef.current?.contains(target as Node)) {
+        // If the user clicked and released on the slider, update the
+        // time immediately.
+        setFrame(frameInput);
+      }
       if (isTimeSliderDraggedDuringPlayback) {
         setFrame(frameInput);
         // Update the frame and unpause playback when the slider is released.
@@ -1247,6 +1254,7 @@ function Viewer(): ReactElement {
               )}
 
               <div
+                ref={timeSliderContainerRef}
                 className={styles.timeSliderContainer}
                 onPointerDownCapture={() => {
                   if (timeControls.isPlaying()) {
