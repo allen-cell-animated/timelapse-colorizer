@@ -2,10 +2,17 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { Dataset } from "../../../src/colorizer";
+import {
+  BACKDROP_BRIGHTNESS_MAX,
+  BACKDROP_BRIGHTNESS_MIN,
+  BACKDROP_OBJECT_OPACITY_MAX,
+  BACKDROP_OBJECT_OPACITY_MIN,
+  BACKDROP_SATURATION_MAX,
+  BACKDROP_SATURATION_MIN,
+} from "../../../src/constants";
+import { useViewerStateStore } from "../../../src/state/ViewerState";
 import { ANY_ERROR } from "../../test_utils";
 import { MOCK_DATASET_WITHOUT_BACKDROP } from "./constants";
-
-import { useViewerStateStore } from "../../../src/state/ViewerState";
 
 describe("useViewerStateStore: BackdropSlice", () => {
   describe("setBackdropKey", () => {
@@ -14,10 +21,11 @@ describe("useViewerStateStore: BackdropSlice", () => {
 
       // Initialized as null
       expect(result.current.backdropKey).toBeNull();
-
-      act(() => {
-        result.current.setBackdropKey(MOCK_DATASET_WITHOUT_BACKDROP, "test");
-      });
+      expect(() => {
+        act(() => {
+          result.current.setBackdropKey(MOCK_DATASET_WITHOUT_BACKDROP, "test");
+        });
+      }).toThrowError(ANY_ERROR);
       expect(result.current.backdropKey).toBeNull();
     });
 
@@ -37,12 +45,6 @@ describe("useViewerStateStore: BackdropSlice", () => {
       // Can set another valid backdrop key
       act(() => {
         result.current.setBackdropKey(mockDataset, "test2");
-      });
-      expect(result.current.backdropKey).toBe("test2");
-
-      // Ignores keys that do not exist
-      act(() => {
-        result.current.setBackdropKey(mockDataset, "test3");
       });
       expect(result.current.backdropKey).toBe("test2");
     });
@@ -90,22 +92,22 @@ describe("useViewerStateStore: BackdropSlice", () => {
     expect(result.current.objectOpacity).toBe(25);
 
     act(() => {
-      result.current.setBackdropBrightness(220);
-      result.current.setBackdropSaturation(150);
-      result.current.setObjectOpacity(120);
+      result.current.setBackdropBrightness(BACKDROP_BRIGHTNESS_MAX + 10);
+      result.current.setBackdropSaturation(BACKDROP_SATURATION_MAX + 20);
+      result.current.setObjectOpacity(BACKDROP_OBJECT_OPACITY_MAX + 30);
     });
-    expect(result.current.backdropBrightness).toBe(200);
-    expect(result.current.backdropSaturation).toBe(100);
-    expect(result.current.objectOpacity).toBe(100);
+    expect(result.current.backdropBrightness).toBe(BACKDROP_BRIGHTNESS_MAX);
+    expect(result.current.backdropSaturation).toBe(BACKDROP_SATURATION_MAX);
+    expect(result.current.objectOpacity).toBe(BACKDROP_OBJECT_OPACITY_MAX);
 
     act(() => {
-      result.current.setBackdropBrightness(-10);
-      result.current.setBackdropSaturation(-10);
-      result.current.setObjectOpacity(-10);
+      result.current.setBackdropBrightness(BACKDROP_BRIGHTNESS_MIN - 10);
+      result.current.setBackdropSaturation(BACKDROP_SATURATION_MIN - 20);
+      result.current.setObjectOpacity(BACKDROP_OBJECT_OPACITY_MIN - 30);
     });
-    expect(result.current.backdropBrightness).toBe(0);
-    expect(result.current.backdropSaturation).toBe(0);
-    expect(result.current.objectOpacity).toBe(0);
+    expect(result.current.backdropBrightness).toBe(BACKDROP_BRIGHTNESS_MIN);
+    expect(result.current.backdropSaturation).toBe(BACKDROP_SATURATION_MIN);
+    expect(result.current.objectOpacity).toBe(BACKDROP_OBJECT_OPACITY_MIN);
   });
 
   it("throws error if NaN passed to backdrop property setters", () => {
