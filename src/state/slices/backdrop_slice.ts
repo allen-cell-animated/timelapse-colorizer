@@ -1,7 +1,18 @@
-import { clamp } from "three/src/math/MathUtils";
 import { StateCreator } from "zustand";
 
 import Dataset from "../../colorizer/Dataset";
+import {
+  BACKDROP_BRIGHTNESS_DEFAULT,
+  BACKDROP_BRIGHTNESS_MAX,
+  BACKDROP_BRIGHTNESS_MIN,
+  BACKDROP_OBJECT_OPACITY_DEFAULT,
+  BACKDROP_OBJECT_OPACITY_MAX,
+  BACKDROP_OBJECT_OPACITY_MIN,
+  BACKDROP_SATURATION_DEFAULT,
+  BACKDROP_SATURATION_MAX,
+  BACKDROP_SATURATION_MIN,
+} from "../../constants";
+import { clampWithNanCheck } from "../utils/data_validation";
 
 type BackdropSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there
@@ -49,31 +60,29 @@ type BackdropSliceActions = {
 
 export type BackdropSlice = BackdropSliceState & BackdropSliceActions;
 
-const clampPercentage = (value: number, min: number, max: number): number => {
-  if (Number.isNaN(value)) {
-    throw new Error(`Invalid value to clamp: ${value}`);
-  }
-  return clamp(value, min, max);
-};
-
 export const createBackdropSlice: StateCreator<BackdropSlice, [], [], BackdropSlice> = (set, get) => ({
   backdropKey: null,
   backdropVisible: false,
-  backdropBrightness: 100,
-  backdropSaturation: 100,
-  objectOpacity: 50,
+  backdropBrightness: BACKDROP_BRIGHTNESS_DEFAULT,
+  backdropSaturation: BACKDROP_SATURATION_DEFAULT,
+  objectOpacity: BACKDROP_OBJECT_OPACITY_DEFAULT,
 
   setBackdropKey: (dataset: Dataset, key: string) => {
     if (key !== null && !dataset.hasBackdrop(key)) {
       // Ignore if key is not in the dataset
-      return;
+      throw new Error(
+        `Backdrop key "${key}" could not be found in dataset. (Available keys: ${dataset.getBackdropData().keys()})`
+      );
     }
     const backdropVisible = get().backdropVisible && key !== null;
     set({ backdropKey: key, backdropVisible });
   },
   // Only enable when backdrop key is not null
   setBackdropVisible: (visible: boolean) => set({ backdropVisible: visible && get().backdropKey !== null }),
-  setBackdropBrightness: (brightness: number) => set({ backdropBrightness: clampPercentage(brightness, 0, 200) }),
-  setBackdropSaturation: (saturation: number) => set({ backdropSaturation: clampPercentage(saturation, 0, 100) }),
-  setObjectOpacity: (opacity: number) => set({ objectOpacity: clampPercentage(opacity, 0, 100) }),
+  setBackdropBrightness: (brightness: number) =>
+    set({ backdropBrightness: clampWithNanCheck(brightness, BACKDROP_BRIGHTNESS_MIN, BACKDROP_BRIGHTNESS_MAX) }),
+  setBackdropSaturation: (saturation: number) =>
+    set({ backdropSaturation: clampWithNanCheck(saturation, BACKDROP_SATURATION_MIN, BACKDROP_SATURATION_MAX) }),
+  setObjectOpacity: (opacity: number) =>
+    set({ objectOpacity: clampWithNanCheck(opacity, BACKDROP_OBJECT_OPACITY_MIN, BACKDROP_OBJECT_OPACITY_MAX) }),
 });
