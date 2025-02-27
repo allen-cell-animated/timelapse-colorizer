@@ -4,9 +4,10 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
+import { useShallow } from "zustand/shallow";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { ColorRamp, Dataset, Track } from "../colorizer";
+import { ColorRamp, Track } from "../colorizer";
 import { AnnotationSelectionMode, LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
@@ -14,7 +15,7 @@ import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
-import Collection from "../colorizer/Collection";
+import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 import { LinkStyleButton } from "./Buttons/LinkStyleButton";
@@ -114,16 +115,8 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
 
 type CanvasWrapperProps = {
   canv: CanvasUIOverlay;
-  /** Dataset to look up track and ID information in.
-   * Changing this does NOT update the canvas dataset; do so
-   * directly by calling `canv.setDataset()`.
-   */
-  dataset: Dataset | null;
-  datasetKey: string | null;
 
   featureKey: string | null;
-  /** Pan and zoom will be reset on collection change. */
-  collection: Collection | null;
   config: ViewerConfig;
   updateConfig: (settings: Partial<ViewerConfig>) => void;
   vectorData: Float32Array | null;
@@ -131,8 +124,6 @@ type CanvasWrapperProps = {
   loading: boolean;
   loadingProgress: number | null;
   isRecording: boolean;
-
-  selectedBackdropKey: string | null;
 
   colorRamp: ColorRamp;
   colorRampMin: number;
@@ -175,6 +166,15 @@ const defaultProps: Partial<CanvasWrapperProps> = {
  */
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
+
+  const store = useViewerStateStore(
+    useShallow((state) => ({
+      dataset: state.dataset,
+      datasetKey: state.datasetKey,
+      collection: state.collection,
+      backdropKey: state.backdropKey,
+    }))
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -269,8 +269,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    if (props.selectedBackdropKey !== null && props.config.backdropVisible) {
-      canv.setBackdropKey(props.selectedBackdropKey);
+    if (store.backdropKey !== null && props.config.backdropVisible) {
+      canv.setBackdropKey(store.backdropKey);
       canv.setBackdropBrightness(props.config.backdropBrightness);
       canv.setBackdropSaturation(props.config.backdropSaturation);
       canv.setObjectOpacity(props.config.objectOpacity);
@@ -279,7 +279,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.setObjectOpacity(100);
     }
   }, [
-    props.selectedBackdropKey,
+    store.backdropKey,
     props.config.backdropVisible,
     props.config.backdropBrightness,
     props.config.backdropSaturation,
@@ -289,7 +289,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Update categorical colors
   useMemo(() => {
     canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors, props.dataset, props.featureKey]);
+  }, [props.categoricalColors, store.dataset, props.featureKey]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
@@ -322,12 +322,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.showTimestamp]);
 
   useMemo(() => {
-    canv.setCollection(props.collection);
-  }, [props.collection]);
+    canv.setCollection(store.collection);
+  }, [store.collection]);
 
   useMemo(() => {
-    canv.setDatasetKey(props.datasetKey);
-  }, [props.datasetKey]);
+    canv.setDatasetKey(store.datasetKey);
+  }, [store.datasetKey]);
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
@@ -349,12 +349,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
-    const timeToAnnotationLabelIds = props.dataset
-      ? props.annotationState.data.getTimeToLabelIdMap(props.dataset)
+    const timeToAnnotationLabelIds = store.dataset
+      ? props.annotationState.data.getTimeToLabelIdMap(store.dataset)
       : new Map();
     canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
     canv.isAnnotationVisible = props.annotationState.visible;
-  }, [props.dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
+  }, [store.dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -398,22 +398,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canvasPanOffset.current = new Vector2(0, 0);
     canv.setZoom(1.0);
     canv.setPan(0, 0);
-  }, [props.collection]);
+  }, [store.collection]);
 
   /** Report clicked tracks via the passed callback. */
   const handleTrackSelection = useCallback(
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (id < 0 || props.dataset === null) {
+      if (id < 0 || store.dataset === null) {
         props.onTrackClicked(null);
       } else {
-        const trackId = props.dataset.getTrackId(id);
-        const newTrack = props.dataset.buildTrack(trackId);
+        const trackId = store.dataset.getTrackId(id);
+        const newTrack = store.dataset.buildTrack(trackId);
         props.onTrackClicked(newTrack);
       }
     },
-    [canv, props.dataset, props.onTrackClicked]
+    [canv, store.dataset, props.onTrackClicked]
   );
 
   /**
@@ -421,10 +421,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const getFrameSizeInScreenPx = useCallback((): Vector2 => {
     const canvasSizePx = getCanvasSizePx();
-    const frameResolution = props.dataset ? props.dataset.frameResolution : canvasSizePx;
+    const frameResolution = store.dataset ? store.dataset.frameResolution : canvasSizePx;
     const canvasZoom = 1 / canvasZoomInverse.current;
     return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
-  }, [props.dataset?.frameResolution, getCanvasSizePx]);
+  }, [store.dataset?.frameResolution, getCanvasSizePx]);
 
   /** Change zoom by some delta factor. */
   const handleZoom = useCallback(
@@ -482,7 +482,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
       canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
-    [canv, getCanvasSizePx, props.dataset]
+    [canv, getCanvasSizePx, store.dataset]
   );
 
   // Mouse event handlers
@@ -609,13 +609,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Report hovered id via the passed callback. */
   const reportHoveredIdAtPixel = useCallback(
     (x: number, y: number): void => {
-      if (!props.dataset) {
+      if (!store.dataset) {
         return;
       }
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [props.dataset, canv]
+    [store.dataset, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
@@ -645,7 +645,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [props.dataset, canv]);
+  }, [store.dataset, canv]);
 
   const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
     return (
@@ -676,9 +676,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const backdropTooltipContents: ReactNode[] = [];
   backdropTooltipContents.push(
     <span key="backdrop-name">
-      {props.selectedBackdropKey === null
+      {store.backdropKey === null
         ? "(No backdrops available)"
-        : props.dataset?.getBackdropData().get(props.selectedBackdropKey)?.name}
+        : store.dataset?.getBackdropData().get(store.backdropKey)?.name}
     </span>
   );
   // Link to viewer settings
@@ -776,7 +776,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             onClick={() => {
               props.updateConfig({ backdropVisible: !props.config.backdropVisible });
             }}
-            disabled={props.selectedBackdropKey === null}
+            disabled={store.backdropKey === null}
           >
             {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
             <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
