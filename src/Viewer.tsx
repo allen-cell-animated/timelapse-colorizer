@@ -335,7 +335,7 @@ function Viewer(): ReactElement {
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
-  // Callback for setting time, to be used only with timeControls.
+  // Callback for setting time, to be used directly only with timeControls.
   const setFrameCallback = useCallback(
     async (frame: number) => {
       await canv.setFrame(frame);
