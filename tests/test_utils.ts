@@ -51,9 +51,6 @@ export function makeMockFetchMethod(validUrl: string, bodyJson: any): typeof fet
     text: function (): Promise<string> {
       throw new Error("Function not implemented.");
     },
-    bytes: function (): Promise<Uint8Array> {
-      throw new Error("Function not implemented.");
-    },
   };
   return (url: string, _timeoutMs?: number, _options?: Object) => {
     if (url === validUrl) {
