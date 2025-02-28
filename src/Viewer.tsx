@@ -390,26 +390,6 @@ function Viewer(): ReactElement {
   );
 
   /**
-   * Attempts to replace the current feature with a new feature from a dataset.
-   * If the feature cannot be loaded, returns the old feature key and does nothing.
-   * @param newDataset the dataset to pull feature data from.
-   * @param newFeatureKey the key of the new feature to select.
-   * @returns the new feature key if it was successfully found and loaded. Otherwise, returns the old feature key.
-   */
-  const replaceFeature = useCallback(
-    (featureDataset: Dataset, newFeatureKey: string): string | null => {
-      if (!featureDataset?.hasFeatureKey(newFeatureKey)) {
-        console.warn("Dataset does not have feature '" + newFeatureKey + "'.");
-        return featureKey;
-      }
-      setFeatureKey(newFeatureKey);
-      canv.setFeatureKey(newFeatureKey);
-      return newFeatureKey;
-    },
-    [canv, featureKey]
-  );
-
-  /**
    * Fire a custom analytics event when a feature is selected.
    */
   const reportFeatureSelected = useCallback((featureDataset: Dataset, newFeatureKey: string): void => {
@@ -502,9 +482,6 @@ function Viewer(): ReactElement {
 
       // State updates
       setDataset(newDatasetKey, newDataset);
-
-      // Only change the feature if there's no equivalent in the new dataset
-
       await canv.setDataset(newDataset);
 
       // Clamp frame to new range
@@ -519,7 +496,7 @@ function Viewer(): ReactElement {
       console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
     },
-    [dataset, featureKey, canv, currentFrame, getUrlParams, replaceFeature, featureThresholds]
+    [dataset, featureKey, canv, currentFrame, getUrlParams, featureThresholds]
   );
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
@@ -660,7 +637,7 @@ function Viewer(): ReactElement {
       }
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        replaceFeature(dataset, dataset.findFeatureByKeyOrName(initialUrlParams.feature) || dataset.featureKeys[0]);
+        setFeatureKey(dataset.findFeatureByKeyOrName(initialUrlParams.feature) || dataset.featureKeys[0]);
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {
@@ -1029,25 +1006,12 @@ function Viewer(): ReactElement {
             <SelectionDropdown
               disabled={disableUi}
               label="Feature"
-              // TODO: Once dropdowns are refactored, add description into tooltips
-              // dataset?.getFeatureData(featureKey)?.description ? (
-              //   // Show as larger element with subtitle if description is given
-              //   <FlexColumn>
-              //     <span style={{ fontSize: "14px" }}>
-              //       {featureKey && dataset?.getFeatureNameWithUnits(featureKey)}
-              //     </span>
-              //     <span style={{ fontSize: "13px", opacity: "0.9" }}>
-              //       {dataset?.getFeatureData(featureKey)?.description}
-              //     </span>
-              //   </FlexColumn>
-              // ) : (
-              //   dataset?.getFeatureNameWithUnits(featureKey)
-              // )
+              // TODO: Show feature description here?
               selected={featureKey ?? undefined}
               items={featureDropdownData}
               onChange={(value) => {
                 if (value !== featureKey && dataset) {
-                  replaceFeature(dataset, value);
+                  setFeatureKey(value);
                   reportFeatureSelected(dataset, value);
                 }
               }}
