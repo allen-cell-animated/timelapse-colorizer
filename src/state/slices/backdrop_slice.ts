@@ -1,6 +1,5 @@
 import { StateCreator } from "zustand";
 
-import Dataset from "../../colorizer/Dataset";
 import {
   BACKDROP_BRIGHTNESS_DEFAULT,
   BACKDROP_BRIGHTNESS_MAX,
@@ -13,6 +12,8 @@ import {
   BACKDROP_SATURATION_MIN,
 } from "../../constants";
 import { clampWithNanCheck } from "../utils/data_validation";
+
+import Dataset from "../../colorizer/Dataset";
 
 type BackdropSliceState = {
   /** The key of the backdrop image set in the current dataset. `null` if there
