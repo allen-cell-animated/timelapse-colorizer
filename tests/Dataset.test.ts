@@ -1,83 +1,18 @@
 import semver from "semver";
-import { DataTexture, RGBAFormat, Texture, UnsignedByteType, Vector2 } from "three";
+import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
-import { ArraySource, IArrayLoader, ITextureImageLoader } from "../src/colorizer";
-import { FeatureArrayType, FeatureDataType, featureTypeSpecs } from "../src/colorizer/types";
+import Dataset, { FeatureType } from "../src/colorizer/Dataset";
 import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
-import { ANY_ERROR } from "./test_utils";
-
-import Dataset, { FeatureType } from "../src/colorizer/Dataset";
-
-const DEFAULT_PATH = "https://some-path.json";
-
-const makeMockFetchMethod = <T>(url: string, manifestJson: T): ((url: string) => Promise<T>) => {
-  return async (inputUrl: string): Promise<T> => {
-    if (inputUrl !== url) {
-      throw new Error(`Input url '${inputUrl}' does not match expected url '${url}'.`);
-    }
-    return Promise.resolve(manifestJson);
-  };
-};
-
-class MockFrameLoader implements ITextureImageLoader {
-  width: number;
-  height: number;
-
-  constructor(width: number = 1, height: number = 1) {
-    this.width = width;
-    this.height = height;
-  }
-
-  load(_url: string): Promise<Texture> {
-    return Promise.resolve(
-      new DataTexture(
-        new Uint8Array(this.width * this.height * 4),
-        this.width,
-        this.height,
-        RGBAFormat,
-        UnsignedByteType
-      )
-    );
-  }
-}
-
-class MockArraySource<T extends FeatureDataType> implements ArraySource<T> {
-  private type: T;
-
-  constructor(type: T) {
-    this.type = type;
-  }
-
-  getBuffer<T extends FeatureDataType>(): FeatureArrayType[T] {
-    return new featureTypeSpecs[this.type].ArrayConstructor([]) as unknown as FeatureArrayType[T];
-  }
-  getTexture(): Texture {
-    return new Texture();
-  }
-  getMin(): number {
-    return 0;
-  }
-  getMax(): number {
-    return 1;
-  }
-}
-
-class MockArrayLoader implements IArrayLoader {
-  dispose(): void {}
-
-  load<T extends FeatureDataType>(_url: string, type: T): Promise<ArraySource<T>> {
-    return Promise.resolve(new MockArraySource(type));
-  }
-}
-
-export const makeMockDataset = async (manifest: AnyManifestFile): Promise<Dataset> => {
-  const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
-  const mockFetch = makeMockFetchMethod(DEFAULT_PATH, manifest);
-  await dataset.open({ manifestLoader: mockFetch });
-  return dataset;
-};
+import {
+  ANY_ERROR,
+  DEFAULT_DATASET_PATH,
+  makeMockAsyncLoader,
+  makeMockDataset,
+  MockArrayLoader,
+  MockFrameLoader,
+} from "./test_utils";
 
 describe("Dataset", () => {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -231,8 +166,8 @@ describe("Dataset", () => {
             feature1: { type: "categorical" },
           },
         };
-        const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
-        const mockFetch = makeMockFetchMethod(DEFAULT_PATH, badManifest);
+        const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), new MockArrayLoader());
+        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
         await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
       });
 
@@ -250,13 +185,13 @@ describe("Dataset", () => {
             },
           },
         };
-        const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(), new MockArrayLoader());
-        const mockFetch = makeMockFetchMethod(DEFAULT_PATH, badManifest);
+        const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), new MockArrayLoader());
+        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, badManifest);
         await expect(dataset.open({ manifestLoader: mockFetch })).rejects.toThrowError(ANY_ERROR);
       });
 
       it("Loads the first frame and retrieves frame dimensions on open", async () => {
-        const mockFetch = makeMockFetchMethod(DEFAULT_PATH, manifest);
+        const mockFetch = makeMockAsyncLoader(DEFAULT_DATASET_PATH, manifest);
         const dimensionTests = [
           [0, 0],
           [1, 1],
@@ -268,7 +203,7 @@ describe("Dataset", () => {
         ];
 
         for (const [width, height] of dimensionTests) {
-          const dataset = new Dataset(DEFAULT_PATH, new MockFrameLoader(width, height), new MockArrayLoader());
+          const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(width, height), new MockArrayLoader());
           expect(dataset.frameResolution).to.deep.equal(new Vector2(1, 1));
           await dataset.open({ manifestLoader: mockFetch });
           expect(dataset.frameResolution).to.deep.equal(new Vector2(width, height));
