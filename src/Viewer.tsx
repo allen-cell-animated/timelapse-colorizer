@@ -164,6 +164,7 @@ function Viewer(): ReactElement {
   const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
   const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
   const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
+  const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
   const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
@@ -1077,8 +1078,10 @@ function Viewer(): ReactElement {
                     <Checkbox
                       checked={config.keepRangeBetweenDatasets}
                       onChange={() => {
+                        // TODO: Remove keepRangeBetweenDatasets from config
                         // Invert lock on range
                         updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
+                        setKeepColorRampRange(!config.keepRangeBetweenDatasets);
                       }}
                     >
                       Keep range when switching datasets and features
