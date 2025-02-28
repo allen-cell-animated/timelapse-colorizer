@@ -1,14 +1,14 @@
 import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
-import type { TrackPlotLayoutConfig } from "../colorizer/Plotting";
-
 import { Dataset, Plotting, Track } from "../colorizer";
+
+import type { TrackPlotLayoutConfig } from "../colorizer/Plotting";
 
 type PlotWrapperProps = {
   frame: number;
   dataset: Dataset | null;
-  featureKey: string;
+  featureKey: string | null;
   selectedTrack: Track | null;
   setFrame: (frame: number) => Promise<void>;
 };
@@ -43,9 +43,9 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
   // Update time and hovered value in plot
   useMemo(() => {
     let hover;
-    if (hoveredObjectId) {
-      const featureData = props.dataset?.getFeatureData(props.featureKey);
-      const hoveredObjectTime = props.dataset?.getTime(hoveredObjectId);
+    if (hoveredObjectId && props.featureKey !== null && props.dataset !== null) {
+      const featureData = props.dataset.getFeatureData(props.featureKey);
+      const hoveredObjectTime = props.dataset.getTime(hoveredObjectId);
       if (featureData && hoveredObjectTime) {
         const featureValue = featureData.data[hoveredObjectId];
         hover = {

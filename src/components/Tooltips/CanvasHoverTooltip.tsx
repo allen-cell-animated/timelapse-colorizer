@@ -17,7 +17,7 @@ import HoverTooltip from "./HoverTooltip";
 
 type CanvasHoverTooltipProps = {
   dataset: Dataset | null;
-  featureKey: string;
+  featureKey: string | null;
   lastValidHoveredId: number;
   showObjectHoverInfo: boolean;
   motionDeltas: Float32Array | null;
@@ -47,6 +47,8 @@ const ObjectInfoCard = styled.div`
 export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverTooltipProps>): ReactElement {
   const { dataset, featureKey, lastValidHoveredId: lastHoveredId, motionDeltas, config } = props;
 
+  const featureName = featureKey && dataset?.getFeatureName(featureKey);
+
   const getFeatureValue = useCallback(
     (id: number): string => {
       if (!featureKey || !dataset) {
@@ -65,7 +67,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   );
 
   const getHoveredFeatureValue = useCallback((): string => {
-    if (lastHoveredId !== null && dataset) {
+    if (lastHoveredId !== null && dataset !== null && featureKey !== null) {
       const featureVal = getFeatureValue(lastHoveredId);
       const categories = dataset.getFeatureCategories(featureKey);
       if (categories !== null) {
@@ -111,8 +113,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   const objectInfoContent = [
     <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
     <p key="feature_value">
-      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
-      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
+      {featureName ?? "Feature"}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
   ];
 

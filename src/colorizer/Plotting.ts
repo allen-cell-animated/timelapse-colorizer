@@ -94,8 +94,8 @@ export default class Plotting {
     this.dataset = dataset;
   }
 
-  plot(track: Track, featureKey: string, time: number): void {
-    if (!this.dataset) {
+  plot(track: Track, featureKey: string | null, time: number): void {
+    if (this.dataset === null || featureKey === null) {
       return;
     }
     const plotinfo = this.dataset?.buildTrackFeaturePlot(track, featureKey);
