@@ -10,9 +10,10 @@ import {
   BACKDROP_SATURATION_MAX,
   BACKDROP_SATURATION_MIN,
 } from "../../../src/constants";
-import { useViewerStateStore } from "../../../src/state/ViewerState";
 import { ANY_ERROR } from "../../test_utils";
 import { MOCK_DATASET_WITHOUT_BACKDROP } from "./constants";
+
+import { useViewerStateStore } from "../../../src/state/ViewerState";
 
 describe("useViewerStateStore: BackdropSlice", () => {
   describe("setBackdropKey", () => {

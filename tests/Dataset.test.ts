@@ -2,7 +2,6 @@ import semver from "semver";
 import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
-import Dataset, { FeatureType } from "../src/colorizer/Dataset";
 import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
 import {
@@ -13,6 +12,8 @@ import {
   MockArrayLoader,
   MockFrameLoader,
 } from "./test_utils";
+
+import Dataset, { FeatureType } from "../src/colorizer/Dataset";
 
 describe("Dataset", () => {
   // eslint-disable-next-line @typescript-eslint/naming-convention

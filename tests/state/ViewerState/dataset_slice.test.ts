@@ -1,7 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { useViewerStateStore } from "../../../src/state/ViewerState";
 import { ANY_ERROR } from "../../test_utils";
 import {
   DEFAULT_BACKDROP_KEY,
@@ -10,6 +9,8 @@ import {
   MOCK_DATASET_WITHOUT_BACKDROP,
   MOCK_FEATURE_KEYS,
 } from "./constants";
+
+import { useViewerStateStore } from "../../../src/state/ViewerState";
 
 describe("useViewerStateStore: DatasetSlice", () => {
   describe("setDataset", () => {

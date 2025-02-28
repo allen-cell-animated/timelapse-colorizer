@@ -1,4 +1,3 @@
-import { Dataset } from "../../../src/colorizer";
 import { AnyManifestFile } from "../../../src/colorizer/utils/dataset_utils";
 import { makeMockDataset } from "../../test_utils";
 
@@ -45,7 +44,7 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   backdrops: [{ name: DEFAULT_BACKDROP_KEY, key: DEFAULT_BACKDROP_KEY, frames: ["frame0.json"] }],
 };
 
-export const MOCK_DATASET = (await makeMockDataset(MOCK_DATASET_MANIFEST)) as Dataset;
+export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST);
 
 export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset({
   ...MOCK_DATASET_MANIFEST,
