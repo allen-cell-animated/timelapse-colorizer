@@ -1,9 +1,8 @@
 import { StateCreator } from "zustand";
 
+import Dataset from "../../colorizer/Dataset";
 import { BackdropSlice } from "./backdrop_slice";
 import { CollectionSlice } from "./collection_slice";
-
-import Dataset from "../../colorizer/Dataset";
 
 type DatasetSliceState =
   | {
@@ -22,6 +21,10 @@ type DatasetSliceState =
 type DatasetSliceActions = {
   setDataset: (key: string, dataset: Dataset) => void;
   clearDataset: () => void;
+  /** Sets the current feature key.
+   * @throws {Error} If the feature key is not found in the dataset.
+   * @throws {Error} If no dataset is loaded.
+   */
   setFeatureKey: (featureKey: string) => void;
 };
 
