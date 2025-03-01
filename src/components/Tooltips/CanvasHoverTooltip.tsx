@@ -47,7 +47,7 @@ const ObjectInfoCard = styled.div`
 export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverTooltipProps>): ReactElement {
   const { dataset, featureKey, lastValidHoveredId: lastHoveredId, motionDeltas, config } = props;
 
-  const featureName = featureKey && dataset?.getFeatureName(featureKey);
+  const featureName = featureKey ? dataset?.getFeatureName(featureKey) : undefined;
 
   const getFeatureValue = useCallback(
     (id: number): string => {

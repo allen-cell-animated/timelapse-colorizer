@@ -16,12 +16,15 @@ import { SubscribableStore } from "../types";
 export const addDerivedStateSubscriber = <T, const U>(
   store: SubscribableStore<T>,
   selectorFn: (state: T) => U,
-  listenerFn: (state: U, prevState: U) => Partial<T>
+  listenerFn: (state: U, prevState: U) => Partial<T> | undefined
 ): void => {
   store.subscribe(
     selectorFn,
     (selectedState, prevSelectedState) => {
-      store.setState(listenerFn(selectedState, prevSelectedState));
+      const result = listenerFn(selectedState, prevSelectedState);
+      if (result) {
+        store.setState(result);
+      }
     },
     {
       fireImmediately: true,

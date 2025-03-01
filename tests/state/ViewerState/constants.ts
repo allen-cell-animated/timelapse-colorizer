@@ -1,20 +1,20 @@
 import { AnyManifestFile } from "../../../src/colorizer/utils/dataset_utils";
 import { makeMockDataset } from "../../test_utils";
 
-export enum MOCK_FEATURE_KEYS {
+export enum MockFeatureKeys {
   FEATURE1 = "feature1",
   FEATURE2 = "feature2",
   FEATURE3 = "feature3",
 }
 
 export const DEFAULT_BACKDROP_KEY = "test_backdrop_key";
-export const DEFAULT_INITIAL_FEATURE_KEY = MOCK_FEATURE_KEYS.FEATURE1;
+export const DEFAULT_INITIAL_FEATURE_KEY = MockFeatureKeys.FEATURE1;
 
 const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   frames: ["frame0.json"],
   features: [
     {
-      key: MOCK_FEATURE_KEYS.FEATURE1,
+      key: MockFeatureKeys.FEATURE1,
       name: "Feature1",
       data: "feature1.json",
       unit: "meters",
@@ -23,7 +23,7 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
       max: 1,
     },
     {
-      key: MOCK_FEATURE_KEYS.FEATURE2,
+      key: MockFeatureKeys.FEATURE2,
       name: "Feature2",
       data: "feature2.json",
       unit: "(m)",
@@ -32,7 +32,7 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
       max: 100,
     },
     {
-      key: MOCK_FEATURE_KEYS.FEATURE3,
+      key: MockFeatureKeys.FEATURE3,
       name: "feature3",
       data: "feature3.json",
       type: "categorical",

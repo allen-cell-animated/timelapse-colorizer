@@ -263,10 +263,7 @@ export default class Dataset {
   }
 
   /** Returns whether the given feature represents categorical data. */
-  public isFeatureCategorical(key: string | null): boolean {
-    if (key === null) {
-      return false;
-    }
+  public isFeatureCategorical(key: string): boolean {
     const featureData = this.getFeatureData(key);
     return featureData !== undefined && featureData.type === FeatureType.CATEGORICAL;
   }

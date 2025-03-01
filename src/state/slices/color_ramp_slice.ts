@@ -141,15 +141,20 @@ export const addColorRampDerivedStateSubscribers = (store: SubscribableStore<Dat
     (state) => ({ dataset: state.dataset, featureKey: state.featureKey }),
     ({ dataset, featureKey }) => {
       if (store.getState().keepColorRampRange) {
-        return {};
-      }
-      if (dataset === null || featureKey === null) {
+        return;
+      } else if (dataset === null || featureKey === null) {
         return { colorRampRange: COLOR_RAMP_RANGE_DEFAULT };
+      } else {
+        const featureData = dataset.getFeatureData(featureKey);
+        if (!featureData) {
+          throw new Error(
+            `ViewerStateStore: Expected feature data not found for key '${featureKey}' in Dataset when updating color ramp range.`
+          );
+        }
+        return {
+          colorRampRange: [featureData.min, featureData.max] as [number, number],
+        };
       }
-      const feature = dataset.getFeatureData(featureKey)!;
-      return {
-        colorRampRange: [feature.min, feature.max] as [number, number],
-      };
     }
   );
 };

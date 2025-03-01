@@ -107,7 +107,6 @@ function Viewer(): ReactElement {
     return canvas;
   });
 
-  // TODO: Merge these into a single state slice call?
   const store = useViewerStateStore(
     useShallow((state) => ({
       dataset: state.dataset,
@@ -120,6 +119,11 @@ function Viewer(): ReactElement {
     }))
   );
   const { dataset, datasetKey, featureKey, collection, setCollection, setDataset, setFeatureKey } = store;
+
+  const isFeatureSelected = dataset !== null && featureKey !== null;
+  const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
+  const featureCategories = isFeatureCategorical ? dataset.getFeatureCategories(featureKey) || [] : [];
+  const featureNameWithUnits = isFeatureSelected ? dataset.getFeatureNameWithUnits(featureKey) : undefined;
 
   // TODO: Remove these when URL parameter initialization and updating is moved
   // into a helper method/out of the component
@@ -1032,8 +1036,8 @@ function Viewer(): ReactElement {
             disabled={disableUi}
             knownCategoricalPalettes={KNOWN_CATEGORICAL_PALETTES}
             categoricalPalettesToDisplay={DISPLAY_CATEGORICAL_PALETTE_KEYS}
-            useCategoricalPalettes={dataset?.isFeatureCategorical(featureKey)}
-            numCategories={dataset?.getFeatureCategories(featureKey ?? "")?.length || 1}
+            useCategoricalPalettes={isFeatureCategorical}
+            numCategories={Math.max(featureCategories.length, 1)}
             selectedPalette={categoricalPalette}
             selectedPaletteKey={selectedPaletteKey}
             onChangePalette={setCategoricalPalette}
@@ -1046,18 +1050,13 @@ function Viewer(): ReactElement {
             {/** Canvas */}
             <div className={styles.canvasTopAndCanvasContainer}>
               <div className={styles.canvasTopContainer}>
-                <h3 style={{ margin: "0" }}>
-                  {featureKey !== null && dataset ? dataset.getFeatureNameWithUnits(featureKey) : "Feature value range"}
-                </h3>
+                <h3 style={{ margin: "0" }}>{featureNameWithUnits ?? "Feature value range"}</h3>
                 <FlexRowAlignCenter $gap={12} style={{ flexWrap: "wrap", justifyContent: "space-between" }}>
                   <div style={{ flexBasis: 250, flexShrink: 2, flexGrow: 2, minWidth: "75px" }}>
                     {
                       // Render either a categorical color picker or a range slider depending on the feature type
-                      dataset?.isFeatureCategorical(featureKey) ? (
-                        <CategoricalColorPicker
-                          categories={(featureKey && dataset.getFeatureCategories(featureKey)) || []}
-                          disabled={disableUi}
-                        />
+                      isFeatureCategorical ? (
+                        <CategoricalColorPicker categories={featureCategories} disabled={disableUi} />
                       ) : (
                         <LabeledSlider
                           type="range"

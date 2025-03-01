@@ -1,8 +1,9 @@
 import { StateCreator } from "zustand";
 
-import Dataset from "../../colorizer/Dataset";
 import { BackdropSlice } from "./backdrop_slice";
 import { CollectionSlice } from "./collection_slice";
+
+import Dataset from "../../colorizer/Dataset";
 
 type DatasetSliceState =
   | {
@@ -45,13 +46,14 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
     } else if (dataset.hasFeatureKey(featureKey)) {
       set({ featureKey });
     } else {
-      throw new Error(`Feature key not found in dataset: ${featureKey}`);
+      throw new Error(`ViewerStateStore.setFeatureKey: Feature key '${featureKey}' was not found in the dataset.`);
     }
   },
 
   setDataset: (key: string, dataset: Dataset) => {
     ///// Validate dataset-dependent state values /////
 
+    // Use new dataset's default feature key if current key is not present
     let featureKey = get().featureKey;
     if (featureKey === null || !dataset.hasFeatureKey(featureKey)) {
       // Set to default feature key of the new dataset

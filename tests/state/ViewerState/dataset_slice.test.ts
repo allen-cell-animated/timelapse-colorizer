@@ -7,7 +7,7 @@ import {
   DEFAULT_INITIAL_FEATURE_KEY,
   MOCK_DATASET,
   MOCK_DATASET_WITHOUT_BACKDROP,
-  MOCK_FEATURE_KEYS,
+  MockFeatureKeys,
 } from "./constants";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
@@ -78,9 +78,9 @@ describe("useViewerStateStore: DatasetSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
         result.current.setDataset("some-key", MOCK_DATASET);
-        result.current.setFeatureKey(MOCK_FEATURE_KEYS.FEATURE2);
+        result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
       });
-      expect(result.current.featureKey).toBe(MOCK_FEATURE_KEYS.FEATURE2);
+      expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE2);
 
       act(() => {
         result.current.clearDataset();
@@ -97,16 +97,16 @@ describe("useViewerStateStore: DatasetSlice", () => {
       });
 
       act(() => {
-        result.current.setFeatureKey(MOCK_FEATURE_KEYS.FEATURE2);
+        result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
       });
-      expect(result.current.featureKey).toBe(MOCK_FEATURE_KEYS.FEATURE2);
+      expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE2);
     });
 
     it("throws error if no dataset is loaded", () => {
       const { result } = renderHook(() => useViewerStateStore());
       expect(() => {
         act(() => {
-          result.current.setFeatureKey("test");
+          result.current.setFeatureKey(MockFeatureKeys.FEATURE1);
         });
       }).toThrowError(ANY_ERROR);
     });
