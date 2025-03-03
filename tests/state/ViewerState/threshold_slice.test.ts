@@ -22,6 +22,7 @@ const OUTDATED_THRESHOLDS: FeatureThreshold[] = [
 ];
 
 const VALIDATED_THRESHOLDS = validateThresholds(MOCK_DATASET, OUTDATED_THRESHOLDS);
+const EXPECTED_IN_RANGE_LUT = new Uint8Array([0, 0, 0, 1, 1, 1, 1, 0, 0]);
 
 describe("ThresholdSlice", () => {
   describe("setThresholds", () => {
@@ -85,8 +86,7 @@ describe("ThresholdSlice", () => {
         result.current.setDataset("some-dataset", MOCK_DATASET);
         result.current.setThresholds(VALIDATED_THRESHOLDS);
       });
-      // TODO: Need to have mock dataset actually retrieve data
-      expect(result.current.inRangeLUT).to.deep.equal(new Uint8Array(0));
+      expect(result.current.inRangeLUT).to.deep.equal(EXPECTED_IN_RANGE_LUT);
     });
 
     it("updates inRangeLUT on dataset change", () => {
@@ -100,8 +100,7 @@ describe("ThresholdSlice", () => {
       act(() => {
         result.current.setDataset("some-dataset", MOCK_DATASET);
       });
-      // TODO: Need to have mock dataset actually retrieve data
-      expect(result.current.inRangeLUT).to.deep.equal(new Uint8Array(0));
+      expect(result.current.inRangeLUT).to.deep.equal(EXPECTED_IN_RANGE_LUT);
     });
   });
 });
