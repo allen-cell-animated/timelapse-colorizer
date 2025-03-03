@@ -32,9 +32,10 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
     if (backdropKey === null || !dataset.hasBackdrop(backdropKey)) {
       backdropKey = dataset.getDefaultBackdropKey();
     }
+    const backdropVisible = get().backdropVisible && backdropKey !== null;
 
     // TODO: Dispose of old dataset?
-    set({ datasetKey: key, dataset, backdropKey });
+    set({ datasetKey: key, dataset, backdropKey, backdropVisible });
   },
-  clearDataset: () => set({ datasetKey: null, dataset: null, backdropKey: null }),
+  clearDataset: () => set({ datasetKey: null, dataset: null, backdropKey: null, backdropVisible: false }),
 });

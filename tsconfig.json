@@ -17,6 +17,6 @@
     "skipLibCheck": true,
     "types": ["vite-plugin-svgr/client", "@types/dom-webcodecs"]
   },
-  "include": ["src", "tests", "env.d.ts"],
+  "include": ["src", "tests", "env.d.ts", "__mocks__"],
   "exclude": ["dist"]
 }
