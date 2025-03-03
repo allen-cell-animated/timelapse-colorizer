@@ -1,16 +1,18 @@
 import { Color } from "three";
 import { StateCreator } from "zustand";
 
+import { isThresholdNumeric } from "../../colorizer";
 import {
   DEFAULT_CATEGORICAL_PALETTE_KEY,
   KNOWN_CATEGORICAL_PALETTES,
 } from "../../colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "../../colorizer/colors/color_ramps";
-import { arrayDeepEquals, getColorMap } from "../../colorizer/utils/data_utils";
+import { arrayDeepEquals, getColorMap, thresholdMatchFinder } from "../../colorizer/utils/data_utils";
 import { COLOR_RAMP_RANGE_DEFAULT } from "../../constants";
 import { SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
+import { ThresholdSlice } from "./threshold_slice";
 
 import ColorRamp from "../../colorizer/ColorRamp";
 
@@ -118,7 +120,9 @@ const getPaletteKey = (palette: Color[]): string | null => {
   return null;
 };
 
-export const addColorRampDerivedStateSubscribers = (store: SubscribableStore<DatasetSlice & ColorRampSlice>): void => {
+export const addColorRampDerivedStateSubscribers = (
+  store: SubscribableStore<DatasetSlice & ColorRampSlice & ThresholdSlice>
+): void => {
   // Calculate color ramp and categorical palette
   addDerivedStateSubscriber(
     store,
@@ -133,6 +137,35 @@ export const addColorRampDerivedStateSubscribers = (store: SubscribableStore<Dat
     ([key, reversed]) => ({
       colorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, reversed),
     })
+  );
+
+  // Update color ramp range if the threshold changes for the currently selected feature
+  addDerivedStateSubscriber(
+    store,
+    (state) => [state.thresholds],
+    ([thresholds], [prevThresholds]) => {
+      const dataset = store.getState().dataset;
+      const featureKey = store.getState().featureKey;
+      if (dataset === null || featureKey === null) {
+        return;
+      }
+      const featureData = dataset.getFeatureData(featureKey);
+      if (!featureData) {
+        throw new Error(
+          `ViewerStateStore: Expected feature data not found for key '${featureKey}' in Dataset when updating color ramp range.`
+        );
+      }
+      // Check if the threshold on the currently selected feature has changed. If so, reset the color ramp range to match
+      // the new threshold.
+      const oldThreshold = thresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
+      const newThreshold = prevThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
+      if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold) && isThresholdNumeric(oldThreshold)) {
+        if (newThreshold.min !== oldThreshold.min || newThreshold.max !== oldThreshold.max) {
+          return { colorRampRange: [newThreshold.min, newThreshold.max] as [number, number] };
+        }
+      }
+      return;
+    }
   );
 
   // Update the color ramp range when the dataset or feature changes
