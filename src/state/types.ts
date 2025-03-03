@@ -1,19 +1,4 @@
-import { StoreApi, UseBoundStore } from "zustand";
-
-// Copied from Zustand's types
-type StoreSubscribeWithSelector<T> = {
-  subscribe: {
-    (listener: (selectedState: T, previousSelectedState: T) => void): () => void;
-    <U>(
-      selector: (state: T) => U,
-      listener: (selectedState: U, previousSelectedState: U) => void,
-      options?: {
-        equalityFn?: (a: U, b: U) => boolean;
-        fireImmediately?: boolean;
-      }
-    ): () => void;
-  };
-};
+import { Mutate, StoreApi, UseBoundStore } from "zustand";
 
 /**
  * A Zustand store wrapped in the `subscribeWithSelector` middleware. This
@@ -22,4 +7,4 @@ type StoreSubscribeWithSelector<T> = {
  * dependencies specified by selector function change, rather than on every
  * state change.
  */
-export type SubscribableStore<T> = UseBoundStore<StoreApi<T> & StoreSubscribeWithSelector<T>>;
+export type SubscribableStore<T> = UseBoundStore<Mutate<StoreApi<T>, [["zustand/subscribeWithSelector", never]]>>;
