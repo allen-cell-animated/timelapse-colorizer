@@ -2,9 +2,9 @@ import { act, renderHook } from "@testing-library/react";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../../../src/colorizer";
+import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "../../../src/colorizer";
 import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MockFeatureKeys } from "./constants";
+import { MOCK_DATASET, MOCK_FEATURE_KEY_TO_UNIT, MockFeatureKeys } from "./constants";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
 
@@ -179,6 +179,57 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       expect(result.current.colorRampRange).not.toStrictEqual([56, 78]);
       const featureData = result.current.dataset?.getFeatureData(result.current.featureKey!)!;
       expect(result.current.colorRampRange).toStrictEqual([featureData!.min, featureData!.max!]);
+    });
+
+    it("preferentially resets to threshold instead of feature range when feature changes", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const threshold: FeatureThreshold = {
+        featureKey: MockFeatureKeys.FEATURE2,
+        unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE2],
+        type: ThresholdType.NUMERIC,
+        min: 56.5,
+        max: 23.3,
+      };
+      act(() => {
+        result.current.setDataset("mockDataset", MOCK_DATASET);
+        result.current.setFeatureKey(MockFeatureKeys.FEATURE1);
+        result.current.setThresholds([threshold]);
+        result.current.setColorRampRange([12, 34]);
+      });
+      expect(result.current.colorRampRange).toStrictEqual([12, 34]);
+
+      act(() => {
+        result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
+      });
+      expect(result.current.colorRampRange).toStrictEqual([threshold.min, threshold.max]);
+    });
+
+    it("resets color ramp range to threshold when threshold changes", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const threshold: FeatureThreshold = {
+        featureKey: MockFeatureKeys.FEATURE1,
+        unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE1],
+        type: ThresholdType.NUMERIC,
+        min: 10,
+        max: 20,
+      };
+
+      act(() => {
+        result.current.setDataset("mockDataset", MOCK_DATASET);
+        result.current.setFeatureKey(MockFeatureKeys.FEATURE1);
+        result.current.setColorRampRange([56, 78]);
+      });
+      expect(result.current.colorRampRange).toStrictEqual([56, 78]);
+
+      act(() => {
+        result.current.setThresholds([{ ...threshold, min: 11, max: 20 }]);
+      });
+      expect(result.current.colorRampRange).toStrictEqual([11, 20]);
+
+      act(() => {
+        result.current.setThresholds([{ ...threshold, min: 100, max: 180 }]);
+      });
+      expect(result.current.colorRampRange).toStrictEqual([100, 180]);
     });
 
     it("resets color ramp range to feature range when dataset changes", () => {

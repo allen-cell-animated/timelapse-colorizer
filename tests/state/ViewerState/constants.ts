@@ -7,6 +7,12 @@ export enum MockFeatureKeys {
   FEATURE3 = "feature3",
 }
 
+export const MOCK_FEATURE_KEY_TO_UNIT = {
+  [MockFeatureKeys.FEATURE1]: "meters",
+  [MockFeatureKeys.FEATURE2]: "(m)",
+  [MockFeatureKeys.FEATURE3]: "",
+};
+
 export const DEFAULT_BACKDROP_KEY = "test_backdrop_key";
 export const DEFAULT_INITIAL_FEATURE_KEY = MockFeatureKeys.FEATURE1;
 
@@ -17,7 +23,7 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
       key: MockFeatureKeys.FEATURE1,
       name: "Feature1",
       data: "feature1.json",
-      unit: "meters",
+      unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE1],
       type: "continuous",
       min: 0,
       max: 1,
@@ -26,7 +32,7 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
       key: MockFeatureKeys.FEATURE2,
       name: "Feature2",
       data: "feature2.json",
-      unit: "(m)",
+      unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE2],
       type: "discrete",
       min: 0,
       max: 100,
@@ -36,6 +42,7 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
       name: "feature3",
       data: "feature3.json",
       type: "categorical",
+      unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE3],
       categories: ["small", "medium", "large"],
       min: 0,
       max: 2,
