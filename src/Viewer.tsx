@@ -40,7 +40,7 @@ import {
   ViewerConfig,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
-import { thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
+import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import {
   useAnnotations,
   useConstructor,
@@ -466,7 +466,6 @@ function Viewer(): ReactElement {
 
       setSelectedTrack(null);
       setDatasetOpen(true);
-      setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
       console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
     },
@@ -603,11 +602,7 @@ function Viewer(): ReactElement {
     // fully implemented.
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.thresholds) {
-        if (dataset) {
-          setFeatureThresholds(validateThresholds(dataset, initialUrlParams.thresholds));
-        } else {
-          setFeatureThresholds(initialUrlParams.thresholds);
-        }
+        setFeatureThresholds(initialUrlParams.thresholds);
       }
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
@@ -701,7 +696,6 @@ function Viewer(): ReactElement {
   const handleDatasetLoad = useCallback(
     (newCollection: Collection, newDatasetKey: string, newDataset: Dataset): void => {
       setCollection(newCollection);
-      setFeatureThresholds([]); // Clear when switching collections
       replaceDataset(newDataset, newDatasetKey);
     },
     [replaceDataset]
