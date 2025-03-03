@@ -2,6 +2,7 @@ import { CloseOutlined, FilterOutlined, SearchOutlined } from "@ant-design/icons
 import { Checkbox, List, Select } from "antd";
 import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react";
 import styled, { css } from "styled-components";
+import { useShallow } from "zustand/shallow";
 
 import { DropdownSVG } from "../../assets";
 import {
@@ -124,11 +125,13 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
   const selectContainerRef = useRef<HTMLDivElement>(null);
 
-  const store = useViewerStateStore((state) => ({
-    thresholds: state.thresholds,
-    setThresholds: state.setThresholds,
-    dataset: state.dataset,
-  }));
+  const store = useViewerStateStore(
+    useShallow((state) => ({
+      thresholds: state.thresholds,
+      setThresholds: state.setThresholds,
+      dataset: state.dataset,
+    }))
+  );
 
   /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature key and unit. */
   const thresholdToKey = (threshold: FeatureThreshold): string => {

@@ -152,15 +152,20 @@ export const addColorRampDerivedStateSubscribers = (
       const featureData = dataset.getFeatureData(featureKey);
       if (!featureData) {
         throw new Error(
-          `ViewerStateStore: Expected feature data not found for key '${featureKey}' in Dataset when updating color ramp range.`
+          `ViewerStateStore: Expected feature data not found for key '${featureKey}' in Dataset when updating color ramp range from threshold.`
         );
       }
       // Check if the threshold on the currently selected feature has changed. If so, reset the color ramp range to match
       // the new threshold.
-      const oldThreshold = thresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
-      const newThreshold = prevThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
-      if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold) && isThresholdNumeric(oldThreshold)) {
-        if (newThreshold.min !== oldThreshold.min || newThreshold.max !== oldThreshold.max) {
+      const prevThreshold = prevThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
+      const newThreshold = thresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
+      if (newThreshold && isThresholdNumeric(newThreshold)) {
+        if (
+          !prevThreshold ||
+          !isThresholdNumeric(prevThreshold) ||
+          newThreshold.min !== prevThreshold.min ||
+          newThreshold.max !== prevThreshold.max
+        ) {
           return { colorRampRange: [newThreshold.min, newThreshold.max] as [number, number] };
         }
       }
@@ -178,15 +183,24 @@ export const addColorRampDerivedStateSubscribers = (
       } else if (dataset === null || featureKey === null) {
         return { colorRampRange: COLOR_RAMP_RANGE_DEFAULT };
       } else {
+        // Reset should occur. Reset to the range of the threshold (if the
+        // feature is thresholded on) or the feature range.
         const featureData = dataset.getFeatureData(featureKey);
         if (!featureData) {
           throw new Error(
             `ViewerStateStore: Expected feature data not found for key '${featureKey}' in Dataset when updating color ramp range.`
           );
         }
-        return {
-          colorRampRange: [featureData.min, featureData.max] as [number, number],
-        };
+        const matchingThreshold = store.getState().thresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
+        if (matchingThreshold && isThresholdNumeric(matchingThreshold)) {
+          return {
+            colorRampRange: [matchingThreshold.min, matchingThreshold.max] as [number, number],
+          };
+        } else {
+          return {
+            colorRampRange: [featureData.min, featureData.max] as [number, number],
+          };
+        }
       }
     }
   );
