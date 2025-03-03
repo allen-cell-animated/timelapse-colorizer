@@ -4,7 +4,6 @@ import React, { ReactElement, ReactNode, useMemo, useRef, useState } from "react
 import styled, { css } from "styled-components";
 
 import { DropdownSVG } from "../../assets";
-import { Dataset } from "../../colorizer";
 import {
   CategoricalFeatureThreshold,
   FeatureThreshold,
@@ -19,6 +18,7 @@ import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { FlexColumn } from "../../styles/utils";
 
 import { FeatureType } from "../../colorizer/Dataset";
+import { useViewerStateStore } from "../../state/ViewerState";
 import IconButton from "../IconButton";
 import LabeledSlider from "../LabeledSlider";
 
@@ -104,9 +104,6 @@ const EmptyListTextContainer = styled.div`
 `;
 
 type FeatureThresholdsTabProps = {
-  featureThresholds: FeatureThreshold[];
-  onChange: (thresholds: FeatureThreshold[]) => void;
-  dataset: Dataset | null;
   disabled?: boolean;
 };
 
@@ -127,6 +124,12 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
   const selectContainerRef = useRef<HTMLDivElement>(null);
 
+  const store = useViewerStateStore((state) => ({
+    thresholds: state.thresholds,
+    setThresholds: state.setThresholds,
+    dataset: state.dataset,
+  }));
+
   /** Converts a threshold to a unique key that can be used to look up its information later. Matches on feature key and unit. */
   const thresholdToKey = (threshold: FeatureThreshold): string => {
     return `${encodeURIComponent(threshold.featureKey)}:${threshold.unit ? encodeURIComponent(threshold.unit) : ""}`;
@@ -143,26 +146,26 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     // This is done as a useMemo and not when the feature is added, in case we switch to another dataset
     // that has the same feature/unit but different min/max values. That way, our saved min/max bounds
     // reflect the last known good values.
-    for (const threshold of props.featureThresholds) {
-      const featureData = props.dataset?.getFeatureData(threshold.featureKey);
+    for (const threshold of store.thresholds) {
+      const featureData = store.dataset?.getFeatureData(threshold.featureKey);
       if (featureData && featureData.unit === threshold.unit && featureData.type !== FeatureType.CATEGORICAL) {
         featureMinMaxBoundsFallback.current.set(thresholdToKey(threshold), [featureData.min, featureData.max]);
       }
     }
-  }, [props.dataset, props.featureThresholds]);
+  }, [store.dataset, store.thresholds]);
 
   ////// EVENT HANDLERS ///////////////////
 
   /** Handle the user selecting new features from the Select dropdown. */
   const onSelect = (featureKey: string): void => {
-    const featureData = props.dataset?.getFeatureData(featureKey);
-    const newThresholds = [...props.featureThresholds];
-    if (featureData && !props.dataset?.isFeatureCategorical(featureKey)) {
+    const featureData = store.dataset?.getFeatureData(featureKey);
+    const newThresholds = [...store.thresholds];
+    if (featureData && !store.dataset?.isFeatureCategorical(featureKey)) {
       // Continuous/discrete feature
       newThresholds.push({
         type: ThresholdType.NUMERIC,
         featureKey: featureKey,
-        unit: props.dataset!.getFeatureUnits(featureKey),
+        unit: store.dataset!.getFeatureUnits(featureKey),
         min: featureData.min,
         max: featureData.max,
       });
@@ -171,43 +174,43 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
       newThresholds.push({
         type: ThresholdType.CATEGORICAL,
         featureKey: featureKey,
-        unit: props.dataset!.getFeatureUnits(featureKey),
+        unit: store.dataset!.getFeatureUnits(featureKey),
         enabledCategories: Array(MAX_FEATURE_CATEGORIES).fill(true),
       });
     }
-    props.onChange(newThresholds);
+    store.setThresholds(newThresholds);
   };
 
   /** Handle the user removing features from the Select dropdown. */
   const onDeselect = (featureKey: string): void => {
     // Find the exact match for the threshold and remove it
-    const featureData = props.dataset?.getFeatureData(featureKey);
-    const newThresholds = [...props.featureThresholds];
+    const featureData = store.dataset?.getFeatureData(featureKey);
+    const newThresholds = [...store.thresholds];
     if (featureData) {
-      const index = props.featureThresholds.findIndex(thresholdMatchFinder(featureKey, featureData.unit));
+      const index = store.thresholds.findIndex(thresholdMatchFinder(featureKey, featureData.unit));
       if (index !== -1) {
         // Delete saved min/max bounds for this feature
-        const thresholdToRemove = props.featureThresholds[index];
+        const thresholdToRemove = store.thresholds[index];
         featureMinMaxBoundsFallback.current.delete(thresholdToKey(thresholdToRemove));
         newThresholds.splice(index, 1);
       }
     }
-    props.onChange(newThresholds);
+    store.setThresholds(newThresholds);
   };
 
   const onCategoricalThresholdChanged = (index: number, enabledCategories: boolean[]): void => {
-    const oldThreshold = props.featureThresholds[index];
+    const oldThreshold = store.thresholds[index];
     if (!isThresholdCategorical(oldThreshold)) {
       return;
     }
     const newThreshold: CategoricalFeatureThreshold = { ...oldThreshold, enabledCategories };
-    const newThresholds = [...props.featureThresholds];
+    const newThresholds = [...store.thresholds];
     newThresholds[index] = newThreshold;
-    props.onChange(newThresholds);
+    store.setThresholds(newThresholds);
   };
 
   const onNumericThresholdChanged = (index: number, min: number, max: number): void => {
-    const oldThreshold = props.featureThresholds[index];
+    const oldThreshold = store.thresholds[index];
     if (!isThresholdNumeric(oldThreshold)) {
       return;
     }
@@ -217,39 +220,39 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
     newThreshold.min = min;
     newThreshold.max = max;
 
-    const newThresholds = [...props.featureThresholds];
+    const newThresholds = [...store.thresholds];
     newThresholds[index] = newThreshold;
 
-    props.onChange(newThresholds);
+    store.setThresholds(newThresholds);
   };
 
   /** Handle a threshold getting deleted via the UI buttons. */
   const onClickedRemove = (index: number): void => {
-    const newThresholds = [...props.featureThresholds];
+    const newThresholds = [...store.thresholds];
     newThresholds.splice(index, 1);
     // Delete saved min/max bounds for this feature when it's removed.
-    const thresholdToDelete = props.featureThresholds[index];
+    const thresholdToDelete = store.thresholds[index];
     featureMinMaxBoundsFallback.current.delete(thresholdToKey(thresholdToDelete));
-    props.onChange(newThresholds);
+    store.setThresholds(newThresholds);
   };
 
   ////// RENDERING ///////////////////
   // The Select dropdown should ONLY show features that are currently present in the dataset.
   const featureOptions =
-    props.dataset?.featureKeys.map((key) => ({
-      label: props.dataset?.getFeatureNameWithUnits(key),
+    store.dataset?.featureKeys.map((key) => ({
+      label: store.dataset?.getFeatureNameWithUnits(key),
       value: key,
     })) || [];
   // Filter out thresholds that no longer match the dataset (feature and/or unit), so we only
   // show selections that are actually valid.
-  const thresholdsInDataset = props.featureThresholds.filter((t) => {
-    const featureData = props.dataset?.getFeatureData(t.featureKey);
+  const thresholdsInDataset = store.thresholds.filter((t) => {
+    const featureData = store.dataset?.getFeatureData(t.featureKey);
     return featureData && featureData.unit === t.unit;
   });
   const selectedFeatures = thresholdsInDataset.map((t) => t.featureKey);
 
   const renderNumericItem = (item: NumericFeatureThreshold, index: number): ReactNode => {
-    const featureData = props.dataset?.getFeatureData(item.featureKey);
+    const featureData = store.dataset?.getFeatureData(item.featureKey);
     const disabled = featureData === undefined || featureData.unit !== item.unit;
     // If the feature is no longer in the dataset, use the saved min/max bounds.
     const savedMinMax = featureMinMaxBoundsFallback.current.get(thresholdToKey(item)) || [Number.NaN, Number.NaN];
@@ -272,7 +275,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   };
 
   const renderCategoricalItem = (item: CategoricalFeatureThreshold, index: number): ReactNode => {
-    const featureData = props.dataset?.getFeatureData(item.featureKey);
+    const featureData = store.dataset?.getFeatureData(item.featureKey);
     const disabled = featureData === undefined || featureData.unit !== item.unit;
 
     const categories = featureData?.categories || [];
@@ -305,7 +308,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
   const renderListItems = (threshold: FeatureThreshold, index: number): ReactNode => {
     // Thresholds are matched on both feature names and units; a threshold must match
     // both in the current dataset to be enabled and editable.
-    const featureData = props.dataset?.getFeatureData(threshold.featureKey);
+    const featureData = store.dataset?.getFeatureData(threshold.featureKey);
     const disabled = featureData === undefined || featureData.unit !== threshold.unit;
     // TODO: This will show the internal feature key name for any filters on features not in
     // the current dataset. Show a different placeholder instead?
@@ -343,7 +346,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
           value={selectedFeatures}
           options={featureOptions}
           disabled={props.disabled}
-          onClear={() => props.onChange([])}
+          onClear={() => store.setThresholds([])}
           // Allows the selection dropdown to be selected and styled
           getPopupContainer={() => selectContainerRef.current!}
           maxTagCount={"responsive"}
@@ -358,7 +361,7 @@ export default function FeatureThresholdsTab(inputProps: FeatureThresholdsTabPro
         <FiltersContent style={{ paddingTop: 0 }} ref={scrollRef} onScroll={onScrollHandler}>
           <List
             renderItem={renderListItems}
-            dataSource={props.featureThresholds}
+            dataSource={store.thresholds}
             locale={{
               emptyText: (
                 <EmptyListTextContainer>
