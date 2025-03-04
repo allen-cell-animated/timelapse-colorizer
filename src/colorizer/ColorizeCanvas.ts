@@ -244,6 +244,8 @@ export default class ColorizeCanvas {
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
     this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
+    this.isValidFrame = this.isValidFrame.bind(this);
+    this.setFrame = this.setFrame.bind(this);
   }
 
   get domElement(): HTMLCanvasElement {

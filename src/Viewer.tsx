@@ -55,7 +55,6 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
-import TimeControls from "./colorizer/TimeControls";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
@@ -97,6 +96,7 @@ function Viewer(): ReactElement {
   const canv = useConstructor(() => {
     const canvas = new CanvasWithOverlay();
     canvas.domElement.className = styles.colorizeCanvas;
+    useViewerStateStore.getState().setLoadFrameCallback(canvas.setFrame);
     return canvas;
   });
 
@@ -131,7 +131,10 @@ function Viewer(): ReactElement {
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
-  const [currentFrame, setCurrentFrame] = useState<number>(0);
+
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
+  const setFrame = useViewerStateStore((state) => state.setFrame);
+
   const annotationState = useAnnotations();
 
   // TODO: Save these settings in local storage
@@ -183,7 +186,9 @@ function Viewer(): ReactElement {
   const pendingAlerts = useRef<(() => void)[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
-  const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
+  const timeControls = useViewerStateStore((state) => state.timeControls);
+
+  // const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
   // TODO: Move all logic for the time slider into its own component!
   // Flag used to indicate that the slider is currently being dragged while playback is occurring.
   const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
@@ -312,30 +317,30 @@ function Viewer(): ReactElement {
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
   // Callback for setting time, to be used only with timeControls.
-  const setFrameCallback = useCallback(
-    async (frame: number) => {
-      await canv.setFrame(frame);
-      setCurrentFrame(frame);
-      setFrameInput(frame);
-      canv.render();
-    },
-    [canv]
-  );
-  timeControls.setFrameCallback(setFrameCallback);
+  // const setFrameCallback = useCallback(
+  //   async (frame: number) => {
+  //     await canv.setFrame(frame);
+  //     setCurrentFrame(frame);
+  //     setFrameInput(frame);
+  //     canv.render();
+  //   },
+  //   [canv]
+  // );
+  // timeControls.setFrameCallback(setFrameCallback);
 
-  const setFrame = useCallback(
-    async (frame: number) => {
-      const isPlaying = timeControls.isPlaying();
-      if (isPlaying) {
-        timeControls.pause();
-      }
-      await setFrameCallback(frame);
-      if (isPlaying) {
-        timeControls.play();
-      }
-    },
-    [setFrameCallback]
-  );
+  // const setFrame = useCallback(
+  //   async (frame: number) => {
+  //     const isPlaying = timeControls.isPlaying();
+  //     if (isPlaying) {
+  //       timeControls.pause();
+  //     }
+  //     await setFrameCallback(frame);
+  //     if (isPlaying) {
+  //       timeControls.play();
+  //     }
+  //   },
+  //   [setFrameCallback]
+  // );
 
   const findTrack = useCallback(
     (trackId: number | null, seekToFrame: boolean = true): void => {
@@ -616,8 +621,9 @@ function Viewer(): ReactElement {
       if (initialUrlParams.time && initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
         const newTime = initialUrlParams.time;
-        await canv.setFrame(newTime);
-        setCurrentFrame(newTime); // Force render
+        setFrame(newTime);
+        // await canv.setFrame(newTime);
+        // setCurrentFrame(newTime); // Force render
         setFrameInput(newTime);
       }
 

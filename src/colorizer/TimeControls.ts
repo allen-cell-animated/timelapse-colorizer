@@ -1,26 +1,27 @@
 import { DEFAULT_PLAYBACK_FPS } from "../constants";
 
-import CanvasWithOverlay from "./CanvasWithOverlay";
-
 // time / playback controls
 const NO_TIMER_ID = -1;
 
 export default class TimeControls {
   private timerId: number;
   private mostRecentPlayRequestId: number;
-  private setFrameFn?: (frame: number) => Promise<void>;
+  private getFrameFn: () => number;
+  private setFrameFn: (frame: number) => Promise<void>;
   private playbackFps: number;
-
-  private canvas: CanvasWithOverlay;
+  private totalFrames: number;
 
   private pauseCallbacks: (() => void)[];
 
-  constructor(canvas: CanvasWithOverlay, playbackFps: number = DEFAULT_PLAYBACK_FPS) {
-    this.canvas = canvas;
+  constructor(getFrameFn: () => number, setFrameFn: (frame: number) => Promise<void>) {
     this.timerId = NO_TIMER_ID;
     this.pauseCallbacks = [];
-    this.playbackFps = playbackFps;
+    this.playbackFps = DEFAULT_PLAYBACK_FPS;
     this.mostRecentPlayRequestId = 0;
+    this.totalFrames = 1;
+
+    this.getFrameFn = getFrameFn;
+    this.setFrameFn = setFrameFn;
 
     this.isPlaying = this.isPlaying.bind(this);
     this.play = this.play.bind(this);
@@ -40,9 +41,12 @@ export default class TimeControls {
     this.playbackFps = fps;
   }
 
+  public setTotalFrames(totalFrames: number): void {
+    this.totalFrames = totalFrames;
+  }
+
   private wrapFrame(index: number): number {
-    const totalFrames = this.canvas.getTotalFrames();
-    return (index + totalFrames) % totalFrames;
+    return (index + this.totalFrames) % this.totalFrames;
   }
 
   private playTimeSeries(onNewFrameCallback: () => void): void {
@@ -71,9 +75,8 @@ export default class TimeControls {
       }
 
       // do the update
-      if (this.setFrameFn) {
-        await this.setFrameFn(nextFrame);
-      }
+      await this.setFrameFn(nextFrame);
+
       const endTime = Date.now();
       const timeElapsed = endTime - startTime;
       onNewFrameCallback();
@@ -90,10 +93,7 @@ export default class TimeControls {
       this.timerId = window.setTimeout(() => loadNextFrame(nextFrame, requestId), delayMs);
     };
 
-    this.timerId = window.setTimeout(
-      () => loadNextFrame(this.canvas.getCurrentFrame(), this.mostRecentPlayRequestId),
-      0
-    );
+    this.timerId = window.setTimeout(() => loadNextFrame(this.getFrameFn(), this.mostRecentPlayRequestId), 0);
   }
 
   /**
@@ -121,9 +121,7 @@ export default class TimeControls {
    * Increment or decrement the time series by the given number of frames.
    */
   public async advanceFrame(delta: number = 1): Promise<void> {
-    if (this.setFrameFn) {
-      await this.setFrameFn(this.wrapFrame(this.canvas.getCurrentFrame() + delta));
-    }
+    await this.setFrameFn(this.wrapFrame(this.getFrameFn() + delta));
   }
 
   public isPlaying(): boolean {
