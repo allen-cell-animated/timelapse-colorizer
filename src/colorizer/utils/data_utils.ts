@@ -6,7 +6,7 @@ import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
-export function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
+export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
   if (arr1.length !== arr2.length) {
     return false;
   }
