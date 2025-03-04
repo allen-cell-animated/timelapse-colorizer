@@ -6,7 +6,7 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
 } from "../../colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "../../colorizer/colors/color_ramps";
-import { arrayDeepEquals, getColorMap } from "../../colorizer/utils/data_utils";
+import { arrayElementsAreEqual, getColorMap } from "../../colorizer/utils/data_utils";
 import { SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 
@@ -99,7 +99,7 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, _get) =>
 
 const getPaletteKey = (palette: Color[]): string | null => {
   for (const [key, paletteData] of KNOWN_CATEGORICAL_PALETTES) {
-    if (arrayDeepEquals(palette, paletteData.colors)) {
+    if (arrayElementsAreEqual(palette, paletteData.colors)) {
       return key;
     }
   }
