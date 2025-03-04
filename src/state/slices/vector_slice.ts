@@ -3,6 +3,7 @@ import { StateCreator } from "zustand";
 
 import { getDefaultVectorConfig, VECTOR_KEY_MOTION_DELTA, VectorConfig, VectorTooltipMode } from "../../colorizer";
 import { SubscribableStore } from "../types";
+import { validateFiniteValue } from "../utils/data_validation";
 import { addDerivedStateSubscriber, makeDebouncedCallback } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 import { WorkerPoolSlice } from "./workerpool_slice";
@@ -66,10 +67,14 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
     }
     set({ vectorKey: key });
   },
-  setVectorMotionTimeIntervals: (timeIntervals: number) =>
-    set({ vectorMotionTimeIntervals: Math.max(1, Math.round(timeIntervals)) }),
+  setVectorMotionTimeIntervals: (timeIntervals: number) => {
+    let value = validateFiniteValue(timeIntervals, "setVectorMotionTimeIntervals");
+    value = Math.max(1, Math.round(value));
+    set({ vectorMotionTimeIntervals: value });
+  },
   setVectorColor: (color: Color) => set({ vectorColor: color }),
-  setVectorScaleFactor: (scale: number) => set({ vectorScaleFactor: scale }),
+  setVectorScaleFactor: (scale: number) =>
+    set({ vectorScaleFactor: validateFiniteValue(scale, "setVectorScaleFactor") }),
   setVectorTooltipMode: (mode: VectorTooltipMode) => set({ vectorTooltipMode: mode }),
 });
 
