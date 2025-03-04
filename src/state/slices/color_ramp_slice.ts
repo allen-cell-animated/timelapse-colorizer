@@ -183,8 +183,9 @@ export const addColorRampDerivedStateSubscribers = (
       } else if (dataset === null || featureKey === null) {
         return { colorRampRange: COLOR_RAMP_RANGE_DEFAULT };
       } else {
-        // Reset should occur. Reset to the range of the threshold (if the
-        // feature is thresholded on) or the feature range.
+        // Reset should occur. If a threshold is set on the selected feature,
+        // reset to the threshold range. Otherwise, reset to the feature data
+        // range.
         const featureData = dataset.getFeatureData(featureKey);
         if (!featureData) {
           throw new Error(

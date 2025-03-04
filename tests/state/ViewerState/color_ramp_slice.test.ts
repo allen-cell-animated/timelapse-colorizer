@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "../../../src/colorizer";
 import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MOCK_FEATURE_KEY_TO_UNIT, MockFeatureKeys } from "./constants";
+import { MOCK_DATASET, MOCK_FEATURE_DATA, MockFeatureKeys } from "./constants";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
 
@@ -185,7 +185,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       const threshold: FeatureThreshold = {
         featureKey: MockFeatureKeys.FEATURE2,
-        unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE2],
+        unit: MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE2].unit!,
         type: ThresholdType.NUMERIC,
         min: 56.5,
         max: 23.3,
@@ -208,7 +208,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       const threshold: FeatureThreshold = {
         featureKey: MockFeatureKeys.FEATURE1,
-        unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE1],
+        unit: MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE1].unit!,
         type: ThresholdType.NUMERIC,
         min: 10,
         max: 20,

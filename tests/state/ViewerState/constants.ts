@@ -1,5 +1,5 @@
 import { FeatureDataType } from "../../../src/colorizer";
-import { AnyManifestFile } from "../../../src/colorizer/utils/dataset_utils";
+import { AnyManifestFile, ManifestFile } from "../../../src/colorizer/utils/dataset_utils";
 import { DEFAULT_DATASET_DIR, makeMockDataset, MockArrayLoader, MockArraySource } from "../../test_utils";
 
 export enum MockFeatureKeys {
@@ -8,10 +8,35 @@ export enum MockFeatureKeys {
   FEATURE3 = "feature3",
 }
 
-export const MOCK_FEATURE_KEY_TO_UNIT = {
-  [MockFeatureKeys.FEATURE1]: "meters",
-  [MockFeatureKeys.FEATURE2]: "(m)",
-  [MockFeatureKeys.FEATURE3]: "",
+export const MOCK_FEATURE_DATA: Record<MockFeatureKeys, ManifestFile["features"][0]> = {
+  [MockFeatureKeys.FEATURE1]: {
+    key: MockFeatureKeys.FEATURE1,
+    name: "Feature1",
+    data: "feature1.json",
+    unit: "meters",
+    type: "continuous",
+    min: 0,
+    max: 1,
+  },
+  [MockFeatureKeys.FEATURE2]: {
+    key: MockFeatureKeys.FEATURE2,
+    name: "Feature2",
+    data: "feature2.json",
+    unit: "(m)",
+    type: "discrete",
+    min: 0,
+    max: 100,
+  },
+  [MockFeatureKeys.FEATURE3]: {
+    key: MockFeatureKeys.FEATURE3,
+    name: "feature3",
+    data: "feature3.json",
+    type: "categorical",
+    unit: "",
+    categories: ["small", "medium", "large"],
+    min: 0,
+    max: 2,
+  },
 };
 
 export const DEFAULT_BACKDROP_KEY = "test_backdrop_key";
@@ -19,34 +44,9 @@ export const DEFAULT_INITIAL_FEATURE_KEY = MockFeatureKeys.FEATURE1;
 
 const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   features: [
-    {
-      key: MockFeatureKeys.FEATURE1,
-      name: "Feature1",
-      data: "feature1.json",
-      unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE1],
-      type: "continuous",
-      min: 0,
-      max: 1,
-    },
-    {
-      key: MockFeatureKeys.FEATURE2,
-      name: "Feature2",
-      data: "feature2.json",
-      unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE2],
-      type: "discrete",
-      min: 0,
-      max: 100,
-    },
-    {
-      key: MockFeatureKeys.FEATURE3,
-      name: "feature3",
-      data: "feature3.json",
-      type: "categorical",
-      unit: MOCK_FEATURE_KEY_TO_UNIT[MockFeatureKeys.FEATURE3],
-      categories: ["small", "medium", "large"],
-      min: 0,
-      max: 2,
-    },
+    MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE1],
+    MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE2],
+    MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE3],
   ],
   frames: ["frame0.png"],
   backdrops: [{ name: DEFAULT_BACKDROP_KEY, key: DEFAULT_BACKDROP_KEY, frames: ["frame0.png"] }],
