@@ -1,21 +1,24 @@
 import { create } from "zustand";
 import { StateCreator } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 
 import { Spread } from "../colorizer/utils/type_utils";
 import { BackdropSlice, createBackdropSlice } from "./slices/backdrop_slice";
 import { CollectionSlice, createCollectionSlice } from "./slices/collection_slice";
+import { addColorRampDerivedStateSubscribers, ColorRampSlice, createColorRampSlice } from "./slices/color_ramp_slice";
 import { createDatasetSlice, DatasetSlice } from "./slices/dataset_slice";
 
 // The ViewerState is composed of many smaller slices, modules of related state,
 // actions, and selectors. See
 // https://github.com/pmndrs/zustand/blob/main/docs/guides/typescript.md#slices-pattern
 // for more details on the pattern.
-export type ViewerState = Spread<CollectionSlice & DatasetSlice & BackdropSlice>;
+export type ViewerState = Spread<CollectionSlice & DatasetSlice & BackdropSlice & ColorRampSlice>;
 
 export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
   ...createCollectionSlice(...a),
   ...createDatasetSlice(...a),
   ...createBackdropSlice(...a),
+  ...createColorRampSlice(...a),
 });
 
 /**
@@ -45,9 +48,19 @@ export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
  * // will rerender on any state change):
  * const store = useViewerStateStore();
  * console.log(store.dataset);
+ *
+ * // Subscribing to changes in the store:
+ * useViewerStateStore.subscribe(
+ *   (state) => [state.dataset, state.collection],
+ *   ([dataset, collection]): void => {
+ *    console.log("Dataset or collection changed:", dataset, collection);
+ *   }
+ * );
  * ```
  */
-export const useViewerStateStore = create<ViewerState>()(viewerStateStoreCreator);
+export const useViewerStateStore = create<ViewerState>()(subscribeWithSelector(viewerStateStoreCreator));
+
+addColorRampDerivedStateSubscribers(useViewerStateStore);
 
 // Adds compatibility with hot module reloading.
 // Adapted from https://github.com/pmndrs/zustand/discussions/827#discussioncomment-9843290

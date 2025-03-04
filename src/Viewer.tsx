@@ -24,8 +24,6 @@ import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 import {
   AnnotationSelectionMode,
   Dataset,
-  DEFAULT_CATEGORICAL_PALETTE_KEY,
-  DEFAULT_COLOR_RAMP_KEY,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
   FeatureThreshold,
@@ -42,7 +40,7 @@ import {
   ViewerConfig,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
-import { getColorMap, getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
+import { getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
 import {
   useAnnotations,
   useConstructor,
@@ -151,14 +149,16 @@ function Viewer(): ReactElement {
 
   const colorRampData = KNOWN_COLOR_RAMPS;
 
-  const [colorRampKey, setColorRampKey] = useState(DEFAULT_COLOR_RAMP_KEY);
-  const [colorRampReversed, setColorRampReversed] = useState(false);
-  const [colorRampMin, setColorRampMin] = useState(0);
-  const [colorRampMax, setColorRampMax] = useState(0);
-
-  const [categoricalPalette, setCategoricalPalette] = useState(
-    KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors
-  );
+  // TODO: Tidy up these state slices once data logic is moved out of this file.
+  const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
+  const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
+  const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
+  const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
+  const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
+  const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
+  const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
+  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
+  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
 
   const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
   const setFeatureThresholds = useCallback(
@@ -174,8 +174,7 @@ function Viewer(): ReactElement {
 
         if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold) && isThresholdNumeric(oldThreshold)) {
           if (newThreshold.min !== oldThreshold.min || newThreshold.max !== oldThreshold.max) {
-            setColorRampMin(newThreshold.min);
-            setColorRampMax(newThreshold.max);
+            setColorRampRange([newThreshold.min, newThreshold.max]);
           }
         }
       }
@@ -272,7 +271,7 @@ function Viewer(): ReactElement {
       return undefined;
     }
     // check if current selected feature range matches the default feature range; if so, don't provide
-    // a range parameter..
+    // a range parameter.
     const featureData = dataset.getFeatureData(featureKey);
     if (featureData) {
       if (featureData.min === colorRampMin && featureData.max === colorRampMax) {
@@ -298,8 +297,8 @@ function Viewer(): ReactElement {
       time: currentFrame !== 0 ? currentFrame : undefined,
       thresholds: featureThresholds,
       range: rangeParam,
-      colorRampKey: colorRampKey,
-      colorRampReversed: colorRampReversed,
+      colorRampKey,
+      colorRampReversed,
       categoricalPalette: categoricalPalette,
       config: config,
       selectedBackdropKey,
@@ -431,11 +430,9 @@ function Viewer(): ReactElement {
         // Use min/max from threshold if there is a matching one, otherwise use feature min/max
         const threshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
         if (threshold && isThresholdNumeric(threshold)) {
-          setColorRampMin(threshold.min);
-          setColorRampMax(threshold.max);
+          setColorRampRange([threshold.min, threshold.max]);
         } else {
-          setColorRampMin(featureData.min);
-          setColorRampMax(featureData.max);
+          setColorRampRange([featureData.min, featureData.max]);
         }
       }
     },
@@ -699,8 +696,7 @@ function Viewer(): ReactElement {
       }
       // Range, track, and time setting must be done after the dataset and feature is set.
       if (initialUrlParams.range) {
-        setColorRampMin(initialUrlParams.range[0]);
-        setColorRampMax(initialUrlParams.range[1]);
+        setColorRampRange(initialUrlParams.range);
       } else {
         // Load default range from dataset for the current feature
         dataset && resetColorRampRangeToDefaults(dataset, newFeatureKey);
@@ -932,7 +928,6 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <ScatterPlotTab
-            dataset={dataset}
             currentFrame={currentFrame}
             selectedTrack={selectedTrack}
             findTrack={findTrack}
@@ -940,10 +935,6 @@ function Viewer(): ReactElement {
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
             selectedFeatureKey={featureKey}
-            colorRampMin={colorRampMin}
-            colorRampMax={colorRampMax}
-            colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
-            categoricalPalette={categoricalPalette}
             inRangeIds={inRangeLUT}
             viewerConfig={config}
             scatterPlotConfig={scatterPlotConfig}
@@ -973,7 +964,6 @@ function Viewer(): ReactElement {
             onChange={setFeatureThresholds}
             dataset={dataset}
             disabled={disableUi}
-            categoricalPalette={categoricalPalette}
           />
         </div>
       ),
@@ -1113,6 +1103,7 @@ function Viewer(): ReactElement {
             useCategoricalPalettes={dataset?.isFeatureCategorical(featureKey) || false}
             numCategories={dataset?.getFeatureCategories(featureKey)?.length || 1}
             selectedPalette={categoricalPalette}
+            selectedPaletteKey={selectedPaletteKey}
             onChangePalette={setCategoricalPalette}
           />
         </FlexRowAlignCenter>
@@ -1133,8 +1124,6 @@ function Viewer(): ReactElement {
                       dataset?.isFeatureCategorical(featureKey) ? (
                         <CategoricalColorPicker
                           categories={dataset.getFeatureCategories(featureKey) || []}
-                          selectedPalette={categoricalPalette}
-                          onChangePalette={setCategoricalPalette}
                           disabled={disableUi}
                         />
                       ) : (
@@ -1145,8 +1134,7 @@ function Viewer(): ReactElement {
                           minSliderBound={dataset?.getFeatureData(featureKey)?.min}
                           maxSliderBound={dataset?.getFeatureData(featureKey)?.max}
                           onChange={function (min: number, max: number): void {
-                            setColorRampMin(min);
-                            setColorRampMax(max);
+                            setColorRampRange([min, max]);
                           }}
                           marks={getColorMapSliderMarks()}
                           disabled={disableUi}
@@ -1182,11 +1170,7 @@ function Viewer(): ReactElement {
                   canv={canv}
                   vectorData={motionDeltas}
                   featureKey={featureKey}
-                  colorRamp={getColorMap(colorRampData, colorRampKey, colorRampReversed)}
-                  colorRampMin={colorRampMin}
-                  colorRampMax={colorRampMax}
                   isRecording={isRecording}
-                  categoricalColors={categoricalPalette}
                   selectedTrack={selectedTrack}
                   config={config}
                   updateConfig={updateConfig}

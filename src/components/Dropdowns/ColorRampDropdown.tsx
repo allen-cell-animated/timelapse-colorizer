@@ -122,6 +122,7 @@ type ColorRampSelectionProps = {
   knownColorRamps?: Map<string, ColorRampData>;
 
   selectedPalette: Color[];
+  selectedPaletteKey: string | null;
   onChangePalette: (newPalette: Color[]) => void;
   numCategories: number;
   categoricalPalettesToDisplay: string[];
@@ -140,19 +141,6 @@ const defaultProps: Partial<ColorRampSelectionProps> = {
   useCategoricalPalettes: false,
   knownCategoricalPalettes: KNOWN_CATEGORICAL_PALETTES,
 };
-
-/** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
-function arrayDeepEquals<T>(arr1: T[], arr2: T[]): boolean {
-  if (arr1.length !== arr2.length) {
-    return false;
-  }
-  for (let i = 0; i < arr2.length; i++) {
-    if (arr1[i] !== arr2[i]) {
-      return false;
-    }
-  }
-  return true;
-}
 
 export default function ColorRampSelection(inputProps: ColorRampSelectionProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<ColorRampSelectionProps>;
@@ -226,13 +214,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
 
   // Check if palette colors match an existing one; otherwise, mark it as being
   // custom.
-  let selectedPaletteKey = CUSTOM_PALETTE_ITEM_KEY;
-  for (const [key, paletteData] of props.knownCategoricalPalettes) {
-    if (arrayDeepEquals(paletteData.colors, props.selectedPalette)) {
-      selectedPaletteKey = key;
-      break;
-    }
-  }
+  const selectedPaletteKey = props.selectedPaletteKey ?? CUSTOM_PALETTE_ITEM_KEY;
   const paletteData = props.knownCategoricalPalettes.get(selectedPaletteKey);
   const selectedPaletteItem = {
     value: selectedPaletteKey,
