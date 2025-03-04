@@ -217,6 +217,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       act(() => {
         result.current.setDataset("mockDataset", MOCK_DATASET);
         result.current.setFeatureKey(MockFeatureKeys.FEATURE1);
+        result.current.setThresholds([threshold]);
         result.current.setColorRampRange([56, 78]);
       });
       expect(result.current.colorRampRange).toStrictEqual([56, 78]);

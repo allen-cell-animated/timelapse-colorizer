@@ -23,6 +23,7 @@ const OUTDATED_THRESHOLDS: FeatureThreshold[] = [
 
 const VALIDATED_THRESHOLDS = validateThresholds(MOCK_DATASET, OUTDATED_THRESHOLDS);
 const EXPECTED_IN_RANGE_LUT = new Uint8Array([0, 0, 0, 1, 1, 1, 1, 0, 0]);
+const EXPECTED_IN_RANGE_LUT_NO_THRESHOLD = new Uint8Array([1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
 describe("ThresholdSlice", () => {
   describe("setThresholds", () => {
@@ -81,9 +82,11 @@ describe("ThresholdSlice", () => {
 
     it("updates inRangeLUT on threshold change", () => {
       const { result } = renderHook(() => useViewerStateStore());
-      expect(result.current.inRangeLUT).to.deep.equal(new Uint8Array(0));
       act(() => {
         result.current.setDataset("some-dataset", MOCK_DATASET);
+      });
+      expect(result.current.inRangeLUT).to.deep.equal(EXPECTED_IN_RANGE_LUT_NO_THRESHOLD);
+      act(() => {
         result.current.setThresholds(VALIDATED_THRESHOLDS);
       });
       expect(result.current.inRangeLUT).to.deep.equal(EXPECTED_IN_RANGE_LUT);
@@ -95,8 +98,6 @@ describe("ThresholdSlice", () => {
         result.current.setThresholds(VALIDATED_THRESHOLDS);
       });
       expect(result.current.inRangeLUT).to.deep.equal(new Uint8Array(0));
-
-      // Set dataset
       act(() => {
         result.current.setDataset("some-dataset", MOCK_DATASET);
       });
