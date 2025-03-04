@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, ThresholdType } from "../src/colorizer/types";
 import { getIntervals, getKeyFromName, validateThresholds } from "../src/colorizer/utils/data_utils";
-
-import { makeMockDataset } from "./Dataset.test";
+import { makeMockDataset } from "./test_utils";
 
 describe("data_utils", () => {
   describe("getKeyFromName", () => {

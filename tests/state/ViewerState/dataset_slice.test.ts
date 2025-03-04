@@ -1,19 +1,18 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_BACKDROP_KEY, MOCK_DATASET_WITH_BACKDROP, MOCK_DATASET_WITHOUT_BACKDROP } from "./constants";
-
 import { useViewerStateStore } from "../../../src/state/ViewerState";
+import { DEFAULT_BACKDROP_KEY, MOCK_DATASET, MOCK_DATASET_WITHOUT_BACKDROP } from "./constants";
 
 describe("useViewerStateStore: DatasetSlice", () => {
   describe("setDataset", () => {
     it("initializes backdrop keys to default", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET_WITH_BACKDROP);
+        result.current.setDataset("some-key", MOCK_DATASET);
       });
 
-      expect(result.current.dataset).toBe(MOCK_DATASET_WITH_BACKDROP);
+      expect(result.current.dataset).toBe(MOCK_DATASET);
       expect(result.current.backdropKey).toBe(DEFAULT_BACKDROP_KEY);
 
       // Change dataset to one without default backdrop, backdropKey should
@@ -29,7 +28,7 @@ describe("useViewerStateStore: DatasetSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
 
       act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET_WITH_BACKDROP);
+        result.current.setDataset("some-key", MOCK_DATASET);
         result.current.setBackdropVisible(true);
       });
       expect(result.current.backdropVisible).toBe(true);
@@ -45,7 +44,7 @@ describe("useViewerStateStore: DatasetSlice", () => {
     it("clears backdrop key and visibility", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET_WITH_BACKDROP);
+        result.current.setDataset("some-key", MOCK_DATASET);
         result.current.setBackdropVisible(true);
       });
       expect(result.current.backdropKey).toBe(DEFAULT_BACKDROP_KEY);

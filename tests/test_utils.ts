@@ -1,6 +1,19 @@
+import { DataTexture, RGBAFormat, Texture, UnsignedByteType } from "three";
+
+import {
+  ArraySource,
+  Dataset,
+  FeatureArrayType,
+  FeatureDataType,
+  featureTypeSpecs,
+  IArrayLoader,
+  ITextureImageLoader,
+} from "../src/colorizer";
+import { AnyManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { fetchWithTimeout } from "../src/colorizer/utils/url_utils";
 
 export const ANY_ERROR = /[.]*/;
+export const DEFAULT_DATASET_PATH = "https://some-path.json";
 
 export async function sleep(timeoutMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, timeoutMs));
@@ -55,3 +68,70 @@ export function makeMockFetchMethod(validUrl: string, bodyJson: any): typeof fet
     });
   };
 }
+
+export const makeMockAsyncLoader = <T>(url: string, manifestJson: T): ((url: string) => Promise<T>) => {
+  return async (inputUrl: string): Promise<T> => {
+    if (inputUrl !== url) {
+      throw new Error(`Input url '${inputUrl}' does not match expected url '${url}'.`);
+    }
+    return Promise.resolve(manifestJson);
+  };
+};
+
+export class MockFrameLoader implements ITextureImageLoader {
+  width: number;
+  height: number;
+
+  constructor(width: number = 1, height: number = 1) {
+    this.width = width;
+    this.height = height;
+  }
+
+  load(_url: string): Promise<Texture> {
+    return Promise.resolve(
+      new DataTexture(
+        new Uint8Array(this.width * this.height * 4),
+        this.width,
+        this.height,
+        RGBAFormat,
+        UnsignedByteType
+      )
+    );
+  }
+}
+
+export class MockArraySource<T extends FeatureDataType> implements ArraySource<T> {
+  private type: T;
+
+  constructor(type: T) {
+    this.type = type;
+  }
+
+  getBuffer<T extends FeatureDataType>(): FeatureArrayType[T] {
+    return new featureTypeSpecs[this.type].ArrayConstructor([]) as unknown as FeatureArrayType[T];
+  }
+  getTexture(): Texture {
+    return new Texture();
+  }
+  getMin(): number {
+    return 0;
+  }
+  getMax(): number {
+    return 1;
+  }
+}
+
+export class MockArrayLoader implements IArrayLoader {
+  dispose(): void {}
+
+  load<T extends FeatureDataType>(_url: string, type: T): Promise<ArraySource<T>> {
+    return Promise.resolve(new MockArraySource(type));
+  }
+}
+
+export const makeMockDataset = async (manifest: AnyManifestFile): Promise<Dataset> => {
+  const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), new MockArrayLoader());
+  const mockLoader = makeMockAsyncLoader(DEFAULT_DATASET_PATH, manifest);
+  await dataset.open({ manifestLoader: mockLoader });
+  return dataset;
+};
