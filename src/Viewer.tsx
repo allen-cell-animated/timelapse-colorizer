@@ -173,7 +173,6 @@ function Viewer(): ReactElement {
   const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
   const setFeatureThresholds = useViewerStateStore((state) => state.setThresholds);
-  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
@@ -849,7 +848,6 @@ function Viewer(): ReactElement {
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
             selectedFeatureKey={featureKey}
-            inRangeIds={inRangeLUT}
             viewerConfig={config}
             scatterPlotConfig={scatterPlotConfig}
             updateScatterPlotConfig={updateScatterPlotConfig}
@@ -1067,7 +1065,6 @@ function Viewer(): ReactElement {
                   config={config}
                   updateConfig={updateConfig}
                   onTrackClicked={onTrackClicked}
-                  inRangeLUT={inRangeLUT}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
                     setShowObjectHoverInfo(isObject);
