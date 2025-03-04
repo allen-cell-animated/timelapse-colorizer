@@ -1,10 +1,12 @@
 import { Tag } from "antd";
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
+import { useShallow } from "zustand/shallow";
 
 import { AnnotationSelectionMode, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../colorizer";
 import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
+import { selectVectorConfigFromState } from "../../state/slices";
 import { FlexColumn, FlexRow } from "../../styles/utils";
 
 import { useViewerStateStore } from "../../state/ViewerState";
@@ -41,7 +43,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
   const motionDeltas = useViewerStateStore((state) => state.vectorMotionDeltas);
-  const vectorConfig = useViewerStateStore((state) => state.vectorConfig);
+  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const featureName = featureKey ? dataset?.getFeatureName(featureKey) : undefined;
 

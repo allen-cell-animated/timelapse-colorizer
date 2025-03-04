@@ -46,6 +46,7 @@ import * as urlUtils from "./colorizer/utils/url_utils";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
+import { selectVectorConfigFromState } from "./state/slices";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
@@ -144,7 +145,7 @@ function Viewer(): ReactElement {
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
     getDefaultScatterPlotConfig()
   );
-  const vectorConfig = useViewerStateStore((state) => state.vectorConfig);
+  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);

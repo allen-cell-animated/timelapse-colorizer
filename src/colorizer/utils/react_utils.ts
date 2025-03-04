@@ -2,11 +2,9 @@ import React, { EventHandler, useEffect, useMemo, useRef, useState } from "react
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
-import { AnnotationSelectionMode, VectorConfig } from "../types";
+import { AnnotationSelectionMode } from "../types";
 
 import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters } from "../AnnotationData";
-import Dataset from "../Dataset";
-import SharedWorkerPool from "../workers/SharedWorkerPool";
 
 // TODO: Move this to a folder outside of `colorizer`.
 // TODO: Split this up into multiple files.
@@ -251,61 +249,6 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
     }
   };
   return [recentCollections, addRecentCollection];
-};
-
-/**
- * Wrapper around the SharedWorkerPool method `getMotionDeltas`. Returns a
- * debounced motion delta array for the given dataset and vector field
- * configuration.
- * @param dataset The dataset to calculate motion deltas for.
- * @param workerPool The worker pool to use for asynchronous calculations.
- * @param config The vector field configuration to use.
- * @param debounceMs The debounce time in milliseconds. Defaults to 100ms.
- * @returns The motion delta array or `null` if the dataset is invalid. Data
- * will be asynchronously updated as calculations complete.
- */
-export const useMotionDeltas = (
-  dataset: Dataset | null,
-  workerPool: SharedWorkerPool,
-  config: VectorConfig,
-  debounceMs = 100
-): Float32Array | null => {
-  const [motionDeltas, setMotionDeltas] = useState<Float32Array | null>(null);
-  // Stores the last config + dataset that was requested. Motion deltas will only be updated
-  // if the config and dataset match the most recent request.
-  const pendingVectorConfig = useRef<null | VectorConfig>(null);
-  const pendingDataset = useRef<null | Dataset>(null);
-
-  const debouncedVectorConfig = useDebounce(config, debounceMs);
-
-  const clearPendingConfig = (): void => {
-    pendingVectorConfig.current = null;
-    pendingDataset.current = null;
-  };
-
-  useEffect(() => {
-    if (dataset === null) {
-      setMotionDeltas(null);
-      clearPendingConfig();
-      return;
-    }
-
-    const updateMotionDeltas = async (vectorConfig: VectorConfig): Promise<void> => {
-      pendingVectorConfig.current = config;
-      pendingDataset.current = dataset;
-
-      const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorConfig.timeIntervals);
-
-      // Check that this is still the most recent request before updating state.
-      if (vectorConfig === pendingVectorConfig.current && dataset === pendingDataset.current) {
-        setMotionDeltas(motionDeltas ?? null);
-        clearPendingConfig();
-      }
-    };
-    updateMotionDeltas(config);
-  }, [debouncedVectorConfig.timeIntervals, dataset]);
-
-  return motionDeltas;
 };
 
 export type AnnotationState =  {

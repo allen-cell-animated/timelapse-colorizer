@@ -29,8 +29,6 @@ type VectorSliceState = {
    * or if the dataset is `null`.
    */
   vectorMotionDeltas: Float32Array | null;
-  /** Convenience config object representing the combined vector settings. */
-  vectorConfig: VectorConfig;
 };
 
 type VectorSliceActions = {
@@ -57,7 +55,6 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
 
   // Derived state
   vectorMotionDeltas: null,
-  vectorConfig: defaultConfig,
 
   setVectorVisible: (visible: boolean) => set({ vectorVisible: visible }),
   setVectorKey: (key: string) => {
@@ -97,29 +94,22 @@ export const addVectorDerivedStateSubscribers = (
       updateMotionDeltas();
     }, 250)
   );
-
-  // Sync combined vector config object with individual state values.
-  addDerivedStateSubscriber(
-    store,
-    (state) => [
-      state.vectorVisible,
-      state.vectorKey,
-      state.vectorMotionTimeIntervals,
-      state.vectorColor,
-      state.vectorScaleFactor,
-      state.vectorTooltipMode,
-    ],
-    ([vectorVisible, vectorKey, vectorMotionTimeIntervals, vectorColor, vectorScaleFactor, vectorTooltipMode]) => {
-      store.setState({
-        vectorConfig: {
-          visible: vectorVisible,
-          key: vectorKey,
-          timeIntervals: vectorMotionTimeIntervals,
-          color: vectorColor,
-          scaleFactor: vectorScaleFactor,
-          tooltipMode: vectorTooltipMode,
-        },
-      });
-    }
-  );
 };
+
+/** Selector that returns a VectorConfig object from a store containing vector
+ * state.
+ * @example
+ * ```
+ * import { useShallow } from "zustand/shallow";
+ *
+ * const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
+ * ```
+ */
+export const selectVectorConfigFromState = (state: VectorSlice): VectorConfig => ({
+  visible: state.vectorVisible,
+  key: state.vectorKey,
+  timeIntervals: state.vectorMotionTimeIntervals,
+  color: state.vectorColor,
+  scaleFactor: state.vectorScaleFactor,
+  tooltipMode: state.vectorTooltipMode,
+});

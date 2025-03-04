@@ -12,6 +12,7 @@ import { AnnotationSelectionMode, LoadTroubleshooting, TabType, ViewerConfig } f
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
+import { selectVectorConfigFromState } from "../state/slices";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
@@ -167,11 +168,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       colorRamp: state.colorRamp,
       colorRampRange: state.colorRampRange,
       categoricalPalette: state.categoricalPalette,
-      vectorConfig: state.vectorConfig,
       vectorMotionDeltas: state.vectorMotionDeltas,
       inRangeLUT: state.inRangeLUT,
     }))
   );
+  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -339,8 +340,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.showLegendDuringExport, props.isRecording]);
 
   useMemo(() => {
-    canv.setVectorFieldConfig(store.vectorConfig);
-  }, [store.vectorConfig]);
+    canv.setVectorFieldConfig(vectorConfig);
+  }, [vectorConfig]);
 
   useMemo(() => {
     canv.setVectorData(store.vectorMotionDeltas);
