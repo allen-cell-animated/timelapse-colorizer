@@ -7,14 +7,20 @@ import {
 } from "../../colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "../../colorizer/colors/color_ramps";
 import { arrayElementsAreEqual, getColorMap } from "../../colorizer/utils/data_utils";
+import { COLOR_RAMP_RANGE_DEFAULT } from "../../constants";
 import { SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
+import { DatasetSlice } from "./dataset_slice";
 
 import ColorRamp from "../../colorizer/ColorRamp";
 
 export type ColorRampSliceState = {
   colorRampKey: string;
   isColorRampReversed: boolean;
+  /**
+   * Keeps the color ramp range fixed when selected dataset or feature changes.
+   */
+  keepColorRampRange: boolean;
   /**
    *Range of feature values over which the color ramp is applied, as `[min,
    * max]`.
@@ -45,6 +51,7 @@ export type ColorRampSliceActions = {
   setColorRampReversed: (reversed: boolean) => void;
   setColorRampRange: (range: [number, number]) => void;
   setCategoricalPalette: (palette: Color[]) => void;
+  setKeepColorRampRange: (keepColorRampRange: boolean) => void;
 };
 
 export type ColorRampSlice = ColorRampSliceState & ColorRampSliceActions;
@@ -52,8 +59,9 @@ export type ColorRampSlice = ColorRampSliceState & ColorRampSliceActions;
 export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, _get) => ({
   // State
   colorRampKey: DEFAULT_COLOR_RAMP_KEY,
+  keepColorRampRange: false,
   isColorRampReversed: false,
-  colorRampRange: [0, 0],
+  colorRampRange: COLOR_RAMP_RANGE_DEFAULT,
   categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
 
   // Derived state
@@ -77,6 +85,10 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, _get) =>
   setColorRampReversed: (reversed: boolean) =>
     set((_state) => ({
       isColorRampReversed: reversed,
+    })),
+  setKeepColorRampRange: (keepColorRampRange: boolean) =>
+    set((_state) => ({
+      keepColorRampRange,
     })),
   // Enforce min/max
   setColorRampRange: (range: [number, number]) =>
@@ -106,7 +118,8 @@ const getPaletteKey = (palette: Color[]): string | null => {
   return null;
 };
 
-export const addColorRampDerivedStateSubscribers = (store: SubscribableStore<ColorRampSlice>): void => {
+export const addColorRampDerivedStateSubscribers = (store: SubscribableStore<DatasetSlice & ColorRampSlice>): void => {
+  // Calculate color ramp and categorical palette
   addDerivedStateSubscriber(
     store,
     (state) => [state.categoricalPalette],
@@ -120,5 +133,28 @@ export const addColorRampDerivedStateSubscribers = (store: SubscribableStore<Col
     ([key, reversed]) => ({
       colorRamp: getColorMap(KNOWN_COLOR_RAMPS, key, reversed),
     })
+  );
+
+  // Update the color ramp range when the dataset or feature changes
+  addDerivedStateSubscriber(
+    store,
+    (state) => ({ dataset: state.dataset, featureKey: state.featureKey }),
+    ({ dataset, featureKey }) => {
+      if (store.getState().keepColorRampRange) {
+        return;
+      } else if (dataset === null || featureKey === null) {
+        return { colorRampRange: COLOR_RAMP_RANGE_DEFAULT };
+      } else {
+        const featureData = dataset.getFeatureData(featureKey);
+        if (!featureData) {
+          throw new Error(
+            `ViewerStateStore: Expected feature data not found for key '${featureKey}' in Dataset when updating color ramp range.`
+          );
+        }
+        return {
+          colorRampRange: [featureData.min, featureData.max] as [number, number],
+        };
+      }
+    }
   );
 };

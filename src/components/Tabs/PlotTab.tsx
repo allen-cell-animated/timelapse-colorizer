@@ -32,7 +32,7 @@ type PlotTabProps = {
   setFrame: (frame: number) => Promise<void>;
   currentFrame: number;
   dataset: Dataset | null;
-  featureKey: string;
+  featureKey: string | null;
   selectedTrack: Track | null;
   disabled: boolean;
 };
