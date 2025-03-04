@@ -16,7 +16,7 @@ import { SubscribableStore } from "../types";
 export const addDerivedStateSubscriber = <T, const U>(
   store: SubscribableStore<T>,
   selectorFn: (state: T) => U,
-  listenerFn: (state: U, prevState: U) => Partial<T> | undefined
+  listenerFn: (state: U, prevState: U) => Partial<T> | undefined | void
 ): void => {
   store.subscribe(
     selectorFn,
@@ -31,4 +31,26 @@ export const addDerivedStateSubscriber = <T, const U>(
       equalityFn: shallow,
     }
   );
+};
+
+export const makeDebouncedCallback = <T, U, CallbackFn extends (state: T) => Partial<U> | undefined | void>(
+  callback: CallbackFn,
+  debounceMs: number = 250
+): ((state: T) => void) => {
+  let timeout: NodeJS.Timeout | null = null;
+  let lastArgs: T | null = null;
+
+  return (state: T) => {
+    lastArgs = state;
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    console.log("makeDebouncedCallback: Setting timeout", debounceMs);
+    timeout = setTimeout(() => {
+      if (lastArgs) {
+        callback(lastArgs);
+      }
+      timeout = null;
+    }, debounceMs);
+  };
 };

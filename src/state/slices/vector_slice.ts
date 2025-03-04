@@ -1,0 +1,125 @@
+import { Color } from "three";
+import { StateCreator } from "zustand";
+
+import { getDefaultVectorConfig, VECTOR_KEY_MOTION_DELTA, VectorConfig, VectorTooltipMode } from "../../colorizer";
+import { SubscribableStore } from "../types";
+import { addDerivedStateSubscriber, makeDebouncedCallback } from "../utils/store_utils";
+import { DatasetSlice } from "./dataset_slice";
+import { WorkerPoolSlice } from "./workerpool_slice";
+
+type VectorSliceState = {
+  vectorVisible: boolean;
+  vectorKey: string;
+  vectorColor: Color;
+  vectorScaleFactor: number;
+  vectorTooltipMode: VectorTooltipMode;
+  /**
+   * Number of time intervals to smooth vector motion deltas over when the
+   * `vectorKey` is `VECTOR_KEY_MOTION_DELTA`, as an integer. 5 by default.
+   */
+  vectorMotionTimeIntervals: number;
+
+  // Derived state
+  /**
+   * Vector motion deltas for all objects in the dataset, as a flat array of 2D
+   * vector coordinates. Motion deltas are smoothed over
+   * `vectorMotionTimeIntervals`.
+   *
+   * Set to `null` if the current `vectorKey` is not `VECTOR_KEY_MOTION_DELTA`,
+   * or if the dataset is `null`.
+   */
+  vectorMotionDeltas: Float32Array | null;
+  /** Convenience config object representing the combined vector settings. */
+  vectorConfig: VectorConfig;
+};
+
+type VectorSliceActions = {
+  setVectorVisible: (visible: boolean) => void;
+  setVectorKey: (key: string) => void;
+  setVectorColor: (color: Color) => void;
+  setVectorScaleFactor: (scale: number) => void;
+  setVectorTooltipMode: (mode: VectorTooltipMode) => void;
+  /** Note: non-integer values will be rounded. */
+  setVectorMotionTimeIntervals: (timeIntervals: number) => void;
+};
+
+export type VectorSlice = VectorSliceState & VectorSliceActions;
+
+const defaultConfig = getDefaultVectorConfig();
+
+export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [], VectorSlice> = (set, _get) => ({
+  vectorVisible: defaultConfig.visible,
+  vectorKey: defaultConfig.key,
+  vectorMotionTimeIntervals: defaultConfig.timeIntervals,
+  vectorColor: defaultConfig.color,
+  vectorScaleFactor: defaultConfig.scaleFactor,
+  vectorTooltipMode: defaultConfig.tooltipMode,
+
+  // Derived state
+  vectorMotionDeltas: null,
+  vectorConfig: defaultConfig,
+
+  setVectorVisible: (visible: boolean) => set({ vectorVisible: visible }),
+  setVectorKey: (key: string) => {
+    // TODO: Validate with dataset when vector features are added
+    if (key !== VECTOR_KEY_MOTION_DELTA) {
+      throw new Error(
+        `VectorSlice.setVectorKey: Invalid key '${key}'. Only motion delta vectors (key '${VECTOR_KEY_MOTION_DELTA}') are currently supported.`
+      );
+    }
+    set({ vectorKey: key });
+  },
+  setVectorMotionTimeIntervals: (timeIntervals: number) =>
+    set({ vectorMotionTimeIntervals: Math.round(timeIntervals) }),
+  setVectorColor: (color: Color) => set({ vectorColor: color }),
+  setVectorScaleFactor: (scale: number) => set({ vectorScaleFactor: scale }),
+  setVectorTooltipMode: (mode: VectorTooltipMode) => set({ vectorTooltipMode: mode }),
+});
+
+export const addVectorDerivedStateSubscribers = (
+  store: SubscribableStore<VectorSlice & WorkerPoolSlice & DatasetSlice>
+): void => {
+  // Update motion deltas when the dataset, vector key, or motion time intervals change.
+  addDerivedStateSubscriber(
+    store,
+    (state) => [state.dataset, state.vectorKey, state.vectorMotionTimeIntervals, state.vectorScaleFactor],
+    // TODO: Debounce???
+    makeDebouncedCallback(([dataset, vectorKey, vectorMotionTimeIntervals]) => {
+      const updateMotionDeltas = async (): Promise<void> => {
+        if (vectorKey !== VECTOR_KEY_MOTION_DELTA || dataset === null) {
+          store.setState({ vectorMotionDeltas: null });
+          return;
+        }
+        const workerPool = store.getState().workerPool;
+        const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorMotionTimeIntervals);
+        store.setState({ vectorMotionDeltas: motionDeltas });
+      };
+      updateMotionDeltas();
+    }, 250)
+  );
+
+  // Sync combined vector config object with individual state values.
+  addDerivedStateSubscriber(
+    store,
+    (state) => [
+      state.vectorVisible,
+      state.vectorKey,
+      state.vectorMotionTimeIntervals,
+      state.vectorColor,
+      state.vectorScaleFactor,
+      state.vectorTooltipMode,
+    ],
+    ([vectorVisible, vectorKey, vectorMotionTimeIntervals, vectorColor, vectorScaleFactor, vectorTooltipMode]) => {
+      store.setState({
+        vectorConfig: {
+          visible: vectorVisible,
+          key: vectorKey,
+          timeIntervals: vectorMotionTimeIntervals,
+          color: vectorColor,
+          scaleFactor: vectorScaleFactor,
+          tooltipMode: vectorTooltipMode,
+        },
+      });
+    }
+  );
+};
