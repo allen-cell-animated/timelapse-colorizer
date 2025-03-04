@@ -41,13 +41,7 @@ import {
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
-import {
-  useAnnotations,
-  useConstructor,
-  useDebounce,
-  useMotionDeltas,
-  useRecentCollections,
-} from "./colorizer/utils/react_utils";
+import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
@@ -150,8 +144,7 @@ function Viewer(): ReactElement {
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
     getDefaultScatterPlotConfig()
   );
-
-  const motionDeltas = useMotionDeltas(dataset, workerPool, config.vectorConfig);
+  const vectorConfig = useViewerStateStore((state) => state.vectorConfig);
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -285,7 +278,10 @@ function Viewer(): ReactElement {
       colorRampKey,
       colorRampReversed,
       categoricalPalette: categoricalPalette,
-      config: config,
+      // TODO: This is a patch to keep vector state saved to the URL while the
+      // state store is being refactored. This should be removed once
+      // ViewerConfig is moved into the state store.
+      config: { ...config, vectorConfig },
       selectedBackdropKey,
       scatterPlotConfig,
     };
@@ -301,6 +297,7 @@ function Viewer(): ReactElement {
     colorRampReversed,
     categoricalPalette,
     config,
+    vectorConfig,
     selectedBackdropKey,
     scatterPlotConfig,
   ]);
@@ -1048,26 +1045,19 @@ function Viewer(): ReactElement {
                 </FlexRowAlignCenter>
               </div>
               <CanvasHoverTooltip
-                dataset={dataset}
-                featureKey={featureKey}
                 lastValidHoveredId={lastValidHoveredId}
                 showObjectHoverInfo={showObjectHoverInfo}
-                motionDeltas={motionDeltas}
-                config={config}
                 annotationState={annotationState}
               >
                 <CanvasWrapper
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
-                  vectorData={motionDeltas}
-                  featureKey={featureKey}
                   isRecording={isRecording}
                   selectedTrack={selectedTrack}
                   config={config}
                   updateConfig={updateConfig}
                   onTrackClicked={onTrackClicked}
-                  inRangeLUT={inRangeLUT}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
                     setShowObjectHoverInfo(isObject);

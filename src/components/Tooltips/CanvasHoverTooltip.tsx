@@ -2,26 +2,17 @@ import { Tag } from "antd";
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
 
-import {
-  AnnotationSelectionMode,
-  Dataset,
-  VECTOR_KEY_MOTION_DELTA,
-  VectorTooltipMode,
-  ViewerConfig,
-} from "../../colorizer";
+import { AnnotationSelectionMode, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../colorizer";
 import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { FlexColumn, FlexRow } from "../../styles/utils";
 
+import { useViewerStateStore } from "../../state/ViewerState";
 import HoverTooltip from "./HoverTooltip";
 
 type CanvasHoverTooltipProps = {
-  dataset: Dataset | null;
-  featureKey: string | null;
   lastValidHoveredId: number;
   showObjectHoverInfo: boolean;
-  motionDeltas: Float32Array | null;
-  config: ViewerConfig;
   annotationState: AnnotationState;
 };
 
@@ -45,7 +36,12 @@ const ObjectInfoCard = styled.div`
  * - If vectors are enabled, the vector value (either magnitude or components) will be displayed.
  */
 export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverTooltipProps>): ReactElement {
-  const { dataset, featureKey, lastValidHoveredId: lastHoveredId, motionDeltas, config } = props;
+  const { lastValidHoveredId: lastHoveredId } = props;
+
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const featureKey = useViewerStateStore((state) => state.featureKey);
+  const motionDeltas = useViewerStateStore((state) => state.vectorMotionDeltas);
+  const vectorConfig = useViewerStateStore((state) => state.vectorConfig);
 
   const featureName = featureKey ? dataset?.getFeatureName(featureKey) : undefined;
 
@@ -81,7 +77,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   const hoveredFeatureValue = getHoveredFeatureValue();
 
   const getVectorTooltipText = useCallback((): string | null => {
-    if (!config.vectorConfig.visible || lastHoveredId === null || !motionDeltas) {
+    if (!vectorConfig.visible || lastHoveredId === null || !motionDeltas) {
       return null;
     }
     const motionDelta = [motionDeltas[2 * lastHoveredId], motionDeltas[2 * lastHoveredId + 1]];
@@ -90,11 +86,11 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       return null;
     }
 
-    const vectorKey = config.vectorConfig.key;
+    const vectorKey = vectorConfig.key;
     // TODO: If/when support for user vector data is added, this will need to get the vector's
     // display name from the dataset.
     const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
-    if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
+    if (vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
       const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
       const angleDegrees = (360 + Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
       const magnitudeText = numberToStringDecimal(magnitude, 3);
@@ -107,7 +103,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       return `${vectorName}: (${x}, ${y}) px
        `;
     }
-  }, [config, lastHoveredId, motionDeltas]);
+  }, [vectorConfig, lastHoveredId, motionDeltas]);
   const vectorTooltipText = getVectorTooltipText();
 
   const objectInfoContent = [

@@ -116,10 +116,8 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
 type CanvasWrapperProps = {
   canv: CanvasUIOverlay;
 
-  featureKey: string | null;
   config: ViewerConfig;
   updateConfig: (settings: Partial<ViewerConfig>) => void;
-  vectorData: Float32Array | null;
 
   loading: boolean;
   loadingProgress: number | null;
@@ -128,8 +126,6 @@ type CanvasWrapperProps = {
   annotationState: AnnotationState;
 
   selectedTrack: Track | null;
-
-  inRangeLUT?: Uint8Array;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
@@ -148,7 +144,6 @@ const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
-  inRangeLUT: new Uint8Array(0),
   maxWidthPx: 1400,
   maxHeightPx: 1000,
 };
@@ -172,6 +167,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       colorRamp: state.colorRamp,
       colorRampRange: state.colorRampRange,
       categoricalPalette: state.categoricalPalette,
+      vectorConfig: state.vectorConfig,
+      vectorMotionDeltas: state.vectorMotionDeltas,
+      inRangeLUT: state.inRangeLUT,
     }))
   );
 
@@ -308,8 +306,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.outlierDrawSettings]);
 
   useMemo(() => {
-    canv.setInRangeLUT(props.inRangeLUT);
-  }, [props.inRangeLUT]);
+    canv.setInRangeLUT(store.inRangeLUT);
+  }, [store.inRangeLUT]);
 
   // Updated track-related settings
   useMemo(() => {
@@ -341,12 +339,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.showLegendDuringExport, props.isRecording]);
 
   useMemo(() => {
-    canv.setVectorFieldConfig(props.config.vectorConfig);
-  }, [props.config.vectorConfig]);
+    canv.setVectorFieldConfig(store.vectorConfig);
+  }, [store.vectorConfig]);
 
   useMemo(() => {
-    canv.setVectorData(props.vectorData);
-  }, [props.vectorData]);
+    canv.setVectorData(store.vectorMotionDeltas);
+  }, [store.vectorMotionDeltas]);
 
   useMemo(() => {
     canv.setOutlineColor(props.config.outlineColor);
