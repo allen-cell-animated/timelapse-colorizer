@@ -294,7 +294,7 @@ export const useMotionDeltas = (
       pendingVectorConfig.current = config;
       pendingDataset.current = dataset;
 
-      const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorConfig);
+      const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorConfig.timeIntervals);
 
       // Check that this is still the most recent request before updating state.
       if (vectorConfig === pendingVectorConfig.current && dataset === pendingDataset.current) {

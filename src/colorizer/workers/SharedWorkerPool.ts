@@ -1,6 +1,6 @@
 import workerpool from "workerpool";
 
-import { FeatureArrayType, FeatureDataType, VectorConfig } from "../types";
+import { FeatureArrayType, FeatureDataType } from "../types";
 import { DataTextureInfo } from "../utils/texture_utils";
 
 import Dataset from "../Dataset";
@@ -72,16 +72,16 @@ export default class SharedWorkerPool {
    * For each object ID `i`, the motion delta is stored at `[2i, 2i + 1]`. If the delta cannot be calculated
    * for the object (e.g. it does not exist for part or all of the  the time interval), the values will be `NaN`.
    */
-  async getMotionDeltas(dataset: Dataset, config: VectorConfig): Promise<Float32Array | undefined> {
+  async getMotionDeltas(dataset: Dataset, timeIntervals: number): Promise<Float32Array | undefined> {
     // We cannot directly pass the Dataset due to textures not being transferable to workers.
     // Instead, pass the relevant data and reconstruct the tracks on the worker side.
     const trackIds = dataset.trackIds;
     const times = dataset.times;
     const centroids = dataset.centroids;
-    if (!trackIds || !times || !centroids || config.timeIntervals < 1) {
+    if (!trackIds || !times || !centroids || timeIntervals < 1) {
       return undefined;
     }
-    return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, config]);
+    return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, timeIntervals]);
   }
 
   terminate(): void {
