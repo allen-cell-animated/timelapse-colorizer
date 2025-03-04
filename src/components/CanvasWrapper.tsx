@@ -168,7 +168,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       colorRamp: state.colorRamp,
       colorRampRange: state.colorRampRange,
       categoricalPalette: state.categoricalPalette,
-      vectorMotionDeltas: state.vectorMotionDeltas,
+      vectorData: state.vectorMotionDeltas,
       inRangeLUT: state.inRangeLUT,
     }))
   );
@@ -344,8 +344,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [vectorConfig]);
 
   useMemo(() => {
-    canv.setVectorData(store.vectorMotionDeltas);
-  }, [store.vectorMotionDeltas]);
+    canv.setVectorData(store.vectorData);
+  }, [store.vectorData]);
 
   useMemo(() => {
     canv.setOutlineColor(props.config.outlineColor);

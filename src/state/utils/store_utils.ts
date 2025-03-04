@@ -33,10 +33,19 @@ export const addDerivedStateSubscriber = <T, const U>(
   );
 };
 
+/**
+ * Returns a new callback function that wraps the original callback, but debounces
+ * repeated calls by a specified number of milliseconds.
+ * @param callback The original callback function to debounce.
+ * @param debounceMs The number of milliseconds to wait before calling the
+ * debounced callback. Defaults to 250ms.
+ */
 export const makeDebouncedCallback = <T, U, CallbackFn extends (state: T) => Partial<U> | undefined | void>(
   callback: CallbackFn,
   debounceMs: number = 250
-): ((state: T) => void) => {
+): ((args: T) => void) => {
+  // TODO: Compare arguments to lastArgs to allow repeated calls with the same
+  // arguments.
   let timeout: ReturnType<typeof setTimeout> | null = null;
   let lastArgs: T | null = null;
 
@@ -45,7 +54,6 @@ export const makeDebouncedCallback = <T, U, CallbackFn extends (state: T) => Par
     if (timeout) {
       clearTimeout(timeout);
     }
-    console.log("makeDebouncedCallback: Setting timeout", debounceMs);
     timeout = setTimeout(() => {
       if (lastArgs) {
         callback(lastArgs);

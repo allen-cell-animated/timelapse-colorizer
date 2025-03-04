@@ -37,7 +37,7 @@ type VectorSliceActions = {
   setVectorColor: (color: Color) => void;
   setVectorScaleFactor: (scale: number) => void;
   setVectorTooltipMode: (mode: VectorTooltipMode) => void;
-  /** Note: non-integer values will be rounded. */
+  /** Note: Motion intervals are rounded to integers and are clamped to be >= 1. */
   setVectorMotionTimeIntervals: (timeIntervals: number) => void;
 };
 
@@ -67,7 +67,7 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
     set({ vectorKey: key });
   },
   setVectorMotionTimeIntervals: (timeIntervals: number) =>
-    set({ vectorMotionTimeIntervals: Math.round(timeIntervals) }),
+    set({ vectorMotionTimeIntervals: Math.max(1, Math.round(timeIntervals)) }),
   setVectorColor: (color: Color) => set({ vectorColor: color }),
   setVectorScaleFactor: (scale: number) => set({ vectorScaleFactor: scale }),
   setVectorTooltipMode: (mode: VectorTooltipMode) => set({ vectorTooltipMode: mode }),
@@ -80,7 +80,6 @@ export const addVectorDerivedStateSubscribers = (
   addDerivedStateSubscriber(
     store,
     (state) => [state.dataset, state.vectorKey, state.vectorMotionTimeIntervals, state.vectorScaleFactor],
-    // TODO: Debounce???
     makeDebouncedCallback(([dataset, vectorKey, vectorMotionTimeIntervals]) => {
       const updateMotionDeltas = async (): Promise<void> => {
         if (vectorKey !== VECTOR_KEY_MOTION_DELTA || dataset === null) {
