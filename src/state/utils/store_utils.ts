@@ -37,7 +37,7 @@ export const makeDebouncedCallback = <T, U, CallbackFn extends (state: T) => Par
   callback: CallbackFn,
   debounceMs: number = 250
 ): ((state: T) => void) => {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
   let lastArgs: T | null = null;
 
   return (state: T) => {
