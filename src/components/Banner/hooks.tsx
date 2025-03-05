@@ -1,4 +1,4 @@
-import React, { DependencyList, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { DependencyList, ReactElement, useCallback, useMemo, useRef, useState } from "react";
 
 import AlertBanner, { AlertBannerProps } from "./AlertBanner";
 
@@ -67,7 +67,7 @@ export const useAlertBanner = (
   }, []);
 
   // Automatically clear banners when the dependency list changes.
-  useEffect(() => {
+  useMemo(() => {
     clearBanners();
   }, deps);
 

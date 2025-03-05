@@ -38,6 +38,7 @@ const palette = {
   infoLight: "#e6f4ff",
   warningMedium: "#ffe58f",
   warningLight: "#fffbe6",
+  transparentGold: "#ebc88d9f",
 };
 
 // Note: Some advanced version of this could swap different theme objects, and
@@ -104,6 +105,9 @@ const theme = {
     },
     tooltip: {
       background: "rgba(50, 50, 51, 0.90)",
+    },
+    annotation: {
+      selectedRange: palette.transparentGold,
     },
     alert: {
       border: {

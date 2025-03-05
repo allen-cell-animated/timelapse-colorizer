@@ -45,6 +45,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   private labelData: LabelData[];
   private timeToLabelIds: Map<number, Record<number, number[]>>;
   private selectedLabelIdx: number | null;
+  private lastClickedId: number | null;
 
   private scaleBarStyle: ScaleBarStyle;
   private timestampStyle: TimestampStyle;
@@ -90,6 +91,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     this.labelData = [];
     this.timeToLabelIds = new Map();
     this.selectedLabelIdx = null;
+    this.lastClickedId = null;
 
     this.scaleBarStyle = styles?.scaleBar || defaultScaleBarStyle;
     this.timestampStyle = styles?.timestamp || defaultTimestampStyle;
@@ -177,11 +179,13 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
   setAnnotationData(
     labelData: LabelData[],
     timeToLabelIds: Map<number, Record<number, number[]>>,
-    selectedLabelIdx: number | null
+    selectedLabelIdx: number | null,
+    lastClickedId: number | null
   ): void {
     this.labelData = labelData;
     this.timeToLabelIds = timeToLabelIds;
     this.selectedLabelIdx = selectedLabelIdx;
+    this.lastClickedId = lastClickedId;
   }
 
   // Rendering functions ////////////////////////////
@@ -203,6 +207,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       labelData: this.labelData,
       timeToLabelIds: this.timeToLabelIds,
       selectedLabelIdx: this.selectedLabelIdx,
+      lastSelectedId: this.lastClickedId,
       frameToCanvasCoordinates: this.frameToCanvasCoordinates,
       frame: this.getCurrentFrame(),
       panOffset: this.panOffset,
