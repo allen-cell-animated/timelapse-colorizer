@@ -1,4 +1,4 @@
-import React, { ReactElement, useContext, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { Color } from "three";
 
@@ -21,6 +21,8 @@ type AnnotationDisplayListProps = {
   onClickDeleteObject: (record: TableDataType) => void;
   selectedTrack: Track | null;
   selectedId?: number;
+  highlightRange: number[] | null;
+  lastClickedId: number | null;
   frame: number;
   labelColor: Color;
 };
@@ -36,26 +38,9 @@ const ListLayoutContainer = styled.div`
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
-  const cachedTracks = useRef<Map<string, Track | undefined>>(new Map());
-  const selectedTrackId = props.selectedTrack?.trackId.toString();
+  const selectedTrackId = props.selectedTrack?.trackId;
 
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
-
-  useEffect(() => {
-    cachedTracks.current.clear();
-  }, [props.dataset]);
-
-  // Building a track is an expensive operation (takes O(N) where N is the
-  // size of the dataset), so cache the tracks.
-  // TODO: This could be optimized by having the dataset perform this once
-  // and save the results in a lookup table.
-  const getTrack = (trackId: number): Track | undefined => {
-    if (!cachedTracks.current.has(trackId.toString())) {
-      const track = props.dataset?.buildTrack(trackId);
-      cachedTracks.current.set(trackId.toString(), track);
-    }
-    return cachedTracks.current.get(trackId.toString());
-  };
 
   // Organize ids by track
   const trackToIds: Map<string, number[]> = useMemo(() => {
@@ -100,7 +85,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     listContents = (
       <ul style={{ marginTop: 0 }}>
         {trackIds.map((trackId) => {
-          const track = getTrack(trackId);
+          const track = props.dataset?.getTrack(trackId);
           const ids = trackToIds.get(trackId.toString())!;
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
@@ -124,7 +109,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                   <p style={{ margin: 0 }}>
                     {trackId}{" "}
                     <span style={{ color: theme.color.text.hint }}>
-                      ({ids.length}/{track?.times.length})
+                      ({ids.length}/{track?.times.length ?? 0})
                     </span>
                   </p>
                 </FlexRowAlignCenter>
@@ -136,7 +121,27 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     );
   }
 
-  const selectedTrackIds = trackToIds.get(selectedTrackId ?? "") ?? [];
+  const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
+
+  // Show a marker in the selected track thumbnail if the last clicked ID is
+  // part of the selected track.
+  let markedTime: number | undefined;
+  if (props.lastClickedId !== null && props.dataset) {
+    const id = props.lastClickedId;
+    const lastClickedTime = props.dataset.getTime(id);
+    const isSelectedTrack = props.dataset.getTrackId(id) === selectedTrackId;
+    if (lastClickedTime !== undefined && isSelectedTrack) {
+      markedTime = lastClickedTime;
+    }
+  }
+  // Highlight a range of objects in the selected track thumbnail if provided
+  let highlightRange: number[] | undefined;
+  if (props.highlightRange && props.highlightRange.length > 0) {
+    const trackId = props.dataset?.getTrackId(props.highlightRange[0]);
+    if (trackId === selectedTrackId) {
+      highlightRange = props.highlightRange;
+    }
+  }
 
   return (
     <FlexColumn>
@@ -180,6 +185,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
               track={props.selectedTrack}
               dataset={props.dataset}
               color={props.labelColor}
+              mark={markedTime}
+              highlightedIds={highlightRange}
             ></AnnotationTrackThumbnail>
 
             <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
@@ -199,7 +206,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             onClickObjectRow={props.onClickObjectRow}
             onClickDeleteObject={props.onClickDeleteObject}
             dataset={props.dataset}
-            ids={selectedTrackId ? trackToIds.get(selectedTrackId) ?? [] : []}
+            ids={selectedTrackId ? trackToIds.get(selectedTrackId?.toString()) ?? [] : []}
             height={410}
             selectedId={props.selectedId}
             hideTrackColumn={true}
