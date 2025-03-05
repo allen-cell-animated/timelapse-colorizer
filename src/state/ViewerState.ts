@@ -8,25 +8,35 @@ import { CollectionSlice, createCollectionSlice } from "./slices/collection_slic
 import { addColorRampDerivedStateSubscribers, ColorRampSlice, createColorRampSlice } from "./slices/color_ramp_slice";
 import { createDatasetSlice, DatasetSlice } from "./slices/dataset_slice";
 import { addThresholdDerivedStateSubscribers, createThresholdSlice, ThresholdSlice } from "./slices/threshold_slice";
+import { addVectorDerivedStateSubscribers, createVectorSlice, VectorSlice } from "./slices/vector_slice";
+import { createWorkerPoolSlice, WorkerPoolSlice } from "./slices/workerpool_slice";
 import { SubscribableStore } from "./types";
 
 // The ViewerState is composed of many smaller slices, modules of related state,
 // actions, and selectors. See
 // https://github.com/pmndrs/zustand/blob/main/docs/guides/typescript.md#slices-pattern
 // for more details on the pattern.
-export type ViewerState = Spread<CollectionSlice & DatasetSlice & BackdropSlice & ColorRampSlice & ThresholdSlice>;
+export type ViewerState = Spread<
+  CollectionSlice & DatasetSlice & BackdropSlice & ColorRampSlice & ThresholdSlice & VectorSlice & WorkerPoolSlice
+>;
 
 export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
-  ...createCollectionSlice(...a),
-  ...createDatasetSlice(...a),
   ...createBackdropSlice(...a),
+  ...createCollectionSlice(...a),
   ...createColorRampSlice(...a),
+  ...createDatasetSlice(...a),
   ...createThresholdSlice(...a),
+  ...createVectorSlice(...a),
+  ...createWorkerPoolSlice(...a),
 });
 
 /**
  * Hook for accessing the global viewer state store. If used with selectors,
  * components will only rerender when the selected state changes.
+ *
+ * NOTE: If you are experiencing a re-render loop while selecting multiple'
+ * values from the store, make sure to use the `useShallow` hook from
+ * `zustand/shallow` to prevent unnecessary re-renders.
  *
  * @example
  * ```tsx
@@ -67,6 +77,7 @@ export const useViewerStateStore: SubscribableStore<ViewerState> = create<Viewer
 
 addColorRampDerivedStateSubscribers(useViewerStateStore);
 addThresholdDerivedStateSubscribers(useViewerStateStore);
+addVectorDerivedStateSubscribers(useViewerStateStore);
 
 // Adds compatibility with hot module reloading.
 // Adapted from https://github.com/pmndrs/zustand/discussions/827#discussioncomment-9843290

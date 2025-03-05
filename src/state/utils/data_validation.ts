@@ -11,3 +11,13 @@ export const clampWithNanCheck = (value: number, min: number, max: number): numb
   }
   return clamp(value, min, max);
 };
+
+/**
+ * Throws an error if the value is not a finite number.
+ */
+export const validateFiniteValue = (value: number, source: string): number => {
+  if (!Number.isFinite(value)) {
+    throw new Error(`${source}: Value ${value} is invalid.`);
+  }
+  return value;
+};

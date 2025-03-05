@@ -12,6 +12,7 @@ import { AnnotationSelectionMode, LoadTroubleshooting, TabType, ViewerConfig } f
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
+import { selectVectorConfigFromState } from "../state/slices";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
@@ -88,10 +89,8 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
 type CanvasWrapperProps = {
   canv: CanvasUIOverlay;
 
-  featureKey: string | null;
   config: ViewerConfig;
   updateConfig: (settings: Partial<ViewerConfig>) => void;
-  vectorData: Float32Array | null;
 
   loading: boolean;
   loadingProgress: number | null;
@@ -141,9 +140,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       colorRamp: state.colorRamp,
       colorRampRange: state.colorRampRange,
       categoricalPalette: state.categoricalPalette,
+      vectorData: state.vectorMotionDeltas,
       inRangeLUT: state.inRangeLUT,
     }))
   );
+  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -311,12 +312,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.showLegendDuringExport, props.isRecording]);
 
   useMemo(() => {
-    canv.setVectorFieldConfig(props.config.vectorConfig);
-  }, [props.config.vectorConfig]);
+    canv.setVectorFieldConfig(vectorConfig);
+  }, [vectorConfig]);
 
   useMemo(() => {
-    canv.setVectorData(props.vectorData);
-  }, [props.vectorData]);
+    canv.setVectorData(store.vectorData);
+  }, [store.vectorData]);
 
   useMemo(() => {
     canv.setOutlineColor(props.config.outlineColor);
