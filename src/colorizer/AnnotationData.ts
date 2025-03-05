@@ -124,6 +124,7 @@ export interface IAnnotationDataSetters {
   deleteLabel(labelIdx: number): void;
 
   setLabelOnIds(labelIdx: number, ids: number[], value: boolean): void;
+  clear(): void;
 }
 
 export type IAnnotationData = IAnnotationDataGetters & IAnnotationDataSetters;
@@ -313,5 +314,11 @@ export class AnnotationData implements IAnnotationData {
     // prefixed with `#`.
 
     return csvString;
+  }
+
+  clear(): void {
+    this.labelData = [];
+    this.numLabelsCreated = 0;
+    this.timeToLabelIdMap = null;
   }
 }

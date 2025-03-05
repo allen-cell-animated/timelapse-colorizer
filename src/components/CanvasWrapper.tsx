@@ -1,5 +1,5 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
-import { Tooltip, TooltipProps } from "antd";
+import { Tooltip } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
@@ -21,6 +21,7 @@ import { AlertBannerProps } from "./Banner";
 import { LinkStyleButton } from "./Buttons/LinkStyleButton";
 import IconButton from "./IconButton";
 import LoadingSpinner from "./LoadingSpinner";
+import { TooltipWithSubtitle } from "./Tooltips/TooltipWithSubtitle";
 
 const ASPECT_RATIO = 14.6 / 10;
 /* Minimum distance in either X or Y that mouse should move
@@ -33,35 +34,6 @@ const RIGHT_CLICK_BUTTON = 2;
 
 const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
-
-function TooltipWithSubtext(
-  props: TooltipProps & { title: ReactNode; subtitle?: ReactNode; subtitleList?: ReactNode[] }
-): ReactElement {
-  const divRef = useRef<HTMLDivElement>(null);
-  return (
-    <div ref={divRef}>
-      <Tooltip
-        {...props}
-        trigger={["hover", "focus"]}
-        title={
-          <>
-            <p style={{ margin: 0 }}>{props.title}</p>
-            {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
-            {props.subtitleList &&
-              props.subtitleList.map((text, i) => (
-                <p key={i} style={{ margin: 0, fontSize: "12px" }}>
-                  {text}
-                </p>
-              ))}
-          </>
-        }
-        getPopupContainer={() => divRef.current ?? document.body}
-      >
-        {props.children}
-      </Tooltip>
-    </div>
-  );
-}
 
 const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: boolean }>`
   position: relative;
@@ -355,9 +327,20 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     const timeToAnnotationLabelIds = store.dataset
       ? props.annotationState.data.getTimeToLabelIdMap(store.dataset)
       : new Map();
-    canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
+    canv.setAnnotationData(
+      annotationLabels,
+      timeToAnnotationLabelIds,
+      props.annotationState.currentLabelIdx,
+      props.annotationState.lastClickedId
+    );
     canv.isAnnotationVisible = props.annotationState.visible;
-  }, [store.dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
+  }, [
+    store.dataset,
+    props.annotationState.data,
+    props.annotationState.lastClickedId,
+    props.annotationState.currentLabelIdx,
+    props.annotationState.visible,
+  ]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -412,7 +395,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         props.onTrackClicked(null);
       } else {
         const trackId = store.dataset.getTrackId(id);
-        const newTrack = store.dataset.buildTrack(trackId);
+        const newTrack = store.dataset.getTrack(trackId);
         props.onTrackClicked(newTrack);
       }
     },
@@ -546,10 +529,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
       } else if (props.annotationState.isAnnotationModeEnabled) {
-        if (props.annotationState.selectionMode === AnnotationSelectionMode.TIME) {
-          canv.domElement.style.cursor = "crosshair";
-        } else {
+        if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
           canv.domElement.style.cursor = "cell";
+        } else {
+          canv.domElement.style.cursor = "crosshair";
         }
       } else {
         canv.domElement.style.cursor = "auto";
@@ -741,7 +724,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <TooltipWithSubtext title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtitle title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -751,8 +734,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <ZoomInOutlined />
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
-        <TooltipWithSubtext title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        </TooltipWithSubtitle>
+        <TooltipWithSubtitle title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -765,10 +748,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <ZoomOutOutlined />
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
+        </TooltipWithSubtitle>
 
         {/* Backdrop toggle */}
-        <TooltipWithSubtext
+        <TooltipWithSubtitle
           title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
           subtitleList={backdropTooltipContents}
@@ -784,11 +767,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
             <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
+        </TooltipWithSubtitle>
 
         {/* Annotation mode toggle */}
         {INTERNAL_BUILD && (
-          <TooltipWithSubtext
+          <TooltipWithSubtitle
             title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
             subtitleList={annotationTooltipContents}
             placement="right"
@@ -803,7 +786,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
               {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
               <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
             </IconButton>
-          </TooltipWithSubtext>
+          </TooltipWithSubtitle>
         )}
       </CanvasControlsContainer>
     </CanvasContainer>
