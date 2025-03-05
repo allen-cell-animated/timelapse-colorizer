@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS } from "../../../src/colorizer";
 import { ANY_ERROR } from "../../test_utils";
+import { MOCK_DATASET, MockFeatureKeys } from "./constants";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
 
@@ -113,7 +114,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
     });
   });
 
-  describe("set colorRampRange", () => {
+  describe("setColorRampRange", () => {
     it("can set min and max", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
@@ -140,6 +141,58 @@ describe("useViewerStateStore: ColorRampSlice", () => {
           result.current.setColorRampRange([NaN, 0]);
         });
       }).toThrowError(ANY_ERROR);
+    });
+  });
+
+  describe("range reset behavior", () => {
+    it("ignores changes to feature and dataset when keepColorRampRange is enabled", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setColorRampRange([12, 34]);
+        result.current.setKeepColorRampRange(true);
+      });
+      expect(result.current.colorRampRange).toStrictEqual([12, 34]);
+
+      act(() => {
+        result.current.setDataset("mockDataset", MOCK_DATASET);
+      });
+      expect(result.current.colorRampRange).toStrictEqual([12, 34]);
+
+      act(() => {
+        result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
+      });
+      expect(result.current.colorRampRange).toStrictEqual([12, 34]);
+    });
+
+    it("resets color ramp range to feature range when feature changes", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setDataset("mockDataset", MOCK_DATASET);
+        result.current.setFeatureKey(MockFeatureKeys.FEATURE1);
+        result.current.setColorRampRange([56, 78]);
+      });
+
+      // Should reset to feature range
+      act(() => {
+        result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
+      });
+      expect(result.current.colorRampRange).not.toStrictEqual([56, 78]);
+      const featureData = result.current.dataset?.getFeatureData(result.current.featureKey!)!;
+      expect(result.current.colorRampRange).toStrictEqual([featureData!.min, featureData!.max!]);
+    });
+
+    it("resets color ramp range to feature range when dataset changes", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setColorRampRange([1234, 5678]);
+      });
+
+      // Should reset to feature range
+      act(() => {
+        result.current.setDataset("mockDataset", MOCK_DATASET);
+      });
+      const featureData = result.current.dataset?.getFeatureData(result.current.featureKey!)!;
+      expect(result.current.colorRampRange).toStrictEqual([featureData.min, featureData.max!]);
     });
   });
 });
