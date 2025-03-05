@@ -23,7 +23,6 @@ import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 import { useShallow } from "zustand/shallow";
 
 import {
-  AnnotationSelectionMode,
   Dataset,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
@@ -199,6 +198,7 @@ function Viewer(): ReactElement {
     }
   }, [timeControls.isPlaying()]);
 
+  const timeSliderContainerRef = useRef<HTMLDivElement>(null);
   /** The frame selected by the time UI. Changes to frameInput are reflected in
    * canvas after a short delay.
    */
@@ -206,6 +206,7 @@ function Viewer(): ReactElement {
   const [findTrackInput, setFindTrackInput] = useState("");
   const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
+  const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
 
@@ -349,7 +350,7 @@ function Viewer(): ReactElement {
         return;
       }
 
-      const newTrack = dataset!.buildTrack(trackId);
+      const newTrack = dataset!.getTrack(trackId);
 
       if (newTrack.ids.length < 1) {
         // Check track validity
@@ -729,17 +730,27 @@ function Viewer(): ReactElement {
   // the frame using a debounced value to prevent constant updates as it moves.
   const debouncedFrameInput = useDebounce(frameInput, 250);
   useEffect(() => {
-    setFrame(debouncedFrameInput);
+    if (!timeControls.isPlaying() && currentFrame !== debouncedFrameInput) {
+      setFrame(debouncedFrameInput);
+    }
+    // Dependency only contains debouncedFrameInput to prevent time from jumping back
+    // to old debounced values when time playback is paused.
   }, [debouncedFrameInput]);
 
   // When the slider is released, check if playback was occurring and resume it.
   // We need to attach the pointerup event listener to the document because it will not fire
   // if the user releases the pointer outside of the slider.
   useEffect(() => {
-    const checkIfPlaybackShouldUnpause = async (): Promise<void> => {
-      setFrame(frameInput);
+    const checkIfPlaybackShouldUnpause = async (event: PointerEvent): Promise<void> => {
+      const target = event.target;
+      if (target && timeSliderContainerRef.current?.contains(target as Node)) {
+        // If the user clicked and released on the slider, update the
+        // time immediately.
+        setFrame(frameInput);
+      }
       if (isTimeSliderDraggedDuringPlayback) {
-        // Update the frame and optionally unpause playback when the slider is released.
+        setFrame(frameInput);
+        // Update the frame and unpause playback when the slider is released.
         setIsTimeSliderDraggedDuringPlayback(false);
         timeControls.play(); // resume playing
       }
@@ -755,19 +766,12 @@ function Viewer(): ReactElement {
     (track: Track | null) => {
       setFindTrackInput(track?.trackId.toString() || "");
       setSelectedTrack(track);
-      if (track && annotationState.isAnnotationModeEnabled && annotationState.currentLabelIdx !== null) {
+      if (dataset && track) {
         const id = track.getIdAtTime(currentFrame);
-        const isLabeled = annotationState.data.isLabelOnId(annotationState.currentLabelIdx, id);
-        const ids = annotationState.selectionMode === AnnotationSelectionMode.TIME ? [id] : track.ids;
-        annotationState.setLabelOnIds(annotationState.currentLabelIdx, ids, !isLabeled);
+        annotationState.handleAnnotationClick(dataset, id);
       }
     },
-    [
-      annotationState.isAnnotationModeEnabled,
-      annotationState.selectionMode,
-      annotationState.currentLabelIdx,
-      currentFrame,
-    ]
+    [dataset, currentFrame, annotationState.handleAnnotationClick]
   );
 
   // RENDERING /////////////////////////////////////////////////////////////
@@ -891,6 +895,7 @@ function Viewer(): ReactElement {
             dataset={dataset}
             selectedTrack={selectedTrack}
             frame={currentFrame}
+            hoveredId={currentHoveredId}
           />
         </div>
       ),
@@ -1080,7 +1085,14 @@ function Viewer(): ReactElement {
             <div className={styles.timeControls}>
               {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
                 // Swap between play and pause button
-                <IconButton type="primary" disabled={disableTimeControlsUi} onClick={() => timeControls.pause()}>
+                <IconButton
+                  type="primary"
+                  disabled={disableTimeControlsUi}
+                  onClick={() => {
+                    timeControls.pause();
+                    setFrameInput(currentFrame);
+                  }}
+                >
                   <PauseOutlined />
                 </IconButton>
               ) : (
@@ -1090,6 +1102,7 @@ function Viewer(): ReactElement {
               )}
 
               <div
+                ref={timeSliderContainerRef}
                 className={styles.timeSliderContainer}
                 onPointerDownCapture={() => {
                   if (timeControls.isPlaying()) {
