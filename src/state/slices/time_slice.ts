@@ -61,17 +61,25 @@ export const createTimeSlice: StateCreator<TimeSlice, [], [], TimeSlice> = (set,
 });
 
 export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetSlice & TimeSlice>): void => {
-  // Update total frames in timecontrols when dataset changes
+  // When dataset changes:
+  // - Pause playback
+  // - Update total frames in timeControls
+  // - Clamp current frame to new total frames
+  // - Load current frame using loadFrameCallback
   addDerivedStateSubscriber(
     store,
     (state) => [state.dataset],
     () => {
       const dataset = store.getState().dataset;
-      if (dataset) {
-        store.getState().timeControls.setTotalFrames(dataset.numberOfFrames);
-      } else {
-        store.getState().timeControls.setTotalFrames(1);
-      }
+
+      // Pause playback when switching any dataset
+      store.getState().timeControls.pause();
+
+      const totalFrames = dataset?.numberOfFrames ?? 1;
+      store.getState().timeControls.setTotalFrames(totalFrames);
+
+      // Clamp and load the frame
+      store.getState().setFrame(Math.min(store.getState().currentFrame, totalFrames - 1));
     }
   );
 };
