@@ -36,7 +36,7 @@ export const createTimeSlice: StateCreator<TimeSlice, [], [], TimeSlice> = (set,
     }
   ),
   _loadFrameCallback: (_frame: number) => {
-    throw new Error("TimeSlice._loadFrameCallback is not set. Did you forget to call setLoadFrameCallback()?");
+    return Promise.resolve();
   },
 
   setLoadFrameCallback: (callback) => {
@@ -79,7 +79,11 @@ export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetS
       store.getState().timeControls.setTotalFrames(totalFrames);
 
       // Clamp and load the frame
-      store.getState().setFrame(Math.min(store.getState().currentFrame, totalFrames - 1));
+      const newFrame = Math.min(store.getState().currentFrame, totalFrames - 1);
+      store.setState({ currentFrame: newFrame, pendingFrame: newFrame });
+      if (dataset !== null) {
+        store.getState().setFrame(newFrame);
+      }
     }
   );
 };
