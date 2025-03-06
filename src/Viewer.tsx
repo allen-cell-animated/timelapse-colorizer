@@ -190,11 +190,11 @@ function Viewer(): ReactElement {
   // const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
   // TODO: Move all logic for the time slider into its own component!
   // Flag used to indicate that the slider is currently being dragged while playback is occurring.
-  const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
+  const isTimeSliderDraggedDuringPlaybackRef = useRef(false);
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
-      setIsTimeSliderDraggedDuringPlayback(false);
+      isTimeSliderDraggedDuringPlaybackRef.current = false;
     }
   }, [timeControls.isPlaying()]);
 
@@ -209,6 +209,18 @@ function Viewer(): ReactElement {
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
+
+  useMemo(() => {
+    useViewerStateStore.subscribe(
+      (state) => [state.currentFrame],
+      ([currentFrame]) => {
+        if (isTimeSliderDraggedDuringPlaybackRef.current) {
+          return;
+        }
+        setFrameInput(currentFrame);
+      }
+    );
+  }, []);
 
   // Warn on tab close if there is annotation data.
   useEffect(() => {
@@ -316,32 +328,6 @@ function Viewer(): ReactElement {
       setSearchParams(getUrlParams(), { replace: true });
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
-
-  // Callback for setting time, to be used only with timeControls.
-  // const setFrameCallback = useCallback(
-  //   async (frame: number) => {
-  //     await canv.setFrame(frame);
-  //     setCurrentFrame(frame);
-  //     setFrameInput(frame);
-  //     canv.render();
-  //   },
-  //   [canv]
-  // );
-  // timeControls.setFrameCallback(setFrameCallback);
-
-  // const setFrame = useCallback(
-  //   async (frame: number) => {
-  //     const isPlaying = timeControls.isPlaying();
-  //     if (isPlaying) {
-  //       timeControls.pause();
-  //     }
-  //     await setFrameCallback(frame);
-  //     if (isPlaying) {
-  //       timeControls.play();
-  //     }
-  //   },
-  //   [setFrameCallback]
-  // );
 
   const findTrack = useCallback(
     (trackId: number | null, seekToFrame: boolean = true): void => {
@@ -748,10 +734,10 @@ function Viewer(): ReactElement {
         // time immediately.
         setFrame(frameInput);
       }
-      if (isTimeSliderDraggedDuringPlayback) {
+      if (isTimeSliderDraggedDuringPlaybackRef.current) {
         setFrame(frameInput);
         // Update the frame and unpause playback when the slider is released.
-        setIsTimeSliderDraggedDuringPlayback(false);
+        isTimeSliderDraggedDuringPlaybackRef.current = false;
         timeControls.play(); // resume playing
       }
     };
@@ -760,7 +746,7 @@ function Viewer(): ReactElement {
     return () => {
       document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
     };
-  });
+  }, []);
 
   const onTrackClicked = useCallback(
     (track: Track | null) => {
@@ -1083,7 +1069,7 @@ function Viewer(): ReactElement {
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
+              {timeControls.isPlaying() || isTimeSliderDraggedDuringPlaybackRef.current ? (
                 // Swap between play and pause button
                 <IconButton
                   type="primary"
@@ -1108,7 +1094,7 @@ function Viewer(): ReactElement {
                   if (timeControls.isPlaying()) {
                     // If the slider is dragged while playing, pause playback.
                     timeControls.pause();
-                    setIsTimeSliderDraggedDuringPlayback(true);
+                    isTimeSliderDraggedDuringPlaybackRef.current = true;
                   }
                 }}
               >
