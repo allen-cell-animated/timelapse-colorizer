@@ -1,6 +1,25 @@
-import { FeatureDataType } from "../../../src/colorizer";
+import { waitFor } from "@testing-library/react";
+import { act } from "react-dom/test-utils";
+
+import { Dataset, FeatureDataType } from "../../../src/colorizer";
 import { AnyManifestFile, ManifestFile } from "../../../src/colorizer/utils/dataset_utils";
+import { ViewerState } from "../../../src/state";
 import { DEFAULT_DATASET_DIR, makeMockDataset, MockArrayLoader, MockArraySource } from "../../test_utils";
+
+/**
+ * Wrapper around `store.setDataset()`. Allows for async operations to complete
+ * after a Dataset is set in the store.
+ */
+export const setDatasetAsync = async (
+  result: { current: ViewerState },
+  dataset: Dataset,
+  datasetKey: string = "some-dataset"
+) => {
+  act(() => {
+    result.current.setDataset(datasetKey, dataset);
+  });
+  await waitFor(() => {});
+};
 
 export enum MockFeatureKeys {
   FEATURE1 = "feature1",
@@ -48,8 +67,14 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE2],
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE3],
   ],
-  frames: ["frame0.png"],
-  backdrops: [{ name: DEFAULT_BACKDROP_KEY, key: DEFAULT_BACKDROP_KEY, frames: ["frame0.png"] }],
+  frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
+  backdrops: [
+    {
+      name: DEFAULT_BACKDROP_KEY,
+      key: DEFAULT_BACKDROP_KEY,
+      frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
+    },
+  ],
   times: "times.json",
   tracks: "tracks.json",
 };

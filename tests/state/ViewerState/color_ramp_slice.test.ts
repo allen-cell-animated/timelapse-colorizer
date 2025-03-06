@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "../../../src/colorizer";
 import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MOCK_FEATURE_DATA, MockFeatureKeys } from "./constants";
+import { MOCK_DATASET, MOCK_FEATURE_DATA, MockFeatureKeys, setDatasetAsync } from "./constants";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
 
@@ -145,7 +145,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
   });
 
   describe("range reset behavior", () => {
-    it("ignores changes to feature and dataset when keepColorRampRange is enabled", () => {
+    it("ignores changes to feature and dataset when keepColorRampRange is enabled", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
         result.current.setColorRampRange([12, 34]);
@@ -153,9 +153,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       });
       expect(result.current.colorRampRange).toStrictEqual([12, 34]);
 
-      act(() => {
-        result.current.setDataset("mockDataset", MOCK_DATASET);
-      });
+      await setDatasetAsync(result, MOCK_DATASET);
       expect(result.current.colorRampRange).toStrictEqual([12, 34]);
 
       act(() => {
@@ -164,10 +162,10 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       expect(result.current.colorRampRange).toStrictEqual([12, 34]);
     });
 
-    it("resets color ramp range to feature range when feature changes", () => {
+    it("resets color ramp range to feature range when feature changes", async () => {
       const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.setDataset("mockDataset", MOCK_DATASET);
         result.current.setFeatureKey(MockFeatureKeys.FEATURE1);
         result.current.setColorRampRange([56, 78]);
       });
@@ -181,7 +179,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       expect(result.current.colorRampRange).toStrictEqual([featureData!.min, featureData!.max!]);
     });
 
-    it("preferentially resets to threshold instead of feature range when feature changes", () => {
+    it("preferentially resets to threshold instead of feature range when feature changes", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       const threshold: FeatureThreshold = {
         featureKey: MockFeatureKeys.FEATURE2,
@@ -190,8 +188,8 @@ describe("useViewerStateStore: ColorRampSlice", () => {
         min: 56.5,
         max: 23.3,
       };
+      await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.setDataset("mockDataset", MOCK_DATASET);
         result.current.setFeatureKey(MockFeatureKeys.FEATURE1);
         result.current.setThresholds([threshold]);
         result.current.setColorRampRange([12, 34]);
@@ -204,7 +202,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       expect(result.current.colorRampRange).toStrictEqual([threshold.min, threshold.max]);
     });
 
-    it("resets color ramp range to threshold when threshold changes", () => {
+    it("resets color ramp range to threshold when threshold changes", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       const threshold: FeatureThreshold = {
         featureKey: MockFeatureKeys.FEATURE1,
@@ -214,8 +212,8 @@ describe("useViewerStateStore: ColorRampSlice", () => {
         max: 20,
       };
 
+      await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.setDataset("mockDataset", MOCK_DATASET);
         result.current.setFeatureKey(MockFeatureKeys.FEATURE1);
         result.current.setThresholds([threshold]);
         result.current.setColorRampRange([56, 78]);
@@ -233,16 +231,14 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       expect(result.current.colorRampRange).toStrictEqual([100, 180]);
     });
 
-    it("resets color ramp range to feature range when dataset changes", () => {
+    it("resets color ramp range to feature range when dataset changes", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
         result.current.setColorRampRange([1234, 5678]);
       });
 
       // Should reset to feature range
-      act(() => {
-        result.current.setDataset("mockDataset", MOCK_DATASET);
-      });
+      await setDatasetAsync(result, MOCK_DATASET);
       const featureData = result.current.dataset?.getFeatureData(result.current.featureKey!)!;
       expect(result.current.colorRampRange).toStrictEqual([featureData.min, featureData.max!]);
     });

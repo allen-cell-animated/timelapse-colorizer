@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, ThresholdType } from "../../../src/colorizer";
 import { validateThresholds } from "../../../src/colorizer/utils/data_utils";
-import { MOCK_DATASET, MockFeatureKeys } from "./constants";
+import { MOCK_DATASET, MockFeatureKeys, setDatasetAsync } from "./constants";
 
 import Collection from "../../../src/colorizer/Collection";
 import { useViewerStateStore } from "../../../src/state/ViewerState";
@@ -35,12 +35,12 @@ describe("ThresholdSlice", () => {
       expect(result.current.thresholds).to.deep.equal(OUTDATED_THRESHOLDS);
     });
 
-    it("sets and validates thresholds when Dataset is set", () => {
+    it("sets and validates thresholds when Dataset is set", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        result.current.setDataset("some-dataset", MOCK_DATASET);
         result.current.setThresholds(OUTDATED_THRESHOLDS);
       });
+      await setDatasetAsync(result, MOCK_DATASET);
       expect(result.current.thresholds).to.deep.equal(VALIDATED_THRESHOLDS);
     });
   });
@@ -58,15 +58,13 @@ describe("ThresholdSlice", () => {
     expect(result.current.thresholds).to.deep.equal([]);
   });
 
-  it("validates thresholds on dataset change", () => {
+  it("validates thresholds on dataset change", async () => {
     const { result } = renderHook(() => useViewerStateStore());
     act(() => {
       result.current.setThresholds(OUTDATED_THRESHOLDS);
     });
     expect(result.current.thresholds).to.deep.equal(OUTDATED_THRESHOLDS);
-    act(() => {
-      result.current.setDataset("some-dataset", MOCK_DATASET);
-    });
+    await setDatasetAsync(result, MOCK_DATASET);
     expect(result.current.thresholds).to.deep.equal(VALIDATED_THRESHOLDS);
   });
 
@@ -80,11 +78,9 @@ describe("ThresholdSlice", () => {
       expect(result.current.inRangeLUT).to.deep.equal(new Uint8Array(0));
     });
 
-    it("updates inRangeLUT on threshold change", () => {
+    it("updates inRangeLUT on threshold change", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      act(() => {
-        result.current.setDataset("some-dataset", MOCK_DATASET);
-      });
+      await setDatasetAsync(result, MOCK_DATASET);
       expect(result.current.inRangeLUT).to.deep.equal(EXPECTED_IN_RANGE_LUT_NO_THRESHOLD);
       act(() => {
         result.current.setThresholds(VALIDATED_THRESHOLDS);
@@ -92,15 +88,13 @@ describe("ThresholdSlice", () => {
       expect(result.current.inRangeLUT).to.deep.equal(EXPECTED_IN_RANGE_LUT);
     });
 
-    it("updates inRangeLUT on dataset change", () => {
+    it("updates inRangeLUT on dataset change", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
         result.current.setThresholds(VALIDATED_THRESHOLDS);
       });
       expect(result.current.inRangeLUT).to.deep.equal(new Uint8Array(0));
-      act(() => {
-        result.current.setDataset("some-dataset", MOCK_DATASET);
-      });
+      await setDatasetAsync(result, MOCK_DATASET);
       expect(result.current.inRangeLUT).to.deep.equal(EXPECTED_IN_RANGE_LUT);
     });
   });

@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { ANY_ERROR } from "../../test_utils";
@@ -8,59 +8,55 @@ import {
   MOCK_DATASET,
   MOCK_DATASET_WITHOUT_BACKDROP,
   MockFeatureKeys,
+  setDatasetAsync,
 } from "./constants";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
 
 describe("useViewerStateStore: DatasetSlice", () => {
   describe("setDataset", () => {
-    it("initializes feature key to default", () => {
+    it("initializes feature key to default", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
         result.current.setDataset("some-key", MOCK_DATASET);
       });
+      await waitFor(() => {});
       expect(result.current.dataset).toBe(MOCK_DATASET);
       expect(result.current.featureKey).toBe(DEFAULT_INITIAL_FEATURE_KEY);
     });
 
-    it("initializes backdrop keys to default", () => {
+    it("initializes backdrop keys to default", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET);
-      });
+      await setDatasetAsync(result, MOCK_DATASET, "some-key");
       expect(result.current.dataset).toBe(MOCK_DATASET);
       expect(result.current.backdropKey).toBe(DEFAULT_BACKDROP_KEY);
 
       // Change dataset to one without default backdrop, backdropKey should
       // be reset to null.
-      act(() => {
-        result.current.setDataset("some-other-key", MOCK_DATASET_WITHOUT_BACKDROP);
-      });
+      await setDatasetAsync(result, MOCK_DATASET_WITHOUT_BACKDROP, "some-other-key");
       expect(result.current.dataset).toBe(MOCK_DATASET_WITHOUT_BACKDROP);
       expect(result.current.backdropKey).toBeNull();
     });
 
-    it("disables backdrop visibility if enabled when the incoming dataset has no backdrops", () => {
+    it("disables backdrop visibility if enabled when the incoming dataset has no backdrops", async () => {
       const { result } = renderHook(() => useViewerStateStore());
 
+      await setDatasetAsync(result, MOCK_DATASET, "some-key");
       act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET);
         result.current.setBackdropVisible(true);
       });
       expect(result.current.backdropVisible).toBe(true);
 
-      act(() => {
-        result.current.setDataset("some-other-key", MOCK_DATASET_WITHOUT_BACKDROP);
-      });
+      await setDatasetAsync(result, MOCK_DATASET_WITHOUT_BACKDROP, "some-other-key");
       expect(result.current.backdropVisible).toBe(false);
     });
   });
 
   describe("clearDataset", () => {
-    it("clears backdrop key and visibility", () => {
+    it("clears backdrop key and visibility", async () => {
       const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET);
         result.current.setBackdropVisible(true);
       });
       expect(result.current.backdropKey).toBe(DEFAULT_BACKDROP_KEY);
@@ -74,10 +70,10 @@ describe("useViewerStateStore: DatasetSlice", () => {
       expect(result.current.backdropVisible).toBe(false);
     });
 
-    it("nulls dependent state", () => {
+    it("nulls dependent state", async () => {
       const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET);
         result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
       });
       expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE2);
@@ -90,11 +86,9 @@ describe("useViewerStateStore: DatasetSlice", () => {
   });
 
   describe("setFeatureKey", () => {
-    it("sets the feature key", () => {
+    it("sets the feature key", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET);
-      });
+      await setDatasetAsync(result, MOCK_DATASET);
 
       act(() => {
         result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
@@ -111,11 +105,9 @@ describe("useViewerStateStore: DatasetSlice", () => {
       }).toThrowError(ANY_ERROR);
     });
 
-    it("throws error if dataset does not have the feature key", () => {
+    it("throws error if dataset does not have the feature key", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET);
-      });
+      await setDatasetAsync(result, MOCK_DATASET);
 
       expect(() => {
         act(() => {
