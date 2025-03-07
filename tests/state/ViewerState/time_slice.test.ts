@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, Mock, vi } from "vitest";
 
 import { useViewerStateStore } from "../../../src/state";
 import { ANY_ERROR, sleep } from "../../test_utils";
@@ -7,7 +7,7 @@ import { MOCK_DATASET, MOCK_DATASET_WITH_TWO_FRAMES } from "./constants";
 import { clearDatasetAsync, setDatasetAsync } from "./utils";
 
 const TIMEOUT_DURATION_MS = 10;
-const getMockLoadCallback = () => vi.fn(() => sleep(TIMEOUT_DURATION_MS));
+const getMockLoadCallback = (): Mock<[], Promise<void>> => vi.fn((): Promise<void> => sleep(TIMEOUT_DURATION_MS));
 
 describe("useViewerStateStore: TimeSlice", () => {
   describe("setFrame", () => {

@@ -212,7 +212,7 @@ function Viewer(): ReactElement {
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
 
-  useMemo(() => {
+  useEffect(() => {
     const unsubscribe = useViewerStateStore.subscribe(
       (state) => [state.pendingFrame],
       ([pendingFrame]) => {
