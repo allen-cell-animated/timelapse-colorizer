@@ -356,6 +356,10 @@ export default class ColorizeCanvas {
     const frame = this.currentFrame;
     this.currentFrame = -1;
     await this.setFrame(frame);
+    if (this.featureKey !== null) {
+      this.setFeatureKey(this.featureKey);
+    }
+
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.vectorField.setDataset(dataset);
     this.render();
