@@ -14,7 +14,7 @@ export const setDatasetAsync = async (
   result: { current: ViewerState },
   dataset: Dataset,
   datasetKey: string = "some-dataset"
-) => {
+): Promise<void> => {
   act(() => {
     result.current.setDataset(datasetKey, dataset);
   });

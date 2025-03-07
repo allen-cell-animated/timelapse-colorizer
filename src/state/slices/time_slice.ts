@@ -2,6 +2,7 @@ import { StateCreator } from "zustand";
 
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
 import { SubscribableStore } from "../types";
+import { clampWithNanCheck } from "../utils/data_validation";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 
@@ -12,10 +13,18 @@ type TimeSliceState = {
   currentFrame: number;
   playbackFps: number;
   timeControls: TimeControls;
-  _loadFrameCallback: (frame: number) => Promise<void>;
+  loadFrameCallback: (frame: number) => Promise<void>;
 };
 
 type TimeSliceActions = {
+  /**
+   * Attempts to set and load the given frame number, using the callback
+   * provided by `setLoadCallback`.
+   *
+   * Note that `pendingFrame` will be set to the frame that is being loaded,
+   * while `currentFrame` will not update until the promise returned by the
+   * callback resolves.
+   */
   setFrame: (frame: number) => Promise<void>;
   setPlaybackFps: (fps: number) => void;
   setLoadFrameCallback: (callback: (frame: number) => Promise<void>) => void;
@@ -31,16 +40,16 @@ export const createTimeSlice: StateCreator<TimeSlice, [], [], TimeSlice> = (set,
     () => get().currentFrame,
     async (frame) => {
       set({ pendingFrame: frame });
-      await get()._loadFrameCallback(frame);
+      await get().loadFrameCallback(frame);
       set({ currentFrame: frame });
     }
   ),
-  _loadFrameCallback: (_frame: number) => {
+  loadFrameCallback: (_frame: number) => {
     return Promise.resolve();
   },
 
   setLoadFrameCallback: (callback) => {
-    set({ _loadFrameCallback: callback });
+    set({ loadFrameCallback: callback });
   },
   setFrame: async (frame: number) => {
     const isPlaying = get().timeControls.isPlaying();
@@ -48,14 +57,14 @@ export const createTimeSlice: StateCreator<TimeSlice, [], [], TimeSlice> = (set,
       get().timeControls.pause();
     }
     set({ pendingFrame: frame });
-    await get()._loadFrameCallback(frame);
+    await get().loadFrameCallback(frame);
     set({ currentFrame: frame });
     if (isPlaying) {
       get().timeControls.play();
     }
   },
   setPlaybackFps: (fps: number) => {
-    set({ playbackFps: fps });
+    set({ playbackFps: clampWithNanCheck(fps, 0, Number.MAX_SAFE_INTEGER) });
     get().timeControls.setPlaybackFps(fps);
   },
 });

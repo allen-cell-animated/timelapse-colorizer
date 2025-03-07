@@ -190,7 +190,6 @@ function Viewer(): ReactElement {
   const [isRecording, setIsRecording] = useState(false);
   const timeControls = useViewerStateStore((state) => state.timeControls);
 
-  // const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
   // TODO: Move all logic for the time slider into its own component!
   // Flag used to indicate that the slider is currently being dragged while playback is occurring.
   const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
