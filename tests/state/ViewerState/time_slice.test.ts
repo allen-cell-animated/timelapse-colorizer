@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import { useViewerStateStore } from "../../../src/state";
 import { ANY_ERROR, sleep } from "../../test_utils";
-import { MOCK_DATASET, setDatasetAsync } from "./constants";
+import { MOCK_DATASET, MOCK_DATASET_WITH_TWO_FRAMES } from "./constants";
+import { clearDatasetAsync, setDatasetAsync } from "./utils";
 
 const TIMEOUT_DURATION_MS = 10;
 const getMockLoadCallback = () => vi.fn(() => sleep(TIMEOUT_DURATION_MS));
@@ -95,5 +96,33 @@ describe("useViewerStateStore: TimeSlice", () => {
         });
       }).toThrowError(ANY_ERROR);
     });
+  });
+
+  it("clamps frame when dataset changes", async () => {
+    const { result } = renderHook(() => useViewerStateStore());
+    await setDatasetAsync(result, MOCK_DATASET);
+    await act(async () => {
+      await result.current.setFrame(3);
+    });
+    expect(result.current.currentFrame).toBe(3);
+    expect(result.current.pendingFrame).toBe(3);
+
+    await setDatasetAsync(result, MOCK_DATASET_WITH_TWO_FRAMES);
+    expect(result.current.currentFrame).toBe(1);
+    expect(result.current.pendingFrame).toBe(1);
+  });
+
+  it("resets time to 0 when dataset is cleared", async () => {
+    const { result } = renderHook(() => useViewerStateStore());
+    await setDatasetAsync(result, MOCK_DATASET);
+    await act(async () => {
+      await result.current.setFrame(3);
+    });
+    expect(result.current.currentFrame).toBe(3);
+    expect(result.current.pendingFrame).toBe(3);
+
+    await clearDatasetAsync(result);
+    expect(result.current.currentFrame).toBe(0);
+    expect(result.current.pendingFrame).toBe(0);
   });
 });

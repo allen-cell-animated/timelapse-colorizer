@@ -1,25 +1,6 @@
-import { waitFor } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
-
-import { Dataset, FeatureDataType } from "../../../src/colorizer";
+import { FeatureDataType } from "../../../src/colorizer";
 import { AnyManifestFile, ManifestFile } from "../../../src/colorizer/utils/dataset_utils";
-import { ViewerState } from "../../../src/state";
 import { DEFAULT_DATASET_DIR, makeMockDataset, MockArrayLoader, MockArraySource } from "../../test_utils";
-
-/**
- * Wrapper around `store.setDataset()`. Allows for async operations to complete
- * after a Dataset is set in the store.
- */
-export const setDatasetAsync = async (
-  result: { current: ViewerState },
-  dataset: Dataset,
-  datasetKey: string = "some-dataset"
-): Promise<void> => {
-  act(() => {
-    result.current.setDataset(datasetKey, dataset);
-  });
-  await waitFor(() => {});
-};
 
 export enum MockFeatureKeys {
   FEATURE1 = "feature1",
@@ -103,6 +84,12 @@ const mockArrayLoader = new MockArrayLoader({
 });
 
 export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST, mockArrayLoader);
+
+export const MOCK_DATASET_WITH_TWO_FRAMES = await makeMockDataset({
+  ...MOCK_DATASET_MANIFEST,
+  frames: ["frame0.png", "frame1.png"],
+  backdrops: [],
+});
 
 export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset({
   ...MOCK_DATASET_MANIFEST,

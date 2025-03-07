@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "../../../src/colorizer";
 import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MOCK_FEATURE_DATA, MockFeatureKeys, setDatasetAsync } from "./constants";
+import { MOCK_DATASET, MOCK_FEATURE_DATA, MockFeatureKeys } from "./constants";
+import { setDatasetAsync } from "./utils";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
 

@@ -8,8 +8,8 @@ import {
   MOCK_DATASET,
   MOCK_DATASET_WITHOUT_BACKDROP,
   MockFeatureKeys,
-  setDatasetAsync,
 } from "./constants";
+import { setDatasetAsync } from "./utils";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
 

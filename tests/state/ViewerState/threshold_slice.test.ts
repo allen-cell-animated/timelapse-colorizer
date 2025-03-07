@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, ThresholdType } from "../../../src/colorizer";
 import { validateThresholds } from "../../../src/colorizer/utils/data_utils";
-import { MOCK_DATASET, MockFeatureKeys, setDatasetAsync } from "./constants";
+import { MOCK_DATASET, MockFeatureKeys } from "./constants";
+import { setDatasetAsync } from "./utils";
 
 import Collection from "../../../src/colorizer/Collection";
 import { useViewerStateStore } from "../../../src/state/ViewerState";
