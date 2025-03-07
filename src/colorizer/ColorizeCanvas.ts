@@ -598,6 +598,8 @@ export default class ColorizeCanvas {
     if ((!forceUpdate && this.currentFrame === index) || !this.isValidFrame(index)) {
       return;
     }
+    // Save loading settings
+    const pendingDataset = this.dataset;
     // New frame, so load the frame data.
     this.currentFrame = index;
     let backdropPromise = undefined;
@@ -608,9 +610,9 @@ export default class ColorizeCanvas {
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
-    if (this.currentFrame !== index) {
-      // This load request has been superceded by a request for another frame, which has already loaded in image data.
-      // Drop this request.
+    if (this.currentFrame !== index || this.dataset !== pendingDataset) {
+      // This load request has been superceded by a request for another frame or
+      // a different dataset. Drop this request.
       return;
     }
 
