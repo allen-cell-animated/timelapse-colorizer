@@ -233,7 +233,7 @@ export default class ColorizeCanvas {
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
-    this.pendingFrame = 0;
+    this.pendingFrame = -1;
 
     this.frameSizeInCanvasCoordinates = new Vector2(1, 1);
     this.frameToCanvasCoordinates = new Vector2(1, 1);
@@ -651,6 +651,7 @@ export default class ColorizeCanvas {
     // Force rescale in case frame dimensions changed
     this.updateScaling(this.dataset?.frameResolution || null, this.canvasResolution);
     this.currentFrame = index;
+    this.pendingFrame = -1;
     this.vectorField.setFrame(this.currentFrame);
   }
 
