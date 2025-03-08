@@ -2,9 +2,11 @@ import { MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
+import { useShallow } from "zustand/shallow";
 
-import { AnnotationSelectionMode, Dataset, Track } from "../../../colorizer";
+import { AnnotationSelectionMode } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { useViewerStateStore } from "../../../state";
 import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
@@ -27,11 +29,6 @@ const enum AnnotationViewType {
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
-  setFrame: (frame: number) => Promise<void>;
-  setTrack: (track: number) => void;
-  selectedTrack: Track | null;
-  dataset: Dataset | null;
-  frame: number;
   hoveredId: number | null;
 };
 
@@ -52,11 +49,21 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
 
+  const store = useViewerStateStore(
+    useShallow((state) => ({
+      frame: state.currentFrame,
+      dataset: state.dataset,
+      setTrack: state.setTrack,
+      setFrame: state.setFrame,
+      selectedTrack: state.track,
+    }))
+  );
+
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
   const selectedId = useMemo(() => {
-    return props.selectedTrack?.getIdAtTime(props.frame) ?? -1;
-  }, [props.frame, props.selectedTrack]);
+    return store.selectedTrack?.getIdAtTime(store.frame) ?? -1;
+  }, [store.frame, store.selectedTrack]);
 
   // If range mode is enabled, highlight the range of IDs that would be selected
   // if the user clicks on the currently hovered ID.
@@ -64,12 +71,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     if (
       props.annotationState.selectionMode === AnnotationSelectionMode.RANGE &&
       props.hoveredId !== null &&
-      props.dataset
+      store.dataset
     ) {
-      return props.annotationState.getSelectRangeFromId(props.dataset, props.hoveredId);
+      return props.annotationState.getSelectRangeFromId(store.dataset, props.hoveredId);
     }
     return null;
-  }, [props.hoveredId, props.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
+  }, [props.hoveredId, store.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -92,10 +99,14 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const onClickObjectRow = useCallback(
     (record: TableDataType): void => {
-      props.setTrack(record.track);
-      props.setFrame(record.time);
+      const trackId = record.track;
+      const track = store.dataset?.getTrack(trackId);
+      if (track) {
+        store.setTrack(track);
+        store.setFrame(record.time);
+      }
     },
-    [props.setTrack, props.setFrame]
+    [store.dataset, store.setTrack, store.setFrame]
   );
 
   const onClickDeleteObject = useCallback(
@@ -132,7 +143,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
         <TextButton
           onClick={() => {
-            const csvData = props.annotationState.data.toCsv(props.dataset!);
+            const csvData = props.annotationState.data.toCsv(store.dataset!);
             download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
             console.log(csvData);
           }}
@@ -209,7 +220,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <AnnotationTable
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
-            dataset={props.dataset}
+            dataset={store.dataset}
             ids={tableIds}
             height={480}
             selectedId={selectedId}
@@ -231,15 +242,20 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <AnnotationDisplayList
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
-            onClickTrack={props.setTrack}
-            setFrame={props.setFrame}
-            dataset={props.dataset}
+            onClickTrack={(id) => {
+              const track = store.dataset?.getTrack(id);
+              if (track) {
+                store.setTrack(track);
+              }
+            }}
+            setFrame={store.setFrame}
+            dataset={store.dataset}
             ids={tableIds}
             highlightRange={highlightedIds}
             lastClickedId={props.annotationState.lastClickedId}
-            selectedTrack={props.selectedTrack}
+            selectedTrack={store.selectedTrack}
             selectedId={selectedId}
-            frame={props.frame}
+            frame={store.frame}
             labelColor={selectedLabel?.color}
           ></AnnotationDisplayList>
         </div>

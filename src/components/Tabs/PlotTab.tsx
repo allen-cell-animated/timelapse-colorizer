@@ -1,9 +1,10 @@
 import { SearchOutlined } from "@ant-design/icons";
 import { Input } from "antd";
-import React, { ReactElement, useRef, useState } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
+import { useShallow } from "zustand/shallow";
 
-import { Dataset, Track } from "../../colorizer";
+import { useViewerStateStore } from "../../state";
 import { FlexRowAlignCenter, NoSpinnerContainer } from "../../styles/utils";
 
 import IconButton from "../IconButton";
@@ -26,36 +27,48 @@ const TrackSearch = styled(FlexRowAlignCenter)`
 `;
 
 type PlotTabProps = {
-  findTrackInputText: string;
-  setFindTrackInputText: (text: string) => void;
-  findTrack: (trackId: number, seekToFrame?: boolean) => void;
-  setFrame: (frame: number) => Promise<void>;
-  currentFrame: number;
-  dataset: Dataset | null;
-  featureKey: string | null;
-  selectedTrack: Track | null;
   disabled: boolean;
 };
 
 export default function PlotTab(props: PlotTabProps): ReactElement {
-  const [isLoading, setIsLoading] = useState(false);
-  const pendingFrame = useRef<number>(props.currentFrame);
+  const store = useViewerStateStore(
+    useShallow((state) => ({
+      currentFrame: state.currentFrame,
+      pendingFrame: state.pendingFrame,
+      dataset: state.dataset,
+      featureKey: state.featureKey,
+      selectedTrack: state.track,
+      setFrame: state.setFrame,
+      setTrack: state.setTrack,
+    }))
+  );
+
+  // Sync track searchbox with selected track
+  useEffect(() => {
+    const unsubscribe = useViewerStateStore.subscribe(
+      (state) => [state.track],
+      ([track]) => {
+        if (track) {
+          setFindTrackInput(track.trackId.toString());
+        } else {
+          setFindTrackInput("");
+        }
+      }
+    );
+    return unsubscribe;
+  }, []);
+
+  const [findTrackInput, setFindTrackInput] = useState("");
+  const isLoading = store.currentFrame !== store.pendingFrame;
 
   const searchForTrack = (): void => {
-    if (props.findTrackInputText === "") {
+    if (findTrackInput === "" || !store.dataset) {
       return;
     }
-    props.findTrack(parseInt(props.findTrackInputText, 10));
-  };
-
-  const setFrame = async (frame: number): Promise<void> => {
-    pendingFrame.current = frame;
-    setIsLoading(true);
-    await props.setFrame(frame);
-    // Continue to show loading spinner if other frames were requested
-    // while this one was loading.
-    if (pendingFrame.current === frame) {
-      setIsLoading(false);
+    const trackId = parseInt(findTrackInput, 10);
+    const track = store.dataset.getTrack(trackId);
+    if (track) {
+      store.setTrack(track);
     }
   };
 
@@ -67,12 +80,12 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
             <h3>Search</h3>
             <Input
               type="number"
-              value={props.findTrackInputText}
+              value={findTrackInput}
               size="small"
               placeholder="Track ID..."
               disabled={props.disabled}
               onChange={(event) => {
-                props.setFindTrackInputText(event.target.value);
+                setFindTrackInput(event.target.value);
               }}
               onPressEnter={searchForTrack}
             />
@@ -85,11 +98,11 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
       <div>
         <LoadingSpinner loading={isLoading}>
           <PlotWrapper
-            setFrame={setFrame}
-            frame={props.currentFrame}
-            dataset={props.dataset}
-            featureKey={props.featureKey}
-            selectedTrack={props.selectedTrack}
+            setFrame={store.setFrame}
+            frame={store.currentFrame}
+            dataset={store.dataset}
+            featureKey={store.featureKey}
+            selectedTrack={store.selectedTrack}
           />
         </LoadingSpinner>
       </div>

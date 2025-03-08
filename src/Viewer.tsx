@@ -133,7 +133,6 @@ function Viewer(): ReactElement {
 
   const selectedTrack = useViewerStateStore((state) => state.track);
   const setSelectedTrack = useViewerStateStore((state) => state.setTrack);
-  const clearSelectedTrack = useViewerStateStore((state) => state.clearTrack);
 
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -206,27 +205,11 @@ function Viewer(): ReactElement {
    * canvas after a short delay.
    */
   const [frameInput, setFrameInput] = useState(0);
-  const [findTrackInput, setFindTrackInput] = useState("");
   const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
-
-  // Sync track searchbox with selected track
-  useEffect(() => {
-    const unsubscribe = useViewerStateStore.subscribe(
-      (state) => [state.track],
-      ([track]) => {
-        if (track) {
-          setFindTrackInput(track.trackId.toString());
-        } else {
-          setFindTrackInput("");
-        }
-      }
-    );
-    return unsubscribe;
-  }, []);
 
   useEffect(() => {
     const unsubscribe = useViewerStateStore.subscribe(
@@ -347,25 +330,6 @@ function Viewer(): ReactElement {
       setSearchParams(getUrlParams(), { replace: true });
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
-
-  const findTrack = useCallback(
-    (trackId: number | null, seekToFrame: boolean = true): void => {
-      if (trackId === null) {
-        clearSelectedTrack();
-        return;
-      }
-      const newTrack = dataset?.getTrack(trackId);
-      if (!newTrack) {
-        return;
-      }
-      setSelectedTrack(newTrack);
-      if (seekToFrame) {
-        setFrame(newTrack.times[0]);
-      }
-      setFindTrackInput(trackId.toString());
-    },
-    [canv, dataset, currentFrame]
-  );
 
   /**
    * Fire a custom analytics event when a feature is selected.
@@ -612,7 +576,13 @@ function Viewer(): ReactElement {
 
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
         // Highlight the track. Seek to start of frame only if time is not defined.
-        findTrack(initialUrlParams.track, initialUrlParams.time !== undefined);
+        const track = dataset?.getTrack(initialUrlParams.track);
+        if (track) {
+          setSelectedTrack(track);
+          if (initialUrlParams.time === undefined) {
+            setFrame(track.times[0]);
+          }
+        }
       }
       if (initialUrlParams.time && initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
@@ -818,17 +788,7 @@ function Viewer(): ReactElement {
       key: TabType.TRACK_PLOT,
       children: (
         <div className={styles.tabContent}>
-          <PlotTab
-            setFrame={setFrame}
-            findTrackInputText={findTrackInput}
-            setFindTrackInputText={setFindTrackInput}
-            findTrack={findTrack}
-            currentFrame={currentFrame}
-            dataset={dataset}
-            featureKey={featureKey}
-            selectedTrack={selectedTrack}
-            disabled={disableUi}
-          />
+          <PlotTab disabled={disableUi} />
         </div>
       ),
     },
@@ -838,13 +798,8 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <ScatterPlotTab
-            currentFrame={currentFrame}
-            selectedTrack={selectedTrack}
-            findTrack={findTrack}
-            setFrame={setFrame}
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
-            selectedFeatureKey={featureKey}
             viewerConfig={config}
             scatterPlotConfig={scatterPlotConfig}
             updateScatterPlotConfig={updateScatterPlotConfig}
@@ -878,15 +833,7 @@ function Viewer(): ReactElement {
       visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
-          <AnnotationTab
-            annotationState={annotationState}
-            setFrame={setFrame}
-            setTrack={(track) => findTrack(track, false)}
-            dataset={dataset}
-            selectedTrack={selectedTrack}
-            frame={currentFrame}
-            hoveredId={currentHoveredId}
-          />
+          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId} />
         </div>
       ),
     },
