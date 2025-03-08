@@ -35,7 +35,6 @@ import {
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
-  Track,
   ViewerConfig,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
@@ -132,7 +131,9 @@ function Viewer(): ReactElement {
   const workerPool = useViewerStateStore((state) => state.workerPool);
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
-  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const selectedTrack = useViewerStateStore((state) => state.track);
+  const setSelectedTrack = useViewerStateStore((state) => state.setTrack);
+  const clearSelectedTrack = useViewerStateStore((state) => state.clearTrack);
 
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -211,6 +212,21 @@ function Viewer(): ReactElement {
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
+
+  // Sync track searchbox with selected track
+  useEffect(() => {
+    const unsubscribe = useViewerStateStore.subscribe(
+      (state) => [state.track],
+      ([track]) => {
+        if (track) {
+          setFindTrackInput(track.trackId.toString());
+        } else {
+          setFindTrackInput("");
+        }
+      }
+    );
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     const unsubscribe = useViewerStateStore.subscribe(
@@ -335,14 +351,11 @@ function Viewer(): ReactElement {
   const findTrack = useCallback(
     (trackId: number | null, seekToFrame: boolean = true): void => {
       if (trackId === null) {
-        setSelectedTrack(null);
+        clearSelectedTrack();
         return;
       }
-
-      const newTrack = dataset!.getTrack(trackId);
-
-      if (newTrack.ids.length < 1) {
-        // Check track validity
+      const newTrack = dataset?.getTrack(trackId);
+      if (!newTrack) {
         return;
       }
       setSelectedTrack(newTrack);
@@ -351,7 +364,7 @@ function Viewer(): ReactElement {
       }
       setFindTrackInput(trackId.toString());
     },
-    [canv, dataset, featureKey, currentFrame]
+    [canv, dataset, currentFrame]
   );
 
   /**
@@ -449,13 +462,6 @@ function Viewer(): ReactElement {
       setDataset(newDatasetKey, newDataset);
       await canv.setDataset(newDataset);
 
-      // Clamp frame to new range
-      const newFrame = Math.min(currentFrame, canv.getTotalFrames() - 1);
-      await setFrame(newFrame);
-
-      setFindTrackInput("");
-
-      setSelectedTrack(null);
       setDatasetOpen(true);
       console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
@@ -749,16 +755,13 @@ function Viewer(): ReactElement {
     };
   }, [isTimeSliderDraggedDuringPlayback, frameInput]);
 
-  const onTrackClicked = useCallback(
-    (track: Track | null) => {
-      setFindTrackInput(track?.trackId.toString() || "");
-      setSelectedTrack(track);
-      if (dataset && track) {
-        const id = track.getIdAtTime(currentFrame);
+  const onClickId = useCallback(
+    (id: number) => {
+      if (dataset) {
         annotationState.handleAnnotationClick(dataset, id);
       }
     },
-    [dataset, currentFrame, annotationState.handleAnnotationClick]
+    [dataset, annotationState.handleAnnotationClick]
   );
 
   // RENDERING /////////////////////////////////////////////////////////////
@@ -1050,10 +1053,9 @@ function Viewer(): ReactElement {
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   isRecording={isRecording}
-                  selectedTrack={selectedTrack}
                   config={config}
+                  onClickId={onClickId}
                   updateConfig={updateConfig}
-                  onTrackClicked={onTrackClicked}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
                     setShowObjectHoverInfo(isObject);

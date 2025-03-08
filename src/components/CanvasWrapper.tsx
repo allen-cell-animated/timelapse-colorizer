@@ -7,7 +7,6 @@ import { clamp } from "three/src/math/MathUtils";
 import { useShallow } from "zustand/shallow";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { Track } from "../colorizer";
 import { AnnotationSelectionMode, LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
@@ -98,14 +97,12 @@ type CanvasWrapperProps = {
 
   annotationState: AnnotationState;
 
-  selectedTrack: Track | null;
+  onClickId?: (id: number) => void;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
   /** Called when the mouse exits the canvas. */
   onMouseLeave?: () => void;
-  /** Called when the canvas is clicked; reports the track info of the clicked object. */
-  onTrackClicked?: (track: Track | null) => void;
 
   showAlert?: (props: AlertBannerProps) => void;
 
@@ -116,7 +113,7 @@ type CanvasWrapperProps = {
 const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
-  onTrackClicked: () => {},
+  onClickId() {},
   maxWidthPx: 1400,
   maxHeightPx: 1000,
 };
@@ -142,6 +139,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       categoricalPalette: state.categoricalPalette,
       vectorData: state.vectorMotionDeltas,
       inRangeLUT: state.inRangeLUT,
+      track: state.track,
+      setTrack: state.setTrack,
+      clearTrack: state.clearTrack,
     }))
   );
   const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
@@ -284,9 +284,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Updated track-related settings
   useMemo(() => {
-    canv.setSelectedTrack(props.selectedTrack);
+    canv.setSelectedTrack(store.track);
     canv.setShowTrackPath(props.config.showTrackPath);
-  }, [props.selectedTrack, props.config.showTrackPath]);
+  }, [store.track, props.config.showTrackPath]);
 
   // Update overlay settings
   useMemo(() => {
@@ -388,19 +388,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [store.collection]);
 
   /** Report clicked tracks via the passed callback. */
-  const handleTrackSelection = useCallback(
+  const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
       if (id < 0 || store.dataset === null) {
-        props.onTrackClicked(null);
+        store.clearTrack();
       } else {
         const trackId = store.dataset.getTrackId(id);
         const newTrack = store.dataset.getTrack(trackId);
-        props.onTrackClicked(newTrack);
+        if (newTrack) {
+          store.setTrack(newTrack);
+        }
       }
+      props.onClickId(id);
     },
-    [canv, store.dataset, props.onTrackClicked]
+    [canv, store.dataset, props.onClickId, store.setTrack, store.clearTrack]
   );
 
   /**
@@ -480,10 +483,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // to check if the mouse was dragged before treating the click as a track
       // selection; otherwise the track selection gets changed unexpectedly.
       if (!isMouseDragging.current) {
-        handleTrackSelection(event);
+        handleClick(event);
       }
     },
-    [handleTrackSelection]
+    [handleClick]
   );
 
   const onContextMenu = useCallback((event: MouseEvent): void => {
