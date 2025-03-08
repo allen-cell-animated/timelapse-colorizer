@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { ANY_ERROR } from "../../test_utils";
@@ -17,10 +17,7 @@ describe("useViewerStateStore: DatasetSlice", () => {
   describe("setDataset", () => {
     it("initializes feature key to default", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      act(() => {
-        result.current.setDataset("some-key", MOCK_DATASET);
-      });
-      await waitFor(() => {});
+      await setDatasetAsync(result, MOCK_DATASET);
       expect(result.current.dataset).toBe(MOCK_DATASET);
       expect(result.current.featureKey).toBe(DEFAULT_INITIAL_FEATURE_KEY);
     });

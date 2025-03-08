@@ -28,15 +28,6 @@ export default class TimeControls {
     this.pause = this.pause.bind(this);
   }
 
-  /**
-   * Adds a callback that will be called to change the current frame.
-   * @param fn A function that takes a frame number and returns a promise that resolves once the
-   * frame is loaded.
-   */
-  public setFrameCallback(fn: (frame: number) => Promise<void>): void {
-    this.setFrameFn = fn;
-  }
-
   public setPlaybackFps(fps: number): void {
     this.playbackFps = fps;
   }

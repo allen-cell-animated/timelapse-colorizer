@@ -9,7 +9,11 @@ import { DatasetSlice } from "./dataset_slice";
 import TimeControls from "../../colorizer/TimeControls";
 
 type TimeSliceState = {
+  /** The frame that is currently being loaded. If no load is happening,
+   * `pendingFrame === currentFrame`.
+   */
   pendingFrame: number;
+  /** The currently loaded and displayed frame. */
   currentFrame: number;
   playbackFps: number;
   timeControls: TimeControls;
@@ -71,10 +75,6 @@ export const createTimeSlice: StateCreator<TimeSlice, [], [], TimeSlice> = (set,
 
 export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetSlice & TimeSlice>): void => {
   // When dataset changes:
-  // - Pause playback
-  // - Update total frames in timeControls
-  // - Clamp current frame to new total frames
-  // - Load current frame using loadFrameCallback
   addDerivedStateSubscriber(
     store,
     (state) => [state.dataset],
@@ -84,10 +84,11 @@ export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetS
       // Pause playback when switching any dataset
       store.getState().timeControls.pause();
 
+      // Update total frames in timeControls
       const totalFrames = dataset?.numberOfFrames ?? 1;
       store.getState().timeControls.setTotalFrames(totalFrames);
 
-      // Clamp and load the frame
+      // Clamp and reload the frame
       const newFrame = Math.min(store.getState().currentFrame, totalFrames - 1);
       store.setState({ currentFrame: newFrame, pendingFrame: newFrame });
       if (dataset !== null) {
