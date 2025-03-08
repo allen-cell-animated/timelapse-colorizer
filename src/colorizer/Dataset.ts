@@ -79,7 +79,7 @@ export default class Dataset {
   private timesFile?: string;
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
-  private cachedTracks: Map<number, Track>;
+  private cachedTracks: Map<number, Track | null>;
 
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
@@ -562,9 +562,9 @@ export default class Dataset {
     }, []) as number[];
   }
 
-  public getTrack(trackId: number): Track {
+  public getTrack(trackId: number): Track | null {
     const cachedTrack = this.cachedTracks.get(trackId);
-    if (cachedTrack) {
+    if (cachedTrack !== undefined) {
       return cachedTrack;
     }
 
@@ -591,7 +591,10 @@ export default class Dataset {
       }, [] as number[]);
     }
 
-    const track = new Track(trackId, times, ids, centroids, bounds);
+    let track = null;
+    if (ids.length > 0) {
+      track = new Track(trackId, times, ids, centroids, bounds);
+    }
     this.cachedTracks.set(trackId, track);
     return track;
   }

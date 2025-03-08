@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
 
+import { Track } from "../../colorizer";
 import { BackdropSlice } from "./backdrop_slice";
 import { CollectionSlice } from "./collection_slice";
 
@@ -10,13 +11,13 @@ type DatasetSliceState =
       datasetKey: null;
       dataset: null;
       featureKey: null;
-      // track: null;
+      track: null;
     }
   | {
       datasetKey: string;
       dataset: Dataset;
       featureKey: string;
-      // track: Track | null;
+      track: Track | null;
     };
 
 type DatasetSliceActions = {
@@ -27,6 +28,8 @@ type DatasetSliceActions = {
    * @throws {Error} If no dataset is loaded.
    */
   setFeatureKey: (featureKey: string) => void;
+  setTrack: (track: Track) => void;
+  clearTrack: () => void;
 };
 
 export type DatasetSlice = DatasetSliceState & DatasetSliceActions;
@@ -38,6 +41,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
   datasetKey: null,
   dataset: null,
   featureKey: null,
+  track: null,
 
   setFeatureKey: (featureKey: string) => {
     const dataset = get().dataset;
@@ -49,8 +53,16 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
       throw new Error(`ViewerStateStore.setFeatureKey: Feature key '${featureKey}' was not found in the dataset.`);
     }
   },
+  setTrack: (track: Track) => {
+    set({ track });
+  },
+  clearTrack: () => {
+    set({ track: null });
+  },
 
   setDataset: (key: string, dataset: Dataset) => {
+    // TODO: Clear/dispose of old dataset here?
+
     ///// Validate dataset-dependent state values /////
 
     // Use new dataset's default feature key if current key is not present
@@ -68,9 +80,9 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
     const backdropVisible = get().backdropVisible && backdropKey !== null;
 
     // TODO: Dispose of old dataset?
-    set({ datasetKey: key, dataset, featureKey, backdropKey, backdropVisible });
+    set({ datasetKey: key, dataset, track: null, featureKey, backdropKey, backdropVisible });
   },
 
   clearDataset: () =>
-    set({ datasetKey: null, dataset: null, featureKey: null, backdropKey: null, backdropVisible: false }),
+    set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null, backdropVisible: false }),
 });
