@@ -61,7 +61,6 @@ type ScatterPlotTabProps = {
   isPlaying: boolean;
 
   selectedFeatureKey: string | null;
-  inRangeIds: Uint8Array;
 
   viewerConfig: ViewerConfig;
   scatterPlotConfig: ScatterPlotConfig;
@@ -89,13 +88,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       colorRampRange: state.colorRampRange,
       colorRamp: state.colorRamp,
       categoricalPalette: state.categoricalPalette,
+      inRangeLUT: state.inRangeLUT,
     }))
   );
 
+  // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   const dataset = useDebounce(store.dataset, 500);
   const colorRamp = store.colorRamp;
   const categoricalPalette = useDebounce(store.categoricalPalette, 100);
   const [colorRampMin, colorRampMax] = useDebounce(store.colorRampRange, 100);
+  const inRangeLUT = store.inRangeLUT;
 
   const [isPending, startTransition] = useTransition();
   // This might seem redundant with `isPending`, but `useTransition` only works within React's
@@ -135,9 +137,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const currentRangeType = useRef<PlotRangeType>(props.scatterPlotConfig.rangeType);
   currentRangeType.current = props.scatterPlotConfig.rangeType;
 
-  // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
-  // Show the loading spinner right away, but don't initiate the state update + render until the debounce has settled.
-  const { selectedTrack, currentFrame, selectedFeatureKey, isPlaying, isVisible, inRangeIds, viewerConfig } = props;
+  const { selectedTrack, currentFrame, selectedFeatureKey, isPlaying, isVisible, viewerConfig } = props;
 
   useEffect(() => {
     const onClick = (): void => {
@@ -551,7 +551,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       const isMinMaxNaN = Number.isNaN(colorMaxValue) && Number.isNaN(colorMinValue);
       const isNaN = Number.isNaN(featureData.data[objectId]);
       const isOutlier = dataset.outliers ? dataset.outliers[objectId] : false;
-      const isOutOfRange = inRangeIds[objectId] === 0;
+      const isOutOfRange = inRangeLUT[objectId] === 0;
 
       if (Number.isNaN(objectId) || objectId === undefined || objectId <= 0) {
         continue;
@@ -653,7 +653,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     colorRampMin,
     colorRampMax,
     colorRamp,
-    inRangeIds,
+    inRangeLUT,
     categoricalPalette,
   ];
 

@@ -13,7 +13,8 @@ import { AnyManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { fetchWithTimeout } from "../src/colorizer/utils/url_utils";
 
 export const ANY_ERROR = /[.]*/;
-export const DEFAULT_DATASET_PATH = "https://some-path.json";
+export const DEFAULT_DATASET_DIR = "https://some-path/";
+export const DEFAULT_DATASET_PATH = "https://some-path/manifest.json";
 
 export async function sleep(timeoutMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, timeoutMs));
@@ -101,14 +102,14 @@ export class MockFrameLoader implements ITextureImageLoader {
 }
 
 export class MockArraySource<T extends FeatureDataType> implements ArraySource<T> {
-  private type: T;
+  private data: FeatureArrayType[T];
 
-  constructor(type: T) {
-    this.type = type;
+  constructor(type: T, data: FeatureArrayType[T] = new featureTypeSpecs[type].ArrayConstructor([])) {
+    this.data = data;
   }
 
   getBuffer<T extends FeatureDataType>(): FeatureArrayType[T] {
-    return new featureTypeSpecs[this.type].ArrayConstructor([]) as unknown as FeatureArrayType[T];
+    return this.data as unknown as FeatureArrayType[T];
   }
   getTexture(): Texture {
     return new Texture();
@@ -122,15 +123,27 @@ export class MockArraySource<T extends FeatureDataType> implements ArraySource<T
 }
 
 export class MockArrayLoader implements IArrayLoader {
+  urlToMockData: { [url: string]: MockArraySource<any> } = {};
+
+  constructor(urlToMockData: { [url: string]: MockArraySource<any> } = {}) {
+    this.urlToMockData = urlToMockData;
+  }
+
   dispose(): void {}
 
-  load<T extends FeatureDataType>(_url: string, type: T): Promise<ArraySource<T>> {
+  load<T extends FeatureDataType>(url: string, type: T): Promise<ArraySource<T>> {
+    if (this.urlToMockData[url]) {
+      return Promise.resolve(this.urlToMockData[url]);
+    }
     return Promise.resolve(new MockArraySource(type));
   }
 }
 
-export const makeMockDataset = async (manifest: AnyManifestFile): Promise<Dataset> => {
-  const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), new MockArrayLoader());
+export const makeMockDataset = async (
+  manifest: AnyManifestFile,
+  loader: MockArrayLoader = new MockArrayLoader()
+): Promise<Dataset> => {
+  const dataset = new Dataset(DEFAULT_DATASET_PATH, new MockFrameLoader(), loader);
   const mockLoader = makeMockAsyncLoader(DEFAULT_DATASET_PATH, manifest);
   await dataset.open({ manifestLoader: mockLoader });
   return dataset;

@@ -101,8 +101,6 @@ type CanvasWrapperProps = {
 
   selectedTrack: Track | null;
 
-  inRangeLUT?: Uint8Array;
-
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
   /** Called when the mouse exits the canvas. */
@@ -120,7 +118,6 @@ const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
   onTrackClicked: () => {},
-  inRangeLUT: new Uint8Array(0),
   maxWidthPx: 1400,
   maxHeightPx: 1000,
 };
@@ -144,6 +141,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       colorRamp: state.colorRamp,
       colorRampRange: state.colorRampRange,
       categoricalPalette: state.categoricalPalette,
+      inRangeLUT: state.inRangeLUT,
     }))
   );
 
@@ -280,8 +278,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [props.config.outlierDrawSettings]);
 
   useMemo(() => {
-    canv.setInRangeLUT(props.inRangeLUT);
-  }, [props.inRangeLUT]);
+    canv.setInRangeLUT(store.inRangeLUT);
+  }, [store.inRangeLUT]);
 
   // Updated track-related settings
   useMemo(() => {

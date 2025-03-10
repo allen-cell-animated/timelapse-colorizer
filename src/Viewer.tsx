@@ -26,7 +26,6 @@ import {
   Dataset,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
-  FeatureThreshold,
   getDefaultScatterPlotConfig,
   getDefaultViewerConfig,
   isThresholdNumeric,
@@ -40,7 +39,7 @@ import {
   ViewerConfig,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
-import { getInRangeLUT, thresholdMatchFinder, validateThresholds } from "./colorizer/utils/data_utils";
+import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import {
   useAnnotations,
   useConstructor,
@@ -171,39 +170,8 @@ function Viewer(): ReactElement {
   const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
-
-  const [featureThresholds, _setFeatureThresholds] = useState<FeatureThreshold[]>([]);
-  const setFeatureThresholds = useCallback(
-    // Change the current feature min + max on the color ramp if that feature's threshold moved.
-    (newThresholds: FeatureThreshold[]): void => {
-      // Check if the current feature is being thresholded on, and if that threshold
-      // has changed. If so, snap the current min + max color ramp values so they match the new
-      // threshold values.
-      if (dataset === null || featureKey === null) {
-        return;
-      }
-      const featureData = dataset.getFeatureData(featureKey);
-      if (featureData) {
-        const oldThreshold = featureThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
-        const newThreshold = newThresholds.find(thresholdMatchFinder(featureKey, featureData.unit));
-
-        if (newThreshold && oldThreshold && isThresholdNumeric(newThreshold) && isThresholdNumeric(oldThreshold)) {
-          if (newThreshold.min !== oldThreshold.min || newThreshold.max !== oldThreshold.max) {
-            setColorRampRange([newThreshold.min, newThreshold.max]);
-          }
-        }
-      }
-      _setFeatureThresholds(newThresholds);
-    },
-    [featureKey, dataset, featureThresholds]
-  );
-  /** A look-up-table from object ID to whether it is in range (=1) or not (=0) */
-  const inRangeLUT = useMemo(() => {
-    if (!dataset) {
-      return new Uint8Array(0);
-    }
-    return getInRangeLUT(dataset, featureThresholds);
-  }, [dataset, featureThresholds]);
+  const featureThresholds = useViewerStateStore((state) => state.thresholds);
+  const setFeatureThresholds = useViewerStateStore((state) => state.setThresholds);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
@@ -498,7 +466,6 @@ function Viewer(): ReactElement {
 
       setSelectedTrack(null);
       setDatasetOpen(true);
-      setFeatureThresholds(validateThresholds(newDataset, featureThresholds));
       console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
     },
@@ -635,11 +602,7 @@ function Viewer(): ReactElement {
     // fully implemented.
     const setupInitialParameters = async (): Promise<void> => {
       if (initialUrlParams.thresholds) {
-        if (dataset) {
-          setFeatureThresholds(validateThresholds(dataset, initialUrlParams.thresholds));
-        } else {
-          setFeatureThresholds(initialUrlParams.thresholds);
-        }
+        setFeatureThresholds(initialUrlParams.thresholds);
       }
       if (initialUrlParams.feature && dataset) {
         // Load feature (if unset, do nothing because replaceDataset already loads a default)
@@ -733,7 +696,6 @@ function Viewer(): ReactElement {
   const handleDatasetLoad = useCallback(
     (newCollection: Collection, newDatasetKey: string, newDataset: Dataset): void => {
       setCollection(newCollection);
-      setFeatureThresholds([]); // Clear when switching collections
       replaceDataset(newDataset, newDatasetKey);
     },
     [replaceDataset]
@@ -839,6 +801,7 @@ function Viewer(): ReactElement {
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
 
+  // TODO: Move into subcomponent for color ramp controls
   // Show min + max marks on the color ramp slider if a feature is selected and
   // is currently being thresholded/filtered on.
   const getColorMapSliderMarks = (): undefined | number[] => {
@@ -889,7 +852,6 @@ function Viewer(): ReactElement {
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
             selectedFeatureKey={featureKey}
-            inRangeIds={inRangeLUT}
             viewerConfig={config}
             scatterPlotConfig={scatterPlotConfig}
             updateScatterPlotConfig={updateScatterPlotConfig}
@@ -913,12 +875,7 @@ function Viewer(): ReactElement {
       key: TabType.FILTERS,
       children: (
         <div className={styles.tabContent}>
-          <FeatureThresholdsTab
-            featureThresholds={featureThresholds}
-            onChange={setFeatureThresholds}
-            dataset={dataset}
-            disabled={disableUi}
-          />
+          <FeatureThresholdsTab disabled={disableUi} />
         </div>
       ),
     },
@@ -1113,7 +1070,6 @@ function Viewer(): ReactElement {
                   config={config}
                   updateConfig={updateConfig}
                   onTrackClicked={onTrackClicked}
-                  inRangeLUT={inRangeLUT}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
                     setShowObjectHoverInfo(isObject);
