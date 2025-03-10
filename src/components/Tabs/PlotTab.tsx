@@ -69,6 +69,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
     const track = store.dataset.getTrack(trackId);
     if (track) {
       store.setTrack(track);
+      store.setFrame(track.times[0]);
     }
   };
 
