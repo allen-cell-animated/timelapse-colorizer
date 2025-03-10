@@ -142,8 +142,8 @@ export const addColorRampDerivedStateSubscribers = (
   // Update color ramp range if the threshold changes for the currently selected feature
   addDerivedStateSubscriber(
     store,
-    (state) => [state.thresholds],
-    ([thresholds], [prevThresholds]) => {
+    (state) => state.thresholds,
+    (thresholds, prevThresholds) => {
       const dataset = store.getState().dataset;
       const featureKey = store.getState().featureKey;
       if (dataset === null || featureKey === null) {
@@ -169,7 +169,7 @@ export const addColorRampDerivedStateSubscribers = (
           return { colorRampRange: [newThreshold.min, newThreshold.max] as [number, number] };
         }
       }
-      return;
+      return undefined;
     }
   );
 
@@ -179,7 +179,7 @@ export const addColorRampDerivedStateSubscribers = (
     (state) => ({ dataset: state.dataset, featureKey: state.featureKey }),
     ({ dataset, featureKey }) => {
       if (store.getState().keepColorRampRange) {
-        return;
+        return undefined;
       } else if (dataset === null || featureKey === null) {
         return { colorRampRange: COLOR_RAMP_RANGE_DEFAULT };
       } else {
