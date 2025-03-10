@@ -10,7 +10,6 @@ import { createDatasetSlice, DatasetSlice } from "./slices/dataset_slice";
 import { addThresholdDerivedStateSubscribers, createThresholdSlice, ThresholdSlice } from "./slices/threshold_slice";
 import { addTimeDerivedStateSubscribers, createTimeSlice, TimeSlice } from "./slices/time_slice";
 import { addVectorDerivedStateSubscribers, createVectorSlice, VectorSlice } from "./slices/vector_slice";
-import { createWorkerPoolSlice, WorkerPoolSlice } from "./slices/workerpool_slice";
 import { SubscribableStore } from "./types";
 
 // The ViewerState is composed of many smaller slices, modules of related state,
@@ -18,14 +17,7 @@ import { SubscribableStore } from "./types";
 // https://github.com/pmndrs/zustand/blob/main/docs/guides/typescript.md#slices-pattern
 // for more details on the pattern.
 export type ViewerState = Spread<
-  CollectionSlice &
-    DatasetSlice &
-    BackdropSlice &
-    ColorRampSlice &
-    TimeSlice &
-    ThresholdSlice &
-    VectorSlice &
-    WorkerPoolSlice
+  CollectionSlice & DatasetSlice & BackdropSlice & ColorRampSlice & TimeSlice & ThresholdSlice & VectorSlice
 >;
 
 export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
@@ -36,7 +28,6 @@ export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
   ...createTimeSlice(...a),
   ...createThresholdSlice(...a),
   ...createVectorSlice(...a),
-  ...createWorkerPoolSlice(...a),
 });
 
 /**
