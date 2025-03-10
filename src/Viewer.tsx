@@ -53,6 +53,7 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
+import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
@@ -128,7 +129,7 @@ function Viewer(): ReactElement {
   const [, addRecentCollection] = useRecentCollections();
 
   // Shared worker pool for background operations (e.g. loading data)
-  const workerPool = useViewerStateStore((state) => state.workerPool);
+  const workerPool = getSharedWorkerPool();
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const selectedTrack = useViewerStateStore((state) => state.track);

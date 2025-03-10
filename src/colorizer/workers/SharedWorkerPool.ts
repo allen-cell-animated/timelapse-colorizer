@@ -84,7 +84,14 @@ export default class SharedWorkerPool {
     return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, timeIntervals]);
   }
 
-  terminate(): void {
-    this.workerPool.terminate();
+  async terminate(): Promise<void> {
+    await this.workerPool.terminate();
   }
 }
+
+let workerPool = new SharedWorkerPool();
+
+/**
+ * Returns the global shared worker pool instance.
+ */
+export const getSharedWorkerPool = (): SharedWorkerPool => workerPool;
