@@ -163,6 +163,7 @@ export default class ColorizeCanvas {
   protected colorMapRangeMax: number;
   protected categoricalPalette: ColorRamp;
   private currentFrame: number;
+  private pendingFrame: number;
 
   private onFrameChangeCallback: (isMissing: boolean) => void;
 
@@ -232,6 +233,7 @@ export default class ColorizeCanvas {
     this.colorMapRangeMin = 0;
     this.colorMapRangeMax = 0;
     this.currentFrame = 0;
+    this.pendingFrame = -1;
 
     this.frameSizeInCanvasCoordinates = new Vector2(1, 1);
     this.frameToCanvasCoordinates = new Vector2(1, 1);
@@ -357,7 +359,8 @@ export default class ColorizeCanvas {
 
     const frame = this.currentFrame;
     this.currentFrame = -1;
-    await this.setFrame(frame, true);
+    this.pendingFrame = -1;
+    await this.setFrame(frame);
     if (this.featureKey !== null) {
       this.setFeatureKey(this.featureKey);
     }
@@ -605,7 +608,7 @@ export default class ColorizeCanvas {
     // Save loading settings
     const pendingDataset = this.dataset;
     // New frame, so load the frame data.
-    this.currentFrame = index;
+    this.pendingFrame = index;
     let backdropPromise = undefined;
     if (this.selectedBackdropKey && this.dataset?.hasBackdrop(this.selectedBackdropKey)) {
       backdropPromise = this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
@@ -614,9 +617,9 @@ export default class ColorizeCanvas {
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
-    if (this.currentFrame !== index || this.dataset !== pendingDataset) {
-      // This load request has been superceded by a request for another frame or
-      // a different dataset. Drop this request.
+    if (this.pendingFrame !== index || this.dataset !== pendingDataset) {
+      // This load request has been superceded by a request for another frame, which has already loaded in image data.
+      // Drop this request.
       return;
     }
 
@@ -655,6 +658,8 @@ export default class ColorizeCanvas {
     this.onFrameChangeCallback(isMissingFile);
     // Force rescale in case frame dimensions changed
     this.updateScaling(this.dataset?.frameResolution || null, this.canvasResolution);
+    this.currentFrame = index;
+    this.pendingFrame = -1;
     this.vectorField.setFrame(this.currentFrame);
   }
 
