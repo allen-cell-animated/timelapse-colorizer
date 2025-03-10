@@ -242,8 +242,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <AnnotationDisplayList
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
-            onClickTrack={(id) => {
-              const track = store.dataset?.getTrack(id);
+            onClickTrack={(trackId) => {
+              const track = store.dataset?.getTrack(trackId);
               if (track) {
                 store.setTrack(track);
               }

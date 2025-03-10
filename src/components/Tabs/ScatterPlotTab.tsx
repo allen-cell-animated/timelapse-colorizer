@@ -97,7 +97,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const categoricalPalette = useDebounce(store.categoricalPalette, 100);
   const [colorRampMin, colorRampMax] = useDebounce(store.colorRampRange, 100);
 
-  const { colorRamp, inRangeLUT, currentFrame, featureKey, track, setTrack, setFrame, clearTrack } = store;
+  const {
+    colorRamp,
+    inRangeLUT,
+    currentFrame,
+    featureKey: selectedFeatureKey,
+    track: selectedTrack,
+    setTrack,
+    setFrame,
+    clearTrack,
+  } = store;
   const { isPlaying, isVisible, viewerConfig } = props;
 
   const [isPending, startTransition] = useTransition();
@@ -162,13 +171,13 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   }, [plotDivRef.current, clearTrack]);
 
   useMemo(() => {
-    if (props.scatterPlotConfig.xAxis === null && props.scatterPlotConfig.yAxis === null && featureKey) {
+    if (props.scatterPlotConfig.xAxis === null && props.scatterPlotConfig.yAxis === null && selectedFeatureKey) {
       props.updateScatterPlotConfig({
-        yAxis: featureKey,
+        yAxis: selectedFeatureKey,
         xAxis: SCATTERPLOT_TIME_FEATURE.value,
       });
     }
-  }, [featureKey]);
+  }, [selectedFeatureKey]);
 
   // Trigger render spinner when playback starts, but only if the render is being delayed.
   // If a render is allowed to happen (such as in the current-track- or current-frame-only
@@ -354,16 +363,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       }
     } else if (range === PlotRangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
-      if (!track) {
+      if (!selectedTrack) {
         return { xData: [], yData: [], objectIds: [], trackIds: [] };
       }
-      for (let i = 0; i < track.ids.length; i++) {
-        const id = track.ids[i];
+      for (let i = 0; i < selectedTrack.ids.length; i++) {
+        const id = selectedTrack.ids[i];
         xData.push(rawXData[id]);
         yData.push(rawYData[id]);
       }
-      objectIds = Array.from(track.ids);
-      trackIds = Array(track.ids.length).fill(track.trackId);
+      objectIds = Array.from(selectedTrack.ids);
+      trackIds = Array(selectedTrack.ids.length).fill(selectedTrack.trackId);
     } else {
       // All time
       objectIds = [...rawXData.keys()];
@@ -491,16 +500,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     overrideColor?: Color,
     allowHover = true
   ): Partial<PlotData>[] => {
-    if (featureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
+    if (selectedFeatureKey === null || dataset === null || !xAxisFeatureKey || !yAxisFeatureKey) {
       return [];
     }
-    const featureData = dataset.getFeatureData(featureKey);
+    const featureData = dataset.getFeatureData(selectedFeatureKey);
     if (!featureData) {
       return [];
     }
 
     // Generate colors
-    const categories = dataset.getFeatureCategories(featureKey);
+    const categories = dataset.getFeatureCategories(selectedFeatureKey);
     const isCategorical = categories !== null;
     const usingOverrideColor = markerConfig.color || overrideColor;
     overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
@@ -642,12 +651,12 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     yAxisFeatureKey,
     rangeType,
     currentFrame,
-    track,
+    selectedTrack,
     isVisible,
     isPlaying,
     plotDivRef.current,
     viewerConfig,
-    featureKey,
+    selectedFeatureKey,
     colorRampMin,
     colorRampMax,
     colorRamp,
@@ -673,7 +682,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const { xData, yData, objectIds, trackIds } = result;
 
     let markerBaseColor = undefined;
-    if (rangeType === PlotRangeType.ALL_TIME && track) {
+    if (rangeType === PlotRangeType.ALL_TIME && selectedTrack) {
       // Use a light grey for other markers when a track is selected.
       markerBaseColor = new Color("#dddddd");
     }
@@ -690,7 +699,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       {},
       markerBaseColor,
       // disable hover for all points other than the track when one is selected
-      track === null || rangeType !== PlotRangeType.ALL_TIME
+      selectedTrack === null || rangeType !== PlotRangeType.ALL_TIME
     );
 
     const xHistogram: Partial<Plotly.PlotData> = {
@@ -740,8 +749,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     // Render currently selected object as an extra crosshair trace.
-    if (track) {
-      const currentObjectId = track.getIdAtTime(currentFrame);
+    if (selectedTrack) {
+      const currentObjectId = selectedTrack.getIdAtTime(currentFrame);
       if (currentObjectId !== -1) {
         traces.push(...drawCrosshair(rawXData[currentObjectId], rawYData[currentObjectId]));
         traces.push(
@@ -749,7 +758,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             [rawXData[currentObjectId]],
             [rawYData[currentObjectId]],
             [currentObjectId],
-            [track.trackId],
+            [selectedTrack.trackId],
             { size: 4 }
           )
         );
@@ -901,7 +910,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             setIsRendering(true);
             clearTrack();
           }}
-          disabled={track === null}
+          disabled={selectedTrack === null}
         >
           Clear Track
         </Button>

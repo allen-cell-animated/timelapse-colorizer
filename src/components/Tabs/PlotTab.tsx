@@ -67,6 +67,7 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
     }
     const trackId = parseInt(findTrackInput, 10);
     const track = store.dataset.getTrack(trackId);
+    // TODO: Show error text if track is not found?
     if (track) {
       store.setTrack(track);
       store.setFrame(track.times[0]);
