@@ -16,7 +16,6 @@ import {
 import { addThresholdDerivedStateSubscribers, createThresholdSlice, ThresholdSlice } from "./slices/threshold_slice";
 import { addTimeDerivedStateSubscribers, createTimeSlice, TimeSlice } from "./slices/time_slice";
 import { addVectorDerivedStateSubscribers, createVectorSlice, VectorSlice } from "./slices/vector_slice";
-import { createWorkerPoolSlice, WorkerPoolSlice } from "./slices/workerpool_slice";
 import { SubscribableStore } from "./types";
 
 // The ViewerState is composed of many smaller slices, modules of related state,
@@ -32,8 +31,7 @@ export type ViewerState = Spread<
     ThresholdSlice &
     VectorSlice &
     ConfigSlice &
-    ScatterPlotSlice &
-    WorkerPoolSlice
+    ScatterPlotSlice
 >;
 
 export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
@@ -44,7 +42,6 @@ export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
   ...createTimeSlice(...a),
   ...createThresholdSlice(...a),
   ...createVectorSlice(...a),
-  ...createWorkerPoolSlice(...a),
   ...createConfigSlice(...a),
   ...createScatterPlotSlice(...a),
 });
