@@ -6,7 +6,7 @@ import { SubscribableStore } from "../types";
 import { validateFiniteValue } from "../utils/data_validation";
 import { addDerivedStateSubscriber, makeDebouncedCallback } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
-import { WorkerPoolSlice } from "./workerpool_slice";
+import { getSharedWorkerPool } from "../../colorizer/workers/SharedWorkerPool";
 
 type VectorSliceState = {
   vectorVisible: boolean;
@@ -79,7 +79,7 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
 });
 
 export const addVectorDerivedStateSubscribers = (
-  store: SubscribableStore<VectorSlice & WorkerPoolSlice & DatasetSlice>
+  store: SubscribableStore<VectorSlice & DatasetSlice>
 ): void => {
   // Update motion deltas when the dataset, vector key, or motion time intervals change.
   addDerivedStateSubscriber(
@@ -91,7 +91,7 @@ export const addVectorDerivedStateSubscribers = (
           store.setState({ vectorMotionDeltas: null });
           return;
         }
-        const workerPool = store.getState().workerPool;
+        const workerPool = getSharedWorkerPool();
         const motionDeltas = await workerPool.getMotionDeltas(dataset, vectorMotionTimeIntervals);
         store.setState({ vectorMotionDeltas: motionDeltas });
       };

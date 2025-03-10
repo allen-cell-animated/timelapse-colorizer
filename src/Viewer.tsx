@@ -85,6 +85,7 @@ import { useViewerStateStore } from "./state/ViewerState";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
+import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 
 function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -126,7 +127,7 @@ function Viewer(): ReactElement {
   const [, addRecentCollection] = useRecentCollections();
 
   // Shared worker pool for background operations (e.g. loading data)
-  const workerPool = useViewerStateStore((state) => state.workerPool);
+  const workerPool = getSharedWorkerPool();
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);

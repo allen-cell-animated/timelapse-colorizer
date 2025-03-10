@@ -7,6 +7,7 @@ import Dataset from "../Dataset";
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
 // @ts-ignore Ignore missing file warning
 import WorkerUrl from "./worker?url&worker";
+import { afterEach } from "vitest";
 
 export default class SharedWorkerPool {
   private workerPool: workerpool.Pool;
@@ -84,7 +85,20 @@ export default class SharedWorkerPool {
     return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, timeIntervals]);
   }
 
-  terminate(): void {
-    this.workerPool.terminate();
+  async terminate(): Promise<void> {
+    await this.workerPool.terminate();
   }
 }
+
+let workerPool = new SharedWorkerPool();
+
+/**
+ * Returns the global shared worker pool instance.
+ */
+export const getSharedWorkerPool = (): SharedWorkerPool => workerPool;
+
+// Terminate and recreate the worker pool after each test.
+afterEach(async (): Promise<void> => {
+  await workerPool.terminate();
+  workerPool = new SharedWorkerPool();
+})
