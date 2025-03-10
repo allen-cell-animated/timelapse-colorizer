@@ -6,6 +6,7 @@ import { SubscribableStore } from "../types";
 import { validateFiniteValue } from "../utils/data_validation";
 import { addDerivedStateSubscriber, makeDebouncedCallback } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
+
 import { getSharedWorkerPool } from "../../colorizer/workers/SharedWorkerPool";
 
 type VectorSliceState = {

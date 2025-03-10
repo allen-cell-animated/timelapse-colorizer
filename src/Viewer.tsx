@@ -55,6 +55,7 @@ import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import TimeControls from "./colorizer/TimeControls";
+import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
@@ -85,7 +86,6 @@ import { useViewerStateStore } from "./state/ViewerState";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
-import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 
 function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////

@@ -1,3 +1,4 @@
+import { afterEach } from "vitest";
 import workerpool from "workerpool";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
@@ -7,7 +8,6 @@ import Dataset from "../Dataset";
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
 // @ts-ignore Ignore missing file warning
 import WorkerUrl from "./worker?url&worker";
-import { afterEach } from "vitest";
 
 export default class SharedWorkerPool {
   private workerPool: workerpool.Pool;
@@ -101,4 +101,4 @@ export const getSharedWorkerPool = (): SharedWorkerPool => workerPool;
 afterEach(async (): Promise<void> => {
   await workerPool.terminate();
   workerPool = new SharedWorkerPool();
-})
+});
