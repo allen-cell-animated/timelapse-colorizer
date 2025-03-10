@@ -7,7 +7,7 @@ import { clamp } from "three/src/math/MathUtils";
 import { useShallow } from "zustand/shallow";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { AnnotationSelectionMode, LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
+import { AnnotationSelectionMode, LoadTroubleshooting, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
@@ -88,9 +88,6 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
 type CanvasWrapperProps = {
   canv: CanvasUIOverlay;
 
-  config: ViewerConfig;
-  updateConfig: (settings: Partial<ViewerConfig>) => void;
-
   loading: boolean;
   loadingProgress: number | null;
   isRecording: boolean;
@@ -134,6 +131,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       featureKey: state.featureKey,
       collection: state.collection,
       backdropKey: state.backdropKey,
+      backdropVisible: state.backdropVisible,
+      setBackdropVisible: state.setBackdropVisible,
+      backdropBrightness: state.backdropBrightness,
+      backdropSaturation: state.backdropSaturation,
+      objectOpacity: state.objectOpacity,
       colorRamp: state.colorRamp,
       colorRampRange: state.colorRampRange,
       categoricalPalette: state.categoricalPalette,
@@ -142,8 +144,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       track: state.track,
       setTrack: state.setTrack,
       clearTrack: state.clearTrack,
+      outOfRangeDrawSettings: state.outOfRangeDrawSettings,
+      outlierDrawSettings: state.outlierDrawSettings,
+      showTrackPath: state.showTrackPath,
+      showScaleBar: state.showScaleBar,
+      showTimestamp: state.showTimestamp,
+      showLegendDuringExport: state.showLegendDuringExport,
+      showHeaderDuringExport: state.showHeaderDuringExport,
+      outlineColor: state.outlineColor,
     }))
   );
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -245,21 +256,21 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update backdrops
   useMemo(() => {
-    if (store.backdropKey !== null && props.config.backdropVisible) {
+    if (store.backdropKey !== null && store.backdropVisible) {
       canv.setBackdropKey(store.backdropKey);
-      canv.setBackdropBrightness(props.config.backdropBrightness);
-      canv.setBackdropSaturation(props.config.backdropSaturation);
-      canv.setObjectOpacity(props.config.objectOpacity);
+      canv.setBackdropBrightness(store.backdropBrightness);
+      canv.setBackdropSaturation(store.backdropSaturation);
+      canv.setObjectOpacity(store.objectOpacity);
     } else {
       canv.setBackdropKey(null);
       canv.setObjectOpacity(100);
     }
   }, [
     store.backdropKey,
-    props.config.backdropVisible,
-    props.config.backdropBrightness,
-    props.config.backdropSaturation,
-    props.config.objectOpacity,
+    store.backdropVisible,
+    store.backdropBrightness,
+    store.backdropSaturation,
+    store.objectOpacity,
   ]);
 
   // Update categorical colors
@@ -269,14 +280,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
-    const settings = props.config.outOfRangeDrawSettings;
+    const settings = store.outOfRangeDrawSettings;
     canv.setOutOfRangeDrawMode(settings.mode, settings.color);
-  }, [props.config.outOfRangeDrawSettings]);
+  }, [store.outOfRangeDrawSettings]);
 
   useMemo(() => {
-    const settings = props.config.outlierDrawSettings;
+    const settings = store.outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
-  }, [props.config.outlierDrawSettings]);
+  }, [store.outlierDrawSettings]);
 
   useMemo(() => {
     canv.setInRangeLUT(store.inRangeLUT);
@@ -285,17 +296,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // Updated track-related settings
   useMemo(() => {
     canv.setSelectedTrack(store.track);
-    canv.setShowTrackPath(props.config.showTrackPath);
-  }, [store.track, props.config.showTrackPath]);
+    canv.setShowTrackPath(store.showTrackPath);
+  }, [store.track, store.showTrackPath]);
 
   // Update overlay settings
   useMemo(() => {
-    canv.isScaleBarVisible = props.config.showScaleBar;
-  }, [props.config.showScaleBar]);
+    canv.isScaleBarVisible = store.showScaleBar;
+  }, [store.showScaleBar]);
 
   useMemo(() => {
-    canv.isTimestampVisible = props.config.showTimestamp;
-  }, [props.config.showTimestamp]);
+    canv.isTimestampVisible = store.showTimestamp;
+  }, [store.showTimestamp]);
 
   useMemo(() => {
     canv.setCollection(store.collection);
@@ -307,9 +318,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
-    canv.isHeaderVisibleOnExport = props.config.showHeaderDuringExport;
-    canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
-  }, [props.config.showLegendDuringExport, props.isRecording]);
+    canv.isHeaderVisibleOnExport = store.showHeaderDuringExport;
+    canv.isFooterVisibleOnExport = store.showLegendDuringExport;
+  }, [store.showLegendDuringExport, props.isRecording]);
 
   useMemo(() => {
     canv.setVectorFieldConfig(vectorConfig);
@@ -320,8 +331,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, [store.vectorData]);
 
   useMemo(() => {
-    canv.setOutlineColor(props.config.outlineColor);
-  }, [props.config.outlineColor]);
+    canv.setOutlineColor(store.outlineColor);
+  }, [store.outlineColor]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
@@ -656,11 +667,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   canv.render();
 
   const onViewerSettingsLinkClicked = (): void => {
-    props.updateConfig({ openTab: TabType.SETTINGS });
+    setOpenTab(TabType.SETTINGS);
   };
 
   const onAnnotationLinkClicked = (): void => {
-    props.updateConfig({ openTab: TabType.ANNOTATION });
+    setOpenTab(TabType.ANNOTATION);
   };
 
   const backdropTooltipContents: ReactNode[] = [];
@@ -756,20 +767,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
         {/* Backdrop toggle */}
         <TooltipWithSubtitle
-          title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
+          title={store.backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
           subtitleList={backdropTooltipContents}
           trigger={["hover", "focus"]}
         >
           <IconButton
-            type={props.config.backdropVisible ? "primary" : "link"}
-            onClick={() => {
-              props.updateConfig({ backdropVisible: !props.config.backdropVisible });
-            }}
+            type={store.backdropVisible ? "primary" : "link"}
+            onClick={() => store.setBackdropVisible(!store.backdropVisible)}
             disabled={store.backdropKey === null}
           >
-            {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
-            <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
+            {store.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+            <VisuallyHidden>{store.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>
 

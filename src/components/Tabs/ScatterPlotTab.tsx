@@ -1,13 +1,13 @@
 import { Button, Tooltip } from "antd";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
-import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, HexColorString } from "three";
 import { useShallow } from "zustand/shallow";
 
 import { SwitchIconSVG } from "../../assets";
 import { Dataset } from "../../colorizer";
-import { DrawMode, PlotRangeType, ScatterPlotConfig, ViewerConfig } from "../../colorizer/types";
+import { DrawMode, PlotRangeType } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
@@ -55,10 +55,6 @@ const PLOT_RANGE_SELECT_ITEMS = Object.values(PlotRangeType);
 type ScatterPlotTabProps = {
   isVisible: boolean;
   isPlaying: boolean;
-
-  viewerConfig: ViewerConfig;
-  scatterPlotConfig: ScatterPlotConfig;
-  updateScatterPlotConfig: (config: Partial<ScatterPlotConfig>) => void;
   showAlert: ShowAlertBannerCallback;
 };
 
@@ -89,8 +85,16 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       setTrack: state.setTrack,
       clearTrack: state.clearTrack,
       track: state.track,
+      rangeType: state.scatterRangeType,
+      xAxis: state.scatterXAxis,
+      yAxis: state.scatterYAxis,
+      setXAxis: state.setScatterXAxis,
+      setYAxis: state.setScatterYAxis,
     }))
   );
+  const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
+  const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
+  const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
   const dataset = useDebounce(store.dataset, 500);
@@ -106,13 +110,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     setTrack,
     setFrame,
     clearTrack,
+    rangeType,
+    xAxis: xAxisFeatureKey,
+    yAxis: yAxisFeatureKey,
+    setXAxis,
+    setYAxis,
   } = store;
-  const { isPlaying, isVisible, viewerConfig } = props;
+  const { isPlaying, isVisible } = props;
 
-  const [isPending, startTransition] = useTransition();
-  // This might seem redundant with `isPending`, but `useTransition` only works within React's
-  // update cycle. Plotly's rendering is synchronous and can freeze the state update render,
-  // so we need to track completion with a separate flag.
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
   const [isRendering, setIsRendering] = useState(false);
 
@@ -144,8 +149,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // If no plotly click event was reported, we assume the click was on a blank area of the plot.
   const timeOfLastPointClicked = useRef<number>(0);
   const emptyClickTimeout = useRef<number | null>(null);
-  const currentRangeType = useRef<PlotRangeType>(props.scatterPlotConfig.rangeType);
-  currentRangeType.current = props.scatterPlotConfig.rangeType;
+  const currentRangeType = useRef<PlotRangeType>(rangeType);
+  currentRangeType.current = rangeType;
 
   useEffect(() => {
     const onClick = (): void => {
@@ -170,12 +175,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     };
   }, [plotDivRef.current, clearTrack]);
 
+  // On first render, set the default axes if they haven't been set yet.
   useMemo(() => {
-    if (props.scatterPlotConfig.xAxis === null && props.scatterPlotConfig.yAxis === null && selectedFeatureKey) {
-      props.updateScatterPlotConfig({
-        yAxis: selectedFeatureKey,
-        xAxis: SCATTERPLOT_TIME_FEATURE.value,
-      });
+    if (xAxisFeatureKey === null && yAxisFeatureKey === null && selectedFeatureKey) {
+      setXAxis(SCATTERPLOT_TIME_FEATURE.value);
+      setYAxis(selectedFeatureKey);
     }
   }, [selectedFeatureKey]);
 
@@ -188,22 +192,34 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
   }, [isPlaying]);
 
-  const [scatterConfig, _setScatterConfig] = useState(props.scatterPlotConfig);
+  // Track last rendered props + state to make optimizations on re-renders
+  type LastRenderedState = {
+    rangeType: PlotRangeType;
+    xAxisFeatureKey: string | null;
+    yAxisFeatureKey: string | null;
+    dataset: Dataset | null;
+  };
+
+  const lastRenderedState = useRef<LastRenderedState>({
+    rangeType: DEFAULT_RANGE_TYPE,
+    xAxisFeatureKey: null,
+    yAxisFeatureKey: null,
+    dataset: dataset,
+  });
+
+  const hasConfigChanged =
+    rangeType !== lastRenderedState.current.rangeType ||
+    xAxisFeatureKey !== lastRenderedState.current.xAxisFeatureKey ||
+    yAxisFeatureKey !== lastRenderedState.current.yAxisFeatureKey;
+
   useEffect(() => {
-    if (props.scatterPlotConfig !== scatterConfig) {
+    if (hasConfigChanged) {
       setIsRendering(true);
-      startTransition(() => {
-        _setScatterConfig(props.scatterPlotConfig);
-      });
     }
-  }, [props.scatterPlotConfig]);
-  const { xAxis: xAxisFeatureKey, yAxis: yAxisFeatureKey, rangeType } = scatterConfig;
+  }, [rangeType, xAxisFeatureKey, yAxisFeatureKey, dataset]);
 
   const isDebouncePending =
-    props.scatterPlotConfig !== scatterConfig ||
-    dataset !== store.dataset ||
-    colorRampMin !== store.colorRampRange[0] ||
-    colorRampMax !== store.colorRampRange[1];
+    dataset !== store.dataset || colorRampMin !== store.colorRampRange[0] || colorRampMax !== store.colorRampRange[1];
 
   //////////////////////////////////
   // Click Handlers
@@ -257,21 +273,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
     return dataset.getFeatureData(featureKey)?.data;
   };
-
-  // Track last rendered props + state to make optimizations on re-renders
-  type LastRenderedState = {
-    rangeType: PlotRangeType;
-    xAxisFeatureKey: string | null;
-    yAxisFeatureKey: string | null;
-    dataset: Dataset | null;
-  };
-
-  const lastRenderedState = useRef<LastRenderedState>({
-    rangeType: DEFAULT_RANGE_TYPE,
-    xAxisFeatureKey: null,
-    yAxisFeatureKey: null,
-    dataset: dataset,
-  });
 
   /** Returns whether the changes would result in a new plot, requiring the zoom and UI to reset. */
   const shouldPlotUiReset = (): boolean => {
@@ -531,8 +532,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     const traceDataBuckets: TraceData[] = [];
     const overrideColorHex: HexColorString = `#${overrideColor.getHexString()}`;
 
-    let outOfRangeColor: HexColorString = `#${viewerConfig.outOfRangeDrawSettings.color.getHexString()}`;
-    let outlierColor: HexColorString = `#${viewerConfig.outlierDrawSettings.color.getHexString()}`;
+    let outOfRangeColor: HexColorString = `#${outOfRangeDrawSettings.color.getHexString()}`;
+    let outlierColor: HexColorString = `#${outlierDrawSettings.color.getHexString()}`;
     const outOfRangeMarker = { ...markerConfig, ...markerConfig.outOfRange };
     const outlierMarker = { ...markerConfig, ...markerConfig.outliers };
     if (usingOverrideColor) {
@@ -604,10 +605,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     });
 
     // Optionally delete the outlier and out of range buckets to hide the values.
-    if (viewerConfig.outlierDrawSettings.mode === DrawMode.HIDE && !markerConfig.outliers) {
+    if (outlierDrawSettings.mode === DrawMode.HIDE && !markerConfig.outliers) {
       traceDataBuckets.splice(1, 1);
     }
-    if (viewerConfig.outOfRangeDrawSettings.mode === DrawMode.HIDE && !markerConfig.outOfRange) {
+    if (outOfRangeDrawSettings.mode === DrawMode.HIDE && !markerConfig.outOfRange) {
       traceDataBuckets.splice(0, 1);
     }
 
@@ -655,7 +656,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     isVisible,
     isPlaying,
     plotDivRef.current,
-    viewerConfig,
+    outlierDrawSettings,
+    outOfRangeDrawSettings,
     selectedFeatureKey,
     colorRampMin,
     colorRampMax,
@@ -732,7 +734,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         traces.push(makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds));
       }
       // Render track points
-      const outOfRangeOutlineColor = viewerConfig.outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
+      const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
       const trackTraces = colorizeScatterplotPoints(
         trackData.xData,
         trackData.yData,
@@ -863,31 +865,20 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
     return (
       <FlexRowAlignCenter $gap={6} style={{ flexWrap: "wrap" }}>
-        <SelectionDropdown
-          label={"X"}
-          selected={xAxisFeatureKey || ""}
-          items={menuItems}
-          onChange={(key: string) => props.updateScatterPlotConfig({ xAxis: key })}
-        />
+        <SelectionDropdown label={"X"} selected={xAxisFeatureKey || ""} items={menuItems} onChange={setXAxis} />
         <Tooltip title="Swap axes" trigger={["hover", "focus"]}>
           <IconButton
             onClick={() => {
-              props.updateScatterPlotConfig({
-                xAxis: yAxisFeatureKey,
-                yAxis: xAxisFeatureKey,
-              });
+              const temp = xAxisFeatureKey;
+              setXAxis(yAxisFeatureKey);
+              setYAxis(temp);
             }}
             type="link"
           >
             <SwitchIconSVG />
           </IconButton>
         </Tooltip>
-        <SelectionDropdown
-          label={"Y"}
-          selected={yAxisFeatureKey || ""}
-          items={menuItems}
-          onChange={(key: string) => props.updateScatterPlotConfig({ yAxis: key })}
-        />
+        <SelectionDropdown label={"Y"} selected={yAxisFeatureKey || ""} items={menuItems} onChange={setYAxis} />
 
         <div style={{ marginLeft: "10px" }}>
           <SelectionDropdown
@@ -895,7 +886,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             selected={rangeType}
             items={PLOT_RANGE_SELECT_ITEMS}
             width={"120px"}
-            onChange={(value: string) => props.updateScatterPlotConfig({ rangeType: value as PlotRangeType })}
+            onChange={(value: string) => setRangeType(value as PlotRangeType)}
           ></SelectionDropdown>
         </div>
       </FlexRowAlignCenter>
@@ -932,7 +923,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     <>
       {makeControlBar(menuItems)}
       <div style={{ position: "relative" }}>
-        <LoadingSpinner loading={isPending || isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
+        <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
             style={{ width: "100%", height: "475px", padding: "5px" }}
