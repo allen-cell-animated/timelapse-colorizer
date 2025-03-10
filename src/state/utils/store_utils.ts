@@ -13,15 +13,18 @@ import { SubscribableStore } from "../types";
  * @param listenerFn The listener function that computes and returns the new
  * derived value, called when the selected dependencies change.
  */
-export const addDerivedStateSubscriber = <T, const U = [keyof T][]>(
+export const addDerivedStateSubscriber = <T, const U>(
   store: SubscribableStore<T>,
   selectorFn: (state: T) => U,
-  listenerFn: (state: U) => Partial<T>
+  listenerFn: (state: U, prevState: U) => Partial<T> | undefined
 ): void => {
   store.subscribe(
     selectorFn,
-    (selectedState) => {
-      store.setState(listenerFn(selectedState));
+    (selectedState, prevSelectedState) => {
+      const result = listenerFn(selectedState, prevSelectedState);
+      if (result) {
+        store.setState(result);
+      }
     },
     {
       fireImmediately: true,

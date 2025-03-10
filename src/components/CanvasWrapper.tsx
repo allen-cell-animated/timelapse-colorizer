@@ -138,6 +138,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     useShallow((state) => ({
       dataset: state.dataset,
       datasetKey: state.datasetKey,
+      featureKey: state.featureKey,
       collection: state.collection,
       backdropKey: state.backdropKey,
       colorRamp: state.colorRamp,
@@ -236,6 +237,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setColorMapRangeMin(store.colorRampRange[0]);
     canv.setColorMapRangeMax(store.colorRampRange[1]);
   }, [store.colorRamp, store.colorRampRange]);
+
+  useMemo(() => {
+    if (store.featureKey) {
+      canv.setFeatureKey(store.featureKey);
+    }
+  }, [store.featureKey]);
 
   // Update backdrops
   useMemo(() => {

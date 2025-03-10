@@ -12,5 +12,6 @@ export const BACKDROP_SATURATION_DEFAULT = 100;
 export const BACKDROP_OBJECT_OPACITY_MIN = 0;
 export const BACKDROP_OBJECT_OPACITY_MAX = 100;
 export const BACKDROP_OBJECT_OPACITY_DEFAULT = 50;
+export const COLOR_RAMP_RANGE_DEFAULT: [number, number] = [0, 0];
 
 export * from "./url";
