@@ -1,4 +1,3 @@
-import { afterEach } from "vitest";
 import workerpool from "workerpool";
 
 import { FeatureArrayType, FeatureDataType } from "../types";
@@ -96,9 +95,3 @@ let workerPool = new SharedWorkerPool();
  * Returns the global shared worker pool instance.
  */
 export const getSharedWorkerPool = (): SharedWorkerPool => workerPool;
-
-// Terminate and recreate the worker pool after each test.
-afterEach(async (): Promise<void> => {
-  await workerPool.terminate();
-  workerPool = new SharedWorkerPool();
-});
