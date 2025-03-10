@@ -51,13 +51,13 @@ export const addThresholdDerivedStateSubscribers = (
   // Validate thresholds on dataset change
   addDerivedStateSubscriber(
     store,
-    (state) => [state.dataset],
-    ([dataset]) => {
+    (state) => state.dataset,
+    (dataset) => {
       const thresholds = store.getState().thresholds;
       if (dataset) {
         return { thresholds: validateThresholds(dataset, thresholds) };
       }
-      return;
+      return undefined;
     }
   );
 
@@ -66,7 +66,7 @@ export const addThresholdDerivedStateSubscribers = (
   // TODO: Should we clear this at all?
   addDerivedStateSubscriber(
     store,
-    (state) => [state.collection],
+    (state) => state.collection,
     () => ({ thresholds: [] })
   );
 };
