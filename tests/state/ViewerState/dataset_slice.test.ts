@@ -6,6 +6,7 @@ import {
   DEFAULT_BACKDROP_KEY,
   DEFAULT_INITIAL_FEATURE_KEY,
   MOCK_DATASET,
+  MOCK_DATASET_DEFAULT_TRACK,
   MOCK_DATASET_WITHOUT_BACKDROP,
   MockFeatureKeys,
 } from "./constants";
@@ -47,6 +48,18 @@ describe("useViewerStateStore: DatasetSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET_WITHOUT_BACKDROP, "some-other-key");
       expect(result.current.backdropVisible).toBe(false);
     });
+
+    it("clears dependent state", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET, "some-key");
+      act(() => {
+        result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
+      });
+      expect(result.current.track).toBe(MOCK_DATASET_DEFAULT_TRACK);
+
+      await setDatasetAsync(result, MOCK_DATASET, "some-other-key");
+      expect(result.current.track).toBeNull();
+    });
   });
 
   describe("clearDataset", () => {
@@ -72,13 +85,41 @@ describe("useViewerStateStore: DatasetSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
         result.current.setFeatureKey(MockFeatureKeys.FEATURE2);
+        result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
       });
       expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE2);
+      expect(result.current.track).toBe(MOCK_DATASET_DEFAULT_TRACK);
 
       act(() => {
         result.current.clearDataset();
       });
       expect(result.current.featureKey).toBeNull();
+      expect(result.current.track).toBeNull();
+    });
+  });
+
+  describe("setTrack & clearTrack", () => {
+    it("throws an error if no dataset is loaded", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      expect(() => {
+        act(() => {
+          result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
+        });
+      }).toThrowError(ANY_ERROR);
+    });
+
+    it("sets and clears the track", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        result.current.setTrack(MOCK_DATASET_DEFAULT_TRACK);
+      });
+      expect(result.current.track).toBe(MOCK_DATASET_DEFAULT_TRACK);
+
+      act(() => {
+        result.current.clearTrack();
+      });
+      expect(result.current.track).toBeNull();
     });
   });
 

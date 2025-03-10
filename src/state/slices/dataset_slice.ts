@@ -46,7 +46,7 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
   setFeatureKey: (featureKey: string) => {
     const dataset = get().dataset;
     if (!dataset) {
-      throw new Error("No dataset loaded");
+      throw new Error("DatasetSlice.setFeatureKey: Cannot set feature key when no dataset loaded");
     } else if (dataset.hasFeatureKey(featureKey)) {
       set({ featureKey });
     } else {
@@ -54,6 +54,10 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
     }
   },
   setTrack: (track: Track) => {
+    if (!get().dataset) {
+      throw new Error("DatasetSlice.setTrack: Cannot set track when no dataset loaded");
+    }
+    // TODO: Validate whether the track is in the dataset?
     set({ track });
   },
   clearTrack: () => {
