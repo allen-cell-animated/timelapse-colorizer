@@ -16,7 +16,7 @@ import { SubscribableStore } from "../types";
 export const addDerivedStateSubscriber = <T, const U>(
   store: SubscribableStore<T>,
   selectorFn: (state: T) => U,
-  listenerFn: (state: U, prevState: U) => Partial<T> | undefined
+  listenerFn: (state: U, prevState: U) => Partial<T> | undefined | void
 ): void => {
   store.subscribe(
     selectorFn,
@@ -31,4 +31,34 @@ export const addDerivedStateSubscriber = <T, const U>(
       equalityFn: shallow,
     }
   );
+};
+
+/**
+ * Returns a new callback function that wraps the original callback, but debounces
+ * repeated calls by a specified number of milliseconds.
+ * @param callback The original callback function to debounce.
+ * @param debounceMs The number of milliseconds to wait before calling the
+ * debounced callback. Defaults to 250ms.
+ */
+export const makeDebouncedCallback = <T, U, CallbackFn extends (state: T) => Partial<U> | undefined | void>(
+  callback: CallbackFn,
+  debounceMs: number = 250
+): ((args: T) => void) => {
+  // TODO: Compare arguments to lastArgs to allow repeated calls with the same
+  // arguments.
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  let lastArgs: T | null = null;
+
+  return (state: T) => {
+    lastArgs = state;
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => {
+      if (lastArgs) {
+        callback(lastArgs);
+      }
+      timeout = null;
+    }, debounceMs);
+  };
 };

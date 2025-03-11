@@ -1,9 +1,9 @@
 import Plotly, { PlotlyHTMLElement } from "plotly.js-dist-min";
 import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
-import { Dataset, Plotting, Track } from "../colorizer";
-
 import type { TrackPlotLayoutConfig } from "../colorizer/Plotting";
+
+import { Dataset, Plotting, Track } from "../colorizer";
 
 type PlotWrapperProps = {
   frame: number;

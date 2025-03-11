@@ -40,17 +40,12 @@ import {
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
-import {
-  useAnnotations,
-  useConstructor,
-  useDebounce,
-  useMotionDeltas,
-  useRecentCollections,
-} from "./colorizer/utils/react_utils";
+import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import * as urlUtils from "./colorizer/utils/url_utils";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
+import { selectVectorConfigFromState } from "./state/slices";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
@@ -60,7 +55,7 @@ import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import TimeControls from "./colorizer/TimeControls";
-import SharedWorkerPool from "./colorizer/workers/SharedWorkerPool";
+import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
 import TextButton from "./components/Buttons/TextButton";
@@ -132,7 +127,7 @@ function Viewer(): ReactElement {
   const [, addRecentCollection] = useRecentCollections();
 
   // Shared worker pool for background operations (e.g. loading data)
-  const workerPool = useConstructor(() => new SharedWorkerPool());
+  const workerPool = getSharedWorkerPool();
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
@@ -149,8 +144,7 @@ function Viewer(): ReactElement {
     (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
     getDefaultScatterPlotConfig()
   );
-
-  const motionDeltas = useMotionDeltas(dataset, workerPool, config.vectorConfig);
+  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
@@ -285,7 +279,10 @@ function Viewer(): ReactElement {
       colorRampKey,
       colorRampReversed,
       categoricalPalette: categoricalPalette,
-      config: config,
+      // TODO: This is a patch to keep vector state saved to the URL while the
+      // state store is being refactored. This should be removed once
+      // ViewerConfig is moved into the state store.
+      config: { ...config, vectorConfig },
       selectedBackdropKey,
       scatterPlotConfig,
     };
@@ -301,6 +298,7 @@ function Viewer(): ReactElement {
     colorRampReversed,
     categoricalPalette,
     config,
+    vectorConfig,
     selectedBackdropKey,
     scatterPlotConfig,
   ]);
@@ -1051,20 +1049,14 @@ function Viewer(): ReactElement {
                 </FlexRowAlignCenter>
               </div>
               <CanvasHoverTooltip
-                dataset={dataset}
-                featureKey={featureKey}
                 lastValidHoveredId={lastValidHoveredId}
                 showObjectHoverInfo={showObjectHoverInfo}
-                motionDeltas={motionDeltas}
-                config={config}
                 annotationState={annotationState}
               >
                 <CanvasWrapper
                   loading={isDatasetLoading}
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
-                  vectorData={motionDeltas}
-                  featureKey={featureKey}
                   isRecording={isRecording}
                   selectedTrack={selectedTrack}
                   config={config}

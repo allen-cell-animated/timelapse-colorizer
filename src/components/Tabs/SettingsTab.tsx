@@ -197,7 +197,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
 
       <CustomCollapse label="Vector arrows">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <VectorFieldSettings config={props.config} updateConfig={props.updateConfig} />
+          <VectorFieldSettings />
         </SettingsContainer>
       </CustomCollapse>
       <div style={{ height: "100px" }}></div>
