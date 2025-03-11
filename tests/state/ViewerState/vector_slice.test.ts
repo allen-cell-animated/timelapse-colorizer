@@ -65,7 +65,7 @@ describe("VectorSlice", () => {
       expect(result.current.vectorMotionTimeIntervals).toBe(1);
     });
 
-    it("round to integers", () => {
+    it("rounds to integers", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
         result.current.setVectorMotionTimeIntervals(100.4);
