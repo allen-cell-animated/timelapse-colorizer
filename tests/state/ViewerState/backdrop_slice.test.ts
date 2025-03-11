@@ -10,7 +10,7 @@ import {
   BACKDROP_SATURATION_MIN,
 } from "../../../src/constants";
 import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET, MOCK_DATASET_WITHOUT_BACKDROP, MockBackdropKeys } from "./constants";
+import { MOCK_DATASET, MockBackdropKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
@@ -99,7 +99,9 @@ describe("useViewerStateStore: BackdropSlice", () => {
     });
     expect(result.current.backdropVisible).toBe(true);
 
-    await setDatasetAsync(result, MOCK_DATASET_WITHOUT_BACKDROP);
+    act(() => {
+      useViewerStateStore.setState({ backdropKey: null });
+    });
     expect(result.current.backdropVisible).toBe(false);
   });
 });

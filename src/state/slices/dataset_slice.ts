@@ -1,7 +1,6 @@
 import { StateCreator } from "zustand";
 
 import { Track } from "../../colorizer";
-import { BackdropSlice } from "./backdrop_slice";
 import { CollectionSlice } from "./collection_slice";
 
 import Dataset from "../../colorizer/Dataset";
@@ -41,10 +40,7 @@ type DatasetSliceActions = {
 
 export type DatasetSlice = DatasetSliceState & DatasetSliceActions;
 
-export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & BackdropSlice, [], [], DatasetSlice> = (
-  set,
-  get
-) => ({
+export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, [], [], DatasetSlice> = (set, get) => ({
   datasetKey: null,
   dataset: null,
   featureKey: null,
@@ -104,12 +100,10 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
     if (backdropKey === null || !dataset.hasBackdrop(backdropKey)) {
       backdropKey = dataset.getDefaultBackdropKey();
     }
-    const backdropVisible = get().backdropVisible && backdropKey !== null;
 
     // TODO: Dispose of old dataset?
-    set({ datasetKey: key, dataset, track: null, featureKey, backdropKey, backdropVisible });
+    set({ datasetKey: key, dataset, track: null, featureKey, backdropKey });
   },
 
-  clearDataset: () =>
-    set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null, backdropVisible: false }),
+  clearDataset: () => set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null }),
 });

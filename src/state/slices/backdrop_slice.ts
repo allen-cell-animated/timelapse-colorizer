@@ -75,6 +75,6 @@ export const addBackdropDerivedStateSubscribers = (store: SubscribableStore<Back
   // Hide backdrop when backdrop key is null
   store.subscribe(
     (state) => state.backdropKey,
-    (backdropKey) => store.setState({ backdropVisible: backdropKey !== null })
+    (backdropKey) => store.setState({ backdropVisible: store.getState().backdropVisible && backdropKey !== null })
   );
 };
