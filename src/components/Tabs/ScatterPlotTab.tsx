@@ -3,7 +3,6 @@ import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, HexColorString } from "three";
-import { useShallow } from "zustand/shallow";
 
 import { SwitchIconSVG } from "../../assets";
 import { Dataset } from "../../colorizer";
@@ -72,50 +71,32 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   // ^ Memo prevents re-rendering if the props haven't changed.
   const theme = useContext(AppThemeContext);
 
-  const store = useViewerStateStore(
-    useShallow((state) => ({
-      dataset: state.dataset,
-      colorRampRange: state.colorRampRange,
-      colorRamp: state.colorRamp,
-      categoricalPalette: state.categoricalPalette,
-      inRangeLUT: state.inRangeLUT,
-      featureKey: state.featureKey,
-      currentFrame: state.currentFrame,
-      setFrame: state.setFrame,
-      setTrack: state.setTrack,
-      clearTrack: state.clearTrack,
-      track: state.track,
-      rangeType: state.scatterRangeType,
-      xAxis: state.scatterXAxis,
-      yAxis: state.scatterYAxis,
-      setXAxis: state.setScatterXAxis,
-      setYAxis: state.setScatterYAxis,
-    }))
-  );
-  const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
+  const clearTrack = useViewerStateStore((state) => state.clearTrack);
+  const colorRamp = useViewerStateStore((state) => state.colorRamp);
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
+  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
   const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const rangeType = useViewerStateStore((state) => state.scatterRangeType);
+  const selectedFeatureKey = useViewerStateStore((state) => state.featureKey);
+  const selectedTrack = useViewerStateStore((state) => state.track);
+  const setFrame = useViewerStateStore((state) => state.setFrame);
+  const setRangeType = useViewerStateStore((state) => state.setScatterRangeType);
+  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const setXAxis = useViewerStateStore((state) => state.setScatterXAxis);
+  const setYAxis = useViewerStateStore((state) => state.setScatterYAxis);
+  const xAxisFeatureKey = useViewerStateStore((state) => state.scatterXAxis);
+  const yAxisFeatureKey = useViewerStateStore((state) => state.scatterYAxis);
 
   // Debounce changes to the dataset to prevent noticeably blocking the UI thread with a re-render.
-  const dataset = useDebounce(store.dataset, 500);
-  const categoricalPalette = useDebounce(store.categoricalPalette, 100);
-  const [colorRampMin, colorRampMax] = useDebounce(store.colorRampRange, 100);
+  const rawDataset = useViewerStateStore((state) => state.dataset);
+  const rawCategoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
+  const rawColorRampRange = useViewerStateStore((state) => state.colorRampRange);
 
-  const {
-    colorRamp,
-    inRangeLUT,
-    currentFrame,
-    featureKey: selectedFeatureKey,
-    track: selectedTrack,
-    setTrack,
-    setFrame,
-    clearTrack,
-    rangeType,
-    xAxis: xAxisFeatureKey,
-    yAxis: yAxisFeatureKey,
-    setXAxis,
-    setYAxis,
-  } = store;
+  const dataset = useDebounce(rawDataset, 500);
+  const categoricalPalette = useDebounce(rawCategoricalPalette, 100);
+  const [colorRampMin, colorRampMax] = useDebounce(rawColorRampRange, 100);
+
   const { isPlaying, isVisible } = props;
 
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
@@ -219,7 +200,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   }, [rangeType, xAxisFeatureKey, yAxisFeatureKey, dataset]);
 
   const isDebouncePending =
-    dataset !== store.dataset || colorRampMin !== store.colorRampRange[0] || colorRampMax !== store.colorRampRange[1];
+    dataset !== rawDataset || colorRampMin !== rawColorRampRange[0] || colorRampMax !== rawColorRampRange[1];
 
   //////////////////////////////////
   // Click Handlers

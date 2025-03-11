@@ -23,27 +23,27 @@ import { SubscribableStore } from "./types";
 // https://github.com/pmndrs/zustand/blob/main/docs/guides/typescript.md#slices-pattern
 // for more details on the pattern.
 export type ViewerState = Spread<
-  CollectionSlice &
-    DatasetSlice &
-    BackdropSlice &
+  BackdropSlice &
+    CollectionSlice &
     ColorRampSlice &
-    TimeSlice &
-    ThresholdSlice &
-    VectorSlice &
     ConfigSlice &
-    ScatterPlotSlice
+    DatasetSlice &
+    ScatterPlotSlice &
+    ThresholdSlice &
+    TimeSlice &
+    VectorSlice
 >;
 
 export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
   ...createBackdropSlice(...a),
   ...createCollectionSlice(...a),
   ...createColorRampSlice(...a),
-  ...createDatasetSlice(...a),
-  ...createTimeSlice(...a),
-  ...createThresholdSlice(...a),
-  ...createVectorSlice(...a),
   ...createConfigSlice(...a),
+  ...createDatasetSlice(...a),
   ...createScatterPlotSlice(...a),
+  ...createThresholdSlice(...a),
+  ...createTimeSlice(...a),
+  ...createVectorSlice(...a),
 });
 
 /**

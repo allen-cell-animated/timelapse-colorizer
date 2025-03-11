@@ -2,7 +2,6 @@ import { Color as AntdColor } from "@rc-component/color-picker";
 import { Checkbox, ColorPicker } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
-import { useShallow } from "zustand/shallow";
 
 import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
 import { DrawMode } from "../../colorizer/types";
@@ -27,42 +26,30 @@ const SETTINGS_GAP_PX = 8;
 export const MAX_SLIDER_WIDTH = "250px";
 
 export default function SettingsTab(): ReactElement {
-  const dataset = useViewerStateStore((state) => state.dataset);
-  // TODO: Other backdrop settings do not yet use `useViewerStateStore`. Replace
-  // here once ViewerConfig can be updated through the store.
+  // State accessors
+  const backdropBrightness = useViewerStateStore((state) => state.backdropBrightness);
   const backdropKey = useViewerStateStore((state) => state.backdropKey) ?? NO_BACKDROP.value;
+  const backdropSaturation = useViewerStateStore((state) => state.backdropSaturation);
+  const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
+  const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
+  const outlineColor = useViewerStateStore((state) => state.outlineColor);
+  const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const setBackdropBrightness = useViewerStateStore((state) => state.setBackdropBrightness);
   const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
-
-  const store = useViewerStateStore(
-    useShallow((state) => ({
-      showTrackPath: state.showTrackPath,
-      showScaleBar: state.showScaleBar,
-      showTimestamp: state.showTimestamp,
-      showLegendDuringExport: state.showLegendDuringExport,
-      showHeaderDuringExport: state.showHeaderDuringExport,
-      outOfRangeDrawSettings: state.outOfRangeDrawSettings,
-      outlierDrawSettings: state.outlierDrawSettings,
-      outlineColor: state.outlineColor,
-      openTab: state.openTab,
-      backdropVisible: state.backdropVisible,
-      backdropBrightness: state.backdropBrightness,
-      backdropSaturation: state.backdropSaturation,
-      objectOpacity: state.objectOpacity,
-      setBackdropBrightness: state.setBackdropBrightness,
-      setBackdropSaturation: state.setBackdropSaturation,
-      setObjectOpacity: state.setObjectOpacity,
-      setBackdropVisible: state.setBackdropVisible,
-      setShowTrackPath: state.setShowTrackPath,
-      setShowScaleBar: state.setShowScaleBar,
-      setShowTimestamp: state.setShowTimestamp,
-      setShowLegendDuringExport: state.setShowLegendDuringExport,
-      setShowHeaderDuringExport: state.setShowHeaderDuringExport,
-      setOutOfRangeDrawSettings: state.setOutOfRangeDrawSettings,
-      setOutlierDrawSettings: state.setOutlierDrawSettings,
-      setOutlineColor: state.setOutlineColor,
-      setOpenTab: state.setOpenTab,
-    }))
-  );
+  const setBackdropSaturation = useViewerStateStore((state) => state.setBackdropSaturation);
+  const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
+  const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
+  const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
+  const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
+  const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
+  const setShowScaleBar = useViewerStateStore((state) => state.setShowScaleBar);
+  const setShowTimestamp = useViewerStateStore((state) => state.setShowTimestamp);
+  const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
+  const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
+  const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
 
   let backdropOptions = useMemo(
     () =>
@@ -73,7 +60,7 @@ export default function SettingsTab(): ReactElement {
   );
 
   const isBackdropDisabled = backdropOptions.length === 0 || backdropKey === null;
-  const isBackdropOptionsDisabled = isBackdropDisabled || !store.backdropVisible;
+  const isBackdropOptionsDisabled = isBackdropDisabled || !backdropVisible;
   let selectedBackdropKey = backdropKey ?? NO_BACKDROP.value;
   if (isBackdropDisabled) {
     backdropOptions = [NO_BACKDROP];
@@ -88,8 +75,8 @@ export default function SettingsTab(): ReactElement {
             <Checkbox
               type="checkbox"
               disabled={isBackdropDisabled}
-              checked={store.backdropVisible}
-              onChange={(event) => store.setBackdropVisible(event.target.checked)}
+              checked={backdropVisible}
+              onChange={(event) => setBackdropVisible(event.target.checked)}
             />
           </SettingsItem>
           <SettingsItem label="Backdrop">
@@ -108,8 +95,8 @@ export default function SettingsTab(): ReactElement {
                 maxSliderBound={200}
                 minInputBound={0}
                 maxInputBound={200}
-                value={store.backdropBrightness}
-                onChange={store.setBackdropBrightness}
+                value={backdropBrightness}
+                onChange={setBackdropBrightness}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
                 disabled={isBackdropOptionsDisabled}
@@ -125,8 +112,8 @@ export default function SettingsTab(): ReactElement {
                 maxSliderBound={100}
                 minInputBound={0}
                 maxInputBound={100}
-                value={store.backdropSaturation}
-                onChange={store.setBackdropSaturation}
+                value={backdropSaturation}
+                onChange={setBackdropSaturation}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
                 disabled={isBackdropOptionsDisabled}
@@ -142,8 +129,8 @@ export default function SettingsTab(): ReactElement {
                 maxSliderBound={100}
                 minInputBound={0}
                 maxInputBound={100}
-                value={store.objectOpacity}
-                onChange={store.setObjectOpacity}
+                value={objectOpacity}
+                onChange={setObjectOpacity}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
               />
@@ -161,8 +148,8 @@ export default function SettingsTab(): ReactElement {
                 size="small"
                 disabledAlpha={true}
                 defaultValue={new AntdColor(OUTLINE_COLOR_DEFAULT)}
-                onChange={(_color, hex) => store.setOutlineColor(new Color(hex as ColorRepresentation))}
-                value={new AntdColor(store.outlineColor.getHexString())}
+                onChange={(_color, hex) => setOutlineColor(new Color(hex as ColorRepresentation))}
+                value={new AntdColor(outlineColor.getHexString())}
                 presets={DEFAULT_OUTLINE_COLOR_PRESETS}
               />
             </div>
@@ -170,20 +157,20 @@ export default function SettingsTab(): ReactElement {
           <SettingsItem label="Filtered object color">
             <DrawModeDropdown
               htmlLabelId="filtered-object-color-label"
-              selected={store.outOfRangeDrawSettings.mode}
-              color={store.outOfRangeDrawSettings.color}
+              selected={outOfRangeDrawSettings.mode}
+              color={outOfRangeDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
-                store.setOutOfRangeDrawSettings({ mode, color });
+                setOutOfRangeDrawSettings({ mode, color });
               }}
             />
           </SettingsItem>
           <SettingsItem label="Outlier object color" id="outlier-object-color-label">
             <DrawModeDropdown
               htmlLabelId="outlier-object-color-label"
-              selected={store.outlierDrawSettings.mode}
-              color={store.outlierDrawSettings.color}
+              selected={outlierDrawSettings.mode}
+              color={outlierDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
-                store.setOutlierDrawSettings({ mode, color });
+                setOutlierDrawSettings({ mode, color });
               }}
             />
           </SettingsItem>
@@ -191,27 +178,27 @@ export default function SettingsTab(): ReactElement {
           <SettingsItem label={"Show track path"}>
             <Checkbox
               type="checkbox"
-              checked={store.showTrackPath}
+              checked={showTrackPath}
               onChange={(event) => {
-                store.setShowTrackPath(event.target.checked);
+                setShowTrackPath(event.target.checked);
               }}
             />
           </SettingsItem>
           <SettingsItem label="Show scale bar">
             <Checkbox
               type="checkbox"
-              checked={store.showScaleBar}
+              checked={showScaleBar}
               onChange={(event) => {
-                store.setShowScaleBar(event.target.checked);
+                setShowScaleBar(event.target.checked);
               }}
             />
           </SettingsItem>
           <SettingsItem label="Show timestamp">
             <Checkbox
               type="checkbox"
-              checked={store.showTimestamp}
+              checked={showTimestamp}
               onChange={(event) => {
-                store.setShowTimestamp(event.target.checked);
+                setShowTimestamp(event.target.checked);
               }}
             />
           </SettingsItem>

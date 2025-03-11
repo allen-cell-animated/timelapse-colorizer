@@ -124,38 +124,35 @@ const defaultProps: Partial<CanvasWrapperProps> = {
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
-  const store = useViewerStateStore(
-    useShallow((state) => ({
-      dataset: state.dataset,
-      datasetKey: state.datasetKey,
-      featureKey: state.featureKey,
-      collection: state.collection,
-      backdropKey: state.backdropKey,
-      backdropVisible: state.backdropVisible,
-      setBackdropVisible: state.setBackdropVisible,
-      backdropBrightness: state.backdropBrightness,
-      backdropSaturation: state.backdropSaturation,
-      objectOpacity: state.objectOpacity,
-      colorRamp: state.colorRamp,
-      colorRampRange: state.colorRampRange,
-      categoricalPalette: state.categoricalPalette,
-      vectorData: state.vectorMotionDeltas,
-      inRangeLUT: state.inRangeLUT,
-      track: state.track,
-      setTrack: state.setTrack,
-      clearTrack: state.clearTrack,
-      outOfRangeDrawSettings: state.outOfRangeDrawSettings,
-      outlierDrawSettings: state.outlierDrawSettings,
-      showTrackPath: state.showTrackPath,
-      showScaleBar: state.showScaleBar,
-      showTimestamp: state.showTimestamp,
-      showLegendDuringExport: state.showLegendDuringExport,
-      showHeaderDuringExport: state.showHeaderDuringExport,
-      outlineColor: state.outlineColor,
-    }))
-  );
+  // Access state properties
+  const backdropBrightness = useViewerStateStore((state) => state.backdropBrightness);
+  const backdropKey = useViewerStateStore((state) => state.backdropKey);
+  const backdropSaturation = useViewerStateStore((state) => state.backdropSaturation);
+  const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
+  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
+  const clearTrack = useViewerStateStore((state) => state.clearTrack);
+  const collection = useViewerStateStore((state) => state.collection);
+  const colorRamp = useViewerStateStore((state) => state.colorRamp);
+  const colorRampRange = useViewerStateStore((state) => state.colorRampRange);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
+  const featureKey = useViewerStateStore((state) => state.featureKey);
+  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
+  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
+  const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
+  const outlineColor = useViewerStateStore((state) => state.outlineColor);
+  const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
+  const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
+  const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
+  const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
+  const track = useViewerStateStore((state) => state.track);
   const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
+  const vectorData = useViewerStateStore((state) => state.vectorMotionDeltas);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -243,102 +240,94 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update canvas color ramp
   useMemo(() => {
-    canv.setColorRamp(store.colorRamp);
-    canv.setColorMapRangeMin(store.colorRampRange[0]);
-    canv.setColorMapRangeMax(store.colorRampRange[1]);
-  }, [store.colorRamp, store.colorRampRange]);
+    canv.setColorRamp(colorRamp);
+    canv.setColorMapRangeMin(colorRampRange[0]);
+    canv.setColorMapRangeMax(colorRampRange[1]);
+  }, [colorRamp, colorRampRange]);
 
   useMemo(() => {
-    if (store.featureKey) {
-      canv.setFeatureKey(store.featureKey);
+    if (featureKey) {
+      canv.setFeatureKey(featureKey);
     }
-  }, [store.featureKey]);
+  }, [featureKey]);
 
   // Update backdrops
   useMemo(() => {
-    if (store.backdropKey !== null && store.backdropVisible) {
-      canv.setBackdropKey(store.backdropKey);
-      canv.setBackdropBrightness(store.backdropBrightness);
-      canv.setBackdropSaturation(store.backdropSaturation);
-      canv.setObjectOpacity(store.objectOpacity);
+    if (backdropKey !== null && backdropVisible) {
+      canv.setBackdropKey(backdropKey);
+      canv.setBackdropBrightness(backdropBrightness);
+      canv.setBackdropSaturation(backdropSaturation);
+      canv.setObjectOpacity(objectOpacity);
     } else {
       canv.setBackdropKey(null);
       canv.setObjectOpacity(100);
     }
-  }, [
-    store.backdropKey,
-    store.backdropVisible,
-    store.backdropBrightness,
-    store.backdropSaturation,
-    store.objectOpacity,
-  ]);
+  }, [backdropKey, backdropVisible, backdropBrightness, backdropSaturation, objectOpacity]);
 
   // Update categorical colors
   useMemo(() => {
-    canv.setCategoricalColors(store.categoricalPalette);
-  }, [store.categoricalPalette]);
+    canv.setCategoricalColors(categoricalPalette);
+  }, [categoricalPalette]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
-    const settings = store.outOfRangeDrawSettings;
+    const settings = outOfRangeDrawSettings;
     canv.setOutOfRangeDrawMode(settings.mode, settings.color);
-  }, [store.outOfRangeDrawSettings]);
+  }, [outOfRangeDrawSettings]);
 
   useMemo(() => {
-    const settings = store.outlierDrawSettings;
+    const settings = outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
-  }, [store.outlierDrawSettings]);
+  }, [outlierDrawSettings]);
 
   useMemo(() => {
-    canv.setInRangeLUT(store.inRangeLUT);
-  }, [store.inRangeLUT]);
+    canv.setInRangeLUT(inRangeLUT);
+  }, [inRangeLUT]);
 
   // Updated track-related settings
   useMemo(() => {
-    canv.setSelectedTrack(store.track);
-    canv.setShowTrackPath(store.showTrackPath);
-  }, [store.track, store.showTrackPath]);
+    canv.setSelectedTrack(track);
+    canv.setShowTrackPath(showTrackPath);
+  }, [track, showTrackPath]);
 
   // Update overlay settings
   useMemo(() => {
-    canv.isScaleBarVisible = store.showScaleBar;
-  }, [store.showScaleBar]);
+    canv.isScaleBarVisible = showScaleBar;
+  }, [showScaleBar]);
 
   useMemo(() => {
-    canv.isTimestampVisible = store.showTimestamp;
-  }, [store.showTimestamp]);
+    canv.isTimestampVisible = showTimestamp;
+  }, [showTimestamp]);
 
   useMemo(() => {
-    canv.setCollection(store.collection);
-  }, [store.collection]);
+    canv.setCollection(collection);
+  }, [collection]);
 
   useMemo(() => {
-    canv.setDatasetKey(store.datasetKey);
-  }, [store.datasetKey]);
+    canv.setDatasetKey(datasetKey);
+  }, [datasetKey]);
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
-    canv.isHeaderVisibleOnExport = store.showHeaderDuringExport;
-    canv.isFooterVisibleOnExport = store.showLegendDuringExport;
-  }, [store.showLegendDuringExport, props.isRecording]);
+    canv.isHeaderVisibleOnExport = showHeaderDuringExport;
+    canv.isFooterVisibleOnExport = showLegendDuringExport;
+  }, [showLegendDuringExport, props.isRecording]);
 
   useMemo(() => {
     canv.setVectorFieldConfig(vectorConfig);
   }, [vectorConfig]);
 
   useMemo(() => {
-    canv.setVectorData(store.vectorData);
-  }, [store.vectorData]);
+    canv.setVectorData(vectorData);
+  }, [vectorData]);
 
   useMemo(() => {
-    canv.setOutlineColor(store.outlineColor);
-  }, [store.outlineColor]);
+    canv.setOutlineColor(outlineColor);
+  }, [outlineColor]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
-    const timeToAnnotationLabelIds = store.dataset
-      ? props.annotationState.data.getTimeToLabelIdMap(store.dataset)
-      : new Map();
+    const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
     canv.setAnnotationData(
       annotationLabels,
       timeToAnnotationLabelIds,
@@ -347,7 +336,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     );
     canv.isAnnotationVisible = props.annotationState.visible;
   }, [
-    store.dataset,
+    dataset,
     props.annotationState.data,
     props.annotationState.lastClickedId,
     props.annotationState.currentLabelIdx,
@@ -396,25 +385,25 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canvasPanOffset.current = new Vector2(0, 0);
     canv.setZoom(1.0);
     canv.setPan(0, 0);
-  }, [store.collection]);
+  }, [collection]);
 
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (id < 0 || store.dataset === null) {
-        store.clearTrack();
+      if (id < 0 || dataset === null) {
+        clearTrack();
       } else {
-        const trackId = store.dataset.getTrackId(id);
-        const newTrack = store.dataset.getTrack(trackId);
+        const trackId = dataset.getTrackId(id);
+        const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
-          store.setTrack(newTrack);
+          setTrack(newTrack);
         }
       }
       props.onClickId(id);
     },
-    [canv, store.dataset, props.onClickId, store.setTrack, store.clearTrack]
+    [canv, dataset, props.onClickId, setTrack, clearTrack]
   );
 
   /**
@@ -422,10 +411,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const getFrameSizeInScreenPx = useCallback((): Vector2 => {
     const canvasSizePx = getCanvasSizePx();
-    const frameResolution = store.dataset ? store.dataset.frameResolution : canvasSizePx;
+    const frameResolution = dataset ? dataset.frameResolution : canvasSizePx;
     const canvasZoom = 1 / canvasZoomInverse.current;
     return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
-  }, [store.dataset?.frameResolution, getCanvasSizePx]);
+  }, [dataset?.frameResolution, getCanvasSizePx]);
 
   /** Change zoom by some delta factor. */
   const handleZoom = useCallback(
@@ -483,7 +472,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
       canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
-    [canv, getCanvasSizePx, store.dataset]
+    [canv, getCanvasSizePx, dataset]
   );
 
   // Mouse event handlers
@@ -610,13 +599,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Report hovered id via the passed callback. */
   const reportHoveredIdAtPixel = useCallback(
     (x: number, y: number): void => {
-      if (!store.dataset) {
+      if (!dataset) {
         return;
       }
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [store.dataset, canv]
+    [dataset, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
@@ -646,7 +635,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [store.dataset, canv]);
+  }, [dataset, canv]);
 
   const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
     return (
@@ -677,9 +666,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const backdropTooltipContents: ReactNode[] = [];
   backdropTooltipContents.push(
     <span key="backdrop-name">
-      {store.backdropKey === null
-        ? "(No backdrops available)"
-        : store.dataset?.getBackdropData().get(store.backdropKey)?.name}
+      {backdropKey === null ? "(No backdrops available)" : dataset?.getBackdropData().get(backdropKey)?.name}
     </span>
   );
   // Link to viewer settings
@@ -767,18 +754,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
         {/* Backdrop toggle */}
         <TooltipWithSubtitle
-          title={store.backdropVisible ? "Hide backdrop" : "Show backdrop"}
+          title={backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
           subtitleList={backdropTooltipContents}
           trigger={["hover", "focus"]}
         >
           <IconButton
-            type={store.backdropVisible ? "primary" : "link"}
-            onClick={() => store.setBackdropVisible(!store.backdropVisible)}
-            disabled={store.backdropKey === null}
+            type={backdropVisible ? "primary" : "link"}
+            onClick={() => setBackdropVisible(!backdropVisible)}
+            disabled={backdropKey === null}
           >
-            {store.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
-            <VisuallyHidden>{store.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
+            {backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+            <VisuallyHidden>{backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>
 
