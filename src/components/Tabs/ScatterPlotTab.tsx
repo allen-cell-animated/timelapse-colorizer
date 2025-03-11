@@ -97,6 +97,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const categoricalPalette = useDebounce(rawCategoricalPalette, 100);
   const [colorRampMin, colorRampMax] = useDebounce(rawColorRampRange, 100);
 
+  const isDebouncePending =
+    dataset !== rawDataset || colorRampMin !== rawColorRampRange[0] || colorRampMax !== rawColorRampRange[1];
+
   const { isPlaying, isVisible } = props;
 
   // TODO: `isRendering` sometimes doesn't trigger the loading spinner.
@@ -174,17 +177,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   }, [isPlaying]);
 
   // Track last rendered props + state to make optimizations on re-renders
-  type LastRenderedState = {
-    rangeType: PlotRangeType;
-    xAxisFeatureKey: string | null;
-    yAxisFeatureKey: string | null;
-    dataset: Dataset | null;
-  };
-
-  const lastRenderedState = useRef<LastRenderedState>({
+  const lastRenderedState = useRef({
     rangeType: DEFAULT_RANGE_TYPE,
-    xAxisFeatureKey: null,
-    yAxisFeatureKey: null,
+    xAxisFeatureKey: null as null | string,
+    yAxisFeatureKey: null as null | string,
     dataset: dataset,
   });
 
@@ -197,10 +193,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (hasConfigChanged) {
       setIsRendering(true);
     }
-  }, [rangeType, xAxisFeatureKey, yAxisFeatureKey, dataset]);
-
-  const isDebouncePending =
-    dataset !== rawDataset || colorRampMin !== rawColorRampRange[0] || colorRampMax !== rawColorRampRange[1];
+  }, [hasConfigChanged]);
 
   //////////////////////////////////
   // Click Handlers
