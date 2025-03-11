@@ -2,7 +2,6 @@ import { Color as AntdColor } from "@rc-component/color-picker";
 import { Card, Checkbox, ColorPicker, Radio } from "antd";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
-import { useShallow } from "zustand/shallow";
 
 import { VECTOR_KEY_MOTION_DELTA } from "../../../colorizer/constants";
 import { VectorTooltipMode } from "../../../colorizer/types";
@@ -20,23 +19,18 @@ const VECTOR_OPTION_MOTION = {
 };
 
 export default function VectorFieldSettings(): ReactElement {
-  const store = useViewerStateStore(
-    useShallow((state) => ({
-      dataset: state.dataset,
-      vectorVisible: state.vectorVisible,
-      vectorKey: state.vectorKey,
-      vectorMotionTimeIntervals: state.vectorMotionTimeIntervals,
-      vectorScaleFactor: state.vectorScaleFactor,
-      vectorTooltipMode: state.vectorTooltipMode,
-      vectorColor: state.vectorColor,
-      setVectorVisible: state.setVectorVisible,
-      setVectorKey: state.setVectorKey,
-      setVectorMotionTimeIntervals: state.setVectorMotionTimeIntervals,
-      setVectorScaleFactor: state.setVectorScaleFactor,
-      setVectorTooltipMode: state.setVectorTooltipMode,
-      setVectorColor: state.setVectorColor,
-    }))
-  );
+  const setVectorColor = useViewerStateStore((state) => state.setVectorColor);
+  const setVectorKey = useViewerStateStore((state) => state.setVectorKey);
+  const setVectorMotionTimeIntervals = useViewerStateStore((state) => state.setVectorMotionTimeIntervals);
+  const setVectorScaleFactor = useViewerStateStore((state) => state.setVectorScaleFactor);
+  const setVectorTooltipMode = useViewerStateStore((state) => state.setVectorTooltipMode);
+  const setVectorVisible = useViewerStateStore((state) => state.setVectorVisible);
+  const vectorColor = useViewerStateStore((state) => state.vectorColor);
+  const vectorKey = useViewerStateStore((state) => state.vectorKey);
+  const vectorMotionTimeIntervals = useViewerStateStore((state) => state.vectorMotionTimeIntervals);
+  const vectorScaleFactor = useViewerStateStore((state) => state.vectorScaleFactor);
+  const vectorTooltipMode = useViewerStateStore((state) => state.vectorTooltipMode);
+  const vectorVisible = useViewerStateStore((state) => state.vectorVisible);
 
   // TODO: Add additional vectors here when support for user vector data is added.
   const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
@@ -46,32 +40,32 @@ export default function VectorFieldSettings(): ReactElement {
       <SettingsItem label={"Show vector arrows"}>
         <div>
           {/* TODO: Replace with a top-level checkbox for Vector arrows when Collapse menus are removed */}
-          <Checkbox checked={store.vectorVisible} onChange={(e) => store.setVectorVisible(e.target.checked)} />
+          <Checkbox checked={vectorVisible} onChange={(e) => setVectorVisible(e.target.checked)} />
         </div>
       </SettingsItem>
 
       <SettingsItem label="Vector" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
         <SelectionDropdown
-          disabled={!store.vectorVisible}
-          selected={store.vectorKey}
+          disabled={!vectorVisible}
+          selected={vectorKey}
           items={vectorOptions}
-          onChange={store.setVectorKey}
+          onChange={setVectorKey}
         ></SelectionDropdown>
-        {store.vectorKey === VECTOR_KEY_MOTION_DELTA && store.vectorVisible && (
+        {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorVisible && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
             <SettingsContainer>
               <SettingsItem label="Average over # time intervals">
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     type="value"
-                    disabled={!store.vectorVisible}
+                    disabled={!vectorVisible}
                     step={1}
                     minSliderBound={1}
                     maxSliderBound={20}
                     minInputBound={1}
                     maxInputBound={100}
-                    value={store.vectorMotionTimeIntervals}
-                    onChange={store.setVectorMotionTimeIntervals}
+                    value={vectorMotionTimeIntervals}
+                    onChange={setVectorMotionTimeIntervals}
                   />
                 </div>
               </SettingsItem>
@@ -89,14 +83,14 @@ export default function VectorFieldSettings(): ReactElement {
       <SettingsItem label={"Scale factor"}>
         <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
           <LabeledSlider
-            disabled={!store.vectorVisible}
+            disabled={!vectorVisible}
             type="value"
             minSliderBound={0}
             maxSliderBound={50}
             minInputBound={0}
             maxInputBound={100}
-            value={store.vectorScaleFactor}
-            onChange={store.setVectorScaleFactor}
+            value={vectorScaleFactor}
+            onChange={setVectorScaleFactor}
             marks={[1]}
           />
         </div>
@@ -104,12 +98,12 @@ export default function VectorFieldSettings(): ReactElement {
       <SettingsItem label="Arrow color">
         <div>
           <ColorPicker
-            disabled={!store.vectorVisible}
+            disabled={!vectorVisible}
             disabledAlpha={true}
             size="small"
-            value={new AntdColor(store.vectorColor.getHexString())}
+            value={new AntdColor(vectorColor.getHexString())}
             onChange={(_color, hex) => {
-              store.setVectorColor(new Color(hex as ColorRepresentation));
+              setVectorColor(new Color(hex as ColorRepresentation));
             }}
             presets={DEFAULT_OUTLINE_COLOR_PRESETS}
           ></ColorPicker>
@@ -118,9 +112,9 @@ export default function VectorFieldSettings(): ReactElement {
       <SettingsItem label="Show vector in tooltip as" labelStyle={{ height: "fit-content" }}>
         <div style={{ width: "fit-content" }}>
           <Radio.Group
-            value={store.vectorTooltipMode}
-            onChange={(e) => store.setVectorTooltipMode(e.target.value)}
-            disabled={!store.vectorVisible}
+            value={vectorTooltipMode}
+            onChange={(e) => setVectorTooltipMode(e.target.value)}
+            disabled={!vectorVisible}
           >
             <Radio value={VectorTooltipMode.MAGNITUDE}>Magnitude and angle</Radio>
             <Radio value={VectorTooltipMode.COMPONENTS}>XY components</Radio>
