@@ -12,12 +12,18 @@ type DatasetSliceState =
       dataset: null;
       featureKey: null;
       track: null;
+      /** The key of the backdrop image set in the current dataset. `null` if there
+       * is no Dataset loaded or if the dataset does not have backdrops. */
+      backdropKey: null;
     }
   | {
       datasetKey: string;
       dataset: Dataset;
       featureKey: string;
       track: Track | null;
+      /** The key of the backdrop image set in the current dataset. `null` if there
+       * is no Dataset loaded or if the dataset does not have backdrops. */
+      backdropKey: string | null;
     };
 
 type DatasetSliceActions = {
@@ -30,6 +36,7 @@ type DatasetSliceActions = {
   setFeatureKey: (featureKey: string) => void;
   setTrack: (track: Track) => void;
   clearTrack: () => void;
+  setBackdropKey: (key: string) => void;
 };
 
 export type DatasetSlice = DatasetSliceState & DatasetSliceActions;
@@ -42,7 +49,23 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
   dataset: null,
   featureKey: null,
   track: null,
+  backdropKey: null,
 
+  setBackdropKey: (key: string) => {
+    const dataset = get().dataset;
+    if (dataset === null) {
+      throw new Error("DatasetSlice.setBackdropKey: Cannot set backdrop key when no dataset loaded");
+    }
+    if (!dataset.hasBackdrop(key)) {
+      // Ignore if key is not in the dataset
+      throw new Error(
+        `Backdrop key "${key}" could not be found in dataset. (Available keys: ${Array.from(
+          dataset.getBackdropData().keys()
+        )})`
+      );
+    }
+    set({ backdropKey: key });
+  },
   setFeatureKey: (featureKey: string) => {
     const dataset = get().dataset;
     if (!dataset) {

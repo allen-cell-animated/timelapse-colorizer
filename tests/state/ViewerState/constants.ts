@@ -39,7 +39,11 @@ export const MOCK_FEATURE_DATA: Record<MockFeatureKeys, ManifestFile["features"]
   },
 };
 
-export const DEFAULT_BACKDROP_KEY = "test_backdrop_key";
+export enum MockBackdropKeys {
+  BACKDROP1 = "backdrop1",
+  BACKDROP2 = "backdrop2",
+}
+
 export const DEFAULT_INITIAL_FEATURE_KEY = MockFeatureKeys.FEATURE1;
 
 const MOCK_DATASET_MANIFEST: AnyManifestFile = {
@@ -51,8 +55,13 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
   backdrops: [
     {
-      name: DEFAULT_BACKDROP_KEY,
-      key: DEFAULT_BACKDROP_KEY,
+      name: MockBackdropKeys.BACKDROP1,
+      key: MockBackdropKeys.BACKDROP1,
+      frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
+    },
+    {
+      name: MockBackdropKeys.BACKDROP2,
+      key: MockBackdropKeys.BACKDROP2,
       frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
     },
   ],
