@@ -89,7 +89,7 @@ export default class SharedWorkerPool {
   }
 }
 
-let workerPool = new SharedWorkerPool();
+const workerPool = new SharedWorkerPool();
 
 /**
  * Returns the global shared worker pool instance.
