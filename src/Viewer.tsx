@@ -195,6 +195,7 @@ function Viewer(): ReactElement {
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
 
+  // Sync the time slider with the pending frame.
   useEffect(() => {
     const unsubscribe = useViewerStateStore.subscribe(
       (state) => [state.pendingFrame],
@@ -207,6 +208,26 @@ function Viewer(): ReactElement {
     );
     return unsubscribe;
   }, [isTimeSliderDraggedDuringPlayback]);
+
+  // When the scatterplot tab is opened for the first time, set the default axes
+  // to the selected feature and time.
+  useEffect(() => {
+    const unsubscribe = useViewerStateStore.subscribe(
+      (state) => [state.openTab, state.dataset],
+      ([openTab, dataset]) => {
+        if (openTab === TabType.SCATTER_PLOT && dataset) {
+          if (
+            useViewerStateStore.getState().scatterXAxis === null &&
+            useViewerStateStore.getState().scatterYAxis === null
+          ) {
+            setScatterXAxis(SCATTERPLOT_TIME_FEATURE.value);
+            setScatterYAxis(featureKey);
+          }
+        }
+      }
+    );
+    return unsubscribe;
+  }, [dataset, featureKey]);
 
   // Warn on tab close if there is annotation data.
   useEffect(() => {

@@ -92,7 +92,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const rawDataset = useViewerStateStore((state) => state.dataset);
   const rawCategoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const rawColorRampRange = useViewerStateStore((state) => state.colorRampRange);
-
   const dataset = useDebounce(rawDataset, 500);
   const categoricalPalette = useDebounce(rawCategoricalPalette, 100);
   const [colorRampMin, colorRampMax] = useDebounce(rawColorRampRange, 100);
@@ -106,7 +105,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
   const [isRendering, setIsRendering] = useState(false);
 
   const plotDivRef = React.useRef<HTMLDivElement>(null);
-  const plotRef = React.useRef<Plotly.PlotlyHTMLElement | null>(null);
+  const [plotRef, setPlotRef] = useState<Plotly.PlotlyHTMLElement | null>(null);
   useEffect(() => {
     // Mount the plot to the DOM
     Plotly.newPlot(
@@ -119,7 +118,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       },
       PLOTLY_CONFIG
     ).then((plot) => {
-      plotRef.current = plot;
+      setPlotRef(plot);
     });
   }, [plotDivRef.current]);
 
@@ -158,14 +157,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xyPlotDiv?.removeEventListener("click", onClick);
     };
   }, [plotDivRef.current, clearTrack]);
-
-  // On first render, set the default axes if they haven't been set yet.
-  useMemo(() => {
-    if (xAxisFeatureKey === null && yAxisFeatureKey === null && selectedFeatureKey) {
-      setXAxis(SCATTERPLOT_TIME_FEATURE.value);
-      setYAxis(selectedFeatureKey);
-    }
-  }, [selectedFeatureKey]);
 
   // Trigger render spinner when playback starts, but only if the render is being delayed.
   // If a render is allowed to happen (such as in the current-track- or current-frame-only
@@ -227,11 +218,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       });
     };
 
-    plotRef.current?.on("plotly_click", onClickPlot);
+    plotRef?.on("plotly_click", onClickPlot);
     return () => {
-      plotRef.current?.removeAllListeners("plotly_click");
+      plotRef?.removeAllListeners("plotly_click");
     };
-  }, [plotRef.current, dataset, setTrack, setFrame]);
+  }, [plotRef, dataset, setTrack, setFrame]);
 
   //////////////////////////////////
   // Helper Methods
