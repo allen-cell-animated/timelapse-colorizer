@@ -50,7 +50,7 @@ export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
  * Hook for accessing the global viewer state store. If used with selectors,
  * components will only rerender when the selected state changes.
  *
- * NOTE: If you are experiencing a re-render loop while selecting multiple'
+ * NOTE: If you are experiencing a re-render loop while selecting multiple
  * values from the store, make sure to use the `useShallow` hook from
  * `zustand/shallow` to prevent unnecessary re-renders.
  *
