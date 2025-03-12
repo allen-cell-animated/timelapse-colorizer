@@ -29,7 +29,7 @@ import { numberToStringDecimal } from "./math_utils";
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
 
-enum UrlParam {
+export enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
   FEATURE = "feature",

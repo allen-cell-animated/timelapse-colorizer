@@ -26,6 +26,17 @@ export type DatasetLoadResult =
       dataset: Dataset;
     };
 
+export type CollectionLoadOptions = {
+  fetchMethod?: typeof fetchWithTimeout;
+  reportWarning?: ReportWarningCallback;
+};
+
+export type DatasetLoadOptions = {
+  onLoadProgress?: (complete: number, total: number) => void;
+  arrayLoader?: IArrayLoader;
+  reportWarning?: ReportWarningCallback;
+};
+
 /**
  * Collections describe a group of datasets, designated with a string name and a path.
  * The class is a wrapper around a simple map, with convenience functions for getting dataset
@@ -132,14 +143,7 @@ export default class Collection {
    *
    * See `DatasetLoadResult` for more details.
    */
-  public async tryLoadDataset(
-    datasetKey: string,
-    options: Partial<{
-      onLoadProgress?: (complete: number, total: number) => void;
-      arrayLoader?: IArrayLoader;
-      reportWarning?: ReportWarningCallback;
-    }> = {}
-  ): Promise<DatasetLoadResult> {
+  public async tryLoadDataset(datasetKey: string, options: DatasetLoadOptions = {}): Promise<DatasetLoadResult> {
     console.time("loadDataset");
 
     if (!this.hasDataset(datasetKey)) {
@@ -275,7 +279,7 @@ export default class Collection {
    */
   public static async loadCollection(
     collectionParam: string,
-    options: Partial<{ fetchMethod: typeof fetchWithTimeout; reportWarning: ReportWarningCallback }> = {}
+    options: CollectionLoadOptions = {}
   ): Promise<Collection> {
     const absoluteCollectionUrl = Collection.formatAbsoluteCollectionPath(collectionParam);
 
