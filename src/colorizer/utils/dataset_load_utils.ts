@@ -6,8 +6,6 @@ import Collection, { CollectionLoadOptions, DatasetLoadOptions } from "../Collec
 import Dataset from "../Dataset";
 import { IArrayLoader } from "../loaders/ILoader";
 
-// DESERIALIZATION ///////////////////////////////////////////////////////////////////////
-
 export const enum LoadResultType {
   SUCCESS,
   LOAD_ERROR,
@@ -15,16 +13,25 @@ export const enum LoadResultType {
 }
 
 type LoadResult<T> =
-  | { type: LoadResultType.SUCCESS; value: T; warnings?: { message: string; description?: string | string[] }[] }
+  | { type: LoadResultType.SUCCESS; value: T }
   | { type: LoadResultType.LOAD_ERROR; message: string }
   | { type: LoadResultType.MISSING_DATASET };
 
+/**
+ * Loads a collection from a provided collection URL and/or dataset URL.
+ * @param collectionParam The URL of the collection. If `null`, the `datasetParam` must be a URL.
+ * @param datasetParam The URL or key of the dataset. If `null`, the default dataset will be loaded.
+ * @param collectionLoadOptions Options for loading the collection:
+ * - `fetchMethod`: The method to use for fetching the collection. Default is `fetchWithTimeout`.
+ * - `reportWarning`: Callback to report warnings to the user.
+ * @returns A promise that resolves to a `LoadResult`.
+ */
 export const loadCollectionFromParams = async (
   collectionParam: string | null,
   datasetParam: string | null,
   collectionLoadOptions: CollectionLoadOptions = {}
 ): Promise<LoadResult<Collection>> => {
-  // There are three ways data can be provided:
+  // There are two ways data can be provided:
   // 1. Collection URL and optional dataset key
   // 2. Dataset URL only
 
