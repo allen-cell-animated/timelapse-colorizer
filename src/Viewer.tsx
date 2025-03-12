@@ -509,7 +509,6 @@ function Viewer(): ReactElement {
       const { collection: newCollection, dataset: newDataset, datasetKey: newDatasetKey } = result;
       setCollection(newCollection);
       addRecentCollection({ url: newCollection.getUrl() });
-      await newDataset.open();
       await replaceDataset(newDataset, newDatasetKey);
       setIsInitialDatasetLoaded(true);
       setIsDatasetLoading(false);

@@ -8,7 +8,7 @@ import { IArrayLoader } from "../loaders/ILoader";
 
 // DESERIALIZATION ///////////////////////////////////////////////////////////////////////
 
-const enum LoadResultType {
+export const enum LoadResultType {
   SUCCESS,
   LOAD_ERROR,
   MISSING_DATASET,
@@ -19,35 +19,27 @@ type LoadResult<T> =
   | { type: LoadResultType.LOAD_ERROR; message: string }
   | { type: LoadResultType.MISSING_DATASET };
 
-export type DatasetLoadOverrides = {
-  datasetKey?: string;
-  collection?: Collection;
-};
-
 export const loadCollectionFromParams = async (
   collectionParam: string | null,
   datasetParam: string | null,
   collectionLoadOptions: CollectionLoadOptions = {}
 ): Promise<LoadResult<Collection>> => {
   // There are three ways data can be provided:
-  // 1. Collection URL and dataset key
-  // 2. Collection URL only (use default dataset)
-  // 3. Dataset URL only
+  // 1. Collection URL and optional dataset key
+  // 2. Dataset URL only
 
   let collection: Collection;
   if (collectionParam) {
     // 1. Collection URL and dataset key
-    // 2. Collection URL only (use default dataset)
     try {
       collection = await Collection.loadCollection(collectionParam, collectionLoadOptions);
-      // Use default dataset if no dataset key is provided
     } catch (error) {
       // Error loading collection
       console.error(error);
       return { type: LoadResultType.LOAD_ERROR, message: (error as Error).message };
     }
   } else if (datasetParam !== null && isUrl(datasetParam)) {
-    // 3. Dataset URL only
+    // 2. Dataset URL only
     // Make a dummy collection that will include only this dataset
     collection = await Collection.makeCollectionFromSingleDataset(datasetParam);
   } else {
@@ -82,7 +74,7 @@ export const loadDatasetFromParams = async (
 };
 
 export const loadInitialCollectionAndDataset = async (
-  location: Partial<LocationState>,
+  location: Partial<LocationState> | null,
   params: URLSearchParams,
   options: {
     collectionFetchMethod?: CollectionLoadOptions["fetchMethod"];
@@ -98,7 +90,7 @@ export const loadInitialCollectionAndDataset = async (
   const datasetParam = params.get(UrlParam.DATASET);
 
   let collection: Collection;
-  if (location.collection && location.datasetKey !== undefined) {
+  if (location && location.collection && location.datasetKey !== undefined) {
     collection = location.collection;
   } else {
     const collectionResult = await loadCollectionFromParams(collectionParam, datasetParam, {
