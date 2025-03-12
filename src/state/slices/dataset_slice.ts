@@ -1,6 +1,8 @@
 import { StateCreator } from "zustand";
 
 import { Track } from "../../colorizer";
+import { decodeInt, encodeValue, UrlParam } from "../../colorizer/utils/url_utils";
+import { SerializedStoreData, Store } from "../types";
 import { CollectionSlice } from "./collection_slice";
 
 import Dataset from "../../colorizer/Dataset";
@@ -107,3 +109,49 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
 
   clearDataset: () => set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null }),
 });
+
+export const serializeDatasetSlice = (store: Store<DatasetSlice>): SerializedStoreData => {
+  const ret: SerializedStoreData = {};
+  const slice = store.getState();
+  if (slice.dataset) {
+    ret[UrlParam.DATASET] = encodeValue(slice.datasetKey);
+  }
+  if (slice.featureKey) {
+    ret[UrlParam.FEATURE] = encodeValue(slice.featureKey);
+  }
+  if (slice.track) {
+    ret[UrlParam.TRACK] = encodeValue(slice.track.trackId);
+  }
+  if (slice.backdropKey) {
+    ret[UrlParam.BACKDROP_KEY] = encodeValue(slice.backdropKey);
+  }
+  return ret;
+};
+
+export const loadDatasetSliceFromParams = (store: Store<DatasetSlice>, params: URLSearchParams): void => {
+  const slice = store.getState();
+  const dataset = slice.dataset;
+  if (!dataset) {
+    // TODO: Throw error here?
+    return;
+  }
+  const featureKeyParam = params.get(UrlParam.FEATURE);
+  const trackIdParam = decodeInt(params.get(UrlParam.TRACK));
+  const backdropKeyParam = params.get(UrlParam.BACKDROP_KEY);
+
+  if (featureKeyParam) {
+    const featureKey = dataset.findFeatureByKeyOrName(featureKeyParam);
+    if (featureKey) {
+      slice.setFeatureKey(featureKey);
+    }
+  }
+  if (trackIdParam) {
+    const track = dataset.getTrack(trackIdParam);
+    if (track) {
+      slice.setTrack(track);
+    }
+  }
+  if (backdropKeyParam && dataset.hasBackdrop(backdropKeyParam)) {
+    slice.setBackdropKey(backdropKeyParam);
+  }
+};

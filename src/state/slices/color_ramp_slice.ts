@@ -1,4 +1,4 @@
-import { Color } from "three";
+import { Color, ColorRepresentation } from "three";
 import { StateCreator } from "zustand";
 
 import { isThresholdNumeric } from "../../colorizer";
@@ -8,8 +8,10 @@ import {
 } from "../../colorizer/colors/categorical_palettes";
 import { DEFAULT_COLOR_RAMP_KEY, KNOWN_COLOR_RAMPS } from "../../colorizer/colors/color_ramps";
 import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "../../colorizer/utils/data_utils";
-import { COLOR_RAMP_RANGE_DEFAULT } from "../../constants";
-import { SubscribableStore } from "../types";
+import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
+import { decodeBoolean, decodeString, encodeValue, UrlParam } from "../../colorizer/utils/url_utils";
+import { COLOR_RAMP_RANGE_DEFAULT, MAX_FEATURE_CATEGORIES } from "../../constants";
+import { SerializedStoreData, Store, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 import { ThresholdSlice } from "./threshold_slice";
@@ -205,4 +207,77 @@ export const addColorRampDerivedStateSubscribers = (
       }
     }
   );
+};
+
+export const serializeColorRampSlice = (store: SubscribableStore<ColorRampSlice>): SerializedStoreData => {
+  const ret: SerializedStoreData = {};
+  const slice = store.getState();
+
+  // Ramp + reversed
+  ret[UrlParam.COLOR_RAMP] =
+    slice.colorRampKey + (slice.isColorRampReversed ? UrlParam.COLOR_RAMP_REVERSED_SUFFIX : "");
+
+  ret[UrlParam.KEEP_RANGE] = encodeValue(slice.keepColorRampRange);
+
+  const range = slice.colorRampRange;
+  ret[UrlParam.RANGE] = encodeValue(`${numberToStringDecimal(range[0], 3)},${numberToStringDecimal(range[1], 3)}`);
+
+  // Palette key takes precedence over palette
+  if (slice.categoricalPaletteKey !== null) {
+    ret[UrlParam.PALETTE_KEY] = encodeValue(slice.categoricalPaletteKey);
+  } else {
+    const stops = slice.categoricalPalette.map((color: Color) => {
+      return color.getHexString();
+    });
+    ret[UrlParam.PALETTE] = `${UrlParam.PALETTE}=${stops.join("-")}`;
+  }
+
+  return ret;
+};
+
+export const loadColorRampSliceFromParams = (store: Store<ColorRampSlice>, params: URLSearchParams): void => {
+  const slice = store.getState();
+
+  const colorRampParam = params.get(UrlParam.COLOR_RAMP);
+  if (colorRampParam) {
+    const [key, reversed] = colorRampParam.split(UrlParam.COLOR_RAMP_REVERSED_SUFFIX);
+    if (KNOWN_COLOR_RAMPS.has(key)) {
+      slice.setColorRampKey(key);
+      slice.setColorRampReversed(reversed !== undefined);
+    }
+  }
+
+  const keepRange = decodeBoolean(params.get(UrlParam.KEEP_RANGE));
+  if (keepRange !== undefined) {
+    slice.setKeepColorRampRange(keepRange);
+  }
+
+  // Parse range
+  const rangeParam = decodeString(params.get(UrlParam.RANGE));
+  if (rangeParam) {
+    const [min, max] = rangeParam.split(",").map((value) => parseFloat(value));
+    if (Number.isFinite(min) && Number.isFinite(max)) {
+      slice.setColorRampRange([min, max]);
+    }
+  }
+
+  // If both are provided, palette key overrides palette
+  const paletteKeyParam = params.get(UrlParam.PALETTE_KEY);
+  const paletteParam = params.get(UrlParam.PALETTE);
+  if (paletteKeyParam) {
+    const paletteData = KNOWN_CATEGORICAL_PALETTES.get(paletteKeyParam);
+    if (paletteData) {
+      slice.setCategoricalPalette(paletteData.colors);
+    }
+  } else if (paletteParam) {
+    const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
+
+    // Parse into color objects
+    const hexColors: ColorRepresentation[] = paletteParam.split("-").map((hex) => "#" + hex) as ColorRepresentation[];
+    if (hexColors.length < MAX_FEATURE_CATEGORIES) {
+      // backfill extra colors to meet max length using default palette
+      hexColors.push(...defaultPalette.colorStops.slice(hexColors.length));
+    }
+    slice.setCategoricalPalette(hexColors.map((hex) => new Color(hex)));
+  }
 };

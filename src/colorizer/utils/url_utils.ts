@@ -324,25 +324,42 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
   return parameters;
 }
 
+export function encodeValue(value: string | number | Color | boolean): string {
+  if (typeof value === "string") {
+    return encodeURIComponent(value);
+  } else if (typeof value === "number") {
+    return value.toString();
+  } else if (value instanceof Color) {
+    return value.getHexString();
+  } else if (typeof value === "boolean") {
+    return value ? "1" : "0";
+  }
+  throw new Error("encodeValue: Unsupported value type");
+}
+
 export function isHexColor(value: string | null): value is HexColorString {
   const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
   return value !== null && hexRegex.test(value);
 }
 
-function decodeHexColor(value: string | null): Color | undefined {
+export function decodeHexColor(value: string | null): Color | undefined {
   value = value?.startsWith("#") ? value : "#" + value;
   return isHexColor(value) ? new Color(value) : undefined;
 }
 
-function decodeFloat(value: string | null): number | undefined {
+export function decodeFloat(value: string | null): number | undefined {
   return value === null ? undefined : parseFloat(value);
 }
 
-function decodeInt(value: string | null): number | undefined {
+export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
-function parseDrawSettings(color: string | null, mode: string | null, defaultSettings: DrawSettings): DrawSettings {
+export function parseDrawSettings(
+  color: string | null,
+  mode: string | null,
+  defaultSettings: DrawSettings
+): DrawSettings {
   const modeInt = parseInt(mode || "-1", 10);
   const hexColor = "#" + color;
   return {
@@ -351,7 +368,7 @@ function parseDrawSettings(color: string | null, mode: string | null, defaultSet
   };
 }
 
-function decodeBoolean(value: string | null): boolean | undefined {
+export function decodeBoolean(value: string | null): boolean | undefined {
   if (value === null) {
     return undefined;
   }
@@ -593,7 +610,7 @@ export function convertAllenPathToHttps(input: string): string | null {
 /**
  * Decodes strings using `decodeURIComponent`, handling null inputs.
  */
-function decodeString(input: string | null): string | undefined {
+export function decodeString(input: string | null): string | undefined {
   return input === null ? undefined : decodeURIComponent(input);
 }
 
