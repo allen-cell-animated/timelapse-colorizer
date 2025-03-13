@@ -48,8 +48,14 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE2],
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE3],
   ],
-  frames: ["frame0.png"],
-  backdrops: [{ name: DEFAULT_BACKDROP_KEY, key: DEFAULT_BACKDROP_KEY, frames: ["frame0.png"] }],
+  frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
+  backdrops: [
+    {
+      name: DEFAULT_BACKDROP_KEY,
+      key: DEFAULT_BACKDROP_KEY,
+      frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
+    },
+  ],
   times: "times.json",
   tracks: "tracks.json",
 };
@@ -78,6 +84,12 @@ const mockArrayLoader = new MockArrayLoader({
 });
 
 export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST, mockArrayLoader);
+
+export const MOCK_DATASET_WITH_TWO_FRAMES = await makeMockDataset({
+  ...MOCK_DATASET_MANIFEST,
+  frames: ["frame0.png", "frame1.png"],
+  backdrops: [],
+});
 
 export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset({
   ...MOCK_DATASET_MANIFEST,

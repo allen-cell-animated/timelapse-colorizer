@@ -8,6 +8,7 @@ import { CollectionSlice, createCollectionSlice } from "./slices/collection_slic
 import { addColorRampDerivedStateSubscribers, ColorRampSlice, createColorRampSlice } from "./slices/color_ramp_slice";
 import { createDatasetSlice, DatasetSlice } from "./slices/dataset_slice";
 import { addThresholdDerivedStateSubscribers, createThresholdSlice, ThresholdSlice } from "./slices/threshold_slice";
+import { addTimeDerivedStateSubscribers, createTimeSlice, TimeSlice } from "./slices/time_slice";
 import { addVectorDerivedStateSubscribers, createVectorSlice, VectorSlice } from "./slices/vector_slice";
 import { SubscribableStore } from "./types";
 
@@ -16,7 +17,7 @@ import { SubscribableStore } from "./types";
 // https://github.com/pmndrs/zustand/blob/main/docs/guides/typescript.md#slices-pattern
 // for more details on the pattern.
 export type ViewerState = Spread<
-  CollectionSlice & DatasetSlice & BackdropSlice & ColorRampSlice & ThresholdSlice & VectorSlice 
+  CollectionSlice & DatasetSlice & BackdropSlice & ColorRampSlice & TimeSlice & ThresholdSlice & VectorSlice
 >;
 
 export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
@@ -24,6 +25,7 @@ export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
   ...createCollectionSlice(...a),
   ...createColorRampSlice(...a),
   ...createDatasetSlice(...a),
+  ...createTimeSlice(...a),
   ...createThresholdSlice(...a),
   ...createVectorSlice(...a),
 });
@@ -76,6 +78,7 @@ export const useViewerStateStore: SubscribableStore<ViewerState> = create<Viewer
 addColorRampDerivedStateSubscribers(useViewerStateStore);
 addThresholdDerivedStateSubscribers(useViewerStateStore);
 addVectorDerivedStateSubscribers(useViewerStateStore);
+addTimeDerivedStateSubscribers(useViewerStateStore);
 
 // Adds compatibility with hot module reloading.
 // Adapted from https://github.com/pmndrs/zustand/discussions/827#discussioncomment-9843290

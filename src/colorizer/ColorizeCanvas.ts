@@ -246,6 +246,8 @@ export default class ColorizeCanvas {
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
     this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
+    this.isValidFrame = this.isValidFrame.bind(this);
+    this.setFrame = this.setFrame.bind(this);
   }
 
   get domElement(): HTMLCanvasElement {
@@ -603,6 +605,8 @@ export default class ColorizeCanvas {
     if ((!forceUpdate && this.currentFrame === index) || !this.isValidFrame(index)) {
       return;
     }
+    // Save loading settings
+    const pendingDataset = this.dataset;
     // New frame, so load the frame data.
     this.pendingFrame = index;
     let backdropPromise = undefined;
@@ -613,7 +617,7 @@ export default class ColorizeCanvas {
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
-    if (this.pendingFrame !== index) {
+    if (this.pendingFrame !== index || this.dataset !== pendingDataset) {
       // This load request has been superceded by a request for another frame, which has already loaded in image data.
       // Drop this request.
       return;

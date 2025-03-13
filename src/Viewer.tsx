@@ -54,7 +54,6 @@ import Collection from "./colorizer/Collection";
 import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
 import { FeatureType } from "./colorizer/Dataset";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
-import TimeControls from "./colorizer/TimeControls";
 import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
 import { useAlertBanner } from "./components/Banner";
@@ -97,6 +96,10 @@ function Viewer(): ReactElement {
   const canv = useConstructor(() => {
     const canvas = new CanvasWithOverlay();
     canvas.domElement.className = styles.colorizeCanvas;
+    useViewerStateStore.getState().setLoadFrameCallback(async (frame) => {
+      await canvas.setFrame(frame);
+      canvas.render();
+    });
     return canvas;
   });
 
@@ -131,7 +134,10 @@ function Viewer(): ReactElement {
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
-  const [currentFrame, setCurrentFrame] = useState<number>(0);
+
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
+  const setFrame = useViewerStateStore((state) => state.setFrame);
+
   const annotationState = useAnnotations();
 
   // TODO: Save these settings in local storage
@@ -183,14 +189,15 @@ function Viewer(): ReactElement {
   const pendingAlerts = useRef<(() => void)[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
-  const timeControls = useConstructor(() => new TimeControls(canv!, playbackFps));
+  const timeControls = useViewerStateStore((state) => state.timeControls);
+
   // TODO: Move all logic for the time slider into its own component!
-  // Flag used to indicate that the slider is currently being dragged while playback is occurring.
-  const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
+  // Flag indicating that frameInput should not be synced with playback.
+  const [isUserDirectlyControllingFrameInput, setIsUserDirectlyControllingFrameInput] = useState(false);
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
-      setIsTimeSliderDraggedDuringPlayback(false);
+      setIsUserDirectlyControllingFrameInput(false);
     }
   }, [timeControls.isPlaying()]);
 
@@ -205,6 +212,14 @@ function Viewer(): ReactElement {
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
+
+  useEffect(() => {
+    // When user is controlling time slider, do not sync frame input w/ playback
+    if (!isUserDirectlyControllingFrameInput) {
+      return useViewerStateStore.subscribe((state) => state.pendingFrame, setFrameInput);
+    }
+    return;
+  }, [isUserDirectlyControllingFrameInput]);
 
   // Warn on tab close if there is annotation data.
   useEffect(() => {
@@ -312,32 +327,6 @@ function Viewer(): ReactElement {
       setSearchParams(getUrlParams(), { replace: true });
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
-
-  // Callback for setting time, to be used directly only with timeControls.
-  const setFrameCallback = useCallback(
-    async (frame: number) => {
-      await canv.setFrame(frame);
-      setCurrentFrame(frame);
-      setFrameInput(frame);
-      canv.render();
-    },
-    [canv]
-  );
-  timeControls.setFrameCallback(setFrameCallback);
-
-  const setFrame = useCallback(
-    async (frame: number) => {
-      const isPlaying = timeControls.isPlaying();
-      if (isPlaying) {
-        timeControls.pause();
-      }
-      await setFrameCallback(frame);
-      if (isPlaying) {
-        timeControls.play();
-      }
-    },
-    [setFrameCallback]
-  );
 
   const findTrack = useCallback(
     (trackId: number | null, seekToFrame: boolean = true): void => {
@@ -618,8 +607,7 @@ function Viewer(): ReactElement {
       if (initialUrlParams.time && initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
         const newTime = initialUrlParams.time;
-        await canv.setFrame(newTime);
-        setCurrentFrame(newTime); // Force render
+        setFrame(newTime);
         setFrameInput(newTime);
       }
 
@@ -743,11 +731,10 @@ function Viewer(): ReactElement {
         // time immediately.
         setFrame(frameInput);
       }
-      if (isTimeSliderDraggedDuringPlayback) {
-        setFrame(frameInput);
+      if (isUserDirectlyControllingFrameInput) {
+        setFrame(frameInput).then(() => timeControls.play());
         // Update the frame and unpause playback when the slider is released.
-        setIsTimeSliderDraggedDuringPlayback(false);
-        timeControls.play(); // resume playing
+        setIsUserDirectlyControllingFrameInput(false);
       }
     };
 
@@ -755,7 +742,7 @@ function Viewer(): ReactElement {
     return () => {
       document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
     };
-  });
+  }, [isUserDirectlyControllingFrameInput, frameInput]);
 
   const onTrackClicked = useCallback(
     (track: Track | null) => {
@@ -1078,7 +1065,7 @@ function Viewer(): ReactElement {
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
+              {timeControls.isPlaying() || isUserDirectlyControllingFrameInput ? (
                 // Swap between play and pause button
                 <IconButton
                   type="primary"
@@ -1103,7 +1090,7 @@ function Viewer(): ReactElement {
                   if (timeControls.isPlaying()) {
                     // If the slider is dragged while playing, pause playback.
                     timeControls.pause();
-                    setIsTimeSliderDraggedDuringPlayback(true);
+                    setIsUserDirectlyControllingFrameInput(true);
                   }
                 }}
               >
