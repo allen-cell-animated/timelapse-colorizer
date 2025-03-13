@@ -6,6 +6,7 @@ export enum MockFeatureKeys {
   FEATURE1 = "feature1",
   FEATURE2 = "feature2",
   FEATURE3 = "feature3",
+  FEATURE4_ILLEGAL_CHARS = "feature$&%20^4",
 }
 
 export const MOCK_FEATURE_DATA: Record<MockFeatureKeys, ManifestFile["features"][0]> = {
@@ -37,6 +38,15 @@ export const MOCK_FEATURE_DATA: Record<MockFeatureKeys, ManifestFile["features"]
     min: 0,
     max: 2,
   },
+  [MockFeatureKeys.FEATURE4_ILLEGAL_CHARS]: {
+    key: MockFeatureKeys.FEATURE4_ILLEGAL_CHARS,
+    name: "Feature$&%20^4",
+    data: "feature4.json",
+    unit: "meters",
+    type: "continuous",
+    min: 0,
+    max: 1,
+  },
 };
 
 export enum MockBackdropKeys {
@@ -51,6 +61,7 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE1],
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE2],
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE3],
+    MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE4_ILLEGAL_CHARS],
   ],
   frames: ["frame0.png", "frame1.png", "frame2.png", "frame3.png"],
   backdrops: [
@@ -89,6 +100,10 @@ const mockArrayLoader = new MockArrayLoader({
   [DEFAULT_DATASET_DIR + "feature3.json"]: new MockArraySource(
     FeatureDataType.F32,
     new Float32Array([0, 0, 0, 1, 1, 1, 2, 2, 2])
+  ),
+  [DEFAULT_DATASET_DIR + "feature4.json"]: new MockArraySource(
+    FeatureDataType.F32,
+    new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
   ),
 });
 
