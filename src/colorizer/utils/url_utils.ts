@@ -324,17 +324,8 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
   return parameters;
 }
 
-export function encodeValue(value: string | number | Color | boolean): string {
-  if (typeof value === "string") {
-    return encodeURIComponent(value);
-  } else if (typeof value === "number") {
-    return value.toString();
-  } else if (value instanceof Color) {
-    return value.getHexString();
-  } else if (typeof value === "boolean") {
-    return value ? "1" : "0";
-  }
-  throw new Error("encodeValue: Unsupported value type");
+export function encodeColor(value: Color): string {
+  return value.getHexString();
 }
 
 export function isHexColor(value: string | null): value is HexColorString {
@@ -345,6 +336,10 @@ export function isHexColor(value: string | null): value is HexColorString {
 export function decodeHexColor(value: string | null): Color | undefined {
   value = value?.startsWith("#") ? value : "#" + value;
   return isHexColor(value) ? new Color(value) : undefined;
+}
+
+export function encodeNumber(value: number): string {
+  return numberToStringDecimal(value, 3);
 }
 
 export function decodeFloat(value: string | null): number | undefined {
@@ -366,6 +361,10 @@ export function parseDrawSettings(
     color: isHexColor(hexColor) ? new Color(hexColor) : defaultSettings.color,
     mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
   };
+}
+
+export function encodeBoolean(value: boolean): string {
+  return value ? "1" : "0";
 }
 
 export function decodeBoolean(value: string | null): boolean | undefined {
@@ -541,9 +540,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
     } else {
       // Save the hex color stops as a string separated by dashes.
       // TODO: Save only the edited colors to shorten URL.
-      const stops = state.categoricalPalette.map((color: Color) => {
-        return color.getHexString();
-      });
+      const stops = state.categoricalPalette.map(encodeColor);
       includedParameters.push(`${UrlParam.PALETTE}=${stops.join("-")}`);
     }
   }

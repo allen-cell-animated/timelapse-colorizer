@@ -250,11 +250,33 @@ describe("useViewerStateStore: DatasetSlice", () => {
         `?${UrlParam.FEATURE}=${encodeURIComponent(MockFeatureKeys.FEATURE4_ILLEGAL_CHARS)}`
       );
       await setDatasetAsync(result, MOCK_DATASET);
-      console.log(MOCK_DATASET.featureKeys);
       act(() => {
         loadDatasetSliceFromParams(result.current, params);
       });
       expect(result.current.featureKey).toBe(MockFeatureKeys.FEATURE4_ILLEGAL_CHARS);
+    });
+
+    it("handles non-integer tracks", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.TRACK, "bad-track-value(notint)");
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadDatasetSliceFromParams(result.current, params);
+      });
+      expect(result.current.track).toBeNull();
+
+      params.set(UrlParam.TRACK, "NaN");
+      act(() => {
+        loadDatasetSliceFromParams(result.current, params);
+      });
+      expect(result.current.track).toBeNull();
+
+      params.set(UrlParam.TRACK, "19.434");
+      act(() => {
+        loadDatasetSliceFromParams(result.current, params);
+      });
+      expect(result.current.track).toBeNull();
     });
 
     it("ignores param keys that are not in the dataset.", async () => {

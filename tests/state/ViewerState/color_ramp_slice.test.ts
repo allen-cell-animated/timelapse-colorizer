@@ -321,7 +321,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
         result.current.setKeepColorRampRange(true);
       });
       let serializedData = serializeColorRampSlice(result.current);
-      expect(serializedData[UrlParam.RANGE]).toBe("0.200%2C100");
+      expect(serializedData[UrlParam.RANGE]).toBe("0.200,100"); // Will be encoded
       expect(serializedData[UrlParam.KEEP_RANGE]).toBe("1");
 
       act(() => {
@@ -329,7 +329,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
         result.current.setKeepColorRampRange(false);
       });
       serializedData = serializeColorRampSlice(result.current);
-      expect(serializedData[UrlParam.RANGE]).toBe("-412%2C-20");
+      expect(serializedData[UrlParam.RANGE]).toBe("-412,-20");
       expect(serializedData[UrlParam.KEEP_RANGE]).toBe("0");
     });
   });
@@ -405,30 +405,27 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       const defaultPalette = result.current.categoricalPalette;
       const incompletePalette = [new Color("#ff0000"), new Color("#00ff00")];
+      const expectedPalette = incompletePalette.concat(defaultPalette.slice(incompletePalette.length));
       const params = new URLSearchParams();
       params.set(UrlParam.PALETTE, incompletePalette.map((color) => color.getHexString()).join("-"));
       act(() => {
         loadColorRampSliceFromParams(result.current, params);
       });
       expect(result.current.categoricalPalette.length).toBe(MAX_FEATURE_CATEGORIES);
-      expect(result.current.categoricalPalette.slice(0, incompletePalette.length)).toStrictEqual(incompletePalette);
-      expect(result.current.categoricalPalette.slice(incompletePalette.length)).toStrictEqual(
-        defaultPalette.slice(incompletePalette.length)
-      );
+      expect(result.current.categoricalPalette).toStrictEqual(expectedPalette);
     });
 
     it("uses palette key instead of palette if both are provided", () => {
       const { result } = renderHook(() => useViewerStateStore());
       const palette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[3];
-      const customPalette = [new Color("#ff0000"), new Color("#00ff00")];
 
       const params = new URLSearchParams();
       params.set(UrlParam.PALETTE_KEY, palette.key);
-      params.set(UrlParam.PALETTE, customPalette.map((color) => color.getHexString()).join("-"));
+      // Custom palette values should be ignored
+      params.set(UrlParam.PALETTE, "ff0000-00ff00");
       act(() => {
         loadColorRampSliceFromParams(result.current, params);
       });
-      // Ignores custom palette
       expect(result.current.categoricalPaletteKey).toBe(palette.key);
       expect(result.current.categoricalPalette).toStrictEqual(palette.colors);
     });

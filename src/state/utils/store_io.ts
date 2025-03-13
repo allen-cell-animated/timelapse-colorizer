@@ -27,11 +27,13 @@ export const serializedStoreDataToUrl = (data: SerializedStoreData): string => {
 
 // DESERIALIZATION ///////////////////////////////////////////////////////////////////////
 
+/**
+ * Loads the viewer state from the given URL parameters. Note that this MUST be called after the dataset is loaded and set in the store.
+ */
 export const loadViewerStateFromParams = async (store: Store<ViewerState>, params: URLSearchParams): Promise<void> => {
-  // Load the rest of the state. This MUST happen after the dataset is loaded into the store.
   // NOTE: Ordering is important here, because of slice dependencies.
   loadDatasetSliceFromParams(store.getState(), params);
-  // Other slices can be added here
+  // TODO: Add other slices here
   // Ramp MUST be loaded last because it updates whenever thresholds or feature changes
   loadColorRampSliceFromParams(store.getState(), params);
 };

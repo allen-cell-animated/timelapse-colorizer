@@ -1,7 +1,7 @@
 import { StateCreator } from "zustand";
 
 import { Track } from "../../colorizer";
-import { decodeInt, encodeValue, UrlParam } from "../../colorizer/utils/url_utils";
+import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
 import { SerializedStoreData } from "../types";
 import { CollectionSlice } from "./collection_slice";
 
@@ -113,16 +113,16 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
 export const serializeDatasetSlice = (slice: DatasetSlice): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   if (slice.dataset !== null) {
-    ret[UrlParam.DATASET] = encodeValue(slice.datasetKey);
+    ret[UrlParam.DATASET] = slice.datasetKey;
   }
   if (slice.featureKey !== null) {
-    ret[UrlParam.FEATURE] = encodeValue(slice.featureKey);
+    ret[UrlParam.FEATURE] = slice.featureKey;
   }
   if (slice.track !== null) {
-    ret[UrlParam.TRACK] = encodeValue(slice.track.trackId);
+    ret[UrlParam.TRACK] = slice.track.trackId.toString();
   }
   if (slice.backdropKey !== null) {
-    ret[UrlParam.BACKDROP_KEY] = encodeValue(slice.backdropKey);
+    ret[UrlParam.BACKDROP_KEY] = slice.backdropKey;
   }
   return ret;
 };
