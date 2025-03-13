@@ -338,7 +338,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
     it("deserializes values", () => {
       const { result } = renderHook(() => useViewerStateStore());
       let ramp = Array.from(KNOWN_COLOR_RAMPS.values())[2];
-      let palette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[3];
+      const palette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[3];
 
       let params = new URLSearchParams();
       params.set(UrlParam.COLOR_RAMP, ramp.key);
@@ -355,7 +355,7 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       expect(result.current.colorRampRange).toStrictEqual([0.2, 100]);
       expect(result.current.keepColorRampRange).toBe(true);
 
-      let customPalette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[4].colors;
+      const customPalette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[4].colors;
       customPalette[0] = new Color("#ffffff");
       ramp = Array.from(KNOWN_COLOR_RAMPS.values())[6];
 

@@ -12,8 +12,8 @@ import { ViewerState } from "../ViewerState";
 
 export const serializeViewerStateStore = (store: Store<ViewerState>): Partial<SerializedStoreData> => {
   return {
-    ...serializeDatasetSlice(store),
-    ...serializeColorRampSlice(store),
+    ...serializeDatasetSlice(store.getState()),
+    ...serializeColorRampSlice(store.getState()),
   };
 };
 
@@ -30,8 +30,8 @@ export const serializedStoreDataToUrl = (data: SerializedStoreData): string => {
 export const loadViewerStateFromParams = async (store: Store<ViewerState>, params: URLSearchParams): Promise<void> => {
   // Load the rest of the state. This MUST happen after the dataset is loaded into the store.
   // NOTE: Ordering is important here, because of slice dependencies.
-  loadDatasetSliceFromParams(store, params);
+  loadDatasetSliceFromParams(store.getState(), params);
   // Other slices can be added here
   // Ramp MUST be loaded last because it updates whenever thresholds or feature changes
-  loadColorRampSliceFromParams(store, params);
+  loadColorRampSliceFromParams(store.getState(), params);
 };

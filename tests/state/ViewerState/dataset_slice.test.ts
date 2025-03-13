@@ -207,7 +207,7 @@ describe("useViewerStateStore: DatasetSlice", () => {
 
     it("does not serialize null values", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      let serializedData = serializeDatasetSlice(result.current);
+      const serializedData = serializeDatasetSlice(result.current);
       expect(serializedData).toStrictEqual({});
     });
   });
