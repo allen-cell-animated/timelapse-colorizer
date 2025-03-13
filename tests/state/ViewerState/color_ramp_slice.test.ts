@@ -3,6 +3,9 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, KNOWN_CATEGORICAL_PALETTES, KNOWN_COLOR_RAMPS, ThresholdType } from "../../../src/colorizer";
+import { UrlParam } from "../../../src/colorizer/utils/url_utils";
+import { MAX_FEATURE_CATEGORIES } from "../../../src/constants";
+import { loadColorRampSliceFromParams, serializeColorRampSlice } from "../../../src/state/slices";
 import { ANY_ERROR } from "../../test_utils";
 import { MOCK_DATASET, MOCK_FEATURE_DATA, MockFeatureKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
@@ -242,6 +245,192 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET);
       const featureData = result.current.dataset?.getFeatureData(result.current.featureKey!)!;
       expect(result.current.colorRampRange).toStrictEqual([featureData.min, featureData.max!]);
+    });
+  });
+
+  describe("serializeColorRampSlice", () => {
+    it("adds reverse prefix to color ramp key", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setColorRampKey("matplotlib-viridis");
+        result.current.setColorRampReversed(false);
+      });
+      let serializedData = serializeColorRampSlice(result.current);
+      expect(serializedData[UrlParam.COLOR_RAMP]).toBe("matplotlib-viridis");
+      act(() => {
+        result.current.setColorRampReversed(true);
+      });
+      serializedData = serializeColorRampSlice(result.current);
+      expect(serializedData[UrlParam.COLOR_RAMP]).toBe("matplotlib-viridis!");
+    });
+
+    it("serializes all color ramp keys", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      for (const key of KNOWN_COLOR_RAMPS.keys()) {
+        act(() => {
+          result.current.setColorRampKey(key);
+          result.current.setColorRampReversed(false);
+        });
+        let serializedData = serializeColorRampSlice(result.current);
+        expect(serializedData[UrlParam.COLOR_RAMP]).toBe(key);
+        act(() => {
+          result.current.setColorRampReversed(true);
+        });
+        serializedData = serializeColorRampSlice(result.current);
+        expect(serializedData[UrlParam.COLOR_RAMP]).toBe(key + "!");
+      }
+    });
+
+    it("serializes palette key only when palette matches", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      for (const palette of KNOWN_CATEGORICAL_PALETTES.values()) {
+        act(() => {
+          result.current.setCategoricalPalette(palette.colors);
+        });
+        const serializedData = serializeColorRampSlice(result.current);
+        expect(serializedData[UrlParam.PALETTE_KEY]).toBe(palette.key);
+        expect(serializedData[UrlParam.PALETTE]).toBeUndefined();
+      }
+    });
+
+    it("uses categorical palette instead of key if palette does not match", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const palette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[3];
+      act(() => {
+        result.current.setCategoricalPalette(palette.colors);
+      });
+      let serializedData = serializeColorRampSlice(result.current);
+      expect(serializedData[UrlParam.PALETTE_KEY]).toEqual(palette.key);
+      expect(serializedData[UrlParam.PALETTE]).toBeUndefined();
+
+      // Change palette slightly
+      const newPalette = [...palette.colors];
+      newPalette[0] = new Color("#ffffff");
+      act(() => {
+        result.current.setCategoricalPalette(newPalette);
+      });
+      serializedData = serializeColorRampSlice(result.current);
+      expect(serializedData[UrlParam.PALETTE_KEY]).toBeUndefined();
+      expect(serializedData[UrlParam.PALETTE]).toStrictEqual(newPalette.map((color) => color.getHexString()).join("-"));
+    });
+
+    it("serializes range, keepRange flag", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setColorRampRange([0.2002, 100]);
+        result.current.setKeepColorRampRange(true);
+      });
+      let serializedData = serializeColorRampSlice(result.current);
+      expect(serializedData[UrlParam.RANGE]).toBe("0.200%2C100");
+      expect(serializedData[UrlParam.KEEP_RANGE]).toBe("1");
+
+      act(() => {
+        result.current.setColorRampRange([-412, -20]);
+        result.current.setKeepColorRampRange(false);
+      });
+      serializedData = serializeColorRampSlice(result.current);
+      expect(serializedData[UrlParam.RANGE]).toBe("-412%2C-20");
+      expect(serializedData[UrlParam.KEEP_RANGE]).toBe("0");
+    });
+  });
+
+  describe("loadColorRampSliceFromParams", () => {
+    it("deserializes values", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      let ramp = Array.from(KNOWN_COLOR_RAMPS.values())[2];
+      let palette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[3];
+
+      let params = new URLSearchParams();
+      params.set(UrlParam.COLOR_RAMP, ramp.key);
+      params.set(UrlParam.PALETTE_KEY, palette.key);
+      params.set(UrlParam.RANGE, "0.200,100");
+      params.set(UrlParam.KEEP_RANGE, "1");
+      act(() => {
+        loadColorRampSliceFromParams(result.current, params);
+      });
+      expect(result.current.colorRampKey).toBe(ramp.key);
+      expect(result.current.isColorRampReversed).toBe(false);
+      expect(result.current.categoricalPaletteKey).toBe(palette.key);
+      expect(result.current.categoricalPalette).toStrictEqual(palette.colors);
+      expect(result.current.colorRampRange).toStrictEqual([0.2, 100]);
+      expect(result.current.keepColorRampRange).toBe(true);
+
+      let customPalette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[4].colors;
+      customPalette[0] = new Color("#ffffff");
+      ramp = Array.from(KNOWN_COLOR_RAMPS.values())[6];
+
+      params = new URLSearchParams();
+      params.set(UrlParam.COLOR_RAMP, ramp.key + "!");
+      params.set(UrlParam.PALETTE, customPalette.map((color) => color.getHexString()).join("-"));
+      params.set(UrlParam.RANGE, "-412,-20");
+      params.set(UrlParam.KEEP_RANGE, "0");
+      act(() => {
+        loadColorRampSliceFromParams(result.current, params);
+      });
+      expect(result.current.colorRampKey).toBe(ramp.key);
+      expect(result.current.isColorRampReversed).toBe(true);
+      expect(result.current.categoricalPaletteKey).toBeNull();
+      expect(result.current.categoricalPalette).toStrictEqual(customPalette);
+      expect(result.current.colorRampRange).toStrictEqual([-412, -20]);
+      expect(result.current.keepColorRampRange).toBe(false);
+    });
+
+    it("ignores invalid color ramp keys", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const initalColorRampKey = result.current.colorRampKey;
+
+      const params = new URLSearchParams();
+      params.set(UrlParam.COLOR_RAMP, "invalid-key!");
+      act(() => {
+        loadColorRampSliceFromParams(result.current, params);
+      });
+      expect(result.current.colorRampKey).toBe(initalColorRampKey);
+      expect(result.current.isColorRampReversed).toBe(false);
+    });
+
+    it("ignores invalid color palette keys", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const initialKey = result.current.categoricalPaletteKey;
+      const initialPalette = result.current.categoricalPalette;
+      const params = new URLSearchParams();
+      params.set(UrlParam.PALETTE_KEY, "invalid-key");
+      act(() => {
+        loadColorRampSliceFromParams(result.current, params);
+      });
+      expect(result.current.categoricalPaletteKey).toBe(initialKey);
+      expect(result.current.categoricalPalette).toStrictEqual(initialPalette);
+    });
+
+    it("backfills missing categorical palette colors to meet 12 total", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const defaultPalette = result.current.categoricalPalette;
+      const incompletePalette = [new Color("#ff0000"), new Color("#00ff00")];
+      const params = new URLSearchParams();
+      params.set(UrlParam.PALETTE, incompletePalette.map((color) => color.getHexString()).join("-"));
+      act(() => {
+        loadColorRampSliceFromParams(result.current, params);
+      });
+      expect(result.current.categoricalPalette.length).toBe(MAX_FEATURE_CATEGORIES);
+      expect(result.current.categoricalPalette.slice(0, incompletePalette.length)).toStrictEqual(incompletePalette);
+      expect(result.current.categoricalPalette.slice(incompletePalette.length)).toStrictEqual(
+        defaultPalette.slice(incompletePalette.length)
+      );
+    });
+
+    it("uses palette key instead of palette if both are provided", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const palette = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[3];
+      const customPalette = [new Color("#ff0000"), new Color("#00ff00")];
+
+      const params = new URLSearchParams();
+      params.set(UrlParam.PALETTE_KEY, palette.key);
+      params.set(UrlParam.PALETTE, customPalette.map((color) => color.getHexString()).join("-"));
+      act(() => {
+        loadColorRampSliceFromParams(result.current, params);
+      });
+      // Ignores custom palette
+      expect(result.current.categoricalPaletteKey).toBe(palette.key);
+      expect(result.current.categoricalPalette).toStrictEqual(palette.colors);
     });
   });
 });

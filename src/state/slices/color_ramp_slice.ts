@@ -11,7 +11,7 @@ import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "../../
 import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
 import { decodeBoolean, decodeString, encodeValue, UrlParam } from "../../colorizer/utils/url_utils";
 import { COLOR_RAMP_RANGE_DEFAULT, MAX_FEATURE_CATEGORIES } from "../../constants";
-import { SerializedStoreData, Store, SubscribableStore } from "../types";
+import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 import { ThresholdSlice } from "./threshold_slice";
@@ -209,9 +209,8 @@ export const addColorRampDerivedStateSubscribers = (
   );
 };
 
-export const serializeColorRampSlice = (store: SubscribableStore<ColorRampSlice>): SerializedStoreData => {
+export const serializeColorRampSlice = (slice: ColorRampSlice): SerializedStoreData => {
   const ret: SerializedStoreData = {};
-  const slice = store.getState();
 
   // Ramp + reversed
   ret[UrlParam.COLOR_RAMP] =
@@ -229,15 +228,13 @@ export const serializeColorRampSlice = (store: SubscribableStore<ColorRampSlice>
     const stops = slice.categoricalPalette.map((color: Color) => {
       return color.getHexString();
     });
-    ret[UrlParam.PALETTE] = `${UrlParam.PALETTE}=${stops.join("-")}`;
+    ret[UrlParam.PALETTE] = stops.join("-");
   }
 
   return ret;
 };
 
-export const loadColorRampSliceFromParams = (store: Store<ColorRampSlice>, params: URLSearchParams): void => {
-  const slice = store.getState();
-
+export const loadColorRampSliceFromParams = (slice: ColorRampSlice, params: URLSearchParams): void => {
   const colorRampParam = params.get(UrlParam.COLOR_RAMP);
   if (colorRampParam) {
     const [key, reversed] = colorRampParam.split(UrlParam.COLOR_RAMP_REVERSED_SUFFIX);
