@@ -5,8 +5,46 @@ import { describe, expect, it } from "vitest";
 import { VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../../src/colorizer";
 import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../../src/state";
-import { loadVectorSliceFromParams, serializeVectorSlice } from "../../../src/state/slices";
+import { loadVectorSliceFromParams, serializeVectorSlice, VectorSlice } from "../../../src/state/slices";
+import { SerializedStoreData } from "../../../src/state/types";
 import { ANY_ERROR } from "../../test_utils";
+import { compareSerializedData, compareSlice } from "./utils";
+
+const EXAMPLE_SLICE_1: Partial<VectorSlice> = {
+  vectorVisible: true,
+  vectorKey: VECTOR_KEY_MOTION_DELTA,
+  vectorMotionTimeIntervals: 1,
+  vectorColor: new Color(0xff0000),
+  vectorScaleFactor: 2,
+  vectorTooltipMode: VectorTooltipMode.COMPONENTS,
+};
+
+const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_VECTOR]: "1",
+  [UrlParam.VECTOR_KEY]: VECTOR_KEY_MOTION_DELTA,
+  [UrlParam.VECTOR_TIME_INTERVALS]: "1",
+  [UrlParam.VECTOR_COLOR]: "ff0000",
+  [UrlParam.VECTOR_SCALE]: "2",
+  [UrlParam.VECTOR_TOOLTIP_MODE]: VectorTooltipMode.COMPONENTS,
+};
+
+const EXAMPLE_SLICE_2: Partial<VectorSlice> = {
+  vectorVisible: false,
+  vectorKey: VECTOR_KEY_MOTION_DELTA,
+  vectorMotionTimeIntervals: 15,
+  vectorColor: new Color(0xffffff),
+  vectorScaleFactor: 12,
+  vectorTooltipMode: VectorTooltipMode.MAGNITUDE,
+};
+
+const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_VECTOR]: "0",
+  [UrlParam.VECTOR_KEY]: VECTOR_KEY_MOTION_DELTA,
+  [UrlParam.VECTOR_TIME_INTERVALS]: "15",
+  [UrlParam.VECTOR_COLOR]: "ffffff",
+  [UrlParam.VECTOR_SCALE]: "12",
+  [UrlParam.VECTOR_TOOLTIP_MODE]: VectorTooltipMode.MAGNITUDE,
+};
 
 describe("VectorSlice", () => {
   it("can set vector properties", () => {
@@ -91,6 +129,7 @@ describe("VectorSlice", () => {
     it("serializes vector slice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
+        useViewerStateStore.setState(EXAMPLE_SLICE_1);
         result.current.setVectorVisible(true);
         result.current.setVectorKey(VECTOR_KEY_MOTION_DELTA);
         result.current.setVectorMotionTimeIntervals(1);
@@ -99,69 +138,28 @@ describe("VectorSlice", () => {
         result.current.setVectorTooltipMode(VectorTooltipMode.COMPONENTS);
       });
       let serializedData = serializeVectorSlice(result.current);
-      expect(serializedData[UrlParam.SHOW_VECTOR]).toBe("1");
-      expect(serializedData[UrlParam.VECTOR_KEY]).toBe(VECTOR_KEY_MOTION_DELTA);
-      expect(serializedData[UrlParam.VECTOR_TIME_INTERVALS]).toBe("1");
-      expect(serializedData[UrlParam.VECTOR_COLOR]).toBe("ff0000");
-      expect(serializedData[UrlParam.VECTOR_SCALE]).toBe("2");
-      expect(serializedData[UrlParam.VECTOR_TOOLTIP_MODE]).toBe(VectorTooltipMode.COMPONENTS);
+      compareSerializedData(serializedData, EXAMPLE_SLICE_1_PARAMS);
 
       act(() => {
-        result.current.setVectorVisible(false);
-        // Currently there are no other valid vector keys.
-        result.current.setVectorKey(VECTOR_KEY_MOTION_DELTA);
-        result.current.setVectorMotionTimeIntervals(15);
-        result.current.setVectorColor(new Color("#ffffff"));
-        result.current.setVectorScaleFactor(12);
-        result.current.setVectorTooltipMode(VectorTooltipMode.MAGNITUDE);
+        useViewerStateStore.setState(EXAMPLE_SLICE_2);
       });
       serializedData = serializeVectorSlice(result.current);
-      expect(serializedData[UrlParam.SHOW_VECTOR]).toBe("0");
-      expect(serializedData[UrlParam.VECTOR_KEY]).toBe(VECTOR_KEY_MOTION_DELTA);
-      expect(serializedData[UrlParam.VECTOR_TIME_INTERVALS]).toBe("15");
-      expect(serializedData[UrlParam.VECTOR_COLOR]).toBe("ffffff");
-      expect(serializedData[UrlParam.VECTOR_SCALE]).toBe("12");
-      expect(serializedData[UrlParam.VECTOR_TOOLTIP_MODE]).toBe(VectorTooltipMode.MAGNITUDE);
+      compareSerializedData(serializedData, EXAMPLE_SLICE_2_PARAMS);
     });
   });
 
   describe("loadVectorSliceFromParams", () => {
     it("loads basic vector settings", () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const params = new URLSearchParams();
-
-      params.set(UrlParam.SHOW_VECTOR, "1");
-      params.set(UrlParam.VECTOR_KEY, VECTOR_KEY_MOTION_DELTA);
-      params.set(UrlParam.VECTOR_TIME_INTERVALS, "1");
-      params.set(UrlParam.VECTOR_COLOR, "ff0000");
-      params.set(UrlParam.VECTOR_SCALE, "2");
-      params.set(UrlParam.VECTOR_TOOLTIP_MODE, VectorTooltipMode.COMPONENTS);
       act(() => {
-        loadVectorSliceFromParams(result.current, params);
+        loadVectorSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_1_PARAMS));
       });
-      expect(result.current.vectorVisible).toBe(true);
-      expect(result.current.vectorKey).toBe(VECTOR_KEY_MOTION_DELTA);
-      expect(result.current.vectorMotionTimeIntervals).toBe(1);
-      expect(result.current.vectorColor.getHexString()).toBe("ff0000");
-      expect(result.current.vectorScaleFactor).toBe(2);
-      expect(result.current.vectorTooltipMode).toBe(VectorTooltipMode.COMPONENTS);
+      compareSlice(result.current, EXAMPLE_SLICE_1);
 
-      params.set(UrlParam.SHOW_VECTOR, "0");
-      // TODO: Do validation for vector keys if added to Dataset
-      // params.set(UrlParam.VECTOR_KEY, VECTOR_KEY_MOTION_DELTA);
-      params.set(UrlParam.VECTOR_TIME_INTERVALS, "15");
-      params.set(UrlParam.VECTOR_COLOR, "ffffff");
-      params.set(UrlParam.VECTOR_SCALE, "12");
-      params.set(UrlParam.VECTOR_TOOLTIP_MODE, VectorTooltipMode.MAGNITUDE);
       act(() => {
-        loadVectorSliceFromParams(result.current, params);
+        loadVectorSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_2_PARAMS));
       });
-      expect(result.current.vectorVisible).toBe(false);
-      expect(result.current.vectorKey).toBe(VECTOR_KEY_MOTION_DELTA);
-      expect(result.current.vectorMotionTimeIntervals).toBe(15);
-      expect(result.current.vectorColor.getHexString()).toBe("ffffff");
-      expect(result.current.vectorScaleFactor).toBe(12);
-      expect(result.current.vectorTooltipMode).toBe(VectorTooltipMode.MAGNITUDE);
+      compareSlice(result.current, EXAMPLE_SLICE_2);
     });
 
     it("ignores invalid vector keys", () => {

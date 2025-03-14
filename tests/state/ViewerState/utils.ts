@@ -1,8 +1,11 @@
 import { waitFor } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
+import { expect } from "vitest";
 
 import { Dataset } from "../../../src/colorizer";
+import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { ViewerState } from "../../../src/state";
+import { SerializedStoreData } from "../../../src/state/types";
 
 /**
  * Wrapper around `store.setDataset()`. Allows for async operations to complete
@@ -25,4 +28,16 @@ export const clearDatasetAsync = async (result: { current: ViewerState }): Promi
     result.current.clearDataset();
   });
   await waitFor(() => {});
+};
+
+export const compareSlice = (actual: Partial<ViewerState>, expected: Partial<ViewerState>): void => {
+  for (const key in expected) {
+    expect(actual[key as keyof ViewerState]).toEqual(expected[key as keyof ViewerState]);
+  }
+};
+
+export const compareSerializedData = (actual: SerializedStoreData, expected: SerializedStoreData): void => {
+  for (const key in expected) {
+    expect(actual[key as UrlParam]).toEqual(expected[key as UrlParam]);
+  }
 };

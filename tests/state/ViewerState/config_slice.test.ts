@@ -6,7 +6,53 @@ import { describe, expect, it } from "vitest";
 import { DrawMode, TabType } from "../../../src/colorizer";
 import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../../src/state";
-import { loadConfigSliceFromParams, serializeConfigSlice } from "../../../src/state/slices";
+import { ConfigSlice, loadConfigSliceFromParams, serializeConfigSlice } from "../../../src/state/slices";
+import { SerializedStoreData } from "../../../src/state/types";
+import { compareSerializedData, compareSlice } from "./utils";
+
+const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
+  showTrackPath: false,
+  showScaleBar: false,
+  showTimestamp: false,
+  outOfRangeDrawSettings: { color: new Color(0xff0000), mode: DrawMode.USE_COLOR },
+  outlierDrawSettings: { color: new Color(0x00ff00), mode: DrawMode.USE_COLOR },
+  outlineColor: new Color(0x0000ff),
+  openTab: TabType.SCATTER_PLOT,
+};
+
+const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_PATH]: "0",
+  [UrlParam.SHOW_SCALEBAR]: "0",
+  [UrlParam.SHOW_TIMESTAMP]: "0",
+  [UrlParam.FILTERED_COLOR]: "ff0000",
+  [UrlParam.FILTERED_MODE]: DrawMode.USE_COLOR.toString(),
+  [UrlParam.OUTLIER_COLOR]: "00ff00",
+  [UrlParam.OUTLIER_MODE]: DrawMode.USE_COLOR.toString(),
+  [UrlParam.OUTLINE_COLOR]: "0000ff",
+  [UrlParam.OPEN_TAB]: TabType.SCATTER_PLOT,
+};
+
+const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
+  showTrackPath: true,
+  showScaleBar: true,
+  showTimestamp: true,
+  outOfRangeDrawSettings: { color: new Color(0xffff00), mode: DrawMode.HIDE },
+  outlierDrawSettings: { color: new Color(0x00ffff), mode: DrawMode.HIDE },
+  outlineColor: new Color(0xff00ff),
+  openTab: TabType.SETTINGS,
+};
+
+const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_PATH]: "1",
+  [UrlParam.SHOW_SCALEBAR]: "1",
+  [UrlParam.SHOW_TIMESTAMP]: "1",
+  [UrlParam.FILTERED_COLOR]: "ffff00",
+  [UrlParam.FILTERED_MODE]: DrawMode.HIDE.toString(),
+  [UrlParam.OUTLIER_COLOR]: "00ffff",
+  [UrlParam.OUTLIER_MODE]: DrawMode.HIDE.toString(),
+  [UrlParam.OUTLINE_COLOR]: "ff00ff",
+  [UrlParam.OPEN_TAB]: TabType.SETTINGS,
+};
 
 describe("ConfigSlice", () => {
   it("can set properties", () => {
@@ -59,90 +105,31 @@ describe("ConfigSlice", () => {
     it("serializes config settings", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        result.current.setShowTrackPath(false);
-        result.current.setShowScaleBar(false);
-        result.current.setShowTimestamp(false);
-        result.current.setOutOfRangeDrawSettings({ color: new Color(0xff0000), mode: DrawMode.USE_COLOR });
-        result.current.setOutlierDrawSettings({ color: new Color(0x00ff00), mode: DrawMode.USE_COLOR });
-        result.current.setOutlineColor(new Color(0x0000ff));
-        result.current.setOpenTab(TabType.SCATTER_PLOT);
+        useViewerStateStore.setState(EXAMPLE_SLICE_1);
       });
       let serializedData = serializeConfigSlice(result.current);
-      expect(serializedData[UrlParam.SHOW_PATH]).toBe("0");
-      expect(serializedData[UrlParam.SHOW_SCALEBAR]).toBe("0");
-      expect(serializedData[UrlParam.SHOW_TIMESTAMP]).toBe("0");
-      expect(serializedData[UrlParam.FILTERED_COLOR]).toBe("ff0000");
-      expect(serializedData[UrlParam.FILTERED_MODE]).toBe(DrawMode.USE_COLOR.toString());
-      expect(serializedData[UrlParam.OUTLIER_COLOR]).toBe("00ff00");
-      expect(serializedData[UrlParam.OUTLIER_MODE]).toBe(DrawMode.USE_COLOR.toString());
-      expect(serializedData[UrlParam.OUTLINE_COLOR]).toBe("0000ff");
-      expect(serializedData[UrlParam.OPEN_TAB]).toBe(TabType.SCATTER_PLOT);
+      compareSerializedData(serializedData, EXAMPLE_SLICE_1_PARAMS);
 
       act(() => {
-        result.current.setShowTrackPath(true);
-        result.current.setShowScaleBar(true);
-        result.current.setShowTimestamp(true);
-        result.current.setOutOfRangeDrawSettings({ color: new Color(0xffff00), mode: DrawMode.HIDE });
-        result.current.setOutlierDrawSettings({ color: new Color(0x00ffff), mode: DrawMode.HIDE });
-        result.current.setOutlineColor(new Color(0xff00ff));
-        result.current.setOpenTab(TabType.SETTINGS);
+        useViewerStateStore.setState(EXAMPLE_SLICE_2);
       });
       serializedData = serializeConfigSlice(result.current);
-      expect(serializedData[UrlParam.SHOW_PATH]).toBe("1");
-      expect(serializedData[UrlParam.SHOW_SCALEBAR]).toBe("1");
-      expect(serializedData[UrlParam.SHOW_TIMESTAMP]).toBe("1");
-      expect(serializedData[UrlParam.FILTERED_COLOR]).toBe("ffff00");
-      expect(serializedData[UrlParam.FILTERED_MODE]).toBe(DrawMode.HIDE.toString());
-      expect(serializedData[UrlParam.OUTLIER_COLOR]).toBe("00ffff");
-      expect(serializedData[UrlParam.OUTLIER_MODE]).toBe(DrawMode.HIDE.toString());
-      expect(serializedData[UrlParam.OUTLINE_COLOR]).toBe("ff00ff");
-      expect(serializedData[UrlParam.OPEN_TAB]).toBe(TabType.SETTINGS);
+      compareSerializedData(serializedData, EXAMPLE_SLICE_2_PARAMS);
     });
   });
 
   describe("loadConfigSliceFromParams", () => {
     it("loads basic config settings", () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const params = new URLSearchParams();
-      params.set(UrlParam.SHOW_PATH, "0");
-      params.set(UrlParam.SHOW_SCALEBAR, "0");
-      params.set(UrlParam.SHOW_TIMESTAMP, "0");
-      params.set(UrlParam.FILTERED_COLOR, "ff0000");
-      params.set(UrlParam.FILTERED_MODE, DrawMode.USE_COLOR.toString());
-      params.set(UrlParam.OUTLIER_COLOR, "00ff00");
-      params.set(UrlParam.OUTLIER_MODE, DrawMode.USE_COLOR.toString());
-      params.set(UrlParam.OUTLINE_COLOR, "0000ff");
-      params.set(UrlParam.OPEN_TAB, TabType.SCATTER_PLOT);
       act(() => {
-        loadConfigSliceFromParams(result.current, params);
+        loadConfigSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_1_PARAMS));
       });
-      expect(result.current.showTrackPath).toBe(false);
-      expect(result.current.showScaleBar).toBe(false);
-      expect(result.current.showTimestamp).toBe(false);
-      expect(result.current.outOfRangeDrawSettings).toEqual({ color: new Color(0xff0000), mode: DrawMode.USE_COLOR });
-      expect(result.current.outlierDrawSettings).toEqual({ color: new Color(0x00ff00), mode: DrawMode.USE_COLOR });
-      expect(result.current.outlineColor).toEqual(new Color(0x0000ff));
-      expect(result.current.openTab).toBe(TabType.SCATTER_PLOT);
+      compareSlice(result.current, EXAMPLE_SLICE_1);
 
-      params.set(UrlParam.SHOW_PATH, "1");
-      params.set(UrlParam.SHOW_SCALEBAR, "1");
-      params.set(UrlParam.SHOW_TIMESTAMP, "1");
-      params.set(UrlParam.FILTERED_COLOR, "ffff00");
-      params.set(UrlParam.FILTERED_MODE, DrawMode.HIDE.toString());
-      params.set(UrlParam.OUTLIER_COLOR, "00ffff");
-      params.set(UrlParam.OUTLIER_MODE, DrawMode.HIDE.toString());
-      params.set(UrlParam.OUTLINE_COLOR, "ff00ff");
-      params.set(UrlParam.OPEN_TAB, TabType.SETTINGS);
       act(() => {
-        loadConfigSliceFromParams(result.current, params);
+        loadConfigSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_2_PARAMS));
       });
-      expect(result.current.showTrackPath).toBe(true);
-      expect(result.current.showScaleBar).toBe(true);
-      expect(result.current.showTimestamp).toBe(true);
-      expect(result.current.outOfRangeDrawSettings).toEqual({ color: new Color(0xffff00), mode: DrawMode.HIDE });
-      expect(result.current.outlierDrawSettings).toEqual({ color: new Color(0x00ffff), mode: DrawMode.HIDE });
-      expect(result.current.outlineColor).toEqual(new Color(0xff00ff));
-      expect(result.current.openTab).toBe(TabType.SETTINGS);
+      compareSlice(result.current, EXAMPLE_SLICE_2);
     });
 
     it("ignores invalid draw setting modes", () => {
