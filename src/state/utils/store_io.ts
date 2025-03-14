@@ -1,4 +1,5 @@
 import {
+  loadBackdropSliceFromParams,
   loadColorRampSliceFromParams,
   loadConfigSliceFromParams,
   loadDatasetSliceFromParams,
@@ -26,7 +27,6 @@ export const serializeViewerStateStore = (store: Store<ViewerState>): Partial<Se
   // Ordered by approximate importance in the URL
   return {
     ...serializeCollectionSlice(store.getState()),
-    ...serializeVectorSlice(store.getState()),
     ...serializeDatasetSlice(store.getState()),
     ...serializeTimeSlice(store.getState()),
     ...serializeColorRampSlice(store.getState()),
@@ -49,23 +49,23 @@ export const serializedStoreDataToUrl = (data: SerializedStoreData): string => {
 // DESERIALIZATION ///////////////////////////////////////////////////////////////////////
 
 /**
- * Loads the viewer state from the given URL  parameters. Note that this MUST be
- * called after the dataset is loaded and set in the store.
+ * Loads the viewer state from the given URL parameters. Note that this MUST be
+ * called after the collection and dataset are loaded and set in the store.
  */
 export const loadViewerStateFromParams = async (store: Store<ViewerState>, params: URLSearchParams): Promise<void> => {
-  // NOTE: Ordering is important here, because of dependencies between slices.
   // 1. No dependencies:
   loadConfigSliceFromParams(store.getState(), params);
 
   // 2. Dependent on dataset object:
+  loadBackdropSliceFromParams(store.getState(), params);
   loadDatasetSliceFromParams(store.getState(), params);
-  loadThresholdSliceFromParams(store.getState(), params);
   loadScatterPlotSliceFromParams(store.getState(), params);
+  loadThresholdSliceFromParams(store.getState(), params);
   loadVectorSliceFromParams(store.getState(), params);
 
-  // 3. Dependent on dataset fields (track/backdrop/features):
+  // 3. Dependent on dataset slice (track/backdrop/features):
   loadTimeSliceFromParams(store.getState(), params);
 
-  // 4. Dependent on dataset + thresholds:
+  // 4. Dependent on dataset + threshold slices:
   loadColorRampSliceFromParams(store.getState(), params);
 };

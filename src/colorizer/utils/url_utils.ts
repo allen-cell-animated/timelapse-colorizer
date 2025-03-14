@@ -416,7 +416,7 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
   return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
 }
 
-const rangeTypeToUrlParam: Record<PlotRangeType, string> = {
+const scatterPlotRangeTypeToUrlParam: Record<PlotRangeType, string> = {
   [PlotRangeType.ALL_TIME]: "all",
   [PlotRangeType.CURRENT_TRACK]: "track",
   [PlotRangeType.CURRENT_FRAME]: "frame",
@@ -429,7 +429,7 @@ const urlParamToRangeType: Record<string, PlotRangeType> = {
 };
 
 export function encodeScatterPlotRangeType(rangeType: PlotRangeType): string {
-  return rangeTypeToUrlParam[rangeType];
+  return scatterPlotRangeTypeToUrlParam[rangeType];
 }
 
 export function decodeScatterPlotRangeType(rangeString: string | null): PlotRangeType | undefined {
@@ -442,7 +442,7 @@ export function decodeScatterPlotRangeType(rangeString: string | null): PlotRang
 function serializeScatterPlotConfig(config: Partial<ScatterPlotConfig>): string[] {
   const parameters: string[] = [];
   if (config.rangeType) {
-    const rangeString = rangeTypeToUrlParam[config.rangeType];
+    const rangeString = scatterPlotRangeTypeToUrlParam[config.rangeType];
     parameters.push(`${UrlParam.SCATTERPLOT_RANGE_MODE}=${rangeString}`);
   }
   config.xAxis && parameters.push(`${UrlParam.SCATTERPLOT_X_AXIS}=${encodeURIComponent(config.xAxis)}`);

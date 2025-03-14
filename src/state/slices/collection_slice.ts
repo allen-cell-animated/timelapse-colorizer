@@ -2,7 +2,6 @@ import { StateCreator } from "zustand";
 
 import { UrlParam } from "../../colorizer/utils/url_utils";
 import { SerializedStoreData } from "../types";
-import { DatasetSlice } from "./dataset_slice";
 
 import Collection from "../../colorizer/Collection";
 
@@ -17,10 +16,7 @@ type CollectionSliceActions = {
 
 export type CollectionSlice = CollectionSliceState & CollectionSliceActions;
 
-export const createCollectionSlice: StateCreator<CollectionSlice & DatasetSlice, [], [], CollectionSlice> = (
-  set,
-  _get
-) => ({
+export const createCollectionSlice: StateCreator<CollectionSlice, [], [], CollectionSlice> = (set, _get) => ({
   collection: null,
 
   setCollection: (collection: Collection) => {
