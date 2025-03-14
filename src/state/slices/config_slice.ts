@@ -4,11 +4,30 @@ import { StateCreator } from "zustand";
 import {
   DrawMode,
   DrawSettings,
+  isTabType,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
   TabType,
 } from "../../colorizer";
+import {
+  decodeBoolean,
+  decodeHexColor,
+  encodeBoolean,
+  encodeColor,
+  parseDrawSettings,
+  UrlParam,
+} from "../../colorizer/utils/url_utils";
+import { SerializedStoreData } from "../types";
+
+const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
+  color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
+  mode: DrawMode.USE_COLOR,
+};
+const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
+  color: new Color(OUTLIER_COLOR_DEFAULT),
+  mode: DrawMode.USE_COLOR,
+};
 
 type ConfigSliceState = {
   showTrackPath: boolean;
@@ -43,14 +62,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   showTimestamp: true,
   showLegendDuringExport: true,
   showHeaderDuringExport: true,
-  outOfRangeDrawSettings: {
-    color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
-    mode: DrawMode.USE_COLOR,
-  },
-  outlierDrawSettings: {
-    color: new Color(OUTLIER_COLOR_DEFAULT),
-    mode: DrawMode.USE_COLOR,
-  },
+  outOfRangeDrawSettings: OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT,
+  outlierDrawSettings: OUTLIER_DRAW_SETTINGS_DEFAULT,
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
   openTab: TabType.TRACK_PLOT,
 
@@ -65,3 +78,58 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setOutlineColor: (outlineColor) => set({ outlineColor }),
   setOpenTab: (openTab) => set({ openTab }),
 });
+
+export const serializeConfigSlice = (slice: ConfigSlice): SerializedStoreData => {
+  const ret: SerializedStoreData = {};
+  ret[UrlParam.SHOW_PATH] = encodeBoolean(slice.showTrackPath);
+  ret[UrlParam.SHOW_SCALEBAR] = encodeBoolean(slice.showScaleBar);
+  ret[UrlParam.SHOW_TIMESTAMP] = encodeBoolean(slice.showTimestamp);
+  // Export settings are currently not serialized.
+  ret[UrlParam.FILTERED_COLOR] = encodeColor(slice.outOfRangeDrawSettings.color);
+  ret[UrlParam.FILTERED_MODE] = slice.outOfRangeDrawSettings.mode.toString();
+  ret[UrlParam.OUTLIER_COLOR] = encodeColor(slice.outlierDrawSettings.color);
+  ret[UrlParam.OUTLIER_MODE] = slice.outlierDrawSettings.mode.toString();
+  ret[UrlParam.OUTLINE_COLOR] = encodeColor(slice.outlineColor);
+
+  ret[UrlParam.OPEN_TAB] = slice.openTab;
+  return ret;
+};
+
+export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
+  const showPathParam = decodeBoolean(params.get(UrlParam.SHOW_PATH));
+  if (showPathParam !== undefined) {
+    slice.setShowTrackPath(showPathParam);
+  }
+  const showScaleBarParam = decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR));
+  if (showScaleBarParam !== undefined) {
+    slice.setShowScaleBar(showScaleBarParam);
+  }
+  const showTimestampParam = decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP));
+  if (showTimestampParam !== undefined) {
+    slice.setShowTimestamp(showTimestampParam);
+  }
+
+  slice.setOutOfRangeDrawSettings(
+    parseDrawSettings(
+      params.get(UrlParam.FILTERED_COLOR),
+      params.get(UrlParam.FILTERED_MODE),
+      OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT
+    )
+  );
+  slice.setOutlierDrawSettings(
+    parseDrawSettings(
+      params.get(UrlParam.OUTLIER_COLOR),
+      params.get(UrlParam.OUTLIER_MODE),
+      OUTLIER_DRAW_SETTINGS_DEFAULT
+    )
+  );
+  const outlineColorParam = decodeHexColor(params.get(UrlParam.OUTLINE_COLOR));
+  if (outlineColorParam) {
+    slice.setOutlineColor(new Color(outlineColorParam));
+  }
+
+  const openTabParam = params.get(UrlParam.OPEN_TAB);
+  if (openTabParam && isTabType(openTabParam)) {
+    slice.setOpenTab(openTabParam as TabType);
+  }
+};
