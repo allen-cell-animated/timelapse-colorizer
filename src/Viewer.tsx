@@ -552,10 +552,6 @@ function Viewer(): ReactElement {
         setFeatureThresholds(initialUrlParams.thresholds);
       }
 
-      if (initialUrlParams.config) {
-        // updateConfig(initialUrlParams.config);
-      }
-
       if (initialUrlParams.scatterPlotConfig) {
         const newScatterPlotConfig = initialUrlParams.scatterPlotConfig;
         // For backwards-compatibility, cast xAxis and yAxis to feature keys.

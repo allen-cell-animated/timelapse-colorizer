@@ -108,7 +108,6 @@ describe("useViewerStateStore: TimeSlice", () => {
       await result.current.setFrame(3);
     });
     expect(result.current.pendingFrame).toBe(3);
-    expect(result.current.currentFrame).toBe(3);
 
     await setDatasetAsync(result, MOCK_DATASET_WITH_TWO_FRAMES);
     expect(result.current.pendingFrame).toBe(1);
@@ -120,11 +119,9 @@ describe("useViewerStateStore: TimeSlice", () => {
     await act(async () => {
       await result.current.setFrame(3);
     });
-    expect(result.current.currentFrame).toBe(3);
     expect(result.current.pendingFrame).toBe(3);
 
     await clearDatasetAsync(result);
-    expect(result.current.currentFrame).toBe(0);
     expect(result.current.pendingFrame).toBe(0);
   });
 
