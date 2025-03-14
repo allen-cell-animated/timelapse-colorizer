@@ -1,8 +1,24 @@
 import { Color } from "three";
 import { StateCreator } from "zustand";
 
-import { getDefaultVectorConfig, VECTOR_KEY_MOTION_DELTA, VectorConfig, VectorTooltipMode } from "../../colorizer";
-import { SubscribableStore } from "../types";
+import {
+  getDefaultVectorConfig,
+  isVectorTooltipMode,
+  VECTOR_KEY_MOTION_DELTA,
+  VectorConfig,
+  VectorTooltipMode,
+} from "../../colorizer";
+import {
+  decodeBoolean,
+  decodeFloat,
+  decodeHexColor,
+  decodeInt,
+  encodeBoolean,
+  encodeColor,
+  encodeNumber,
+  UrlParam,
+} from "../../colorizer/utils/url_utils";
+import { SerializedStoreData, SubscribableStore } from "../types";
 import { validateFiniteValue } from "../utils/data_validation";
 import { addDerivedStateSubscriber, makeDebouncedCallback } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
@@ -79,9 +95,7 @@ export const createVectorSlice: StateCreator<VectorSlice & DatasetSlice, [], [],
   setVectorTooltipMode: (mode: VectorTooltipMode) => set({ vectorTooltipMode: mode }),
 });
 
-export const addVectorDerivedStateSubscribers = (
-  store: SubscribableStore<VectorSlice & DatasetSlice>
-): void => {
+export const addVectorDerivedStateSubscribers = (store: SubscribableStore<VectorSlice & DatasetSlice>): void => {
   // Update motion deltas when the dataset, vector key, or motion time intervals change.
   addDerivedStateSubscriber(
     store,
@@ -118,3 +132,47 @@ export const selectVectorConfigFromState = (state: VectorSlice): VectorConfig =>
   scaleFactor: state.vectorScaleFactor,
   tooltipMode: state.vectorTooltipMode,
 });
+
+export const serializeVectorSlice = (slice: VectorSlice): SerializedStoreData => {
+  const ret: SerializedStoreData = {};
+  ret[UrlParam.SHOW_VECTOR] = encodeBoolean(slice.vectorVisible);
+  ret[UrlParam.VECTOR_KEY] = slice.vectorKey;
+  ret[UrlParam.VECTOR_COLOR] = encodeColor(slice.vectorColor);
+  ret[UrlParam.VECTOR_SCALE] = encodeNumber(slice.vectorScaleFactor);
+  ret[UrlParam.VECTOR_TOOLTIP_MODE] = slice.vectorTooltipMode.toString();
+  ret[UrlParam.VECTOR_TIME_INTERVALS] = encodeNumber(slice.vectorMotionTimeIntervals);
+  return ret;
+};
+
+export function loadVectorSliceFromParams(slice: VectorSlice, params: URLSearchParams): void {
+  const vectorVisible = decodeBoolean(params.get(UrlParam.SHOW_VECTOR));
+  if (vectorVisible !== undefined) {
+    slice.setVectorVisible(vectorVisible);
+  }
+
+  const vectorKey = params.get(UrlParam.VECTOR_KEY);
+  // TODO: Do validation for vector keys if added to Dataset
+  if (vectorKey === VECTOR_KEY_MOTION_DELTA) {
+    slice.setVectorKey(vectorKey);
+  }
+
+  const vectorColor = decodeHexColor(params.get(UrlParam.VECTOR_COLOR));
+  if (vectorColor !== undefined) {
+    slice.setVectorColor(new Color(vectorColor));
+  }
+
+  const vectorScale = decodeFloat(params.get(UrlParam.VECTOR_SCALE));
+  if (vectorScale !== undefined) {
+    slice.setVectorScaleFactor(vectorScale);
+  }
+
+  const vectorTooltipMode = params.get(UrlParam.VECTOR_TOOLTIP_MODE);
+  if (vectorTooltipMode && isVectorTooltipMode(vectorTooltipMode)) {
+    slice.setVectorTooltipMode(vectorTooltipMode);
+  }
+
+  const vectorTimeIntervals = decodeInt(params.get(UrlParam.VECTOR_TIME_INTERVALS));
+  if (vectorTimeIntervals !== undefined) {
+    slice.setVectorMotionTimeIntervals(vectorTimeIntervals);
+  }
+}
