@@ -2,11 +2,17 @@ import {
   loadColorRampSliceFromParams,
   loadConfigSliceFromParams,
   loadDatasetSliceFromParams,
+  loadScatterPlotSliceFromParams,
+  loadThresholdSliceFromParams,
   loadTimeSliceFromParams,
   loadVectorSliceFromParams,
+  serializeBackdropSlice,
+  serializeCollectionSlice,
   serializeColorRampSlice,
   serializeConfigSlice,
   serializeDatasetSlice,
+  serializeScatterPlotSlice,
+  serializeThresholdSlice,
   serializeTimeSlice,
   serializeVectorSlice,
 } from "../slices";
@@ -19,10 +25,15 @@ import { ViewerState } from "../ViewerState";
 export const serializeViewerStateStore = (store: Store<ViewerState>): Partial<SerializedStoreData> => {
   // Ordered by approximate importance in the URL
   return {
+    ...serializeCollectionSlice(store.getState()),
+    ...serializeVectorSlice(store.getState()),
     ...serializeDatasetSlice(store.getState()),
     ...serializeTimeSlice(store.getState()),
     ...serializeColorRampSlice(store.getState()),
+    ...serializeThresholdSlice(store.getState()),
     ...serializeConfigSlice(store.getState()),
+    ...serializeScatterPlotSlice(store.getState()),
+    ...serializeBackdropSlice(store.getState()),
     ...serializeVectorSlice(store.getState()),
   };
 };
@@ -44,13 +55,17 @@ export const serializedStoreDataToUrl = (data: SerializedStoreData): string => {
 export const loadViewerStateFromParams = async (store: Store<ViewerState>, params: URLSearchParams): Promise<void> => {
   // NOTE: Ordering is important here, because of dependencies between slices.
   // 1. No dependencies:
-  loadDatasetSliceFromParams(store.getState(), params);
   loadConfigSliceFromParams(store.getState(), params);
 
-  // 2. Dependent on dataset fields:
-  loadTimeSliceFromParams(store.getState(), params);
+  // 2. Dependent on dataset object:
+  loadDatasetSliceFromParams(store.getState(), params);
+  loadThresholdSliceFromParams(store.getState(), params);
+  loadScatterPlotSliceFromParams(store.getState(), params);
   loadVectorSliceFromParams(store.getState(), params);
 
-  // 3. Dependent on dataset + thresholds:
+  // 3. Dependent on dataset fields (track/backdrop/features):
+  loadTimeSliceFromParams(store.getState(), params);
+
+  // 4. Dependent on dataset + thresholds:
   loadColorRampSliceFromParams(store.getState(), params);
 };

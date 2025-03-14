@@ -45,7 +45,7 @@ export enum UrlParam {
   BACKDROP_KEY = "bg-key",
   BACKDROP_BRIGHTNESS = "bg-brightness",
   BACKDROP_SATURATION = "bg-sat",
-  FOREGROUND_ALPHA = "fg-alpha",
+  OBJECT_OPACITY = "fg-alpha",
   OUTLIER_MODE = "outlier-mode",
   OUTLIER_COLOR = "outlier-color",
   FILTERED_MODE = "filter-mode",
@@ -190,6 +190,10 @@ function serializeThreshold(threshold: FeatureThreshold): string {
   }
 }
 
+export function serializeThresholds(thresholds: FeatureThreshold[]): string {
+  return thresholds.map(serializeThreshold).join(",");
+}
+
 /**
  * Deserializes a single threshold string into a FeatureThreshold object.
  * @param thresholdString Threshold string to parse.
@@ -251,11 +255,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
   return threshold;
 }
 
-function serializeThresholds(thresholds: FeatureThreshold[]): string {
-  return thresholds.map(serializeThreshold).join(",");
-}
-
-function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | undefined {
+export function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | undefined {
   if (!thresholds) {
     return undefined;
   }
@@ -289,7 +289,7 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
 
   // Foreground
   if (config.objectOpacity !== undefined) {
-    parameters.push(`${UrlParam.FOREGROUND_ALPHA}=${config.objectOpacity}`);
+    parameters.push(`${UrlParam.OBJECT_OPACITY}=${config.objectOpacity}`);
   }
 
   // Outlier + filter colors
@@ -378,7 +378,7 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
   const newConfig: Partial<ViewerConfig> = {};
   newConfig.backdropSaturation = decodeInt(params.get(UrlParam.BACKDROP_SATURATION));
   newConfig.backdropBrightness = decodeInt(params.get(UrlParam.BACKDROP_BRIGHTNESS));
-  newConfig.objectOpacity = decodeInt(params.get(UrlParam.FOREGROUND_ALPHA));
+  newConfig.objectOpacity = decodeInt(params.get(UrlParam.OBJECT_OPACITY));
 
   if (params.get(UrlParam.OUTLIER_COLOR) || params.get(UrlParam.OUTLIER_MODE)) {
     newConfig.outlierDrawSettings = parseDrawSettings(
@@ -427,6 +427,17 @@ const urlParamToRangeType: Record<string, PlotRangeType> = {
   track: PlotRangeType.CURRENT_TRACK,
   frame: PlotRangeType.CURRENT_FRAME,
 };
+
+export function encodeScatterPlotRangeType(rangeType: PlotRangeType): string {
+  return rangeTypeToUrlParam[rangeType];
+}
+
+export function decodeScatterPlotRangeType(rangeString: string | null): PlotRangeType | undefined {
+  if (rangeString === null) {
+    return;
+  }
+  return urlParamToRangeType[rangeString];
+}
 
 function serializeScatterPlotConfig(config: Partial<ScatterPlotConfig>): string[] {
   const parameters: string[] = [];

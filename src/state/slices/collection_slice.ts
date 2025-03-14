@@ -1,5 +1,7 @@
 import { StateCreator } from "zustand";
 
+import { UrlParam } from "../../colorizer/utils/url_utils";
+import { SerializedStoreData } from "../types";
 import { DatasetSlice } from "./dataset_slice";
 
 import Collection from "../../colorizer/Collection";
@@ -25,3 +27,15 @@ export const createCollectionSlice: StateCreator<CollectionSlice & DatasetSlice,
     set({ collection });
   },
 });
+
+export const serializeCollectionSlice = (slice: CollectionSlice): SerializedStoreData => {
+  const collection = slice.collection;
+  // Collection URl is null if a single dataset was loaded, so the collection is
+  // a mocked collection with a single dataset.
+  if (collection === null || collection.url === null) {
+    return {};
+  }
+  return {
+    [UrlParam.COLLECTION]: collection.url,
+  };
+};

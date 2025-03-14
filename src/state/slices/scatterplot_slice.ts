@@ -2,8 +2,9 @@ import { StateCreator } from "zustand";
 
 import { Dataset } from "../../colorizer";
 import { PlotRangeType } from "../../colorizer/types";
+import { decodeScatterPlotRangeType, encodeScatterPlotRangeType, UrlParam } from "../../colorizer/utils/url_utils";
 import { SCATTERPLOT_TIME_FEATURE } from "../../components/Tabs/scatter_plot_data_utils";
-import { SubscribableStore } from "../types";
+import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 
@@ -75,4 +76,33 @@ export const addScatterPlotSliceDerivedStateSubscribers = (
       }
     }
   );
+};
+
+export const serializeScatterPlotSlice = (slice: ScatterPlotSlice): SerializedStoreData => {
+  const ret: SerializedStoreData = {};
+  if (slice.scatterXAxis !== null) {
+    ret[UrlParam.SCATTERPLOT_X_AXIS] = slice.scatterXAxis;
+  }
+  if (slice.scatterYAxis !== null) {
+    ret[UrlParam.SCATTERPLOT_Y_AXIS] = slice.scatterYAxis;
+  }
+  ret[UrlParam.SCATTERPLOT_RANGE_MODE] = encodeScatterPlotRangeType(slice.scatterRangeType);
+  return ret;
+};
+
+export const loadScatterPlotSliceFromParams = (slice: ScatterPlotSlice, params: URLSearchParams): void => {
+  const scatterXAxis = params.get(UrlParam.SCATTERPLOT_X_AXIS);
+  if (scatterXAxis !== null) {
+    slice.setScatterXAxis(scatterXAxis);
+  }
+
+  const scatterYAxis = params.get(UrlParam.SCATTERPLOT_Y_AXIS);
+  if (scatterYAxis !== null) {
+    slice.setScatterYAxis(scatterYAxis);
+  }
+
+  const scatterRangeType = decodeScatterPlotRangeType(params.get(UrlParam.SCATTERPLOT_RANGE_MODE));
+  if (scatterRangeType !== undefined) {
+    slice.setScatterRangeType(scatterRangeType);
+  }
 };
