@@ -162,7 +162,7 @@ export function loadVectorSliceFromParams(slice: VectorSlice, params: URLSearchP
   }
 
   const vectorScale = decodeFloat(params.get(UrlParam.VECTOR_SCALE));
-  if (vectorScale !== undefined) {
+  if (vectorScale !== undefined && Number.isFinite(vectorScale)) {
     slice.setVectorScaleFactor(vectorScale);
   }
 
@@ -172,7 +172,7 @@ export function loadVectorSliceFromParams(slice: VectorSlice, params: URLSearchP
   }
 
   const vectorTimeIntervals = decodeInt(params.get(UrlParam.VECTOR_TIME_INTERVALS));
-  if (vectorTimeIntervals !== undefined) {
+  if (vectorTimeIntervals !== undefined && Number.isFinite(vectorTimeIntervals)) {
     slice.setVectorMotionTimeIntervals(vectorTimeIntervals);
   }
 }
