@@ -3,10 +3,12 @@ import {
   loadConfigSliceFromParams,
   loadDatasetSliceFromParams,
   loadTimeSliceFromParams,
+  loadVectorSliceFromParams,
   serializeColorRampSlice,
   serializeConfigSlice,
   serializeDatasetSlice,
   serializeTimeSlice,
+  serializeVectorSlice,
 } from "../slices";
 import { SerializedStoreData, Store } from "../types";
 
@@ -21,6 +23,7 @@ export const serializeViewerStateStore = (store: Store<ViewerState>): Partial<Se
     ...serializeTimeSlice(store.getState()),
     ...serializeColorRampSlice(store.getState()),
     ...serializeConfigSlice(store.getState()),
+    ...serializeVectorSlice(store.getState()),
   };
 };
 
@@ -46,6 +49,7 @@ export const loadViewerStateFromParams = async (store: Store<ViewerState>, param
 
   // 2. Dependent on dataset fields:
   loadTimeSliceFromParams(store.getState(), params);
+  loadVectorSliceFromParams(store.getState(), params);
 
   // 3. Dependent on dataset + thresholds:
   loadColorRampSliceFromParams(store.getState(), params);

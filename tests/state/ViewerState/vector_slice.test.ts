@@ -130,12 +130,6 @@ describe("VectorSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
         useViewerStateStore.setState(EXAMPLE_SLICE_1);
-        result.current.setVectorVisible(true);
-        result.current.setVectorKey(VECTOR_KEY_MOTION_DELTA);
-        result.current.setVectorMotionTimeIntervals(1);
-        result.current.setVectorColor(new Color("#ff0000"));
-        result.current.setVectorScaleFactor(2);
-        result.current.setVectorTooltipMode(VectorTooltipMode.COMPONENTS);
       });
       let serializedData = serializeVectorSlice(result.current);
       compareSerializedData(serializedData, EXAMPLE_SLICE_1_PARAMS);

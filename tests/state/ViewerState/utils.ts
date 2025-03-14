@@ -30,12 +30,22 @@ export const clearDatasetAsync = async (result: { current: ViewerState }): Promi
   await waitFor(() => {});
 };
 
+/**
+ * Checks whether all key-value pairs in `expected` are present in `actual`.
+ * Note that `actual` may contain additional key-value pairs not present in
+ * `expected` and still pass this check.
+ */
 export const compareSlice = (actual: Partial<ViewerState>, expected: Partial<ViewerState>): void => {
   for (const key in expected) {
     expect(actual[key as keyof ViewerState]).toEqual(expected[key as keyof ViewerState]);
   }
 };
 
+/**
+ * Checks whether all key-value pairs in `expected` are present in `actual`.
+ * Note that `actual` may contain additional key-value pairs not present in
+ * `expected` and still pass this check.
+ */
 export const compareSerializedData = (actual: SerializedStoreData, expected: SerializedStoreData): void => {
   for (const key in expected) {
     expect(actual[key as UrlParam]).toEqual(expected[key as UrlParam]);
