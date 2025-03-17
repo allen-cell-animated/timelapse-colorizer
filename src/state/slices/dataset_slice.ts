@@ -7,27 +7,22 @@ import { CollectionSlice } from "./collection_slice";
 
 import Dataset from "../../colorizer/Dataset";
 
-type DatasetSliceState =
-  | {
-      datasetKey: null;
-      dataset: null;
-      featureKey: null;
-      track: null;
-      /** The key of the backdrop image set in the current dataset. `null` if there
-       * is no Dataset loaded or if the dataset does not have backdrops. */
-      backdropKey: null;
-    }
-  | {
-      datasetKey: string;
-      dataset: Dataset;
-      featureKey: string;
-      track: Track | null;
-      /** The key of the backdrop image set in the current dataset. `null` if there
-       * is no Dataset loaded or if the dataset does not have backdrops. */
-      backdropKey: string | null;
-    };
+export type DatasetSliceState = {
+  datasetKey: string | null;
+  dataset: Dataset | null;
+  featureKey: string | null;
+  track: Track | null;
+  /** The key of the backdrop image set in the current dataset. `null` if there
+   * is no Dataset loaded or if the dataset does not have backdrops. */
+  backdropKey: string | null;
+};
 
-type DatasetSliceActions = {
+export type DatasetSliceSerializableState = Pick<
+  DatasetSliceState,
+  "datasetKey" | "featureKey" | "track" | "backdropKey"
+>;
+
+export type DatasetSliceActions = {
   setDataset: (key: string, dataset: Dataset) => void;
   clearDataset: () => void;
   /** Sets the current feature key.
@@ -110,9 +105,9 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   clearDataset: () => set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null }),
 });
 
-export const serializeDatasetSlice = (slice: Partial<DatasetSlice>): SerializedStoreData => {
+export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
-  if (slice.dataset) {
+  if (slice.datasetKey !== undefined && slice.datasetKey !== null) {
     ret[UrlParam.DATASET] = slice.datasetKey;
   }
   if (slice.featureKey !== undefined && slice.featureKey !== null) {
@@ -128,14 +123,12 @@ export const serializeDatasetSlice = (slice: Partial<DatasetSlice>): SerializedS
 };
 
 /** Selects state values that serialization depends on. */
-export const datasetSliceSerializationDependencies = (slice: DatasetSlice): Partial<DatasetSliceState> =>
-  ({
-    dataset: slice.dataset,
-    datasetKey: slice.datasetKey,
-    featureKey: slice.featureKey,
-    track: slice.track,
-    backdropKey: slice.backdropKey,
-  } as DatasetSliceState);
+export const datasetSliceSerializationDependencies = (slice: DatasetSlice): DatasetSliceSerializableState => ({
+  datasetKey: slice.datasetKey,
+  featureKey: slice.featureKey,
+  track: slice.track,
+  backdropKey: slice.backdropKey,
+});
 
 export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearchParams): void => {
   const dataset = slice.dataset;

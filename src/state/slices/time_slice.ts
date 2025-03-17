@@ -9,7 +9,7 @@ import { DatasetSlice } from "./dataset_slice";
 
 import TimeControls from "../../colorizer/TimeControls";
 
-type TimeSliceState = {
+export type TimeSliceState = {
   /** The frame that is currently being loaded. If no load is happening,
    * `pendingFrame === currentFrame`.
    */
@@ -21,7 +21,9 @@ type TimeSliceState = {
   loadFrameCallback: (frame: number) => Promise<void>;
 };
 
-type TimeSliceActions = {
+export type TimeSliceSerializableState = Pick<TimeSliceState, "currentFrame">;
+
+export type TimeSliceActions = {
   /**
    * Attempts to set and load the given frame number, using the callback
    * provided by `setLoadCallback`.
@@ -101,14 +103,14 @@ export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetS
   );
 };
 
-export const serializeTimeSlice = (state: Partial<TimeSlice>): SerializedStoreData => {
+export const serializeTimeSlice = (state: Partial<TimeSliceSerializableState>): SerializedStoreData => {
   return {
     [UrlParam.TIME]: state.currentFrame?.toString(),
   };
 };
 
 /** Selects state values that serialization depends on. */
-export const timeSliceSerializationDependencies = (slice: TimeSlice): Partial<TimeSliceState> => ({
+export const timeSliceSerializationDependencies = (slice: TimeSlice): TimeSliceSerializableState => ({
   currentFrame: slice.currentFrame,
 });
 

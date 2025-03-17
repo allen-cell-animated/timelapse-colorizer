@@ -22,7 +22,7 @@ import { SerializedStoreData, SubscribableStore } from "../types";
 import { clampWithNanCheck } from "../utils/data_validation";
 import { DatasetSlice } from "./dataset_slice";
 
-type BackdropSliceState = {
+export type BackdropSliceState = {
   backdropVisible: boolean;
   /** Brightness, as a percentage in the `[0, 200]` range. 100 by default. */
   backdropBrightness: number;
@@ -33,7 +33,12 @@ type BackdropSliceState = {
   objectOpacity: number;
 };
 
-type BackdropSliceActions = {
+export type BackdropSliceSerializableState = Pick<
+  BackdropSliceState,
+  "backdropVisible" | "backdropBrightness" | "backdropSaturation" | "objectOpacity"
+>;
+
+export type BackdropSliceActions = {
   /**
    * Sets the visibility of the backdrop layer. The backdrop will be hidden if
    * the current backdrop key is `null`.
@@ -86,7 +91,7 @@ export const addBackdropDerivedStateSubscribers = (store: SubscribableStore<Back
   );
 };
 
-export const serializeBackdropSlice = (state: Partial<BackdropSlice>): SerializedStoreData => {
+export const serializeBackdropSlice = (state: Partial<BackdropSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   ret[UrlParam.SHOW_BACKDROP] = encodeMaybeBoolean(state.backdropVisible);
   ret[UrlParam.BACKDROP_BRIGHTNESS] = encodeMaybeNumber(state.backdropBrightness);
@@ -96,7 +101,7 @@ export const serializeBackdropSlice = (state: Partial<BackdropSlice>): Serialize
 };
 
 /** Selects state values that serialization depends on. */
-export const backdropSliceSerializationDependencies = (slice: BackdropSlice): Partial<BackdropSliceState> => ({
+export const backdropSliceSerializationDependencies = (slice: BackdropSlice): BackdropSliceSerializableState => ({
   backdropVisible: slice.backdropVisible,
   backdropBrightness: slice.backdropBrightness,
   backdropSaturation: slice.backdropSaturation,

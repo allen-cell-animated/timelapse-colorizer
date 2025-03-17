@@ -8,13 +8,18 @@ import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 
-type ScatterPlotSliceState = {
+export type ScatterPlotSliceState = {
   scatterXAxis: string | null;
   scatterYAxis: string | null;
   scatterRangeType: PlotRangeType;
 };
 
-type ScatterPlotSliceActions = {
+export type ScatterPlotSliceSerializableState = Pick<
+  ScatterPlotSliceState,
+  "scatterXAxis" | "scatterYAxis" | "scatterRangeType"
+>;
+
+export type ScatterPlotSliceActions = {
   setScatterXAxis: (xAxis: string | null) => void;
   setScatterYAxis: (yAxis: string | null) => void;
   setScatterRangeType: (rangeType: PlotRangeType) => void;
@@ -78,7 +83,7 @@ export const addScatterPlotSliceDerivedStateSubscribers = (
   );
 };
 
-export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSlice>): SerializedStoreData => {
+export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   ret[UrlParam.SCATTERPLOT_X_AXIS] = slice.scatterXAxis ?? undefined;
   ret[UrlParam.SCATTERPLOT_Y_AXIS] = slice.scatterYAxis ?? undefined;
@@ -89,7 +94,9 @@ export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSlice>): Ser
 };
 
 /** Selects state values that serialization depends on. */
-export const scatterPlotSliceSerializationDependencies = (slice: ScatterPlotSlice): Partial<ScatterPlotSliceState> => ({
+export const scatterPlotSliceSerializationDependencies = (
+  slice: ScatterPlotSlice
+): ScatterPlotSliceSerializableState => ({
   scatterXAxis: slice.scatterXAxis,
   scatterYAxis: slice.scatterYAxis,
   scatterRangeType: slice.scatterRangeType,

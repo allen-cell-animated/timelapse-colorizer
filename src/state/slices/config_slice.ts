@@ -29,7 +29,7 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   mode: DrawMode.USE_COLOR,
 };
 
-type ConfigSliceState = {
+export type ConfigSliceState = {
   showTrackPath: boolean;
   showScaleBar: boolean;
   showTimestamp: boolean;
@@ -41,7 +41,18 @@ type ConfigSliceState = {
   openTab: TabType;
 };
 
-type ConfigSliceActions = {
+export type ConfigSliceSerializableState = Pick<
+  ConfigSliceState,
+  | "showTrackPath"
+  | "showScaleBar"
+  | "showTimestamp"
+  | "outOfRangeDrawSettings"
+  | "outlierDrawSettings"
+  | "outlineColor"
+  | "openTab"
+>;
+
+export type ConfigSliceActions = {
   setShowTrackPath: (showTrackPath: boolean) => void;
   setShowScaleBar: (showScaleBar: boolean) => void;
   setShowTimestamp: (showTimestamp: boolean) => void;
@@ -79,7 +90,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setOpenTab: (openTab) => set({ openTab }),
 });
 
-export const serializeConfigSlice = (slice: Partial<ConfigSlice>): SerializedStoreData => {
+export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   ret[UrlParam.SHOW_PATH] = encodeMaybeBoolean(slice.showTrackPath);
   ret[UrlParam.SHOW_SCALEBAR] = encodeMaybeBoolean(slice.showScaleBar);
@@ -96,7 +107,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSlice>): SerializedSto
 };
 
 /** Selects state values that serialization depends on. */
-export const configSliceSerializationDependencies = (slice: ConfigSlice): Partial<ConfigSliceState> => ({
+export const configSliceSerializationDependencies = (slice: ConfigSlice): ConfigSliceSerializableState => ({
   showTrackPath: slice.showTrackPath,
   showScaleBar: slice.showScaleBar,
   showTimestamp: slice.showTimestamp,

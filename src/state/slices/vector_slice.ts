@@ -25,7 +25,7 @@ import { DatasetSlice } from "./dataset_slice";
 
 import { getSharedWorkerPool } from "../../colorizer/workers/SharedWorkerPool";
 
-type VectorSliceState = {
+export type VectorSliceState = {
   vectorVisible: boolean;
   vectorKey: string;
   vectorColor: Color;
@@ -49,7 +49,17 @@ type VectorSliceState = {
   vectorMotionDeltas: Float32Array | null;
 };
 
-type VectorSliceActions = {
+export type VectorSliceSerializableState = Pick<
+  VectorSliceState,
+  | "vectorVisible"
+  | "vectorKey"
+  | "vectorColor"
+  | "vectorScaleFactor"
+  | "vectorTooltipMode"
+  | "vectorMotionTimeIntervals"
+>;
+
+export type VectorSliceActions = {
   setVectorVisible: (visible: boolean) => void;
   setVectorKey: (key: string) => void;
   setVectorColor: (color: Color) => void;
