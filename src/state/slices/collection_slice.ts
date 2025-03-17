@@ -23,11 +23,11 @@ export const createCollectionSlice: StateCreator<CollectionSlice, [], [], Collec
   },
 });
 
-export const serializeCollectionSlice = (slice: CollectionSlice): SerializedStoreData => {
+export const serializeCollectionSlice = (slice: Partial<CollectionSlice>): SerializedStoreData => {
   const collection = slice.collection;
   // Collection URL is null if a single dataset was loaded directly.
   // In this case, the collection doesn't need to be included in the URL.
-  if (collection === null || collection.url === null) {
+  if (!collection || collection.url === null) {
     return {};
   }
   return {

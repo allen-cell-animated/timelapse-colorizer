@@ -78,15 +78,13 @@ export const addScatterPlotSliceDerivedStateSubscribers = (
   );
 };
 
-export const serializeScatterPlotSlice = (slice: ScatterPlotSlice): SerializedStoreData => {
+export const serializeScatterPlotSlice = (slice: Partial<ScatterPlotSlice>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
-  if (slice.scatterXAxis !== null) {
-    ret[UrlParam.SCATTERPLOT_X_AXIS] = slice.scatterXAxis;
+  ret[UrlParam.SCATTERPLOT_X_AXIS] = slice.scatterXAxis ?? undefined;
+  ret[UrlParam.SCATTERPLOT_Y_AXIS] = slice.scatterYAxis ?? undefined;
+  if (slice.scatterRangeType !== undefined) {
+    ret[UrlParam.SCATTERPLOT_RANGE_MODE] = encodeScatterPlotRangeType(slice.scatterRangeType);
   }
-  if (slice.scatterYAxis !== null) {
-    ret[UrlParam.SCATTERPLOT_Y_AXIS] = slice.scatterYAxis;
-  }
-  ret[UrlParam.SCATTERPLOT_RANGE_MODE] = encodeScatterPlotRangeType(slice.scatterRangeType);
   return ret;
 };
 

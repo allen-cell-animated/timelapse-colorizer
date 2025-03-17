@@ -1,3 +1,4 @@
+import { UrlParam } from "../../colorizer/utils/url_utils";
 import {
   backdropSliceSerializationDependencies,
   collectionSliceSerializationDependencies,
@@ -45,34 +46,70 @@ export const selectSerializationDependencies = (state: ViewerState): Partial<Vie
   ...vectorSliceSerializationDependencies(state),
 });
 
-export const getDifferingKeys = (a: Partial<ViewerState>, b: Partial<ViewerState>): Set<keyof ViewerState> => {
-  const differingKeys = new Set<keyof ViewerState>();
+/**
+ * Returns a copy of an object where any properties with a value of `undefined`
+ * are not included.
+ */
+function removeUndefinedProperties<T>(object: T): Partial<T> {
+  const ret: Partial<T> = {};
+  for (const key in object) {
+    if (object[key] !== undefined) {
+      ret[key] = object[key];
+    }
+  }
+  return ret;
+}
+
+export const getDifferingKeys = <T>(a: Partial<T>, b: Partial<T>): Set<keyof T> => {
+  const differingKeys = new Set<keyof T>();
   for (const key in a) {
-    const typedKey = key as keyof ViewerState;
-    if (a[typedKey] !== b[typedKey]) {
-      differingKeys.add(typedKey);
+    if (a[key] !== b[key]) {
+      differingKeys.add(key);
     }
   }
   return differingKeys;
 };
 
-export const serializeViewerStateStore = (store: Store<ViewerState>): Partial<SerializedStoreData> => {
+export const serializeViewerStateStore = (state: Partial<ViewerState>): Partial<SerializedStoreData> => {
   // Ordered by approximate importance in the URL
   return {
-    ...serializeCollectionSlice(store.getState()),
-    ...serializeDatasetSlice(store.getState()),
-    ...serializeTimeSlice(store.getState()),
-    ...serializeColorRampSlice(store.getState()),
-    ...serializeThresholdSlice(store.getState()),
-    ...serializeConfigSlice(store.getState()),
-    ...serializeScatterPlotSlice(store.getState()),
-    ...serializeBackdropSlice(store.getState()),
-    ...serializeVectorSlice(store.getState()),
+    ...serializeCollectionSlice(state),
+    ...serializeDatasetSlice(state),
+    ...serializeTimeSlice(state),
+    ...serializeColorRampSlice(state),
+    ...serializeThresholdSlice(state),
+    ...serializeConfigSlice(state),
+    ...serializeScatterPlotSlice(state),
+    ...serializeBackdropSlice(state),
+    ...serializeVectorSlice(state),
   };
 };
 
-export const serializedStoreDataToUrl = (data: SerializedStoreData): string => {
+export type ViewerStateParams = Partial<ViewerState> & {
+  /** URL of the collection resource to load. */
+  collectionParam?: string;
+  /** URL of the dataset to load (if no collection is provided) or the key of
+   * the dataset in the collection. */
+  datasetParam?: string;
+};
+
+export const serializeViewerStateParams = (params: ViewerStateParams): SerializedStoreData => {
+  const ret: SerializedStoreData = {};
+  if (params.collectionParam) {
+    ret[UrlParam.COLLECTION] = params.collectionParam;
+  }
+  if (params.datasetParam) {
+    ret[UrlParam.DATASET] = params.datasetParam;
+  }
+  return {
+    ...ret,
+    ...serializeViewerStateStore(params),
+  };
+};
+
+export const serializedDataToUrl = (data: SerializedStoreData): string => {
   const params = new URLSearchParams();
+  data = removeUndefinedProperties(data);
   for (const [key, value] of Object.entries(data)) {
     params.set(key, value);
   }

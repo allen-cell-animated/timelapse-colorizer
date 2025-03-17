@@ -1,13 +1,13 @@
 import { ReactNode } from "react";
 
-import { UrlParams } from "../colorizer/utils/url_utils";
+import { ViewerStateParams } from "../state/utils/store_io";
 
 import Collection from "../colorizer/Collection";
 
 export type DatasetEntry = {
   name: string;
   description: ReactNode;
-  loadParams: Partial<UrlParams>;
+  loadParams: ViewerStateParams;
 };
 
 export type ProjectEntry = {
@@ -15,7 +15,7 @@ export type ProjectEntry = {
   description: ReactNode;
   publicationLink?: URL;
   publicationName?: string;
-  loadParams?: Partial<UrlParams>;
+  loadParams?: ViewerStateParams;
   datasets?: DatasetEntry[];
   inReview?: boolean;
 };

@@ -72,8 +72,8 @@ export const addThresholdDerivedStateSubscribers = (
   );
 };
 
-export const serializeThresholdSlice = (slice: ThresholdSlice): SerializedStoreData => {
-  if (slice.thresholds.length === 0) {
+export const serializeThresholdSlice = (slice: Partial<ThresholdSlice>): SerializedStoreData => {
+  if (!slice.thresholds || slice.thresholds.length === 0) {
     return {};
   }
   return { [UrlParam.THRESHOLDS]: serializeThresholds(slice.thresholds) };

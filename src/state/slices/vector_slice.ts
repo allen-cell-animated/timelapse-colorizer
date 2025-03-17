@@ -13,9 +13,9 @@ import {
   decodeFloat,
   decodeHexColor,
   decodeInt,
-  encodeBoolean,
-  encodeColor,
-  encodeNumber,
+  encodeMaybeBoolean,
+  encodeMaybeColor,
+  encodeMaybeNumber,
   UrlParam,
 } from "../../colorizer/utils/url_utils";
 import { SerializedStoreData, SubscribableStore } from "../types";
@@ -133,14 +133,14 @@ export const selectVectorConfigFromState = (state: VectorSlice): VectorConfig =>
   tooltipMode: state.vectorTooltipMode,
 });
 
-export const serializeVectorSlice = (slice: VectorSlice): SerializedStoreData => {
+export const serializeVectorSlice = (slice: Partial<VectorSlice>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
-  ret[UrlParam.SHOW_VECTOR] = encodeBoolean(slice.vectorVisible);
+  ret[UrlParam.SHOW_VECTOR] = encodeMaybeBoolean(slice.vectorVisible);
   ret[UrlParam.VECTOR_KEY] = slice.vectorKey;
-  ret[UrlParam.VECTOR_COLOR] = encodeColor(slice.vectorColor);
-  ret[UrlParam.VECTOR_SCALE] = encodeNumber(slice.vectorScaleFactor);
-  ret[UrlParam.VECTOR_TOOLTIP_MODE] = slice.vectorTooltipMode.toString();
-  ret[UrlParam.VECTOR_TIME_INTERVALS] = encodeNumber(slice.vectorMotionTimeIntervals);
+  ret[UrlParam.VECTOR_COLOR] = encodeMaybeColor(slice.vectorColor);
+  ret[UrlParam.VECTOR_SCALE] = encodeMaybeNumber(slice.vectorScaleFactor);
+  ret[UrlParam.VECTOR_TOOLTIP_MODE] = slice.vectorTooltipMode?.toString();
+  ret[UrlParam.VECTOR_TIME_INTERVALS] = encodeMaybeNumber(slice.vectorMotionTimeIntervals);
   return ret;
 };
 

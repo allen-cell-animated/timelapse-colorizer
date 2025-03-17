@@ -13,8 +13,8 @@ import {
 import {
   decodeBoolean,
   decodeHexColor,
-  encodeBoolean,
-  encodeColor,
+  encodeMaybeBoolean,
+  encodeMaybeColor,
   parseDrawSettings,
   UrlParam,
 } from "../../colorizer/utils/url_utils";
@@ -79,17 +79,17 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setOpenTab: (openTab) => set({ openTab }),
 });
 
-export const serializeConfigSlice = (slice: ConfigSlice): SerializedStoreData => {
+export const serializeConfigSlice = (slice: Partial<ConfigSlice>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
-  ret[UrlParam.SHOW_PATH] = encodeBoolean(slice.showTrackPath);
-  ret[UrlParam.SHOW_SCALEBAR] = encodeBoolean(slice.showScaleBar);
-  ret[UrlParam.SHOW_TIMESTAMP] = encodeBoolean(slice.showTimestamp);
+  ret[UrlParam.SHOW_PATH] = encodeMaybeBoolean(slice.showTrackPath);
+  ret[UrlParam.SHOW_SCALEBAR] = encodeMaybeBoolean(slice.showScaleBar);
+  ret[UrlParam.SHOW_TIMESTAMP] = encodeMaybeBoolean(slice.showTimestamp);
   // Export settings are currently not serialized.
-  ret[UrlParam.FILTERED_COLOR] = encodeColor(slice.outOfRangeDrawSettings.color);
-  ret[UrlParam.FILTERED_MODE] = slice.outOfRangeDrawSettings.mode.toString();
-  ret[UrlParam.OUTLIER_COLOR] = encodeColor(slice.outlierDrawSettings.color);
-  ret[UrlParam.OUTLIER_MODE] = slice.outlierDrawSettings.mode.toString();
-  ret[UrlParam.OUTLINE_COLOR] = encodeColor(slice.outlineColor);
+  ret[UrlParam.FILTERED_COLOR] = encodeMaybeColor(slice.outOfRangeDrawSettings?.color);
+  ret[UrlParam.FILTERED_MODE] = slice.outOfRangeDrawSettings?.mode.toString();
+  ret[UrlParam.OUTLIER_COLOR] = encodeMaybeColor(slice.outlierDrawSettings?.color);
+  ret[UrlParam.OUTLIER_MODE] = slice.outlierDrawSettings?.mode.toString();
+  ret[UrlParam.OUTLINE_COLOR] = encodeMaybeColor(slice.outlineColor);
 
   ret[UrlParam.OPEN_TAB] = slice.openTab;
   return ret;

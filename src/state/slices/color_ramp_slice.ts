@@ -11,8 +11,8 @@ import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "../../
 import {
   decodeBoolean,
   decodeString,
-  encodeBoolean,
   encodeColor,
+  encodeMaybeBoolean,
   encodeNumber,
   UrlParam,
 } from "../../colorizer/utils/url_utils";
@@ -215,22 +215,26 @@ export const addColorRampDerivedStateSubscribers = (
   );
 };
 
-export const serializeColorRampSlice = (slice: ColorRampSlice): SerializedStoreData => {
+export const serializeColorRampSlice = (slice: Partial<ColorRampSlice>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
 
   // Ramp + reversed
-  ret[UrlParam.COLOR_RAMP] =
-    slice.colorRampKey + (slice.isColorRampReversed ? UrlParam.COLOR_RAMP_REVERSED_SUFFIX : "");
+  if (slice.colorRampKey !== undefined) {
+    ret[UrlParam.COLOR_RAMP] =
+      slice.colorRampKey + (slice.isColorRampReversed ? UrlParam.COLOR_RAMP_REVERSED_SUFFIX : "");
+  }
 
-  ret[UrlParam.KEEP_RANGE] = encodeBoolean(slice.keepColorRampRange);
+  ret[UrlParam.KEEP_RANGE] = encodeMaybeBoolean(slice.keepColorRampRange);
 
-  const range = slice.colorRampRange;
-  ret[UrlParam.RANGE] = range.map(encodeNumber).join(",");
+  if (slice.colorRampRange !== undefined) {
+    const range = slice.colorRampRange;
+    ret[UrlParam.RANGE] = range.map(encodeNumber).join(",");
+  }
 
   // Palette key takes precedence over palette
   if (slice.categoricalPaletteKey !== null) {
     ret[UrlParam.PALETTE_KEY] = slice.categoricalPaletteKey;
-  } else {
+  } else if (slice.categoricalPalette !== undefined) {
     ret[UrlParam.PALETTE] = slice.categoricalPalette.map(encodeColor).join("-");
   }
 

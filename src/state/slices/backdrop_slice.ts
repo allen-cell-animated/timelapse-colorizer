@@ -1,6 +1,12 @@
 import { StateCreator } from "zustand";
 
-import { decodeBoolean, decodeFloat, encodeBoolean, encodeNumber, UrlParam } from "../../colorizer/utils/url_utils";
+import {
+  decodeBoolean,
+  decodeFloat,
+  encodeMaybeBoolean,
+  encodeMaybeNumber,
+  UrlParam,
+} from "../../colorizer/utils/url_utils";
 import {
   BACKDROP_BRIGHTNESS_DEFAULT,
   BACKDROP_BRIGHTNESS_MAX,
@@ -80,12 +86,12 @@ export const addBackdropDerivedStateSubscribers = (store: SubscribableStore<Back
   );
 };
 
-export const serializeBackdropSlice = (state: BackdropSlice): SerializedStoreData => {
+export const serializeBackdropSlice = (state: Partial<BackdropSlice>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
-  ret[UrlParam.SHOW_BACKDROP] = encodeBoolean(state.backdropVisible);
-  ret[UrlParam.BACKDROP_BRIGHTNESS] = encodeNumber(state.backdropBrightness);
-  ret[UrlParam.BACKDROP_SATURATION] = encodeNumber(state.backdropSaturation);
-  ret[UrlParam.OBJECT_OPACITY] = encodeNumber(state.objectOpacity);
+  ret[UrlParam.SHOW_BACKDROP] = encodeMaybeBoolean(state.backdropVisible);
+  ret[UrlParam.BACKDROP_BRIGHTNESS] = encodeMaybeNumber(state.backdropBrightness);
+  ret[UrlParam.BACKDROP_SATURATION] = encodeMaybeNumber(state.backdropSaturation);
+  ret[UrlParam.OBJECT_OPACITY] = encodeMaybeNumber(state.objectOpacity);
   return ret;
 };
 
