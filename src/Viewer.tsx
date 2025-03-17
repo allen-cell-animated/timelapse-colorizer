@@ -25,7 +25,7 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
-import * as urlUtils from "./colorizer/utils/url_utils";
+import { isUrl, UrlParam } from "./colorizer/utils/url_utils";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
@@ -180,7 +180,7 @@ function Viewer(): ReactElement {
     // TODO: Update types for makeDebouncedCallback since right now it requires
     // an argument (even if it's a dummy one) to be passed to the callback.
     makeDebouncedCallback(() => {
-      const params = serializeViewerStateStore(useViewerStateStore);
+      const params = serializeViewerStateStore(useViewerStateStore.getState());
       setSearchParams(params, { replace: true });
       console.log("Sync URL");
     }),
@@ -363,12 +363,6 @@ function Viewer(): ReactElement {
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
-  // Only retrieve parameters once, because the URL can be updated by state updates
-  // and lose information (like the track, feature, time, etc.) that isn't
-  // accessed in the first render.
-  const initialUrlParams = useConstructor(() => {
-    return urlUtils.loadFromUrlSearchParams(searchParams);
-  });
   const initialSearchParams = useConstructor(() => searchParams);
 
   // Break React rules to prevent a race condition where the initial dataset is reloaded
@@ -400,10 +394,10 @@ function Viewer(): ReactElement {
         newCollection = stateCollection;
       } else {
         // Collect from URL
-        const collectionUrlParam = initialUrlParams.collection;
-        const datasetParam = initialUrlParams.dataset;
+        const collectionUrlParam = initialSearchParams.get(UrlParam.COLLECTION);
+        const datasetParam = initialSearchParams.get(UrlParam.DATASET);
 
-        if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
+        if (datasetParam && isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
           // Make a dummy collection that will include only this dataset
           newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);

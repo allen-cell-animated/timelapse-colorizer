@@ -36,9 +36,9 @@ export const landingPageContent: ProjectEntry[] = [
         description:
           "Minimally filtered tracked nuclei with quantitative single-timepoint features (subset of exploratory analysis dataset)",
         loadParams: {
-          collection:
+          collectionParam:
             "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/baseline_colonies_dataset/collection.json",
-          time: 15,
+          currentFrame: 15,
         },
       },
       {
@@ -46,9 +46,9 @@ export const landingPageContent: ProjectEntry[] = [
         description:
           "Nuclei tracked throughout interphase (subset of baseline colonies analysis dataset, with added growth trajectory features)",
         loadParams: {
-          collection:
+          collectionParam:
             "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/full-interphase_dataset/collection.json",
-          time: 15,
+          currentFrame: 15,
         },
       },
       {
@@ -56,18 +56,18 @@ export const landingPageContent: ProjectEntry[] = [
         description:
           "Nuclei tracked across multiple generations (subset of full-interphase analysis dataset, with added lineage annotation)",
         loadParams: {
-          collection:
+          collectionParam:
             "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/lineage-annotated_dataset/collection.json",
-          time: 15,
+          currentFrame: 15,
         },
       },
       {
         name: "Exploratory dataset",
         description: "All successful tracked nuclei, with all available features and filters",
         loadParams: {
-          collection:
+          collectionParam:
             "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/exploratory_dataset/collection.json",
-          time: 15,
+          currentFrame: 15,
           thresholds: [
             {
               featureKey: "growth_outlier_filter",
