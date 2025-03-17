@@ -4,7 +4,7 @@ import { expect } from "vitest";
 
 import { Dataset } from "../../../src/colorizer";
 import { UrlParam } from "../../../src/colorizer/utils/url_utils";
-import { ViewerState } from "../../../src/state";
+import { ViewerStore } from "../../../src/state/slices";
 import { SerializedStoreData } from "../../../src/state/types";
 
 /**
@@ -13,7 +13,7 @@ import { SerializedStoreData } from "../../../src/state/types";
  */
 
 export const setDatasetAsync = async (
-  result: { current: ViewerState },
+  result: { current: ViewerStore },
   dataset: Dataset,
   datasetKey: string = "some-dataset"
 ): Promise<void> => {
@@ -23,7 +23,7 @@ export const setDatasetAsync = async (
   await waitFor(() => {});
 };
 
-export const clearDatasetAsync = async (result: { current: ViewerState }): Promise<void> => {
+export const clearDatasetAsync = async (result: { current: ViewerStore }): Promise<void> => {
   act(() => {
     result.current.clearDataset();
   });
@@ -35,9 +35,9 @@ export const clearDatasetAsync = async (result: { current: ViewerState }): Promi
  * Note that `actual` may contain additional key-value pairs not present in
  * `expected` and still pass this check.
  */
-export const compareSlice = (actual: Partial<ViewerState>, expected: Partial<ViewerState>): void => {
+export const compareSlice = (actual: Partial<ViewerStore>, expected: Partial<ViewerStore>): void => {
   for (const key in expected) {
-    expect(actual[key as keyof ViewerState]).toEqual(expected[key as keyof ViewerState]);
+    expect(actual[key as keyof ViewerStore]).toEqual(expected[key as keyof ViewerStore]);
   }
 };
 
