@@ -144,6 +144,16 @@ export const serializeVectorSlice = (slice: VectorSlice): SerializedStoreData =>
   return ret;
 };
 
+/** Selects state values that serialization depends on. */
+export const vectorSliceSerializationDependencies = (slice: VectorSlice): Partial<VectorSliceState> => ({
+  vectorVisible: slice.vectorVisible,
+  vectorKey: slice.vectorKey,
+  vectorColor: slice.vectorColor,
+  vectorScaleFactor: slice.vectorScaleFactor,
+  vectorTooltipMode: slice.vectorTooltipMode,
+  vectorMotionTimeIntervals: slice.vectorMotionTimeIntervals,
+});
+
 export function loadVectorSliceFromParams(slice: VectorSlice, params: URLSearchParams): void {
   const vectorVisible = decodeBoolean(params.get(UrlParam.SHOW_VECTOR));
   if (vectorVisible !== undefined) {

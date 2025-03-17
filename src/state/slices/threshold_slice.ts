@@ -79,6 +79,11 @@ export const serializeThresholdSlice = (slice: ThresholdSlice): SerializedStoreD
   return { [UrlParam.THRESHOLDS]: serializeThresholds(slice.thresholds) };
 };
 
+/* Selects state values that serialization depends on. */
+export const thresholdSliceSerializationDependencies = (slice: ThresholdSlice): Partial<ThresholdSliceState> => ({
+  thresholds: slice.thresholds,
+});
+
 export const loadThresholdSliceFromParams = (slice: ThresholdSlice, params: URLSearchParams): void => {
   const thresholds = deserializeThresholds(params.get(UrlParam.THRESHOLDS));
   if (thresholds !== undefined) {

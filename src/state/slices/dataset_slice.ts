@@ -127,6 +127,16 @@ export const serializeDatasetSlice = (slice: DatasetSlice): SerializedStoreData 
   return ret;
 };
 
+/** Selects state values that serialization depends on. */
+export const datasetSliceSerializationDependencies = (slice: DatasetSlice): Partial<DatasetSliceState> =>
+  ({
+    dataset: slice.dataset,
+    datasetKey: slice.datasetKey,
+    featureKey: slice.featureKey,
+    track: slice.track,
+    backdropKey: slice.backdropKey,
+  } as DatasetSliceState);
+
 export const loadDatasetSliceFromParams = (slice: DatasetSlice, params: URLSearchParams): void => {
   const dataset = slice.dataset;
   if (!dataset) {

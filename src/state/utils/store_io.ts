@@ -1,4 +1,9 @@
 import {
+  backdropSliceSerializationDependencies,
+  collectionSliceSerializationDependencies,
+  colorRampSliceSerializationDependencies,
+  configSliceSerializationDependencies,
+  datasetSliceSerializationDependencies,
   loadBackdropSliceFromParams,
   loadColorRampSliceFromParams,
   loadConfigSliceFromParams,
@@ -7,6 +12,7 @@ import {
   loadThresholdSliceFromParams,
   loadTimeSliceFromParams,
   loadVectorSliceFromParams,
+  scatterPlotSliceSerializationDependencies,
   serializeBackdropSlice,
   serializeCollectionSlice,
   serializeColorRampSlice,
@@ -16,12 +22,39 @@ import {
   serializeThresholdSlice,
   serializeTimeSlice,
   serializeVectorSlice,
+  thresholdSliceSerializationDependencies,
+  timeSliceSerializationDependencies,
+  vectorSliceSerializationDependencies,
 } from "../slices";
 import { SerializedStoreData, Store } from "../types";
 
 import { ViewerState } from "../ViewerState";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
+
+export const selectSerializationDependencies = (state: ViewerState): Partial<ViewerState> => ({
+  ...collectionSliceSerializationDependencies(state),
+  ...datasetSliceSerializationDependencies(state),
+  // Time slice should only allow updates when paused.
+  ...timeSliceSerializationDependencies(state),
+  ...colorRampSliceSerializationDependencies(state),
+  ...thresholdSliceSerializationDependencies(state),
+  ...configSliceSerializationDependencies(state),
+  ...scatterPlotSliceSerializationDependencies(state),
+  ...backdropSliceSerializationDependencies(state),
+  ...vectorSliceSerializationDependencies(state),
+});
+
+export const getDifferingKeys = (a: Partial<ViewerState>, b: Partial<ViewerState>): Set<keyof ViewerState> => {
+  const differingKeys = new Set<keyof ViewerState>();
+  for (const key in a) {
+    const typedKey = key as keyof ViewerState;
+    if (a[typedKey] !== b[typedKey]) {
+      differingKeys.add(typedKey);
+    }
+  }
+  return differingKeys;
+};
 
 export const serializeViewerStateStore = (store: Store<ViewerState>): Partial<SerializedStoreData> => {
   // Ordered by approximate importance in the URL

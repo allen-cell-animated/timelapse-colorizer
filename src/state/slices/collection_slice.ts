@@ -34,3 +34,8 @@ export const serializeCollectionSlice = (slice: CollectionSlice): SerializedStor
     [UrlParam.COLLECTION]: collection.url,
   };
 };
+
+/** Selects state values that serialization depends on. */
+export const collectionSliceSerializationDependencies = (slice: CollectionSlice): Partial<CollectionSliceState> => ({
+  collection: slice.collection,
+});

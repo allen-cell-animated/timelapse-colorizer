@@ -95,6 +95,17 @@ export const serializeConfigSlice = (slice: ConfigSlice): SerializedStoreData =>
   return ret;
 };
 
+/** Selects state values that serialization depends on. */
+export const configSliceSerializationDependencies = (slice: ConfigSlice): Partial<ConfigSliceState> => ({
+  showTrackPath: slice.showTrackPath,
+  showScaleBar: slice.showScaleBar,
+  showTimestamp: slice.showTimestamp,
+  outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
+  outlierDrawSettings: slice.outlierDrawSettings,
+  outlineColor: slice.outlineColor,
+  openTab: slice.openTab,
+});
+
 export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
   const showPathParam = decodeBoolean(params.get(UrlParam.SHOW_PATH));
   if (showPathParam !== undefined) {

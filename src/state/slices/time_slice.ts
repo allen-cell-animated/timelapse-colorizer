@@ -107,6 +107,11 @@ export const serializeTimeSlice = (state: TimeSlice): SerializedStoreData => {
   };
 };
 
+/** Selects state values that serialization depends on. */
+export const timeSliceSerializationDependencies = (slice: TimeSlice): Partial<TimeSliceState> => ({
+  currentFrame: slice.currentFrame,
+});
+
 export const loadTimeSliceFromParams = (state: TimeSlice & DatasetSlice, params: URLSearchParams): void => {
   // Load time from URL. If no time is set but a track is, set the time to the
   // start of the track.
