@@ -90,6 +90,13 @@ export const serializeScatterPlotSlice = (slice: ScatterPlotSlice): SerializedSt
   return ret;
 };
 
+/** Selects state values that serialization depends on. */
+export const scatterPlotSliceSerializationDependencies = (slice: ScatterPlotSlice): Partial<ScatterPlotSliceState> => ({
+  scatterXAxis: slice.scatterXAxis,
+  scatterYAxis: slice.scatterYAxis,
+  scatterRangeType: slice.scatterRangeType,
+});
+
 export const loadScatterPlotSliceFromParams = (slice: ScatterPlotSlice, params: URLSearchParams): void => {
   const scatterXAxis = params.get(UrlParam.SCATTERPLOT_X_AXIS);
   if (scatterXAxis !== null) {

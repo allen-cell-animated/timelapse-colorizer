@@ -89,6 +89,14 @@ export const serializeBackdropSlice = (state: BackdropSlice): SerializedStoreDat
   return ret;
 };
 
+/** Selects state values that serialization depends on. */
+export const backdropSliceSerializationDependencies = (slice: BackdropSlice): Partial<BackdropSliceState> => ({
+  backdropVisible: slice.backdropVisible,
+  backdropBrightness: slice.backdropBrightness,
+  backdropSaturation: slice.backdropSaturation,
+  objectOpacity: slice.objectOpacity,
+});
+
 export const loadBackdropSliceFromParams = (slice: BackdropSlice, params: URLSearchParams): void => {
   const showBackdrop = decodeBoolean(params.get(UrlParam.SHOW_BACKDROP));
   if (showBackdrop !== undefined) {

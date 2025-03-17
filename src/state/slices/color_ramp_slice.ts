@@ -237,6 +237,15 @@ export const serializeColorRampSlice = (slice: ColorRampSlice): SerializedStoreD
   return ret;
 };
 
+/** Selects state values that serialization depends on. */
+export const colorRampSliceSerializationDependencies = (slice: ColorRampSlice): Partial<ColorRampSliceState> => ({
+  colorRampKey: slice.colorRampKey,
+  isColorRampReversed: slice.isColorRampReversed,
+  keepColorRampRange: slice.keepColorRampRange,
+  colorRampRange: slice.colorRampRange,
+  categoricalPalette: slice.categoricalPalette,
+});
+
 export const loadColorRampSliceFromParams = (slice: ColorRampSlice, params: URLSearchParams): void => {
   const colorRampParam = params.get(UrlParam.COLOR_RAMP);
   if (colorRampParam) {
