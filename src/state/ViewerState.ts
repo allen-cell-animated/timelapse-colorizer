@@ -1,49 +1,8 @@
 import { create } from "zustand";
-import { StateCreator } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-import { addBackdropDerivedStateSubscribers, BackdropSlice, createBackdropSlice } from "./slices/backdrop_slice";
-import { CollectionSlice, createCollectionSlice } from "./slices/collection_slice";
-import { addColorRampDerivedStateSubscribers, ColorRampSlice, createColorRampSlice } from "./slices/color_ramp_slice";
-import { ConfigSlice, createConfigSlice } from "./slices/config_slice";
-import { createDatasetSlice, DatasetSlice } from "./slices/dataset_slice";
-import {
-  addScatterPlotSliceDerivedStateSubscribers,
-  createScatterPlotSlice,
-  ScatterPlotSlice,
-} from "./slices/scatterplot_slice";
-import { addThresholdDerivedStateSubscribers, createThresholdSlice, ThresholdSlice } from "./slices/threshold_slice";
-import { addTimeDerivedStateSubscribers, createTimeSlice, TimeSlice } from "./slices/time_slice";
-import { addVectorDerivedStateSubscribers, createVectorSlice, VectorSlice } from "./slices/vector_slice";
+import { addStoreStateSubscribers, viewerStateStoreCreator, ViewerStore } from "./slices";
 import { SubscribableStore } from "./types";
-
-/**
- * Combined state for the React app. The ViewerState is composed of many smaller
- * **slices**, modules of related state, actions, and selectors. See
- * https://github.com/pmndrs/zustand/blob/main/docs/guides/typescript.md#slices-pattern
- * for more details on the pattern.
- */
-export type ViewerState = BackdropSlice &
-  CollectionSlice &
-  ColorRampSlice &
-  ConfigSlice &
-  DatasetSlice &
-  ScatterPlotSlice &
-  ThresholdSlice &
-  TimeSlice &
-  VectorSlice;
-
-export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
-  ...createBackdropSlice(...a),
-  ...createCollectionSlice(...a),
-  ...createColorRampSlice(...a),
-  ...createConfigSlice(...a),
-  ...createDatasetSlice(...a),
-  ...createScatterPlotSlice(...a),
-  ...createThresholdSlice(...a),
-  ...createTimeSlice(...a),
-  ...createVectorSlice(...a),
-});
 
 /**
  * Hook for accessing the global viewer state store. If used with selectors,
@@ -86,22 +45,17 @@ export const viewerStateStoreCreator: StateCreator<ViewerState> = (...a) => ({
  * );
  * ```
  */
-export const useViewerStateStore: SubscribableStore<ViewerState> = create<ViewerState>()(
+export const useViewerStateStore: SubscribableStore<ViewerStore> = create<ViewerStore>()(
   subscribeWithSelector(viewerStateStoreCreator)
 );
 
-addBackdropDerivedStateSubscribers(useViewerStateStore);
-addColorRampDerivedStateSubscribers(useViewerStateStore);
-addScatterPlotSliceDerivedStateSubscribers(useViewerStateStore);
-addThresholdDerivedStateSubscribers(useViewerStateStore);
-addTimeDerivedStateSubscribers(useViewerStateStore);
-addVectorDerivedStateSubscribers(useViewerStateStore);
+addStoreStateSubscribers(useViewerStateStore);
 
 // Adds compatibility with hot module reloading.
 // Adapted from https://github.com/pmndrs/zustand/discussions/827#discussioncomment-9843290
 declare global {
   interface Window {
-    _store: ViewerState;
+    _store: ViewerStore;
   }
 }
 

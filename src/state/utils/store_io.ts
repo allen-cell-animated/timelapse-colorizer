@@ -26,14 +26,14 @@ import {
   thresholdSliceSerializationDependencies,
   timeSliceSerializationDependencies,
   vectorSliceSerializationDependencies,
+  ViewerStore,
+  ViewerStoreSerializableState,
 } from "../slices";
 import { SerializedStoreData, Store } from "../types";
 
-import { ViewerState } from "../ViewerState";
-
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
 
-export const selectSerializationDependencies = (state: ViewerState): Partial<ViewerState> => ({
+export const selectSerializationDependencies = (state: ViewerStore): Partial<ViewerStore> => ({
   ...collectionSliceSerializationDependencies(state),
   ...datasetSliceSerializationDependencies(state),
   // Time slice should only allow updates when paused.
@@ -70,7 +70,13 @@ export const getDifferingKeys = <T>(a: Partial<T>, b: Partial<T>): Set<keyof T> 
   return differingKeys;
 };
 
-export const serializeViewerState = (state: Partial<ViewerState>): Partial<SerializedStoreData> => {
+/**
+ * Serializes viewer store state into a `SerializedStoreData` object,
+ * which can be used to generate a URL query string using `serializedDataToUrl`.
+ * @param params Object containing serializable viewer state parameters.
+ * Also includes a `collectionParam` field for the collection URL.
+ */
+export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): Partial<SerializedStoreData> => {
   // Ordered by approximate importance in the URL
   return {
     ...serializeCollectionSlice(state),
@@ -85,29 +91,33 @@ export const serializeViewerState = (state: Partial<ViewerState>): Partial<Seria
   };
 };
 
-export type ViewerParams = Partial<ViewerState> & {
+export type ViewerParams = Partial<ViewerStoreSerializableState> & {
   /** URL of the collection resource to load. */
   collectionParam?: string;
-  /** URL of the dataset to load (if no collection is provided) or the key of
-   * the dataset in the collection. */
-  datasetParam?: string;
 };
 
+/**
+ * Serializes parameters for the viewer into a `SerializedStoreData` object,
+ * which can be used to generate a URL query string using `serializedDataToUrl`.
+ * @param params Object containing serializable viewer state parameters.
+ * Also includes a `collectionParam` field for the collection URL.
+ */
 export const serializeViewerParams = (params: ViewerParams): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   if (params.collectionParam) {
     ret[UrlParam.COLLECTION] = params.collectionParam;
   }
-  if (params.datasetParam) {
-    ret[UrlParam.DATASET] = params.datasetParam;
-  }
   return {
-    // Order collection + dataset first
+    // Order collection first
     ...ret,
-    ...serializeViewerState({ ...params, dataset: undefined, datasetKey: undefined, collection: undefined }),
+    ...serializeViewerState({ ...params, collection: undefined }),
   };
 };
 
+/**
+ * Converts a serialized store data object to a URL query string. Does not
+ * include the `?` prefix.
+ */
 export const serializedDataToUrl = (data: SerializedStoreData): string => {
   const params = new URLSearchParams();
   data = removeUndefinedProperties(data);
@@ -123,7 +133,7 @@ export const serializedDataToUrl = (data: SerializedStoreData): string => {
  * Loads the viewer state from the given URL parameters. Note that this MUST be
  * called after the collection and dataset are loaded and set in the store.
  */
-export const loadViewerStateFromParams = async (store: Store<ViewerState>, params: URLSearchParams): Promise<void> => {
+export const loadViewerStateFromParams = async (store: Store<ViewerStore>, params: URLSearchParams): Promise<void> => {
   // 1. No dependencies:
   loadConfigSliceFromParams(store.getState(), params);
 
