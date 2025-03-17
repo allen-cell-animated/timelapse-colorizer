@@ -11,7 +11,6 @@ type CollectionSliceState = {
 
 type CollectionSliceActions = {
   setCollection: (collection: Collection) => void;
-  // TODO: Add action for loading and setting a dataset here
 };
 
 export type CollectionSlice = CollectionSliceState & CollectionSliceActions;
@@ -26,8 +25,8 @@ export const createCollectionSlice: StateCreator<CollectionSlice, [], [], Collec
 
 export const serializeCollectionSlice = (slice: CollectionSlice): SerializedStoreData => {
   const collection = slice.collection;
-  // Collection URl is null if a single dataset was loaded, so the collection is
-  // a mocked collection with a single dataset.
+  // Collection URL is null if a single dataset was loaded directly.
+  // In this case, the collection doesn't need to be included in the URL.
   if (collection === null || collection.url === null) {
     return {};
   }
