@@ -70,7 +70,7 @@ export const getDifferingKeys = <T>(a: Partial<T>, b: Partial<T>): Set<keyof T> 
   return differingKeys;
 };
 
-export const serializeViewerStateStore = (state: Partial<ViewerState>): Partial<SerializedStoreData> => {
+export const serializeViewerState = (state: Partial<ViewerState>): Partial<SerializedStoreData> => {
   // Ordered by approximate importance in the URL
   return {
     ...serializeCollectionSlice(state),
@@ -85,7 +85,7 @@ export const serializeViewerStateStore = (state: Partial<ViewerState>): Partial<
   };
 };
 
-export type ViewerStateParams = Partial<ViewerState> & {
+export type ViewerParams = Partial<ViewerState> & {
   /** URL of the collection resource to load. */
   collectionParam?: string;
   /** URL of the dataset to load (if no collection is provided) or the key of
@@ -93,7 +93,7 @@ export type ViewerStateParams = Partial<ViewerState> & {
   datasetParam?: string;
 };
 
-export const serializeViewerStateParams = (params: ViewerStateParams): SerializedStoreData => {
+export const serializeViewerParams = (params: ViewerParams): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   if (params.collectionParam) {
     ret[UrlParam.COLLECTION] = params.collectionParam;
@@ -102,8 +102,9 @@ export const serializeViewerStateParams = (params: ViewerStateParams): Serialize
     ret[UrlParam.DATASET] = params.datasetParam;
   }
   return {
+    // Order collection + dataset first
     ...ret,
-    ...serializeViewerStateStore(params),
+    ...serializeViewerState({ ...params, dataset: undefined, datasetKey: undefined, collection: undefined }),
   };
 };
 

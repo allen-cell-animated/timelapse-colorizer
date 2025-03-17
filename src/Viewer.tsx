@@ -33,7 +33,7 @@ import {
   getDifferingKeys,
   loadViewerStateFromParams,
   selectSerializationDependencies,
-  serializeViewerStateStore,
+  serializeViewerState,
 } from "./state/utils/store_io";
 import { makeDebouncedCallback } from "./state/utils/store_utils";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
@@ -180,7 +180,7 @@ function Viewer(): ReactElement {
     // TODO: Update types for makeDebouncedCallback since right now it requires
     // an argument (even if it's a dummy one) to be passed to the callback.
     makeDebouncedCallback(() => {
-      const params = serializeViewerStateStore(useViewerStateStore.getState());
+      const params = serializeViewerState(useViewerStateStore.getState());
       setSearchParams(params, { replace: true });
       console.log("Sync URL");
     }),

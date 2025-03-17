@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
 import { Dataset } from "../colorizer";
-import { serializedDataToUrl, serializeViewerStateParams } from "../state/utils/store_io";
+import { serializedDataToUrl, serializeViewerParams } from "../state/utils/store_io";
 import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
@@ -221,7 +221,7 @@ export default function LandingPage(): ReactElement {
   // TODO: Should the load buttons be link elements or buttons?
   // Currently both the link and the button inside can be tab-selected.
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
-    const viewerLink = `${PageRoutes.VIEWER}?${serializedDataToUrl(serializeViewerStateParams(dataset.loadParams))}`;
+    const viewerLink = `${PageRoutes.VIEWER}?${serializedDataToUrl(serializeViewerParams(dataset.loadParams))}`;
 
     return (
       <DatasetCard key={index}>
@@ -256,7 +256,7 @@ export default function LandingPage(): ReactElement {
     ) : null;
 
     const loadButton = project.loadParams ? (
-      <ButtonStyleLink to={"viewer?" + serializedDataToUrl(serializeViewerStateParams(project.loadParams))}>
+      <ButtonStyleLink to={"viewer?" + serializedDataToUrl(serializeViewerParams(project.loadParams))}>
         Load<VisuallyHidden> dataset {project.name}</VisuallyHidden>
       </ButtonStyleLink>
     ) : null;
