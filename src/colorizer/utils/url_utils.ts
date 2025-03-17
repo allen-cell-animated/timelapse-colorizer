@@ -328,6 +328,10 @@ export function encodeColor(value: Color): string {
   return value.getHexString();
 }
 
+export function encodeMaybeColor(value: Color | undefined): string | undefined {
+  return value ? encodeColor(value) : undefined;
+}
+
 export function isHexColor(value: string | null): value is HexColorString {
   const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
   return value !== null && hexRegex.test(value);
@@ -340,6 +344,10 @@ export function decodeHexColor(value: string | null): Color | undefined {
 
 export function encodeNumber(value: number): string {
   return numberToStringDecimal(value, 3);
+}
+
+export function encodeMaybeNumber(value: number | undefined): string | undefined {
+  return value !== undefined ? encodeNumber(value) : undefined;
 }
 
 export function decodeFloat(value: string | null): number | undefined {
@@ -365,6 +373,10 @@ export function parseDrawSettings(
 
 export function encodeBoolean(value: boolean): string {
   return value ? "1" : "0";
+}
+
+export function encodeMaybeBoolean(value: boolean | undefined): string | undefined {
+  return value !== undefined ? encodeBoolean(value) : undefined;
 }
 
 export function decodeBoolean(value: string | null): boolean | undefined {

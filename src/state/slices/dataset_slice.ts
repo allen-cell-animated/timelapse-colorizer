@@ -110,18 +110,18 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, []
   clearDataset: () => set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null }),
 });
 
-export const serializeDatasetSlice = (slice: DatasetSlice): SerializedStoreData => {
+export const serializeDatasetSlice = (slice: Partial<DatasetSlice>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
-  if (slice.dataset !== null) {
+  if (slice.dataset) {
     ret[UrlParam.DATASET] = slice.datasetKey;
   }
-  if (slice.featureKey !== null) {
+  if (slice.featureKey !== undefined && slice.featureKey !== null) {
     ret[UrlParam.FEATURE] = slice.featureKey;
   }
-  if (slice.track !== null) {
+  if (slice.track) {
     ret[UrlParam.TRACK] = slice.track.trackId.toString();
   }
-  if (slice.backdropKey !== null) {
+  if (slice.backdropKey !== undefined && slice.backdropKey !== null) {
     ret[UrlParam.BACKDROP_KEY] = slice.backdropKey;
   }
   return ret;

@@ -101,9 +101,9 @@ export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetS
   );
 };
 
-export const serializeTimeSlice = (state: TimeSlice): SerializedStoreData => {
+export const serializeTimeSlice = (state: Partial<TimeSlice>): SerializedStoreData => {
   return {
-    [UrlParam.TIME]: state.currentFrame.toString(),
+    [UrlParam.TIME]: state.currentFrame?.toString(),
   };
 };
 
