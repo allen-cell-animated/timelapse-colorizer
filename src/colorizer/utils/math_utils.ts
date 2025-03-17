@@ -7,7 +7,9 @@ import Track from "../Track";
  * digits after the decimal place.
  * @param input The number to format.
  * @param maxSignificantDigitsAfterDecimal The maximum number of significant
- * digits after the decimal place.
+ * digits after the decimal place. If `input` is less than 1, this will be the
+ * number of significant digits. If `input is greater than 1, this will be the
+ * number of digits after the decimal point.
  * @param skipIntegers If true (default), integers will be returned as strings
  * without decimal points.
  * @returns A string representation of the number.

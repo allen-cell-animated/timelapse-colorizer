@@ -38,7 +38,11 @@ describe("numberToStringDecimal", () => {
     expect(numberToStringDecimal(12345.6789, 3)).to.equal("12345.679");
   });
 
-  it("keeps precision for small values < 1", () => {
+  it("does not use precision for values over 1", () => {
+    expect(numberToStringDecimal(100.0000001234, 3)).to.equal("100.000");
+  });
+
+  it("uses precision for values less than 1", () => {
     const value = 0.0000001234;
     expect(numberToStringDecimal(value, 3)).to.equal("1.23e-7");
   });

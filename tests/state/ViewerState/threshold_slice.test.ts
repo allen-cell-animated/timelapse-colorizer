@@ -137,5 +137,16 @@ describe("ThresholdSlice", () => {
       });
       expect(result.current.thresholds).to.deep.equal(DEFAULT_THRESHOLDS);
     });
+
+    it("ignores bad data", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.THRESHOLDS, "bad-threshold");
+      act(() => {
+        result.current.setThresholds([]);
+        loadThresholdSliceFromParams(result.current, params);
+      });
+      expect(result.current.thresholds).to.deep.equal([]);
+    });
   });
 });
