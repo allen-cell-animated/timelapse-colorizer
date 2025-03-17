@@ -51,6 +51,16 @@ export type ColorRampSliceState = {
   categoricalPaletteKey: string | null;
 };
 
+export type ColorRampSliceSerializableState = Pick<
+  ColorRampSliceState,
+  | "colorRampKey"
+  | "isColorRampReversed"
+  | "keepColorRampRange"
+  | "colorRampRange"
+  | "categoricalPalette"
+  | "categoricalPaletteKey"
+>;
+
 export type ColorRampSliceActions = {
   /**
    * Changes the key of the current color ramp to one in `KNOWN_COLOR_RAMPS`.
@@ -215,7 +225,7 @@ export const addColorRampDerivedStateSubscribers = (
   );
 };
 
-export const serializeColorRampSlice = (slice: Partial<ColorRampSlice>): SerializedStoreData => {
+export const serializeColorRampSlice = (slice: Partial<ColorRampSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
 
   // Ramp + reversed
@@ -242,12 +252,13 @@ export const serializeColorRampSlice = (slice: Partial<ColorRampSlice>): Seriali
 };
 
 /** Selects state values that serialization depends on. */
-export const colorRampSliceSerializationDependencies = (slice: ColorRampSlice): Partial<ColorRampSliceState> => ({
+export const colorRampSliceSerializationDependencies = (slice: ColorRampSlice): ColorRampSliceSerializableState => ({
   colorRampKey: slice.colorRampKey,
   isColorRampReversed: slice.isColorRampReversed,
   keepColorRampRange: slice.keepColorRampRange,
   colorRampRange: slice.colorRampRange,
   categoricalPalette: slice.categoricalPalette,
+  categoricalPaletteKey: slice.categoricalPaletteKey,
 });
 
 export const loadColorRampSliceFromParams = (slice: ColorRampSlice, params: URLSearchParams): void => {

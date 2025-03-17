@@ -5,11 +5,13 @@ import { SerializedStoreData } from "../types";
 
 import Collection from "../../colorizer/Collection";
 
-type CollectionSliceState = {
+export type CollectionSliceState = {
   collection: Collection | null;
 };
 
-type CollectionSliceActions = {
+export type CollectionSliceSerializableState = Pick<CollectionSliceState, "collection">;
+
+export type CollectionSliceActions = {
   setCollection: (collection: Collection) => void;
 };
 
@@ -23,7 +25,7 @@ export const createCollectionSlice: StateCreator<CollectionSlice, [], [], Collec
   },
 });
 
-export const serializeCollectionSlice = (slice: Partial<CollectionSlice>): SerializedStoreData => {
+export const serializeCollectionSlice = (slice: Partial<CollectionSliceSerializableState>): SerializedStoreData => {
   const collection = slice.collection;
   // Collection URL is null if a single dataset was loaded directly.
   // In this case, the collection doesn't need to be included in the URL.
@@ -36,6 +38,6 @@ export const serializeCollectionSlice = (slice: Partial<CollectionSlice>): Seria
 };
 
 /** Selects state values that serialization depends on. */
-export const collectionSliceSerializationDependencies = (slice: CollectionSlice): Partial<CollectionSliceState> => ({
+export const collectionSliceSerializationDependencies = (slice: CollectionSlice): CollectionSliceSerializableState => ({
   collection: slice.collection,
 });

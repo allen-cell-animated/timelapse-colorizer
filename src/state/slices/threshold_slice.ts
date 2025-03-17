@@ -8,7 +8,7 @@ import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { CollectionSlice } from "./collection_slice";
 import { DatasetSlice } from "./dataset_slice";
 
-type ThresholdSliceState = {
+export type ThresholdSliceState = {
   thresholds: FeatureThreshold[];
 
   // Derived state
@@ -16,7 +16,9 @@ type ThresholdSliceState = {
   inRangeLUT: Uint8Array;
 };
 
-type ThresholdSliceActions = {
+export type ThresholdSliceSerializableState = Pick<ThresholdSliceState, "thresholds">;
+
+export type ThresholdSliceActions = {
   setThresholds: (thresholds: FeatureThreshold[]) => void;
 };
 
@@ -72,7 +74,7 @@ export const addThresholdDerivedStateSubscribers = (
   );
 };
 
-export const serializeThresholdSlice = (slice: Partial<ThresholdSlice>): SerializedStoreData => {
+export const serializeThresholdSlice = (slice: Partial<ThresholdSliceSerializableState>): SerializedStoreData => {
   if (!slice.thresholds || slice.thresholds.length === 0) {
     return {};
   }
@@ -80,7 +82,7 @@ export const serializeThresholdSlice = (slice: Partial<ThresholdSlice>): Seriali
 };
 
 /* Selects state values that serialization depends on. */
-export const thresholdSliceSerializationDependencies = (slice: ThresholdSlice): Partial<ThresholdSliceState> => ({
+export const thresholdSliceSerializationDependencies = (slice: ThresholdSlice): ThresholdSliceSerializableState => ({
   thresholds: slice.thresholds,
 });
 
