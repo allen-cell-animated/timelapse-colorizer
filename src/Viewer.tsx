@@ -97,8 +97,9 @@ function Viewer(): ReactElement {
   const workerPool = getSharedWorkerPool();
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
-  // TODO: Tidy up these state slices once data logic is moved out of this file.
-  // Get viewer state
+  // TODO: Refactor dataset dropdowns, color ramp controls, and time controls into separate
+  // components to greatly reduce the state required for this component.
+  // Get viewer state:
   const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const collection = useViewerStateStore((state) => state.collection);
