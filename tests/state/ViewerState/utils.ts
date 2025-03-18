@@ -37,7 +37,9 @@ export const clearDatasetAsync = async (result: { current: ViewerStore }): Promi
  */
 export const compareSlice = (actual: Partial<ViewerStore>, expected: Partial<ViewerStore>): void => {
   for (const key in expected) {
-    expect(actual[key as keyof ViewerStore]).toEqual(expected[key as keyof ViewerStore]);
+    const actualValue = actual[key as keyof ViewerStore];
+    const expectedValue = expected[key as keyof ViewerStore];
+    expect(actualValue, "Different slice value for field '" + key + "'").toEqual(expectedValue);
   }
 };
 
@@ -48,6 +50,8 @@ export const compareSlice = (actual: Partial<ViewerStore>, expected: Partial<Vie
  */
 export const compareSerializedData = (actual: SerializedStoreData, expected: SerializedStoreData): void => {
   for (const key in expected) {
-    expect(actual[key as UrlParam]).toEqual(expected[key as UrlParam]);
+    const actualValue = actual[key as UrlParam];
+    const expectedValue = expected[key as UrlParam];
+    expect(actualValue, "Different serialized value for field '" + key + "'").toEqual(expectedValue);
   }
 };

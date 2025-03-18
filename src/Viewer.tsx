@@ -10,7 +10,6 @@ import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
-import { useShallow } from "zustand/shallow";
 
 import {
   Dataset,
@@ -26,12 +25,17 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
-import * as urlUtils from "./colorizer/utils/url_utils";
+import { isUrl, UrlParam } from "./colorizer/utils/url_utils";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
-import { selectVectorConfigFromState } from "./state/slices";
-import { loadViewerStateFromParams } from "./state/utils/store_io";
+import { getDifferingProperties } from "./state/utils/data_validation";
+import {
+  loadViewerStateFromParams,
+  selectSerializationDependencies,
+  serializeViewerState,
+} from "./state/utils/store_io";
+import { makeDebouncedCallback } from "./state/utils/store_utils";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
@@ -89,62 +93,51 @@ function Viewer(): ReactElement {
     return canvas;
   });
 
+  // Shared worker pool for background operations (e.g. loading data)
+  const workerPool = getSharedWorkerPool();
+  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
+
+  // TODO: Tidy up these state slices once data logic is moved out of this file.
+  // Get viewer state
+  const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
+  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const collection = useViewerStateStore((state) => state.collection);
+  const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
+  const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
+  const featureThresholds = useViewerStateStore((state) => state.thresholds);
+  const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
+  const openTab = useViewerStateStore((state) => state.openTab);
+  const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
+  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
   const setCollection = useViewerStateStore((state) => state.setCollection);
+  const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
+  const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
+  const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
   const setDataset = useViewerStateStore((state) => state.setDataset);
   const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
+  const setFrame = useViewerStateStore((state) => state.setFrame);
+  const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
+  const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
+  const timeControls = useViewerStateStore((state) => state.timeControls);
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
   const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
   const featureCategories = isFeatureCategorical ? dataset.getFeatureCategories(featureKey) || [] : [];
   const featureNameWithUnits = isFeatureSelected ? dataset.getFeatureNameWithUnits(featureKey) : undefined;
 
-  // TODO: Remove these when URL parameter initialization and updating is moved
-  // into a helper method/out of the component
-  /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
-  const selectedBackdropKey = useViewerStateStore((state) => state.backdropKey);
-
   const [, addRecentCollection] = useRecentCollections();
-
-  // Shared worker pool for background operations (e.g. loading data)
-  const workerPool = getSharedWorkerPool();
-  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
-
-  const selectedTrack = useViewerStateStore((state) => state.track);
-
-  const currentFrame = useViewerStateStore((state) => state.currentFrame);
-  const setFrame = useViewerStateStore((state) => state.setFrame);
-
   const annotationState = useAnnotations();
-
-  const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
-  const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
-  const openTab = useViewerStateStore((state) => state.openTab);
-  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
-
-  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
   const [datasetLoadProgress, setDatasetLoadProgress] = useState<number | null>(null);
   const [datasetOpen, setDatasetOpen] = useState(false);
-
-  // TODO: Tidy up these state slices once data logic is moved out of this file.
-  const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
-  const setColorRampKey = useViewerStateStore((state) => state.setColorRampKey);
-  const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
-  const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
-  const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
-  const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
-  const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
-  const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
-  const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
-  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
-  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
-  const featureThresholds = useViewerStateStore((state) => state.thresholds);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
@@ -162,7 +155,6 @@ function Viewer(): ReactElement {
   const pendingAlerts = useRef<(() => void)[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
-  const timeControls = useViewerStateStore((state) => state.timeControls);
 
   // TODO: Move all logic for the time slider into its own component!
   // Flag used to indicate that the slider is currently being dragged while playback is occurring.
@@ -184,6 +176,34 @@ function Viewer(): ReactElement {
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
+  const updateUrlParams = useCallback(
+    // TODO: Update types for makeDebouncedCallback since right now it requires
+    // an argument (even if it's a dummy one) to be passed to the callback.
+    makeDebouncedCallback(() => {
+      if (!isDatasetLoading) {
+        const params = serializeViewerState(useViewerStateStore.getState());
+        setSearchParams(params, { replace: true });
+      }
+    }),
+    [isDatasetLoading]
+  );
+
+  useEffect(() => {
+    return useViewerStateStore.subscribe(selectSerializationDependencies, (state, prevState) => {
+      // Ignore changes to the current frame during playback.
+      const differingKeys = getDifferingProperties(state, prevState);
+      const hasOnlyTimeChanged = differingKeys.size === 1 && differingKeys.has("currentFrame");
+
+      if (
+        differingKeys.size === 0 ||
+        (hasOnlyTimeChanged && useViewerStateStore.getState().timeControls.isPlaying()) ||
+        isRecording
+      ) {
+        return;
+      }
+      updateUrlParams(state);
+    });
+  }, [isRecording, updateUrlParams]);
 
   // Sync the time slider with the pending frame.
   useEffect(() => {
@@ -238,93 +258,6 @@ function Viewer(): ReactElement {
   }, [annotationState.data]);
 
   // UTILITY METHODS /////////////////////////////////////////////////////////////
-
-  /**
-   * Formats the dataset and collection parameters for use in a URL.
-   */
-  const getDatasetAndCollectionParam = useCallback((): {
-    datasetParam?: string;
-    collectionParam?: string;
-  } => {
-    if (collection?.url === null) {
-      // A single dataset was loaded, so there's no collection URL. Use the dataset URL instead.
-      return { datasetParam: dataset?.manifestUrl, collectionParam: undefined };
-    } else {
-      return { datasetParam: datasetKey ?? undefined, collectionParam: collection?.url };
-    }
-  }, [datasetKey, dataset, collection]);
-
-  /**
-   * Get the optional color map feature range parameter for the URL. If the range
-   * is the full range of the feature's values (default), return undefined.
-   */
-  const getRangeParam = useCallback((): [number, number] | undefined => {
-    if (!dataset || !featureKey) {
-      return undefined;
-    }
-    // check if current selected feature range matches the default feature range; if so, don't provide
-    // a range parameter.
-    const featureData = dataset.getFeatureData(featureKey);
-    if (featureData) {
-      if (featureData.min === colorRampMin && featureData.max === colorRampMax) {
-        return undefined;
-      }
-    }
-    return [colorRampMin, colorRampMax];
-  }, [colorRampMin, colorRampMax, featureKey, dataset]);
-
-  /**
-   * Get a URL query string representing the current collection, dataset, feature, track,
-   * and frame information.
-   */
-  const getUrlParams = useCallback((): string => {
-    const { datasetParam, collectionParam } = getDatasetAndCollectionParam();
-    const rangeParam = getRangeParam();
-    const state: Partial<urlUtils.UrlParams> = {
-      collection: collectionParam,
-      dataset: datasetParam,
-      feature: featureKey ?? undefined,
-      track: selectedTrack?.trackId,
-      // Ignore time=0 to reduce clutter
-      time: currentFrame !== 0 ? currentFrame : undefined,
-      thresholds: featureThresholds,
-      range: rangeParam,
-      colorRampKey,
-      colorRampReversed,
-      categoricalPalette: categoricalPalette,
-      // TODO: This is a patch to keep vector state saved to the URL while the
-      // state store is being refactored. This should be removed once
-      // ViewerConfig is moved into the state store.
-      // config: { ...config, vectorConfig },
-      selectedBackdropKey,
-      // scatterPlotConfig,
-    };
-    return urlUtils.paramsToUrlQueryString(state);
-  }, [
-    getDatasetAndCollectionParam,
-    getRangeParam,
-    featureKey,
-    selectedTrack,
-    currentFrame,
-    featureThresholds,
-    colorRampKey,
-    colorRampReversed,
-    categoricalPalette,
-    // config,
-    vectorConfig,
-    selectedBackdropKey,
-    // scatterPlotConfig,
-  ]);
-
-  // Update url whenever the viewer settings change, with a few exceptions:
-  // - The URL should not change while playing/recording for performance reasons.
-  // - The URL should not change if the dataset hasn't loaded yet, or if it failed to load.
-  //   that way, users can refresh the page to try again.
-  useEffect(() => {
-    if (!timeControls.isPlaying() && !isRecording && isInitialDatasetLoaded) {
-      setSearchParams(getUrlParams(), { replace: true });
-    }
-  }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
   /**
    * Fire a custom analytics event when a feature is selected.
@@ -426,18 +359,10 @@ function Viewer(): ReactElement {
       console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
     },
-    [dataset, featureKey, canv, currentFrame, getUrlParams, featureThresholds]
+    [dataset, featureKey, canv, currentFrame, featureThresholds]
   );
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
-
-  // Only retrieve parameters once, because the URL can be updated by state updates
-  // and lose information (like the track, feature, time, etc.) that isn't
-  // accessed in the first render.
-  const initialUrlParams = useConstructor(() => {
-    return urlUtils.loadFromUrlSearchParams(searchParams);
-  });
-  const initialSearchParams = useConstructor(() => searchParams);
 
   // Break React rules to prevent a race condition where the initial dataset is reloaded
   // when useEffect gets fired twice. This caused certain URL parameters like time to get
@@ -468,10 +393,10 @@ function Viewer(): ReactElement {
         newCollection = stateCollection;
       } else {
         // Collect from URL
-        const collectionUrlParam = initialUrlParams.collection;
-        const datasetParam = initialUrlParams.dataset;
+        const collectionUrlParam = searchParams.get(UrlParam.COLLECTION);
+        const datasetParam = searchParams.get(UrlParam.DATASET);
 
-        if (datasetParam && urlUtils.isUrl(datasetParam) && !collectionUrlParam) {
+        if (datasetParam && isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
           // Make a dummy collection that will include only this dataset
           newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
@@ -531,7 +456,7 @@ function Viewer(): ReactElement {
       }
       setIsDatasetLoading(false);
       // Load the viewer state from the URL after the dataset is loaded.
-      loadViewerStateFromParams(useViewerStateStore, initialSearchParams);
+      loadViewerStateFromParams(useViewerStateStore, searchParams);
       return;
     };
     loadInitialDataset();
