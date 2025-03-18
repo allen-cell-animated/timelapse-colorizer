@@ -2,12 +2,13 @@ import { StateCreator } from "zustand";
 
 import { FeatureThreshold } from "../../colorizer";
 import { getInRangeLUT, validateThresholds } from "../../colorizer/utils/data_utils";
-import { SubscribableStore } from "../types";
+import { deserializeThresholds, serializeThresholds, UrlParam } from "../../colorizer/utils/url_utils";
+import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { CollectionSlice } from "./collection_slice";
 import { DatasetSlice } from "./dataset_slice";
 
-type ThresholdSliceState = {
+export type ThresholdSliceState = {
   thresholds: FeatureThreshold[];
 
   // Derived state
@@ -15,7 +16,9 @@ type ThresholdSliceState = {
   inRangeLUT: Uint8Array;
 };
 
-type ThresholdSliceActions = {
+export type ThresholdSliceSerializableState = Pick<ThresholdSliceState, "thresholds">;
+
+export type ThresholdSliceActions = {
   setThresholds: (thresholds: FeatureThreshold[]) => void;
 };
 
@@ -69,4 +72,23 @@ export const addThresholdDerivedStateSubscribers = (
     (state) => state.collection,
     () => ({ thresholds: [] })
   );
+};
+
+export const serializeThresholdSlice = (slice: Partial<ThresholdSliceSerializableState>): SerializedStoreData => {
+  if (!slice.thresholds || slice.thresholds.length === 0) {
+    return {};
+  }
+  return { [UrlParam.THRESHOLDS]: serializeThresholds(slice.thresholds) };
+};
+
+/* Selects state values that serialization depends on. */
+export const selectThresholdSliceSerializationDeps = (slice: ThresholdSlice): ThresholdSliceSerializableState => ({
+  thresholds: slice.thresholds,
+});
+
+export const loadThresholdSliceFromParams = (slice: ThresholdSlice, params: URLSearchParams): void => {
+  const thresholds = deserializeThresholds(params.get(UrlParam.THRESHOLDS));
+  if (thresholds !== undefined) {
+    slice.setThresholds(thresholds);
+  }
 };

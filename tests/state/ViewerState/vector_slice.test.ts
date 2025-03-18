@@ -3,8 +3,48 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../../src/colorizer";
+import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../../src/state";
+import { loadVectorSliceFromParams, serializeVectorSlice, VectorSlice } from "../../../src/state/slices";
+import { SerializedStoreData } from "../../../src/state/types";
 import { ANY_ERROR } from "../../test_utils";
+import { compareSerializedData, compareSlice } from "./utils";
+
+const EXAMPLE_SLICE_1: Partial<VectorSlice> = {
+  vectorVisible: true,
+  vectorKey: VECTOR_KEY_MOTION_DELTA,
+  vectorMotionTimeIntervals: 1,
+  vectorColor: new Color(0xff0000),
+  vectorScaleFactor: 2,
+  vectorTooltipMode: VectorTooltipMode.COMPONENTS,
+};
+
+const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_VECTOR]: "1",
+  [UrlParam.VECTOR_KEY]: VECTOR_KEY_MOTION_DELTA,
+  [UrlParam.VECTOR_TIME_INTERVALS]: "1",
+  [UrlParam.VECTOR_COLOR]: "ff0000",
+  [UrlParam.VECTOR_SCALE]: "2",
+  [UrlParam.VECTOR_TOOLTIP_MODE]: VectorTooltipMode.COMPONENTS,
+};
+
+const EXAMPLE_SLICE_2: Partial<VectorSlice> = {
+  vectorVisible: false,
+  vectorKey: VECTOR_KEY_MOTION_DELTA,
+  vectorMotionTimeIntervals: 15,
+  vectorColor: new Color(0xffffff),
+  vectorScaleFactor: 12,
+  vectorTooltipMode: VectorTooltipMode.MAGNITUDE,
+};
+
+const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
+  [UrlParam.SHOW_VECTOR]: "0",
+  [UrlParam.VECTOR_KEY]: VECTOR_KEY_MOTION_DELTA,
+  [UrlParam.VECTOR_TIME_INTERVALS]: "15",
+  [UrlParam.VECTOR_COLOR]: "ffffff",
+  [UrlParam.VECTOR_SCALE]: "12",
+  [UrlParam.VECTOR_TOOLTIP_MODE]: VectorTooltipMode.MAGNITUDE,
+};
 
 describe("VectorSlice", () => {
   it("can set vector properties", () => {
@@ -82,6 +122,91 @@ describe("VectorSlice", () => {
       expect(() => {
         result.current.setVectorMotionTimeIntervals(NaN);
       }).toThrowError(ANY_ERROR);
+    });
+  });
+
+  describe("serializeVectorSlice", () => {
+    it("serializes vector slice", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        useViewerStateStore.setState(EXAMPLE_SLICE_1);
+      });
+      let serializedData = serializeVectorSlice(result.current);
+      compareSerializedData(serializedData, EXAMPLE_SLICE_1_PARAMS);
+
+      act(() => {
+        useViewerStateStore.setState(EXAMPLE_SLICE_2);
+      });
+      serializedData = serializeVectorSlice(result.current);
+      compareSerializedData(serializedData, EXAMPLE_SLICE_2_PARAMS);
+    });
+  });
+
+  describe("loadVectorSliceFromParams", () => {
+    it("loads basic vector settings", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        loadVectorSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_1_PARAMS));
+      });
+      compareSlice(result.current, EXAMPLE_SLICE_1);
+
+      act(() => {
+        loadVectorSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_2_PARAMS));
+      });
+      compareSlice(result.current, EXAMPLE_SLICE_2);
+    });
+
+    it("ignores invalid vector keys", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.VECTOR_KEY, "invalid_key");
+      act(() => {
+        loadVectorSliceFromParams(result.current, params);
+      });
+      expect(result.current.vectorKey).not.toBe("invalid_key");
+    });
+
+    it("ignores infinite or NaN scale values", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+
+      const initialScale = result.current.vectorScaleFactor;
+      const invalidValues = ["NaN", "Infinity"];
+      for (const value of invalidValues) {
+        params.set(UrlParam.VECTOR_SCALE, value);
+        act(() => {
+          loadVectorSliceFromParams(result.current, params);
+        });
+        expect(result.current.vectorScaleFactor).toBe(initialScale);
+      }
+    });
+
+    it("ignores infinite, NaN, or negative time intervals", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      act(() => {
+        result.current.setVectorMotionTimeIntervals(1);
+      });
+      const initialTimeIntervals = result.current.vectorMotionTimeIntervals;
+
+      const params = new URLSearchParams();
+      const invalidValues = ["NaN", "Infinity", "-1"];
+      for (const value of invalidValues) {
+        params.set(UrlParam.VECTOR_TIME_INTERVALS, value);
+        act(() => {
+          loadVectorSliceFromParams(result.current, params);
+        });
+        expect(result.current.vectorMotionTimeIntervals).toBe(initialTimeIntervals);
+      }
+    });
+
+    it("ignores invalid vector tooltip keys", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.VECTOR_TOOLTIP_MODE, "invalid");
+      act(() => {
+        loadVectorSliceFromParams(result.current, params);
+      });
+      expect(result.current.vectorTooltipMode).not.toBe("invalid");
     });
   });
 });

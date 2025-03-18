@@ -1,14 +1,15 @@
 import { StateCreator } from "zustand";
 
+import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
-import { SubscribableStore } from "../types";
+import { SerializedStoreData, SubscribableStore } from "../types";
 import { clampWithNanCheck } from "../utils/data_validation";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 
 import TimeControls from "../../colorizer/TimeControls";
 
-type TimeSliceState = {
+export type TimeSliceState = {
   /** The frame that is currently being loaded. If no load is happening,
    * `pendingFrame === currentFrame`.
    */
@@ -20,7 +21,9 @@ type TimeSliceState = {
   loadFrameCallback: (frame: number) => Promise<void>;
 };
 
-type TimeSliceActions = {
+export type TimeSliceSerializableState = Pick<TimeSliceState, "currentFrame">;
+
+export type TimeSliceActions = {
   /**
    * Attempts to set and load the given frame number, using the callback
    * provided by `setLoadCallback`.
@@ -98,4 +101,26 @@ export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetS
       }
     }
   );
+};
+
+export const serializeTimeSlice = (state: Partial<TimeSliceSerializableState>): SerializedStoreData => {
+  return {
+    [UrlParam.TIME]: state.currentFrame?.toString(),
+  };
+};
+
+/** Selects state values that serialization depends on. */
+export const selectTimeSliceSerializationDeps = (slice: TimeSlice): TimeSliceSerializableState => ({
+  currentFrame: slice.currentFrame,
+});
+
+export const loadTimeSliceFromParams = (state: TimeSlice & DatasetSlice, params: URLSearchParams): void => {
+  // Load time from URL. If no time is set but a track is, set the time to the
+  // start of the track.
+  const time = decodeInt(params.get(UrlParam.TIME));
+  if (time !== undefined) {
+    state.setFrame(time);
+  } else if (state.track !== null) {
+    state.setFrame(state.track.startTime());
+  }
 };

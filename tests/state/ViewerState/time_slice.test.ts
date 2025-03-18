@@ -1,7 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, Mock, vi } from "vitest";
 
+import { Track } from "../../../src/colorizer";
+import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../../src/state";
+import { loadTimeSliceFromParams, serializeTimeSlice } from "../../../src/state/slices";
 import { ANY_ERROR, sleep } from "../../test_utils";
 import { MOCK_DATASET, MOCK_DATASET_WITH_TWO_FRAMES } from "./constants";
 import { clearDatasetAsync, setDatasetAsync } from "./utils";
@@ -104,11 +107,9 @@ describe("useViewerStateStore: TimeSlice", () => {
     await act(async () => {
       await result.current.setFrame(3);
     });
-    expect(result.current.currentFrame).toBe(3);
     expect(result.current.pendingFrame).toBe(3);
 
     await setDatasetAsync(result, MOCK_DATASET_WITH_TWO_FRAMES);
-    expect(result.current.currentFrame).toBe(1);
     expect(result.current.pendingFrame).toBe(1);
   });
 
@@ -118,11 +119,59 @@ describe("useViewerStateStore: TimeSlice", () => {
     await act(async () => {
       await result.current.setFrame(3);
     });
-    expect(result.current.currentFrame).toBe(3);
     expect(result.current.pendingFrame).toBe(3);
 
     await clearDatasetAsync(result);
-    expect(result.current.currentFrame).toBe(0);
     expect(result.current.pendingFrame).toBe(0);
+  });
+
+  describe("serializeTimeSlice", () => {
+    it("serializes 0 values", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await act(async () => {
+        await result.current.setFrame(0);
+      });
+      expect(serializeTimeSlice(result.current)[UrlParam.TIME]).toBe("0");
+    });
+
+    it("serializes time value", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await act(async () => {
+        await result.current.setFrame(155);
+      });
+      expect(serializeTimeSlice(result.current)[UrlParam.TIME]).toBe("155");
+    });
+  });
+
+  describe("loadTimeSliceFromParams", () => {
+    it("loads time from params", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.TIME, "100");
+      act(() => {
+        loadTimeSliceFromParams(result.current, params);
+      });
+      expect(result.current.pendingFrame).toBe(100);
+
+      params.set(UrlParam.TIME, "0");
+      act(() => {
+        loadTimeSliceFromParams(result.current, params);
+      });
+      expect(result.current.pendingFrame).toBe(0);
+    });
+
+    it("uses track start time if no time is provided", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        // Fake track with start time at 50
+        result.current.setTrack(new Track(15, [50], [0], [0, 0], [1, 1]));
+      });
+      const params = new URLSearchParams();
+      act(() => {
+        loadTimeSliceFromParams(result.current, params);
+      });
+      expect(result.current.pendingFrame).toBe(50);
+    });
   });
 });

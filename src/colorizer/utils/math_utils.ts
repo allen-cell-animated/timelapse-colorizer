@@ -3,21 +3,41 @@ import { Vector2 } from "three";
 import Track from "../Track";
 
 /**
- * Formats a number as a string decimal with a defined number of digits
- * after the decimal place. Optionally ignores integers and returns them as-is.
+ * Formats a number as a string decimal, with a maximum number of significant
+ * digits after the decimal place.
+ * @param input The number to format.
+ * @param maxSignificantDigitsAfterDecimal The maximum number of significant
+ * digits after the decimal place. If `input` is less than 1, this will be the
+ * number of significant digits. If `input is greater than 1, this will be the
+ * number of digits after the decimal point.
+ * @param skipIntegers If true (default), integers will be returned as strings
+ * without decimal points.
+ * @returns A string representation of the number.
+ * - If the number is `undefined` or `null`, returns `"NaN"`.
+ * - If the number is an integer and `skipIntegers` is true, returns the number
+ *   as a string without a decimal point.
+ * - If the number is less than 1, returns the number with
+ *   `maxSignificantDigitsAfterDecimal` significant digits. (using
+ *   `toPrecision`).
+ * - Otherwise, returns the number with `maxSignificantDigitsAfterDecimal`
+ *   digits after the decimal point (using `toFixed`).
+ *
  */
 export function numberToStringDecimal(
   input: number | undefined | null,
-  decimalPlaces: number,
+  maxSignificantDigitsAfterDecimal: number,
   skipIntegers: boolean = true
 ): string {
   if (input === undefined || input === null) {
     return "NaN";
-  }
-  if (Number.isInteger(input) && skipIntegers) {
+  } else if (Number.isInteger(input) && skipIntegers) {
     return input.toString();
+  } else if (Math.abs(input) < 1) {
+    // For numbers less than 1, return value by precision
+    return input.toPrecision(maxSignificantDigitsAfterDecimal);
+  } else {
+    return input.toFixed(maxSignificantDigitsAfterDecimal);
   }
-  return input.toFixed(decimalPlaces);
 }
 
 /**
