@@ -42,7 +42,7 @@ export function removeUndefinedProperties<T>(object: T): Partial<T> {
 export const getDifferingProperties = <T extends Record<string, any>>(a: Partial<T>, b: Partial<T>): Set<keyof T> => {
   const differingKeys = new Set<keyof T>();
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  for (const key in keys) {
+  for (const key of keys) {
     if (a[key] !== b[key]) {
       differingKeys.add(key);
     }
