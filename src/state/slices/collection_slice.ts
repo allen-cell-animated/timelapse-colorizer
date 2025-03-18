@@ -38,6 +38,6 @@ export const serializeCollectionSlice = (slice: Partial<CollectionSliceSerializa
 };
 
 /** Selects state values that serialization depends on. */
-export const collectionSliceSerializationDependencies = (slice: CollectionSlice): CollectionSliceSerializableState => ({
+export const selectCollectionSliceSerializationDeps = (slice: CollectionSlice): CollectionSliceSerializableState => ({
   collection: slice.collection,
 });

@@ -110,7 +110,7 @@ export const serializeTimeSlice = (state: Partial<TimeSliceSerializableState>): 
 };
 
 /** Selects state values that serialization depends on. */
-export const timeSliceSerializationDependencies = (slice: TimeSlice): TimeSliceSerializableState => ({
+export const selectTimeSliceSerializationDeps = (slice: TimeSlice): TimeSliceSerializableState => ({
   currentFrame: slice.currentFrame,
 });
 

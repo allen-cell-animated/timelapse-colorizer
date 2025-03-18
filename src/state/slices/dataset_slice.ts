@@ -123,7 +123,7 @@ export const serializeDatasetSlice = (slice: Partial<DatasetSliceSerializableSta
 };
 
 /** Selects state values that serialization depends on. */
-export const datasetSliceSerializationDependencies = (slice: DatasetSlice): DatasetSliceSerializableState => ({
+export const selectDatasetSliceSerializationDeps = (slice: DatasetSlice): DatasetSliceSerializableState => ({
   datasetKey: slice.datasetKey,
   featureKey: slice.featureKey,
   track: slice.track,

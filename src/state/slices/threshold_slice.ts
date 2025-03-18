@@ -82,7 +82,7 @@ export const serializeThresholdSlice = (slice: Partial<ThresholdSliceSerializabl
 };
 
 /* Selects state values that serialization depends on. */
-export const thresholdSliceSerializationDependencies = (slice: ThresholdSlice): ThresholdSliceSerializableState => ({
+export const selectThresholdSliceSerializationDeps = (slice: ThresholdSlice): ThresholdSliceSerializableState => ({
   thresholds: slice.thresholds,
 });
 
