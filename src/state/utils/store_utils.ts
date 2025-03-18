@@ -40,7 +40,7 @@ export const addDerivedStateSubscriber = <T, const U>(
  * @param debounceMs The number of milliseconds to wait before calling the
  * debounced callback. Defaults to 250ms.
  */
-export const makeDebouncedCallback = <T, U, CallbackFn extends (state: T) => Partial<U> | undefined | void>(
+export const makeDebouncedCallback = <T, U, CallbackFn extends (args: T) => Partial<U> | undefined | void>(
   callback: CallbackFn,
   debounceMs: number = 250
 ): ((args: T) => void) => {
@@ -49,8 +49,8 @@ export const makeDebouncedCallback = <T, U, CallbackFn extends (state: T) => Par
   let timeout: ReturnType<typeof setTimeout> | null = null;
   let lastArgs: T | null = null;
 
-  return (state: T) => {
-    lastArgs = state;
+  return (args: T): void => {
+    lastArgs = args;
     if (timeout) {
       clearTimeout(timeout);
     }

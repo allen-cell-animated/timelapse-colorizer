@@ -91,25 +91,37 @@ export const serializeViewerState = (state: Partial<ViewerStoreSerializableState
   };
 };
 
-export type ViewerParams = Partial<ViewerStoreSerializableState> & {
-  /** URL of the collection resource to load. */
+export type ViewerParams = {
+  /** Optional URL of the collection resource to load. Overwrites the URL of the
+   * `collection` field in the serialized store data if defined.
+   */
   collectionParam?: string;
-};
+  /** Optional URL of the dataset or dataset key. Overwrites the
+   * `dataset` field in the serialized store data if defined.
+   */
+  datasetParam?: string;
+} & Partial<ViewerStoreSerializableState>;
 
 /**
  * Serializes parameters for the viewer into a `SerializedStoreData` object,
  * which can be used to generate a URL query string using `serializedDataToUrl`.
- * @param params Object containing serializable viewer state parameters.
- * Also includes a `collectionParam` field for the collection URL.
+ * @param params Object containing serializable viewer state parameters; see
+ * `ViewerStoreSerializableState` for a list of possible fields.
  */
 export const serializeViewerParams = (params: ViewerParams): SerializedStoreData => {
   const ret: SerializedStoreData = {};
   if (params.collectionParam) {
     ret[UrlParam.COLLECTION] = params.collectionParam;
   }
+  if (params.datasetParam) {
+    ret[UrlParam.DATASET] = params.datasetParam;
+  }
   return {
+    // Order collection + dataset first in params, but override the default
+    // serialized collection fields by destructuring a second time.
     ...ret,
-    ...serializeViewerState(params),
+    ...serializeViewerState({ ...params }),
+    ...ret,
   };
 };
 

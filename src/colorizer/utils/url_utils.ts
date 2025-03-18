@@ -29,6 +29,7 @@ import { numberToStringDecimal } from "./math_utils";
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
 
+export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 export enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
@@ -38,7 +39,6 @@ export enum UrlParam {
   THRESHOLDS = "filters",
   RANGE = "range",
   COLOR_RAMP = "color",
-  COLOR_RAMP_REVERSED_SUFFIX = "!",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
   SHOW_BACKDROP = "bg",
@@ -550,7 +550,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
   if (state.colorRampKey) {
     if (state.colorRampReversed) {
       includedParameters.push(
-        `${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + UrlParam.COLOR_RAMP_REVERSED_SUFFIX)}`
+        `${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + URL_COLOR_RAMP_REVERSED_SUFFIX)}`
       );
     } else {
       includedParameters.push(`${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
@@ -703,10 +703,7 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
   let colorRampParam: string | undefined = colorRampRawParam || undefined;
   let colorRampReversedParam: boolean | undefined = undefined;
   //  Color ramps are marked as reversed by adding ! to the end of the key
-  if (
-    colorRampRawParam &&
-    colorRampRawParam.charAt(colorRampRawParam.length - 1) === UrlParam.COLOR_RAMP_REVERSED_SUFFIX
-  ) {
+  if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === URL_COLOR_RAMP_REVERSED_SUFFIX) {
     colorRampReversedParam = true;
     colorRampParam = colorRampRawParam.slice(0, -1);
   }

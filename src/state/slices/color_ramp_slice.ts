@@ -14,6 +14,7 @@ import {
   encodeColor,
   encodeMaybeBoolean,
   encodeNumber,
+  URL_COLOR_RAMP_REVERSED_SUFFIX,
   UrlParam,
 } from "../../colorizer/utils/url_utils";
 import { COLOR_RAMP_RANGE_DEFAULT, MAX_FEATURE_CATEGORIES } from "../../constants";
@@ -230,8 +231,7 @@ export const serializeColorRampSlice = (slice: Partial<ColorRampSliceSerializabl
 
   // Ramp + reversed
   if (slice.colorRampKey !== undefined) {
-    ret[UrlParam.COLOR_RAMP] =
-      slice.colorRampKey + (slice.isColorRampReversed ? UrlParam.COLOR_RAMP_REVERSED_SUFFIX : "");
+    ret[UrlParam.COLOR_RAMP] = slice.colorRampKey + (slice.isColorRampReversed ? URL_COLOR_RAMP_REVERSED_SUFFIX : "");
   }
 
   ret[UrlParam.KEEP_RANGE] = encodeMaybeBoolean(slice.keepColorRampRange);
@@ -264,7 +264,7 @@ export const colorRampSliceSerializationDependencies = (slice: ColorRampSlice): 
 export const loadColorRampSliceFromParams = (slice: ColorRampSlice, params: URLSearchParams): void => {
   const colorRampParam = params.get(UrlParam.COLOR_RAMP);
   if (colorRampParam) {
-    const [key, reversed] = colorRampParam.split(UrlParam.COLOR_RAMP_REVERSED_SUFFIX);
+    const [key, reversed] = colorRampParam.split(URL_COLOR_RAMP_REVERSED_SUFFIX);
     if (KNOWN_COLOR_RAMPS.has(key)) {
       slice.setColorRampKey(key);
       slice.setColorRampReversed(reversed !== undefined);
