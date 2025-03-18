@@ -14,6 +14,20 @@ const getMockLoadCallback = (): Mock<[], Promise<void>> => vi.fn((): Promise<voi
 
 describe("useViewerStateStore: TimeSlice", () => {
   describe("setFrame", () => {
+    it("throws an error for non-finite values", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await expect(async () => {
+        await act(async () => {
+          await result.current.setFrame(NaN);
+        });
+      }).rejects.toThrowError(ANY_ERROR);
+      await expect(async () => {
+        await act(async () => {
+          await result.current.setFrame(Infinity);
+        });
+      }).rejects.toThrowError(ANY_ERROR);
+    });
+
     it("calls loadFrameCallback", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       const mockLoadCallback = getMockLoadCallback();
@@ -165,13 +179,24 @@ describe("useViewerStateStore: TimeSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
         // Fake track with start time at 50
-        result.current.setTrack(new Track(15, [50], [0], [0, 0], [1, 1]));
+        result.current.setTrack(new Track(15, [3], [0], [0, 0], [1, 1]));
       });
       const params = new URLSearchParams();
       act(() => {
         loadTimeSliceFromParams(result.current, params);
       });
-      expect(result.current.pendingFrame).toBe(50);
+      expect(result.current.pendingFrame).toBe(3);
+    });
+
+    it("clamps frame number if dataset is provided", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.TIME, "100");
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadTimeSliceFromParams(result.current, params);
+      });
+      expect(result.current.pendingFrame).toBe(MOCK_DATASET.numberOfFrames - 1);
     });
   });
 });
