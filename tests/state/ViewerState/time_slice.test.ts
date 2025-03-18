@@ -188,7 +188,17 @@ describe("useViewerStateStore: TimeSlice", () => {
       expect(result.current.pendingFrame).toBe(3);
     });
 
-    it("clamps frame number if dataset is provided", async () => {
+    it("clamps min frame number to 0", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.TIME, "-100");
+      act(() => {
+        loadTimeSliceFromParams(result.current, params);
+      });
+      expect(result.current.pendingFrame).toBe(0);
+    });
+
+    it("clamps max frame number if dataset is provided", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       const params = new URLSearchParams();
       params.set(UrlParam.TIME, "100");

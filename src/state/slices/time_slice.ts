@@ -26,8 +26,8 @@ export type TimeSliceSerializableState = Pick<TimeSliceState, "currentFrame">;
 export type TimeSliceActions = {
   /**
    * Attempts to set and load the given frame number, using the callback
-   * provided by `setLoadCallback`. The frame number will be clamped to the
-   * number of frames in the dataset if one is loaded.
+   * provided by `setLoadCallback`. The frame number will be clamped between 0
+   * and the number of frames in the dataset, if one is loaded.
    *
    * Note that `pendingFrame` will be set to the frame that is being loaded,
    * while `currentFrame` will not update until the promise returned by the
@@ -66,6 +66,8 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
     const dataset = get().dataset;
     if (dataset !== null) {
       frame = clampWithNanCheck(frame, 0, dataset.numberOfFrames - 1);
+    } else {
+      frame = Math.max(frame, 0);
     }
 
     const isPlaying = get().timeControls.isPlaying();
