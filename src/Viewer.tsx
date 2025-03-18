@@ -181,12 +181,12 @@ function Viewer(): ReactElement {
     // TODO: Update types for makeDebouncedCallback since right now it requires
     // an argument (even if it's a dummy one) to be passed to the callback.
     makeDebouncedCallback(() => {
-      if (!isDatasetLoading) {
+      if (isInitialDatasetLoaded) {
         const params = serializeViewerState(useViewerStateStore.getState());
         setSearchParams(params, { replace: true });
       }
     }),
-    [isDatasetLoading]
+    [isInitialDatasetLoaded]
   );
 
   useEffect(() => {
@@ -456,6 +456,7 @@ function Viewer(): ReactElement {
         setIsInitialDatasetLoaded(true);
       }
       setIsDatasetLoading(false);
+
       // Load the viewer state from the URL after the dataset is loaded.
       loadViewerStateFromParams(useViewerStateStore, searchParams);
       return;
