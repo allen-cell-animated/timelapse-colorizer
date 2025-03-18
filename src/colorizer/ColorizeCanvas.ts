@@ -618,8 +618,8 @@ export default class ColorizeCanvas {
     const [frame, backdrop] = result;
 
     if (this.pendingFrame !== index || this.dataset !== pendingDataset) {
-      // This load request has been superceded by a request for another frame, which has already loaded in image data.
-      // Drop this request.
+      // This load request has been superceded by a request for another frame or
+      // a different dataset. Drop this request.
       return;
     }
 

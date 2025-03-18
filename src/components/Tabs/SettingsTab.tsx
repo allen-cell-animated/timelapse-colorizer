@@ -4,7 +4,7 @@ import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
-import { DrawMode, ViewerConfig } from "../../colorizer/types";
+import { DrawMode } from "../../colorizer/types";
 import { FlexColumn } from "../../styles/utils";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
@@ -25,17 +25,31 @@ export const SETTINGS_INDENT_PX = 24;
 const SETTINGS_GAP_PX = 8;
 export const MAX_SLIDER_WIDTH = "250px";
 
-type SettingsTabProps = {
-  config: ViewerConfig;
-  updateConfig(settings: Partial<ViewerConfig>): void;
-};
-
-export default function SettingsTab(props: SettingsTabProps): ReactElement {
-  const dataset = useViewerStateStore((state) => state.dataset);
-  // TODO: Other backdrop settings do not yet use `useViewerStateStore`. Replace
-  // here once ViewerConfig can be updated through the store.
+export default function SettingsTab(): ReactElement {
+  // State accessors
+  const backdropBrightness = useViewerStateStore((state) => state.backdropBrightness);
   const backdropKey = useViewerStateStore((state) => state.backdropKey) ?? NO_BACKDROP.value;
+  const backdropSaturation = useViewerStateStore((state) => state.backdropSaturation);
+  const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
+  const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
+  const outlineColor = useViewerStateStore((state) => state.outlineColor);
+  const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const setBackdropBrightness = useViewerStateStore((state) => state.setBackdropBrightness);
   const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
+  const setBackdropSaturation = useViewerStateStore((state) => state.setBackdropSaturation);
+  const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
+  const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
+  const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
+  const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
+  const setOutOfRangeDrawSettings = useViewerStateStore((state) => state.setOutOfRangeDrawSettings);
+  const setShowScaleBar = useViewerStateStore((state) => state.setShowScaleBar);
+  const setShowTimestamp = useViewerStateStore((state) => state.setShowTimestamp);
+  const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
+  const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
+  const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
 
   let backdropOptions = useMemo(
     () =>
@@ -46,7 +60,7 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
   );
 
   const isBackdropDisabled = backdropOptions.length === 0 || backdropKey === null;
-  const isBackdropOptionsDisabled = isBackdropDisabled || !props.config.backdropVisible;
+  const isBackdropOptionsDisabled = isBackdropDisabled || !backdropVisible;
   let selectedBackdropKey = backdropKey ?? NO_BACKDROP.value;
   if (isBackdropDisabled) {
     backdropOptions = [NO_BACKDROP];
@@ -61,10 +75,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
             <Checkbox
               type="checkbox"
               disabled={isBackdropDisabled}
-              checked={props.config.backdropVisible}
-              onChange={(event) => {
-                props.updateConfig({ backdropVisible: event.target.checked });
-              }}
+              checked={backdropVisible}
+              onChange={(event) => setBackdropVisible(event.target.checked)}
             />
           </SettingsItem>
           <SettingsItem label="Backdrop">
@@ -83,8 +95,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 maxSliderBound={200}
                 minInputBound={0}
                 maxInputBound={200}
-                value={props.config.backdropBrightness}
-                onChange={(brightness: number) => props.updateConfig({ backdropBrightness: brightness })}
+                value={backdropBrightness}
+                onChange={setBackdropBrightness}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
                 disabled={isBackdropOptionsDisabled}
@@ -100,8 +112,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 maxSliderBound={100}
                 minInputBound={0}
                 maxInputBound={100}
-                value={props.config.backdropSaturation}
-                onChange={(saturation: number) => props.updateConfig({ backdropSaturation: saturation })}
+                value={backdropSaturation}
+                onChange={setBackdropSaturation}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
                 disabled={isBackdropOptionsDisabled}
@@ -117,8 +129,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 maxSliderBound={100}
                 minInputBound={0}
                 maxInputBound={100}
-                value={props.config.objectOpacity}
-                onChange={(objectOpacity: number) => props.updateConfig({ objectOpacity: objectOpacity })}
+                value={objectOpacity}
+                onChange={setObjectOpacity}
                 marks={[100]}
                 numberFormatter={(value?: number) => `${value}%`}
               />
@@ -136,10 +148,8 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
                 size="small"
                 disabledAlpha={true}
                 defaultValue={new AntdColor(OUTLINE_COLOR_DEFAULT)}
-                onChange={(_color, hex) => {
-                  props.updateConfig({ outlineColor: new Color(hex as ColorRepresentation) });
-                }}
-                value={new AntdColor(props.config.outlineColor.getHexString())}
+                onChange={(_color, hex) => setOutlineColor(new Color(hex as ColorRepresentation))}
+                value={new AntdColor(outlineColor.getHexString())}
                 presets={DEFAULT_OUTLINE_COLOR_PRESETS}
               />
             </div>
@@ -147,20 +157,20 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           <SettingsItem label="Filtered object color">
             <DrawModeDropdown
               htmlLabelId="filtered-object-color-label"
-              selected={props.config.outOfRangeDrawSettings.mode}
-              color={props.config.outOfRangeDrawSettings.color}
+              selected={outOfRangeDrawSettings.mode}
+              color={outOfRangeDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
-                props.updateConfig({ outOfRangeDrawSettings: { mode, color } });
+                setOutOfRangeDrawSettings({ mode, color });
               }}
             />
           </SettingsItem>
           <SettingsItem label="Outlier object color" id="outlier-object-color-label">
             <DrawModeDropdown
               htmlLabelId="outlier-object-color-label"
-              selected={props.config.outlierDrawSettings.mode}
-              color={props.config.outlierDrawSettings.color}
+              selected={outlierDrawSettings.mode}
+              color={outlierDrawSettings.color}
               onChange={(mode: DrawMode, color: Color) => {
-                props.updateConfig({ outlierDrawSettings: { mode, color } });
+                setOutlierDrawSettings({ mode, color });
               }}
             />
           </SettingsItem>
@@ -168,27 +178,27 @@ export default function SettingsTab(props: SettingsTabProps): ReactElement {
           <SettingsItem label={"Show track path"}>
             <Checkbox
               type="checkbox"
-              checked={props.config.showTrackPath}
+              checked={showTrackPath}
               onChange={(event) => {
-                props.updateConfig({ showTrackPath: event.target.checked });
+                setShowTrackPath(event.target.checked);
               }}
             />
           </SettingsItem>
           <SettingsItem label="Show scale bar">
             <Checkbox
               type="checkbox"
-              checked={props.config.showScaleBar}
+              checked={showScaleBar}
               onChange={(event) => {
-                props.updateConfig({ showScaleBar: event.target.checked });
+                setShowScaleBar(event.target.checked);
               }}
             />
           </SettingsItem>
           <SettingsItem label="Show timestamp">
             <Checkbox
               type="checkbox"
-              checked={props.config.showTimestamp}
+              checked={showTimestamp}
               onChange={(event) => {
-                props.updateConfig({ showTimestamp: event.target.checked });
+                setShowTimestamp(event.target.checked);
               }}
             />
           </SettingsItem>

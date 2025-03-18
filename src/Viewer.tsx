@@ -8,17 +8,7 @@ import {
 } from "@ant-design/icons";
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
-import React, {
-  ReactElement,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
 import { useShallow } from "zustand/shallow";
 
@@ -26,16 +16,12 @@ import {
   Dataset,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
-  getDefaultScatterPlotConfig,
-  getDefaultViewerConfig,
   isThresholdNumeric,
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   LoadTroubleshooting,
   ReportWarningCallback,
-  ScatterPlotConfig,
   TabType,
-  ViewerConfig,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
@@ -140,16 +126,12 @@ function Viewer(): ReactElement {
 
   const annotationState = useAnnotations();
 
-  // TODO: Save these settings in local storage
-  // Use reducer here in case multiple updates happen simultaneously
-  const [config, updateConfig] = useReducer(
-    (current: ViewerConfig, newProperties: Partial<ViewerConfig>) => ({ ...current, ...newProperties }),
-    getDefaultViewerConfig()
-  );
-  const [scatterPlotConfig, updateScatterPlotConfig] = useReducer(
-    (current: ScatterPlotConfig, newProperties: Partial<ScatterPlotConfig>) => ({ ...current, ...newProperties }),
-    getDefaultScatterPlotConfig()
-  );
+  const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
+  const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
+  const setScatterRangeType = useViewerStateStore((state) => state.setScatterRangeType);
+  const openTab = useViewerStateStore((state) => state.openTab);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+
   const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
 
   const [isInitialDatasetLoaded, setIsInitialDatasetLoaded] = useState(false);
@@ -166,6 +148,7 @@ function Viewer(): ReactElement {
   const setColorRampReversed = useViewerStateStore((state) => state.setColorRampReversed);
   const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
   const setColorRampRange = useViewerStateStore((state) => state.setColorRampRange);
+  const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
   const setKeepColorRampRange = useViewerStateStore((state) => state.setKeepColorRampRange);
   const selectedPaletteKey = useViewerStateStore((state) => state.categoricalPaletteKey);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
@@ -212,6 +195,7 @@ function Viewer(): ReactElement {
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
 
+  // Sync the time slider with the pending frame.
   useEffect(() => {
     // When user is controlling time slider, do not sync frame input w/ playback
     if (!isUserDirectlyControllingFrameInput) {
@@ -219,6 +203,26 @@ function Viewer(): ReactElement {
     }
     return;
   }, [isUserDirectlyControllingFrameInput]);
+
+  // When the scatterplot tab is opened for the first time, set the default axes
+  // to the selected feature and time.
+  useEffect(() => {
+    const unsubscribe = useViewerStateStore.subscribe(
+      (state) => [state.openTab, state.dataset],
+      ([openTab, dataset]) => {
+        if (openTab === TabType.SCATTER_PLOT && dataset) {
+          if (
+            useViewerStateStore.getState().scatterXAxis === null &&
+            useViewerStateStore.getState().scatterYAxis === null
+          ) {
+            setScatterXAxis(SCATTERPLOT_TIME_FEATURE.value);
+            setScatterYAxis(featureKey);
+          }
+        }
+      }
+    );
+    return unsubscribe;
+  }, [dataset, featureKey]);
 
   // Warn on tab close if there is annotation data.
   useEffect(() => {
@@ -296,9 +300,9 @@ function Viewer(): ReactElement {
       // TODO: This is a patch to keep vector state saved to the URL while the
       // state store is being refactored. This should be removed once
       // ViewerConfig is moved into the state store.
-      config: { ...config, vectorConfig },
+      // config: { ...config, vectorConfig },
       selectedBackdropKey,
-      scatterPlotConfig,
+      // scatterPlotConfig,
     };
     return urlUtils.paramsToUrlQueryString(state);
   }, [
@@ -311,10 +315,10 @@ function Viewer(): ReactElement {
     colorRampKey,
     colorRampReversed,
     categoricalPalette,
-    config,
+    // config,
     vectorConfig,
     selectedBackdropKey,
-    scatterPlotConfig,
+    // scatterPlotConfig,
   ]);
 
   // Update url whenever the viewer settings change, with a few exceptions:
@@ -346,10 +350,11 @@ function Viewer(): ReactElement {
 
   const openScatterPlotTab = useCallback(
     (xAxis: string, yAxis: string) => {
-      updateConfig({ openTab: TabType.SCATTER_PLOT });
-      updateScatterPlotConfig({ xAxis, yAxis });
+      setOpenTab(TabType.SCATTER_PLOT);
+      setScatterXAxis(xAxis);
+      setScatterYAxis(yAxis);
     },
-    [updateConfig, updateScatterPlotConfig]
+    [setOpenTab, setScatterXAxis, setScatterYAxis]
   );
 
   // DATASET LOADING ///////////////////////////////////////////////////////
@@ -594,22 +599,25 @@ function Viewer(): ReactElement {
         }
       }
       if (initialUrlParams.config) {
-        updateConfig(initialUrlParams.config);
+        // updateConfig(initialUrlParams.config);
       }
+
       if (initialUrlParams.scatterPlotConfig) {
         const newScatterPlotConfig = initialUrlParams.scatterPlotConfig;
         // For backwards-compatibility, cast xAxis and yAxis to feature keys.
         if (newScatterPlotConfig.xAxis) {
           const xAxis = newScatterPlotConfig.xAxis;
-          newScatterPlotConfig.xAxis =
-            xAxis === SCATTERPLOT_TIME_FEATURE.value ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
+          const newXAxis = xAxis === SCATTERPLOT_TIME_FEATURE.value ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
+          setScatterXAxis(newXAxis ?? null);
         }
         if (newScatterPlotConfig.yAxis) {
           const yAxis = newScatterPlotConfig.yAxis;
-          newScatterPlotConfig.yAxis =
-            yAxis === SCATTERPLOT_TIME_FEATURE.value ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
+          const newYAxis = yAxis === SCATTERPLOT_TIME_FEATURE.value ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
+          setScatterYAxis(newYAxis ?? null);
         }
-        updateScatterPlotConfig(newScatterPlotConfig);
+        if (newScatterPlotConfig.rangeType) {
+          setScatterRangeType(newScatterPlotConfig.rangeType);
+        }
       }
     };
 
@@ -793,11 +801,8 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <ScatterPlotTab
-            isVisible={config.openTab === TabType.SCATTER_PLOT}
+            isVisible={openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
-            viewerConfig={config}
-            scatterPlotConfig={scatterPlotConfig}
-            updateScatterPlotConfig={updateScatterPlotConfig}
             showAlert={showAlert}
           />
         </div>
@@ -837,7 +842,7 @@ function Viewer(): ReactElement {
       key: TabType.SETTINGS,
       children: (
         <div className={styles.tabContent}>
-          <SettingsTab config={config} updateConfig={updateConfig} />
+          <SettingsTab />
         </div>
       ),
     },
@@ -880,8 +885,6 @@ function Viewer(): ReactElement {
               defaultImagePrefix={datasetKey + "-" + featureKey}
               disabled={dataset === null}
               setIsRecording={setIsRecording}
-              config={config}
-              updateConfig={updateConfig}
             />
             <TextButton onClick={openCopyNotification}>
               <LinkOutlined />
@@ -972,12 +975,10 @@ function Viewer(): ReactElement {
                   </div>
                   <div style={{ flexBasis: 100, flexShrink: 1, flexGrow: 1, width: "fit-content" }}>
                     <Checkbox
-                      checked={config.keepRangeBetweenDatasets}
+                      checked={keepColorRampRange}
                       onChange={() => {
-                        // TODO: Remove keepRangeBetweenDatasets from config
                         // Invert lock on range
-                        updateConfig({ keepRangeBetweenDatasets: !config.keepRangeBetweenDatasets });
-                        setKeepColorRampRange(!config.keepRangeBetweenDatasets);
+                        setKeepColorRampRange(!keepColorRampRange);
                       }}
                     >
                       Keep range when switching datasets and features
@@ -995,9 +996,7 @@ function Viewer(): ReactElement {
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   isRecording={isRecording}
-                  config={config}
                   onClickId={onClickId}
-                  updateConfig={updateConfig}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
                     setShowObjectHoverInfo(isObject);
@@ -1091,8 +1090,8 @@ function Viewer(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
-                activeKey={config.openTab}
-                onChange={(key) => updateConfig({ openTab: key as TabType })}
+                activeKey={openTab}
+                onChange={(key) => setOpenTab(key as TabType)}
                 items={tabItems}
               />
             </div>
