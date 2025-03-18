@@ -180,11 +180,12 @@ function Viewer(): ReactElement {
     // TODO: Update types for makeDebouncedCallback since right now it requires
     // an argument (even if it's a dummy one) to be passed to the callback.
     makeDebouncedCallback(() => {
-      const params = serializeViewerState(useViewerStateStore.getState());
-      setSearchParams(params, { replace: true });
-      console.log("Sync URL");
+      if (!isDatasetLoading) {
+        const params = serializeViewerState(useViewerStateStore.getState());
+        setSearchParams(params, { replace: true });
+      }
     }),
-    []
+    [isDatasetLoading]
   );
 
   useEffect(() => {
