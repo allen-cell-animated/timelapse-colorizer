@@ -2,6 +2,8 @@ import { FeatureDataType } from "../../../src/colorizer";
 import { AnyManifestFile, ManifestFile } from "../../../src/colorizer/utils/dataset_utils";
 import { DEFAULT_DATASET_DIR, makeMockDataset, MockArrayLoader, MockArraySource } from "../../test_utils";
 
+import Collection from "../../../src/colorizer/Collection";
+
 export enum MockFeatureKeys {
   FEATURE1 = "feature1",
   FEATURE2 = "feature2",
@@ -121,3 +123,11 @@ export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset({
 });
 
 export const MOCK_DATASET_DEFAULT_TRACK = MOCK_DATASET.getTrack(0)!;
+
+export const MOCK_DATASET_KEY = "some-dataset";
+export const MOCK_COLLECTION_PATH = "https://some-url.com/collection.json";
+
+export const MOCK_COLLECTION = new Collection(
+  new Map([[MOCK_DATASET_KEY, { path: "https://some-url.com/data/dataset.json", name: MOCK_DATASET_KEY }]]),
+  MOCK_COLLECTION_PATH
+);

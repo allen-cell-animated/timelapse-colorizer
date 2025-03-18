@@ -1,0 +1,205 @@
+/* eslint @typescript-eslint/naming-convention: 0 */
+// ^ Allow dash-case for URL params
+import { act, renderHook } from "@testing-library/react";
+import { Color } from "three";
+import { describe, expect, it } from "vitest";
+
+import {
+  DEFAULT_CATEGORICAL_PALETTE_KEY,
+  DrawMode,
+  DrawSettings,
+  KNOWN_CATEGORICAL_PALETTES,
+  KNOWN_COLOR_RAMPS,
+  PlotRangeType,
+  TabType,
+  ThresholdType,
+  VECTOR_KEY_MOTION_DELTA,
+  VectorTooltipMode,
+} from "../../src/colorizer";
+import { UrlParam } from "../../src/colorizer/utils/url_utils";
+import { useViewerStateStore } from "../../src/state";
+import { ViewerStoreSerializableState } from "../../src/state/slices";
+import { SerializedStoreData } from "../../src/state/types";
+import { loadViewerStateFromParams, serializedDataToUrl, serializeViewerParams } from "../../src/state/utils/store_io";
+import { sleep } from "../test_utils";
+import {
+  MOCK_COLLECTION,
+  MOCK_COLLECTION_PATH,
+  MOCK_DATASET,
+  MOCK_DATASET_DEFAULT_TRACK,
+  MOCK_DATASET_KEY,
+  MockBackdropKeys,
+  MockFeatureKeys,
+} from "./ViewerState/constants";
+import { compareSlice, setDatasetAsync } from "./ViewerState/utils";
+
+const COLOR_RAMP_KEY = Array.from(KNOWN_COLOR_RAMPS.keys())[3];
+
+const EXAMPLE_STORE: ViewerStoreSerializableState = {
+  collection: MOCK_COLLECTION,
+  datasetKey: MOCK_DATASET_KEY,
+  featureKey: MockFeatureKeys.FEATURE1,
+  track: MOCK_DATASET_DEFAULT_TRACK,
+  currentFrame: 14,
+  thresholds: [
+    { featureKey: "f1", unit: "m", type: ThresholdType.NUMERIC, min: 0, max: 0 },
+    { featureKey: "f2", unit: "um", type: ThresholdType.NUMERIC, min: NaN, max: NaN },
+    { featureKey: "f3", unit: "km", type: ThresholdType.NUMERIC, min: 0, max: 1 },
+    { featureKey: "f4", unit: "mm", type: ThresholdType.NUMERIC, min: 0.501, max: 1000.485 },
+    {
+      featureKey: "f5",
+      unit: "",
+      type: ThresholdType.CATEGORICAL,
+      enabledCategories: [true, true, true, true, true, true, true, true, true, true, true, true],
+    },
+    {
+      featureKey: "f6",
+      unit: "",
+      type: ThresholdType.CATEGORICAL,
+      enabledCategories: [true, false, false, false, true, false, false, false, false, false, false, false],
+    },
+  ],
+  colorRampRange: [21.433, 89.4],
+  colorRampKey: COLOR_RAMP_KEY,
+  isColorRampReversed: true,
+  categoricalPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
+  categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
+  showTrackPath: true,
+  showScaleBar: true,
+  showTimestamp: false,
+  keepColorRampRange: true,
+  backdropVisible: true,
+  backdropBrightness: 75,
+  backdropSaturation: 50,
+  objectOpacity: 25,
+  openTab: TabType.FILTERS,
+  outOfRangeDrawSettings: { mode: DrawMode.HIDE, color: new Color("#ff0000") } as DrawSettings,
+  outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color("#00ff00") } as DrawSettings,
+  outlineColor: new Color("#0000ff"),
+  vectorVisible: true,
+  vectorKey: VECTOR_KEY_MOTION_DELTA,
+  vectorMotionTimeIntervals: 18,
+  vectorColor: new Color("#ff00ff"),
+  vectorScaleFactor: 5,
+  vectorTooltipMode: VectorTooltipMode.COMPONENTS,
+  backdropKey: MockBackdropKeys.BACKDROP2,
+  scatterXAxis: MockFeatureKeys.FEATURE3,
+  scatterYAxis: MockFeatureKeys.FEATURE2,
+  scatterRangeType: PlotRangeType.ALL_TIME,
+};
+
+const EXAMPLE_STORE_EXPECTED_PARAMS: Required<Omit<SerializedStoreData, UrlParam.PALETTE>> = {
+  collection: MOCK_COLLECTION_PATH,
+  dataset: MOCK_DATASET_KEY,
+  feature: MockFeatureKeys.FEATURE1,
+  track: MOCK_DATASET_DEFAULT_TRACK.trackId.toString(),
+  t: "14",
+  filters: "f1:m:0:0,f2:um:NaN:NaN,f3:km:0:1,f4:mm:0.501:1000.485,f5::fff,f6::11",
+  range: "21.433,89.400",
+  color: COLOR_RAMP_KEY + "!",
+  "keep-range": "1",
+  // Palette key will take precedence over palette
+  // palette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!
+  //   .colors.map((color) => color.getHexString())
+  //   .join("-"),
+  "palette-key": DEFAULT_CATEGORICAL_PALETTE_KEY,
+  path: "1",
+  scalebar: "1",
+  timestamp: "0",
+  bg: "1",
+  "bg-brightness": "75",
+  "bg-sat": "50",
+  "fg-alpha": "25",
+  tab: TabType.FILTERS,
+  "filter-color": "ff0000",
+  "filter-mode": DrawMode.HIDE.toString(),
+  "outlier-color": "00ff00",
+  "outlier-mode": DrawMode.USE_COLOR.toString(),
+  "outline-color": "0000ff",
+  vc: "1",
+  "vc-key": VECTOR_KEY_MOTION_DELTA,
+  "vc-color": "ff00ff",
+  "vc-scale": "5",
+  "vc-tooltip": VectorTooltipMode.COMPONENTS,
+  "vc-time-int": "18",
+  "bg-key": MockBackdropKeys.BACKDROP2,
+  "scatter-x": MockFeatureKeys.FEATURE3,
+  "scatter-y": MockFeatureKeys.FEATURE2,
+  "scatter-range": "all",
+};
+
+const EXAMPLE_STORE_EXPECTED_QUERY_STRING =
+  "collection=https%3A%2F%2Fsome-url.com%2Fcollection.json&dataset=some-dataset" +
+  "&feature=feature1&track=0&bg-key=backdrop2&t=14&color=matplotlib-inferno%21&keep-range=1&range=21.433%2C89.400" +
+  "&palette-key=adobe&filters=f1%3Am%3A0%3A0%2Cf2%3Aum%3ANaN%3ANaN%2Cf3%3Akm%3A0%3A1%2Cf4%3Amm%3A0.501%3A1000.485%2Cf5%3A%3Afff%2Cf6%3A%3A11" +
+  "&path=1&scalebar=1&timestamp=0&filter-color=ff0000&filter-mode=0&outlier-color=00ff00&outlier-mode=1&outline-color=0000ff" +
+  "&tab=filters&scatter-x=feature3&scatter-y=feature2&scatter-range=all" +
+  "&bg=1&bg-brightness=75&bg-sat=50&fg-alpha=25" +
+  "&vc=1&vc-key=_motion_&vc-color=ff00ff&vc-scale=5&vc-tooltip=c&vc-time-int=18";
+
+describe("serializeViewerState", () => {
+  it("handles empty state", () => {
+    const state = {};
+    expect(serializeViewerParams(state)).toEqual({});
+  });
+});
+
+describe("serializeViewerParams", () => {
+  it("handles empty state", () => {
+    const params = {};
+    expect(serializedDataToUrl(serializeViewerParams(params))).toEqual("");
+  });
+
+  it("allows collection and dataset URLs to be overwritten", () => {
+    const params = {
+      collectionParam: "https://some-url.com/collection.json", // https%3A%2F%2Fsome-url.com%2Fcollection.json
+      // hello world in mandarin
+      datasetParam: "你好世界", // %E4%BD%A0%E5%A5%BD%E4%B8%96%E7%95%8C
+    };
+    const expectedQueryString =
+      "collection=https%3A%2F%2Fsome-url.com%2Fcollection.json" + "&dataset=%E4%BD%A0%E5%A5%BD%E4%B8%96%E7%95%8C";
+    expect(serializedDataToUrl(serializeViewerParams(params))).toEqual(expectedQueryString);
+  });
+
+  it("serializes state", async () => {
+    const { result } = renderHook(() => useViewerStateStore());
+    act(() => {
+      result.current.setCollection(MOCK_COLLECTION);
+    });
+    await setDatasetAsync(result, MOCK_DATASET);
+    act(() => {
+      useViewerStateStore.setState(EXAMPLE_STORE);
+    });
+    const serializedParams = serializeViewerParams(useViewerStateStore.getState());
+    expect(serializedParams).toEqual(EXAMPLE_STORE_EXPECTED_PARAMS);
+    expect(serializedDataToUrl(serializedParams)).toEqual(EXAMPLE_STORE_EXPECTED_QUERY_STRING);
+  });
+});
+
+describe("loadViewerStateFromParams", () => {
+  it("handles empty params", async () => {
+    const { result } = renderHook(() => useViewerStateStore());
+    const params = new URLSearchParams();
+    await setDatasetAsync(result, MOCK_DATASET);
+    const initialState = useViewerStateStore.getState();
+    act(() => {
+      loadViewerStateFromParams(useViewerStateStore, params);
+    });
+    expect(useViewerStateStore.getState()).toEqual(initialState);
+  });
+
+  it("loads state", async () => {
+    const { result } = renderHook(() => useViewerStateStore());
+    const params = new URLSearchParams(serializedDataToUrl(EXAMPLE_STORE_EXPECTED_PARAMS));
+    act(() => {
+      result.current.setCollection(MOCK_COLLECTION);
+    });
+    await setDatasetAsync(result, MOCK_DATASET);
+    await act(async () => {
+      loadViewerStateFromParams(useViewerStateStore, params);
+      // Fixup: Wait for frame to load fully so `currentFrame` value is correct
+      await sleep(10);
+    });
+    compareSlice(useViewerStateStore.getState(), EXAMPLE_STORE);
+  });
+});

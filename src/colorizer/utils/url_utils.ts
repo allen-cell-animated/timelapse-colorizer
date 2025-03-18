@@ -1,16 +1,10 @@
 // Typescript doesn't recognize RequestInit
 
 /* global RequestInit */
-import { Color, ColorRepresentation, HexColorString } from "three";
+import { Color, HexColorString } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import {
-  DEFAULT_CATEGORICAL_PALETTE_KEY,
-  getKeyFromPalette,
-  KNOWN_CATEGORICAL_PALETTES,
-} from "../colors/categorical_palettes";
-import { getDefaultVectorConfig, getDefaultViewerConfig } from "../constants";
-import { isTabType, isThresholdCategorical, isVectorTooltipMode, VectorConfig } from "../types";
+import { isThresholdCategorical } from "../types";
 import {
   DrawSettings,
   FeatureThreshold,
@@ -29,6 +23,7 @@ import { numberToStringDecimal } from "./math_utils";
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
 
+export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 export enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
@@ -38,7 +33,6 @@ export enum UrlParam {
   THRESHOLDS = "filters",
   RANGE = "range",
   COLOR_RAMP = "color",
-  COLOR_RAMP_REVERSED_SUFFIX = "!",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
   SHOW_BACKDROP = "bg",
@@ -268,62 +262,6 @@ export function deserializeThresholds(thresholds: string | null): FeatureThresho
   }, [] as FeatureThreshold[]);
 }
 
-/**
- * If the boolean parameter is defined, serializes it as a string and adds it to the parameters array.
- */
-function tryAddBooleanParam(parameters: string[], value: boolean | undefined, key: string): void {
-  if (value !== undefined) {
-    parameters.push(`${key}=${value ? "1" : "0"}`);
-  }
-}
-
-function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
-  const parameters: string[] = [];
-  // Backdrop
-  if (config.backdropSaturation !== undefined) {
-    parameters.push(`${UrlParam.BACKDROP_SATURATION}=${config.backdropSaturation}`);
-  }
-  if (config.backdropBrightness !== undefined) {
-    parameters.push(`${UrlParam.BACKDROP_BRIGHTNESS}=${config.backdropBrightness}`);
-  }
-
-  // Foreground
-  if (config.objectOpacity !== undefined) {
-    parameters.push(`${UrlParam.OBJECT_OPACITY}=${config.objectOpacity}`);
-  }
-
-  // Outlier + filter colors
-  if (config.outlierDrawSettings) {
-    parameters.push(`${UrlParam.OUTLIER_COLOR}=${config.outlierDrawSettings.color.getHexString()}`);
-    parameters.push(`${UrlParam.OUTLIER_MODE}=${config.outlierDrawSettings.mode}`);
-  }
-  if (config.outOfRangeDrawSettings) {
-    parameters.push(`${UrlParam.FILTERED_COLOR}=${config.outOfRangeDrawSettings.color.getHexString()}`);
-    parameters.push(`${UrlParam.FILTERED_MODE}=${config.outOfRangeDrawSettings.mode}`);
-  }
-
-  // Color config
-  if (config.outlineColor) {
-    parameters.push(`${UrlParam.OUTLINE_COLOR}=${config.outlineColor.getHexString()}`);
-  }
-
-  if (config.openTab) {
-    parameters.push(`${UrlParam.OPEN_TAB}=${config.openTab}`);
-  }
-
-  if (config.vectorConfig) {
-    parameters.push(...serializeVectorConfig(config.vectorConfig));
-  }
-
-  tryAddBooleanParam(parameters, config.backdropVisible, UrlParam.SHOW_BACKDROP);
-  tryAddBooleanParam(parameters, config.showScaleBar, UrlParam.SHOW_SCALEBAR);
-  tryAddBooleanParam(parameters, config.showTimestamp, UrlParam.SHOW_TIMESTAMP);
-  tryAddBooleanParam(parameters, config.showTrackPath, UrlParam.SHOW_PATH);
-  tryAddBooleanParam(parameters, config.keepRangeBetweenDatasets, UrlParam.KEEP_RANGE);
-
-  return parameters;
-}
-
 export function encodeColor(value: Color): string {
   return value.getHexString();
 }
@@ -386,48 +324,6 @@ export function decodeBoolean(value: string | null): boolean | undefined {
   return value === "1";
 }
 
-function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig> | undefined {
-  const newConfig: Partial<ViewerConfig> = {};
-  newConfig.backdropSaturation = decodeInt(params.get(UrlParam.BACKDROP_SATURATION));
-  newConfig.backdropBrightness = decodeInt(params.get(UrlParam.BACKDROP_BRIGHTNESS));
-  newConfig.objectOpacity = decodeInt(params.get(UrlParam.OBJECT_OPACITY));
-
-  if (params.get(UrlParam.OUTLIER_COLOR) || params.get(UrlParam.OUTLIER_MODE)) {
-    newConfig.outlierDrawSettings = parseDrawSettings(
-      params.get(UrlParam.OUTLIER_COLOR),
-      params.get(UrlParam.OUTLIER_MODE),
-      getDefaultViewerConfig().outlierDrawSettings
-    );
-  }
-  if (params.get(UrlParam.FILTERED_COLOR) || params.get(UrlParam.FILTERED_MODE)) {
-    newConfig.outOfRangeDrawSettings = parseDrawSettings(
-      params.get(UrlParam.FILTERED_COLOR),
-      params.get(UrlParam.FILTERED_MODE),
-      getDefaultViewerConfig().outOfRangeDrawSettings
-    );
-  }
-  newConfig.outlineColor = decodeHexColor(params.get(UrlParam.OUTLINE_COLOR));
-
-  const openTab = params.get(UrlParam.OPEN_TAB);
-  if (openTab && isTabType(openTab)) {
-    newConfig.openTab = openTab;
-  }
-
-  newConfig.backdropVisible = decodeBoolean(params.get(UrlParam.SHOW_BACKDROP));
-  newConfig.showScaleBar = decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR));
-  newConfig.showTimestamp = decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP));
-  newConfig.showTrackPath = decodeBoolean(params.get(UrlParam.SHOW_PATH));
-  newConfig.keepRangeBetweenDatasets = decodeBoolean(params.get(UrlParam.KEEP_RANGE));
-
-  const vectorConfig = deserializeVectorConfig(params);
-  if (vectorConfig && Object.keys(vectorConfig).length > 0) {
-    newConfig.vectorConfig = { ...getDefaultVectorConfig(), ...vectorConfig };
-  }
-
-  const finalConfig = removeUndefinedProperties(newConfig);
-  return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
-}
-
 const scatterPlotRangeTypeToUrlParam: Record<PlotRangeType, string> = {
   [PlotRangeType.ALL_TIME]: "all",
   [PlotRangeType.CURRENT_TRACK]: "track",
@@ -449,136 +345,6 @@ export function decodeScatterPlotRangeType(rangeString: string | null): PlotRang
     return;
   }
   return urlParamToRangeType[rangeString];
-}
-
-function serializeScatterPlotConfig(config: Partial<ScatterPlotConfig>): string[] {
-  const parameters: string[] = [];
-  if (config.rangeType) {
-    const rangeString = scatterPlotRangeTypeToUrlParam[config.rangeType];
-    parameters.push(`${UrlParam.SCATTERPLOT_RANGE_MODE}=${rangeString}`);
-  }
-  config.xAxis && parameters.push(`${UrlParam.SCATTERPLOT_X_AXIS}=${encodeURIComponent(config.xAxis)}`);
-  config.yAxis && parameters.push(`${UrlParam.SCATTERPLOT_Y_AXIS}=${encodeURIComponent(config.yAxis)}`);
-  return parameters;
-}
-
-function deserializeScatterPlotConfig(params: URLSearchParams): Partial<ScatterPlotConfig> | undefined {
-  const newConfig: Partial<ScatterPlotConfig> = {};
-  const rangeString = params.get(UrlParam.SCATTERPLOT_RANGE_MODE);
-  if (rangeString && urlParamToRangeType[rangeString]) {
-    newConfig.rangeType = urlParamToRangeType[rangeString];
-  }
-  newConfig.xAxis = decodeString(params.get(UrlParam.SCATTERPLOT_X_AXIS));
-  newConfig.yAxis = decodeString(params.get(UrlParam.SCATTERPLOT_Y_AXIS));
-
-  const finalConfig = removeUndefinedProperties(newConfig);
-  return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
-}
-
-function serializeVectorConfig(config: Partial<VectorConfig>): string[] {
-  const parameters: string[] = [];
-  tryAddBooleanParam(parameters, config.visible, UrlParam.SHOW_VECTOR);
-  config.color !== undefined && parameters.push(`${UrlParam.VECTOR_COLOR}=${config.color.getHexString()}`);
-  config.key !== undefined && parameters.push(`${UrlParam.VECTOR_KEY}=${encodeURIComponent(config.key)}`);
-  config.scaleFactor !== undefined && parameters.push(`${UrlParam.VECTOR_SCALE}=${config.scaleFactor}`);
-  config.timeIntervals !== undefined && parameters.push(`${UrlParam.VECTOR_TIME_INTERVALS}=${config.timeIntervals}`);
-  config.tooltipMode !== undefined && parameters.push(`${UrlParam.VECTOR_TOOLTIP_MODE}=${config.tooltipMode}`);
-  return parameters;
-}
-
-function deserializeVectorConfig(params: URLSearchParams): Partial<VectorConfig> | undefined {
-  const newConfig: Partial<VectorConfig> = {};
-  newConfig.visible = decodeBoolean(params.get(UrlParam.SHOW_VECTOR));
-  newConfig.color = decodeHexColor(params.get(UrlParam.VECTOR_COLOR));
-  newConfig.key = decodeString(params.get(UrlParam.VECTOR_KEY));
-  newConfig.scaleFactor = decodeFloat(params.get(UrlParam.VECTOR_SCALE));
-  newConfig.timeIntervals = decodeInt(params.get(UrlParam.VECTOR_TIME_INTERVALS));
-
-  const tooltip = params.get(UrlParam.VECTOR_TOOLTIP_MODE);
-  if (tooltip && isVectorTooltipMode(tooltip)) {
-    newConfig.tooltipMode = tooltip;
-  }
-
-  return removeUndefinedProperties(newConfig);
-}
-
-/**
- * Creates a url query string from parameters that can be appended onto the base URL.
- *
- * @param state: An object matching any of the properties of `UrlParams`.
- * - `collection`: string path to the collection. Ignores paths matching the default collection address.
- * - `dataset`: string name or URL of the dataset.
- * - `feature`: string name of the feature.
- * - `track`: integer track number.
- * - `time`: integer frame number.
- * - `thresholds`: array of feature threshold.
- * - `range`: array of two numbers, representing the min and max of the color map range.
- * - `colorRampKey`: the key of the current color map.
- * - `colorRampReversed`: boolean, whether the color map is reversed.
- * - `categoricalPalette`: an array of (three.js) Color objects representing the current color palette to use.
- *
- * @returns
- * - If no parameters are present or valid, returns an empty string.
- * - Else, returns a string of URL parameters that can be appended to the URL directly (ex: `?collection=<some_url>&time=23`).
- */
-export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
-  // Get parameters, ignoring null/empty values
-  const includedParameters: string[] = [];
-
-  if (state.collection) {
-    includedParameters.push(`${UrlParam.COLLECTION}=${encodeURIComponent(state.collection)}`);
-  }
-  if (state.dataset) {
-    includedParameters.push(`${UrlParam.DATASET}=${encodeURIComponent(state.dataset)}`);
-  }
-  if (state.feature) {
-    includedParameters.push(`${UrlParam.FEATURE}=${encodeURIComponent(state.feature)}`);
-  }
-  if (state.track !== undefined) {
-    includedParameters.push(`${UrlParam.TRACK}=${state.track}`);
-  }
-  if (state.time !== undefined) {
-    includedParameters.push(`${UrlParam.TIME}=${state.time}`);
-  }
-  if (state.thresholds && state.thresholds.length > 0) {
-    includedParameters.push(`${UrlParam.THRESHOLDS}=${encodeURIComponent(serializeThresholds(state.thresholds))}`);
-  }
-  if (state.range && state.range.length === 2) {
-    const rangeString = `${numberToStringDecimal(state.range[0], 3)},${numberToStringDecimal(state.range[1], 3)}`;
-    includedParameters.push(`${UrlParam.RANGE}=${encodeURIComponent(rangeString)}`);
-  }
-  if (state.colorRampKey) {
-    if (state.colorRampReversed) {
-      includedParameters.push(
-        `${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + UrlParam.COLOR_RAMP_REVERSED_SUFFIX)}`
-      );
-    } else {
-      includedParameters.push(`${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
-    }
-  }
-  if (state.categoricalPalette) {
-    const key = getKeyFromPalette(state.categoricalPalette);
-    if (key !== null) {
-      includedParameters.push(`${UrlParam.PALETTE_KEY}=${key}`);
-    } else {
-      // Save the hex color stops as a string separated by dashes.
-      // TODO: Save only the edited colors to shorten URL.
-      const stops = state.categoricalPalette.map(encodeColor);
-      includedParameters.push(`${UrlParam.PALETTE}=${stops.join("-")}`);
-    }
-  }
-  if (state.config) {
-    includedParameters.push(...serializeViewerConfig(state.config));
-  }
-  if (state.selectedBackdropKey) {
-    includedParameters.push(`${UrlParam.BACKDROP_KEY}=${encodeURIComponent(state.selectedBackdropKey)}`);
-  }
-  if (state.scatterPlotConfig) {
-    includedParameters.push(...serializeScatterPlotConfig(state.scatterPlotConfig));
-  }
-
-  // If parameters present, join with URL syntax and push into the URL
-  return includedParameters.length > 0 ? "?" + includedParameters.join("&") : "";
 }
 
 /**
@@ -654,102 +420,4 @@ export function formatPath(input: string): string {
     input = input.slice(0, input.length - 1);
   }
   return input.trim();
-}
-
-/**
- * Returns a copy of an object where any properties with a value of `undefined`
- * are not included.
- */
-function removeUndefinedProperties<T>(object: T): Partial<T> {
-  const ret: Partial<T> = {};
-  for (const key in object) {
-    if (object[key] !== undefined) {
-      ret[key] = object[key];
-    }
-  }
-  return ret;
-}
-
-/**
- * Loads viewer parameters from a URLSearchParams object.
- * @param queryString A URLSearchParams object.
- * @returns A partial UrlParams object with values loaded from the queryString.
- * Enforces min/max ordering for thresholds and range.
- */
-export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<UrlParams> {
-  const base10Radix = 10; // required for parseInt
-  const collectionParam = urlParams.get(UrlParam.COLLECTION) ?? undefined;
-  const datasetParam = urlParams.get(UrlParam.DATASET) ?? undefined;
-  const featureParam = urlParams.get(UrlParam.FEATURE) ?? undefined;
-  const trackParam = urlParams.get(UrlParam.TRACK) ? parseInt(urlParams.get(UrlParam.TRACK)!, base10Radix) : undefined;
-  // This assumes there are no negative timestamps in the dataset
-  const timeParam = urlParams.get(UrlParam.TIME) ? parseInt(urlParams.get(UrlParam.TIME)!, base10Radix) : undefined;
-
-  // Parse and validate thresholds
-  const thresholdsParam = deserializeThresholds(urlParams.get(UrlParam.THRESHOLDS));
-
-  let rangeParam: [number, number] | undefined = undefined;
-  const rawRangeParam = decodeString(urlParams.get(UrlParam.RANGE));
-  if (rawRangeParam) {
-    const [min, max] = rawRangeParam.split(",");
-    rangeParam = [parseFloat(min), parseFloat(max)];
-    // Enforce min/max ordering
-    if (rangeParam[0] > rangeParam[1]) {
-      rangeParam.reverse();
-    }
-  }
-
-  const colorRampRawParam = urlParams.get(UrlParam.COLOR_RAMP);
-  let colorRampParam: string | undefined = colorRampRawParam || undefined;
-  let colorRampReversedParam: boolean | undefined = undefined;
-  //  Color ramps are marked as reversed by adding ! to the end of the key
-  if (
-    colorRampRawParam &&
-    colorRampRawParam.charAt(colorRampRawParam.length - 1) === UrlParam.COLOR_RAMP_REVERSED_SUFFIX
-  ) {
-    colorRampReversedParam = true;
-    colorRampParam = colorRampRawParam.slice(0, -1);
-  }
-
-  // Parse palette data
-  const paletteKeyParam = urlParams.get(UrlParam.PALETTE_KEY);
-  const paletteStringParam = urlParams.get(UrlParam.PALETTE);
-  const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
-
-  let categoricalPalette: Color[] | undefined = undefined;
-  if (paletteKeyParam) {
-    // Use key if provided
-    categoricalPalette = KNOWN_CATEGORICAL_PALETTES.get(paletteKeyParam)?.colors || defaultPalette.colors;
-  } else if (paletteStringParam) {
-    // Parse into color objects
-    const hexColors: ColorRepresentation[] = paletteStringParam
-      .split("-")
-      .map((hex) => "#" + hex) as ColorRepresentation[];
-    if (hexColors.length < MAX_FEATURE_CATEGORIES) {
-      // backfill extra colors to meet max length using default palette
-      hexColors.push(...defaultPalette.colorStops.slice(hexColors.length));
-    }
-    categoricalPalette = hexColors.map((hex) => new Color(hex));
-  }
-
-  const config = deserializeViewerConfig(urlParams);
-  const selectedBackdropKey = decodeString(urlParams.get(UrlParam.BACKDROP_KEY));
-  const scatterPlotConfig = deserializeScatterPlotConfig(urlParams);
-
-  // Remove undefined entries from the object for a cleaner return value
-  return removeUndefinedProperties({
-    collection: collectionParam,
-    dataset: datasetParam,
-    feature: featureParam,
-    track: trackParam,
-    time: timeParam,
-    thresholds: thresholdsParam,
-    range: rangeParam,
-    colorRampKey: colorRampParam,
-    colorRampReversed: colorRampReversedParam,
-    categoricalPalette,
-    config,
-    selectedBackdropKey,
-    scatterPlotConfig,
-  });
 }

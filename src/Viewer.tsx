@@ -363,8 +363,6 @@ function Viewer(): ReactElement {
 
   // INITIAL SETUP  ////////////////////////////////////////////////////////////////
 
-  const initialSearchParams = useConstructor(() => searchParams);
-
   // Break React rules to prevent a race condition where the initial dataset is reloaded
   // when useEffect gets fired twice. This caused certain URL parameters like time to get
   // lost or reset.
@@ -394,8 +392,8 @@ function Viewer(): ReactElement {
         newCollection = stateCollection;
       } else {
         // Collect from URL
-        const collectionUrlParam = initialSearchParams.get(UrlParam.COLLECTION);
-        const datasetParam = initialSearchParams.get(UrlParam.DATASET);
+        const collectionUrlParam = searchParams.get(UrlParam.COLLECTION);
+        const datasetParam = searchParams.get(UrlParam.DATASET);
 
         if (datasetParam && isUrl(datasetParam) && !collectionUrlParam) {
           // Dataset is a URL and no collection URL is provided;
@@ -457,7 +455,7 @@ function Viewer(): ReactElement {
       }
       setIsDatasetLoading(false);
       // Load the viewer state from the URL after the dataset is loaded.
-      loadViewerStateFromParams(useViewerStateStore, initialSearchParams);
+      loadViewerStateFromParams(useViewerStateStore, searchParams);
       return;
     };
     loadInitialDataset();
