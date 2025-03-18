@@ -95,3 +95,5 @@ export const MOCK_DATASET_WITHOUT_BACKDROP = await makeMockDataset({
   ...MOCK_DATASET_MANIFEST,
   backdrops: [],
 });
+
+export const MOCK_DATASET_DEFAULT_TRACK = MOCK_DATASET.getTrack(0)!;

@@ -372,6 +372,9 @@ export const useAnnotations = (): AnnotationState => {
       throw new Error(`useAnnotations:getIdsInRange: IDs ${id1} and ${id2} are not in the same track.`);
     }
     const track = dataset.getTrack(dataset.getTrackId(id1));
+    if (!track) {
+      throw new Error(`useAnnotations:getIdsInRange: Track ID ${dataset.getTrackId(id1)} not found.`);
+    }
     const idx0 = track.ids.indexOf(id1);
     const idx1 = track.ids.indexOf(id2);
     const startIdx = Math.min(idx0, idx1);
@@ -410,6 +413,9 @@ export const useAnnotations = (): AnnotationState => {
       return;
     }
     const track = dataset.getTrack(dataset.getTrackId(id));
+    if (!track) {
+      throw new Error(`useAnnotations:handleAnnotationClick: Track ID ${dataset.getTrackId(id)} not found.`);
+    }
     const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
 
     const idRange = getSelectRangeFromId(dataset, id);

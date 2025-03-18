@@ -35,7 +35,6 @@ import {
   ReportWarningCallback,
   ScatterPlotConfig,
   TabType,
-  Track,
   ViewerConfig,
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
@@ -133,7 +132,8 @@ function Viewer(): ReactElement {
   const workerPool = getSharedWorkerPool();
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
-  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const selectedTrack = useViewerStateStore((state) => state.track);
+  const setSelectedTrack = useViewerStateStore((state) => state.setTrack);
 
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -206,7 +206,6 @@ function Viewer(): ReactElement {
    * canvas after a short delay.
    */
   const [frameInput, setFrameInput] = useState(0);
-  const [findTrackInput, setFindTrackInput] = useState("");
   const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
@@ -328,28 +327,6 @@ function Viewer(): ReactElement {
     }
   }, [timeControls.isPlaying(), isRecording, getUrlParams, isInitialDatasetLoaded]);
 
-  const findTrack = useCallback(
-    (trackId: number | null, seekToFrame: boolean = true): void => {
-      if (trackId === null) {
-        setSelectedTrack(null);
-        return;
-      }
-
-      const newTrack = dataset!.getTrack(trackId);
-
-      if (newTrack.ids.length < 1) {
-        // Check track validity
-        return;
-      }
-      setSelectedTrack(newTrack);
-      if (seekToFrame) {
-        setFrame(newTrack.times[0]);
-      }
-      setFindTrackInput(trackId.toString());
-    },
-    [canv, dataset, featureKey, currentFrame]
-  );
-
   /**
    * Fire a custom analytics event when a feature is selected.
    */
@@ -445,13 +422,6 @@ function Viewer(): ReactElement {
       setDataset(newDatasetKey, newDataset);
       await canv.setDataset(newDataset);
 
-      // Clamp frame to new range
-      const newFrame = Math.min(currentFrame, canv.getTotalFrames() - 1);
-      await setFrame(newFrame);
-
-      setFindTrackInput("");
-
-      setSelectedTrack(null);
       setDatasetOpen(true);
       console.log("Dataset metadata:", newDataset.metadata);
       console.log("Num Items:" + newDataset?.numObjects);
@@ -602,7 +572,13 @@ function Viewer(): ReactElement {
 
       if (initialUrlParams.track && initialUrlParams.track >= 0) {
         // Highlight the track. Seek to start of frame only if time is not defined.
-        findTrack(initialUrlParams.track, initialUrlParams.time !== undefined);
+        const track = dataset?.getTrack(initialUrlParams.track);
+        if (track) {
+          setSelectedTrack(track);
+          if (initialUrlParams.time === undefined) {
+            setFrame(track.times[0]);
+          }
+        }
       }
       if (initialUrlParams.time && initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
@@ -744,16 +720,13 @@ function Viewer(): ReactElement {
     };
   }, [isUserDirectlyControllingFrameInput, frameInput]);
 
-  const onTrackClicked = useCallback(
-    (track: Track | null) => {
-      setFindTrackInput(track?.trackId.toString() || "");
-      setSelectedTrack(track);
-      if (dataset && track) {
-        const id = track.getIdAtTime(currentFrame);
+  const onClickId = useCallback(
+    (id: number) => {
+      if (dataset) {
         annotationState.handleAnnotationClick(dataset, id);
       }
     },
-    [dataset, currentFrame, annotationState.handleAnnotationClick]
+    [dataset, annotationState.handleAnnotationClick]
   );
 
   // RENDERING /////////////////////////////////////////////////////////////
@@ -810,17 +783,7 @@ function Viewer(): ReactElement {
       key: TabType.TRACK_PLOT,
       children: (
         <div className={styles.tabContent}>
-          <PlotTab
-            setFrame={setFrame}
-            findTrackInputText={findTrackInput}
-            setFindTrackInputText={setFindTrackInput}
-            findTrack={findTrack}
-            currentFrame={currentFrame}
-            dataset={dataset}
-            featureKey={featureKey}
-            selectedTrack={selectedTrack}
-            disabled={disableUi}
-          />
+          <PlotTab disabled={disableUi} />
         </div>
       ),
     },
@@ -830,13 +793,8 @@ function Viewer(): ReactElement {
       children: (
         <div className={styles.tabContent}>
           <ScatterPlotTab
-            currentFrame={currentFrame}
-            selectedTrack={selectedTrack}
-            findTrack={findTrack}
-            setFrame={setFrame}
             isVisible={config.openTab === TabType.SCATTER_PLOT}
             isPlaying={timeControls.isPlaying() || isRecording}
-            selectedFeatureKey={featureKey}
             viewerConfig={config}
             scatterPlotConfig={scatterPlotConfig}
             updateScatterPlotConfig={updateScatterPlotConfig}
@@ -870,15 +828,7 @@ function Viewer(): ReactElement {
       visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
-          <AnnotationTab
-            annotationState={annotationState}
-            setFrame={setFrame}
-            setTrack={(track) => findTrack(track, false)}
-            dataset={dataset}
-            selectedTrack={selectedTrack}
-            frame={currentFrame}
-            hoveredId={currentHoveredId}
-          />
+          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId} />
         </div>
       ),
     },
@@ -1045,10 +995,9 @@ function Viewer(): ReactElement {
                   loadingProgress={datasetLoadProgress}
                   canv={canv}
                   isRecording={isRecording}
-                  selectedTrack={selectedTrack}
                   config={config}
+                  onClickId={onClickId}
                   updateConfig={updateConfig}
-                  onTrackClicked={onTrackClicked}
                   onMouseHover={(id: number): void => {
                     const isObject = id !== BACKGROUND_ID;
                     setShowObjectHoverInfo(isObject);
