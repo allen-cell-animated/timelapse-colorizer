@@ -123,6 +123,7 @@ export const serializedDataToUrl = (data: SerializedStoreData): string => {
  * called after the collection and dataset are loaded and set in the store.
  */
 export const loadViewerStateFromParams = async (store: Store<ViewerStore>, params: URLSearchParams): Promise<void> => {
+  // TODO: Should each of these be wrapped in a try/catch block in case of bad inputs?
   // 1. No dependencies:
   loadConfigSliceFromParams(store.getState(), params);
 
