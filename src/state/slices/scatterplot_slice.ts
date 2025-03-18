@@ -102,14 +102,19 @@ export const scatterPlotSliceSerializationDependencies = (
   scatterRangeType: slice.scatterRangeType,
 });
 
-export const loadScatterPlotSliceFromParams = (slice: ScatterPlotSlice, params: URLSearchParams): void => {
+export const loadScatterPlotSliceFromParams = (
+  slice: ScatterPlotSlice & DatasetSlice,
+  params: URLSearchParams
+): void => {
+  const dataset = slice.dataset;
+
   const scatterXAxis = params.get(UrlParam.SCATTERPLOT_X_AXIS);
-  if (scatterXAxis !== null) {
+  if (scatterXAxis !== null && scatterXAxis !== undefined && isAxisKeyValid(dataset, scatterXAxis)) {
     slice.setScatterXAxis(scatterXAxis);
   }
 
   const scatterYAxis = params.get(UrlParam.SCATTERPLOT_Y_AXIS);
-  if (scatterYAxis !== null) {
+  if (scatterYAxis !== null && scatterYAxis !== undefined && isAxisKeyValid(dataset, scatterYAxis)) {
     slice.setScatterYAxis(scatterYAxis);
   }
 
