@@ -1,6 +1,5 @@
-// Typescript doesn't recognize RequestInit
-
 /* global RequestInit */
+// Typescript doesn't recognize RequestInit
 import { Color, HexColorString } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
@@ -421,3 +420,11 @@ export function formatPath(input: string): string {
   }
   return input.trim();
 }
+
+export const makeGitHubIssueLink = (title: string, body: string, labels?: string[]): string => {
+  const baseUrl = "https://github.com/allen-cell-animated/timelapse-colorizer/issues/new";
+  const titleParam = `title=${encodeURIComponent(title)}`;
+  const bodyParam = `body=${encodeURIComponent(body)}`;
+  const labelsParam = labels ? `labels=${labels.join(",")}` : "";
+  return `${baseUrl}?${titleParam}&${bodyParam}&${labelsParam}`;
+};
