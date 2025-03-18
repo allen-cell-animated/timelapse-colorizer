@@ -110,7 +110,6 @@ export type ViewerStoreSerializableState = BackdropSliceSerializableState &
 export type ViewerStore = ViewerStoreState & ViewerStoreActions;
 
 export const viewerStateStoreCreator: StateCreator<ViewerStore> = (...a) => ({
-  // TODO: Move this into slices/index.ts
   ...createBackdropSlice(...a),
   ...createCollectionSlice(...a),
   ...createColorRampSlice(...a),

@@ -101,7 +101,7 @@ export const serializeBackdropSlice = (state: Partial<BackdropSliceSerializableS
 };
 
 /** Selects state values that serialization depends on. */
-export const backdropSliceSerializationDependencies = (slice: BackdropSlice): BackdropSliceSerializableState => ({
+export const selectBackdropSliceSerializationDeps = (slice: BackdropSlice): BackdropSliceSerializableState => ({
   backdropVisible: slice.backdropVisible,
   backdropBrightness: slice.backdropBrightness,
   backdropSaturation: slice.backdropSaturation,

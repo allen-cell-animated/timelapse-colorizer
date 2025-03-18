@@ -1,10 +1,5 @@
 import { UrlParam } from "../../colorizer/utils/url_utils";
 import {
-  backdropSliceSerializationDependencies,
-  collectionSliceSerializationDependencies,
-  colorRampSliceSerializationDependencies,
-  configSliceSerializationDependencies,
-  datasetSliceSerializationDependencies,
   loadBackdropSliceFromParams,
   loadColorRampSliceFromParams,
   loadConfigSliceFromParams,
@@ -13,7 +8,15 @@ import {
   loadThresholdSliceFromParams,
   loadTimeSliceFromParams,
   loadVectorSliceFromParams,
-  scatterPlotSliceSerializationDependencies,
+  selectBackdropSliceSerializationDeps,
+  selectCollectionSliceSerializationDeps,
+  selectColorRampSliceSerializationDeps,
+  selectConfigSliceSerializationDeps,
+  selectDatasetSliceSerializationDeps,
+  selectScatterPlotSliceSerializationDeps,
+  selectThresholdSliceSerializationDeps,
+  selectTimeSliceSerializationDeps,
+  selectVectorSliceSerializationDeps,
   serializeBackdropSlice,
   serializeCollectionSlice,
   serializeColorRampSlice,
@@ -23,52 +26,25 @@ import {
   serializeThresholdSlice,
   serializeTimeSlice,
   serializeVectorSlice,
-  thresholdSliceSerializationDependencies,
-  timeSliceSerializationDependencies,
-  vectorSliceSerializationDependencies,
   ViewerStore,
   ViewerStoreSerializableState,
 } from "../slices";
 import { SerializedStoreData, Store } from "../types";
+import { removeUndefinedProperties } from "./data_validation";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
 
 export const selectSerializationDependencies = (state: ViewerStore): Partial<ViewerStore> => ({
-  ...collectionSliceSerializationDependencies(state),
-  ...datasetSliceSerializationDependencies(state),
-  // Time slice should only allow updates when paused.
-  ...timeSliceSerializationDependencies(state),
-  ...colorRampSliceSerializationDependencies(state),
-  ...thresholdSliceSerializationDependencies(state),
-  ...configSliceSerializationDependencies(state),
-  ...scatterPlotSliceSerializationDependencies(state),
-  ...backdropSliceSerializationDependencies(state),
-  ...vectorSliceSerializationDependencies(state),
+  ...selectCollectionSliceSerializationDeps(state),
+  ...selectDatasetSliceSerializationDeps(state),
+  ...selectTimeSliceSerializationDeps(state),
+  ...selectColorRampSliceSerializationDeps(state),
+  ...selectThresholdSliceSerializationDeps(state),
+  ...selectConfigSliceSerializationDeps(state),
+  ...selectScatterPlotSliceSerializationDeps(state),
+  ...selectBackdropSliceSerializationDeps(state),
+  ...selectVectorSliceSerializationDeps(state),
 });
-
-/**
- * Returns a copy of an object where any properties with a value of `undefined`
- * are not included.
- */
-function removeUndefinedProperties<T>(object: T): Partial<T> {
-  const ret: Partial<T> = {};
-  for (const key in object) {
-    if (object[key] !== undefined) {
-      ret[key] = object[key];
-    }
-  }
-  return ret;
-}
-
-export const getDifferingKeys = <T>(a: Partial<T>, b: Partial<T>): Set<keyof T> => {
-  const differingKeys = new Set<keyof T>();
-  for (const key in a) {
-    if (a[key] !== b[key]) {
-      differingKeys.add(key);
-    }
-  }
-  return differingKeys;
-};
 
 /**
  * Serializes viewer store state into a `SerializedStoreData` object,
@@ -78,7 +54,7 @@ export const getDifferingKeys = <T>(a: Partial<T>, b: Partial<T>): Set<keyof T> 
  */
 export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): Partial<SerializedStoreData> => {
   // Ordered by approximate importance in the URL
-  return {
+  return removeUndefinedProperties({
     ...serializeCollectionSlice(state),
     ...serializeDatasetSlice(state),
     ...serializeTimeSlice(state),
@@ -88,15 +64,17 @@ export const serializeViewerState = (state: Partial<ViewerStoreSerializableState
     ...serializeScatterPlotSlice(state),
     ...serializeBackdropSlice(state),
     ...serializeVectorSlice(state),
-  };
+  });
 };
 
 export type ViewerParams = {
-  /** Optional URL of the collection resource to load. Overwrites the URL of the
+  /**
+   * Optional URL of the collection resource to load. Overwrites the URL of the
    * `collection` field in the serialized store data if defined.
    */
   collectionParam?: string;
-  /** Optional URL of the dataset or dataset key. Overwrites the
+  /**
+   * Optional URL of the dataset or dataset key. Overwrites the
    * `dataset` field in the serialized store data if defined.
    */
   datasetParam?: string;
@@ -116,13 +94,13 @@ export const serializeViewerParams = (params: ViewerParams): SerializedStoreData
   if (params.datasetParam) {
     ret[UrlParam.DATASET] = params.datasetParam;
   }
-  return {
+  return removeUndefinedProperties({
     // Order collection + dataset first in params, but override the default
     // serialized collection fields by destructuring a second time.
     ...ret,
     ...serializeViewerState({ ...params }),
     ...ret,
-  };
+  });
 };
 
 /**

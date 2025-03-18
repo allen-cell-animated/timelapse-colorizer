@@ -242,7 +242,7 @@ export const serializeColorRampSlice = (slice: Partial<ColorRampSliceSerializabl
   }
 
   // Palette key takes precedence over palette
-  if (slice.categoricalPaletteKey !== null) {
+  if (slice.categoricalPaletteKey !== undefined && slice.categoricalPaletteKey !== null) {
     ret[UrlParam.PALETTE_KEY] = slice.categoricalPaletteKey;
   } else if (slice.categoricalPalette !== undefined) {
     ret[UrlParam.PALETTE] = slice.categoricalPalette.map(encodeColor).join("-");
@@ -252,7 +252,7 @@ export const serializeColorRampSlice = (slice: Partial<ColorRampSliceSerializabl
 };
 
 /** Selects state values that serialization depends on. */
-export const colorRampSliceSerializationDependencies = (slice: ColorRampSlice): ColorRampSliceSerializableState => ({
+export const selectColorRampSliceSerializationDeps = (slice: ColorRampSlice): ColorRampSliceSerializableState => ({
   colorRampKey: slice.colorRampKey,
   isColorRampReversed: slice.isColorRampReversed,
   keepColorRampRange: slice.keepColorRampRange,

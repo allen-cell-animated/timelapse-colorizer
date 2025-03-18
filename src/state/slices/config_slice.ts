@@ -107,7 +107,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
 };
 
 /** Selects state values that serialization depends on. */
-export const configSliceSerializationDependencies = (slice: ConfigSlice): ConfigSliceSerializableState => ({
+export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSliceSerializableState => ({
   showTrackPath: slice.showTrackPath,
   showScaleBar: slice.showScaleBar,
   showTimestamp: slice.showTimestamp,

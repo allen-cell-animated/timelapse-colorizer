@@ -155,7 +155,7 @@ export const serializeVectorSlice = (slice: Partial<VectorSlice>): SerializedSto
 };
 
 /** Selects state values that serialization depends on. */
-export const vectorSliceSerializationDependencies = (slice: VectorSlice): Partial<VectorSliceState> => ({
+export const selectVectorSliceSerializationDeps = (slice: VectorSlice): Partial<VectorSliceState> => ({
   vectorVisible: slice.vectorVisible,
   vectorKey: slice.vectorKey,
   vectorColor: slice.vectorColor,
