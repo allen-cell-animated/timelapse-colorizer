@@ -4,7 +4,6 @@ import { LocationState } from "../types";
 
 import Collection, { CollectionLoadOptions, DatasetLoadOptions } from "../colorizer/Collection";
 import Dataset from "../colorizer/Dataset";
-import { IArrayLoader } from "../colorizer/loaders/ILoader";
 
 export const enum LoadResultType {
   SUCCESS,
@@ -20,10 +19,9 @@ type LoadResult<T> =
 /**
  * Loads a collection from a provided collection URL and/or dataset URL.
  * @param collectionParam The URL of the collection. If `null`, the
- * `datasetParam` must be provided as a URL.
- * @param datasetParam The URL or key of the dataset. If `null` and a
- * `collectionParam` is provided, the default dataset in the collection will be
- * loaded.
+ * `datasetParam` is expected to be a URL.
+ * @param datasetParam The URL or key of the dataset. If `null`, the default
+ * dataset in the collection will be loaded.
  * @param collectionLoadOptions Options for loading the collection, containing
  * the following properties:
  * - `fetchMethod`: The method to use for fetching the collection. Default is
@@ -31,7 +29,7 @@ type LoadResult<T> =
  * - `reportWarning`: Callback to report warnings to the user.
  * @returns A promise that resolves to a `LoadResult`.
  */
-export const loadCollectionFromParams = async (
+const loadCollectionFromParams = async (
   collectionParam: string | null,
   datasetParam: string | null,
   collectionLoadOptions: CollectionLoadOptions = {}
@@ -54,9 +52,10 @@ export const loadCollectionFromParams = async (
     // 2. Dataset URL only
     // Make a dummy collection that will include only this dataset
     collection = await Collection.makeCollectionFromSingleDataset(datasetParam);
-  } else {
-    console.error("No collection URL or dataset URL provided.");
+  } else if (collectionParam === null && datasetParam === null) {
     return { type: LoadResultType.MISSING_DATASET };
+  } else {
+    return { type: LoadResultType.LOAD_ERROR, message: "No collection or dataset URL was provided." };
   }
   return { type: LoadResultType.SUCCESS, value: collection };
 };
@@ -74,7 +73,7 @@ export const loadCollectionFromParams = async (
  * - `reportWarning`: Callback to report warnings to the user.
  * @returns A promise that resolves to a `LoadResult`.
  */
-export const loadDatasetFromParams = async (
+const loadDatasetFromParams = async (
   collection: Collection,
   datasetParam: string | null,
   datasetLoadOptions: DatasetLoadOptions = {}
@@ -107,14 +106,7 @@ export const loadDatasetFromParams = async (
  * already-loaded collection that was saved to the Location state (see
  * https://api.reactrouter.com/v7/interfaces/react_router.Location.html).
  * @param options An object containing options for loading the collection and
- * dataset, including the following properties:
- * - `collectionFetchMethod`: The method to use for fetching the collection.
- *   Default is `fetchWithTimeout`.
- * - `arrayLoader`: The array loader to use for loading the dataset.
- * - `onLoadProgress`: Callback to report load progress.
- * - `reportMissingDataset`: Callback to report that the dataset is missing.
- * - `reportWarning`: Callback to report warnings to the user.
- * - `reportLoadError`: Callback to report load errors to the user.
+ * dataset.
  * @returns A promise that resolves to an object containing the loaded
  * collection, dataset, and dataset key, or `null` if the collection or dataset
  * could not be loaded.
@@ -124,7 +116,9 @@ export const loadInitialCollectionAndDataset = async (
   overrides: Partial<LocationState> | null,
   options: {
     collectionFetchMethod?: CollectionLoadOptions["fetchMethod"];
-    arrayLoader?: IArrayLoader;
+    manifestLoader?: DatasetLoadOptions["manifestLoader"];
+    arrayLoader?: DatasetLoadOptions["arrayLoader"];
+    frameLoader?: DatasetLoadOptions["frameLoader"];
     onLoadProgress?: ReportLoadProgressCallback;
     reportMissingDataset?: () => void;
     reportWarning?: ReportWarningCallback;
@@ -156,7 +150,9 @@ export const loadInitialCollectionAndDataset = async (
 
   // Load dataset
   const datasetResult = await loadDatasetFromParams(collection, datasetParam, {
+    manifestLoader: options.manifestLoader,
     arrayLoader: options.arrayLoader,
+    frameLoader: options.frameLoader,
     onLoadProgress: options.onLoadProgress,
     reportWarning: options.reportWarning,
   });

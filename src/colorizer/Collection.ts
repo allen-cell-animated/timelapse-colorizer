@@ -8,10 +8,17 @@ import {
   updateCollectionVersion,
 } from "./utils/collection_utils";
 import { formatAsBulletList, uncapitalizeFirstLetter } from "./utils/data_utils";
-import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl } from "./utils/url_utils";
+import {
+  DEFAULT_FETCH_TIMEOUT_MS,
+  fetchManifestJson,
+  fetchWithTimeout,
+  formatPath,
+  isJson,
+  isUrl,
+} from "./utils/url_utils";
 
 import Dataset from "./Dataset";
-import { IArrayLoader } from "./loaders/ILoader";
+import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 
 export type CollectionData = Map<string, CollectionEntry>;
 
@@ -32,8 +39,10 @@ export type CollectionLoadOptions = {
 };
 
 export type DatasetLoadOptions = {
+  manifestLoader?: typeof fetchManifestJson;
   onLoadProgress?: (complete: number, total: number) => void;
   arrayLoader?: IArrayLoader;
+  frameLoader?: ITextureImageLoader;
   reportWarning?: ReportWarningCallback;
 };
 
@@ -162,10 +171,14 @@ export default class Collection {
       options.onLoadProgress?.(completedLoadItems, totalLoadItems);
     };
 
-    // TODO: Override fetch method
     try {
-      const dataset = new Dataset(path, undefined, options.arrayLoader);
-      await dataset.open({ onLoadStart, onLoadComplete, reportWarning: options.reportWarning });
+      const dataset = new Dataset(path, options.frameLoader, options.arrayLoader);
+      await dataset.open({
+        onLoadStart,
+        onLoadComplete,
+        reportWarning: options.reportWarning,
+        manifestLoader: options.manifestLoader,
+      });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {
