@@ -24,7 +24,6 @@ import {
 } from "./colorizer";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
-import { loadInitialCollectionAndDataset } from "./colorizer/utils/dataset_load_utils";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
@@ -38,6 +37,7 @@ import {
 import { makeDebouncedCallback } from "./state/utils/store_utils";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
+import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
 import CanvasWithOverlay from "./colorizer/CanvasWithOverlay";
 import Collection from "./colorizer/Collection";
@@ -397,7 +397,7 @@ function Viewer(): ReactElement {
       // Location can include a Collection object and a datasetKey to be loaded.
       const locationState = location.state as Partial<LocationState>;
 
-      const result = await loadInitialCollectionAndDataset(locationState, searchParams, {
+      const result = await loadInitialCollectionAndDataset(searchParams, locationState, {
         arrayLoader,
         onLoadProgress: handleProgressUpdate,
         reportWarning: showDatasetLoadWarning,

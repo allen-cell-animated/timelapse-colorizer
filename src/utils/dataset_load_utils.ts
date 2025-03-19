@@ -1,10 +1,10 @@
-import { LocationState } from "../../types";
-import { ReportErrorCallback, ReportLoadProgressCallback, ReportWarningCallback } from "../types";
-import { isUrl, UrlParam } from "./url_utils";
+import { ReportErrorCallback, ReportLoadProgressCallback, ReportWarningCallback } from "../colorizer/types";
+import { isUrl, UrlParam } from "../colorizer/utils/url_utils";
+import { LocationState } from "../types";
 
-import Collection, { CollectionLoadOptions, DatasetLoadOptions } from "../Collection";
-import Dataset from "../Dataset";
-import { IArrayLoader } from "../loaders/ILoader";
+import Collection, { CollectionLoadOptions, DatasetLoadOptions } from "../colorizer/Collection";
+import Dataset from "../colorizer/Dataset";
+import { IArrayLoader } from "../colorizer/loaders/ILoader";
 
 export const enum LoadResultType {
   SUCCESS,
@@ -19,10 +19,15 @@ type LoadResult<T> =
 
 /**
  * Loads a collection from a provided collection URL and/or dataset URL.
- * @param collectionParam The URL of the collection. If `null`, the `datasetParam` must be a URL.
- * @param datasetParam The URL or key of the dataset. If `null`, the default dataset will be loaded.
- * @param collectionLoadOptions Options for loading the collection:
- * - `fetchMethod`: The method to use for fetching the collection. Default is `fetchWithTimeout`.
+ * @param collectionParam The URL of the collection. If `null`, the
+ * `datasetParam` must be provided as a URL.
+ * @param datasetParam The URL or key of the dataset. If `null` and a
+ * `collectionParam` is provided, the default dataset in the collection will be
+ * loaded.
+ * @param collectionLoadOptions Options for loading the collection, containing
+ * the following properties:
+ * - `fetchMethod`: The method to use for fetching the collection. Default is
+ *   `fetchWithTimeout`.
  * - `reportWarning`: Callback to report warnings to the user.
  * @returns A promise that resolves to a `LoadResult`.
  */
@@ -42,7 +47,7 @@ export const loadCollectionFromParams = async (
       collection = await Collection.loadCollection(collectionParam, collectionLoadOptions);
     } catch (error) {
       // Error loading collection
-      console.error(error);
+      console.error("loadCollectionFromParams: ", error);
       return { type: LoadResultType.LOAD_ERROR, message: (error as Error).message };
     }
   } else if (datasetParam !== null && isUrl(datasetParam)) {
@@ -56,6 +61,19 @@ export const loadCollectionFromParams = async (
   return { type: LoadResultType.SUCCESS, value: collection };
 };
 
+/**
+ * Attempts to load a dataset from a collection based on the provided dataset
+ * key. If the dataset key is not found in the collection, the default dataset
+ * will be loaded.
+ * @param collection The collection to load the dataset from.
+ * @param datasetParam The dataset key to load.
+ * @param datasetLoadOptions An object containing options for loading the
+ * dataset, including the following properties:
+ * - `arrayLoader`: The array loader to use for loading the dataset.
+ * - `onLoadProgress`: Callback to report load progress.
+ * - `reportWarning`: Callback to report warnings to the user.
+ * @returns A promise that resolves to a `LoadResult`.
+ */
 export const loadDatasetFromParams = async (
   collection: Collection,
   datasetParam: string | null,
@@ -71,7 +89,6 @@ export const loadDatasetFromParams = async (
   const datasetResult = await collection.tryLoadDataset(datasetKey, datasetLoadOptions);
 
   if (!datasetResult.loaded) {
-    console.error(datasetResult.errorMessage);
     return {
       type: LoadResultType.LOAD_ERROR,
       message: datasetResult.errorMessage || "Encountered unknown error while loading dataset.",
@@ -80,9 +97,31 @@ export const loadDatasetFromParams = async (
   return { type: LoadResultType.SUCCESS, value: { dataset: datasetResult.dataset, datasetKey } };
 };
 
+/**
+ * Loads the initial collection and dataset based on the provided URL
+ * parameters, with overrides.
+ * @param params The URL search parameters to extract the collection and dataset
+ * parameters from.
+ * @param overrides An object with optional `collection` (a loaded Collection
+ * object) and `datasetKey` properties. Typically, this is used to pass in an
+ * already-loaded collection that was saved to the Location state (see
+ * https://api.reactrouter.com/v7/interfaces/react_router.Location.html).
+ * @param options An object containing options for loading the collection and
+ * dataset, including the following properties:
+ * - `collectionFetchMethod`: The method to use for fetching the collection.
+ *   Default is `fetchWithTimeout`.
+ * - `arrayLoader`: The array loader to use for loading the dataset.
+ * - `onLoadProgress`: Callback to report load progress.
+ * - `reportMissingDataset`: Callback to report that the dataset is missing.
+ * - `reportWarning`: Callback to report warnings to the user.
+ * - `reportLoadError`: Callback to report load errors to the user.
+ * @returns A promise that resolves to an object containing the loaded
+ * collection, dataset, and dataset key, or `null` if the collection or dataset
+ * could not be loaded.
+ */
 export const loadInitialCollectionAndDataset = async (
-  location: Partial<LocationState> | null,
   params: URLSearchParams,
+  overrides: Partial<LocationState> | null,
   options: {
     collectionFetchMethod?: CollectionLoadOptions["fetchMethod"];
     arrayLoader?: IArrayLoader;
@@ -94,11 +133,12 @@ export const loadInitialCollectionAndDataset = async (
 ): Promise<{ collection: Collection; dataset: Dataset; datasetKey: string } | null> => {
   // Load collection
   const collectionParam = params.get(UrlParam.COLLECTION);
-  const datasetParam = params.get(UrlParam.DATASET);
+  const datasetParam = overrides?.datasetKey ?? params.get(UrlParam.DATASET);
 
   let collection: Collection;
-  if (location && location.collection && location.datasetKey !== undefined) {
-    collection = location.collection;
+  if (overrides && overrides.collection) {
+    // An already-loaded Collection object has been provided. Skip loading.
+    collection = overrides.collection;
   } else {
     const collectionResult = await loadCollectionFromParams(collectionParam, datasetParam, {
       fetchMethod: options.collectionFetchMethod,
