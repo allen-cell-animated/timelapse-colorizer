@@ -474,7 +474,7 @@ function Viewer(): ReactElement {
             VERSION_NUMBER +
             "\n\n---\n" +
             "**Please provide any additional information that may be helpful in diagnosing the issue:**\n",
-          ["bug"]
+          ["bug", "auto-generated"]
         );
         showAlert({
           type: "error",
