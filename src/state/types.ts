@@ -1,5 +1,7 @@
 import { Mutate, StoreApi, UseBoundStore } from "zustand";
 
+import { UrlParam } from "../colorizer/utils/url_utils";
+
 // Note: Zustand's repo maintainer says that 'subscribeWithSelector' is just for
 // compatibility, and the behavior can be replicated without needing the
 // middleware. See
@@ -17,3 +19,8 @@ import { Mutate, StoreApi, UseBoundStore } from "zustand";
  * @see https://zustand.docs.pmnd.rs/middlewares/subscribe-with-selector
  */
 export type SubscribableStore<T> = UseBoundStore<Mutate<StoreApi<T>, [["zustand/subscribeWithSelector", never]]>>;
+
+/** Alias for Zustand's store type. */
+export type Store<T> = UseBoundStore<StoreApi<T>>;
+
+export type SerializedStoreData = Partial<Record<UrlParam, string>>;

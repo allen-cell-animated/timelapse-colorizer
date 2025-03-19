@@ -29,7 +29,7 @@ import { numberToStringDecimal } from "./math_utils";
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
 
-enum UrlParam {
+export enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
   FEATURE = "feature",
@@ -324,25 +324,37 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
   return parameters;
 }
 
+export function encodeColor(value: Color): string {
+  return value.getHexString();
+}
+
 export function isHexColor(value: string | null): value is HexColorString {
   const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
   return value !== null && hexRegex.test(value);
 }
 
-function decodeHexColor(value: string | null): Color | undefined {
+export function decodeHexColor(value: string | null): Color | undefined {
   value = value?.startsWith("#") ? value : "#" + value;
   return isHexColor(value) ? new Color(value) : undefined;
 }
 
-function decodeFloat(value: string | null): number | undefined {
+export function encodeNumber(value: number): string {
+  return numberToStringDecimal(value, 3);
+}
+
+export function decodeFloat(value: string | null): number | undefined {
   return value === null ? undefined : parseFloat(value);
 }
 
-function decodeInt(value: string | null): number | undefined {
+export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
 }
 
-function parseDrawSettings(color: string | null, mode: string | null, defaultSettings: DrawSettings): DrawSettings {
+export function parseDrawSettings(
+  color: string | null,
+  mode: string | null,
+  defaultSettings: DrawSettings
+): DrawSettings {
   const modeInt = parseInt(mode || "-1", 10);
   const hexColor = "#" + color;
   return {
@@ -351,7 +363,11 @@ function parseDrawSettings(color: string | null, mode: string | null, defaultSet
   };
 }
 
-function decodeBoolean(value: string | null): boolean | undefined {
+export function encodeBoolean(value: boolean): string {
+  return value ? "1" : "0";
+}
+
+export function decodeBoolean(value: string | null): boolean | undefined {
   if (value === null) {
     return undefined;
   }
@@ -524,9 +540,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
     } else {
       // Save the hex color stops as a string separated by dashes.
       // TODO: Save only the edited colors to shorten URL.
-      const stops = state.categoricalPalette.map((color: Color) => {
-        return color.getHexString();
-      });
+      const stops = state.categoricalPalette.map(encodeColor);
       includedParameters.push(`${UrlParam.PALETTE}=${stops.join("-")}`);
     }
   }
@@ -593,7 +607,7 @@ export function convertAllenPathToHttps(input: string): string | null {
 /**
  * Decodes strings using `decodeURIComponent`, handling null inputs.
  */
-function decodeString(input: string | null): string | undefined {
+export function decodeString(input: string | null): string | undefined {
   return input === null ? undefined : decodeURIComponent(input);
 }
 

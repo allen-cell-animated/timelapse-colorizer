@@ -31,6 +31,7 @@ import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { selectVectorConfigFromState } from "./state/slices";
+import { loadViewerStateFromParams } from "./state/utils/store_io";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 
@@ -114,7 +115,6 @@ function Viewer(): ReactElement {
   const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
 
   const selectedTrack = useViewerStateStore((state) => state.track);
-  const setSelectedTrack = useViewerStateStore((state) => state.setTrack);
 
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const setFrame = useViewerStateStore((state) => state.setFrame);
@@ -133,8 +133,6 @@ function Viewer(): ReactElement {
   const [isDatasetLoading, setIsDatasetLoading] = useState(false);
   const [datasetLoadProgress, setDatasetLoadProgress] = useState<number | null>(null);
   const [datasetOpen, setDatasetOpen] = useState(false);
-
-  const colorRampData = KNOWN_COLOR_RAMPS;
 
   // TODO: Tidy up these state slices once data logic is moved out of this file.
   const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
@@ -437,21 +435,7 @@ function Viewer(): ReactElement {
   const initialUrlParams = useConstructor(() => {
     return urlUtils.loadFromUrlSearchParams(searchParams);
   });
-
-  // Load URL parameters into the state that don't require a dataset to be loaded.
-  // This reduces flicker on initial load.
-  useEffect(() => {
-    // Load the currently selected color ramp info from the URL, if it exists.
-    if (initialUrlParams.colorRampKey && colorRampData.has(initialUrlParams.colorRampKey)) {
-      setColorRampKey(initialUrlParams.colorRampKey);
-    }
-    if (initialUrlParams.colorRampReversed) {
-      setColorRampReversed(initialUrlParams.colorRampReversed);
-    }
-    if (initialUrlParams.categoricalPalette) {
-      setCategoricalPalette(initialUrlParams.categoricalPalette);
-    }
-  }, []);
+  const initialSearchParams = useConstructor(() => searchParams);
 
   // Break React rules to prevent a race condition where the initial dataset is reloaded
   // when useEffect gets fired twice. This caused certain URL parameters like time to get
@@ -558,27 +542,10 @@ function Viewer(): ReactElement {
     // TODO: Move initial parsing out of `Viewer.tsx` once state store is
     // fully implemented.
     const setupInitialParameters = async (): Promise<void> => {
+      loadViewerStateFromParams(useViewerStateStore, initialSearchParams);
+
       if (initialUrlParams.thresholds) {
         setFeatureThresholds(initialUrlParams.thresholds);
-      }
-      if (initialUrlParams.feature && dataset) {
-        // Load feature (if unset, do nothing because replaceDataset already loads a default)
-        setFeatureKey(dataset.findFeatureByKeyOrName(initialUrlParams.feature) || dataset.featureKeys[0]);
-      }
-      // Range, track, and time setting must be done after the dataset and feature is set.
-      if (initialUrlParams.range) {
-        setColorRampRange(initialUrlParams.range);
-      }
-
-      if (initialUrlParams.track && initialUrlParams.track >= 0) {
-        // Highlight the track. Seek to start of frame only if time is not defined.
-        const track = dataset?.getTrack(initialUrlParams.track);
-        if (track) {
-          setSelectedTrack(track);
-          if (initialUrlParams.time === undefined) {
-            setFrame(track.times[0]);
-          }
-        }
       }
       if (initialUrlParams.time && initialUrlParams.time >= 0) {
         // Load time (if unset, defaults to track time or default t=0)
