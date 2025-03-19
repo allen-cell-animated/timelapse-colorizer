@@ -1,7 +1,6 @@
 import { StateCreator } from "zustand";
 
 import { Track } from "../../colorizer";
-import { BackdropSlice } from "./backdrop_slice";
 import { CollectionSlice } from "./collection_slice";
 
 import Dataset from "../../colorizer/Dataset";
@@ -12,12 +11,18 @@ type DatasetSliceState =
       dataset: null;
       featureKey: null;
       track: null;
+      /** The key of the backdrop image set in the current dataset. `null` if there
+       * is no Dataset loaded or if the dataset does not have backdrops. */
+      backdropKey: null;
     }
   | {
       datasetKey: string;
       dataset: Dataset;
       featureKey: string;
       track: Track | null;
+      /** The key of the backdrop image set in the current dataset. `null` if there
+       * is no Dataset loaded or if the dataset does not have backdrops. */
+      backdropKey: string | null;
     };
 
 type DatasetSliceActions = {
@@ -30,19 +35,33 @@ type DatasetSliceActions = {
   setFeatureKey: (featureKey: string) => void;
   setTrack: (track: Track) => void;
   clearTrack: () => void;
+  setBackdropKey: (key: string) => void;
 };
 
 export type DatasetSlice = DatasetSliceState & DatasetSliceActions;
 
-export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & BackdropSlice, [], [], DatasetSlice> = (
-  set,
-  get
-) => ({
+export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice, [], [], DatasetSlice> = (set, get) => ({
   datasetKey: null,
   dataset: null,
   featureKey: null,
   track: null,
+  backdropKey: null,
 
+  setBackdropKey: (key: string) => {
+    const dataset = get().dataset;
+    if (dataset === null) {
+      throw new Error("DatasetSlice.setBackdropKey: Cannot set backdrop key when no dataset loaded");
+    }
+    if (!dataset.hasBackdrop(key)) {
+      // Ignore if key is not in the dataset
+      throw new Error(
+        `Backdrop key "${key}" could not be found in dataset. (Available keys: ${Array.from(
+          dataset.getBackdropData().keys()
+        )})`
+      );
+    }
+    set({ backdropKey: key });
+  },
   setFeatureKey: (featureKey: string) => {
     const dataset = get().dataset;
     if (!dataset) {
@@ -81,12 +100,10 @@ export const createDatasetSlice: StateCreator<CollectionSlice & DatasetSlice & B
     if (backdropKey === null || !dataset.hasBackdrop(backdropKey)) {
       backdropKey = dataset.getDefaultBackdropKey();
     }
-    const backdropVisible = get().backdropVisible && backdropKey !== null;
 
     // TODO: Dispose of old dataset?
-    set({ datasetKey: key, dataset, track: null, featureKey, backdropKey, backdropVisible });
+    set({ datasetKey: key, dataset, track: null, featureKey, backdropKey });
   },
 
-  clearDataset: () =>
-    set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null, backdropVisible: false }),
+  clearDataset: () => set({ datasetKey: null, dataset: null, track: null, featureKey: null, backdropKey: null }),
 });

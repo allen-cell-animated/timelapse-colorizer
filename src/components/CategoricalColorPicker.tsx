@@ -3,7 +3,6 @@ import { Color as AntColor } from "antd/es/color-picker/color";
 import React, { ReactElement, useMemo } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation } from "three";
-import { useShallow } from "zustand/shallow";
 
 import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
 
@@ -50,22 +49,19 @@ const ColorPickerContainer = styled(FlexRow)<{
 
 export default function CategoricalColorPicker(inputProps: CategoricalColorPickerProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CategoricalColorPickerProps>;
-  const store = useViewerStateStore(
-    useShallow((state) => ({
-      categoricalPalette: state.categoricalPalette,
-      setCategoricalPalette: state.setCategoricalPalette,
-    }))
-  );
+
+  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
+  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
 
   const colorPickers = useMemo(() => {
     const elements = [];
     for (let i = 0; i < props.categories.length; i++) {
-      const color = store.categoricalPalette[i];
+      const color = categoricalPalette[i];
       const label = props.categories[i];
       const onChange = (_value: AntColor, hex: string): void => {
-        const newPalette = [...store.categoricalPalette];
+        const newPalette = [...categoricalPalette];
         newPalette[i] = new Color(hex as ColorRepresentation);
-        store.setCategoricalPalette(newPalette);
+        setCategoricalPalette(newPalette);
       };
 
       // Make the color picker component

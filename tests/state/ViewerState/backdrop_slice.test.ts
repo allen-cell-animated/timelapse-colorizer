@@ -1,7 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { Dataset } from "../../../src/colorizer";
 import {
   BACKDROP_BRIGHTNESS_MAX,
   BACKDROP_BRIGHTNESS_MIN,
@@ -11,46 +10,12 @@ import {
   BACKDROP_SATURATION_MIN,
 } from "../../../src/constants";
 import { ANY_ERROR } from "../../test_utils";
-import { MOCK_DATASET_WITHOUT_BACKDROP } from "./constants";
+import { MOCK_DATASET, MockBackdropKeys } from "./constants";
+import { setDatasetAsync } from "./utils";
 
 import { useViewerStateStore } from "../../../src/state/ViewerState";
 
 describe("useViewerStateStore: BackdropSlice", () => {
-  describe("setBackdropKey", () => {
-    it("does not allow backdrop slice to be set when provided Dataset has no backdrops", () => {
-      const { result } = renderHook(() => useViewerStateStore());
-
-      // Initialized as null
-      expect(result.current.backdropKey).toBeNull();
-      expect(() => {
-        act(() => {
-          result.current.setBackdropKey(MOCK_DATASET_WITHOUT_BACKDROP, "test");
-        });
-      }).toThrowError(ANY_ERROR);
-      expect(result.current.backdropKey).toBeNull();
-    });
-
-    it("allows setting backdrop keys that are in the dataset.", () => {
-      const mockDataset = {
-        hasBackdrop: (key: string) => key === "test1" || key === "test2",
-        getDefaultBackdropKey: () => "test1",
-      } as unknown as Dataset;
-      const { result } = renderHook(() => useViewerStateStore());
-
-      // Should initialize to default backdrop key
-      act(() => {
-        result.current.setBackdropKey(mockDataset, "test1");
-      });
-      expect(result.current.backdropKey).toBe("test1");
-
-      // Can set another valid backdrop key
-      act(() => {
-        result.current.setBackdropKey(mockDataset, "test2");
-      });
-      expect(result.current.backdropKey).toBe("test2");
-    });
-  });
-
   describe("setBackdropVisible", () => {
     it("does not allow visibility to be enabled when backdrop key is null", () => {
       const { result } = renderHook(() => useViewerStateStore());
@@ -122,5 +87,21 @@ describe("useViewerStateStore: BackdropSlice", () => {
     expect(() => {
       result.current.setObjectOpacity(NaN);
     }).toThrowError(ANY_ERROR);
+  });
+
+  it("disables backdrop visibility if key is set to null", async () => {
+    const { result } = renderHook(() => useViewerStateStore());
+
+    await setDatasetAsync(result, MOCK_DATASET);
+    act(() => {
+      result.current.setBackdropKey(MockBackdropKeys.BACKDROP1);
+      result.current.setBackdropVisible(true);
+    });
+    expect(result.current.backdropVisible).toBe(true);
+
+    act(() => {
+      useViewerStateStore.setState({ backdropKey: null });
+    });
+    expect(result.current.backdropVisible).toBe(false);
   });
 });

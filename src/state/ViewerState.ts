@@ -3,7 +3,7 @@ import { StateCreator } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 import { Spread } from "../colorizer/utils/type_utils";
-import { BackdropSlice, createBackdropSlice } from "./slices/backdrop_slice";
+import { addBackdropDerivedStateSubscribers, BackdropSlice, createBackdropSlice } from "./slices/backdrop_slice";
 import { CollectionSlice, createCollectionSlice } from "./slices/collection_slice";
 import { addColorRampDerivedStateSubscribers, ColorRampSlice, createColorRampSlice } from "./slices/color_ramp_slice";
 import { ConfigSlice, createConfigSlice } from "./slices/config_slice";
@@ -91,6 +91,7 @@ export const useViewerStateStore: SubscribableStore<ViewerState> = create<Viewer
   subscribeWithSelector(viewerStateStoreCreator)
 );
 
+addBackdropDerivedStateSubscribers(useViewerStateStore);
 addColorRampDerivedStateSubscribers(useViewerStateStore);
 addScatterPlotSliceDerivedStateSubscribers(useViewerStateStore);
 addThresholdDerivedStateSubscribers(useViewerStateStore);

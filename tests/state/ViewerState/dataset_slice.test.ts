@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { ANY_ERROR } from "../../test_utils";
 import {
-  DEFAULT_BACKDROP_KEY,
   DEFAULT_INITIAL_FEATURE_KEY,
   MOCK_DATASET,
   MOCK_DATASET_DEFAULT_TRACK,
   MOCK_DATASET_WITHOUT_BACKDROP,
+  MockBackdropKeys,
   MockFeatureKeys,
 } from "./constants";
 import { setDatasetAsync } from "./utils";
@@ -27,7 +27,7 @@ describe("useViewerStateStore: DatasetSlice", () => {
       const { result } = renderHook(() => useViewerStateStore());
       await setDatasetAsync(result, MOCK_DATASET, "some-key");
       expect(result.current.dataset).toBe(MOCK_DATASET);
-      expect(result.current.backdropKey).toBe(DEFAULT_BACKDROP_KEY);
+      expect(result.current.backdropKey).toBe(MockBackdropKeys.BACKDROP1);
 
       // Change dataset to one without default backdrop, backdropKey should
       // be reset to null.
@@ -69,7 +69,7 @@ describe("useViewerStateStore: DatasetSlice", () => {
       act(() => {
         result.current.setBackdropVisible(true);
       });
-      expect(result.current.backdropKey).toBe(DEFAULT_BACKDROP_KEY);
+      expect(result.current.backdropKey).toBe(MockBackdropKeys.BACKDROP1);
       expect(result.current.backdropVisible).toBe(true);
 
       act(() => {
@@ -152,6 +152,38 @@ describe("useViewerStateStore: DatasetSlice", () => {
           result.current.setFeatureKey("non-existent-key");
         });
       }).toThrowError(ANY_ERROR);
+    });
+  });
+
+  describe("setBackdropKey", () => {
+    it("does not allow backdrop slice to be set when provided Dataset has no backdrops", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+
+      // Initialized as null
+      expect(result.current.backdropKey).toBeNull();
+      expect(() => {
+        act(() => {
+          result.current.setBackdropKey("test");
+        });
+      }).toThrowError(ANY_ERROR);
+      expect(result.current.backdropKey).toBeNull();
+    });
+
+    it("allows setting backdrop keys that are in the dataset.", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+
+      // Should initialize to default backdrop key
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        result.current.setBackdropKey(MockBackdropKeys.BACKDROP1);
+      });
+      expect(result.current.backdropKey).toBe(MockBackdropKeys.BACKDROP1);
+
+      // Can set another valid backdrop key
+      act(() => {
+        result.current.setBackdropKey(MockBackdropKeys.BACKDROP2);
+      });
+      expect(result.current.backdropKey).toBe(MockBackdropKeys.BACKDROP2);
     });
   });
 });

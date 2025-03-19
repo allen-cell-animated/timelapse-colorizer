@@ -88,18 +88,13 @@ function Viewer(): ReactElement {
     return canvas;
   });
 
-  const store = useViewerStateStore(
-    useShallow((state) => ({
-      dataset: state.dataset,
-      datasetKey: state.datasetKey,
-      featureKey: state.featureKey,
-      collection: state.collection,
-      setCollection: state.setCollection,
-      setFeatureKey: state.setFeatureKey,
-      setDataset: state.setDataset,
-    }))
-  );
-  const { dataset, datasetKey, featureKey, collection, setCollection, setDataset, setFeatureKey } = store;
+  const collection = useViewerStateStore((state) => state.collection);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
+  const featureKey = useViewerStateStore((state) => state.featureKey);
+  const setCollection = useViewerStateStore((state) => state.setCollection);
+  const setDataset = useViewerStateStore((state) => state.setDataset);
+  const setFeatureKey = useViewerStateStore((state) => state.setFeatureKey);
 
   const isFeatureSelected = dataset !== null && featureKey !== null;
   const isFeatureCategorical = isFeatureSelected && dataset.isFeatureCategorical(featureKey);
@@ -595,7 +590,7 @@ function Viewer(): ReactElement {
       const backdropKey = initialUrlParams.selectedBackdropKey;
       if (backdropKey) {
         if (dataset?.hasBackdrop(backdropKey)) {
-          setSelectedBackdropKey(dataset, backdropKey);
+          setSelectedBackdropKey(backdropKey);
         }
       }
       if (initialUrlParams.config) {

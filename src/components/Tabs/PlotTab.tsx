@@ -2,7 +2,6 @@ import { SearchOutlined } from "@ant-design/icons";
 import { Input } from "antd";
 import React, { ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
-import { useShallow } from "zustand/shallow";
 
 import { useViewerStateStore } from "../../state";
 import { FlexRowAlignCenter, NoSpinnerContainer } from "../../styles/utils";
@@ -31,17 +30,13 @@ type PlotTabProps = {
 };
 
 export default function PlotTab(props: PlotTabProps): ReactElement {
-  const store = useViewerStateStore(
-    useShallow((state) => ({
-      currentFrame: state.currentFrame,
-      pendingFrame: state.pendingFrame,
-      dataset: state.dataset,
-      featureKey: state.featureKey,
-      selectedTrack: state.track,
-      setFrame: state.setFrame,
-      setTrack: state.setTrack,
-    }))
-  );
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const featureKey = useViewerStateStore((state) => state.featureKey);
+  const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
+  const selectedTrack = useViewerStateStore((state) => state.track);
+  const setFrame = useViewerStateStore((state) => state.setFrame);
+  const setTrack = useViewerStateStore((state) => state.setTrack);
 
   const [findTrackInput, setFindTrackInput] = useState("");
 
@@ -60,18 +55,18 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
     return unsubscribe;
   }, []);
 
-  const isLoading = store.currentFrame !== store.pendingFrame;
+  const isLoading = currentFrame !== pendingFrame;
 
   const searchForTrack = (): void => {
-    if (findTrackInput === "" || !store.dataset) {
+    if (findTrackInput === "" || !dataset) {
       return;
     }
     const trackId = parseInt(findTrackInput, 10);
-    const track = store.dataset.getTrack(trackId);
+    const track = dataset.getTrack(trackId);
     // TODO: Show error text if track is not found?
     if (track) {
-      store.setTrack(track);
-      store.setFrame(track.times[0]);
+      setTrack(track);
+      setFrame(track.times[0]);
     }
   };
 
@@ -101,11 +96,11 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
       <div>
         <LoadingSpinner loading={isLoading}>
           <PlotWrapper
-            setFrame={store.setFrame}
-            frame={store.currentFrame}
-            dataset={store.dataset}
-            featureKey={store.featureKey}
-            selectedTrack={store.selectedTrack}
+            setFrame={setFrame}
+            frame={currentFrame}
+            dataset={dataset}
+            featureKey={featureKey}
+            selectedTrack={selectedTrack}
           />
         </LoadingSpinner>
       </div>
