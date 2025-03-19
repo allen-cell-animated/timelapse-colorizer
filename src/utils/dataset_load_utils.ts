@@ -53,9 +53,14 @@ const loadCollectionFromParams = async (
     // Make a dummy collection that will include only this dataset
     collection = await Collection.makeCollectionFromSingleDataset(datasetParam);
   } else if (collectionParam === null && datasetParam === null) {
+    // No arguments provided, report missing datasets as a special case
     return { type: LoadResultType.MISSING_DATASET };
   } else {
-    return { type: LoadResultType.LOAD_ERROR, message: "No collection or dataset URL was provided." };
+    // No collection was provided, AND the dataset was not a URL.
+    return {
+      type: LoadResultType.LOAD_ERROR,
+      message: "loadCollectionFromParams: Neither collection nor dataset parameters were provided as a URL.",
+    };
   }
   return { type: LoadResultType.SUCCESS, value: collection };
 };
@@ -156,6 +161,7 @@ export const loadInitialCollectionAndDataset = async (
     onLoadProgress: options.onLoadProgress,
     reportWarning: options.reportWarning,
   });
+
   if (datasetResult.type === LoadResultType.LOAD_ERROR) {
     options.reportLoadError?.(datasetResult.message);
     return null;
@@ -163,6 +169,5 @@ export const loadInitialCollectionAndDataset = async (
     options.reportMissingDataset?.();
     return null;
   }
-
   return { collection, dataset: datasetResult.value.dataset, datasetKey: datasetResult.value.datasetKey };
 };
