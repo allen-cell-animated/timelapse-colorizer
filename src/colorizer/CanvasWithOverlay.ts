@@ -127,10 +127,10 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     return this.canvas;
   }
 
-  public setSize(width: number, height: number): void {
+  public setResolution(width: number, height: number): void {
     this.canvasSize.x = width;
     this.canvasSize.y = height;
-    super.setSize(width, height);
+    super.setResolution(width, height);
   }
 
   public getIdAtPixel(x: number, y: number): number {

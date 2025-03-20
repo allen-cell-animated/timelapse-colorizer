@@ -33,6 +33,7 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
+import { CanvasStateParams, ICanvas } from "./ICanvas";
 import Track from "./Track";
 import VectorField from "./VectorField";
 
@@ -117,7 +118,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-export default class ColorizeCanvas {
+export default class ColorizeCanvas implements ICanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;
@@ -152,9 +153,12 @@ export default class ColorizeCanvas {
   private renderer: WebGLRenderer;
   private pickRenderTarget: WebGLRenderTarget;
 
+  private prevParams: CanvasStateParams | null;
+  private params: CanvasStateParams | null;
+
   protected dataset: Dataset | null;
   protected track: Track | null;
-  protected canvasResolution: Vector2 | null;
+  protected canvasResolution: Vector2;
 
   protected featureKey: string | null;
   protected selectedBackdropKey: string | null;
@@ -221,8 +225,11 @@ export default class ColorizeCanvas {
     this.renderer = new WebGLRenderer({ antialias: true });
     this.checkPixelRatio();
 
+    this.params = null;
+    this.prevParams = null;
+
     this.dataset = null;
-    this.canvasResolution = null;
+    this.canvasResolution = new Vector2(1, 1);
     this.featureKey = null;
     this.selectedBackdropKey = null;
     this.colorRamp = new ColorRamp(["black"]);
@@ -250,8 +257,20 @@ export default class ColorizeCanvas {
     this.setFrame = this.setFrame.bind(this);
   }
 
+  get resolution(): Vector2 {
+    return this.canvasResolution;
+  }
+
   get domElement(): HTMLCanvasElement {
     return this.renderer.domElement;
+  }
+
+  setParams(params: CanvasStateParams): void {
+    if (this.params === params) {
+      return;
+    }
+
+    this.params = params;
   }
 
   private checkPixelRatio(): void {
@@ -260,7 +279,7 @@ export default class ColorizeCanvas {
     }
   }
 
-  setSize(width: number, height: number): void {
+  setResolution(width: number, height: number): void {
     this.checkPixelRatio();
 
     this.renderer.setSize(width, height);
@@ -522,19 +541,6 @@ export default class ColorizeCanvas {
     this.colorMapRangeMax = newMax;
   }
 
-  resetColorMapRange(): void {
-    if (!this.featureKey) {
-      return;
-    }
-    const featureData = this.dataset?.getFeatureData(this.featureKey);
-    if (featureData) {
-      this.colorMapRangeMin = featureData.min;
-      this.colorMapRangeMax = featureData.max;
-      this.setUniform("featureColorRampMin", this.colorMapRangeMin);
-      this.setUniform("featureColorRampMax", this.colorMapRangeMax);
-    }
-  }
-
   setInRangeLUT(inRangeLUT: Uint8Array): void {
     // Save the array to a texture and pass it into the shader
     if (inRangeLUT.length > 0) {
@@ -542,15 +548,6 @@ export default class ColorizeCanvas {
       this.render();
     }
   }
-
-  getColorMapRangeMin(): number {
-    return this.colorMapRangeMin;
-  }
-
-  getColorMapRangeMax(): number {
-    return this.colorMapRangeMax;
-  }
-
   /**
    * @returns The number of frames in the dataset. If no dataset is loaded,
    * returns 0 by default.
@@ -559,10 +556,12 @@ export default class ColorizeCanvas {
     return this.dataset ? this.dataset.numberOfFrames : 0;
   }
 
+  // TODO: Delete
   getCurrentFrame(): number {
     return this.currentFrame;
   }
 
+  // TODO: Move to dataset
   public isValidFrame(index: number): boolean {
     return index >= 0 && index < this.getTotalFrames();
   }
