@@ -28,7 +28,7 @@ export type CanvasStateParams = Pick<
 
 export const canvasStateParamsSelector = (state: ViewerStoreState): CanvasStateParams => ({
   dataset: state.dataset,
-  featureKey: state.scatterXAxis,
+  featureKey: state.featureKey,
   track: state.track,
   showTrackPath: state.showTrackPath,
   colorRamp: state.colorRamp,
