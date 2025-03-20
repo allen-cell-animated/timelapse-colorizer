@@ -425,6 +425,6 @@ export const makeGitHubIssueLink = (title: string, body: string, labels?: string
   const baseUrl = "https://github.com/allen-cell-animated/timelapse-colorizer/issues/new";
   const titleParam = `title=${encodeURIComponent(title)}`;
   const bodyParam = `body=${encodeURIComponent(body)}`;
-  const labelsParam = labels ? `labels=${labels.join(",")}` : "";
+  const labelsParam = labels ? `labels=${labels.map(encodeURIComponent).join(",")}` : "";
   return `${baseUrl}?${titleParam}&${bodyParam}&${labelsParam}`;
 };

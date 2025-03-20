@@ -139,6 +139,4 @@ export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URL
 
   // 4. Dependent on dataset + threshold slices:
   loadColorRampSliceFromParams(store.getState(), params);
-
-  throw new Error("Some funky crazy error happened here! oh no!");
 };
