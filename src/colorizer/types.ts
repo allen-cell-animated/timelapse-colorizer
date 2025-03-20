@@ -214,6 +214,10 @@ export enum AnnotationSelectionMode {
  */
 export type ReportWarningCallback = (message: string, description: string | string[]) => void;
 
+export type ReportErrorCallback = (message: string) => void;
+
+export type ReportLoadProgressCallback = (complete: number, total: number) => void;
+
 export enum LoadTroubleshooting {
   CHECK_NETWORK = "This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
     " Please check your network access.",

@@ -9,7 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
   Dataset,
@@ -25,7 +25,7 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
-import { isUrl, makeGitHubIssueLink, UrlParam } from "./colorizer/utils/url_utils";
+import { makeGitHubIssueLink } from "./colorizer/utils/url_utils";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD, VERSION_NUMBER } from "./constants";
@@ -38,6 +38,7 @@ import {
 import { makeDebouncedCallback } from "./state/utils/store_utils";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
+import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
 import CanvasWithOverlay from "./colorizer/CanvasWithOverlay";
 import Collection from "./colorizer/Collection";
@@ -181,12 +182,12 @@ function Viewer(): ReactElement {
     // TODO: Update types for makeDebouncedCallback since right now it requires
     // an argument (even if it's a dummy one) to be passed to the callback.
     makeDebouncedCallback(() => {
-      if (!isDatasetLoading) {
+      if (isInitialDatasetLoaded) {
         const params = serializeViewerState(useViewerStateStore.getState());
         setSearchParams(params, { replace: true });
       }
     }),
-    [isDatasetLoading]
+    [isInitialDatasetLoaded]
   );
 
   useEffect(() => {
@@ -328,6 +329,19 @@ function Viewer(): ReactElement {
     [showAlert]
   );
 
+  const showMissingDatasetAlert = useCallback(() => {
+    showAlert({
+      message: "No dataset loaded.",
+      type: "info",
+      closable: false,
+      description: [
+        "You'll need to load a dataset to use Timelapse Feature Explorer.",
+        "If you have a dataset, load it from the menu above. Otherwise, return to the homepage to see our published datasets.",
+      ],
+      action: <Link to="/">Return to homepage</Link>,
+    });
+  }, [showAlert]);
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -377,85 +391,33 @@ function Viewer(): ReactElement {
       if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
         return;
       }
+
       setIsDatasetLoading(true);
-      isLoadingInitialDataset.current = true;
-      let newCollection: Collection;
-      let datasetKey: string;
-
-      const locationHasCollectionAndDataset = (location: Location): boolean => {
-        return location.state && "collection" in location.state && "datasetKey" in location.state;
-      };
-
-      // Check if we were passed a collection + dataset from the previous page.
-      if (locationHasCollectionAndDataset(location)) {
-        // Collect from previous page state
-        const { collection: stateCollection, datasetKey: stateDatasetKey } = location.state as LocationState;
-        datasetKey = stateDatasetKey;
-        newCollection = stateCollection;
-      } else {
-        // Collect from URL
-        const collectionUrlParam = searchParams.get(UrlParam.COLLECTION);
-        const datasetParam = searchParams.get(UrlParam.DATASET);
-
-        if (datasetParam && isUrl(datasetParam) && !collectionUrlParam) {
-          // Dataset is a URL and no collection URL is provided;
-          // Make a dummy collection that will include only this dataset
-          newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
-          datasetKey = newCollection.getDefaultDatasetKey();
-        } else {
-          if (!collectionUrlParam) {
-            showAlert({
-              message: "No dataset loaded.",
-              type: "info",
-              closable: false,
-              description: [
-                "You'll need to load a dataset to use Timelapse Feature Explorer.",
-                "If you have a dataset, load it from the menu above. Otherwise, return to the homepage to see our published datasets.",
-              ],
-              action: <Link to="/">Return to homepage</Link>,
-            });
-            console.error("No collection URL or dataset URL provided.");
-            setIsDatasetLoading(false);
-            return;
-          }
-          // Try loading the collection, with the default collection as a fallback.
-
-          try {
-            newCollection = await Collection.loadCollection(collectionUrlParam, {
-              reportWarning: showDatasetLoadWarning,
-            });
-            datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
-          } catch (error) {
-            console.error(error);
-            showDatasetLoadError((error as Error).message);
-            setIsDatasetLoading(false);
-            return;
-          }
-        }
-      }
-
-      setCollection(newCollection);
       setDatasetLoadProgress(null);
-      const datasetResult = await newCollection.tryLoadDataset(datasetKey, {
-        onLoadProgress: handleProgressUpdate,
+      isLoadingInitialDataset.current = true;
+      // Location can include a Collection object and a datasetKey to be loaded.
+      const locationState = location.state as Partial<LocationState>;
+
+      const result = await loadInitialCollectionAndDataset(searchParams, locationState, {
         arrayLoader,
+        onLoadProgress: handleProgressUpdate,
         reportWarning: showDatasetLoadWarning,
+        reportLoadError: showDatasetLoadError,
+        reportMissingDataset: showMissingDatasetAlert,
       });
 
-      if (!datasetResult.loaded) {
-        console.error(datasetResult.errorMessage);
-        showDatasetLoadError(datasetResult.errorMessage);
+      if (!result) {
         setIsDatasetLoading(false);
         return;
       }
-      // Add the collection to the recent collections list
-      addRecentCollection({ url: newCollection.getUrl() });
 
-      if (!isInitialDatasetLoaded) {
-        await replaceDataset(datasetResult.dataset, datasetKey);
-        setIsInitialDatasetLoaded(true);
-      }
+      const { collection: newCollection, dataset: newDataset, datasetKey: newDatasetKey } = result;
+      setCollection(newCollection);
+      addRecentCollection({ url: newCollection.getUrl() });
+      await replaceDataset(newDataset, newDatasetKey);
+      setIsInitialDatasetLoaded(true);
       setIsDatasetLoading(false);
+
       // Load the viewer state from the URL after the dataset is loaded.
       try {
         loadViewerStateFromParams(useViewerStateStore, searchParams);
