@@ -19,6 +19,7 @@ import {
   UrlParam,
 } from "../../colorizer/utils/url_utils";
 import { SerializedStoreData } from "../types";
+import { setValueIfDefined } from "../utils/data_validation";
 
 const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
@@ -96,18 +97,9 @@ export const serializeConfigSlice = (slice: ConfigSlice): SerializedStoreData =>
 };
 
 export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
-  const showPathParam = decodeBoolean(params.get(UrlParam.SHOW_PATH));
-  if (showPathParam !== undefined) {
-    slice.setShowTrackPath(showPathParam);
-  }
-  const showScaleBarParam = decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR));
-  if (showScaleBarParam !== undefined) {
-    slice.setShowScaleBar(showScaleBarParam);
-  }
-  const showTimestampParam = decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP));
-  if (showTimestampParam !== undefined) {
-    slice.setShowTimestamp(showTimestampParam);
-  }
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH)), slice.setShowTrackPath);
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR)), slice.setShowScaleBar);
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP)), slice.setShowTimestamp);
 
   slice.setOutOfRangeDrawSettings(
     parseDrawSettings(

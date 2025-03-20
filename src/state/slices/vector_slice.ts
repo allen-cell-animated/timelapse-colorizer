@@ -19,7 +19,7 @@ import {
   UrlParam,
 } from "../../colorizer/utils/url_utils";
 import { SerializedStoreData, SubscribableStore } from "../types";
-import { validateFiniteValue } from "../utils/data_validation";
+import { setValueIfDefined, validateFiniteValue } from "../utils/data_validation";
 import { addDerivedStateSubscriber, makeDebouncedCallback } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 
@@ -145,10 +145,7 @@ export const serializeVectorSlice = (slice: VectorSlice): SerializedStoreData =>
 };
 
 export function loadVectorSliceFromParams(slice: VectorSlice, params: URLSearchParams): void {
-  const vectorVisible = decodeBoolean(params.get(UrlParam.SHOW_VECTOR));
-  if (vectorVisible !== undefined) {
-    slice.setVectorVisible(vectorVisible);
-  }
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_VECTOR)), slice.setVectorVisible);
 
   const vectorKey = params.get(UrlParam.VECTOR_KEY);
   // TODO: Do validation for vector keys if added to Dataset
