@@ -106,7 +106,6 @@ function Viewer(): ReactElement {
   // into a helper method/out of the component
   /** Backdrop key is null if the dataset has no backdrops, or during initialization. */
   const selectedBackdropKey = useViewerStateStore((state) => state.backdropKey);
-  const setSelectedBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
 
   const [, addRecentCollection] = useRecentCollections();
 
@@ -546,22 +545,6 @@ function Viewer(): ReactElement {
 
       if (initialUrlParams.thresholds) {
         setFeatureThresholds(initialUrlParams.thresholds);
-      }
-      if (initialUrlParams.time && initialUrlParams.time >= 0) {
-        // Load time (if unset, defaults to track time or default t=0)
-        const newTime = initialUrlParams.time;
-        setFrame(newTime);
-        setFrameInput(newTime);
-      }
-
-      const backdropKey = initialUrlParams.selectedBackdropKey;
-      if (backdropKey) {
-        if (dataset?.hasBackdrop(backdropKey)) {
-          setSelectedBackdropKey(backdropKey);
-        }
-      }
-      if (initialUrlParams.config) {
-        // updateConfig(initialUrlParams.config);
       }
 
       if (initialUrlParams.scatterPlotConfig) {

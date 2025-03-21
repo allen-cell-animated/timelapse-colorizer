@@ -1,10 +1,11 @@
 import { StateCreator } from "zustand";
 
+import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
-import { SubscribableStore } from "../types";
+import type { SerializedStoreData, SubscribableStore } from "../types";
 import { clampWithNanCheck } from "../utils/data_validation";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
-import { DatasetSlice } from "./dataset_slice";
+import type { DatasetSlice } from "./dataset_slice";
 
 import TimeControls from "../../colorizer/TimeControls";
 
@@ -98,4 +99,21 @@ export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetS
       }
     }
   );
+};
+
+export const serializeTimeSlice = (state: TimeSlice): SerializedStoreData => {
+  return {
+    [UrlParam.TIME]: state.currentFrame.toString(),
+  };
+};
+
+export const loadTimeSliceFromParams = (state: TimeSlice & DatasetSlice, params: URLSearchParams): void => {
+  // Load time from URL. If no time is set but a track is, set the time to the
+  // start of the track.
+  const time = decodeInt(params.get(UrlParam.TIME));
+  if (time !== undefined) {
+    state.setFrame(time);
+  } else if (state.track !== null) {
+    state.setFrame(state.track.startTime());
+  }
 };

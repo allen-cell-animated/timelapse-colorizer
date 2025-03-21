@@ -1,5 +1,6 @@
 import { waitFor } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
+import { expect } from "vitest";
 
 import { Dataset } from "../../../src/colorizer";
 import { ViewerState } from "../../../src/state";
@@ -25,4 +26,15 @@ export const clearDatasetAsync = async (result: { current: ViewerState }): Promi
     result.current.clearDataset();
   });
   await waitFor(() => {});
+};
+
+/**
+ * Checks whether all key-value pairs in `expected` are present in `actual`.
+ * Note that `actual` may contain additional key-value pairs not present in
+ * `expected` and still pass this check.
+ */
+export const compareRecord = <T extends Record<string, unknown>>(actual: T, expected: T): void => {
+  for (const key in expected) {
+    expect(actual[key]).toEqual(expected[key]);
+  }
 };
