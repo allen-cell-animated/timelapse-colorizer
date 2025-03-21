@@ -243,11 +243,11 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.pickMaterial.uniforms[name].value = value;
   }
 
-  get resolution(): Vector2 {
+  public get resolution(): Vector2 {
     return this.canvasResolution;
   }
 
-  get domElement(): HTMLCanvasElement {
+  public get domElement(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
 
@@ -257,7 +257,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
   }
 
-  setResolution(width: number, height: number): void {
+  public setResolution(width: number, height: number): void {
     this.checkPixelRatio();
 
     this.renderer.setSize(width, height);
@@ -271,7 +271,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
   }
 
-  setZoom(zoom: number): void {
+  public setZoom(zoom: number): void {
     this.zoomMultiplier = zoom;
     if (this.params?.dataset) {
       this.updateScaling(this.params.dataset.frameResolution, this.canvasResolution);
@@ -284,7 +284,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
    * Expects x and y in a range of [-0.5, 0.5], where [0, 0] means the frame will be centered
    * and [-0.5, -0.5] means the top right corner of the frame will be centered in the canvas view.
    */
-  setPan(x: number, y: number): void {
+  public setPan(x: number, y: number): void {
     this.panOffset = new Vector2(x, y);
     this.setUniform("panOffset", this.panOffset);
 
@@ -349,13 +349,11 @@ export default class ColorizeCanvas implements IRenderCanvas {
     if (dataset === null) {
       return;
     }
-
     if (dataset.outliers) {
       this.setUniform("outlierData", packDataTexture(Array.from(dataset.outliers), FeatureDataType.U8));
     } else {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
-
     this.vectorField.setDataset(dataset);
     await this.forceFrameReload();
     this.updateScaling(dataset.frameResolution, this.canvasResolution);
@@ -402,7 +400,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
   }
 
-  updateTrackData(dataset: Dataset | null, track: Track | null): void {
+  private updateTrackData(dataset: Dataset | null, track: Track | null): void {
     if (!track || !track.centroids || track.centroids.length === 0 || !dataset) {
       return;
     }
@@ -433,7 +431,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.line.geometry.getAttribute("position").needsUpdate = true;
   }
 
-  updateFeatureData(dataset: Dataset | null, featureKey: string | null): void {
+  private updateFeatureData(dataset: Dataset | null, featureKey: string | null): void {
     if (featureKey === null || dataset === null) {
       return;
     }
@@ -563,7 +561,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
    * @param forceUpdate Force a reload of the frame data, even if the frame
    * is already loaded.
    */
-  async setFrame(index: number, forceUpdate: boolean = false): Promise<void> {
+  public async setFrame(index: number, forceUpdate: boolean = false): Promise<void> {
     const dataset = this.params?.dataset;
     // Ignore same or bad frame indices
     if (!dataset || (!forceUpdate && this.currentFrame === index) || !dataset.isValidFrameIndex(index)) {
@@ -641,7 +639,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
    * Updates the range of the track path line so that it shows up the path up to the current
    * frame.
    */
-  syncTrackPathLine(): void {
+  private syncTrackPathLine(): void {
     // Show nothing if track doesn't exist or doesn't have centroid data
     const track = this.params?.track;
     if (!track || !track.centroids || !this.params?.showTrackPath) {
@@ -669,21 +667,21 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.setUniform("highlightedId", this.params?.track.getIdAtTime(this.currentFrame));
   }
 
-  render(): void {
+  public render(): void {
     this.syncHighlightedId();
     this.syncTrackPathLine();
 
     this.renderer.render(this.scene, this.camera);
   }
 
-  dispose(): void {
+  public dispose(): void {
     this.material.dispose();
     this.geometry.dispose();
     this.renderer.dispose();
     this.pickMaterial.dispose();
   }
 
-  getIdAtPixel(x: number, y: number): number {
+  public getIdAtPixel(x: number, y: number): number {
     const rt = this.renderer.getRenderTarget();
 
     this.renderer.setRenderTarget(this.pickRenderTarget);
