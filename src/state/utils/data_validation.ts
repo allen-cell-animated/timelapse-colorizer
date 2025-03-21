@@ -21,3 +21,10 @@ export const validateFiniteValue = (value: number, source: string): number => {
   }
   return value;
 };
+
+/** Calls the setter with the provided value if not `undefined`. */
+export const setValueIfDefined = <T>(value: T | undefined, setter: (value: T) => void): void => {
+  if (value !== undefined) {
+    setter(value);
+  }
+};
