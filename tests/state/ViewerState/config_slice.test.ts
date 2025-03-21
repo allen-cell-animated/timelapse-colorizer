@@ -8,7 +8,7 @@ import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../../src/state";
 import { ConfigSlice, loadConfigSliceFromParams, serializeConfigSlice } from "../../../src/state/slices";
 import { SerializedStoreData } from "../../../src/state/types";
-import { compareSerializedData, compareSlice } from "./utils";
+import { compareRecord } from "./utils";
 
 const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   showTrackPath: false,
@@ -108,13 +108,13 @@ describe("ConfigSlice", () => {
         useViewerStateStore.setState(EXAMPLE_SLICE_1);
       });
       let serializedData = serializeConfigSlice(result.current);
-      compareSerializedData(serializedData, EXAMPLE_SLICE_1_PARAMS);
+      compareRecord(serializedData, EXAMPLE_SLICE_1_PARAMS);
 
       act(() => {
         useViewerStateStore.setState(EXAMPLE_SLICE_2);
       });
       serializedData = serializeConfigSlice(result.current);
-      compareSerializedData(serializedData, EXAMPLE_SLICE_2_PARAMS);
+      compareRecord(serializedData, EXAMPLE_SLICE_2_PARAMS);
     });
   });
 
@@ -124,12 +124,12 @@ describe("ConfigSlice", () => {
       act(() => {
         loadConfigSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_1_PARAMS));
       });
-      compareSlice(result.current, EXAMPLE_SLICE_1);
+      compareRecord(result.current, EXAMPLE_SLICE_1);
 
       act(() => {
         loadConfigSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_2_PARAMS));
       });
-      compareSlice(result.current, EXAMPLE_SLICE_2);
+      compareRecord(result.current, EXAMPLE_SLICE_2);
     });
 
     it("ignores invalid draw setting modes", () => {

@@ -3,9 +3,7 @@ import { act } from "react-dom/test-utils";
 import { expect } from "vitest";
 
 import { Dataset } from "../../../src/colorizer";
-import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { ViewerStore } from "../../../src/state/slices";
-import { SerializedStoreData } from "../../../src/state/types";
 
 /**
  * Wrapper around `store.setDataset()`. Allows for async operations to complete
@@ -35,19 +33,8 @@ export const clearDatasetAsync = async (result: { current: ViewerStore }): Promi
  * Note that `actual` may contain additional key-value pairs not present in
  * `expected` and still pass this check.
  */
-export const compareSlice = (actual: Partial<ViewerStore>, expected: Partial<ViewerStore>): void => {
+export const compareRecord = <T extends Record<string, unknown>>(actual: T, expected: T): void => {
   for (const key in expected) {
-    expect(actual[key as keyof ViewerStore]).toEqual(expected[key as keyof ViewerStore]);
-  }
-};
-
-/**
- * Checks whether all key-value pairs in `expected` are present in `actual`.
- * Note that `actual` may contain additional key-value pairs not present in
- * `expected` and still pass this check.
- */
-export const compareSerializedData = (actual: SerializedStoreData, expected: SerializedStoreData): void => {
-  for (const key in expected) {
-    expect(actual[key as UrlParam]).toEqual(expected[key as UrlParam]);
+    expect(actual[key]).toEqual(expected[key]);
   }
 };

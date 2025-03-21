@@ -18,7 +18,8 @@ import {
   parseDrawSettings,
   UrlParam,
 } from "../../colorizer/utils/url_utils";
-import { SerializedStoreData } from "../types";
+import type { SerializedStoreData } from "../types";
+import { setValueIfDefined } from "../utils/data_validation";
 
 const OUT_OF_RANGE_DRAW_SETTINGS_DEFAULT: DrawSettings = {
   color: new Color(OUT_OF_RANGE_COLOR_DEFAULT),
@@ -90,20 +91,19 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setOpenTab: (openTab) => set({ openTab }),
 });
 
-export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
-  const ret: SerializedStoreData = {};
-  ret[UrlParam.SHOW_PATH] = encodeMaybeBoolean(slice.showTrackPath);
-  ret[UrlParam.SHOW_SCALEBAR] = encodeMaybeBoolean(slice.showScaleBar);
-  ret[UrlParam.SHOW_TIMESTAMP] = encodeMaybeBoolean(slice.showTimestamp);
-  // Export settings are currently not serialized.
-  ret[UrlParam.FILTERED_COLOR] = encodeMaybeColor(slice.outOfRangeDrawSettings?.color);
-  ret[UrlParam.FILTERED_MODE] = slice.outOfRangeDrawSettings?.mode.toString();
-  ret[UrlParam.OUTLIER_COLOR] = encodeMaybeColor(slice.outlierDrawSettings?.color);
-  ret[UrlParam.OUTLIER_MODE] = slice.outlierDrawSettings?.mode.toString();
-  ret[UrlParam.OUTLINE_COLOR] = encodeMaybeColor(slice.outlineColor);
-
-  ret[UrlParam.OPEN_TAB] = slice.openTab;
-  return ret;
+export const serializeConfigSlice = (slice: Partial<ConfigSlice>): SerializedStoreData => {
+  return {
+    [UrlParam.SHOW_PATH]: encodeMaybeBoolean(slice.showTrackPath),
+    [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
+    [UrlParam.SHOW_TIMESTAMP]: encodeMaybeBoolean(slice.showTimestamp),
+    // Export settings are currently not serialized.
+    [UrlParam.FILTERED_COLOR]: encodeMaybeColor(slice.outOfRangeDrawSettings?.color),
+    [UrlParam.FILTERED_MODE]: slice.outOfRangeDrawSettings?.mode.toString(),
+    [UrlParam.OUTLIER_COLOR]: encodeMaybeColor(slice.outlierDrawSettings?.color),
+    [UrlParam.OUTLIER_MODE]: slice.outlierDrawSettings?.mode.toString(),
+    [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice?.outlineColor),
+    [UrlParam.OPEN_TAB]: slice.openTab,
+  };
 };
 
 /** Selects state values that serialization depends on. */
@@ -118,18 +118,9 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
 });
 
 export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchParams): void => {
-  const showPathParam = decodeBoolean(params.get(UrlParam.SHOW_PATH));
-  if (showPathParam !== undefined) {
-    slice.setShowTrackPath(showPathParam);
-  }
-  const showScaleBarParam = decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR));
-  if (showScaleBarParam !== undefined) {
-    slice.setShowScaleBar(showScaleBarParam);
-  }
-  const showTimestampParam = decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP));
-  if (showTimestampParam !== undefined) {
-    slice.setShowTimestamp(showTimestampParam);
-  }
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH)), slice.setShowTrackPath);
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR)), slice.setShowScaleBar);
+  setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP)), slice.setShowTimestamp);
 
   slice.setOutOfRangeDrawSettings(
     parseDrawSettings(
