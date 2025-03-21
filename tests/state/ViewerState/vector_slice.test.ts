@@ -8,7 +8,7 @@ import { useViewerStateStore } from "../../../src/state";
 import { loadVectorSliceFromParams, serializeVectorSlice, VectorSlice } from "../../../src/state/slices";
 import { SerializedStoreData } from "../../../src/state/types";
 import { ANY_ERROR } from "../../test_utils";
-import { compareSerializedData, compareSlice } from "./utils";
+import { compareRecord } from "./utils";
 
 const EXAMPLE_SLICE_1: Partial<VectorSlice> = {
   vectorVisible: true,
@@ -132,13 +132,13 @@ describe("VectorSlice", () => {
         useViewerStateStore.setState(EXAMPLE_SLICE_1);
       });
       let serializedData = serializeVectorSlice(result.current);
-      compareSerializedData(serializedData, EXAMPLE_SLICE_1_PARAMS);
+      compareRecord(serializedData, EXAMPLE_SLICE_1_PARAMS);
 
       act(() => {
         useViewerStateStore.setState(EXAMPLE_SLICE_2);
       });
       serializedData = serializeVectorSlice(result.current);
-      compareSerializedData(serializedData, EXAMPLE_SLICE_2_PARAMS);
+      compareRecord(serializedData, EXAMPLE_SLICE_2_PARAMS);
     });
   });
 
@@ -148,12 +148,12 @@ describe("VectorSlice", () => {
       act(() => {
         loadVectorSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_1_PARAMS));
       });
-      compareSlice(result.current, EXAMPLE_SLICE_1);
+      compareRecord(result.current, EXAMPLE_SLICE_1);
 
       act(() => {
         loadVectorSliceFromParams(result.current, new URLSearchParams(EXAMPLE_SLICE_2_PARAMS));
       });
-      compareSlice(result.current, EXAMPLE_SLICE_2);
+      compareRecord(result.current, EXAMPLE_SLICE_2);
     });
 
     it("ignores invalid vector keys", () => {

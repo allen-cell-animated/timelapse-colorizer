@@ -2,10 +2,10 @@ import { StateCreator } from "zustand";
 
 import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
-import { SerializedStoreData, SubscribableStore } from "../types";
+import type { SerializedStoreData, SubscribableStore } from "../types";
 import { clampWithNanCheck } from "../utils/data_validation";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
-import { DatasetSlice } from "./dataset_slice";
+import type { DatasetSlice } from "./dataset_slice";
 
 import TimeControls from "../../colorizer/TimeControls";
 

@@ -31,7 +31,7 @@ import {
   MockBackdropKeys,
   MockFeatureKeys,
 } from "./ViewerState/constants";
-import { compareSlice, setDatasetAsync } from "./ViewerState/utils";
+import { compareRecord, setDatasetAsync } from "./ViewerState/utils";
 
 const COLOR_RAMP_KEY = Array.from(KNOWN_COLOR_RAMPS.keys())[3];
 
@@ -200,6 +200,6 @@ describe("loadViewerStateFromParams", () => {
       // Fixup: Wait for frame to load fully so `currentFrame` value is correct
       await sleep(10);
     });
-    compareSlice(useViewerStateStore.getState(), EXAMPLE_STORE);
+    compareRecord(useViewerStateStore.getState(), EXAMPLE_STORE);
   });
 });

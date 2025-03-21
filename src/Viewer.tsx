@@ -29,8 +29,8 @@ import { isUrl, UrlParam } from "./colorizer/utils/url_utils";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
+import { getDifferingProperties } from "./state/utils/data_validation";
 import {
-  getDifferingKeys,
   loadViewerStateFromParams,
   selectSerializationDependencies,
   serializeViewerState,
@@ -157,12 +157,12 @@ function Viewer(): ReactElement {
   const [isRecording, setIsRecording] = useState(false);
 
   // TODO: Move all logic for the time slider into its own component!
-  // Flag used to indicate that the slider is currently being dragged while playback is occurring.
-  const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
+  // Flag indicating that frameInput should not be synced with playback.
+  const [isUserDirectlyControllingFrameInput, setIsUserDirectlyControllingFrameInput] = useState(false);
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
-      setIsTimeSliderDraggedDuringPlayback(false);
+      setIsUserDirectlyControllingFrameInput(false);
     }
   }, [timeControls.isPlaying()]);
 
@@ -191,7 +191,7 @@ function Viewer(): ReactElement {
   useEffect(() => {
     return useViewerStateStore.subscribe(selectSerializationDependencies, (state, prevState) => {
       // Ignore changes to the current frame during playback.
-      const differingKeys = getDifferingKeys(state, prevState);
+      const differingKeys = getDifferingProperties(state, prevState);
       const hasOnlyTimeChanged = differingKeys.size === 1 && differingKeys.has("currentFrame");
 
       if (
@@ -207,17 +207,12 @@ function Viewer(): ReactElement {
 
   // Sync the time slider with the pending frame.
   useEffect(() => {
-    const unsubscribe = useViewerStateStore.subscribe(
-      (state) => [state.pendingFrame],
-      ([pendingFrame]) => {
-        if (isTimeSliderDraggedDuringPlayback) {
-          return;
-        }
-        setFrameInput(pendingFrame);
-      }
-    );
-    return unsubscribe;
-  }, [isTimeSliderDraggedDuringPlayback]);
+    // When user is controlling time slider, do not sync frame input w/ playback
+    if (!isUserDirectlyControllingFrameInput) {
+      return useViewerStateStore.subscribe((state) => state.pendingFrame, setFrameInput);
+    }
+    return;
+  }, [isUserDirectlyControllingFrameInput]);
 
   // When the scatterplot tab is opened for the first time, set the default axes
   // to the selected feature and time.
@@ -553,11 +548,10 @@ function Viewer(): ReactElement {
         // time immediately.
         setFrame(frameInput);
       }
-      if (isTimeSliderDraggedDuringPlayback) {
-        setFrame(frameInput);
+      if (isUserDirectlyControllingFrameInput) {
+        setFrame(frameInput).then(() => timeControls.play());
         // Update the frame and unpause playback when the slider is released.
-        setIsTimeSliderDraggedDuringPlayback(false);
-        timeControls.play(); // resume playing
+        setIsUserDirectlyControllingFrameInput(false);
       }
     };
 
@@ -565,7 +559,7 @@ function Viewer(): ReactElement {
     return () => {
       document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
     };
-  }, [isTimeSliderDraggedDuringPlayback, frameInput]);
+  }, [isUserDirectlyControllingFrameInput, frameInput]);
 
   const onClickId = useCallback(
     (id: number) => {
@@ -852,7 +846,7 @@ function Viewer(): ReactElement {
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
+              {timeControls.isPlaying() || isUserDirectlyControllingFrameInput ? (
                 // Swap between play and pause button
                 <IconButton
                   type="primary"
@@ -877,7 +871,7 @@ function Viewer(): ReactElement {
                   if (timeControls.isPlaying()) {
                     // If the slider is dragged while playing, pause playback.
                     timeControls.pause();
-                    setIsTimeSliderDraggedDuringPlayback(true);
+                    setIsUserDirectlyControllingFrameInput(true);
                   }
                 }}
               >
