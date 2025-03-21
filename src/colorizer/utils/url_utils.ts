@@ -24,7 +24,7 @@ import {
 } from "../types";
 import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
-import { numberToStringDecimal } from "./math_utils";
+import { formatNumber } from "./math_utils";
 
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
@@ -184,8 +184,8 @@ function serializeThreshold(threshold: FeatureThreshold): string {
     return `${featureKey}:${featureUnit}:${selectedHex}`;
   } else {
     // Numeric feature
-    const min = numberToStringDecimal(threshold.min, 3);
-    const max = numberToStringDecimal(threshold.max, 3);
+    const min = formatNumber(threshold.min, 3);
+    const max = formatNumber(threshold.max, 3);
     return `${featureKey}:${featureUnit}:${min}:${max}`;
   }
 }
@@ -339,7 +339,7 @@ export function decodeHexColor(value: string | null): Color | undefined {
 }
 
 export function encodeNumber(value: number): string {
-  return numberToStringDecimal(value, 3);
+  return formatNumber(value, 3);
 }
 
 export function decodeFloat(value: string | null): number | undefined {
@@ -532,7 +532,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
     includedParameters.push(`${UrlParam.THRESHOLDS}=${encodeURIComponent(serializeThresholds(state.thresholds))}`);
   }
   if (state.range && state.range.length === 2) {
-    const rangeString = `${numberToStringDecimal(state.range[0], 3)},${numberToStringDecimal(state.range[1], 3)}`;
+    const rangeString = `${formatNumber(state.range[0], 3)},${formatNumber(state.range[1], 3)}`;
     includedParameters.push(`${UrlParam.RANGE}=${encodeURIComponent(rangeString)}`);
   }
   if (state.colorRampKey) {
