@@ -18,7 +18,7 @@ import {
 } from "../types";
 import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
-import { numberToStringDecimal } from "./math_utils";
+import { formatNumber } from "./math_utils";
 
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
@@ -178,8 +178,8 @@ function serializeThreshold(threshold: FeatureThreshold): string {
     return `${featureKey}:${featureUnit}:${selectedHex}`;
   } else {
     // Numeric feature
-    const min = numberToStringDecimal(threshold.min, 3);
-    const max = numberToStringDecimal(threshold.max, 3);
+    const min = formatNumber(threshold.min, 3);
+    const max = formatNumber(threshold.max, 3);
     return `${featureKey}:${featureUnit}:${min}:${max}`;
   }
 }
@@ -281,7 +281,7 @@ export function decodeHexColor(value: string | null): Color | undefined {
 }
 
 export function encodeNumber(value: number): string {
-  return numberToStringDecimal(value, 3);
+  return formatNumber(value, 3);
 }
 
 export function encodeMaybeNumber(value: number | undefined): string | undefined {
