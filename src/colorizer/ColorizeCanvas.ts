@@ -35,7 +35,7 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { CanvasStateParams, IRenderCanvas } from "./IRenderCanvas";
+import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 import Track from "./Track";
 import VectorField from "./VectorField";
 
@@ -154,10 +154,13 @@ export default class ColorizeCanvas implements IRenderCanvas {
   private renderer: WebGLRenderer;
   private pickRenderTarget: WebGLRenderTarget;
 
-  protected params: CanvasStateParams | null;
+  protected params: RenderCanvasStateParams | null;
+  // Categorical palette is stored separately from params because it's not a
+  // direct part of state, and the ColorRamp class must be disposed and
+  // recreated when the palette changes.
+  protected categoricalPalette: ColorRamp;
 
   protected canvasResolution: Vector2;
-  protected categoricalPalette: ColorRamp;
 
   protected currentFrame: number;
   private pendingFrame: number;
@@ -233,7 +236,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.onFrameChangeCallback = () => {};
 
     this.render = this.render.bind(this);
-    this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
     this.setFrame = this.setFrame.bind(this);
   }
@@ -343,6 +345,19 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.vectorField.setScale(this.frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
 
+  /**
+   * Forces a reload of the current frame, even if it's already loaded. If a
+   * different frame is in the process of being loaded, the reload will be
+   * called on that pending frame.
+   */
+  private forceFrameReload(): void {
+    // Force update on the current frame or the frame that's currently being loaded
+    const frame = this.pendingFrame !== -1 ? this.pendingFrame : this.currentFrame;
+    this.setFrame(frame, true).then(() => {
+      this.render();
+    });
+  }
+
   // PARAM HANDLING /////////////////////////////////////////////////////////////////////////
 
   private async handleNewDataset(dataset: Dataset | null): Promise<void> {
@@ -357,11 +372,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.vectorField.setDataset(dataset);
     await this.forceFrameReload();
     this.updateScaling(dataset.frameResolution, this.canvasResolution);
-  }
-
-  private setCategoricalPalette(colors: Color[]): void {
-    this.categoricalPalette.dispose();
-    this.categoricalPalette = new ColorRamp(colors);
   }
 
   private setOutlineColor(color: Color): void {
@@ -386,16 +396,16 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.setUniform("canvasBackgroundColor", color);
   }
 
-  private setOutlierDrawMode(mode: DrawMode, color?: Color): void {
+  private setOutlierDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outlierDrawMode", mode);
-    if (mode === DrawMode.USE_COLOR && color) {
+    if (mode === DrawMode.USE_COLOR) {
       this.setUniform("outlierColor", color);
     }
   }
 
-  private setOutOfRangeDrawMode(mode: DrawMode, color?: Color): void {
+  private setOutOfRangeDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outOfRangeDrawMode", mode);
-    if (mode === DrawMode.USE_COLOR && color) {
+    if (mode === DrawMode.USE_COLOR) {
       this.setUniform("outOfRangeColor", color);
     }
   }
@@ -449,24 +459,11 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
   }
 
-  /**
-   * Forces a reload of the current frame, even if it's already loaded. If a
-   * different frame is in the process of being loaded, the reload will be
-   * called on that pending frame.
-   */
-  private forceFrameReload(): void {
-    // Force update on the current frame or the frame that's currently being loaded
-    const frame = this.pendingFrame !== -1 ? this.pendingFrame : this.currentFrame;
-    this.setFrame(frame, true).then(() => {
-      this.render();
-    });
-  }
-
   public setOnFrameChangeCallback(callback: (isMissing: boolean) => void): void {
     this.onFrameChangeCallback = callback;
   }
 
-  public setParams(params: CanvasStateParams): void {
+  public setParams(params: RenderCanvasStateParams): void {
     // TODO: What happens when `setParams` is called again while waiting for a Dataset to load?
     // May cause visual desync where the color ramp/feature data updates before frames load in fully
     if (this.params === params) {
@@ -474,24 +471,32 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
     const prevParams = this.params;
     this.params = params;
-    const hasDatasetChanged = hasPropertyChanged(params, prevParams, ["dataset"]);
-
-    if (hasDatasetChanged) {
+    // Update dataset and array data
+    if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       this.handleNewDataset(params.dataset);
     }
+    if (hasPropertyChanged(params, prevParams, ["dataset", "featureKey"])) {
+      this.updateFeatureData(params.dataset, params.featureKey);
+    }
+    if (hasPropertyChanged(params, prevParams, ["dataset", "track"])) {
+      this.updateTrackData(params.dataset, params.track);
+    }
+    if (hasPropertyChanged(params, prevParams, ["inRangeLUT"])) {
+      this.setInRangeLUT(params.inRangeLUT);
+    }
 
-    this.updateFeatureData(params.dataset, params.featureKey);
-    this.updateTrackData(params.dataset, params.track);
-
+    // Basic rendering settings
     if (hasPropertyChanged(params, prevParams, ["outlierDrawSettings"])) {
       this.setOutlierDrawMode(params.outlierDrawSettings.mode, params.outlierDrawSettings.color);
     }
     if (hasPropertyChanged(params, prevParams, ["outOfRangeDrawSettings"])) {
       this.setOutOfRangeDrawMode(params.outOfRangeDrawSettings.mode, params.outOfRangeDrawSettings.color);
     }
-    if (hasPropertyChanged(params, prevParams, ["inRangeLUT"])) {
-      this.setInRangeLUT(params.inRangeLUT);
+    if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
+      this.setOutlineColor(params.outlineColor);
     }
+
+    // Update vector data
     if (hasPropertyChanged(params, prevParams, ["vectorVisible", "vectorColor", "vectorScaleFactor"])) {
       this.vectorField.setConfig({
         color: params.vectorColor,
@@ -501,9 +506,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
     if (hasPropertyChanged(params, prevParams, ["vectorMotionDeltas"])) {
       this.vectorField.setVectorData(params.vectorMotionDeltas);
-    }
-    if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
-      this.setOutlineColor(params.outlineColor);
     }
 
     // Backdrops
@@ -520,9 +522,10 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.setUniform("backdropSaturation", clamp(params.backdropSaturation, 0, 100) / 100);
     this.setUniform("backdropBrightness", clamp(params.backdropBrightness, 0, 200) / 100);
 
-    // Update color ramp  + palette as needed
+    // Update color ramp  + palette
     if (hasPropertyChanged(params, prevParams, ["categoricalPalette"])) {
-      this.setCategoricalPalette(params.categoricalPalette);
+      this.categoricalPalette.dispose();
+      this.categoricalPalette = new ColorRamp(params.categoricalPalette);
     }
     if (
       hasPropertyChanged(params, prevParams, [
@@ -536,14 +539,10 @@ export default class ColorizeCanvas implements IRenderCanvas {
       if (params.dataset !== null && params.featureKey !== null) {
         const isFeatureCategorical = params.dataset.isFeatureCategorical(params.featureKey);
         if (isFeatureCategorical) {
-          // This.categoricalPalette is set by setCategoricalColors because a new
-          // ColorRamp object is created when the palette is changed.
-          console.log("Setting categorical palette");
           this.setUniform("colorRamp", this.categoricalPalette.texture);
           this.setUniform("featureColorRampMin", 0);
           this.setUniform("featureColorRampMax", MAX_FEATURE_CATEGORIES - 1);
         } else {
-          console.log("Setting color ramp");
           this.setUniform("colorRamp", params.colorRamp.texture);
           this.setUniform("featureColorRampMin", params.colorRampRange[0]);
           this.setUniform("featureColorRampMax", params.colorRampRange[1]);

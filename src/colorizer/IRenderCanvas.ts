@@ -25,9 +25,9 @@ const canvasStateDeps = [
   "backdropBrightness",
 ] as const;
 
-export type CanvasStateParams = Pick<ViewerStoreState, (typeof canvasStateDeps)[number]>;
+export type RenderCanvasStateParams = Pick<ViewerStoreState, (typeof canvasStateDeps)[number]>;
 
-export const canvasStateParamsSelector = (state: ViewerStoreState): CanvasStateParams => {
+export const renderCanvasStateParamsSelector = (state: ViewerStoreState): RenderCanvasStateParams => {
   const entries = canvasStateDeps.map((key) => [key, state[key]]);
   return Object.fromEntries(entries);
 };
@@ -44,7 +44,10 @@ export interface IRenderCanvas {
    * Updates the parameters used to configure the canvas view. See
    * `CanvasStateParams` for a complete list of parameters required.
    */
-  setParams(params: CanvasStateParams): void;
+  setParams(params: RenderCanvasStateParams): void;
+  // TODO: Have `setFrame` report additional information about the frame
+  // such as the frame number and whether the file was missing/load failed.
+  // This is currently handled through `loadFrameCallback`.
   /**
    * Loads and renders the data for a specific frame. Returns a Promise that
    * resolves when the data is loaded and rendered onscreen.

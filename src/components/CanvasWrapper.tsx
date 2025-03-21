@@ -13,7 +13,7 @@ import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
-import { canvasStateParamsSelector } from "../colorizer/IRenderCanvas";
+import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
@@ -146,7 +146,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
-    return useViewerStateStore.subscribe(canvasStateParamsSelector, (params) => {
+    return useViewerStateStore.subscribe(renderCanvasStateParamsSelector, (params) => {
       canv.setParams(params);
     });
   }, []);
