@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
 
+import { decodeBoolean, decodeFloat, encodeBoolean, encodeNumber, UrlParam } from "../../colorizer/utils/url_utils";
 import {
   BACKDROP_BRIGHTNESS_DEFAULT,
   BACKDROP_BRIGHTNESS_MAX,
@@ -11,7 +12,7 @@ import {
   BACKDROP_SATURATION_MAX,
   BACKDROP_SATURATION_MIN,
 } from "../../constants";
-import { SubscribableStore } from "../types";
+import { SerializedStoreData, SubscribableStore } from "../types";
 import { clampWithNanCheck } from "../utils/data_validation";
 import { DatasetSlice } from "./dataset_slice";
 
@@ -77,4 +78,32 @@ export const addBackdropDerivedStateSubscribers = (store: SubscribableStore<Back
     (state) => state.backdropKey,
     (backdropKey) => store.setState({ backdropVisible: store.getState().backdropVisible && backdropKey !== null })
   );
+};
+
+export const serializeBackdropSlice = (state: BackdropSlice): SerializedStoreData => {
+  const ret: SerializedStoreData = {};
+  ret[UrlParam.SHOW_BACKDROP] = encodeBoolean(state.backdropVisible);
+  ret[UrlParam.BACKDROP_BRIGHTNESS] = encodeNumber(state.backdropBrightness);
+  ret[UrlParam.BACKDROP_SATURATION] = encodeNumber(state.backdropSaturation);
+  ret[UrlParam.OBJECT_OPACITY] = encodeNumber(state.objectOpacity);
+  return ret;
+};
+
+export const loadBackdropSliceFromParams = (slice: BackdropSlice, params: URLSearchParams): void => {
+  const showBackdrop = decodeBoolean(params.get(UrlParam.SHOW_BACKDROP));
+  if (showBackdrop !== undefined) {
+    slice.setBackdropVisible(showBackdrop);
+  }
+  const backdropBrightness = decodeFloat(params.get(UrlParam.BACKDROP_BRIGHTNESS));
+  if (backdropBrightness !== undefined && Number.isFinite(backdropBrightness)) {
+    slice.setBackdropBrightness(backdropBrightness);
+  }
+  const backdropSaturation = decodeFloat(params.get(UrlParam.BACKDROP_SATURATION));
+  if (backdropSaturation !== undefined && Number.isFinite(backdropSaturation)) {
+    slice.setBackdropSaturation(backdropSaturation);
+  }
+  const objectOpacity = decodeFloat(params.get(UrlParam.OBJECT_OPACITY));
+  if (objectOpacity !== undefined && Number.isFinite(objectOpacity)) {
+    slice.setObjectOpacity(objectOpacity);
+  }
 };

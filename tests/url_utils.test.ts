@@ -6,18 +6,21 @@ import { getDefaultViewerConfig } from "../src/colorizer/constants";
 import {
   DrawMode,
   DrawSettings,
+  FeatureThreshold,
   PlotRangeType,
   TabType,
   ThresholdType,
   VectorTooltipMode,
 } from "../src/colorizer/types";
 import {
+  deserializeThresholds,
   isAllenPath,
   isHexColor,
   isJson,
   isUrl,
   loadFromUrlSearchParams,
   paramsToUrlQueryString,
+  serializeThresholds,
   UrlParams,
 } from "../src/colorizer/utils/url_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
@@ -192,65 +195,6 @@ describe("Loading + saving from URL query strings", () => {
     expect(parsedParams).deep.equals(originalParams);
   });
 
-  it("Handles feature threshold names with nonstandard characters", () => {
-    const originalParams: Partial<UrlParams> = {
-      thresholds: [
-        { featureKey: "feature,,,", unit: ",m,", type: ThresholdType.NUMERIC, min: 0, max: 1 },
-        { featureKey: "(feature)", unit: "(m)", type: ThresholdType.NUMERIC, min: 0, max: 1 },
-        { featureKey: "feat:ure", unit: ":m", type: ThresholdType.NUMERIC, min: 0, max: 1 },
-        {
-          featureKey: "0.0%",
-          unit: "m&m's",
-          type: ThresholdType.CATEGORICAL,
-          enabledCategories: padCategories([true, false, false]),
-        },
-      ],
-    };
-    const queryString = paramsToUrlQueryString(originalParams);
-    const expectedQueryString =
-      "?filters=feature%252C%252C%252C%3A%252Cm%252C%3A0%3A1%2C(feature)%3A(m)%3A0%3A1%2Cfeat%253Aure%3A%253Am%3A0%3A1%2C0.0%2525%3Am%2526m's%3A1";
-    expect(queryString).equals(expectedQueryString);
-
-    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
-    expect(parsedParams).deep.equals(originalParams);
-  });
-
-  it("Enforces min/max on range and thresholds", () => {
-    const originalParams: Partial<UrlParams> = {
-      thresholds: [
-        { featureKey: "feature1", unit: "m", type: ThresholdType.NUMERIC, min: 1, max: 0 },
-        { featureKey: "feature2", unit: "m", type: ThresholdType.NUMERIC, min: 12, max: -34 },
-        { featureKey: "feature3", unit: "m", type: ThresholdType.NUMERIC, min: 0.5, max: 0.25 },
-      ],
-      range: [1, 0],
-    };
-    const queryString = paramsToUrlQueryString(originalParams);
-    const expectedQueryString =
-      "?filters=feature1%3Am%3A1%3A0%2Cfeature2%3Am%3A12%3A-34%2Cfeature3%3Am%3A0.500%3A0.250&range=1%2C0";
-    expect(queryString).equals(expectedQueryString);
-
-    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
-
-    expect(parsedParams.thresholds).deep.equals([
-      { featureKey: "feature1", unit: "m", type: ThresholdType.NUMERIC, min: 0, max: 1 },
-      { featureKey: "feature2", unit: "m", type: ThresholdType.NUMERIC, min: -34, max: 12 },
-      { featureKey: "feature3", unit: "m", type: ThresholdType.NUMERIC, min: 0.25, max: 0.5 },
-    ]);
-    expect(parsedParams.range).deep.equals([0, 1]);
-  });
-
-  it("Handles empty feature thresholds", () => {
-    const originalParams: Partial<UrlParams> = {
-      thresholds: [{ featureKey: "feature1", unit: "", type: ThresholdType.NUMERIC, min: 0, max: 1 }],
-    };
-    const queryString = paramsToUrlQueryString(originalParams);
-    const expectedQueryString = "?filters=feature1%3A%3A0%3A1";
-    expect(queryString).equals(expectedQueryString);
-
-    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
-    expect(parsedParams.thresholds).deep.equals(originalParams.thresholds);
-  });
-
   it("Handles zero values for numeric parameters", () => {
     const originalParams: Partial<UrlParams> = {
       time: 0,
@@ -264,46 +208,6 @@ describe("Loading + saving from URL query strings", () => {
 
     const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
     expect(parsedParams).deep.equals(originalParams);
-  });
-
-  it("Handles less than the maximum expected categories", () => {
-    const originalParams: Partial<UrlParams> = {
-      thresholds: [{ featureKey: "feature", unit: "", type: ThresholdType.CATEGORICAL, enabledCategories: [true] }],
-    };
-    const queryString = paramsToUrlQueryString(originalParams);
-    const expectedQueryString = "?filters=feature%3A%3A1";
-    expect(queryString).equals(expectedQueryString);
-
-    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
-    expect(parsedParams.thresholds).deep.equals([
-      {
-        featureKey: "feature",
-        unit: "",
-        type: ThresholdType.CATEGORICAL,
-        enabledCategories: padCategories([true]),
-      },
-    ]);
-  });
-
-  it("Handles more than the maximum expected categories", () => {
-    const thresholds = padCategories([true, true]);
-    thresholds.push(true); // Add an extra threshold. This should be ignored
-    const originalParams: Partial<UrlParams> = {
-      thresholds: [{ featureKey: "feature", unit: "", type: ThresholdType.CATEGORICAL, enabledCategories: thresholds }],
-    };
-    const queryString = paramsToUrlQueryString(originalParams);
-    const expectedQueryString = "?filters=feature%3A%3A1003";
-    expect(queryString).equals(expectedQueryString);
-
-    const parsedParams = loadFromUrlSearchParams(new URLSearchParams(queryString));
-    expect(parsedParams.thresholds).deep.equals([
-      {
-        featureKey: "feature",
-        unit: "",
-        type: ThresholdType.CATEGORICAL,
-        enabledCategories: padCategories([true, true]),
-      },
-    ]);
   });
 
   it("Handles all color map names", () => {
@@ -528,6 +432,116 @@ describe("Loading + saving from URL query strings", () => {
 
     it("Ignores hex values with alpha", () => {
       expect(isHexColor("#aabbccdd")).to.be.false;
+    });
+  });
+
+  describe("serializeThresholds / deserializeThresholds", () => {
+    it("handles threshold data", () => {
+      const thresholds: FeatureThreshold[] = [
+        { featureKey: "f1", unit: "m", type: ThresholdType.NUMERIC, min: 0, max: 0 },
+        { featureKey: "f2", unit: "um", type: ThresholdType.NUMERIC, min: NaN, max: NaN },
+        { featureKey: "f3", unit: "km", type: ThresholdType.NUMERIC, min: 0, max: 1 },
+        { featureKey: "f4", unit: "mm", type: ThresholdType.NUMERIC, min: 0.501, max: 1000.485 },
+        {
+          featureKey: "f5",
+          unit: "",
+          type: ThresholdType.CATEGORICAL,
+          enabledCategories: [true, true, true, true, true, true, true, true, true, true, true, true],
+        },
+        {
+          featureKey: "f6",
+          unit: "",
+          type: ThresholdType.CATEGORICAL,
+          enabledCategories: [true, false, false, false, true, false, false, false, false, false, false, false],
+        },
+      ];
+      const serialized = serializeThresholds(thresholds);
+      expect(serialized).to.equal("f1:m:0:0,f2:um:NaN:NaN,f3:km:0:1,f4:mm:0.501:1000.485,f5::fff,f6::11");
+      const deserialized = deserializeThresholds(serialized);
+      expect(deserialized).to.deep.equal(thresholds);
+    });
+
+    it("escapes feature threshold names and units", () => {
+      const thresholds: FeatureThreshold[] = [
+        { featureKey: "feature,,,", unit: ",m,", type: ThresholdType.NUMERIC, min: 0, max: 1 },
+        { featureKey: "(feature)", unit: "(m)", type: ThresholdType.NUMERIC, min: 0, max: 1 },
+        { featureKey: "feat:ure", unit: ":m", type: ThresholdType.NUMERIC, min: 0, max: 1 },
+        {
+          featureKey: "0.0%",
+          unit: "m&m's",
+          type: ThresholdType.CATEGORICAL,
+          enabledCategories: padCategories([true, false, false]),
+        },
+      ];
+      const serialized = serializeThresholds(thresholds);
+      expect(serialized).to.equal(
+        "feature%2C%2C%2C:%2Cm%2C:0:1,(feature):(m):0:1,feat%3Aure:%3Am:0:1,0.0%25:m%26m's:1"
+      );
+      const deserialized = deserializeThresholds(serialized);
+      expect(deserialized).to.deep.equal(thresholds);
+    });
+
+    it("orders min and max on thresholds", () => {
+      const thresholds: FeatureThreshold[] = [
+        { featureKey: "feature1", unit: "m", type: ThresholdType.NUMERIC, min: 1, max: 0 },
+        { featureKey: "feature2", unit: "m", type: ThresholdType.NUMERIC, min: 12, max: -34 },
+        { featureKey: "feature3", unit: "m", type: ThresholdType.NUMERIC, min: 0.5, max: 0.25 },
+      ];
+      const serialized = serializeThresholds(thresholds);
+      expect(serialized).to.equal("feature1:m:1:0,feature2:m:12:-34,feature3:m:0.500:0.250");
+
+      const deserialized = deserializeThresholds(serialized);
+      expect(deserialized).to.deep.equal([
+        { featureKey: "feature1", unit: "m", type: ThresholdType.NUMERIC, min: 0, max: 1 },
+        { featureKey: "feature2", unit: "m", type: ThresholdType.NUMERIC, min: -34, max: 12 },
+        { featureKey: "feature3", unit: "m", type: ThresholdType.NUMERIC, min: 0.25, max: 0.5 },
+      ]);
+    });
+
+    it("handles feature thresholds with empty units", () => {
+      const thresholds: FeatureThreshold[] = [
+        { featureKey: "feature1", unit: "", type: ThresholdType.NUMERIC, min: 0, max: 1 },
+      ];
+      const serialized = serializeThresholds(thresholds);
+      expect(serialized).to.equal("feature1::0:1");
+      const deserialized = deserializeThresholds(serialized);
+      expect(deserialized).to.deep.equal(thresholds);
+    });
+
+    it("handles categorical thresholds with fewer than expected categories", () => {
+      const thresholds: FeatureThreshold[] = [
+        { featureKey: "feature", unit: "", type: ThresholdType.CATEGORICAL, enabledCategories: [true, false, true] },
+      ];
+      const serialized = serializeThresholds(thresholds);
+      expect(serialized).to.equal("feature::5");
+      const deserialized = deserializeThresholds(serialized);
+      expect(deserialized).to.deep.equal([
+        {
+          featureKey: "feature",
+          unit: "",
+          type: ThresholdType.CATEGORICAL,
+          enabledCategories: padCategories([true, false, true]),
+        },
+      ]);
+    });
+
+    it("handles categorical thresholds with more than expected categories", () => {
+      const enabledCategories = padCategories([true, true]);
+      enabledCategories.push(true); // Add an extra category. This should be ignored
+      const thresholds: FeatureThreshold[] = [
+        { featureKey: "feature", unit: "", type: ThresholdType.CATEGORICAL, enabledCategories: enabledCategories },
+      ];
+      const serialized = serializeThresholds(thresholds);
+      expect(serialized).to.equal("feature::1003");
+      const deserialized = deserializeThresholds(serialized);
+      expect(deserialized).to.deep.equal([
+        {
+          featureKey: "feature",
+          unit: "",
+          type: ThresholdType.CATEGORICAL,
+          enabledCategories: padCategories([true, true]),
+        },
+      ]);
     });
   });
 });

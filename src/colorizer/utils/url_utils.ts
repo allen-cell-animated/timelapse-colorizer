@@ -24,7 +24,7 @@ import {
 } from "../types";
 import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
-import { numberToStringDecimal } from "./math_utils";
+import { formatNumber } from "./math_utils";
 
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
@@ -45,7 +45,7 @@ export enum UrlParam {
   BACKDROP_KEY = "bg-key",
   BACKDROP_BRIGHTNESS = "bg-brightness",
   BACKDROP_SATURATION = "bg-sat",
-  FOREGROUND_ALPHA = "fg-alpha",
+  OBJECT_OPACITY = "fg-alpha",
   OUTLIER_MODE = "outlier-mode",
   OUTLIER_COLOR = "outlier-color",
   FILTERED_MODE = "filter-mode",
@@ -184,10 +184,14 @@ function serializeThreshold(threshold: FeatureThreshold): string {
     return `${featureKey}:${featureUnit}:${selectedHex}`;
   } else {
     // Numeric feature
-    const min = numberToStringDecimal(threshold.min, 3);
-    const max = numberToStringDecimal(threshold.max, 3);
+    const min = formatNumber(threshold.min, 3);
+    const max = formatNumber(threshold.max, 3);
     return `${featureKey}:${featureUnit}:${min}:${max}`;
   }
+}
+
+export function serializeThresholds(thresholds: FeatureThreshold[]): string {
+  return thresholds.map(serializeThreshold).join(",");
 }
 
 /**
@@ -251,11 +255,7 @@ function deserializeThreshold(thresholdString: string): FeatureThreshold | undef
   return threshold;
 }
 
-function serializeThresholds(thresholds: FeatureThreshold[]): string {
-  return thresholds.map(serializeThreshold).join(",");
-}
-
-function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | undefined {
+export function deserializeThresholds(thresholds: string | null): FeatureThreshold[] | undefined {
   if (!thresholds) {
     return undefined;
   }
@@ -289,7 +289,7 @@ function serializeViewerConfig(config: Partial<ViewerConfig>): string[] {
 
   // Foreground
   if (config.objectOpacity !== undefined) {
-    parameters.push(`${UrlParam.FOREGROUND_ALPHA}=${config.objectOpacity}`);
+    parameters.push(`${UrlParam.OBJECT_OPACITY}=${config.objectOpacity}`);
   }
 
   // Outlier + filter colors
@@ -339,7 +339,7 @@ export function decodeHexColor(value: string | null): Color | undefined {
 }
 
 export function encodeNumber(value: number): string {
-  return numberToStringDecimal(value, 3);
+  return formatNumber(value, 3);
 }
 
 export function decodeFloat(value: string | null): number | undefined {
@@ -378,7 +378,7 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
   const newConfig: Partial<ViewerConfig> = {};
   newConfig.backdropSaturation = decodeInt(params.get(UrlParam.BACKDROP_SATURATION));
   newConfig.backdropBrightness = decodeInt(params.get(UrlParam.BACKDROP_BRIGHTNESS));
-  newConfig.objectOpacity = decodeInt(params.get(UrlParam.FOREGROUND_ALPHA));
+  newConfig.objectOpacity = decodeInt(params.get(UrlParam.OBJECT_OPACITY));
 
   if (params.get(UrlParam.OUTLIER_COLOR) || params.get(UrlParam.OUTLIER_MODE)) {
     newConfig.outlierDrawSettings = parseDrawSettings(
@@ -416,7 +416,7 @@ function deserializeViewerConfig(params: URLSearchParams): Partial<ViewerConfig>
   return Object.keys(finalConfig).length === 0 ? undefined : finalConfig;
 }
 
-const rangeTypeToUrlParam: Record<PlotRangeType, string> = {
+const scatterPlotRangeTypeToUrlParam: Record<PlotRangeType, string> = {
   [PlotRangeType.ALL_TIME]: "all",
   [PlotRangeType.CURRENT_TRACK]: "track",
   [PlotRangeType.CURRENT_FRAME]: "frame",
@@ -428,10 +428,21 @@ const urlParamToRangeType: Record<string, PlotRangeType> = {
   frame: PlotRangeType.CURRENT_FRAME,
 };
 
+export function encodeScatterPlotRangeType(rangeType: PlotRangeType): string {
+  return scatterPlotRangeTypeToUrlParam[rangeType];
+}
+
+export function decodeScatterPlotRangeType(rangeString: string | null): PlotRangeType | undefined {
+  if (rangeString === null) {
+    return;
+  }
+  return urlParamToRangeType[rangeString];
+}
+
 function serializeScatterPlotConfig(config: Partial<ScatterPlotConfig>): string[] {
   const parameters: string[] = [];
   if (config.rangeType) {
-    const rangeString = rangeTypeToUrlParam[config.rangeType];
+    const rangeString = scatterPlotRangeTypeToUrlParam[config.rangeType];
     parameters.push(`${UrlParam.SCATTERPLOT_RANGE_MODE}=${rangeString}`);
   }
   config.xAxis && parameters.push(`${UrlParam.SCATTERPLOT_X_AXIS}=${encodeURIComponent(config.xAxis)}`);
@@ -521,7 +532,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
     includedParameters.push(`${UrlParam.THRESHOLDS}=${encodeURIComponent(serializeThresholds(state.thresholds))}`);
   }
   if (state.range && state.range.length === 2) {
-    const rangeString = `${numberToStringDecimal(state.range[0], 3)},${numberToStringDecimal(state.range[1], 3)}`;
+    const rangeString = `${formatNumber(state.range[0], 3)},${formatNumber(state.range[1], 3)}`;
     includedParameters.push(`${UrlParam.RANGE}=${encodeURIComponent(rangeString)}`);
   }
   if (state.colorRampKey) {

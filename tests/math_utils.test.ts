@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   convertCanvasOffsetPxToFrameCoords,
+  formatNumber,
   getFrameSizeInScreenPx,
   numberToSciNotation,
   remap,
@@ -11,6 +12,41 @@ import {
 const DEFAULT_ZOOM = 1;
 const DEFAULT_CANVAS_RESOLUTION = new Vector2(100, 100);
 const DEFAULT_FRAME_RESOLUTION = new Vector2(1, 1);
+
+describe("formatNumber", () => {
+  it("handles undefined and null values", () => {
+    expect(formatNumber(undefined, 3)).to.equal("NaN");
+    expect(formatNumber(null, 3)).to.equal("NaN");
+  });
+
+  it("handles integers", () => {
+    expect(formatNumber(0, 3)).to.equal("0");
+    expect(formatNumber(1, 3)).to.equal("1");
+    expect(formatNumber(-1, 3)).to.equal("-1");
+    expect(formatNumber(123, 3)).to.equal("123");
+  });
+
+  it("truncates/rounds decimals to the specified max decimals", () => {
+    expect(formatNumber(10.123456, 3)).to.equal("10.123");
+    expect(formatNumber(10.123456, 2)).to.equal("10.12");
+    expect(formatNumber(10.123456, 1)).to.equal("10.1");
+    expect(formatNumber(10.123456, 0)).to.equal("10");
+
+    expect(formatNumber(-10.123456, 3)).to.equal("-10.123");
+
+    // Applies rounding
+    expect(formatNumber(12345.6789, 3)).to.equal("12345.679");
+  });
+
+  it("does not use precision for values over 1", () => {
+    expect(formatNumber(100.0000001234, 3)).to.equal("100.000");
+  });
+
+  it("uses precision for values less than 1", () => {
+    const value = 0.0000001234;
+    expect(formatNumber(value, 3)).to.equal("1.23e-7");
+  });
+});
 
 describe("numberToSciNotation", () => {
   it("Handles zero", () => {

@@ -2,7 +2,8 @@ import { StateCreator } from "zustand";
 
 import { FeatureThreshold } from "../../colorizer";
 import { getInRangeLUT, validateThresholds } from "../../colorizer/utils/data_utils";
-import { SubscribableStore } from "../types";
+import { deserializeThresholds, serializeThresholds, UrlParam } from "../../colorizer/utils/url_utils";
+import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { CollectionSlice } from "./collection_slice";
 import { DatasetSlice } from "./dataset_slice";
@@ -69,4 +70,18 @@ export const addThresholdDerivedStateSubscribers = (
     (state) => state.collection,
     () => ({ thresholds: [] })
   );
+};
+
+export const serializeThresholdSlice = (slice: ThresholdSlice): SerializedStoreData => {
+  if (slice.thresholds.length === 0) {
+    return {};
+  }
+  return { [UrlParam.THRESHOLDS]: serializeThresholds(slice.thresholds) };
+};
+
+export const loadThresholdSliceFromParams = (slice: ThresholdSlice, params: URLSearchParams): void => {
+  const thresholds = deserializeThresholds(params.get(UrlParam.THRESHOLDS));
+  if (thresholds !== undefined) {
+    slice.setThresholds(thresholds);
+  }
 };

@@ -122,7 +122,6 @@ function Viewer(): ReactElement {
 
   const setScatterXAxis = useViewerStateStore((state) => state.setScatterXAxis);
   const setScatterYAxis = useViewerStateStore((state) => state.setScatterYAxis);
-  const setScatterRangeType = useViewerStateStore((state) => state.setScatterRangeType);
   const openTab = useViewerStateStore((state) => state.openTab);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
 
@@ -146,7 +145,6 @@ function Viewer(): ReactElement {
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
-  const setFeatureThresholds = useViewerStateStore((state) => state.setThresholds);
 
   const [playbackFps, setPlaybackFps] = useState(DEFAULT_PLAYBACK_FPS);
 
@@ -527,47 +525,12 @@ function Viewer(): ReactElement {
         setIsInitialDatasetLoaded(true);
       }
       setIsDatasetLoading(false);
+      // Load the viewer state from the URL after the dataset is loaded.
+      loadViewerStateFromParams(useViewerStateStore, initialSearchParams);
       return;
     };
     loadInitialDataset();
   }, []);
-
-  // Load additional properties from the URL, including the time, track, and feature.
-  // Run only once after the first dataset has been loaded.
-  useEffect(() => {
-    if (!isInitialDatasetLoaded) {
-      return;
-    }
-    // TODO: Move initial parsing out of `Viewer.tsx` once state store is
-    // fully implemented.
-    const setupInitialParameters = async (): Promise<void> => {
-      loadViewerStateFromParams(useViewerStateStore, initialSearchParams);
-
-      if (initialUrlParams.thresholds) {
-        setFeatureThresholds(initialUrlParams.thresholds);
-      }
-
-      if (initialUrlParams.scatterPlotConfig) {
-        const newScatterPlotConfig = initialUrlParams.scatterPlotConfig;
-        // For backwards-compatibility, cast xAxis and yAxis to feature keys.
-        if (newScatterPlotConfig.xAxis) {
-          const xAxis = newScatterPlotConfig.xAxis;
-          const newXAxis = xAxis === SCATTERPLOT_TIME_FEATURE.value ? xAxis : dataset?.findFeatureByKeyOrName(xAxis);
-          setScatterXAxis(newXAxis ?? null);
-        }
-        if (newScatterPlotConfig.yAxis) {
-          const yAxis = newScatterPlotConfig.yAxis;
-          const newYAxis = yAxis === SCATTERPLOT_TIME_FEATURE.value ? yAxis : dataset?.findFeatureByKeyOrName(yAxis);
-          setScatterYAxis(newYAxis ?? null);
-        }
-        if (newScatterPlotConfig.rangeType) {
-          setScatterRangeType(newScatterPlotConfig.rangeType);
-        }
-      }
-    };
-
-    setupInitialParameters();
-  }, [isInitialDatasetLoaded]);
 
   // DISPLAY CONTROLS //////////////////////////////////////////////////////
   const handleDatasetChange = useCallback(

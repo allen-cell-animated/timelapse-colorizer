@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import {
   BACKDROP_BRIGHTNESS_MAX,
   BACKDROP_BRIGHTNESS_MIN,
@@ -9,6 +10,7 @@ import {
   BACKDROP_SATURATION_MAX,
   BACKDROP_SATURATION_MIN,
 } from "../../../src/constants";
+import { loadBackdropSliceFromParams, serializeBackdropSlice } from "../../../src/state/slices";
 import { ANY_ERROR } from "../../test_utils";
 import { MOCK_DATASET, MockBackdropKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
@@ -103,5 +105,64 @@ describe("useViewerStateStore: BackdropSlice", () => {
       useViewerStateStore.setState({ backdropKey: null });
     });
     expect(result.current.backdropVisible).toBe(false);
+  });
+
+  describe("serializeBackdropSlice", () => {
+    it("serializes backdrop values", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        result.current.setBackdropVisible(true);
+        result.current.setBackdropBrightness(75);
+        result.current.setBackdropSaturation(50);
+        result.current.setObjectOpacity(25);
+      });
+      const serialized = serializeBackdropSlice(result.current);
+      expect(serialized[UrlParam.SHOW_BACKDROP]).toBe("1");
+      expect(serialized[UrlParam.BACKDROP_BRIGHTNESS]).toBe("75");
+      expect(serialized[UrlParam.BACKDROP_SATURATION]).toBe("50");
+      expect(serialized[UrlParam.OBJECT_OPACITY]).toBe("25");
+    });
+  });
+
+  describe("loadBackdropSliceFromParams", () => {
+    it("loads backdrop data from params", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.SHOW_BACKDROP, "1");
+      params.set(UrlParam.BACKDROP_BRIGHTNESS, "75");
+      params.set(UrlParam.BACKDROP_SATURATION, "50");
+      params.set(UrlParam.OBJECT_OPACITY, "25");
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadBackdropSliceFromParams(result.current, params);
+      });
+      expect(result.current.backdropVisible).toBe(true);
+      expect(result.current.backdropBrightness).toBe(75);
+      expect(result.current.backdropSaturation).toBe(50);
+      expect(result.current.objectOpacity).toBe(25);
+    });
+
+    it("ignores NaN/Infinity values for numeric fields", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const initialBackdropBrightness = result.current.backdropBrightness;
+      const initialBackdropSaturation = result.current.backdropSaturation;
+      const initialObjectOpacity = result.current.objectOpacity;
+
+      const illegalValues = ["NaN", "Infinity", "-Infinity"];
+      for (const value of illegalValues) {
+        const params = new URLSearchParams();
+        params.set(UrlParam.BACKDROP_BRIGHTNESS, value);
+        params.set(UrlParam.BACKDROP_SATURATION, value);
+        params.set(UrlParam.OBJECT_OPACITY, value);
+        act(() => {
+          loadBackdropSliceFromParams(result.current, params);
+        });
+        expect(result.current.backdropBrightness).toBe(initialBackdropBrightness);
+        expect(result.current.backdropSaturation).toBe(initialBackdropSaturation);
+        expect(result.current.objectOpacity).toBe(initialObjectOpacity);
+      }
+    });
   });
 });
