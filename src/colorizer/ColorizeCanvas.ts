@@ -35,7 +35,7 @@ import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
-import { CanvasStateParams, ICanvas } from "./ICanvas";
+import { CanvasStateParams, IRenderCanvas } from "./IRenderCanvas";
 import Track from "./Track";
 import VectorField from "./VectorField";
 
@@ -120,7 +120,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-export default class ColorizeCanvas implements ICanvas {
+export default class ColorizeCanvas implements IRenderCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;
@@ -468,7 +468,7 @@ export default class ColorizeCanvas implements ICanvas {
     this.onFrameChangeCallback = callback;
   }
 
-  public async setParams(params: CanvasStateParams): Promise<void> {
+  public setParams(params: CanvasStateParams): void {
     // TODO: What happens when `setParams` is called again while waiting for a Dataset to load?
     // May cause visual desync where the color ramp/feature data updates before frames load in fully
     if (this.params === params) {

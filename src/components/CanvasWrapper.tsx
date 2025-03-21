@@ -13,7 +13,7 @@ import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
-import { canvasStateParamsSelector } from "../colorizer/ICanvas";
+import { canvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";

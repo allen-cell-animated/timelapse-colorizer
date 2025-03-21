@@ -32,12 +32,12 @@ export const canvasStateParamsSelector = (state: ViewerStoreState): CanvasStateP
   return Object.fromEntries(entries);
 };
 
-export interface ICanvas {
+export interface IRenderCanvas {
   get domElement(): HTMLCanvasElement;
   get resolution(): Vector2;
   setResolution(width: number, height: number): void;
   setParams(params: CanvasStateParams): void;
-  setFrame(frame: number): Promise<void>;
+  setFrame(frame: number): void;
   render(): void;
   dispose(): void;
   getIdAtPixel(x: number, y: number): number;
