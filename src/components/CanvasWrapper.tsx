@@ -4,14 +4,12 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
-import { useShallow } from "zustand/shallow";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { AnnotationSelectionMode, LoadTroubleshooting, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
-import { selectVectorConfigFromState } from "../state/slices";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
@@ -141,8 +139,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
 
-  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
-
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canv = props.canv;
@@ -256,10 +252,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.isHeaderVisibleOnExport = showHeaderDuringExport;
     canv.isFooterVisibleOnExport = showLegendDuringExport;
   }, [showLegendDuringExport, props.isRecording]);
-
-  useMemo(() => {
-    canv.setVectorFieldConfig(vectorConfig);
-  }, [vectorConfig]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();

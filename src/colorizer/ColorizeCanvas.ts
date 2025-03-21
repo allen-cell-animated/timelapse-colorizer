@@ -29,7 +29,7 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import { DrawMode, FeatureDataType, VectorConfig } from "./types";
+import { DrawMode, FeatureDataType } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -402,10 +402,6 @@ export default class ColorizeCanvas implements ICanvas {
     }
   }
 
-  setVectorFieldConfig(config: VectorConfig): void {
-    this.vectorField.setConfig(config);
-  }
-
   updateTrackData(dataset: Dataset | null, track: Track | null): void {
     if (!track || !track.centroids || track.centroids.length === 0 || !dataset) {
       return;
@@ -496,18 +492,14 @@ export default class ColorizeCanvas implements ICanvas {
       this.setOutOfRangeDrawMode(params.outOfRangeDrawSettings.mode, params.outOfRangeDrawSettings.color);
     }
     if (hasPropertyChanged(params, prevParams, ["inRangeLUT"])) {
-      console.log("Setting in range LUT");
       this.setInRangeLUT(params.inRangeLUT);
     }
-    if (
-      hasPropertyChanged(params, prevParams, [
-        "vectorMotionDeltas",
-        "vectorVisible",
-        "vectorColor",
-        "vectorScaleFactor",
-      ])
-    ) {
-      // TODO: Fix vectors
+    if (hasPropertyChanged(params, prevParams, ["vectorVisible", "vectorColor", "vectorScaleFactor"])) {
+      this.vectorField.setConfig({
+        color: params.vectorColor,
+        scaleFactor: params.vectorScaleFactor,
+        visible: params.vectorVisible,
+      });
     }
     if (hasPropertyChanged(params, prevParams, ["vectorMotionDeltas"])) {
       this.vectorField.setVectorData(params.vectorMotionDeltas);

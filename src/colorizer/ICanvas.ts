@@ -2,52 +2,35 @@ import { Vector2 } from "three";
 
 import { ViewerStoreState } from "../state/slices";
 
-export type CanvasStateParams = Pick<
-  ViewerStoreState,
-  | "dataset"
-  | "featureKey"
-  | "track"
-  | "showTrackPath"
-  | "colorRamp"
-  | "colorRampRange"
-  | "categoricalPalette"
-  | "outlineColor"
-  | "outlierDrawSettings"
-  | "outOfRangeDrawSettings"
-  | "inRangeLUT"
-  | "vectorMotionDeltas"
-  | "vectorVisible"
-  | "vectorColor"
-  | "vectorScaleFactor"
-  | "backdropKey"
-  | "backdropVisible"
-  | "objectOpacity"
-  | "backdropSaturation"
-  | "backdropBrightness"
->;
+const canvasStateDeps = [
+  "dataset",
+  "featureKey",
+  "track",
+  "showTrackPath",
+  "colorRamp",
+  "colorRampRange",
+  "categoricalPalette",
+  "outlineColor",
+  "outlierDrawSettings",
+  "outOfRangeDrawSettings",
+  "inRangeLUT",
+  "vectorMotionDeltas",
+  "vectorVisible",
+  "vectorColor",
+  "vectorScaleFactor",
+  "backdropKey",
+  "backdropVisible",
+  "objectOpacity",
+  "backdropSaturation",
+  "backdropBrightness",
+] as const;
 
-export const canvasStateParamsSelector = (state: ViewerStoreState): CanvasStateParams => ({
-  dataset: state.dataset,
-  featureKey: state.featureKey,
-  track: state.track,
-  showTrackPath: state.showTrackPath,
-  colorRamp: state.colorRamp,
-  colorRampRange: state.colorRampRange,
-  categoricalPalette: state.categoricalPalette,
-  outlineColor: state.outlineColor,
-  outlierDrawSettings: state.outlierDrawSettings,
-  outOfRangeDrawSettings: state.outOfRangeDrawSettings,
-  inRangeLUT: state.inRangeLUT,
-  vectorMotionDeltas: state.vectorMotionDeltas,
-  vectorVisible: state.vectorVisible,
-  vectorColor: state.vectorColor,
-  vectorScaleFactor: state.vectorScaleFactor,
-  backdropKey: state.backdropKey,
-  backdropVisible: state.backdropVisible,
-  objectOpacity: state.objectOpacity,
-  backdropSaturation: state.backdropSaturation,
-  backdropBrightness: state.backdropBrightness,
-});
+export type CanvasStateParams = Pick<ViewerStoreState, (typeof canvasStateDeps)[number]>;
+
+export const canvasStateParamsSelector = (state: ViewerStoreState): CanvasStateParams => {
+  const entries = canvasStateDeps.map((key) => [key, state[key]]);
+  return Object.fromEntries(entries);
+};
 
 export interface ICanvas {
   get domElement(): HTMLCanvasElement;
