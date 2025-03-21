@@ -356,13 +356,9 @@ export default class ColorizeCanvas implements ICanvas {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
 
-    const frame = this.currentFrame;
-    this.currentFrame = -1;
-    this.pendingFrame = -1;
-    await this.setFrame(frame);
-
-    this.updateScaling(dataset.frameResolution, this.canvasResolution);
     this.vectorField.setDataset(dataset);
+    await this.forceFrameReload();
+    this.updateScaling(dataset.frameResolution, this.canvasResolution);
   }
 
   private setCategoricalPalette(colors: Color[]): void {
@@ -459,8 +455,12 @@ export default class ColorizeCanvas implements ICanvas {
     }
   }
 
-  // TODO: Rename this function?
-  public handleNewBackdropKey(): void {
+  /**
+   * Forces a reload of the current frame, even if it's already loaded. If a
+   * different frame is in the process of being loaded, the reload will be
+   * called on that pending frame.
+   */
+  private forceFrameReload(): void {
     // Force update on the current frame or the frame that's currently being loaded
     const frame = this.pendingFrame !== -1 ? this.pendingFrame : this.currentFrame;
     this.setFrame(frame, true).then(() => {
@@ -480,7 +480,6 @@ export default class ColorizeCanvas implements ICanvas {
     }
     const prevParams = this.params;
     this.params = params;
-    // Set Dataset, which affects many other settings
     const hasDatasetChanged = hasPropertyChanged(params, prevParams, ["dataset"]);
 
     if (hasDatasetChanged) {
@@ -519,7 +518,7 @@ export default class ColorizeCanvas implements ICanvas {
 
     // Backdrops
     if (hasPropertyChanged(params, prevParams, ["backdropKey", "backdropVisible"])) {
-      this.handleNewBackdropKey();
+      this.forceFrameReload();
     }
     if (hasPropertyChanged(params, prevParams, ["backdropVisible", "objectOpacity"])) {
       if (params.backdropVisible) {
@@ -582,9 +581,9 @@ export default class ColorizeCanvas implements ICanvas {
     // Save loading settings to prevent race conditions.
     const pendingDataset = dataset;
     this.pendingFrame = index;
-    const pendingBackdropKey = this.params?.backdropKey;
+    const pendingBackdropKey = this.params?.backdropKey ?? null;
     let backdropPromise = undefined;
-    if (this.params?.backdropVisible && pendingBackdropKey && dataset?.hasBackdrop(pendingBackdropKey)) {
+    if (this.params?.backdropVisible && pendingBackdropKey !== null && dataset?.hasBackdrop(pendingBackdropKey)) {
       backdropPromise = dataset?.loadBackdrop(pendingBackdropKey, index);
     }
     const framePromise = dataset?.loadFrame(index);
