@@ -29,7 +29,7 @@ export function renderStringArrayAsJsx(items: string[] | string | undefined): Re
   if (typeof items === "string") {
     return (
       <RenderedStringContainer>
-        <p>{items}</p>;
+        <p>{items}</p>
       </RenderedStringContainer>
     );
   }
