@@ -35,6 +35,6 @@ export const clearDatasetAsync = async (result: { current: ViewerStore }): Promi
  */
 export const compareRecord = <T extends Record<string, unknown>>(actual: T, expected: T): void => {
   for (const key in expected) {
-    expect(actual[key]).toEqual(expected[key]);
+    expect(actual[key], `compareRecord: Found different values for field '${key}'.`).toEqual(expected[key]);
   }
 };

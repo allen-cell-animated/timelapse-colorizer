@@ -91,7 +91,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setOpenTab: (openTab) => set({ openTab }),
 });
 
-export const serializeConfigSlice = (slice: Partial<ConfigSlice>): SerializedStoreData => {
+export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState>): SerializedStoreData => {
   return {
     [UrlParam.SHOW_PATH]: encodeMaybeBoolean(slice.showTrackPath),
     [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
@@ -101,7 +101,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSlice>): SerializedSto
     [UrlParam.FILTERED_MODE]: slice.outOfRangeDrawSettings?.mode.toString(),
     [UrlParam.OUTLIER_COLOR]: encodeMaybeColor(slice.outlierDrawSettings?.color),
     [UrlParam.OUTLIER_MODE]: slice.outlierDrawSettings?.mode.toString(),
-    [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice?.outlineColor),
+    [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice.outlineColor),
     [UrlParam.OPEN_TAB]: slice.openTab,
   };
 };
