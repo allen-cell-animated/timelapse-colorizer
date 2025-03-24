@@ -6,10 +6,10 @@ import { Color, ColorRepresentation } from "three";
 
 import { FlexRow, FlexRowAlignCenter } from "../styles/utils";
 
+import { useViewerStateStore } from "../state/ViewerState";
+
 type CategoricalColorPickerProps = {
   categories: string[];
-  selectedPalette: Color[];
-  onChangePalette: (newPalette: Color[]) => void;
   disabled?: boolean;
 };
 
@@ -50,15 +50,18 @@ const ColorPickerContainer = styled(FlexRow)<{
 export default function CategoricalColorPicker(inputProps: CategoricalColorPickerProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CategoricalColorPickerProps>;
 
+  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
+  const setCategoricalPalette = useViewerStateStore((state) => state.setCategoricalPalette);
+
   const colorPickers = useMemo(() => {
     const elements = [];
     for (let i = 0; i < props.categories.length; i++) {
-      const color = props.selectedPalette[i];
+      const color = categoricalPalette[i];
       const label = props.categories[i];
       const onChange = (_value: AntColor, hex: string): void => {
-        const newPalette = [...props.selectedPalette];
+        const newPalette = [...categoricalPalette];
         newPalette[i] = new Color(hex as ColorRepresentation);
-        props.onChangePalette(newPalette);
+        setCategoricalPalette(newPalette);
       };
 
       // Make the color picker component

@@ -22,7 +22,7 @@ type SelectionDropdownProps = {
    */
   htmlLabelId?: string;
   /** The value of the item that is currently selected. */
-  selected: string | SelectItem;
+  selected: string | SelectItem | undefined;
   /** An array of SelectItems that describes the item properties (`{value,
    * label}`), or an array of strings. Dropdown items will be presented in the
    * provided array order.

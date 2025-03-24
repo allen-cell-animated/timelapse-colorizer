@@ -246,6 +246,8 @@ export default class ColorizeCanvas {
     this.getCurrentFrame = this.getCurrentFrame.bind(this);
     this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
+    this.isValidFrame = this.isValidFrame.bind(this);
+    this.setFrame = this.setFrame.bind(this);
   }
 
   get domElement(): HTMLCanvasElement {
@@ -359,6 +361,10 @@ export default class ColorizeCanvas {
     this.currentFrame = -1;
     this.pendingFrame = -1;
     await this.setFrame(frame);
+    if (this.featureKey !== null) {
+      this.setFeatureKey(this.featureKey);
+    }
+
     this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.vectorField.setDataset(dataset);
     this.render();
@@ -577,8 +583,13 @@ export default class ColorizeCanvas {
   }
 
   public setBackdropKey(key: string | null): void {
+    if (this.selectedBackdropKey === key) {
+      return;
+    }
     this.selectedBackdropKey = key;
-    this.setFrame(this.currentFrame, true).then(() => {
+    // Force update on the current frame or the frame that's currently being loaded
+    const frame = this.pendingFrame !== -1 ? this.pendingFrame : this.currentFrame;
+    this.setFrame(frame, true).then(() => {
       this.render();
     });
   }
@@ -599,8 +610,11 @@ export default class ColorizeCanvas {
     if ((!forceUpdate && this.currentFrame === index) || !this.isValidFrame(index)) {
       return;
     }
+    // Save loading settings
+    const pendingDataset = this.dataset;
     // New frame, so load the frame data.
     this.pendingFrame = index;
+    const loadedBackdropKey = this.selectedBackdropKey;
     let backdropPromise = undefined;
     if (this.selectedBackdropKey && this.dataset?.hasBackdrop(this.selectedBackdropKey)) {
       backdropPromise = this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
@@ -609,16 +623,22 @@ export default class ColorizeCanvas {
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
-    if (this.pendingFrame !== index) {
-      // This load request has been superceded by a request for another frame, which has already loaded in image data.
-      // Drop this request.
+    const isForcingUpdateOnLoadedFrame = this.pendingFrame === -1 && this.currentFrame === index && forceUpdate;
+    if ((!isForcingUpdateOnLoadedFrame && this.pendingFrame !== index) || this.dataset !== pendingDataset) {
+      // Drop the request if:
+      // - A different frame number has been requested since the load started
+      //   (and it's not the loaded frame being force-reloaded)
+      // - The dataset has changed since the load started
       return;
     }
 
     let isMissingFile = false;
 
     if (backdrop.status === "fulfilled" && backdrop.value) {
-      this.setUniform("backdrop", backdrop.value);
+      if (this.selectedBackdropKey === loadedBackdropKey) {
+        // Only update the backdrop if the selected key is the one we requested
+        this.setUniform("backdrop", backdrop.value);
+      }
     } else {
       if (backdrop.status === "rejected") {
         // Only show error message if the backdrop load encountered an error (null/undefined backdrops aren't
@@ -629,7 +649,10 @@ export default class ColorizeCanvas {
         );
         isMissingFile = true;
       }
-      this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
+      if (this.selectedBackdropKey === loadedBackdropKey) {
+        // Only clear the backdrop if the selected key (null) is the one we requested
+        this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
+      }
     }
 
     if (frame.status === "fulfilled" && frame.value) {

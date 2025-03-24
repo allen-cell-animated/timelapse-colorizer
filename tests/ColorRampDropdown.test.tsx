@@ -31,6 +31,7 @@ describe("ColorRampDropdown", () => {
           useCategoricalPalettes={false}
           numCategories={0}
           selectedPalette={defaultPalette}
+          selectedPaletteKey={null}
           onChangePalette={(): void => {}}
           colorRampsToDisplay={["map1", "map2", "map3"]}
           categoricalPalettesToDisplay={[]}
@@ -54,6 +55,7 @@ describe("ColorRampDropdown", () => {
             categoricalPalettesToDisplay={[]}
             numCategories={0}
             selectedPalette={[]}
+            selectedPaletteKey={null}
             onChangePalette={(): void => {}}
           />
         )

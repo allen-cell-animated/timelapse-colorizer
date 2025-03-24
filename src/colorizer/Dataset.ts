@@ -53,7 +53,8 @@ const defaultMetadata: ManifestFileMetadata = {
   startTimeSeconds: 0,
 };
 
-const MAX_CACHED_FRAME_BYTES = 1_000_000_000; // 1 GB
+const MAX_CACHED_FRAME_BYTES = 500_000_000; // 500 MB
+const MAX_CACHED_BACKDROPS_BYTES = 500_000_000; // 500 MB
 
 export default class Dataset {
   private frameLoader: ITextureImageLoader;
@@ -63,8 +64,7 @@ export default class Dataset {
 
   private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, BackdropData>;
-  // TODO: Implement caching for overlays-- extend FrameCache to allow multiple frames per index -> string name?
-  // private backdrops: Map<string, FrameCache | null>;
+  private backdropFrames: DataCache<string, Texture> | null;
 
   private arrayLoader: IArrayLoader;
   private cleanupArrayLoaderOnDispose: boolean;
@@ -79,7 +79,7 @@ export default class Dataset {
   private timesFile?: string;
   public trackIds?: Uint32Array | null;
   public times?: Uint32Array | null;
-  private cachedTracks: Map<number, Track>;
+  private cachedTracks: Map<number, Track | null>;
 
   public centroidsFile?: string;
   public centroids?: Uint16Array | null;
@@ -108,6 +108,7 @@ export default class Dataset {
     this.frameLoader = frameLoader || new ImageFrameLoader(RGBAIntegerFormat);
     this.frameFiles = [];
     this.frames = null;
+    this.backdropFrames = null;
     this.frameDimensions = null;
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
@@ -349,6 +350,12 @@ export default class Dataset {
 
   public async loadBackdrop(key: string, index: number): Promise<Texture | undefined> {
     // TODO: Implement caching
+    const cacheKey = `${key}-${index}`;
+    const cachedFrame = this.backdropFrames?.get(cacheKey);
+    if (cachedFrame) {
+      return cachedFrame;
+    }
+
     const frames = this.backdropData.get(key)?.frames;
     // TODO: Wrapping or clamping?
     if (!frames || index < 0 || index >= frames.length) {
@@ -362,6 +369,7 @@ export default class Dataset {
 
     const fullUrl = this.resolveUrl(frames[index]);
     const loadedFrame = await this.backdropLoader.load(fullUrl);
+    this.backdropFrames?.insert(cacheKey, loadedFrame);
     return loadedFrame;
   }
 
@@ -425,6 +433,7 @@ export default class Dataset {
     }
 
     this.frames = new DataCache(MAX_CACHED_FRAME_BYTES);
+    this.backdropFrames = new DataCache(MAX_CACHED_BACKDROPS_BYTES);
 
     // Wrap an async operation and report progress when it starts + completes
     const reportLoadProgress = async <T>(promise: Promise<T>): Promise<T> => {
@@ -515,6 +524,7 @@ export default class Dataset {
   public dispose(): void {
     Object.values(this.features).forEach(({ tex }) => tex.dispose());
     this.frames?.dispose();
+    this.backdropFrames?.dispose();
     // Cleanup array loader if it was created in the constructor
     if (this.cleanupArrayLoaderOnDispose) {
       this.arrayLoader.dispose();
@@ -552,9 +562,9 @@ export default class Dataset {
     }, []) as number[];
   }
 
-  public getTrack(trackId: number): Track {
+  public getTrack(trackId: number): Track | null {
     const cachedTrack = this.cachedTracks.get(trackId);
-    if (cachedTrack) {
+    if (cachedTrack !== undefined) {
       return cachedTrack;
     }
 
@@ -581,7 +591,10 @@ export default class Dataset {
       }, [] as number[]);
     }
 
-    const track = new Track(trackId, times, ids, centroids, bounds);
+    let track = null;
+    if (ids.length > 0) {
+      track = new Track(trackId, times, ids, centroids, bounds);
+    }
     this.cachedTracks.set(trackId, track);
     return track;
   }

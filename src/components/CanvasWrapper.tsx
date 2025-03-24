@@ -4,17 +4,18 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
+import { useShallow } from "zustand/shallow";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { ColorRamp, Dataset, Track } from "../colorizer";
-import { AnnotationSelectionMode, LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
+import { AnnotationSelectionMode, LoadTroubleshooting, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
+import { selectVectorConfigFromState } from "../state/slices";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
-import Collection from "../colorizer/Collection";
+import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 import { LinkStyleButton } from "./Buttons/LinkStyleButton";
@@ -86,43 +87,19 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
 
 type CanvasWrapperProps = {
   canv: CanvasUIOverlay;
-  /** Dataset to look up track and ID information in.
-   * Changing this does NOT update the canvas dataset; do so
-   * directly by calling `canv.setDataset()`.
-   */
-  dataset: Dataset | null;
-  datasetKey: string | null;
-
-  featureKey: string | null;
-  /** Pan and zoom will be reset on collection change. */
-  collection: Collection | null;
-  config: ViewerConfig;
-  updateConfig: (settings: Partial<ViewerConfig>) => void;
-  vectorData: Float32Array | null;
 
   loading: boolean;
   loadingProgress: number | null;
   isRecording: boolean;
 
-  selectedBackdropKey: string | null;
-
-  colorRamp: ColorRamp;
-  colorRampMin: number;
-  colorRampMax: number;
-
   annotationState: AnnotationState;
 
-  selectedTrack: Track | null;
-  categoricalColors: Color[];
-
-  inRangeLUT?: Uint8Array;
+  onClickId?: (id: number) => void;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (id: number) => void;
   /** Called when the mouse exits the canvas. */
   onMouseLeave?: () => void;
-  /** Called when the canvas is clicked; reports the track info of the clicked object. */
-  onTrackClicked?: (track: Track | null) => void;
 
   showAlert?: (props: AlertBannerProps) => void;
 
@@ -133,8 +110,7 @@ type CanvasWrapperProps = {
 const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
-  onTrackClicked: () => {},
-  inRangeLUT: new Uint8Array(0),
+  onClickId() {},
   maxWidthPx: 1400,
   maxHeightPx: 1000,
 };
@@ -147,6 +123,36 @@ const defaultProps: Partial<CanvasWrapperProps> = {
  */
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
+
+  // Access state properties
+  const backdropBrightness = useViewerStateStore((state) => state.backdropBrightness);
+  const backdropKey = useViewerStateStore((state) => state.backdropKey);
+  const backdropSaturation = useViewerStateStore((state) => state.backdropSaturation);
+  const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
+  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
+  const clearTrack = useViewerStateStore((state) => state.clearTrack);
+  const collection = useViewerStateStore((state) => state.collection);
+  const colorRamp = useViewerStateStore((state) => state.colorRamp);
+  const colorRampRange = useViewerStateStore((state) => state.colorRampRange);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
+  const featureKey = useViewerStateStore((state) => state.featureKey);
+  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
+  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
+  const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
+  const outlineColor = useViewerStateStore((state) => state.outlineColor);
+  const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
+  const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
+  const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
+  const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
+  const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
+  const track = useViewerStateStore((state) => state.track);
+  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
+  const vectorData = useViewerStateStore((state) => state.vectorMotionDeltas);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -234,96 +240,94 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // Update canvas color ramp
   useMemo(() => {
-    canv.setColorRamp(props.colorRamp);
-    canv.setColorMapRangeMin(props.colorRampMin);
-    canv.setColorMapRangeMax(props.colorRampMax);
-  }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
+    canv.setColorRamp(colorRamp);
+    canv.setColorMapRangeMin(colorRampRange[0]);
+    canv.setColorMapRangeMax(colorRampRange[1]);
+  }, [colorRamp, colorRampRange]);
+
+  useMemo(() => {
+    if (featureKey) {
+      canv.setFeatureKey(featureKey);
+    }
+  }, [featureKey]);
 
   // Update backdrops
   useMemo(() => {
-    if (props.selectedBackdropKey !== null && props.config.backdropVisible) {
-      canv.setBackdropKey(props.selectedBackdropKey);
-      canv.setBackdropBrightness(props.config.backdropBrightness);
-      canv.setBackdropSaturation(props.config.backdropSaturation);
-      canv.setObjectOpacity(props.config.objectOpacity);
+    if (backdropKey !== null && backdropVisible) {
+      canv.setBackdropKey(backdropKey);
+      canv.setBackdropBrightness(backdropBrightness);
+      canv.setBackdropSaturation(backdropSaturation);
+      canv.setObjectOpacity(objectOpacity);
     } else {
       canv.setBackdropKey(null);
       canv.setObjectOpacity(100);
     }
-  }, [
-    props.selectedBackdropKey,
-    props.config.backdropVisible,
-    props.config.backdropBrightness,
-    props.config.backdropSaturation,
-    props.config.objectOpacity,
-  ]);
+  }, [backdropKey, backdropVisible, backdropBrightness, backdropSaturation, objectOpacity]);
 
   // Update categorical colors
   useMemo(() => {
-    canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors, props.dataset, props.featureKey]);
+    canv.setCategoricalColors(categoricalPalette);
+  }, [categoricalPalette]);
 
   // Update drawing modes for outliers + out of range values
   useMemo(() => {
-    const settings = props.config.outOfRangeDrawSettings;
+    const settings = outOfRangeDrawSettings;
     canv.setOutOfRangeDrawMode(settings.mode, settings.color);
-  }, [props.config.outOfRangeDrawSettings]);
+  }, [outOfRangeDrawSettings]);
 
   useMemo(() => {
-    const settings = props.config.outlierDrawSettings;
+    const settings = outlierDrawSettings;
     canv.setOutlierDrawMode(settings.mode, settings.color);
-  }, [props.config.outlierDrawSettings]);
+  }, [outlierDrawSettings]);
 
   useMemo(() => {
-    canv.setInRangeLUT(props.inRangeLUT);
-  }, [props.inRangeLUT]);
+    canv.setInRangeLUT(inRangeLUT);
+  }, [inRangeLUT]);
 
   // Updated track-related settings
   useMemo(() => {
-    canv.setSelectedTrack(props.selectedTrack);
-    canv.setShowTrackPath(props.config.showTrackPath);
-  }, [props.selectedTrack, props.config.showTrackPath]);
+    canv.setSelectedTrack(track);
+    canv.setShowTrackPath(showTrackPath);
+  }, [track, showTrackPath]);
 
   // Update overlay settings
   useMemo(() => {
-    canv.isScaleBarVisible = props.config.showScaleBar;
-  }, [props.config.showScaleBar]);
+    canv.isScaleBarVisible = showScaleBar;
+  }, [showScaleBar]);
 
   useMemo(() => {
-    canv.isTimestampVisible = props.config.showTimestamp;
-  }, [props.config.showTimestamp]);
+    canv.isTimestampVisible = showTimestamp;
+  }, [showTimestamp]);
 
   useMemo(() => {
-    canv.setCollection(props.collection);
-  }, [props.collection]);
+    canv.setCollection(collection);
+  }, [collection]);
 
   useMemo(() => {
-    canv.setDatasetKey(props.datasetKey);
-  }, [props.datasetKey]);
+    canv.setDatasetKey(datasetKey);
+  }, [datasetKey]);
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
-    canv.isHeaderVisibleOnExport = props.config.showHeaderDuringExport;
-    canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
-  }, [props.config.showLegendDuringExport, props.isRecording]);
+    canv.isHeaderVisibleOnExport = showHeaderDuringExport;
+    canv.isFooterVisibleOnExport = showLegendDuringExport;
+  }, [showLegendDuringExport, props.isRecording]);
 
   useMemo(() => {
-    canv.setVectorFieldConfig(props.config.vectorConfig);
-  }, [props.config.vectorConfig]);
+    canv.setVectorFieldConfig(vectorConfig);
+  }, [vectorConfig]);
 
   useMemo(() => {
-    canv.setVectorData(props.vectorData);
-  }, [props.vectorData]);
+    canv.setVectorData(vectorData);
+  }, [vectorData]);
 
   useMemo(() => {
-    canv.setOutlineColor(props.config.outlineColor);
-  }, [props.config.outlineColor]);
+    canv.setOutlineColor(outlineColor);
+  }, [outlineColor]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
-    const timeToAnnotationLabelIds = props.dataset
-      ? props.annotationState.data.getTimeToLabelIdMap(props.dataset)
-      : new Map();
+    const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
     canv.setAnnotationData(
       annotationLabels,
       timeToAnnotationLabelIds,
@@ -332,7 +336,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     );
     canv.isAnnotationVisible = props.annotationState.visible;
   }, [
-    props.dataset,
+    dataset,
     props.annotationState.data,
     props.annotationState.lastClickedId,
     props.annotationState.currentLabelIdx,
@@ -381,22 +385,25 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canvasPanOffset.current = new Vector2(0, 0);
     canv.setZoom(1.0);
     canv.setPan(0, 0);
-  }, [props.collection]);
+  }, [collection]);
 
   /** Report clicked tracks via the passed callback. */
-  const handleTrackSelection = useCallback(
+  const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (id < 0 || props.dataset === null) {
-        props.onTrackClicked(null);
+      if (id < 0 || dataset === null) {
+        clearTrack();
       } else {
-        const trackId = props.dataset.getTrackId(id);
-        const newTrack = props.dataset.getTrack(trackId);
-        props.onTrackClicked(newTrack);
+        const trackId = dataset.getTrackId(id);
+        const newTrack = dataset.getTrack(trackId);
+        if (newTrack) {
+          setTrack(newTrack);
+        }
       }
+      props.onClickId(id);
     },
-    [canv, props.dataset, props.onTrackClicked]
+    [canv, dataset, props.onClickId, setTrack, clearTrack]
   );
 
   /**
@@ -404,10 +411,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const getFrameSizeInScreenPx = useCallback((): Vector2 => {
     const canvasSizePx = getCanvasSizePx();
-    const frameResolution = props.dataset ? props.dataset.frameResolution : canvasSizePx;
+    const frameResolution = dataset ? dataset.frameResolution : canvasSizePx;
     const canvasZoom = 1 / canvasZoomInverse.current;
     return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
-  }, [props.dataset?.frameResolution, getCanvasSizePx]);
+  }, [dataset?.frameResolution, getCanvasSizePx]);
 
   /** Change zoom by some delta factor. */
   const handleZoom = useCallback(
@@ -465,7 +472,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
       canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
-    [canv, getCanvasSizePx, props.dataset]
+    [canv, getCanvasSizePx, dataset]
   );
 
   // Mouse event handlers
@@ -476,10 +483,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // to check if the mouse was dragged before treating the click as a track
       // selection; otherwise the track selection gets changed unexpectedly.
       if (!isMouseDragging.current) {
-        handleTrackSelection(event);
+        handleClick(event);
       }
     },
-    [handleTrackSelection]
+    [handleClick]
   );
 
   const onContextMenu = useCallback((event: MouseEvent): void => {
@@ -592,13 +599,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Report hovered id via the passed callback. */
   const reportHoveredIdAtPixel = useCallback(
     (x: number, y: number): void => {
-      if (!props.dataset) {
+      if (!dataset) {
         return;
       }
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [props.dataset, canv]
+    [dataset, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
@@ -628,7 +635,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [props.dataset, canv]);
+  }, [dataset, canv]);
 
   const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
     return (
@@ -649,19 +656,17 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   canv.render();
 
   const onViewerSettingsLinkClicked = (): void => {
-    props.updateConfig({ openTab: TabType.SETTINGS });
+    setOpenTab(TabType.SETTINGS);
   };
 
   const onAnnotationLinkClicked = (): void => {
-    props.updateConfig({ openTab: TabType.ANNOTATION });
+    setOpenTab(TabType.ANNOTATION);
   };
 
   const backdropTooltipContents: ReactNode[] = [];
   backdropTooltipContents.push(
     <span key="backdrop-name">
-      {props.selectedBackdropKey === null
-        ? "(No backdrops available)"
-        : props.dataset?.getBackdropData().get(props.selectedBackdropKey)?.name}
+      {backdropKey === null ? "(No backdrops available)" : dataset?.getBackdropData().get(backdropKey)?.name}
     </span>
   );
   // Link to viewer settings
@@ -749,20 +754,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
         {/* Backdrop toggle */}
         <TooltipWithSubtitle
-          title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
+          title={backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
           subtitleList={backdropTooltipContents}
           trigger={["hover", "focus"]}
         >
           <IconButton
-            type={props.config.backdropVisible ? "primary" : "link"}
-            onClick={() => {
-              props.updateConfig({ backdropVisible: !props.config.backdropVisible });
-            }}
-            disabled={props.selectedBackdropKey === null}
+            type={backdropVisible ? "primary" : "link"}
+            onClick={() => setBackdropVisible(!backdropVisible)}
+            disabled={backdropKey === null}
           >
-            {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
-            <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
+            {backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+            <VisuallyHidden>{backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
         </TooltipWithSubtitle>
 

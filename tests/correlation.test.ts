@@ -81,7 +81,6 @@ describe("computeCorrelations", () => {
     ];
 
     expect(received.length).toBe(expected.length);
-    console.log(received);
     for (let i = 0; i < received.length; i++) {
       for (let j = 0; j < received[i].length; j++) {
         expect(received[i][j]).toBeCloseTo(expected[i][j]);
