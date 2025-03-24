@@ -86,10 +86,9 @@ function Viewer(): ReactElement {
   const canv = useConstructor(() => {
     const canvas = new CanvasWithOverlay();
     canvas.domElement.className = styles.colorizeCanvas;
-    useViewerStateStore.getState().setLoadFrameCallback(async (frame) => {
-      await canvas.setFrame(frame);
-      canvas.render();
-    });
+    // Report frame load results to the store
+    canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);
+    useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
   });
 
@@ -805,7 +804,7 @@ function Viewer(): ReactElement {
                     }
                   }}
                   onMouseLeave={() => setShowObjectHoverInfo(false)}
-                  showAlert={isInitialDatasetLoaded ? showAlert : undefined}
+                  showAlert={showAlert}
                   annotationState={annotationState}
                 />
               </CanvasHoverTooltip>

@@ -1,6 +1,7 @@
 import { Vector2 } from "three";
 
 import { ViewerStoreState } from "../state/slices";
+import { FrameLoadResult } from "./types";
 
 const canvasStateDeps = [
   "dataset",
@@ -45,16 +46,19 @@ export interface IRenderCanvas {
    * `CanvasStateParams` for a complete list of parameters required.
    */
   setParams(params: RenderCanvasStateParams): void;
-  // TODO: Have `setFrame` report additional information about the frame
-  // such as the frame number and whether the file was missing/load failed.
-  // This is currently handled through `loadFrameCallback`.
   /**
-   * Loads and renders the data for a specific frame. Returns a Promise that
-   * resolves when the data is loaded and rendered onscreen.
-   * @param frame The frame number to load and render. Ignores frames that are
-   * out of range of the current dataset or that are already loaded.
+   * Requests to load and render the image data for a specific frame.
+   * @param requestedFrame The frame number to load and render.
+   * @returns
+   * - `null` if the frame was out of bounds or no dataset was set.
+   * - A `FrameLoadResult` object if the frame was loaded and rendered.
    */
-  setFrame(frame: number): Promise<void>;
+  setFrame: (requestedFrame: number) => Promise<FrameLoadResult | null>;
+  /**
+   * Sets a callback function that will be called whenever any frame is loaded.
+   */
+  setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void;
+
   render(): void;
   /**
    * Disposes of the canvas and its resources.
