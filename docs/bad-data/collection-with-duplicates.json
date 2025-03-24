@@ -1,0 +1,9 @@
+{
+  "datasets": [
+    { "name": "Normal dataset", "path": "default/manifest.json" },
+    { "name": "Copied dataset 1", "path": "default/manifest.json" },
+    { "name": "Copied dataset 1", "path": "default/manifest.json" },
+    { "name": "Copied dataset 2", "path": "default/manifest.json" },
+    { "name": "Copied dataset 2", "path": "default/manifest.json" }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "frames": ["frame_0.png", "frame_1.png", "frame_2.png", "frame_3.png", "frame_4.png"],
+  "features": [
+    {
+      "name": "Continuous Feature",
+      "data": "feature_0.json",
+      "units": "°F",
+      "type": "continuous"
+    },
+    {
+      "name": "Discrete Feature",
+      "data": "feature_1.json",
+      "units": "nodes",
+      "type": "discrete"
+    },
+    {
+      "name": "Categorical Feature",
+      "data": "feature_2.json",
+      "type": "categorical",
+      "categories": ["Spicy", "Sour", "Bitter", "Sweet", "Dry"]
+    }
+  ],
+  "backdrops": [
+    {
+      "key": "backdrop_dark",
+      "name": "Backdrop Dark",
+      "frames": [
+        "backdrop-dark/image_1.png",
+        "backdrop-dark/image_2.png",
+        "backdrop-dark/image_3.png",
+        "backdrop-dark/image_4.png",
+        "backdrop-dark/image_5.png"
+      ]
+    },
+    {
+      "key": "backdrop_light",
+      "name": "Backdrop Light",
+      "frames": [
+        "backdrop-light/image_1.png",
+        "backdrop-light/image_2.png",
+        "backdrop-light/image_3.png",
+        "backdrop-light/image_4.png",
+        "backdrop-light/image_5.png"
+      ]
+    }
+  ],
+  "bounds": "bounds.json",
+  "times": "times.json",
+  "tracks": "tracks.json",
+  "centroids": "centroids.json",
+  "outliers": "outliers.json"
+}

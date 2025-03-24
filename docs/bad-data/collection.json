@@ -1,0 +1,33 @@
+{
+  "datasets": [
+    { "name": "Normal dataset", "path": "default/manifest.json" },
+    {
+      "name": "Malformed JSON manifest",
+      "path": "default/manifest_bad_json.json"
+    },
+    {
+      "name": "Manifest missing features",
+      "path": "default/manifest_no_features.json"
+    },
+    {
+      "name": "Manifest with no features",
+      "path": "default/manifest_empty_features.json"
+    },
+    {
+      "name": "Manifest with no time JSON",
+      "path": "default/manifest_no_time.json"
+    },
+    {
+      "name": "Manifest with no data JSON",
+      "path": "default/manifest_no_data.json"
+    },
+    {
+      "name": "Manifest with bad feature paths",
+      "path": "default/manifest_bad_feature_paths.json"
+    },
+    {
+      "name": "Manifest with many bad feature paths",
+      "path": "default/manifest_many_bad_feature_paths.json"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "frames": [
+    "frame_0.png",
+    "frame_1.png",
+    "frame_2.png",
+    "frame_3.png",
+    "frame_4.png",
+    "frame_5.png",
+    "frame_6.png",
+    "frame_7.png",
+    "frame_8.png",
+    "frame_9.png",
+    "frame_10.png",
+    "frame_11.png",
+    "frame_12.png",
+    "frame_13.png",
+    "frame_14.png",
+    "frame_15.png",
+    "frame_16.png",
+    "frame_17.png",
+    "frame_18.png",
+    "frame_19.png",
+    "frame_20.png",
+    "frame_21.png",
+    "frame_22.png",
+    "frame_23.png",
+    "frame_24.png",
+    "frame_25.png",
+    "frame_26.png",
+    "frame_27.png",
+    "frame_28.png",
+    "frame_29.png",
+    "frame_30.png",
+    "frame_31.png"
+  ],
+  "features": {
+    "Mean migration speed per track": "feature_0.json",
+    "Integrated Distance": "feature_1.json",
+    "Displacement": "feature_2.json",
+    "Average colony overlap per track": "feature_3.json",
+    "Migration velocity": "feature_4.json",
+    "R0Cell_Neighbors_NumberOfNeighbors_Adjacent": "feature_5.json",
+    "R0Cell_Neighbors_PercentTouching_Adjacent": "feature_6.json"
+  },
+  "outliers": "outliers.json",
+  "tracks": "tracks.json",
+  "times": "times.json",
+  "centroids": "centroids.json",
+  "bounds": "bounds.json",
+  "featureMetadata": {
+    "Mean migration speed per track": {
+      "units": "\u00b5m/min"
+    },
+    "Integrated Distance": {
+      "units": "\u00b5m"
+    },
+    "Displacement": {
+      "units": "\u00b5m"
+    },
+    "Average colony overlap per track": {
+      "units": null
+    },
+    "Migration velocity": {
+      "units": "\u00b5m/min"
+    },
+    "R0Cell_Neighbors_NumberOfNeighbors_Adjacent": {
+      "units": null
+    },
+    "R0Cell_Neighbors_PercentTouching_Adjacent": {
+      "units": null
+    }
+  },
+  "metadata": {
+    "frameDims": {
+      "width": 500.80800000000005,
+      "height": 338.208,
+      "units": "\u00b5m"
+    }
+  }
+}
