@@ -138,7 +138,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
-  const loadFrameResult = useViewerStateStore((state) => state.loadFrameResult);
+  const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -179,25 +179,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const lastMousePositionPx = useRef(new Vector2(0, 0));
   const theme = useContext(AppThemeContext);
 
-  const isMissingFile = !loadFrameResult.frameLoaded || !loadFrameResult.backdropLoaded;
+  const isMissingFile = !frameLoadResult.frameLoaded || !frameLoadResult.backdropLoaded;
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
-  const showMissingFrameWarning = useCallback(() => {
-    props.showAlert({
-      type: "warning",
-      message: "Warning: One or more frames or backdrops failed to load.",
-      description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
-      showDoNotShowAgainCheckbox: true,
-      closable: true,
-    });
-  }, [props.showAlert, canv]);
-
+  // Show warning if files are missing
   useMemo(() => {
-    if (isMissingFile) {
-      showMissingFrameWarning();
+    if (isMissingFile && props.showAlert) {
+      props.showAlert({
+        type: "warning",
+        message: "Warning: One or more frames or backdrops failed to load.",
+        description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+        showDoNotShowAgainCheckbox: true,
+        closable: true,
+      });
     }
-  }, [loadFrameResult, isMissingFile]);
+  }, [frameLoadResult, isMissingFile, props.showAlert]);
 
   // Mount the canvas to the placeholder's location in the document.
   useEffect(() => {

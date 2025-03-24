@@ -2,6 +2,7 @@ import { Color } from "three";
 
 import {
   DrawMode,
+  FrameLoadResult,
   PlotRangeType,
   ScatterPlotConfig,
   TabType,
@@ -16,6 +17,12 @@ export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;
 
 export const VECTOR_KEY_MOTION_DELTA = "_motion_";
+
+export const getDefaultFrameLoadResult = (): FrameLoadResult => ({
+  frame: 0,
+  frameLoaded: false,
+  backdropLoaded: false,
+});
 
 export const getDefaultVectorConfig = (): VectorConfig => ({
   visible: false,

@@ -1,6 +1,6 @@
 import { StateCreator } from "zustand";
 
-import { DEFAULT_FRAME_LOAD_RESULT, FrameLoadCallback, FrameLoadResult } from "../../colorizer";
+import { FrameLoadCallback, FrameLoadResult, getDefaultFrameLoadResult } from "../../colorizer";
 import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
 import { SerializedStoreData, SubscribableStore } from "../types";
@@ -19,9 +19,9 @@ export type TimeSliceState = {
   currentFrame: number;
   playbackFps: number;
   timeControls: TimeControls;
-  loadFrameCallback: FrameLoadCallback;
+  frameLoadCallback: FrameLoadCallback;
   /** The result of the last frame load. `null` when no frame has been loaded yet. */
-  loadFrameResult: FrameLoadResult;
+  frameLoadResult: FrameLoadResult;
   // currentLoadFrameRequestId: number;
 };
 
@@ -39,7 +39,7 @@ export type TimeSliceActions = {
    */
   setFrame: (frame: number) => Promise<void>;
   setPlaybackFps: (fps: number) => void;
-  setLoadFrameCallback: (callback: (frame: number) => Promise<FrameLoadResult>) => void;
+  setFrameLoadCallback: (callback: FrameLoadCallback) => void;
 };
 
 export type TimeSlice = TimeSliceState & TimeSliceActions;
@@ -52,8 +52,8 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
     () => get().currentFrame,
     async (frame) => {
       set({ pendingFrame: frame });
-      const result = await get().loadFrameCallback(frame);
-      set({ loadFrameResult: result, currentFrame: result.frame });
+      const result = await get().frameLoadCallback(frame);
+      set({ frameLoadResult: result, currentFrame: result.frame });
       if (frame !== result.frame) {
         // Load request was ignored. Reset pendingFrame to currentFrame
         // if no other load request was made in the meantime.
@@ -61,13 +61,13 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
       }
     }
   ),
-  loadFrameCallback: (_frame: number) => {
-    return Promise.resolve(DEFAULT_FRAME_LOAD_RESULT);
+  frameLoadCallback: (frame: number) => {
+    return Promise.resolve({ ...getDefaultFrameLoadResult(), frame });
   },
-  loadFrameResult: { frame: -1, frameLoaded: false, backdropLoaded: false },
+  frameLoadResult: { frame: -1, frameLoaded: false, backdropLoaded: false },
 
-  setLoadFrameCallback: (callback) => {
-    set({ loadFrameCallback: callback });
+  setFrameLoadCallback: (callback) => {
+    set({ frameLoadCallback: callback });
   },
   setFrame: async (frame: number) => {
     if (!Number.isFinite(frame)) {
@@ -86,9 +86,9 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
     }
     set({ pendingFrame: frame });
     await get()
-      .loadFrameCallback(frame)
+      .frameLoadCallback(frame)
       .then((result) => {
-        set({ currentFrame: result.frame, loadFrameResult: result });
+        set({ currentFrame: result.frame, frameLoadResult: result });
       })
       .catch((error) => {
         console.error(`TimeSlice.setFrame: Failed to load frame ${frame}:`, error);

@@ -47,13 +47,18 @@ export interface IRenderCanvas {
    */
   setParams(params: RenderCanvasStateParams): void;
   /**
-   * Loads and renders the data for a specific frame. Returns a Promise that
-   * resolves when the data is loaded and rendered onscreen.
-   * @param frame The frame number to load and render. Ignores frames that are
-   * out of range of the current dataset or that are already loaded.
-   * @returns A `FrameLoadResult` object of the loaded frame.
-   * Note that, if the frame is out of bounds, the `FrameLoadResult`'s `frame`
-   * property will be whatever frame is currently loaded.
+   * Requests to load and render the image data for a specific frame. Returns a
+   * Promise that resolves when the frame is loaded and rendered, or if the
+   * request was ignored (e.g. if the frame is out of bounds).
+   * @param requestedFrame The frame number to load and render.
+   * @returns A `FrameLoadResult`, containing:
+   * - `frame`: the currently loaded and visible frame number. Note that this
+   *   may not be the same as `requestedFrame` if the frame was out of bounds or
+   *   otherwise ignored.
+   * - `frameLoaded`: Whether the frame was loaded successfully. If `false`, the
+   *   frame loading failed due to an error.
+   * - `backdropLoaded`: Whether the backdrop was loaded successfully for
+   *   `frame`. If `false`, the backdrop loading failed due to an error.
    */
   setFrame: FrameLoadCallback;
   render(): void;

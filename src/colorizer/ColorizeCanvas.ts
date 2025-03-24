@@ -25,6 +25,7 @@ import { clamp } from "three/src/math/MathUtils";
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
   BACKGROUND_COLOR_DEFAULT,
+  getDefaultFrameLoadResult,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
@@ -134,7 +135,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
 
   protected frameSizeInCanvasCoordinates: Vector2;
   protected frameToCanvasCoordinates: Vector2;
-  private lastFrameLoadResult: FrameLoadResult = { frame: -1, frameLoaded: false, backdropLoaded: false };
+  private lastFrameLoadResult: FrameLoadResult;
 
   /**
    * The zoom level of the frame in the canvas. At default zoom level 1, the frame will be
@@ -226,6 +227,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.categoricalPalette = new ColorRamp(["black"]);
     this.currentFrame = 0;
     this.pendingFrame = -1;
+    this.lastFrameLoadResult = getDefaultFrameLoadResult();
 
     this.frameSizeInCanvasCoordinates = new Vector2(1, 1);
     this.frameToCanvasCoordinates = new Vector2(1, 1);
@@ -546,13 +548,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.render();
   }
 
-  /**
-   * Sets the current frame of the canvas, loading the new frame data if the
-   * frame number changes.
-   * @param index Index of the new frame.
-   * @param forceUpdate Force a reload of the frame data, even if the frame
-   * is already loaded.
-   */
   public async setFrame(index: number, forceUpdate: boolean = false): Promise<FrameLoadResult> {
     const dataset = this.params?.dataset;
     // Ignore same or bad frame indices
