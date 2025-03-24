@@ -90,9 +90,10 @@
           // Anything not matched in another group.
           ["^"],
           // Relative imports - lowercase utilities and submodules
-          ["^[.]+.*/[a-z]+[\\w]*$"],
+          // "\\u0000" is added to the end of imported types.
+          ["^[.]+.*/[a-z]+[\\w]*(\\u0000)?$"],
           // Relative imports - other classes and components
-          ["^[./].*/[\\w?&]*$"],
+          ["^[./].*/[\\w?&]*(\\u0000)?$"],
           // Relative imports - resource files
           ["^[.].*/[\\w?_\\-]*[.][\\w.?&_\\-]*$"]
         ]

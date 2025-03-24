@@ -149,11 +149,12 @@ describe("useViewerStateStore: TimeSlice", () => {
     });
 
     it("serializes time value", async () => {
+      const frameNumber = 155;
       const { result } = renderHook(() => useViewerStateStore());
       await act(async () => {
-        await result.current.setFrame(155);
+        await result.current.setFrame(frameNumber);
       });
-      expect(serializeTimeSlice(result.current)[UrlParam.TIME]).toBe("155");
+      expect(serializeTimeSlice(result.current)[UrlParam.TIME]).toBe(frameNumber.toString());
     });
   });
 

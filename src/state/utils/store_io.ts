@@ -98,7 +98,7 @@ export const serializeViewerParams = (params: ViewerParams): SerializedStoreData
     // Order collection + dataset first in params, but override the default
     // serialized collection fields by destructuring a second time.
     ...ret,
-    ...serializeViewerState({ ...params }),
+    ...serializeViewerState(params),
     ...ret,
   });
 };
