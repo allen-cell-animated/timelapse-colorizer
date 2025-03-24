@@ -122,7 +122,7 @@ export const serializedDataToUrl = (data: SerializedStoreData): string => {
  * Loads the viewer state from the given URL parameters. Note that this MUST be
  * called after the collection and dataset are loaded and set in the store.
  */
-export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URLSearchParams): void => {
+export const loadViewerStateFromParams = async (store: Store<ViewerStore>, params: URLSearchParams): Promise<void> => {
   // TODO: Should each of these be wrapped in a try/catch block in case of bad inputs?
   // 1. No dependencies:
   loadConfigSliceFromParams(store.getState(), params);
