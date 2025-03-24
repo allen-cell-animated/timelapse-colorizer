@@ -29,7 +29,7 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import { DrawMode, FeatureDataType } from "./types";
+import { DrawMode, FeatureDataType, FrameLoadResult } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -134,6 +134,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
 
   protected frameSizeInCanvasCoordinates: Vector2;
   protected frameToCanvasCoordinates: Vector2;
+  private lastFrameLoadResult: FrameLoadResult = { frame: -1, frameLoaded: false, backdropLoaded: false };
 
   /**
    * The zoom level of the frame in the canvas. At default zoom level 1, the frame will be
@@ -164,8 +165,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
 
   protected currentFrame: number;
   private pendingFrame: number;
-
-  private onFrameChangeCallback: (isMissing: boolean) => void;
 
   constructor() {
     this.geometry = new PlaneGeometry(2, 2);
@@ -232,8 +231,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.frameToCanvasCoordinates = new Vector2(1, 1);
     this.zoomMultiplier = 1;
     this.panOffset = new Vector2(0, 0);
-
-    this.onFrameChangeCallback = () => {};
 
     this.render = this.render.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
@@ -459,10 +456,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
   }
 
-  public setOnFrameChangeCallback(callback: (isMissing: boolean) => void): void {
-    this.onFrameChangeCallback = callback;
-  }
-
   public setParams(params: RenderCanvasStateParams): void {
     // TODO: What happens when `setParams` is called again while waiting for a Dataset to load?
     // May cause visual desync where the color ramp/feature data updates before frames load in fully
@@ -560,11 +553,11 @@ export default class ColorizeCanvas implements IRenderCanvas {
    * @param forceUpdate Force a reload of the frame data, even if the frame
    * is already loaded.
    */
-  public async setFrame(index: number, forceUpdate: boolean = false): Promise<void> {
+  public async setFrame(index: number, forceUpdate: boolean = false): Promise<FrameLoadResult> {
     const dataset = this.params?.dataset;
     // Ignore same or bad frame indices
     if (!dataset || (!forceUpdate && this.currentFrame === index) || !dataset.isValidFrameIndex(index)) {
-      return;
+      return this.lastFrameLoadResult;
     }
     // Load the frame data asynchronously.
     // Save loading settings to prevent race conditions.
@@ -585,10 +578,11 @@ export default class ColorizeCanvas implements IRenderCanvas {
       // - A different frame number has been requested since the load started
       //   (and it's not the loaded frame being force-reloaded)
       // - The dataset has changed since the load started
-      return;
+      return this.lastFrameLoadResult;
     }
 
-    let isMissingFile = false;
+    let frameLoaded = true;
+    let backdropLoaded = true;
 
     if (backdrop.status === "fulfilled" && backdrop.value) {
       if (this.params?.backdropKey === pendingBackdropKey) {
@@ -600,7 +594,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
         // Only show error message if the backdrop load encountered an error (null/undefined backdrops aren't
         // considered errors, since that means the path has been deliberately marked as missing.)
         console.error("Failed to load backdrop " + pendingBackdropKey + " for frame " + index + ": ", backdrop.reason);
-        isMissingFile = true;
+        backdropLoaded = false;
       }
       if (this.params?.backdropKey === pendingBackdropKey) {
         // Only clear the backdrop if the selected key (null) is the one we requested
@@ -614,7 +608,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
       if (frame.status === "rejected") {
         // Only show error message if the frame load encountered an error. (Null/undefined is okay)
         console.error("Failed to load frame " + index + ": ", frame.reason);
-        isMissingFile = true;
+        frameLoaded = false;
       }
       // Set to blank
       const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
@@ -623,13 +617,15 @@ export default class ColorizeCanvas implements IRenderCanvas {
       this.setUniform("frame", emptyFrame);
     }
 
-    this.onFrameChangeCallback(isMissingFile);
     // Force rescale in case frame dimensions changed
     this.updateScaling(dataset?.frameResolution || null, this.canvasResolution);
     this.currentFrame = index;
     this.pendingFrame = -1;
     this.vectorField.setFrame(this.currentFrame);
     this.render();
+    const frameLoadResult = { frame: index, frameLoaded, backdropLoaded };
+    this.lastFrameLoadResult = frameLoadResult;
+    return frameLoadResult;
   }
 
   // RENDERING /////////////////////////////////////////////////////////////////////////////
