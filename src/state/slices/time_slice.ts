@@ -26,7 +26,8 @@ export type TimeSliceSerializableState = Pick<TimeSliceState, "currentFrame">;
 export type TimeSliceActions = {
   /**
    * Attempts to set and load the given frame number, using the callback
-   * provided by `setLoadCallback`.
+   * provided by `setLoadCallback`. The frame number will be clamped between 0
+   * and the number of frames in the dataset, if one is loaded.
    *
    * Note that `pendingFrame` will be set to the frame that is being loaded,
    * while `currentFrame` will not update until the promise returned by the
@@ -39,7 +40,7 @@ export type TimeSliceActions = {
 
 export type TimeSlice = TimeSliceState & TimeSliceActions;
 
-export const createTimeSlice: StateCreator<TimeSlice, [], [], TimeSlice> = (set, get) => ({
+export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], TimeSlice> = (set, get) => ({
   pendingFrame: 0,
   currentFrame: 0,
   playbackFps: DEFAULT_PLAYBACK_FPS,
@@ -59,16 +60,35 @@ export const createTimeSlice: StateCreator<TimeSlice, [], [], TimeSlice> = (set,
     set({ loadFrameCallback: callback });
   },
   setFrame: async (frame: number) => {
+    if (!Number.isFinite(frame)) {
+      throw new Error(`TimeSlice.setFrame: Invalid frame number: ${frame}`);
+    }
+    const dataset = get().dataset;
+    if (dataset !== null) {
+      frame = clampWithNanCheck(frame, 0, dataset.numberOfFrames - 1);
+    } else {
+      frame = Math.max(frame, 0);
+    }
+
     const isPlaying = get().timeControls.isPlaying();
     if (isPlaying) {
       get().timeControls.pause();
     }
     set({ pendingFrame: frame });
-    await get().loadFrameCallback(frame);
-    set({ currentFrame: frame });
-    if (isPlaying) {
-      get().timeControls.play();
-    }
+    await get()
+      .loadFrameCallback(frame)
+      .then(() => {
+        set({ currentFrame: frame });
+      })
+      .catch((error) => {
+        console.error(`TimeSlice.setFrame: Failed to load frame ${frame}:`, error);
+        set({ pendingFrame: get().currentFrame });
+      })
+      .finally(() => {
+        if (isPlaying) {
+          get().timeControls.play();
+        }
+      });
   },
   setPlaybackFps: (fps: number) => {
     set({ playbackFps: clampWithNanCheck(fps, 0, Number.MAX_SAFE_INTEGER) });
@@ -118,7 +138,7 @@ export const loadTimeSliceFromParams = (state: TimeSlice & DatasetSlice, params:
   // Load time from URL. If no time is set but a track is, set the time to the
   // start of the track.
   const time = decodeInt(params.get(UrlParam.TIME));
-  if (time !== undefined) {
+  if (time !== undefined && Number.isFinite(time)) {
     state.setFrame(time);
   } else if (state.track !== null) {
     state.setFrame(state.track.startTime());
