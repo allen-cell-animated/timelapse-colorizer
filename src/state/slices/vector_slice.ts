@@ -13,9 +13,9 @@ import {
   decodeFloat,
   decodeHexColor,
   decodeInt,
-  encodeBoolean,
-  encodeColor,
-  encodeNumber,
+  encodeMaybeBoolean,
+  encodeMaybeColor,
+  encodeMaybeNumber,
   UrlParam,
 } from "../../colorizer/utils/url_utils";
 import type { SerializedStoreData, SubscribableStore } from "../types";
@@ -25,7 +25,7 @@ import type { DatasetSlice } from "./dataset_slice";
 
 import { getSharedWorkerPool } from "../../colorizer/workers/SharedWorkerPool";
 
-type VectorSliceState = {
+export type VectorSliceState = {
   vectorVisible: boolean;
   vectorKey: string;
   vectorColor: Color;
@@ -49,7 +49,17 @@ type VectorSliceState = {
   vectorMotionDeltas: Float32Array | null;
 };
 
-type VectorSliceActions = {
+export type VectorSliceSerializableState = Pick<
+  VectorSliceState,
+  | "vectorVisible"
+  | "vectorKey"
+  | "vectorColor"
+  | "vectorScaleFactor"
+  | "vectorTooltipMode"
+  | "vectorMotionTimeIntervals"
+>;
+
+export type VectorSliceActions = {
   setVectorVisible: (visible: boolean) => void;
   setVectorKey: (key: string) => void;
   setVectorColor: (color: Color) => void;
@@ -133,16 +143,26 @@ export const selectVectorConfigFromState = (state: VectorSlice): VectorConfig =>
   tooltipMode: state.vectorTooltipMode,
 });
 
-export const serializeVectorSlice = (slice: VectorSlice): SerializedStoreData => {
+export const serializeVectorSlice = (slice: Partial<VectorSlice>): SerializedStoreData => {
   return {
-    [UrlParam.SHOW_VECTOR]: encodeBoolean(slice.vectorVisible),
+    [UrlParam.SHOW_VECTOR]: encodeMaybeBoolean(slice.vectorVisible),
     [UrlParam.VECTOR_KEY]: slice.vectorKey,
-    [UrlParam.VECTOR_COLOR]: encodeColor(slice.vectorColor),
-    [UrlParam.VECTOR_SCALE]: encodeNumber(slice.vectorScaleFactor),
-    [UrlParam.VECTOR_TOOLTIP_MODE]: slice.vectorTooltipMode.toString(),
-    [UrlParam.VECTOR_TIME_INTERVALS]: encodeNumber(slice.vectorMotionTimeIntervals),
+    [UrlParam.VECTOR_COLOR]: encodeMaybeColor(slice.vectorColor),
+    [UrlParam.VECTOR_SCALE]: encodeMaybeNumber(slice.vectorScaleFactor),
+    [UrlParam.VECTOR_TOOLTIP_MODE]: slice.vectorTooltipMode?.toString(),
+    [UrlParam.VECTOR_TIME_INTERVALS]: encodeMaybeNumber(slice.vectorMotionTimeIntervals),
   };
 };
+
+/** Selects state values that serialization depends on. */
+export const selectVectorSliceSerializationDeps = (slice: VectorSlice): Partial<VectorSliceState> => ({
+  vectorVisible: slice.vectorVisible,
+  vectorKey: slice.vectorKey,
+  vectorColor: slice.vectorColor,
+  vectorScaleFactor: slice.vectorScaleFactor,
+  vectorTooltipMode: slice.vectorTooltipMode,
+  vectorMotionTimeIntervals: slice.vectorMotionTimeIntervals,
+});
 
 export function loadVectorSliceFromParams(slice: VectorSlice, params: URLSearchParams): void {
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_VECTOR)), slice.setVectorVisible);

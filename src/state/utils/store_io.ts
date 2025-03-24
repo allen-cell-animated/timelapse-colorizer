@@ -1,3 +1,4 @@
+import { UrlParam } from "../../colorizer/utils/url_utils";
 import {
   loadBackdropSliceFromParams,
   loadColorRampSliceFromParams,
@@ -7,6 +8,15 @@ import {
   loadThresholdSliceFromParams,
   loadTimeSliceFromParams,
   loadVectorSliceFromParams,
+  selectBackdropSliceSerializationDeps,
+  selectCollectionSliceSerializationDeps,
+  selectColorRampSliceSerializationDeps,
+  selectConfigSliceSerializationDeps,
+  selectDatasetSliceSerializationDeps,
+  selectScatterPlotSliceSerializationDeps,
+  selectThresholdSliceSerializationDeps,
+  selectTimeSliceSerializationDeps,
+  selectVectorSliceSerializationDeps,
   serializeBackdropSlice,
   serializeCollectionSlice,
   serializeColorRampSlice,
@@ -16,30 +26,90 @@ import {
   serializeThresholdSlice,
   serializeTimeSlice,
   serializeVectorSlice,
+  ViewerStore,
+  ViewerStoreSerializableState,
 } from "../slices";
 import { SerializedStoreData, Store } from "../types";
-
-import { ViewerState } from "../ViewerState";
+import { removeUndefinedProperties } from "./data_validation";
 
 // SERIALIZATION /////////////////////////////////////////////////////////////////////////
 
-export const serializeViewerStateStore = (store: Store<ViewerState>): Partial<SerializedStoreData> => {
+export const selectSerializationDependencies = (state: ViewerStore): Partial<ViewerStore> => ({
+  ...selectCollectionSliceSerializationDeps(state),
+  ...selectDatasetSliceSerializationDeps(state),
+  ...selectTimeSliceSerializationDeps(state),
+  ...selectColorRampSliceSerializationDeps(state),
+  ...selectThresholdSliceSerializationDeps(state),
+  ...selectConfigSliceSerializationDeps(state),
+  ...selectScatterPlotSliceSerializationDeps(state),
+  ...selectBackdropSliceSerializationDeps(state),
+  ...selectVectorSliceSerializationDeps(state),
+});
+
+/**
+ * Serializes viewer store state into a `SerializedStoreData` object,
+ * which can be used to generate a URL query string using `serializedDataToUrl`.
+ * @param params Object containing serializable viewer state parameters.
+ * Also includes a `collectionParam` field for the collection URL.
+ */
+export const serializeViewerState = (state: Partial<ViewerStoreSerializableState>): Partial<SerializedStoreData> => {
   // Ordered by approximate importance in the URL
-  return {
-    ...serializeCollectionSlice(store.getState()),
-    ...serializeDatasetSlice(store.getState()),
-    ...serializeTimeSlice(store.getState()),
-    ...serializeColorRampSlice(store.getState()),
-    ...serializeThresholdSlice(store.getState()),
-    ...serializeConfigSlice(store.getState()),
-    ...serializeScatterPlotSlice(store.getState()),
-    ...serializeBackdropSlice(store.getState()),
-    ...serializeVectorSlice(store.getState()),
-  };
+  return removeUndefinedProperties({
+    ...serializeCollectionSlice(state),
+    ...serializeDatasetSlice(state),
+    ...serializeTimeSlice(state),
+    ...serializeColorRampSlice(state),
+    ...serializeThresholdSlice(state),
+    ...serializeConfigSlice(state),
+    ...serializeScatterPlotSlice(state),
+    ...serializeBackdropSlice(state),
+    ...serializeVectorSlice(state),
+  });
 };
 
-export const serializedStoreDataToUrl = (data: SerializedStoreData): string => {
+export type ViewerParams = {
+  /**
+   * Optional URL of the collection resource to load. Overwrites the URL of the
+   * `collection` field in the serialized store data if defined.
+   */
+  collectionParam?: string;
+  /**
+   * Optional URL of the dataset or dataset key. Overwrites the
+   * `dataset` field in the serialized store data if defined.
+   */
+  datasetParam?: string;
+} & Partial<ViewerStoreSerializableState>;
+
+/**
+ * Serializes parameters for the viewer into a `SerializedStoreData` object,
+ * which can be used to generate a URL query string using `serializedDataToUrl`.
+ * @param params Object containing serializable viewer state parameters; see
+ * `ViewerStoreSerializableState` for a list of possible fields.
+ */
+export const serializeViewerParams = (params: ViewerParams): SerializedStoreData => {
+  const ret: SerializedStoreData = {};
+  if (params.collectionParam) {
+    ret[UrlParam.COLLECTION] = params.collectionParam;
+  }
+  if (params.datasetParam) {
+    ret[UrlParam.DATASET] = params.datasetParam;
+  }
+  return removeUndefinedProperties({
+    // Order collection + dataset first in params, but override the default
+    // serialized collection fields by destructuring a second time.
+    ...ret,
+    ...serializeViewerState(params),
+    ...ret,
+  });
+};
+
+/**
+ * Converts a serialized store data object to a URL query string. Does not
+ * include the `?` prefix.
+ */
+export const serializedDataToUrl = (data: SerializedStoreData): string => {
   const params = new URLSearchParams();
+  data = removeUndefinedProperties(data);
   for (const [key, value] of Object.entries(data)) {
     params.set(key, value);
   }
@@ -52,7 +122,7 @@ export const serializedStoreDataToUrl = (data: SerializedStoreData): string => {
  * Loads the viewer state from the given URL parameters. Note that this MUST be
  * called after the collection and dataset are loaded and set in the store.
  */
-export const loadViewerStateFromParams = async (store: Store<ViewerState>, params: URLSearchParams): Promise<void> => {
+export const loadViewerStateFromParams = async (store: Store<ViewerStore>, params: URLSearchParams): Promise<void> => {
   // 1. No dependencies:
   loadConfigSliceFromParams(store.getState(), params);
 

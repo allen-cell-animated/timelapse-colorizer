@@ -29,6 +29,7 @@ import { formatNumber } from "./math_utils";
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
 
+export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 export enum UrlParam {
   TRACK = "track",
   DATASET = "dataset",
@@ -38,7 +39,6 @@ export enum UrlParam {
   THRESHOLDS = "filters",
   RANGE = "range",
   COLOR_RAMP = "color",
-  COLOR_RAMP_REVERSED_SUFFIX = "!",
   PALETTE = "palette",
   PALETTE_KEY = "palette-key",
   SHOW_BACKDROP = "bg",
@@ -328,6 +328,10 @@ export function encodeColor(value: Color): string {
   return value.getHexString();
 }
 
+export function encodeMaybeColor(value: Color | undefined): string | undefined {
+  return value ? encodeColor(value) : undefined;
+}
+
 export function isHexColor(value: string | null): value is HexColorString {
   const hexRegex = /^#([0-9a-f]{3}){1,2}$/;
   return value !== null && hexRegex.test(value);
@@ -340,6 +344,10 @@ export function decodeHexColor(value: string | null): Color | undefined {
 
 export function encodeNumber(value: number): string {
   return formatNumber(value, 3);
+}
+
+export function encodeMaybeNumber(value: number | undefined): string | undefined {
+  return value !== undefined ? encodeNumber(value) : undefined;
 }
 
 export function decodeFloat(value: string | null): number | undefined {
@@ -365,6 +373,10 @@ export function parseDrawSettings(
 
 export function encodeBoolean(value: boolean): string {
   return value ? "1" : "0";
+}
+
+export function encodeMaybeBoolean(value: boolean | undefined): string | undefined {
+  return value !== undefined ? encodeBoolean(value) : undefined;
 }
 
 export function decodeBoolean(value: string | null): boolean | undefined {
@@ -538,7 +550,7 @@ export function paramsToUrlQueryString(state: Partial<UrlParams>): string {
   if (state.colorRampKey) {
     if (state.colorRampReversed) {
       includedParameters.push(
-        `${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + UrlParam.COLOR_RAMP_REVERSED_SUFFIX)}`
+        `${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey + URL_COLOR_RAMP_REVERSED_SUFFIX)}`
       );
     } else {
       includedParameters.push(`${UrlParam.COLOR_RAMP}=${encodeURIComponent(state.colorRampKey)}`);
@@ -691,10 +703,7 @@ export function loadFromUrlSearchParams(urlParams: URLSearchParams): Partial<Url
   let colorRampParam: string | undefined = colorRampRawParam || undefined;
   let colorRampReversedParam: boolean | undefined = undefined;
   //  Color ramps are marked as reversed by adding ! to the end of the key
-  if (
-    colorRampRawParam &&
-    colorRampRawParam.charAt(colorRampRawParam.length - 1) === UrlParam.COLOR_RAMP_REVERSED_SUFFIX
-  ) {
+  if (colorRampRawParam && colorRampRawParam.charAt(colorRampRawParam.length - 1) === URL_COLOR_RAMP_REVERSED_SUFFIX) {
     colorRampReversedParam = true;
     colorRampParam = colorRampRawParam.slice(0, -1);
   }

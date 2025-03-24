@@ -151,6 +151,19 @@ describe("ScatterplotSlice", () => {
       expect(result.current.scatterRangeType).toBe(PlotRangeType.CURRENT_FRAME);
     });
 
+    it("ignores axes that are not in the dataset when dataset is loaded", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.SCATTERPLOT_X_AXIS, "invalid-feature-x");
+      params.set(UrlParam.SCATTERPLOT_Y_AXIS, "invalid-feature-y");
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadScatterPlotSliceFromParams(result.current, params);
+      });
+      expect(result.current.scatterXAxis).toBe(null);
+      expect(result.current.scatterYAxis).toBe(null);
+    });
+
     it("ignores missing axes", () => {
       const { result } = renderHook(() => useViewerStateStore());
       const initialXAxis = result.current.scatterXAxis;

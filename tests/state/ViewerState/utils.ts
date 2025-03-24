@@ -3,7 +3,7 @@ import { act } from "react-dom/test-utils";
 import { expect } from "vitest";
 
 import { Dataset } from "../../../src/colorizer";
-import { ViewerState } from "../../../src/state";
+import { ViewerStore } from "../../../src/state/slices";
 
 /**
  * Wrapper around `store.setDataset()`. Allows for async operations to complete
@@ -11,7 +11,7 @@ import { ViewerState } from "../../../src/state";
  */
 
 export const setDatasetAsync = async (
-  result: { current: ViewerState },
+  result: { current: ViewerStore },
   dataset: Dataset,
   datasetKey: string = "some-dataset"
 ): Promise<void> => {
@@ -21,7 +21,7 @@ export const setDatasetAsync = async (
   await waitFor(() => {});
 };
 
-export const clearDatasetAsync = async (result: { current: ViewerState }): Promise<void> => {
+export const clearDatasetAsync = async (result: { current: ViewerStore }): Promise<void> => {
   act(() => {
     result.current.clearDataset();
   });

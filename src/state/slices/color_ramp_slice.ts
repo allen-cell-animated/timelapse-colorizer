@@ -11,9 +11,10 @@ import { arrayElementsAreEqual, getColorMap, thresholdMatchFinder } from "../../
 import {
   decodeBoolean,
   decodeString,
-  encodeBoolean,
   encodeColor,
+  encodeMaybeBoolean,
   encodeNumber,
+  URL_COLOR_RAMP_REVERSED_SUFFIX,
   UrlParam,
 } from "../../colorizer/utils/url_utils";
 import { COLOR_RAMP_RANGE_DEFAULT, MAX_FEATURE_CATEGORIES } from "../../constants";
@@ -50,6 +51,16 @@ export type ColorRampSliceState = {
    */
   categoricalPaletteKey: string | null;
 };
+
+export type ColorRampSliceSerializableState = Pick<
+  ColorRampSliceState,
+  | "colorRampKey"
+  | "isColorRampReversed"
+  | "keepColorRampRange"
+  | "colorRampRange"
+  | "categoricalPalette"
+  | "categoricalPaletteKey"
+>;
 
 export type ColorRampSliceActions = {
   /**
@@ -215,32 +226,45 @@ export const addColorRampDerivedStateSubscribers = (
   );
 };
 
-export const serializeColorRampSlice = (slice: ColorRampSlice): SerializedStoreData => {
+export const serializeColorRampSlice = (slice: Partial<ColorRampSliceSerializableState>): SerializedStoreData => {
   const ret: SerializedStoreData = {};
 
   // Ramp + reversed
-  ret[UrlParam.COLOR_RAMP] =
-    slice.colorRampKey + (slice.isColorRampReversed ? UrlParam.COLOR_RAMP_REVERSED_SUFFIX : "");
+  if (slice.colorRampKey !== undefined) {
+    ret[UrlParam.COLOR_RAMP] = slice.colorRampKey + (slice.isColorRampReversed ? URL_COLOR_RAMP_REVERSED_SUFFIX : "");
+  }
 
-  ret[UrlParam.KEEP_RANGE] = encodeBoolean(slice.keepColorRampRange);
+  ret[UrlParam.KEEP_RANGE] = encodeMaybeBoolean(slice.keepColorRampRange);
 
-  const range = slice.colorRampRange;
-  ret[UrlParam.RANGE] = range.map(encodeNumber).join(",");
+  if (slice.colorRampRange !== undefined) {
+    const range = slice.colorRampRange;
+    ret[UrlParam.RANGE] = range.map(encodeNumber).join(",");
+  }
 
   // Palette key takes precedence over palette
-  if (slice.categoricalPaletteKey !== null) {
+  if (slice.categoricalPaletteKey !== undefined && slice.categoricalPaletteKey !== null) {
     ret[UrlParam.PALETTE_KEY] = slice.categoricalPaletteKey;
-  } else {
+  } else if (slice.categoricalPalette !== undefined) {
     ret[UrlParam.PALETTE] = slice.categoricalPalette.map(encodeColor).join("-");
   }
 
   return ret;
 };
 
+/** Selects state values that serialization depends on. */
+export const selectColorRampSliceSerializationDeps = (slice: ColorRampSlice): ColorRampSliceSerializableState => ({
+  colorRampKey: slice.colorRampKey,
+  isColorRampReversed: slice.isColorRampReversed,
+  keepColorRampRange: slice.keepColorRampRange,
+  colorRampRange: slice.colorRampRange,
+  categoricalPalette: slice.categoricalPalette,
+  categoricalPaletteKey: slice.categoricalPaletteKey,
+});
+
 export const loadColorRampSliceFromParams = (slice: ColorRampSlice, params: URLSearchParams): void => {
   const colorRampParam = params.get(UrlParam.COLOR_RAMP);
   if (colorRampParam) {
-    const [key, reversed] = colorRampParam.split(UrlParam.COLOR_RAMP_REVERSED_SUFFIX);
+    const [key, reversed] = colorRampParam.split(URL_COLOR_RAMP_REVERSED_SUFFIX);
     if (KNOWN_COLOR_RAMPS.has(key)) {
       slice.setColorRampKey(key);
       slice.setColorRampReversed(reversed !== undefined);

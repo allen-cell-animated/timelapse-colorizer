@@ -1,6 +1,12 @@
 import { StateCreator } from "zustand";
 
-import { decodeBoolean, decodeFloat, encodeBoolean, encodeNumber, UrlParam } from "../../colorizer/utils/url_utils";
+import {
+  decodeBoolean,
+  decodeFloat,
+  encodeMaybeBoolean,
+  encodeMaybeNumber,
+  UrlParam,
+} from "../../colorizer/utils/url_utils";
 import {
   BACKDROP_BRIGHTNESS_DEFAULT,
   BACKDROP_BRIGHTNESS_MAX,
@@ -16,7 +22,7 @@ import { SerializedStoreData, SubscribableStore } from "../types";
 import { clampWithNanCheck } from "../utils/data_validation";
 import { DatasetSlice } from "./dataset_slice";
 
-type BackdropSliceState = {
+export type BackdropSliceState = {
   backdropVisible: boolean;
   /** Brightness, as a percentage in the `[0, 200]` range. 100 by default. */
   backdropBrightness: number;
@@ -27,7 +33,12 @@ type BackdropSliceState = {
   objectOpacity: number;
 };
 
-type BackdropSliceActions = {
+export type BackdropSliceSerializableState = Pick<
+  BackdropSliceState,
+  "backdropVisible" | "backdropBrightness" | "backdropSaturation" | "objectOpacity"
+>;
+
+export type BackdropSliceActions = {
   /**
    * Sets the visibility of the backdrop layer. The backdrop will be hidden if
    * the current backdrop key is `null`.
@@ -80,14 +91,22 @@ export const addBackdropDerivedStateSubscribers = (store: SubscribableStore<Back
   );
 };
 
-export const serializeBackdropSlice = (state: BackdropSlice): SerializedStoreData => {
-  const ret: SerializedStoreData = {};
-  ret[UrlParam.SHOW_BACKDROP] = encodeBoolean(state.backdropVisible);
-  ret[UrlParam.BACKDROP_BRIGHTNESS] = encodeNumber(state.backdropBrightness);
-  ret[UrlParam.BACKDROP_SATURATION] = encodeNumber(state.backdropSaturation);
-  ret[UrlParam.OBJECT_OPACITY] = encodeNumber(state.objectOpacity);
-  return ret;
+export const serializeBackdropSlice = (state: Partial<BackdropSliceSerializableState>): SerializedStoreData => {
+  return {
+    [UrlParam.SHOW_BACKDROP]: encodeMaybeBoolean(state.backdropVisible),
+    [UrlParam.BACKDROP_BRIGHTNESS]: encodeMaybeNumber(state.backdropBrightness),
+    [UrlParam.BACKDROP_SATURATION]: encodeMaybeNumber(state.backdropSaturation),
+    [UrlParam.OBJECT_OPACITY]: encodeMaybeNumber(state.objectOpacity),
+  };
 };
+
+/** Selects state values that serialization depends on. */
+export const selectBackdropSliceSerializationDeps = (slice: BackdropSlice): BackdropSliceSerializableState => ({
+  backdropVisible: slice.backdropVisible,
+  backdropBrightness: slice.backdropBrightness,
+  backdropSaturation: slice.backdropSaturation,
+  objectOpacity: slice.objectOpacity,
+});
 
 export const loadBackdropSliceFromParams = (slice: BackdropSlice, params: URLSearchParams): void => {
   const showBackdrop = decodeBoolean(params.get(UrlParam.SHOW_BACKDROP));
