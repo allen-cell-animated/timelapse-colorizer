@@ -3,35 +3,30 @@ import { Vector2 } from "three";
 import { ViewerStoreState } from "../state/slices";
 import { FrameLoadResult } from "./types";
 
-const canvasStateDeps = [
-  "dataset",
-  "featureKey",
-  "track",
-  "showTrackPath",
-  "colorRamp",
-  "colorRampRange",
-  "categoricalPalette",
-  "outlineColor",
-  "outlierDrawSettings",
-  "outOfRangeDrawSettings",
-  "inRangeLUT",
-  "vectorMotionDeltas",
-  "vectorVisible",
-  "vectorColor",
-  "vectorScaleFactor",
-  "backdropKey",
-  "backdropVisible",
-  "objectOpacity",
-  "backdropSaturation",
-  "backdropBrightness",
-] as const;
+export const renderCanvasStateParamsSelector = (state: ViewerStoreState) => ({
+  dataset: state.dataset,
+  featureKey: state.featureKey,
+  track: state.track,
+  showTrackPath: state.showTrackPath,
+  colorRamp: state.colorRamp,
+  colorRampRange: state.colorRampRange,
+  categoricalPaletteRamp: state.categoricalPaletteRamp,
+  outlineColor: state.outlineColor,
+  outlierDrawSettings: state.outlierDrawSettings,
+  outOfRangeDrawSettings: state.outOfRangeDrawSettings,
+  inRangeLUT: state.inRangeLUT,
+  vectorMotionDeltas: state.vectorMotionDeltas,
+  vectorVisible: state.vectorVisible,
+  vectorColor: state.vectorColor,
+  vectorScaleFactor: state.vectorScaleFactor,
+  backdropKey: state.backdropKey,
+  backdropVisible: state.backdropVisible,
+  objectOpacity: state.objectOpacity,
+  backdropSaturation: state.backdropSaturation,
+  backdropBrightness: state.backdropBrightness,
+});
 
-export type RenderCanvasStateParams = Pick<ViewerStoreState, (typeof canvasStateDeps)[number]>;
-
-export const renderCanvasStateParamsSelector = (state: ViewerStoreState): RenderCanvasStateParams => {
-  const entries = canvasStateDeps.map((key) => [key, state[key]]);
-  return Object.fromEntries(entries);
-};
+export type RenderCanvasStateParams = ReturnType<typeof renderCanvasStateParamsSelector>;
 
 /**
  * A canvas that renders timelapse data.

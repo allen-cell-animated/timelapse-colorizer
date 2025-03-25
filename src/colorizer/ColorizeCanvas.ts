@@ -24,7 +24,8 @@ import { clamp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
-  BACKGROUND_COLOR_DEFAULT,
+  CANVAS_BACKGROUND_COLOR_DEFAULT,
+  FRAME_BACKGROUND_COLOR_DEFAULT,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
@@ -110,9 +111,9 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     colorRamp: new Uniform(emptyColorRamp),
     highlightedId: new Uniform(-1),
     hideOutOfRange: new Uniform(false),
-    backgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
+    backgroundColor: new Uniform(new Color(FRAME_BACKGROUND_COLOR_DEFAULT)),
     outlineColor: new Uniform(new Color(OUTLINE_COLOR_DEFAULT)),
-    canvasBackgroundColor: new Uniform(new Color(BACKGROUND_COLOR_DEFAULT)),
+    canvasBackgroundColor: new Uniform(new Color(CANVAS_BACKGROUND_COLOR_DEFAULT)),
     outlierColor: new Uniform(new Color(OUTLIER_COLOR_DEFAULT)),
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
@@ -155,11 +156,8 @@ export default class ColorizeCanvas implements IRenderCanvas {
   private renderer: WebGLRenderer;
   private pickRenderTarget: WebGLRenderTarget;
 
+  // TODO: Force params to be provided in constructor?
   protected params: RenderCanvasStateParams | null;
-  // Categorical palette is stored separately from params because it's not a
-  // direct part of state, and the ColorRamp class must be disposed and
-  // recreated when the palette changes.
-  protected categoricalPalette: ColorRamp;
 
   protected canvasResolution: Vector2;
 
@@ -225,7 +223,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.params = null;
 
     this.canvasResolution = new Vector2(1, 1);
-    this.categoricalPalette = new ColorRamp(["black"]);
     this.currentFrame = -1;
     this.pendingFrame = -1;
     this.lastFrameLoadResult = null;
@@ -389,15 +386,6 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
   }
 
-  public setBackgroundColor(color: Color): void {
-    this.setUniform("backgroundColor", color);
-  }
-
-  /** Set the color of the area outside the frame in the canvas. */
-  public setCanvasBackgroundColor(color: Color): void {
-    this.setUniform("canvasBackgroundColor", color);
-  }
-
   private setOutlierDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outlierDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
@@ -524,24 +512,19 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.setUniform("backdropSaturation", clamp(params.backdropSaturation, 0, 100) / 100);
     this.setUniform("backdropBrightness", clamp(params.backdropBrightness, 0, 200) / 100);
 
-    // Update color ramp  + palette
-    if (hasPropertyChanged(params, prevParams, ["categoricalPalette"])) {
-      this.categoricalPalette.dispose();
-      this.categoricalPalette = new ColorRamp(params.categoricalPalette);
-    }
     if (
       hasPropertyChanged(params, prevParams, [
         "dataset",
         "featureKey",
         "colorRamp",
         "colorRampRange",
-        "categoricalPalette",
+        "categoricalPaletteRamp",
       ])
     ) {
       if (params.dataset !== null && params.featureKey !== null) {
         const isFeatureCategorical = params.dataset.isFeatureCategorical(params.featureKey);
         if (isFeatureCategorical) {
-          this.setUniform("colorRamp", this.categoricalPalette.texture);
+          this.setUniform("colorRamp", params.categoricalPaletteRamp.texture);
           this.setUniform("featureColorRampMin", 0);
           this.setUniform("featureColorRampMax", MAX_FEATURE_CATEGORIES - 1);
         } else {
