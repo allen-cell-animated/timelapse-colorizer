@@ -59,7 +59,7 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
       set({ pendingFrame: frame });
       const result = await get().frameLoadCallback(frame);
       if (result !== null) {
-        set({ currentFrame: frame });
+        set({ currentFrame: result.frame, frameLoadResult: result });
       } else if (get().pendingFrame === frame) {
         // Reset pendingFrame if it hasn't changed. (e.g. no other calls to
         // setFrame were made while this one was loading)
@@ -95,7 +95,7 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
       .frameLoadCallback(frame)
       .then((result) => {
         if (result !== null) {
-          set({ currentFrame: result.frame });
+          set({ currentFrame: result.frame, frameLoadResult: result });
         } else if (get().pendingFrame === frame) {
           // Reset pendingFrame if it hasn't changed. (e.g. no other calls to
           // setFrame were made while this one was loading)
