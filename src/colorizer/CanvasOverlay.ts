@@ -28,7 +28,7 @@ import { getPixelRatio } from "./canvas/utils";
 import { CanvasScaleInfo, CanvasType, FrameLoadResult } from "./types";
 
 import { LabelData } from "./AnnotationData";
-import ColorizeCanvas from "./ColorizeCanvas";
+import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 /**
@@ -38,7 +38,7 @@ import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
  */
 export default class CanvasOverlay implements IRenderCanvas {
   private canvasElement: HTMLCanvasElement;
-  private canvas: IRenderCanvas;
+  private innerCanvas: IRenderCanvas;
   private ctx: CanvasRenderingContext2D;
 
   private currentFrame: number;
@@ -62,7 +62,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   private annotationStyle: AnnotationStyle;
 
   /** Size of the inner colorized canvas, in pixels. */
-  private canvasResolution: Vector2;
+  private innerCanvasSize: Vector2;
   // Size of the header and footer as of the current render.
   private headerSize: Vector2;
   private footerSize: Vector2;
@@ -90,13 +90,13 @@ export default class CanvasOverlay implements IRenderCanvas {
       footer?: FooterStyle;
     }
   ) {
-    this.canvas = canvas;
+    this.innerCanvas = canvas;
     this.canvasElement = document.createElement("canvas");
     this.canvasElement.style.display = "block";
     this.onFrameLoadCallback = () => {};
 
     this.params = params;
-    this.currentFrame = 0;
+    this.currentFrame = -1;
     this.zoomMultiplier = 1;
     this.panOffset = new Vector2();
 
@@ -112,7 +112,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.headerStyle = styles?.header || defaultHeaderStyle;
     this.footerStyle = styles?.footer || defaultFooterStyle;
     this.annotationStyle = defaultAnnotationStyle;
-    this.canvasResolution = new Vector2(1, 1);
+    this.innerCanvasSize = new Vector2(1, 1);
     this.headerSize = new Vector2(0, 0);
     this.footerSize = new Vector2(0, 0);
 
@@ -135,11 +135,11 @@ export default class CanvasOverlay implements IRenderCanvas {
   // Wrapped ColorizeCanvas functions ///////
 
   public get resolution(): Vector2 {
-    return this.canvasResolution.clone();
+    return this.innerCanvasSize.clone();
   }
 
   public getScaleInfo(): CanvasScaleInfo {
-    return this.canvas.getScaleInfo();
+    return this.innerCanvas.getScaleInfo();
   }
 
   get domElement(): HTMLCanvasElement {
@@ -149,23 +149,23 @@ export default class CanvasOverlay implements IRenderCanvas {
 
   setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
     this.onFrameLoadCallback = callback;
-    this.canvas.setOnFrameLoadCallback(callback);
+    this.innerCanvas.setOnFrameLoadCallback(callback);
   }
 
   dispose(): void {
-    this.canvas.dispose();
+    this.innerCanvas.dispose();
   }
 
   public setResolution(width: number, height: number): void {
-    this.canvasResolution.x = width;
-    this.canvasResolution.y = height;
-    this.canvas.setResolution(width, height);
+    this.innerCanvasSize.x = width;
+    this.innerCanvasSize.y = height;
+    this.innerCanvas.setResolution(width, height);
     this.render();
   }
 
   public getIdAtPixel(x: number, y: number): number {
     const headerHeight = this.headerSize.y;
-    return this.canvas.getIdAtPixel(x, y - headerHeight);
+    return this.innerCanvas.getIdAtPixel(x, y - headerHeight);
   }
 
   // Getters/Setters ////////////////////////////////
@@ -201,35 +201,35 @@ export default class CanvasOverlay implements IRenderCanvas {
 
   public setZoom(zoom: number): void {
     this.zoomMultiplier = zoom;
-    if (this.canvas instanceof ColorizeCanvas) {
-      this.canvas.setZoom(zoom);
+    if (this.innerCanvas instanceof ColorizeCanvas2D) {
+      this.innerCanvas.setZoom(zoom);
     }
     this.render();
   }
 
   public setPan(x: number, y: number): void {
     this.panOffset.set(x, y);
-    if (this.canvas instanceof ColorizeCanvas) {
-      this.canvas.setPan(x, y);
+    if (this.innerCanvas instanceof ColorizeCanvas2D) {
+      this.innerCanvas.setPan(x, y);
     }
     this.render();
   }
 
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
     this.params = params;
-    await this.canvas.setParams(params);
+    await this.innerCanvas.setParams(params);
     this.render(false);
   }
 
   public async setCanvas(canvas: IRenderCanvas): Promise<void> {
-    this.canvas = canvas;
-    this.canvas.setResolution(this.canvasResolution.x, this.canvasResolution.y);
-    this.canvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
-    await this.canvas.setParams(this.params);
-    await this.canvas.setFrame(this.currentFrame);
-    if (this.canvas instanceof ColorizeCanvas) {
-      this.canvas.setZoom(this.zoomMultiplier);
-      this.canvas.setPan(this.panOffset.x, this.panOffset.y);
+    this.innerCanvas = canvas;
+    this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
+    this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
+    await this.innerCanvas.setParams(this.params);
+    await this.innerCanvas.setFrame(this.currentFrame);
+    if (this.innerCanvas instanceof ColorizeCanvas2D) {
+      this.innerCanvas.setZoom(this.zoomMultiplier);
+      this.innerCanvas.setPan(this.panOffset.x, this.panOffset.y);
     }
     this.render(false);
   }
@@ -250,7 +250,7 @@ export default class CanvasOverlay implements IRenderCanvas {
 
   private getBaseRendererParams(): BaseRenderParams {
     return {
-      canvasSize: this.canvasResolution,
+      canvasSize: this.innerCanvasSize,
       collection: this.params.collection,
       dataset: this.params.dataset,
       datasetKey: this.params.datasetKey,
@@ -259,7 +259,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   private getAnnotationRenderer(): RenderInfo {
-    const scaleInfo = this.canvas.getScaleInfo();
+    const scaleInfo = this.innerCanvas.getScaleInfo();
     const params: AnnotationParams = {
       ...this.getBaseRendererParams(),
       visible: this.isAnnotationVisible,
@@ -286,7 +286,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   private getFooterRenderer(visible: boolean): RenderInfo {
-    const scaleInfo = this.canvas.getScaleInfo();
+    const scaleInfo = this.innerCanvas.getScaleInfo();
     const baseParams = this.getBaseRendererParams();
     const params: FooterParams = {
       ...baseParams,
@@ -315,9 +315,10 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   public async setFrame(requestedFrame: number): Promise<FrameLoadResult | null> {
-    const result = await this.canvas.setFrame(requestedFrame);
+    const result = await this.innerCanvas.setFrame(requestedFrame);
     if (result !== null) {
-      this.currentFrame = requestedFrame;
+      this.currentFrame = result.frame;
+      // setFrame already re-renders the inner canvas.
       this.render(false);
     }
     return result;
@@ -325,6 +326,8 @@ export default class CanvasOverlay implements IRenderCanvas {
 
   /**
    * Render the viewport canvas with overlay elements composited on top of it.
+   * @param doesInnerCanvasNeedRender Whether the inner canvas needs to be
+   * re-rendered. True by default.
    */
   render(doesInnerCanvasNeedRender: boolean = true): void {
     // Expand size by header + footer, if rendering:
@@ -334,9 +337,9 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.footerSize = footerRenderer.sizePx;
 
     const devicePixelRatio = getPixelRatio();
-    this.canvasElement.width = Math.round(this.canvasResolution.x * devicePixelRatio);
+    this.canvasElement.width = Math.round(this.innerCanvasSize.x * devicePixelRatio);
     this.canvasElement.height = Math.round(
-      (this.canvasResolution.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio
+      (this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio
     );
 
     //Clear canvas
@@ -345,16 +348,16 @@ export default class CanvasOverlay implements IRenderCanvas {
     // Because CanvasWithOverlay is a child of ColorizeCanvas, this renders the base
     // colorized viewport image. It is then composited into the CanvasWithOverlay's canvas.
     if (doesInnerCanvasNeedRender) {
-      this.canvas.render();
+      this.innerCanvas.render();
     }
     this.ctx.imageSmoothingEnabled = false;
-    this.ctx.drawImage(this.canvas.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
+    this.ctx.drawImage(this.innerCanvas.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
     headerRenderer.render(new Vector2(0, 0));
     this.getAnnotationRenderer().render(new Vector2(0, this.headerSize.y));
-    footerRenderer.render(new Vector2(0, this.canvasResolution.y + this.headerSize.y));
+    footerRenderer.render(new Vector2(0, this.innerCanvasSize.y + this.headerSize.y));
   }
 
   /**
@@ -368,9 +371,9 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.footerSize = footerRenderer.sizePx;
 
     const devicePixelRatio = getPixelRatio();
-    const canvasWidth = Math.round(this.canvasResolution.x * devicePixelRatio);
+    const canvasWidth = Math.round(this.innerCanvasSize.x * devicePixelRatio);
     const canvasHeight = Math.round(
-      (this.canvasResolution.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio
+      (this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio
     );
     return [canvasWidth, canvasHeight];
   }

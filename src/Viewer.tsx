@@ -41,7 +41,7 @@ import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
 import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import ColorizeCanvas, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
 import { FeatureType } from "./colorizer/Dataset";
 import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
@@ -86,7 +86,7 @@ function Viewer(): ReactElement {
 
   const canv = useConstructor(() => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
-    const canvas = new CanvasOverlay(new ColorizeCanvas(), stateDeps);
+    const canvas = new CanvasOverlay(new ColorizeCanvas2D(), stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
     canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);
