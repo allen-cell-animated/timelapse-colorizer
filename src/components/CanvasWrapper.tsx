@@ -2,7 +2,7 @@ import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons
 import { Tooltip } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation, Vector2 } from "three";
+import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
@@ -224,7 +224,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.updateLegendStyle(defaultTheme);
     canv.updateFooterStyle(sidebarTheme);
     canv.updateHeaderStyle(sidebarTheme);
-    canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
 
   // Update overlay settings

@@ -242,7 +242,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       legend: {
         ...baseParams,
         colorRamp: this.params?.colorRamp || new ColorRamp(["white"]),
-        categoricalPalette: this.categoricalPalette,
+        categoricalPalette: this.params?.categoricalPaletteRamp || new ColorRamp(["white"]),
         colorMapRangeMin: this.params?.colorRampRange[0] || 0,
         colorMapRangeMax: this.params?.colorRampRange[1] || 1,
       },

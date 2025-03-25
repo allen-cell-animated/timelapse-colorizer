@@ -116,6 +116,16 @@ describe("useViewerStateStore: ColorRampSlice", () => {
       });
       expect(result.current.categoricalPaletteKey).toBeNull();
     });
+
+    it("updates categoricalPaletteRamp when set", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const paletteData = Array.from(KNOWN_CATEGORICAL_PALETTES.values())[2];
+      const colorStops = paletteData.colors;
+      act(() => {
+        result.current.setCategoricalPalette(colorStops);
+      });
+      expect(result.current.categoricalPaletteRamp.colorStops).toStrictEqual(colorStops);
+    });
   });
 
   describe("setColorRampRange", () => {

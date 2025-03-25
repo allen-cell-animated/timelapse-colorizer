@@ -73,7 +73,6 @@ const theme = {
       modalOverlay: "rgba(0, 0, 0, 0.7)",
     },
     viewport: {
-      background: palette.gray7,
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
       annotationOutline: palette.themeLight,
