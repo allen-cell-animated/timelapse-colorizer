@@ -3,7 +3,31 @@ import { Vector2 } from "three";
 import { ViewerStoreState } from "../state/slices";
 import { FrameLoadResult } from "./types";
 
-export const renderCanvasStateParamsSelector = (state: ViewerStoreState) => ({
+export type RenderCanvasStateParams = Pick<
+  ViewerStoreState,
+  | "dataset"
+  | "featureKey"
+  | "track"
+  | "showTrackPath"
+  | "colorRamp"
+  | "colorRampRange"
+  | "categoricalPaletteRamp"
+  | "outlineColor"
+  | "outlierDrawSettings"
+  | "outOfRangeDrawSettings"
+  | "inRangeLUT"
+  | "vectorMotionDeltas"
+  | "vectorVisible"
+  | "vectorColor"
+  | "vectorScaleFactor"
+  | "backdropKey"
+  | "backdropVisible"
+  | "objectOpacity"
+  | "backdropSaturation"
+  | "backdropBrightness"
+>;
+
+export const renderCanvasStateParamsSelector = (state: ViewerStoreState): RenderCanvasStateParams => ({
   dataset: state.dataset,
   featureKey: state.featureKey,
   track: state.track,
@@ -25,8 +49,6 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState) => ({
   backdropSaturation: state.backdropSaturation,
   backdropBrightness: state.backdropBrightness,
 });
-
-export type RenderCanvasStateParams = ReturnType<typeof renderCanvasStateParamsSelector>;
 
 /**
  * A canvas that renders timelapse data.
