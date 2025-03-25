@@ -511,10 +511,10 @@ function Viewer(): ReactElement {
       if (target && timeSliderContainerRef.current?.contains(target as Node)) {
         // If the user clicked and released on the slider, update the
         // time immediately.
-        setFrame(frameInput);
+        await setFrame(frameInput);
       }
       if (isTimeSliderDraggedDuringPlayback) {
-        setFrame(frameInput);
+        await setFrame(frameInput);
         // Update the frame and unpause playback when the slider is released.
         setIsTimeSliderDraggedDuringPlayback(false);
         timeControls.play(); // resume playing

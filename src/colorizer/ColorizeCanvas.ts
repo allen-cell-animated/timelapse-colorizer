@@ -558,10 +558,11 @@ export default class ColorizeCanvas implements IRenderCanvas {
   public async setFrame(index: number, forceUpdate: boolean = false): Promise<FrameLoadResult | null> {
     const dataset = this.params?.dataset;
     if (!dataset || !dataset.isValidFrameIndex(index)) {
+      // Out of bounds
       return null;
     }
     if (!forceUpdate && this.currentFrame === index) {
-      // Out of bounds or reloading current frame
+      // Reloading current frame, skip request
       return this.lastFrameLoadResult;
     }
     // Load the frame data asynchronously.
