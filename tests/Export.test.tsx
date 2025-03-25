@@ -18,6 +18,9 @@ describe("ExportButton", () => {
           getCanvas={vi.fn()}
           getCanvasExportDimensions={vi.fn()}
           currentFrame={0}
+          onClick={vi.fn()}
+          setIsRecording={vi.fn()}
+          disabled={false}
         />
       );
     }

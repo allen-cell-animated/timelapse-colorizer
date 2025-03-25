@@ -11,9 +11,7 @@ import {
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,
-  ScatterPlotConfig,
   ThresholdType,
-  ViewerConfig,
 } from "../types";
 import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
@@ -66,23 +64,6 @@ const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   "/allen/aics/assay-dev": "https://dev-aics-dtp-001.int.allencell.org/assay-dev",
   // eslint-disable-next-line @typescript-eslint/naming-convention
   "/allen/aics/microscopy": "https://dev-aics-dtp-001.int.allencell.org/microscopy",
-};
-
-export type UrlParams = {
-  collection: string;
-  dataset: string;
-  /** Either feature key or feature name. */
-  feature: string;
-  track: number;
-  time: number;
-  thresholds: FeatureThreshold[];
-  range: [number, number];
-  colorRampKey: string | null;
-  colorRampReversed: boolean | null;
-  categoricalPalette: Color[];
-  config: Partial<ViewerConfig>;
-  selectedBackdropKey: string | null;
-  scatterPlotConfig: Partial<ScatterPlotConfig>;
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
