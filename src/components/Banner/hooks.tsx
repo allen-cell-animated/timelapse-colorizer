@@ -58,7 +58,7 @@ export const useAlertBanner = (
       ignoredBannerMessages.current.add(props.message);
       setBannerProps((previousBannerProps) => [...previousBannerProps, props]);
     },
-    [bannerProps, ignoredBannerMessages.current]
+    [ignoredBannerMessages.current]
   );
 
   const clearBanners = useCallback(() => {
