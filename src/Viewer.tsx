@@ -25,6 +25,7 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
+import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
@@ -413,7 +414,12 @@ function Viewer(): ReactElement {
       setIsDatasetLoading(false);
 
       // Load the viewer state from the URL after the dataset is loaded.
-      loadViewerStateFromParams(useViewerStateStore, searchParams);
+      try {
+        loadViewerStateFromParams(useViewerStateStore, searchParams);
+      } catch (error) {
+        console.error("Failed to load viewer state from URL:", error);
+        showAlert(showFailedUrlParseAlert(window.location.href, error as Error));
+      }
       return;
     };
     loadInitialDataset();
