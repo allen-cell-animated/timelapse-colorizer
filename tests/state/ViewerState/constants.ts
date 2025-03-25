@@ -1,8 +1,11 @@
 import { FeatureDataType } from "../../../src/colorizer";
+import { CollectionFile } from "../../../src/colorizer/utils/collection_utils";
 import { AnyManifestFile, ManifestFile } from "../../../src/colorizer/utils/dataset_utils";
 import { DEFAULT_DATASET_DIR, makeMockDataset, MockArrayLoader, MockArraySource } from "../../test_utils";
 
 import Collection from "../../../src/colorizer/Collection";
+
+// TODO: Move to /tests/constants.ts so other tests can use these constants
 
 export enum MockFeatureKeys {
   FEATURE1 = "feature1",
@@ -58,7 +61,7 @@ export enum MockBackdropKeys {
 
 export const DEFAULT_INITIAL_FEATURE_KEY = MockFeatureKeys.FEATURE1;
 
-const MOCK_DATASET_MANIFEST: AnyManifestFile = {
+export const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   features: [
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE1],
     MOCK_FEATURE_DATA[MockFeatureKeys.FEATURE2],
@@ -82,7 +85,7 @@ const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   tracks: "tracks.json",
 };
 
-const mockArrayLoader = new MockArrayLoader({
+export const MOCK_DATASET_ARRAY_LOADER = new MockArrayLoader({
   [DEFAULT_DATASET_DIR + "times.json"]: new MockArraySource(
     FeatureDataType.U32,
     new Uint32Array([0, 1, 2, 0, 1, 2, 0, 1, 2])
@@ -109,7 +112,7 @@ const mockArrayLoader = new MockArrayLoader({
   ),
 });
 
-export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST, mockArrayLoader);
+export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST, MOCK_DATASET_ARRAY_LOADER);
 
 export const MOCK_DATASET_WITH_TWO_FRAMES = await makeMockDataset({
   ...MOCK_DATASET_MANIFEST,
@@ -126,8 +129,14 @@ export const MOCK_DATASET_DEFAULT_TRACK = MOCK_DATASET.getTrack(0)!;
 
 export const MOCK_DATASET_KEY = "some-dataset";
 export const MOCK_COLLECTION_PATH = "https://some-url.com/collection.json";
+export const MOCK_DATASET_PATH = "https://some-url.com/data/dataset.json";
+
+export const MOCK_COLLECTION_MANIFEST: CollectionFile = {
+  datasets: [{ path: MOCK_DATASET_PATH, name: MOCK_DATASET_KEY }],
+  metadata: {},
+};
 
 export const MOCK_COLLECTION = new Collection(
-  new Map([[MOCK_DATASET_KEY, { path: "https://some-url.com/data/dataset.json", name: MOCK_DATASET_KEY }]]),
+  new Map([[MOCK_DATASET_KEY, { path: MOCK_DATASET_PATH, name: MOCK_DATASET_KEY }]]),
   MOCK_COLLECTION_PATH
 );
