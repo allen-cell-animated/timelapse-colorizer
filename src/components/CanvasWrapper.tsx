@@ -13,7 +13,7 @@ import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasOverlay";
-import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
+import { IRenderCanvas, renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
@@ -85,7 +85,7 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
 `;
 
 type CanvasWrapperProps = {
-  canv: CanvasUIOverlay;
+  canv: IRenderCanvas;
 
   loading: boolean;
   loadingProgress: number | null;
@@ -217,39 +217,39 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       stroke: theme.color.layout.borders,
       fill: theme.color.layout.background,
     };
-    canv.updateScaleBarStyle(defaultTheme);
-    canv.updateTimestampStyle(defaultTheme);
-    canv.updateInsetBoxStyle({ stroke: theme.color.layout.borders });
-    canv.updateLegendStyle(defaultTheme);
-    canv.updateFooterStyle(sidebarTheme);
-    canv.updateHeaderStyle(sidebarTheme);
+    // canv.updateScaleBarStyle(defaultTheme);
+    // canv.updateTimestampStyle(defaultTheme);
+    // canv.updateInsetBoxStyle({ stroke: theme.color.layout.borders });
+    // canv.updateLegendStyle(defaultTheme);
+    // canv.updateFooterStyle(sidebarTheme);
+    // canv.updateHeaderStyle(sidebarTheme);
   }, [theme]);
 
   // Update overlay settings
   useMemo(() => {
-    canv.isScaleBarVisible = showScaleBar;
+    // canv.isScaleBarVisible = showScaleBar;
   }, [showScaleBar]);
 
   useMemo(() => {
-    canv.isTimestampVisible = showTimestamp;
+    // canv.isTimestampVisible = showTimestamp;
   }, [showTimestamp]);
 
   useMemo(() => {
-    canv.setIsExporting(props.isRecording);
-    canv.isHeaderVisibleOnExport = showHeaderDuringExport;
-    canv.isFooterVisibleOnExport = showLegendDuringExport;
+    // canv.setIsExporting(props.isRecording);
+    // canv.isHeaderVisibleOnExport = showHeaderDuringExport;
+    // canv.isFooterVisibleOnExport = showLegendDuringExport;
   }, [showLegendDuringExport, props.isRecording]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
     const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
-    canv.setAnnotationData(
-      annotationLabels,
-      timeToAnnotationLabelIds,
-      props.annotationState.currentLabelIdx,
-      props.annotationState.lastClickedId
-    );
-    canv.isAnnotationVisible = props.annotationState.visible;
+    // canv.setAnnotationData(
+    //   annotationLabels,
+    //   timeToAnnotationLabelIds,
+    //   props.annotationState.currentLabelIdx,
+    //   props.annotationState.lastClickedId
+    // );
+    // canv.isAnnotationVisible = props.annotationState.visible;
   }, [
     dataset,
     props.annotationState.data,
@@ -297,8 +297,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     canvasZoomInverse.current = 1.0;
     canvasPanOffset.current = new Vector2(0, 0);
-    canv.setZoom(1.0);
-    canv.setPan(0, 0);
+    // canv.setZoom(1.0);
+    // canv.setPan(0, 0);
   }, [collection]);
 
   /** Report clicked tracks via the passed callback. */
@@ -335,7 +335,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     (zoomDelta: number): void => {
       canvasZoomInverse.current += zoomDelta;
       canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
-      canv.setZoom(1 / canvasZoomInverse.current);
+      // canv.setZoom(1 / canvasZoomInverse.current);
     },
     [canv]
   );
@@ -370,7 +370,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -0.5, 0.5);
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -0.5, 0.5);
 
-      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+      // canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
     [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
   );
@@ -384,7 +384,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // Clamp panning
       canvasPanOffset.current.x = clamp(canvasPanOffset.current.x, -0.5, 0.5);
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
-      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+      // canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
     [canv, getCanvasSizePx, dataset]
   );
@@ -612,7 +612,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
 
   return (
-    <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
+    <CanvasContainer
+      ref={containerRef}
+      $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}
+      id="canvas-wrapper"
+    >
       {props.annotationState.isAnnotationModeEnabled && (
         <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
       )}
@@ -631,8 +635,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             onClick={() => {
               canvasZoomInverse.current = 1.0;
               canvasPanOffset.current = new Vector2(0, 0);
-              canv.setZoom(1.0);
-              canv.setPan(0, 0);
+              // canv.setZoom(1.0);
+              // canv.setPan(0, 0);
             }}
             type="link"
           >

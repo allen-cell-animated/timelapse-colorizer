@@ -2,13 +2,13 @@ import {
   AREA_LIGHT,
   Light,
   LoadSpec,
+  Lut,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
   View3d,
   Volume,
   VolumeLoaderContext,
 } from "@aics/vole-core";
-import { render } from "react-dom";
 import { Vector2, Vector3 } from "three";
 
 import { CanvasScaleInfo, CanvasType, FrameLoadResult } from "./types";
@@ -39,12 +39,13 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   constructor(params: RenderCanvasStateParams) {
     this.params = params;
     this.viewContainer = document.createElement("div");
+
     this.view3d = new View3d({ parentElement: this.viewContainer });
     this.view3d.loaderContext = loaderContext;
     this.setResolution(10, 10);
     this.view3d.setShowAxis(true);
-    this.initLights();
     this.view3d.setVolumeRenderMode(RENDERMODE_RAYMARCH);
+    this.initLights();
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -84,6 +85,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   setResolution(width: number, height: number): void {
+    console.log("ColorizeCanvas3D setResolution", width, height);
     this.viewContainer.style.width = `${width}px`;
     this.viewContainer.style.height = `${height}px`;
     this.view3d.resize(null, width, height);
@@ -105,8 +107,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       // Setup volume loader and load an example volume
       console.log("Setting up loader");
       const loader = await loaderContext.createLoader([
-        "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
-        "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/2.zarr",
+        "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_09_small/seg.ome.zarr",
       ]);
       const loadSpec = new LoadSpec();
       const volume = await loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
@@ -115,19 +116,45 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         // currently, this must be called when channel data arrives (here in this callback)
         this.view3d.onVolumeData(currentVol, [channelIndex]);
 
-        this.view3d.setVolumeChannelEnabled(currentVol, channelIndex, true);
+        // Get histogram from channel data
+        const histogram = currentVol.getHistogram(channelIndex);
+        // const hmin = histogram.findBinOfPercentile(0.5);
+        // const hmax = histogram.findBinOfPercentile(0.983);
+        // const lut = new Lut().createFromMinMax(hmin, hmax);
+        const lut = new Lut().createLabelColors(histogram);
+        // currentVol.setLut(channelIndex, lut);
+        currentVol.setColorPalette(channelIndex, lut.lut);
+        currentVol.setColorPaletteAlpha(channelIndex, 0.5);
 
         // these calls tell the viewer that things are out of date
         this.view3d.updateActiveChannels(currentVol);
         this.view3d.updateLuts(currentVol);
         this.view3d.redraw();
-        console.log("Volume loaded");
+        console.log("Loaded channel", channelIndex);
       });
       this.view3d.addVolume(volume);
-      this.view3d.updateDensity(volume, 12.5);
-      this.view3d.updateExposure(0.75);
+
+      this.view3d.setVolumeChannelEnabled(volume, 0, true);
+      this.view3d.setVolumeChannelOptions(volume, 0, {
+        isosurfaceEnabled: false,
+        isosurfaceOpacity: 1.0,
+        enabled: true,
+        color: [1, 1, 1],
+        emissiveColor: [0, 0, 0],
+      });
+
+      this.view3d.updateDensity(volume, 50);
+      this.view3d.updateExposure(60);
+      this.view3d.setVolumeRotation(volume, [0, 0, 0]);
+      this.view3d.setVolumeTranslation(volume, [0, 0, 0]);
+      this.view3d.setVolumeScale(volume, [1, 1, 1]);
+      this.view3d.setShowBoundingBox(volume, true);
+      this.view3d.setBoundingBoxColor(volume, [1, 0, 0]);
+      this.view3d.resetCamera();
+
       await loader.loadVolumeData(volume);
       this.render();
+      console.log("Volume data loaded");
       return {
         frame: 0,
         isFrameLoaded: true,
