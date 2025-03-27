@@ -537,6 +537,14 @@ export default class Dataset {
     return this.times?.[index] || 0;
   }
 
+  public getTotalFrames(): number {
+    return this.frameFiles.length;
+  }
+
+  public isValidFrameIndex(index: number): boolean {
+    return index >= 0 && index < this.getTotalFrames();
+  }
+
   /** get track id of a given cell id */
   public getTrackId(index: number): number {
     return this.trackIds?.[index] || 0;

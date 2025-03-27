@@ -363,7 +363,6 @@ function Viewer(): ReactElement {
 
       // State updates
       setDataset(newDatasetKey, newDataset);
-      await canv.setDataset(newDataset);
 
       setDatasetOpen(true);
       console.log("Dataset metadata:", newDataset.metadata);

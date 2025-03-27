@@ -29,6 +29,7 @@ import { getPixelRatio } from "./canvas/utils";
 import { LabelData } from "./AnnotationData";
 import Collection from "./Collection";
 import ColorizeCanvas from "./ColorizeCanvas";
+import ColorRamp from "./ColorRamp";
 
 /**
  * Extends the ColorizeCanvas class by overlaying and compositing additional
@@ -127,10 +128,11 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     return this.canvas;
   }
 
-  public setSize(width: number, height: number): void {
+  public setResolution(width: number, height: number): void {
     this.canvasSize.x = width;
     this.canvasSize.y = height;
-    super.setSize(width, height);
+    super.setResolution(width, height);
+    this.render();
   }
 
   public getIdAtPixel(x: number, y: number): number {
@@ -194,9 +196,9 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     return {
       canvasSize: this.canvasSize,
       collection: this.collection,
-      dataset: this.dataset,
+      dataset: this.params?.dataset || null,
       datasetKey: this.datasetKey,
-      featureKey: this.featureKey,
+      featureKey: this.params?.featureKey || null,
     };
   }
 
@@ -209,7 +211,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       selectedLabelIdx: this.selectedLabelIdx,
       lastSelectedId: this.lastClickedId,
       frameToCanvasCoordinates: this.frameToCanvasCoordinates,
-      frame: this.getCurrentFrame(),
+      frame: this.currentFrame,
       panOffset: this.panOffset,
     };
     return getAnnotationRenderer(this.ctx, params, this.annotationStyle);
@@ -228,7 +230,7 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
     const params: FooterParams = {
       ...baseParams,
       visible,
-      timestamp: { ...baseParams, currentFrame: this.getCurrentFrame(), visible: this.isTimestampVisible },
+      timestamp: { ...baseParams, currentFrame: this.currentFrame, visible: this.isTimestampVisible },
       timestampStyle: this.timestampStyle,
       scaleBar: {
         ...baseParams,
@@ -239,10 +241,10 @@ export default class CanvasWithOverlay extends ColorizeCanvas {
       insetBoxStyle: this.insetBoxStyle,
       legend: {
         ...baseParams,
-        colorRamp: this.colorRamp,
+        colorRamp: this.params?.colorRamp || new ColorRamp(["white"]),
         categoricalPalette: this.categoricalPalette,
-        colorMapRangeMin: this.colorMapRangeMin,
-        colorMapRangeMax: this.colorMapRangeMax,
+        colorMapRangeMin: this.params?.colorRampRange[0] || 0,
+        colorMapRangeMax: this.params?.colorRampRange[1] || 1,
       },
       legendStyle: this.legendStyle,
     };
