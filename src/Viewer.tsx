@@ -42,6 +42,7 @@ import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
 import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
+import { ColorizeCanvas3D } from "./colorizer/ColorizeCanvas3D";
 import { FeatureType } from "./colorizer/Dataset";
 import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
@@ -84,9 +85,12 @@ function Viewer(): ReactElement {
 
   const [, startTransition] = React.useTransition();
 
+  // TODO: Make `canv` an IRenderCanvas type? Don't wrap `ColorizeCanvas3D` in `CanvasOverlay`...?
   const canv = useConstructor(() => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
-    const canvas = new CanvasOverlay(new ColorizeCanvas2D(), stateDeps);
+    // const innerCanvas = new ColorizeCanvas2D();
+    const innerCanvas = new ColorizeCanvas3D(stateDeps);
+    const canvas = new CanvasOverlay(innerCanvas, stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
     canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);
