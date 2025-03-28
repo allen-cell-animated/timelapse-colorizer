@@ -2,7 +2,8 @@ import { Color } from "three";
 
 import { PlotRangeType, ScatterPlotConfig, VectorConfig, VectorTooltipMode } from "./types";
 
-export const BACKGROUND_COLOR_DEFAULT = 0xffffff;
+export const FRAME_BACKGROUND_COLOR_DEFAULT = 0xffffff;
+export const CANVAS_BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
 export const OUTLINE_COLOR_DEFAULT = 0xff00ff;
 export const OUTLIER_COLOR_DEFAULT = 0xc0c0c0;
 export const OUT_OF_RANGE_COLOR_DEFAULT = 0xdddddd;

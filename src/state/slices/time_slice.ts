@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
 
+import { FrameLoadResult } from "../../colorizer";
 import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
 import type { SerializedStoreData, SubscribableStore } from "../types";
@@ -7,10 +8,12 @@ import { clampWithNanCheck } from "../utils/data_validation";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import type { DatasetSlice } from "./dataset_slice";
 
+import { IRenderCanvas } from "../../colorizer/IRenderCanvas";
 import TimeControls from "../../colorizer/TimeControls";
 
 export type TimeSliceState = {
-  /** The frame that is currently being loaded. If no load is happening,
+  /**
+   * The frame that is currently being loaded. If no load is happening,
    * `pendingFrame === currentFrame`.
    */
   pendingFrame: number;
@@ -18,7 +21,12 @@ export type TimeSliceState = {
   currentFrame: number;
   playbackFps: number;
   timeControls: TimeControls;
-  loadFrameCallback: (frame: number) => Promise<void>;
+  frameLoadCallback: IRenderCanvas["setFrame"];
+  /**
+   * The `FrameLoadResult` from the last loaded frame. `null` at
+   * initialization.
+   */
+  frameLoadResult: FrameLoadResult | null;
 };
 
 export type TimeSliceSerializableState = Pick<TimeSliceState, "currentFrame">;
@@ -35,7 +43,8 @@ export type TimeSliceActions = {
    */
   setFrame: (frame: number) => Promise<void>;
   setPlaybackFps: (fps: number) => void;
-  setLoadFrameCallback: (callback: (frame: number) => Promise<void>) => void;
+  setFrameLoadCallback: (callback: IRenderCanvas["setFrame"]) => void;
+  setFrameLoadResult: (result: FrameLoadResult) => void;
 };
 
 export type TimeSlice = TimeSliceState & TimeSliceActions;
@@ -48,17 +57,24 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
     () => get().currentFrame,
     async (frame) => {
       set({ pendingFrame: frame });
-      await get().loadFrameCallback(frame);
-      set({ currentFrame: frame });
+      const result = await get().frameLoadCallback(frame);
+      if (result !== null) {
+        set({ currentFrame: result.frame, frameLoadResult: result });
+      } else if (get().pendingFrame === frame) {
+        // Reset pendingFrame if it hasn't changed. (e.g. no other calls to
+        // setFrame were made while this one was loading)
+        // TODO: More robust handling for requests? Request IDs?
+        set({ pendingFrame: get().currentFrame });
+      }
     }
   ),
-  loadFrameCallback: (_frame: number) => {
-    return Promise.resolve();
+  frameLoadCallback: (frame: number): Promise<FrameLoadResult> => {
+    return Promise.resolve({ frame, isFrameLoaded: false, isBackdropLoaded: false, backdropKey: null });
   },
+  frameLoadResult: null,
 
-  setLoadFrameCallback: (callback) => {
-    set({ loadFrameCallback: callback });
-  },
+  setFrameLoadCallback: (callback) => set({ frameLoadCallback: callback }),
+  setFrameLoadResult: (result) => set({ frameLoadResult: result }),
   setFrame: async (frame: number) => {
     if (!Number.isFinite(frame)) {
       throw new Error(`TimeSlice.setFrame: Invalid frame number: ${frame}`);
@@ -76,9 +92,15 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
     }
     set({ pendingFrame: frame });
     await get()
-      .loadFrameCallback(frame)
-      .then(() => {
-        set({ currentFrame: frame });
+      .frameLoadCallback(frame)
+      .then((result) => {
+        if (result !== null) {
+          set({ currentFrame: result.frame, frameLoadResult: result });
+        } else if (get().pendingFrame === frame) {
+          // Reset pendingFrame if it hasn't changed. (e.g. no other calls to
+          // setFrame were made while this one was loading)
+          set({ pendingFrame: get().currentFrame });
+        }
       })
       .catch((error) => {
         console.error(`TimeSlice.setFrame: Failed to load frame ${frame}:`, error);
@@ -110,6 +132,9 @@ export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetS
       // Update total frames in timeControls
       const totalFrames = dataset?.numberOfFrames ?? 1;
       store.getState().timeControls.setTotalFrames(totalFrames);
+
+      // Reset last frame load result
+      store.setState({ frameLoadResult: null });
 
       // Clamp and reload the frame
       const newFrame = Math.min(store.getState().currentFrame, totalFrames - 1);
