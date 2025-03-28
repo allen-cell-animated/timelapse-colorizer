@@ -44,6 +44,10 @@ export const DEFAULT_CONFIG = {
     // https://vite.dev/config/dep-optimization-options#optimizedeps-exclude
     include: ["@aics/vole-core > tweakpane", "@aics/vole-core > geotiff", "@aics/vole-core > throttled-queue"],
   },
+  worker: {
+    // Fixes an invalid output format error when building
+    format: "es",
+  },
   plugins: [svgr(), glsl(), react()],
 };
 
