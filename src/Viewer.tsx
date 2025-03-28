@@ -88,9 +88,8 @@ function Viewer(): ReactElement {
   const canv: IRenderCanvas = useConstructor(() => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
     // const innerCanvas = new ColorizeCanvas2D();
-    const innerCanvas = new ColorizeCanvas3D(stateDeps);
     // const canvas = new CanvasOverlay(innerCanvas, stateDeps);
-    const canvas = innerCanvas;
+    const canvas = new ColorizeCanvas3D(stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
     canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);

@@ -79,8 +79,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   get domElement(): HTMLCanvasElement {
-    // I hope this works
-    return this.view3d.getCanvasDOMElement();
+    // return this.view3d.getCanvasDOMElement();
+    // This breaks Export mode. Replace with above line once API support
+    // for it is added to vole-core.
+    return this.view3d.getDOMElement() as unknown as HTMLCanvasElement;
   }
 
   get resolution(): Vector2 {
@@ -217,7 +219,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   render(): void {
-    this.view3d.render();
+    this.view3d.redraw();
+    // this.view3d.render();
   }
 
   dispose(): void {
