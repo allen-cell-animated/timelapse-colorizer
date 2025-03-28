@@ -35,10 +35,13 @@ export const DEFAULT_CONFIG = {
     },
   },
   optimizeDeps: {
-    // Temp patch for a bug where the worker couldn't be loaded, since it's a local path.
+    // vole-core uses a worker imported via local import (e.g. new
+    // URL('./local-worker.js', import.meta.url)). If vite bundles the worker,
+    // vole-core will not be able to find it at runtime. We exclude vole-core
+    // from dependency optimization here.
     exclude: ["@aics/vole-core"],
-    // Have to include all CommonJS dependencies of vole-core
-    // See https://vite.dev/config/dep-optimization-options#optimizedeps-exclude
+    // Have to still optimize all CommonJS dependencies of vole-core. See
+    // https://vite.dev/config/dep-optimization-options#optimizedeps-exclude
     include: ["@aics/vole-core > tweakpane", "@aics/vole-core > geotiff", "@aics/vole-core > throttled-queue"],
   },
   plugins: [svgr(), glsl(), react()],
