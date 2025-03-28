@@ -39,9 +39,8 @@ import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
-import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./colorizer/ColorizeCanvas3D";
 import { FeatureType } from "./colorizer/Dataset";
 import { IRenderCanvas, renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";

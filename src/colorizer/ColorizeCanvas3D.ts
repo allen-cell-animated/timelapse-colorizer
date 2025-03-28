@@ -133,7 +133,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       // Use colorize
       const lut = new Lut().createLabelColors(histogram);
       currentVol.setColorPalette(channelIndex, lut.lut);
-      currentVol.setColorPaletteAlpha(channelIndex, 0.5);
+      currentVol.setColorPaletteAlpha(channelIndex, 1.0);
 
       // these calls tell the viewer that things are out of date
       this.view3d.updateActiveChannels(currentVol);
@@ -152,14 +152,17 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       emissiveColor: [0, 0, 0],
     });
 
-    this.view3d.updateDensity(volume, 50);
-    this.view3d.updateExposure(60);
+    this.view3d.updateDensity(volume, 0.5);
+    this.view3d.updateExposure(0.6);
     this.view3d.setVolumeRotation(volume, [0, 0, 0]);
     this.view3d.setVolumeTranslation(volume, [0, 0, 0]);
     this.view3d.setVolumeScale(volume, [1, 1, 1]);
     this.view3d.setShowBoundingBox(volume, true);
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
+    // TODO: Look at gamma/levels settings? Vole-app looks good at levels
+    // 0,75,255
+    // this.view3d.setGamma(volume, 0, 75, 255);
 
     this.loader = loader;
     this.volume = volume;
