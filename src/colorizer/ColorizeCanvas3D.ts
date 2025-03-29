@@ -1,8 +1,8 @@
 import {
   AREA_LIGHT,
+  ColorizeFeature,
   Light,
   LoadSpec,
-  Lut,
   RawArrayLoader,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
@@ -14,7 +14,10 @@ import {
 } from "@aics/vole-core";
 import { Vector2, Vector3 } from "three";
 
-import { CanvasScaleInfo, CanvasType, FrameLoadResult } from "./types";
+import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { CanvasScaleInfo, CanvasType, FeatureDataType, FrameLoadResult } from "./types";
+import { hasPropertyChanged } from "./utils/data_utils";
+import { packDataTexture } from "./utils/texture_utils";
 
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
@@ -27,7 +30,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   // private viewContainer: HTMLElement;
   private view3d: View3d;
   private onLoadFrameCallback: (result: FrameLoadResult) => void;
-  // private params: RenderCanvasStateParams;
+  private params: RenderCanvasStateParams;
 
   private canvasResolution: Vector2;
 
@@ -45,8 +48,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
    * Or it also seems like ThreeJS will just create its own div...
    */
 
-  constructor(_params: RenderCanvasStateParams) {
-    // this.params = params;
+  constructor(params: RenderCanvasStateParams) {
+    this.params = params;
 
     this.view3d = new View3d();
     this.view3d.loaderContext = loaderContext;
@@ -98,8 +101,58 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.canvasResolution.set(width, height);
   }
 
-  setParams(_params: RenderCanvasStateParams): Promise<void> {
-    // this.params = params;
+  private configureColorizeFeature(volume: Volume, channelIndex: number): void {
+    const dataset = this.params.dataset;
+    const featureKey = this.params.featureKey;
+    if (dataset !== null && featureKey !== null) {
+      const featureData = dataset.getFeatureData(featureKey);
+      if (featureData) {
+        const isCategorical = dataset.isFeatureCategorical(featureKey);
+        const ramp = isCategorical ? this.params.categoricalPaletteRamp : this.params.colorRamp;
+        const range = isCategorical ? [0, MAX_FEATURE_CATEGORIES - 1] : this.params.colorRampRange;
+        const feature: ColorizeFeature = {
+          idsToFeatureValue: featureData.tex,
+          featureValueToColor: ramp.texture,
+          inRangeIds: packDataTexture(Array.from(this.params.inRangeLUT), FeatureDataType.U8),
+          outlierData: packDataTexture(Array.from(dataset.outliers ?? []), FeatureDataType.U8),
+          featureMin: range[0],
+          featureMax: range[1],
+        };
+        // TODO: This needs to be called again AFTER each channel has loaded.
+        // Maybe setup this colorizing in the volume loader callback?
+        this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
+      }
+    }
+  }
+
+  setParams(params: RenderCanvasStateParams): Promise<void> {
+    if (this.params === params) {
+      return Promise.resolve();
+    }
+    const prevParams = this.params;
+    this.params = params;
+
+    // Update color ramp
+    if (
+      hasPropertyChanged(params, prevParams, [
+        "colorRamp",
+        "colorRampRange",
+        "categoricalPaletteRamp",
+        "dataset",
+        "featureKey",
+        "inRangeLUT",
+      ])
+    ) {
+      if (this.volume) {
+        // Update color ramp for all channels
+        for (let i = 0; i < this.volume.numChannels; i++) {
+          this.configureColorizeFeature(this.volume, i);
+        }
+      }
+    }
+
+    // this.view3d.redraw();
+
     // Eventually volume change is handled here?
     return Promise.resolve();
   }
@@ -116,13 +169,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       // currently, this must be called when channel data arrives (here in this callback)
       this.view3d.onVolumeData(currentVol, [channelIndex]);
 
-      // Get histogram from channel data
-      const histogram = currentVol.getHistogram(channelIndex);
-
-      // Use colorize
-      const lut = new Lut().createLabelColors(histogram);
-      currentVol.setColorPalette(channelIndex, lut.lut);
-      currentVol.setColorPaletteAlpha(channelIndex, 1.0);
+      this.configureColorizeFeature(currentVol, channelIndex);
 
       // these calls tell the viewer that things are out of date
       this.view3d.updateActiveChannels(currentVol);
