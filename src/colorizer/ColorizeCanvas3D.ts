@@ -27,7 +27,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   // private viewContainer: HTMLElement;
   private view3d: View3d;
   private onLoadFrameCallback: (result: FrameLoadResult) => void;
-  private params: RenderCanvasStateParams;
+  // private params: RenderCanvasStateParams;
 
   private canvasResolution: Vector2;
 
@@ -45,10 +45,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
    * Or it also seems like ThreeJS will just create its own div...
    */
 
-  constructor(params: RenderCanvasStateParams) {
-    this.params = params;
-    // this.viewContainer = document.createElement("div");
-    // this.viewContainer.id = "canvas3d-viewcontainer";
+  constructor(_params: RenderCanvasStateParams) {
+    // this.params = params;
 
     this.view3d = new View3d();
     this.view3d.loaderContext = loaderContext;
@@ -67,7 +65,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = () => {};
   }
 
-  private initLights() {
+  private initLights(): void {
     const lights = [new Light(SKY_LIGHT), new Light(AREA_LIGHT)];
     lights[0].mColorTop = new Vector3(0.3, 0.3, 0.3);
     lights[0].mColorMiddle = new Vector3(0.3, 0.3, 0.3);
@@ -96,25 +94,20 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   setResolution(width: number, height: number): void {
-    console.log("ColorizeCanvas3D setResolution", width, height);
-    // this.viewContainer.style.width = `${width}px`;
-    // this.viewContainer.style.height = `${height}px`;
     this.view3d.resize(null, width, height);
     this.canvasResolution.set(width, height);
   }
 
-  setParams(params: RenderCanvasStateParams): Promise<void> {
-    this.params = params;
+  setParams(_params: RenderCanvasStateParams): Promise<void> {
+    // this.params = params;
     // Eventually volume change is handled here?
     return Promise.resolve();
   }
 
   private async loadInitialVolume(path: string | string[]): Promise<Volume> {
-    console.log("Awaiting onOpen");
     await loaderContext.onOpen();
 
     // Setup volume loader and load an example volume
-    console.log("Setting up loader");
     const loader = await loaderContext.createLoader(path);
     const loadSpec = new LoadSpec();
     const volume = await loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
@@ -126,12 +119,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       // Get histogram from channel data
       const histogram = currentVol.getHistogram(channelIndex);
 
-      // Use LUT
-      // const hmin = histogram.findBinOfPercentile(0.5);
-      // const hmax = histogram.findBinOfPercentile(0.983);
-      // const lut = new Lut().createFromMinMax(hmin, hmax);
-      // currentVol.setLut(channelIndex, lut);
-
       // Use colorize
       const lut = new Lut().createLabelColors(histogram);
       currentVol.setColorPalette(channelIndex, lut.lut);
@@ -141,7 +128,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       this.view3d.updateActiveChannels(currentVol);
       this.view3d.updateLuts(currentVol);
       this.view3d.redraw();
-      console.log("Loaded channel", channelIndex);
     });
     this.view3d.addVolume(volume);
 
@@ -193,21 +179,19 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_09_small/seg.ome.zarr",
         ]);
       }
-      await this.view3d.setTime(this.volume!, requestedFrame, (vol) => {
-        if (vol.isLoaded()) {
-        }
-      });
+      await this.view3d.setTime(this.volume!, requestedFrame);
 
-      this.render();
+      this.render(true);
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
-      console.log("Volume data loaded for frame ", requestedFrame);
-      return {
+      const result = {
         frame: requestedFrame,
         isFrameLoaded: true,
         backdropKey: null,
         isBackdropLoaded: true,
       };
+      this.onLoadFrameCallback(result);
+      return result;
     };
     this.pendingFrame = requestedFrame;
     this.pendingVolumePromise = loadVolumeFrame();
@@ -218,9 +202,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = callback;
   }
 
-  render(): void {
+  render(_synchronous: boolean = false): void {
     this.view3d.redraw();
-    // this.view3d.render();
+    // TODO: Change to below line once vole-core is patched
+    // this.view3d.redraw(synchronous);
   }
 
   dispose(): void {
