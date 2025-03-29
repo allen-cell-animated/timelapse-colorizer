@@ -2,11 +2,11 @@ import { Button, Tooltip } from "antd";
 import Plotly, { PlotData, PlotMarker } from "plotly.js-dist-min";
 import React, { memo, ReactElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation, HexColorString } from "three";
+import { Color, ColorRepresentation } from "three";
 
 import { SwitchIconSVG } from "../../assets";
 import { Dataset } from "../../colorizer";
-import { DrawMode, PlotRangeType } from "../../colorizer/types";
+import { DrawMode, HexColorString, PlotRangeType } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
 import { ShowAlertBannerCallback } from "../Banner/hooks";
