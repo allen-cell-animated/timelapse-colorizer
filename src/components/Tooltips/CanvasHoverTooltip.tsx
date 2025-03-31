@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { useShallow } from "zustand/shallow";
 
 import { AnnotationSelectionMode, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../colorizer";
-import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
+import { formatNumber } from "../../colorizer/utils/math_utils";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { selectVectorConfigFromState } from "../../state/slices";
 import { FlexColumn, FlexRow } from "../../styles/utils";
@@ -60,7 +60,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       let featureValue = featureData?.data[id] ?? -1;
       featureValue = isFinite(featureValue) ? featureValue : NaN;
       const unitsLabel = featureData?.unit ? ` ${featureData?.unit}` : "";
-      return numberToStringDecimal(featureValue, 3) + unitsLabel;
+      return formatNumber(featureValue, 3) + unitsLabel;
     },
     [featureKey, dataset]
   );
@@ -96,13 +96,13 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     if (vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
       const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
       const angleDegrees = (360 + Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
-      const magnitudeText = numberToStringDecimal(magnitude, 3);
-      const angleText = numberToStringDecimal(angleDegrees, 1);
+      const magnitudeText = formatNumber(magnitude, 3);
+      const angleText = formatNumber(angleDegrees, 1);
       return `${vectorName}: ${magnitudeText} px, ${angleText}°`;
     } else {
-      const allowIntegerTruncation = Number.isInteger(motionDelta[0]) && Number.isInteger(motionDelta[1]);
-      const x = numberToStringDecimal(motionDelta[0], 3, allowIntegerTruncation);
-      const y = numberToStringDecimal(motionDelta[1], 3, allowIntegerTruncation);
+      const showIntegersAsDecimals = !Number.isInteger(motionDelta[0]) || !Number.isInteger(motionDelta[1]);
+      const x = formatNumber(motionDelta[0], 3, showIntegersAsDecimals);
+      const y = formatNumber(motionDelta[1], 3, showIntegersAsDecimals);
       return `${vectorName}: (${x}, ${y}) px
        `;
     }

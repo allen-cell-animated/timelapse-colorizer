@@ -92,12 +92,12 @@ export const addBackdropDerivedStateSubscribers = (store: SubscribableStore<Back
 };
 
 export const serializeBackdropSlice = (state: Partial<BackdropSliceSerializableState>): SerializedStoreData => {
-  const ret: SerializedStoreData = {};
-  ret[UrlParam.SHOW_BACKDROP] = encodeMaybeBoolean(state.backdropVisible);
-  ret[UrlParam.BACKDROP_BRIGHTNESS] = encodeMaybeNumber(state.backdropBrightness);
-  ret[UrlParam.BACKDROP_SATURATION] = encodeMaybeNumber(state.backdropSaturation);
-  ret[UrlParam.OBJECT_OPACITY] = encodeMaybeNumber(state.objectOpacity);
-  return ret;
+  return {
+    [UrlParam.SHOW_BACKDROP]: encodeMaybeBoolean(state.backdropVisible),
+    [UrlParam.BACKDROP_BRIGHTNESS]: encodeMaybeNumber(state.backdropBrightness),
+    [UrlParam.BACKDROP_SATURATION]: encodeMaybeNumber(state.backdropSaturation),
+    [UrlParam.OBJECT_OPACITY]: encodeMaybeNumber(state.objectOpacity),
+  };
 };
 
 /** Selects state values that serialization depends on. */
