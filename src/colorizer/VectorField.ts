@@ -1,7 +1,15 @@
-import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, LineSegments, Material, Vector2 } from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  Line,
+  LineBasicMaterial,
+  LineSegments,
+  Material,
+  Vector2,
+} from "three";
 
-import { getDefaultVectorConfig } from "./constants";
-import { VectorConfig } from "./types";
+import { OUTLINE_COLOR_DEFAULT } from "./constants";
 
 import Dataset from "./Dataset";
 
@@ -15,6 +23,12 @@ const arrowStyle = {
 };
 
 type ArrayVector3 = [number, number, number];
+
+export type VectorFieldConfig = {
+  visible: boolean;
+  scaleFactor: number;
+  color: Color;
+};
 
 /**
  * Renders vector arrows as a Three JS object.
@@ -35,8 +49,9 @@ export default class VectorField {
 
   ///// Stored parameters /////
   private dataset: Dataset | null;
-  private config: VectorConfig;
   private currentFrame: number;
+  private scaleFactor: number;
+  private visible: boolean;
   /** Resolution of the canvas in onscreen pixels. */
   private canvasResolution: Vector2;
   /**
@@ -57,7 +72,8 @@ export default class VectorField {
 
   constructor() {
     this.dataset = null;
-    this.config = getDefaultVectorConfig();
+    this.scaleFactor = 1;
+    this.visible = false;
     this.currentFrame = 0;
     this.canvasResolution = new Vector2();
     this.frameToCanvasCoordinates = new Vector2();
@@ -65,7 +81,7 @@ export default class VectorField {
 
     const lineGeometry = new BufferGeometry();
     const lineMaterial = new LineBasicMaterial({
-      color: this.config.color,
+      color: new Color(OUTLINE_COLOR_DEFAULT),
       // Note: setting line width to anything other than 1.0 is unreliable.
       // See https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/lineWidth
       linewidth: 1,
@@ -85,7 +101,7 @@ export default class VectorField {
 
     // Update vertex geometry range to render.
     const range = this.timeToVertexIndexRange.get(frame);
-    if (range && this.config.visible) {
+    if (range && this.visible) {
       this.line.geometry.setDrawRange(range[0], range[1] - range[0]);
     } else {
       this.line.geometry.setDrawRange(0, 0);
@@ -194,8 +210,8 @@ export default class VectorField {
 
     const vectorStart: ArrayVector3 = [centroid[0], centroid[1], 0];
     const vectorEnd: ArrayVector3 = [
-      centroid[0] + delta[0] * this.config.scaleFactor,
-      centroid[1] + delta[1] * this.config.scaleFactor,
+      centroid[0] + delta[0] * this.scaleFactor,
+      centroid[1] + delta[1] * this.scaleFactor,
       0,
     ];
     const normVectorEnd = this.framePixelsToRelativeFrameCoords(vectorEnd);
@@ -223,7 +239,7 @@ export default class VectorField {
    * a frame number to the range of vertices that should be drawn for that frame.
    */
   private updateLineVertices(): void {
-    if (!this.dataset || !this.vectorData || !this.config.visible) {
+    if (!this.dataset || !this.vectorData || !this.visible) {
       this.line.geometry.setDrawRange(0, 0);
       return;
     }
@@ -304,12 +320,13 @@ export default class VectorField {
     );
   }
 
-  public setConfig(config: VectorConfig): void {
+  public setConfig(config: VectorFieldConfig): void {
     // TODO: will not need update if scaling is controlled by vertex shader
-    const needsUpdate = this.config.scaleFactor !== config.scaleFactor || this.config.visible !== config.visible;
+    const needsUpdate = this.scaleFactor !== config.scaleFactor || this.visible !== config.visible;
 
-    this.config = config;
-    (this.line.material as LineBasicMaterial).color = this.config.color;
+    this.visible = config.visible;
+    this.scaleFactor = config.scaleFactor;
+    (this.line.material as LineBasicMaterial).color = config.color;
 
     if (needsUpdate) {
       this.updateLineVertices();

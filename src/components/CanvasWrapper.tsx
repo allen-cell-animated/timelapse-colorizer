@@ -4,17 +4,16 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
-import { useShallow } from "zustand/shallow";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
 import { AnnotationSelectionMode, LoadTroubleshooting, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
-import { selectVectorConfigFromState } from "../state/slices";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
+import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
@@ -125,23 +124,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
   // Access state properties
-  const backdropBrightness = useViewerStateStore((state) => state.backdropBrightness);
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const backdropKey = useViewerStateStore((state) => state.backdropKey);
-  const backdropSaturation = useViewerStateStore((state) => state.backdropSaturation);
   const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
-  const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const collection = useViewerStateStore((state) => state.collection);
-  const colorRamp = useViewerStateStore((state) => state.colorRamp);
-  const colorRampRange = useViewerStateStore((state) => state.colorRampRange);
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
-  const featureKey = useViewerStateStore((state) => state.featureKey);
-  const inRangeLUT = useViewerStateStore((state) => state.inRangeLUT);
-  const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
-  const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
-  const outlineColor = useViewerStateStore((state) => state.outlineColor);
-  const outOfRangeDrawSettings = useViewerStateStore((state) => state.outOfRangeDrawSettings);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setTrack = useViewerStateStore((state) => state.setTrack);
@@ -149,15 +138,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
-  const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
-  const track = useViewerStateStore((state) => state.track);
-  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
-  const vectorData = useViewerStateStore((state) => state.vectorMotionDeltas);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canv = props.canv;
   const canvasPlaceholderRef = useRef<HTMLDivElement>(null);
+
+  // Add subscriber so canvas parameters are updated when the state changes.
+  useEffect(() => {
+    return useViewerStateStore.subscribe(renderCanvasStateParamsSelector, (params) => {
+      canv.setParams(params);
+    });
+  }, []);
 
   /**
    * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
@@ -238,58 +230,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
 
-  // Update canvas color ramp
-  useMemo(() => {
-    canv.setColorRamp(colorRamp);
-    canv.setColorMapRangeMin(colorRampRange[0]);
-    canv.setColorMapRangeMax(colorRampRange[1]);
-  }, [colorRamp, colorRampRange]);
-
-  useMemo(() => {
-    if (featureKey) {
-      canv.setFeatureKey(featureKey);
-    }
-  }, [featureKey]);
-
-  // Update backdrops
-  useMemo(() => {
-    if (backdropKey !== null && backdropVisible) {
-      canv.setBackdropKey(backdropKey);
-      canv.setBackdropBrightness(backdropBrightness);
-      canv.setBackdropSaturation(backdropSaturation);
-      canv.setObjectOpacity(objectOpacity);
-    } else {
-      canv.setBackdropKey(null);
-      canv.setObjectOpacity(100);
-    }
-  }, [backdropKey, backdropVisible, backdropBrightness, backdropSaturation, objectOpacity]);
-
-  // Update categorical colors
-  useMemo(() => {
-    canv.setCategoricalColors(categoricalPalette);
-  }, [categoricalPalette]);
-
-  // Update drawing modes for outliers + out of range values
-  useMemo(() => {
-    const settings = outOfRangeDrawSettings;
-    canv.setOutOfRangeDrawMode(settings.mode, settings.color);
-  }, [outOfRangeDrawSettings]);
-
-  useMemo(() => {
-    const settings = outlierDrawSettings;
-    canv.setOutlierDrawMode(settings.mode, settings.color);
-  }, [outlierDrawSettings]);
-
-  useMemo(() => {
-    canv.setInRangeLUT(inRangeLUT);
-  }, [inRangeLUT]);
-
-  // Updated track-related settings
-  useMemo(() => {
-    canv.setSelectedTrack(track);
-    canv.setShowTrackPath(showTrackPath);
-  }, [track, showTrackPath]);
-
   // Update overlay settings
   useMemo(() => {
     canv.isScaleBarVisible = showScaleBar;
@@ -312,18 +252,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.isHeaderVisibleOnExport = showHeaderDuringExport;
     canv.isFooterVisibleOnExport = showLegendDuringExport;
   }, [showLegendDuringExport, props.isRecording]);
-
-  useMemo(() => {
-    canv.setVectorFieldConfig(vectorConfig);
-  }, [vectorConfig]);
-
-  useMemo(() => {
-    canv.setVectorData(vectorData);
-  }, [vectorData]);
-
-  useMemo(() => {
-    canv.setOutlineColor(outlineColor);
-  }, [outlineColor]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
@@ -362,13 +290,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     const updateCanvasDimensions = (): void => {
       const canvasSizePx = getCanvasSizePx();
-      canv.setSize(canvasSizePx.x, canvasSizePx.y);
+      canv.setResolution(canvasSizePx.x, canvasSizePx.y);
     };
     updateCanvasDimensions(); // Initial size setting
 
     const handleResize = (): void => {
       updateCanvasDimensions();
-      canv.render();
     };
 
     window.addEventListener("resize", handleResize);
@@ -621,7 +548,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     if (isMouseOverCanvas.current) {
       reportHoveredIdAtPixel(lastMousePositionPx.current.x, lastMousePositionPx.current.y);
     }
-  }, [canv.getCurrentFrame()]);
+  }, [currentFrame]);
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent): void => {

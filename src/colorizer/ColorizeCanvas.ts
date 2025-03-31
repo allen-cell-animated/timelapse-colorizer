@@ -20,6 +20,7 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
+import { clamp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
@@ -28,11 +29,13 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import { DrawMode, FeatureDataType, VectorConfig } from "./types";
+import { DrawMode, FeatureDataType } from "./types";
+import { hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";
 import Dataset from "./Dataset";
+import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 import Track from "./Track";
 import VectorField from "./VectorField";
 
@@ -117,7 +120,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-export default class ColorizeCanvas {
+export default class ColorizeCanvas implements IRenderCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;
@@ -128,7 +131,6 @@ export default class ColorizeCanvas {
   // Rendered track line that shows the trajectory of a cell.
   private line: Line;
   private points: Float32Array;
-  private showTrackPath: boolean;
 
   protected frameSizeInCanvasCoordinates: Vector2;
   protected frameToCanvasCoordinates: Vector2;
@@ -152,17 +154,15 @@ export default class ColorizeCanvas {
   private renderer: WebGLRenderer;
   private pickRenderTarget: WebGLRenderTarget;
 
-  protected dataset: Dataset | null;
-  protected track: Track | null;
-  protected canvasResolution: Vector2 | null;
-
-  protected featureKey: string | null;
-  protected selectedBackdropKey: string | null;
-  protected colorRamp: ColorRamp;
-  protected colorMapRangeMin: number;
-  protected colorMapRangeMax: number;
+  protected params: RenderCanvasStateParams | null;
+  // Categorical palette is stored separately from params because it's not a
+  // direct part of state, and the ColorRamp class must be disposed and
+  // recreated when the palette changes.
   protected categoricalPalette: ColorRamp;
-  private currentFrame: number;
+
+  protected canvasResolution: Vector2;
+
+  protected currentFrame: number;
   private pendingFrame: number;
 
   private onFrameChangeCallback: (isMissing: boolean) => void;
@@ -221,17 +221,10 @@ export default class ColorizeCanvas {
     this.renderer = new WebGLRenderer({ antialias: true });
     this.checkPixelRatio();
 
-    this.dataset = null;
-    this.canvasResolution = null;
-    this.featureKey = null;
-    this.selectedBackdropKey = null;
-    this.colorRamp = new ColorRamp(["black"]);
-    this.categoricalPalette = new ColorRamp(["black"]);
+    this.params = null;
 
-    this.track = null;
-    this.showTrackPath = false;
-    this.colorMapRangeMin = 0;
-    this.colorMapRangeMax = 0;
+    this.canvasResolution = new Vector2(1, 1);
+    this.categoricalPalette = new ColorRamp(["black"]);
     this.currentFrame = 0;
     this.pendingFrame = -1;
 
@@ -243,14 +236,20 @@ export default class ColorizeCanvas {
     this.onFrameChangeCallback = () => {};
 
     this.render = this.render.bind(this);
-    this.getCurrentFrame = this.getCurrentFrame.bind(this);
-    this.setOutOfRangeDrawMode = this.setOutOfRangeDrawMode.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
-    this.isValidFrame = this.isValidFrame.bind(this);
     this.setFrame = this.setFrame.bind(this);
   }
 
-  get domElement(): HTMLCanvasElement {
+  private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
+    this.material.uniforms[name].value = value;
+    this.pickMaterial.uniforms[name].value = value;
+  }
+
+  public get resolution(): Vector2 {
+    return this.canvasResolution;
+  }
+
+  public get domElement(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
 
@@ -260,7 +259,7 @@ export default class ColorizeCanvas {
     }
   }
 
-  setSize(width: number, height: number): void {
+  public setResolution(width: number, height: number): void {
     this.checkPixelRatio();
 
     this.renderer.setSize(width, height);
@@ -269,15 +268,15 @@ export default class ColorizeCanvas {
     this.pickRenderTarget.setSize(width, height);
 
     this.canvasResolution = new Vector2(width, height);
-    if (this.dataset) {
-      this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    if (this.params?.dataset) {
+      this.updateScaling(this.params.dataset.frameResolution, this.canvasResolution);
     }
   }
 
-  setZoom(zoom: number): void {
+  public setZoom(zoom: number): void {
     this.zoomMultiplier = zoom;
-    if (this.dataset) {
-      this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
+    if (this.params?.dataset) {
+      this.updateScaling(this.params.dataset.frameResolution, this.canvasResolution);
     }
     this.render();
   }
@@ -287,7 +286,7 @@ export default class ColorizeCanvas {
    * Expects x and y in a range of [-0.5, 0.5], where [0, 0] means the frame will be centered
    * and [-0.5, -0.5] means the top right corner of the frame will be centered in the canvas view.
    */
-  setPan(x: number, y: number): void {
+  public setPan(x: number, y: number): void {
     this.panOffset = new Vector2(x, y);
     this.setUniform("panOffset", this.panOffset);
 
@@ -346,50 +345,36 @@ export default class ColorizeCanvas {
     this.vectorField.setScale(this.frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
 
-  public async setDataset(dataset: Dataset): Promise<void> {
-    if (this.dataset !== null) {
-      this.dataset.dispose();
+  /**
+   * Forces a reload of the current frame, even if it's already loaded. If a
+   * different frame is in the process of being loaded, the reload will be
+   * called on that pending frame.
+   */
+  private forceFrameReload(): void {
+    // Force update on the current frame or the frame that's currently being loaded
+    const frame = this.pendingFrame !== -1 ? this.pendingFrame : this.currentFrame;
+    this.setFrame(frame, true).then(() => {
+      this.render();
+    });
+  }
+
+  // PARAM HANDLING /////////////////////////////////////////////////////////////////////////
+
+  private async handleNewDataset(dataset: Dataset | null): Promise<void> {
+    if (dataset === null) {
+      return;
     }
-    this.dataset = dataset;
-    if (this.dataset.outliers) {
-      this.setUniform("outlierData", packDataTexture(Array.from(this.dataset.outliers), FeatureDataType.U8));
+    if (dataset.outliers) {
+      this.setUniform("outlierData", packDataTexture(Array.from(dataset.outliers), FeatureDataType.U8));
     } else {
       this.setUniform("outlierData", packDataTexture([0], FeatureDataType.U8));
     }
-
-    const frame = this.currentFrame;
-    this.currentFrame = -1;
-    this.pendingFrame = -1;
-    await this.setFrame(frame);
-    if (this.featureKey !== null) {
-      this.setFeatureKey(this.featureKey);
-    }
-
-    this.updateScaling(this.dataset.frameResolution, this.canvasResolution);
     this.vectorField.setDataset(dataset);
-    this.render();
+    await this.forceFrameReload();
+    this.updateScaling(dataset.frameResolution, this.canvasResolution);
   }
 
-  private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
-    this.material.uniforms[name].value = value;
-    this.pickMaterial.uniforms[name].value = value;
-  }
-
-  /** Sets the current color ramp. Used when a continuous or discrete feature is selected. */
-  setColorRamp(ramp: ColorRamp): void {
-    if (this.colorRamp !== ramp) {
-      // Dispose of existing ramp
-      this.colorRamp.dispose();
-    }
-    this.colorRamp = ramp;
-  }
-
-  setCategoricalColors(colors: Color[]): void {
-    this.categoricalPalette.dispose();
-    this.categoricalPalette = new ColorRamp(colors);
-  }
-
-  setOutlineColor(color: Color): void {
+  private setOutlineColor(color: Color): void {
     this.setUniform("outlineColor", color);
 
     // Update line color
@@ -402,43 +387,31 @@ export default class ColorizeCanvas {
     }
   }
 
-  setBackgroundColor(color: Color): void {
+  public setBackgroundColor(color: Color): void {
     this.setUniform("backgroundColor", color);
   }
 
   /** Set the color of the area outside the frame in the canvas. */
-  setCanvasBackgroundColor(color: Color): void {
+  public setCanvasBackgroundColor(color: Color): void {
     this.setUniform("canvasBackgroundColor", color);
   }
 
-  setOutlierDrawMode(mode: DrawMode, color?: Color): void {
+  private setOutlierDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outlierDrawMode", mode);
-    if (mode === DrawMode.USE_COLOR && color) {
+    if (mode === DrawMode.USE_COLOR) {
       this.setUniform("outlierColor", color);
     }
   }
 
-  setOutOfRangeDrawMode(mode: DrawMode, color?: Color): void {
+  private setOutOfRangeDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outOfRangeDrawMode", mode);
-    if (mode === DrawMode.USE_COLOR && color) {
+    if (mode === DrawMode.USE_COLOR) {
       this.setUniform("outOfRangeColor", color);
     }
   }
 
-  setVectorData(vectorData: Float32Array | null): void {
-    this.vectorField.setVectorData(vectorData);
-  }
-
-  setVectorFieldConfig(config: VectorConfig): void {
-    this.vectorField.setConfig(config);
-  }
-
-  setSelectedTrack(track: Track | null): void {
-    if (this.track && this.track?.trackId === track?.trackId) {
-      return;
-    }
-    this.track = track;
-    if (!track || !track.centroids || track.centroids.length === 0 || !this.dataset) {
+  private updateTrackData(dataset: Dataset | null, track: Track | null): void {
+    if (!track || !track.centroids || track.centroids.length === 0 || !dataset) {
       return;
     }
     // Make a new array of the centroid positions in pixel coordinates.
@@ -459,143 +432,125 @@ export default class ColorizeCanvas {
       }
 
       // Normalize from pixel coordinates to canvas space [-1, 1]
-      this.points[3 * i + 0] = (track.centroids[2 * trackIndex] / this.dataset.frameResolution.x) * 2.0 - 1.0;
-      this.points[3 * i + 1] = -((track.centroids[2 * trackIndex + 1] / this.dataset.frameResolution.y) * 2.0 - 1.0);
+      this.points[3 * i + 0] = (track.centroids[2 * trackIndex] / dataset.frameResolution.x) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((track.centroids[2 * trackIndex + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
       this.points[3 * i + 2] = 0;
     }
     // Assign new BufferAttribute because the old array has been discarded.
     this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
     this.line.geometry.getAttribute("position").needsUpdate = true;
-    this.updateTrackRange();
   }
 
-  setShowTrackPath(show: boolean): void {
-    this.showTrackPath = show;
-  }
-
-  /**
-   * Updates the range of the track path line so that it shows up the path up to the current
-   * frame.
-   */
-  updateTrackRange(): void {
-    // Show nothing if track doesn't exist or doesn't have centroid data
-    if (!this.track || !this.track.centroids || !this.showTrackPath) {
-      this.line.geometry.setDrawRange(0, 0);
+  private updateFeatureData(dataset: Dataset | null, featureKey: string | null): void {
+    if (featureKey === null || dataset === null) {
       return;
     }
-
-    // Show path up to current frame
-    let range = this.currentFrame - this.track.startTime() + 1;
-
-    if (range > this.track.duration() || range < 0) {
-      // Hide track if we are outside the track range
-      range = 0;
-    }
-
-    this.line.geometry.setDrawRange(0, range);
-  }
-
-  private updateHighlightedId(): void {
-    // Hide highlight if no track is selected
-    if (!this.track) {
-      this.setUniform("highlightedId", -1);
+    if (!dataset.hasFeatureKey(featureKey)) {
       return;
     }
-    this.setUniform("highlightedId", this.track.getIdAtTime(this.currentFrame));
-  }
-
-  setFeatureKey(key: string): void {
-    if (!this.dataset?.hasFeatureKey(key)) {
-      return;
-    }
-    const featureData = this.dataset.getFeatureData(key)!;
-    this.featureKey = key;
+    const featureData = dataset.getFeatureData(featureKey)!;
     this.setUniform("featureData", featureData.tex);
-    this.render(); // re-render necessary because map range may have changed
   }
 
-  setColorMapRangeMin(newMin: number): void {
-    this.colorMapRangeMin = newMin;
-  }
-
-  setColorMapRangeMax(newMax: number): void {
-    this.colorMapRangeMax = newMax;
-  }
-
-  resetColorMapRange(): void {
-    if (!this.featureKey) {
-      return;
-    }
-    const featureData = this.dataset?.getFeatureData(this.featureKey);
-    if (featureData) {
-      this.colorMapRangeMin = featureData.min;
-      this.colorMapRangeMax = featureData.max;
-      this.setUniform("featureColorRampMin", this.colorMapRangeMin);
-      this.setUniform("featureColorRampMax", this.colorMapRangeMax);
-    }
-  }
-
-  setInRangeLUT(inRangeLUT: Uint8Array): void {
+  private setInRangeLUT(inRangeLUT: Uint8Array): void {
     // Save the array to a texture and pass it into the shader
     if (inRangeLUT.length > 0) {
       this.setUniform("inRangeIds", packDataTexture(Array.from(inRangeLUT), FeatureDataType.U8));
-      this.render();
     }
-  }
-
-  getColorMapRangeMin(): number {
-    return this.colorMapRangeMin;
-  }
-
-  getColorMapRangeMax(): number {
-    return this.colorMapRangeMax;
-  }
-
-  /**
-   * @returns The number of frames in the dataset. If no dataset is loaded,
-   * returns 0 by default.
-   */
-  getTotalFrames(): number {
-    return this.dataset ? this.dataset.numberOfFrames : 0;
-  }
-
-  getCurrentFrame(): number {
-    return this.currentFrame;
-  }
-
-  public isValidFrame(index: number): boolean {
-    return index >= 0 && index < this.getTotalFrames();
-  }
-
-  public setObjectOpacity(percentOpacity: number): void {
-    percentOpacity = Math.max(0, Math.min(100, percentOpacity));
-    this.setUniform("objectOpacity", percentOpacity / 100);
-  }
-
-  public setBackdropSaturation(percentSaturation: number): void {
-    percentSaturation = Math.max(0, Math.min(100, percentSaturation));
-    this.setUniform("backdropSaturation", percentSaturation / 100);
-  }
-
-  public setBackdropBrightness(percentBrightness: number): void {
-    percentBrightness = Math.max(0, Math.min(200, percentBrightness));
-    this.setUniform("backdropBrightness", percentBrightness / 100);
-  }
-
-  public setBackdropKey(key: string | null): void {
-    if (this.selectedBackdropKey === key) {
-      return;
-    }
-    this.selectedBackdropKey = key;
-    // Force update on the current frame or the frame that's currently being loaded
-    const frame = this.pendingFrame !== -1 ? this.pendingFrame : this.currentFrame;
-    this.setFrame(frame, true).then(() => {
-      this.render();
-    });
   }
 
   public setOnFrameChangeCallback(callback: (isMissing: boolean) => void): void {
     this.onFrameChangeCallback = callback;
+  }
+
+  public setParams(params: RenderCanvasStateParams): void {
+    // TODO: What happens when `setParams` is called again while waiting for a Dataset to load?
+    // May cause visual desync where the color ramp/feature data updates before frames load in fully
+    if (this.params === params) {
+      return;
+    }
+    const prevParams = this.params;
+    this.params = params;
+    // Update dataset and array data
+    if (hasPropertyChanged(params, prevParams, ["dataset"])) {
+      this.handleNewDataset(params.dataset);
+    }
+    if (hasPropertyChanged(params, prevParams, ["dataset", "featureKey"])) {
+      this.updateFeatureData(params.dataset, params.featureKey);
+    }
+    if (hasPropertyChanged(params, prevParams, ["dataset", "track"])) {
+      this.updateTrackData(params.dataset, params.track);
+    }
+    if (hasPropertyChanged(params, prevParams, ["inRangeLUT"])) {
+      this.setInRangeLUT(params.inRangeLUT);
+    }
+
+    // Basic rendering settings
+    if (hasPropertyChanged(params, prevParams, ["outlierDrawSettings"])) {
+      this.setOutlierDrawMode(params.outlierDrawSettings.mode, params.outlierDrawSettings.color);
+    }
+    if (hasPropertyChanged(params, prevParams, ["outOfRangeDrawSettings"])) {
+      this.setOutOfRangeDrawMode(params.outOfRangeDrawSettings.mode, params.outOfRangeDrawSettings.color);
+    }
+    if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
+      this.setOutlineColor(params.outlineColor);
+    }
+
+    // Update vector data
+    if (hasPropertyChanged(params, prevParams, ["vectorVisible", "vectorColor", "vectorScaleFactor"])) {
+      this.vectorField.setConfig({
+        color: params.vectorColor,
+        scaleFactor: params.vectorScaleFactor,
+        visible: params.vectorVisible,
+      });
+    }
+    if (hasPropertyChanged(params, prevParams, ["vectorMotionDeltas"])) {
+      this.vectorField.setVectorData(params.vectorMotionDeltas);
+    }
+
+    // Backdrops
+    if (hasPropertyChanged(params, prevParams, ["backdropKey", "backdropVisible"])) {
+      this.forceFrameReload();
+    }
+    if (hasPropertyChanged(params, prevParams, ["backdropVisible", "objectOpacity"])) {
+      if (params.backdropVisible) {
+        this.setUniform("objectOpacity", clamp(params.objectOpacity, 0, 100) / 100);
+      } else {
+        this.setUniform("objectOpacity", 1.0);
+      }
+    }
+    this.setUniform("backdropSaturation", clamp(params.backdropSaturation, 0, 100) / 100);
+    this.setUniform("backdropBrightness", clamp(params.backdropBrightness, 0, 200) / 100);
+
+    // Update color ramp  + palette
+    if (hasPropertyChanged(params, prevParams, ["categoricalPalette"])) {
+      this.categoricalPalette.dispose();
+      this.categoricalPalette = new ColorRamp(params.categoricalPalette);
+    }
+    if (
+      hasPropertyChanged(params, prevParams, [
+        "dataset",
+        "featureKey",
+        "colorRamp",
+        "colorRampRange",
+        "categoricalPalette",
+      ])
+    ) {
+      if (params.dataset !== null && params.featureKey !== null) {
+        const isFeatureCategorical = params.dataset.isFeatureCategorical(params.featureKey);
+        if (isFeatureCategorical) {
+          this.setUniform("colorRamp", this.categoricalPalette.texture);
+          this.setUniform("featureColorRampMin", 0);
+          this.setUniform("featureColorRampMax", MAX_FEATURE_CATEGORIES - 1);
+        } else {
+          this.setUniform("colorRamp", params.colorRamp.texture);
+          this.setUniform("featureColorRampMin", params.colorRampRange[0]);
+          this.setUniform("featureColorRampMax", params.colorRampRange[1]);
+        }
+      }
+    }
+
+    this.render();
   }
 
   /**
@@ -605,26 +560,27 @@ export default class ColorizeCanvas {
    * @param forceUpdate Force a reload of the frame data, even if the frame
    * is already loaded.
    */
-  async setFrame(index: number, forceUpdate: boolean = false): Promise<void> {
+  public async setFrame(index: number, forceUpdate: boolean = false): Promise<void> {
+    const dataset = this.params?.dataset;
     // Ignore same or bad frame indices
-    if ((!forceUpdate && this.currentFrame === index) || !this.isValidFrame(index)) {
+    if (!dataset || (!forceUpdate && this.currentFrame === index) || !dataset.isValidFrameIndex(index)) {
       return;
     }
-    // Save loading settings
-    const pendingDataset = this.dataset;
-    // New frame, so load the frame data.
+    // Load the frame data asynchronously.
+    // Save loading settings to prevent race conditions.
+    const pendingDataset = dataset;
     this.pendingFrame = index;
-    const loadedBackdropKey = this.selectedBackdropKey;
+    const pendingBackdropKey = this.params?.backdropKey ?? null;
     let backdropPromise = undefined;
-    if (this.selectedBackdropKey && this.dataset?.hasBackdrop(this.selectedBackdropKey)) {
-      backdropPromise = this.dataset?.loadBackdrop(this.selectedBackdropKey, index);
+    if (this.params?.backdropVisible && pendingBackdropKey !== null && dataset?.hasBackdrop(pendingBackdropKey)) {
+      backdropPromise = dataset?.loadBackdrop(pendingBackdropKey, index);
     }
-    const framePromise = this.dataset?.loadFrame(index);
+    const framePromise = dataset?.loadFrame(index);
     const result = await Promise.allSettled([framePromise, backdropPromise]);
     const [frame, backdrop] = result;
 
     const isForcingUpdateOnLoadedFrame = this.pendingFrame === -1 && this.currentFrame === index && forceUpdate;
-    if ((!isForcingUpdateOnLoadedFrame && this.pendingFrame !== index) || this.dataset !== pendingDataset) {
+    if ((!isForcingUpdateOnLoadedFrame && this.pendingFrame !== index) || this.params?.dataset !== pendingDataset) {
       // Drop the request if:
       // - A different frame number has been requested since the load started
       //   (and it's not the loaded frame being force-reloaded)
@@ -635,7 +591,7 @@ export default class ColorizeCanvas {
     let isMissingFile = false;
 
     if (backdrop.status === "fulfilled" && backdrop.value) {
-      if (this.selectedBackdropKey === loadedBackdropKey) {
+      if (this.params?.backdropKey === pendingBackdropKey) {
         // Only update the backdrop if the selected key is the one we requested
         this.setUniform("backdrop", backdrop.value);
       }
@@ -643,13 +599,10 @@ export default class ColorizeCanvas {
       if (backdrop.status === "rejected") {
         // Only show error message if the backdrop load encountered an error (null/undefined backdrops aren't
         // considered errors, since that means the path has been deliberately marked as missing.)
-        console.error(
-          "Failed to load backdrop " + this.selectedBackdropKey + " for frame " + index + ": ",
-          backdrop.reason
-        );
+        console.error("Failed to load backdrop " + pendingBackdropKey + " for frame " + index + ": ", backdrop.reason);
         isMissingFile = true;
       }
-      if (this.selectedBackdropKey === loadedBackdropKey) {
+      if (this.params?.backdropKey === pendingBackdropKey) {
         // Only clear the backdrop if the selected key (null) is the one we requested
         this.setUniform("backdrop", new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType));
       }
@@ -672,45 +625,62 @@ export default class ColorizeCanvas {
 
     this.onFrameChangeCallback(isMissingFile);
     // Force rescale in case frame dimensions changed
-    this.updateScaling(this.dataset?.frameResolution || null, this.canvasResolution);
+    this.updateScaling(dataset?.frameResolution || null, this.canvasResolution);
     this.currentFrame = index;
     this.pendingFrame = -1;
     this.vectorField.setFrame(this.currentFrame);
+    this.render();
   }
 
-  /** Switches the coloring between the categorical and color ramps depending on the currently
-   * selected feature.
+  // RENDERING /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Updates the range of the track path line so that it shows up the path up to the current
+   * frame.
    */
-  updateRamp(): void {
-    if (this.featureKey && this.dataset?.isFeatureCategorical(this.featureKey)) {
-      this.setUniform("colorRamp", this.categoricalPalette.texture);
-      this.setUniform("featureColorRampMin", 0);
-      this.setUniform("featureColorRampMax", MAX_FEATURE_CATEGORIES - 1);
-    } else {
-      this.setUniform("colorRamp", this.colorRamp.texture);
-      this.setUniform("featureColorRampMin", this.colorMapRangeMin);
-      this.setUniform("featureColorRampMax", this.colorMapRangeMax);
+  private syncTrackPathLine(): void {
+    // Show nothing if track doesn't exist or doesn't have centroid data
+    const track = this.params?.track;
+    if (!track || !track.centroids || !this.params?.showTrackPath) {
+      this.line.geometry.setDrawRange(0, 0);
+      return;
     }
+
+    // Show path up to current frame
+    let range = this.currentFrame - track.startTime() + 1;
+
+    if (range > track.duration() || range < 0) {
+      // Hide track if we are outside the track range
+      range = 0;
+    }
+
+    this.line.geometry.setDrawRange(0, range);
   }
 
-  render(): void {
-    this.updateHighlightedId();
-    this.updateTrackRange();
-    this.updateRamp();
+  private syncHighlightedId(): void {
+    // Hide highlight if no track is selected
+    if (!this.params?.track) {
+      this.setUniform("highlightedId", -1);
+      return;
+    }
+    this.setUniform("highlightedId", this.params?.track.getIdAtTime(this.currentFrame));
+  }
+
+  public render(): void {
+    this.syncHighlightedId();
+    this.syncTrackPathLine();
 
     this.renderer.render(this.scene, this.camera);
   }
 
-  dispose(): void {
-    this.dataset?.dispose();
-    this.dataset = null;
+  public dispose(): void {
     this.material.dispose();
     this.geometry.dispose();
     this.renderer.dispose();
     this.pickMaterial.dispose();
   }
 
-  getIdAtPixel(x: number, y: number): number {
+  public getIdAtPixel(x: number, y: number): number {
     const rt = this.renderer.getRenderTarget();
 
     this.renderer.setRenderTarget(this.pickRenderTarget);
