@@ -186,6 +186,54 @@ const rawColorRampData: RawColorData[] = [
     // seaborn.cubehelix_palette(start=2.3, rot=-0.3, as_cmap=True, reverse=True)
     colorStops: ["#0f3221", "#31673d", "#64945a", "#a0ba84", "#d9ddbf"],
   },
+  {
+    key: "fabio_crameri-romao",
+    name: "Crameri - RomaO (Cyclical)",
+    // Note: this is reversed from the original to match the other palettes
+    // which typically reserve warm colors for higher values.
+    colorStops: [
+      "#733957",
+      "#664476",
+      "#585893",
+      "#4F76AE",
+      "#5494C0",
+      "#6AB2CB",
+      "#8DCEDB",
+      "#B1DDD7",
+      "#CCE1B1",
+      "#D6D790",
+      "#CFBC66",
+      "#BC9540",
+      "#A9732E",
+      "#98572C",
+      "#8B4433",
+      "#7E3943",
+      "#733957",
+    ],
+  },
+  {
+    key: "fabio_crameri-viko",
+    name: "Crameri - VikO (Cyclical)",
+    colorStops: [
+      "#4F1A3D",
+      "#442551",
+      "#38396C",
+      "#345487",
+      "#43739F",
+      "#6895B6",
+      "#90AFC5",
+      "#BAC1C6",
+      "#D5BEB3",
+      "#D9AC94",
+      "#D0916F",
+      "#BE714B",
+      "#A34D2D",
+      "#842E1F",
+      "#6C1B21",
+      "#5B152C",
+      "#50193C",
+    ],
+  },
 ];
 
 // Convert the color stops into color ramps
@@ -222,5 +270,7 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   "esri-blue_red_8",
   "esri-green_brown_1",
   "matplotlib-purple_orange",
+  "fabio_crameri-romao",
+  "fabio_crameri-viko",
 ];
 export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];
