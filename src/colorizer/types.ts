@@ -81,14 +81,11 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
 
 export type FrameLoadResult = {
   frame: number;
-  /** False if frame loading encountered an error. */
-  isFrameLoaded: boolean;
+  /** True if frame loading encountered an error. */
+  frameError: boolean;
   backdropKey: string | null;
-  /**
-   * False if backdrop loading encountered an error. Note that this will be
-   * true if the backdrop is not visible.
-   */
-  isBackdropLoaded: boolean;
+  /** True if backdrop loading encountered an error */
+  backdropError: boolean;
 };
 
 export enum CanvasType {

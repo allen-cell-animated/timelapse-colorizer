@@ -558,8 +558,8 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       return this.lastFrameLoadResult;
     }
 
-    let isFrameLoaded = true;
-    let isBackdropLoaded = true;
+    let frameError = false;
+    let backdropError = false;
 
     if (backdrop.status === "fulfilled" && backdrop.value) {
       if (this.params?.backdropKey === pendingBackdropKey) {
@@ -571,7 +571,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
         // Only show error message if the backdrop load encountered an error (null/undefined backdrops aren't
         // considered errors, since that means the path has been deliberately marked as missing.)
         console.error("Failed to load backdrop " + pendingBackdropKey + " for frame " + index + ": ", backdrop.reason);
-        isBackdropLoaded = false;
+        backdropError = true;
       }
       if (this.params?.backdropKey === pendingBackdropKey) {
         // Only clear the backdrop if the selected key (null) is the one we requested
@@ -585,7 +585,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       if (frame.status === "rejected") {
         // Only show error message if the frame load encountered an error. (Null/undefined is okay)
         console.error("Failed to load frame " + index + ": ", frame.reason);
-        isFrameLoaded = false;
+        frameError = true;
       }
       // Set to blank
       const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
@@ -602,9 +602,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.render();
     const frameLoadResult: FrameLoadResult = {
       frame: index,
-      isFrameLoaded,
+      frameError,
       backdropKey: pendingBackdropKey,
-      isBackdropLoaded,
+      backdropError,
     };
     this.lastFrameLoadResult = frameLoadResult;
     this.onFrameLoadCallback(frameLoadResult);

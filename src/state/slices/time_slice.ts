@@ -69,7 +69,7 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
     }
   ),
   frameLoadCallback: (frame: number): Promise<FrameLoadResult> => {
-    return Promise.resolve({ frame, isFrameLoaded: false, isBackdropLoaded: false, backdropKey: null });
+    return Promise.resolve({ frame, frameError: false, backdropError: false, backdropKey: null });
   },
   frameLoadResult: null,
 
