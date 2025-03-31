@@ -12,7 +12,7 @@ import { clearDatasetAsync, setDatasetAsync } from "./utils";
 const TIMEOUT_DURATION_MS = 5;
 const MOCK_LOAD_CALLBACK = async (frame: number): Promise<FrameLoadResult> => {
   await sleep(TIMEOUT_DURATION_MS);
-  return Promise.resolve({ frame, isFrameLoaded: true, backdropKey: null, isBackdropLoaded: true });
+  return Promise.resolve({ frame, frameError: false, backdropKey: null, backdropError: false });
 };
 
 describe("useViewerStateStore: TimeSlice", () => {
