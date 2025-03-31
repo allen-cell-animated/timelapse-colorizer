@@ -179,8 +179,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const lastMousePositionPx = useRef(new Vector2(0, 0));
   const theme = useContext(AppThemeContext);
 
-  const isMissingFile =
-    frameLoadResult !== null && (!frameLoadResult.isFrameLoaded || !frameLoadResult.isBackdropLoaded);
+  const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
