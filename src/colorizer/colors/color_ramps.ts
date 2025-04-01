@@ -234,6 +234,29 @@ const rawColorRampData: RawColorData[] = [
       "#50193C",
     ],
   },
+  {
+    key: "fabio_crameri-broco",
+    name: "Crameri - BrocO (Cyclical)",
+    colorStops: [
+      "#372F38",
+      "#36344C",
+      "#39456A",
+      "#47608A",
+      "#5F7DA3",
+      "#7E99B8",
+      "#9FB4C8",
+      "#BDC8D0",
+      "#CFD3C6",
+      "#C9CAA9",
+      "#B3B284",
+      "#959462",
+      "#777646",
+      "#5C5A33",
+      "#484329",
+      "#3C352B",
+      "#372F37",
+    ],
+  },
 ];
 
 // Convert the color stops into color ramps
@@ -272,5 +295,6 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   "matplotlib-purple_orange",
   "fabio_crameri-romao",
   "fabio_crameri-viko",
+  "fabio_crameri-broco",
 ];
 export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];
