@@ -56,7 +56,15 @@ export const useAlertBanner = (
         return;
       }
       ignoredBannerMessages.current.add(props.message);
-      setBannerProps((previousBannerProps) => [...previousBannerProps, props]);
+      setBannerProps((previousBannerProps) => {
+        // TODO: Needed to add a check here  to prevent duplicate error messages
+        // possibly due to batched state updates. Fix by changing banner props
+        // to a ref or other datastructure?
+        if (previousBannerProps.some((banner) => banner.message === props.message)) {
+          return previousBannerProps;
+        }
+        return [...previousBannerProps, props];
+      });
     },
     [ignoredBannerMessages.current]
   );

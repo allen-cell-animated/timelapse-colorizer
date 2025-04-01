@@ -1,6 +1,5 @@
-// Typescript doesn't recognize RequestInit
-
 /* global RequestInit */
+// Typescript doesn't recognize RequestInit
 import { Color, HexColorString } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
@@ -12,13 +11,11 @@ import {
   LoadErrorMessage,
   LoadTroubleshooting,
   PlotRangeType,
-  ScatterPlotConfig,
   ThresholdType,
-  ViewerConfig,
 } from "../types";
 import { nanToNull } from "./data_load_utils";
 import { AnyManifestFile } from "./dataset_utils";
-import { numberToStringDecimal } from "./math_utils";
+import { formatNumber } from "./math_utils";
 
 // TODO: This file needs to be split up for easier reading and unit testing.
 // This could also be a great opportunity to reconsider how we store and manage state.
@@ -67,23 +64,6 @@ const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   "/allen/aics/assay-dev": "https://dev-aics-dtp-001.int.allencell.org/assay-dev",
   // eslint-disable-next-line @typescript-eslint/naming-convention
   "/allen/aics/microscopy": "https://dev-aics-dtp-001.int.allencell.org/microscopy",
-};
-
-export type UrlParams = {
-  collection: string;
-  dataset: string;
-  /** Either feature key or feature name. */
-  feature: string;
-  track: number;
-  time: number;
-  thresholds: FeatureThreshold[];
-  range: [number, number];
-  colorRampKey: string | null;
-  colorRampReversed: boolean | null;
-  categoricalPalette: Color[];
-  config: Partial<ViewerConfig>;
-  selectedBackdropKey: string | null;
-  scatterPlotConfig: Partial<ScatterPlotConfig>;
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -178,8 +158,8 @@ function serializeThreshold(threshold: FeatureThreshold): string {
     return `${featureKey}:${featureUnit}:${selectedHex}`;
   } else {
     // Numeric feature
-    const min = numberToStringDecimal(threshold.min, 3);
-    const max = numberToStringDecimal(threshold.max, 3);
+    const min = formatNumber(threshold.min, 3);
+    const max = formatNumber(threshold.max, 3);
     return `${featureKey}:${featureUnit}:${min}:${max}`;
   }
 }
@@ -281,7 +261,7 @@ export function decodeHexColor(value: string | null): Color | undefined {
 }
 
 export function encodeNumber(value: number): string {
-  return numberToStringDecimal(value, 3);
+  return formatNumber(value, 3);
 }
 
 export function encodeMaybeNumber(value: number | undefined): string | undefined {
@@ -421,3 +401,11 @@ export function formatPath(input: string): string {
   }
   return input.trim();
 }
+
+export const makeGitHubIssueLink = (title: string, body: string, labels?: string[]): string => {
+  const baseUrl = "https://github.com/allen-cell-animated/timelapse-colorizer/issues/new";
+  const titleParam = `title=${encodeURIComponent(title)}`;
+  const bodyParam = `body=${encodeURIComponent(body)}`;
+  const labelsParam = labels ? `labels=${labels.map(encodeURIComponent).join(",")}` : "";
+  return `${baseUrl}?${titleParam}&${bodyParam}&${labelsParam}`;
+};

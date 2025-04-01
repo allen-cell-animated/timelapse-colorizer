@@ -173,31 +173,6 @@ export const isTabType = (tab: string): tab is TabType => {
   return Object.values(TabType).includes(tab as TabType);
 };
 
-/**
- * Configuration for the viewer. These are high-level settings
- * that are not specific to a particular dataset.
- */
-export type ViewerConfig = {
-  showTrackPath: boolean;
-  showScaleBar: boolean;
-  showTimestamp: boolean;
-  showLegendDuringExport: boolean;
-  showHeaderDuringExport: boolean;
-  keepRangeBetweenDatasets: boolean;
-  backdropVisible: boolean;
-  /** Brightness, as an integer percentage. */
-  backdropBrightness: number;
-  /** Saturation, as an integer percentage. */
-  backdropSaturation: number;
-  /** Object opacity when backdrop is visible, as an integer percentage. */
-  objectOpacity: number;
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
-  outlineColor: Color;
-  openTab: TabType;
-  vectorConfig: VectorConfig;
-};
-
 export enum PlotRangeType {
   ALL_TIME = "All time",
   CURRENT_TRACK = "Current track",
