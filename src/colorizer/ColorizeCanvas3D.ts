@@ -39,12 +39,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   private pendingFrame: number;
   private currentFrame: number;
 
-  /**
-   * View3d requires a div to be passed in, and it mounts the ThreeJS panel to that div.
-   * See if I can get away with just grabbing the child element of the div?
-   * Or it also seems like ThreeJS will just create its own div...
-   */
-
   constructor(_params: RenderCanvasStateParams) {
     // this.params = params;
 
@@ -77,7 +71,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   get domElement(): HTMLCanvasElement {
-    // I hope this works
     return this.view3d.getCanvasDOMElement();
   }
 
@@ -98,7 +91,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   setParams(_params: RenderCanvasStateParams): Promise<void> {
     // this.params = params;
-    // Eventually volume change is handled here?
+    // Eventually colorizing parameters will be set here
     return Promise.resolve();
   }
 
@@ -111,18 +104,16 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     const volume = await loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
 
-      // currently, this must be called when channel data arrives (here in this callback)
       this.view3d.onVolumeData(currentVol, [channelIndex]);
 
       // Get histogram from channel data
       const histogram = currentVol.getHistogram(channelIndex);
 
-      // Use colorize
+      // Use the "colorize" LUT (random colors).
       const lut = new Lut().createLabelColors(histogram);
       currentVol.setColorPalette(channelIndex, lut.lut);
       currentVol.setColorPaletteAlpha(channelIndex, 1.0);
 
-      // these calls tell the viewer that things are out of date
       this.view3d.updateActiveChannels(currentVol);
       this.view3d.updateLuts(currentVol);
       this.view3d.redraw();
@@ -146,7 +137,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setShowBoundingBox(volume, true);
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
-    // TODO: Look at gamma/levels settings? Vole-app looks good at levels
+
+    // TODO: Look at gamma/levels setting? Vole-app looks good at levels
     // 0,75,255
     // this.view3d.setGamma(volume, 0, 75, 255);
 
