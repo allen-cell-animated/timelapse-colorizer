@@ -15,7 +15,7 @@ import {
 import { Vector2, Vector3 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { CanvasScaleInfo, CanvasType, FeatureDataType, FrameLoadResult } from "./types";
+import { CanvasScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -74,7 +74,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   get domElement(): HTMLCanvasElement {
-    return this.view3d.getCanvasDOMElement();
+    return this.view3d.getDOMElement() as unknown as HTMLCanvasElement;
   }
 
   get resolution(): Vector2 {
@@ -108,6 +108,12 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           outlierData: packDataTexture(Array.from(dataset.outliers ?? []), FeatureDataType.U8),
           featureMin: range[0],
           featureMax: range[1],
+          outlineColor: this.params.outlineColor,
+          outlierColor: this.params.outlierDrawSettings.color,
+          outOfRangeColor: this.params.outOfRangeDrawSettings.color,
+          outlierDrawMode: this.params.outlierDrawSettings.mode,
+          outOfRangeDrawMode: this.params.outOfRangeDrawSettings.mode,
+          hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
         };
         // TODO: This needs to be called again AFTER each channel has loaded.
         // Maybe setup this colorizing in the volume loader callback?
@@ -175,6 +181,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       color: [1, 1, 1],
       emissiveColor: [0, 0, 0],
     });
+    this.view3d.enablePicking(volume, true, 0);
 
     this.view3d.updateDensity(volume, 0.5);
     this.view3d.updateExposure(0.6);
@@ -239,15 +246,30 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = callback;
   }
 
-  render(synchronous: boolean = false): void {
-    this.view3d.redraw(synchronous);
+  private syncSelectedId(): void {
+    if (!this.volume) {
+      return;
+    }
+    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
+    this.view3d.setSelectedID(this.volume, 0, id + 1);
+  }
+
+  render(_synchronous = false): void {
+    this.syncSelectedId();
+    // this.view3d.redraw();
+    // TODO: Change to below line once vole-core is patched
+    // this.view3d.redraw(synchronous);
+    this.view3d.redraw();
   }
 
   dispose(): void {
     this.view3d.removeAllVolumes();
   }
 
-  getIdAtPixel(_x: number, _y: number): number {
-    return 0;
+  getIdAtPixel(x: number, y: number): number {
+    if (this.volume?.isLoaded()) {
+      return this.view3d.hitTest(x, y) - 1;
+    }
+    return -1;
   }
 }
