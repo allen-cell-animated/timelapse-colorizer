@@ -1,7 +1,7 @@
 import Plotly, { PlotData } from "plotly.js-dist-min";
-import { Color, HexColorString } from "three";
+import { Color } from "three";
 
-import { ColorRamp, Dataset } from "../../colorizer";
+import { ColorRamp, Dataset, HexColorString } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 
 /** Extra feature added to the dropdowns representing the frame number. */
