@@ -42,12 +42,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   private pendingFrame: number;
   private currentFrame: number;
 
-  /**
-   * View3d requires a div to be passed in, and it mounts the ThreeJS panel to that div.
-   * See if I can get away with just grabbing the child element of the div?
-   * Or it also seems like ThreeJS will just create its own div...
-   */
-
   constructor(params: RenderCanvasStateParams) {
     this.params = params;
 
@@ -80,10 +74,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   get domElement(): HTMLCanvasElement {
-    // return this.view3d.getCanvasDOMElement();
-    // This breaks Export mode. Replace with above line once API support
-    // for it is added to vole-core.
-    return this.view3d.getDOMElement() as unknown as HTMLCanvasElement;
+    return this.view3d.getCanvasDOMElement();
   }
 
   get resolution(): Vector2 {
@@ -166,12 +157,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     const volume = await loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
 
-      // currently, this must be called when channel data arrives (here in this callback)
       this.view3d.onVolumeData(currentVol, [channelIndex]);
 
       this.configureColorizeFeature(currentVol, channelIndex);
 
-      // these calls tell the viewer that things are out of date
       this.view3d.updateActiveChannels(currentVol);
       this.view3d.updateLuts(currentVol);
       this.view3d.redraw();
@@ -195,7 +184,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setShowBoundingBox(volume, true);
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
-    // TODO: Look at gamma/levels settings? Vole-app looks good at levels
+
+    // TODO: Look at gamma/levels setting? Vole-app looks good at levels
     // 0,75,255
     // this.view3d.setGamma(volume, 0, 75, 255);
 
@@ -249,10 +239,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = callback;
   }
 
-  render(_synchronous: boolean = false): void {
-    this.view3d.redraw();
-    // TODO: Change to below line once vole-core is patched
-    // this.view3d.redraw(synchronous);
+  render(synchronous: boolean = false): void {
+    this.view3d.redraw(synchronous);
   }
 
   dispose(): void {

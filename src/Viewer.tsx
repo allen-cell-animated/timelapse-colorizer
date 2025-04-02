@@ -681,6 +681,8 @@ function Viewer(): ReactElement {
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrame}
+              // TODO: Add `getExportDimensions()` to IRenderCanvas interface
+              // getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvasExportDimensions={() => canv.resolution.toArray()}
               getCanvas={() => canv.domElement}
               // Stop playback when exporting

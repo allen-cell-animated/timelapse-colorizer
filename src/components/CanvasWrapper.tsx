@@ -619,11 +619,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   );
 
   return (
-    <CanvasContainer
-      ref={containerRef}
-      $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}
-      id="canvas-wrapper"
-    >
+    <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {props.annotationState.isAnnotationModeEnabled && (
         <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
       )}
