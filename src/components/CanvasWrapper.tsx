@@ -566,8 +566,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
-  canv.render();
-
   const onViewerSettingsLinkClicked = (): void => {
     setOpenTab(TabType.SETTINGS);
   };
