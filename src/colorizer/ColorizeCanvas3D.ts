@@ -78,7 +78,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     return this.canvasResolution.clone();
   }
 
-  getScaleInfo(): CanvasScaleInfo {
+  get scaleInfo(): CanvasScaleInfo {
     return {
       type: CanvasType.CANVAS_3D,
     };
@@ -154,9 +154,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       this.pendingFrame = -1;
       return Promise.resolve({
         frame: this.currentFrame,
-        isFrameLoaded: true,
+        frameError: false,
         backdropKey: null,
-        isBackdropLoaded: true,
+        backdropError: false,
       });
     }
     if (requestedFrame === this.pendingFrame && this.pendingVolumePromise) {
@@ -174,11 +174,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       this.render(true);
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
-      const result = {
+      const result: FrameLoadResult = {
         frame: requestedFrame,
-        isFrameLoaded: true,
+        frameError: false,
         backdropKey: null,
-        isBackdropLoaded: true,
+        backdropError: false,
       };
       this.onLoadFrameCallback(result);
       return result;
