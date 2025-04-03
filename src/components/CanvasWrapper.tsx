@@ -1,6 +1,6 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
 import { Color, ColorRepresentation, Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
@@ -138,6 +138,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -178,27 +179,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const lastMousePositionPx = useRef(new Vector2(0, 0));
   const theme = useContext(AppThemeContext);
 
-  const [showMissingFileIcon, setShowMissingFileIcon] = useState(false);
+  const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
-  const onFrameChangedCallback = useCallback(
-    (isMissing: boolean) => {
-      setShowMissingFileIcon(isMissing);
-      if (props.showAlert && isMissing) {
-        props.showAlert({
-          type: "warning",
-          message: "Warning: One or more frames failed to load.",
-          description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
-          showDoNotShowAgainCheckbox: true,
-          closable: true,
-        });
-      }
-    },
-    [props.showAlert, setShowMissingFileIcon, canv]
-  );
-
-  canv.setOnFrameChangeCallback(onFrameChangedCallback);
+  // Show warning if files are missing
+  useEffect(() => {
+    if (isMissingFile) {
+      props.showAlert({
+        type: "warning",
+        message: "Warning: One or more frames or backdrops failed to load.",
+        description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+        showDoNotShowAgainCheckbox: true,
+        closable: true,
+      });
+    }
+  }, [frameLoadResult]);
 
   // Mount the canvas to the placeholder's location in the document.
   useEffect(() => {
@@ -632,7 +628,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
         <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
-      <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
+      <MissingFileIconContainer style={{ visibility: isMissingFile ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
         <p id="no-image">
           <b>Missing image data</b>

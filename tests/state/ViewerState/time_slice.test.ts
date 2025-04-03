@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, Mock, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { Track } from "../../../src/colorizer";
+import { FrameLoadResult, Track } from "../../../src/colorizer";
 import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../../src/state";
 import { loadTimeSliceFromParams, serializeTimeSlice } from "../../../src/state/slices";
@@ -9,8 +9,11 @@ import { ANY_ERROR, sleep } from "../../test_utils";
 import { MOCK_DATASET, MOCK_DATASET_WITH_TWO_FRAMES } from "./constants";
 import { clearDatasetAsync, setDatasetAsync } from "./utils";
 
-const TIMEOUT_DURATION_MS = 10;
-const getMockLoadCallback = (): Mock<[], Promise<void>> => vi.fn((): Promise<void> => sleep(TIMEOUT_DURATION_MS));
+const TIMEOUT_DURATION_MS = 5;
+const MOCK_LOAD_CALLBACK = async (frame: number): Promise<FrameLoadResult> => {
+  await sleep(TIMEOUT_DURATION_MS);
+  return Promise.resolve({ frame, frameError: false, backdropKey: null, backdropError: false });
+};
 
 describe("useViewerStateStore: TimeSlice", () => {
   describe("setFrame", () => {
@@ -30,10 +33,10 @@ describe("useViewerStateStore: TimeSlice", () => {
 
     it("calls loadFrameCallback", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const mockLoadCallback = getMockLoadCallback();
       setDatasetAsync(result, MOCK_DATASET);
+      const mockLoadCallback = vi.fn(MOCK_LOAD_CALLBACK);
       await act(async () => {
-        result.current.setLoadFrameCallback(mockLoadCallback);
+        result.current.setFrameLoadCallback(mockLoadCallback);
         await result.current.setFrame(1);
       });
       expect(mockLoadCallback).toHaveBeenCalled();
@@ -41,11 +44,10 @@ describe("useViewerStateStore: TimeSlice", () => {
 
     it("sets pendingFrame and currentFrame", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const mockLoadCallback = getMockLoadCallback();
       setDatasetAsync(result, MOCK_DATASET);
       let setFramePromise;
       await act(async () => {
-        result.current.setLoadFrameCallback(mockLoadCallback);
+        result.current.setFrameLoadCallback(MOCK_LOAD_CALLBACK);
         setFramePromise = result.current.setFrame(1);
       });
       expect(result.current.pendingFrame).toBe(1);
@@ -60,10 +62,10 @@ describe("useViewerStateStore: TimeSlice", () => {
   describe("timeControls", () => {
     it("calls loadFrameCallback", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const mockLoadCallback = getMockLoadCallback();
       setDatasetAsync(result, MOCK_DATASET);
+      const mockLoadCallback = vi.fn(MOCK_LOAD_CALLBACK);
       await act(async () => {
-        result.current.setLoadFrameCallback(mockLoadCallback);
+        result.current.setFrameLoadCallback(mockLoadCallback);
         result.current.setPlaybackFps(1000 / TIMEOUT_DURATION_MS);
         result.current.timeControls.play();
       });
@@ -74,10 +76,9 @@ describe("useViewerStateStore: TimeSlice", () => {
 
     it("sets pendingFrame and currentFrame", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const mockLoadCallback = getMockLoadCallback();
       setDatasetAsync(result, MOCK_DATASET);
       await act(async () => {
-        result.current.setLoadFrameCallback(mockLoadCallback);
+        result.current.setFrameLoadCallback(MOCK_LOAD_CALLBACK);
         result.current.setPlaybackFps(1000 / TIMEOUT_DURATION_MS);
         result.current.timeControls.play();
       });

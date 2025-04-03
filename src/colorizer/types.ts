@@ -76,6 +76,15 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
   },
 };
 
+export type FrameLoadResult = {
+  frame: number;
+  /** True if frame loading encountered an error. */
+  frameError: boolean;
+  backdropKey: string | null;
+  /** True if backdrop loading encountered an error */
+  backdropError: boolean;
+};
+
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 /** Draw options for object types. */
