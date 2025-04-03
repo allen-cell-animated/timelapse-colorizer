@@ -23,7 +23,7 @@ import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
 import { ThresholdSlice } from "./threshold_slice";
 
-import ColorRamp from "../../colorizer/ColorRamp";
+import ColorRamp, { ColorRampType } from "../../colorizer/ColorRamp";
 
 export type ColorRampSliceState = {
   colorRampKey: string;
@@ -50,6 +50,13 @@ export type ColorRampSliceState = {
    * `KNOWN_CATEGORICAL_PALETTES`. `null` if the palette has no match.
    */
   categoricalPaletteKey: string | null;
+  /**
+   * The current `categoricalPalette`, as a `ColorRamp` object.
+   *
+   * This is equivalent to calling `new ColorRamp(categoricalPalette)`, but
+   * handles initialization and disposal of the `ColorRamp` object.
+   */
+  categoricalPaletteRamp: ColorRamp;
 };
 
 export type ColorRampSliceSerializableState = Pick<
@@ -77,17 +84,20 @@ export type ColorRampSliceActions = {
 
 export type ColorRampSlice = ColorRampSliceState & ColorRampSliceActions;
 
+const defaultCategoricalPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
+
 export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, _get) => ({
   // State
   colorRampKey: DEFAULT_COLOR_RAMP_KEY,
   keepColorRampRange: false,
   isColorRampReversed: false,
   colorRampRange: COLOR_RAMP_RANGE_DEFAULT,
-  categoricalPalette: KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!.colors,
+  categoricalPalette: defaultCategoricalPalette.colors,
 
   // Derived state
   colorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY, false),
   categoricalPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
+  categoricalPaletteRamp: new ColorRamp(defaultCategoricalPalette.colors, ColorRampType.HARD_STOP),
 
   // Actions
   setColorRampKey: (key: string) =>
@@ -146,9 +156,14 @@ export const addColorRampDerivedStateSubscribers = (
   addDerivedStateSubscriber(
     store,
     (state) => [state.categoricalPalette],
-    ([palette]) => ({
-      categoricalPaletteKey: getPaletteKey(palette),
-    })
+    ([palette]) => {
+      // Dispose of old palette ramp
+      store.getState().categoricalPaletteRamp.dispose();
+      return {
+        categoricalPaletteKey: getPaletteKey(palette),
+        categoricalPaletteRamp: new ColorRamp(palette, ColorRampType.HARD_STOP),
+      };
+    }
   );
   addDerivedStateSubscriber(
     store,
