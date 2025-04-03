@@ -65,7 +65,7 @@ export interface IRenderCanvas {
 
   /** Gets information about canvas scaling. Switches types for 2D and 3D
    * canvases. */
-  getScaleInfo(): CanvasScaleInfo;
+  get scaleInfo(): CanvasScaleInfo;
 
   setResolution(width: number, height: number): void;
 
