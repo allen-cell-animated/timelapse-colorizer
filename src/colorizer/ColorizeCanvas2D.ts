@@ -134,7 +134,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private line: Line;
   private points: Float32Array;
 
-  private scaleInfo: Canvas2DScaleInfo;
+  private savedScaleInfo: Canvas2DScaleInfo;
   private lastFrameLoadResult: FrameLoadResult | null;
 
   /**
@@ -226,7 +226,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.currentFrame = -1;
     this.pendingFrame = -1;
     this.lastFrameLoadResult = null;
-    this.scaleInfo = {
+    this.savedScaleInfo = {
       type: CanvasType.CANVAS_2D,
       frameSizeInCanvasCoordinates: new Vector2(1, 1),
       canvasToFrameCoordinates: new Vector2(1, 1),
@@ -252,8 +252,8 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     return this.canvasResolution.clone();
   }
 
-  public getScaleInfo(): Canvas2DScaleInfo {
-    return this.scaleInfo;
+  public get scaleInfo(): Canvas2DScaleInfo {
+    return this.savedScaleInfo;
   }
 
   public get domElement(): HTMLCanvasElement {
@@ -299,11 +299,11 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     // Adjust the line mesh position with scaling and panning
     this.line.position.set(
-      2 * this.panOffset.x * this.scaleInfo.frameToCanvasCoordinates.x,
-      2 * this.panOffset.y * this.scaleInfo.frameToCanvasCoordinates.y,
+      2 * this.panOffset.x * this.savedScaleInfo.frameToCanvasCoordinates.x,
+      2 * this.panOffset.y * this.savedScaleInfo.frameToCanvasCoordinates.y,
       0
     );
-    this.vectorField.setPosition(this.panOffset, this.scaleInfo.frameToCanvasCoordinates);
+    this.vectorField.setPosition(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
     this.render();
   }
 
@@ -311,8 +311,8 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     if (!frameResolution || !canvasResolution) {
       return;
     }
-    this.scaleInfo = get2DCanvasScaling(frameResolution, canvasResolution, this.zoomMultiplier);
-    const { frameToCanvasCoordinates, canvasToFrameCoordinates } = this.scaleInfo;
+    this.savedScaleInfo = get2DCanvasScaling(frameResolution, canvasResolution, this.zoomMultiplier);
+    const { frameToCanvasCoordinates, canvasToFrameCoordinates } = this.savedScaleInfo;
 
     this.setUniform("canvasSizePx", canvasResolution);
     this.setUniform("canvasToFrameScale", canvasToFrameCoordinates);
@@ -558,8 +558,8 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       return this.lastFrameLoadResult;
     }
 
-    let isFrameLoaded = true;
-    let isBackdropLoaded = true;
+    let frameError = false;
+    let backdropError = false;
 
     if (backdrop.status === "fulfilled" && backdrop.value) {
       if (this.params?.backdropKey === pendingBackdropKey) {
@@ -571,7 +571,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
         // Only show error message if the backdrop load encountered an error (null/undefined backdrops aren't
         // considered errors, since that means the path has been deliberately marked as missing.)
         console.error("Failed to load backdrop " + pendingBackdropKey + " for frame " + index + ": ", backdrop.reason);
-        isBackdropLoaded = false;
+        backdropError = true;
       }
       if (this.params?.backdropKey === pendingBackdropKey) {
         // Only clear the backdrop if the selected key (null) is the one we requested
@@ -585,7 +585,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       if (frame.status === "rejected") {
         // Only show error message if the frame load encountered an error. (Null/undefined is okay)
         console.error("Failed to load frame " + index + ": ", frame.reason);
-        isFrameLoaded = false;
+        frameError = true;
       }
       // Set to blank
       const emptyFrame = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAIntegerFormat, UnsignedByteType);
@@ -602,9 +602,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.render();
     const frameLoadResult: FrameLoadResult = {
       frame: index,
-      isFrameLoaded,
+      frameError,
       backdropKey: pendingBackdropKey,
-      isBackdropLoaded,
+      backdropError,
     };
     this.lastFrameLoadResult = frameLoadResult;
     this.onFrameLoadCallback(frameLoadResult);

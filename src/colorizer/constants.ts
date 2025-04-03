@@ -1,14 +1,6 @@
 import { Color } from "three";
 
-import {
-  DrawMode,
-  PlotRangeType,
-  ScatterPlotConfig,
-  TabType,
-  VectorConfig,
-  VectorTooltipMode,
-  ViewerConfig,
-} from "./types";
+import { PlotRangeType, ScatterPlotConfig, VectorConfig, VectorTooltipMode } from "./types";
 
 export const FRAME_BACKGROUND_COLOR_DEFAULT = 0xffffff;
 export const CANVAS_BACKGROUND_COLOR_DEFAULT = 0xf7f7f7;
@@ -26,27 +18,6 @@ export const getDefaultVectorConfig = (): VectorConfig => ({
   scaleFactor: 4,
   tooltipMode: VectorTooltipMode.MAGNITUDE,
 });
-
-export const getDefaultViewerConfig = (): ViewerConfig => ({
-  showTrackPath: true,
-  showScaleBar: true,
-  showTimestamp: true,
-  showLegendDuringExport: true,
-  showHeaderDuringExport: true,
-  keepRangeBetweenDatasets: false,
-  backdropVisible: false,
-  /** Brightness, as an integer percentage. */
-  backdropBrightness: 100,
-  /** Saturation, as an integer percentage. */
-  backdropSaturation: 100,
-  /** Opacity when backdrops are visible, as an integer percentage. */
-  objectOpacity: 50,
-  outOfRangeDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUT_OF_RANGE_COLOR_DEFAULT) },
-  outlierDrawSettings: { mode: DrawMode.USE_COLOR, color: new Color(OUTLIER_COLOR_DEFAULT) },
-  outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
-  openTab: TabType.TRACK_PLOT,
-  vectorConfig: getDefaultVectorConfig(),
-}); // Use a function instead of a constant to avoid sharing the same object reference.
 
 export const getDefaultScatterPlotConfig = (): ScatterPlotConfig => ({
   xAxis: null,

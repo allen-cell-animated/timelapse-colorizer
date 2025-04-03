@@ -24,6 +24,12 @@ const arrowStyle = {
 
 type ArrayVector3 = [number, number, number];
 
+export type VectorFieldConfig = {
+  visible: boolean;
+  scaleFactor: number;
+  color: Color;
+};
+
 /**
  * Renders vector arrows as a Three JS object.
  */
@@ -314,7 +320,7 @@ export default class VectorField {
     );
   }
 
-  public setConfig(config: { visible: boolean; scaleFactor: number; color: Color }): void {
+  public setConfig(config: VectorFieldConfig): void {
     // TODO: will not need update if scaling is controlled by vertex shader
     const needsUpdate = this.scaleFactor !== config.scaleFactor || this.visible !== config.visible;
 

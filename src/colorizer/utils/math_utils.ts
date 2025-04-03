@@ -10,8 +10,8 @@ import Track from "../Track";
  * digits after the decimal place. If `input` is less than 1, this will be the
  * number of significant digits. If `input is greater than 1, this will be the
  * number of digits after the decimal point.
- * @param skipIntegers If true (default), integers will be returned as strings
- * without decimal points.
+ * @param showIntegersAsDecimals If true, integers will be shown as numbers with
+ * decimal points. False by default.
  * @returns A string representation of the number.
  * - If the number is `undefined` or `null`, returns `"NaN"`.
  * - If the number is an integer and `skipIntegers` is true, returns the number
@@ -23,14 +23,14 @@ import Track from "../Track";
  *   digits after the decimal point (using `toFixed`).
  *
  */
-export function numberToStringDecimal(
+export function formatNumber(
   input: number | undefined | null,
   maxSignificantDigitsAfterDecimal: number,
-  skipIntegers: boolean = true
+  showIntegersAsDecimals: boolean = false
 ): string {
   if (input === undefined || input === null) {
     return "NaN";
-  } else if (Number.isInteger(input) && skipIntegers) {
+  } else if (Number.isInteger(input) && !showIntegersAsDecimals) {
     return input.toString();
   } else if (Math.abs(input) < 1) {
     // For numbers less than 1, return value by precision
@@ -44,7 +44,7 @@ export function numberToStringDecimal(
  * Returns the number with a maximum number of digits after the decimal place, rounded to nearest.
  */
 export function setMaxDecimalPrecision(input: number, decimalPlaces: number): number {
-  return Number.parseFloat(numberToStringDecimal(input, decimalPlaces, true));
+  return Number.parseFloat(formatNumber(input, decimalPlaces, true));
 }
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.

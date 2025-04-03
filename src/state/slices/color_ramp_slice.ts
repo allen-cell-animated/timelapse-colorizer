@@ -50,7 +50,12 @@ export type ColorRampSliceState = {
    * `KNOWN_CATEGORICAL_PALETTES`. `null` if the palette has no match.
    */
   categoricalPaletteKey: string | null;
-  /** The current `categoricalPalette`, as a `ColorRamp` object. */
+  /**
+   * The current `categoricalPalette`, as a `ColorRamp` object.
+   *
+   * This is equivalent to calling `new ColorRamp(categoricalPalette)`, but
+   * handles initialization and disposal of the `ColorRamp` object.
+   */
   categoricalPaletteRamp: ColorRamp;
 };
 

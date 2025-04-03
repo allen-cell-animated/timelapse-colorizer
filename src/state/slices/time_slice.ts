@@ -3,10 +3,10 @@ import { StateCreator } from "zustand";
 import { FrameLoadResult } from "../../colorizer";
 import { decodeInt, UrlParam } from "../../colorizer/utils/url_utils";
 import { DEFAULT_PLAYBACK_FPS } from "../../constants";
-import { SerializedStoreData, SubscribableStore } from "../types";
+import type { SerializedStoreData, SubscribableStore } from "../types";
 import { clampWithNanCheck } from "../utils/data_validation";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
-import { DatasetSlice } from "./dataset_slice";
+import type { DatasetSlice } from "./dataset_slice";
 
 import { IRenderCanvas } from "../../colorizer/IRenderCanvas";
 import TimeControls from "../../colorizer/TimeControls";
@@ -69,7 +69,7 @@ export const createTimeSlice: StateCreator<TimeSlice & DatasetSlice, [], [], Tim
     }
   ),
   frameLoadCallback: (frame: number): Promise<FrameLoadResult> => {
-    return Promise.resolve({ frame, isFrameLoaded: false, isBackdropLoaded: false, backdropKey: null });
+    return Promise.resolve({ frame, frameError: true, backdropError: true, backdropKey: null });
   },
   frameLoadResult: null,
 

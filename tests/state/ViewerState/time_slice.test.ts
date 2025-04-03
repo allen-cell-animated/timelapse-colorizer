@@ -12,7 +12,7 @@ import { clearDatasetAsync, setDatasetAsync } from "./utils";
 const TIMEOUT_DURATION_MS = 5;
 const MOCK_LOAD_CALLBACK = async (frame: number): Promise<FrameLoadResult> => {
   await sleep(TIMEOUT_DURATION_MS);
-  return Promise.resolve({ frame, isFrameLoaded: true, backdropKey: null, isBackdropLoaded: true });
+  return Promise.resolve({ frame, frameError: false, backdropKey: null, backdropError: false });
 };
 
 describe("useViewerStateStore: TimeSlice", () => {
@@ -150,11 +150,12 @@ describe("useViewerStateStore: TimeSlice", () => {
     });
 
     it("serializes time value", async () => {
+      const frameNumber = 155;
       const { result } = renderHook(() => useViewerStateStore());
       await act(async () => {
-        await result.current.setFrame(155);
+        await result.current.setFrame(frameNumber);
       });
-      expect(serializeTimeSlice(result.current)[UrlParam.TIME]).toBe("155");
+      expect(serializeTimeSlice(result.current)[UrlParam.TIME]).toBe(frameNumber.toString());
     });
   });
 

@@ -17,9 +17,8 @@ import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ExportIconSVG } from "../assets";
-import { getDefaultViewerConfig } from "../colorizer/constants";
-import { ViewerConfig } from "../colorizer/types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
+import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
 import { FlexColumn, FlexColumnAlignCenter, FlexRow } from "../styles/utils";
 
@@ -35,17 +34,15 @@ import SpinBox from "./SpinBox";
 type ExportButtonProps = {
   totalFrames: number;
   setFrame: (frame: number) => Promise<void>;
-  getCanvasExportDimensions?: () => [number, number];
+  getCanvasExportDimensions: () => [number, number];
   getCanvas: () => HTMLCanvasElement;
   /** Callback, called whenever the button is clicked. Can be used to stop playback. */
-  onClick?: () => void;
+  onClick: () => void;
   currentFrame: number;
   /** Callback, called whenever the recording process starts or stops. */
-  setIsRecording?: (recording: boolean) => void;
-  defaultImagePrefix?: string;
-  disabled?: boolean;
-  config?: ViewerConfig;
-  updateConfig?: (settings: Partial<ViewerConfig>) => void;
+  setIsRecording: (recording: boolean) => void;
+  defaultImagePrefix: string;
+  disabled: boolean;
 };
 
 const FRAME_RANGE_RADIO_LABEL_ID = "export-modal-frame-range-label";
@@ -55,8 +52,6 @@ const defaultProps: Partial<ExportButtonProps> = {
   defaultImagePrefix: "image",
   disabled: false,
   onClick: () => {},
-  config: getDefaultViewerConfig(),
-  updateConfig: () => {},
 };
 
 const HorizontalDiv = styled.div`
@@ -141,6 +136,11 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
   // <body> tag, which causes some issues with styling.
   const { notification } = App.useApp();
   const modal = useStyledModal();
+
+  const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
+  const setShowHeaderDuringExport = useViewerStateStore((state) => state.setShowHeaderDuringExport);
+  const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
+  const setShowLegendDuringExport = useViewerStateStore((state) => state.setShowLegendDuringExport);
 
   const originalFrameRef = useRef(props.currentFrame);
   const [isModalOpen, _setIsModalOpen] = useState(false);
@@ -631,19 +631,15 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
             </SettingsItem>
             <SettingsItem label={"Show feature legend"}>
               <Checkbox
-                checked={props.config.showLegendDuringExport}
-                onChange={(e) => {
-                  props.updateConfig({ showLegendDuringExport: e.target.checked });
-                }}
+                checked={showLegendDuringExport}
+                onChange={(e) => setShowLegendDuringExport(e.target.checked)}
               />
             </SettingsItem>
             <SettingsItem label="Show dataset name">
               <div>
                 <Checkbox
-                  checked={props.config.showHeaderDuringExport}
-                  onChange={(e) => {
-                    props.updateConfig({ showHeaderDuringExport: e.target.checked });
-                  }}
+                  checked={showHeaderDuringExport}
+                  onChange={(e) => setShowHeaderDuringExport(e.target.checked)}
                 />
               </div>
             </SettingsItem>

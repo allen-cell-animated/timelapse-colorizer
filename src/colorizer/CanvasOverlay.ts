@@ -138,8 +138,8 @@ export default class CanvasOverlay implements IRenderCanvas {
     return this.innerCanvasSize.clone();
   }
 
-  public getScaleInfo(): CanvasScaleInfo {
-    return this.innerCanvas.getScaleInfo();
+  public get scaleInfo(): CanvasScaleInfo {
+    return this.innerCanvas.scaleInfo;
   }
 
   get domElement(): HTMLCanvasElement {
@@ -147,7 +147,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     return this.canvasElement;
   }
 
-  setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
+  public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
     this.onFrameLoadCallback = callback;
     this.innerCanvas.setOnFrameLoadCallback(callback);
   }
@@ -259,7 +259,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   private getAnnotationRenderer(): RenderInfo {
-    const scaleInfo = this.innerCanvas.getScaleInfo();
+    const scaleInfo = this.innerCanvas.scaleInfo;
     const params: AnnotationParams = {
       ...this.getBaseRendererParams(),
       visible: this.isAnnotationVisible,
@@ -286,7 +286,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   private getFooterRenderer(visible: boolean): RenderInfo {
-    const scaleInfo = this.innerCanvas.getScaleInfo();
+    const scaleInfo = this.innerCanvas.scaleInfo;
     const baseParams = this.getBaseRendererParams();
     const params: FooterParams = {
       ...baseParams,
