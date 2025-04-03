@@ -73,7 +73,13 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.updateLights(lights);
   }
 
-  get domElement(): HTMLCanvasElement {
+  get domElement(): HTMLElement {
+    return this.view3d.getDOMElement();
+  }
+
+  get canvas(): HTMLCanvasElement {
+    // TODO: Temp fix while the colorizing and picking branch needs merge from
+    // main
     return this.view3d.getDOMElement() as unknown as HTMLCanvasElement;
   }
 
@@ -81,7 +87,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     return this.canvasResolution.clone();
   }
 
-  getScaleInfo(): CanvasScaleInfo {
+  get scaleInfo(): CanvasScaleInfo {
     return {
       type: CanvasType.CANVAS_3D,
     };
@@ -208,9 +214,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       this.pendingFrame = -1;
       return Promise.resolve({
         frame: this.currentFrame,
-        isFrameLoaded: true,
+        frameError: false,
         backdropKey: null,
-        isBackdropLoaded: true,
+        backdropError: false,
       });
     }
     if (requestedFrame === this.pendingFrame && this.pendingVolumePromise) {
@@ -228,11 +234,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       this.render(true);
       this.currentFrame = requestedFrame;
       this.pendingFrame = -1;
-      const result = {
+      const result: FrameLoadResult = {
         frame: requestedFrame,
-        isFrameLoaded: true,
+        frameError: false,
         backdropKey: null,
-        isBackdropLoaded: true,
+        backdropError: false,
       };
       this.onLoadFrameCallback(result);
       return result;
