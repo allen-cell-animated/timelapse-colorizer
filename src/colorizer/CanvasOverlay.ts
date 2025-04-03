@@ -351,7 +351,9 @@ export default class CanvasOverlay implements IRenderCanvas {
       this.innerCanvas.render();
     }
     this.ctx.imageSmoothingEnabled = false;
-    this.ctx.drawImage(this.innerCanvas.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
+    if (this.innerCanvas.domElement.width !== 0 && this.innerCanvas.domElement.height !== 0) {
+      this.ctx.drawImage(this.innerCanvas.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
+    }
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
 
