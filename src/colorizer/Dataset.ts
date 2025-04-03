@@ -1,4 +1,4 @@
-import { RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
+import { DataTexture, RGBAFormat, RGBAIntegerFormat, Texture, Vector2 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
@@ -29,7 +29,7 @@ export type FeatureData = {
   name: string;
   key: string;
   data: Float32Array;
-  tex: Texture;
+  tex: DataTexture;
   min: number;
   max: number;
   unit: string;
