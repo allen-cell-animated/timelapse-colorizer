@@ -387,7 +387,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     if (doesInnerCanvasNeedRender || this.isExporting) {
       this.innerCanvas.render();
     }
-    if (this.isExporting) {
+    if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
       // In export mode only, draw the inner canvas inside of the overlay
       // canvas. Normally, the overlay canvas has a transparent background that
       // shows the inner canvas behind it. This lets us export the contents of

@@ -14,6 +14,8 @@ import {
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
 
+export type HexColorString = `#${string}`;
+
 /** Available types for data loading (features, tracks, outliers, etc.), as a CPU buffer or a GPU texture */
 export enum FeatureDataType {
   F32,

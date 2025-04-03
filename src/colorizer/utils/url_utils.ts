@@ -1,9 +1,8 @@
 /* global RequestInit */
-// Typescript doesn't recognize RequestInit
-import { Color, HexColorString } from "three";
+import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { isThresholdCategorical } from "../types";
+import { HexColorString, isThresholdCategorical } from "../types";
 import {
   DrawSettings,
   FeatureThreshold,
