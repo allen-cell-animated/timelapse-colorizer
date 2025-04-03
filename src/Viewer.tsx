@@ -40,10 +40,11 @@ import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
-import CanvasWithOverlay from "./colorizer/CanvasWithOverlay";
+import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
 import { FeatureType } from "./colorizer/Dataset";
+import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
@@ -85,7 +86,8 @@ function Viewer(): ReactElement {
   const [, startTransition] = React.useTransition();
 
   const canv = useConstructor(() => {
-    const canvas = new CanvasWithOverlay();
+    const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
+    const canvas = new CanvasOverlay(new ColorizeCanvas2D(), stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
     canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);

@@ -1,11 +1,13 @@
 import { Vector2 } from "three";
 
 import { ViewerStoreState } from "../state/slices";
-import { FrameLoadResult } from "./types";
+import { CanvasScaleInfo, FrameLoadResult } from "./types";
 
 export type RenderCanvasStateParams = Pick<
   ViewerStoreState,
   | "dataset"
+  | "collection"
+  | "datasetKey"
   | "featureKey"
   | "track"
   | "showTrackPath"
@@ -29,6 +31,8 @@ export type RenderCanvasStateParams = Pick<
 
 export const renderCanvasStateParamsSelector = (state: ViewerStoreState): RenderCanvasStateParams => ({
   dataset: state.dataset,
+  collection: state.collection,
+  datasetKey: state.datasetKey,
   featureKey: state.featureKey,
   track: state.track,
   showTrackPath: state.showTrackPath,
@@ -55,14 +59,21 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
  */
 export interface IRenderCanvas {
   get domElement(): HTMLCanvasElement;
+
   /** (X,Y) resolution of the canvas, in pixels. */
   get resolution(): Vector2;
+
+  /** Gets information about canvas scaling. Switches types for 2D and 3D
+   * canvases. */
+  get scaleInfo(): CanvasScaleInfo;
+
   setResolution(width: number, height: number): void;
+
   /**
    * Updates the parameters used to configure the canvas view. See
    * `CanvasStateParams` for a complete list of parameters required.
    */
-  setParams(params: RenderCanvasStateParams): void;
+  setParams(params: RenderCanvasStateParams): Promise<void>;
   /**
    * Requests to load and render the image data for a specific frame.
    * @param requestedFrame The frame number to load and render.

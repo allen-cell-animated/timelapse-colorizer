@@ -23,6 +23,7 @@ import {
 import { clamp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
+import { get2DCanvasScaling } from "./canvas/utils";
 import {
   CANVAS_BACKGROUND_COLOR_DEFAULT,
   FRAME_BACKGROUND_COLOR_DEFAULT,
@@ -30,7 +31,7 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import { DrawMode, FeatureDataType, FrameLoadResult } from "./types";
+import { Canvas2DScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -121,7 +122,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   };
 };
 
-export default class ColorizeCanvas implements IRenderCanvas {
+export default class ColorizeCanvas2D implements IRenderCanvas {
   private geometry: PlaneGeometry;
   private material: ShaderMaterial;
   private pickMaterial: ShaderMaterial;
@@ -133,8 +134,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
   private line: Line;
   private points: Float32Array;
 
-  protected frameSizeInCanvasCoordinates: Vector2;
-  protected frameToCanvasCoordinates: Vector2;
+  private savedScaleInfo: Canvas2DScaleInfo;
   private lastFrameLoadResult: FrameLoadResult | null;
 
   /**
@@ -226,9 +226,13 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.currentFrame = -1;
     this.pendingFrame = -1;
     this.lastFrameLoadResult = null;
+    this.savedScaleInfo = {
+      type: CanvasType.CANVAS_2D,
+      frameSizeInCanvasCoordinates: new Vector2(1, 1),
+      canvasToFrameCoordinates: new Vector2(1, 1),
+      frameToCanvasCoordinates: new Vector2(1, 1),
+    };
 
-    this.frameSizeInCanvasCoordinates = new Vector2(1, 1);
-    this.frameToCanvasCoordinates = new Vector2(1, 1);
     this.zoomMultiplier = 1;
     this.panOffset = new Vector2(0, 0);
 
@@ -245,7 +249,11 @@ export default class ColorizeCanvas implements IRenderCanvas {
   }
 
   public get resolution(): Vector2 {
-    return this.canvasResolution;
+    return this.canvasResolution.clone();
+  }
+
+  public get scaleInfo(): Canvas2DScaleInfo {
+    return this.savedScaleInfo;
   }
 
   public get domElement(): HTMLCanvasElement {
@@ -291,11 +299,11 @@ export default class ColorizeCanvas implements IRenderCanvas {
 
     // Adjust the line mesh position with scaling and panning
     this.line.position.set(
-      2 * this.panOffset.x * this.frameToCanvasCoordinates.x,
-      2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
+      2 * this.panOffset.x * this.savedScaleInfo.frameToCanvasCoordinates.x,
+      2 * this.panOffset.y * this.savedScaleInfo.frameToCanvasCoordinates.y,
       0
     );
-    this.vectorField.setPosition(this.panOffset, this.frameToCanvasCoordinates);
+    this.vectorField.setPosition(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
     this.render();
   }
 
@@ -303,45 +311,21 @@ export default class ColorizeCanvas implements IRenderCanvas {
     if (!frameResolution || !canvasResolution) {
       return;
     }
+    this.savedScaleInfo = get2DCanvasScaling(frameResolution, canvasResolution, this.zoomMultiplier);
+    const { frameToCanvasCoordinates, canvasToFrameCoordinates } = this.savedScaleInfo;
+
     this.setUniform("canvasSizePx", canvasResolution);
-    // Both the frame and the canvas have coordinates in a range of [0, 1] in the x and y axis.
-    // However, the canvas may have a different aspect ratio than the frame, so we need to scale
-    // the frame to fit within the canvas while maintaining the aspect ratio.
-    const canvasAspect = canvasResolution.x / canvasResolution.y;
-    const frameAspect = frameResolution.x / frameResolution.y;
-    const unscaledFrameSizeInCanvasCoords: Vector2 = new Vector2(1, 1);
-    if (canvasAspect > frameAspect) {
-      // Canvas has a wider aspect ratio than the frame, so proportional height is 1
-      // and we scale width accordingly.
-      unscaledFrameSizeInCanvasCoords.x = canvasAspect / frameAspect;
-    } else {
-      unscaledFrameSizeInCanvasCoords.y = frameAspect / canvasAspect;
-    }
-
-    // Get final size by applying the current zoom level, where `zoomMultiplier=2` means the frame is 2x
-    // larger than its base size. Save this to use when calculating units with the scale bar.
-    this.frameSizeInCanvasCoordinates = unscaledFrameSizeInCanvasCoords.clone().multiplyScalar(this.zoomMultiplier);
-
-    // Transforms from [0, 1] space of the canvas to the [0, 1] space of the frame by dividing by the zoom level.
-    // ex: Let's say our frame has the same aspect ratio as the canvas, but our zoom is set to 2x.
-    // Assuming that the [0, 0] position of the frame and the canvas are in the same position,
-    // the position [1, 1] on the canvas should map to [0.5, 0.5] on the frame.
-    const canvasToFrameCoordinates = unscaledFrameSizeInCanvasCoords.clone().divideScalar(this.zoomMultiplier);
     this.setUniform("canvasToFrameScale", canvasToFrameCoordinates);
 
-    // Invert to get the frame to canvas coordinates. The line mesh is in frame coordinates, so transform it to
-    // canvas coordinates so it matches the zoomed frame.
-    this.frameToCanvasCoordinates = new Vector2(1 / canvasToFrameCoordinates.x, 1 / canvasToFrameCoordinates.y);
-
-    this.line.scale.set(this.frameToCanvasCoordinates.x, this.frameToCanvasCoordinates.y, 1);
+    this.line.scale.set(frameToCanvasCoordinates.x, frameToCanvasCoordinates.y, 1);
     // The line mesh is centered at [0,0]. Adjust the line mesh position with scaling and panning
     this.line.position.set(
-      2 * this.panOffset.x * this.frameToCanvasCoordinates.x,
-      2 * this.panOffset.y * this.frameToCanvasCoordinates.y,
+      2 * this.panOffset.x * frameToCanvasCoordinates.x,
+      2 * this.panOffset.y * frameToCanvasCoordinates.y,
       0
     );
-    this.vectorField.setPosition(this.panOffset, this.frameToCanvasCoordinates);
-    this.vectorField.setScale(this.frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
+    this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
+    this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
 
   /**
@@ -453,17 +437,18 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.onFrameLoadCallback = callback;
   }
 
-  public setParams(params: RenderCanvasStateParams): void {
+  public async setParams(params: RenderCanvasStateParams): Promise<void> {
     // TODO: What happens when `setParams` is called again while waiting for a Dataset to load?
     // May cause visual desync where the color ramp/feature data updates before frames load in fully
     if (this.params === params) {
       return;
     }
+    const promises: Promise<void>[] = [];
     const prevParams = this.params;
     this.params = params;
     // Update dataset and array data
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
-      this.handleNewDataset(params.dataset);
+      promises.push(this.handleNewDataset(params.dataset));
     }
     if (hasPropertyChanged(params, prevParams, ["dataset", "featureKey"])) {
       this.updateFeatureData(params.dataset, params.featureKey);
@@ -512,6 +497,7 @@ export default class ColorizeCanvas implements IRenderCanvas {
     this.setUniform("backdropSaturation", clamp(params.backdropSaturation, 0, 100) / 100);
     this.setUniform("backdropBrightness", clamp(params.backdropBrightness, 0, 200) / 100);
 
+    // Update color ramp + palette
     if (
       hasPropertyChanged(params, prevParams, [
         "dataset",
@@ -536,6 +522,8 @@ export default class ColorizeCanvas implements IRenderCanvas {
     }
 
     this.render();
+    await Promise.all(promises);
+    return;
   }
 
   public async setFrame(index: number, forceUpdate: boolean = false): Promise<FrameLoadResult | null> {

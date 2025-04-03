@@ -12,7 +12,7 @@ import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
+import CanvasUIOverlay from "../colorizer/CanvasOverlay";
 import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
@@ -130,7 +130,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const clearTrack = useViewerStateStore((state) => state.clearTrack);
   const collection = useViewerStateStore((state) => state.collection);
   const dataset = useViewerStateStore((state) => state.dataset);
-  const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setTrack = useViewerStateStore((state) => state.setTrack);
@@ -233,14 +232,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useMemo(() => {
     canv.isTimestampVisible = showTimestamp;
   }, [showTimestamp]);
-
-  useMemo(() => {
-    canv.setCollection(collection);
-  }, [collection]);
-
-  useMemo(() => {
-    canv.setDatasetKey(datasetKey);
-  }, [datasetKey]);
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
