@@ -101,6 +101,9 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvasElement.style.display = "block";
     // Let mouse events pass through to the inner canvas.
     this.canvasElement.style.pointerEvents = "none";
+    // Ensure the canvas is rendered on top of the inner canvas.
+    this.canvasElement.style.position = "relative";
+    this.canvasElement.style.zIndex = "1";
 
     // Set up DOM elements, which are structured like:
     // canvasContainerDiv
@@ -111,7 +114,6 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvasContainerDiv.style.position = "relative";
     this.canvasContainerDiv.style.width = "100%";
     this.canvasContainerDiv.style.height = "100%";
-    this.canvasContainerDiv.style.zIndex = "1";
 
     this.innerCanvasContainerDiv = document.createElement("div");
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
@@ -123,8 +125,8 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvasElement.style.top = "0px";
     this.canvasElement.style.left = "0px";
 
-    this.canvasContainerDiv.appendChild(this.canvasElement);
     this.canvasContainerDiv.appendChild(this.innerCanvasContainerDiv);
+    this.canvasContainerDiv.appendChild(this.canvasElement);
 
     this.onFrameLoadCallback = () => {};
 
@@ -385,7 +387,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.ctx.imageSmoothingEnabled = false;
 
     if (doesInnerCanvasNeedRender || this.isExporting) {
-      this.innerCanvas.render();
+      this.innerCanvas.render(this.isExporting);
     }
     if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
       // In export mode only, draw the inner canvas inside of the overlay

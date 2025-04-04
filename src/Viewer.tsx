@@ -40,11 +40,12 @@ import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
 import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
+import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
+import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./colorizer/ColorizeCanvas3D";
 import { FeatureType } from "./colorizer/Dataset";
-import { IRenderCanvas, renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
+import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
@@ -85,12 +86,13 @@ function Viewer(): ReactElement {
 
   const [, startTransition] = React.useTransition();
 
-  // TODO: Make `canv` an IRenderCanvas type? Don't wrap `ColorizeCanvas3D` in `CanvasOverlay`...?
-  const canv: IRenderCanvas = useConstructor(() => {
+  const canv: CanvasOverlay = useConstructor(() => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
-    // const innerCanvas = new ColorizeCanvas2D();
-    // const canvas = new CanvasOverlay(innerCanvas, stateDeps);
-    const canvas = new ColorizeCanvas3D(stateDeps);
+    // TODO: Once Datasets can report whether they are 2D or 3D, CanvasOverlay
+    // should construct and swap between the two types of canvases on its own.
+    const use3DCanvas = true;
+    const innerCanvas = use3DCanvas ? new ColorizeCanvas3D(stateDeps) : new ColorizeCanvas2D();
+    const canvas = new CanvasOverlay(innerCanvas, stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
     canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);
@@ -681,9 +683,7 @@ function Viewer(): ReactElement {
             <Export
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrame}
-              // TODO: Add `getExportDimensions()` to IRenderCanvas interface
-              // getCanvasExportDimensions={() => canv.getExportDimensions()}
-              getCanvasExportDimensions={() => canv.resolution.toArray()}
+              getCanvasExportDimensions={() => canv.getExportDimensions()}
               getCanvas={() => canv.canvas}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}

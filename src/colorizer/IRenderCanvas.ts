@@ -94,7 +94,7 @@ export interface IRenderCanvas {
    */
   setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void;
 
-  render(): void;
+  render(synchronous?: boolean): void;
 
   /**
    * Disposes of the canvas and its resources.

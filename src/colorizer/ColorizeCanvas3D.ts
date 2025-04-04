@@ -78,9 +78,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   get canvas(): HTMLCanvasElement {
-    // TODO: Temp fix while the colorizing and picking branch needs merge from
-    // main
-    return this.view3d.getDOMElement() as unknown as HTMLCanvasElement;
+    return this.view3d.getCanvasDOMElement();
   }
 
   get resolution(): Vector2 {
@@ -260,12 +258,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setSelectedID(this.volume, 0, id + 1);
   }
 
-  render(_synchronous = false): void {
+  render(synchronous = false): void {
     this.syncSelectedId();
-    // this.view3d.redraw();
-    // TODO: Change to below line once vole-core is patched
-    // this.view3d.redraw(synchronous);
-    this.view3d.redraw();
+    this.view3d.redraw(synchronous);
   }
 
   dispose(): void {
