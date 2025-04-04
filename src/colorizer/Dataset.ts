@@ -62,6 +62,12 @@ export default class Dataset {
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
+  public frame3dFiles?: string | string[];
+  public segmentationChannel?: number;
+
+  private frameIdOffsetFile?: string;
+  public frameIdOffset: Uint32Array | null;
+
   private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, BackdropData>;
   private backdropFrames: DataCache<string, Texture> | null;
@@ -110,6 +116,8 @@ export default class Dataset {
     this.frames = null;
     this.backdropFrames = null;
     this.frameDimensions = null;
+
+    this.frameIdOffset = null;
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
@@ -271,6 +279,14 @@ export default class Dataset {
     return featureData !== undefined && featureData.type === FeatureType.CATEGORICAL;
   }
 
+  public has2dFrames(): boolean {
+    return this.frameFiles !== undefined;
+  }
+
+  public has3dFrames(): boolean {
+    return this.frame3dFiles !== undefined;
+  }
+
   /**
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
    * @param dataType The expected format of the data.
@@ -412,6 +428,8 @@ export default class Dataset {
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
+    this.frame3dFiles = manifest.frames3d?.source;
+    this.segmentationChannel = manifest.frames3d?.segmentationChannel ?? 0;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
@@ -419,6 +437,7 @@ export default class Dataset {
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
     this.boundsFile = manifest.bounds;
+    this.frameIdOffsetFile = manifest.frameIdOffsets;
 
     if (manifest.backdrops) {
       for (const { name, key, frames } of manifest.backdrops) {
@@ -458,10 +477,11 @@ export default class Dataset {
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.timesFile)),
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.centroidsFile)),
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.boundsFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.frameIdOffsetFile)),
       reportLoadProgress(this.loadFrame(0)),
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
+    const [outliers, tracks, times, centroids, bounds, frameIdOffsets, _loadedFrame, ...featureResults] = result;
 
     const unloadableDataFiles: string[] = [];
     function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
@@ -476,6 +496,10 @@ export default class Dataset {
     this.times = urlUtils.getPromiseValue(times, makeLoadFailedCallback("Times", this.timesFile));
     this.centroids = urlUtils.getPromiseValue(centroids, makeLoadFailedCallback("Centroids", this.centroidsFile));
     this.bounds = urlUtils.getPromiseValue(bounds, makeLoadFailedCallback("Bounds", this.boundsFile));
+    this.frameIdOffset = urlUtils.getPromiseValue(
+      frameIdOffsets,
+      makeLoadFailedCallback("Frame ID Offsets", this.frameIdOffsetFile)
+    );
 
     if (unloadableDataFiles.length > 0) {
       // Report warning of all the files that couldn't be loaded and their associated errors.
@@ -518,6 +542,24 @@ export default class Dataset {
     });
 
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
+
+    // TODO: initiailize the frameIdOffset array as all zeroes if the dataset
+    // does not define the offsets.
+
+    // Hacky thing here: Figure out the smallest ID of an object on every frame
+    // to do the frame-local offsets
+    const frameToSmallestId: number[] = Array.from({ length: this.numberOfFrames }).fill(Infinity) as number[];
+    const frameToLargestId: number[] = Array.from({ length: this.numberOfFrames }).fill(-Infinity) as number[];
+    for (let id = 0; id < this.numObjects; id++) {
+      const time = this.times?.[id];
+      if (time !== undefined) {
+        frameToSmallestId[time] = Math.min(frameToSmallestId[time], id);
+        frameToLargestId[time] = Math.max(frameToLargestId[time], id);
+      }
+    }
+    console.log("Frame to smallest ID: ", frameToSmallestId);
+    console.log("Frame to largest ID: ", frameToLargestId);
+    this.frameIdOffset = new Uint32Array(this.numberOfFrames);
   }
 
   /** Frees the GPU resources held by this dataset */
