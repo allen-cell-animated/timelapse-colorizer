@@ -1,4 +1,5 @@
 /* global RequestInit */
+// Typescript doesn't recognize RequestInit
 import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";

@@ -522,7 +522,8 @@ function Viewer(): ReactElement {
         await setFrame(frameInput);
       }
       if (isUserDirectlyControllingFrameInput) {
-        setFrame(frameInput).then(() => timeControls.play());
+        await setFrame(frameInput);
+        timeControls.play();
         // Update the frame and unpause playback when the slider is released.
         setIsUserDirectlyControllingFrameInput(false);
       }

@@ -1,23 +1,9 @@
-import {
-  Color,
-  ColorManagement,
-  ColorRepresentation,
-  DataTexture,
-  FloatType,
-  LinearFilter,
-  NearestFilter,
-  RGBAFormat,
-} from "three";
+import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, NearestFilter, RGBAFormat } from "three";
 
 export enum ColorRampType {
   LINEAR,
   HARD_STOP,
 }
-
-// Fixes an issue in Three.js where the new default color management causes all
-// Color objects to be interpreted as sRGB colors, which breaks expected linear
-// interpolation between colors in the ramp.
-ColorManagement.enabled = false;
 
 export default class ColorRamp {
   public readonly colorStops: Color[];

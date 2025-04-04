@@ -142,6 +142,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         "dataset",
         "featureKey",
         "inRangeLUT",
+        "outOfRangeDrawSettings",
+        "outlierDrawSettings",
+        "outlineColor",
+        "outlierDrawSettings",
+        "outOfRangeDrawSettings",
       ])
     ) {
       if (this.volume) {
