@@ -236,6 +236,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   // TODO: Move `isExporting` flag into state
   public setIsExporting(isExporting: boolean): void {
     this.isExporting = isExporting;
+    this.render(false);
   }
 
   public setZoom(zoom: number): void {
@@ -256,12 +257,20 @@ export default class CanvasOverlay implements IRenderCanvas {
 
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
     this.params = params;
+    // Inner canvas will re-render itself when the params are set.
     await this.innerCanvas.setParams(params);
     this.render(false);
   }
 
   public async setCanvas(canvas: IRenderCanvas): Promise<void> {
+    // Remove previous inner canvas from DOM.
+    this.innerCanvasContainerDiv.removeChild(this.innerCanvas.domElement);
+    if (canvas !== this.innerCanvas) {
+      this.innerCanvas.dispose();
+    }
+
     this.innerCanvas = canvas;
+    this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
     await this.innerCanvas.setParams(this.params);

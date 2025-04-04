@@ -92,6 +92,7 @@ function Viewer(): ReactElement {
     // should construct and swap between the two types of canvases on its own.
     const use3DCanvas = true;
     const innerCanvas = use3DCanvas ? new ColorizeCanvas3D(stateDeps) : new ColorizeCanvas2D();
+
     const canvas = new CanvasOverlay(innerCanvas, stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
