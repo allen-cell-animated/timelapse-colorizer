@@ -180,8 +180,6 @@ function Viewer(): ReactElement {
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
   const updateUrlParams = useCallback(
-    // TODO: Update types for makeDebouncedCallback since right now it requires
-    // an argument (even if it's a dummy one) to be passed to the callback.
     makeDebouncedCallback(() => {
       if (isInitialDatasetLoaded) {
         const params = serializeViewerState(useViewerStateStore.getState());
@@ -190,6 +188,13 @@ function Viewer(): ReactElement {
     }),
     [isInitialDatasetLoaded]
   );
+
+  useEffect(() => {
+    // Update the URL parameters once after the dataset is loaded for the first time.
+    if (isInitialDatasetLoaded) {
+      updateUrlParams();
+    }
+  }, [isInitialDatasetLoaded]);
 
   useEffect(() => {
     return useViewerStateStore.subscribe(selectSerializationDependencies, (state, prevState) => {
@@ -204,7 +209,7 @@ function Viewer(): ReactElement {
       ) {
         return;
       }
-      updateUrlParams(state);
+      updateUrlParams();
     });
   }, [isRecording, updateUrlParams]);
 
