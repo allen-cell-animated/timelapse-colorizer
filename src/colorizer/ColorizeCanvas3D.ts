@@ -114,6 +114,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           outlierDrawMode: this.params.outlierDrawSettings.mode,
           outOfRangeDrawMode: this.params.outOfRangeDrawSettings.mode,
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
+          timeToIdOffset: dataset.frameIdOffset ?? new Uint32Array([0]),
         };
         // TODO: This needs to be called again AFTER each channel has loaded.
         // Maybe setup this colorizing in the volume loader callback?

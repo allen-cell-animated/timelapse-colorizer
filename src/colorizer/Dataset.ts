@@ -58,7 +58,7 @@ const MAX_CACHED_BACKDROPS_BYTES = 500_000_000; // 500 MB
 
 export default class Dataset {
   private frameLoader: ITextureImageLoader;
-  private frameFiles: string[];
+  private frameFiles?: string[];
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
@@ -308,7 +308,7 @@ export default class Dataset {
   }
 
   public get numberOfFrames(): number {
-    return this.frameFiles.length || 0;
+    return this.frameFiles?.length ?? 0;
   }
 
   public get featureKeys(): string[] {
@@ -325,7 +325,7 @@ export default class Dataset {
 
   /** Loads a single frame from the dataset */
   public async loadFrame(index: number): Promise<Texture | undefined> {
-    if (index < 0 || index >= this.frameFiles.length) {
+    if (index < 0 || this.frameFiles === undefined || index >= this.frameFiles.length) {
       return undefined;
     }
 
@@ -375,11 +375,6 @@ export default class Dataset {
     const frames = this.backdropData.get(key)?.frames;
     // TODO: Wrapping or clamping?
     if (!frames || index < 0 || index >= frames.length) {
-      return undefined;
-    }
-
-    // Allow for undefined or null backdrop frames in the manifest
-    if (this.frameFiles[index] === undefined || this.frameFiles[index] === null) {
       return undefined;
     }
 
@@ -559,7 +554,7 @@ export default class Dataset {
     }
     console.log("Frame to smallest ID: ", frameToSmallestId);
     console.log("Frame to largest ID: ", frameToLargestId);
-    this.frameIdOffset = new Uint32Array(this.numberOfFrames);
+    this.frameIdOffset = new Uint32Array(frameToSmallestId);
   }
 
   /** Frees the GPU resources held by this dataset */
@@ -580,7 +575,7 @@ export default class Dataset {
   }
 
   public getTotalFrames(): number {
-    return this.frameFiles.length;
+    return this.frameFiles?.length ?? 0;
   }
 
   public isValidFrameIndex(index: number): boolean {
