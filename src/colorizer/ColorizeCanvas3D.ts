@@ -168,7 +168,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           this.volume.cleanup();
           this.volume = null;
         }
-        this.loadNewVolume(params.dataset.frames3dSrc).then(() => {
+        this.initializingVolumePromise = this.loadNewVolume(params.dataset.frames3dSrc);
+        this.initializingVolumePromise.then(() => {
           this.setFrame(params.pendingFrame);
         });
       }
@@ -233,6 +234,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   setFrame(requestedFrame: number): Promise<FrameLoadResult | null> {
+    console.log("ColorizeCanvas3D.setFrame", requestedFrame);
+    if (!this.params?.dataset?.isValidFrameIndex(requestedFrame)) {
+      return Promise.resolve(null);
+    }
     if (requestedFrame === this.currentFrame) {
       this.pendingFrame = -1;
       return Promise.resolve({
@@ -297,8 +302,12 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   getIdAtPixel(x: number, y: number): number {
-    if (this.volume?.isLoaded()) {
-      return this.view3d.hitTest(x, y) - 1;
+    const dataset = this.params?.dataset;
+    if (this.volume?.isLoaded() && dataset) {
+      const frameLocalId = this.view3d.hitTest(x, y);
+      const offset = dataset.frameIdOffset ? dataset.frameIdOffset[this.currentFrame] : 0;
+      const id = frameLocalId <= 0 ? 0 : frameLocalId + offset;
+      return id - 1;
     }
     return -1;
   }
