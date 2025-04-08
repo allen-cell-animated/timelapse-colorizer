@@ -33,13 +33,6 @@ export type ManifestFileMetadata = Spread<ManifestFileMetadataV1_1_0>;
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV0_0_0 = {
   frames: string[];
-  /** Offsets for  */
-  frameIdOffsets?: string;
-  frames3d?: {
-    source: string | string[];
-    segmentationChannel: number;
-    totalFrames: number;
-  };
   /** Deprecated; Map from feature name to relative path. */
   features: Record<string, string>;
   /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
@@ -57,7 +50,6 @@ type ManifestFileV0_0_0 = {
   centroids?: string;
   bounds?: string;
   metadata?: Partial<ManifestFileMetadataV0_0_0>;
-  // TODO:
 };
 
 // v1.0.0 removes the featureMetadata field, replaces the features map with an ordered
@@ -87,6 +79,17 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
 type ManifestFileV1_1_0 = Spread<
   ManifestFileV1_0_0 & {
     metadata?: Partial<ManifestFileMetadataV1_1_0>;
+    /**
+     * Offsets raw, per-frame object IDs in 2D or 3D data into
+     * indices for the global data arrays.
+     */
+    frameIdOffsets?: string;
+    /** Required data for  */
+    frames3d?: {
+      source: string | string[];
+      segmentationChannel: number;
+      totalFrames: number;
+    };
   }
 >;
 

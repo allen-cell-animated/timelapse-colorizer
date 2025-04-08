@@ -38,8 +38,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   private loader: WorkerLoader | RawArrayLoader | TiffLoader | null = null;
   private volume: Volume | null = null;
+  /** A Promise for the load of the initial Volume object. */
   private initializingVolumePromise: Promise<Volume> | null = null;
-  private pendingVolumePromise: Promise<FrameLoadResult> | null = null;
+  /** A Promise for the load of the volume data for a single frame. */
+  private volumeFrameLoadPromise: Promise<FrameLoadResult> | null = null;
+
   private pendingFrame: number;
   private currentFrame: number;
 
@@ -234,7 +237,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   setFrame(requestedFrame: number): Promise<FrameLoadResult | null> {
-    console.log("ColorizeCanvas3D.setFrame", requestedFrame);
     if (!this.params?.dataset?.isValidFrameIndex(requestedFrame)) {
       return Promise.resolve(null);
     }
@@ -247,8 +249,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         backdropError: false,
       });
     }
-    if (requestedFrame === this.pendingFrame && this.pendingVolumePromise) {
-      return this.pendingVolumePromise;
+    if (requestedFrame === this.pendingFrame && this.volumeFrameLoadPromise) {
+      return this.volumeFrameLoadPromise;
     }
     if (!this.volume && !this.initializingVolumePromise) {
       return Promise.resolve(null);
@@ -276,8 +278,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return result;
     };
     this.pendingFrame = requestedFrame;
-    this.pendingVolumePromise = loadVolumeFrame();
-    return this.pendingVolumePromise as Promise<FrameLoadResult>;
+    this.volumeFrameLoadPromise = loadVolumeFrame();
+    return this.volumeFrameLoadPromise as Promise<FrameLoadResult>;
   }
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
@@ -285,11 +287,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   private syncSelectedId(): void {
-    if (!this.volume || !this.params) {
+    if (!this.volume || !this.params || !this.params.dataset) {
       return;
     }
     const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, 0, id + 1);
+    this.view3d.setSelectedID(this.volume, this.params.dataset.segmentationChannel ?? 0, id + 1);
   }
 
   render(synchronous = false): void {
@@ -303,6 +305,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   getIdAtPixel(x: number, y: number): number {
     const dataset = this.params?.dataset;
+    // TODO: Currently `View3d.hitTest` reports the per-frame IDs, not global IDs.
+    // Ideally, vole-core should handle this based on the frame ID offset array that's passed into it
+    // during colorizer setup.
     if (this.volume?.isLoaded() && dataset) {
       const frameLocalId = this.view3d.hitTest(x, y);
       const offset = dataset.frameIdOffset ? dataset.frameIdOffset[this.currentFrame] : 0;
