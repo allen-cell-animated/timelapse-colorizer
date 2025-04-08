@@ -30,7 +30,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   // private viewContainer: HTMLElement;
   private view3d: View3d;
   private onLoadFrameCallback: (result: FrameLoadResult) => void;
-  private params: RenderCanvasStateParams;
+  private params: RenderCanvasStateParams | null;
 
   private canvasResolution: Vector2;
 
@@ -43,9 +43,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   private pendingFrame: number;
   private currentFrame: number;
 
-  constructor(params: RenderCanvasStateParams) {
-    this.params = params;
-
+  constructor() {
+    this.params = null;
     this.view3d = new View3d();
     this.view3d.loaderContext = loaderContext;
     this.canvasResolution = new Vector2(10, 10);
@@ -98,6 +97,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   private configureColorizeFeature(volume: Volume, channelIndex: number): void {
+    if (!this.params) {
+      return;
+    }
     const dataset = this.params.dataset;
     const featureKey = this.params.featureKey;
     if (dataset !== null && featureKey !== null) {
@@ -128,7 +130,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
   }
 
-  setParams(params: RenderCanvasStateParams): Promise<void> {
+  public setParams(params: RenderCanvasStateParams): Promise<void> {
     if (this.params === params) {
       return Promise.resolve();
     }
@@ -167,7 +169,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           this.volume = null;
         }
         this.loadNewVolume(params.dataset.frames3dSrc).then(() => {
-          this.setFrame(this.params.pendingFrame);
+          this.setFrame(params.pendingFrame);
         });
       }
     }
@@ -179,6 +181,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   private async loadNewVolume(path: string | string[]): Promise<Volume> {
+    if (!this.params) {
+      throw new Error("Cannot load volume without parameters.");
+    }
     await loaderContext.onOpen();
 
     this.loader = await loaderContext.createLoader(path);
@@ -275,7 +280,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   private syncSelectedId(): void {
-    if (!this.volume) {
+    if (!this.volume || !this.params) {
       return;
     }
     const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;

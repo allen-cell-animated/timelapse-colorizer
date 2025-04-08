@@ -26,9 +26,11 @@ import {
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
 import { CanvasScaleInfo, CanvasType, FrameLoadResult } from "./types";
+import { hasPropertyChanged } from "./utils/data_utils";
 
 import { LabelData } from "./AnnotationData";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
+import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 /**
@@ -44,7 +46,12 @@ export default class CanvasOverlay implements IRenderCanvas {
   private innerCanvasContainerDiv: HTMLDivElement;
 
   private canvasElement: HTMLCanvasElement;
+
+  private innerCanvas2d: ColorizeCanvas2D;
+  private innerCanvas3d: ColorizeCanvas3D | null;
+
   private innerCanvas: IRenderCanvas;
+  private innerCanvasType: CanvasType;
   private ctx: CanvasRenderingContext2D;
 
   private currentFrame: number;
@@ -85,7 +92,6 @@ export default class CanvasOverlay implements IRenderCanvas {
   public isAnnotationVisible: boolean;
 
   constructor(
-    canvas: IRenderCanvas,
     params: RenderCanvasStateParams,
     styles?: {
       scaleBar?: ScaleBarStyle;
@@ -96,7 +102,12 @@ export default class CanvasOverlay implements IRenderCanvas {
       footer?: FooterStyle;
     }
   ) {
-    this.innerCanvas = canvas;
+    this.innerCanvas2d = new ColorizeCanvas2D();
+    this.innerCanvas3d = null;
+
+    this.innerCanvas = this.innerCanvas2d;
+    this.innerCanvasType = CanvasType.CANVAS_2D;
+
     this.canvasElement = document.createElement("canvas");
     this.canvasElement.style.display = "block";
     // Let mouse events pass through to the inner canvas.
@@ -192,7 +203,8 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   dispose(): void {
-    this.innerCanvas.dispose();
+    this.innerCanvas2d.dispose();
+    this.innerCanvas3d?.dispose();
   }
 
   public setResolution(width: number, height: number): void {
@@ -240,34 +252,51 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   public setZoom(zoom: number): void {
-    this.zoomMultiplier = zoom;
+    // TODO: Replace all these checks for specific instances with canvas type (2D/3D)
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
+      this.zoomMultiplier = zoom;
       this.innerCanvas.setZoom(zoom);
     }
     this.render();
   }
 
   public setPan(x: number, y: number): void {
-    this.panOffset.set(x, y);
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
+      this.panOffset.set(x, y);
       this.innerCanvas.setPan(x, y);
     }
     this.render();
   }
 
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
+    const prevParams = this.params;
     this.params = params;
-    // Inner canvas will re-render itself when the params are set.
+
+    // If the dataset has changed, construct and initialize the inner
+    // canvas.
+    if (hasPropertyChanged(params, prevParams, ["dataset"])) {
+      if (params.dataset) {
+        if (params.dataset.has2dFrames() && this.innerCanvasType !== CanvasType.CANVAS_2D) {
+          this.innerCanvasType = CanvasType.CANVAS_2D;
+          await this.setCanvas(this.innerCanvas2d);
+        } else if (params.dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
+          this.innerCanvasType = CanvasType.CANVAS_3D;
+          this.innerCanvas3d = new ColorizeCanvas3D();
+          await this.setCanvas(this.innerCanvas3d);
+        }
+      }
+    }
+
     await this.innerCanvas.setParams(params);
+
+    // Inner canvas will re-render on setParams, so it doesn't need
+    // to be re-rendered here.
     this.render(false);
   }
 
   public async setCanvas(canvas: IRenderCanvas): Promise<void> {
     // Remove previous inner canvas from DOM.
     this.innerCanvasContainerDiv.removeChild(this.innerCanvas.domElement);
-    if (canvas !== this.innerCanvas) {
-      this.innerCanvas.dispose();
-    }
 
     this.innerCanvas = canvas;
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
