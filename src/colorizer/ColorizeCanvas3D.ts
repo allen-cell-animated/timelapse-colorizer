@@ -36,9 +36,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   private tempCanvas: HTMLCanvasElement;
 
-  private isLoadingInitialVolume: boolean = false;
   private loader: WorkerLoader | RawArrayLoader | TiffLoader | null = null;
   private volume: Volume | null = null;
+  private initializingVolumePromise: Promise<Volume> | null = null;
   private pendingVolumePromise: Promise<FrameLoadResult> | null = null;
   private pendingFrame: number;
   private currentFrame: number;
@@ -159,19 +159,32 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       }
     }
 
+    if (hasPropertyChanged(params, prevParams, ["dataset"])) {
+      if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3dSrc) {
+        if (this.volume) {
+          this.view3d.removeAllVolumes();
+          this.volume.cleanup();
+          this.volume = null;
+        }
+        this.loadNewVolume(params.dataset.frames3dSrc).then(() => {
+          this.setFrame(this.params.pendingFrame);
+        });
+      }
+    }
+
     this.render(false);
 
     // Eventually volume change is handled here?
     return Promise.resolve();
   }
 
-  private async loadInitialVolume(path: string | string[]): Promise<Volume> {
+  private async loadNewVolume(path: string | string[]): Promise<Volume> {
     await loaderContext.onOpen();
 
-    // Setup volume loader and load an example volume
-    const loader = await loaderContext.createLoader(path);
+    this.loader = await loaderContext.createLoader(path);
     const loadSpec = new LoadSpec();
-    const volume = await loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
+    loadSpec.time = this.params.pendingFrame;
+    const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
 
       this.view3d.onVolumeData(currentVol, [channelIndex]);
@@ -184,15 +197,16 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     });
     this.view3d.addVolume(volume);
 
-    this.view3d.setVolumeChannelEnabled(volume, 0, true);
-    this.view3d.setVolumeChannelOptions(volume, 0, {
+    const segChannel = this.params.dataset?.segmentationChannel ?? 0;
+    this.view3d.setVolumeChannelEnabled(volume, segChannel, true);
+    this.view3d.setVolumeChannelOptions(volume, segChannel, {
       isosurfaceEnabled: false,
       isosurfaceOpacity: 1.0,
       enabled: true,
       color: [1, 1, 1],
       emissiveColor: [0, 0, 0],
     });
-    this.view3d.enablePicking(volume, true, 0);
+    this.view3d.enablePicking(volume, true, segChannel);
 
     this.view3d.updateDensity(volume, 0.5);
     this.view3d.updateExposure(0.6);
@@ -207,10 +221,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // 0,75,255
     // this.view3d.setGamma(volume, 0, 75, 255);
 
-    this.loader = loader;
     this.volume = volume;
 
-    await loader.loadVolumeData(volume);
+    await this.loader.loadVolumeData(volume);
     return volume;
   }
 
@@ -227,15 +240,18 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     if (requestedFrame === this.pendingFrame && this.pendingVolumePromise) {
       return this.pendingVolumePromise;
     }
+    if (!this.volume && !this.initializingVolumePromise) {
+      return Promise.resolve(null);
+    }
 
     const loadVolumeFrame = async (): Promise<FrameLoadResult> => {
-      if ((!this.volume || !this.loader) && !this.isLoadingInitialVolume) {
-        this.isLoadingInitialVolume = true;
-        await this.loadInitialVolume([
-          "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_09_small/seg.ome.zarr",
-        ]);
+      if (!this.volume || !this.loader) {
+        await this.initializingVolumePromise;
+        if (!this.volume) {
+          throw new Error("No volume was loaded");
+        }
       }
-      await this.view3d.setTime(this.volume!, requestedFrame);
+      await this.view3d.setTime(this.volume, requestedFrame);
 
       this.render(true);
       this.currentFrame = requestedFrame;

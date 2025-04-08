@@ -62,8 +62,9 @@ export default class Dataset {
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
-  public frame3dFiles?: string | string[];
+  public frames3dSrc?: string | string[];
   public segmentationChannel?: number;
+  private totalFrames3d?: number;
 
   private frameIdOffsetFile?: string;
   public frameIdOffset: Uint32Array | null;
@@ -284,7 +285,7 @@ export default class Dataset {
   }
 
   public has3dFrames(): boolean {
-    return this.frame3dFiles !== undefined;
+    return this.frames3dSrc !== undefined;
   }
 
   /**
@@ -308,7 +309,7 @@ export default class Dataset {
   }
 
   public get numberOfFrames(): number {
-    return this.frameFiles?.length ?? 0;
+    return this.getTotalFrames();
   }
 
   public get featureKeys(): string[] {
@@ -423,8 +424,9 @@ export default class Dataset {
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
-    this.frame3dFiles = manifest.frames3d?.source;
+    this.frames3dSrc = manifest.frames3d?.source;
     this.segmentationChannel = manifest.frames3d?.segmentationChannel ?? 0;
+    this.totalFrames3d = manifest.frames3d?.totalFrames ?? 0;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
@@ -491,10 +493,9 @@ export default class Dataset {
     this.times = urlUtils.getPromiseValue(times, makeLoadFailedCallback("Times", this.timesFile));
     this.centroids = urlUtils.getPromiseValue(centroids, makeLoadFailedCallback("Centroids", this.centroidsFile));
     this.bounds = urlUtils.getPromiseValue(bounds, makeLoadFailedCallback("Bounds", this.boundsFile));
-    this.frameIdOffset = urlUtils.getPromiseValue(
-      frameIdOffsets,
-      makeLoadFailedCallback("Frame ID Offsets", this.frameIdOffsetFile)
-    );
+    this.frameIdOffset =
+      urlUtils.getPromiseValue(frameIdOffsets, makeLoadFailedCallback("Frame ID Offsets", this.frameIdOffsetFile)) ??
+      new Uint32Array([0]);
 
     if (unloadableDataFiles.length > 0) {
       // Report warning of all the files that couldn't be loaded and their associated errors.
@@ -537,24 +538,6 @@ export default class Dataset {
     });
 
     // TODO: Pre-process feature data to handle outlier values by interpolating between known good values (#21)
-
-    // TODO: initiailize the frameIdOffset array as all zeroes if the dataset
-    // does not define the offsets.
-
-    // Hacky thing here: Figure out the smallest ID of an object on every frame
-    // to do the frame-local offsets
-    const frameToSmallestId: number[] = Array.from({ length: this.numberOfFrames }).fill(Infinity) as number[];
-    const frameToLargestId: number[] = Array.from({ length: this.numberOfFrames }).fill(-Infinity) as number[];
-    for (let id = 0; id < this.numObjects; id++) {
-      const time = this.times?.[id];
-      if (time !== undefined) {
-        frameToSmallestId[time] = Math.min(frameToSmallestId[time], id);
-        frameToLargestId[time] = Math.max(frameToLargestId[time], id);
-      }
-    }
-    console.log("Frame to smallest ID: ", frameToSmallestId);
-    console.log("Frame to largest ID: ", frameToLargestId);
-    this.frameIdOffset = new Uint32Array(frameToSmallestId);
   }
 
   /** Frees the GPU resources held by this dataset */
@@ -575,7 +558,11 @@ export default class Dataset {
   }
 
   public getTotalFrames(): number {
-    return this.frameFiles?.length ?? 0;
+    if (this.has2dFrames()) {
+      return this.frameFiles?.length ?? 0;
+    } else {
+      return this.totalFrames3d ?? 0;
+    }
   }
 
   public isValidFrameIndex(index: number): boolean {

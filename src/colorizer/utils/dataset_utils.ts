@@ -38,6 +38,7 @@ type ManifestFileV0_0_0 = {
   frames3d?: {
     source: string | string[];
     segmentationChannel: number;
+    totalFrames: number;
   };
   /** Deprecated; Map from feature name to relative path. */
   features: Record<string, string>;
