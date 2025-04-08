@@ -516,7 +516,8 @@
   ],
   "frames3d": {
     "source": "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_05_large/seg.ome.zarr",
-    "segmentationChannel": 0
+    "segmentationChannel": 0,
+    "totalFrames": 570
   },
   "frameIdOffsets": "frame_id_offset.json",  
   "outliers": "outliers.parquet",
