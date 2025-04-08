@@ -36,6 +36,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   private tempCanvas: HTMLCanvasElement;
 
+  private isLoadingInitialVolume: boolean = false;
   private loader: WorkerLoader | RawArrayLoader | TiffLoader | null = null;
   private volume: Volume | null = null;
   private pendingVolumePromise: Promise<FrameLoadResult> | null = null;
@@ -73,8 +74,12 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.updateLights(lights);
   }
 
-  get domElement(): HTMLCanvasElement {
-    return this.view3d.getDOMElement() as unknown as HTMLCanvasElement;
+  get domElement(): HTMLElement {
+    return this.view3d.getDOMElement();
+  }
+
+  get canvas(): HTMLCanvasElement {
+    return this.view3d.getCanvasDOMElement();
   }
 
   get resolution(): Vector2 {
@@ -154,7 +159,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       }
     }
 
-    // this.view3d.redraw();
+    this.render(false);
 
     // Eventually volume change is handled here?
     return Promise.resolve();
@@ -224,7 +229,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
 
     const loadVolumeFrame = async (): Promise<FrameLoadResult> => {
-      if (!this.volume || !this.loader) {
+      if ((!this.volume || !this.loader) && !this.isLoadingInitialVolume) {
+        this.isLoadingInitialVolume = true;
         await this.loadInitialVolume([
           "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_09_small/seg.ome.zarr",
         ]);
@@ -260,12 +266,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setSelectedID(this.volume, 0, id + 1);
   }
 
-  render(_synchronous = false): void {
+  render(synchronous = false): void {
     this.syncSelectedId();
-    // this.view3d.redraw();
-    // TODO: Change to below line once vole-core is patched
-    // this.view3d.redraw(synchronous);
-    this.view3d.redraw();
+    this.view3d.redraw(synchronous);
   }
 
   dispose(): void {
