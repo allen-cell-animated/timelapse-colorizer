@@ -1,0 +1,545 @@
+{
+  "features": [
+    {
+      "name": "Volume",
+      "data": "feature_0.parquet",
+      "unit": "\u03bcm\u00b3",
+      "type": "continuous",
+      "key": "volume",
+      "min": 68.05868634259261,
+      "max": 2050.3883923611115,
+      "description": "The sum of the voxels inside the nuclear segmentation at every time point."
+    },
+    {
+      "name": "Height",
+      "data": "feature_1.parquet",
+      "unit": "\u03bcm",
+      "type": "continuous",
+      "key": "height",
+      "min": 3.3583333333333334,
+      "max": 13.541666666666668,
+      "description": "The distance between the lowest and highest pixels of the nucleus segmentation in the Z-dimension at every time point."
+    },
+    {
+      "name": "XY aspect ratio",
+      "data": "feature_2.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "xy_aspect_ratio",
+      "min": 0.8243243243243243,
+      "max": 3.4098360655737703,
+      "description": "The ratio of length to the width of the nuclear segmentation at every timepoint. The length is defined as the longest axis of the nuclear segmentation in the XY-plane. The width is defined as the length of nuclear segmentation in the plane perpendicular to the longest axis."
+    },
+    {
+      "name": "Family ID",
+      "data": "feature_3.parquet",
+      "unit": "",
+      "type": "discrete",
+      "key": "family_id",
+      "min": 0.0,
+      "max": 288.0,
+      "description": "Unique identifier for all the nuclei in the same family tree."
+    },
+    {
+      "name": "Volume at start of growth",
+      "data": "feature_4.parquet",
+      "unit": "\u03bcm\u00b3",
+      "type": "continuous",
+      "key": "volume_at_start_of_growth",
+      "min": 404.0331313657408,
+      "max": 712.751045138889,
+      "description": "The volume at the start of the growth phase for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Volume at end of growth",
+      "data": "feature_5.parquet",
+      "unit": "\u03bcm\u00b3",
+      "type": "continuous",
+      "key": "volume_at_end_of_growth",
+      "min": 782.4523958333335,
+      "max": 1954.5340960648152,
+      "description": "The volume at the time of lamin shell breakdown, the end of the growth phase, for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Growth volume fold-change",
+      "data": "feature_6.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "growth_volume_foldchange",
+      "min": 1.512004418217319,
+      "max": 3.6259328446218144,
+      "description": "The volume fold-change from the start to the end of growth for a full-interphase nuclear trajectory (i.e., \u201cvolume at the end of growth\u201d / \u201cvolume at start of growth\u201d)."
+    },
+    {
+      "name": "Added volume during growth",
+      "data": "feature_7.parquet",
+      "unit": "\u03bcm\u00b3",
+      "type": "continuous",
+      "key": "added_volume_during_growth",
+      "min": 299.3895636574075,
+      "max": 1415.4909918981484,
+      "description": "The amount of volume added from the start to the end of growth for a full-interphase nuclear trajectory (i.e., \u201cvolume at the end of growth\u201d - \u201cvolume at start of growth\u201d)."
+    },
+    {
+      "name": "Growth duration",
+      "data": "feature_8.parquet",
+      "unit": "hr",
+      "type": "continuous",
+      "key": "growth_duration",
+      "min": 10.25,
+      "max": 31.833333333333332,
+      "description": "Duration of the growth phase from the start to the end of growth for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Growth rate",
+      "data": "feature_9.parquet",
+      "unit": "\u03bcm\u00b3/hr",
+      "type": "continuous",
+      "key": "growth_rate",
+      "min": 17.338615814393947,
+      "max": 58.69972679833013,
+      "description": "The growth rate of the growth phase calculated by endpoints (i.e., \u201cvolume at the end of growth\u201d - \u201cvolume at start of growth\u201d) / \u201cgrowth duration\u201d."
+    },
+    {
+      "name": "Fitted time scaling factor \u03b1",
+      "data": "feature_10.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "fitted_time_scaling_factor_",
+      "min": 0.5046579240196807,
+      "max": 2.8479153704917737,
+      "description": "Each volume trajectory was fit to a power law scaling with time \ud835\udc49(\ud835\udc61) =\ud835\udc49\ud835\udc60\ud835\udc61\ud835\udc4e\ud835\udc5f\ud835\udc61+\ud835\udc5f\ud835\udc61^\ud835\udefc over all time points during the growth phase. This feature is the fitted time scaling factor \ud835\udefc for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Transient growth rate",
+      "data": "feature_11.parquet",
+      "unit": "\u03bcm\u00b3/hr",
+      "type": "continuous",
+      "key": "transient_growth_rate",
+      "min": -80.54554429456924,
+      "max": 113.60543578762481,
+      "description": "The change in volume over time for a four hour rolling window for middle interphase time points of full-interphase trajectories."
+    },
+    {
+      "name": "Density",
+      "data": "feature_12.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "density",
+      "min": 0.2143820224719101,
+      "max": 0.8106370543541789,
+      "description": "The ratio between the area of the nucleus (from maximum z projected nuclear segmentation) and the area of the pseudo cell (from maximum z projected nuclear segmentation) gives a metric represtative of the local density for each nucleus at every timepoint. The density was not calculated if the nucleus was on the edge of the colony or had a mitotic neighbor."
+    },
+    {
+      "name": "Normalized interphase time",
+      "data": "feature_13.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "normalized_interphase_time",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "The time within interphase normalized by the total interphase time for full-interphase nuclear trajectories. This ranges from 0 to 1, where 0 represents the start of interphase and 1 represents the end of interphase."
+    },
+    {
+      "name": "Synchronized time",
+      "data": "feature_14.parquet",
+      "unit": "hr",
+      "type": "continuous",
+      "key": "synchronized_time",
+      "min": 0.0,
+      "max": 32.5,
+      "description": "Time synchronized to start of interphase for each single full-interphase nuclear trajectory (i.e., all trajectories start with a synchronized time of 0 hours)."
+    },
+    {
+      "name": "Time at start of growth",
+      "data": "feature_15.parquet",
+      "unit": "hr",
+      "type": "continuous",
+      "key": "time_at_start_of_growth",
+      "min": 0.5,
+      "max": 33.5,
+      "description": "The calculated time of the start of the growth phase in single full-interphase nuclear trajectory. This time is relative to the start of the timelapse imaging."
+    },
+    {
+      "name": "Aligned colony time at start of growth",
+      "data": "feature_16.parquet",
+      "unit": "hr",
+      "type": "continuous",
+      "key": "aligned_colony_time_at_start_of_growth",
+      "min": 10.75,
+      "max": 43.75,
+      "description": "In general, \u201caligned colony time\u201d is the universal timeline for all three baseline colonies (Small, Medium and Large), based on aligning their individual timelapses based on their colony development. This feature gives the time for the start of the growth phase for an individual full-interphase nuclear trajectory within aligned colony time."
+    },
+    {
+      "name": "Normalized distance from colony center",
+      "data": "feature_17.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "normalized_distance_from_colony_center",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "The normalized radial position in the colony, where the center of the colony is 0 and the edge is 1. The colony depth of each nucleus is assigned using a Voronoi tessellation graph. The normalized distance from the center is calculated from these depths as (maximum depth within the colony - individual nuclear depth) / (maximum depth within the colony - minimum depth within the colony)"
+    },
+    {
+      "name": "Trajectory termination annotation",
+      "data": "feature_18.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "trajectory_termination_annotation",
+      "min": 0.0,
+      "max": 2.0,
+      "description": "Manual annotation of how a trajectory terminated. 0 - trajectory terminates by cell dividing. 1 - trajectory terminates by nucleus going off the edge of the field of view. 2 - trajectory terminates by apoptosis.",
+      "categories": [
+        "Division",
+        "Leaves FOV",
+        "Apoptosis"
+      ]
+    },
+    {
+      "name": "Growth outlier filter",
+      "data": "feature_19.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "growth_outlier_filter",
+      "min": 0,
+      "max": 1,
+      "description": "Is true if the nuclear trajectory is identified as a biological outlier (e.g. grows for an abnormally long time and the daughters die)",
+      "categories": [
+        "False",
+        "True"
+      ]
+    },
+    {
+      "name": "Baseline colonies dataset filter",
+      "data": "feature_20.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "baseline_colonies_dataset_filter",
+      "min": 0,
+      "max": 1,
+      "description": "Filter which limits the included dataset to nuclei in the \u201cbaseline colonies analysis dataset.\u201d This includes all nuclei tracked for at least one hour and included \u201cgrowth outliers\u201d (biological outliers) but excludes any technical outliers (outliers automatically filtered or annotated as having errors in segmentation, tracking, etc).",
+      "categories": [
+        "False",
+        "True"
+      ]
+    },
+    {
+      "name": "Full-interphase dataset filter",
+      "data": "feature_21.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "fullinterphase_dataset_filter",
+      "min": 0,
+      "max": 1,
+      "description": "Filter which limits the included dataset to nuclei analyzed in the \u201cfull-interphase analysis dataset.\u201d It is a subset of the \u201cbaseline colonies analysis dataset.\u201d Only nuclei tracked successfully throughout interphase are included in this dataset, and growth outliers are excluded from this dataset.",
+      "categories": [
+        "False",
+        "True"
+      ]
+    },
+    {
+      "name": "Lineage-annotated dataset filter",
+      "data": "feature_22.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "lineageannotated_dataset_filter",
+      "min": 0,
+      "max": 1,
+      "description": "Filter which limits the included dataset to nuclei analyzed in the \u201clineage-annotated analysis dataset.\u201d It is a subset of the \u201cfull-interphase dataset,\u201d including just the nuclei in the Small and Medium colonies from this dataset. It includes the \u201cFamily ID\u201d feature.",
+      "categories": [
+        "False",
+        "True"
+      ]
+    },
+    {
+      "name": "Volume at start of expansion",
+      "data": "feature_23.parquet",
+      "unit": "\u03bcm\u00b3",
+      "type": "continuous",
+      "key": "volume_at_start_of_expansion",
+      "min": 236.08087268518523,
+      "max": 437.22588541666676,
+      "description": "The volume at the time of lamin shell formation, the start of the expansion phase, for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Time at start of expansion",
+      "data": "feature_24.parquet",
+      "unit": "hr",
+      "type": "continuous",
+      "key": "time_at_start_of_expansion",
+      "min": 0.08333333333333333,
+      "max": 32.916666666666664,
+      "description": "Time at lamin shell formation, the start of the expansion phase, for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Time at end of growth",
+      "data": "feature_25.parquet",
+      "unit": "hr",
+      "type": "continuous",
+      "key": "time_at_end_of_growth",
+      "min": 11.833333333333332,
+      "max": 47.25,
+      "description": "Time at lamin shell breakdown, the end of the growth phase, for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Expansion duration",
+      "data": "feature_26.parquet",
+      "unit": "min",
+      "type": "continuous",
+      "key": "expansion_duration",
+      "min": 10.0,
+      "max": 105.0,
+      "description": "Duration of the expansion phase from lamin shell formation to the start of the growth phase for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Interphase duration",
+      "data": "feature_27.parquet",
+      "unit": "hr",
+      "type": "continuous",
+      "key": "interphase_duration",
+      "min": 132.0,
+      "max": 390.0,
+      "description": "Duration of the total time during interphase from lamin shell formation (which is the start of the expansion phase) to lamin shell breakdown (which is the end of the growth phase) for a full-interphase nuclear trajectory. Interphase includes both the \u201cexpansion\u201d phase and the \u201cgrowth\u201d phase."
+    },
+    {
+      "name": "Expansion rate",
+      "data": "feature_28.parquet",
+      "unit": "\u03bcm\u00b3/hr",
+      "type": "continuous",
+      "key": "expansion_rate",
+      "min": 128.84707539682543,
+      "max": 610.4822208333335,
+      "description": "The growth rate of the expansion phase calculated by endpoints: (volume at end of expansion - volume at start of expansion) / expansion duration for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Volume fold-change relative to starting volume",
+      "data": "feature_29.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "volume_foldchange_relative_to_starting_volume",
+      "min": 0.4391181245792579,
+      "max": 3.6502811506420234,
+      "description": "The volume fold-change relative to the volume at the start of growth for a full-interphase nuclear trajectory (i.e. volume / volume at start of growth)."
+    },
+    {
+      "name": "Distance from colony center",
+      "data": "feature_30.parquet",
+      "unit": "\u03bcm",
+      "type": "continuous",
+      "key": "distance_from_colony_center",
+      "min": 0.019862946672704624,
+      "max": 32.02053872221555,
+      "description": "Distance from the center of the colony."
+    },
+    {
+      "name": "Colony-averaged transient growth rate",
+      "data": "feature_31.parquet",
+      "unit": "\u03bcm\u00b3/hr",
+      "type": "continuous",
+      "key": "colonyaveraged_transient_growth_rate",
+      "min": 15.36840482880813,
+      "max": 53.48387380449273,
+      "description": "The transient growth rate over a four hour rolling window centered at a given time point, averaged across all nuclei in the colony."
+    },
+    {
+      "name": "Neighborhood-averaged transient growth rate",
+      "data": "feature_32.parquet",
+      "unit": "\u03bcm\u00b3/hr",
+      "type": "continuous",
+      "key": "neighborhoodaveraged_transient_growth_rate",
+      "min": -4.468770280354944,
+      "max": 63.10549243890672,
+      "description": "The transient growth rate over a four hour rolling window centered at a given time point, averaged across all nuclei within a 90 \u00b5m radius neighborhood of each nucleus."
+    },
+    {
+      "name": "YZ aspect ratio",
+      "data": "feature_33.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "yz_aspect_ratio",
+      "min": 0.1926605504587156,
+      "max": 1.7708333333333333,
+      "description": "The ratio of width to the height of the nuclear segmentation at every time point. The width is defined as the length of nuclear segmentation in the plane perpendicular to the longest axis in the XY-plane. The height is the length of the nuclear segmentation in the Z-plane."
+    },
+    {
+      "name": "XZ aspect ratio",
+      "data": "feature_34.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "xz_aspect_ratio",
+      "min": 0.8404255319148937,
+      "max": 7.416666666666667,
+      "description": "The ratio of width to the height of the nuclear segmentation at every time point. The length is defined as the longest axis of the nuclear segmentation in the XY-plane. The height is the length of the nuclear segmentation in the Z-plane."
+    },
+    {
+      "name": "Surface area",
+      "data": "feature_35.parquet",
+      "unit": "\u03bcm\u00b2",
+      "type": "continuous",
+      "key": "surface_area",
+      "min": 96.07795421451115,
+      "max": 1355.995359698226,
+      "description": "The number of pixels on the surface of the smoothed mesh of the nuclear segmentation at every time point."
+    },
+    {
+      "name": "Surface area at start of growth",
+      "data": "feature_36.parquet",
+      "unit": "\u03bcm\u00b2",
+      "type": "continuous",
+      "key": "surface_area_at_start_of_growth",
+      "min": 320.52329759464885,
+      "max": 529.6618606283118,
+      "description": "The surface area at the start of the growth phase for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Surface area at end of growth",
+      "data": "feature_37.parquet",
+      "unit": "\u03bcm\u00b2",
+      "type": "continuous",
+      "key": "surface_area_at_end_of_growth",
+      "min": 581.6928477409791,
+      "max": 1289.5879071964366,
+      "description": "The surface area at the time of lamin shell breakdown, the end of the growth phase, for a full-interphase nuclear trajectory."
+    },
+    {
+      "name": "Surface area fold-change during growth",
+      "data": "feature_38.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "surface_area_foldchange_during_growth",
+      "min": 1.3779332956008772,
+      "max": 3.196628553937717,
+      "description": "The surface area fold-change from the start to the end of growth for a full-interphase nuclear trajectory (i.e., \u201csurface area at the end of growth\u201d / \u201csurface area at start of growth\u201d)."
+    },
+    {
+      "name": "Surface area fold-change relative to starting surface area",
+      "data": "feature_39.parquet",
+      "unit": "",
+      "type": "continuous",
+      "key": "surface_area_foldchange_relative_to_starting_surface_area",
+      "min": 0.5668576171613317,
+      "max": 3.196628553937717,
+      "description": "The surface area fold-change relative to the surface area at the start of growth for a full-interphase nuclear trajectory (i.e. surface area / surface area at start of growth)."
+    },
+    {
+      "name": " Added surface area during growth",
+      "data": "feature_40.parquet",
+      "unit": "\u03bcm\u00b2",
+      "type": "continuous",
+      "key": "added_surface_area_during_growth",
+      "min": 170.71077370636306,
+      "max": 886.1666508831631,
+      "description": "The amount of surface area added from the start to the end of growth for a full-interphase nuclear trajectory (i.e., \u201csurface area at the end of growth\u201d - \u201csurface area at start of growth\u201d)."
+    },
+    {
+      "name": "Surface area to volume ratio",
+      "data": "feature_41.parquet",
+      "unit": "\u03bcm\u207b\u00b9",
+      "type": "continuous",
+      "key": "surface_area_to_volume_ratio",
+      "min": 0.5323943042598477,
+      "max": 1.864888047958738,
+      "description": "The ratio of the surface area to the volume of the nuclear segmentation at every time point."
+    },
+    {
+      "name": "Has mitotic neighbor flag",
+      "data": "feature_42.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "has_mitotic_neighbor_flag",
+      "min": 0,
+      "max": 1,
+      "description": "True at timepoints when adjacent neighbors are undergoing mitosis.",
+      "categories": [
+        "False",
+        "True"
+      ]
+    },
+    {
+      "name": "Has dying neighbor flag",
+      "data": "feature_43.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "has_dying_neighbor_flag",
+      "min": 0,
+      "max": 1,
+      "description": "True at timepoints when adjacent neighbors are undergoing cell death.",
+      "categories": [
+        "False",
+        "True"
+      ]
+    },
+    {
+      "name": "2D nuclear area",
+      "data": "feature_44.parquet",
+      "unit": "\u03bcm\u00b2",
+      "type": "continuous",
+      "key": "2d_nuclear_area",
+      "min": 0.4412777777777778,
+      "max": 13.886166666666668,
+      "description": "The area of the nucleus (from maximum z projected nuclear segmentation)."
+    },
+    {
+      "name": "Pseudo cell area",
+      "data": "feature_45.parquet",
+      "unit": "\u03bcm\u00b2",
+      "type": "continuous",
+      "key": "pseudo_cell_area",
+      "min": 3.1321333333333334,
+      "max": 28.572266666666668,
+      "description": "The area of the pseudo cell (from maximum z projected nuclear segmentation)."
+    },
+    {
+      "name": "Volume dip flag",
+      "data": "feature_46.parquet",
+      "unit": "",
+      "type": "categorical",
+      "key": "volume_dip_flag",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "True at all timepoints along an identified volume dip event.",
+      "categories": [
+        "False",
+        "True"
+      ]
+    },
+    {
+      "name": "Change in volume in 25 minute window",
+      "data": "feature_47.parquet",
+      "unit": "\u03bcm\u00b3",
+      "type": "continuous",
+      "key": "change_in_volume_in_25_minute_window",
+      "min": -357.15744593867555,
+      "max": 251.2335514096861,
+      "description": "The nuclear volume change in a 25 minute window at each frame (t) calculated by \u2206V(t) = V(t-5) - V(t)."
+    }
+  ],
+  "frames3d": {
+    "source": "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_06_medium/seg.ome.zarr",
+    "segmentationChannel": 0
+  },
+  "frameIdOffsets": "frame_id_offset.json",  
+  "outliers": "outliers.parquet",
+  "tracks": "tracks.parquet",
+  "times": "times.parquet",
+  "centroids": "centroids.parquet",
+  "metadata": {
+    "name": "Nucmorph Dataset v3",
+    "description": "",
+    "author": "Allen Institute for Cell Science",
+    "datasetVersion": "v3.0.0",
+    "dateCreated": "2025-04-08T16:58:21.381901Z",
+    "lastModified": "2025-04-08T16:58:21.381901Z",
+    "revision": 0,
+    "writerVersion": "v1.4.2",
+    "frameDims": {
+      "width": 494.0,
+      "height": 338.0,
+      "units": "\u00b5m"
+    },
+    "startingTimeSeconds": 0,
+    "startingFrameNumber": 0,
+    "frameDurationSeconds": 300
+  },
+  "backdrops": []
+}

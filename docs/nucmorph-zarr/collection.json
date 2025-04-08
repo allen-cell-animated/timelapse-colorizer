@@ -1,0 +1,13 @@
+{
+    "datasets": [
+      { "name": "Small 3D", "path": "small" },
+      { "name": "Medium 3D", "path": "medium" },
+      { "name": "Large 3D", "path": "large" },
+      { "name": "Small 2D", "path": "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/exploratory_dataset/small/manifest.json" },
+      { "name": "Medium 2D", "path": "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/exploratory_dataset/medium/manifest.json" },
+      { "name": "Large 2D", "path": "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/timelapse_feature_explorer_datasets/exploratory_dataset/large/manifest.json" }
+    ],
+    "metadata": {
+      "name": "Exploratory dataset"
+    }
+  }
