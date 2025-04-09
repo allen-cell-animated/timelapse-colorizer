@@ -115,8 +115,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           outOfRangeDrawMode: this.params.outOfRangeDrawSettings.mode,
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
         };
-        // TODO: This needs to be called again AFTER each channel has loaded.
-        // Maybe setup this colorizing in the volume loader callback?
         this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
       }
     }
@@ -153,9 +151,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       }
     }
 
-    // this.view3d.redraw();
-
-    // Eventually volume change is handled here?
     return Promise.resolve();
   }
 
@@ -259,12 +254,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setSelectedID(this.volume, 0, id + 1);
   }
 
-  render(_synchronous = false): void {
+  render(synchronous = false): void {
     this.syncSelectedId();
-    // this.view3d.redraw();
-    // TODO: Change to below line once vole-core is patched
-    // this.view3d.redraw(synchronous);
-    this.view3d.redraw();
+    this.view3d.redraw(synchronous);
   }
 
   dispose(): void {
