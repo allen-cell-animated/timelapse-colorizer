@@ -32,11 +32,17 @@ import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 /**
- * Wraps an IRenderCanvas class by overlaying and compositing additional
- * dynamic elements (like a scale bar, timestamp, etc.) on top of a
- * base colorized image.
+ * Wraps an IRenderCanvas class, overlaying and compositing additional dynamic
+ * elements (like a scale bar, timestamp, etc.) on top of the base canvas.
+ *
+ * During export mode, the overlay canvas will render the inner canvas directly
+ * into itself, so that the exported image contains both the inner canvas and
+ * the overlay elements.
  */
 export default class CanvasOverlay implements IRenderCanvas {
+  private canvasContainerDiv: HTMLDivElement;
+  private innerCanvasContainerDiv: HTMLDivElement;
+
   private canvasElement: HTMLCanvasElement;
   private innerCanvas: IRenderCanvas;
   private ctx: CanvasRenderingContext2D;
@@ -93,6 +99,35 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.innerCanvas = canvas;
     this.canvasElement = document.createElement("canvas");
     this.canvasElement.style.display = "block";
+    // Let mouse events pass through to the inner canvas.
+    this.canvasElement.style.pointerEvents = "none";
+    // Ensure the canvas is rendered on top of the inner canvas.
+    this.canvasElement.style.position = "relative";
+    this.canvasElement.style.zIndex = "1";
+
+    // Set up DOM elements, which are structured like:
+    // canvasContainerDiv
+    //   canvasElement
+    //   innerCanvasContainerDiv
+    //     innerCanvas
+    this.canvasContainerDiv = document.createElement("div");
+    this.canvasContainerDiv.style.position = "relative";
+    this.canvasContainerDiv.style.width = "100%";
+    this.canvasContainerDiv.style.height = "100%";
+
+    this.innerCanvasContainerDiv = document.createElement("div");
+    this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
+    this.innerCanvasContainerDiv.style.position = "absolute";
+    this.innerCanvasContainerDiv.style.top = "0px";
+    this.innerCanvasContainerDiv.style.left = "0px";
+    this.innerCanvasContainerDiv.style.zIndex = "0";
+
+    this.canvasElement.style.top = "0px";
+    this.canvasElement.style.left = "0px";
+
+    this.canvasContainerDiv.appendChild(this.innerCanvasContainerDiv);
+    this.canvasContainerDiv.appendChild(this.canvasElement);
+
     this.onFrameLoadCallback = () => {};
 
     this.params = params;
@@ -142,8 +177,12 @@ export default class CanvasOverlay implements IRenderCanvas {
     return this.innerCanvas.scaleInfo;
   }
 
-  get domElement(): HTMLCanvasElement {
+  get domElement(): HTMLElement {
     // Override base ColorizeCanvas getter with the composited canvas.
+    return this.canvasContainerDiv;
+  }
+
+  get canvas(): HTMLCanvasElement {
     return this.canvasElement;
   }
 
@@ -197,6 +236,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   // TODO: Move `isExporting` flag into state
   public setIsExporting(isExporting: boolean): void {
     this.isExporting = isExporting;
+    this.render(false);
   }
 
   public setZoom(zoom: number): void {
@@ -217,12 +257,20 @@ export default class CanvasOverlay implements IRenderCanvas {
 
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
     this.params = params;
+    // Inner canvas will re-render itself when the params are set.
     await this.innerCanvas.setParams(params);
     this.render(false);
   }
 
   public async setCanvas(canvas: IRenderCanvas): Promise<void> {
+    // Remove previous inner canvas from DOM.
+    this.innerCanvasContainerDiv.removeChild(this.innerCanvas.domElement);
+    if (canvas !== this.innerCanvas) {
+      this.innerCanvas.dispose();
+    }
+
     this.innerCanvas = canvas;
+    this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
     await this.innerCanvas.setParams(this.params);
@@ -345,14 +393,18 @@ export default class CanvasOverlay implements IRenderCanvas {
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
-    // Because CanvasWithOverlay is a child of ColorizeCanvas, this renders the base
-    // colorized viewport image. It is then composited into the CanvasWithOverlay's canvas.
-    if (doesInnerCanvasNeedRender) {
-      this.innerCanvas.render();
-    }
     this.ctx.imageSmoothingEnabled = false;
-    if (this.innerCanvas.domElement.width !== 0 && this.innerCanvas.domElement.height !== 0) {
-      this.ctx.drawImage(this.innerCanvas.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
+
+    if (doesInnerCanvasNeedRender || this.isExporting) {
+      this.innerCanvas.render(this.isExporting);
+    }
+    if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
+      // In export mode only, draw the inner canvas inside of the overlay
+      // canvas. Normally, the overlay canvas has a transparent background that
+      // shows the inner canvas behind it. This lets us export the contents of
+      // both canvases as one image.
+      this.ctx.fillStyle = "white";
+      this.ctx.drawImage(this.innerCanvas.canvas, 0, Math.round(this.headerSize.y * devicePixelRatio));
     }
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
