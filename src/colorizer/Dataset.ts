@@ -66,8 +66,11 @@ export default class Dataset {
   public segmentationChannel?: number;
   private totalFrames3d?: number;
 
-  private frameIdOffsetFile?: string;
-  public frameIdOffset: Uint32Array | null;
+  private segIdsFile?: string;
+  /** Lookup from a global index of an object to the segmentation ID in the
+   * frame/image where it appears. */
+  public segIds?: Uint32Array | null;
+  public frameToIdOffset: Uint32Array | null;
 
   private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, BackdropData>;
@@ -118,7 +121,7 @@ export default class Dataset {
     this.backdropFrames = null;
     this.frameDimensions = null;
 
-    this.frameIdOffset = null;
+    this.frameToIdOffset = null;
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
@@ -386,6 +389,42 @@ export default class Dataset {
   }
 
   /**
+   * Returns a Uint32Array of ID offsets for each time in the dataset.
+   *
+   * NOTE: This makes a lot of VERY LARGE assumptions about the frame data,
+   * namely that either:
+   * - Frame data has segmentation IDs that are globally unique, OR
+   * - Frame data has segmentation IDs that increase monotonically
+   *   (e.g. 2, 3, 4, 5, etc.) on that frame.
+   *
+   * The second assumption breaks down if there are any skipped segmentation IDs
+   * in the frame. A more robust version of this is described in
+   * https://github.com/allen-cell-animated/timelapse-colorizer/issues/630.
+   */
+  private buildFrameToIdOffsetsFromSegIds(): Uint32Array {
+    // Get the index of the object with the smallest segmentation ID for each
+    // frame.
+    const frameToSmallestSegIdIdx: number[] = Array.from({ length: this.numberOfFrames }).fill(-1) as number[];
+    for (let idx = 0; idx < this.numObjects; idx++) {
+      const time = this.times![idx];
+      const seg_id = this.segIds?.[idx] ?? idx;
+      if (frameToSmallestSegIdIdx[time] === -1) {
+        frameToSmallestSegIdIdx[time] = idx;
+      } else {
+        const last_min_seg_id = this.segIds?.[frameToSmallestSegIdIdx[time]] ?? Infinity;
+        if (seg_id < last_min_seg_id) {
+          frameToSmallestSegIdIdx[time] = idx;
+        }
+      }
+    }
+    // Get offset between the segmentation ID and the global index for each frame.
+    const frameToIdOffsets = frameToSmallestSegIdIdx.map((idx) => {
+      return idx === -1 ? 0 : idx - (this.segIds?.[idx] ?? idx + 1) + 1;
+    });
+    return new Uint32Array(frameToIdOffsets);
+  }
+
+  /**
    * Gets the resolution of the last loaded frame.
    * If no frame has been loaded yet, returns (1,1)
    */
@@ -434,7 +473,7 @@ export default class Dataset {
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
     this.boundsFile = manifest.bounds;
-    this.frameIdOffsetFile = manifest.frameIdOffsets;
+    this.segIdsFile = manifest.segIds;
 
     if (manifest.backdrops) {
       for (const { name, key, frames } of manifest.backdrops) {
@@ -474,7 +513,7 @@ export default class Dataset {
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.timesFile)),
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.centroidsFile)),
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.boundsFile)),
-      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.frameIdOffsetFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.segIdsFile)),
       reportLoadProgress(this.loadFrame(0)),
       ...featuresPromises,
     ]);
@@ -493,9 +532,7 @@ export default class Dataset {
     this.times = urlUtils.getPromiseValue(times, makeLoadFailedCallback("Times", this.timesFile));
     this.centroids = urlUtils.getPromiseValue(centroids, makeLoadFailedCallback("Centroids", this.centroidsFile));
     this.bounds = urlUtils.getPromiseValue(bounds, makeLoadFailedCallback("Bounds", this.boundsFile));
-    this.frameIdOffset =
-      urlUtils.getPromiseValue(frameIdOffsets, makeLoadFailedCallback("Frame ID Offsets", this.frameIdOffsetFile)) ??
-      new Uint32Array([0]);
+    this.segIds = urlUtils.getPromiseValue(frameIdOffsets, makeLoadFailedCallback("Segmentation IDs", this.segIdsFile));
 
     if (unloadableDataFiles.length > 0) {
       // Report warning of all the files that couldn't be loaded and their associated errors.
@@ -527,6 +564,17 @@ export default class Dataset {
         LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
       ]);
     }
+
+    // Construct default array of segmentation IDs if not provided in the manifest.
+    if (!this.segIds) {
+      // Construct default segIds array (0, 1, 2, ...)
+      this.segIds = new Uint32Array(this.numObjects);
+      for (let i = 0; i < this.numObjects; i++) {
+        this.segIds[i] = i;
+      }
+    }
+    // Construct offset array for frame IDs to segmentation IDs.
+    this.frameToIdOffset = this.buildFrameToIdOffsetsFromSegIds();
 
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {

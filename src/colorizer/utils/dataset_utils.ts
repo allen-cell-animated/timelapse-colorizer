@@ -79,11 +79,8 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
 type ManifestFileV1_1_0 = Spread<
   ManifestFileV1_0_0 & {
     metadata?: Partial<ManifestFileMetadataV1_1_0>;
-    /**
-     * Offsets raw, per-frame object IDs in 2D or 3D data into
-     * indices for the global data arrays.
-     */
-    frameIdOffsets?: string;
+    /** Segmentation IDs for objects as they appear in image/frame data. */
+    segIds?: string;
     /** Required data for  */
     frames3d?: {
       source: string | string[];

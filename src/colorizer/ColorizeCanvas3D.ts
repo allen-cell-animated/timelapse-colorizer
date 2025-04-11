@@ -124,7 +124,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           outlierDrawMode: this.params.outlierDrawSettings.mode,
           outOfRangeDrawMode: this.params.outOfRangeDrawSettings.mode,
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
-          timeToIdOffset: dataset.frameIdOffset ?? new Uint32Array([0]),
+          timeToIdOffset: dataset.frameToIdOffset ?? new Uint32Array([0]),
         };
         // TODO: This needs to be called again AFTER each channel has loaded.
         // Maybe setup this colorizing in the volume loader callback?
@@ -310,7 +310,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // during colorizer setup.
     if (this.volume?.isLoaded() && dataset) {
       const frameLocalId = this.view3d.hitTest(x, y);
-      const offset = dataset.frameIdOffset ? dataset.frameIdOffset[this.currentFrame] : 0;
+      const offset = dataset.frameToIdOffset ? dataset.frameToIdOffset[this.currentFrame] : 0;
       const id = frameLocalId <= 0 ? 0 : frameLocalId + offset;
       return id - 1;
     }
