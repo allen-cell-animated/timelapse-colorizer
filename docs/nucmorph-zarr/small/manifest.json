@@ -542,5 +542,6 @@
     "startingFrameNumber": 0,
     "frameDurationSeconds": 300
   },
-  "backdrops": []
+  "backdrops": [],
+  "segIds": "seg_ids.parquet"
 }
