@@ -389,16 +389,21 @@ export default class Dataset {
   }
 
   /**
-   * Returns a Uint32Array of ID offsets for each time in the dataset.
+   * Returns a lookup table of ID offsets for each time in the dataset, used to
+   * get the global indices for objects in the image/frame data.
+   *
+   * When looking up data for an object with segmentation ID `segId` in the
+   * image/frame data at time `time`, the global index of the object is given by
+   * `segId + frameToIdOffsets[time]`.
    *
    * NOTE: This makes a lot of VERY LARGE assumptions about the frame data,
    * namely that either:
    * - Frame data has segmentation IDs that are globally unique, OR
-   * - Frame data has segmentation IDs that increase monotonically
-   *   (e.g. 2, 3, 4, 5, etc.) on that frame.
+   * - Frame data has segmentation IDs that increase monotonically (e.g. 2, 3,
+   *   4, 5, etc.) on that frame.
    *
    * The second assumption breaks down if there are any skipped segmentation IDs
-   * in the frame. A more robust version of this is described in
+   * in the frame. A future, more robust version of this is described in
    * https://github.com/allen-cell-animated/timelapse-colorizer/issues/630.
    */
   private buildFrameToIdOffsetsFromSegIds(): Uint32Array {
@@ -407,12 +412,12 @@ export default class Dataset {
     const frameToSmallestSegIdIdx: number[] = Array.from({ length: this.numberOfFrames }).fill(-1) as number[];
     for (let idx = 0; idx < this.numObjects; idx++) {
       const time = this.times![idx];
-      const seg_id = this.segIds?.[idx] ?? idx;
+      const segId = this.segIds?.[idx] ?? idx;
       if (frameToSmallestSegIdIdx[time] === -1) {
         frameToSmallestSegIdIdx[time] = idx;
       } else {
-        const last_min_seg_id = this.segIds?.[frameToSmallestSegIdIdx[time]] ?? Infinity;
-        if (seg_id < last_min_seg_id) {
+        const lastMinSegId = this.segIds?.[frameToSmallestSegIdIdx[time]] ?? Infinity;
+        if (segId < lastMinSegId) {
           frameToSmallestSegIdIdx[time] = idx;
         }
       }
