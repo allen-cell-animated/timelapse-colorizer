@@ -239,7 +239,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     };
     this.pendingFrame = requestedFrame;
     this.pendingVolumePromise = loadVolumeFrame();
-    return this.pendingVolumePromise as Promise<FrameLoadResult>;
+    return this.pendingVolumePromise;
   }
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
