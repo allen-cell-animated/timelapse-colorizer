@@ -74,7 +74,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   get domElement(): HTMLCanvasElement {
-    return this.view3d.getDOMElement() as unknown as HTMLCanvasElement;
+    return this.view3d.getCanvasDOMElement();
   }
 
   get resolution(): Vector2 {
@@ -250,8 +250,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     if (!this.volume) {
       return;
     }
-    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, 0, id + 1);
+    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) + 1 : -1;
+    this.view3d.setSelectedID(this.volume, 0, id);
   }
 
   render(synchronous = false): void {
