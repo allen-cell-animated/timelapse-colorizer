@@ -67,9 +67,19 @@ export default class Dataset {
   private totalFrames3d?: number;
 
   private segIdsFile?: string;
-  /** Lookup from a global index of an object to the segmentation ID in the
+  /** Lookup from a global index of an object to the raw segmentation ID in the
    * frame/image where it appears. */
   public segIds?: Uint32Array | null;
+  /**
+   * Lookup table from a frame number to the offsets with which to read data
+   * from globally-indexed arrays for objects on that frame. Note that this
+   * assumes that all objects in a frame have segmentation IDs that are
+   * monotonically increasing (e.g. skips no values), and that a frame's objects
+   * all have adjacent indices in the global array.
+   *
+   * For any object with segmentation ID `segId` in frame `frame`, the global
+   * index of that object is given by `segId + frameToIdOffsets[frame]`.
+   */
   public frameToIdOffset: Uint32Array | null;
 
   private backdropLoader: ITextureImageLoader;
@@ -480,12 +490,12 @@ export default class Dataset {
     this.boundsFile = manifest.bounds;
     this.segIdsFile = manifest.segIds;
 
-    if (manifest.backdrops) {
+    if (manifest.backdrops && manifest.frames) {
       for (const { name, key, frames } of manifest.backdrops) {
         this.backdropData.set(key, { name, frames });
-        if (frames.length !== this.frameFiles.length || 0) {
+        if (frames.length !== this.frameFiles?.length || 0) {
           throw new Error(
-            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
+            `Number of frames (${this.frameFiles?.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
               ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
           );
         }

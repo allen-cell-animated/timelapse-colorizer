@@ -48,6 +48,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   private canvasElement: HTMLCanvasElement;
 
   private innerCanvas2d: ColorizeCanvas2D;
+  // Initialization of inner canvas is deferred until needed.
   private innerCanvas3d: ColorizeCanvas3D | null;
 
   private innerCanvas: IRenderCanvas;
@@ -272,7 +273,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     const prevParams = this.params;
     this.params = params;
 
-    // If the dataset has changed, construct and initialize the inner
+    // If the dataset has changed types, construct and initialize the inner
     // canvas.
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       if (params.dataset) {
@@ -281,7 +282,9 @@ export default class CanvasOverlay implements IRenderCanvas {
           await this.setCanvas(this.innerCanvas2d);
         } else if (params.dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
           this.innerCanvasType = CanvasType.CANVAS_3D;
-          this.innerCanvas3d = new ColorizeCanvas3D();
+          if (!this.innerCanvas3d) {
+            this.innerCanvas3d = new ColorizeCanvas3D();
+          }
           await this.setCanvas(this.innerCanvas3d);
         }
       }
