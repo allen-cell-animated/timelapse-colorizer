@@ -8,6 +8,7 @@ export type RenderCanvasStateParams = Pick<
   | "dataset"
   | "collection"
   | "datasetKey"
+  | "pendingFrame"
   | "featureKey"
   | "track"
   | "showTrackPath"
@@ -34,6 +35,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   collection: state.collection,
   datasetKey: state.datasetKey,
   featureKey: state.featureKey,
+  pendingFrame: state.pendingFrame,
   track: state.track,
   showTrackPath: state.showTrackPath,
   colorRamp: state.colorRamp,

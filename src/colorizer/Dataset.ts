@@ -58,9 +58,31 @@ const MAX_CACHED_BACKDROPS_BYTES = 500_000_000; // 500 MB
 
 export default class Dataset {
   private frameLoader: ITextureImageLoader;
-  private frameFiles: string[];
+  private frameFiles?: string[];
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
+
+  /** Source for 3D data, resolved to http/https URLs. */
+  public frames3dSrc?: string | string[];
+  /** Index of the segmentation channel in the 3D data. */
+  public segmentationChannel?: number;
+  private totalFrames3d?: number;
+
+  private segIdsFile?: string;
+  /** Lookup from a global index of an object to the raw segmentation ID in the
+   * frame/image where it appears. */
+  public segIds?: Uint32Array | null;
+  /**
+   * Lookup table from a frame number to the offsets with which to read data
+   * from globally-indexed arrays for objects on that frame. Note that this
+   * assumes that all objects in a frame have segmentation IDs that are
+   * monotonically increasing (e.g. skips no values), and that a frame's objects
+   * all have adjacent indices in the global array.
+   *
+   * For any object with segmentation ID `segId` at time `t`, the global
+   * index of that object is given by `segId + frameToIdOffsets[t]`.
+   */
+  public frameToIdOffset: Uint32Array | null;
 
   private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, BackdropData>;
@@ -111,6 +133,8 @@ export default class Dataset {
     this.backdropFrames = null;
     this.frameDimensions = null;
 
+    this.frameToIdOffset = null;
+
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
 
@@ -121,7 +145,20 @@ export default class Dataset {
     this.metadata = defaultMetadata;
   }
 
-  private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
+  private resolvePathToUrl = (url: string): string => {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    } else {
+      return `${this.baseUrl}/${url}`;
+    }
+  };
+
+  private resolvePathsToUrls = <T extends string | string[]>(url: T): T => {
+    if (Array.isArray(url)) {
+      return url.map((u) => this.resolvePathToUrl(u)) as T;
+    }
+    return this.resolvePathToUrl(url) as T;
+  };
 
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
     const isFeatureType = (inputType: string): inputType is FeatureType => {
@@ -139,7 +176,7 @@ export default class Dataset {
   private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
-    const url = this.resolveUrl(metadata.data);
+    const url = this.resolvePathToUrl(metadata.data);
     const featureType = this.parseFeatureType(metadata.type);
 
     const source = await this.arrayLoader.load(
@@ -271,6 +308,14 @@ export default class Dataset {
     return featureData !== undefined && featureData.type === FeatureType.CATEGORICAL;
   }
 
+  public has2dFrames(): boolean {
+    return this.frameFiles !== undefined;
+  }
+
+  public has3dFrames(): boolean {
+    return this.frames3dSrc !== undefined;
+  }
+
   /**
    * Fetches and loads a data file as an array and returns its data as a TypedArray using the provided dataType.
    * @param dataType The expected format of the data.
@@ -286,13 +331,13 @@ export default class Dataset {
       return null;
     }
 
-    const url = this.resolveUrl(fileUrl);
+    const url = this.resolvePathToUrl(fileUrl);
     const source = await this.arrayLoader.load(url, dataType);
     return source.getBuffer();
   }
 
   public get numberOfFrames(): number {
-    return this.frameFiles.length || 0;
+    return this.getTotalFrames();
   }
 
   public get featureKeys(): string[] {
@@ -309,7 +354,7 @@ export default class Dataset {
 
   /** Loads a single frame from the dataset */
   public async loadFrame(index: number): Promise<Texture | undefined> {
-    if (index < 0 || index >= this.frameFiles.length) {
+    if (index < 0 || this.frameFiles === undefined || index >= this.frameFiles.length) {
       return undefined;
     }
 
@@ -324,7 +369,7 @@ export default class Dataset {
       return undefined;
     }
 
-    const fullUrl = this.resolveUrl(this.frameFiles[index]);
+    const fullUrl = this.resolvePathToUrl(this.frameFiles[index]);
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
@@ -362,15 +407,51 @@ export default class Dataset {
       return undefined;
     }
 
-    // Allow for undefined or null backdrop frames in the manifest
-    if (this.frameFiles[index] === undefined || this.frameFiles[index] === null) {
-      return undefined;
-    }
-
-    const fullUrl = this.resolveUrl(frames[index]);
+    const fullUrl = this.resolvePathToUrl(frames[index]);
     const loadedFrame = await this.backdropLoader.load(fullUrl);
     this.backdropFrames?.insert(cacheKey, loadedFrame);
     return loadedFrame;
+  }
+
+  /**
+   * Returns a lookup table of ID offsets for each time in the dataset, used to
+   * get the global indices for objects in the image/frame data.
+   *
+   * When looking up data for an object with segmentation ID `segId` in the
+   * image/frame data at time `t`, the global index of the object is given by
+   * `segId + frameToIdOffsets[t]`.
+   *
+   * NOTE: This makes a lot of VERY LARGE assumptions about the frame data,
+   * namely that either:
+   * - Frame data has segmentation IDs that are globally unique, OR
+   * - Frame data has segmentation IDs that increase monotonically (e.g. 2, 3,
+   *   4, 5, etc.) on that frame.
+   *
+   * The second assumption breaks down if there are any skipped segmentation IDs
+   * in the frame. A future, more robust version of this is described in
+   * https://github.com/allen-cell-animated/timelapse-colorizer/issues/630.
+   */
+  private buildFrameToIdOffsetsFromSegIds(): Uint32Array {
+    // Get the index of the object with the smallest segmentation ID for each
+    // frame.
+    const frameToSmallestSegIdIdx: number[] = Array.from({ length: this.numberOfFrames }).fill(-1) as number[];
+    for (let idx = 0; idx < this.numObjects; idx++) {
+      const time = this.times![idx];
+      const segId = this.segIds?.[idx] ?? idx;
+      if (frameToSmallestSegIdIdx[time] === -1) {
+        frameToSmallestSegIdIdx[time] = idx;
+      } else {
+        const lastMinSegId = this.segIds?.[frameToSmallestSegIdIdx[time]] ?? Infinity;
+        if (segId < lastMinSegId) {
+          frameToSmallestSegIdIdx[time] = idx;
+        }
+      }
+    }
+    // Get offset between the segmentation ID and the global index for each frame.
+    const frameToIdOffsets = frameToSmallestSegIdIdx.map((idx) => {
+      return idx === -1 ? 0 : idx - (this.segIds?.[idx] ?? idx + 1) + 1;
+    });
+    return new Uint32Array(frameToIdOffsets);
   }
 
   /**
@@ -412,6 +493,10 @@ export default class Dataset {
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
+    const frames3dSrc = manifest.frames3d?.source;
+    this.frames3dSrc = frames3dSrc ? this.resolvePathsToUrls(frames3dSrc) : undefined;
+    this.segmentationChannel = manifest.frames3d?.segmentationChannel ?? 0;
+    this.totalFrames3d = manifest.frames3d?.totalFrames ?? 0;
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
@@ -419,13 +504,14 @@ export default class Dataset {
     this.timesFile = manifest.times;
     this.centroidsFile = manifest.centroids;
     this.boundsFile = manifest.bounds;
+    this.segIdsFile = manifest.segIds;
 
-    if (manifest.backdrops) {
+    if (manifest.backdrops && manifest.frames) {
       for (const { name, key, frames } of manifest.backdrops) {
         this.backdropData.set(key, { name, frames });
-        if (frames.length !== this.frameFiles.length || 0) {
+        if (frames.length !== this.frameFiles?.length || 0) {
           throw new Error(
-            `Number of frames (${this.frameFiles.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
+            `Number of frames (${this.frameFiles?.length}) does not match number of images (${frames.length}) for backdrop '${key}'. ` +
               ` If you are a dataset author, please ensure that the number of frames in the manifest matches the number of images for each backdrop.`
           );
         }
@@ -458,10 +544,11 @@ export default class Dataset {
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.timesFile)),
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.centroidsFile)),
       reportLoadProgress(this.loadToBuffer(FeatureDataType.U16, this.boundsFile)),
+      reportLoadProgress(this.loadToBuffer(FeatureDataType.U32, this.segIdsFile)),
       reportLoadProgress(this.loadFrame(0)),
       ...featuresPromises,
     ]);
-    const [outliers, tracks, times, centroids, bounds, _loadedFrame, ...featureResults] = result;
+    const [outliers, tracks, times, centroids, bounds, frameIdOffsets, _loadedFrame, ...featureResults] = result;
 
     const unloadableDataFiles: string[] = [];
     function makeLoadFailedCallback(fileType: string, url?: string): (reason: any) => void {
@@ -476,6 +563,7 @@ export default class Dataset {
     this.times = urlUtils.getPromiseValue(times, makeLoadFailedCallback("Times", this.timesFile));
     this.centroids = urlUtils.getPromiseValue(centroids, makeLoadFailedCallback("Centroids", this.centroidsFile));
     this.bounds = urlUtils.getPromiseValue(bounds, makeLoadFailedCallback("Bounds", this.boundsFile));
+    this.segIds = urlUtils.getPromiseValue(frameIdOffsets, makeLoadFailedCallback("Segmentation IDs", this.segIdsFile));
 
     if (unloadableDataFiles.length > 0) {
       // Report warning of all the files that couldn't be loaded and their associated errors.
@@ -508,6 +596,17 @@ export default class Dataset {
       ]);
     }
 
+    // Construct default array of segmentation IDs if not provided in the manifest.
+    if (!this.segIds) {
+      // Construct default segIds array (0, 1, 2, ...)
+      this.segIds = new Uint32Array(this.numObjects);
+      for (let i = 0; i < this.numObjects; i++) {
+        this.segIds[i] = i;
+      }
+    }
+    // Construct offset array for frame IDs to segmentation IDs.
+    this.frameToIdOffset = this.buildFrameToIdOffsetsFromSegIds();
+
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
       datasetWriterVersion: this.metadata.writerVersion || "N/A",
@@ -538,7 +637,11 @@ export default class Dataset {
   }
 
   public getTotalFrames(): number {
-    return this.frameFiles.length;
+    if (this.has2dFrames()) {
+      return this.frameFiles?.length ?? 0;
+    } else {
+      return this.totalFrames3d ?? 0;
+    }
   }
 
   public isValidFrameIndex(index: number): boolean {
