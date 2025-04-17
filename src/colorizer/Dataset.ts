@@ -62,7 +62,9 @@ export default class Dataset {
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
+  /** Source for 3D data, resolved to http/https URLs. */
   public frames3dSrc?: string | string[];
+  /** Index of the segmentation channel in the 3D data. */
   public segmentationChannel?: number;
   private totalFrames3d?: number;
 
@@ -143,7 +145,20 @@ export default class Dataset {
     this.metadata = defaultMetadata;
   }
 
-  private resolveUrl = (url: string): string => `${this.baseUrl}/${url}`;
+  private resolvePathToUrl = (url: string): string => {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    } else {
+      return `${this.baseUrl}/${url}`;
+    }
+  };
+
+  private resolvePathsToUrls = <T extends string | string[]>(url: T): T => {
+    if (Array.isArray(url)) {
+      return url.map((u) => this.resolvePathToUrl(u)) as T;
+    }
+    return this.resolvePathToUrl(url) as T;
+  };
 
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
     const isFeatureType = (inputType: string): inputType is FeatureType => {
@@ -161,7 +176,7 @@ export default class Dataset {
   private async loadFeature(metadata: ManifestFile["features"][number]): Promise<[string, FeatureData]> {
     const name = metadata.name;
     const key = metadata.key || getKeyFromName(name);
-    const url = this.resolveUrl(metadata.data);
+    const url = this.resolvePathToUrl(metadata.data);
     const featureType = this.parseFeatureType(metadata.type);
 
     const source = await this.arrayLoader.load(
@@ -316,7 +331,7 @@ export default class Dataset {
       return null;
     }
 
-    const url = this.resolveUrl(fileUrl);
+    const url = this.resolvePathToUrl(fileUrl);
     const source = await this.arrayLoader.load(url, dataType);
     return source.getBuffer();
   }
@@ -354,7 +369,7 @@ export default class Dataset {
       return undefined;
     }
 
-    const fullUrl = this.resolveUrl(this.frameFiles[index]);
+    const fullUrl = this.resolvePathToUrl(this.frameFiles[index]);
     const loadedFrame = await this.frameLoader.load(fullUrl);
     this.frameDimensions = new Vector2(loadedFrame.image.width, loadedFrame.image.height);
     const frameSizeBytes = loadedFrame.image.width * loadedFrame.image.height * 4;
@@ -392,7 +407,7 @@ export default class Dataset {
       return undefined;
     }
 
-    const fullUrl = this.resolveUrl(frames[index]);
+    const fullUrl = this.resolvePathToUrl(frames[index]);
     const loadedFrame = await this.backdropLoader.load(fullUrl);
     this.backdropFrames?.insert(cacheKey, loadedFrame);
     return loadedFrame;
@@ -478,7 +493,8 @@ export default class Dataset {
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
-    this.frames3dSrc = manifest.frames3d?.source;
+    const frames3dSrc = manifest.frames3d?.source;
+    this.frames3dSrc = frames3dSrc ? this.resolvePathsToUrls(frames3dSrc) : undefined;
     this.segmentationChannel = manifest.frames3d?.segmentationChannel ?? 0;
     this.totalFrames3d = manifest.frames3d?.totalFrames ?? 0;
     this.outlierFile = manifest.outliers;

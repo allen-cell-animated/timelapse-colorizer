@@ -48,7 +48,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   private canvasElement: HTMLCanvasElement;
 
   private innerCanvas2d: ColorizeCanvas2D;
-  // Initialization of inner canvas is deferred until needed.
+  // Initialization of inner 3D canvas is deferred until needed.
   private innerCanvas3d: ColorizeCanvas3D | null;
 
   private innerCanvas: IRenderCanvas;
