@@ -79,8 +79,8 @@ export default class Dataset {
    * monotonically increasing (e.g. skips no values), and that a frame's objects
    * all have adjacent indices in the global array.
    *
-   * For any object with segmentation ID `segId` in frame `frame`, the global
-   * index of that object is given by `segId + frameToIdOffsets[frame]`.
+   * For any object with segmentation ID `segId` at time `t`, the global
+   * index of that object is given by `segId + frameToIdOffsets[t]`.
    */
   public frameToIdOffset: Uint32Array | null;
 
@@ -418,8 +418,8 @@ export default class Dataset {
    * get the global indices for objects in the image/frame data.
    *
    * When looking up data for an object with segmentation ID `segId` in the
-   * image/frame data at time `time`, the global index of the object is given by
-   * `segId + frameToIdOffsets[time]`.
+   * image/frame data at time `t`, the global index of the object is given by
+   * `segId + frameToIdOffsets[t]`.
    *
    * NOTE: This makes a lot of VERY LARGE assumptions about the frame data,
    * namely that either:

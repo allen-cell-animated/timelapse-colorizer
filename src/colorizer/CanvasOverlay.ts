@@ -275,22 +275,27 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     // If the dataset has changed types, construct and initialize the inner
     // canvas.
+    let hasUpdatedCanvasParams = false;
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       if (params.dataset) {
         if (params.dataset.has2dFrames() && this.innerCanvasType !== CanvasType.CANVAS_2D) {
           this.innerCanvasType = CanvasType.CANVAS_2D;
           await this.setCanvas(this.innerCanvas2d);
+          hasUpdatedCanvasParams = true;
         } else if (params.dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
           this.innerCanvasType = CanvasType.CANVAS_3D;
           if (!this.innerCanvas3d) {
             this.innerCanvas3d = new ColorizeCanvas3D();
           }
           await this.setCanvas(this.innerCanvas3d);
+          hasUpdatedCanvasParams = true;
         }
       }
     }
 
-    await this.innerCanvas.setParams(params);
+    if (!hasUpdatedCanvasParams) {
+      await this.innerCanvas.setParams(params);
+    }
 
     // Inner canvas will re-render on setParams, so it doesn't need
     // to be re-rendered here.
