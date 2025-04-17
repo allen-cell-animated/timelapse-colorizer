@@ -126,8 +126,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
           timeToIdOffset: dataset.frameToIdOffset ?? new Uint32Array([0]),
         };
-        // TODO: This needs to be called again AFTER each channel has loaded.
-        // Maybe setup this colorizing in the volume loader callback?
         this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
       }
     }
