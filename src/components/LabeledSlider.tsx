@@ -4,7 +4,7 @@ import React, { ReactElement, ReactEventHandler, ReactNode, useRef } from "react
 import styled, { css } from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
-import { numberToStringDecimal, setMaxDecimalPrecision } from "../colorizer/utils/math_utils";
+import { formatNumber, setMaxDecimalPrecision } from "../colorizer/utils/math_utils";
 import { excludeUndefinedValues } from "../colorizer/utils/react_utils";
 
 type BaseLabeledSliderProps = {
@@ -205,7 +205,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     });
   }
 
-  const defaultNumberFormatter = (value?: number): string => numberToStringDecimal(value, props.maxDecimalsToDisplay);
+  const defaultNumberFormatter = (value?: number): string => formatNumber(value, props.maxDecimalsToDisplay);
   const numberFormatter = props.numberFormatter ? props.numberFormatter : defaultNumberFormatter;
 
   // Use a placeholder if the min/max bounds are undefined

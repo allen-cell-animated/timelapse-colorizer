@@ -9,7 +9,7 @@ import {
 import { Checkbox, notification, Slider, Tabs } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Link, Location, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
   Dataset,
@@ -25,7 +25,7 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./colorizer/utils/analytics";
 import { thresholdMatchFinder } from "./colorizer/utils/data_utils";
 import { useAnnotations, useConstructor, useDebounce, useRecentCollections } from "./colorizer/utils/react_utils";
-import { isUrl, UrlParam } from "./colorizer/utils/url_utils";
+import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
@@ -38,11 +38,13 @@ import {
 import { makeDebouncedCallback } from "./state/utils/store_utils";
 import { FlexRow, FlexRowAlignCenter } from "./styles/utils";
 import { LocationState } from "./types";
+import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
-import CanvasWithOverlay from "./colorizer/CanvasWithOverlay";
+import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas";
+import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
 import { FeatureType } from "./colorizer/Dataset";
+import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
 import { getSharedWorkerPool } from "./colorizer/workers/SharedWorkerPool";
 import { AppThemeContext } from "./components/AppStyle";
@@ -84,12 +86,12 @@ function Viewer(): ReactElement {
   const [, startTransition] = React.useTransition();
 
   const canv = useConstructor(() => {
-    const canvas = new CanvasWithOverlay();
+    const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
+    const canvas = new CanvasOverlay(new ColorizeCanvas2D(), stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
-    useViewerStateStore.getState().setLoadFrameCallback(async (frame) => {
-      await canvas.setFrame(frame);
-      canvas.render();
-    });
+    // Report frame load results to the store
+    canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);
+    useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
   });
 
@@ -158,12 +160,12 @@ function Viewer(): ReactElement {
   const [isRecording, setIsRecording] = useState(false);
 
   // TODO: Move all logic for the time slider into its own component!
-  // Flag used to indicate that the slider is currently being dragged while playback is occurring.
-  const [isTimeSliderDraggedDuringPlayback, setIsTimeSliderDraggedDuringPlayback] = useState(false);
+  // Flag indicating that frameInput should not be synced with playback.
+  const [isUserDirectlyControllingFrameInput, setIsUserDirectlyControllingFrameInput] = useState(false);
 
   useEffect(() => {
     if (timeControls.isPlaying()) {
-      setIsTimeSliderDraggedDuringPlayback(false);
+      setIsUserDirectlyControllingFrameInput(false);
     }
   }, [timeControls.isPlaying()]);
 
@@ -178,8 +180,6 @@ function Viewer(): ReactElement {
 
   // EVENT LISTENERS ////////////////////////////////////////////////////////
   const updateUrlParams = useCallback(
-    // TODO: Update types for makeDebouncedCallback since right now it requires
-    // an argument (even if it's a dummy one) to be passed to the callback.
     makeDebouncedCallback(() => {
       if (isInitialDatasetLoaded) {
         const params = serializeViewerState(useViewerStateStore.getState());
@@ -188,6 +188,13 @@ function Viewer(): ReactElement {
     }),
     [isInitialDatasetLoaded]
   );
+
+  useEffect(() => {
+    // Update the URL parameters once after the dataset is loaded for the first time.
+    if (isInitialDatasetLoaded) {
+      updateUrlParams();
+    }
+  }, [isInitialDatasetLoaded]);
 
   useEffect(() => {
     return useViewerStateStore.subscribe(selectSerializationDependencies, (state, prevState) => {
@@ -202,23 +209,18 @@ function Viewer(): ReactElement {
       ) {
         return;
       }
-      updateUrlParams(state);
+      updateUrlParams();
     });
   }, [isRecording, updateUrlParams]);
 
   // Sync the time slider with the pending frame.
   useEffect(() => {
-    const unsubscribe = useViewerStateStore.subscribe(
-      (state) => [state.pendingFrame],
-      ([pendingFrame]) => {
-        if (isTimeSliderDraggedDuringPlayback) {
-          return;
-        }
-        setFrameInput(pendingFrame);
-      }
-    );
-    return unsubscribe;
-  }, [isTimeSliderDraggedDuringPlayback]);
+    // When user is controlling time slider, do not sync frame input w/ playback
+    if (!isUserDirectlyControllingFrameInput) {
+      return useViewerStateStore.subscribe((state) => state.pendingFrame, setFrameInput);
+    }
+    return;
+  }, [isUserDirectlyControllingFrameInput]);
 
   // When the scatterplot tab is opened for the first time, set the default axes
   // to the selected feature and time.
@@ -328,6 +330,19 @@ function Viewer(): ReactElement {
     [showAlert]
   );
 
+  const showMissingDatasetAlert = useCallback(() => {
+    showAlert({
+      message: "No dataset loaded.",
+      type: "info",
+      closable: false,
+      description: [
+        "You'll need to load a dataset to use Timelapse Feature Explorer.",
+        "If you have a dataset, load it from the menu above. Otherwise, return to the homepage to see our published datasets.",
+      ],
+      action: <Link to="/">Return to homepage</Link>,
+    });
+  }, [showAlert]);
+
   /**
    * Replaces the current dataset with another loaded dataset. Handles cleanup and state changes.
    * @param newDataset the new Dataset to replace the existing with. If null, does nothing.
@@ -354,7 +369,6 @@ function Viewer(): ReactElement {
 
       // State updates
       setDataset(newDatasetKey, newDataset);
-      await canv.setDataset(newDataset);
 
       setDatasetOpen(true);
       console.log("Dataset metadata:", newDataset.metadata);
@@ -377,88 +391,40 @@ function Viewer(): ReactElement {
       if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
         return;
       }
+
       setIsDatasetLoading(true);
-      isLoadingInitialDataset.current = true;
-      let newCollection: Collection;
-      let datasetKey: string;
-
-      const locationHasCollectionAndDataset = (location: Location): boolean => {
-        return location.state && "collection" in location.state && "datasetKey" in location.state;
-      };
-
-      // Check if we were passed a collection + dataset from the previous page.
-      if (locationHasCollectionAndDataset(location)) {
-        // Collect from previous page state
-        const { collection: stateCollection, datasetKey: stateDatasetKey } = location.state as LocationState;
-        datasetKey = stateDatasetKey;
-        newCollection = stateCollection;
-      } else {
-        // Collect from URL
-        const collectionUrlParam = searchParams.get(UrlParam.COLLECTION);
-        const datasetParam = searchParams.get(UrlParam.DATASET);
-
-        if (datasetParam && isUrl(datasetParam) && !collectionUrlParam) {
-          // Dataset is a URL and no collection URL is provided;
-          // Make a dummy collection that will include only this dataset
-          newCollection = await Collection.makeCollectionFromSingleDataset(datasetParam);
-          datasetKey = newCollection.getDefaultDatasetKey();
-        } else {
-          if (!collectionUrlParam) {
-            showAlert({
-              message: "No dataset loaded.",
-              type: "info",
-              closable: false,
-              description: [
-                "You'll need to load a dataset to use Timelapse Feature Explorer.",
-                "If you have a dataset, load it from the menu above. Otherwise, return to the homepage to see our published datasets.",
-              ],
-              action: <Link to="/">Return to homepage</Link>,
-            });
-            console.error("No collection URL or dataset URL provided.");
-            setIsDatasetLoading(false);
-            return;
-          }
-          // Try loading the collection, with the default collection as a fallback.
-
-          try {
-            newCollection = await Collection.loadCollection(collectionUrlParam, {
-              reportWarning: showDatasetLoadWarning,
-            });
-            datasetKey = datasetParam || newCollection.getDefaultDatasetKey();
-          } catch (error) {
-            console.error(error);
-            showDatasetLoadError((error as Error).message);
-            setIsDatasetLoading(false);
-            return;
-          }
-        }
-      }
-
-      setCollection(newCollection);
       setDatasetLoadProgress(null);
-      const datasetResult = await newCollection.tryLoadDataset(datasetKey, {
-        onLoadProgress: handleProgressUpdate,
+      isLoadingInitialDataset.current = true;
+      // Location can include a Collection object and a datasetKey to be loaded.
+      const locationState = location.state as Partial<LocationState>;
+
+      const result = await loadInitialCollectionAndDataset(searchParams, locationState, {
         arrayLoader,
+        onLoadProgress: handleProgressUpdate,
         reportWarning: showDatasetLoadWarning,
+        reportLoadError: showDatasetLoadError,
+        reportMissingDataset: showMissingDatasetAlert,
       });
 
-      if (!datasetResult.loaded) {
-        console.error(datasetResult.errorMessage);
-        showDatasetLoadError(datasetResult.errorMessage);
+      if (!result) {
         setIsDatasetLoading(false);
         return;
       }
-      // Add the collection to the recent collections list
-      addRecentCollection({ url: newCollection.getUrl() });
 
-      if (!isInitialDatasetLoaded) {
-        await replaceDataset(datasetResult.dataset, datasetKey);
-        setIsInitialDatasetLoaded(true);
-      }
+      const { collection: newCollection, dataset: newDataset, datasetKey: newDatasetKey } = result;
+      setCollection(newCollection);
+      addRecentCollection({ url: newCollection.getUrl() });
+      await replaceDataset(newDataset, newDatasetKey);
+      setIsInitialDatasetLoaded(true);
       setIsDatasetLoading(false);
 
       // Load the viewer state from the URL after the dataset is loaded.
-      loadViewerStateFromParams(useViewerStateStore, searchParams);
+      try {
+        loadViewerStateFromParams(useViewerStateStore, searchParams);
+      } catch (error) {
+        console.error("Failed to load viewer state from URL:", error);
+        showAlert(showFailedUrlParseAlert(window.location.href, error as Error));
+      }
       return;
     };
     loadInitialDataset();
@@ -553,13 +519,12 @@ function Viewer(): ReactElement {
       if (target && timeSliderContainerRef.current?.contains(target as Node)) {
         // If the user clicked and released on the slider, update the
         // time immediately.
-        setFrame(frameInput);
+        await setFrame(frameInput);
       }
-      if (isTimeSliderDraggedDuringPlayback) {
-        setFrame(frameInput);
+      if (isUserDirectlyControllingFrameInput) {
+        setFrame(frameInput).then(() => timeControls.play());
         // Update the frame and unpause playback when the slider is released.
-        setIsTimeSliderDraggedDuringPlayback(false);
-        timeControls.play(); // resume playing
+        setIsUserDirectlyControllingFrameInput(false);
       }
     };
 
@@ -567,7 +532,7 @@ function Viewer(): ReactElement {
     return () => {
       document.removeEventListener("pointerup", checkIfPlaybackShouldUnpause);
     };
-  }, [isTimeSliderDraggedDuringPlayback, frameInput]);
+  }, [isUserDirectlyControllingFrameInput, frameInput]);
 
   const onClickId = useCallback(
     (id: number) => {
@@ -846,7 +811,7 @@ function Viewer(): ReactElement {
                     }
                   }}
                   onMouseLeave={() => setShowObjectHoverInfo(false)}
-                  showAlert={isInitialDatasetLoaded ? showAlert : undefined}
+                  showAlert={showAlert}
                   annotationState={annotationState}
                 />
               </CanvasHoverTooltip>
@@ -854,7 +819,7 @@ function Viewer(): ReactElement {
 
             {/** Time Control Bar */}
             <div className={styles.timeControls}>
-              {timeControls.isPlaying() || isTimeSliderDraggedDuringPlayback ? (
+              {timeControls.isPlaying() || isUserDirectlyControllingFrameInput ? (
                 // Swap between play and pause button
                 <IconButton
                   type="primary"
@@ -879,7 +844,7 @@ function Viewer(): ReactElement {
                   if (timeControls.isPlaying()) {
                     // If the slider is dragged while playing, pause playback.
                     timeControls.pause();
-                    setIsTimeSliderDraggedDuringPlayback(true);
+                    setIsUserDirectlyControllingFrameInput(true);
                   }
                 }}
               >

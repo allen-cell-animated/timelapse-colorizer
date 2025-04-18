@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, Mock, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { Track } from "../../../src/colorizer";
+import { FrameLoadResult, Track } from "../../../src/colorizer";
 import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../../src/state";
 import { loadTimeSliceFromParams, serializeTimeSlice } from "../../../src/state/slices";
@@ -9,17 +9,34 @@ import { ANY_ERROR, sleep } from "../../test_utils";
 import { MOCK_DATASET, MOCK_DATASET_WITH_TWO_FRAMES } from "./constants";
 import { clearDatasetAsync, setDatasetAsync } from "./utils";
 
-const TIMEOUT_DURATION_MS = 10;
-const getMockLoadCallback = (): Mock<[], Promise<void>> => vi.fn((): Promise<void> => sleep(TIMEOUT_DURATION_MS));
+const TIMEOUT_DURATION_MS = 5;
+const MOCK_LOAD_CALLBACK = async (frame: number): Promise<FrameLoadResult> => {
+  await sleep(TIMEOUT_DURATION_MS);
+  return Promise.resolve({ frame, frameError: false, backdropKey: null, backdropError: false });
+};
 
 describe("useViewerStateStore: TimeSlice", () => {
   describe("setFrame", () => {
+    it("throws an error for non-finite values", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      await expect(async () => {
+        await act(async () => {
+          await result.current.setFrame(NaN);
+        });
+      }).rejects.toThrowError(ANY_ERROR);
+      await expect(async () => {
+        await act(async () => {
+          await result.current.setFrame(Infinity);
+        });
+      }).rejects.toThrowError(ANY_ERROR);
+    });
+
     it("calls loadFrameCallback", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const mockLoadCallback = getMockLoadCallback();
       setDatasetAsync(result, MOCK_DATASET);
+      const mockLoadCallback = vi.fn(MOCK_LOAD_CALLBACK);
       await act(async () => {
-        result.current.setLoadFrameCallback(mockLoadCallback);
+        result.current.setFrameLoadCallback(mockLoadCallback);
         await result.current.setFrame(1);
       });
       expect(mockLoadCallback).toHaveBeenCalled();
@@ -27,11 +44,10 @@ describe("useViewerStateStore: TimeSlice", () => {
 
     it("sets pendingFrame and currentFrame", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const mockLoadCallback = getMockLoadCallback();
       setDatasetAsync(result, MOCK_DATASET);
       let setFramePromise;
       await act(async () => {
-        result.current.setLoadFrameCallback(mockLoadCallback);
+        result.current.setFrameLoadCallback(MOCK_LOAD_CALLBACK);
         setFramePromise = result.current.setFrame(1);
       });
       expect(result.current.pendingFrame).toBe(1);
@@ -46,10 +62,10 @@ describe("useViewerStateStore: TimeSlice", () => {
   describe("timeControls", () => {
     it("calls loadFrameCallback", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const mockLoadCallback = getMockLoadCallback();
       setDatasetAsync(result, MOCK_DATASET);
+      const mockLoadCallback = vi.fn(MOCK_LOAD_CALLBACK);
       await act(async () => {
-        result.current.setLoadFrameCallback(mockLoadCallback);
+        result.current.setFrameLoadCallback(mockLoadCallback);
         result.current.setPlaybackFps(1000 / TIMEOUT_DURATION_MS);
         result.current.timeControls.play();
       });
@@ -60,10 +76,9 @@ describe("useViewerStateStore: TimeSlice", () => {
 
     it("sets pendingFrame and currentFrame", async () => {
       const { result } = renderHook(() => useViewerStateStore());
-      const mockLoadCallback = getMockLoadCallback();
       setDatasetAsync(result, MOCK_DATASET);
       await act(async () => {
-        result.current.setLoadFrameCallback(mockLoadCallback);
+        result.current.setFrameLoadCallback(MOCK_LOAD_CALLBACK);
         result.current.setPlaybackFps(1000 / TIMEOUT_DURATION_MS);
         result.current.timeControls.play();
       });
@@ -135,11 +150,12 @@ describe("useViewerStateStore: TimeSlice", () => {
     });
 
     it("serializes time value", async () => {
+      const frameNumber = 155;
       const { result } = renderHook(() => useViewerStateStore());
       await act(async () => {
-        await result.current.setFrame(155);
+        await result.current.setFrame(frameNumber);
       });
-      expect(serializeTimeSlice(result.current)[UrlParam.TIME]).toBe("155");
+      expect(serializeTimeSlice(result.current)[UrlParam.TIME]).toBe(frameNumber.toString());
     });
   });
 
@@ -165,13 +181,34 @@ describe("useViewerStateStore: TimeSlice", () => {
       await setDatasetAsync(result, MOCK_DATASET);
       act(() => {
         // Fake track with start time at 50
-        result.current.setTrack(new Track(15, [50], [0], [0, 0], [1, 1]));
+        result.current.setTrack(new Track(15, [3], [0], [0, 0], [1, 1]));
       });
       const params = new URLSearchParams();
       act(() => {
         loadTimeSliceFromParams(result.current, params);
       });
-      expect(result.current.pendingFrame).toBe(50);
+      expect(result.current.pendingFrame).toBe(3);
+    });
+
+    it("clamps min frame number to 0", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.TIME, "-100");
+      act(() => {
+        loadTimeSliceFromParams(result.current, params);
+      });
+      expect(result.current.pendingFrame).toBe(0);
+    });
+
+    it("clamps max frame number if dataset is provided", async () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.TIME, "100");
+      await setDatasetAsync(result, MOCK_DATASET);
+      act(() => {
+        loadTimeSliceFromParams(result.current, params);
+      });
+      expect(result.current.pendingFrame).toBe(MOCK_DATASET.numberOfFrames - 1);
     });
   });
 });

@@ -49,3 +49,10 @@ export const getDifferingProperties = <T extends Record<string, any>>(a: Partial
   }
   return differingKeys;
 };
+
+/** Calls the setter with the provided value if not `undefined`. */
+export const setValueIfDefined = <T>(value: T | undefined, setter: (value: T) => void): void => {
+  if (value !== undefined) {
+    setter(value);
+  }
+};

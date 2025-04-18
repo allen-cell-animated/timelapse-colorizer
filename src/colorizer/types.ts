@@ -9,6 +9,7 @@ import {
   TextureDataType,
   UnsignedByteType,
   UnsignedIntType,
+  Vector2,
 } from "three";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
@@ -75,6 +76,51 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
     internalFormat: "R8UI",
   },
 };
+
+// CANVAS //////////////////////////////////////
+
+export type FrameLoadResult = {
+  frame: number;
+  /** True if frame loading encountered an error. */
+  frameError: boolean;
+  backdropKey: string | null;
+  /** True if backdrop loading encountered an error */
+  backdropError: boolean;
+};
+
+export enum CanvasType {
+  CANVAS_2D = "2D",
+  CANVAS_3D = "3D",
+}
+
+export type Canvas2DScaleInfo = {
+  type: CanvasType.CANVAS_2D;
+  /**
+   * Size of the frame in [0, 1] canvas coordinates, accounting for zoom.
+   */
+  frameSizeInCanvasCoordinates: Vector2;
+  /**
+   * Transforms from [0,1] space of the canvas to the [0,1] space of the frame,
+   * account for zoom.
+   *
+   * e.g. If frame has the same aspect ratio as the canvas and zoom is set to
+   * 2x, then, assuming that the [0, 0] position of the frame and the canvas are
+   * in the same position, the position [1, 1] on the canvas should map to [0.5,
+   * 0.5] on the frame.
+   */
+  canvasToFrameCoordinates: Vector2;
+  /**
+   * Inverse of `canvasToFrameCoordinates`. Transforms from [0,1] space of the
+   * frame to the [0,1] space of the canvas, accounting for zoom.
+   */
+  frameToCanvasCoordinates: Vector2;
+};
+
+export type Canvas3DScaleInfo = {
+  type: CanvasType.CANVAS_3D;
+};
+
+export type CanvasScaleInfo = Canvas3DScaleInfo | Canvas2DScaleInfo;
 
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
@@ -164,31 +210,6 @@ export const isTabType = (tab: string): tab is TabType => {
   return Object.values(TabType).includes(tab as TabType);
 };
 
-/**
- * Configuration for the viewer. These are high-level settings
- * that are not specific to a particular dataset.
- */
-export type ViewerConfig = {
-  showTrackPath: boolean;
-  showScaleBar: boolean;
-  showTimestamp: boolean;
-  showLegendDuringExport: boolean;
-  showHeaderDuringExport: boolean;
-  keepRangeBetweenDatasets: boolean;
-  backdropVisible: boolean;
-  /** Brightness, as an integer percentage. */
-  backdropBrightness: number;
-  /** Saturation, as an integer percentage. */
-  backdropSaturation: number;
-  /** Object opacity when backdrop is visible, as an integer percentage. */
-  objectOpacity: number;
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
-  outlineColor: Color;
-  openTab: TabType;
-  vectorConfig: VectorConfig;
-};
-
 export enum PlotRangeType {
   ALL_TIME = "All time",
   CURRENT_TRACK = "Current track",
@@ -213,6 +234,10 @@ export enum AnnotationSelectionMode {
  * is provided for the description, each string should be displayed on a new line.
  */
 export type ReportWarningCallback = (message: string, description: string | string[]) => void;
+
+export type ReportErrorCallback = (message: string) => void;
+
+export type ReportLoadProgressCallback = (complete: number, total: number) => void;
 
 export enum LoadTroubleshooting {
   CHECK_NETWORK = "This may be due to a network issue, the server being unreachable, or a misconfigured URL." +

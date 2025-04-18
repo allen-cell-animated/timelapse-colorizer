@@ -38,6 +38,8 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
   const setFrame = useViewerStateStore((state) => state.setFrame);
   const setTrack = useViewerStateStore((state) => state.setTrack);
 
+  const [findTrackInput, setFindTrackInput] = useState("");
+
   // Sync track searchbox with selected track
   useEffect(() => {
     const unsubscribe = useViewerStateStore.subscribe(
@@ -53,7 +55,6 @@ export default function PlotTab(props: PlotTabProps): ReactElement {
     return unsubscribe;
   }, []);
 
-  const [findTrackInput, setFindTrackInput] = useState("");
   const isLoading = currentFrame !== pendingFrame;
 
   const searchForTrack = (): void => {

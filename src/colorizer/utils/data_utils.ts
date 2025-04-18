@@ -187,3 +187,21 @@ export function getIntervals(values: number[]): [number, number][] {
   }
   return intervals;
 }
+
+export function hasPropertyChanged<T extends Record<string, unknown>>(
+  curr: T | null,
+  prev: T | null,
+  properties: (keyof T)[]
+): boolean {
+  if (!curr && !prev) {
+    return false;
+  } else if (!curr || !prev) {
+    return true;
+  }
+  for (const property of properties) {
+    if (curr[property] !== prev[property]) {
+      return true;
+    }
+  }
+  return false;
+}
