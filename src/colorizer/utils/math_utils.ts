@@ -1,7 +1,6 @@
 import { Vector2 } from "three";
 
-import { FeatureThreshold } from "../types";
-import { isValueWithinThreshold } from "./data_utils";
+import { FeatureThreshold, isThresholdNumeric } from "../types";
 
 import Track from "../Track";
 
@@ -300,6 +299,15 @@ export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number)
   }
 
   return motionDeltas;
+}
+
+/** Returns whether a feature value is inside the range of a threshold. */
+function isValueWithinThreshold(value: number, threshold: FeatureThreshold): boolean {
+  if (isThresholdNumeric(threshold)) {
+    return value >= threshold.min && value <= threshold.max;
+  } else {
+    return threshold.enabledCategories[value];
+  }
 }
 
 export function calculateInRangeLUT(

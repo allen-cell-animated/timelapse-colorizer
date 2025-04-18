@@ -105,15 +105,6 @@ export function validateThresholds(dataset: Dataset, thresholds: FeatureThreshol
   return newThresholds;
 }
 
-/** Returns whether a feature value is inside the range of a threshold. */
-export function isValueWithinThreshold(value: number, threshold: FeatureThreshold): boolean {
-  if (isThresholdNumeric(threshold)) {
-    return value >= threshold.min && value <= threshold.max;
-  } else {
-    return threshold.enabledCategories[value];
-  }
-}
-
 /**
  * Sanitizes a string name to a key for internal use. Replaces all non-alphanumeric characters with underscores,
  * and converts the string to lowercase.
