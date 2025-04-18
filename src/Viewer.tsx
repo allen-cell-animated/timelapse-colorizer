@@ -91,7 +91,7 @@ function Viewer(): ReactElement {
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
     canvas.setOnFrameLoadCallback((result) => {
-      useViewerStateStore.getState().setFrameLoadResult;
+      useViewerStateStore.getState().setFrameLoadResult(result);
       useViewerStateStore.setState({ currentFrame: result.frame });
     });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
