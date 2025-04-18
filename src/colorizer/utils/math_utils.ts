@@ -1,5 +1,8 @@
 import { Vector2 } from "three";
 
+import { FeatureThreshold } from "../types";
+import { isValueWithinThreshold } from "./data_utils";
+
 import Track from "../Track";
 
 /**
@@ -297,4 +300,25 @@ export function calculateMotionDeltas(tracks: Track[], numTimeIntervals: number)
   }
 
   return motionDeltas;
+}
+
+export function calculateInRangeLUT(
+  numObjects: number,
+  thresholds: FeatureThreshold[],
+  featureData: Float32Array[]
+): Uint8Array {
+  const inRangeIds = new Uint8Array(numObjects);
+
+  for (let id = 0; id < numObjects; id++) {
+    inRangeIds[id] = 1;
+    for (let thresholdIdx = 0; thresholdIdx < thresholds.length; thresholdIdx++) {
+      const threshold = thresholds[thresholdIdx];
+      const featureValue = featureData[thresholdIdx][id];
+      if (!isValueWithinThreshold(featureValue, threshold)) {
+        inRangeIds[id] = 0;
+        break;
+      }
+    }
+  }
+  return inRangeIds;
 }
