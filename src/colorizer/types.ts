@@ -1,5 +1,6 @@
 import {
   Color,
+  DataTexture,
   FloatType,
   IntType,
   PixelFormat,
@@ -229,6 +230,45 @@ export enum AnnotationSelectionMode {
   RANGE,
   TRACK,
 }
+
+export type GlobalIdLookupInfo = {
+  /**
+   * A LUT mapping from the segmentation ID (e.g. raw pixel value) of an object
+   * in a given frame to its global ID in the dataset, which is used to index
+   * into data arrays for feature, time, track, and other data. We use a lookup
+   * because segmentation IDs are not guaranteed to be unique across frames.
+   *
+   * An additional optimization is performed where all segmentation IDs are
+   * offset by the smallest segmentation ID in the frame to reduce the size of
+   * the LUT.
+   *
+   * The global ID of an object with segmentation ID `segId` is `lut[segId -
+   * minSegId]`.
+   *
+   * For example, if we had the following segmentation IDs and global IDs:
+   * | Segmentation IDs | Global ID |
+   * |------------------|-----------|
+   * | 3                | 1         |
+   * | 4                | 3         |
+   * | 6                | 5         |
+   * | 9                | 2         |
+   *
+   * The raw, pre-optimized LUT would be: `[0, 0, 0, 1, 3, 0, 5, 0, 0, 2]`. We
+   * can reduce the size of the LUT by removing the starting 0s and just
+   * tracking the smallest ID separately, which gives us `[1, 3, 0, 5, 0, 0,
+   * 2]`.
+   */
+  lut: Uint32Array;
+  /**
+   * The `lut` packed as a DataTexture with square dimensions. See comments on
+   * `lut` for more details on the contents.
+   */
+  texture: DataTexture;
+  /**
+   * The smallest segmentation on this frame, used for memory optimization.
+   */
+  minSegId: number;
+};
 
 /**
  * Callback used to report warnings to the user. The message is the title
