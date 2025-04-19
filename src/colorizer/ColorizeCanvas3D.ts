@@ -124,7 +124,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           outlierDrawMode: this.params.outlierDrawSettings.mode,
           outOfRangeDrawMode: this.params.outOfRangeDrawSettings.mode,
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
-          timeToIdOffset: dataset.frameToIdOffset ?? new Uint32Array([0]),
+          frameToGlobalIdLookup: dataset.frameToGlobalIdLookup!,
         };
         this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
       }
@@ -289,7 +289,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return;
     }
     const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, this.params.dataset.segmentationChannel ?? 0, id + 1);
+    this.view3d.setSelectedID(this.volume, this.params.dataset.segmentationChannel ?? 0, id);
   }
 
   render(synchronous = false): void {
@@ -308,9 +308,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // during colorizer setup.
     if (this.volume?.isLoaded() && dataset) {
       const frameLocalId = this.view3d.hitTest(x, y);
-      const offset = dataset.frameToIdOffset ? dataset.frameToIdOffset[this.currentFrame] : 0;
-      const id = frameLocalId <= 0 ? 0 : frameLocalId + offset;
-      return id - 1;
+      const globalIdInfo = dataset.frameToGlobalIdLookup?.get(this.currentFrame);
+      if (!globalIdInfo || frameLocalId <= 0) {
+        return -1;
+      }
+      return globalIdInfo.lut[frameLocalId - globalIdInfo.minSegId];
     }
     return -1;
   }
