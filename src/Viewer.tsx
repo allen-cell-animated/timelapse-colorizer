@@ -638,7 +638,7 @@ function Viewer(): ReactElement {
       visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
-          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId?.globalId || null} />
+          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId?.globalId ?? null} />
         </div>
       ),
     },
@@ -806,7 +806,6 @@ function Viewer(): ReactElement {
                     const isObject = info !== null;
                     setShowObjectHoverInfo(isObject);
                     if (isObject) {
-                      // TODO: Show additional information about
                       setLastValidHoveredId(info);
                     }
                   }}

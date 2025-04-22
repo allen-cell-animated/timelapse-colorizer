@@ -196,7 +196,7 @@ describe("data_utils", () => {
       const frameToGlobalIdLookup = buildFrameToGlobalIdLookup(times, segIds, numFrames);
       expect(frameToGlobalIdLookup.size).to.equal(2);
 
-      // lut[segId - minSegId] = index in original times/segIds arrays
+      // lut[segId - minSegId] - 1 = index in original times/segIds arrays
       //                                        seg IDs:  1  2     4        7
       const lookup0 = frameToGlobalIdLookup.get(0);
       expect(lookup0?.lut).to.deep.equal(new Uint32Array([1, 2, 0, 3, 0, 0, 4]));

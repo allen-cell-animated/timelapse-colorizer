@@ -124,7 +124,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           outlierDrawMode: this.params.outlierDrawSettings.mode,
           outOfRangeDrawMode: this.params.outOfRangeDrawSettings.mode,
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
-          frameToGlobalIdLookup: dataset.frameToGlobalIdLookup!,
+          frameToGlobalIdLookup: dataset.frameToGlobalIdLookup ?? new Map(),
         };
         this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
       }
@@ -308,8 +308,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // during colorizer setup.
     if (this.volume?.isLoaded() && dataset) {
       const segId = this.view3d.hitTest(x, y);
-      const globalIdInfo = dataset.frameToGlobalIdLookup?.get(this.currentFrame);
-      if (!globalIdInfo || segId === -1) {
+      if (segId === -1) {
         // Background hit
         return null;
       }

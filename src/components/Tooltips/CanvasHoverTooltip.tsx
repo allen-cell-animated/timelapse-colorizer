@@ -44,7 +44,7 @@ const DebugText = styled.p`
  * - If vectors are enabled, the vector value (either magnitude or components) will be displayed.
  */
 export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverTooltipProps>): ReactElement {
-  const { lastValidHoveredId: lastHovered } = props;
+  const { lastValidHoveredId: lastHoveredId } = props;
 
   const dataset = useViewerStateStore((state) => state.dataset);
   const featureKey = useViewerStateStore((state) => state.featureKey);
@@ -71,8 +71,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   );
 
   const getHoveredFeatureValue = useCallback((): string => {
-    if (lastHovered.globalId !== undefined && dataset !== null && featureKey !== null) {
-      const featureVal = getFeatureValue(lastHovered.globalId);
+    if (lastHoveredId.globalId !== undefined && dataset !== null && featureKey !== null) {
+      const featureVal = getFeatureValue(lastHoveredId.globalId);
       const categories = dataset.getFeatureCategories(featureKey);
       if (categories !== null) {
         return categories[Number.parseInt(featureVal, 10)];
@@ -81,14 +81,14 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       }
     }
     return "N/A";
-  }, [lastHovered, dataset, getFeatureValue, featureKey]);
+  }, [lastHoveredId, dataset, getFeatureValue, featureKey]);
   const hoveredFeatureValue = getHoveredFeatureValue();
 
   const getVectorTooltipText = useCallback((): string | null => {
-    if (!vectorConfig.visible || lastHovered.globalId === undefined || !motionDeltas) {
+    if (!vectorConfig.visible || lastHoveredId.globalId === undefined || !motionDeltas) {
       return null;
     }
-    const globalId = lastHovered.globalId;
+    const globalId = lastHoveredId.globalId;
     const motionDelta = [motionDeltas[2 * globalId], motionDeltas[2 * globalId + 1]];
 
     if (Number.isNaN(motionDelta[0]) || Number.isNaN(motionDelta[1])) {
@@ -112,17 +112,17 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       return `${vectorName}: (${x}, ${y}) px
        `;
     }
-  }, [vectorConfig, lastHovered, motionDeltas]);
+  }, [vectorConfig, lastHoveredId, motionDeltas]);
   const vectorTooltipText = getVectorTooltipText();
 
   const objectInfoContent = [
     <p key="track_id">
-      Track ID: {lastHovered.globalId !== undefined ? dataset?.getTrackId(lastHovered.globalId) : "N/A"}
+      Track ID: {lastHoveredId.globalId !== undefined ? dataset?.getTrackId(lastHoveredId.globalId) : "N/A"}
     </p>,
     <p key="feature_value">
       {featureName ?? "Feature"}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
-    <DebugText key="object_id">Seg ID: {lastHovered.segId}</DebugText>,
+    <DebugText key="object_id">Seg ID: {lastHoveredId.segId}</DebugText>,
   ];
 
   if (vectorTooltipText) {
@@ -131,8 +131,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
   // Show all current labels applied to the hovered object
   const labelData = props.annotationState.data.getLabels();
-  if (lastHovered.globalId !== undefined) {
-    const labels = props.annotationState.data.getLabelsAppliedToId(lastHovered.globalId);
+  if (lastHoveredId.globalId !== undefined) {
+    const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredId.globalId);
     if (labels.length > 0 && props.annotationState.visible) {
       objectInfoContent.push(
         <div style={{ lineHeight: "28px" }}>
@@ -167,8 +167,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       </Tag>
     );
 
-    if (lastHovered.globalId !== undefined) {
-      const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHovered.globalId);
+    if (lastHoveredId.globalId !== undefined) {
+      const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
       if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
         const verb = isHoveredIdLabeled ? "unlabel" : "label";
         annotationLabel = (
@@ -181,7 +181,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
         );
       } else if (props.annotationState.selectionMode === AnnotationSelectionMode.RANGE && dataset) {
         if (props.showObjectHoverInfo) {
-          const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHovered.globalId);
+          const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHoveredId.globalId);
           if (hoveredRange !== null && hoveredRange.length > 1) {
             // Get min and max track IDs
             const id0 = hoveredRange[0];

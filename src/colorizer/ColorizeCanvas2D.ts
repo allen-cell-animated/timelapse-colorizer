@@ -681,7 +681,6 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     // get 32bit value from 4 8bit values
     const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
-
     const globalId = getGlobalIdFromSegId(dataset.frameToGlobalIdLookup, this.currentFrame, segId);
     return { segId, globalId };
   }

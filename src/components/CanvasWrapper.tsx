@@ -311,19 +311,19 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
-      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (dataset === null || info === null || info.globalId === undefined) {
+      if (dataset === null || id === null || id.globalId === undefined) {
         clearTrack();
         return;
       } else {
-        const trackId = dataset.getTrackId(info.globalId);
+        const trackId = dataset.getTrackId(id.globalId);
         const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
           setTrack(newTrack);
         }
       }
-      props.onClickId(info);
+      props.onClickId(id);
     },
     [canv, dataset, props.onClickId, setTrack, clearTrack]
   );
@@ -524,8 +524,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       if (!dataset) {
         return;
       }
-      const info = canv.getIdAtPixel(x, y);
-      props.onMouseHover(info);
+      const id = canv.getIdAtPixel(x, y);
+      props.onMouseHover(id);
     },
     [dataset, canv]
   );
