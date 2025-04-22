@@ -410,8 +410,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       }
 
       // Normalize from pixel coordinates to canvas space [-1, 1]
-      this.points[3 * i + 0] = (track.centroids[3 * trackIndex] / dataset.frameResolution.x) * 2.0 - 1.0;
-      this.points[3 * i + 1] = -((track.centroids[3 * trackIndex + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
+      const centroid = dataset.getCentroid(track.ids[trackIndex])!;
+      this.points[3 * i + 0] = (centroid[0] / dataset.frameResolution.x) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((centroid[1] / dataset.frameResolution.y) * 2.0 - 1.0);
       this.points[3 * i + 2] = 0;
     }
     // Assign new BufferAttribute because the old array has been discarded.

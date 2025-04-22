@@ -697,7 +697,7 @@ export default class Dataset {
     const centroidsData = this.centroids;
     if (centroidsData) {
       centroids = ids.reduce((result, i) => {
-        result.push(centroidsData[3 * i], centroidsData[3 * i + 1], centroidsData[3 * i + 2]);
+        result.push(...this.getCentroid(i)!);
         return result;
       }, [] as number[]);
     }
