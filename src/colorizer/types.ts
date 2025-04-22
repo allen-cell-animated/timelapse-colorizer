@@ -238,20 +238,21 @@ export type GlobalIdLookupInfo = {
    * into data arrays for feature, time, track, and other data. We use a lookup
    * because segmentation IDs are not guaranteed to be unique across frames.
    *
-   * An additional optimization is performed where all segmentation IDs are
-   * offset by the smallest segmentation ID in the frame to reduce the size of
-   * the LUT.
+   * An optimization is performed where all segmentation IDs are offset by the
+   * smallest segmentation ID in the frame to reduce the size of the LUT.
+   * Additionally, the value `0` is reserved to indicate that a segmentation ID
+   * does not have a global ID, so all global IDs are offset by 1.
    *
    * The global ID of an object with segmentation ID `segId` is `lut[segId -
-   * minSegId]`.
+   * minSegId] - 1`.
    *
    * For example, if we had the following segmentation IDs and global IDs:
-   * | Segmentation IDs | Global ID |
-   * |------------------|-----------|
-   * | 3                | 1         |
-   * | 4                | 3         |
-   * | 6                | 5         |
-   * | 9                | 2         |
+   * | Segmentation IDs | Global ID | Global ID + 1 |
+   * |------------------|-----------|---------------|
+   * | 3                | 0         | 1             |
+   * | 4                | 2         | 3             |
+   * | 6                | 4         | 5             |
+   * | 9                | 1         | 2             |
    *
    * The raw, pre-optimized LUT would be: `[0, 0, 0, 1, 3, 0, 5, 0, 0, 2]`. We
    * can reduce the size of the LUT by removing the starting 0s and just
@@ -268,6 +269,15 @@ export type GlobalIdLookupInfo = {
    * The smallest segmentation on this frame, used for memory optimization.
    */
   minSegId: number;
+};
+
+export type PixelIdInfo = {
+  /** Segmentation ID of the pixel.*/
+  segId: number;
+  /** Global ID derived from the segmentation ID, used to index into data
+   * arrays. `undefined` if the segmentation ID is missing from the dataset.
+   */
+  globalId?: number;
 };
 
 /**

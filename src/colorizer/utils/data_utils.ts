@@ -279,8 +279,8 @@ export function buildFrameToGlobalIdLookup(
   }
 
   // For each object with segmentation ID `segId` at time `t`, fill the arrays
-  // so that `frameToLut.get(t)[segId]` is the global ID of the object, used to
-  // index into the global data arrays. However, we do one extra trick for
+  // so that `frameToLut.get(t)[segId] - 1` is the global ID of the object, used
+  // to index into the global data arrays. However, we do one extra trick for
   // memory optimization, where the arrays are truncated to below the smallest
   // segmentation ID for that frame. For an array [0, 0, 0, 1, 0, 2, 3], the
   // array is saved as [1, 0, 2, 3].
@@ -290,7 +290,7 @@ export function buildFrameToGlobalIdLookup(
     const segId = segIds[i] - minSegId;
     const lut = frameToLut.get(time);
     if (lut) {
-      lut[segId] = i;
+      lut[segId] = i + 1; // +1 to reserve 0 for missing data
     }
   }
 
@@ -306,4 +306,24 @@ export function buildFrameToGlobalIdLookup(
       ];
     })
   );
+}
+
+export function getGlobalIdFromSegId(
+  frameToGlobalIdLUT: Map<number, GlobalIdLookupInfo> | null,
+  frame: number,
+  segId: number
+): number | undefined {
+  if (!frameToGlobalIdLUT) {
+    return undefined;
+  }
+  const lut = frameToGlobalIdLUT.get(frame);
+  if (!lut) {
+    return undefined;
+  }
+  const rawGlobalId = lut.lut[segId - lut.minSegId];
+  if (rawGlobalId === undefined || rawGlobalId === 0) {
+    return undefined;
+  }
+
+  return rawGlobalId - 1; // -1 to convert to zero-based index
 }

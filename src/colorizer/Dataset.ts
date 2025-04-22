@@ -564,7 +564,7 @@ export default class Dataset {
       // Construct default segIds array (0, 1, 2, ...)
       this.segIds = new Uint32Array(this.numObjects);
       for (let i = 0; i < this.numObjects; i++) {
-        this.segIds[i] = i;
+        this.segIds[i] = i + 1;
       }
     }
 

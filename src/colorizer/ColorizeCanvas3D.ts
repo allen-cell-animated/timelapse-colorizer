@@ -15,8 +15,8 @@ import {
 import { Vector2, Vector3 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { CanvasScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult } from "./types";
-import { hasPropertyChanged } from "./utils/data_utils";
+import { CanvasScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult, PixelIdInfo } from "./types";
+import { getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
@@ -301,19 +301,21 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.removeAllVolumes();
   }
 
-  getIdAtPixel(x: number, y: number): number {
+  getIdAtPixel(x: number, y: number): PixelIdInfo | null {
     const dataset = this.params?.dataset;
     // TODO: Currently `View3d.hitTest` reports the per-frame IDs, not global IDs.
     // Ideally, vole-core should handle this based on the frame ID offset array that's passed into it
     // during colorizer setup.
     if (this.volume?.isLoaded() && dataset) {
-      const frameLocalId = this.view3d.hitTest(x, y);
+      const segId = this.view3d.hitTest(x, y);
       const globalIdInfo = dataset.frameToGlobalIdLookup?.get(this.currentFrame);
-      if (!globalIdInfo || frameLocalId <= 0) {
-        return -1;
+      if (!globalIdInfo || segId === -1) {
+        // Background hit
+        return null;
       }
-      return globalIdInfo.lut[frameLocalId - globalIdInfo.minSegId];
+      const globalId = getGlobalIdFromSegId(dataset.frameToGlobalIdLookup, this.currentFrame, segId);
+      return { segId, globalId };
     }
-    return -1;
+    return null;
   }
 }

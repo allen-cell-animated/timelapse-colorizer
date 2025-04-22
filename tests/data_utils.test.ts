@@ -144,7 +144,8 @@ describe("data_utils", () => {
       expect(frameToGlobalIdLookup.size).to.equal(1);
       const lookup0 = frameToGlobalIdLookup.get(0);
       expect(lookup0).to.not.be.undefined;
-      expect(lookup0?.lut).to.deep.equal(new Uint32Array([0, 1, 2, 3, 4]));
+      // Values will be offset by 1 so 0 represents missing data
+      expect(lookup0?.lut).to.deep.equal(new Uint32Array([1, 2, 3, 4, 5]));
       expect(lookup0?.minSegId).to.equal(0);
     });
 
@@ -156,7 +157,7 @@ describe("data_utils", () => {
       expect(frameToGlobalIdLookup.size).to.equal(3);
 
       const lookup0 = frameToGlobalIdLookup.get(0);
-      expect(lookup0?.lut).to.deep.equal(new Uint32Array([0, 1, 2, 3, 4]));
+      expect(lookup0?.lut).to.deep.equal(new Uint32Array([1, 2, 3, 4, 5]));
       expect(lookup0?.minSegId).to.equal(0);
 
       const lookup1 = frameToGlobalIdLookup.get(1);
@@ -164,7 +165,7 @@ describe("data_utils", () => {
       expect(lookup1?.minSegId).to.equal(0);
 
       const lookup2 = frameToGlobalIdLookup.get(2);
-      expect(lookup2?.lut).to.deep.equal(new Uint32Array([5, 6, 7]));
+      expect(lookup2?.lut).to.deep.equal(new Uint32Array([6, 7, 8]));
       expect(lookup2?.minSegId).to.equal(5);
     });
 
@@ -176,7 +177,7 @@ describe("data_utils", () => {
       expect(frameToGlobalIdLookup.size).to.equal(3);
       const lookup0 = frameToGlobalIdLookup.get(0);
 
-      expect(lookup0?.lut).to.deep.equal(new Uint32Array([0, 1, 2, 3]));
+      expect(lookup0?.lut).to.deep.equal(new Uint32Array([1, 2, 3, 4]));
       expect(lookup0?.minSegId).to.equal(1);
 
       const lookup1 = frameToGlobalIdLookup.get(1);
@@ -184,7 +185,7 @@ describe("data_utils", () => {
       expect(lookup1?.minSegId).to.equal(0);
 
       const lookup2 = frameToGlobalIdLookup.get(2);
-      expect(lookup2?.lut).to.deep.equal(new Uint32Array([4, 5, 6]));
+      expect(lookup2?.lut).to.deep.equal(new Uint32Array([5, 6, 7]));
       expect(lookup2?.minSegId).to.equal(1);
     });
 
@@ -198,12 +199,12 @@ describe("data_utils", () => {
       // lut[segId - minSegId] = index in original times/segIds arrays
       //                                        seg IDs:  1  2     4        7
       const lookup0 = frameToGlobalIdLookup.get(0);
-      expect(lookup0?.lut).to.deep.equal(new Uint32Array([0, 1, 0, 2, 0, 0, 3]));
+      expect(lookup0?.lut).to.deep.equal(new Uint32Array([1, 2, 0, 3, 0, 0, 4]));
       expect(lookup0?.minSegId).to.equal(1);
 
       const lookup1 = frameToGlobalIdLookup.get(1);
       //                                        seg IDs:  3  4
-      expect(lookup1?.lut).to.deep.equal(new Uint32Array([4, 5]));
+      expect(lookup1?.lut).to.deep.equal(new Uint32Array([5, 6]));
       expect(lookup1?.minSegId).to.equal(3);
     });
 
@@ -218,12 +219,12 @@ describe("data_utils", () => {
 
       const lookup0 = frameToGlobalIdLookup.get(0);
       //                                        seg IDs:  1     3  4
-      expect(lookup0?.lut).to.deep.equal(new Uint32Array([4, 0, 2, 0]));
+      expect(lookup0?.lut).to.deep.equal(new Uint32Array([5, 0, 3, 1]));
       expect(lookup0?.minSegId).to.equal(1);
 
       const lookup1 = frameToGlobalIdLookup.get(1);
       //                                        seg IDs:  2     4  5
-      expect(lookup1?.lut).to.deep.equal(new Uint32Array([1, 0, 5, 3]));
+      expect(lookup1?.lut).to.deep.equal(new Uint32Array([2, 0, 6, 4]));
       expect(lookup1?.minSegId).to.equal(2);
     });
   });
