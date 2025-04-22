@@ -11,6 +11,7 @@ import {
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { formatAsBulletList, getKeyFromName } from "./utils/data_utils";
 import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
+import { padCentroidsTo3d } from "./utils/math_utils";
 import * as urlUtils from "./utils/url_utils";
 
 import DataCache from "./DataCache";
@@ -607,6 +608,11 @@ export default class Dataset {
     // Construct offset array for frame IDs to segmentation IDs.
     this.frameToIdOffset = this.buildFrameToIdOffsetsFromSegIds();
 
+    // Fixup 2D centroids to 3D
+    if (this.centroids) {
+      this.centroids = padCentroidsTo3d(this.centroids, this.numObjects);
+    }
+
     // Analytics reporting
     triggerAnalyticsEvent(AnalyticsEvent.DATASET_LOAD, {
       datasetWriterVersion: this.metadata.writerVersion || "N/A",
@@ -656,12 +662,13 @@ export default class Dataset {
   /**
    * Returns the 2D centroid of a given object id.
    */
-  public getCentroid(objectId: number): [number, number] | undefined {
-    const index = objectId * 2;
+  public getCentroid(objectId: number): [number, number, number] | undefined {
+    const index = objectId * 3;
     const x = this.centroids?.[index];
     const y = this.centroids?.[index + 1];
-    if (x && y) {
-      return [x, y];
+    const z = this.centroids?.[index + 2];
+    if (x && y && z) {
+      return [x, y, z];
     }
     return undefined;
   }
@@ -687,9 +694,10 @@ export default class Dataset {
     const times = this.times ? ids.map((i) => (this.times ? this.times[i] : 0)) : [];
 
     let centroids: number[] = [];
-    if (this.centroids) {
+    const centroidsData = this.centroids;
+    if (centroidsData) {
       centroids = ids.reduce((result, i) => {
-        result.push(this.centroids![2 * i], this.centroids![2 * i + 1]);
+        result.push(centroidsData[3 * i], centroidsData[3 * i + 1], centroidsData[3 * i + 2]);
         return result;
       }, [] as number[]);
     }
