@@ -792,7 +792,7 @@ function Viewer(): ReactElement {
                 </FlexRowAlignCenter>
               </div>
               <CanvasHoverTooltip
-                lastValidHoveredId={lastValidHoveredId?.globalId ?? -1}
+                lastValidHoveredId={lastValidHoveredId}
                 showObjectHoverInfo={showObjectHoverInfo}
                 annotationState={annotationState}
               >
