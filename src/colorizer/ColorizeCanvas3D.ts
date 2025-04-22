@@ -248,7 +248,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     };
     this.pendingFrame = requestedFrame;
     this.pendingVolumePromise = loadVolumeFrame();
-    return this.pendingVolumePromise as Promise<FrameLoadResult>;
+    return this.pendingVolumePromise;
   }
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
@@ -259,8 +259,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     if (!this.volume) {
       return;
     }
-    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, 0, id + 1);
+    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) + 1 : -1;
+    this.view3d.setSelectedID(this.volume, 0, id);
   }
 
   render(synchronous = false): void {
