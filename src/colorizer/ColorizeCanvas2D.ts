@@ -260,6 +260,10 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     return this.renderer.domElement;
   }
 
+  public get canvas(): HTMLCanvasElement {
+    return this.renderer.domElement;
+  }
+
   private checkPixelRatio(): void {
     if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
       this.renderer.setPixelRatio(window.devicePixelRatio);

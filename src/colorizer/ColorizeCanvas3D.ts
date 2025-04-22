@@ -30,7 +30,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   // private viewContainer: HTMLElement;
   private view3d: View3d;
   private onLoadFrameCallback: (result: FrameLoadResult) => void;
-  private params: RenderCanvasStateParams;
+  private params: RenderCanvasStateParams | null;
 
   private canvasResolution: Vector2;
 
@@ -38,13 +38,16 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   private loader: WorkerLoader | RawArrayLoader | TiffLoader | null = null;
   private volume: Volume | null = null;
-  private pendingVolumePromise: Promise<FrameLoadResult> | null = null;
+  /** A Promise for the load of the initial Volume object. */
+  private initializingVolumePromise: Promise<Volume> | null = null;
+  /** A Promise for the load of the volume data for a single frame. */
+  private volumeFrameLoadPromise: Promise<FrameLoadResult> | null = null;
+
   private pendingFrame: number;
   private currentFrame: number;
 
-  constructor(params: RenderCanvasStateParams) {
-    this.params = params;
-
+  constructor() {
+    this.params = null;
     this.view3d = new View3d();
     this.view3d.loaderContext = loaderContext;
     this.canvasResolution = new Vector2(10, 10);
@@ -73,7 +76,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.updateLights(lights);
   }
 
-  get domElement(): HTMLCanvasElement {
+  get domElement(): HTMLElement {
+    return this.view3d.getDOMElement();
+  }
+
+  get canvas(): HTMLCanvasElement {
     return this.view3d.getCanvasDOMElement();
   }
 
@@ -93,6 +100,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   private configureColorizeFeature(volume: Volume, channelIndex: number): void {
+    if (!this.params) {
+      return;
+    }
     const dataset = this.params.dataset;
     const featureKey = this.params.featureKey;
     if (dataset !== null && featureKey !== null) {
@@ -114,13 +124,14 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           outlierDrawMode: this.params.outlierDrawSettings.mode,
           outOfRangeDrawMode: this.params.outOfRangeDrawSettings.mode,
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
+          timeToIdOffset: dataset.frameToIdOffset ?? new Uint32Array([0]),
         };
         this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
       }
     }
   }
 
-  setParams(params: RenderCanvasStateParams): Promise<void> {
+  public setParams(params: RenderCanvasStateParams): Promise<void> {
     if (this.params === params) {
       return Promise.resolve();
     }
@@ -151,16 +162,36 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       }
     }
 
+    if (hasPropertyChanged(params, prevParams, ["dataset"])) {
+      if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3dSrc) {
+        if (this.volume) {
+          this.view3d.removeAllVolumes();
+          this.volume.cleanup();
+          this.volume = null;
+        }
+        this.initializingVolumePromise = this.loadNewVolume(params.dataset.frames3dSrc);
+        this.initializingVolumePromise.then(() => {
+          this.setFrame(params.pendingFrame);
+        });
+      }
+    }
+
+    this.render(false);
+
+    // Eventually volume change is handled here?
     return Promise.resolve();
   }
 
-  private async loadInitialVolume(path: string | string[]): Promise<Volume> {
+  private async loadNewVolume(path: string | string[]): Promise<Volume> {
+    if (!this.params) {
+      throw new Error("Cannot load volume without parameters.");
+    }
     await loaderContext.onOpen();
 
-    // Setup volume loader and load an example volume
-    const loader = await loaderContext.createLoader(path);
+    this.loader = await loaderContext.createLoader(path);
     const loadSpec = new LoadSpec();
-    const volume = await loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
+    loadSpec.time = this.params.pendingFrame;
+    const volume = await this.loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
       const currentVol = v;
 
       this.view3d.onVolumeData(currentVol, [channelIndex]);
@@ -173,15 +204,16 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     });
     this.view3d.addVolume(volume);
 
-    this.view3d.setVolumeChannelEnabled(volume, 0, true);
-    this.view3d.setVolumeChannelOptions(volume, 0, {
+    const segChannel = this.params.dataset?.segmentationChannel ?? 0;
+    this.view3d.setVolumeChannelEnabled(volume, segChannel, true);
+    this.view3d.setVolumeChannelOptions(volume, segChannel, {
       isosurfaceEnabled: false,
       isosurfaceOpacity: 1.0,
       enabled: true,
       color: [1, 1, 1],
       emissiveColor: [0, 0, 0],
     });
-    this.view3d.enablePicking(volume, true, 0);
+    this.view3d.enablePicking(volume, true, segChannel);
 
     this.view3d.updateDensity(volume, 0.5);
     this.view3d.updateExposure(0.6);
@@ -196,14 +228,16 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // 0,75,255
     // this.view3d.setGamma(volume, 0, 75, 255);
 
-    this.loader = loader;
     this.volume = volume;
 
-    await loader.loadVolumeData(volume);
+    await this.loader.loadVolumeData(volume);
     return volume;
   }
 
   setFrame(requestedFrame: number): Promise<FrameLoadResult | null> {
+    if (!this.params?.dataset?.isValidFrameIndex(requestedFrame)) {
+      return Promise.resolve(null);
+    }
     if (requestedFrame === this.currentFrame) {
       this.pendingFrame = -1;
       return Promise.resolve({
@@ -213,17 +247,21 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         backdropError: false,
       });
     }
-    if (requestedFrame === this.pendingFrame && this.pendingVolumePromise) {
-      return this.pendingVolumePromise;
+    if (requestedFrame === this.pendingFrame && this.volumeFrameLoadPromise) {
+      return this.volumeFrameLoadPromise;
+    }
+    if (!this.volume && !this.initializingVolumePromise) {
+      return Promise.resolve(null);
     }
 
     const loadVolumeFrame = async (): Promise<FrameLoadResult> => {
       if (!this.volume || !this.loader) {
-        await this.loadInitialVolume([
-          "https://allencell.s3.amazonaws.com/aics/nuc-morph-dataset/hipsc_fov_nuclei_timelapse_dataset/hipsc_fov_nuclei_timelapse_data_used_for_analysis/baseline_colonies_fov_timelapse_dataset/20200323_09_small/seg.ome.zarr",
-        ]);
+        await this.initializingVolumePromise;
+        if (!this.volume) {
+          throw new Error("No volume was loaded");
+        }
       }
-      await this.view3d.setTime(this.volume!, requestedFrame);
+      await this.view3d.setTime(this.volume, requestedFrame);
 
       this.render(true);
       this.currentFrame = requestedFrame;
@@ -238,8 +276,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return result;
     };
     this.pendingFrame = requestedFrame;
-    this.pendingVolumePromise = loadVolumeFrame();
-    return this.pendingVolumePromise;
+    this.volumeFrameLoadPromise = loadVolumeFrame();
+    return this.volumeFrameLoadPromise as Promise<FrameLoadResult>;
   }
 
   public setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void {
@@ -247,11 +285,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   private syncSelectedId(): void {
-    if (!this.volume) {
+    if (!this.volume || !this.params || !this.params.dataset) {
       return;
     }
-    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) + 1 : -1;
-    this.view3d.setSelectedID(this.volume, 0, id);
+    const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
+    this.view3d.setSelectedID(this.volume, this.params.dataset.segmentationChannel ?? 0, id + 1);
   }
 
   render(synchronous = false): void {
@@ -264,8 +302,15 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   getIdAtPixel(x: number, y: number): number {
-    if (this.volume?.isLoaded()) {
-      return this.view3d.hitTest(x, y) - 1;
+    const dataset = this.params?.dataset;
+    // TODO: Currently `View3d.hitTest` reports the per-frame IDs, not global IDs.
+    // Ideally, vole-core should handle this based on the frame ID offset array that's passed into it
+    // during colorizer setup.
+    if (this.volume?.isLoaded() && dataset) {
+      const frameLocalId = this.view3d.hitTest(x, y);
+      const offset = dataset.frameToIdOffset ? dataset.frameToIdOffset[this.currentFrame] : 0;
+      const id = frameLocalId <= 0 ? 0 : frameLocalId + offset;
+      return id - 1;
     }
     return -1;
   }

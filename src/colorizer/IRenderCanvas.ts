@@ -8,6 +8,7 @@ export type RenderCanvasStateParams = Pick<
   | "dataset"
   | "collection"
   | "datasetKey"
+  | "pendingFrame"
   | "featureKey"
   | "track"
   | "showTrackPath"
@@ -34,6 +35,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   collection: state.collection,
   datasetKey: state.datasetKey,
   featureKey: state.featureKey,
+  pendingFrame: state.pendingFrame,
   track: state.track,
   showTrackPath: state.showTrackPath,
   colorRamp: state.colorRamp,
@@ -58,13 +60,19 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
  * A canvas that renders timelapse data.
  */
 export interface IRenderCanvas {
-  get domElement(): HTMLCanvasElement;
+  /**
+   * Returns a DOM element that can be used to mount the canvas.
+   */
+  get domElement(): HTMLElement;
+
+  get canvas(): HTMLCanvasElement;
 
   /** (X,Y) resolution of the canvas, in pixels. */
   get resolution(): Vector2;
 
   /** Gets information about canvas scaling. Switches types for 2D and 3D
-   * canvases. */
+   * canvases.
+   */
   get scaleInfo(): CanvasScaleInfo;
 
   setResolution(width: number, height: number): void;
@@ -74,6 +82,7 @@ export interface IRenderCanvas {
    * `CanvasStateParams` for a complete list of parameters required.
    */
   setParams(params: RenderCanvasStateParams): Promise<void>;
+
   /**
    * Requests to load and render the image data for a specific frame.
    * @param requestedFrame The frame number to load and render.
@@ -87,11 +96,13 @@ export interface IRenderCanvas {
    */
   setOnFrameLoadCallback(callback: (result: FrameLoadResult) => void): void;
 
-  render(): void;
+  render(synchronous?: boolean): void;
+
   /**
    * Disposes of the canvas and its resources.
    */
   dispose(): void;
+
   /**
    * Gets the ID of the segmentation at a pixel coordinate in the canvas, where
    * `(0,0)` is the top left corner.

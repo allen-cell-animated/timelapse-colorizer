@@ -32,7 +32,7 @@ export type ManifestFileMetadata = Spread<ManifestFileMetadataV1_1_0>;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type ManifestFileV0_0_0 = {
-  frames: string[];
+  frames?: string[];
   /** Deprecated; Map from feature name to relative path. */
   features: Record<string, string>;
   /** Deprecated; avoid using in new datasets. Instead, use the new `FeatureMetadata` spec. */
@@ -79,6 +79,32 @@ type ManifestFileV1_0_0 = Omit<ManifestFileV0_0_0, "features" | "featureMetadata
 type ManifestFileV1_1_0 = Spread<
   ManifestFileV1_0_0 & {
     metadata?: Partial<ManifestFileMetadataV1_1_0>;
+    /**
+     * Segmentation IDs for objects as they appear in image/frame data.
+     * Segmentation IDs should be unique for each object in a frame, and for
+     * best performance should be contiguous integers starting from 1.
+     *
+     * If an object at some time `t` has segmentation ID `21`, all pixels with a
+     * value of 21 in the frame at time `t` belong to that object.
+     */
+    segIds?: string;
+    /**
+     * Optional 3D volumetric segmentation data.
+     */
+    frames3d?: {
+      /**
+       * URL or path relative to the root of the manifest. Expected to be a
+       * time-series ZARR array (e.g. ends with `.ome.zarr`). */
+      source: string | string[];
+      /**
+       * The index of the channel to use as a segmentation. If multiple volumes
+       * are specified in `source`, `segmentationChannel` indexes into a list of
+       * the channels of all volumes concatenated together.
+       **/
+      segmentationChannel: number;
+      /** Total number of frames in the time-series volume. */
+      totalFrames: number;
+    };
   }
 >;
 

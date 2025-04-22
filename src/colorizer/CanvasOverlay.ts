@@ -26,19 +26,33 @@ import {
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
 import { CanvasScaleInfo, CanvasType, FrameLoadResult } from "./types";
+import { hasPropertyChanged } from "./utils/data_utils";
 
 import { LabelData } from "./AnnotationData";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
+import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 /**
- * Wraps an IRenderCanvas class by overlaying and compositing additional
- * dynamic elements (like a scale bar, timestamp, etc.) on top of a
- * base colorized image.
+ * Wraps an IRenderCanvas class, overlaying and compositing additional dynamic
+ * elements (like a scale bar, timestamp, etc.) on top of the base canvas.
+ *
+ * During export mode, the overlay canvas will render the inner canvas directly
+ * into itself, so that the exported image contains both the inner canvas and
+ * the overlay elements.
  */
 export default class CanvasOverlay implements IRenderCanvas {
+  private canvasContainerDiv: HTMLDivElement;
+  private innerCanvasContainerDiv: HTMLDivElement;
+
   private canvasElement: HTMLCanvasElement;
+
+  private innerCanvas2d: ColorizeCanvas2D;
+  // Initialization of inner 3D canvas is deferred until needed.
+  private innerCanvas3d: ColorizeCanvas3D | null;
+
   private innerCanvas: IRenderCanvas;
+  private innerCanvasType: CanvasType;
   private ctx: CanvasRenderingContext2D;
 
   private currentFrame: number;
@@ -79,7 +93,6 @@ export default class CanvasOverlay implements IRenderCanvas {
   public isAnnotationVisible: boolean;
 
   constructor(
-    canvas: IRenderCanvas,
     params: RenderCanvasStateParams,
     styles?: {
       scaleBar?: ScaleBarStyle;
@@ -90,9 +103,43 @@ export default class CanvasOverlay implements IRenderCanvas {
       footer?: FooterStyle;
     }
   ) {
-    this.innerCanvas = canvas;
+    this.innerCanvas2d = new ColorizeCanvas2D();
+    this.innerCanvas3d = null;
+
+    this.innerCanvas = this.innerCanvas2d;
+    this.innerCanvasType = CanvasType.CANVAS_2D;
+
     this.canvasElement = document.createElement("canvas");
     this.canvasElement.style.display = "block";
+    // Let mouse events pass through to the inner canvas.
+    this.canvasElement.style.pointerEvents = "none";
+    // Ensure the canvas is rendered on top of the inner canvas.
+    this.canvasElement.style.position = "relative";
+    this.canvasElement.style.zIndex = "1";
+
+    // Set up DOM elements, which are structured like:
+    // canvasContainerDiv
+    //   canvasElement
+    //   innerCanvasContainerDiv
+    //     innerCanvas
+    this.canvasContainerDiv = document.createElement("div");
+    this.canvasContainerDiv.style.position = "relative";
+    this.canvasContainerDiv.style.width = "100%";
+    this.canvasContainerDiv.style.height = "100%";
+
+    this.innerCanvasContainerDiv = document.createElement("div");
+    this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
+    this.innerCanvasContainerDiv.style.position = "absolute";
+    this.innerCanvasContainerDiv.style.top = "0px";
+    this.innerCanvasContainerDiv.style.left = "0px";
+    this.innerCanvasContainerDiv.style.zIndex = "0";
+
+    this.canvasElement.style.top = "0px";
+    this.canvasElement.style.left = "0px";
+
+    this.canvasContainerDiv.appendChild(this.innerCanvasContainerDiv);
+    this.canvasContainerDiv.appendChild(this.canvasElement);
+
     this.onFrameLoadCallback = () => {};
 
     this.params = params;
@@ -142,8 +189,12 @@ export default class CanvasOverlay implements IRenderCanvas {
     return this.innerCanvas.scaleInfo;
   }
 
-  get domElement(): HTMLCanvasElement {
+  get domElement(): HTMLElement {
     // Override base ColorizeCanvas getter with the composited canvas.
+    return this.canvasContainerDiv;
+  }
+
+  get canvas(): HTMLCanvasElement {
     return this.canvasElement;
   }
 
@@ -153,7 +204,8 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   dispose(): void {
-    this.innerCanvas.dispose();
+    this.innerCanvas2d.dispose();
+    this.innerCanvas3d?.dispose();
   }
 
   public setResolution(width: number, height: number): void {
@@ -197,32 +249,65 @@ export default class CanvasOverlay implements IRenderCanvas {
   // TODO: Move `isExporting` flag into state
   public setIsExporting(isExporting: boolean): void {
     this.isExporting = isExporting;
+    this.render(false);
   }
 
   public setZoom(zoom: number): void {
-    this.zoomMultiplier = zoom;
+    // TODO: Replace all these checks for specific instances with canvas type (2D/3D)
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
+      this.zoomMultiplier = zoom;
       this.innerCanvas.setZoom(zoom);
     }
     this.render();
   }
 
   public setPan(x: number, y: number): void {
-    this.panOffset.set(x, y);
     if (this.innerCanvas instanceof ColorizeCanvas2D) {
+      this.panOffset.set(x, y);
       this.innerCanvas.setPan(x, y);
     }
     this.render();
   }
 
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
+    const prevParams = this.params;
     this.params = params;
-    await this.innerCanvas.setParams(params);
+
+    // If the dataset has changed types, construct and initialize the inner
+    // canvas.
+    let hasUpdatedCanvasParams = false;
+    if (hasPropertyChanged(params, prevParams, ["dataset"])) {
+      if (params.dataset) {
+        if (params.dataset.has2dFrames() && this.innerCanvasType !== CanvasType.CANVAS_2D) {
+          this.innerCanvasType = CanvasType.CANVAS_2D;
+          await this.setCanvas(this.innerCanvas2d);
+          hasUpdatedCanvasParams = true;
+        } else if (params.dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
+          this.innerCanvasType = CanvasType.CANVAS_3D;
+          if (!this.innerCanvas3d) {
+            this.innerCanvas3d = new ColorizeCanvas3D();
+          }
+          await this.setCanvas(this.innerCanvas3d);
+          hasUpdatedCanvasParams = true;
+        }
+      }
+    }
+
+    if (!hasUpdatedCanvasParams) {
+      await this.innerCanvas.setParams(params);
+    }
+
+    // Inner canvas will re-render on setParams, so it doesn't need
+    // to be re-rendered here.
     this.render(false);
   }
 
   public async setCanvas(canvas: IRenderCanvas): Promise<void> {
+    // Remove previous inner canvas from DOM.
+    this.innerCanvasContainerDiv.removeChild(this.innerCanvas.domElement);
+
     this.innerCanvas = canvas;
+    this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
     this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.innerCanvas.setOnFrameLoadCallback(this.onFrameLoadCallback);
     await this.innerCanvas.setParams(this.params);
@@ -345,14 +430,18 @@ export default class CanvasOverlay implements IRenderCanvas {
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
-    // Because CanvasWithOverlay is a child of ColorizeCanvas, this renders the base
-    // colorized viewport image. It is then composited into the CanvasWithOverlay's canvas.
-    if (doesInnerCanvasNeedRender) {
-      this.innerCanvas.render();
-    }
     this.ctx.imageSmoothingEnabled = false;
-    if (this.innerCanvas.domElement.width !== 0 && this.innerCanvas.domElement.height !== 0) {
-      this.ctx.drawImage(this.innerCanvas.domElement, 0, Math.round(this.headerSize.y * devicePixelRatio));
+
+    if (doesInnerCanvasNeedRender || this.isExporting) {
+      this.innerCanvas.render(this.isExporting);
+    }
+    if (this.isExporting && this.innerCanvas.canvas.width !== 0 && this.innerCanvas.canvas.height !== 0) {
+      // In export mode only, draw the inner canvas inside of the overlay
+      // canvas. Normally, the overlay canvas has a transparent background that
+      // shows the inner canvas behind it. This lets us export the contents of
+      // both canvases as one image.
+      this.ctx.fillStyle = "white";
+      this.ctx.drawImage(this.innerCanvas.canvas, 0, Math.round(this.headerSize.y * devicePixelRatio));
     }
 
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
