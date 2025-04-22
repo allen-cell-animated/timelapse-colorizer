@@ -667,7 +667,7 @@ export default class Dataset {
     const x = this.centroids?.[index];
     const y = this.centroids?.[index + 1];
     const z = this.centroids?.[index + 2];
-    if (x && y && z) {
+    if (x !== undefined && y !== undefined && z !== undefined) {
       return [x, y, z];
     }
     return undefined;

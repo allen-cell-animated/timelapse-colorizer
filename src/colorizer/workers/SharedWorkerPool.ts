@@ -68,8 +68,8 @@ export default class SharedWorkerPool {
    * @param config Vector configuration settings, including the number of time intervals to average over.
    * @returns one of the following:
    * - `undefined` if the configuration is invalid or the dataset is missing required data.
-   * - `Float32Array` of motion deltas for each object in the dataset, with length equal to `2 * dataset.numObjects`.
-   * For each object ID `i`, the motion delta is stored at `[2i, 2i + 1]`. If the delta cannot be calculated
+   * - `Float32Array` of motion deltas for each object in the dataset, with length equal to `3 * dataset.numObjects`.
+   * For each object ID `i`, the motion delta is stored at `[3i, 3i + 1, 3i + 2]`. If the delta cannot be calculated
    * for the object (e.g. it does not exist for part or all of the  the time interval), the values will be `NaN`.
    */
   async getMotionDeltas(dataset: Dataset, timeIntervals: number): Promise<Float32Array | undefined> {
