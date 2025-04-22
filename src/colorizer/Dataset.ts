@@ -73,18 +73,23 @@ export default class Dataset {
   /** Lookup from a global index of an object to the raw segmentation ID in the
    * frame/image where it appears. */
   public segIds?: Uint32Array | null;
-  /**
-   * Lookup table from a frame number to the offsets with which to read data
-   * from globally-indexed arrays for objects on that frame. Note that this
-   * assumes that all objects in a frame have segmentation IDs that are
-   * monotonically increasing (e.g. skips no values), and that a frame's objects
-   * all have adjacent indices in the global array.
-   *
-   * For any object with segmentation ID `segId` at time `t`, the global
-   * index of that object is given by `segId + frameToIdOffsets[t]`.
-   */
-  public frameToIdOffset: Uint32Array | null;
 
+  /**
+   * Maps from a frame number to a lookup table used to get the global ID of a
+   * segmentation ID in that frame.
+   *
+   * For segmentation ID `segId` at time `t`, the global ID is given by:
+   *
+   * ```
+   * const globalIdLut = frameToGlobalIdLookup[t];
+   * const globalId = globalIdLut.lut[segId - globalIdLut.minSegId] - 1;
+   * ```
+   *
+   * The global ID is `NaN` or `-1` if there is no global ID that matches that
+   * segmentation ID, such as when rows are missing in the dataset.
+   *
+   * See `GlobalIdLookupInfo` for more details.
+   */
   public frameToGlobalIdLookup: Map<number, GlobalIdLookupInfo> | null;
 
   private backdropLoader: ITextureImageLoader;
@@ -136,7 +141,6 @@ export default class Dataset {
     this.backdropFrames = null;
     this.frameDimensions = null;
 
-    this.frameToIdOffset = null;
     this.frameToGlobalIdLookup = null;
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);

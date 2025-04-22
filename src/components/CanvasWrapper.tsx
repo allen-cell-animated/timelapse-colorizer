@@ -6,7 +6,7 @@ import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { AnnotationSelectionMode, LoadTroubleshooting, TabType } from "../colorizer/types";
+import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
@@ -93,10 +93,10 @@ type CanvasWrapperProps = {
 
   annotationState: AnnotationState;
 
-  onClickId?: (id: number) => void;
+  onClickId?: (info: PixelIdInfo) => void;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
-  onMouseHover?: (id: number) => void;
+  onMouseHover?: (info: PixelIdInfo | null) => void;
   /** Called when the mouse exits the canvas. */
   onMouseLeave?: () => void;
 
@@ -311,18 +311,19 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (id < 0 || dataset === null) {
+      if (dataset === null || info === null || info.globalId === undefined) {
         clearTrack();
+        return;
       } else {
-        const trackId = dataset.getTrackId(id);
+        const trackId = dataset.getTrackId(info.globalId);
         const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
           setTrack(newTrack);
         }
       }
-      props.onClickId(id);
+      props.onClickId(info);
     },
     [canv, dataset, props.onClickId, setTrack, clearTrack]
   );
@@ -523,8 +524,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       if (!dataset) {
         return;
       }
-      const id = canv.getIdAtPixel(x, y);
-      props.onMouseHover(id);
+      const info = canv.getIdAtPixel(x, y);
+      props.onMouseHover(info);
     },
     [dataset, canv]
   );
