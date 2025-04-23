@@ -15,8 +15,8 @@ import {
 import { Vector2, Vector3 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { CanvasScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult } from "./types";
-import { hasPropertyChanged } from "./utils/data_utils";
+import { CanvasScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult, PixelIdInfo } from "./types";
+import { getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
@@ -124,7 +124,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           outlierDrawMode: this.params.outlierDrawSettings.mode,
           outOfRangeDrawMode: this.params.outOfRangeDrawSettings.mode,
           hideOutOfRange: this.params.outOfRangeDrawSettings.mode === DrawMode.HIDE,
-          timeToIdOffset: dataset.frameToIdOffset ?? new Uint32Array([0]),
+          frameToGlobalIdLookup: dataset.frameToGlobalIdLookup ?? new Map(),
         };
         this.view3d.setChannelColorizeFeature(volume, channelIndex, feature);
       }
@@ -289,7 +289,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return;
     }
     const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, this.params.dataset.segmentationChannel ?? 0, id + 1);
+    this.view3d.setSelectedID(this.volume, this.params.dataset.segmentationChannel ?? 0, id);
   }
 
   render(synchronous = false): void {
@@ -301,17 +301,20 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.removeAllVolumes();
   }
 
-  getIdAtPixel(x: number, y: number): number {
+  getIdAtPixel(x: number, y: number): PixelIdInfo | null {
     const dataset = this.params?.dataset;
     // TODO: Currently `View3d.hitTest` reports the per-frame IDs, not global IDs.
     // Ideally, vole-core should handle this based on the frame ID offset array that's passed into it
     // during colorizer setup.
     if (this.volume?.isLoaded() && dataset) {
-      const frameLocalId = this.view3d.hitTest(x, y);
-      const offset = dataset.frameToIdOffset ? dataset.frameToIdOffset[this.currentFrame] : 0;
-      const id = frameLocalId <= 0 ? 0 : frameLocalId + offset;
-      return id - 1;
+      const segId = this.view3d.hitTest(x, y);
+      if (segId === -1) {
+        // Background hit
+        return null;
+      }
+      const globalId = getGlobalIdFromSegId(dataset.frameToGlobalIdLookup, this.currentFrame, segId);
+      return { segId, globalId };
     }
-    return -1;
+    return null;
   }
 }

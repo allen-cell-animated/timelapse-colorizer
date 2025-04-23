@@ -25,7 +25,7 @@ import {
 } from "./canvas/elements/annotations";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
-import { CanvasScaleInfo, CanvasType, FrameLoadResult } from "./types";
+import { CanvasScaleInfo, CanvasType, FrameLoadResult, PixelIdInfo } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 
 import { LabelData } from "./AnnotationData";
@@ -126,6 +126,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.canvasContainerDiv.style.position = "relative";
     this.canvasContainerDiv.style.width = "100%";
     this.canvasContainerDiv.style.height = "100%";
+    this.canvasContainerDiv.style.overflow = "hidden";
 
     this.innerCanvasContainerDiv = document.createElement("div");
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
@@ -215,7 +216,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.render();
   }
 
-  public getIdAtPixel(x: number, y: number): number {
+  public getIdAtPixel(x: number, y: number): PixelIdInfo | null {
     const headerHeight = this.headerSize.y;
     return this.innerCanvas.getIdAtPixel(x, y - headerHeight);
   }
@@ -421,11 +422,26 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.headerSize = headerRenderer.sizePx;
     this.footerSize = footerRenderer.sizePx;
 
+    // Update canvas resolution + size.
     const devicePixelRatio = getPixelRatio();
-    this.canvasElement.width = Math.round(this.innerCanvasSize.x * devicePixelRatio);
-    this.canvasElement.height = Math.round(
-      (this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio
-    );
+    const baseCanvasWidthPx = this.innerCanvasSize.x;
+    const baseCanvasHeightPx = this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y;
+
+    // We use devicePixelRatio to scale the canvas with browser zoom / high-DPI
+    // displays so text + graphics are sharp.
+    this.canvasElement.width = Math.round(baseCanvasWidthPx * devicePixelRatio);
+    this.canvasElement.height = Math.round(baseCanvasHeightPx * devicePixelRatio);
+    this.canvasContainerDiv.style.width = `${baseCanvasWidthPx}px`;
+    this.canvasContainerDiv.style.height = `${baseCanvasHeightPx}px`;
+    this.canvas.style.width = `${baseCanvasWidthPx}px`;
+    this.canvas.style.height = `${baseCanvasHeightPx}px`;
+
+    // TODO: The inner canvas should already handle this but there's a noticeable
+    // improvement in rendering quality/sharpness when it's set here...
+    this.innerCanvas.canvas.width = Math.round(this.innerCanvasSize.x * devicePixelRatio);
+    this.innerCanvas.canvas.height = Math.round(this.innerCanvasSize.y * devicePixelRatio);
+    this.innerCanvas.canvas.style.width = `${this.innerCanvasSize.x}px`;
+    this.innerCanvas.canvas.style.height = `${this.innerCanvasSize.y}px`;
 
     //Clear canvas
     this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);

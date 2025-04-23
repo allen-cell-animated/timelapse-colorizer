@@ -270,39 +270,6 @@ describe("Dataset", () => {
     expect(source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
   });
 
-  describe("frameToIdOffset", () => {
-    it("returns 0 offsets if segmentation IDs are globally unique", async () => {
-      const mockArrayLoaderSource = {
-        ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
-        [DEFAULT_DATASET_DIR + "seg_ids.json"]: new MockArraySource(
-          FeatureDataType.U32,
-          new Uint32Array([1, 2, 3, 4, 5, 6, 7, 8, 9])
-        ),
-      };
-      const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
-      const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, mockArrayLoader);
-
-      const frameToIdOffset = dataset.frameToIdOffset;
-      expect(frameToIdOffset).to.deep.equal(new Uint32Array([0, 0, 0, 0]));
-    });
-
-    it("calculates ID offsets from frame-local segmentation IDs", async () => {
-      const mockArrayLoaderSource = {
-        ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
-        [DEFAULT_DATASET_DIR + "seg_ids.json"]: new MockArraySource(
-          FeatureDataType.U32,
-          // time array:  [0, 0, 0, 1, 1, 1, 2, 2, 3]
-          new Uint32Array([1, 2, 3, 1, 2, 3, 1, 2, 1])
-        ),
-      };
-      const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
-      const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, mockArrayLoader);
-
-      const frameToIdOffset = dataset.frameToIdOffset;
-      expect(frameToIdOffset).to.deep.equal(new Uint32Array([0, 3, 6, 8]));
-    });
-  });
-
   describe("centroids data", () => {
     it("loads 2D centroid data as 3D", async () => {
       const mockArrayLoaderSource = {

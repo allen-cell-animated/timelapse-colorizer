@@ -4,12 +4,13 @@ import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
   FeatureArrayType,
   FeatureDataType,
+  GlobalIdLookupInfo,
   LoadErrorMessage,
   LoadTroubleshooting,
   ReportWarningCallback,
 } from "./types";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
-import { formatAsBulletList, getKeyFromName } from "./utils/data_utils";
+import { buildFrameToGlobalIdLookup, formatAsBulletList, getKeyFromName } from "./utils/data_utils";
 import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import { padCentroidsTo3d } from "./utils/math_utils";
 import * as urlUtils from "./utils/url_utils";
@@ -73,17 +74,24 @@ export default class Dataset {
   /** Lookup from a global index of an object to the raw segmentation ID in the
    * frame/image where it appears. */
   public segIds?: Uint32Array | null;
+
   /**
-   * Lookup table from a frame number to the offsets with which to read data
-   * from globally-indexed arrays for objects on that frame. Note that this
-   * assumes that all objects in a frame have segmentation IDs that are
-   * monotonically increasing (e.g. skips no values), and that a frame's objects
-   * all have adjacent indices in the global array.
+   * Maps from a frame number to a lookup table used to get the global ID of a
+   * segmentation ID in that frame.
    *
-   * For any object with segmentation ID `segId` at time `t`, the global
-   * index of that object is given by `segId + frameToIdOffsets[t]`.
+   * For segmentation ID `segId` at time `t`, the global ID is given by:
+   *
+   * ```
+   * const globalIdLut = frameToGlobalIdLookup[t];
+   * const globalId = globalIdLut.lut[segId - globalIdLut.minSegId] - 1;
+   * ```
+   *
+   * The global ID is `NaN` or `-1` if there is no global ID that matches that
+   * segmentation ID, such as when rows are missing in the dataset.
+   *
+   * See `GlobalIdLookupInfo` for more details.
    */
-  public frameToIdOffset: Uint32Array | null;
+  public frameToGlobalIdLookup: Map<number, GlobalIdLookupInfo> | null;
 
   private backdropLoader: ITextureImageLoader;
   private backdropData: Map<string, BackdropData>;
@@ -134,7 +142,7 @@ export default class Dataset {
     this.backdropFrames = null;
     this.frameDimensions = null;
 
-    this.frameToIdOffset = null;
+    this.frameToGlobalIdLookup = null;
 
     this.backdropLoader = frameLoader || new ImageFrameLoader(RGBAFormat);
     this.backdropData = new Map();
@@ -415,47 +423,6 @@ export default class Dataset {
   }
 
   /**
-   * Returns a lookup table of ID offsets for each time in the dataset, used to
-   * get the global indices for objects in the image/frame data.
-   *
-   * When looking up data for an object with segmentation ID `segId` in the
-   * image/frame data at time `t`, the global index of the object is given by
-   * `segId + frameToIdOffsets[t]`.
-   *
-   * NOTE: This makes a lot of VERY LARGE assumptions about the frame data,
-   * namely that either:
-   * - Frame data has segmentation IDs that are globally unique, OR
-   * - Frame data has segmentation IDs that increase monotonically (e.g. 2, 3,
-   *   4, 5, etc.) on that frame.
-   *
-   * The second assumption breaks down if there are any skipped segmentation IDs
-   * in the frame. A future, more robust version of this is described in
-   * https://github.com/allen-cell-animated/timelapse-colorizer/issues/630.
-   */
-  private buildFrameToIdOffsetsFromSegIds(): Uint32Array {
-    // Get the index of the object with the smallest segmentation ID for each
-    // frame.
-    const frameToSmallestSegIdIdx: number[] = Array.from({ length: this.numberOfFrames }).fill(-1) as number[];
-    for (let idx = 0; idx < this.numObjects; idx++) {
-      const time = this.times![idx];
-      const segId = this.segIds?.[idx] ?? idx;
-      if (frameToSmallestSegIdIdx[time] === -1) {
-        frameToSmallestSegIdIdx[time] = idx;
-      } else {
-        const lastMinSegId = this.segIds?.[frameToSmallestSegIdIdx[time]] ?? Infinity;
-        if (segId < lastMinSegId) {
-          frameToSmallestSegIdIdx[time] = idx;
-        }
-      }
-    }
-    // Get offset between the segmentation ID and the global index for each frame.
-    const frameToIdOffsets = frameToSmallestSegIdIdx.map((idx) => {
-      return idx === -1 ? 0 : idx - (this.segIds?.[idx] ?? idx + 1) + 1;
-    });
-    return new Uint32Array(frameToIdOffsets);
-  }
-
-  /**
    * Gets the resolution of the last loaded frame.
    * If no frame has been loaded yet, returns (1,1)
    */
@@ -602,11 +569,13 @@ export default class Dataset {
       // Construct default segIds array (0, 1, 2, ...)
       this.segIds = new Uint32Array(this.numObjects);
       for (let i = 0; i < this.numObjects; i++) {
-        this.segIds[i] = i;
+        this.segIds[i] = i + 1;
       }
     }
-    // Construct offset array for frame IDs to segmentation IDs.
-    this.frameToIdOffset = this.buildFrameToIdOffsetsFromSegIds();
+
+    if (this.times) {
+      this.frameToGlobalIdLookup = buildFrameToGlobalIdLookup(this.times, this.segIds, this.getTotalFrames());
+    }
 
     // Fixup 2D centroids to 3D
     if (this.centroids) {

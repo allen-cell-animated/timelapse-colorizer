@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
 
 import { ViewerStoreState } from "../state/slices";
-import { CanvasScaleInfo, FrameLoadResult } from "./types";
+import { CanvasScaleInfo, FrameLoadResult, PixelIdInfo } from "./types";
 
 export type RenderCanvasStateParams = Pick<
   ViewerStoreState,
@@ -106,6 +106,11 @@ export interface IRenderCanvas {
   /**
    * Gets the ID of the segmentation at a pixel coordinate in the canvas, where
    * `(0,0)` is the top left corner.
+   *
+   * @returns
+   * - If there is a segmentation present, returns an object containing the
+   *   segmentation ID and the global ID (if one exists).
+   * - If there is no segmentation present, returns `null`.
    */
-  getIdAtPixel(x: number, y: number): number;
+  getIdAtPixel(x: number, y: number): PixelIdInfo | null;
 }
