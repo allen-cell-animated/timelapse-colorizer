@@ -122,7 +122,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     <p key="feature_value">
       {featureName ?? "Feature"}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
-    <DebugText key="object_id">Seg ID: {lastHoveredId.segId}</DebugText>,
+    <DebugText key="object_id">Pixel value: {lastHoveredId.segId}</DebugText>,
   ];
 
   if (vectorTooltipText) {
