@@ -650,6 +650,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   }
 
   public render(): void {
+    this.checkPixelRatio();
     this.syncHighlightedId();
     this.syncTrackPathLine();
 
