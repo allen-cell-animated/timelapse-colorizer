@@ -111,13 +111,11 @@ export default class CanvasOverlay implements IRenderCanvas {
     //   innerCanvasContainerDiv
     //     innerCanvas
     this.canvasContainerDiv = document.createElement("div");
-    this.canvasContainerDiv.style.position = "relative";
-    this.canvasContainerDiv.style.overflow = "hidden";
+    this.canvasContainerDiv.style.cssText = "position: relative; overflow: hidden;";
 
     this.innerCanvasContainerDiv = document.createElement("div");
     this.innerCanvasContainerDiv.appendChild(this.innerCanvas.domElement);
-    this.innerCanvasContainerDiv.style.position = "absolute";
-    this.innerCanvasContainerDiv.style.zIndex = "0";
+    this.innerCanvasContainerDiv.style.cssText = "position: absolute; z-index: 0;";
 
     this.canvasContainerDiv.appendChild(this.innerCanvasContainerDiv);
     this.canvasContainerDiv.appendChild(this.canvasElement);
