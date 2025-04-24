@@ -368,7 +368,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   }
 
   private setOutlineColor(color: Color): void {
-    this.setUniform("outlineColor", color);
+    this.setUniform("outlineColor", color.clone().convertLinearToSRGB());
 
     // Update line color
     if (Array.isArray(this.line.material)) {
@@ -383,14 +383,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private setOutlierDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outlierDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
-      this.setUniform("outlierColor", color);
+      this.setUniform("outlierColor", color.clone().convertLinearToSRGB());
     }
   }
 
   private setOutOfRangeDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outOfRangeDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
-      this.setUniform("outOfRangeColor", color);
+      this.setUniform("outOfRangeColor", color.clone().convertLinearToSRGB());
     }
   }
 
@@ -472,13 +472,19 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     // Basic rendering settings
     if (hasPropertyChanged(params, prevParams, ["outlierDrawSettings"])) {
-      this.setOutlierDrawMode(params.outlierDrawSettings.mode, params.outlierDrawSettings.color);
+      this.setOutlierDrawMode(
+        params.outlierDrawSettings.mode,
+        params.outlierDrawSettings.color.clone().convertLinearToSRGB()
+      );
     }
     if (hasPropertyChanged(params, prevParams, ["outOfRangeDrawSettings"])) {
-      this.setOutOfRangeDrawMode(params.outOfRangeDrawSettings.mode, params.outOfRangeDrawSettings.color);
+      this.setOutOfRangeDrawMode(
+        params.outOfRangeDrawSettings.mode,
+        params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB()
+      );
     }
     if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
-      this.setOutlineColor(params.outlineColor);
+      this.setOutlineColor(params.outlineColor.clone().convertLinearToSRGB());
     }
 
     // Update vector data
