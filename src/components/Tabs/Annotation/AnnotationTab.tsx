@@ -12,7 +12,7 @@ import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/
 import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
 
-import { LabelData } from "../../../colorizer/AnnotationData";
+import { LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
 import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
@@ -84,8 +84,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     });
   };
 
-  const onCreateNewLabel = (): void => {
-    const index = createNewLabel();
+  const onCreateNewLabel = (options: LabelOptions): void => {
+    const index = createNewLabel(options);
     setCurrentLabelIdx(index);
   };
 
@@ -179,6 +179,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               selectedLabelIdx={currentLabelIdx}
               selectionMode={props.annotationState.selectionMode}
               setSelectionMode={props.annotationState.setSelectionMode}
+              defaultLabelOptions={props.annotationState.data.getNextDefaultLabelSettings()}
             />
           )}
         </FlexRow>

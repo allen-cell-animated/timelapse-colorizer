@@ -9,16 +9,24 @@ import { AnnotationSelectionMode } from "../../../colorizer";
 import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
-import { LabelData } from "../../../colorizer/AnnotationData";
+import { DEFAULT_ANNOTATION_LABEL_COLORS, LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
 import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
 
+export const DEFAULT_LABEL_COLOR_PRESETS = [
+  {
+    label: "Presets",
+    colors: DEFAULT_ANNOTATION_LABEL_COLORS,
+  },
+];
+
 type LabelEditControlsProps = {
-  onCreateNewLabel: () => void;
+  onCreateNewLabel: (options: LabelOptions) => void;
   onDeleteLabel: () => void;
   setLabelColor: (color: Color) => void;
   setLabelName: (name: string) => void;
+  defaultLabelOptions: LabelOptions;
   selectedLabel: LabelData;
   selectedLabelIdx: number;
   selectionMode: AnnotationSelectionMode;
@@ -27,6 +35,8 @@ type LabelEditControlsProps = {
 
 export default function LabelEditControls(props: LabelEditControlsProps): ReactElement {
   const theme = useContext(AppThemeContext);
+
+  const [showCreatePopover, setShowCreatePopover] = useState(false);
 
   const [showEditPopover, setShowEditPopover] = useState(false);
   const [editPopoverNameInput, setEditPopoverNameInput] = useState("");
@@ -50,12 +60,14 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   };
 
   const onClickCreateNewLabel = (): void => {
-    props.onCreateNewLabel();
+    setShowDeletePopup(false);
     setShowEditPopover(false);
+    setShowCreatePopover(!showCreatePopover);
   };
 
   const deleteLabel = (): void => {
     props.onDeleteLabel();
+    setShowCreatePopover(false);
     setShowEditPopover(false);
     setShowDeletePopup(false);
   };
@@ -110,6 +122,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
             value={new AntdColor(props.selectedLabel.color.getHexString())}
             onChange={onColorPickerChange}
             disabledAlpha={true}
+            presets={DEFAULT_LABEL_COLOR_PRESETS}
           />
         </div>
       </label>
