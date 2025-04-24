@@ -1,6 +1,6 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useRef } from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
 import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
@@ -12,7 +12,8 @@ import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import { IRenderCanvas, renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
+import CanvasOverlay from "../colorizer/CanvasOverlay";
+import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
@@ -84,7 +85,7 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
 `;
 
 type CanvasWrapperProps = {
-  canv: IRenderCanvas;
+  canv: CanvasOverlay;
 
   loading: boolean;
   loadingProgress: number | null;
@@ -133,10 +134,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
   const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
   const setTrack = useViewerStateStore((state) => state.setTrack);
-  // const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
-  // const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
-  // const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
-  // const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
+  const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
+  const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
+  const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -153,6 +154,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.setParams(params);
     });
   }, []);
+
+  // TODO: Move management of the zoom/pan into the canvas class itself (or a
+  // helper). CanvasWrapper should have a way to zoom in/out and reset the view,
+  // but otherwise doesn't need to track the zoom/pan state.
 
   /**
    * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
@@ -207,62 +212,58 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   // if these were useEffects, the canvas will lag behind updates since there is no state update to
   // trigger a re-render.
 
-  // TODO: Uncomment these once ColorizeCanvas3D is compatible with
-  // CanvasUIOverlay. I could also move this into global state and have
-  // it be handled by `canvas.setParams`.
-
   // Update the theming of the canvas overlay.
-  // useMemo(() => {
-  //   const defaultTheme = {
-  //     fontSizePx: theme.font.size.label,
-  //     fontColor: theme.color.text.primary,
-  //     fontFamily: theme.font.family,
-  //   };
-  //   const sidebarTheme = {
-  //     ...defaultTheme,
-  //     stroke: theme.color.layout.borders,
-  //     fill: theme.color.layout.background,
-  //   };
-  //   canv.updateScaleBarStyle(defaultTheme);
-  //   canv.updateTimestampStyle(defaultTheme);
-  //   canv.updateInsetBoxStyle({ stroke: theme.color.layout.borders });
-  //   canv.updateLegendStyle(defaultTheme);
-  //   canv.updateFooterStyle(sidebarTheme);
-  //   canv.updateHeaderStyle(sidebarTheme);
-  // }, [theme]);
+  useMemo(() => {
+    const defaultTheme = {
+      fontSizePx: theme.font.size.label,
+      fontColor: theme.color.text.primary,
+      fontFamily: theme.font.family,
+    };
+    const sidebarTheme = {
+      ...defaultTheme,
+      stroke: theme.color.layout.borders,
+      fill: theme.color.layout.background,
+    };
+    canv.updateScaleBarStyle(defaultTheme);
+    canv.updateTimestampStyle(defaultTheme);
+    canv.updateInsetBoxStyle({ stroke: theme.color.layout.borders });
+    canv.updateLegendStyle(defaultTheme);
+    canv.updateFooterStyle(sidebarTheme);
+    canv.updateHeaderStyle(sidebarTheme);
+  }, [theme]);
 
   // Update overlay settings
-  // useMemo(() => {
-  //   canv.isScaleBarVisible = showScaleBar;
-  // }, [showScaleBar]);
+  useMemo(() => {
+    canv.isScaleBarVisible = showScaleBar;
+  }, [showScaleBar]);
 
-  // useMemo(() => {
-  //   canv.isTimestampVisible = showTimestamp;
-  // }, [showTimestamp]);
+  useMemo(() => {
+    canv.isTimestampVisible = showTimestamp;
+  }, [showTimestamp]);
 
-  // useMemo(() => {
-  //   canv.setIsExporting(props.isRecording);
-  //   canv.isHeaderVisibleOnExport = showHeaderDuringExport;
-  //   canv.isFooterVisibleOnExport = showLegendDuringExport;
-  // }, [showLegendDuringExport, props.isRecording]);
+  useMemo(() => {
+    canv.setIsExporting(props.isRecording);
+    canv.isHeaderVisibleOnExport = showHeaderDuringExport;
+    canv.isFooterVisibleOnExport = showLegendDuringExport;
+  }, [showLegendDuringExport, props.isRecording]);
 
-  // useMemo(() => {
-  //   const annotationLabels = props.annotationState.data.getLabels();
-  //   const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
-  //   canv.setAnnotationData(
-  //     annotationLabels,
-  //     timeToAnnotationLabelIds,
-  //     props.annotationState.currentLabelIdx,
-  //     props.annotationState.lastClickedId
-  //   );
-  //   canv.isAnnotationVisible = props.annotationState.visible;
-  // }, [
-  //   dataset,
-  //   props.annotationState.data,
-  //   props.annotationState.lastClickedId,
-  //   props.annotationState.currentLabelIdx,
-  //   props.annotationState.visible,
-  // ]);
+  useMemo(() => {
+    const annotationLabels = props.annotationState.data.getLabels();
+    const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
+    canv.setAnnotationData(
+      annotationLabels,
+      timeToAnnotationLabelIds,
+      props.annotationState.currentLabelIdx,
+      props.annotationState.lastClickedId
+    );
+    canv.isAnnotationVisible = props.annotationState.visible;
+  }, [
+    dataset,
+    props.annotationState.data,
+    props.annotationState.lastClickedId,
+    props.annotationState.currentLabelIdx,
+    props.annotationState.visible,
+  ]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -341,7 +342,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     (zoomDelta: number): void => {
       canvasZoomInverse.current += zoomDelta;
       canvasZoomInverse.current = clamp(canvasZoomInverse.current, MIN_INVERSE_ZOOM, MAX_INVERSE_ZOOM);
-      // canv.setZoom(1 / canvasZoomInverse.current);
+      canv.setZoom(1 / canvasZoomInverse.current);
     },
     [canv]
   );
@@ -376,7 +377,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPanOffset.current.x = clamp(canvasPanOffset.current.x + mousePositionDelta.x, -0.5, 0.5);
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y + mousePositionDelta.y, -0.5, 0.5);
 
-      // canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
     [handleZoom, getCanvasSizePx, getFrameSizeInScreenPx]
   );
@@ -390,7 +391,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       // Clamp panning
       canvasPanOffset.current.x = clamp(canvasPanOffset.current.x, -0.5, 0.5);
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
-      // canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
+      canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
     [canv, getCanvasSizePx, dataset]
   );
@@ -573,8 +574,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
-  canv.render();
-
   const onViewerSettingsLinkClicked = (): void => {
     setOpenTab(TabType.SETTINGS);
   };
@@ -637,8 +636,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             onClick={() => {
               canvasZoomInverse.current = 1.0;
               canvasPanOffset.current = new Vector2(0, 0);
-              // canv.setZoom(1.0);
-              // canv.setPan(0, 0);
+              canv.setZoom(1.0);
+              canv.setPan(0, 0);
             }}
             type="link"
           >
