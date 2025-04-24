@@ -188,6 +188,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
     await loaderContext.onOpen();
 
+    console.log("Loading volume from path:", path);
     this.loader = await loaderContext.createLoader(path);
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;

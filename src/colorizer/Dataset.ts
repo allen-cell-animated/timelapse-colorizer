@@ -148,6 +148,16 @@ export default class Dataset {
   private resolvePathToUrl = (url: string): string => {
     if (url.startsWith("http://") || url.startsWith("https://")) {
       return url;
+    } else if (urlUtils.isAllenPath(url)) {
+      const newUrl = urlUtils.convertAllenPathToHttps(url);
+      if (newUrl) {
+        return newUrl;
+      } else {
+        throw new Error(
+          `Error while resolving path: Allen filepath '${url}' was detected but could not be converted to an HTTPS URL.` +
+            ` This may be because the file is in a directory that is not publicly servable.`
+        );
+      }
     } else {
       return `${this.baseUrl}/${url}`;
     }
