@@ -45,8 +45,8 @@ const vec4 TRANSPARENT = vec4(0.0, 0.0, 0.0, 0.0);
 /** MUST be synchronized with the DrawMode enum in ColorizeCanvas! */
 const uint DRAW_MODE_HIDE = 0u;
 const uint DRAW_MODE_COLOR = 1u;
-const uint BACKGROUND_ID = 0xFFFFFFFFu;
-const uint MISSING_DATA_ID = 0u;
+const uint BACKGROUND_ID = 0u;
+const uint MISSING_DATA_ID = 0xFFFFFFFFu;
 
 uniform vec3 outlierColor;
 uniform uint outlierDrawMode;
@@ -106,6 +106,9 @@ uint getId(vec2 sUv) {
   // have associated data. `1` MUST be subtracted from the ID when accessing
   // data buffers.
   uint globalId = c.r;
+  if (globalId == 0u) {
+    return MISSING_DATA_ID;
+  }
   return globalId;
 }
 
@@ -206,8 +209,11 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
   vec4 color;
-  if (isInRange) {
-    if (isOutlier || isMissingData) {
+  if (isMissingData) {
+    // TODO: Use a different color for missing data.
+    color = getColorFromDrawMode(outlierDrawMode, outlierColor);
+  } else if (isInRange) {
+    if (isOutlier) {
       color = getColorFromDrawMode(outlierDrawMode, outlierColor);
     } else {
       color = getColorRamp(normFeatureVal);
