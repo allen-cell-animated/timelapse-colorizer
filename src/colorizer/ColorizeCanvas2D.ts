@@ -60,6 +60,10 @@ type ColorizeUniformTypes = {
   featureData: Texture;
   outlierData: Texture;
   inRangeIds: Texture;
+  /** LUT mapping from segmentation ID (raw pixel value) to the global ID. */
+  segIdToGlobalId: DataTexture;
+  segIdOffset: number;
+
   featureColorRampMin: number;
   featureColorRampMax: number;
   /** UI overlay for scale bars and timestamps. */
@@ -88,12 +92,12 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
   const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
+  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAFormat, UnsignedByteType);
 
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["#aaa", "#fff"]).texture;
-
   return {
     panOffset: new Uniform(new Vector2(0, 0)),
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -102,6 +106,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
+    segIdToGlobalId: new Uniform(emptySegIdToGlobalId),
+    segIdOffset: new Uniform(0),
     overlay: new Uniform(emptyOverlay),
     objectOpacity: new Uniform(1.0),
     backdrop: new Uniform(emptyBackdrop),
@@ -585,6 +591,11 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     if (frame.status === "fulfilled" && frame.value) {
       this.setUniform("frame", frame.value);
+      const globalIdLookup = dataset.frameToGlobalIdLookup?.get(index);
+      if (globalIdLookup) {
+        this.setUniform("segIdOffset", globalIdLookup.minSegId);
+        this.setUniform("segIdToGlobalId", globalIdLookup.texture);
+      }
     } else {
       if (frame.status === "rejected") {
         // Only show error message if the frame load encountered an error. (Null/undefined is okay)
