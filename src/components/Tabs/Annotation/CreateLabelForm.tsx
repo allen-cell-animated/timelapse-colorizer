@@ -40,14 +40,6 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
     }
   }, [props.focusNameInput]);
 
-  useEffect(() => {
-    setColor(props.initialLabelOptions.color);
-  }, [props.initialLabelOptions.color]);
-
-  useEffect(() => {
-    setNameInput(props.initialLabelOptions.name);
-  }, [props.initialLabelOptions.name]);
-
   const confirm = (): void => {
     props.onConfirm({
       color: color,
