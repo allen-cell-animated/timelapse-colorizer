@@ -125,7 +125,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         open={showCreatePopover}
         onOpenChange={hideOnOpenChange(setShowCreatePopover)}
         getPopupContainer={() => createPopoverContainerRef.current!}
-        style={{ zIndex: "1000" }}
+        destroyTooltipOnHide={true}
       >
         <div ref={createPopoverContainerRef}>
           <Tooltip title="Create new label" placement="top">
@@ -153,7 +153,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         open={showEditPopover}
         onOpenChange={hideOnOpenChange(setShowEditPopover)}
         getPopupContainer={() => editPopoverContainerRef.current!}
-        style={{ zIndex: "1000" }}
+        destroyTooltipOnHide={true}
       >
         <div ref={editPopoverContainerRef}>
           <Tooltip title="Edit label" placement="top">
