@@ -1,5 +1,5 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
-import { Radio, Tooltip } from "antd";
+import { Modal, Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
 import { Color } from "three";
 import { useShallow } from "zustand/shallow";
@@ -13,12 +13,14 @@ import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
 
 import { LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
+import { Z_INDEX_MODAL } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
 import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
+import CreateLabelForm from "./CreateLabelForm";
 import LabelEditControls from "./LabelEditControls";
 
 const LABEL_DROPDOWN_LABEL_ID = "label-dropdown-label";
@@ -48,6 +50,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
+  const [showCreateLabelModal, setShowCreateLabelModal] = useState(false);
 
   const store = useViewerStateStore(
     useShallow((state) => ({
@@ -77,6 +80,16 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     }
     return null;
   }, [props.hoveredId, store.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
+
+  const onClickEnableAnnotationMode = useCallback(() => {
+    // If no labels are defined, prompt the user to create a new label
+    // before enabling annotation mode.
+    if (annotationData.getLabels().length === 0) {
+      setShowCreateLabelModal(true);
+    } else {
+      setIsAnnotationModeEnabled(!isAnnotationModeEnabled);
+    }
+  }, [isAnnotationModeEnabled, annotationData]);
 
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
@@ -136,10 +149,32 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRow style={{ width: "100%", justifyContent: "space-between" }}>
-        <AnnotationModeButton
-          active={isAnnotationModeEnabled}
-          onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
-        />
+        <AnnotationModeButton active={isAnnotationModeEnabled} onClick={onClickEnableAnnotationMode} />
+
+        {/* Appears when the user activates annotations for the first time and should define a label. */}
+        <Modal
+          open={showCreateLabelModal}
+          footer={null}
+          closable={true}
+          width={300}
+          title="Create new label"
+          onCancel={() => setShowCreateLabelModal(false)}
+          destroyOnClose={true}
+        >
+          <div style={{ marginTop: "15px" }}>
+            <CreateLabelForm
+              initialLabelOptions={annotationData.getNextDefaultLabelSettings()}
+              onConfirm={(options: LabelOptions) => {
+                onCreateNewLabel(options);
+                setShowCreateLabelModal(false);
+                setIsAnnotationModeEnabled(true);
+              }}
+              onCancel={() => setShowCreateLabelModal(false)}
+              zIndex={Z_INDEX_MODAL + 50}
+              focusNameInput={true}
+            />
+          </div>
+        </Modal>
 
         <TextButton
           onClick={() => {

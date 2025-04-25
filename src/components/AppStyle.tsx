@@ -4,6 +4,10 @@ import styled from "styled-components";
 
 import { latoRegularEot, latoRegularTtf, latoRegularWoff, latoRegularWoff2 } from "../assets";
 
+export const Z_INDEX_TOOLTIP = 2000;
+export const Z_INDEX_POPOVER = 2050;
+export const Z_INDEX_MODAL = 2100;
+
 type AppStyleProps = {
   className?: string;
 };
@@ -410,18 +414,25 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               marginLG: 0,
             },
             Tooltip: {
-              zIndexPopup: 2000,
+              zIndexPopup: Z_INDEX_TOOLTIP,
+            },
+            Popover: {
+              zIndexPopup: Z_INDEX_POPOVER,
             },
             Popconfirm: {
-              zIndexPopup: 2050,
+              zIndexPopup: Z_INDEX_POPOVER,
               colorText: theme.color.text.secondary,
             },
             Modal: {
               // Set z-index to 2100 here because Ant sets popups to 1050 by default, and modals to 1000.
-              zIndexBase: 2100,
-              zIndexPopupBase: 2100,
+              zIndexBase: Z_INDEX_MODAL,
+              zIndexPopupBase: Z_INDEX_MODAL,
               titleFontSize: theme.font.size.section,
               margin: 20,
+            },
+            Table: {
+              colorIcon: theme.color.text.disabled,
+              colorIconHover: theme.color.text.hint,
             },
           },
         }}

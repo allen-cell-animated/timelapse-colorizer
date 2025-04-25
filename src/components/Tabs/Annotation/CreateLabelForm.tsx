@@ -1,11 +1,12 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Input, InputRef } from "antd";
+import { Button, ColorPicker, ConfigProvider, Input, InputRef } from "antd";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import { Color } from "three";
 
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
 import { LabelOptions } from "../../../colorizer/AnnotationData";
+import { Z_INDEX_POPOVER } from "../../AppStyle";
 import { DEFAULT_LABEL_COLOR_PRESETS } from "./LabelEditControls";
 
 type CreateLabelFormProps = {
@@ -15,12 +16,14 @@ type CreateLabelFormProps = {
   onColorChanged?: (color: Color) => void;
   confirmText?: string;
   focusNameInput?: boolean;
+  zIndex?: number;
 };
 
 const defaultProps: Partial<CreateLabelFormProps> = {
   confirmText: "Create",
   focusNameInput: true,
   onColorChanged: () => {},
+  zIndex: Z_INDEX_POPOVER,
 };
 
 export default function CreateLabelForm(inputProps: CreateLabelFormProps): ReactElement {
@@ -32,9 +35,10 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
 
   useEffect(() => {
     if (nameInputRef.current && props.focusNameInput) {
+      console.log("Focusing name input");
       nameInputRef.current.focus();
     }
-  }, []);
+  }, [props.focusNameInput]);
 
   useEffect(() => {
     setColor(props.initialLabelOptions.color);
@@ -70,15 +74,21 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
       </label>
       <label style={{ gap: "10px", display: "flex", flexDirection: "row" }}>
         <span>Color</span>
-        <div>
-          <ColorPicker
-            size="small"
-            value={new AntdColor(color.getHexString())}
-            onChange={onColorPickerChange}
-            disabledAlpha={true}
-            presets={DEFAULT_LABEL_COLOR_PRESETS}
-          />
-        </div>
+        {/* TODO: This is a fix for a bug where the ColorPicker's popover cannot have its
+         * containing element set. This means that we have to manually set the zIndex
+         * if it's in a modal or other element with a higher zIndex.
+         */}
+        <ConfigProvider theme={{ components: { Popover: { zIndexPopup: props.zIndex } } }}>
+          <div>
+            <ColorPicker
+              size="small"
+              value={new AntdColor(color.getHexString())}
+              onChange={onColorPickerChange}
+              disabledAlpha={true}
+              presets={DEFAULT_LABEL_COLOR_PRESETS}
+            />
+          </div>
+        </ConfigProvider>
       </label>
       <FlexRow style={{ marginLeft: "auto" }} $gap={10}>
         <Button onClick={props.onCancel}>Cancel</Button>
