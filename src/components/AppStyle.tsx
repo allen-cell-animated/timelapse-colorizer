@@ -75,7 +75,7 @@ const theme = {
     viewport: {
       overlayBackground: "rgba(255, 255, 255, 0.8)",
       overlayOutline: "rgba(0, 0, 0, 0.2)",
-      annotationOutline: palette.themeLight,
+      annotationOutline: palette.successMediumDark,
     },
     // TODO: Reorganize the button colors by primary/default/secondary etc.
     button: {
