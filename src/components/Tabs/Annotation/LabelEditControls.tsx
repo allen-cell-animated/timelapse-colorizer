@@ -45,12 +45,10 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
 
   const savedLabelOptions = useRef<LabelOptions | null>(null);
 
-  // Edit popover handlers
+  // Edit button popover handlers
 
   const onClickEditButton = (): void => {
     setShowEditPopover(!showEditPopover);
-    setShowCreatePopover(false);
-    setShowDeletePopup(false);
     savedLabelOptions.current = {
       color: props.selectedLabel.color.clone(),
       name: props.selectedLabel.name,
@@ -71,36 +69,36 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
     setShowEditPopover(false);
   };
 
-  // Create popover handlers
+  // Create button popover handlers
 
   const onClickCreateButton = (): void => {
     setShowCreatePopover(!showCreatePopover);
-    setShowDeletePopup(false);
-    setShowEditPopover(false);
   };
 
-  // Delete popover handlers
+  // Delete button popover handlers
 
   const deleteLabel = (): void => {
     props.onDeleteLabel();
-    setShowCreatePopover(false);
-    setShowEditPopover(false);
     setShowDeletePopup(false);
   };
 
-  const onDeletePopupOpenChange = (open: boolean): void => {
-    if (!open) {
-      setShowDeletePopup(false);
-      return;
-    }
+  const onClickDeleteButton = (): void => {
     if (props.selectedLabel.ids.size > 0) {
-      // Ask for confirmation if there are selected objects.
+      // Ask for confirmation only if there are selected objects.
       setShowDeletePopup(true);
-      setShowEditPopover(false);
-      setShowCreatePopover(false);
     } else {
       deleteLabel();
     }
+  };
+
+  /**
+   * Popovers can report when a user has clicked off of them.
+   * This creates a handler that will close the popover when the user clicks outside of it.
+   */
+  const hideOnOpenChange = (setOpen: (open: boolean) => void) => {
+    return (open: boolean) => {
+      if (!open) setOpen(false);
+    };
   };
 
   useEffect(() => {
@@ -109,19 +107,6 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
     setShowEditPopover(false);
     setShowDeletePopup(false);
   }, [props.selectedLabelIdx]);
-
-  // A small popup that appears when you press the edit button.
-  const editPopoverContents = showEditPopover ? (
-    <CreateLabelForm
-      initialLabelOptions={props.selectedLabel}
-      onConfirm={onClickEditSave}
-      onCancel={onClickEditCancel}
-      // Sync label color with color picker. If operation is cancelled,
-      // the color will be reset to the original label color.
-      onColorChanged={props.setLabelColor}
-      confirmText="Save"
-    />
-  ) : null;
 
   return (
     <FlexRow $gap={6}>
@@ -138,6 +123,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
           />
         }
         open={showCreatePopover}
+        onOpenChange={hideOnOpenChange(setShowCreatePopover)}
         getPopupContainer={() => createPopoverContainerRef.current!}
         style={{ zIndex: "1000" }}
       >
@@ -153,8 +139,19 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         title={<p style={{ fontSize: theme.font.size.label }}>Edit label</p>}
         trigger={["click"]}
         placement="bottom"
-        content={editPopoverContents}
+        content={
+          <CreateLabelForm
+            initialLabelOptions={props.selectedLabel}
+            onConfirm={onClickEditSave}
+            onCancel={onClickEditCancel}
+            // Sync label color with color picker. If operation is cancelled,
+            // the color will be reset to the original label color.
+            onColorChanged={props.setLabelColor}
+            confirmText="Save"
+          />
+        }
         open={showEditPopover}
+        onOpenChange={hideOnOpenChange(setShowEditPopover)}
         getPopupContainer={() => editPopoverContainerRef.current!}
         style={{ zIndex: "1000" }}
       >
@@ -169,15 +166,15 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
       <Popconfirm
         title={`Delete label with ${props.selectedLabel.ids.size} object(s)?`}
         description={"This cannot be undone."}
-        onOpenChange={onDeletePopupOpenChange}
         open={showDeletePopup}
+        onOpenChange={hideOnOpenChange(setShowDeletePopup)}
         onConfirm={deleteLabel}
         onCancel={() => setShowDeletePopup(false)}
         placement="bottom"
         getPopupContainer={() => editPopoverContainerRef.current!}
       >
         <Tooltip title="Delete label" placement="top">
-          <IconButton type="outlined">
+          <IconButton type="outlined" onClick={onClickDeleteButton}>
             <DeleteOutlined />
           </IconButton>
         </Tooltip>
