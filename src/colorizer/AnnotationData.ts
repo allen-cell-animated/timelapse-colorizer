@@ -162,6 +162,7 @@ export class AnnotationData implements IAnnotationData {
     this.getLabeledIds = this.getLabeledIds.bind(this);
     this.getTimeToLabelIdMap = this.getTimeToLabelIdMap.bind(this);
     this.getLabels = this.getLabels.bind(this);
+    this.getNextDefaultLabelSettings = this.getNextDefaultLabelSettings.bind(this);
     this.createNewLabel = this.createNewLabel.bind(this);
     this.setLabelName = this.setLabelName.bind(this);
     this.setLabelColor = this.setLabelColor.bind(this);

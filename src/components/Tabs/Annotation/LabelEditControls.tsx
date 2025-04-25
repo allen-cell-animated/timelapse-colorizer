@@ -37,12 +37,15 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   const theme = useContext(AppThemeContext);
 
   const [showCreatePopover, setShowCreatePopover] = useState(false);
+  const createPopoverContainerRef = useRef<HTMLDivElement>(null);
   const [showEditPopover, setShowEditPopover] = useState(false);
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
 
   const savedLabelOptions = useRef<LabelOptions | null>(null);
+
+  // Edit popover handlers
 
   const onClickEditButton = (): void => {
     setShowEditPopover(!showEditPopover);
@@ -68,11 +71,15 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
     setShowEditPopover(false);
   };
 
-  const onClickCreateNewLabel = (): void => {
+  // Create popover handlers
+
+  const onClickCreateButton = (): void => {
+    setShowCreatePopover(!showCreatePopover);
     setShowDeletePopup(false);
     setShowEditPopover(false);
-    setShowCreatePopover(!showCreatePopover);
   };
+
+  // Delete popover handlers
 
   const deleteLabel = (): void => {
     props.onDeleteLabel();
@@ -87,15 +94,18 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
       return;
     }
     if (props.selectedLabel.ids.size > 0) {
+      // Ask for confirmation if there are selected objects.
       setShowDeletePopup(true);
       setShowEditPopover(false);
+      setShowCreatePopover(false);
     } else {
       deleteLabel();
     }
   };
 
   useEffect(() => {
-    // If the selection changes, close the edit/delete popovers.
+    // If the selection changes, close the popovers.
+    setShowCreatePopover(false);
     setShowEditPopover(false);
     setShowDeletePopup(false);
   }, [props.selectedLabelIdx]);
@@ -115,11 +125,30 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
 
   return (
     <FlexRow $gap={6}>
-      <Tooltip title="Create new label" placement="top">
-        <IconButton onClick={onClickCreateNewLabel} type="outlined">
-          <TagAddIconSVG />
-        </IconButton>
-      </Tooltip>
+      <Popover
+        title={<p style={{ fontSize: theme.font.size.label }}>Create label</p>}
+        trigger={["click"]}
+        placement="bottom"
+        content={
+          <CreateLabelForm
+            initialLabelOptions={props.defaultLabelOptions}
+            onConfirm={props.onCreateNewLabel}
+            onCancel={() => setShowCreatePopover(false)}
+            confirmText="Create"
+          />
+        }
+        open={showCreatePopover}
+        getPopupContainer={() => createPopoverContainerRef.current!}
+        style={{ zIndex: "1000" }}
+      >
+        <div ref={createPopoverContainerRef}>
+          <Tooltip title="Create new label" placement="top">
+            <IconButton onClick={onClickCreateButton} type="outlined">
+              <TagAddIconSVG />
+            </IconButton>
+          </Tooltip>
+        </div>
+      </Popover>
       <Popover
         title={<p style={{ fontSize: theme.font.size.label }}>Edit label</p>}
         trigger={["click"]}

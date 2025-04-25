@@ -12,7 +12,7 @@ type CreateLabelFormProps = {
   initialLabelOptions: LabelOptions;
   onConfirm: (options: LabelOptions) => void;
   onCancel: () => void;
-  onColorChanged: (color: Color) => void;
+  onColorChanged?: (color: Color) => void;
   confirmText?: string;
   focusNameInput?: boolean;
 };
@@ -20,6 +20,7 @@ type CreateLabelFormProps = {
 const defaultProps: Partial<CreateLabelFormProps> = {
   confirmText: "Create",
   focusNameInput: true,
+  onColorChanged: () => {},
 };
 
 export default function CreateLabelForm(inputProps: CreateLabelFormProps): ReactElement {
