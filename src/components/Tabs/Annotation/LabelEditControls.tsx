@@ -1,18 +1,18 @@
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
-import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Input, InputRef, Popconfirm, Popover, Radio, Tooltip } from "antd";
+import { Popconfirm, Popover, Radio, Tooltip } from "antd";
 import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
-import { Color, ColorRepresentation } from "three";
+import { Color } from "three";
 
 import { TagAddIconSVG } from "../../../assets";
 import { AnnotationSelectionMode } from "../../../colorizer";
 import { StyledRadioGroup } from "../../../styles/components";
-import { FlexColumn, FlexRow } from "../../../styles/utils";
+import { FlexRow } from "../../../styles/utils";
 
 import { DEFAULT_ANNOTATION_LABEL_COLORS, LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
 import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
+import CreateLabelForm from "./CreateLabelForm";
 
 export const DEFAULT_LABEL_COLOR_PRESETS = [
   {
@@ -37,25 +37,34 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   const theme = useContext(AppThemeContext);
 
   const [showCreatePopover, setShowCreatePopover] = useState(false);
-
   const [showEditPopover, setShowEditPopover] = useState(false);
-  const [editPopoverNameInput, setEditPopoverNameInput] = useState("");
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
-  const editPopoverInputRef = useRef<InputRef>(null);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
 
+  const savedLabelOptions = useRef<LabelOptions | null>(null);
+
   const onClickEditButton = (): void => {
-    setEditPopoverNameInput(props.selectedLabel.name);
     setShowEditPopover(!showEditPopover);
+    setShowCreatePopover(false);
+    setShowDeletePopup(false);
+    savedLabelOptions.current = {
+      color: props.selectedLabel.color.clone(),
+      name: props.selectedLabel.name,
+    };
   };
 
   const onClickEditCancel = (): void => {
     setShowEditPopover(false);
+    // Restore saved label options
+    if (savedLabelOptions.current) {
+      props.setLabelName(savedLabelOptions.current.name);
+      props.setLabelColor(savedLabelOptions.current.color);
+    }
   };
 
-  const onClickEditSave = (): void => {
-    props.setLabelName(editPopoverNameInput.trim());
+  const onClickEditSave = (options: LabelOptions): void => {
+    props.setLabelName(options.name);
     setShowEditPopover(false);
   };
 
@@ -85,17 +94,6 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
     }
   };
 
-  const onColorPickerChange = (_color: any, hex: string): void => {
-    props.setLabelColor(new Color(hex as ColorRepresentation));
-  };
-
-  useEffect(() => {
-    // Focus input when popover is shown.
-    if (showEditPopover) {
-      editPopoverInputRef.current?.focus();
-    }
-  }, [showEditPopover]);
-
   useEffect(() => {
     // If the selection changes, close the edit/delete popovers.
     setShowEditPopover(false);
@@ -103,37 +101,17 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   }, [props.selectedLabelIdx]);
 
   // A small popup that appears when you press the edit button.
-  const editPopoverContents = (
-    <FlexColumn style={{ width: "250px" }} $gap={10}>
-      <label style={{ gap: "10px", display: "flex", flexDirection: "row" }}>
-        <span>Name</span>
-        <Input
-          value={editPopoverNameInput}
-          onChange={(e) => setEditPopoverNameInput(e.target.value)}
-          onPressEnter={onClickEditSave}
-          ref={editPopoverInputRef}
-        ></Input>
-      </label>
-      <label style={{ gap: "10px", display: "flex", flexDirection: "row" }}>
-        <span>Color</span>
-        <div>
-          <ColorPicker
-            size="small"
-            value={new AntdColor(props.selectedLabel.color.getHexString())}
-            onChange={onColorPickerChange}
-            disabledAlpha={true}
-            presets={DEFAULT_LABEL_COLOR_PRESETS}
-          />
-        </div>
-      </label>
-      <FlexRow style={{ marginLeft: "auto" }} $gap={10}>
-        <Button onClick={onClickEditCancel}>Cancel</Button>
-        <Button onClick={onClickEditSave} type="primary">
-          Save
-        </Button>
-      </FlexRow>
-    </FlexColumn>
-  );
+  const editPopoverContents = showEditPopover ? (
+    <CreateLabelForm
+      initialLabelOptions={props.selectedLabel}
+      onConfirm={onClickEditSave}
+      onCancel={onClickEditCancel}
+      // Sync label color with color picker. If operation is cancelled,
+      // the color will be reset to the original label color.
+      onColorChanged={props.setLabelColor}
+      confirmText="Save"
+    />
+  ) : null;
 
   return (
     <FlexRow $gap={6}>
