@@ -43,6 +43,14 @@ type BackdropData = {
   frames: string[];
 };
 
+export type Frames3dData = {
+  /** Source for 3D data, resolved to http/https URLs. Expected to be a path to an OME-Zarr array.*/
+  source: string;
+  /** Index of the segmentation channel in the source data. */
+  segmentationChannel: number;
+  totalFrames: number;
+};
+
 const defaultMetadata: ManifestFileMetadata = {
   frameDims: {
     width: 0,
@@ -62,11 +70,7 @@ export default class Dataset {
   private frames: DataCache<number, Texture> | null;
   private frameDimensions: Vector2 | null;
 
-  /** Source for 3D data, resolved to http/https URLs. */
-  public frames3dSrc?: string | string[];
-  /** Index of the segmentation channel in the 3D data. */
-  public segmentationChannel?: number;
-  private totalFrames3d?: number;
+  public frames3d?: Frames3dData;
 
   private segIdsFile?: string;
   /** Lookup from a global index of an object to the raw segmentation ID in the
@@ -161,13 +165,6 @@ export default class Dataset {
     } else {
       return `${this.baseUrl}/${url}`;
     }
-  };
-
-  private resolvePathsToUrls = <T extends string | string[]>(url: T): T => {
-    if (Array.isArray(url)) {
-      return url.map((u) => this.resolvePathToUrl(u)) as T;
-    }
-    return this.resolvePathToUrl(url) as T;
   };
 
   private parseFeatureType(inputType: string | undefined, defaultType = FeatureType.CONTINUOUS): FeatureType {
@@ -323,7 +320,7 @@ export default class Dataset {
   }
 
   public has3dFrames(): boolean {
-    return this.frames3dSrc !== undefined;
+    return this.frames3d !== undefined;
   }
 
   /**
@@ -503,10 +500,14 @@ export default class Dataset {
     const manifest = updateManifestVersion(await options.manifestLoader(this.manifestUrl));
 
     this.frameFiles = manifest.frames;
-    const frames3dSrc = manifest.frames3d?.source;
-    this.frames3dSrc = frames3dSrc ? this.resolvePathsToUrls(frames3dSrc) : undefined;
-    this.segmentationChannel = manifest.frames3d?.segmentationChannel ?? 0;
-    this.totalFrames3d = manifest.frames3d?.totalFrames ?? 0;
+    const frames3dSrc = manifest.frames3d;
+    if (frames3dSrc && frames3dSrc.source) {
+      this.frames3d = {
+        source: this.resolvePathToUrl(frames3dSrc.source),
+        segmentationChannel: manifest.frames3d?.segmentationChannel ?? 0,
+        totalFrames: manifest.frames3d?.totalFrames ?? 0,
+      };
+    }
     this.outlierFile = manifest.outliers;
     this.metadata = { ...defaultMetadata, ...manifest.metadata };
 
@@ -650,7 +651,7 @@ export default class Dataset {
     if (this.has2dFrames()) {
       return this.frameFiles?.length ?? 0;
     } else {
-      return this.totalFrames3d ?? 0;
+      return this.frames3d?.totalFrames ?? 0;
     }
   }
 

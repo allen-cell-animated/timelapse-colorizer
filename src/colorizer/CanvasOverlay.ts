@@ -31,6 +31,7 @@ import { hasPropertyChanged } from "./utils/data_utils";
 import { LabelData } from "./AnnotationData";
 import ColorizeCanvas2D from "./ColorizeCanvas2D";
 import { ColorizeCanvas3D } from "./ColorizeCanvas3D";
+import Dataset from "./Dataset";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 /**
@@ -270,6 +271,30 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.render();
   }
 
+  /**
+   * Returns true if the inner canvas type does not match the dataset type.
+   */
+  private doesCanvasTypeNeedUpdate(dataset: Dataset): boolean {
+    // Note: If a dataset has both 2D and 3D frames, this won't trigger a canvas change.
+    return (
+      (this.innerCanvasType === CanvasType.CANVAS_2D && !dataset.has2dFrames()) ||
+      (this.innerCanvasType === CanvasType.CANVAS_3D && !dataset.has3dFrames())
+    );
+  }
+
+  private async updateCanvasType(dataset: Dataset): Promise<void> {
+    if (dataset.has2dFrames() && this.innerCanvasType !== CanvasType.CANVAS_2D) {
+      this.innerCanvasType = CanvasType.CANVAS_2D;
+      await this.setCanvas(this.innerCanvas2d);
+    } else if (dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
+      this.innerCanvasType = CanvasType.CANVAS_3D;
+      if (!this.innerCanvas3d) {
+        this.innerCanvas3d = new ColorizeCanvas3D();
+      }
+      await this.setCanvas(this.innerCanvas3d);
+    }
+  }
+
   public async setParams(params: RenderCanvasStateParams): Promise<void> {
     const prevParams = this.params;
     this.params = params;
@@ -278,19 +303,10 @@ export default class CanvasOverlay implements IRenderCanvas {
     // canvas.
     let hasUpdatedCanvasParams = false;
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
-      if (params.dataset) {
-        if (params.dataset.has2dFrames() && this.innerCanvasType !== CanvasType.CANVAS_2D) {
-          this.innerCanvasType = CanvasType.CANVAS_2D;
-          await this.setCanvas(this.innerCanvas2d);
-          hasUpdatedCanvasParams = true;
-        } else if (params.dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
-          this.innerCanvasType = CanvasType.CANVAS_3D;
-          if (!this.innerCanvas3d) {
-            this.innerCanvas3d = new ColorizeCanvas3D();
-          }
-          await this.setCanvas(this.innerCanvas3d);
-          hasUpdatedCanvasParams = true;
-        }
+      const dataset = params.dataset;
+      if (dataset && this.doesCanvasTypeNeedUpdate(dataset)) {
+        await this.updateCanvasType(dataset);
+        hasUpdatedCanvasParams = true;
       }
     }
 
