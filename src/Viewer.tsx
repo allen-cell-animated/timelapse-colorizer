@@ -42,8 +42,7 @@ import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
 import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
-import { ColorizeCanvas3D } from "./colorizer/ColorizeCanvas3D";
+import { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
 import { FeatureType } from "./colorizer/Dataset";
 import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
@@ -88,15 +87,13 @@ function Viewer(): ReactElement {
 
   const canv: CanvasOverlay = useConstructor(() => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
-    // TODO: Once Datasets can report whether they are 2D or 3D, CanvasOverlay
-    // should construct and swap between the two types of canvases on its own.
-    const use3DCanvas = true;
-    const innerCanvas = use3DCanvas ? new ColorizeCanvas3D(stateDeps) : new ColorizeCanvas2D();
-
-    const canvas = new CanvasOverlay(innerCanvas, stateDeps);
+    const canvas = new CanvasOverlay(stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
-    canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);
+    canvas.setOnFrameLoadCallback((result) => {
+      useViewerStateStore.getState().setFrameLoadResult(result);
+      useViewerStateStore.setState({ currentFrame: result.frame });
+    });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
   });

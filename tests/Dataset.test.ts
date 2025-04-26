@@ -2,14 +2,18 @@ import semver from "semver";
 import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
+import { FeatureDataType } from "../src/colorizer";
 import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
+import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "./state/ViewerState/constants";
 import {
   ANY_ERROR,
+  DEFAULT_DATASET_DIR,
   DEFAULT_DATASET_PATH,
   makeMockAsyncLoader,
   makeMockDataset,
   MockArrayLoader,
+  MockArraySource,
   MockFrameLoader,
 } from "./test_utils";
 
@@ -250,4 +254,69 @@ describe("Dataset", () => {
       });
     });
   }
+
+  it("changes relative source paths for 3D data to URLs", async () => {
+    const manifestWith3dSource: AnyManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        source: "seg.ome.zarr",
+        segmentationChannel: 1,
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentationChannel).to.equal(1);
+    expect(frames3d?.totalFrames).to.equal(4);
+  });
+
+  it("converts allen Zarr paths to URLs", async () => {
+    const manifestWith3dSource: AnyManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        source: "/allen/aics/assay-dev/some/path/to/seg.ome.zarr",
+        segmentationChannel: 0,
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.source).to.equal("https://dev-aics-dtp-001.int.allencell.org/assay-dev/some/path/to/seg.ome.zarr");
+  });
+
+  describe("frameToIdOffset", () => {
+    it("returns 0 offsets if segmentation IDs are globally unique", async () => {
+      const mockArrayLoaderSource = {
+        ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
+        [DEFAULT_DATASET_DIR + "seg_ids.json"]: new MockArraySource(
+          FeatureDataType.U32,
+          new Uint32Array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        ),
+      };
+      const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
+      const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, mockArrayLoader);
+
+      const frameToIdOffset = dataset.frameToIdOffset;
+      expect(frameToIdOffset).to.deep.equal(new Uint32Array([0, 0, 0, 0]));
+    });
+
+    it("calculates ID offsets from frame-local segmentation IDs", async () => {
+      const mockArrayLoaderSource = {
+        ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
+        [DEFAULT_DATASET_DIR + "seg_ids.json"]: new MockArraySource(
+          FeatureDataType.U32,
+          // time array:  [0, 0, 0, 1, 1, 1, 2, 2, 3]
+          new Uint32Array([1, 2, 3, 1, 2, 3, 1, 2, 1])
+        ),
+      };
+      const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
+      const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, mockArrayLoader);
+
+      const frameToIdOffset = dataset.frameToIdOffset;
+      expect(frameToIdOffset).to.deep.equal(new Uint32Array([0, 3, 6, 8]));
+    });
+  });
 });

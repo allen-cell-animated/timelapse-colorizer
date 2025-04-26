@@ -138,7 +138,7 @@ export const addTimeDerivedStateSubscribers = (store: SubscribableStore<DatasetS
 
       // Clamp and reload the frame
       const newFrame = Math.min(store.getState().currentFrame, totalFrames - 1);
-      store.setState({ currentFrame: newFrame, pendingFrame: newFrame });
+      store.setState({ currentFrame: -1, pendingFrame: newFrame });
       if (dataset !== null) {
         // TODO: This may cause a race condition since ColorizeCanvas already
         // loads the frame when the dataset is set.
