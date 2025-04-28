@@ -94,8 +94,8 @@ type ManifestFileV1_1_0 = Spread<
     frames3d?: {
       /**
        * URL or path relative to the root of the manifest. Expected to be a
-       * time-series ZARR array (e.g. ends with `.ome.zarr`). */
-      source: string | string[];
+       * time-series ZARR (e.g. ends with `.ome.zarr`). */
+      source: string;
       /**
        * The index of the channel to use as a segmentation. If multiple volumes
        * are specified in `source`, `segmentationChannel` indexes into a list of

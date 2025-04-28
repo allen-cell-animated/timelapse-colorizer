@@ -258,13 +258,30 @@ describe("Dataset", () => {
       ...MOCK_DATASET_MANIFEST,
       frames3d: {
         source: "seg.ome.zarr",
+        segmentationChannel: 1,
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentationChannel).to.equal(1);
+    expect(frames3d?.totalFrames).to.equal(4);
+  });
+
+  it("converts allen Zarr paths to URLs", async () => {
+    const manifestWith3dSource: AnyManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        source: "/allen/aics/assay-dev/some/path/to/seg.ome.zarr",
         segmentationChannel: 0,
         totalFrames: 4,
       },
     };
     const dataset = await makeMockDataset(manifestWith3dSource);
     expect(dataset.has3dFrames()).to.be.true;
-    const source = dataset.frames3dSrc;
-    expect(source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.source).to.equal("https://dev-aics-dtp-001.int.allencell.org/assay-dev/some/path/to/seg.ome.zarr");
   });
 });

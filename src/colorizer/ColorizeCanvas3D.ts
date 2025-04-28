@@ -163,13 +163,13 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
 
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
-      if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3dSrc) {
+      if (params.dataset !== null && params.dataset.has3dFrames() && params.dataset.frames3d) {
         if (this.volume) {
           this.view3d.removeAllVolumes();
           this.volume.cleanup();
           this.volume = null;
         }
-        this.initializingVolumePromise = this.loadNewVolume(params.dataset.frames3dSrc);
+        this.initializingVolumePromise = this.loadNewVolume(params.dataset.frames3d.source);
         this.initializingVolumePromise.then(() => {
           this.setFrame(params.pendingFrame);
         });
@@ -188,6 +188,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
     await loaderContext.onOpen();
 
+    console.log("Loading volume from path:", path);
     this.loader = await loaderContext.createLoader(path);
     const loadSpec = new LoadSpec();
     loadSpec.time = this.params.pendingFrame;
@@ -204,7 +205,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     });
     this.view3d.addVolume(volume);
 
-    const segChannel = this.params.dataset?.segmentationChannel ?? 0;
+    const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
     this.view3d.setVolumeChannelEnabled(volume, segChannel, true);
     this.view3d.setVolumeChannelOptions(volume, segChannel, {
       isosurfaceEnabled: false,
@@ -289,7 +290,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return;
     }
     const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, this.params.dataset.segmentationChannel ?? 0, id);
+    this.view3d.setSelectedID(this.volume, this.params.dataset.frames3d?.segmentationChannel ?? 0, id + 1);
   }
 
   render(synchronous = false): void {
@@ -303,9 +304,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   getIdAtPixel(x: number, y: number): PixelIdInfo | null {
     const dataset = this.params?.dataset;
-    // TODO: Currently `View3d.hitTest` reports the per-frame IDs, not global IDs.
-    // Ideally, vole-core should handle this based on the frame ID offset array that's passed into it
-    // during colorizer setup.
     if (this.volume?.isLoaded() && dataset) {
       const segId = this.view3d.hitTest(x, y);
       if (segId === -1) {
