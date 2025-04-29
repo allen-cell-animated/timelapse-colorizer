@@ -1,7 +1,6 @@
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Popconfirm, Popover, Radio, Tooltip } from "antd";
 import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
-import { Color } from "three";
 
 import { TagAddIconSVG } from "../../../assets";
 import { AnnotationSelectionMode } from "../../../colorizer";
@@ -22,10 +21,9 @@ export const DEFAULT_LABEL_COLOR_PRESETS = [
 ];
 
 type LabelEditControlsProps = {
-  onCreateNewLabel: (options: LabelOptions) => void;
+  onCreateNewLabel: (options: Partial<LabelOptions>) => void;
   onDeleteLabel: () => void;
-  setLabelColor: (color: Color) => void;
-  setLabelName: (name: string) => void;
+  setLabelOptions: (options: Partial<LabelOptions>) => void;
   defaultLabelOptions: LabelOptions;
   selectedLabel: LabelData;
   selectedLabelIdx: number;
@@ -43,15 +41,15 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
 
-  const savedLabelOptions = useRef<LabelOptions | null>(null);
+  const savedLabelOptions = useRef<Partial<LabelOptions> | null>(null);
 
   // Edit button popover handlers
 
   const onClickEditButton = (): void => {
     setShowEditPopover(!showEditPopover);
     savedLabelOptions.current = {
-      color: props.selectedLabel.color.clone(),
-      name: props.selectedLabel.name,
+      color: props.selectedLabel.options.color.clone(),
+      name: props.selectedLabel.options.name,
     };
   };
 
@@ -59,13 +57,12 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
     setShowEditPopover(false);
     // Restore saved label options
     if (savedLabelOptions.current) {
-      props.setLabelName(savedLabelOptions.current.name);
-      props.setLabelColor(savedLabelOptions.current.color);
+      props.setLabelOptions(savedLabelOptions.current);
     }
   };
 
-  const onClickEditSave = (options: LabelOptions): void => {
-    props.setLabelName(options.name);
+  const onClickEditSave = (options: Partial<LabelOptions>): void => {
+    props.setLabelOptions(options);
     setShowEditPopover(false);
   };
 
@@ -141,12 +138,14 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
         placement="bottom"
         content={
           <CreateLabelForm
-            initialLabelOptions={props.selectedLabel}
+            initialLabelOptions={props.selectedLabel.options}
             onConfirm={onClickEditSave}
             onCancel={onClickEditCancel}
             // Sync label color with color picker. If operation is cancelled,
             // the color will be reset to the original label color.
-            onColorChanged={props.setLabelColor}
+            onColorChanged={(color) => {
+              props.setLabelOptions({ color });
+            }}
             confirmText="Save"
           />
         }

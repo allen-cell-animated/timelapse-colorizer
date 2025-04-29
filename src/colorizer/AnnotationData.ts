@@ -20,8 +20,7 @@ export type LabelOptions = {
 };
 
 export type LabelData = {
-  name: string;
-  color: Color;
+  options: LabelOptions;
   ids: Set<number>;
 };
 
@@ -132,9 +131,7 @@ export interface IAnnotationDataSetters {
    * array of labels (as returned by `getLabels()`).
    * */
   createNewLabel(options?: Partial<LabelOptions>): number;
-
-  setLabelName(labelIdx: number, name: string): void;
-  setLabelColor(labelIdx: number, color: Color): void;
+  setLabelOptions(labelIdx: number, options: Partial<LabelOptions>): void;
   deleteLabel(labelIdx: number): void;
 
   setLabelOnIds(labelIdx: number, ids: number[], value: boolean): void;
@@ -164,8 +161,6 @@ export class AnnotationData implements IAnnotationData {
     this.getLabels = this.getLabels.bind(this);
     this.getNextDefaultLabelSettings = this.getNextDefaultLabelSettings.bind(this);
     this.createNewLabel = this.createNewLabel.bind(this);
-    this.setLabelName = this.setLabelName.bind(this);
-    this.setLabelColor = this.setLabelColor.bind(this);
     this.deleteLabel = this.deleteLabel.bind(this);
     this.isLabelOnId = this.isLabelOnId.bind(this);
     this.setLabelOnId = this.setLabelOnId.bind(this);
@@ -249,12 +244,15 @@ export class AnnotationData implements IAnnotationData {
 
   // Setters
 
+  private markIdMapAsDirty(): void {
+    this.timeToLabelIdMap = null;
+  }
+
   /** Creates a new label and returns its index. */
   createNewLabel(options: Partial<LabelOptions> = {}): number {
     options = removeUndefinedProperties(options);
     this.labelData.push({
-      ...this.getNextDefaultLabelSettings(),
-      ...options,
+      options: { ...this.getNextDefaultLabelSettings(), ...options },
       ids: new Set(),
     });
 
@@ -268,20 +266,18 @@ export class AnnotationData implements IAnnotationData {
     }
   }
 
-  setLabelName(labelIdx: number, name: string): void {
+  setLabelOptions(labelIdx: number, options: Partial<LabelOptions>): void {
     this.validateIndex(labelIdx);
-    this.labelData[labelIdx].name = name;
-  }
-
-  setLabelColor(labelIdx: number, color: Color): void {
-    this.validateIndex(labelIdx);
-    this.labelData[labelIdx].color = color;
+    options = removeUndefinedProperties(options);
+    const labelData = this.labelData[labelIdx];
+    labelData.options = { ...labelData.options, ...options };
+    this.markIdMapAsDirty();
   }
 
   deleteLabel(labelIdx: number): void {
     this.validateIndex(labelIdx);
     this.labelData.splice(labelIdx, 1);
-    this.timeToLabelIdMap = null;
+    this.markIdMapAsDirty();
   }
 
   private setLabelOnId(labelIdx: number, id: number, value: boolean): void {
@@ -291,7 +287,7 @@ export class AnnotationData implements IAnnotationData {
     } else {
       this.labelData[labelIdx].ids.delete(id);
     }
-    this.timeToLabelIdMap = null;
+    this.markIdMapAsDirty();
   }
 
   setLabelOnIds(labelIdx: number, ids: number[], value: boolean): void {
@@ -299,14 +295,14 @@ export class AnnotationData implements IAnnotationData {
     for (const id of ids) {
       this.setLabelOnId(labelIdx, id, value);
     }
-    this.timeToLabelIdMap = null;
+    this.markIdMapAsDirty();
   }
 
   toCsv(dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels();
     const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
 
-    headerRow.push(...this.labelData.map((label) => label.name.trim()));
+    headerRow.push(...this.labelData.map((label) => label.options.name.trim()));
 
     const csvRows: number[][] = [];
     for (const [id, labels] of idsToLabels) {
@@ -335,6 +331,6 @@ export class AnnotationData implements IAnnotationData {
   clear(): void {
     this.labelData = [];
     this.numLabelsCreated = 0;
-    this.timeToLabelIdMap = null;
+    this.markIdMapAsDirty();
   }
 }

@@ -135,9 +135,9 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
             <Tag
               key={labelIdx}
               style={{ width: "fit-content", margin: "0 2px" }}
-              color={"#" + label.color.getHexString()}
+              color={"#" + label.options.color.getHexString()}
             >
-              {label.name}
+              {label.options.name}
             </Tag>
           );
         })}
@@ -151,8 +151,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
     const currentLabelData = labelData[currentLabelIdx];
     annotationLabel = (
-      <Tag style={{ width: "fit-content" }} color={"#" + currentLabelData.color.getHexString()} bordered={true}>
-        {currentLabelData.name}
+      <Tag style={{ width: "fit-content" }} color={"#" + currentLabelData.options.color.getHexString()} bordered={true}>
+        {currentLabelData.options.name}
       </Tag>
     );
 
