@@ -165,6 +165,7 @@ export class AnnotationData implements IAnnotationData {
     this.isLabelOnId = this.isLabelOnId.bind(this);
     this.setLabelOnId = this.setLabelOnId.bind(this);
     this.setLabelOnIds = this.setLabelOnIds.bind(this);
+    this.setLabelOptions = this.setLabelOptions.bind(this);
     this.toCsv = this.toCsv.bind(this);
   }
 
