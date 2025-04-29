@@ -181,6 +181,7 @@ export class AnnotationData implements IAnnotationData {
     this.createNewLabel = this.createNewLabel.bind(this);
     this.deleteLabel = this.deleteLabel.bind(this);
     this.isLabelOnId = this.isLabelOnId.bind(this);
+    this.setLabelOptions = this.setLabelOptions.bind(this);
     this.setLabelValueOnId = this.setLabelValueOnId.bind(this);
     this.setLabelValueOnIds = this.setLabelValueOnIds.bind(this);
     this.removeLabelOnId = this.removeLabelOnId.bind(this);
