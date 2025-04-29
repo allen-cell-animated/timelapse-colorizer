@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../../src/colorizer";
 import { compareRecord } from "../state/ViewerState/utils";
 
-import { AnnotationData } from "../../src/colorizer/AnnotationData";
+import { AnnotationData, BOOLEAN_VALUE } from "../../src/colorizer/AnnotationData";
 
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
@@ -74,14 +74,14 @@ describe("AnnotationData", () => {
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
     annotationData.createNewLabel();
-    annotationData.setLabelOnIds(0, [0, 35, 458], true);
-    annotationData.setLabelOnIds(1, [35], true);
+    annotationData.setLabelValueOnIds(0, [0, 35, 458], BOOLEAN_VALUE);
+    annotationData.setLabelValueOnIds(1, [35], BOOLEAN_VALUE);
 
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
     expect(annotationData.getLabelsAppliedToId(35)).to.deep.equal([0, 1]);
     expect(annotationData.getLabelsAppliedToId(458)).to.deep.equal([0]);
 
-    annotationData.setLabelOnIds(0, [35], false);
+    annotationData.removeLabelOnIds(0, [35]);
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
     expect(annotationData.getLabelsAppliedToId(35)).to.deep.equal([1]);
     expect(annotationData.getLabelsAppliedToId(458)).to.deep.equal([0]);
@@ -91,18 +91,18 @@ describe("AnnotationData", () => {
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
     annotationData.createNewLabel();
-    annotationData.setLabelOnIds(0, [0], true);
-    annotationData.setLabelOnIds(0, [0], true);
-    annotationData.setLabelOnIds(0, [1], true);
+    annotationData.setLabelValueOnIds(0, [0], BOOLEAN_VALUE);
+    annotationData.setLabelValueOnIds(0, [0], BOOLEAN_VALUE);
+    annotationData.setLabelValueOnIds(0, [1], BOOLEAN_VALUE);
 
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
     expect(annotationData.isLabelOnId(0, 0)).toBe(true);
     expect(annotationData.getLabelsAppliedToId(1)).to.deep.equal([0]);
     expect(annotationData.isLabelOnId(0, 1)).toBe(true);
 
-    annotationData.setLabelOnIds(0, [0], false);
-    annotationData.setLabelOnIds(0, [0], false);
-    annotationData.setLabelOnIds(0, [1], false);
+    annotationData.removeLabelOnIds(0, [0]);
+    annotationData.removeLabelOnIds(0, [0]);
+    annotationData.removeLabelOnIds(0, [1]);
 
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([]);
     expect(annotationData.isLabelOnId(0, 0)).toBe(false);
@@ -116,10 +116,10 @@ describe("AnnotationData", () => {
     };
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
-    annotationData.setLabelOnIds(0, [0, 1, 2, 3, 4, 5], true);
+    annotationData.setLabelValueOnIds(0, [0, 1, 2, 3, 4, 5], BOOLEAN_VALUE);
 
     annotationData.createNewLabel();
-    annotationData.setLabelOnIds(1, [2], true);
+    annotationData.setLabelValueOnIds(1, [2], BOOLEAN_VALUE);
 
     /* eslint-disable @typescript-eslint/naming-convention */
     // ESLint doesn't like "0" and "1" being property keys.
@@ -147,13 +147,16 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel({ name: "Label 2" });
       annotationData.createNewLabel({ name: "Label 3" });
 
-      annotationData.setLabelOnIds(0, [0], true);
-      annotationData.setLabelOnIds(1, [1], true);
-      annotationData.setLabelOnIds(2, [2], true);
+      annotationData.setLabelValueOnIds(0, [0], BOOLEAN_VALUE);
+      annotationData.setLabelValueOnIds(1, [1], BOOLEAN_VALUE);
+      annotationData.setLabelValueOnIds(2, [2], BOOLEAN_VALUE);
 
       const csv = annotationData.toCsv(mockDataset);
       expect(csv).to.equal(
-        `ID,Track,Frame,Label 1,Label 2,Label 3\r\n` + "0,0,0,1,0,0\r\n" + "1,1,1,0,1,0\r\n" + "2,2,2,0,0,1"
+        `ID,Track,Frame,Label 1,Label 2,Label 3\r\n` +
+          `0,0,0,${BOOLEAN_VALUE},,\r\n` +
+          `1,1,1,,${BOOLEAN_VALUE},\r\n` +
+          `2,2,2,,,${BOOLEAN_VALUE}`
       );
     });
 
@@ -164,10 +167,10 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel({ name: 'a","fake label' });
       annotationData.createNewLabel({ name: '","' });
 
-      annotationData.setLabelOnIds(0, [0], true);
-      annotationData.setLabelOnIds(1, [1], true);
-      annotationData.setLabelOnIds(2, [2], true);
-      annotationData.setLabelOnIds(3, [3], true);
+      annotationData.setLabelValueOnIds(0, [0], BOOLEAN_VALUE);
+      annotationData.setLabelValueOnIds(1, [1], BOOLEAN_VALUE);
+      annotationData.setLabelValueOnIds(2, [2], BOOLEAN_VALUE);
+      annotationData.setLabelValueOnIds(3, [3], BOOLEAN_VALUE);
 
       const csv = annotationData.toCsv(mockDataset);
 
@@ -175,10 +178,10 @@ describe("AnnotationData", () => {
       // Single quotes are escaped as double quotes.
       expect(csv).to.equal(
         `ID,Track,Frame,"""label",",,,,,","a"",""fake label",""","""\r\n` +
-          "0,0,0,1,0,0,0\r\n" +
-          "1,1,1,0,1,0,0\r\n" +
-          "2,2,2,0,0,1,0\r\n" +
-          "3,3,3,0,0,0,1"
+          `0,0,0,${BOOLEAN_VALUE},,,\r\n` +
+          `1,1,1,,${BOOLEAN_VALUE},,\r\n` +
+          `2,2,2,,,${BOOLEAN_VALUE},\r\n` +
+          `3,3,3,,,,${BOOLEAN_VALUE}`
       );
     });
 

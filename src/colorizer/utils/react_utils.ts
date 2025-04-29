@@ -421,16 +421,25 @@ export const useAnnotations = (): AnnotationState => {
     }
     const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
 
+    const toggleRange = (range: number[]): void => {
+      const defaultValue = annotationData.getNextDefaultLabelValue(currentLabelIdx);
+      if (isLabeled) {
+        annotationData.removeLabelOnIds(currentLabelIdx, range);
+      } else {
+        annotationData.setLabelValueOnIds(currentLabelIdx, range,defaultValue);
+      }
+    };
+
     const idRange = getSelectRangeFromId(dataset, id);
     switch (selectionMode) {
       case AnnotationSelectionMode.TRACK:
         // Toggle entire track
-        annotationData.setLabelOnIds(currentLabelIdx, track.ids, !isLabeled);
+        toggleRange(track.ids);
         break;
       case AnnotationSelectionMode.RANGE:
         if (idRange !== null) {
           setLastEditedRange(idRange);
-          annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
+          toggleRange(idRange);
           setLastClickedId(null);
         } else {
           setLastClickedId(id);
@@ -438,7 +447,7 @@ export const useAnnotations = (): AnnotationState => {
         break;
       case AnnotationSelectionMode.TIME:
       default:
-        annotationData.setLabelOnIds(currentLabelIdx, [id], !isLabeled);
+        toggleRange([id]);
         setLastClickedId(id);
     }
     setDataUpdateCounter((value) => value + 1);
@@ -462,6 +471,8 @@ export const useAnnotations = (): AnnotationState => {
       isLabelOnId: annotationData.isLabelOnId,
       getNextDefaultLabelSettings: annotationData.getNextDefaultLabelSettings,
       toCsv: annotationData.toCsv,
+      getNextDefaultLabelValue: annotationData.getNextDefaultLabelValue,
+      getValueFromId: annotationData.getValueFromId,
     }),
     [dataUpdateCounter]
   );
@@ -484,7 +495,8 @@ export const useAnnotations = (): AnnotationState => {
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
     setLabelOptions: wrapFunctionInUpdate(annotationData.setLabelOptions),
     deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
-    setLabelOnIds: wrapFunctionInUpdate(annotationData.setLabelOnIds),
+    setLabelValueOnIds: wrapFunctionInUpdate(annotationData.setLabelValueOnIds),
+    removeLabelOnIds: wrapFunctionInUpdate(annotationData.removeLabelOnIds),
     clear: wrapFunctionInUpdate(clear),
   };
 };
