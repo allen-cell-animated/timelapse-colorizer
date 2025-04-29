@@ -269,7 +269,10 @@ export class AnnotationData implements IAnnotationData {
         }
       }
       throw new Error(
-        `AnnotationData.getValueFromId: ID was listed as being in label ${labelIdx} () Value for ID ${id} not found in label data ${labelIdx}.`
+        "AnnotationData.getValueFromId: ID was listed as being labeled by label " +
+          `#${labelIdx} ('${labelData.options.name}'), but no value for ID ${id} was ` +
+          "found in the label data. This indicates a mismatch between the value lookup " +
+          " and the labeled IDs, and is likely a developer error."
       );
     } else {
       return null;
@@ -300,8 +303,7 @@ export class AnnotationData implements IAnnotationData {
         if (labelData.lastValue === null) {
           return "0";
         } else {
-          const lastValue = parseInt(labelData.lastValue, 10);
-          return (lastValue + 1).toString();
+          return labelData.lastValue;
         }
     }
   }
@@ -402,6 +404,7 @@ export class AnnotationData implements IAnnotationData {
         if (ids.size === 0) {
           labelData.valueToIds.delete(value);
         }
+        break;
       }
     }
     this.markIdMapAsDirty();
