@@ -135,6 +135,46 @@ describe("AnnotationData", () => {
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
+  it("can assign and return label values", () => {
+    const annotationData = new AnnotationData();
+    annotationData.createNewLabel();
+    annotationData.setLabelValueOnIds(0, [0, 1, 2], "A");
+    annotationData.setLabelValueOnIds(0, [3, 4], "B");
+    annotationData.setLabelValueOnIds(0, [5], "C");
+
+    const labelData = annotationData.getLabels()[0];
+    expect(labelData.valueToIds.get("A")).to.deep.equal(new Set([0, 1, 2]));
+    expect(labelData.valueToIds.get("B")).to.deep.equal(new Set([3, 4]));
+    expect(labelData.valueToIds.get("C")).to.deep.equal(new Set([5]));
+    expect(labelData.ids).to.deep.equal(new Set([0, 1, 2, 3, 4, 5]));
+
+    expect(annotationData.getValueFromId(0, 0)).to.equal("A");
+    expect(annotationData.getValueFromId(0, 1)).to.equal("A");
+    expect(annotationData.getValueFromId(0, 2)).to.equal("A");
+    expect(annotationData.getValueFromId(0, 3)).to.equal("B");
+    expect(annotationData.getValueFromId(0, 4)).to.equal("B");
+    expect(annotationData.getValueFromId(0, 5)).to.equal("C");
+  });
+
+  it("can reassign values", () => {
+    const annotationData = new AnnotationData();
+    annotationData.createNewLabel();
+
+    annotationData.setLabelValueOnIds(0, [1, 2], "A");
+    annotationData.setLabelValueOnIds(0, [1], "B");
+    annotationData.setLabelValueOnIds(0, [2, 3], "C");
+
+    const labelData = annotationData.getLabels()[0];
+    expect(labelData.ids).to.deep.equal(new Set([1, 2, 3]));
+    expect(labelData.valueToIds.get("A")).toBeUndefined();
+    expect(labelData.valueToIds.get("B")).to.deep.equal(new Set([1]));
+    expect(labelData.valueToIds.get("C")).to.deep.equal(new Set([2, 3]));
+
+    expect(annotationData.getValueFromId(0, 1)).to.equal("B");
+    expect(annotationData.getValueFromId(0, 2)).to.equal("C");
+    expect(annotationData.getValueFromId(0, 3)).to.equal("C");
+  });
+
   describe("toCsv", () => {
     const mockDataset = {
       getTime: (id: number): number => [0, 1, 2, 3][id],
@@ -160,6 +200,18 @@ describe("AnnotationData", () => {
       );
     });
 
+    it("exports different values to the CSV", () => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel({ name: "Label 1" });
+
+      annotationData.setLabelValueOnIds(0, [0, 1], "A");
+      annotationData.setLabelValueOnIds(0, [2], "B");
+      annotationData.setLabelValueOnIds(0, [3], "C");
+
+      const csv = annotationData.toCsv(mockDataset);
+      expect(csv).to.equal(`ID,Track,Frame,Label 1\r\n` + `0,0,0,A\r\n` + `1,1,1,A\r\n` + `2,2,2,B\r\n` + `3,3,3,C`);
+    });
+
     it("handles labels with quote and comma characters", () => {
       const annotationData = new AnnotationData();
       annotationData.createNewLabel({ name: '"label' });
@@ -182,6 +234,20 @@ describe("AnnotationData", () => {
           `1,1,1,,${BOOLEAN_VALUE},,\r\n` +
           `2,2,2,,,${BOOLEAN_VALUE},\r\n` +
           `3,3,3,,,,${BOOLEAN_VALUE}`
+      );
+    });
+
+    it("handles values with quote and comma characters", () => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel({ name: "Label 1" });
+
+      annotationData.setLabelValueOnIds(0, [0], '"value"');
+      annotationData.setLabelValueOnIds(0, [1], "value,value,value");
+      annotationData.setLabelValueOnIds(0, [2], ",,,");
+
+      const csv = annotationData.toCsv(mockDataset);
+      expect(csv).to.equal(
+        `ID,Track,Frame,Label 1\r\n` + `0,0,0,"""value"""\r\n` + `1,1,1,"value,value,value"\r\n` + `2,2,2,",,,"`
       );
     });
 

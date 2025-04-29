@@ -114,7 +114,7 @@ export interface IAnnotationDataGetters {
 
   getNextDefaultLabelValue(labelIdx: number): string;
 
-  getValueFromId(id: number, labelIdx: number): string | null;
+  getValueFromId(labelIdx: number, id: number): string | null;
 
   /**
    * Converts the annotation data to a CSV string.
@@ -257,7 +257,7 @@ export class AnnotationData implements IAnnotationData {
     return idsToLabels;
   }
 
-  getValueFromId(id: number, labelIdx: number): string | null {
+  getValueFromId(labelIdx: number, id: number): string | null {
     // This lookup may be too slow. May need to cache lookup from ID to value.
     this.validateIndex(labelIdx);
     const labelData = this.labelData[labelIdx];
@@ -371,7 +371,7 @@ export class AnnotationData implements IAnnotationData {
     if (labelData.ids.has(id)) {
       // If this ID is already labeled, remove it from the old value to reassign
       // it.
-      const oldValue = this.getValueFromId(id, labelIdx);
+      const oldValue = this.getValueFromId(labelIdx, id);
       if (oldValue !== null && oldValue !== value) {
         this.removeIdFromValue(labelIdx, id, oldValue);
       }
@@ -425,6 +425,10 @@ export class AnnotationData implements IAnnotationData {
     headerRow.push(...this.labelData.map((label) => label.options.name.trim()));
 
     const csvRows: (string | number)[][] = [];
+    // TODO: In the worst case scenario, there are many labels with many values,
+    // and every ID is labeled with each. In this case, getValueFromId can be
+    // O(N), which makes this for loop O(N^3)). Consider caching the lookup (ID
+    // -> value) if the CSV export step is slow.
     for (const [id, labels] of idsToLabels) {
       const track = dataset.getTrackId(id);
       const time = dataset.getTime(id);
@@ -432,7 +436,7 @@ export class AnnotationData implements IAnnotationData {
       const row: (string | number)[] = [id, track, time];
       for (let i = 0; i < this.labelData.length; i++) {
         if (labels.includes(i)) {
-          row.push(this.getValueFromId(id, i) ?? "");
+          row.push(this.getValueFromId(i, id) ?? "");
         }
         row.push("");
       }
