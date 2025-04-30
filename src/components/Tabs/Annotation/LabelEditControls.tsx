@@ -5,7 +5,6 @@ import React, { ReactElement, useContext, useEffect, useRef, useState } from "re
 import { TagAddIconSVG } from "../../../assets";
 import { AnnotationSelectionMode } from "../../../colorizer";
 import { StyledRadioGroup } from "../../../styles/components";
-import { FlexRow } from "../../../styles/utils";
 
 import { DEFAULT_ANNOTATION_LABEL_COLORS, LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
@@ -106,7 +105,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   }, [props.selectedLabelIdx]);
 
   return (
-    <FlexRow $gap={6}>
+    <>
       <Popover
         title={<p style={{ fontSize: theme.font.size.label }}>Create label</p>}
         trigger={["click"]}
@@ -147,6 +146,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
               props.setLabelOptions({ color });
             }}
             confirmText="Save"
+            allowTypeSelection={false}
           />
         }
         open={showEditPopover}
@@ -180,7 +180,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
       </Popconfirm>
 
       <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
-        <span style={{ fontSize: theme.font.size.label }}>Select by </span>
+        <span style={{ fontSize: theme.font.size.label, width: "max-content" }}>Select by </span>
         <StyledRadioGroup
           style={{ display: "flex", flexDirection: "row" }}
           value={props.selectionMode}
@@ -208,6 +208,6 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
           </Tooltip>
         </StyledRadioGroup>
       </label>
-    </FlexRow>
+    </>
   );
 }

@@ -49,6 +49,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
   const [showCreateLabelModal, setShowCreateLabelModal] = useState(false);
+  const modalContainerRef = React.useRef<HTMLDivElement>(null);
 
   const store = useViewerStateStore(
     useShallow((state) => ({
@@ -146,7 +147,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   return (
     <FlexColumnAlignCenter $gap={10}>
-      <FlexRow style={{ width: "100%", justifyContent: "space-between" }}>
+      <FlexRow style={{ width: "100%", justifyContent: "space-between" }} ref={modalContainerRef}>
         <AnnotationModeButton active={isAnnotationModeEnabled} onClick={onClickEnableAnnotationMode} />
 
         {/* Appears when the user activates annotations for the first time and should define a label. */}
@@ -154,10 +155,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           open={showCreateLabelModal}
           footer={null}
           closable={true}
-          width={300}
+          width={360}
           title="Create new label"
           onCancel={() => setShowCreateLabelModal(false)}
           destroyOnClose={true}
+          getContainer={() => modalContainerRef.current ?? document.body}
         >
           <div style={{ marginTop: "15px" }}>
             <CreateLabelForm
@@ -186,8 +188,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
-      <FlexRow $gap={6} style={{ width: "100%" }}>
-        <FlexRow $gap={6}>
+      <FlexRow $gap={6} style={{ width: "100%", flexWrap: "wrap" }}>
+        <FlexRow $gap={6} style={{ flexWrap: "wrap" }}>
           <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
           <SelectionDropdown
             selected={(currentLabelIdx ?? -1).toString()}

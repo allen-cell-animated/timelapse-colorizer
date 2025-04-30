@@ -53,6 +53,7 @@ type SelectionDropdownProps = {
 };
 
 const defaultProps: Partial<SelectionDropdownProps> = {
+  buttonType: "outlined",
   showSelectedItemTooltip: true,
   controlTooltipPlacement: "right",
 };
