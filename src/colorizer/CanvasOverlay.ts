@@ -25,7 +25,7 @@ import {
 } from "./canvas/elements/annotations";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
 import { getPixelRatio } from "./canvas/utils";
-import { CanvasScaleInfo, CanvasType, FrameLoadResult } from "./types";
+import { CanvasScaleInfo, CanvasType, FrameLoadResult, PixelIdInfo } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 
 import { LabelData } from "./AnnotationData";
@@ -208,7 +208,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.render();
   }
 
-  public getIdAtPixel(x: number, y: number): number {
+  public getIdAtPixel(x: number, y: number): PixelIdInfo | null {
     const headerHeight = this.headerSize.y;
     return this.innerCanvas.getIdAtPixel(x, y - headerHeight);
   }

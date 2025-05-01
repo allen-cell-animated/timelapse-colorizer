@@ -31,8 +31,8 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import { Canvas2DScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult } from "./types";
-import { hasPropertyChanged } from "./utils/data_utils";
+import { Canvas2DScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult, PixelIdInfo } from "./types";
+import { getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp from "./ColorRamp";
@@ -664,7 +664,12 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.pickMaterial.dispose();
   }
 
-  public getIdAtPixel(x: number, y: number): number {
+  public getIdAtPixel(x: number, y: number): PixelIdInfo | null {
+    const dataset = this.params?.dataset;
+    if (!dataset) {
+      return null;
+    }
+
     const rt = this.renderer.getRenderTarget();
 
     this.renderer.setRenderTarget(this.pickRenderTarget);
@@ -676,8 +681,12 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.renderer.setRenderTarget(rt);
 
     // get 32bit value from 4 8bit values
-    const value = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
-    // offset by 1 since 0 is background.
-    return value - 1;
+    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
+
+    if (segId === 0) {
+      return null;
+    }
+    const globalId = getGlobalIdFromSegId(dataset.frameToGlobalIdLookup, this.currentFrame, segId);
+    return { segId, globalId };
   }
 }
