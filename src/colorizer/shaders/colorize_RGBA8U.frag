@@ -47,6 +47,7 @@ const uint DRAW_MODE_HIDE = 0u;
 const uint DRAW_MODE_COLOR = 1u;
 const uint BACKGROUND_ID = 0u;
 const uint MISSING_DATA_ID = 0xFFFFFFFFu;
+const int ID_OFFSET = 1;
 
 uniform vec3 outlierColor;
 uniform uint outlierDrawMode;
@@ -102,8 +103,8 @@ uint getId(vec2 sUv) {
     return BACKGROUND_ID;
   }
   uvec4 c = getUintFromTex(segIdToGlobalId, int(rawId - segIdOffset));
-  // Note: IDs are offset by `1` to reserve `0` for segmentations that don't
-  // have associated data. `1` MUST be subtracted from the ID when accessing
+  // Note: IDs are offset by `ID_OFFSET` (`=1`) to reserve `0` for segmentations that don't
+  // have associated data. `ID_OFFSET` MUST be subtracted from the ID when accessing
   // data buffers.
   uint globalId = c.r;
   if (globalId == 0u) {
@@ -125,10 +126,10 @@ bool isEdge(vec2 uv) {
   float wStep = 1.0 / float(canvasSizePx.x) * float(canvasToFrameScale.x);
   float hStep = 1.0 / float(canvasSizePx.y) * float(canvasToFrameScale.y);        
   // sample around the pixel to see if we are on an edge
-  int R = int(getId(uv + vec2(thickness * wStep, 0))) - 1;
-  int L = int(getId(uv + vec2(-thickness * wStep, 0))) - 1;
-  int T = int(getId(uv + vec2(0, thickness * hStep))) - 1;
-  int B = int(getId(uv + vec2(0, -thickness * hStep))) - 1;
+  int R = int(getId(uv + vec2(thickness * wStep, 0))) - ID_OFFSET;
+  int L = int(getId(uv + vec2(-thickness * wStep, 0))) - ID_OFFSET;
+  int T = int(getId(uv + vec2(0, thickness * hStep))) - ID_OFFSET;
+  int B = int(getId(uv + vec2(0, -thickness * hStep))) - ID_OFFSET;
   // if any neighbors are not highlightedId then color this as edge
   return highlightedId != -1 && (R != highlightedId || L != highlightedId || T != highlightedId || B != highlightedId);
 }
@@ -188,7 +189,7 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // do an outline around highlighted object
-  if (int(id) - 1 == highlightedId) {
+  if (int(id) - ID_OFFSET == highlightedId) {
     if (isEdge(sUv)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
@@ -196,13 +197,13 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Data buffer starts at 0, non-background segmentation IDs start at 1
-  float featureVal = getFloatFromTex(featureData, int(id) - 1).r;
-  uint outlierVal = getUintFromTex(outlierData, int(id) - 1).r;
+  float featureVal = getFloatFromTex(featureData, int(id) - ID_OFFSET).r;
+  uint outlierVal = getUintFromTex(outlierData, int(id) - ID_OFFSET).r;
   float normFeatureVal = (featureVal - featureColorRampMin) / (featureColorRampMax - featureColorRampMin);
 
   // Use the selected draw mode to handle out of range and outlier values;
   // otherwise color with the color ramp as usual.
-  bool isInRange = getUintFromTex(inRangeIds, int(id) - 1).r == 1u;
+  bool isInRange = getUintFromTex(inRangeIds, int(id) - ID_OFFSET).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
   bool isMissingData = (id == MISSING_DATA_ID);
 
