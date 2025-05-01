@@ -629,17 +629,17 @@ export default class Dataset {
   }
 
   /**
-   * Returns the 2D centroid of a given object id.
+   * Returns the 3D centroid of a given object id.
    */
   public getCentroid(objectId: number): [number, number, number] | undefined {
     const index = objectId * 3;
-    const x = this.centroids?.[index];
-    const y = this.centroids?.[index + 1];
-    const z = this.centroids?.[index + 2];
-    if (x !== undefined && y !== undefined && z !== undefined) {
-      return [x, y, z];
+    if (this.centroids === undefined || this.centroids === null || index + 2 >= this.centroids.length) {
+      return undefined;
     }
-    return undefined;
+    const x = this.centroids[index];
+    const y = this.centroids[index + 1];
+    const z = this.centroids[index + 2];
+    return [x, y, z];
   }
 
   private getIdsOfTrack(trackId: number): number[] {
