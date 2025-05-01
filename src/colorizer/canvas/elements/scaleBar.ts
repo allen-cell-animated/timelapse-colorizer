@@ -81,7 +81,7 @@ export function getScaleBarRenderer(
   style: ScaleBarStyle
 ): RenderInfo {
   const frameDims = params.dataset?.metadata.frameDims;
-  const hasFrameDims = frameDims && frameDims.width !== 0 && frameDims.height !== 0;
+  const hasFrameDims = frameDims && frameDims.width && frameDims.height;
 
   if (!hasFrameDims || !params.visible) {
     return EMPTY_RENDER_INFO;
