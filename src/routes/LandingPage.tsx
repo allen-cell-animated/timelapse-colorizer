@@ -123,7 +123,12 @@ const ProjectCard = styled.li`
   display: flex;
   width: 100%;
   flex-direction: column;
-  gap: 0px;
+  gap: 10px;
+
+  & h2 {
+    /* font-weight: bold; */
+    /* font-size: var(--font-size-label); */
+  }
 
   & h3 {
     font-weight: bold;
@@ -146,10 +151,10 @@ const DatasetList = styled.ol`
   padding: 0;
   width: 100%;
   display: grid;
-  margin-top: 4px;
+  /* margin-top: 4px; */
   // Use grid + subgrid to align the title, description, and button for each horizontal
   // row of cards. repeat is used to tile the layout if the cards wrap to a new line.
-  grid-template-rows: repeat(3, auto);
+  grid-template-rows: repeat(auto, auto, auto, 10px);
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   justify-content: space-around;
   text-align: start;
@@ -159,10 +164,10 @@ const DatasetList = styled.ol`
 const DatasetCard = styled.li`
   display: grid;
   grid-template-rows: subgrid;
-  grid-row: span 3;
+  grid-row: span 4;
   min-width: 180px;
   align-items: flex-start;
-  margin-top: 20px;
+  /* margin-top: 20px; */
 
   & > h3 {
     display: grid;
@@ -230,6 +235,8 @@ export default function LandingPage(): ReactElement {
         <ButtonStyleLink to={viewerLink}>
           Load<VisuallyHidden> dataset {dataset.name}</VisuallyHidden>
         </ButtonStyleLink>
+        {/* Hack to add gutter between groups of three rows */}
+        <div style={{ height: "20px" }}> </div>
       </DatasetCard>
     );
   };
