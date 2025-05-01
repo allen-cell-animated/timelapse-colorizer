@@ -285,7 +285,8 @@ export type GlobalIdLookupInfo = {
 export type PixelIdInfo = {
   /** Segmentation ID of the pixel.*/
   segId: number;
-  /** Global ID derived from the segmentation ID, used to index into data
+  /**
+   * Global ID derived from the segmentation ID, used to index into data
    * arrays. `undefined` if the segmentation ID is missing from the dataset.
    */
   globalId?: number;
