@@ -24,9 +24,11 @@ export const landingPageContent: ProjectEntry[] = [
         .
       </>
     ),
-    publicationLink: new URL("https://doi.org/10.1016/j.cels.2025.101265"),
-    publicationName:
-      "Colony context and size-dependent compensation mechanisms give rise to variations in nuclear growth trajectories (Cell Systems, May 2025)",
+    publicationInfo: {
+      url: new URL("https://doi.org/10.1016/j.cels.2025.101265"),
+      name: "Colony context and size-dependent compensation mechanisms give rise to variations in nuclear growth trajectories",
+      citation: "Cell Systems, May 2025",
+    },
     datasets: [
       {
         name: "Baseline colonies dataset",

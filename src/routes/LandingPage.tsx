@@ -146,7 +146,6 @@ const DatasetList = styled.ol`
   padding: 0;
   width: 100%;
   display: grid;
-  margin-top: 4px;
   // Use grid + subgrid to align the title, description, and button for each horizontal
   // row of cards. repeat is used to tile the layout if the cards wrap to a new line.
   grid-template-rows: repeat(3, auto);
@@ -248,10 +247,11 @@ export default function LandingPage(): ReactElement {
       <h2>{project.name}</h2>
     );
 
-    const publicationElement = project.publicationLink ? (
+    const publication = project.publicationInfo;
+    const publicationElement = publication ? (
       <p>
-        Related publication:{" "}
-        <ExternalLink href={project.publicationLink.toString()}>{project.publicationName}</ExternalLink>
+        Related publication: <ExternalLink href={publication.url.toString()}>{publication.name}</ExternalLink> (
+        {publication.citation})
       </p>
     ) : null;
 
