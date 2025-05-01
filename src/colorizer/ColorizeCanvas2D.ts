@@ -35,7 +35,7 @@ import { Canvas2DScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResu
 import { hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
-import ColorRamp from "./ColorRamp";
+import ColorRamp, { ColorRampType } from "./ColorRamp";
 import Dataset from "./Dataset";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 import Track from "./Track";
@@ -78,6 +78,7 @@ type ColorizeUniformTypes = {
   hideOutOfRange: boolean;
   outlierDrawMode: number;
   outOfRangeDrawMode: number;
+  useRepeatingCategoricalColors: boolean;
 };
 
 type ColorizeUniforms = { [K in keyof ColorizeUniformTypes]: Uniform<ColorizeUniformTypes[K]> };
@@ -119,6 +120,7 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     outOfRangeColor: new Uniform(new Color(OUT_OF_RANGE_COLOR_DEFAULT)),
     outlierDrawMode: new Uniform(DrawMode.USE_COLOR),
     outOfRangeDrawMode: new Uniform(DrawMode.USE_COLOR),
+    useRepeatingCategoricalColors: new Uniform(false),
   };
 };
 
@@ -513,10 +515,13 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
           this.setUniform("colorRamp", params.categoricalPaletteRamp.texture);
           this.setUniform("featureColorRampMin", 0);
           this.setUniform("featureColorRampMax", MAX_FEATURE_CATEGORIES - 1);
+          this.setUniform("useRepeatingCategoricalColors", true);
         } else {
           this.setUniform("colorRamp", params.colorRamp.texture);
           this.setUniform("featureColorRampMin", params.colorRampRange[0]);
           this.setUniform("featureColorRampMax", params.colorRampRange[1]);
+          // Numeric values can sometimes use repeating categorical colors, such as the glasbey palettes.
+          this.setUniform("useRepeatingCategoricalColors", params.colorRamp.type === ColorRampType.HARD_STOP);
         }
       }
     }

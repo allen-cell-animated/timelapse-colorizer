@@ -1,14 +1,18 @@
 import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, NearestFilter, RGBAFormat } from "three";
 
+import { getPixelRatio } from "./canvas";
+
 export enum ColorRampType {
   LINEAR,
   HARD_STOP,
 }
 
+const DISPLAY_GRADIENT_MAX_STOPS = 24;
+
 export default class ColorRamp {
   public readonly colorStops: Color[];
   public readonly texture: DataTexture;
-  private type: ColorRampType;
+  public readonly type: ColorRampType;
 
   constructor(colorStops: ColorRepresentation[], type: ColorRampType = ColorRampType.LINEAR) {
     this.colorStops = colorStops.map((color) => new Color(color));
@@ -45,8 +49,9 @@ export default class ColorRamp {
   /** Creates a canvas filled in with this color ramp, to present as an option in a menu e.g. */
   public createGradientCanvas(width: number, height: number, vertical = false): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
+    const pixelRatio = getPixelRatio();
+    canvas.width = width * pixelRatio;
+    canvas.height = height * pixelRatio;
     const ctx = canvas.getContext("2d")!;
 
     if (this.colorStops.length < 2) {
@@ -60,8 +65,9 @@ export default class ColorRamp {
       ctx.fillRect(0, 0, width, height);
     } else {
       // Draw as hard stop gradients
-      const step = width / this.colorStops.length;
-      this.colorStops.forEach((color, idx) => {
+      const stops = this.colorStops.slice(0, DISPLAY_GRADIENT_MAX_STOPS);
+      const step = width / stops.length;
+      stops.forEach((color, idx) => {
         ctx.fillStyle = `#${color.getHexString()}`;
         ctx.fillRect(Math.floor(step * idx), 0, Math.ceil(step), height);
       });
