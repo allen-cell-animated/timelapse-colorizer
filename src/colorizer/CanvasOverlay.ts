@@ -266,23 +266,22 @@ export default class CanvasOverlay implements IRenderCanvas {
    * Returns true if the inner canvas type does not match the dataset type.
    */
   private doesCanvasTypeNeedUpdate(dataset: Dataset): boolean {
-    // Note: If a dataset has both 2D and 3D frames, this won't trigger a canvas change.
     return (
-      (this.innerCanvasType === CanvasType.CANVAS_2D && !dataset.has2dFrames()) ||
+      (this.innerCanvasType === CanvasType.CANVAS_2D && dataset.has3dFrames()) ||
       (this.innerCanvasType === CanvasType.CANVAS_3D && !dataset.has3dFrames())
     );
   }
 
   private async updateCanvasType(dataset: Dataset): Promise<void> {
-    if (dataset.has2dFrames() && this.innerCanvasType !== CanvasType.CANVAS_2D) {
-      this.innerCanvasType = CanvasType.CANVAS_2D;
-      await this.setCanvas(this.innerCanvas2d);
-    } else if (dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
+    if (dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
       this.innerCanvasType = CanvasType.CANVAS_3D;
       if (!this.innerCanvas3d) {
         this.innerCanvas3d = new ColorizeCanvas3D();
       }
       await this.setCanvas(this.innerCanvas3d);
+    } else if (this.innerCanvasType !== CanvasType.CANVAS_2D) {
+      this.innerCanvasType = CanvasType.CANVAS_2D;
+      await this.setCanvas(this.innerCanvas2d);
     }
   }
 
