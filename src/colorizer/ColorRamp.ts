@@ -1,7 +1,5 @@
 import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, NearestFilter, RGBAFormat } from "three";
 
-import { getPixelRatio } from "./canvas";
-
 export enum ColorRampType {
   LINEAR,
   HARD_STOP,
