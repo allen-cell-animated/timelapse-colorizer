@@ -290,7 +290,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return;
     }
     const id = this.params.track ? this.params.track.getIdAtTime(this.currentFrame) : -1;
-    this.view3d.setSelectedID(this.volume, this.params.dataset.frames3d?.segmentationChannel ?? 0, id + 1);
+    this.view3d.setSelectedID(this.volume, this.params.dataset.frames3d?.segmentationChannel ?? 0, id);
   }
 
   render(synchronous = false): void {
