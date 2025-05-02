@@ -263,23 +263,32 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   /**
-   * Returns true if the inner canvas type does not match the dataset type.
+   * Returns true if the inner canvas type needs to be changed to match the
+   * dataset type.
+   *
+   * Currently, the 3D canvas is preferentially shown if the dataset has 3D
+   * frames, even if a dataset has 2D and 3D frame data.
    */
   private doesCanvasTypeNeedUpdate(dataset: Dataset): boolean {
+    // TODO: Change this check (and the conditional in `updateCanvasType`) to
+    // only switch if a dataset doesn't have the matching frame type once a user
+    // control for 2D/3D view mode is added. Right now, this always switches to
+    // 3D if the dataset has 3D frames, meaning that 3D frame data overrides 2D
+    // frame data.
     return (
-      (this.innerCanvasType === CanvasType.CANVAS_2D && dataset.has3dFrames()) ||
+      (this.innerCanvasType !== CanvasType.CANVAS_3D && dataset.has3dFrames()) ||
       (this.innerCanvasType === CanvasType.CANVAS_3D && !dataset.has3dFrames())
     );
   }
 
   private async updateCanvasType(dataset: Dataset): Promise<void> {
-    if (dataset.has3dFrames() && this.innerCanvasType !== CanvasType.CANVAS_3D) {
+    if (this.innerCanvasType !== CanvasType.CANVAS_3D && dataset.has3dFrames()) {
       this.innerCanvasType = CanvasType.CANVAS_3D;
       if (!this.innerCanvas3d) {
         this.innerCanvas3d = new ColorizeCanvas3D();
       }
       await this.setCanvas(this.innerCanvas3d);
-    } else if (this.innerCanvasType !== CanvasType.CANVAS_2D) {
+    } else if (this.innerCanvasType === CanvasType.CANVAS_3D && !dataset.has3dFrames()) {
       this.innerCanvasType = CanvasType.CANVAS_2D;
       await this.setCanvas(this.innerCanvas2d);
     }
