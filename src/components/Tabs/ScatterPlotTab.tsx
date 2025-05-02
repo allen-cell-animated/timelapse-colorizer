@@ -477,7 +477,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // Generate colors
     const categories = dataset.getFeatureCategories(selectedFeatureKey);
     const isCategorical = categories !== null;
-    const isCategoricalPalette = colorRamp.type === ColorRampType.HARD_STOP;
+    const isCategoricalPalette = colorRamp.type === ColorRampType.CATEGORICAL;
     const usingOverrideColor = markerConfig.color || overrideColor;
     overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
 

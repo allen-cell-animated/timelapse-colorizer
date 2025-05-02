@@ -576,7 +576,7 @@ function Viewer(): ReactElement {
   const disableTimeControlsUi = disableUi;
   // Disable color ramp controls when the feature is numeric but we've selected
   // a categorical color ramp (e.g. glasbey)
-  const disableRampControlsUi = !isFeatureCategorical && colorRamp.type === ColorRampType.HARD_STOP;
+  const disableRampControlsUi = !isFeatureCategorical && colorRamp.type === ColorRampType.CATEGORICAL;
 
   // TODO: Move into subcomponent for color ramp controls
   // Show min + max marks on the color ramp slider if a feature is selected and

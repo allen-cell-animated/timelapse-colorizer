@@ -287,7 +287,7 @@ const rawColorRampData: RawColorData[] = [
 const colorRampData: ColorRampData[] = rawColorRampData.map((value) => {
   return {
     ...value,
-    colorRamp: new ColorRamp(value.colorStops, value.categorical ? ColorRampType.HARD_STOP : ColorRampType.LINEAR),
+    colorRamp: new ColorRamp(value.colorStops, value.categorical ? ColorRampType.CATEGORICAL : ColorRampType.LINEAR),
   };
 });
 

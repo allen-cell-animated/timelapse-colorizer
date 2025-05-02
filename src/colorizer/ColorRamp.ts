@@ -2,7 +2,7 @@ import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, Neare
 
 export enum ColorRampType {
   LINEAR,
-  HARD_STOP,
+  CATEGORICAL,
 }
 
 const DISPLAY_GRADIENT_MAX_STOPS = 24;
@@ -17,7 +17,7 @@ export default class ColorRamp {
     const dataArr = this.colorStops.flatMap((col) => [col.r, col.g, col.b, 1]);
     this.texture = new DataTexture(new Float32Array(dataArr), this.colorStops.length, 1, RGBAFormat, FloatType);
     this.type = type;
-    if (this.type === ColorRampType.HARD_STOP) {
+    if (this.type === ColorRampType.CATEGORICAL) {
       this.texture.minFilter = NearestFilter;
       this.texture.magFilter = NearestFilter;
     } else {

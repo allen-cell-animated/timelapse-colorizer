@@ -521,7 +521,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
           this.setUniform("featureColorRampMin", params.colorRampRange[0]);
           this.setUniform("featureColorRampMax", params.colorRampRange[1]);
           // Numeric values can sometimes use repeating categorical colors, such as the glasbey palettes.
-          this.setUniform("useRepeatingCategoricalColors", params.colorRamp.type === ColorRampType.HARD_STOP);
+          this.setUniform("useRepeatingCategoricalColors", params.colorRamp.type === ColorRampType.CATEGORICAL);
         }
       }
     }
