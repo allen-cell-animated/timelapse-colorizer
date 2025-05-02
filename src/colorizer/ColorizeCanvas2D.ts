@@ -195,6 +195,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.scene = new Scene();
+    this.scene.background = new Color(CANVAS_BACKGROUND_COLOR_DEFAULT);
     this.scene.add(this.mesh);
 
     this.vectorField = new VectorField();
