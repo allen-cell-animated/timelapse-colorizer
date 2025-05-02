@@ -49,9 +49,8 @@ export default class ColorRamp {
   /** Creates a canvas filled in with this color ramp, to present as an option in a menu e.g. */
   public createGradientCanvas(width: number, height: number, vertical = false): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
-    const pixelRatio = getPixelRatio();
-    canvas.width = width * pixelRatio;
-    canvas.height = height * pixelRatio;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext("2d")!;
 
     if (this.colorStops.length < 2) {

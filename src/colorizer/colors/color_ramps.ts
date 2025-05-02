@@ -271,13 +271,13 @@ const rawColorRampData: RawColorData[] = [
   },
   {
     key: "colorcet-glasbey_light",
-    name: "Colorcet - Glasbey Light",
+    name: "Colorcet - Glasbey (for dark backgrounds)",
     categorical: true,
     colorStops: GLASBEY_LIGHT_COLORS,
   },
   {
     key: "colorcet-glasbey_dark",
-    name: "Colorcet - Glasbey Dark",
+    name: "Colorcet - Glasbey (for light backgrounds)",
     categorical: true,
     colorStops: GLASBEY_DARK_COLORS,
   },

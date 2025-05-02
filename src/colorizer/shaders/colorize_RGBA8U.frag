@@ -95,7 +95,7 @@ vec4 getColorRamp(float val) {
 vec4 getCategoricalColor(float featureValue) {
   float width = float(textureSize(colorRamp, 0).x);
   float modValue = mod(featureValue, width);
-  return getColorRamp(modValue / width);
+  return getColorRamp(modValue / (width - 1.0));
 }
 
 bool isEdge(vec2 uv) {

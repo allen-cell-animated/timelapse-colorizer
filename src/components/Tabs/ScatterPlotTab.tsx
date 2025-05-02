@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { Color, ColorRepresentation, HexColorString } from "three";
 
 import { SwitchIconSVG } from "../../assets";
-import { Dataset } from "../../colorizer";
+import { ColorRampType, Dataset } from "../../colorizer";
 import { DrawMode, PlotRangeType } from "../../colorizer/types";
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRow, FlexRowAlignCenter } from "../../styles/utils";
@@ -477,6 +477,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // Generate colors
     const categories = dataset.getFeatureCategories(selectedFeatureKey);
     const isCategorical = categories !== null;
+    const isCategoricalPalette = colorRamp.type === ColorRampType.HARD_STOP;
     const usingOverrideColor = markerConfig.color || overrideColor;
     overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
 
@@ -485,7 +486,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       // Do no coloring! Keep all points in the same bucket, which will still be split up later.
       colors = [overrideColor];
     } else if (isCategorical) {
-      colors = categoricalPalette.slice(0, categories.length);
+      colors = categoricalPalette;
+    } else if (isCategoricalPalette) {
+      colors = colorRamp.colorStops;
     } else {
       colors = subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
     }
@@ -537,6 +540,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         bucketIndex = BUCKET_INDEX_OUTLIERS;
       } else if (usingOverrideColor) {
         bucketIndex = NUM_RESERVED_BUCKETS;
+      } else if (isCategorical || isCategoricalPalette) {
+        bucketIndex = (Math.round(featureData.data[objectId]) % colors.length) + NUM_RESERVED_BUCKETS;
       } else {
         bucketIndex =
           getBucketIndex(featureData.data[objectId], colorMinValue, colorMaxValue, colors.length) +
