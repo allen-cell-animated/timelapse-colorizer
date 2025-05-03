@@ -477,7 +477,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     // Generate colors
     const categories = dataset.getFeatureCategories(selectedFeatureKey);
     const isCategorical = categories !== null;
-    const isCategoricalPalette = colorRamp.type === ColorRampType.CATEGORICAL;
+    const isCategoricalRamp = colorRamp.type === ColorRampType.CATEGORICAL;
     const usingOverrideColor = markerConfig.color || overrideColor;
     overrideColor = overrideColor || new Color(markerConfig.color as ColorRepresentation);
 
@@ -487,7 +487,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       colors = [overrideColor];
     } else if (isCategorical) {
       colors = categoricalPalette;
-    } else if (isCategoricalPalette) {
+    } else if (isCategoricalRamp) {
       colors = colorRamp.colorStops;
     } else {
       colors = subsampleColorRamp(colorRamp, COLOR_RAMP_SUBSAMPLES);
@@ -540,7 +540,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         bucketIndex = BUCKET_INDEX_OUTLIERS;
       } else if (usingOverrideColor) {
         bucketIndex = NUM_RESERVED_BUCKETS;
-      } else if (isCategorical || isCategoricalPalette) {
+      } else if (isCategorical || isCategoricalRamp) {
         bucketIndex = (Math.round(featureData.data[objectId]) % colors.length) + NUM_RESERVED_BUCKETS;
       } else {
         bucketIndex =

@@ -9,9 +9,11 @@ export type RawColorData = {
   /** Display name. */
   name: string;
   colorStops: `#${string}`[];
-  // Ramps meant for features with many integer values (e.g. track ID).
-  // Most commonly used for glasbey color ramp visualizations, where lots
-  // of colors are needed to distinguish between many different values.
+  /**
+   * Ramps meant for features with many integer values (e.g. track ID).
+   * Most commonly used for glasbey color ramp visualizations, where lots
+   * of colors are needed to distinguish between many different values.
+   */
   categorical?: boolean;
 };
 
@@ -264,6 +266,8 @@ const rawColorRampData: RawColorData[] = [
     ],
   },
   {
+    // TODO: Add an additional description field to describe how the categorical
+    // repeating ramps function?
     key: "colorcet-glasbey",
     name: "Colorcet - Glasbey (Repeating)",
     categorical: true,
