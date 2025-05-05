@@ -2,14 +2,18 @@ import semver from "semver";
 import { Vector2 } from "three";
 import { describe, expect, it } from "vitest";
 
+import { FeatureDataType } from "../src/colorizer";
 import { AnyManifestFile, ManifestFile } from "../src/colorizer/utils/dataset_utils";
 import { MAX_FEATURE_CATEGORIES } from "../src/constants";
+import { MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE, MOCK_DATASET_MANIFEST } from "./state/ViewerState/constants";
 import {
   ANY_ERROR,
+  DEFAULT_DATASET_DIR,
   DEFAULT_DATASET_PATH,
   makeMockAsyncLoader,
   makeMockDataset,
   MockArrayLoader,
+  MockArraySource,
   MockFrameLoader,
 } from "./test_utils";
 
@@ -250,4 +254,76 @@ describe("Dataset", () => {
       });
     });
   }
+
+  it("changes relative source paths for 3D data to URLs", async () => {
+    const manifestWith3dSource: AnyManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        source: "seg.ome.zarr",
+        segmentationChannel: 1,
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.source).to.equal(DEFAULT_DATASET_DIR + "seg.ome.zarr");
+    expect(frames3d?.segmentationChannel).to.equal(1);
+    expect(frames3d?.totalFrames).to.equal(4);
+  });
+
+  it("converts allen Zarr paths to URLs", async () => {
+    const manifestWith3dSource: AnyManifestFile = {
+      ...MOCK_DATASET_MANIFEST,
+      frames3d: {
+        source: "/allen/aics/assay-dev/some/path/to/seg.ome.zarr",
+        segmentationChannel: 0,
+        totalFrames: 4,
+      },
+    };
+    const dataset = await makeMockDataset(manifestWith3dSource);
+    expect(dataset.has3dFrames()).to.be.true;
+    const frames3d = dataset.frames3d;
+    expect(frames3d?.source).to.equal("https://dev-aics-dtp-001.int.allencell.org/assay-dev/some/path/to/seg.ome.zarr");
+  });
+
+  describe("centroids data", () => {
+    it("loads 2D centroid data as 3D", async () => {
+      const mockArrayLoaderSource = {
+        ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
+        [DEFAULT_DATASET_DIR + "centroids.json"]: new MockArraySource(
+          FeatureDataType.F32,
+          new Float32Array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8])
+        ),
+      };
+      const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
+      const mockDatasetManifest = {
+        ...MOCK_DATASET_MANIFEST,
+        centroids: "centroids.json",
+      };
+      const dataset = await makeMockDataset(mockDatasetManifest, mockArrayLoader);
+      expect(dataset.centroids).to.deep.equal(
+        new Uint16Array([0, 0, 0, 1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 0, 5, 5, 0, 6, 6, 0, 7, 7, 0, 8, 8, 0])
+      );
+    });
+
+    it("loads 3D centroid data", async () => {
+      const mockArrayLoaderSource = {
+        ...MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE,
+        [DEFAULT_DATASET_DIR + "centroids.json"]: new MockArraySource(
+          FeatureDataType.U16,
+          new Uint16Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
+        ),
+      };
+      const mockArrayLoader = new MockArrayLoader(mockArrayLoaderSource);
+      const mockDatasetManifest = {
+        ...MOCK_DATASET_MANIFEST,
+        centroids: "centroids.json",
+      };
+      const dataset = await makeMockDataset(mockDatasetManifest, mockArrayLoader);
+      expect(dataset.centroids).to.deep.equal(
+        new Uint16Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
+      );
+    });
+  });
 });

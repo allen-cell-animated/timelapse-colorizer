@@ -25,7 +25,7 @@ export default class Track {
       this.ids = indices.map((i) => ids[i]);
 
       this.centroids = indices.reduce((result, i) => {
-        result.push(centroids[i * 2], centroids[i * 2 + 1]);
+        result.push(centroids[i * 3], centroids[i * 3 + 1], centroids[i * 3 + 2]);
         return result;
       }, [] as number[]);
 

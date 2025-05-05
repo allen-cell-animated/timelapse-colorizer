@@ -19,6 +19,7 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   LoadTroubleshooting,
+  PixelIdInfo,
   ReportWarningCallback,
   TabType,
 } from "./colorizer";
@@ -42,7 +43,6 @@ import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
 import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
 import { FeatureType } from "./colorizer/Dataset";
 import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
@@ -85,12 +85,15 @@ function Viewer(): ReactElement {
 
   const [, startTransition] = React.useTransition();
 
-  const canv = useConstructor(() => {
+  const canv: CanvasOverlay = useConstructor(() => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
-    const canvas = new CanvasOverlay(new ColorizeCanvas2D(), stateDeps);
+    const canvas = new CanvasOverlay(stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
-    canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);
+    canvas.setOnFrameLoadCallback((result) => {
+      useViewerStateStore.getState().setFrameLoadResult(result);
+      useViewerStateStore.setState({ currentFrame: result.frame });
+    });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
   });
@@ -174,7 +177,7 @@ function Viewer(): ReactElement {
    * canvas after a short delay.
    */
   const [frameInput, setFrameInput] = useState(0);
-  const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
+  const [lastValidHoveredId, setLastValidHoveredId] = useState<PixelIdInfo>({ segId: -1, globalId: undefined });
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
@@ -522,7 +525,8 @@ function Viewer(): ReactElement {
         await setFrame(frameInput);
       }
       if (isUserDirectlyControllingFrameInput) {
-        setFrame(frameInput).then(() => timeControls.play());
+        await setFrame(frameInput);
+        timeControls.play();
         // Update the frame and unpause playback when the slider is released.
         setIsUserDirectlyControllingFrameInput(false);
       }
@@ -535,9 +539,9 @@ function Viewer(): ReactElement {
   }, [isUserDirectlyControllingFrameInput, frameInput]);
 
   const onClickId = useCallback(
-    (id: number) => {
-      if (dataset) {
-        annotationState.handleAnnotationClick(dataset, id);
+    (info: PixelIdInfo) => {
+      if (dataset && info.globalId !== undefined) {
+        annotationState.handleAnnotationClick(dataset, info.globalId);
       }
     },
     [dataset, annotationState.handleAnnotationClick]
@@ -639,7 +643,7 @@ function Viewer(): ReactElement {
       visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
-          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId} />
+          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId?.globalId ?? null} />
         </div>
       ),
     },
@@ -684,7 +688,7 @@ function Viewer(): ReactElement {
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrame}
               getCanvasExportDimensions={() => canv.getExportDimensions()}
-              getCanvas={() => canv.domElement}
+              getCanvas={() => canv.canvas}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
               currentFrame={currentFrame}
@@ -803,11 +807,11 @@ function Viewer(): ReactElement {
                   canv={canv}
                   isRecording={isRecording}
                   onClickId={onClickId}
-                  onMouseHover={(id: number): void => {
-                    const isObject = id !== BACKGROUND_ID;
+                  onMouseHover={(info: PixelIdInfo | null): void => {
+                    const isObject = info !== null;
                     setShowObjectHoverInfo(isObject);
                     if (isObject) {
-                      setLastValidHoveredId(id);
+                      setLastValidHoveredId(info);
                     }
                   }}
                   onMouseLeave={() => setShowObjectHoverInfo(false)}
