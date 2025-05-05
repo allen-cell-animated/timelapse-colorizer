@@ -10,7 +10,8 @@ const CSV_COL_ID = "ID";
 const CSV_COL_TIME = "Frame";
 const CSV_COL_TRACK = "Track";
 
-export const BOOLEAN_VALUE = "true";
+export const BOOLEAN_VALUE_TRUE = "true";
+export const BOOLEAN_VALUE_FALSE = "false";
 
 export const DEFAULT_ANNOTATION_LABEL_COLORS = KNOWN_CATEGORICAL_PALETTES.get(
   DEFAULT_CATEGORICAL_PALETTE_KEY
@@ -292,7 +293,7 @@ export class AnnotationData implements IAnnotationData {
     const labelData = this.labelData[labelIdx];
     switch (labelData.options.type) {
       case LabelType.BOOLEAN:
-        return BOOLEAN_VALUE;
+        return BOOLEAN_VALUE_TRUE;
       case LabelType.INTEGER:
         if (labelData.options.autoIncrement) {
           return (parseInt(labelData.lastValue ?? "-1", 10) + 1).toString();
@@ -434,9 +435,11 @@ export class AnnotationData implements IAnnotationData {
       const time = dataset.getTime(id);
 
       const row: (string | number)[] = [id, track, time];
-      for (let i = 0; i < this.labelData.length; i++) {
-        if (labels.includes(i)) {
-          row.push(this.getValueFromId(i, id) ?? "");
+      for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
+        if (labels.includes(labelIdx)) {
+          row.push(this.getValueFromId(labelIdx, id) ?? "");
+        } else if (this.labelData[labelIdx].options.type === LabelType.BOOLEAN) {
+          row.push(BOOLEAN_VALUE_FALSE);
         } else {
           row.push("");
         }
