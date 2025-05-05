@@ -78,7 +78,6 @@ export const VisuallyHidden = styled.span`
 `;
 
 const StyledLink = styled.a`
-  white-space: nowrap;
   text-decoration: underline;
 
   &:focus-visible {

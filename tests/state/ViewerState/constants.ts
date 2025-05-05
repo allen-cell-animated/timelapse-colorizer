@@ -83,16 +83,21 @@ export const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   ],
   times: "times.json",
   tracks: "tracks.json",
+  segIds: "seg_ids.json",
 };
 
-export const MOCK_DATASET_ARRAY_LOADER = new MockArrayLoader({
+export const MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE = {
   [DEFAULT_DATASET_DIR + "times.json"]: new MockArraySource(
     FeatureDataType.U32,
-    new Uint32Array([0, 1, 2, 0, 1, 2, 0, 1, 2])
+    new Uint32Array([0, 0, 0, 1, 1, 1, 2, 2, 3])
+  ),
+  [DEFAULT_DATASET_DIR + "seg_ids.json"]: new MockArraySource(
+    FeatureDataType.U32,
+    new Uint32Array([0, 1, 2, 3, 4, 5, 6, 7, 8])
   ),
   [DEFAULT_DATASET_DIR + "tracks.json"]: new MockArraySource(
     FeatureDataType.U32,
-    new Uint32Array([0, 0, 0, 1, 1, 1, 2, 2, 2])
+    new Uint32Array([0, 1, 2, 0, 1, 2, 0, 1, 2])
   ),
   [DEFAULT_DATASET_DIR + "feature1.json"]: new MockArraySource(
     FeatureDataType.F32,
@@ -110,7 +115,9 @@ export const MOCK_DATASET_ARRAY_LOADER = new MockArrayLoader({
     FeatureDataType.F32,
     new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
   ),
-});
+};
+
+export const MOCK_DATASET_ARRAY_LOADER = new MockArrayLoader(MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE);
 
 export const MOCK_DATASET = await makeMockDataset(MOCK_DATASET_MANIFEST, MOCK_DATASET_ARRAY_LOADER);
 

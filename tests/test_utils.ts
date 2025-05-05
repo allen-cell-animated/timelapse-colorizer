@@ -111,8 +111,8 @@ export class MockArraySource<T extends FeatureDataType> implements ArraySource<T
   getBuffer<T extends FeatureDataType>(): FeatureArrayType[T] {
     return this.data as unknown as FeatureArrayType[T];
   }
-  getTexture(): Texture {
-    return new Texture();
+  getTexture(): DataTexture {
+    return new DataTexture();
   }
   getMin(): number {
     return 0;
