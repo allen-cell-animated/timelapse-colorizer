@@ -10,7 +10,8 @@ const CSV_COL_ID = "ID";
 const CSV_COL_TIME = "Frame";
 const CSV_COL_TRACK = "Track";
 
-export const BOOLEAN_VALUE = "TRUE";
+export const BOOLEAN_VALUE_TRUE = "true";
+export const BOOLEAN_VALUE_FALSE = "false";
 
 export const DEFAULT_ANNOTATION_LABEL_COLORS = KNOWN_CATEGORICAL_PALETTES.get(
   DEFAULT_CATEGORICAL_PALETTE_KEY
@@ -31,9 +32,13 @@ export type LabelOptions = {
 
 export type LabelData = {
   options: LabelOptions;
-  valueToIds: Map<string, Set<number>>;
   ids: Set<number>;
   lastValue: string | null;
+
+  // Bidirectional mapping between IDs and values.
+  valueToIds: Map<string, Set<number>>;
+  idToValue: Map<number, string>;
+
   // TODO: Store recently used values? Save values even if all IDs with them
   // have been removed?
 };
@@ -262,18 +267,7 @@ export class AnnotationData implements IAnnotationData {
     this.validateIndex(labelIdx);
     const labelData = this.labelData[labelIdx];
     if (labelData.ids.has(id)) {
-      // Search through values to find the one that matches the ID.
-      for (const [value, ids] of labelData.valueToIds) {
-        if (ids.has(id)) {
-          return value;
-        }
-      }
-      throw new Error(
-        "AnnotationData.getValueFromId: ID was listed as being labeled by label " +
-          `#${labelIdx} ('${labelData.options.name}'), but no value for ID ${id} was ` +
-          "found in the label data. This indicates a mismatch between the value lookup " +
-          " and the labeled IDs, and is likely a developer error."
-      );
+      return labelData.idToValue.get(id) ?? null;
     } else {
       return null;
     }
@@ -292,7 +286,7 @@ export class AnnotationData implements IAnnotationData {
     const labelData = this.labelData[labelIdx];
     switch (labelData.options.type) {
       case LabelType.BOOLEAN:
-        return BOOLEAN_VALUE;
+        return BOOLEAN_VALUE_TRUE;
       case LabelType.INTEGER:
         if (labelData.options.autoIncrement) {
           return (parseInt(labelData.lastValue ?? "-1", 10) + 1).toString();
@@ -320,6 +314,7 @@ export class AnnotationData implements IAnnotationData {
     this.labelData.push({
       options: { ...this.getNextDefaultLabelSettings(), ...options },
       ids: new Set(),
+      idToValue: new Map<number, string>(),
       valueToIds: new Map<string, Set<number>>(),
       lastValue: null,
     });
@@ -361,6 +356,9 @@ export class AnnotationData implements IAnnotationData {
         labelData.valueToIds.delete(value);
       }
     }
+    if (labelData.idToValue.has(id)) {
+      labelData.idToValue.delete(id);
+    }
     this.markIdMapAsDirty();
   }
 
@@ -380,6 +378,7 @@ export class AnnotationData implements IAnnotationData {
       labelData.valueToIds.set(value, new Set());
     }
     labelData.valueToIds.get(value)!.add(id);
+    labelData.idToValue.set(id, value);
 
     labelData.ids.add(id);
     labelData.lastValue = value;
@@ -398,14 +397,11 @@ export class AnnotationData implements IAnnotationData {
     this.validateIndex(labelIdx);
     const labelData = this.labelData[labelIdx];
     labelData.ids.delete(id);
-    for (const [value, ids] of labelData.valueToIds) {
-      if (ids.has(id)) {
-        ids.delete(id);
-        if (ids.size === 0) {
-          labelData.valueToIds.delete(value);
-        }
-        break;
-      }
+
+    // Remove id <-> value mapping.
+    const value = labelData.idToValue.get(id);
+    if (value !== undefined) {
+      this.removeIdFromValue(labelIdx, id, value);
     }
     this.markIdMapAsDirty();
   }
@@ -434,11 +430,14 @@ export class AnnotationData implements IAnnotationData {
       const time = dataset.getTime(id);
 
       const row: (string | number)[] = [id, track, time];
-      for (let i = 0; i < this.labelData.length; i++) {
-        if (labels.includes(i)) {
-          row.push(this.getValueFromId(i, id) ?? "");
+      for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
+        if (labels.includes(labelIdx)) {
+          row.push(this.getValueFromId(labelIdx, id) ?? "");
+        } else if (this.labelData[labelIdx].options.type === LabelType.BOOLEAN) {
+          row.push(BOOLEAN_VALUE_FALSE);
+        } else {
+          row.push("");
         }
-        row.push("");
       }
       csvRows.push(row);
     }
