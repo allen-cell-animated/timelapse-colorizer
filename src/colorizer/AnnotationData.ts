@@ -32,9 +32,13 @@ export type LabelOptions = {
 
 export type LabelData = {
   options: LabelOptions;
-  valueToIds: Map<string, Set<number>>;
   ids: Set<number>;
   lastValue: string | null;
+
+  // Bidirectional mapping between IDs and values.
+  valueToIds: Map<string, Set<number>>;
+  idToValue: Map<number, string>;
+
   // TODO: Store recently used values? Save values even if all IDs with them
   // have been removed?
 };
@@ -263,18 +267,7 @@ export class AnnotationData implements IAnnotationData {
     this.validateIndex(labelIdx);
     const labelData = this.labelData[labelIdx];
     if (labelData.ids.has(id)) {
-      // Search through values to find the one that matches the ID.
-      for (const [value, ids] of labelData.valueToIds) {
-        if (ids.has(id)) {
-          return value;
-        }
-      }
-      throw new Error(
-        "AnnotationData.getValueFromId: ID was listed as being labeled by label " +
-          `#${labelIdx} ('${labelData.options.name}'), but no value for ID ${id} was ` +
-          "found in the label data. This indicates a mismatch between the value lookup " +
-          " and the labeled IDs, and is likely a developer error."
-      );
+      return labelData.idToValue.get(id) ?? null;
     } else {
       return null;
     }
@@ -321,6 +314,7 @@ export class AnnotationData implements IAnnotationData {
     this.labelData.push({
       options: { ...this.getNextDefaultLabelSettings(), ...options },
       ids: new Set(),
+      idToValue: new Map<number, string>(),
       valueToIds: new Map<string, Set<number>>(),
       lastValue: null,
     });
@@ -362,6 +356,9 @@ export class AnnotationData implements IAnnotationData {
         labelData.valueToIds.delete(value);
       }
     }
+    if (labelData.idToValue.has(id)) {
+      labelData.idToValue.delete(id);
+    }
     this.markIdMapAsDirty();
   }
 
@@ -381,6 +378,7 @@ export class AnnotationData implements IAnnotationData {
       labelData.valueToIds.set(value, new Set());
     }
     labelData.valueToIds.get(value)!.add(id);
+    labelData.idToValue.set(id, value);
 
     labelData.ids.add(id);
     labelData.lastValue = value;
@@ -399,14 +397,11 @@ export class AnnotationData implements IAnnotationData {
     this.validateIndex(labelIdx);
     const labelData = this.labelData[labelIdx];
     labelData.ids.delete(id);
-    for (const [value, ids] of labelData.valueToIds) {
-      if (ids.has(id)) {
-        ids.delete(id);
-        if (ids.size === 0) {
-          labelData.valueToIds.delete(value);
-        }
-        break;
-      }
+
+    // Remove id <-> value mapping.
+    const value = labelData.idToValue.get(id);
+    if (value !== undefined) {
+      this.removeIdFromValue(labelIdx, id, value);
     }
     this.markIdMapAsDirty();
   }
