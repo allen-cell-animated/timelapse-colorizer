@@ -10,7 +10,7 @@ const CSV_COL_ID = "ID";
 const CSV_COL_TIME = "Frame";
 const CSV_COL_TRACK = "Track";
 
-export const BOOLEAN_VALUE = "TRUE";
+export const BOOLEAN_VALUE = "true";
 
 export const DEFAULT_ANNOTATION_LABEL_COLORS = KNOWN_CATEGORICAL_PALETTES.get(
   DEFAULT_CATEGORICAL_PALETTE_KEY
@@ -437,8 +437,9 @@ export class AnnotationData implements IAnnotationData {
       for (let i = 0; i < this.labelData.length; i++) {
         if (labels.includes(i)) {
           row.push(this.getValueFromId(i, id) ?? "");
+        } else {
+          row.push("");
         }
-        row.push("");
       }
       csvRows.push(row);
     }
