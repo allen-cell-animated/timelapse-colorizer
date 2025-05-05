@@ -2,7 +2,7 @@ import { Vector2 } from "three";
 
 import { BaseRenderParams, EMPTY_RENDER_INFO, RenderInfo } from "../types";
 
-import { LabelData } from "../../AnnotationData";
+import { LabelData, LabelType } from "../../AnnotationData";
 
 export type AnnotationParams = BaseRenderParams & {
   visible: boolean;
@@ -26,13 +26,17 @@ export type AnnotationStyle = {
    * the zoom level (at 2x zoom the markers will be 2x bigger).
    */
   scaleWithZoomPct: number;
+  borderRadiusPx: number;
+  textPaddingPx: number;
 };
 
-export const defaultAnnotationStyle = {
-  markerSizePx: 5,
+export const defaultAnnotationStyle: AnnotationStyle = {
+  markerSizePx: 6,
   borderColor: "white",
-  additionalItemsOffsetPx: 2,
+  additionalItemsOffsetPx: 3,
   scaleWithZoomPct: 0.25,
+  borderRadiusPx: 2,
+  textPaddingPx: 4,
 };
 
 /** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
@@ -132,22 +136,67 @@ function drawAnnotationMarker(
 
   // Draw an additional marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {
-    ctx.fillStyle = "#" + params.labelData[labelIdx[1]].options.color.getHexString();
+    const bgLabelData = params.labelData[labelIdx[1]];
+    ctx.fillStyle = "#" + bgLabelData.options.color.getHexString();
     const offsetPos = pos.clone().addScalar(style.additionalItemsOffsetPx * dampenedZoomScale);
     ctx.beginPath();
-    ctx.arc(offsetPos.x, offsetPos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
+    if (bgLabelData.options.type === LabelType.BOOLEAN) {
+      ctx.arc(offsetPos.x, offsetPos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
+    } else {
+      ctx.roundRect(
+        Math.round(offsetPos.x - scaledMarkerSizePx) - 0.5,
+        Math.round(offsetPos.y - scaledMarkerSizePx) - 0.5,
+        scaledMarkerSizePx * 2,
+        scaledMarkerSizePx * 2,
+        style.borderRadiusPx * dampenedZoomScale
+      );
+    }
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
 
-  // Draw the main marker.
   ctx.fillStyle = "#" + labelData.options.color.getHexString();
-  ctx.beginPath();
-  ctx.arc(pos.x, pos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+  if (labelData.options.type === LabelType.BOOLEAN) {
+    // Draw the main marker as a filled circle.
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    // Draw the main marker as a filled square, with text inside.
+    // Get value (HACKY. PLEASE MAKE THIS MORE EFFICIENT.)
+    let textValue = "N/A";
+    for (const [value, ids] of labelData.valueToIds) {
+      if (ids.has(id)) {
+        textValue = value;
+        break;
+      }
+    }
+    const fontSizePx = scaledMarkerSizePx * 2 - style.textPaddingPx;
+    ctx.font = `${scaledMarkerSizePx * 2}px Lato, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const textSize = ctx.measureText(textValue);
+    const rectHeight = Math.round(fontSizePx + style.textPaddingPx * dampenedZoomScale); // Adjust text height to fit inside the square
+    const rectWidth = Math.max(rectHeight, Math.round(textSize.width + style.textPaddingPx * dampenedZoomScale)); // Add padding to the text size
+    ctx.beginPath();
+    ctx.roundRect(
+      Math.round(pos.x - rectWidth / 2) - 0.5,
+      Math.round(pos.y - rectHeight / 2) - 0.5,
+      rectWidth,
+      rectHeight,
+      style.borderRadiusPx * dampenedZoomScale
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = style.borderColor;
+    ctx.fillText(textValue, pos.x, pos.y); // Debug text
+  }
 }
 
 export function getAnnotationRenderer(
@@ -183,11 +232,11 @@ export function getAnnotationRenderer(
         }
       }
 
+      drawLastClickedId(origin, ctx, params, style);
+
       for (const [id, labelIdxs] of idsToLabels) {
         drawAnnotationMarker(origin, ctx, params, style, id, labelIdxs);
       }
-
-      drawLastClickedId(origin, ctx, params, style);
     },
   };
 }
