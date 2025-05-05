@@ -3,7 +3,7 @@ import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
 import { useShallow } from "zustand/shallow";
 
-import { AnnotationSelectionMode, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../colorizer";
+import { AnnotationSelectionMode, PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../colorizer";
 import { formatNumber } from "../../colorizer/utils/math_utils";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { selectVectorConfigFromState } from "../../state/slices";
@@ -13,7 +13,7 @@ import { useViewerStateStore } from "../../state/ViewerState";
 import HoverTooltip from "./HoverTooltip";
 
 type CanvasHoverTooltipProps = {
-  lastValidHoveredId: number;
+  lastValidHoveredId: PixelIdInfo;
   showObjectHoverInfo: boolean;
   annotationState: AnnotationState;
 };
@@ -29,6 +29,11 @@ const ObjectInfoCard = styled.div`
 
   transition: opacity 300ms ease-in-out;
   width: fit-content;
+`;
+
+const DebugText = styled.p`
+  font-size: var(--font-size-label-small) !important;
+  color: var(--color-text-hint);
 `;
 
 /**
@@ -66,8 +71,8 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   );
 
   const getHoveredFeatureValue = useCallback((): string => {
-    if (lastHoveredId !== null && dataset !== null && featureKey !== null) {
-      const featureVal = getFeatureValue(lastHoveredId);
+    if (lastHoveredId.globalId !== undefined && dataset !== null && featureKey !== null) {
+      const featureVal = getFeatureValue(lastHoveredId.globalId);
       const categories = dataset.getFeatureCategories(featureKey);
       if (categories !== null) {
         return categories[Number.parseInt(featureVal, 10)];
@@ -75,15 +80,16 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
         return featureVal;
       }
     }
-    return "";
+    return "N/A";
   }, [lastHoveredId, dataset, getFeatureValue, featureKey]);
   const hoveredFeatureValue = getHoveredFeatureValue();
 
   const getVectorTooltipText = useCallback((): string | null => {
-    if (!vectorConfig.visible || lastHoveredId === null || !motionDeltas) {
+    if (!vectorConfig.visible || lastHoveredId.globalId === undefined || !motionDeltas) {
       return null;
     }
-    const motionDelta = [motionDeltas[2 * lastHoveredId], motionDeltas[2 * lastHoveredId + 1]];
+    const globalId = lastHoveredId.globalId;
+    const motionDelta = [motionDeltas[2 * globalId], motionDeltas[2 * globalId + 1]];
 
     if (Number.isNaN(motionDelta[0]) || Number.isNaN(motionDelta[1])) {
       return null;
@@ -110,10 +116,13 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   const vectorTooltipText = getVectorTooltipText();
 
   const objectInfoContent = [
-    <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
+    <p key="track_id">
+      Track ID: {lastHoveredId.globalId !== undefined ? dataset?.getTrackId(lastHoveredId.globalId) : "N/A"}
+    </p>,
     <p key="feature_value">
       {featureName ?? "Feature"}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
     </p>,
+    <DebugText key="object_id">Pixel value: {lastHoveredId.segId}</DebugText>,
   ];
 
   if (vectorTooltipText) {
@@ -121,28 +130,30 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   }
 
   // Show all current labels applied to the hovered object
-  const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredId);
   const labelData = props.annotationState.data.getLabels();
-  if (labels.length > 0 && props.annotationState.visible) {
-    objectInfoContent.push(
-      <div style={{ lineHeight: "28px" }}>
-        {labels.map((labelIdx) => {
-          const label = labelData[labelIdx];
-          return (
-            // TODO: Tags do not change their text color based on the background color.
-            // Make a custom wrapper for Tag that does this; see
-            // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
-            <Tag
-              key={labelIdx}
-              style={{ width: "fit-content", margin: "0 2px" }}
-              color={"#" + label.color.getHexString()}
-            >
-              {label.name}
-            </Tag>
-          );
-        })}
-      </div>
-    );
+  if (lastHoveredId.globalId !== undefined) {
+    const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredId.globalId);
+    if (labels.length > 0 && props.annotationState.visible) {
+      objectInfoContent.push(
+        <div style={{ lineHeight: "28px" }}>
+          {labels.map((labelIdx) => {
+            const label = labelData[labelIdx];
+            return (
+              // TODO: Tags do not change their text color based on the background color.
+              // Make a custom wrapper for Tag that does this; see
+              // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+              <Tag
+                key={labelIdx}
+                style={{ width: "fit-content", margin: "0 2px" }}
+                color={"#" + label.color.getHexString()}
+              >
+                {label.name}
+              </Tag>
+            );
+          })}
+        </div>
+      );
+    }
   }
 
   // If editing annotations, also show the current label being applied
@@ -156,35 +167,37 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       </Tag>
     );
 
-    const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId);
-    if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
-      const verb = isHoveredIdLabeled ? "unlabel" : "label";
-      annotationLabel = (
-        <FlexRow>
-          {annotationLabel}
-          <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
-            ✦ Click to {verb} entire track
-          </Tag>
-        </FlexRow>
-      );
-    } else if (props.annotationState.selectionMode === AnnotationSelectionMode.RANGE && dataset) {
-      if (props.showObjectHoverInfo) {
-        const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHoveredId);
-        if (hoveredRange !== null && hoveredRange.length > 1) {
-          // Get min and max track IDs
-          const id0 = hoveredRange[0];
-          const id1 = hoveredRange[hoveredRange.length - 1];
-          const t0 = dataset.getTime(id0);
-          const t1 = dataset.getTime(id1);
-          const verb = isHoveredIdLabeled ? "unlabel" : "label";
-          annotationLabel = (
-            <FlexRow>
-              {annotationLabel}
-              <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
-                ✦ Click to {verb} {hoveredRange.length} objects from time {t0} to {t1}
-              </Tag>
-            </FlexRow>
-          );
+    if (lastHoveredId.globalId !== undefined) {
+      const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
+      if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
+        const verb = isHoveredIdLabeled ? "unlabel" : "label";
+        annotationLabel = (
+          <FlexRow>
+            {annotationLabel}
+            <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
+              ✦ Click to {verb} entire track
+            </Tag>
+          </FlexRow>
+        );
+      } else if (props.annotationState.selectionMode === AnnotationSelectionMode.RANGE && dataset) {
+        if (props.showObjectHoverInfo) {
+          const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHoveredId.globalId);
+          if (hoveredRange !== null && hoveredRange.length > 1) {
+            // Get min and max track IDs
+            const id0 = hoveredRange[0];
+            const id1 = hoveredRange[hoveredRange.length - 1];
+            const t0 = dataset.getTime(id0);
+            const t1 = dataset.getTime(id1);
+            const verb = isHoveredIdLabeled ? "unlabel" : "label";
+            annotationLabel = (
+              <FlexRow>
+                {annotationLabel}
+                <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
+                  ✦ Click to {verb} {hoveredRange.length} objects from time {t0} to {t1}
+                </Tag>
+              </FlexRow>
+            );
+          }
         }
       }
     }
