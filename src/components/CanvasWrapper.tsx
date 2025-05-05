@@ -6,13 +6,13 @@ import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { AnnotationSelectionMode, LoadTroubleshooting, TabType } from "../colorizer/types";
+import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import CanvasUIOverlay from "../colorizer/CanvasOverlay";
+import CanvasOverlay from "../colorizer/CanvasOverlay";
 import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
@@ -85,7 +85,7 @@ const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
 `;
 
 type CanvasWrapperProps = {
-  canv: CanvasUIOverlay;
+  canv: CanvasOverlay;
 
   loading: boolean;
   loadingProgress: number | null;
@@ -93,10 +93,10 @@ type CanvasWrapperProps = {
 
   annotationState: AnnotationState;
 
-  onClickId?: (id: number) => void;
+  onClickId?: (info: PixelIdInfo) => void;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
-  onMouseHover?: (id: number) => void;
+  onMouseHover?: (info: PixelIdInfo | null) => void;
   /** Called when the mouse exits the canvas. */
   onMouseLeave?: () => void;
 
@@ -124,6 +124,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
   // Access state properties
+  const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
   const backdropKey = useViewerStateStore((state) => state.backdropKey);
   const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
@@ -144,12 +145,19 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const canv = props.canv;
   const canvasPlaceholderRef = useRef<HTMLDivElement>(null);
 
+  const isFrameLoading = pendingFrame !== currentFrame;
+  const loadProgress = props.loading ? props.loadingProgress : null;
+
   // Add subscriber so canvas parameters are updated when the state changes.
   useEffect(() => {
     return useViewerStateStore.subscribe(renderCanvasStateParamsSelector, (params) => {
       canv.setParams(params);
     });
   }, []);
+
+  // TODO: Move management of the zoom/pan into the canvas class itself (or a
+  // helper). CanvasWrapper should have a way to zoom in/out and reset the view,
+  // but otherwise doesn't need to track the zoom/pan state.
 
   /**
    * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
@@ -296,8 +304,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     canvasZoomInverse.current = 1.0;
     canvasPanOffset.current = new Vector2(0, 0);
-    canv.setZoom(1.0);
-    canv.setPan(0, 0);
+    // canv.setZoom(1.0);
+    // canv.setPan(0, 0);
   }, [collection]);
 
   /** Report clicked tracks via the passed callback. */
@@ -305,10 +313,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     async (event: MouseEvent): Promise<void> => {
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (id < 0 || dataset === null) {
+      if (dataset === null || id === null || id.globalId === undefined) {
         clearTrack();
+        return;
       } else {
-        const trackId = dataset.getTrackId(id);
+        const trackId = dataset.getTrackId(id.globalId);
         const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
           setTrack(newTrack);
@@ -566,8 +575,6 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
-  canv.render();
-
   const onViewerSettingsLinkClicked = (): void => {
     setOpenTab(TabType.SETTINGS);
   };
@@ -615,7 +622,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       {props.annotationState.isAnnotationModeEnabled && (
         <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
       )}
-      <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
+      <LoadingSpinner loading={props.loading || isFrameLoading} progress={loadProgress}>
         <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
       <MissingFileIconContainer style={{ visibility: isMissingFile ? "visible" : "hidden" }}>
