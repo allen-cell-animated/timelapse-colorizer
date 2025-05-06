@@ -117,7 +117,7 @@ export interface IAnnotationDataGetters {
    */
   getNextDefaultLabelSettings(): LabelOptions;
 
-  getNextDefaultLabelValue(labelIdx: number): string;
+  getNextDefaultLabelValue(labelIdx: number, useLastValue: boolean): string;
 
   getValueFromId(labelIdx: number, id: number): string | null;
 
@@ -281,14 +281,14 @@ export class AnnotationData implements IAnnotationData {
     return { type: LabelType.BOOLEAN, name, color, autoIncrement: true };
   }
 
-  getNextDefaultLabelValue(labelIdx: number): string {
+  getNextDefaultLabelValue(labelIdx: number, useLastValue: boolean): string {
     this.validateIndex(labelIdx);
     const labelData = this.labelData[labelIdx];
     switch (labelData.options.type) {
       case LabelType.BOOLEAN:
         return BOOLEAN_VALUE_TRUE;
       case LabelType.INTEGER:
-        if (labelData.options.autoIncrement) {
+        if (labelData.options.autoIncrement && !useLastValue) {
           return (parseInt(labelData.lastValue ?? "-1", 10) + 1).toString();
         } else {
           return (labelData.lastValue ?? "0").toString();

@@ -264,7 +264,8 @@ export type AnnotationState = {
   selectionMode: AnnotationSelectionMode;
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
   lastClickedId: number | null;
-  lastEditedRange: number[] | null;
+  activeEditRange: number[] | null;
+  nextDefaultLabelValue: string | null;
   /**
    * For a given ID, returns the range of IDs that would be selected if the ID
    * is clicked with range selection mode turned on.
@@ -275,7 +276,7 @@ export type AnnotationState = {
    * - A list of IDs to select if this ID is clicked with range selection mode turned on.
    */
   getSelectRangeFromId: (dataset: Dataset, id: number) => number[] | null;
-  handleAnnotationClick: (dataset: Dataset, id: number, selectRange?: boolean) => void;
+  handleAnnotationClick: (dataset: Dataset, id: number | null) => void;
   /**
    * Contains annotation data getters. Use this object directly as a dependency
    * in `useMemo` or `useCallback` to trigger updates when the underlying data
@@ -297,7 +298,7 @@ export const useAnnotations = (): AnnotationState => {
   const [baseSelectionMode, setBaseSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
 
   const isSelectRangeHotkeyPressed = useShortcutKey("Shift");
-  // const isReuseValueHotkeyPressed = useShortcutKey("Control");
+  const isReuseValueHotkeyPressed = useShortcutKey("Control");
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [lastEditedRange, setLastEditedRange] = useState<number[] | null>(null);
@@ -416,11 +417,22 @@ export const useAnnotations = (): AnnotationState => {
     [lastEditedRange, lastClickedId]
   );
 
+  const nextDefaultLabelValue = useMemo(() => {
+    if (currentLabelIdx === null) {
+      return null;
+    }
+    return annotationData.getNextDefaultLabelValue(currentLabelIdx, isReuseValueHotkeyPressed);
+  }, [currentLabelIdx, dataUpdateCounter, isReuseValueHotkeyPressed]);
+
   // TODO: Also handle clicking on background
   const handleAnnotationClick = useCallback(
-    (dataset: Dataset, id: number): void => {
-      if (!isAnnotationEnabled || currentLabelIdx === null) {
-        setLastClickedId(id);
+    (dataset: Dataset, id: number | null): void => {
+      if (!isAnnotationEnabled) {
+        return;
+      }
+      setLastClickedId(id);
+      if (currentLabelIdx === null || id === null) {
+        setLastEditedRange(null);
         return;
       }
       const track = dataset.getTrack(dataset.getTrackId(id));
@@ -430,7 +442,7 @@ export const useAnnotations = (): AnnotationState => {
       const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
 
       const toggleRange = (range: number[]): void => {
-        const defaultValue = annotationData.getNextDefaultLabelValue(currentLabelIdx);
+        const defaultValue = annotationData.getNextDefaultLabelValue(currentLabelIdx, isReuseValueHotkeyPressed);
         if (isLabeled) {
           annotationData.removeLabelOnIds(currentLabelIdx, range);
         } else {
@@ -464,7 +476,7 @@ export const useAnnotations = (): AnnotationState => {
       }
       setDataUpdateCounter((value) => value + 1);
     },
-    [selectionMode, currentLabelIdx, getSelectRangeFromId]
+    [selectionMode, currentLabelIdx, getSelectRangeFromId, isReuseValueHotkeyPressed]
   );
 
   const clear = (): void => {
@@ -503,8 +515,9 @@ export const useAnnotations = (): AnnotationState => {
     setSelectionMode,
     data,
     handleAnnotationClick,
+    nextDefaultLabelValue,
     lastClickedId,
-    lastEditedRange,
+    activeEditRange: lastEditedRange,
     getSelectRangeFromId,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),

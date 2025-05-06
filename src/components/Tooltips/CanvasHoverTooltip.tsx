@@ -1,4 +1,4 @@
-import { Tag } from "antd";
+import { Space, Tag } from "antd";
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
 import { useShallow } from "zustand/shallow";
@@ -9,6 +9,7 @@ import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { selectVectorConfigFromState } from "../../state/slices";
 import { FlexColumn, FlexRow } from "../../styles/utils";
 
+import { LabelType } from "../../colorizer/AnnotationData";
 import { useViewerStateStore } from "../../state/ViewerState";
 import HoverTooltip from "./HoverTooltip";
 
@@ -34,6 +35,45 @@ const ObjectInfoCard = styled.div`
 const DebugText = styled.p`
   font-size: var(--font-size-label-small) !important;
   color: var(--color-text-hint);
+`;
+
+const TagGroup = styled.div<{ $color: string }>`
+  display: flex;
+  flex-direction: row;
+  border-radius: calc(var(--radius-control-small) + 1) px;
+  --border-radius: var(--radius-control-small);
+  font-size: var(--font-size-label-small);
+  line-height: calc(var(--font-size-label-small) + 6px);
+  height: calc(var(--font-size-label-small) + 10px);
+  margin-right: 8px;
+
+  & * {
+    text-wrap-mode: nowrap;
+  }
+
+  & > :first-child {
+    width: max-content;
+    background-color: ${(props) => props.$color};
+    color: var(--color-text-button);
+    padding: 2px 8px 0px 8px;
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+  }
+
+  & > :last-child {
+    border-top-right-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+  }
+
+  & > :not(:first-child) {
+    width: fit-content;
+    background-color: var(--color-background);
+    border: 1px solid ${(props) => props.$color};
+    padding: 1px 4px 0px 6px;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 `;
 
 /**
@@ -131,24 +171,26 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
   // Show all current labels applied to the hovered object
   const labelData = props.annotationState.data.getLabels();
-  if (lastHoveredId.globalId !== undefined) {
-    const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredId.globalId);
+  const lastHoveredGlobalId = lastHoveredId.globalId;
+  if (lastHoveredGlobalId !== undefined) {
+    const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredGlobalId);
     if (labels.length > 0 && props.annotationState.visible) {
       objectInfoContent.push(
         <div style={{ lineHeight: "28px" }}>
           {labels.map((labelIdx) => {
             const label = labelData[labelIdx];
+            const value =
+              label.options.type !== LabelType.BOOLEAN
+                ? props.annotationState.data.getValueFromId(labelIdx, lastHoveredGlobalId)
+                : undefined;
             return (
               // TODO: Tags do not change their text color based on the background color.
               // Make a custom wrapper for Tag that does this; see
               // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
-              <Tag
-                key={labelIdx}
-                style={{ width: "fit-content", margin: "0 2px" }}
-                color={"#" + label.options.color.getHexString()}
-              >
-                {label.options.name}
-              </Tag>
+              <TagGroup key={labelIdx} style={{ margin: "0 2px" }} $color={"#" + label.options.color.getHexString()}>
+                <span>{label.options.name}</span>
+                <span>{value}</span>
+              </TagGroup>
             );
           })}
         </div>
@@ -161,10 +203,19 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   const currentLabelIdx = props.annotationState.currentLabelIdx;
   if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
     const currentLabelData = labelData[currentLabelIdx];
+
+    let currentValue = null;
+    if (currentLabelData.options.type !== "boolean") {
+      currentValue = props.annotationState.nextDefaultLabelValue;
+    }
+
     annotationLabel = (
-      <Tag style={{ width: "fit-content" }} color={"#" + currentLabelData.options.color.getHexString()} bordered={true}>
-        {currentLabelData.options.name}
-      </Tag>
+      <>
+        <TagGroup $color={"#" + currentLabelData.options.color.getHexString()}>
+          <span>{currentLabelData.options.name}</span>
+          <span>{currentValue}</span>
+        </TagGroup>
+      </>
     );
 
     if (lastHoveredId.globalId !== undefined) {

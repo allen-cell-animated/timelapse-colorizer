@@ -540,8 +540,8 @@ function Viewer(): ReactElement {
 
   const onClickId = useCallback(
     (info: PixelIdInfo) => {
-      if (dataset && info.globalId !== undefined) {
-        annotationState.handleAnnotationClick(dataset, info.globalId);
+      if (dataset) {
+        annotationState.handleAnnotationClick(dataset, info.globalId ?? null);
       }
     },
     [dataset, annotationState.handleAnnotationClick]

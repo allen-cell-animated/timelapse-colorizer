@@ -30,6 +30,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   const [visible, setVisible] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const anchorRef = React.useRef<HTMLDivElement>(null);
+  const prevLastClickedId = React.useRef(props.annotationState.lastClickedId);
 
   const { lastClickedId, currentLabelIdx, data: annotationData, isAnnotationModeEnabled } = props.annotationState;
 
@@ -59,7 +60,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   }, [lastClickedId, currentLabelIdx]);
 
   const handleInputConfirm = () => {
-    const lastEditedRange = props.annotationState.lastEditedRange;
+    const lastEditedRange = props.annotationState.activeEditRange;
     console.log("lastEditedRange", lastEditedRange);
     if (lastEditedRange !== null && currentLabelIdx !== null) {
       const newValue = inputValue;
@@ -67,6 +68,13 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     }
     setVisible(false);
   };
+
+  useEffect(() => {
+    // When last clicked ID changes, that means the user clicked on a new object or on the
+    // background. Save the current input value to the last clicked ID's label data.
+    if (visible) {
+    }
+  }, [lastClickedId]);
 
   return (
     <div ref={anchorRef} style={{ position: "absolute", width: "1px", height: "1px", zIndex: 102 }}>
