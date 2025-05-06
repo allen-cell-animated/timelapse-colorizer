@@ -263,6 +263,8 @@ export type AnnotationState = {
   setVisibility: (visible: boolean) => void;
   selectionMode: AnnotationSelectionMode;
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
+  lastClickedId: number | null;
+  lastEditedRange: number[] | null;
   /**
    * For a given ID, returns the range of IDs that would be selected if the ID
    * is clicked with range selection mode turned on.
@@ -272,7 +274,6 @@ export type AnnotationState = {
    * - Returns `null` if no range would be selected.
    * - A list of IDs to select if this ID is clicked with range selection mode turned on.
    */
-  lastClickedId: number | null;
   getSelectRangeFromId: (dataset: Dataset, id: number) => number[] | null;
   handleAnnotationClick: (dataset: Dataset, id: number, selectRange?: boolean) => void;
   /**
@@ -296,6 +297,8 @@ export const useAnnotations = (): AnnotationState => {
   const [baseSelectionMode, setBaseSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
 
   const isSelectRangeHotkeyPressed = useShortcutKey("Shift");
+  // const isReuseValueHotkeyPressed = useShortcutKey("Control");
+
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   const [lastEditedRange, setLastEditedRange] = useState<number[] | null>(null);
 
@@ -413,6 +416,7 @@ export const useAnnotations = (): AnnotationState => {
     [lastEditedRange, lastClickedId]
   );
 
+  // TODO: Also handle clicking on background
   const handleAnnotationClick = useCallback(
     (dataset: Dataset, id: number): void => {
       if (!isAnnotationEnabled || currentLabelIdx === null) {
@@ -438,12 +442,15 @@ export const useAnnotations = (): AnnotationState => {
       switch (selectionMode) {
         case AnnotationSelectionMode.TRACK:
           // Toggle entire track
+          setLastEditedRange(track.ids);
           toggleRange(track.ids);
+          setLastClickedId(id);
           break;
         case AnnotationSelectionMode.RANGE:
           if (idRange !== null) {
             setLastEditedRange(idRange);
             toggleRange(idRange);
+            // TODO: Change this to lastClickedRangeEndpoint?
             setLastClickedId(null);
           } else {
             setLastClickedId(id);
@@ -452,6 +459,7 @@ export const useAnnotations = (): AnnotationState => {
         case AnnotationSelectionMode.TIME:
         default:
           toggleRange([id]);
+          setLastEditedRange([id]);
           setLastClickedId(id);
       }
       setDataUpdateCounter((value) => value + 1);
@@ -496,6 +504,7 @@ export const useAnnotations = (): AnnotationState => {
     data,
     handleAnnotationClick,
     lastClickedId,
+    lastEditedRange,
     getSelectRangeFromId,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),

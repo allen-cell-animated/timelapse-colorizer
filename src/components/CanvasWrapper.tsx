@@ -1,6 +1,6 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
@@ -20,6 +20,7 @@ import { AlertBannerProps } from "./Banner";
 import { LinkStyleButton } from "./Buttons/LinkStyleButton";
 import IconButton from "./IconButton";
 import LoadingSpinner from "./LoadingSpinner";
+import AnnotationInputPopover from "./Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "./Tooltips/TooltipWithSubtitle";
 
 const ASPECT_RATIO = 14.6 / 10;
@@ -144,6 +145,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canv = props.canv;
   const canvasPlaceholderRef = useRef<HTMLDivElement>(null);
+
+  const [lastClickPosition, setLastClickPosition] = useState<[number, number]>([0, 0]);
 
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
@@ -311,6 +314,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
+      setLastClickPosition([event.offsetX, event.offsetY]);
       const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
       if (dataset === null || id === null || id.globalId === undefined) {
@@ -709,6 +713,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           </TooltipWithSubtitle>
         )}
       </CanvasControlsContainer>
+      <AnnotationInputPopover
+        annotationState={props.annotationState}
+        anchorPositionPx={lastClickPosition}
+      ></AnnotationInputPopover>
     </CanvasContainer>
   );
 }

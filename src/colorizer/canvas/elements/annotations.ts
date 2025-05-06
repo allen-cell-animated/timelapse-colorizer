@@ -17,7 +17,8 @@ export type AnnotationParams = BaseRenderParams & {
 };
 
 export type AnnotationStyle = {
-  markerSizePx: number;
+  booleanMarkerRadiusPx: number;
+  textMarkerRadiusPx: number;
   borderColor: string;
   additionalItemsOffsetPx: number;
   /** Percentage, as a number from 0 to 1, of how much to scale the annotation
@@ -31,7 +32,8 @@ export type AnnotationStyle = {
 };
 
 export const defaultAnnotationStyle: AnnotationStyle = {
-  markerSizePx: 6,
+  booleanMarkerRadiusPx: 5,
+  textMarkerRadiusPx: 6,
   borderColor: "white",
   additionalItemsOffsetPx: 3,
   scaleWithZoomPct: 0.25,
@@ -95,7 +97,7 @@ function drawLastClickedId(
   const zoomScale = getMarkerScale(params, style);
   ctx.setLineDash([3, 2]);
   ctx.beginPath();
-  ctx.arc(pos.x, pos.y, style.markerSizePx * zoomScale, 0, 2 * Math.PI);
+  ctx.arc(pos.x, pos.y, style.booleanMarkerRadiusPx * zoomScale, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.stroke();
   ctx.setLineDash([]);
@@ -132,7 +134,8 @@ function drawAnnotationMarker(
 
   // Scale markers by the zoom level.
   const dampenedZoomScale = getMarkerScale(params, style);
-  const scaledMarkerSizePx = style.markerSizePx * dampenedZoomScale;
+  const scaledBooleanMarkerRadiusPx = style.booleanMarkerRadiusPx * dampenedZoomScale;
+  const scaledTextMarkerRadiusPx = style.textMarkerRadiusPx * dampenedZoomScale;
 
   // Draw an additional marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {
@@ -141,13 +144,13 @@ function drawAnnotationMarker(
     const offsetPos = pos.clone().addScalar(style.additionalItemsOffsetPx * dampenedZoomScale);
     ctx.beginPath();
     if (bgLabelData.options.type === LabelType.BOOLEAN) {
-      ctx.arc(offsetPos.x, offsetPos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
+      ctx.arc(offsetPos.x, offsetPos.y, scaledBooleanMarkerRadiusPx, 0, 2 * Math.PI);
     } else {
       ctx.roundRect(
-        Math.round(offsetPos.x - scaledMarkerSizePx) - 0.5,
-        Math.round(offsetPos.y - scaledMarkerSizePx) - 0.5,
-        scaledMarkerSizePx * 2,
-        scaledMarkerSizePx * 2,
+        Math.round(offsetPos.x - scaledBooleanMarkerRadiusPx) - 0.5,
+        Math.round(offsetPos.y - scaledBooleanMarkerRadiusPx) - 0.5,
+        scaledBooleanMarkerRadiusPx * 2,
+        scaledBooleanMarkerRadiusPx * 2,
         style.borderRadiusPx * dampenedZoomScale
       );
     }
@@ -160,7 +163,7 @@ function drawAnnotationMarker(
   if (labelData.options.type === LabelType.BOOLEAN) {
     // Draw the main marker as a filled circle.
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
+    ctx.arc(pos.x, pos.y, scaledBooleanMarkerRadiusPx, 0, 2 * Math.PI);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -174,8 +177,8 @@ function drawAnnotationMarker(
         break;
       }
     }
-    const fontSizePx = scaledMarkerSizePx * 2 - style.textPaddingPx;
-    ctx.font = `${scaledMarkerSizePx * 2}px Lato, sans-serif`;
+    const fontSizePx = scaledTextMarkerRadiusPx * 2 - style.textPaddingPx;
+    ctx.font = `${scaledTextMarkerRadiusPx * 2}px Lato, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
