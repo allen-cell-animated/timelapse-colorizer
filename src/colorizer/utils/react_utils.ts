@@ -292,7 +292,7 @@ export type AnnotationState = {
 export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
 
-  const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
+  const [currentLabelIdx, _setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
   const [visible, _setVisibility] = useState<boolean>(false);
 
@@ -325,6 +325,11 @@ export const useAnnotations = (): AnnotationState => {
     selectionMode = AnnotationSelectionMode.RANGE;
   }
 
+  const setCurrentLabelIdx = (labelIdx: number | null): void => {
+    _setCurrentLabelIdx(labelIdx);
+    setActiveEditRange(null);
+  }
+
   const setSelectionMode = (newMode: AnnotationSelectionMode): void => {
     if (newMode === baseSelectionMode) {
       return;
@@ -353,6 +358,7 @@ export const useAnnotations = (): AnnotationState => {
         setDataUpdateCounter((value) => value + 1);
       }
     }
+    setActiveEditRange(null);
     _setIsAnnotationEnabled(enabled);
   };
 
