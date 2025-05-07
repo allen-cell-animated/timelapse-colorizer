@@ -426,8 +426,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // selection, but keep the behavior where focus is removed from other
     // elements.
     event.preventDefault();
-    if (document.activeElement instanceof HTMLElement && document.activeElement !== canv.domElement) {
-      document.activeElement.blur();
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && !containerRef.current?.contains(activeElement)) {
+      activeElement.blur();
     }
 
     isMouseDragging.current = false;

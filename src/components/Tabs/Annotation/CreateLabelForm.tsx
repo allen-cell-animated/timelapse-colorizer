@@ -49,7 +49,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
 
   useEffect(() => {
     if (nameInputRef.current && props.focusNameInput) {
-      nameInputRef.current.focus();
+      nameInputRef.current.focus({ preventScroll: true });
     }
   }, [props.focusNameInput]);
 
