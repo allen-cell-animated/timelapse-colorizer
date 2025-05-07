@@ -503,7 +503,7 @@ export const useAnnotations = (): AnnotationState => {
       setLastClickedId(id);
       setDataUpdateCounter((value) => value + 1);
     },
-    [selectionMode, currentLabelIdx, getSelectRangeFromId, isReuseValueHotkeyPressed]
+    [isAnnotationEnabled, selectionMode, currentLabelIdx, getSelectRangeFromId, isReuseValueHotkeyPressed]
   );
 
   const clear = (): void => {
