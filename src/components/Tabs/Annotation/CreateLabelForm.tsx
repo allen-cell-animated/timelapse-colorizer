@@ -117,7 +117,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
             <TooltipWithSubtitle
               trigger={["hover", "focus"]}
               title="Increments the label value on each click"
-              subtitle="Hold Shift to reuse last value"
+              subtitle="Hold Ctrl to reuse last value"
               placement="right"
             >
               <div>

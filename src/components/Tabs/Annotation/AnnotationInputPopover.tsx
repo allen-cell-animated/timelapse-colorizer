@@ -1,6 +1,6 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { Card, Input, InputRef } from "antd";
-import React, { ReactElement, useEffect, useState } from "react";
+import React, { ReactElement, useContext, useEffect, useState } from "react";
 import styled from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
@@ -8,6 +8,7 @@ import { useViewerStateStore } from "../../../state";
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
 import { LabelType } from "../../../colorizer/AnnotationData";
+import { AppThemeContext } from "../../AppStyle";
 import IconButton from "../../IconButton";
 
 type AnnotationInputPopoverProps = {
@@ -15,15 +16,23 @@ type AnnotationInputPopoverProps = {
   anchorPositionPx: [number, number];
 };
 
-const InputWrapper = styled(Card)`
+const CARD_WIDTH_PX = 200;
+
+const StyledCard = styled(Card)`
   position: relative;
-  transform: translateX(-50%) translateY(-150%);
-  width: 200px;
+  // Hard-coded values used instead of transform/translate to ensure that the
+  // card aligns with pixel grid.
+  left: -${CARD_WIDTH_PX / 2}px;
+  width: ${CARD_WIDTH_PX}px;
+  bottom: 90px;
   z-index: 1;
   & .ant-card-body {
-    padding: 4px;
+    padding: 8px;
+    padding-top: 6px;
   }
   & * {
+    // Fixes a bug where the input popover's contents would persist when the
+    // popover was hidden.
     transition: all 0.2s, visibility 0s;
   }
 `;
@@ -35,6 +44,8 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   const [inputValue, setInputValue] = useState("");
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<InputRef>(null);
+
+  const theme = useContext(AppThemeContext);
 
   const {
     lastClickedId,
@@ -130,9 +141,9 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   return (
     <div ref={anchorRef} style={{ position: "absolute", width: "1px", height: "1px", zIndex: 102 }}>
-      <InputWrapper size="small" style={{ visibility: visible ? "visible" : "hidden" }}>
+      <StyledCard size="small" style={{ visibility: visible ? "visible" : "hidden" }}>
         <FlexColumn>
-          <span style={{ fontSize: "12px", color: "#999", marginTop: "0" }}>
+          <span style={{ fontSize: theme.font.size.labelSmall, color: theme.color.text.hint, marginTop: "0" }}>
             Editing {editCount} object{editCount > 1 ? "s" : ""}
           </span>
           <FlexRow $gap={6}>
@@ -152,7 +163,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
             </IconButton>
           </FlexRow>
         </FlexColumn>
-      </InputWrapper>
+      </StyledCard>
     </div>
   );
 }

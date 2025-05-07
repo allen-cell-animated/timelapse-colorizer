@@ -10,9 +10,9 @@ import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } fr
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
-import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import { LabelType } from "../colorizer/AnnotationData";
+import { LabelData, LabelType } from "../colorizer/AnnotationData";
 import CanvasOverlay from "../colorizer/CanvasOverlay";
 import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
@@ -73,17 +73,24 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   pointer-events: none;
 `;
 
-const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
+const AnnotationModeContainer = styled(FlexColumn)`
   position: absolute;
   top: 10px;
   left: 10px;
-  font-weight: bold;
   background-color: var(--color-viewport-overlay-background);
   border: 1px solid var(--color-viewport-overlay-outline);
-  z-index: 200;
-  padding: 8px 12px;
+  z-index: 100;
+  padding: 8px 8px;
   border-radius: 4px;
   pointer-events: none;
+  gap: 6px;
+`;
+
+const HotkeyText = styled.div`
+  padding: 1px 4px;
+  border-radius: 4px;
+  background-color: var(--color-viewport-overlay-background);
+  border: 1px solid var(--color-viewport-overlay-outline);
 `;
 
 type CanvasWrapperProps = {
@@ -643,12 +650,32 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       </span>
     )
   );
+  const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
+  const shouldShowReuseValueHotkey = labelData.options.type === LabelType.INTEGER && labelData.options.autoIncrement;
 
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
-      {props.annotationState.isAnnotationModeEnabled && (
-        <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
-      )}
+      {
+        // TODO: Fade out annotation mode modal if mouse approaches top left corner?
+        props.annotationState.isAnnotationModeEnabled && (
+          <AnnotationModeContainer>
+            <span style={{ marginLeft: "2px" }}>
+              <b>Annotation editing in progress...</b>
+            </span>
+            <FlexColumn $gap={6}>
+              <FlexRowAlignCenter $gap={6}>
+                <HotkeyText>Shift</HotkeyText> hold to select range
+              </FlexRowAlignCenter>
+              {shouldShowReuseValueHotkey && (
+                <FlexRowAlignCenter $gap={6}>
+                  <HotkeyText>Ctrl</HotkeyText>
+                  hold to reuse last value
+                </FlexRowAlignCenter>
+              )}
+            </FlexColumn>
+          </AnnotationModeContainer>
+        )
+      }
       <LoadingSpinner loading={props.loading || isFrameLoading} progress={loadProgress}>
         <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
