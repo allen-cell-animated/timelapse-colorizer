@@ -40,7 +40,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
   const props = { ...defaultProps, ...inputProps } as Required<CreateLabelFormProps>;
 
   const [labelType, setLabelType] = useState<LabelType>(props.initialLabelOptions.type);
-  const [autoIncrement, setAutoIncrement] = useState(false);
+  const [autoIncrement, setAutoIncrement] = useState(props.initialLabelOptions.autoIncrement);
   const [color, setColor] = useState(props.initialLabelOptions.color);
   const [nameInput, setNameInput] = useState(props.initialLabelOptions.name);
   const nameInputRef = useRef<InputRef>(null);
