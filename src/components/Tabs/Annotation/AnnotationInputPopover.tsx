@@ -5,8 +5,9 @@ import styled from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { useViewerStateStore } from "../../../state";
-import { FlexRow } from "../../../styles/utils";
+import { FlexColumn, FlexRow } from "../../../styles/utils";
 
+import { LabelType } from "../../../colorizer/AnnotationData";
 import IconButton from "../../IconButton";
 
 type AnnotationInputPopoverProps = {
@@ -16,6 +17,7 @@ type AnnotationInputPopoverProps = {
 
 const InputWrapper = styled(Card)`
   position: relative;
+  transform: translateX(-50%) translateY(-150%);
   width: 200px;
   & .ant-card-body {
     padding: 4px;
@@ -58,18 +60,33 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       anchorRef.current.style.left = `${props.anchorPositionPx[0] + 10}px`;
       anchorRef.current.style.top = `${props.anchorPositionPx[1] + 10}px`;
       setVisible(true);
-      inputRef.current?.focus({ preventScroll: true });
     } else {
       setVisible(false);
     }
-  }, [activeEditRange]);
+  }, [activeEditRange, lastClickedId, dataset]);
+
+  // Focus the input when the popover is visible.
+  useEffect(() => {
+    if (visible && inputRef.current) {
+      console.log("Focusing input", inputRef.current, inputRef);
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 50);
+    }
+  }, [visible]);
 
   const handleInputConfirm = () => {
     const lastEditedRange = props.annotationState.activeEditRange;
     console.log("lastEditedRange", lastEditedRange);
     if (lastEditedRange !== null && currentLabelIdx !== null) {
+      // Validate
       const newValue = inputValue;
-      props.annotationState.setLabelValueOnIds(currentLabelIdx, lastEditedRange, newValue);
+      if (newValue.length === 0) {
+        props.annotationState.removeLabelOnIds(currentLabelIdx, lastEditedRange);
+      } else {
+        props.annotationState.setLabelValueOnIds(currentLabelIdx, lastEditedRange, newValue);
+      }
     }
     setVisible(false);
     clearActiveEditRange();
@@ -77,10 +94,22 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Editing the input value directly updates the label value in the annotation state.
-    if (currentLabelIdx !== null && activeEditRange !== null) {
-      setInputValue(e.target.value);
-      props.annotationState.setLabelValueOnIds(currentLabelIdx, activeEditRange, e.target.value);
+    if (currentLabelIdx === null || activeEditRange === null) {
+      return;
     }
+    // Validate input based on label type.
+    const labelData = props.annotationState.data.getLabels()[currentLabelIdx];
+    let value = e.target.value;
+    if (labelData.options.type === LabelType.INTEGER) {
+      value = value.replaceAll(/[^0-9]/g, "");
+      if (value.length === 0) {
+        setInputValue("");
+        // Don't allow empty values to be set on the label.
+        return;
+      }
+    }
+    setInputValue(value);
+    props.annotationState.setLabelValueOnIds(currentLabelIdx, activeEditRange, value);
   };
 
   const handleDelete = () => {
@@ -93,25 +122,32 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   // TODO: Pressing escape should reset the input value to the original value.
 
+  const editCount = activeEditRange?.length ?? 0;
+
   return (
     <div ref={anchorRef} style={{ position: "absolute", width: "1px", height: "1px", zIndex: 102 }}>
       <InputWrapper size="small" style={{ visibility: visible ? "visible" : "hidden" }}>
-        <FlexRow $gap={6}>
-          {/* TODO: Change width based on field type? */}
-          <Input
-            ref={inputRef}
-            size="small"
-            defaultValue={inputValue}
-            style={{ pointerEvents: "auto" }}
-            value={inputValue}
-            onChange={handleInputChange}
-            onPressEnter={handleInputConfirm}
-            width={"50px"}
-          ></Input>
-          <IconButton type="link" onClick={handleDelete}>
-            <DeleteOutlined />
-          </IconButton>
-        </FlexRow>
+        <FlexColumn>
+          <span style={{ fontSize: "12px", color: "#999", marginTop: "0" }}>
+            Editing {editCount} object{editCount > 1 ? "s" : ""}
+          </span>
+          <FlexRow $gap={6}>
+            {/* TODO: Change width based on field type? */}
+            <Input
+              ref={inputRef}
+              size="small"
+              defaultValue={inputValue}
+              style={{ pointerEvents: "auto" }}
+              value={inputValue}
+              onChange={handleInputChange}
+              onPressEnter={handleInputConfirm}
+              width={"50px"}
+            ></Input>
+            <IconButton type="link" onClick={handleDelete}>
+              <DeleteOutlined />
+            </IconButton>
+          </FlexRow>
+        </FlexColumn>
       </InputWrapper>
     </div>
   );

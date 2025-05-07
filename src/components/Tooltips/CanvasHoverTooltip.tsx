@@ -1,4 +1,4 @@
-import { Space, Tag } from "antd";
+import { Tag } from "antd";
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
 import { useShallow } from "zustand/shallow";
@@ -220,8 +220,9 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
     if (lastHoveredId.globalId !== undefined) {
       const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
+      const isLabelBoolean = currentLabelData.options.type === LabelType.BOOLEAN;
+      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "unlabel" : "edit") : "label";
       if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
-        const verb = isHoveredIdLabeled ? "unlabel" : "label";
         annotationLabel = (
           <FlexRow>
             {annotationLabel}
@@ -239,7 +240,6 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
             const id1 = hoveredRange[hoveredRange.length - 1];
             const t0 = dataset.getTime(id0);
             const t1 = dataset.getTime(id1);
-            const verb = isHoveredIdLabeled ? "unlabel" : "label";
             annotationLabel = (
               <FlexRow>
                 {annotationLabel}

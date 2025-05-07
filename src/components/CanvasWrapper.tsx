@@ -12,6 +12,7 @@ import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
 
+import { LabelType } from "../colorizer/AnnotationData";
 import CanvasOverlay from "../colorizer/CanvasOverlay";
 import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
@@ -94,7 +95,7 @@ type CanvasWrapperProps = {
 
   annotationState: AnnotationState;
 
-  onClickId?: (info: PixelIdInfo) => void;
+  onClickId?: (info: PixelIdInfo | null) => void;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (info: PixelIdInfo | null) => void;
@@ -315,19 +316,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
       setLastClickPosition([event.offsetX, event.offsetY]);
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (dataset === null || id === null || id.globalId === undefined) {
+      if (dataset === null || info === null || info.globalId === undefined) {
         clearTrack();
-        return;
       } else {
-        const trackId = dataset.getTrackId(id.globalId);
+        const trackId = dataset.getTrackId(info.globalId);
         const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
           setTrack(newTrack);
         }
       }
-      props.onClickId(id);
+      props.onClickId(info);
     },
     [canv, dataset, props.onClickId, setTrack, clearTrack]
   );
@@ -428,6 +428,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     event.preventDefault();
     const activeElement = document.activeElement;
     if (activeElement instanceof HTMLElement && !containerRef.current?.contains(activeElement)) {
+      console.log("blurring active element", activeElement);
       activeElement.blur();
     }
 
@@ -460,6 +461,21 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       if (isMouseDragging.current) {
         canv.domElement.style.cursor = "move";
       } else if (props.annotationState.isAnnotationModeEnabled) {
+        // Check if mouse is over an object
+        const labelIdx = props.annotationState.currentLabelIdx;
+        if (labelIdx !== null) {
+          const labelData = props.annotationState.data.getLabels()[labelIdx];
+          if (labelData.options.type !== LabelType.BOOLEAN) {
+            const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+            // If the current hovered ID has a label with an editable value, show
+            // the edit cursor.
+            if (id !== null && id.globalId !== undefined && labelData.ids.has(id.globalId)) {
+              canv.domElement.style.cursor = "text";
+              return;
+            }
+          }
+        }
+
         if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
           canv.domElement.style.cursor = "cell";
         } else {
@@ -469,7 +485,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         canv.domElement.style.cursor = "auto";
       }
     },
-    [handlePan, props.annotationState.isAnnotationModeEnabled, props.annotationState.selectionMode]
+    [
+      handlePan,
+      props.annotationState.isAnnotationModeEnabled,
+      props.annotationState.selectionMode,
+      props.annotationState.data,
+      props.annotationState.currentLabelIdx,
+    ]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {

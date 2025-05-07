@@ -444,11 +444,14 @@ export const useAnnotations = (): AnnotationState => {
   const handleAnnotationClick = useCallback(
     (dataset: Dataset, id: number | null): void => {
       if (!isAnnotationEnabled) {
+        setLastEditedRange(null);
+        setActiveEditRange(null);
         return;
       }
       setLastClickedId(id);
       if (currentLabelIdx === null || id === null) {
         setLastEditedRange(null);
+        setActiveEditRange(null);
         return;
       }
       const track = dataset.getTrack(dataset.getTrackId(id));
@@ -462,11 +465,13 @@ export const useAnnotations = (): AnnotationState => {
         const defaultValue = annotationData.getNextDefaultLabelValue(currentLabelIdx, isReuseValueHotkeyPressed);
         if (isLabeled && labelData.options.type === LabelType.BOOLEAN) {
           annotationData.removeLabelOnIds(currentLabelIdx, range);
+          setActiveEditRange(null);
         } else if (isLabeled) {
           // Initiate editing of the label value for that range
           setActiveEditRange(range);
         }  else {
           annotationData.setLabelValueOnIds(currentLabelIdx, range, defaultValue);
+          setActiveEditRange(null);
         }
       };
 
@@ -476,24 +481,20 @@ export const useAnnotations = (): AnnotationState => {
           // Toggle entire track
           setLastEditedRange(track.ids);
           toggleRange(track.ids);
-          setLastClickedId(id);
           break;
         case AnnotationSelectionMode.RANGE:
           if (idRange !== null) {
             setLastEditedRange(idRange);
             toggleRange(idRange);
             // TODO: Change this to lastClickedRangeEndpoint?
-            setLastClickedId(null);
-          } else {
-            setLastClickedId(id);
           }
           break;
         case AnnotationSelectionMode.TIME:
         default:
           toggleRange([id]);
           setLastEditedRange([id]);
-          setLastClickedId(id);
       }
+      setLastClickedId(id);
       setDataUpdateCounter((value) => value + 1);
     },
     [selectionMode, currentLabelIdx, getSelectRangeFromId, isReuseValueHotkeyPressed]
