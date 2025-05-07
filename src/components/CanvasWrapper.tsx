@@ -651,7 +651,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     )
   );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
-  const shouldShowReuseValueHotkey = labelData.options.type === LabelType.INTEGER && labelData.options.autoIncrement;
+  const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
 
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>

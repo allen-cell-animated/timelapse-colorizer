@@ -294,8 +294,8 @@ export class AnnotationData implements IAnnotationData {
           return (labelData.lastValue ?? "0").toString();
         }
       case LabelType.CUSTOM:
-        if (labelData.lastValue === null) {
-          return "0";
+        if (!labelData.lastValue) {
+          return "Click to edit";
         } else {
           return labelData.lastValue;
         }
