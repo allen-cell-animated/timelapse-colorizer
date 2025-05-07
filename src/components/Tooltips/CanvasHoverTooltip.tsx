@@ -37,45 +37,6 @@ const DebugText = styled.p`
   color: var(--color-text-hint);
 `;
 
-const TagGroup = styled.div<{ $color: string }>`
-  display: flex;
-  flex-direction: row;
-  border-radius: calc(var(--radius-control-small) + 1) px;
-  --border-radius: var(--radius-control-small);
-  font-size: var(--font-size-label-small);
-  line-height: calc(var(--font-size-label-small) + 6px);
-  height: calc(var(--font-size-label-small) + 10px);
-  margin-right: 8px;
-
-  & * {
-    text-wrap-mode: nowrap;
-  }
-
-  & > :first-child {
-    width: max-content;
-    background-color: ${(props) => props.$color};
-    color: var(--color-text-button);
-    padding: 2px 8px 0px 8px;
-    border-top-left-radius: var(--border-radius);
-    border-bottom-left-radius: var(--border-radius);
-  }
-
-  & > :last-child {
-    border-top-right-radius: var(--border-radius);
-    border-bottom-right-radius: var(--border-radius);
-  }
-
-  & > :not(:first-child) {
-    width: fit-content;
-    background-color: var(--color-background);
-    border: 1px solid ${(props) => props.$color};
-    padding: 1px 4px 0px 6px;
-    max-width: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-`;
-
 /**
  * Sets up and configures the hover tooltip for the main viewport canvas.
  * By default, displays the track ID and the value of the feature at the hovered point.
@@ -187,10 +148,14 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
               // TODO: Tags do not change their text color based on the background color.
               // Make a custom wrapper for Tag that does this; see
               // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
-              <TagGroup key={labelIdx} style={{ margin: "0 2px" }} $color={"#" + label.options.color.getHexString()}>
-                <span>{label.options.name}</span>
-                <span>{value}</span>
-              </TagGroup>
+              <Tag
+                key={labelIdx}
+                style={{ width: "fit-content", margin: "0 2px" }}
+                color={"#" + label.options.color.getHexString()}
+              >
+                {label.options.name}
+                {value ? " - " + value : ""}
+              </Tag>
             );
           })}
         </div>
@@ -204,17 +169,20 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
     const currentLabelData = labelData[currentLabelIdx];
 
-    let currentValue = null;
-    if (currentLabelData.options.type !== "boolean") {
-      currentValue = props.annotationState.nextDefaultLabelValue;
+    let value = null;
+    if (currentLabelData.options.type !== LabelType.BOOLEAN) {
+      value = props.annotationState.nextDefaultLabelValue;
     }
 
     annotationLabel = (
       <>
-        <TagGroup $color={"#" + currentLabelData.options.color.getHexString()}>
-          <span>{currentLabelData.options.name}</span>
-          <span>{currentValue}</span>
-        </TagGroup>
+        <Tag
+          style={{ width: "fit-content", margin: "0 2px" }}
+          color={"#" + currentLabelData.options.color.getHexString()}
+        >
+          {currentLabelData.options.name}
+          {value ? " - " + value : ""}
+        </Tag>
       </>
     );
 
