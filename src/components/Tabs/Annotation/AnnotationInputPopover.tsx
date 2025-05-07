@@ -19,10 +19,13 @@ const InputWrapper = styled(Card)`
   position: relative;
   transform: translateX(-50%) translateY(-150%);
   width: 200px;
+  z-index: 1;
   & .ant-card-body {
     padding: 4px;
   }
-  z-index: 1;
+  & * {
+    transition: all 0.2s, visibility 0s;
+  }
 `;
 
 export default function AnnotationInputPopover(props: AnnotationInputPopoverProps): ReactElement {
@@ -120,7 +123,8 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     clearActiveEditRange();
   };
 
-  // TODO: Pressing escape should reset the input value to the original value.
+  // TODO: Pressing escape should reset the input value to the original value and close the popover.
+  // TODO: Use the actual popover component from Antd?
 
   const editCount = activeEditRange?.length ?? 0;
 
