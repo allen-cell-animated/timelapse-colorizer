@@ -1,5 +1,6 @@
 import {
   Color,
+  DataTexture,
   FloatType,
   IntType,
   PixelFormat,
@@ -13,6 +14,8 @@ import {
 } from "three";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
+
+export type HexColorString = `#${string}`;
 
 /** Available types for data loading (features, tracks, outliers, etc.), as a CPU buffer or a GPU texture */
 export enum FeatureDataType {
@@ -227,6 +230,67 @@ export enum AnnotationSelectionMode {
   RANGE,
   TRACK,
 }
+
+/**
+ * Data used to map from the segmentation ID (e.g. raw pixel value) of an object
+ * in a given frame to its global ID in the dataset, which is used to index into
+ * data arrays for feature, time, track, and other data. We use a lookup because
+ * segmentation IDs are not guaranteed to be unique across frames.
+ *
+ * The global ID of an object with segmentation ID `segId` and
+ * GlobalIdLookupInfo `info` is given by:
+ *
+ * ```
+ * info.lut[segId - info.minSegId] - 1
+ * ```
+ *
+ *  If the segmentation ID is not present in the dataset, the global ID is
+ * `NaN` or `-1`.
+ */
+export type GlobalIdLookupInfo = {
+  /**
+   * A LUT that maps from segmentation IDs to global IDs.
+   *
+   * An optimization is performed where all segmentation IDs are offset by the
+   * smallest segmentation ID in the frame to reduce the size of the LUT.
+   * Additionally, the value `0` is reserved to indicate that a segmentation ID
+   * does not have a global ID, so all global IDs are offset by 1.
+   *
+   * For example, if we had the following segmentation IDs and global IDs:
+   * 
+   * | Segmentation IDs | Global ID | Global ID + 1 |
+   * |------------------|-----------|---------------|
+   * | 3                | 0         | 1             |
+   * | 4                | 2         | 3             |
+   * | 6                | 4         | 5             |
+   * | 9                | 1         | 2             |
+
+   * The raw, pre-optimized LUT would be: `[0, 0, 0, 1, 3, 0, 5, 0, 0, 2]`. We
+   * can reduce the size of the LUT by removing the starting 0s and just
+   * tracking the smallest ID separately, which gives us `[1, 3, 0, 5, 0, 0,
+   * 2]`.
+   */
+  lut: Uint32Array;
+  /**
+   * The `lut` packed as a DataTexture with square dimensions. See comments on
+   * `lut` for more details on the contents.
+   */
+  texture: DataTexture;
+  /**
+   * The smallest segmentation on this frame, used for memory optimization.
+   */
+  minSegId: number;
+};
+
+export type PixelIdInfo = {
+  /** Segmentation ID of the pixel.*/
+  segId: number;
+  /**
+   * Global ID derived from the segmentation ID, used to index into data
+   * arrays. `undefined` if the segmentation ID is missing from the dataset.
+   */
+  globalId?: number;
+};
 
 /**
  * Callback used to report warnings to the user. The message is the title

@@ -31,8 +31,8 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import { Canvas2DScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult } from "./types";
-import { hasPropertyChanged } from "./utils/data_utils";
+import { Canvas2DScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult, PixelIdInfo } from "./types";
+import { getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp, { ColorRampType } from "./ColorRamp";
@@ -60,6 +60,10 @@ type ColorizeUniformTypes = {
   featureData: Texture;
   outlierData: Texture;
   inRangeIds: Texture;
+  /** LUT mapping from segmentation ID (raw pixel value) to the global ID. */
+  segIdToGlobalId: DataTexture;
+  segIdOffset: number;
+
   featureColorRampMin: number;
   featureColorRampMax: number;
   /** UI overlay for scale bars and timestamps. */
@@ -89,12 +93,12 @@ const getDefaultUniforms = (): ColorizeUniforms => {
   emptyFrame.internalFormat = "RGBA8UI";
   emptyFrame.needsUpdate = true;
   const emptyOverlay = new DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, RGBAFormat, UnsignedByteType);
+  const emptySegIdToGlobalId = new DataTexture(new Uint8Array([0]), 1, 1, RGBAFormat, UnsignedByteType);
 
   const emptyFeature = packDataTexture([0], FeatureDataType.F32);
   const emptyOutliers = packDataTexture([0], FeatureDataType.U8);
   const emptyInRangeIds = packDataTexture([0], FeatureDataType.U8);
   const emptyColorRamp = new ColorRamp(["#aaa", "#fff"]).texture;
-
   return {
     panOffset: new Uniform(new Vector2(0, 0)),
     canvasToFrameScale: new Uniform(new Vector2(1, 1)),
@@ -103,6 +107,8 @@ const getDefaultUniforms = (): ColorizeUniforms => {
     featureData: new Uniform(emptyFeature),
     outlierData: new Uniform(emptyOutliers),
     inRangeIds: new Uniform(emptyInRangeIds),
+    segIdToGlobalId: new Uniform(emptySegIdToGlobalId),
+    segIdOffset: new Uniform(0),
     overlay: new Uniform(emptyOverlay),
     objectOpacity: new Uniform(1.0),
     backdrop: new Uniform(emptyBackdrop),
@@ -191,6 +197,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.scene = new Scene();
+    this.scene.background = new Color(CANVAS_BACKGROUND_COLOR_DEFAULT);
     this.scene.add(this.mesh);
 
     this.vectorField = new VectorField();
@@ -259,6 +266,10 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   }
 
   public get domElement(): HTMLCanvasElement {
+    return this.renderer.domElement;
+  }
+
+  public get canvas(): HTMLCanvasElement {
     return this.renderer.domElement;
   }
 
@@ -360,7 +371,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   }
 
   private setOutlineColor(color: Color): void {
-    this.setUniform("outlineColor", color);
+    this.setUniform("outlineColor", color.clone().convertLinearToSRGB());
 
     // Update line color
     if (Array.isArray(this.line.material)) {
@@ -375,14 +386,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private setOutlierDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outlierDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
-      this.setUniform("outlierColor", color);
+      this.setUniform("outlierColor", color.clone().convertLinearToSRGB());
     }
   }
 
   private setOutOfRangeDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outOfRangeDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
-      this.setUniform("outOfRangeColor", color);
+      this.setUniform("outOfRangeColor", color.clone().convertLinearToSRGB());
     }
   }
 
@@ -408,8 +419,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       }
 
       // Normalize from pixel coordinates to canvas space [-1, 1]
-      this.points[3 * i + 0] = (track.centroids[2 * trackIndex] / dataset.frameResolution.x) * 2.0 - 1.0;
-      this.points[3 * i + 1] = -((track.centroids[2 * trackIndex + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
+      const centroid = dataset.getCentroid(track.ids[trackIndex])!;
+      this.points[3 * i + 0] = (centroid[0] / dataset.frameResolution.x) * 2.0 - 1.0;
+      this.points[3 * i + 1] = -((centroid[1] / dataset.frameResolution.y) * 2.0 - 1.0);
       this.points[3 * i + 2] = 0;
     }
     // Assign new BufferAttribute because the old array has been discarded.
@@ -464,13 +476,19 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     // Basic rendering settings
     if (hasPropertyChanged(params, prevParams, ["outlierDrawSettings"])) {
-      this.setOutlierDrawMode(params.outlierDrawSettings.mode, params.outlierDrawSettings.color);
+      this.setOutlierDrawMode(
+        params.outlierDrawSettings.mode,
+        params.outlierDrawSettings.color.clone().convertLinearToSRGB()
+      );
     }
     if (hasPropertyChanged(params, prevParams, ["outOfRangeDrawSettings"])) {
-      this.setOutOfRangeDrawMode(params.outOfRangeDrawSettings.mode, params.outOfRangeDrawSettings.color);
+      this.setOutOfRangeDrawMode(
+        params.outOfRangeDrawSettings.mode,
+        params.outOfRangeDrawSettings.color.clone().convertLinearToSRGB()
+      );
     }
     if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
-      this.setOutlineColor(params.outlineColor);
+      this.setOutlineColor(params.outlineColor.clone().convertLinearToSRGB());
     }
 
     // Update vector data
@@ -586,6 +604,11 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
     if (frame.status === "fulfilled" && frame.value) {
       this.setUniform("frame", frame.value);
+      const globalIdLookup = dataset.frameToGlobalIdLookup?.get(index);
+      if (globalIdLookup) {
+        this.setUniform("segIdOffset", globalIdLookup.minSegId);
+        this.setUniform("segIdToGlobalId", globalIdLookup.texture);
+      }
     } else {
       if (frame.status === "rejected") {
         // Only show error message if the frame load encountered an error. (Null/undefined is okay)
@@ -651,6 +674,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   }
 
   public render(): void {
+    this.checkPixelRatio();
     this.syncHighlightedId();
     this.syncTrackPathLine();
 
@@ -664,7 +688,12 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.pickMaterial.dispose();
   }
 
-  public getIdAtPixel(x: number, y: number): number {
+  public getIdAtPixel(x: number, y: number): PixelIdInfo | null {
+    const dataset = this.params?.dataset;
+    if (!dataset) {
+      return null;
+    }
+
     const rt = this.renderer.getRenderTarget();
 
     this.renderer.setRenderTarget(this.pickRenderTarget);
@@ -676,8 +705,12 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.renderer.setRenderTarget(rt);
 
     // get 32bit value from 4 8bit values
-    const value = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
-    // offset by 1 since 0 is background.
-    return value - 1;
+    const segId = pixbuf[0] | (pixbuf[1] << 8) | (pixbuf[2] << 16) | (pixbuf[3] << 24);
+
+    if (segId === 0) {
+      return null;
+    }
+    const globalId = getGlobalIdFromSegId(dataset.frameToGlobalIdLookup, this.currentFrame, segId);
+    return { segId, globalId };
   }
 }

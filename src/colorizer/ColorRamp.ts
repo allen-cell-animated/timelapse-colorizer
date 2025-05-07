@@ -14,7 +14,14 @@ export default class ColorRamp {
 
   constructor(colorStops: ColorRepresentation[], type: ColorRampType = ColorRampType.LINEAR) {
     this.colorStops = colorStops.map((color) => new Color(color));
-    const dataArr = this.colorStops.flatMap((col) => [col.r, col.g, col.b, 1]);
+    const dataArr = this.colorStops.flatMap((col) => {
+      // Must convert from LinearSRGB to sRGB color space before getting the RGB
+      // components since WebGL (canvas, etc.) expects sRGB, but Three stores
+      // color data using LinearSRGB by default. See
+      // https://threejs.org/manual/#en/color-management.
+      const srgbCol = col.clone().convertLinearToSRGB();
+      return [srgbCol.r, srgbCol.g, srgbCol.b, 1];
+    });
     this.texture = new DataTexture(new Float32Array(dataArr), this.colorStops.length, 1, RGBAFormat, FloatType);
     this.type = type;
     if (this.type === ColorRampType.CATEGORICAL) {

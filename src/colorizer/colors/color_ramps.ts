@@ -26,7 +26,14 @@ export type ColorRampData = RawColorData & {
 // DO NOT REMOVE COLOR RAMPS FROM THIS LIST OR CHANGE THEIR KEYS. This will break backwards compatibility with URLs.
 // Instead, remove them from `DISPLAY_COLOR_RAMP_KEYS` to omit them from the UI.
 const rawColorRampData: RawColorData[] = [
-  { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
+  {
+    key: "matplotlib-cool",
+    name: "Matplotlib - Cool",
+    // TODO: This results in some banding in the scatterplot because Three is using linear SRGB
+    // color space for interpolation. This could potentially be fixed by manually calculating the
+    // interpolated colors in the color ramp.
+    colorStops: ["#00ffff", "#20e0ff", "#40c0ff", "#60a0ff", "#8080ff", "#a060ff", "#c040ff", "#e020ff", "#ff00ff"],
+  },
   {
     key: "matplotlib-viridis",
     name: "Matplotlib - Viridis",

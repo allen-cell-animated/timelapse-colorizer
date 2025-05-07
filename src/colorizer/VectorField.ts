@@ -203,7 +203,7 @@ export default class VectorField {
     return vertices;
   }
 
-  private getArrowVertices(centroid: [number, number], delta: [number, number]): Float32Array {
+  private getArrowVertices(centroid: [number, number, number], delta: [number, number, number]): Float32Array {
     // Draw the main vector line segment from centroid to centroid + delta.
     // TODO: Perform scaling as a step in a vertex shader.
     const vertices = new Float32Array(VERTICES_PER_VECTOR_LINE * VERTEX_LENGTH);
@@ -212,6 +212,8 @@ export default class VectorField {
     const vectorEnd: ArrayVector3 = [
       centroid[0] + delta[0] * this.scaleFactor,
       centroid[1] + delta[1] * this.scaleFactor,
+      // NOTE: We discard 3D component of vector here because this is in 2D, but
+      // some future 3D vector visualization may want to use this.
       0,
     ];
     const normVectorEnd = this.framePixelsToRelativeFrameCoords(vectorEnd);
@@ -251,8 +253,9 @@ export default class VectorField {
       const time = this.dataset.getTime(i);
       const ids = timeToIds.get(time) ?? [];
       if (
-        Number.isNaN(this.vectorData[i * 2]) ||
-        Number.isNaN(this.vectorData[i * 2 + 1]) ||
+        Number.isNaN(this.vectorData[i * 3]) ||
+        Number.isNaN(this.vectorData[i * 3 + 1]) ||
+        Number.isNaN(this.vectorData[i * 3 + 2]) ||
         this.dataset.getCentroid(i) === undefined
       ) {
         continue;
@@ -273,7 +276,11 @@ export default class VectorField {
 
       for (const objectId of ids) {
         const centroid = this.dataset.getCentroid(objectId)!;
-        const delta: [number, number] = [this.vectorData[objectId * 2], this.vectorData[objectId * 2 + 1]];
+        const delta: [number, number, number] = [
+          this.vectorData[objectId * 3],
+          this.vectorData[objectId * 3 + 1],
+          this.vectorData[objectId * 3 + 2],
+        ];
 
         const arrowVertices = this.getArrowVertices(centroid, delta);
         vertices.set(arrowVertices, nextEmptyIndex * VERTEX_LENGTH);
