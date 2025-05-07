@@ -328,7 +328,7 @@ export const useAnnotations = (): AnnotationState => {
   const setCurrentLabelIdx = (labelIdx: number | null): void => {
     _setCurrentLabelIdx(labelIdx);
     setActiveEditRange(null);
-  }
+  };
 
   const setSelectionMode = (newMode: AnnotationSelectionMode): void => {
     if (newMode === baseSelectionMode) {

@@ -90,7 +90,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     }
   }, [visible]);
 
-  const handleInputConfirm = () => {
+  const handleInputConfirm = (): void => {
     const lastEditedRange = props.annotationState.activeEditRange;
     console.log("lastEditedRange", lastEditedRange);
     if (lastEditedRange !== null && currentLabelIdx !== null) {
@@ -106,7 +106,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     clearActiveEditRange();
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     // Editing the input value directly updates the label value in the annotation state.
     if (currentLabelIdx === null || activeEditRange === null) {
       return;
@@ -126,7 +126,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     props.annotationState.setLabelValueOnIds(currentLabelIdx, activeEditRange, value);
   };
 
-  const handleDelete = () => {
+  const handleDelete = (): void => {
     if (currentLabelIdx !== null && activeEditRange !== null) {
       props.annotationState.removeLabelOnIds(currentLabelIdx, activeEditRange);
     }
