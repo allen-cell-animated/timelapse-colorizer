@@ -145,6 +145,20 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
 
+  const labelSelectionDropdown = (
+    <>
+      <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
+      <SelectionDropdown
+        selected={(currentLabelIdx ?? -1).toString()}
+        items={selectLabelOptions}
+        onChange={onSelectLabelIdx}
+        disabled={currentLabelIdx === null}
+        showSelectedItemTooltip={false}
+        htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
+      ></SelectionDropdown>
+    </>
+  );
+
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRow style={{ width: "100%", justifyContent: "space-between" }} ref={modalContainerRef}>
@@ -190,21 +204,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       {/* Label selection and edit/create/delete buttons */}
       <FlexRow $gap={6} style={{ width: "100%", flexWrap: "wrap" }}>
         <FlexRow $gap={6} style={{ flexWrap: "wrap" }}>
-          <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
-          <SelectionDropdown
-            selected={(currentLabelIdx ?? -1).toString()}
-            items={selectLabelOptions}
-            onChange={onSelectLabelIdx}
-            disabled={currentLabelIdx === null}
-            showSelectedItemTooltip={false}
-            htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
-          ></SelectionDropdown>
-
           {/*
            * Hide edit-related buttons until edit mode is enabled.
            * Note that currentLabelIdx will never be null when edit mode is enabled.
            */}
-          {isAnnotationModeEnabled && currentLabelIdx !== null && (
+          {isAnnotationModeEnabled && currentLabelIdx !== null ? (
             <LabelEditControls
               onCreateNewLabel={onCreateNewLabel}
               onDeleteLabel={onDeleteLabel}
@@ -214,7 +218,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               selectionMode={props.annotationState.selectionMode}
               setSelectionMode={props.annotationState.setSelectionMode}
               defaultLabelOptions={props.annotationState.data.getNextDefaultLabelSettings()}
-            />
+            >
+              {labelSelectionDropdown}
+            </LabelEditControls>
+          ) : (
+            labelSelectionDropdown
           )}
         </FlexRow>
 

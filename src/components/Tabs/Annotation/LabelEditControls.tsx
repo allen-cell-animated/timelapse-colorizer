@@ -1,6 +1,6 @@
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Popconfirm, Popover, Radio, Tooltip } from "antd";
-import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
+import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, useState } from "react";
 
 import { TagAddIconSVG } from "../../../assets";
 import { AnnotationSelectionMode } from "../../../colorizer";
@@ -30,7 +30,7 @@ type LabelEditControlsProps = {
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
 };
 
-export default function LabelEditControls(props: LabelEditControlsProps): ReactElement {
+export default function LabelEditControls(props: PropsWithChildren<LabelEditControlsProps>): ReactElement {
   const theme = useContext(AppThemeContext);
 
   const [showCreatePopover, setShowCreatePopover] = useState(false);
@@ -125,12 +125,13 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
       >
         <div ref={createPopoverContainerRef}>
           <Tooltip title="Create new label" placement="top">
-            <IconButton onClick={onClickCreateButton} type="outlined">
+            <IconButton onClick={onClickCreateButton} type="primary">
               <TagAddIconSVG />
             </IconButton>
           </Tooltip>
         </div>
       </Popover>
+      {props.children}
       <Popover
         title={<p style={{ fontSize: theme.font.size.label }}>Edit label</p>}
         trigger={["click"]}
