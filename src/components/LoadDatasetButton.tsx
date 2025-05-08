@@ -210,7 +210,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
         } else if (hasConvertedAllenPath) {
           setErrorText(
             (reason.toString() || DEFAULT_URL_FAILURE_MESSAGE) +
-              "\nIf the problem is not network access, this may be an unrecognized file path. If you expect this path to work, please report an issue on GitHub from the Help menu."
+              "\nIf the problem is not network access, this may be an unrecognized file path. If you expect this path to work, please report an issue on GitHub from the Help menu or contact a developer."
           );
         } else {
           setErrorText(reason.toString() || DEFAULT_URL_FAILURE_MESSAGE);
