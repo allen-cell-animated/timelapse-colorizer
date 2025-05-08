@@ -2,13 +2,15 @@ import { Color, ColorRepresentation, DataTexture, FloatType, LinearFilter, Neare
 
 export enum ColorRampType {
   LINEAR,
-  HARD_STOP,
+  CATEGORICAL,
 }
+
+const DISPLAY_GRADIENT_MAX_STOPS = 24;
 
 export default class ColorRamp {
   public readonly colorStops: Color[];
   public readonly texture: DataTexture;
-  private type: ColorRampType;
+  public readonly type: ColorRampType;
 
   constructor(colorStops: ColorRepresentation[], type: ColorRampType = ColorRampType.LINEAR) {
     this.colorStops = colorStops.map((color) => new Color(color));
@@ -22,7 +24,7 @@ export default class ColorRamp {
     });
     this.texture = new DataTexture(new Float32Array(dataArr), this.colorStops.length, 1, RGBAFormat, FloatType);
     this.type = type;
-    if (this.type === ColorRampType.HARD_STOP) {
+    if (this.type === ColorRampType.CATEGORICAL) {
       this.texture.minFilter = NearestFilter;
       this.texture.magFilter = NearestFilter;
     } else {
@@ -67,8 +69,9 @@ export default class ColorRamp {
       ctx.fillRect(0, 0, width, height);
     } else {
       // Draw as hard stop gradients
-      const step = width / this.colorStops.length;
-      this.colorStops.forEach((color, idx) => {
+      const stops = this.colorStops.slice(0, DISPLAY_GRADIENT_MAX_STOPS);
+      const step = width / stops.length;
+      stops.forEach((color, idx) => {
         ctx.fillStyle = `#${color.getHexString()}`;
         ctx.fillRect(Math.floor(step * idx), 0, Math.ceil(step), height);
       });

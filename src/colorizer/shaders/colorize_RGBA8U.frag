@@ -57,6 +57,7 @@ uniform uint outOfRangeDrawMode;
 uniform int highlightedId;
 
 uniform bool hideOutOfRange;
+uniform bool useRepeatingCategoricalColors;
 
 in vec2 vUv;
 
@@ -118,6 +119,12 @@ vec4 getColorRamp(float val) {
   float range = (width - 1.0) / width;
   float adjustedVal = (0.5 / width) + (val * range);
   return texture(colorRamp, vec2(adjustedVal, 0.5));
+}
+
+vec4 getCategoricalColor(float featureValue) {
+  float width = float(textureSize(colorRamp, 0).x);
+  float modValue = mod(featureValue, width);
+  return getColorRamp(modValue / (width - 1.0));
 }
 
 bool isEdge(vec2 uv) {
@@ -216,6 +223,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   } else if (isInRange) {
     if (isOutlier) {
       color = getColorFromDrawMode(outlierDrawMode, outlierColor);
+    } else if (useRepeatingCategoricalColors) {
+      color = getCategoricalColor(featureVal);
     } else {
       color = getColorRamp(normFeatureVal);
     }
