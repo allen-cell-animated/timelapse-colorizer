@@ -79,10 +79,14 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   // Focus the input when the popover is visible.
   useEffect(() => {
     if (hasValidData && inputRef.current) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
+      // Adding a slight delay fixes a bug where the input is not consistently
+      // focused
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 10);
     }
-  }, [hasValidData]);
+  }, [hasValidData, activeEditRange]);
 
   //// Interaction handlers ////
 
