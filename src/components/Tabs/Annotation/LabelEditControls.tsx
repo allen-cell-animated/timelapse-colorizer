@@ -1,12 +1,11 @@
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Popconfirm, Popover, Radio, Tooltip } from "antd";
-import React, { ReactElement, useContext, useEffect, useRef, useState } from "react";
+import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, useState } from "react";
 import { Color } from "three";
 
 import { TagAddIconSVG } from "../../../assets";
 import { AnnotationSelectionMode } from "../../../colorizer";
 import { StyledRadioGroup } from "../../../styles/components";
-import { FlexRow } from "../../../styles/utils";
 
 import { DEFAULT_ANNOTATION_LABEL_COLORS, LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
@@ -33,7 +32,7 @@ type LabelEditControlsProps = {
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
 };
 
-export default function LabelEditControls(props: LabelEditControlsProps): ReactElement {
+export default function LabelEditControls(props: PropsWithChildren<LabelEditControlsProps>): ReactElement {
   const theme = useContext(AppThemeContext);
 
   const [showCreatePopover, setShowCreatePopover] = useState(false);
@@ -109,7 +108,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
   }, [props.selectedLabelIdx]);
 
   return (
-    <FlexRow $gap={6}>
+    <>
       <Popover
         title={<p style={{ fontSize: theme.font.size.label }}>Create label</p>}
         trigger={["click"]}
@@ -129,12 +128,13 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
       >
         <div ref={createPopoverContainerRef}>
           <Tooltip title="Create new label" placement="top">
-            <IconButton onClick={onClickCreateButton} type="outlined">
+            <IconButton onClick={onClickCreateButton} type="primary">
               <TagAddIconSVG />
             </IconButton>
           </Tooltip>
         </div>
       </Popover>
+      {props.children}
       <Popover
         title={<p style={{ fontSize: theme.font.size.label }}>Edit label</p>}
         trigger={["click"]}
@@ -181,7 +181,7 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
       </Popconfirm>
 
       <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
-        <span style={{ fontSize: theme.font.size.label }}>Select by </span>
+        <span style={{ fontSize: theme.font.size.label, width: "max-content" }}>Select by </span>
         <StyledRadioGroup
           style={{ display: "flex", flexDirection: "row" }}
           value={props.selectionMode}
@@ -209,6 +209,6 @@ export default function LabelEditControls(props: LabelEditControlsProps): ReactE
           </Tooltip>
         </StyledRadioGroup>
       </label>
-    </FlexRow>
+    </>
   );
 }
