@@ -1,10 +1,9 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { Card, Input, InputRef } from "antd";
-import React, { ReactElement, useContext, useEffect, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useState } from "react";
 import styled from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
-import { useViewerStateStore } from "../../../state";
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
 import { LabelType } from "../../../colorizer/AnnotationData";
@@ -38,9 +37,6 @@ const StyledCard = styled(Card)`
 `;
 
 export default function AnnotationInputPopover(props: AnnotationInputPopoverProps): ReactElement {
-  const dataset = useViewerStateStore((state) => state.dataset);
-
-  const [visible, setVisible] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<InputRef>(null);
@@ -52,47 +48,46 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     currentLabelIdx,
     data: annotationData,
     isAnnotationModeEnabled,
+    // The range of ids that are currently being edited. `null` if no range is
+    // being edited, in which case the popover is hidden.
     activeEditRange,
     clearActiveEditRange,
   } = props.annotationState;
+  const originalValueRef = React.useRef<string | null>(null);
+
+  const hasValidData =
+    isAnnotationModeEnabled && activeEditRange !== null && lastClickedId !== null && currentLabelIdx !== null;
+
+  //// Prop update handlers ////
 
   useEffect(() => {
-    if (!isAnnotationModeEnabled) {
-      setVisible(false);
-    }
-  }, [isAnnotationModeEnabled]);
-
-  useEffect(() => {
-    if (activeEditRange === null || lastClickedId === null || currentLabelIdx === null || !dataset) {
-      setVisible(false);
-      return;
-    }
-    // Check if the last clicked ID is labeled-- this means that the ID(s)
-    // were added to the label data instead of being removed.
-    if (anchorRef.current && activeEditRange) {
-      setInputValue(annotationData.getValueFromId(currentLabelIdx, lastClickedId) ?? "");
+    if (anchorRef.current) {
       anchorRef.current.style.left = `${props.anchorPositionPx[0] + 10}px`;
       anchorRef.current.style.top = `${props.anchorPositionPx[1] + 10}px`;
-      setVisible(true);
-    } else {
-      setVisible(false);
     }
-  }, [activeEditRange, lastClickedId, dataset]);
+  }, [props.anchorPositionPx]);
+
+  // Reset the input value when a new range is selected for editing.
+  useEffect(() => {
+    if (currentLabelIdx !== null && lastClickedId !== null) {
+      const value = annotationData.getValueFromId(currentLabelIdx, lastClickedId) ?? "";
+      setInputValue(value);
+      originalValueRef.current = value;
+    }
+  }, [currentLabelIdx, lastClickedId]);
 
   // Focus the input when the popover is visible.
   useEffect(() => {
-    if (visible && inputRef.current) {
-      console.log("Focusing input", inputRef.current, inputRef);
-      setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      }, 50);
+    if (hasValidData && inputRef.current) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
     }
-  }, [visible]);
+  }, [hasValidData]);
+
+  //// Interaction handlers ////
 
   const handleInputConfirm = (): void => {
     const lastEditedRange = props.annotationState.activeEditRange;
-    console.log("lastEditedRange", lastEditedRange);
     if (lastEditedRange !== null && currentLabelIdx !== null) {
       // Validate
       const newValue = inputValue;
@@ -102,7 +97,6 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
         props.annotationState.setLabelValueOnIds(currentLabelIdx, lastEditedRange, newValue);
       }
     }
-    setVisible(false);
     clearActiveEditRange();
   };
 
@@ -118,7 +112,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       value = value.replaceAll(/[^0-9]/g, "");
       if (value.length === 0) {
         setInputValue("");
-        // Don't allow empty values to be set on the label.
+        // Don't allow empty values to be set on the label for integers.
         return;
       }
     }
@@ -130,24 +124,45 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     if (currentLabelIdx !== null && activeEditRange !== null) {
       props.annotationState.removeLabelOnIds(currentLabelIdx, activeEditRange);
     }
-    setVisible(false);
     clearActiveEditRange();
   };
 
-  // TODO: Pressing escape should reset the input value to the original value and close the popover.
-  // TODO: Use the actual popover component from Antd?
+  // Reset to original value and close the popover when escape is pressed.
+  const handleEscape = useCallback((): void => {
+    if (originalValueRef.current !== null && hasValidData) {
+      props.annotationState.setLabelValueOnIds(currentLabelIdx, activeEditRange, originalValueRef.current);
+    }
+    clearActiveEditRange();
+  }, [hasValidData]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+        handleEscape();
+      }
+    };
+    anchorRef.current?.addEventListener("keydown", handleKeyDown);
+    return () => {
+      anchorRef.current?.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleEscape]);
+
+  // TODO: Use the actual popover component from Antd to get the little arrow at
+  // the bottom? This requires visibility to be toggled every time anchor
+  // position prop changes, or else the popover will not move with the anchor
+  // element.
 
   const editCount = activeEditRange?.length ?? 0;
 
   return (
     <div ref={anchorRef} style={{ position: "absolute", width: "1px", height: "1px", zIndex: 102 }}>
-      <StyledCard size="small" style={{ visibility: visible ? "visible" : "hidden" }}>
+      <StyledCard size="small" style={{ visibility: hasValidData ? "visible" : "hidden" }}>
         <FlexColumn>
           <span style={{ fontSize: theme.font.size.labelSmall, color: theme.color.text.hint, marginTop: "0" }}>
             Editing {editCount} object{editCount > 1 ? "s" : ""}
           </span>
           <FlexRow $gap={6}>
-            {/* TODO: Change width based on field type? */}
+            {/* TODO: Resize input based on value? */}
             <Input
               ref={inputRef}
               size="small"
