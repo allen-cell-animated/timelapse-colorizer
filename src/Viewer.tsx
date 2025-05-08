@@ -539,9 +539,9 @@ function Viewer(): ReactElement {
   }, [isUserDirectlyControllingFrameInput, frameInput]);
 
   const onClickId = useCallback(
-    (info: PixelIdInfo) => {
-      if (dataset && info.globalId !== undefined) {
-        annotationState.handleAnnotationClick(dataset, info.globalId);
+    (info: PixelIdInfo | null) => {
+      if (dataset) {
+        annotationState.handleAnnotationClick(dataset, info?.globalId ?? null);
       }
     },
     [dataset, annotationState.handleAnnotationClick]

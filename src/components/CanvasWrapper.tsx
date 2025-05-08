@@ -1,6 +1,6 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
@@ -10,8 +10,9 @@ import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } fr
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
-import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
+import { LabelData, LabelType } from "../colorizer/AnnotationData";
 import CanvasOverlay from "../colorizer/CanvasOverlay";
 import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
 import { useViewerStateStore } from "../state/ViewerState";
@@ -20,6 +21,7 @@ import { AlertBannerProps } from "./Banner";
 import { LinkStyleButton } from "./Buttons/LinkStyleButton";
 import IconButton from "./IconButton";
 import LoadingSpinner from "./LoadingSpinner";
+import AnnotationInputPopover from "./Tabs/Annotation/AnnotationInputPopover";
 import { TooltipWithSubtitle } from "./Tooltips/TooltipWithSubtitle";
 
 const ASPECT_RATIO = 14.6 / 10;
@@ -71,17 +73,24 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   pointer-events: none;
 `;
 
-const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
+const AnnotationModeContainer = styled(FlexColumn)`
   position: absolute;
   top: 10px;
   left: 10px;
-  font-weight: bold;
   background-color: var(--color-viewport-overlay-background);
   border: 1px solid var(--color-viewport-overlay-outline);
-  z-index: 200;
-  padding: 8px 12px;
+  z-index: 100;
+  padding: 8px 8px;
   border-radius: 4px;
   pointer-events: none;
+  gap: 6px;
+`;
+
+const HotkeyText = styled.div`
+  padding: 1px 4px;
+  border-radius: 4px;
+  background-color: var(--color-viewport-overlay-background);
+  border: 1px solid var(--color-viewport-overlay-outline);
 `;
 
 type CanvasWrapperProps = {
@@ -93,7 +102,7 @@ type CanvasWrapperProps = {
 
   annotationState: AnnotationState;
 
-  onClickId?: (info: PixelIdInfo) => void;
+  onClickId?: (info: PixelIdInfo | null) => void;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
   onMouseHover?: (info: PixelIdInfo | null) => void;
@@ -144,6 +153,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   const canv = props.canv;
   const canvasPlaceholderRef = useRef<HTMLDivElement>(null);
+
+  const [lastClickPosition, setLastClickPosition] = useState<[number, number]>([0, 0]);
 
   const isFrameLoading = pendingFrame !== currentFrame;
   const loadProgress = props.loading ? props.loadingProgress : null;
@@ -308,24 +319,66 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // canv.setPan(0, 0);
   }, [collection]);
 
+  /**
+   * Updates the canvas' cursor type based on panning and annotation editing
+   * modes. Should be called after click interactions and mouse movement.
+   */
+  const updateCanvasCursor = useCallback(
+    (offsetX: number, offsetY: number): void => {
+      if (isMouseDragging.current) {
+        canv.domElement.style.cursor = "move";
+      } else if (props.annotationState.isAnnotationModeEnabled) {
+        // Check if mouse is over an object, and if it's labeled with an editable label.
+        // If so, show the edit cursor.
+        const labelIdx = props.annotationState.currentLabelIdx;
+        if (labelIdx !== null) {
+          const labelData = props.annotationState.data.getLabels()[labelIdx];
+          if (labelData.options.type !== LabelType.BOOLEAN) {
+            const id = canv.getIdAtPixel(offsetX, offsetY);
+            if (id !== null && id.globalId !== undefined && labelData.ids.has(id.globalId)) {
+              canv.domElement.style.cursor = "text";
+              return;
+            }
+          }
+        }
+
+        if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
+          canv.domElement.style.cursor = "cell";
+        } else {
+          canv.domElement.style.cursor = "crosshair";
+        }
+      } else {
+        canv.domElement.style.cursor = "auto";
+      }
+    },
+    [
+      isMouseDragging,
+      props.annotationState.isAnnotationModeEnabled,
+      props.annotationState.data,
+      props.annotationState.selectionMode,
+      props.annotationState.currentLabelIdx,
+    ]
+  );
+
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      setLastClickPosition([event.offsetX, event.offsetY]);
+      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
       // Reset track input
-      if (dataset === null || id === null || id.globalId === undefined) {
+      if (dataset === null || info === null || info.globalId === undefined) {
         clearTrack();
-        return;
       } else {
-        const trackId = dataset.getTrackId(id.globalId);
+        const trackId = dataset.getTrackId(info.globalId);
         const newTrack = dataset.getTrack(trackId);
         if (newTrack) {
           setTrack(newTrack);
         }
       }
-      props.onClickId(id);
+      props.onClickId(info);
+      updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [canv, dataset, props.onClickId, setTrack, clearTrack]
+    [canv, dataset, props.onClickId, setTrack, clearTrack, updateCanvasCursor]
   );
 
   /**
@@ -422,7 +475,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // selection, but keep the behavior where focus is removed from other
     // elements.
     event.preventDefault();
-    if (document.activeElement instanceof HTMLElement && document.activeElement !== canv.domElement) {
+    if (document.activeElement instanceof HTMLElement && !containerRef.current?.contains(document.activeElement)) {
       document.activeElement.blur();
     }
 
@@ -452,19 +505,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       }
 
-      if (isMouseDragging.current) {
-        canv.domElement.style.cursor = "move";
-      } else if (props.annotationState.isAnnotationModeEnabled) {
-        if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
-          canv.domElement.style.cursor = "cell";
-        } else {
-          canv.domElement.style.cursor = "crosshair";
-        }
-      } else {
-        canv.domElement.style.cursor = "auto";
-      }
+      updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [handlePan, props.annotationState.isAnnotationModeEnabled, props.annotationState.selectionMode]
+    [handlePan, updateCanvasCursor]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -616,12 +659,31 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       </span>
     )
   );
+  const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
+  const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
 
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
-      {props.annotationState.isAnnotationModeEnabled && (
-        <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
-      )}
+      {
+        // TODO: Fade out annotation mode modal if mouse approaches top left corner?
+        // TODO: Make the hotkey text change styling if the hotkey is pressed?
+        props.annotationState.isAnnotationModeEnabled && (
+          <AnnotationModeContainer>
+            <span style={{ marginLeft: "2px" }}>
+              <b>Annotation editing in progress...</b>
+            </span>
+            <FlexRowAlignCenter $gap={6}>
+              <HotkeyText>Shift</HotkeyText> hold to select range
+            </FlexRowAlignCenter>
+            {shouldShowReuseValueHotkey && (
+              <FlexRowAlignCenter $gap={6}>
+                <HotkeyText>Ctrl</HotkeyText>
+                hold to reuse last value
+              </FlexRowAlignCenter>
+            )}
+          </AnnotationModeContainer>
+        )
+      }
       <LoadingSpinner loading={props.loading || isFrameLoading} progress={loadProgress}>
         <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
@@ -709,6 +771,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
           </TooltipWithSubtitle>
         )}
       </CanvasControlsContainer>
+      <AnnotationInputPopover
+        annotationState={props.annotationState}
+        anchorPositionPx={lastClickPosition}
+      ></AnnotationInputPopover>
     </CanvasContainer>
   );
 }

@@ -9,6 +9,7 @@ import { AnnotationState } from "../../colorizer/utils/react_utils";
 import { selectVectorConfigFromState } from "../../state/slices";
 import { FlexColumn, FlexRow } from "../../styles/utils";
 
+import { LabelType } from "../../colorizer/AnnotationData";
 import { useViewerStateStore } from "../../state/ViewerState";
 import HoverTooltip from "./HoverTooltip";
 
@@ -131,13 +132,18 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
 
   // Show all current labels applied to the hovered object
   const labelData = props.annotationState.data.getLabels();
-  if (lastHoveredId.globalId !== undefined) {
-    const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredId.globalId);
+  const lastHoveredGlobalId = lastHoveredId.globalId;
+  if (lastHoveredGlobalId !== undefined) {
+    const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredGlobalId);
     if (labels.length > 0 && props.annotationState.visible) {
       objectInfoContent.push(
         <div style={{ lineHeight: "28px" }}>
           {labels.map((labelIdx) => {
             const label = labelData[labelIdx];
+            const value =
+              label.options.type !== LabelType.BOOLEAN
+                ? props.annotationState.data.getValueFromId(labelIdx, lastHoveredGlobalId)
+                : undefined;
             return (
               // TODO: Tags do not change their text color based on the background color.
               // Make a custom wrapper for Tag that does this; see
@@ -148,6 +154,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
                 color={"#" + label.options.color.getHexString()}
               >
                 {label.options.name}
+                {value ? " - " + value : ""}
               </Tag>
             );
           })}
@@ -161,16 +168,29 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   const currentLabelIdx = props.annotationState.currentLabelIdx;
   if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
     const currentLabelData = labelData[currentLabelIdx];
+
+    let value = null;
+    if (currentLabelData.options.type !== LabelType.BOOLEAN) {
+      value = props.annotationState.nextDefaultLabelValue;
+    }
+
     annotationLabel = (
-      <Tag style={{ width: "fit-content" }} color={"#" + currentLabelData.options.color.getHexString()} bordered={true}>
-        {currentLabelData.options.name}
-      </Tag>
+      <>
+        <Tag
+          style={{ width: "fit-content", margin: "0 2px" }}
+          color={"#" + currentLabelData.options.color.getHexString()}
+        >
+          {currentLabelData.options.name}
+          {value ? " - " + value : ""}
+        </Tag>
+      </>
     );
 
     if (lastHoveredId.globalId !== undefined) {
       const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
+      const isLabelBoolean = currentLabelData.options.type === LabelType.BOOLEAN;
+      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "unlabel" : "edit") : "label";
       if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
-        const verb = isHoveredIdLabeled ? "unlabel" : "label";
         annotationLabel = (
           <FlexRow>
             {annotationLabel}
@@ -188,7 +208,6 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
             const id1 = hoveredRange[hoveredRange.length - 1];
             const t0 = dataset.getTime(id0);
             const t1 = dataset.getTime(id1);
-            const verb = isHoveredIdLabeled ? "unlabel" : "label";
             annotationLabel = (
               <FlexRow>
                 {annotationLabel}

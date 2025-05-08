@@ -147,6 +147,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
               props.setLabelOptions({ color });
             }}
             confirmText="Save"
+            allowTypeSelection={false}
           />
         }
         open={showEditPopover}

@@ -345,6 +345,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.timeToLabelIds = timeToLabelIds;
     this.selectedLabelIdx = selectedLabelIdx;
     this.lastClickedId = lastClickedId;
+    this.render(false);
   }
 
   // Rendering functions ////////////////////////////
