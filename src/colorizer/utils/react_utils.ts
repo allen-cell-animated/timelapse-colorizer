@@ -452,7 +452,7 @@ export const useAnnotations = (): AnnotationState => {
     (dataset: Dataset, id: number | null): void => {
       if (!isAnnotationEnabled || currentLabelIdx === null || id === null) {
         if (isAnnotationEnabled) {
-          setLastClickedId(id)
+          setLastClickedId(id);
         }
         setLastEditedRange(null);
         setActiveEditRange(null);
