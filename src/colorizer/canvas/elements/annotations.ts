@@ -18,9 +18,10 @@ export type AnnotationParams = BaseRenderParams & {
 
 export type AnnotationStyle = {
   booleanMarkerRadiusPx: number;
-  textMarkerRadiusPx: number;
+  textMarkerHeightPx: number;
   borderColor: string;
-  additionalItemsOffsetPx: number;
+  textExtraItemsOffsetPx: number;
+  booleanExtraItemsOffsetPx: number;
   /** Percentage, as a number from 0 to 1, of how much to scale the annotation
    * size with the zoom level. 0 means no scaling (the marker size is fixed in
    * onscreen pixels), 1 means the annotation markers will scale linearly with
@@ -29,16 +30,23 @@ export type AnnotationStyle = {
   scaleWithZoomPct: number;
   borderRadiusPx: number;
   textPaddingPx: number;
+  textPaddingTopPx: number;
+  textPaddingBottomPx: number;
+  maxTextCharacters: number;
 };
 
 export const defaultAnnotationStyle: AnnotationStyle = {
   booleanMarkerRadiusPx: 5,
-  textMarkerRadiusPx: 6,
+  textMarkerHeightPx: 14,
   borderColor: "white",
-  additionalItemsOffsetPx: 3,
+  textExtraItemsOffsetPx: 5,
+  booleanExtraItemsOffsetPx: 3,
   scaleWithZoomPct: 0.25,
   borderRadiusPx: 2,
   textPaddingPx: 4,
+  textPaddingTopPx: 2,
+  textPaddingBottomPx: 2,
+  maxTextCharacters: 20,
 };
 
 /** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
@@ -133,24 +141,31 @@ function drawAnnotationMarker(
   ctx.strokeStyle = style.borderColor;
 
   // Scale markers by the zoom level.
+  const isBooleanLabel = labelData.options.type === LabelType.BOOLEAN;
   const dampenedZoomScale = getMarkerScale(params, style);
   const scaledBooleanMarkerRadiusPx = style.booleanMarkerRadiusPx * dampenedZoomScale;
-  const scaledTextMarkerRadiusPx = style.textMarkerRadiusPx * dampenedZoomScale;
 
   // Draw an additional marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {
     const bgLabelData = params.labelData[labelIdx[1]];
     ctx.fillStyle = "#" + bgLabelData.options.color.getHexString();
-    const offsetPos = pos.clone().addScalar(style.additionalItemsOffsetPx * dampenedZoomScale);
+    // Vary offset based on the type of the primary label
+    const offsetPx = isBooleanLabel ? style.booleanExtraItemsOffsetPx : style.textExtraItemsOffsetPx;
+    const offsetPos = pos.clone().addScalar(offsetPx * dampenedZoomScale);
     ctx.beginPath();
     if (bgLabelData.options.type === LabelType.BOOLEAN) {
+      // Draw BG circle for boolean labels
       ctx.arc(offsetPos.x, offsetPos.y, scaledBooleanMarkerRadiusPx, 0, 2 * Math.PI);
     } else {
+      // Draw BG rectangle with rounded corners for text labels
+      // Increase size slightly more if the label is also rectangular, since it's otherwise
+      // very hard to see the label.
+      const rectHeight = scaledBooleanMarkerRadiusPx + (isBooleanLabel ? 0 : dampenedZoomScale);
       ctx.roundRect(
-        Math.round(offsetPos.x - scaledBooleanMarkerRadiusPx) - 0.5,
-        Math.round(offsetPos.y - scaledBooleanMarkerRadiusPx) - 0.5,
-        scaledBooleanMarkerRadiusPx * 2,
-        scaledBooleanMarkerRadiusPx * 2,
+        Math.round(offsetPos.x - rectHeight) - 0.5,
+        Math.round(offsetPos.y - rectHeight) - 0.5,
+        rectHeight * 2,
+        rectHeight * 2,
         style.borderRadiusPx * dampenedZoomScale
       );
     }
@@ -168,37 +183,35 @@ function drawAnnotationMarker(
     ctx.fill();
     ctx.stroke();
   } else {
-    // Draw the main marker as a filled square, with text inside.
-    // Get value (HACKY. PLEASE MAKE THIS MORE EFFICIENT.)
-    let textValue = "N/A";
-    for (const [value, ids] of labelData.valueToIds) {
-      if (ids.has(id)) {
-        textValue = value;
-        break;
-      }
+    // Draw a rectangle with rounded corners for text labels.
+    let textValue = labelData.idToValue.get(id) || "N/A";
+    if (textValue.length > style.maxTextCharacters) {
+      textValue = textValue.slice(0, style.maxTextCharacters - 3) + "...";
     }
-    const fontSizePx = scaledTextMarkerRadiusPx * 2 - style.textPaddingPx;
-    ctx.font = `${scaledTextMarkerRadiusPx * 2}px Lato, sans-serif`;
+    const fontSizePx = Math.floor(
+      (style.textMarkerHeightPx - style.textPaddingTopPx - style.textPaddingBottomPx) * dampenedZoomScale
+    );
+    ctx.font = `${fontSizePx}px Lato, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
     const textSize = ctx.measureText(textValue);
-    const rectHeight = Math.round(fontSizePx + style.textPaddingPx * dampenedZoomScale); // Adjust text height to fit inside the square
-    const rectWidth = Math.max(rectHeight, Math.round(textSize.width + style.textPaddingPx * dampenedZoomScale)); // Add padding to the text size
+    const rectHeight = style.textMarkerHeightPx * dampenedZoomScale; // Adjust text height to fit inside the square
+    const rectWidth = Math.max(rectHeight, Math.ceil(textSize.width + style.textPaddingPx * 2 * dampenedZoomScale)); // Add padding to the text size
+    const rectPosX = Math.round(pos.x - rectWidth / 2) - 0.5;
+    const rectPosY = Math.round(pos.y - rectHeight / 2) - 0.5;
     ctx.beginPath();
-    ctx.roundRect(
-      Math.round(pos.x - rectWidth / 2) - 0.5,
-      Math.round(pos.y - rectHeight / 2) - 0.5,
-      rectWidth,
-      rectHeight,
-      style.borderRadiusPx * dampenedZoomScale
-    );
+    ctx.roundRect(rectPosX, rectPosY, rectWidth, rectHeight, style.borderRadiusPx * dampenedZoomScale);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
     ctx.fillStyle = style.borderColor;
-    ctx.fillText(textValue, pos.x, pos.y); // Debug text
+    ctx.fillText(
+      textValue,
+      Math.round(pos.x),
+      Math.round(rectPosY + style.textPaddingTopPx * dampenedZoomScale + fontSizePx / 2)
+    ); // Debug text
   }
 }
 
