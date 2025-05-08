@@ -358,6 +358,8 @@ export const useAnnotations = (): AnnotationState => {
         setDataUpdateCounter((value) => value + 1);
       }
     }
+    setLastClickedId(null);
+    setLastEditedRange(null);
     setActiveEditRange(null);
     _setIsAnnotationEnabled(enabled);
   };
@@ -446,16 +448,12 @@ export const useAnnotations = (): AnnotationState => {
     return annotationData.getNextDefaultLabelValue(currentLabelIdx, isReuseValueHotkeyPressed);
   }, [currentLabelIdx, dataUpdateCounter, isReuseValueHotkeyPressed]);
 
-  // TODO: Also handle clicking on background
   const handleAnnotationClick = useCallback(
     (dataset: Dataset, id: number | null): void => {
-      if (!isAnnotationEnabled) {
-        setLastEditedRange(null);
-        setActiveEditRange(null);
-        return;
-      }
-      setLastClickedId(id);
-      if (currentLabelIdx === null || id === null) {
+      if (!isAnnotationEnabled || currentLabelIdx === null || id === null) {
+        if (isAnnotationEnabled) {
+          setLastClickedId(id)
+        }
         setLastEditedRange(null);
         setActiveEditRange(null);
         return;
@@ -470,10 +468,11 @@ export const useAnnotations = (): AnnotationState => {
       const toggleRange = (range: number[]): void => {
         const defaultValue = annotationData.getNextDefaultLabelValue(currentLabelIdx, isReuseValueHotkeyPressed);
         if (isLabeled && labelData.options.type === LabelType.BOOLEAN) {
+          // Clicking a boolean label toggles the label on and off
           annotationData.removeLabelOnIds(currentLabelIdx, range);
           setActiveEditRange(null);
         } else if (isLabeled) {
-          // Initiate editing of the label value for that range
+          // If clicking on a range that is already labeled, initiate editing of the label value for that range
           setActiveEditRange(range);
         }  else {
           annotationData.setLabelValueOnIds(currentLabelIdx, range, defaultValue);
@@ -485,20 +484,17 @@ export const useAnnotations = (): AnnotationState => {
       switch (selectionMode) {
         case AnnotationSelectionMode.TRACK:
           // Toggle entire track
-          setLastEditedRange(track.ids);
           toggleRange(track.ids);
           break;
         case AnnotationSelectionMode.RANGE:
           if (idRange !== null) {
             setLastEditedRange(idRange);
             toggleRange(idRange);
-            // TODO: Change this to lastClickedRangeEndpoint?
           }
           break;
         case AnnotationSelectionMode.TIME:
         default:
           toggleRange([id]);
-          setLastEditedRange([id]);
       }
       setLastClickedId(id);
       setDataUpdateCounter((value) => value + 1);

@@ -319,6 +319,47 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // canv.setPan(0, 0);
   }, [collection]);
 
+  /**
+   * Updates the canvas' cursor type based on panning and annotation editing
+   * modes. Should be called after click interactions and mouse movement.
+   */
+  const updateCanvasCursor = useCallback(
+    (offsetX: number, offsetY: number): void => {
+      if (isMouseDragging.current) {
+        canv.domElement.style.cursor = "move";
+      } else if (props.annotationState.isAnnotationModeEnabled) {
+        // Check if mouse is over an object, and if it's labeled with an editable label.
+        // If so, show the edit cursor.
+        const labelIdx = props.annotationState.currentLabelIdx;
+        if (labelIdx !== null) {
+          const labelData = props.annotationState.data.getLabels()[labelIdx];
+          if (labelData.options.type !== LabelType.BOOLEAN) {
+            const id = canv.getIdAtPixel(offsetX, offsetY);
+            if (id !== null && id.globalId !== undefined && labelData.ids.has(id.globalId)) {
+              canv.domElement.style.cursor = "text";
+              return;
+            }
+          }
+        }
+
+        if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
+          canv.domElement.style.cursor = "cell";
+        } else {
+          canv.domElement.style.cursor = "crosshair";
+        }
+      } else {
+        canv.domElement.style.cursor = "auto";
+      }
+    },
+    [
+      isMouseDragging,
+      props.annotationState.isAnnotationModeEnabled,
+      props.annotationState.data,
+      props.annotationState.selectionMode,
+      props.annotationState.currentLabelIdx,
+    ]
+  );
+
   /** Report clicked tracks via the passed callback. */
   const handleClick = useCallback(
     async (event: MouseEvent): Promise<void> => {
@@ -335,8 +376,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       }
       props.onClickId(info);
+      updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [canv, dataset, props.onClickId, setTrack, clearTrack]
+    [canv, dataset, props.onClickId, setTrack, clearTrack, updateCanvasCursor]
   );
 
   /**
@@ -433,10 +475,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     // selection, but keep the behavior where focus is removed from other
     // elements.
     event.preventDefault();
-    const activeElement = document.activeElement;
-    if (activeElement instanceof HTMLElement && !containerRef.current?.contains(activeElement)) {
-      console.log("blurring active element", activeElement);
-      activeElement.blur();
+    if (document.activeElement instanceof HTMLElement && !containerRef.current?.contains(document.activeElement)) {
+      document.activeElement.blur();
     }
 
     isMouseDragging.current = false;
@@ -465,40 +505,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       }
 
-      if (isMouseDragging.current) {
-        canv.domElement.style.cursor = "move";
-      } else if (props.annotationState.isAnnotationModeEnabled) {
-        // Check if mouse is over an object
-        const labelIdx = props.annotationState.currentLabelIdx;
-        if (labelIdx !== null) {
-          const labelData = props.annotationState.data.getLabels()[labelIdx];
-          if (labelData.options.type !== LabelType.BOOLEAN) {
-            const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-            // If the current hovered ID has a label with an editable value, show
-            // the edit cursor.
-            if (id !== null && id.globalId !== undefined && labelData.ids.has(id.globalId)) {
-              canv.domElement.style.cursor = "text";
-              return;
-            }
-          }
-        }
-
-        if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
-          canv.domElement.style.cursor = "cell";
-        } else {
-          canv.domElement.style.cursor = "crosshair";
-        }
-      } else {
-        canv.domElement.style.cursor = "auto";
-      }
+      updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [
-      handlePan,
-      props.annotationState.isAnnotationModeEnabled,
-      props.annotationState.selectionMode,
-      props.annotationState.data,
-      props.annotationState.currentLabelIdx,
-    ]
+    [handlePan, updateCanvasCursor]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -657,22 +666,21 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
       {
         // TODO: Fade out annotation mode modal if mouse approaches top left corner?
+        // TODO: Make the hotkey text change styling if the hotkey is pressed?
         props.annotationState.isAnnotationModeEnabled && (
           <AnnotationModeContainer>
             <span style={{ marginLeft: "2px" }}>
               <b>Annotation editing in progress...</b>
             </span>
-            <FlexColumn $gap={6}>
+            <FlexRowAlignCenter $gap={6}>
+              <HotkeyText>Shift</HotkeyText> hold to select range
+            </FlexRowAlignCenter>
+            {shouldShowReuseValueHotkey && (
               <FlexRowAlignCenter $gap={6}>
-                <HotkeyText>Shift</HotkeyText> hold to select range
+                <HotkeyText>Ctrl</HotkeyText>
+                hold to reuse last value
               </FlexRowAlignCenter>
-              {shouldShowReuseValueHotkey && (
-                <FlexRowAlignCenter $gap={6}>
-                  <HotkeyText>Ctrl</HotkeyText>
-                  hold to reuse last value
-                </FlexRowAlignCenter>
-              )}
-            </FlexColumn>
+            )}
           </AnnotationModeContainer>
         )
       }

@@ -29,6 +29,7 @@ export type AnnotationStyle = {
    */
   scaleWithZoomPct: number;
   borderRadiusPx: number;
+  /** Horizontal padding, on left and right. */
   textPaddingPx: number;
   textPaddingTopPx: number;
   textPaddingBottomPx: number;
@@ -43,7 +44,7 @@ export const defaultAnnotationStyle: AnnotationStyle = {
   booleanExtraItemsOffsetPx: 3,
   scaleWithZoomPct: 0.25,
   borderRadiusPx: 2,
-  textPaddingPx: 4,
+  textPaddingPx: 2,
   textPaddingTopPx: 2,
   textPaddingBottomPx: 2,
   maxTextCharacters: 20,
@@ -145,11 +146,11 @@ function drawAnnotationMarker(
   const dampenedZoomScale = getMarkerScale(params, style);
   const scaledBooleanMarkerRadiusPx = style.booleanMarkerRadiusPx * dampenedZoomScale;
 
-  // Draw an additional marker behind the main one if there are multiple labels.
+  // Draw an additional secondary marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {
     const bgLabelData = params.labelData[labelIdx[1]];
     ctx.fillStyle = "#" + bgLabelData.options.color.getHexString();
-    // Vary offset based on the type of the primary label
+    // Vary offset based on the type of the main label
     const offsetPx = isBooleanLabel ? style.booleanExtraItemsOffsetPx : style.textExtraItemsOffsetPx;
     const offsetPos = pos.clone().addScalar(offsetPx * dampenedZoomScale);
     ctx.beginPath();
@@ -158,9 +159,9 @@ function drawAnnotationMarker(
       ctx.arc(offsetPos.x, offsetPos.y, scaledBooleanMarkerRadiusPx, 0, 2 * Math.PI);
     } else {
       // Draw BG rectangle with rounded corners for text labels
-      // Increase size slightly more if the label is also rectangular, since it's otherwise
+      // Increase size slightly more if the main label is also rectangular, since it's otherwise
       // very hard to see the label.
-      const rectHeight = scaledBooleanMarkerRadiusPx + (isBooleanLabel ? 0 : dampenedZoomScale);
+      const rectHeight = scaledBooleanMarkerRadiusPx + (isBooleanLabel ? 0 : 1 * dampenedZoomScale);
       ctx.roundRect(
         Math.round(offsetPos.x - rectHeight) - 0.5,
         Math.round(offsetPos.y - rectHeight) - 0.5,
@@ -174,6 +175,7 @@ function drawAnnotationMarker(
     ctx.stroke();
   }
 
+  // Draw the main marker.
   ctx.fillStyle = "#" + labelData.options.color.getHexString();
   if (labelData.options.type === LabelType.BOOLEAN) {
     // Draw the main marker as a filled circle.
@@ -183,8 +185,8 @@ function drawAnnotationMarker(
     ctx.fill();
     ctx.stroke();
   } else {
-    // Draw a rectangle with rounded corners for text labels.
-    let textValue = labelData.idToValue.get(id) || "N/A";
+    // Draw a rectangle with rounded corners that contains a text label.
+    let textValue = labelData.idToValue.get(id) || "";
     if (textValue.length > style.maxTextCharacters) {
       textValue = textValue.slice(0, style.maxTextCharacters - 3) + "...";
     }
@@ -211,7 +213,7 @@ function drawAnnotationMarker(
       textValue,
       Math.round(pos.x),
       Math.round(rectPosY + style.textPaddingTopPx * dampenedZoomScale + fontSizePx / 2)
-    ); // Debug text
+    );
   }
 }
 
