@@ -19,24 +19,47 @@ type AntStyledSelectProps<
   styles?: StylesConfig<SelectItem, IsMulti, Group>;
 };
 
+const COLOR_INDICATOR_BASE_STYLE = {
+  borderRadius: 10,
+  display: "block",
+  marginLeft: 1,
+  marginRight: 6,
+  height: 11,
+  width: 11,
+};
+
+const LABELED_COLOR_INDICATOR_BASE_STYLE = {
+  ...COLOR_INDICATOR_BASE_STYLE,
+  borderRadius: 2,
+  color: "white",
+  width: 12,
+  height: 12,
+  fontSize: 8,
+  marginLeft: 0,
+  marginRight: 6,
+  textAlign: "center",
+  position: "relative",
+};
+
 /**
  * If `color` is defined, adds style config properties  that add a colored
  * pseudo-element indicator to the left of an option text in the dropdown.
  */
-const addOptionalColorIndicator = (color: Color | undefined): Partial<StylesConfig["option"]> => {
+const addOptionalColorIndicator = (
+  color: Color | undefined,
+  label: string | undefined
+): Partial<StylesConfig["option"]> => {
   if (color) {
+    const baseStyle = label ? LABELED_COLOR_INDICATOR_BASE_STYLE : COLOR_INDICATOR_BASE_STYLE;
     return {
       alignItems: "center",
       display: "flex",
+      flexDirection: "row",
       // eslint-disable-next-line @typescript-eslint/naming-convention
       ":before": {
+        ...baseStyle,
         backgroundColor: "#" + color.getHexString(),
-        borderRadius: 10,
-        content: '" "',
-        display: "block",
-        marginRight: 8,
-        height: 10,
-        width: 10,
+        content: `"${label ?? " "}"`,
       },
     };
   }
@@ -218,11 +241,11 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectIte
           : theme.color.dropdown.backgroundHover
         : undefined,
     },
-    ...addOptionalColorIndicator(data?.color),
+    ...addOptionalColorIndicator(data?.color, data?.colorLabel),
   }),
   singleValue: (styles, { data }) => ({
     ...styles,
-    ...addOptionalColorIndicator(data?.color),
+    ...addOptionalColorIndicator(data?.color, data?.colorLabel),
   }),
 });
 

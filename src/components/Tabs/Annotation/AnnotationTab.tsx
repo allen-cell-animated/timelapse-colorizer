@@ -11,7 +11,7 @@ import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/
 import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
 
-import { LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
+import { LabelData, LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
 import { Z_INDEX_MODAL } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
@@ -131,12 +131,19 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   );
 
   // Options for the selection dropdown
+  const labelTypeToLabel: Record<LabelType, string> = {
+    [LabelType.BOOLEAN]: "",
+    [LabelType.INTEGER]: "I",
+    [LabelType.CUSTOM]: "C",
+  };
+
   const selectLabelOptions: SelectItem[] = useMemo(
     () =>
       labels.map((label, index) => ({
         value: index.toString(),
         label: label.ids.size ? `${label.options.name} (${label.ids.size})` : label.options.name,
         color: label.options.color,
+        colorLabel: labelTypeToLabel[label.options.type],
       })),
     [annotationData]
   );
