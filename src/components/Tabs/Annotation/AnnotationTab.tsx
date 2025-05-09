@@ -18,6 +18,7 @@ import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
 import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationImportButton from "./AnnotationImportButton";
 import AnnotationModeButton from "./AnnotationModeButton";
 import CreateLabelForm from "./CreateLabelForm";
 import LabelEditControls from "./LabelEditControls";
@@ -190,6 +191,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           </div>
         </Modal>
 
+        <AnnotationImportButton annotationState={props.annotationState} />
         <TextButton
           onClick={() => {
             const csvData = props.annotationState.data.toCsv(store.dataset!);
