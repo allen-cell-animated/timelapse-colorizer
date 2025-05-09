@@ -2,9 +2,10 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../../src/colorizer";
+import { MOCK_DATASET } from "../state/ViewerState/constants";
 import { compareRecord } from "../state/ViewerState/utils";
 
-import { AnnotationData, BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE } from "../../src/colorizer/AnnotationData";
+import { AnnotationData, BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelType } from "../../src/colorizer/AnnotationData";
 
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
@@ -277,6 +278,151 @@ describe("AnnotationData", () => {
 
       const csv = annotationData.toCsv(mockDataset);
       expect(csv).to.equal(`ID,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`);
+    });
+  });
+
+  describe("fromCsv", () => {
+    const booleanLabelKey = "Boolean Label";
+    const integerLabelKey = "Integer Label";
+    const customLabelKey = "Custom Label";
+
+    it("parses a basic CSV to an AnnotationData object", () => {
+      const mockCsvHeaders = `ID,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `3,1,3,${BOOLEAN_VALUE_FALSE}\r\n`; // false values are omitted
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const annotationData = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+
+      const labels = annotationData.getLabels();
+      const labelData = labels[0];
+      expect(labels.length).toBe(1);
+      expect(labelData.options.name).toBe(booleanLabelKey);
+      expect(labelData.options.color).toEqual(defaultPalette.colors[0]);
+      expect(labelData.options.type).toBe(LabelType.BOOLEAN);
+
+      // Check IDs and values
+      expect(labelData.ids).toEqual(new Set([0, 1, 2]));
+      expect(labelData.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2]));
+      expect(labelData.idToValue.get(0)).toEqual(BOOLEAN_VALUE_TRUE);
+      expect(labelData.idToValue.get(1)).toEqual(BOOLEAN_VALUE_TRUE);
+      expect(labelData.idToValue.get(2)).toEqual(BOOLEAN_VALUE_TRUE);
+    });
+
+    it("determines and parses multiple labels", () => {
+      const mockCsvHeaders = `ID,Track,Frame,${booleanLabelKey},${integerLabelKey},${customLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,${BOOLEAN_VALUE_TRUE},1,"A"\r\n` +
+        `1,0,1,${BOOLEAN_VALUE_TRUE},2,"B"\r\n` +
+        `2,0,2,${BOOLEAN_VALUE_TRUE},3,"C"\r\n` +
+        `7,2,7,${BOOLEAN_VALUE_TRUE},4,"D"\r\n`;
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const annotationData = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+
+      const labels = annotationData.getLabels();
+      expect(labels.length).toBe(3);
+      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
+      expect(labels[1].options.name).toBe(integerLabelKey);
+      expect(labels[1].options.type).toBe(LabelType.INTEGER);
+      expect(labels[2].options.name).toBe(customLabelKey);
+      expect(labels[2].options.type).toBe(LabelType.CUSTOM);
+
+      // Check ID + value to ID mappings
+      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 7]));
+      expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2, 7]));
+
+      expect(labels[1].ids).toEqual(new Set([0, 1, 2, 7]));
+      expect(labels[1].valueToIds).to.deep.equal(
+        new Map([
+          ["1", new Set([0])],
+          ["2", new Set([1])],
+          ["3", new Set([2])],
+          ["4", new Set([7])],
+        ])
+      );
+      expect(labels[1].idToValue).to.deep.equal(
+        new Map([
+          [0, "1"],
+          [1, "2"],
+          [2, "3"],
+          [7, "4"],
+        ])
+      );
+
+      expect(labels[2].ids).toEqual(new Set([0, 1, 2, 7]));
+      expect(labels[2].valueToIds).to.deep.equal(
+        new Map([
+          ["A", new Set([0])],
+          ["B", new Set([1])],
+          ["C", new Set([2])],
+          ["D", new Set([7])],
+        ])
+      );
+      expect(labels[2].idToValue).to.deep.equal(
+        new Map([
+          [0, "A"],
+          [1, "B"],
+          [2, "C"],
+          [7, "D"],
+        ])
+      );
+    });
+
+    it("handles empty/missing/falsy lines", () => {
+      const mockCsvHeaders = `ID,Track,Frame,${booleanLabelKey},${integerLabelKey},${customLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,${BOOLEAN_VALUE_TRUE} , ,"A"\r\n` +
+        `1,0,1,${BOOLEAN_VALUE_FALSE},2,""\r\n` +
+        `2,0,2,                      ,3,"C"\r\n` +
+        `7,2,7,${BOOLEAN_VALUE_TRUE} ,4,\r\n`;
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const annotationData = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+
+      const labels = annotationData.getLabels();
+      expect(labels.length).toBe(3);
+      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
+      expect(labels[1].options.name).toBe(integerLabelKey);
+      expect(labels[1].options.type).toBe(LabelType.INTEGER);
+      expect(labels[2].options.name).toBe(customLabelKey);
+      expect(labels[2].options.type).toBe(LabelType.CUSTOM);
+
+      // Check ID + value to ID mappings
+      expect(labels[0].ids).toEqual(new Set([0, 7]));
+      expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 7]));
+
+      expect(labels[1].ids).toEqual(new Set([1, 2, 7]));
+      expect(labels[1].valueToIds).to.deep.equal(
+        new Map([
+          ["2", new Set([1])],
+          ["3", new Set([2])],
+          ["4", new Set([7])],
+        ])
+      );
+      expect(labels[1].idToValue).to.deep.equal(
+        new Map([
+          [1, "2"],
+          [2, "3"],
+          [7, "4"],
+        ])
+      );
+
+      expect(labels[2].ids).toEqual(new Set([0, 2]));
+      expect(labels[2].valueToIds).to.deep.equal(
+        new Map([
+          ["A", new Set([0])],
+          ["C", new Set([2])],
+        ])
+      );
+      expect(labels[2].idToValue).to.deep.equal(
+        new Map([
+          [0, "A"],
+          [2, "C"],
+        ])
+      );
     });
   });
 });
