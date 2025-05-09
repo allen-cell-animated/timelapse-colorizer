@@ -143,9 +143,9 @@ describe("AnnotationData", () => {
 
     it("exports to CSV", () => {
       const annotationData = new AnnotationData();
-      annotationData.createNewLabel("Label 1");
-      annotationData.createNewLabel("Label 2");
-      annotationData.createNewLabel("Label 3");
+      annotationData.createNewLabel({ name: "Label 1" });
+      annotationData.createNewLabel({ name: "Label 2" });
+      annotationData.createNewLabel({ name: "Label 3" });
 
       annotationData.setLabelOnIds(0, [0], true);
       annotationData.setLabelOnIds(1, [1], true);
@@ -159,10 +159,10 @@ describe("AnnotationData", () => {
 
     it("handles labels with quote and comma characters", () => {
       const annotationData = new AnnotationData();
-      annotationData.createNewLabel('"label');
-      annotationData.createNewLabel(",,,,,");
-      annotationData.createNewLabel('a","fake label');
-      annotationData.createNewLabel('","');
+      annotationData.createNewLabel({ name: '"label' });
+      annotationData.createNewLabel({ name: ",,,,," });
+      annotationData.createNewLabel({ name: 'a","fake label' });
+      annotationData.createNewLabel({ name: '","' });
 
       annotationData.setLabelOnIds(0, [0], true);
       annotationData.setLabelOnIds(1, [1], true);
@@ -184,9 +184,9 @@ describe("AnnotationData", () => {
 
     it("trims column name whitespace on export", () => {
       const annotationData = new AnnotationData();
-      annotationData.createNewLabel(" \t Label 1");
-      annotationData.createNewLabel("\tLabel 2  ");
-      annotationData.createNewLabel("\t\tLabel 3 \t ");
+      annotationData.createNewLabel({ name: " \t Label 1" });
+      annotationData.createNewLabel({ name: "\tLabel 2  " });
+      annotationData.createNewLabel({ name: "\t\tLabel 3 \t " });
 
       const csv = annotationData.toCsv(mockDataset);
       expect(csv).to.equal(`ID,Track,Frame,Label 1,Label 2,Label 3\r\n`);
@@ -195,12 +195,12 @@ describe("AnnotationData", () => {
     it("escapes column names starting with special characters", () => {
       // See https://owasp.org/www-community/attacks/CSV_Injection
       const annotationData = new AnnotationData();
-      annotationData.createNewLabel("=SUM(A2:A5)");
-      annotationData.createNewLabel("@label");
-      annotationData.createNewLabel("+label");
-      annotationData.createNewLabel("-label");
-      annotationData.createNewLabel("\tlabel 1");
-      annotationData.createNewLabel("\rlabel 2");
+      annotationData.createNewLabel({ name: "=SUM(A2:A5)" });
+      annotationData.createNewLabel({ name: "@label" });
+      annotationData.createNewLabel({ name: "+label" });
+      annotationData.createNewLabel({ name: "-label" });
+      annotationData.createNewLabel({ name: "\tlabel 1" });
+      annotationData.createNewLabel({ name: "\rlabel 2" });
 
       const csv = annotationData.toCsv(mockDataset);
       expect(csv).to.equal(`ID,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`);

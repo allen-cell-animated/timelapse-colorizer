@@ -283,6 +283,9 @@ export type AnnotationState =  {
   data: IAnnotationDataGetters;
 } & IAnnotationDataSetters;
 
+// TODO: Move this into a zustand state slice. A lot of the logic here is
+// attempting to synchronize updates between the annotation data and the UI,
+// which can be handled by zustand.
 export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
 
@@ -457,6 +460,7 @@ export const useAnnotations = (): AnnotationState => {
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
       isLabelOnId: annotationData.isLabelOnId,
+      getNextDefaultLabelSettings: annotationData.getNextDefaultLabelSettings,
       toCsv: annotationData.toCsv,
     }),
     [dataUpdateCounter]
