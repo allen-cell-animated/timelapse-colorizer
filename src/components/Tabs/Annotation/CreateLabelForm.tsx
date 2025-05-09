@@ -12,7 +12,7 @@ import { DEFAULT_LABEL_COLOR_PRESETS } from "./LabelEditControls";
 
 type CreateLabelFormProps = {
   initialLabelOptions: LabelOptions;
-  onConfirm: (options: LabelOptions) => void;
+  onConfirm: (options: Partial<LabelOptions>) => void;
   onCancel: () => void;
   onColorChanged?: (color: Color) => void;
   confirmText?: string;

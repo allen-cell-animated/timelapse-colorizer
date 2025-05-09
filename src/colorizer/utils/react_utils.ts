@@ -482,8 +482,7 @@ export const useAnnotations = (): AnnotationState => {
     getSelectRangeFromId,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
-    setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
-    setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
+    setLabelOptions: wrapFunctionInUpdate(annotationData.setLabelOptions),
     deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
     setLabelOnIds: wrapFunctionInUpdate(annotationData.setLabelOnIds),
     clear: wrapFunctionInUpdate(clear),

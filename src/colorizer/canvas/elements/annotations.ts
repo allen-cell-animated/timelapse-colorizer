@@ -132,7 +132,7 @@ function drawAnnotationMarker(
 
   // Draw an additional marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {
-    ctx.fillStyle = "#" + params.labelData[labelIdx[1]].color.getHexString();
+    ctx.fillStyle = "#" + params.labelData[labelIdx[1]].options.color.getHexString();
     const offsetPos = pos.clone().addScalar(style.additionalItemsOffsetPx * dampenedZoomScale);
     ctx.beginPath();
     ctx.arc(offsetPos.x, offsetPos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
@@ -142,7 +142,7 @@ function drawAnnotationMarker(
   }
 
   // Draw the main marker.
-  ctx.fillStyle = "#" + labelData.color.getHexString();
+  ctx.fillStyle = "#" + labelData.options.color.getHexString();
   ctx.beginPath();
   ctx.arc(pos.x, pos.y, scaledMarkerSizePx, 0, 2 * Math.PI);
   ctx.closePath();

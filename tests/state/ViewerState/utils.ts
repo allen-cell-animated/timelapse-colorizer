@@ -33,7 +33,7 @@ export const clearDatasetAsync = async (result: { current: ViewerStore }): Promi
  * Note that `actual` may contain additional key-value pairs not present in
  * `expected` and still pass this check.
  */
-export const compareRecord = <T extends Record<string, unknown>>(actual: T, expected: T): void => {
+export const compareRecord = <T extends Record<string, unknown>>(actual: T, expected: Partial<T>): void => {
   for (const key in expected) {
     expect(actual[key], `compareRecord: Found different values for field '${key}'.`).toEqual(expected[key]);
   }
