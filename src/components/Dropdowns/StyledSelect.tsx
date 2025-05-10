@@ -35,9 +35,14 @@ const LABELED_COLOR_INDICATOR_BASE_STYLE = {
   height: 12,
   width: 12,
   borderRadius: 2,
-  fontSize: 8,
+  fontSize: 9,
   textAlign: "center",
+  // Use serif font to make certain characters (`I`) more legible but keep
+  // default fonts as fallback
+  fontFamily: "Garamond,var(--default-font)",
+  lineHeight: "13px", // Vertically centers text
   color: "var(--color-text-button)",
+  fontWeight: 800,
 };
 
 /**
