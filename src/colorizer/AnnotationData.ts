@@ -424,6 +424,11 @@ export class AnnotationData implements IAnnotationData {
     }
     const data = result.data as Record<string, string>[];
     let headers = result.meta.fields as string[];
+
+    // Check for required ID column.
+    if (headers.indexOf(CSV_COL_ID) === -1) {
+      throw new Error(`CSV does not contain expected ID columns with the header "${CSV_COL_ID}".`);
+    }
     // Remove the metadata columns
     headers = headers.filter((header) => header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME);
     const headerToType = getLabelTypeFromParsedCsv(headers, data);
@@ -433,9 +438,6 @@ export class AnnotationData implements IAnnotationData {
       const header = headers[i].trim();
       if (header === CSV_COL_ID || header === CSV_COL_TRACK || header === CSV_COL_TIME) {
         continue;
-      }
-      if (!headerToType.has(header)) {
-        throw new Error(`Invalid header in CSV: ${header}`);
       }
       const type = headerToType.get(header)!;
       annotationData.createNewLabel({
@@ -449,9 +451,9 @@ export class AnnotationData implements IAnnotationData {
       const track = parseInt(row[CSV_COL_TRACK], 10);
       const time = parseInt(row[CSV_COL_TIME], 10);
 
-      // TODO: warn here if the data is mismatched -> return as some sort of
-      // result? TBD
-
+      // TODO: Check that the id is valid for the dataset, and that the track and time
+      // match for the ID. Count up any mismatches and return it as part of a
+      // Result object so we can warn the user.
       if (isNaN(id) || isNaN(track) || isNaN(time)) {
         console.warn(`Invalid ID, track, or time in CSV: ${row}`);
         continue;

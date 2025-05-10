@@ -21,23 +21,28 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [convertedAnnotationData, setConvertedAnnotationData] = useState<AnnotationData | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [errorText, setErrorText] = useState("");
 
   const modalContainerRef = React.useRef<HTMLDivElement>(null);
 
   const handleFileUpload = async (file: File): Promise<void> => {
+    setUploadedFile(file);
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
     if (!isCsv || !dataset) {
-      console.log("File is not a CSV or dataset is null");
+      setErrorText("Only CSV files are supported.");
       return;
     }
-    setUploadedFile(file);
     const reader = new FileReader();
     reader.onload = async (e) => {
       const text = e.target?.result as string;
       // TODO: handle errors here
-      const annotationData = await AnnotationData.fromCsv(dataset, text);
-      setConvertedAnnotationData(annotationData);
-      console.log("Converted annotation data:", annotationData);
+      try {
+        // TODO: Do this in a worker to avoid blocking the UI thread?
+        const annotationData = await AnnotationData.fromCsv(dataset, text);
+        setConvertedAnnotationData(annotationData);
+      } catch (error) {
+        setErrorText("Could not parse CSV file. Parsing failed with the following error: " + error);
+      }
     };
     reader.readAsText(file);
   };
@@ -73,7 +78,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     fileList.push({
       uid: "-1",
       name: uploadedFile.name,
-      status: "done",
+      status: convertedAnnotationData !== null ? "done" : "error",
       // url: URL.createObjectURL(uploadedFile),
     });
   }
@@ -82,6 +87,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     if (info.fileList.length === 0) {
       setUploadedFile(null);
       setConvertedAnnotationData(null);
+      setErrorText("");
     }
   };
 
@@ -110,6 +116,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
           </span>
           <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
         </Upload.Dragger>
+        {errorText && <p style={{ color: theme.color.text.error }}>{errorText}</p>}
         {convertedAnnotationData && hasAnnotationData && (
           <p style={{ color: theme.color.text.error }}>Existing annotations will be overwritten during import.</p>
         )}
