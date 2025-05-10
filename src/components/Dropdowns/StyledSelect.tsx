@@ -20,25 +20,24 @@ type AntStyledSelectProps<
 };
 
 const COLOR_INDICATOR_BASE_STYLE = {
-  borderRadius: 10,
   display: "block",
   marginLeft: 1,
   marginRight: 6,
   height: 11,
   width: 11,
+  borderRadius: 11,
 };
 
 const LABELED_COLOR_INDICATOR_BASE_STYLE = {
   ...COLOR_INDICATOR_BASE_STYLE,
-  borderRadius: 2,
-  color: "white",
-  width: 12,
-  height: 12,
-  fontSize: 8,
   marginLeft: 0,
   marginRight: 6,
+  height: 12,
+  width: 12,
+  borderRadius: 2,
+  fontSize: 8,
   textAlign: "center",
-  position: "relative",
+  color: "var(--color-text-button)",
 };
 
 /**
