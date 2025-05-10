@@ -50,9 +50,19 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
 
   const handleImport = async () => {
     if (convertedAnnotationData) {
+      // TODO: give more advanced merging options here. There are three possible
+      // options:
+      // 1. Overwrite existing annotations (default, current behavior)
+      // 2. Keep both (no merging, labels are kept separate even if they have
+      //    matching names)
+      // 3. Merge annotations (merge matching labels with the same types. Users
+      //    should be given an option for how to handle when conflicts occur for
+      //    values (e.g. the imported CSV has a different value assigned to the
+      //    same ID))
       annotationState.replaceAnnotationData(convertedAnnotationData);
       setShowModal(false);
       setConvertedAnnotationData(null);
+      annotationState.setVisibility(true);
     }
   };
 
@@ -90,7 +100,6 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
           name="file"
           multiple={false}
           accept=".csv"
-          // TODO: control file list here
           fileList={fileList}
           onChange={handleFileChange}
           showUploadList={true}
@@ -102,9 +111,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
           <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
         </Upload.Dragger>
         {convertedAnnotationData && hasAnnotationData && (
-          <p style={{ color: theme.color.text.error }}>
-            You have existing annotations that will be overwritten during import.
-          </p>
+          <p style={{ color: theme.color.text.error }}>Existing annotations will be overwritten during import.</p>
         )}
       </Modal>
       <TextButton
