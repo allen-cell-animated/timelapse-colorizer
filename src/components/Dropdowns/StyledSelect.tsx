@@ -19,24 +19,51 @@ type AntStyledSelectProps<
   styles?: StylesConfig<SelectItem, IsMulti, Group>;
 };
 
+const COLOR_INDICATOR_BASE_STYLE = {
+  display: "block",
+  marginLeft: 1,
+  marginRight: 6,
+  height: 11,
+  width: 11,
+  borderRadius: 11,
+};
+
+const LABELED_COLOR_INDICATOR_BASE_STYLE = {
+  ...COLOR_INDICATOR_BASE_STYLE,
+  marginLeft: 0,
+  marginRight: 6,
+  height: 12,
+  width: 12,
+  borderRadius: 2,
+  fontSize: 9,
+  textAlign: "center",
+  // Use serif font to make certain characters (`I`) more legible but keep
+  // default fonts as fallback
+  fontFamily: "Garamond,var(--default-font)",
+  lineHeight: "13px", // Vertically centers text
+  color: "var(--color-text-button)",
+  fontWeight: 800,
+};
+
 /**
  * If `color` is defined, adds style config properties  that add a colored
  * pseudo-element indicator to the left of an option text in the dropdown.
  */
-const addOptionalColorIndicator = (color: Color | undefined): Partial<StylesConfig["option"]> => {
+const addOptionalColorIndicator = (
+  color: Color | undefined,
+  label: string | undefined
+): Partial<StylesConfig["option"]> => {
   if (color) {
+    const baseStyle = label ? LABELED_COLOR_INDICATOR_BASE_STYLE : COLOR_INDICATOR_BASE_STYLE;
     return {
       alignItems: "center",
       display: "flex",
+      flexDirection: "row",
       // eslint-disable-next-line @typescript-eslint/naming-convention
       ":before": {
+        ...baseStyle,
         backgroundColor: "#" + color.getHexString(),
-        borderRadius: 10,
-        content: '" "',
-        display: "block",
-        marginRight: 8,
-        height: 10,
-        width: 10,
+        content: `"${label ?? " "}"`,
       },
     };
   }
@@ -218,11 +245,11 @@ const getCustomStyles = (theme: AppTheme, width: string): StylesConfig<SelectIte
           : theme.color.dropdown.backgroundHover
         : undefined,
     },
-    ...addOptionalColorIndicator(data?.color),
+    ...addOptionalColorIndicator(data?.color, data?.colorLabel),
   }),
   singleValue: (styles, { data }) => ({
     ...styles,
-    ...addOptionalColorIndicator(data?.color),
+    ...addOptionalColorIndicator(data?.color, data?.colorLabel),
   }),
 });
 

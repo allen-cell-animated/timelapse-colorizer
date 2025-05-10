@@ -15,6 +15,8 @@ export type SelectItem = {
    * shown next to the label in the dropdown.
    */
   color?: Color;
+  /** Optional one-character label that will be rendered in the color indicator. */
+  colorLabel?: string;
   /** Optional tooltip for an option. If set, a tooltip will be shown when
    * the option is hovered or focused in the dropdown. */
   tooltip?: string | ReactNode;
