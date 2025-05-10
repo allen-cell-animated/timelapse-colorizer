@@ -10,6 +10,7 @@ import {
 } from "../types";
 import { packDataTexture } from "./texture_utils";
 
+import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelType } from "../AnnotationData";
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
 
@@ -326,4 +327,41 @@ export function getGlobalIdFromSegId(
   }
 
   return rawGlobalId - 1; // -1 to convert to zero-based index
+}
+
+export function getLabelTypeFromParsedCsv(
+  headers: string[],
+  data: Record<string, string | undefined>[]
+): Map<string, LabelType> {
+  const labelTypeMap = new Map<string, LabelType>();
+  for (const header of headers) {
+    let hasIntegerValues = true;
+    let hasBooleanValues = true;
+    for (const row of data) {
+      const value = row[header]?.trim();
+      if (value === undefined || value === "") {
+        continue;
+      } else if (value === BOOLEAN_VALUE_TRUE || value === BOOLEAN_VALUE_FALSE) {
+        hasIntegerValues = false;
+      } else if (parseInt(value, 10).toString() === value) {
+        hasBooleanValues = false;
+      } else {
+        hasBooleanValues = false;
+        hasIntegerValues = false;
+        break;
+      }
+      if (!hasIntegerValues && !hasBooleanValues) {
+        break;
+      }
+    }
+
+    if (hasIntegerValues) {
+      labelTypeMap.set(header, LabelType.INTEGER);
+    } else if (hasBooleanValues) {
+      labelTypeMap.set(header, LabelType.BOOLEAN);
+    } else {
+      labelTypeMap.set(header, LabelType.CUSTOM);
+    }
+  }
+  return labelTypeMap;
 }

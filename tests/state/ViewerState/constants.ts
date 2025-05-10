@@ -86,6 +86,21 @@ export const MOCK_DATASET_MANIFEST: AnyManifestFile = {
   segIds: "seg_ids.json",
 };
 
+/**
+ * Summary of the mock dataset:
+ * | Index | Times | Seg IDs | Tracks | Feature 1 | Feature 2 | Feature 3 | Feature 4 |
+ * |-------|-------|---------|--------|-----------|-----------|-----------|-----------|
+ * | 0     | 0     | 0       | 0      | 0.1       | 0         | 0         | 0.1       |
+ * | 1     | 0     | 1       | 1      | 0.2       | 10        | 0         | 0.2       |
+ * | 2     | 0     | 2       | 2      | 0.3       | 20        | 0         | 0.3       |
+ * | 3     | 1     | 3       | 3      | 0.4       | 30        | 1         | 0.4       |
+ * | 4     | 1     | 4       | 4      | 0.5       | 40        | 1         | 0.5       |
+ * | 5     | 1     | 5       | 5      | 0.6       | 50        | 1         | 0.6       |
+ * | 6     | 2     | 6       | 6      | 0.7       | 60        | 2         | 0.7       |
+ * | 7     | 2     | 7       | 7      | 0.8       | 70        | 2         | 0.8       |
+ * | 8     | 3     | 8       | 8      | 0.9       | 80        | 2         | 0.9       |
+ */
+
 export const MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE = {
   [DEFAULT_DATASET_DIR + "times.json"]: new MockArraySource(
     FeatureDataType.U32,
