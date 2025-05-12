@@ -423,26 +423,25 @@ export class AnnotationData implements IAnnotationData {
       throw new Error(`Error parsing CSV: ${result.errors.map((e) => e.message).join(", ")}`);
     }
     const data = result.data as Record<string, string>[];
-    let headers = result.meta.fields as string[];
+    const headers = result.meta.fields as string[];
 
     // Check for required ID column.
     if (headers.indexOf(CSV_COL_ID) === -1) {
       throw new Error(`CSV does not contain expected ID columns with the header "${CSV_COL_ID}".`);
     }
     // Remove the metadata columns
-    headers = headers.filter((header) => header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME);
-    const headerToType = getLabelTypeFromParsedCsv(headers, data);
+    const labelNames = headers.filter(
+      (header) => header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME
+    );
+    const labelNameToType = getLabelTypeFromParsedCsv(headers, data);
 
     // Create each of the labels from a header in the CSV.
-    for (let i = 0; i < headers.length; i++) {
-      const header = headers[i].trim();
-      if (header === CSV_COL_ID || header === CSV_COL_TRACK || header === CSV_COL_TIME) {
-        continue;
-      }
-      const type = headerToType.get(header)!;
+    for (let i = 0; i < labelNames.length; i++) {
+      const name = labelNames[i].trim();
+      const type = labelNameToType.get(name)!;
       annotationData.createNewLabel({
-        name: header,
-        type: type,
+        name,
+        type,
       });
     }
 
@@ -459,11 +458,11 @@ export class AnnotationData implements IAnnotationData {
         continue;
       }
       // Push row data to the labels.
-      for (let labelIdx = 0; labelIdx < headers.length; labelIdx++) {
+      for (let labelIdx = 0; labelIdx < labelNames.length; labelIdx++) {
         const labelData = annotationData.labelData[labelIdx];
         const isBoolean = labelData.options.type === LabelType.BOOLEAN;
-        const header = headers[labelIdx];
-        const value = row[header]?.trim();
+        const name = labelNames[labelIdx];
+        const value = row[name]?.trim();
         // Ignore invalid values (and omit boolean false values)
         if (value === undefined || value === "" || (isBoolean && value === BOOLEAN_VALUE_FALSE)) {
           continue;
