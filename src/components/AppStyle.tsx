@@ -177,6 +177,7 @@ const CssContainer = styled.div`
   --color-text-disabled: ${theme.color.text.disabled};
   --color-text-button: ${theme.color.text.button};
   --color-text-error: ${theme.color.text.error};
+  --color-text-warning: ${theme.color.text.warning};
   --color-text-success: ${theme.color.text.success};
   --color-text-theme: ${theme.color.theme};
   --color-text-theme-dark: ${theme.color.themeDark};

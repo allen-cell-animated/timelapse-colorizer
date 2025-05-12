@@ -1,9 +1,11 @@
 import { UploadOutlined, WarningOutlined } from "@ant-design/icons";
-import { Modal, Upload, UploadFile } from "antd";
-import React, { ReactElement, useContext, useState } from "react";
+import { Card, Modal, Upload, UploadFile } from "antd";
+import React, { ReactElement, useContext, useMemo, useState } from "react";
+import styled from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { useViewerStateStore } from "../../../state";
+import { FlexColumn, FlexRow } from "../../../styles/utils";
 
 import { AnnotationData } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
@@ -11,6 +13,24 @@ import TextButton from "../../Buttons/TextButton";
 
 type AnnotationImportButtonProps = {
   annotationState: AnnotationState;
+};
+
+const WarningStyleCard = styled(Card)`
+  border-color: var(--color-alert-warning-border);
+  background-color: var(--color-alert-warning-fill);
+`;
+
+const WarningCard = (props: React.PropsWithChildren): ReactElement => {
+  return (
+    <WarningStyleCard size="small">
+      <FlexRow $gap={10}>
+        <div>
+          <WarningOutlined style={{ color: "var(--color-text-warning)", fontSize: "var(--font-size-label)" }} />
+        </div>
+        {props.children}
+      </FlexRow>
+    </WarningStyleCard>
+  );
 };
 
 export default function AnnotationImportButton(props: AnnotationImportButtonProps): ReactElement {
@@ -27,6 +47,8 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
 
   const handleFileUpload = async (file: File): Promise<void> => {
     setUploadedFile(file);
+    setConvertedAnnotationData(null);
+    setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
     if (!isCsv || !dataset) {
       setErrorText("Only CSV files are supported.");
@@ -35,13 +57,12 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     const reader = new FileReader();
     reader.onload = async (e) => {
       const text = e.target?.result as string;
-      // TODO: handle errors here
       try {
         // TODO: Do this in a worker to avoid blocking the UI thread?
         const annotationData = await AnnotationData.fromCsv(dataset, text);
         setConvertedAnnotationData(annotationData);
       } catch (error) {
-        setErrorText('Could not parse CSV file. Parsing failed with the following error: "' + error + '"');
+        setErrorText("Could not parse CSV file. Parsing failed with the following error: '" + error + "'");
       }
     };
     reader.readAsText(file);
@@ -51,6 +72,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     setShowModal(false);
     setConvertedAnnotationData(null);
     setUploadedFile(null);
+    setErrorText("");
   };
 
   const handleImport = async (): Promise<void> => {
@@ -75,18 +97,22 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
 
   const hasAnnotationData = annotationState.data.getLabels().length > 0;
 
-  const fileList: UploadFile[] = [];
-  if (uploadedFile) {
-    fileList.push({
-      uid: "-1",
-      name: uploadedFile.name,
-      status: convertedAnnotationData !== null ? "done" : "error",
-      // url: URL.createObjectURL(uploadedFile),
-    });
-  }
+  const fileList: UploadFile[] = useMemo(() => {
+    if (!uploadedFile) {
+      return [];
+    }
+    return [
+      {
+        uid: "",
+        name: uploadedFile.name,
+        status: convertedAnnotationData !== null ? "done" : "error",
+      },
+    ];
+  }, [uploadedFile, convertedAnnotationData]);
 
   const handleFileChange = (info: { fileList: UploadFile[] }): void => {
     if (info.fileList.length === 0) {
+      // File was removed. Clear the state.
       setUploadedFile(null);
       setConvertedAnnotationData(null);
       setErrorText("");
@@ -105,26 +131,26 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         onCancel={handleCancel}
         destroyOnClose={true}
       >
-        <Upload.Dragger
-          name="file"
-          multiple={false}
-          accept=".csv"
-          fileList={fileList}
-          onChange={handleFileChange}
-          showUploadList={true}
-          beforeUpload={handleFileUpload}
-        >
-          <span style={{ color: theme.color.text.hint, fontSize: theme.font.size.header }}>
-            <UploadOutlined />
-          </span>
-          <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
-        </Upload.Dragger>
-        {errorText && <p style={{ color: theme.color.text.error }}>{errorText}</p>}
-        {convertedAnnotationData && hasAnnotationData && (
-          <p style={{ color: theme.color.text.warning }}>
-            <WarningOutlined /> Existing annotations will be overwritten during import.
-          </p>
-        )}
+        <FlexColumn $gap={10}>
+          <Upload.Dragger
+            name="file"
+            multiple={false}
+            accept=".csv"
+            fileList={fileList}
+            onChange={handleFileChange}
+            showUploadList={true}
+            beforeUpload={handleFileUpload}
+          >
+            <span style={{ color: theme.color.text.hint, fontSize: theme.font.size.header }}>
+              <UploadOutlined />
+            </span>
+            <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
+          </Upload.Dragger>
+          {errorText && <p style={{ color: theme.color.text.error }}>{errorText}</p>}
+          {convertedAnnotationData && hasAnnotationData && (
+            <WarningCard>Existing annotations will be overwritten during import.</WarningCard>
+          )}
+        </FlexColumn>
       </Modal>
       <TextButton
         onClick={() => {
