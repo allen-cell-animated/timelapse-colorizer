@@ -539,8 +539,13 @@ function Viewer(): ReactElement {
   }, [isUserDirectlyControllingFrameInput, frameInput]);
 
   const onClickId = useCallback(
+    // `info` is null if the user clicked on a background pixel. Otherwise, it
+    // contains the segmentation ID (raw image pixel value) and the global ID.
+    // The global ID is undefined if the object does not exist in the dataset.
     (info: PixelIdInfo | null) => {
       if (dataset) {
+        // Pass null if the user clicked on something non-interactive
+        // (background or a non-existent object).
         annotationState.handleAnnotationClick(dataset, info?.globalId ?? null);
       }
     },
