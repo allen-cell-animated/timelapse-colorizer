@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import { BaseRenderParams, EMPTY_RENDER_INFO, RenderInfo } from "../types";
+import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 
 import { LabelData, LabelType } from "../../AnnotationData";
 
@@ -16,9 +16,8 @@ export type AnnotationParams = BaseRenderParams & {
   panOffset: Vector2;
 };
 
-export type AnnotationStyle = {
+export type AnnotationStyle = FontStyle & {
   booleanMarkerRadiusPx: number;
-  textMarkerHeightPx: number;
   borderColor: string;
   textExtraItemsOffsetPx: number;
   booleanExtraItemsOffsetPx: number;
@@ -37,8 +36,10 @@ export type AnnotationStyle = {
 };
 
 export const defaultAnnotationStyle: AnnotationStyle = {
+  ...defaultFontStyle,
+  fontColor: "white",
+  fontSizePx: 10,
   booleanMarkerRadiusPx: 5,
-  textMarkerHeightPx: 14,
   borderColor: "white",
   textExtraItemsOffsetPx: 5,
   booleanExtraItemsOffsetPx: 3,
@@ -190,15 +191,15 @@ function drawAnnotationMarker(
     if (textValue.length > style.maxTextCharacters) {
       textValue = textValue.slice(0, style.maxTextCharacters - 3) + "...";
     }
-    const fontSizePx = Math.floor(
-      (style.textMarkerHeightPx - style.textPaddingTopPx - style.textPaddingBottomPx) * dampenedZoomScale
-    );
-    ctx.font = `${fontSizePx}px Lato, sans-serif`;
+    const fontSizePx = style.fontSizePx * dampenedZoomScale;
+    ctx.font = `${fontSizePx}px ${style.fontFamily}, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
     const textSize = ctx.measureText(textValue);
-    const rectHeight = style.textMarkerHeightPx * dampenedZoomScale; // Adjust text height to fit inside the square
+    const rectHeight = Math.floor(
+      (style.fontSizePx + style.textPaddingTopPx + style.textPaddingBottomPx) * dampenedZoomScale
+    );
     const rectWidth = Math.max(rectHeight, Math.ceil(textSize.width + style.textPaddingPx * 2 * dampenedZoomScale)); // Add padding to the text size
     const rectPosX = Math.round(pos.x - rectWidth / 2) - 0.5;
     const rectPosY = Math.round(pos.y - rectHeight / 2) - 0.5;
@@ -208,7 +209,7 @@ function drawAnnotationMarker(
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = style.borderColor;
+    ctx.fillStyle = style.fontColor;
     ctx.fillText(
       textValue,
       Math.round(pos.x),
