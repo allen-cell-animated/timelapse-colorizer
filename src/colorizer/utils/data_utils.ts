@@ -339,11 +339,12 @@ export function getLabelTypeFromParsedCsv(
     let hasBooleanValues = true;
     for (const row of data) {
       const value = row[header]?.trim();
+      const valueAsInt = parseInt(value ?? "", 10);
       if (value === undefined || value === "") {
         continue;
       } else if (value === BOOLEAN_VALUE_TRUE || value === BOOLEAN_VALUE_FALSE) {
         hasIntegerValues = false;
-      } else if (parseInt(value, 10).toString() === value) {
+      } else if (valueAsInt.toString(10) === value && Number.isInteger(valueAsInt)) {
         hasBooleanValues = false;
       } else {
         hasBooleanValues = false;
