@@ -1,6 +1,7 @@
 import Papa from "papaparse";
 import { Color } from "three";
 
+import { removeUndefinedProperties } from "../state/utils/data_validation";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
 
 import Dataset from "./Dataset";
@@ -8,6 +9,15 @@ import Dataset from "./Dataset";
 const CSV_COL_ID = "ID";
 const CSV_COL_TIME = "Frame";
 const CSV_COL_TRACK = "Track";
+
+export const DEFAULT_ANNOTATION_LABEL_COLORS = KNOWN_CATEGORICAL_PALETTES.get(
+  DEFAULT_CATEGORICAL_PALETTE_KEY
+)!.colorStops;
+
+export type LabelOptions = {
+  name: string;
+  color: Color;
+};
 
 export type LabelData = {
   name: string;
@@ -83,6 +93,13 @@ export interface IAnnotationDataGetters {
   getTimeToLabelIdMap(dataset: Dataset): Map<number, Record<number, number[]>>;
 
   /**
+   * Returns the next default label settings, including name and color. Useful
+   * for ensuring labels have unique names and colors, even if some have been
+   * deleted.
+   */
+  getNextDefaultLabelSettings(): LabelOptions;
+
+  /**
    * Converts the annotation data to a CSV string.
    *
    * @param dataset Dataset object to use for time and track information.
@@ -110,14 +127,11 @@ export interface IAnnotationDataGetters {
 }
 
 export interface IAnnotationDataSetters {
-  /** Creates a new label and returns its index in the array of labels (as
-   * returned by `getLabels()`).
-   * @param name The name of the label. If no name is provided, a default name
-   * ("Label {number}") will be used.
-   * @param color The color to use for the label. If no color is provided, a
-   * color will be chosen from the default categorical palette.
+  /**
+   * Creates a new label with the given options and returns its index in the
+   * array of labels (as returned by `getLabels()`).
    * */
-  createNewLabel(name?: string, color?: Color): number;
+  createNewLabel(options?: Partial<LabelOptions>): number;
 
   setLabelName(labelIdx: number, name: string): void;
   setLabelColor(labelIdx: number, color: Color): void;
@@ -148,6 +162,7 @@ export class AnnotationData implements IAnnotationData {
     this.getLabeledIds = this.getLabeledIds.bind(this);
     this.getTimeToLabelIdMap = this.getTimeToLabelIdMap.bind(this);
     this.getLabels = this.getLabels.bind(this);
+    this.getNextDefaultLabelSettings = this.getNextDefaultLabelSettings.bind(this);
     this.createNewLabel = this.createNewLabel.bind(this);
     this.setLabelName = this.setLabelName.bind(this);
     this.setLabelColor = this.setLabelColor.bind(this);
@@ -224,21 +239,22 @@ export class AnnotationData implements IAnnotationData {
     return idsToLabels;
   }
 
+  getNextDefaultLabelSettings(): LabelOptions {
+    const color = new Color(
+      DEFAULT_ANNOTATION_LABEL_COLORS[this.numLabelsCreated % DEFAULT_ANNOTATION_LABEL_COLORS.length]
+    );
+    const name = `Label ${this.numLabelsCreated + 1}`;
+    return { name, color };
+  }
+
   // Setters
 
   /** Creates a new label and returns its index. */
-  createNewLabel(name?: string, color?: Color): number {
-    if (!color) {
-      const palette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
-      color = new Color(palette.colorStops[this.numLabelsCreated % palette.colorStops.length]);
-    }
-    if (!name) {
-      name = `Label ${this.numLabelsCreated + 1}`;
-    }
-
+  createNewLabel(options: Partial<LabelOptions> = {}): number {
+    options = removeUndefinedProperties(options);
     this.labelData.push({
-      name,
-      color,
+      ...this.getNextDefaultLabelSettings(),
+      ...options,
       ids: new Set(),
     });
 
