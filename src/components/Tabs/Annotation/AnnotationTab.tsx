@@ -191,16 +191,18 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           </div>
         </Modal>
 
-        <AnnotationImportButton annotationState={props.annotationState} />
-        <TextButton
-          onClick={() => {
-            const csvData = props.annotationState.data.toCsv(store.dataset!);
-            download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
-            console.log(csvData);
-          }}
-        >
-          Export CSV
-        </TextButton>
+        <FlexRow $gap={2}>
+          <AnnotationImportButton annotationState={props.annotationState} />
+          <TextButton
+            onClick={() => {
+              const csvData = props.annotationState.data.toCsv(store.dataset!);
+              download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+              console.log(csvData);
+            }}
+          >
+            Export CSV
+          </TextButton>
+        </FlexRow>
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
