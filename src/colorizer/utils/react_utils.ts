@@ -524,7 +524,7 @@ export const useAnnotations = (): AnnotationState => {
         setCurrentLabelIdx(newAnnotationData.getLabels().length - 1);
       }
     }
-  }
+  };
 
   const data = useMemo(
     (): IAnnotationDataGetters => ({

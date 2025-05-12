@@ -1,4 +1,4 @@
-import { UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined, WarningOutlined } from "@ant-design/icons";
 import { Modal, Upload, UploadFile } from "antd";
 import React, { ReactElement, useContext, useState } from "react";
 
@@ -41,19 +41,19 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         const annotationData = await AnnotationData.fromCsv(dataset, text);
         setConvertedAnnotationData(annotationData);
       } catch (error) {
-        setErrorText("Could not parse CSV file. Parsing failed with the following error: " + error);
+        setErrorText('Could not parse CSV file. Parsing failed with the following error: "' + error + '"');
       }
     };
     reader.readAsText(file);
   };
 
-  const handleCancel = () => {
+  const handleCancel = (): void => {
     setShowModal(false);
     setConvertedAnnotationData(null);
     setUploadedFile(null);
   };
 
-  const handleImport = async () => {
+  const handleImport = async (): Promise<void> => {
     if (convertedAnnotationData) {
       // TODO: give more advanced merging options here. There are three possible
       // options:
@@ -67,6 +67,8 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
       annotationState.replaceAnnotationData(convertedAnnotationData);
       setShowModal(false);
       setConvertedAnnotationData(null);
+      setUploadedFile(null);
+      setErrorText("");
       annotationState.setVisibility(true);
     }
   };
@@ -83,7 +85,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     });
   }
 
-  const handleFileChange = (info: { fileList: UploadFile[] }) => {
+  const handleFileChange = (info: { fileList: UploadFile[] }): void => {
     if (info.fileList.length === 0) {
       setUploadedFile(null);
       setConvertedAnnotationData(null);
@@ -101,6 +103,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         okButtonProps={{ disabled: !convertedAnnotationData }}
         onOk={handleImport}
         onCancel={handleCancel}
+        destroyOnClose={true}
       >
         <Upload.Dragger
           name="file"
@@ -118,7 +121,9 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         </Upload.Dragger>
         {errorText && <p style={{ color: theme.color.text.error }}>{errorText}</p>}
         {convertedAnnotationData && hasAnnotationData && (
-          <p style={{ color: theme.color.text.error }}>Existing annotations will be overwritten during import.</p>
+          <p style={{ color: theme.color.text.warning }}>
+            <WarningOutlined /> Existing annotations will be overwritten during import.
+          </p>
         )}
       </Modal>
       <TextButton

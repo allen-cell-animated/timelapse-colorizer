@@ -61,6 +61,7 @@ const theme = {
       disabled: palette.gray30,
       button: palette.gray0,
       error: palette.error,
+      warning: palette.warning,
       success: palette.success,
       theme: palette.theme,
       link: palette.link,
