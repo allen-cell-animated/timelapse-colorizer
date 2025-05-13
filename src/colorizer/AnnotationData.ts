@@ -7,9 +7,9 @@ import { getLabelTypeFromParsedCsv } from "./utils/data_utils";
 
 import Dataset from "./Dataset";
 
-const CSV_COL_ID = "ID";
-const CSV_COL_TIME = "Frame";
-const CSV_COL_TRACK = "Track";
+export const CSV_COL_ID = "ID";
+export const CSV_COL_TIME = "Frame";
+export const CSV_COL_TRACK = "Track";
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";
