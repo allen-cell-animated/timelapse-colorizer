@@ -261,13 +261,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
     const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
+    canv.isAnnotationVisible = props.annotationState.visible;
     canv.setAnnotationData(
       annotationLabels,
       timeToAnnotationLabelIds,
       props.annotationState.currentLabelIdx,
       props.annotationState.lastClickedId
     );
-    canv.isAnnotationVisible = props.annotationState.visible;
   }, [
     dataset,
     props.annotationState.data,

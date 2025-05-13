@@ -1,6 +1,6 @@
 import { UploadOutlined, WarningOutlined } from "@ant-design/icons";
 import { Card, Modal, Upload, UploadFile } from "antd";
-import React, { ReactElement, useContext, useState } from "react";
+import React, { ReactElement, useContext, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
@@ -16,10 +16,23 @@ type AnnotationImportButtonProps = {
   annotationState: AnnotationState;
 };
 
-const WarningCard = styled(Card)`
+const WarningStyleCard = styled(Card)`
   border-color: var(--color-alert-warning-border);
   background-color: var(--color-alert-warning-fill);
 `;
+
+const WarningCard = (props: React.PropsWithChildren): ReactElement => {
+  return (
+    <WarningStyleCard size="small">
+      <FlexRow $gap={10}>
+        <div>
+          <WarningOutlined style={{ color: "var(--color-text-warning)", fontSize: "var(--font-size-label)" }} />
+        </div>
+        {props.children}
+      </FlexRow>
+    </WarningStyleCard>
+  );
+};
 
 export default function AnnotationImportButton(props: AnnotationImportButtonProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -36,6 +49,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
   const handleFileUpload = async (file: File): Promise<void> => {
     setUploadedFile(file);
     setParseResult(null);
+    setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
     if (!isCsv || !dataset) {
       setErrorText("Only CSV files are supported.");
@@ -44,7 +58,6 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     const reader = new FileReader();
     reader.onload = async (e) => {
       const text = e.target?.result as string;
-      // TODO: handle errors here
       try {
         // TODO: Do this in a worker to avoid blocking the UI thread?
         const result = await AnnotationData.fromCsv(dataset, text);
@@ -61,6 +74,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     setShowModal(false);
     setParseResult(null);
     setUploadedFile(null);
+    setErrorText("");
   };
 
   const handleImport = async (): Promise<void> => {
@@ -109,17 +123,22 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     }
   }
 
-  const fileList: UploadFile[] = [];
-  if (uploadedFile) {
-    fileList.push({
-      uid: "-1",
-      name: uploadedFile.name,
-      status: parseResult !== null ? "done" : "error",
-    });
-  }
+  const fileList: UploadFile[] = useMemo(() => {
+    if (!uploadedFile) {
+      return [];
+    }
+    return [
+      {
+        uid: "",
+        name: uploadedFile.name,
+        status: parseResult?.annotationData !== null ? "done" : "error",
+      },
+    ];
+  }, [uploadedFile, parseResult]);
 
   const handleFileChange = (info: { fileList: UploadFile[] }): void => {
     if (info.fileList.length === 0) {
+      // File was removed. Clear the state.
       setUploadedFile(null);
       setParseResult(null);
       setErrorText("");
@@ -160,28 +179,18 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
                 <b>Loaded annotations for {parseResult.totalRows} objects.</b>
               </p>
               {conversionWarnings.length > 0 && (
-                <WarningCard size="small">
-                  <FlexRow $gap={10}>
-                    <div>
-                      <WarningOutlined style={{ color: theme.color.text.warning, fontSize: theme.font.size.label }} />
-                    </div>
-                    <div>
-                      Some data mismatches were detected in the CSV file. This may indicate that the annotations are
-                      from another dataset.
-                      {renderStringArrayAsJsx(conversionWarnings)}
-                    </div>
-                  </FlexRow>
+                <WarningCard>
+                  <div>
+                    Some data mismatches were detected in the CSV file. This may indicate that the annotations are from
+                    another dataset.
+                    {renderStringArrayAsJsx(conversionWarnings)}
+                  </div>
                 </WarningCard>
               )}
               {parseResult && hasAnnotationData && (
                 <p style={{ color: theme.color.text.warning }}>
-                  <WarningCard size="small">
-                    <FlexRow $gap={10}>
-                      <div>
-                        <WarningOutlined style={{ color: theme.color.text.warning, fontSize: theme.font.size.label }} />
-                      </div>
-                      <div>Existing annotations will be overwritten during import.</div>
-                    </FlexRow>
+                  <WarningCard>
+                    <FlexRow $gap={10}>Existing annotations will be overwritten during import.</FlexRow>
                   </WarningCard>
                 </p>
               )}

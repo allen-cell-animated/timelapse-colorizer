@@ -266,5 +266,17 @@ describe("data_utils", () => {
         ])
       );
     });
+
+    it("treats decimal values as custom", () => {
+      const headers = ["custom", "custom2"];
+      const data = [{ custom: "1.0", custom2: "1.1" }];
+      const result = getLabelTypeFromParsedCsv(headers, data);
+      expect(result).to.deep.equal(
+        new Map([
+          ["custom", LabelType.CUSTOM],
+          ["custom2", LabelType.CUSTOM],
+        ])
+      );
+    });
   });
 });
