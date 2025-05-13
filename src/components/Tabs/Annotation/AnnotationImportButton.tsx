@@ -1,63 +1,19 @@
-import {
-  DeleteOutlined,
-  ExclamationCircleOutlined,
-  PaperClipOutlined,
-  UploadOutlined,
-  WarningOutlined,
-} from "@ant-design/icons";
-import { Card, Modal, Upload, UploadFile } from "antd";
-import React, { ReactElement, useContext, useMemo, useState } from "react";
-import styled from "styled-components";
+import { UploadOutlined } from "@ant-design/icons";
+import { Modal, Upload, UploadFile } from "antd";
+import React, { ReactElement, useContext, useState } from "react";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { useViewerStateStore } from "../../../state";
 import { FlexColumn, FlexRow } from "../../../styles/utils";
-import { renderStringArrayAsJsx } from "../../../utils/formatting";
 
 import { AnnotationData, AnnotationParseResult } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
-import IconButton from "../../IconButton";
+import MessageCard from "../../MessageCard";
+import AnnotationFileInfo from "./AnnotationFileInfo";
 
 type AnnotationImportButtonProps = {
   annotationState: AnnotationState;
-};
-
-const WarningStyleCard = styled(Card)`
-  border-color: var(--color-alert-warning-border);
-  background-color: var(--color-alert-warning-fill);
-`;
-
-const WarningCard = (props: React.PropsWithChildren): ReactElement => {
-  return (
-    <WarningStyleCard size="small">
-      <FlexRow $gap={10}>
-        <div>
-          <WarningOutlined style={{ color: "var(--color-text-warning)", fontSize: "var(--font-size-label)" }} />
-        </div>
-        {props.children}
-      </FlexRow>
-    </WarningStyleCard>
-  );
-};
-
-// TODO: Make shared styled component?
-const ErrorStyleCard = styled(Card)`
-  border-color: var(--color-alert-error-border);
-  background-color: var(--color-alert-error-fill);
-`;
-
-const ErrorCard = (props: React.PropsWithChildren): ReactElement => {
-  return (
-    <ErrorStyleCard size="small">
-      <FlexRow $gap={10}>
-        <div>
-          <ExclamationCircleOutlined style={{ color: "var(--color-text-error)", fontSize: "var(--font-size-label)" }} />
-        </div>
-        {props.children}
-      </FlexRow>
-    </ErrorStyleCard>
-  );
 };
 
 export default function AnnotationImportButton(props: AnnotationImportButtonProps): ReactElement {
@@ -124,30 +80,6 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
   };
 
   const hasAnnotationData = annotationState.data.getLabels().length > 0;
-  const conversionWarnings = [];
-  if (parseResult) {
-    const { invalidIds, mismatchedTimes, mismatchedTracks, unparseableRows } = parseResult;
-    if (invalidIds === 1) {
-      conversionWarnings.push(`- ${invalidIds} object had an ID that is not in the dataset.`);
-    } else if (invalidIds > 1) {
-      conversionWarnings.push(`- ${invalidIds} objects had IDs that are not in the dataset.`);
-    }
-    const maxMismatchedData = Math.max(mismatchedTimes, mismatchedTracks);
-    if (maxMismatchedData === 1) {
-      conversionWarnings.push(
-        `- ${maxMismatchedData} object had a time or track that does not match the current dataset.`
-      );
-    } else if (maxMismatchedData > 1) {
-      conversionWarnings.push(
-        `- ${maxMismatchedData} objects had times or tracks that do not match the current dataset.`
-      );
-    }
-    if (unparseableRows === 1) {
-      conversionWarnings.push(`- ${unparseableRows} object could not be parsed.`);
-    } else if (unparseableRows > 1) {
-      conversionWarnings.push(`- ${unparseableRows} objects could not be parsed.`);
-    }
-  }
 
   const handleFileChange = (info: { fileList: UploadFile[] }): void => {
     if (info.fileList.length === 0) {
@@ -159,68 +91,6 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
   };
 
   //// Rendering ////
-
-  const fileList: UploadFile[] = useMemo(() => {
-    if (!uploadedFile) {
-      return [];
-    }
-    return [
-      {
-        uid: "",
-        name: uploadedFile.name,
-        status: parseResult?.annotationData !== null ? "done" : "error",
-      },
-    ];
-  }, [uploadedFile, parseResult]);
-
-  const fileDeleteButton = (
-    <IconButton
-      type="text"
-      onClick={() => {
-        setUploadedFile(null);
-        setParseResult(null);
-        setErrorText("");
-      }}
-    >
-      <DeleteOutlined />
-    </IconButton>
-  );
-
-  const fileInfoTitle = (
-    <FlexRow $gap={6}>
-      <PaperClipOutlined />
-      <b>{uploadedFile?.name}</b>
-    </FlexRow>
-  );
-
-  const hasError = errorText !== "";
-  const fileInfoContents = hasError ? (
-    <ErrorCard>
-      <p style={{ color: theme.color.text.error }}>{errorText}</p>
-    </ErrorCard>
-  ) : (
-    <>
-      {conversionWarnings.length > 0 && (
-        <WarningCard>
-          <div>
-            Some data mismatches were detected in the CSV file. This may indicate that the annotations are from another
-            dataset.
-            {renderStringArrayAsJsx(conversionWarnings)}
-          </div>
-        </WarningCard>
-      )}
-      <ul style={{ margin: "5px 0", paddingLeft: "30px" }}>
-        <li>{parseResult?.totalRows || 0} annotated objects</li>
-        <li>{parseResult?.annotationData.getLabels().length} labels</li>
-      </ul>
-    </>
-  );
-
-  const fileInfoCard = (
-    <Card size="small" title={fileInfoTitle} extra={fileDeleteButton} style={{ margin: "0px 20px" }}>
-      <FlexColumn $gap={6}>{fileInfoContents}</FlexColumn>
-    </Card>
-  );
 
   return (
     <div ref={modalContainerRef}>
@@ -236,13 +106,21 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
       >
         <FlexColumn $gap={6}>
           {uploadedFile ? (
-            fileInfoCard
+            <AnnotationFileInfo
+              errorText={errorText}
+              file={uploadedFile}
+              parseResult={parseResult}
+              clearFile={() => {
+                setUploadedFile(null);
+                setParseResult(null);
+                setErrorText("");
+              }}
+            ></AnnotationFileInfo>
           ) : (
             <Upload.Dragger
               name="file"
               multiple={false}
               accept=".csv"
-              fileList={fileList}
               onChange={handleFileChange}
               showUploadList={true}
               beforeUpload={handleFileUpload}
@@ -259,9 +137,9 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
             <FlexColumn $gap={6}>
               {parseResult && hasAnnotationData && (
                 <p style={{ color: theme.color.text.warning }}>
-                  <WarningCard>
+                  <MessageCard type="warning">
                     <FlexRow $gap={10}>Existing annotations will be overwritten during import.</FlexRow>
-                  </WarningCard>
+                  </MessageCard>
                 </p>
               )}
             </FlexColumn>
