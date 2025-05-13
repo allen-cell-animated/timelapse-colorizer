@@ -1,4 +1,10 @@
-import { UploadOutlined, WarningOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  ExclamationCircleOutlined,
+  PaperClipOutlined,
+  UploadOutlined,
+  WarningOutlined,
+} from "@ant-design/icons";
 import { Card, Modal, Upload, UploadFile } from "antd";
 import React, { ReactElement, useContext, useMemo, useState } from "react";
 import styled from "styled-components";
@@ -11,6 +17,7 @@ import { renderStringArrayAsJsx } from "../../../utils/formatting";
 import { AnnotationData, AnnotationParseResult } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
+import IconButton from "../../IconButton";
 
 type AnnotationImportButtonProps = {
   annotationState: AnnotationState;
@@ -31,6 +38,25 @@ const WarningCard = (props: React.PropsWithChildren): ReactElement => {
         {props.children}
       </FlexRow>
     </WarningStyleCard>
+  );
+};
+
+// TODO: Make shared styled component?
+const ErrorStyleCard = styled(Card)`
+  border-color: var(--color-alert-error-border);
+  background-color: var(--color-alert-error-fill);
+`;
+
+const ErrorCard = (props: React.PropsWithChildren): ReactElement => {
+  return (
+    <ErrorStyleCard size="small">
+      <FlexRow $gap={10}>
+        <div>
+          <ExclamationCircleOutlined style={{ color: "var(--color-text-error)", fontSize: "var(--font-size-label)" }} />
+        </div>
+        {props.children}
+      </FlexRow>
+    </ErrorStyleCard>
   );
 };
 
@@ -123,6 +149,17 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     }
   }
 
+  const handleFileChange = (info: { fileList: UploadFile[] }): void => {
+    if (info.fileList.length === 0) {
+      // File was removed. Clear the state.
+      setUploadedFile(null);
+      setParseResult(null);
+      setErrorText("");
+    }
+  };
+
+  //// Rendering ////
+
   const fileList: UploadFile[] = useMemo(() => {
     if (!uploadedFile) {
       return [];
@@ -136,14 +173,54 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     ];
   }, [uploadedFile, parseResult]);
 
-  const handleFileChange = (info: { fileList: UploadFile[] }): void => {
-    if (info.fileList.length === 0) {
-      // File was removed. Clear the state.
-      setUploadedFile(null);
-      setParseResult(null);
-      setErrorText("");
-    }
-  };
+  const fileDeleteButton = (
+    <IconButton
+      type="text"
+      onClick={() => {
+        setUploadedFile(null);
+        setParseResult(null);
+        setErrorText("");
+      }}
+    >
+      <DeleteOutlined />
+    </IconButton>
+  );
+
+  const fileInfoTitle = (
+    <FlexRow $gap={6}>
+      <PaperClipOutlined />
+      <b>{uploadedFile?.name}</b>
+    </FlexRow>
+  );
+
+  const hasError = errorText !== "";
+  const fileInfoContents = hasError ? (
+    <ErrorCard>
+      <p style={{ color: theme.color.text.error }}>{errorText}</p>
+    </ErrorCard>
+  ) : (
+    <>
+      {conversionWarnings.length > 0 && (
+        <WarningCard>
+          <div>
+            Some data mismatches were detected in the CSV file. This may indicate that the annotations are from another
+            dataset.
+            {renderStringArrayAsJsx(conversionWarnings)}
+          </div>
+        </WarningCard>
+      )}
+      <ul style={{ margin: "5px 0", paddingLeft: "30px" }}>
+        <li>{parseResult?.totalRows || 0} annotated objects</li>
+        <li>{parseResult?.annotationData.getLabels().length} labels</li>
+      </ul>
+    </>
+  );
+
+  const fileInfoCard = (
+    <Card size="small" title={fileInfoTitle} extra={fileDeleteButton} style={{ margin: "0px 20px" }}>
+      <FlexColumn $gap={6}>{fileInfoContents}</FlexColumn>
+    </Card>
+  );
 
   return (
     <div ref={modalContainerRef}>
@@ -158,35 +235,28 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         destroyOnClose={true}
       >
         <FlexColumn $gap={6}>
-          <Upload.Dragger
-            name="file"
-            multiple={false}
-            accept=".csv"
-            fileList={fileList}
-            onChange={handleFileChange}
-            showUploadList={true}
-            beforeUpload={handleFileUpload}
-          >
-            <span style={{ color: theme.color.text.hint, fontSize: theme.font.size.header }}>
-              <UploadOutlined />
-            </span>
-            <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
-          </Upload.Dragger>
-          {errorText && <p style={{ color: theme.color.text.error }}>{errorText}</p>}
+          {uploadedFile ? (
+            fileInfoCard
+          ) : (
+            <Upload.Dragger
+              name="file"
+              multiple={false}
+              accept=".csv"
+              fileList={fileList}
+              onChange={handleFileChange}
+              showUploadList={true}
+              beforeUpload={handleFileUpload}
+            >
+              <>
+                <span style={{ color: theme.color.text.hint, fontSize: theme.font.size.header }}>
+                  <UploadOutlined />
+                </span>
+                <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
+              </>
+            </Upload.Dragger>
+          )}
           {parseResult && (
             <FlexColumn $gap={6}>
-              <p>
-                <b>Loaded annotations for {parseResult.totalRows} objects.</b>
-              </p>
-              {conversionWarnings.length > 0 && (
-                <WarningCard>
-                  <div>
-                    Some data mismatches were detected in the CSV file. This may indicate that the annotations are from
-                    another dataset.
-                    {renderStringArrayAsJsx(conversionWarnings)}
-                  </div>
-                </WarningCard>
-              )}
               {parseResult && hasAnnotationData && (
                 <p style={{ color: theme.color.text.warning }}>
                   <WarningCard>
@@ -196,6 +266,22 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
               )}
             </FlexColumn>
           )}
+          {/* <SettingsContainer>
+            <SettingsItem label="Conflict resolution">
+              <Radio.Group>
+                <Space direction="vertical">
+                  <Radio value="append">
+                    <FlexColumn>
+                      <p>Append labels</p>
+                      <p style={{ marginTop: 0 }}>Some additional context</p>
+                    </FlexColumn>
+                  </Radio>
+                  <Radio value="merge">Merge matching labels</Radio>
+                  <Radio value="">Overwrite existing annotations</Radio>
+                </Space>
+              </Radio.Group>
+            </SettingsItem>
+          </SettingsContainer> */}
         </FlexColumn>
       </Modal>
       <TextButton
