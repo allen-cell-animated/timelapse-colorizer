@@ -666,6 +666,8 @@ function Viewer(): ReactElement {
     },
   ];
   const tabItems = allTabItems.filter((item) => item.visible !== false);
+  const visibleTabKeys = useMemo(() => new Set(tabItems.map((item) => item.key)), [INTERNAL_BUILD]);
+  const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.TRACK_PLOT;
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {
@@ -923,7 +925,7 @@ function Viewer(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
-                activeKey={openTab}
+                activeKey={currentTab}
                 onChange={(key) => setOpenTab(key as TabType)}
                 items={tabItems}
               />
