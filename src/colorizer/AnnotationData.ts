@@ -316,10 +316,13 @@ export class AnnotationData implements IAnnotationData {
       case LabelType.BOOLEAN:
         return BOOLEAN_VALUE_TRUE;
       case LabelType.INTEGER:
-        if (labelData.options.autoIncrement && !useLastValue) {
-          return (parseInt(labelData.lastValue ?? "-1", 10) + 1).toString();
+        if (labelData.lastValue === null) {
+          return "0";
+        } else if (labelData.options.autoIncrement && !useLastValue) {
+          const lastValueInt = parseInt(labelData.lastValue, 10);
+          return (lastValueInt + 1).toString();
         } else {
-          return (labelData.lastValue ?? "0").toString();
+          return labelData.lastValue.toString();
         }
       case LabelType.CUSTOM:
         if (!labelData.lastValue) {

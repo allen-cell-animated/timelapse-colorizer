@@ -1,6 +1,6 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { Card, Input, InputRef } from "antd";
-import React, { ReactElement, useCallback, useContext, useEffect, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
@@ -54,9 +54,21 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     clearActiveEditRange,
   } = props.annotationState;
   const originalValueRef = React.useRef<string | null>(null);
+  const lastActiveEditRangeRef = useRef(props.annotationState.activeEditRange);
+  const lastLabelIdxRef = useRef(props.annotationState.currentLabelIdx);
+  const lastLabelCountRef = useRef(props.annotationState.data.getLabels().length);
 
   const hasValidData =
     isAnnotationModeEnabled && activeEditRange !== null && lastClickedId !== null && currentLabelIdx !== null;
+
+  const saveInputValue = (labelIdx: number, range: number[]): void => {
+    const newValue = inputValue.trim();
+    if (newValue.length === 0) {
+      props.annotationState.removeLabelOnIds(labelIdx, range);
+    } else {
+      props.annotationState.setLabelValueOnIds(labelIdx, range, newValue);
+    }
+  };
 
   //// Prop update handlers ////
 
@@ -69,34 +81,43 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   // Reset the input value when a new range is selected for editing.
   useEffect(() => {
+    // If we were previously editing something, save the changes. Skip if the
+    // label was deleted.
+    if (lastActiveEditRangeRef.current !== activeEditRange) {
+      const hasLabelBeenDeleted = lastLabelCountRef.current > annotationData.getLabels().length;
+      if (lastActiveEditRangeRef.current !== null && lastLabelIdxRef.current !== null && !hasLabelBeenDeleted) {
+        saveInputValue(lastLabelIdxRef.current, lastActiveEditRangeRef.current);
+      }
+      lastActiveEditRangeRef.current = activeEditRange;
+    }
     if (currentLabelIdx !== null && lastClickedId !== null) {
       const value = annotationData.getValueFromId(currentLabelIdx, lastClickedId) ?? "";
       setInputValue(value);
       originalValueRef.current = value;
     }
-  }, [currentLabelIdx, lastClickedId]);
+    lastLabelIdxRef.current = currentLabelIdx;
+    lastLabelCountRef.current = annotationData.getLabels().length;
+  }, [activeEditRange]);
 
   // Focus the input when the popover is visible.
   useEffect(() => {
     if (hasValidData && inputRef.current) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
+      // Adding a slight delay fixes a bug where the input is not consistently
+      // focused
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 10);
     }
   }, [hasValidData]);
 
   //// Interaction handlers ////
 
   const handleInputConfirm = (): void => {
-    const lastEditedRange = props.annotationState.activeEditRange;
-    if (lastEditedRange !== null && currentLabelIdx !== null) {
-      // Validate
-      const newValue = inputValue;
-      if (newValue.length === 0) {
-        props.annotationState.removeLabelOnIds(currentLabelIdx, lastEditedRange);
-      } else {
-        props.annotationState.setLabelValueOnIds(currentLabelIdx, lastEditedRange, newValue);
-      }
+    if (currentLabelIdx === null || activeEditRange === null) {
+      return;
     }
+    saveInputValue(currentLabelIdx, activeEditRange);
     clearActiveEditRange();
   };
 
@@ -151,6 +172,16 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   // the bottom? This requires visibility to be toggled every time anchor
   // position prop changes, or else the popover will not move with the anchor
   // element.
+
+  // TODO: The annotation state uses the last valid value of a label to
+  // determine its next default value. There is a bug where, if using the
+  // backspace key to erase the input character-by-character, the last valid
+  // value is something unexpected. For example, if erasing a string "1004"
+  // character-by-character, the last valid value before the empty string is "1"
+  // which makes the next default value also "1". For auto-incrementing
+  // integers, this can be confusing (jumping from 1004 to 1 instead of to
+  // 1005). This can be fixed by updating the AnnotationData API to include a
+  // setter for the last value field.
 
   const editCount = activeEditRange?.length ?? 0;
 

@@ -263,7 +263,15 @@ export type AnnotationState = {
   setVisibility: (visible: boolean) => void;
   selectionMode: AnnotationSelectionMode;
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
+  /** 
+   * The ID of the last clicked object. `null` if the user clicked on the
+   * background. 
+   */
   lastClickedId: number | null;
+  /** 
+   * The range of values that should currently be editable. Value is non-null
+   * when a user interacts with an annotation in order to edit it.
+   */
   activeEditRange: number[] | null;
   clearActiveEditRange: () => void;
   nextDefaultLabelValue: string | null;
@@ -306,10 +314,6 @@ export const useAnnotations = (): AnnotationState => {
   const isSelectRangeHotkeyPressed = useShortcutKey("Shift");
   const isReuseValueHotkeyPressed = useShortcutKey("Control");
 
-  /** 
-   * The ID of the last clicked object. `null` if the user clicked on the
-   * background. 
-   */
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
   /**
    * The last range of IDs that were edited, used for range-related operations.
@@ -318,10 +322,6 @@ export const useAnnotations = (): AnnotationState => {
    * another object is clicked.
   */
   const [lastEditedRange, setLastEditedRange] = useState<number[] | null>(null);
-  /** 
-   * The range of values that should currently be editable. Value is non-null
-   * when a user interacts with an annotation in order to edit it.
-   */
   const [activeEditRange, setActiveEditRange] = useState<number[] | null>(null);
 
   // When in time mode, allow hotkeys to temporarily change to range mode.

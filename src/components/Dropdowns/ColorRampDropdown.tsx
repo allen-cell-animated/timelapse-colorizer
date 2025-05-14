@@ -171,7 +171,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
         throw new Error(`Invalid categorical palette key '${key}'`);
       }
       const visibleColors = paletteData.colors.slice(0, Math.max(1, props.numCategories));
-      const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
+      const colorRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
       return {
         value: key,
         label: paletteData.name,
@@ -206,7 +206,7 @@ export default function ColorRampSelection(inputProps: ColorRampSelectionProps):
 
   const paletteImgSrc = useMemo(() => {
     const visibleColors = props.selectedPalette.slice(0, Math.max(1, props.numCategories));
-    const colorRamp = new ColorRamp(visibleColors, ColorRampType.HARD_STOP);
+    const colorRamp = new ColorRamp(visibleColors, ColorRampType.CATEGORICAL);
     return colorRamp
       .createGradientCanvas(DROPDOWN_WIDTH_PX - DROPDOWN_CATEGORICAL_BORDER_PX, theme.controls.height)
       .toDataURL();
