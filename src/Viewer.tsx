@@ -1,6 +1,7 @@
 import {
   CaretRightOutlined,
   CheckCircleOutlined,
+  EllipsisOutlined,
   LinkOutlined,
   PauseOutlined,
   StepBackwardFilled,
@@ -933,6 +934,7 @@ function Viewer(): ReactElement {
                 activeKey={openTab}
                 onChange={(key) => setOpenTab(key as TabType)}
                 items={tabItems}
+                moreIcon={<EllipsisOutlined style={{ fontSize: theme.font.size.section }} />}
               />
             </div>
           </div>
