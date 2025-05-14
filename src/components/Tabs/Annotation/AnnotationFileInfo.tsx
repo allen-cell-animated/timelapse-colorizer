@@ -69,7 +69,10 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
 
     const parsedObjects = parseResult.totalRows - parseResult.unparseableRows - parseResult.invalidIds;
     const totalObjects = parseResult.totalRows;
-    const parsedObjectsText = parsedObjects === totalObjects ? parsedObjects : `${parsedObjects}/${totalObjects}`;
+    let parsedObjectsText = parsedObjects === totalObjects ? parsedObjects : `${parsedObjects}/${totalObjects}`;
+    parsedObjectsText += parsedObjects === 1 ? " object" : " objects";
+    const labels = parseResult.annotationData.getLabels();
+    const truncatedLabels = labels.slice(0, 5);
 
     return (
       <FlexColumn $gap={6}>
@@ -84,11 +87,22 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
         )}
         {parseResult && (
           <FlexColumn>
-            <p>Annotations were parsed for {parsedObjectsText} objects.</p>
-            <p>Parsed labels:</p>
-            <ul style={{ margin: "0" }}>
-              <li>{parseResult?.annotationData.getLabels().length} labels</li>
-            </ul>
+            <p>
+              Annotations were parsed for {parsedObjectsText} with{" "}
+              {formatQuantityString(labels.length, "label", "labels")}:
+            </p>
+            {/* TODO: make a collapsible area in case there are lots of labels */}
+            <ol style={{ margin: "0" }}>
+              {truncatedLabels.map((label, index) => {
+                return (
+                  <li key={index}>
+                    <span>{label.options.name}</span>{" "}
+                    <span style={{ color: theme.color.text.hint }}>({label.ids.size})</span>
+                  </li>
+                );
+              })}
+              {truncatedLabels.length < labels.length && <span>...</span>}
+            </ol>
           </FlexColumn>
         )}
       </FlexColumn>
