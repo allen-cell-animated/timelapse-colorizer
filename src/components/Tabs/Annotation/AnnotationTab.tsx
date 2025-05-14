@@ -1,7 +1,6 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Modal, Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
-import { Color } from "three";
 import { useShallow } from "zustand/shallow";
 
 import { AnnotationSelectionMode } from "../../../colorizer";
@@ -43,8 +42,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     data: annotationData,
     createNewLabel,
     deleteLabel,
-    setLabelName,
-    setLabelColor,
+    setLabelOptions,
     setLabelOnIds,
   } = props.annotationState;
 
@@ -97,7 +95,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     });
   };
 
-  const onCreateNewLabel = (options: LabelOptions): void => {
+  const onCreateNewLabel = (options: Partial<LabelOptions>): void => {
     const index = createNewLabel(options);
     setCurrentLabelIdx(index);
   };
@@ -136,8 +134,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     () =>
       labels.map((label, index) => ({
         value: index.toString(),
-        label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
-        color: label.color,
+        label: label.ids.size ? `${label.options.name} (${label.ids.size})` : label.options.name,
+        color: label.options.color,
       })),
     [annotationData]
   );
@@ -178,7 +176,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <div style={{ marginTop: "15px" }}>
             <CreateLabelForm
               initialLabelOptions={annotationData.getNextDefaultLabelSettings()}
-              onConfirm={(options: LabelOptions) => {
+              onConfirm={(options: Partial<LabelOptions>) => {
                 onCreateNewLabel(options);
                 setShowCreateLabelModal(false);
                 setIsAnnotationModeEnabled(true);
@@ -212,8 +210,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             <LabelEditControls
               onCreateNewLabel={onCreateNewLabel}
               onDeleteLabel={onDeleteLabel}
-              setLabelColor={(color: Color) => setLabelColor(currentLabelIdx, color)}
-              setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
+              setLabelOptions={(options) => setLabelOptions(currentLabelIdx, options)}
               selectedLabel={selectedLabel}
               selectedLabelIdx={currentLabelIdx}
               selectionMode={props.annotationState.selectionMode}
@@ -300,7 +297,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             selectedTrack={store.selectedTrack}
             selectedId={selectedId}
             frame={store.frame}
-            labelColor={selectedLabel?.color}
+            labelColor={selectedLabel?.options.color}
           ></AnnotationDisplayList>
         </div>
       </LoadingSpinner>

@@ -2,6 +2,7 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../../src/colorizer";
+import { compareRecord } from "../state/ViewerState/utils";
 
 import { AnnotationData } from "../../src/colorizer/AnnotationData";
 
@@ -24,11 +25,11 @@ describe("AnnotationData", () => {
     annotationData.createNewLabel();
     annotationData.createNewLabel();
 
-    expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 2", color: defaultPalette.colors[1], ids: new Set() },
-      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
-    ]);
+    const labels = annotationData.getLabels();
+    expect(labels.length).toBe(3);
+    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Label 2", color: defaultPalette.colors[1] });
+    compareRecord(labels[2].options, { name: "Label 3", color: defaultPalette.colors[2] });
   });
 
   it("allows updating of label names and colors", () => {
@@ -37,16 +38,15 @@ describe("AnnotationData", () => {
     annotationData.createNewLabel();
     annotationData.createNewLabel();
 
-    annotationData.setLabelName(0, "New Label Name");
-    annotationData.setLabelColor(1, new Color("#FF0000"));
-    annotationData.setLabelName(2, "Another New Label Name");
-    annotationData.setLabelColor(2, new Color("#00FF00"));
+    annotationData.setLabelOptions(0, { name: "New Label Name" });
+    annotationData.setLabelOptions(1, { color: new Color("#FF0000") });
+    annotationData.setLabelOptions(2, { name: "Another New Label Name", color: new Color("#00FF00") });
 
-    expect(annotationData.getLabels()).to.deep.equal([
-      { name: "New Label Name", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 2", color: new Color("#FF0000"), ids: new Set() },
-      { name: "Another New Label Name", color: new Color("#00FF00"), ids: new Set() },
-    ]);
+    const labels = annotationData.getLabels();
+    expect(labels.length).toBe(3);
+    compareRecord(labels[0].options, { name: "New Label Name", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Label 2", color: new Color("#FF0000") });
+    compareRecord(labels[2].options, { name: "Another New Label Name", color: new Color("#00FF00") });
   });
 
   it("deletes labels", () => {
@@ -56,18 +56,18 @@ describe("AnnotationData", () => {
     annotationData.createNewLabel();
 
     annotationData.deleteLabel(1);
-    expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
-    ]);
+    let labels = annotationData.getLabels();
+    expect(labels.length).toBe(2);
+    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Label 3", color: defaultPalette.colors[2] });
 
     // Creating new label should reuse deleted index and increment name by 1
     annotationData.createNewLabel();
-    expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
-      { name: "Label 4", color: defaultPalette.colors[3], ids: new Set() },
-    ]);
+    labels = annotationData.getLabels();
+    expect(labels.length).toBe(3);
+    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Label 3", color: defaultPalette.colors[2] });
+    compareRecord(labels[2].options, { name: "Label 4", color: defaultPalette.colors[3] });
   });
 
   it("can apply and remove labels from an ID", () => {
