@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, ExclamationCircleOutlined, InfoCircleOutlined, WarningOutlined } from "@ant-design/icons";
+import { CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled, InfoCircleFilled } from "@ant-design/icons";
 import { Card } from "antd";
 import React, { ReactElement } from "react";
 
@@ -25,12 +25,12 @@ export default function MessageCard(props: React.PropsWithChildren<MessageCardPr
   }[type];
 
   const cardIcon = {
-    info: <InfoCircleOutlined style={{ color: "var(--color-text-info)", fontSize: "var(--font-size-label)" }} />,
-    warning: <WarningOutlined style={{ color: "var(--color-text-warning)", fontSize: "var(--font-size-label)" }} />,
-    error: (
-      <ExclamationCircleOutlined style={{ color: "var(--color-text-error)", fontSize: "var(--font-size-label)" }} />
+    info: <InfoCircleFilled style={{ color: "var(--color-text-info)", fontSize: "var(--font-size-label)" }} />,
+    warning: (
+      <ExclamationCircleFilled style={{ color: "var(--color-text-warning)", fontSize: "var(--font-size-label)" }} />
     ),
-    success: <CheckCircleOutlined style={{ color: "var(--color-text-success)", fontSize: "var(--font-size-label)" }} />,
+    error: <CloseCircleFilled style={{ color: "var(--color-text-error)", fontSize: "var(--font-size-label)" }} />,
+    success: <CheckCircleFilled style={{ color: "var(--color-text-success)", fontSize: "var(--font-size-label)" }} />,
   };
 
   return (
