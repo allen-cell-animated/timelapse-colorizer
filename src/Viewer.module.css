@@ -138,3 +138,10 @@
   height: var(--height);
   overflow-y: scroll;
 }
+
+.plotAndFiltersPanel :global(.ant-tabs-nav-operations) {
+  &&&& > button {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
