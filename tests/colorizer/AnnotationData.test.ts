@@ -294,7 +294,8 @@ describe("AnnotationData", () => {
         `2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
         `3,1,3,${BOOLEAN_VALUE_FALSE}\r\n`; // false values are omitted
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const annotationData = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const annotationData = result.annotationData;
 
       const labels = annotationData.getLabels();
       const labelData = labels[0];
@@ -319,7 +320,8 @@ describe("AnnotationData", () => {
         `2,0,2,${BOOLEAN_VALUE_TRUE},3,"C"\r\n` +
         `7,2,7,${BOOLEAN_VALUE_TRUE},4,"D"\r\n`;
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const annotationData = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const annotationData = result.annotationData;
 
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(3);
@@ -379,7 +381,8 @@ describe("AnnotationData", () => {
         `2,0,2,                      ,3,"C"\r\n` +
         `7,2,7,${BOOLEAN_VALUE_TRUE} ,4,\r\n`;
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const annotationData = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const annotationData = result.annotationData;
 
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(3);
