@@ -43,7 +43,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     createNewLabel,
     deleteLabel,
     setLabelOptions,
-    setLabelOnIds,
+    removeLabelOnIds,
   } = props.annotationState;
 
   const [isPending, startTransition] = useTransition();
@@ -123,10 +123,10 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const onClickDeleteObject = useCallback(
     (record: TableDataType): void => {
       if (currentLabelIdx !== null) {
-        setLabelOnIds(currentLabelIdx, [record.id], false);
+        removeLabelOnIds(currentLabelIdx, [record.id]);
       }
     },
-    [currentLabelIdx, setLabelOnIds]
+    [currentLabelIdx, removeLabelOnIds]
   );
 
   // Options for the selection dropdown
