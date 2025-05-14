@@ -16,6 +16,9 @@ import { AppThemeContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
 import StyledModal from "./Modals/StyledModal";
 
+const DEFAULT_URL_FAILURE_MESSAGE =
+  "The dataset(s) could not be loaded with the URL provided. Please check it and try again.";
+
 type LoadDatasetButtonProps = {
   /**
    * Callback when a dataset was successfully loaded.
@@ -155,15 +158,17 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
       return;
     }
     let formattedUrlInput = urlInput.trim();
+    let hasConvertedAllenPath = false;
     // Check if the URL is an allen resource. If so, attempt to convert it.
     if (isAllenPath(formattedUrlInput)) {
       const convertedUrl = convertAllenPathToHttps(formattedUrlInput);
       if (!convertedUrl) {
         setErrorText(
-          "The provided filestore path cannot be loaded directly. Please check that the path is correct! Alternatively, move your dataset so it is served over HTTPS."
+          "The provided filestore path cannot be loaded directly. Please check that the path is correct; if this a path you expect to work, file an issue on GitHub. Alternatively, move your dataset so it is served over HTTPS."
         );
         return;
       }
+      hasConvertedAllenPath = true;
       formattedUrlInput = convertedUrl;
     }
 
@@ -202,11 +207,13 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
           setErrorText(
             "Timeout: The server took too long to respond. Please check if the file server is online and try again."
           );
-        } else {
+        } else if (hasConvertedAllenPath) {
           setErrorText(
-            reason.toString() ||
-              "The dataset(s) could not be loaded with the URL provided. Please check it and try again."
+            (reason.toString() || DEFAULT_URL_FAILURE_MESSAGE) +
+              "\nIf the problem is not network access, this may be an unrecognized file path. If you expect this path to work, please report an issue on GitHub from the Help menu or contact a developer."
           );
+        } else {
+          setErrorText(reason.toString() || DEFAULT_URL_FAILURE_MESSAGE);
         }
         setIsLoading(false);
       }
