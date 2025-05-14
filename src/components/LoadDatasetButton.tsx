@@ -14,6 +14,7 @@ import { renderStringArrayAsJsx } from "../utils/formatting";
 import Collection from "../colorizer/Collection";
 import { AppThemeContext } from "./AppStyle";
 import TextButton from "./Buttons/TextButton";
+import MessageCard from "./MessageCard";
 import StyledModal from "./Modals/StyledModal";
 
 type LoadDatasetButtonProps = {
@@ -86,7 +87,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, _setErrorText] = useState<ReactNode>("");
   const setErrorText = useCallback((newErrorText: ReactNode) => {
-    if (typeof newErrorText === "string") {
+    if (typeof newErrorText === "string" && newErrorText !== "") {
       const splitText = newErrorText.split("\n");
       _setErrorText(renderStringArrayAsJsx(splitText));
     } else {
@@ -306,12 +307,7 @@ export default function LoadDatasetButton(props: LoadDatasetButtonProps): ReactE
               </Space.Compact>
             </div>
           </div>
-
-          {errorText && (
-            <p>
-              <span style={{ color: theme.color.text.error }}>{errorText}</span>
-            </p>
-          )}
+          {errorText && <MessageCard type="error">{errorText}</MessageCard>}
         </div>
       </StyledModal>
     </div>
