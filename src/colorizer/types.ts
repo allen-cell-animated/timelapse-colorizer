@@ -304,7 +304,7 @@ export type ReportErrorCallback = (message: string) => void;
 export type ReportLoadProgressCallback = (complete: number, total: number) => void;
 
 export enum LoadTroubleshooting {
-  CHECK_NETWORK = "This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
+  CHECK_NETWORK = "This may be due to a network issue, the server being down or unreachable, or a misconfigured URL." +
     " Please check your network access.",
   CHECK_FILE_EXISTS = "Please check if the file exists and if you have access to it, or see the developer console for more details.",
   CHECK_FILE_OR_NETWORK = "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",

@@ -6,12 +6,13 @@ import {
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Checkbox, notification, Slider, Tabs } from "antd";
+import { Checkbox, notification, Slider, Tabs, Tooltip } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
+  ColorRampType,
   Dataset,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
@@ -108,6 +109,7 @@ function Viewer(): ReactElement {
   const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const collection = useViewerStateStore((state) => state.collection);
+  const colorRamp = useViewerStateStore((state) => state.colorRamp);
   const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
   const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
@@ -539,8 +541,13 @@ function Viewer(): ReactElement {
   }, [isUserDirectlyControllingFrameInput, frameInput]);
 
   const onClickId = useCallback(
+    // `info` is null if the user clicked on a background pixel. Otherwise, it
+    // contains the segmentation ID (raw image pixel value) and the global ID.
+    // The global ID is undefined if the object does not exist in the dataset.
     (info: PixelIdInfo | null) => {
       if (dataset) {
+        // Pass null if the user clicked on something non-interactive
+        // (background or a non-existent object).
         annotationState.handleAnnotationClick(dataset, info?.globalId ?? null);
       }
     },
@@ -576,6 +583,9 @@ function Viewer(): ReactElement {
 
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
+  // Disable color ramp controls when the feature is numeric but we've selected
+  // a categorical color ramp (e.g. glasbey)
+  const disableRampControlsUi = !isFeatureCategorical && colorRamp.type === ColorRampType.CATEGORICAL;
 
   // TODO: Move into subcomponent for color ramp controls
   // Show min + max marks on the color ramp slider if a feature is selected and
@@ -768,18 +778,33 @@ function Viewer(): ReactElement {
                       isFeatureCategorical ? (
                         <CategoricalColorPicker categories={featureCategories} disabled={disableUi} />
                       ) : (
-                        <LabeledSlider
-                          type="range"
-                          min={colorRampMin}
-                          max={colorRampMax}
-                          minSliderBound={featureKey !== null ? dataset?.getFeatureData(featureKey)?.min : undefined}
-                          maxSliderBound={featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined}
-                          onChange={function (min: number, max: number): void {
-                            setColorRampRange([min, max]);
-                          }}
-                          marks={getColorMapSliderMarks()}
-                          disabled={disableUi}
-                        />
+                        <Tooltip
+                          trigger={["hover", "focus"]}
+                          title={
+                            disableRampControlsUi
+                              ? "Color ramp adjustment is disabled when a Glasbey color map is selected."
+                              : undefined
+                          }
+                        >
+                          <div style={{ width: "100%" }}>
+                            <LabeledSlider
+                              type="range"
+                              min={colorRampMin}
+                              max={colorRampMax}
+                              minSliderBound={
+                                featureKey !== null ? dataset?.getFeatureData(featureKey)?.min : undefined
+                              }
+                              maxSliderBound={
+                                featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined
+                              }
+                              onChange={function (min: number, max: number): void {
+                                setColorRampRange([min, max]);
+                              }}
+                              marks={getColorMapSliderMarks()}
+                              disabled={disableUi || disableRampControlsUi}
+                            />
+                          </div>
+                        </Tooltip>
                       )
                     }
                   </div>

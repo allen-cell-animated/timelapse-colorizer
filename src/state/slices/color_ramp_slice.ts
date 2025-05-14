@@ -97,7 +97,7 @@ export const createColorRampSlice: StateCreator<ColorRampSlice> = (set, _get) =>
   // Derived state
   colorRamp: getColorMap(KNOWN_COLOR_RAMPS, DEFAULT_COLOR_RAMP_KEY, false),
   categoricalPaletteKey: DEFAULT_CATEGORICAL_PALETTE_KEY,
-  categoricalPaletteRamp: new ColorRamp(defaultCategoricalPalette.colors, ColorRampType.HARD_STOP),
+  categoricalPaletteRamp: new ColorRamp(defaultCategoricalPalette.colors, ColorRampType.CATEGORICAL),
 
   // Actions
   setColorRampKey: (key: string) =>
@@ -161,7 +161,7 @@ export const addColorRampDerivedStateSubscribers = (
       store.getState().categoricalPaletteRamp.dispose();
       return {
         categoricalPaletteKey: getPaletteKey(palette),
-        categoricalPaletteRamp: new ColorRamp(palette, ColorRampType.HARD_STOP),
+        categoricalPaletteRamp: new ColorRamp(palette, ColorRampType.CATEGORICAL),
       };
     }
   );
