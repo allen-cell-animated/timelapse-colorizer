@@ -19,6 +19,7 @@ const VECTOR_OPTION_MOTION = {
 };
 
 export default function VectorFieldSettings(): ReactElement {
+  const dataset = useViewerStateStore((state) => state.dataset);
   const setVectorColor = useViewerStateStore((state) => state.setVectorColor);
   const setVectorKey = useViewerStateStore((state) => state.setVectorKey);
   const setVectorMotionTimeIntervals = useViewerStateStore((state) => state.setVectorMotionTimeIntervals);
@@ -34,31 +35,36 @@ export default function VectorFieldSettings(): ReactElement {
 
   // TODO: Add additional vectors here when support for user vector data is added.
   const vectorOptions = useMemo(() => [VECTOR_OPTION_MOTION], []);
+  const vectorOptionsEnabled = vectorVisible && dataset !== null;
 
   return (
     <>
       <SettingsItem label={"Show vector arrows"}>
         <div>
           {/* TODO: Replace with a top-level checkbox for Vector arrows when Collapse menus are removed */}
-          <Checkbox checked={vectorVisible} onChange={(e) => setVectorVisible(e.target.checked)} />
+          <Checkbox
+            checked={vectorVisible}
+            onChange={(e) => setVectorVisible(e.target.checked)}
+            disabled={dataset === null}
+          />
         </div>
       </SettingsItem>
 
       <SettingsItem label="Vector" labelStyle={{ height: "min-content", paddingTop: "2px" }}>
         <SelectionDropdown
-          disabled={!vectorVisible}
+          disabled={!vectorOptionsEnabled}
           selected={vectorKey}
           items={vectorOptions}
           onChange={setVectorKey}
         ></SelectionDropdown>
-        {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorVisible && (
+        {vectorKey === VECTOR_KEY_MOTION_DELTA && vectorOptionsEnabled && (
           <Card style={{ position: "relative", width: "fit-content", marginTop: "10px" }} size="small">
             <SettingsContainer>
               <SettingsItem label="Average over # time intervals">
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     type="value"
-                    disabled={!vectorVisible}
+                    disabled={!vectorOptionsEnabled}
                     step={1}
                     minSliderBound={1}
                     maxSliderBound={20}
@@ -83,7 +89,7 @@ export default function VectorFieldSettings(): ReactElement {
       <SettingsItem label={"Scale factor"}>
         <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
           <LabeledSlider
-            disabled={!vectorVisible}
+            disabled={!vectorOptionsEnabled}
             type="value"
             minSliderBound={0}
             maxSliderBound={50}
@@ -98,7 +104,7 @@ export default function VectorFieldSettings(): ReactElement {
       <SettingsItem label="Arrow color">
         <div>
           <ColorPicker
-            disabled={!vectorVisible}
+            disabled={!vectorOptionsEnabled}
             disabledAlpha={true}
             size="small"
             value={new AntdColor(vectorColor.getHexString())}
@@ -114,7 +120,7 @@ export default function VectorFieldSettings(): ReactElement {
           <Radio.Group
             value={vectorTooltipMode}
             onChange={(e) => setVectorTooltipMode(e.target.value)}
-            disabled={!vectorVisible}
+            disabled={!vectorOptionsEnabled}
           >
             <Radio value={VectorTooltipMode.MAGNITUDE}>Magnitude and angle</Radio>
             <Radio value={VectorTooltipMode.COMPONENTS}>XY components</Radio>

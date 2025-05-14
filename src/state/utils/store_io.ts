@@ -119,14 +119,21 @@ export const serializedDataToUrl = (data: SerializedStoreData): string => {
 // DESERIALIZATION ///////////////////////////////////////////////////////////////////////
 
 /**
+ * Loads only the viewer state that's not dependent on the dataset from the
+ * given URL parameters.
+ */
+export const loadInitialViewerStateFromParams = (store: Store<ViewerStore>, params: URLSearchParams): void => {
+  // Load only slices that do not depend on the dataset or collection
+  loadConfigSliceFromParams(store.getState(), params);
+};
+
+/**
  * Loads the viewer state from the given URL parameters. Note that this MUST be
  * called after the collection and dataset are loaded and set in the store.
  */
 export const loadViewerStateFromParams = (store: Store<ViewerStore>, params: URLSearchParams): void => {
   // TODO: Should each of these be wrapped in a try/catch block in case of bad inputs?
   // 1. No dependencies:
-  loadConfigSliceFromParams(store.getState(), params);
-
   // 2. Dependent on dataset object:
   loadBackdropSliceFromParams(store.getState(), params);
   loadDatasetSliceFromParams(store.getState(), params);

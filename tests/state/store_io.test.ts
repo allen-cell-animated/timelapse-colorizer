@@ -19,7 +19,12 @@ import { UrlParam } from "../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../src/state";
 import { ViewerStoreSerializableState } from "../../src/state/slices";
 import { SerializedStoreData } from "../../src/state/types";
-import { loadViewerStateFromParams, serializedDataToUrl, serializeViewerParams } from "../../src/state/utils/store_io";
+import {
+  loadInitialViewerStateFromParams,
+  loadViewerStateFromParams,
+  serializedDataToUrl,
+  serializeViewerParams,
+} from "../../src/state/utils/store_io";
 import { sleep } from "../test_utils";
 import {
   MOCK_COLLECTION,
@@ -194,6 +199,7 @@ describe("loadViewerStateFromParams", () => {
     });
     await setDatasetAsync(result, MOCK_DATASET);
     await act(async () => {
+      loadInitialViewerStateFromParams(useViewerStateStore, params);
       loadViewerStateFromParams(useViewerStateStore, params);
       // Fixup: Wait for frame to load fully so `currentFrame` value is correct
       await sleep(10);
