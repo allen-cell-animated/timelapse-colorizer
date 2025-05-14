@@ -33,6 +33,7 @@ import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_ut
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
+  loadInitialViewerStateFromParams,
   loadViewerStateFromParams,
   selectSerializationDependencies,
   serializeViewerState,
@@ -396,6 +397,8 @@ function Viewer(): ReactElement {
       if (isLoadingInitialDataset.current || isInitialDatasetLoaded) {
         return;
       }
+
+      loadInitialViewerStateFromParams(useViewerStateStore, searchParams);
 
       setIsDatasetLoading(true);
       setDatasetLoadProgress(null);
