@@ -149,9 +149,6 @@ export default class Plotting {
   }
 
   setSize(x: number, y: number): void {
-    if (!x || !y) {
-      return;
-    }
     const layout: Partial<Plotly.Layout> = {
       width: x,
       height: y,
