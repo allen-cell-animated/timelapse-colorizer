@@ -92,8 +92,8 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
               {formatQuantityString(labels.length, "label", "labels")}:
             </p>
             {/* TODO: make a collapsible area in case there are lots of labels */}
-            <ExpandableList collapsedHeightPx={65}>
-              <ol style={{ margin: "0", paddingLeft: "15px" }}>
+            <ExpandableList collapsedHeightPx={65} expandedMaxHeightPx={300}>
+              <ol style={{ margin: "0", paddingLeft: "30px" }}>
                 {labels.map((label, index) => {
                   return (
                     <li key={index}>
