@@ -24,6 +24,12 @@ export enum LabelType {
   CUSTOM = "custom",
 }
 
+export enum AnnotationMergeMode {
+  APPEND = "append",
+  MERGE = "merge",
+  OVERWRITE = "overwrite",
+}
+
 export type LabelOptions = {
   type: LabelType;
   name: string;
