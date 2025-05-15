@@ -50,7 +50,6 @@ export default function ExpandableList(inputProps: PropsWithChildren<ExpandableL
   useEffect(() => {
     const handleResize = (): void => {
       if (childContainerRef.current) {
-        console.log("childContainerRef.current", childContainerRef.current);
         setContentSize(childContainerRef.current.scrollHeight);
       }
     };
@@ -64,6 +63,7 @@ export default function ExpandableList(inputProps: PropsWithChildren<ExpandableL
   }, [props.children, childContainerRef.current]);
 
   useEffect(() => {
+    // Scroll to top when collapsing.
     if (!expanded) {
       scrollRef.current?.scrollTo(0, 0);
     }
