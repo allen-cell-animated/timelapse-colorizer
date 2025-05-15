@@ -46,6 +46,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     setLabelOptions,
     removeLabelOnIds,
   } = props.annotationState;
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
 
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
@@ -203,7 +204,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <TextButton
             onClick={() => {
               const csvData = props.annotationState.data.toCsv(store.dataset!);
-              download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+              const name = datasetKey ?? "annotations";
+              download(`${name}-annotations.csv`, "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
               console.log(csvData);
             }}
           >
