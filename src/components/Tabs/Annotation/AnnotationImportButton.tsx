@@ -144,22 +144,6 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
               )}
             </FlexColumn>
           )}
-          {/* <SettingsContainer>
-            <SettingsItem label="Conflict resolution">
-              <Radio.Group>
-                <Space direction="vertical">
-                  <Radio value="append">
-                    <FlexColumn>
-                      <p>Append labels</p>
-                      <p style={{ marginTop: 0 }}>Some additional context</p>
-                    </FlexColumn>
-                  </Radio>
-                  <Radio value="merge">Merge matching labels</Radio>
-                  <Radio value="">Overwrite existing annotations</Radio>
-                </Space>
-              </Radio.Group>
-            </SettingsItem>
-          </SettingsContainer> */}
         </FlexColumn>
       </Modal>
       <TextButton
