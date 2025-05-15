@@ -1,4 +1,4 @@
-import { DeleteOutlined, PaperClipOutlined } from "@ant-design/icons";
+import { CloseOutlined, PaperClipOutlined } from "@ant-design/icons";
 import { Card } from "antd";
 import React, { ReactElement, useContext, useMemo } from "react";
 
@@ -120,7 +120,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
       }
       extra={
         <IconButton type="text" onClick={props.clearFile}>
-          <DeleteOutlined />
+          <CloseOutlined />
         </IconButton>
       }
     >
