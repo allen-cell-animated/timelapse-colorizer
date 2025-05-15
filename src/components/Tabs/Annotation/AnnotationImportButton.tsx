@@ -4,7 +4,7 @@ import React, { ReactElement, useContext, useState } from "react";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { useViewerStateStore } from "../../../state";
-import { FlexColumn, FlexRow } from "../../../styles/utils";
+import { FlexColumn } from "../../../styles/utils";
 
 import { AnnotationData, AnnotationParseResult } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
@@ -79,7 +79,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     }
   };
 
-  const hasAnnotationData = annotationState.data.getLabels().length > 0;
+  const hasExistingAnnotationData = annotationState.data.getLabels().length > 0;
 
   const handleFileChange = (info: { fileList: UploadFile[] }): void => {
     if (info.fileList.length === 0) {
@@ -133,33 +133,9 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
               </>
             </Upload.Dragger>
           )}
-          {parseResult && (
-            <FlexColumn $gap={6}>
-              {parseResult && hasAnnotationData && (
-                <p style={{ color: theme.color.text.warning }}>
-                  <MessageCard type="warning">
-                    <FlexRow $gap={10}>Existing annotations will be overwritten during import.</FlexRow>
-                  </MessageCard>
-                </p>
-              )}
-            </FlexColumn>
+          {parseResult && hasExistingAnnotationData && (
+            <MessageCard type="warning">Existing annotations will be overwritten during import.</MessageCard>
           )}
-          {/* <SettingsContainer>
-            <SettingsItem label="Conflict resolution">
-              <Radio.Group>
-                <Space direction="vertical">
-                  <Radio value="append">
-                    <FlexColumn>
-                      <p>Append labels</p>
-                      <p style={{ marginTop: 0 }}>Some additional context</p>
-                    </FlexColumn>
-                  </Radio>
-                  <Radio value="merge">Merge matching labels</Radio>
-                  <Radio value="">Overwrite existing annotations</Radio>
-                </Space>
-              </Radio.Group>
-            </SettingsItem>
-          </SettingsContainer> */}
         </FlexColumn>
       </Modal>
       <TextButton
