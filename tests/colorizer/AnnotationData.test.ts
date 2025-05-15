@@ -438,7 +438,8 @@ describe("AnnotationData", () => {
         `4,1,4,False\r\n` +
         `5,1,5,FALSE\r\n`;
       const mockCsv = mockCsvHeaders + mockCsvData;
-      const annotationData = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const annotationData = result.annotationData;
       const labels = annotationData.getLabels();
       expect(labels.length).toBe(1);
       expect(labels[0].options.name).toBe(booleanLabelKey);
