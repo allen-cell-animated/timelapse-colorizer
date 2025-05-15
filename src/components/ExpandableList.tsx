@@ -19,10 +19,15 @@ const defaultProps: Partial<ExpandableListProps> = {
   expandedMaxHeightPx: 500,
 };
 
-const ExpandingContainer = styled.div<{ $expanded: boolean; $collapsedHeightPx: number; $expandedMaxHeightPx: number }>`
+const ExpandingContainer = styled.div<{
+  $expanded: boolean;
+  $showScrollbar: boolean;
+  $collapsedHeightPx: number;
+  $expandedMaxHeightPx: number;
+}>`
   width: 100%;
   max-height: ${(props) => (props.$expanded ? props.$expandedMaxHeightPx : props.$collapsedHeightPx)}px;
-  overflow-y: ${(props) => (props.$expanded ? "auto" : "hidden")};
+  overflow-y: ${(props) => (props.$showScrollbar ? "auto" : "hidden")};
   transition: all 0.3s ease-in-out allow-discrete;
 `;
 
@@ -65,7 +70,7 @@ export default function ExpandableList(inputProps: PropsWithChildren<ExpandableL
   }, [expanded]);
 
   const showExpandButton = contentSize > props.collapsedHeightPx;
-  const showScrollShadow = expanded && contentSize > props.expandedMaxHeightPx;
+  const showScrollbar = expanded && contentSize > props.expandedMaxHeightPx;
 
   return (
     <FlexColumn>
@@ -74,12 +79,13 @@ export default function ExpandableList(inputProps: PropsWithChildren<ExpandableL
           $expanded={expanded}
           $collapsedHeightPx={props.collapsedHeightPx}
           $expandedMaxHeightPx={props.expandedMaxHeightPx}
+          $showScrollbar={showScrollbar}
           ref={scrollRef}
           onScroll={onScrollHandler}
         >
           <div ref={childContainerRef}>{props.children}</div>
         </ExpandingContainer>
-        {showScrollShadow && (
+        {showScrollbar && (
           <ScrollShadowContainer
             style={{
               ...scrollShadowStyle,
