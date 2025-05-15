@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, ReactElement, useEffect, useRef, useState } from "react";
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 
 import { ScrollShadowContainer, useScrollShadow } from "../colorizer/utils/react_utils";
 import { FlexColumn } from "../styles/utils";
@@ -22,33 +22,8 @@ const defaultProps: Partial<ExpandableListProps> = {
 const ExpandingContainer = styled.div<{ $expanded: boolean; $collapsedHeightPx: number; $expandedMaxHeightPx: number }>`
   width: 100%;
   max-height: ${(props) => (props.$expanded ? props.$expandedMaxHeightPx : props.$collapsedHeightPx)}px;
-
-  transition: all 0.3s ease-in-out allow-discrete;
   overflow-y: ${(props) => (props.$expanded ? "auto" : "hidden")};
-  /* overflow-y: clip;
-
-  // When the container expands, animate in scrollbar after a delay so it
-  // doesn't flash. (Note that when the container starts to collapse, the
-  // scrollbar is removed immediately.)
-  ${(props) => {
-    if (props.$expanded) {
-      return css`
-        animation: showScroll 0s ease-in-out;
-        animation-delay: 0.3s;
-        animation-fill-mode: forwards;
-      `;
-    }
-    return "";
-  }}
-
-  @keyframes showScroll {
-    0% {
-      overflow-y: clip;
-    }
-    100% {
-      overflow-y: auto;
-    }
-  } */
+  transition: all 0.3s ease-in-out allow-discrete;
 `;
 
 /**
