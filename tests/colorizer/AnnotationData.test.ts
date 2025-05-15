@@ -427,5 +427,24 @@ describe("AnnotationData", () => {
         ])
       );
     });
+
+    it("handles mixed boolean capitalization", () => {
+      const mockCsvHeaders = `ID,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,true\r\n` +
+        `1,0,1,True\r\n` +
+        `2,0,2,TRUE\r\n` +
+        `3,1,3,false\r\n` +
+        `4,1,4,False\r\n` +
+        `5,1,5,FALSE\r\n`;
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const annotationData = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const labels = annotationData.getLabels();
+      expect(labels.length).toBe(1);
+      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
+      expect(labels[0].ids).toEqual(new Set([0, 1, 2]));
+      expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2]));
+    });
   });
 });
