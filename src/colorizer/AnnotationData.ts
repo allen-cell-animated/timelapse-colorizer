@@ -465,10 +465,13 @@ export class AnnotationData implements IAnnotationData {
         const labelData = annotationData.labelData[labelIdx];
         const isBoolean = labelData.options.type === LabelType.BOOLEAN;
         const name = labelNames[labelIdx];
-        const value = row[name]?.trim();
+        let value = row[name]?.trim();
         // Ignore invalid values (and omit boolean false values)
-        if (value === undefined || value === "" || (isBoolean && value === BOOLEAN_VALUE_FALSE)) {
+        if (value === undefined || value === "" || (isBoolean && value.toLowerCase() === BOOLEAN_VALUE_FALSE)) {
           continue;
+        }
+        if (isBoolean) {
+          value = BOOLEAN_VALUE_TRUE;
         }
         annotationData.setLabelValueOnId(labelIdx, id, value);
       }
