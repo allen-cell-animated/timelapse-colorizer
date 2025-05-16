@@ -21,7 +21,6 @@ import {
   makeEmptyTraceData,
   makeLineTrace,
   scaleColorOpacityByMarkerCount,
-  SCATTERPLOT_TIME_FEATURE,
   splitTraceData,
   subsampleColorRamp,
   TraceData,
@@ -234,9 +233,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (featureKey === null || dataset === null) {
       return undefined;
     }
-    if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
-      return dataset.times || undefined;
-    }
     return dataset.getFeatureData(featureKey)?.data;
   };
 
@@ -385,12 +381,6 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
     let min = dataset?.getFeatureData(featureKey)?.min || 0;
     let max = dataset?.getFeatureData(featureKey)?.max || 0;
-
-    // Special case for time feature, which isn't in the dataset
-    if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
-      min = 0;
-      max = dataset?.numberOfFrames || 0;
-    }
 
     if (dataset && dataset.isFeatureCategorical(featureKey)) {
       // Add extra padding for categories so they're nicely centered
@@ -660,11 +650,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       markerBaseColor = new Color("#dddddd");
     }
 
-    const isUsingTime =
-      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value ||
-      yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value ||
-      xAxisFeatureKey === TIME_FEATURE_KEY ||
-      yAxisFeatureKey === TIME_FEATURE_KEY;
+    const isUsingTime = xAxisFeatureKey === TIME_FEATURE_KEY || yAxisFeatureKey === TIME_FEATURE_KEY;
 
     // Configure traces
     const traces = colorizeScatterplotPoints(

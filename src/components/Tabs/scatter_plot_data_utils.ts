@@ -4,10 +4,11 @@ import { Color } from "three";
 import { ColorRamp, Dataset, HexColorString } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 
-// TODO: Add a deprecation warning and replace with the new TIME_FEATURE_KEY constant.
-// Add a fixup so that the old key is replaced with the new one in the dataset.
-/** Extra feature added to the dropdowns representing the frame number. */
-export const SCATTERPLOT_TIME_FEATURE = { value: "scatterplot_time", label: "Time" };
+/**
+ * Extra feature added to the dropdowns representing the frame number.
+ * Deprecated because Time is now automatically added as a feature to the dataset.
+ */
+export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -128,9 +129,6 @@ export const getFeatureOrTimeName = (featureKey: string | null, dataset: Dataset
   if (featureKey === null || dataset === null) {
     return "";
   }
-  if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
-    return SCATTERPLOT_TIME_FEATURE.label;
-  }
   return dataset.getFeatureName(featureKey) || "";
 };
 
@@ -138,9 +136,6 @@ export const getFeatureOrTimeName = (featureKey: string | null, dataset: Dataset
 export const getFeatureOrTimeNameWithUnits = (featureKey: string | null, dataset: Dataset | null): string => {
   if (featureKey === null || dataset === null) {
     return "";
-  }
-  if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
-    return SCATTERPLOT_TIME_FEATURE.label;
   }
   return dataset.getFeatureNameWithUnits(featureKey) || "";
 };
