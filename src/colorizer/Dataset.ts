@@ -441,6 +441,41 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
+  /** Adds auto-generated features for time and track to this Dataset. */
+  private addTimeAndTrackFeatures(): void {
+    if (this.trackIds && !this.features.has(TRACK_FEATURE_KEY)) {
+      const trackData = new Float32Array(this.trackIds);
+      this.features.set(TRACK_FEATURE_KEY, {
+        name: "Track ID",
+        key: TRACK_FEATURE_KEY,
+        data: this.trackIds,
+        tex: packDataTexture(trackData, FeatureDataType.F32),
+        min: 0,
+        max: this.trackIds.reduce((max, id) => Math.max(max, id), 0),
+        unit: "",
+        type: FeatureType.DISCRETE,
+        categories: null,
+        description: "Track ID of the object. This feature is added by the viewer.",
+      });
+    }
+
+    if (this.times && !this.features.has(TIME_FEATURE_KEY)) {
+      const timeData = new Float32Array(this.times);
+      this.features.set(TIME_FEATURE_KEY, {
+        name: "Time",
+        key: TIME_FEATURE_KEY,
+        data: this.times,
+        tex: packDataTexture(timeData, FeatureDataType.F32),
+        min: 0,
+        max: this.times.reduce((max, id) => Math.max(max, id), 0),
+        unit: "",
+        type: FeatureType.CONTINUOUS,
+        categories: null,
+        description: "Time of the object. This feature is added by the viewer.",
+      });
+    }
+  }
+
   /**
    * Opens the dataset and loads all necessary files from the manifest.
    * @param options Configuration options for the dataset loader.
@@ -579,38 +614,7 @@ export default class Dataset {
       ]);
     }
 
-    // Add time and track features to the dataset
-    if (this.trackIds && !this.features.has(TRACK_FEATURE_KEY)) {
-      const trackData = new Float32Array(this.trackIds);
-      this.features.set(TRACK_FEATURE_KEY, {
-        name: "Track ID",
-        key: TRACK_FEATURE_KEY,
-        data: this.trackIds,
-        tex: packDataTexture(trackData, FeatureDataType.F32),
-        min: 0,
-        max: this.trackIds.reduce((max, id) => Math.max(max, id), 0),
-        unit: "",
-        type: FeatureType.DISCRETE,
-        categories: null,
-        description: "Track ID of the object. This feature is added by the viewer.",
-      });
-    }
-
-    if (this.times && !this.features.has(TIME_FEATURE_KEY)) {
-      const timeData = new Float32Array(this.times);
-      this.features.set(TIME_FEATURE_KEY, {
-        name: "Time",
-        key: TIME_FEATURE_KEY,
-        data: this.times,
-        tex: packDataTexture(timeData, FeatureDataType.F32),
-        min: 0,
-        max: this.times.reduce((max, id) => Math.max(max, id), 0),
-        unit: "",
-        type: FeatureType.CONTINUOUS,
-        categories: null,
-        description: "Time of the object. This feature is added by the viewer.",
-      });
-    }
+    this.addTimeAndTrackFeatures();
 
     // Construct default array of segmentation IDs if not provided in the manifest.
     if (!this.segIds) {
