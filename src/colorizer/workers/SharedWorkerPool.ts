@@ -51,7 +51,7 @@ export default class SharedWorkerPool {
    * correlation coefficient between the `i`th and `j`th features.
    */
   async getCorrelations(d: Dataset, featureKeys?: string[]): Promise<number[][]> {
-    const featureData: Float32Array[] = [];
+    const featureData: (Float32Array | Uint32Array)[] = [];
     featureKeys = featureKeys ?? d.featureKeys;
     for (const key of featureKeys) {
       if (d.hasFeatureKey(key)) {

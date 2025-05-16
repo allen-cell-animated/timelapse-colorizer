@@ -3,10 +3,12 @@ import { StateCreator } from "zustand";
 import { Dataset } from "../../colorizer";
 import { PlotRangeType } from "../../colorizer/types";
 import { decodeScatterPlotRangeType, encodeScatterPlotRangeType, UrlParam } from "../../colorizer/utils/url_utils";
-import { SCATTERPLOT_TIME_FEATURE } from "../../components/Tabs/scatter_plot_data_utils";
+import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "../../components/Tabs/scatter_plot_data_utils";
 import { SerializedStoreData, SubscribableStore } from "../types";
 import { addDerivedStateSubscriber } from "../utils/store_utils";
 import { DatasetSlice } from "./dataset_slice";
+
+import { TIME_FEATURE_KEY } from "../../colorizer/Dataset";
 
 export type ScatterPlotSliceState = {
   scatterXAxis: string | null;
@@ -28,12 +30,7 @@ export type ScatterPlotSliceActions = {
 export type ScatterPlotSlice = ScatterPlotSliceState & ScatterPlotSliceActions;
 
 const isAxisKeyValid = (dataset: Dataset | null, featureKey: string | null): boolean => {
-  return (
-    dataset === null ||
-    featureKey === null ||
-    dataset.hasFeatureKey(featureKey) ||
-    featureKey === SCATTERPLOT_TIME_FEATURE.value
-  );
+  return dataset === null || featureKey === null || dataset.hasFeatureKey(featureKey);
 };
 
 export const createScatterPlotSlice: StateCreator<DatasetSlice & ScatterPlotSlice, [], [], ScatterPlotSlice> = (
@@ -112,12 +109,18 @@ export const loadScatterPlotSliceFromParams = (
 ): void => {
   const dataset = slice.dataset;
 
-  const scatterXAxis = params.get(UrlParam.SCATTERPLOT_X_AXIS);
+  let scatterXAxis = params.get(UrlParam.SCATTERPLOT_X_AXIS);
+  if (scatterXAxis === DEPRECATED_SCATTERPLOT_TIME_KEY) {
+    scatterXAxis = TIME_FEATURE_KEY;
+  }
   if (scatterXAxis !== null && scatterXAxis !== undefined && isAxisKeyValid(dataset, scatterXAxis)) {
     slice.setScatterXAxis(scatterXAxis);
   }
 
-  const scatterYAxis = params.get(UrlParam.SCATTERPLOT_Y_AXIS);
+  let scatterYAxis = params.get(UrlParam.SCATTERPLOT_Y_AXIS);
+  if (scatterYAxis === DEPRECATED_SCATTERPLOT_TIME_KEY) {
+    scatterYAxis = TIME_FEATURE_KEY;
+  }
   if (scatterYAxis !== null && scatterYAxis !== undefined && isAxisKeyValid(dataset, scatterYAxis)) {
     slice.setScatterYAxis(scatterYAxis);
   }
