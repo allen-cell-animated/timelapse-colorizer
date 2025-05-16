@@ -4,6 +4,8 @@ import { Color } from "three";
 import { ColorRamp, Dataset, HexColorString } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 
+// TODO: Add a deprecation warning and replace with the new TIME_FEATURE_KEY constant.
+// Add a fixup so that the old key is replaced with the new one in the dataset.
 /** Extra feature added to the dropdowns representing the frame number. */
 export const SCATTERPLOT_TIME_FEATURE = { value: "scatterplot_time", label: "Time" };
 

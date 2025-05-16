@@ -27,6 +27,7 @@ import {
   TraceData,
 } from "./scatter_plot_data_utils";
 
+import { TIME_FEATURE_KEY } from "../../colorizer/Dataset";
 import { useViewerStateStore } from "../../state/ViewerState";
 import { AppThemeContext } from "../AppStyle";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
@@ -660,7 +661,10 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     }
 
     const isUsingTime =
-      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value || yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value;
+      xAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value ||
+      yAxisFeatureKey === SCATTERPLOT_TIME_FEATURE.value ||
+      xAxisFeatureKey === TIME_FEATURE_KEY ||
+      yAxisFeatureKey === TIME_FEATURE_KEY;
 
     // Configure traces
     const traces = colorizeScatterplotPoints(
@@ -825,11 +829,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
 
   const menuItems = useMemo((): SelectItem[] => {
     const featureKeys = dataset ? dataset.featureKeys : [];
-    const menuItems: SelectItem[] = featureKeys.map((key: string) => {
+    return featureKeys.map((key: string) => {
       return { value: key, label: dataset?.getFeatureNameWithUnits(key) ?? key };
     });
-    menuItems.push(SCATTERPLOT_TIME_FEATURE);
-    return menuItems;
   }, [dataset]);
 
   const makeControlBar = (menuItems: SelectItem[]): ReactElement => {
