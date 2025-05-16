@@ -11,7 +11,6 @@ import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "../.
 import { AppThemeContext } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import MessageCard from "../../MessageCard";
-import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import AnnotationFileInfo from "./AnnotationFileInfo";
 
 type AnnotationImportButtonProps = {
@@ -79,16 +78,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
 
   const handleImport = async (): Promise<void> => {
     if (parseResult) {
-      // TODO: give more advanced merging options here. There are three possible
-      // options:
-      // 1. Overwrite existing annotations (default, current behavior)
-      // 2. Keep both (no merging, labels are kept separate even if they have
-      //    matching names)
-      // 3. Merge annotations (merge matching labels with the same types. Users
-      //    should be given an option for how to handle when conflicts occur for
-      //    values (e.g. the imported CSV has a different value assigned to the
-      //    same ID))
-      annotationState.replaceAnnotationData(parseResult.annotationData);
+      annotationState.importData(parseResult.annotationData, mergeMode);
       setShowModal(false);
       setParseResult(null);
       setUploadedFile(null);
@@ -151,46 +141,36 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
               </>
             </Upload.Dragger>
           )}
-          {parseResult && (
-            <FlexColumn $gap={6}>
-              {parseResult && hasExistingAnnotationData && (
-                <p style={{ color: theme.color.text.warning }}>
-                  <MessageCard type="info">
-                    <FlexColumn>
-                      <span style={{ marginBottom: 5 }}>
-                        You have existing annotations. How would you like to handle the imported annotations?
-                      </span>
-                      <SettingsContainer>
-                        <SettingsItem labelStyle={{ marginBottom: "auto" }}>
-                          <Radio.Group value={mergeMode} onChange={(e) => setMergeMode(e.target.value)}>
-                            <Space direction="vertical">
-                              <Radio value={AnnotationMergeMode.APPEND}>Append as new annotations</Radio>
-                              <MultilineRadio
-                                value={AnnotationMergeMode.MERGE}
-                                $expanded={mergeMode === AnnotationMergeMode.MERGE}
-                              >
-                                {mergeMode === AnnotationMergeMode.MERGE ? (
-                                  <FlexColumn>
-                                    <p style={{ margin: 0 }}>Merge matching annotations</p>
-                                    <p style={{ margin: 0 }}>
-                                      Matching labels will be merged, all other labels will be appended. If there are
-                                      per-object conflicts, the imported CSV overrides existing annotations.
-                                    </p>
-                                  </FlexColumn>
-                                ) : (
-                                  <>Merge matching annotations</>
-                                )}
-                              </MultilineRadio>
-                              <Radio value={AnnotationMergeMode.OVERWRITE}>Replace all existing annotations</Radio>
-                            </Space>
-                          </Radio.Group>
-                        </SettingsItem>
-                      </SettingsContainer>
-                    </FlexColumn>
-                  </MessageCard>
-                </p>
-              )}
-            </FlexColumn>
+          {parseResult && hasExistingAnnotationData && (
+            <MessageCard type="info">
+              <FlexColumn>
+                <span style={{ marginBottom: 5 }}>
+                  You have existing annotations. How would you like to handle the imported annotations?
+                </span>
+                <Radio.Group value={mergeMode} onChange={(e) => setMergeMode(e.target.value)}>
+                  <Space direction="vertical">
+                    <Radio value={AnnotationMergeMode.APPEND}>Append as new annotations</Radio>
+                    <MultilineRadio
+                      value={AnnotationMergeMode.MERGE}
+                      $expanded={mergeMode === AnnotationMergeMode.MERGE}
+                    >
+                      {mergeMode === AnnotationMergeMode.MERGE ? (
+                        <FlexColumn>
+                          <p style={{ margin: 0 }}>Merge matching annotations</p>
+                          <p style={{ margin: 0 }}>
+                            Matching labels will be merged, all other labels will be appended. If there are per-object
+                            conflicts, the imported CSV overrides existing annotations.
+                          </p>
+                        </FlexColumn>
+                      ) : (
+                        <>Merge matching annotations</>
+                      )}
+                    </MultilineRadio>
+                    <Radio value={AnnotationMergeMode.OVERWRITE}>Replace all existing annotations</Radio>
+                  </Space>
+                </Radio.Group>
+              </FlexColumn>
+            </MessageCard>
           )}
         </FlexColumn>
       </Modal>

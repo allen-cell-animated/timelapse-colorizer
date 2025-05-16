@@ -3,7 +3,7 @@ import { Color } from "three";
 
 import { removeUndefinedProperties } from "../state/utils/data_validation";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
-import { getLabelTypeFromParsedCsv } from "./utils/data_utils";
+import { cloneLabel, getLabelTypeFromParsedCsv } from "./utils/data_utils";
 
 import Dataset from "./Dataset";
 
@@ -522,6 +522,59 @@ export class AnnotationData implements IAnnotationData {
       }
     }
     return { annotationData, mismatchedTimes, mismatchedTracks, unparseableRows, invalidIds, totalRows: data.length };
+  }
+
+  private findMatchingLabelIdx(name: string, type: LabelType): number {
+    for (let i = 0; i < this.labelData.length; i++) {
+      const labelData = this.labelData[i];
+      if (labelData.options.name === name && labelData.options.type === type) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Merges two annotation data objects and returns a new, resulting object,
+   * based on the merge mode.
+   */
+  static merge(
+    annotationData1: AnnotationData,
+    annotationData2: AnnotationData,
+    mergeMode: AnnotationMergeMode
+  ): AnnotationData {
+    const mergedAnnotationData = new AnnotationData();
+    if (mergeMode === AnnotationMergeMode.OVERWRITE) {
+      mergedAnnotationData.labelData = [...annotationData2.labelData.map(cloneLabel)];
+      mergedAnnotationData.numLabelsCreated = annotationData2.numLabelsCreated;
+    } else if (mergeMode === AnnotationMergeMode.APPEND) {
+      mergedAnnotationData.labelData = [
+        ...annotationData1.labelData.map(cloneLabel),
+        ...annotationData2.labelData.map(cloneLabel),
+      ];
+      mergedAnnotationData.numLabelsCreated = annotationData1.numLabelsCreated + annotationData2.numLabelsCreated;
+    } else {
+      // merge
+      mergedAnnotationData.labelData = [...annotationData1.labelData.map(cloneLabel)];
+      mergedAnnotationData.numLabelsCreated = annotationData1.numLabelsCreated;
+      for (const labelData2 of annotationData2.labelData) {
+        const labelIdx = mergedAnnotationData.findMatchingLabelIdx(labelData2.options.name, labelData2.options.type);
+        if (labelIdx !== -1) {
+          // There's an existing label that matches on name + type. Merge the
+          // IDs and overwrite the values.
+          const labelData1 = mergedAnnotationData.labelData[labelIdx];
+          labelData1.ids = new Set([...labelData1.ids, ...labelData2.ids]);
+          for (const [value, ids] of labelData2.valueToIds.entries()) {
+            mergedAnnotationData.setLabelValueOnIds(labelIdx, Array.from(ids), value);
+          }
+        } else {
+          // Add the new label.
+          mergedAnnotationData.labelData.push(cloneLabel(labelData2));
+          mergedAnnotationData.numLabelsCreated++;
+        }
+      }
+    }
+    return mergedAnnotationData;
   }
 
   toCsv(dataset: Dataset, delimiter: string = ","): string {
