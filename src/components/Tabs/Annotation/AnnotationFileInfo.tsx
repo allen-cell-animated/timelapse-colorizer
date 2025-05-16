@@ -1,4 +1,4 @@
-import { DeleteOutlined, PaperClipOutlined } from "@ant-design/icons";
+import { CloseOutlined, PaperClipOutlined } from "@ant-design/icons";
 import { Card } from "antd";
 import React, { ReactElement, useContext, useMemo } from "react";
 
@@ -7,6 +7,7 @@ import { renderStringArrayAsJsx } from "../../../utils/formatting";
 
 import { AnnotationParseResult } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
+import ExpandableList from "../../ExpandableList";
 import IconButton from "../../IconButton";
 import MessageCard from "../../MessageCard";
 
@@ -72,7 +73,6 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
     let parsedObjectsText = parsedObjects === totalObjects ? parsedObjects : `${parsedObjects}/${totalObjects}`;
     parsedObjectsText += parsedObjects === 1 ? " object" : " objects";
     const labels = parseResult.annotationData.getLabels();
-    const truncatedLabels = labels.slice(0, 5);
 
     return (
       <FlexColumn $gap={6}>
@@ -91,18 +91,18 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
               Annotations were parsed for {parsedObjectsText} with{" "}
               {formatQuantityString(labels.length, "label", "labels")}:
             </p>
-            {/* TODO: make a collapsible area in case there are lots of labels */}
-            <ol style={{ margin: "0" }}>
-              {truncatedLabels.map((label, index) => {
-                return (
-                  <li key={index}>
-                    <span>{label.options.name}</span>{" "}
-                    <span style={{ color: theme.color.text.hint }}>({label.ids.size})</span>
-                  </li>
-                );
-              })}
-              {truncatedLabels.length < labels.length && <span>...</span>}
-            </ol>
+            <ExpandableList collapsedHeightPx={68} expandedMaxHeightPx={300}>
+              <ol style={{ margin: "0", paddingLeft: "30px" }}>
+                {labels.map((label, index) => {
+                  return (
+                    <li key={index}>
+                      <span>{label.options.name}</span>{" "}
+                      <span style={{ color: theme.color.text.hint }}>({label.ids.size})</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </ExpandableList>
           </FlexColumn>
         )}
       </FlexColumn>
@@ -120,7 +120,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
       }
       extra={
         <IconButton type="text" onClick={props.clearFile}>
-          <DeleteOutlined />
+          <CloseOutlined />
         </IconButton>
       }
     >

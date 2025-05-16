@@ -62,17 +62,18 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
 
   const confirm = (): void => {
     // Perform validation step
-    if (nameInput.trim() === "") {
+    const newName = nameInput.trim();
+    if (newName === "") {
       setNameInputError("Label name cannot be empty.");
       return;
-    } else if (isMetadataColumnName(nameInput.trim())) {
-      setNameInputError(`Label name '${nameInput.trim()}' is reserved for metadata. Please choose a different name.`);
+    } else if (isMetadataColumnName(newName)) {
+      setNameInputError(`Label name '${newName}' is reserved for metadata. Please choose a different name.`);
       return;
     }
 
     props.onConfirm({
       color: color,
-      name: nameInput.trim(),
+      name: newName,
       type: labelType,
       autoIncrement: autoIncrement,
     });

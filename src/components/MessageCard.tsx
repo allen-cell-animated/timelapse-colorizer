@@ -1,8 +1,10 @@
 import { CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled, InfoCircleFilled } from "@ant-design/icons";
 import { Card } from "antd";
-import React, { ReactElement } from "react";
+import React, { ReactElement, useContext } from "react";
 
 import { FlexRow } from "../styles/utils";
+
+import { AppThemeContext } from "./AppStyle";
 
 type MessageCardType = "info" | "warning" | "error" | "success";
 
@@ -14,29 +16,34 @@ const defaultProps: MessageCardProps = {
   type: "info",
 };
 
+/**
+ * A styled card component that displays a message with an icon. Use for alerts,
+ * warnings, errors, and success messages.
+ */
 export default function MessageCard(props: React.PropsWithChildren<MessageCardProps>): ReactElement {
   const { type } = { ...defaultProps, ...props } as Required<MessageCardProps>;
 
-  const cardStyle = {
-    info: { backgroundColor: "var(--color-alert-info-fill)", borderColor: "var(--color-alert-info-border)" },
-    warning: { backgroundColor: "var(--color-alert-warning-fill)", borderColor: "var(--color-alert-warning-border)" },
-    error: { backgroundColor: "var(--color-alert-error-fill)", borderColor: "var(--color-alert-error-border)" },
-    success: { backgroundColor: "var(--color-alert-success-fill)", borderColor: "var(--color-alert-success-border)" },
-  }[type];
+  const theme = useContext(AppThemeContext);
 
-  const cardIcon = {
-    info: <InfoCircleFilled style={{ color: "var(--color-text-info)", fontSize: "var(--font-size-label)" }} />,
-    warning: (
-      <ExclamationCircleFilled style={{ color: "var(--color-text-warning)", fontSize: "var(--font-size-label)" }} />
-    ),
-    error: <CloseCircleFilled style={{ color: "var(--color-text-error)", fontSize: "var(--font-size-label)" }} />,
-    success: <CheckCircleFilled style={{ color: "var(--color-text-success)", fontSize: "var(--font-size-label)" }} />,
+  const cardStyle = {
+    backgroundColor: theme.color.alert.fill[type],
+    borderColor: theme.color.alert.border[type],
   };
+  const cardIconStyle = {
+    color: theme.color.text[type],
+    fontSize: theme.font.size.label,
+  };
+  const cardIcon = {
+    info: <InfoCircleFilled style={cardIconStyle} />,
+    warning: <ExclamationCircleFilled style={cardIconStyle} />,
+    error: <CloseCircleFilled style={cardIconStyle} />,
+    success: <CheckCircleFilled style={cardIconStyle} />,
+  }[type];
 
   return (
     <Card size="small" style={{ ...cardStyle }}>
       <FlexRow $gap={10}>
-        <div style={{ marginTop: "2px" }}>{cardIcon[type]}</div>
+        <div style={{ marginTop: "2px" }}>{cardIcon}</div>
         {props.children}
       </FlexRow>
     </Card>

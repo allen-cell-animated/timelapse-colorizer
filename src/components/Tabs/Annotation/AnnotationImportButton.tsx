@@ -97,7 +97,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
     }
   };
 
-  const hasAnnotationData = annotationState.data.getLabels().length > 0;
+  const hasExistingAnnotationData = annotationState.data.getLabels().length > 0;
 
   const handleFileChange = (info: { fileList: UploadFile[] }): void => {
     if (info.fileList.length === 0) {
@@ -153,7 +153,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
           )}
           {parseResult && (
             <FlexColumn $gap={6}>
-              {parseResult && hasAnnotationData && (
+              {parseResult && hasExistingAnnotationData && (
                 <p style={{ color: theme.color.text.warning }}>
                   <MessageCard type="info">
                     <FlexColumn>

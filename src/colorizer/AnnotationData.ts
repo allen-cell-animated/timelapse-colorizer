@@ -61,17 +61,18 @@ export type AnnotationParseResult = {
   /**
    * The number of annotated objects that had times/frame numbers that did not
    * match those of the dataset. If > 0, this likely indicates that annotations
-   * for a different dataset were imported.x
+   * for a different dataset were imported.
    */
   mismatchedTracks: number;
   /**
-   * Rows that could not be parsed due to invalid (NaN) IDs, tracks, or times.
-   * These rows will be skipped.
+   * Rows that could not be parsed due to invalid (non-numeric) IDs, tracks, or
+   * times. These rows will be skipped.
    */
   unparseableRows: number;
   /**
-   * IDs that were not found in the dataset and were skipped. If > 0, this
-   * likely indicates that annotations for a different dataset were imported.
+   * The number of rows with IDs that were not found in the dataset and were
+   * skipped. If > 0, this likely indicates that annotations for a different
+   * dataset were imported, or that the dataset was modified.
    */
   invalidIds: number;
   totalRows: number;
@@ -509,10 +510,13 @@ export class AnnotationData implements IAnnotationData {
         const labelData = annotationData.labelData[labelIdx];
         const isBoolean = labelData.options.type === LabelType.BOOLEAN;
         const name = labelNames[labelIdx];
-        const value = row[name]?.trim();
+        let value = row[name]?.trim();
         // Ignore invalid values (and omit boolean false values)
-        if (value === undefined || value === "" || (isBoolean && value === BOOLEAN_VALUE_FALSE)) {
+        if (value === undefined || value === "" || (isBoolean && value.toLowerCase() === BOOLEAN_VALUE_FALSE)) {
           continue;
+        }
+        if (isBoolean) {
+          value = BOOLEAN_VALUE_TRUE;
         }
         annotationData.setLabelValueOnId(labelIdx, id, value);
       }
