@@ -10,6 +10,7 @@ import {
 } from "../types";
 import { packDataTexture } from "./texture_utils";
 
+import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelType } from "../AnnotationData";
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
 
@@ -326,4 +327,48 @@ export function getGlobalIdFromSegId(
   }
 
   return rawGlobalId - 1; // -1 to convert to zero-based index
+}
+
+export function getLabelTypeFromParsedCsv(
+  headers: string[],
+  data: Record<string, string | undefined>[]
+): Map<string, LabelType> {
+  const labelTypeMap = new Map<string, LabelType>();
+  for (const header of headers) {
+    let hasIntegerValues = true;
+    let hasBooleanValues = true;
+    for (const row of data) {
+      const value = row[header]?.trim();
+      const valueAsInt = parseInt(value ?? "", 10);
+      if (value === undefined || value === "") {
+        continue;
+      } else if (value.toLowerCase() === BOOLEAN_VALUE_TRUE || value.toLowerCase() === BOOLEAN_VALUE_FALSE) {
+        hasIntegerValues = false;
+      } else if (valueAsInt.toString(10) === value && Number.isInteger(valueAsInt)) {
+        // ^ check that the value's string representation is the same as the
+        // parsed integer (there would be a mismatch for float values, e.g.
+        // "1.0" != 1)
+        hasBooleanValues = false;
+      } else {
+        // String/custom value (neither int nor boolean)
+        hasBooleanValues = false;
+        hasIntegerValues = false;
+        break;
+      }
+      if (!hasIntegerValues && !hasBooleanValues) {
+        // Triggers if there are both integer and boolean values in the same
+        // column, which will be handled as custom
+        break;
+      }
+    }
+
+    if (hasIntegerValues) {
+      labelTypeMap.set(header, LabelType.INTEGER);
+    } else if (hasBooleanValues) {
+      labelTypeMap.set(header, LabelType.BOOLEAN);
+    } else {
+      labelTypeMap.set(header, LabelType.CUSTOM);
+    }
+  }
+  return labelTypeMap;
 }

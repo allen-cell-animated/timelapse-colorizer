@@ -275,6 +275,7 @@ export type AnnotationState = {
   activeEditRange: number[] | null;
   clearActiveEditRange: () => void;
   nextDefaultLabelValue: string | null;
+  replaceAnnotationData: (annotationData: AnnotationData) => void;
   /**
    * For a given ID, returns the range of IDs that would be selected if the ID
    * is clicked with range selection mode turned on.
@@ -298,7 +299,11 @@ export type AnnotationState = {
 // attempting to synchronize updates between the annotation data and the UI,
 // which can be handled by zustand.
 export const useAnnotations = (): AnnotationState => {
-  const annotationData = useConstructor(() => new AnnotationData());
+  const annotationDataRef = useRef<AnnotationData | null>(null);
+  if (annotationDataRef.current === null) {
+    annotationDataRef.current = new AnnotationData();
+  }
+  const annotationData = annotationDataRef.current;
 
   const [currentLabelIdx, _setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
@@ -510,6 +515,21 @@ export const useAnnotations = (): AnnotationState => {
     setIsAnnotationEnabled(false);
   };
 
+  const replaceAnnotationData = (newAnnotationData: AnnotationData): void => {
+    annotationDataRef.current = newAnnotationData;
+    const numLabels = newAnnotationData.getLabels().length;
+    if (numLabels === 0 ) {
+      setCurrentLabelIdx(null);
+      setIsAnnotationEnabled(false);
+      return;
+    }
+    if (currentLabelIdx === null) {
+      setCurrentLabelIdx(0);   
+    } else if (currentLabelIdx >= numLabels) {
+      setCurrentLabelIdx(numLabels - 1);
+    }
+  };
+
   const data = useMemo(
     (): IAnnotationDataGetters => ({
       // Data getters
@@ -550,5 +570,6 @@ export const useAnnotations = (): AnnotationState => {
     setLabelValueOnIds: wrapFunctionInUpdate(annotationData.setLabelValueOnIds),
     removeLabelOnIds: wrapFunctionInUpdate(annotationData.removeLabelOnIds),
     clear: wrapFunctionInUpdate(clear),
+    replaceAnnotationData: wrapFunctionInUpdate(replaceAnnotationData),
   };
 };

@@ -5,9 +5,12 @@ import {
   buildFrameToGlobalIdLookup,
   getIntervals,
   getKeyFromName,
+  getLabelTypeFromParsedCsv,
   validateThresholds,
 } from "../src/colorizer/utils/data_utils";
 import { makeMockDataset } from "./test_utils";
+
+import { LabelType } from "../src/colorizer/AnnotationData";
 
 describe("data_utils", () => {
   describe("getKeyFromName", () => {
@@ -226,6 +229,54 @@ describe("data_utils", () => {
       //                                        seg IDs:  2     4  5
       expect(lookup1?.lut).to.deep.equal(new Uint32Array([2, 0, 6, 4]));
       expect(lookup1?.minSegId).to.equal(2);
+    });
+  });
+
+  describe("getLabelTypeFromParsedCsv", () => {
+    it("returns correct label types", () => {
+      const headers = ["boolean", "integer", "custom"];
+      const data = [
+        { boolean: "true", integer: "1", custom: "some text" },
+        { boolean: "false", integer: "2", custom: "some other text" },
+      ];
+      const result = getLabelTypeFromParsedCsv(headers, data);
+      expect(result).to.deep.equal(
+        new Map([
+          ["boolean", LabelType.BOOLEAN],
+          ["integer", LabelType.INTEGER],
+          ["custom", LabelType.CUSTOM],
+        ])
+      );
+    });
+
+    it("handles gaps in data", () => {
+      const headers = ["boolean", "integer", "custom"];
+      const data: Record<string, string>[] = [
+        { boolean: "true", integer: "1", custom: "some text" },
+        { boolean: "", integer: "", custom: "" },
+        {},
+        { boolean: "false", integer: "2", custom: "some other text" },
+      ];
+      const result = getLabelTypeFromParsedCsv(headers, data);
+      expect(result).to.deep.equal(
+        new Map([
+          ["boolean", LabelType.BOOLEAN],
+          ["integer", LabelType.INTEGER],
+          ["custom", LabelType.CUSTOM],
+        ])
+      );
+    });
+
+    it("treats decimal values as custom", () => {
+      const headers = ["custom", "custom2"];
+      const data = [{ custom: "1.0", custom2: "1.1" }];
+      const result = getLabelTypeFromParsedCsv(headers, data);
+      expect(result).to.deep.equal(
+        new Map([
+          ["custom", LabelType.CUSTOM],
+          ["custom2", LabelType.CUSTOM],
+        ])
+      );
     });
   });
 });
