@@ -455,7 +455,7 @@ export default class Dataset {
         unit: "",
         type: FeatureType.DISCRETE,
         categories: null,
-        description: "Track ID of the object. This feature is added by the viewer.",
+        description: "Track ID of the object. This feature was added by the viewer.",
       });
     }
 
@@ -471,7 +471,7 @@ export default class Dataset {
         unit: "",
         type: FeatureType.CONTINUOUS,
         categories: null,
-        description: "Time of the object. This feature is added by the viewer.",
+        description: "Frame number where the object appears. This feature was added by the viewer.",
       });
     }
   }

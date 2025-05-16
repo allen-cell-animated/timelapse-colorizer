@@ -15,7 +15,6 @@ import {
   DataArray,
   drawCrosshair,
   getBucketIndex,
-  getFeatureOrTimeNameWithUnits,
   getHoverTemplate,
   isHistogramEvent,
   makeEmptyTraceData,
@@ -737,11 +736,11 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       yHistogram
     );
 
-    scatterPlotXAxis.title = getFeatureOrTimeNameWithUnits(xAxisFeatureKey, dataset);
+    scatterPlotXAxis.title = dataset.getFeatureNameWithUnits(xAxisFeatureKey);
     // Due to limited space in the Y-axis, hide categorical feature names.
     scatterPlotYAxis.title = dataset.isFeatureCategorical(yAxisFeatureKey)
       ? ""
-      : getFeatureOrTimeNameWithUnits(yAxisFeatureKey, dataset);
+      : dataset.getFeatureNameWithUnits(yAxisFeatureKey);
 
     // Add extra margin for categorical feature labels on the Y axis.
     const leftMarginPx = Math.max(60, estimateTextWidthPxForCategories(yAxisFeatureKey));

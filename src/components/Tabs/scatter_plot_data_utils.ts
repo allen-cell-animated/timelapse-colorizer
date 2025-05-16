@@ -124,30 +124,14 @@ export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: He
   return (baseColor + opacityString) as HexColorString;
 }
 
-/** Retrieve feature name, if it exists. Accounts for the added time feature. */
-export const getFeatureOrTimeName = (featureKey: string | null, dataset: Dataset | null): string => {
-  if (featureKey === null || dataset === null) {
-    return "";
-  }
-  return dataset.getFeatureName(featureKey) || "";
-};
-
-/** Retrieve feature name with units, if it exists. Accounts for the added time feature. */
-export const getFeatureOrTimeNameWithUnits = (featureKey: string | null, dataset: Dataset | null): string => {
-  if (featureKey === null || dataset === null) {
-    return "";
-  }
-  return dataset.getFeatureNameWithUnits(featureKey) || "";
-};
-
 /**
  * Returns a Plotly hovertemplate string for a scatter plot trace.
  * The trace must include the `id` (object ID) and `customdata` (track ID) fields.
  */
 export function getHoverTemplate(dataset: Dataset, xAxisFeatureKey: string, yAxisFeatureKey: string): string {
   return (
-    `${getFeatureOrTimeName(xAxisFeatureKey, dataset)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
-    `<br>${getFeatureOrTimeName(yAxisFeatureKey, dataset)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
+    `${dataset.getFeatureName(xAxisFeatureKey)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
+    `<br>${dataset.getFeatureName(yAxisFeatureKey)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
     `<br>Track ID: %{customdata}<br>Object ID: %{id}<extra></extra>`
   );
 }
