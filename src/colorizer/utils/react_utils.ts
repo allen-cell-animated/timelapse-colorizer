@@ -5,7 +5,7 @@ import { useLocalStorage } from "usehooks-ts";
 import { AnnotationSelectionMode } from "../types";
 import { useShortcutKey } from "./hooks";
 
-import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters, LabelType } from "../AnnotationData";
+import { AnnotationData, AnnotationMergeMode, IAnnotationDataGetters, IAnnotationDataSetters, LabelType } from "../AnnotationData";
 import Dataset from "../Dataset";
 
 // TODO: Move this to a folder outside of `colorizer`.
@@ -275,7 +275,7 @@ export type AnnotationState = {
   activeEditRange: number[] | null;
   clearActiveEditRange: () => void;
   nextDefaultLabelValue: string | null;
-  replaceAnnotationData: (annotationData: AnnotationData) => void;
+  importData: (annotationData: AnnotationData, mode: AnnotationMergeMode) => void;
   /**
    * For a given ID, returns the range of IDs that would be selected if the ID
    * is clicked with range selection mode turned on.
@@ -515,14 +515,18 @@ export const useAnnotations = (): AnnotationState => {
     setIsAnnotationEnabled(false);
   };
 
-  const replaceAnnotationData = (newAnnotationData: AnnotationData): void => {
-    annotationDataRef.current = newAnnotationData;
-    if (newAnnotationData.getLabels().length > 0) {
+  const importData = (newData: AnnotationData, mode: AnnotationMergeMode): void => {
+    const mergedData = AnnotationData.merge(annotationData, newData, mode);
+    annotationDataRef.current = mergedData;
+    if (mergedData.getLabels().length > 0) {
       if (currentLabelIdx === null) {
         setCurrentLabelIdx(0);   
-      } else if (currentLabelIdx >= newAnnotationData.getLabels().length) {
-        setCurrentLabelIdx(newAnnotationData.getLabels().length - 1);
+      } else if (currentLabelIdx >= mergedData.getLabels().length) {
+        setCurrentLabelIdx(mergedData.getLabels().length - 1);
       }
+    } else {
+      setIsAnnotationEnabled(false);
+      setCurrentLabelIdx(null);
     }
   };
 
@@ -566,6 +570,6 @@ export const useAnnotations = (): AnnotationState => {
     setLabelValueOnIds: wrapFunctionInUpdate(annotationData.setLabelValueOnIds),
     removeLabelOnIds: wrapFunctionInUpdate(annotationData.removeLabelOnIds),
     clear: wrapFunctionInUpdate(clear),
-    replaceAnnotationData: wrapFunctionInUpdate(replaceAnnotationData),
+    importData: wrapFunctionInUpdate(importData),
   };
 };
