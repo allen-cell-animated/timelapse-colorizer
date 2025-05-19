@@ -76,7 +76,9 @@ export default function PlotWrapper(inputProps: PlotWrapperProps): ReactElement 
     }
     const width = plotDivRef.current.clientWidth;
     const height = plotDivRef.current.clientHeight;
-    plot?.setSize(width, height);
+    if (width && height) {
+      plot?.setSize(width, height);
+    }
   };
 
   useEffect(() => {

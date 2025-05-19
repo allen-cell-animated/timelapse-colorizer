@@ -408,6 +408,7 @@ export default function AppStyle(props: PropsWithChildren<AppStyleProps>): React
               cardBg: theme.color.layout.tabBackground,
               colorBorder: theme.color.layout.borders,
               colorBorderSecondary: theme.color.layout.borders,
+              fontSizeLG: theme.font.size.content,
             },
             Divider: {
               colorSplit: theme.color.layout.dividers,
