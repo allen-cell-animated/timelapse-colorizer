@@ -204,7 +204,6 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClick={() => {
               const csvData = props.annotationState.data.toCsv(store.dataset!);
               download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
-              console.log(csvData);
             }}
           >
             Export CSV
