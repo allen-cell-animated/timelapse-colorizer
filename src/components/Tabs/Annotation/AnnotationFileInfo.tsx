@@ -91,7 +91,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
               Annotations were parsed for {parsedObjectsText} with{" "}
               {formatQuantityString(labels.length, "label", "labels")}:
             </p>
-            <ExpandableList collapsedHeightPx={68} expandedMaxHeightPx={300}>
+            <ExpandableList collapsedHeightPx={66} expandedMaxHeightPx={300} buttonStyle={{ marginLeft: "15px" }}>
               <ol style={{ margin: "0", paddingLeft: "30px" }}>
                 {labels.map((label, index) => {
                   return (

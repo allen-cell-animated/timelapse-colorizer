@@ -11,12 +11,14 @@ type ExpandableListProps = {
   collapseActionText?: string;
   collapsedHeightPx?: number;
   expandedMaxHeightPx?: number;
+  buttonStyle?: React.CSSProperties;
 };
 const defaultProps: Partial<ExpandableListProps> = {
   expandActionText: "Show more",
   collapseActionText: "Show less",
   collapsedHeightPx: 100,
   expandedMaxHeightPx: 500,
+  buttonStyle: {},
 };
 
 const ExpandingContainer = styled.div<{
@@ -95,7 +97,11 @@ export default function ExpandableList(inputProps: PropsWithChildren<ExpandableL
       </div>
       {showExpandButton && (
         <div>
-          <TextButton type="link" onClick={() => setExpanded(!expanded)} style={{ paddingLeft: "0px" }}>
+          <TextButton
+            type="link"
+            onClick={() => setExpanded(!expanded)}
+            style={{ paddingLeft: "0px", ...props.buttonStyle }}
+          >
             {expanded ? props.collapseActionText : props.expandActionText}
           </TextButton>
         </div>
