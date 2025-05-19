@@ -31,7 +31,7 @@ import { useAnnotations, useConstructor, useDebounce, useRecentCollections } fro
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
-import { DEFAULT_PLAYBACK_FPS } from "./constants";
+import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
   loadInitialViewerStateFromParams,
