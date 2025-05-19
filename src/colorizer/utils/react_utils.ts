@@ -517,12 +517,16 @@ export const useAnnotations = (): AnnotationState => {
 
   const replaceAnnotationData = (newAnnotationData: AnnotationData): void => {
     annotationDataRef.current = newAnnotationData;
-    if (newAnnotationData.getLabels().length > 0) {
-      if (currentLabelIdx === null) {
-        setCurrentLabelIdx(0);   
-      } else if (currentLabelIdx >= newAnnotationData.getLabels().length) {
-        setCurrentLabelIdx(newAnnotationData.getLabels().length - 1);
-      }
+    const numLabels = newAnnotationData.getLabels().length;
+    if (numLabels === 0 ) {
+      setCurrentLabelIdx(null);
+      setIsAnnotationEnabled(false);
+      return;
+    }
+    if (currentLabelIdx === null) {
+      setCurrentLabelIdx(0);   
+    } else if (currentLabelIdx >= numLabels) {
+      setCurrentLabelIdx(numLabels - 1);
     }
   };
 
