@@ -3,6 +3,7 @@ import React, { ReactElement, useEffect, useRef } from "react";
 import { clamp, lerp } from "three/src/math/MathUtils";
 
 import { Dataset, Track } from "../../colorizer";
+import { useViewerStateStore } from "../../state";
 
 const CONFIG: Partial<Plotly.Config> = {
   responsive: true,
@@ -77,12 +78,7 @@ const EXAMPLE_XY_POINTS_3 = [
 
 const EXAMPLE_XY_POINTS = [EXAMPLE_XY_POINTS_1, EXAMPLE_XY_POINTS_2, EXAMPLE_XY_POINTS_3];
 
-type Plot3DTabProps = {
-  dataset: Dataset | null;
-  selectedTrack: Track | null;
-  currentFrame: number;
-  setFrame: (frame: number) => void;
-};
+// type Plot3DTabProps = {};
 
 class Plot3d {
   public parentRef: HTMLElement;
@@ -169,9 +165,14 @@ class Plot3d {
   }
 }
 
-export default function Plot3dTab(props: Plot3DTabProps): ReactElement {
+export default function Plot3dTab(): ReactElement {
   const plotContainerRef = useRef<HTMLDivElement>(null);
   const plot3dRef = useRef<Plot3d | null>(null);
+
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const track = useViewerStateStore((state) => state.track);
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
+  const setFrame = useViewerStateStore((state) => state.setFrame);
 
   useEffect(() => {
     plot3dRef.current = new Plot3d(plotContainerRef.current!);
@@ -179,18 +180,18 @@ export default function Plot3dTab(props: Plot3DTabProps): ReactElement {
 
   useEffect(() => {
     if (plot3dRef.current) {
-      plot3dRef.current.dataset = props.dataset;
-      plot3dRef.current.track = props.selectedTrack;
-      plot3dRef.current.plot(props.currentFrame);
+      plot3dRef.current.dataset = dataset;
+      plot3dRef.current.track = track;
+      plot3dRef.current.plot(currentFrame);
     }
-  }, [props.dataset, props.selectedTrack, props.currentFrame]);
+  }, [dataset, track, currentFrame]);
 
   useEffect(() => {
     const onClickPlot = (eventData: Plotly.PlotMouseEvent): void => {
       if (eventData.points.length === 0) {
         return;
       }
-      props.setFrame((eventData.points[0].customdata as number) ?? props.currentFrame);
+      setFrame((eventData.points[0].customdata as number) ?? currentFrame);
     };
 
     const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
@@ -199,7 +200,7 @@ export default function Plot3dTab(props: Plot3DTabProps): ReactElement {
       const plotDiv = plotContainerRef.current as PlotlyHTMLElement | null;
       plotDiv?.removeAllListeners("plotly_click");
     };
-  }, [props.setFrame]);
+  }, [setFrame]);
 
   return <div ref={plotContainerRef} style={{ width: "auto", height: "auto", zIndex: "0" }}></div>;
 }

@@ -117,7 +117,6 @@ function Viewer(): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const datasetKey = useViewerStateStore((state) => state.datasetKey);
   const featureKey = useViewerStateStore((state) => state.featureKey);
-  const track = useViewerStateStore((state) => state.track);
   const featureThresholds = useViewerStateStore((state) => state.thresholds);
   const keepColorRampRange = useViewerStateStore((state) => state.keepColorRampRange);
   const openTab = useViewerStateStore((state) => state.openTab);
@@ -665,12 +664,7 @@ function Viewer(): ReactElement {
       visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
-          <Plot3dTab
-            dataset={dataset}
-            selectedTrack={track}
-            currentFrame={currentFrame}
-            setFrame={setFrame}
-          ></Plot3dTab>
+          <Plot3dTab></Plot3dTab>
         </div>
       ),
     },
