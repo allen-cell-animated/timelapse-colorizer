@@ -33,6 +33,7 @@ import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_ut
 import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
+  loadInitialViewerStateFromParams,
   loadViewerStateFromParams,
   selectSerializationDependencies,
   serializeViewerState,
@@ -397,6 +398,8 @@ function Viewer(): ReactElement {
         return;
       }
 
+      loadInitialViewerStateFromParams(useViewerStateStore, searchParams);
+
       setIsDatasetLoading(true);
       setDatasetLoadProgress(null);
       isLoadingInitialDataset.current = true;
@@ -668,6 +671,8 @@ function Viewer(): ReactElement {
     },
   ];
   const tabItems = allTabItems.filter((item) => item.visible !== false);
+  const visibleTabKeys = useMemo(() => new Set(tabItems.map((item) => item.key)), [INTERNAL_BUILD]);
+  const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.TRACK_PLOT;
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {
@@ -925,7 +930,7 @@ function Viewer(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
-                activeKey={openTab}
+                activeKey={currentTab}
                 onChange={(key) => setOpenTab(key as TabType)}
                 items={tabItems}
               />
