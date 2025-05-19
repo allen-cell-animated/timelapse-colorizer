@@ -1,25 +1,28 @@
 import { HomeOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons";
-import { Tooltip, TooltipProps } from "antd";
+import { Tooltip } from "antd";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
-import { Color, ColorRepresentation, Vector2 } from "three";
+import { Vector2 } from "three";
 import { clamp } from "three/src/math/MathUtils";
 
 import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIconSVG } from "../assets";
-import { ColorRamp, Dataset, Track } from "../colorizer";
-import { LoadTroubleshooting, TabType, ViewerConfig } from "../colorizer/types";
+import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
 import { INTERNAL_BUILD } from "../constants";
-import { FlexColumn, FlexColumnAlignCenter, VisuallyHidden } from "../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
-import CanvasUIOverlay from "../colorizer/CanvasWithOverlay";
-import Collection from "../colorizer/Collection";
+import { LabelData, LabelType } from "../colorizer/AnnotationData";
+import CanvasOverlay from "../colorizer/CanvasOverlay";
+import { renderCanvasStateParamsSelector } from "../colorizer/IRenderCanvas";
+import { useViewerStateStore } from "../state/ViewerState";
 import { AppThemeContext } from "./AppStyle";
 import { AlertBannerProps } from "./Banner";
 import { LinkStyleButton } from "./Buttons/LinkStyleButton";
 import IconButton from "./IconButton";
 import LoadingSpinner from "./LoadingSpinner";
+import AnnotationInputPopover from "./Tabs/Annotation/AnnotationInputPopover";
+import { TooltipWithSubtitle } from "./Tooltips/TooltipWithSubtitle";
 
 const ASPECT_RATIO = 14.6 / 10;
 /* Minimum distance in either X or Y that mouse should move
@@ -32,35 +35,6 @@ const RIGHT_CLICK_BUTTON = 2;
 
 const MAX_INVERSE_ZOOM = 2; // 0.5x zoom
 const MIN_INVERSE_ZOOM = 0.1; // 10x zoom
-
-function TooltipWithSubtext(
-  props: TooltipProps & { title: ReactNode; subtitle?: ReactNode; subtitleList?: ReactNode[] }
-): ReactElement {
-  const divRef = useRef<HTMLDivElement>(null);
-  return (
-    <div ref={divRef}>
-      <Tooltip
-        {...props}
-        trigger={["hover", "focus"]}
-        title={
-          <>
-            <p style={{ margin: 0 }}>{props.title}</p>
-            {props.subtitle && <p style={{ margin: 0, fontSize: "12px" }}>{props.subtitle}</p>}
-            {props.subtitleList &&
-              props.subtitleList.map((text, i) => (
-                <p key={i} style={{ margin: 0, fontSize: "12px" }}>
-                  {text}
-                </p>
-              ))}
-          </>
-        }
-        getPopupContainer={() => divRef.current ?? document.body}
-      >
-        {props.children}
-      </Tooltip>
-    </div>
-  );
-}
 
 const CanvasContainer = styled(FlexColumnAlignCenter)<{ $annotationModeEnabled: boolean }>`
   position: relative;
@@ -99,58 +73,41 @@ const MissingFileIconContainer = styled(FlexColumnAlignCenter)`
   pointer-events: none;
 `;
 
-const AnnotationModeContainer = styled(FlexColumnAlignCenter)`
+const AnnotationModeContainer = styled(FlexColumn)`
   position: absolute;
   top: 10px;
   left: 10px;
-  font-weight: bold;
   background-color: var(--color-viewport-overlay-background);
   border: 1px solid var(--color-viewport-overlay-outline);
-  z-index: 200;
-  padding: 8px 12px;
+  z-index: 100;
+  padding: 8px 8px;
   border-radius: 4px;
   pointer-events: none;
+  gap: 6px;
+`;
+
+const HotkeyText = styled.div`
+  padding: 1px 4px;
+  border-radius: 4px;
+  background-color: var(--color-viewport-overlay-background);
+  border: 1px solid var(--color-viewport-overlay-outline);
 `;
 
 type CanvasWrapperProps = {
-  canv: CanvasUIOverlay;
-  /** Dataset to look up track and ID information in.
-   * Changing this does NOT update the canvas dataset; do so
-   * directly by calling `canv.setDataset()`.
-   */
-  dataset: Dataset | null;
-  datasetKey: string | null;
-
-  featureKey: string | null;
-  /** Pan and zoom will be reset on collection change. */
-  collection: Collection | null;
-  config: ViewerConfig;
-  updateConfig: (settings: Partial<ViewerConfig>) => void;
-  vectorData: Float32Array | null;
+  canv: CanvasOverlay;
 
   loading: boolean;
   loadingProgress: number | null;
   isRecording: boolean;
 
-  selectedBackdropKey: string | null;
-
-  colorRamp: ColorRamp;
-  colorRampMin: number;
-  colorRampMax: number;
-
   annotationState: AnnotationState;
 
-  selectedTrack: Track | null;
-  categoricalColors: Color[];
-
-  inRangeLUT?: Uint8Array;
+  onClickId?: (info: PixelIdInfo | null) => void;
 
   /** Called when the mouse hovers over the canvas; reports the currently hovered id. */
-  onMouseHover?: (id: number) => void;
+  onMouseHover?: (info: PixelIdInfo | null) => void;
   /** Called when the mouse exits the canvas. */
   onMouseLeave?: () => void;
-  /** Called when the canvas is clicked; reports the track info of the clicked object. */
-  onTrackClicked?: (track: Track | null) => void;
 
   showAlert?: (props: AlertBannerProps) => void;
 
@@ -161,8 +118,7 @@ type CanvasWrapperProps = {
 const defaultProps: Partial<CanvasWrapperProps> = {
   onMouseHover() {},
   onMouseLeave() {},
-  onTrackClicked: () => {},
-  inRangeLUT: new Uint8Array(0),
+  onClickId() {},
   maxWidthPx: 1400,
   maxHeightPx: 1000,
 };
@@ -176,10 +132,43 @@ const defaultProps: Partial<CanvasWrapperProps> = {
 export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CanvasWrapperProps>;
 
+  // Access state properties
+  const pendingFrame = useViewerStateStore((state) => state.pendingFrame);
+  const currentFrame = useViewerStateStore((state) => state.currentFrame);
+  const backdropKey = useViewerStateStore((state) => state.backdropKey);
+  const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
+  const clearTrack = useViewerStateStore((state) => state.clearTrack);
+  const collection = useViewerStateStore((state) => state.collection);
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
+  const setOpenTab = useViewerStateStore((state) => state.setOpenTab);
+  const setTrack = useViewerStateStore((state) => state.setTrack);
+  const showHeaderDuringExport = useViewerStateStore((state) => state.showHeaderDuringExport);
+  const showLegendDuringExport = useViewerStateStore((state) => state.showLegendDuringExport);
+  const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
+  const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
+  const frameLoadResult = useViewerStateStore((state) => state.frameLoadResult);
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canv = props.canv;
   const canvasPlaceholderRef = useRef<HTMLDivElement>(null);
+
+  const [lastClickPosition, setLastClickPosition] = useState<[number, number]>([0, 0]);
+
+  const isFrameLoading = pendingFrame !== currentFrame;
+  const loadProgress = props.loading ? props.loadingProgress : null;
+
+  // Add subscriber so canvas parameters are updated when the state changes.
+  useEffect(() => {
+    return useViewerStateStore.subscribe(renderCanvasStateParamsSelector, (params) => {
+      canv.setParams(params);
+    });
+  }, []);
+
+  // TODO: Move management of the zoom/pan into the canvas class itself (or a
+  // helper). CanvasWrapper should have a way to zoom in/out and reset the view,
+  // but otherwise doesn't need to track the zoom/pan state.
 
   /**
    * Canvas zoom level, stored as its inverse. This makes it so linear changes in zoom level
@@ -208,27 +197,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   const lastMousePositionPx = useRef(new Vector2(0, 0));
   const theme = useContext(AppThemeContext);
 
-  const [showMissingFileIcon, setShowMissingFileIcon] = useState(false);
+  const isMissingFile = frameLoadResult !== null && (frameLoadResult.frameError || frameLoadResult.backdropError);
 
   // CANVAS PROPERTIES /////////////////////////////////////////////////
 
-  const onFrameChangedCallback = useCallback(
-    (isMissing: boolean) => {
-      setShowMissingFileIcon(isMissing);
-      if (props.showAlert && isMissing) {
-        props.showAlert({
-          type: "warning",
-          message: "Warning: One or more frames failed to load.",
-          description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
-          showDoNotShowAgainCheckbox: true,
-          closable: true,
-        });
-      }
-    },
-    [props.showAlert, setShowMissingFileIcon, canv]
-  );
-
-  canv.setOnFrameChangeCallback(onFrameChangedCallback);
+  // Show warning if files are missing
+  useEffect(() => {
+    if (isMissingFile) {
+      props.showAlert({
+        type: "warning",
+        message: "Warning: One or more frames or backdrops failed to load.",
+        description: LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
+        showDoNotShowAgainCheckbox: true,
+        closable: true,
+      });
+    }
+  }, [frameLoadResult]);
 
   // Mount the canvas to the placeholder's location in the document.
   useEffect(() => {
@@ -257,104 +241,40 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     canv.updateLegendStyle(defaultTheme);
     canv.updateFooterStyle(sidebarTheme);
     canv.updateHeaderStyle(sidebarTheme);
-    canv.setCanvasBackgroundColor(new Color(theme.color.viewport.background as ColorRepresentation));
   }, [theme]);
-
-  // Update canvas color ramp
-  useMemo(() => {
-    canv.setColorRamp(props.colorRamp);
-    canv.setColorMapRangeMin(props.colorRampMin);
-    canv.setColorMapRangeMax(props.colorRampMax);
-  }, [props.colorRamp, props.colorRampMin, props.colorRampMax]);
-
-  // Update backdrops
-  useMemo(() => {
-    if (props.selectedBackdropKey !== null && props.config.backdropVisible) {
-      canv.setBackdropKey(props.selectedBackdropKey);
-      canv.setBackdropBrightness(props.config.backdropBrightness);
-      canv.setBackdropSaturation(props.config.backdropSaturation);
-      canv.setObjectOpacity(props.config.objectOpacity);
-    } else {
-      canv.setBackdropKey(null);
-      canv.setObjectOpacity(100);
-    }
-  }, [
-    props.selectedBackdropKey,
-    props.config.backdropVisible,
-    props.config.backdropBrightness,
-    props.config.backdropSaturation,
-    props.config.objectOpacity,
-  ]);
-
-  // Update categorical colors
-  useMemo(() => {
-    canv.setCategoricalColors(props.categoricalColors);
-  }, [props.categoricalColors, props.dataset, props.featureKey]);
-
-  // Update drawing modes for outliers + out of range values
-  useMemo(() => {
-    const settings = props.config.outOfRangeDrawSettings;
-    canv.setOutOfRangeDrawMode(settings.mode, settings.color);
-  }, [props.config.outOfRangeDrawSettings]);
-
-  useMemo(() => {
-    const settings = props.config.outlierDrawSettings;
-    canv.setOutlierDrawMode(settings.mode, settings.color);
-  }, [props.config.outlierDrawSettings]);
-
-  useMemo(() => {
-    canv.setInRangeLUT(props.inRangeLUT);
-  }, [props.inRangeLUT]);
-
-  // Updated track-related settings
-  useMemo(() => {
-    canv.setSelectedTrack(props.selectedTrack);
-    canv.setShowTrackPath(props.config.showTrackPath);
-  }, [props.selectedTrack, props.config.showTrackPath]);
 
   // Update overlay settings
   useMemo(() => {
-    canv.isScaleBarVisible = props.config.showScaleBar;
-  }, [props.config.showScaleBar]);
+    canv.isScaleBarVisible = showScaleBar;
+  }, [showScaleBar]);
 
   useMemo(() => {
-    canv.isTimestampVisible = props.config.showTimestamp;
-  }, [props.config.showTimestamp]);
-
-  useMemo(() => {
-    canv.setCollection(props.collection);
-  }, [props.collection]);
-
-  useMemo(() => {
-    canv.setDatasetKey(props.datasetKey);
-  }, [props.datasetKey]);
+    canv.isTimestampVisible = showTimestamp;
+  }, [showTimestamp]);
 
   useMemo(() => {
     canv.setIsExporting(props.isRecording);
-    canv.isHeaderVisibleOnExport = props.config.showHeaderDuringExport;
-    canv.isFooterVisibleOnExport = props.config.showLegendDuringExport;
-  }, [props.config.showLegendDuringExport, props.isRecording]);
-
-  useMemo(() => {
-    canv.setVectorFieldConfig(props.config.vectorConfig);
-  }, [props.config.vectorConfig]);
-
-  useMemo(() => {
-    canv.setVectorData(props.vectorData);
-  }, [props.vectorData]);
-
-  useMemo(() => {
-    canv.setOutlineColor(props.config.outlineColor);
-  }, [props.config.outlineColor]);
+    canv.isHeaderVisibleOnExport = showHeaderDuringExport;
+    canv.isFooterVisibleOnExport = showLegendDuringExport;
+  }, [showLegendDuringExport, props.isRecording]);
 
   useMemo(() => {
     const annotationLabels = props.annotationState.data.getLabels();
-    const timeToAnnotationLabelIds = props.dataset
-      ? props.annotationState.data.getTimeToLabelIdMap(props.dataset)
-      : new Map();
-    canv.setAnnotationData(annotationLabels, timeToAnnotationLabelIds, props.annotationState.currentLabelIdx);
+    const timeToAnnotationLabelIds = dataset ? props.annotationState.data.getTimeToLabelIdMap(dataset) : new Map();
+    canv.setAnnotationData(
+      annotationLabels,
+      timeToAnnotationLabelIds,
+      props.annotationState.currentLabelIdx,
+      props.annotationState.lastClickedId
+    );
     canv.isAnnotationVisible = props.annotationState.visible;
-  }, [props.dataset, props.annotationState.data, props.annotationState.currentLabelIdx, props.annotationState.visible]);
+  }, [
+    dataset,
+    props.annotationState.data,
+    props.annotationState.lastClickedId,
+    props.annotationState.currentLabelIdx,
+    props.annotationState.visible,
+  ]);
 
   // CANVAS RESIZING /////////////////////////////////////////////////
 
@@ -375,13 +295,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     const updateCanvasDimensions = (): void => {
       const canvasSizePx = getCanvasSizePx();
-      canv.setSize(canvasSizePx.x, canvasSizePx.y);
+      canv.setResolution(canvasSizePx.x, canvasSizePx.y);
     };
     updateCanvasDimensions(); // Initial size setting
 
     const handleResize = (): void => {
       updateCanvasDimensions();
-      canv.render();
     };
 
     window.addEventListener("resize", handleResize);
@@ -396,24 +315,70 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     canvasZoomInverse.current = 1.0;
     canvasPanOffset.current = new Vector2(0, 0);
-    canv.setZoom(1.0);
-    canv.setPan(0, 0);
-  }, [props.collection]);
+    // canv.setZoom(1.0);
+    // canv.setPan(0, 0);
+  }, [collection]);
 
-  /** Report clicked tracks via the passed callback. */
-  const handleTrackSelection = useCallback(
-    async (event: MouseEvent): Promise<void> => {
-      const id = canv.getIdAtPixel(event.offsetX, event.offsetY);
-      // Reset track input
-      if (id < 0 || props.dataset === null) {
-        props.onTrackClicked(null);
+  /**
+   * Updates the canvas' cursor type based on panning and annotation editing
+   * modes. Should be called after click interactions and mouse movement.
+   */
+  const updateCanvasCursor = useCallback(
+    (offsetX: number, offsetY: number): void => {
+      if (isMouseDragging.current) {
+        canv.domElement.style.cursor = "move";
+      } else if (props.annotationState.isAnnotationModeEnabled) {
+        // Check if mouse is over an object, and if it's labeled with an editable label.
+        // If so, show the edit cursor.
+        const labelIdx = props.annotationState.currentLabelIdx;
+        if (labelIdx !== null) {
+          const labelData = props.annotationState.data.getLabels()[labelIdx];
+          if (labelData.options.type !== LabelType.BOOLEAN) {
+            const id = canv.getIdAtPixel(offsetX, offsetY);
+            if (id !== null && id.globalId !== undefined && labelData.ids.has(id.globalId)) {
+              canv.domElement.style.cursor = "text";
+              return;
+            }
+          }
+        }
+
+        if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
+          canv.domElement.style.cursor = "cell";
+        } else {
+          canv.domElement.style.cursor = "crosshair";
+        }
       } else {
-        const trackId = props.dataset.getTrackId(id);
-        const newTrack = props.dataset.buildTrack(trackId);
-        props.onTrackClicked(newTrack);
+        canv.domElement.style.cursor = "auto";
       }
     },
-    [canv, props.dataset, props.onTrackClicked]
+    [
+      isMouseDragging,
+      props.annotationState.isAnnotationModeEnabled,
+      props.annotationState.data,
+      props.annotationState.selectionMode,
+      props.annotationState.currentLabelIdx,
+    ]
+  );
+
+  /** Report clicked tracks via the passed callback. */
+  const handleClick = useCallback(
+    async (event: MouseEvent): Promise<void> => {
+      setLastClickPosition([event.offsetX, event.offsetY]);
+      const info = canv.getIdAtPixel(event.offsetX, event.offsetY);
+      // Reset track input
+      if (dataset === null || info === null || info.globalId === undefined) {
+        clearTrack();
+      } else {
+        const trackId = dataset.getTrackId(info.globalId);
+        const newTrack = dataset.getTrack(trackId);
+        if (newTrack) {
+          setTrack(newTrack);
+        }
+      }
+      props.onClickId(info);
+      updateCanvasCursor(event.offsetX, event.offsetY);
+    },
+    [canv, dataset, props.onClickId, setTrack, clearTrack, updateCanvasCursor]
   );
 
   /**
@@ -421,10 +386,10 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
    */
   const getFrameSizeInScreenPx = useCallback((): Vector2 => {
     const canvasSizePx = getCanvasSizePx();
-    const frameResolution = props.dataset ? props.dataset.frameResolution : canvasSizePx;
+    const frameResolution = dataset ? dataset.frameResolution : canvasSizePx;
     const canvasZoom = 1 / canvasZoomInverse.current;
     return mathUtils.getFrameSizeInScreenPx(canvasSizePx, frameResolution, canvasZoom);
-  }, [props.dataset?.frameResolution, getCanvasSizePx]);
+  }, [dataset?.frameResolution, getCanvasSizePx]);
 
   /** Change zoom by some delta factor. */
   const handleZoom = useCallback(
@@ -482,21 +447,21 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canvasPanOffset.current.y = clamp(canvasPanOffset.current.y, -0.5, 0.5);
       canv.setPan(canvasPanOffset.current.x, canvasPanOffset.current.y);
     },
-    [canv, getCanvasSizePx, props.dataset]
+    [canv, getCanvasSizePx, dataset]
   );
 
   // Mouse event handlers
 
   const onMouseClick = useCallback(
     (event: MouseEvent): void => {
-      // Note that click events won't fire until the mouse is released. We need to check
-      // if the mouse was dragged before treating the click as a track selection; otherwise
-      // the track selection gets changed unexpectedly.
+      // Note that click events won't fire until the mouse is released. We need
+      // to check if the mouse was dragged before treating the click as a track
+      // selection; otherwise the track selection gets changed unexpectedly.
       if (!isMouseDragging.current) {
-        handleTrackSelection(event);
+        handleClick(event);
       }
     },
-    [handleTrackSelection]
+    [handleClick]
   );
 
   const onContextMenu = useCallback((event: MouseEvent): void => {
@@ -506,7 +471,14 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   }, []);
 
   const onMouseDown = useCallback((event: MouseEvent): void => {
-    event.preventDefault(); // Prevent text selection
+    // Prevent the default behavior for mouse clicks that would cause text
+    // selection, but keep the behavior where focus is removed from other
+    // elements.
+    event.preventDefault();
+    if (document.activeElement instanceof HTMLElement && !containerRef.current?.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+
     isMouseDragging.current = false;
 
     if (event.button === MIDDLE_CLICK_BUTTON) {
@@ -533,15 +505,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         }
       }
 
-      if (isMouseDragging.current) {
-        canv.domElement.style.cursor = "move";
-      } else if (props.annotationState.isAnnotationModeEnabled) {
-        canv.domElement.style.cursor = "crosshair";
-      } else {
-        canv.domElement.style.cursor = "auto";
-      }
+      updateCanvasCursor(event.offsetX, event.offsetY);
     },
-    [handlePan, props.annotationState.isAnnotationModeEnabled]
+    [handlePan, updateCanvasCursor]
   );
 
   const onMouseUp = useCallback((_event: MouseEvent): void => {
@@ -598,13 +564,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   /** Report hovered id via the passed callback. */
   const reportHoveredIdAtPixel = useCallback(
     (x: number, y: number): void => {
-      if (!props.dataset) {
+      if (!dataset) {
         return;
       }
       const id = canv.getIdAtPixel(x, y);
       props.onMouseHover(id);
     },
-    [props.dataset, canv]
+    [dataset, canv]
   );
 
   /** Track whether the canvas is hovered, so we can determine whether to send updates about the
@@ -620,7 +586,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     if (isMouseOverCanvas.current) {
       reportHoveredIdAtPixel(lastMousePositionPx.current.x, lastMousePositionPx.current.y);
     }
-  }, [canv.getCurrentFrame()]);
+  }, [currentFrame]);
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent): void => {
@@ -634,7 +600,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       canv.domElement.removeEventListener("mousemove", onMouseMove);
       canv.domElement.removeEventListener("mouseleave", props.onMouseLeave);
     };
-  }, [props.dataset, canv]);
+  }, [dataset, canv]);
 
   const makeLinkStyleButton = (key: string, onClick: () => void, content: ReactNode): ReactNode => {
     return (
@@ -652,22 +618,18 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
 
   // RENDERING /////////////////////////////////////////////////
 
-  canv.render();
-
   const onViewerSettingsLinkClicked = (): void => {
-    props.updateConfig({ openTab: TabType.SETTINGS });
+    setOpenTab(TabType.SETTINGS);
   };
 
   const onAnnotationLinkClicked = (): void => {
-    props.updateConfig({ openTab: TabType.ANNOTATION });
+    setOpenTab(TabType.ANNOTATION);
   };
 
   const backdropTooltipContents: ReactNode[] = [];
   backdropTooltipContents.push(
     <span key="backdrop-name">
-      {props.selectedBackdropKey === null
-        ? "(No backdrops available)"
-        : props.dataset?.getBackdropData().get(props.selectedBackdropKey)?.name}
+      {backdropKey === null ? "(No backdrops available)" : dataset?.getBackdropData().get(backdropKey)?.name}
     </span>
   );
   // Link to viewer settings
@@ -697,16 +659,35 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       </span>
     )
   );
+  const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
+  const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
 
   return (
     <CanvasContainer ref={containerRef} $annotationModeEnabled={props.annotationState.isAnnotationModeEnabled}>
-      {props.annotationState.isAnnotationModeEnabled && (
-        <AnnotationModeContainer>Annotation editing in progress...</AnnotationModeContainer>
-      )}
-      <LoadingSpinner loading={props.loading} progress={props.loadingProgress}>
+      {
+        // TODO: Fade out annotation mode modal if mouse approaches top left corner?
+        // TODO: Make the hotkey text change styling if the hotkey is pressed?
+        props.annotationState.isAnnotationModeEnabled && (
+          <AnnotationModeContainer>
+            <span style={{ marginLeft: "2px" }}>
+              <b>Annotation editing in progress...</b>
+            </span>
+            <FlexRowAlignCenter $gap={6}>
+              <HotkeyText>Shift</HotkeyText> hold to select range
+            </FlexRowAlignCenter>
+            {shouldShowReuseValueHotkey && (
+              <FlexRowAlignCenter $gap={6}>
+                <HotkeyText>Ctrl</HotkeyText>
+                hold to reuse last value
+              </FlexRowAlignCenter>
+            )}
+          </AnnotationModeContainer>
+        )
+      }
+      <LoadingSpinner loading={props.loading || isFrameLoading} progress={loadProgress}>
         <div ref={canvasPlaceholderRef}></div>
       </LoadingSpinner>
-      <MissingFileIconContainer style={{ visibility: showMissingFileIcon ? "visible" : "hidden" }}>
+      <MissingFileIconContainer style={{ visibility: isMissingFile ? "visible" : "hidden" }}>
         <NoImageSVG aria-labelledby="no-image" style={{ width: "50px" }} />
         <p id="no-image">
           <b>Missing image data</b>
@@ -727,7 +708,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <VisuallyHidden>Reset view</VisuallyHidden>
           </IconButton>
         </Tooltip>
-        <TooltipWithSubtext title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        <TooltipWithSubtitle title={"Zoom in"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -737,8 +718,8 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <ZoomInOutlined />
             <VisuallyHidden>Zoom in</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
-        <TooltipWithSubtext title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
+        </TooltipWithSubtitle>
+        <TooltipWithSubtitle title={"Zoom out"} subtitle="Ctrl + Scroll" placement="right" trigger={["hover", "focus"]}>
           <IconButton
             type="link"
             onClick={() => {
@@ -751,30 +732,28 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <ZoomOutOutlined />
             <VisuallyHidden>Zoom out</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
+        </TooltipWithSubtitle>
 
         {/* Backdrop toggle */}
-        <TooltipWithSubtext
-          title={props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}
+        <TooltipWithSubtitle
+          title={backdropVisible ? "Hide backdrop" : "Show backdrop"}
           placement="right"
           subtitleList={backdropTooltipContents}
           trigger={["hover", "focus"]}
         >
           <IconButton
-            type={props.config.backdropVisible ? "primary" : "link"}
-            onClick={() => {
-              props.updateConfig({ backdropVisible: !props.config.backdropVisible });
-            }}
-            disabled={props.selectedBackdropKey === null}
+            type={backdropVisible ? "primary" : "link"}
+            onClick={() => setBackdropVisible(!backdropVisible)}
+            disabled={backdropKey === null}
           >
-            {props.config.backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
-            <VisuallyHidden>{props.config.backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
+            {backdropVisible ? <ImagesSlashIconSVG /> : <ImagesIconSVG />}
+            <VisuallyHidden>{backdropVisible ? "Hide backdrop" : "Show backdrop"}</VisuallyHidden>
           </IconButton>
-        </TooltipWithSubtext>
+        </TooltipWithSubtitle>
 
         {/* Annotation mode toggle */}
         {INTERNAL_BUILD && (
-          <TooltipWithSubtext
+          <TooltipWithSubtitle
             title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
             subtitleList={annotationTooltipContents}
             placement="right"
@@ -789,9 +768,13 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
               {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
               <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
             </IconButton>
-          </TooltipWithSubtext>
+          </TooltipWithSubtitle>
         )}
       </CanvasControlsContainer>
+      <AnnotationInputPopover
+        annotationState={props.annotationState}
+        anchorPositionPx={lastClickPosition}
+      ></AnnotationInputPopover>
     </CanvasContainer>
   );
 }

@@ -1,6 +1,6 @@
 import { Color, Vector2 } from "three";
 
-import { numberToStringDecimal } from "../../utils/math_utils";
+import { formatNumber } from "../../utils/math_utils";
 import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 import { configureCanvasText, renderCanvasText } from "../utils";
 
@@ -184,8 +184,8 @@ function getNumericKeyRenderer(ctx: CanvasRenderingContext2D, params: LegendPara
 
       // Render min/max labels under color ramp
       const rangeLabelFontStyle: FontStyle = { ...style, fontSizePx: style.labelFontSizePx };
-      const minLabel = numberToStringDecimal(params.colorMapRangeMin, 3, true);
-      const maxLabel = numberToStringDecimal(params.colorMapRangeMax, 3, true);
+      const minLabel = formatNumber(params.colorMapRangeMin, 3);
+      const maxLabel = formatNumber(params.colorMapRangeMax, 3);
       configureCanvasText(ctx, rangeLabelFontStyle, "left", "top");
       renderCanvasText(ctx, origin.x, origin.y, minLabel, { maxWidth: maxWidthPx / 2 });
       configureCanvasText(ctx, rangeLabelFontStyle, "right", "top");

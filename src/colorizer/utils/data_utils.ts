@@ -1,9 +1,30 @@
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { ColorRampData } from "../colors/color_ramps";
-import { FeatureThreshold, isThresholdCategorical, isThresholdNumeric, ThresholdType } from "../types";
+import {
+  FeatureDataType,
+  FeatureThreshold,
+  GlobalIdLookupInfo,
+  isThresholdCategorical,
+  isThresholdNumeric,
+  ThresholdType,
+} from "../types";
+import { packDataTexture } from "./texture_utils";
 
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
+
+/** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
+export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  for (let i = 0; i < arr2.length; i++) {
+    if (arr1[i] !== arr2[i]) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /**
  * Generates a find function for a FeatureThreshold, matching on feature name and unit.
@@ -168,4 +189,141 @@ export function formatAsBulletList(items: string[], maxDisplayCount: number = Nu
     itemDisplayText.push(` - ...and ${items.length - 5} more.`);
   }
   return itemDisplayText;
+}
+
+/**
+ * For a list of integers, returns a list of inclusive `[min, max]` value
+ * intervals where the integers are contiguous.
+ *
+ * @example
+ * ```
+ * const result = getIntervals([5, 6, 7, 9, 10, 14])
+ * // result = [[5, 7], [9, 10], [14, 14]]
+ * ```
+ */
+export function getIntervals(values: number[]): [number, number][] {
+  let min = values[0];
+  let max = values[0];
+  for (const value of values) {
+    min = Math.min(min, value);
+    max = Math.max(max, value);
+  }
+
+  const intervals: [number, number][] = [];
+  const valuesAsSet = new Set(values);
+  let lastIntervalStart = -1;
+
+  for (let i = min; i <= max; i++) {
+    if (valuesAsSet.has(i)) {
+      if (lastIntervalStart === -1) {
+        lastIntervalStart = i;
+      }
+    } else {
+      if (lastIntervalStart !== -1) {
+        intervals.push([lastIntervalStart, i - 1]);
+        lastIntervalStart = -1;
+      }
+    }
+  }
+  if (lastIntervalStart !== -1) {
+    intervals.push([lastIntervalStart, max]);
+  }
+  return intervals;
+}
+
+export function hasPropertyChanged<T extends Record<string, unknown>>(
+  curr: T | null,
+  prev: T | null,
+  properties: (keyof T)[]
+): boolean {
+  if (!curr && !prev) {
+    return false;
+  } else if (!curr || !prev) {
+    return true;
+  }
+  for (const property of properties) {
+    if (curr[property] !== prev[property]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Creates a lookup table that can be used to find the global ID from a
+ * segmentation ID (raw pixel value) for each frame in the dataset.
+ */
+export function buildFrameToGlobalIdLookup(
+  times: Uint32Array,
+  segIds: Uint32Array,
+  numFrames: number
+): Map<number, GlobalIdLookupInfo> {
+  const frameToLut = new Map<number, Uint32Array>();
+
+  // Get min and max segmentation IDs for each frame.
+  const frameToMinSegId: number[] = [];
+  const frameToMaxSegId: number[] = [];
+  for (let i = 0; i < times.length; i++) {
+    const time = times[i];
+    const segId = segIds[i];
+    frameToMinSegId[time] = Math.min(frameToMinSegId[time] ?? segId, segId);
+    frameToMaxSegId[time] = Math.max(frameToMaxSegId[time] ?? segId, segId);
+  }
+
+  // Initialize the arrays to hold the global IDs for each frame.
+  for (let i = 0; i < numFrames; i++) {
+    const minSegId = frameToMinSegId[i] ?? 0;
+    const maxSegId = frameToMaxSegId[i] ?? 0;
+    const lut = new Uint32Array(maxSegId - minSegId + 1);
+    frameToLut.set(i, lut);
+  }
+
+  // For each object with segmentation ID `segId` at time `t`, fill the arrays
+  // so that `frameToLut.get(t)[segId] - 1` is the global ID of the object, used
+  // to index into the global data arrays. However, we do one extra trick for
+  // memory optimization, where the arrays are truncated to below the smallest
+  // segmentation ID for that frame. For an array [0, 0, 0, 1, 0, 2, 3], the
+  // array is saved as [1, 0, 2, 3].
+  for (let i = 0; i < times.length; i++) {
+    const time = times[i];
+    const minSegId = frameToMinSegId[time] ?? 0;
+    const segId = segIds[i] - minSegId;
+    const lut = frameToLut.get(time);
+    if (lut) {
+      lut[segId] = i + 1; // +1 to reserve 0 for missing data
+    }
+  }
+
+  return new Map<number, GlobalIdLookupInfo>(
+    Array.from(frameToLut.entries()).map(([frame, lut]) => {
+      return [
+        frame,
+        {
+          lut,
+          texture: packDataTexture(lut, FeatureDataType.U32),
+          minSegId: frameToMinSegId[frame] ?? 0,
+        },
+      ];
+    })
+  );
+}
+
+export function getGlobalIdFromSegId(
+  frameToGlobalIdLUT: Map<number, GlobalIdLookupInfo> | null,
+  frame: number,
+  segId: number
+): number | undefined {
+  if (!frameToGlobalIdLUT) {
+    return undefined;
+  }
+  const lut = frameToGlobalIdLUT.get(frame);
+  if (!lut) {
+    return undefined;
+  }
+  const rawGlobalId = lut.lut[segId - lut.minSegId];
+  if (rawGlobalId === undefined || rawGlobalId === 0) {
+    return undefined;
+  }
+
+  return rawGlobalId - 1; // -1 to convert to zero-based index
 }

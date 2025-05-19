@@ -2,8 +2,9 @@ import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "../../src/colorizer";
+import { compareRecord } from "../state/ViewerState/utils";
 
-import { AnnotationData } from "../../src/colorizer/AnnotationData";
+import { AnnotationData, BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE } from "../../src/colorizer/AnnotationData";
 
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
@@ -24,11 +25,11 @@ describe("AnnotationData", () => {
     annotationData.createNewLabel();
     annotationData.createNewLabel();
 
-    expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 2", color: defaultPalette.colors[1], ids: new Set() },
-      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
-    ]);
+    const labels = annotationData.getLabels();
+    expect(labels.length).toBe(3);
+    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Label 2", color: defaultPalette.colors[1] });
+    compareRecord(labels[2].options, { name: "Label 3", color: defaultPalette.colors[2] });
   });
 
   it("allows updating of label names and colors", () => {
@@ -37,16 +38,15 @@ describe("AnnotationData", () => {
     annotationData.createNewLabel();
     annotationData.createNewLabel();
 
-    annotationData.setLabelName(0, "New Label Name");
-    annotationData.setLabelColor(1, new Color("#FF0000"));
-    annotationData.setLabelName(2, "Another New Label Name");
-    annotationData.setLabelColor(2, new Color("#00FF00"));
+    annotationData.setLabelOptions(0, { name: "New Label Name" });
+    annotationData.setLabelOptions(1, { color: new Color("#FF0000") });
+    annotationData.setLabelOptions(2, { name: "Another New Label Name", color: new Color("#00FF00") });
 
-    expect(annotationData.getLabels()).to.deep.equal([
-      { name: "New Label Name", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 2", color: new Color("#FF0000"), ids: new Set() },
-      { name: "Another New Label Name", color: new Color("#00FF00"), ids: new Set() },
-    ]);
+    const labels = annotationData.getLabels();
+    expect(labels.length).toBe(3);
+    compareRecord(labels[0].options, { name: "New Label Name", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Label 2", color: new Color("#FF0000") });
+    compareRecord(labels[2].options, { name: "Another New Label Name", color: new Color("#00FF00") });
   });
 
   it("deletes labels", () => {
@@ -56,55 +56,53 @@ describe("AnnotationData", () => {
     annotationData.createNewLabel();
 
     annotationData.deleteLabel(1);
-    expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
-    ]);
+    let labels = annotationData.getLabels();
+    expect(labels.length).toBe(2);
+    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Label 3", color: defaultPalette.colors[2] });
 
     // Creating new label should reuse deleted index and increment name by 1
     annotationData.createNewLabel();
-    expect(annotationData.getLabels()).to.deep.equal([
-      { name: "Label 1", color: defaultPalette.colors[0], ids: new Set() },
-      { name: "Label 3", color: defaultPalette.colors[2], ids: new Set() },
-      { name: "Label 4", color: defaultPalette.colors[3], ids: new Set() },
-    ]);
+    labels = annotationData.getLabels();
+    expect(labels.length).toBe(3);
+    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Label 3", color: defaultPalette.colors[2] });
+    compareRecord(labels[2].options, { name: "Label 4", color: defaultPalette.colors[3] });
   });
 
   it("can apply and remove labels from an ID", () => {
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
     annotationData.createNewLabel();
-    annotationData.setLabelOnId(0, 0, true);
-    annotationData.setLabelOnId(0, 35, true);
-    annotationData.setLabelOnId(0, 458, true);
-    annotationData.setLabelOnId(1, 35, true);
+    annotationData.setLabelValueOnIds(0, [0, 35, 458], BOOLEAN_VALUE_TRUE);
+    annotationData.setLabelValueOnIds(1, [35], BOOLEAN_VALUE_TRUE);
 
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
     expect(annotationData.getLabelsAppliedToId(35)).to.deep.equal([0, 1]);
     expect(annotationData.getLabelsAppliedToId(458)).to.deep.equal([0]);
 
-    annotationData.setLabelOnId(0, 35, false);
+    annotationData.removeLabelOnIds(0, [35]);
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
     expect(annotationData.getLabelsAppliedToId(35)).to.deep.equal([1]);
     expect(annotationData.getLabelsAppliedToId(458)).to.deep.equal([0]);
   });
 
-  it("ignores duplicate calls to setLabelOnId", () => {
+  it("ignores duplicate calls to setLabelOnIds", () => {
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
     annotationData.createNewLabel();
-    annotationData.setLabelOnId(0, 0, true);
-    annotationData.setLabelOnId(0, 0, true);
-    annotationData.setLabelOnId(0, 1, true);
+    annotationData.setLabelValueOnIds(0, [0], BOOLEAN_VALUE_TRUE);
+    annotationData.setLabelValueOnIds(0, [0], BOOLEAN_VALUE_TRUE);
+    annotationData.setLabelValueOnIds(0, [1], BOOLEAN_VALUE_TRUE);
 
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([0]);
     expect(annotationData.isLabelOnId(0, 0)).toBe(true);
     expect(annotationData.getLabelsAppliedToId(1)).to.deep.equal([0]);
     expect(annotationData.isLabelOnId(0, 1)).toBe(true);
 
-    annotationData.setLabelOnId(0, 0, false);
-    annotationData.setLabelOnId(0, 0, false);
-    annotationData.setLabelOnId(0, 1, false);
+    annotationData.removeLabelOnIds(0, [0]);
+    annotationData.removeLabelOnIds(0, [0]);
+    annotationData.removeLabelOnIds(0, [1]);
 
     expect(annotationData.getLabelsAppliedToId(0)).to.deep.equal([]);
     expect(annotationData.isLabelOnId(0, 0)).toBe(false);
@@ -118,15 +116,10 @@ describe("AnnotationData", () => {
     };
     const annotationData = new AnnotationData();
     annotationData.createNewLabel();
-    annotationData.setLabelOnId(0, 0, true);
-    annotationData.setLabelOnId(0, 1, true);
-    annotationData.setLabelOnId(0, 2, true);
-    annotationData.setLabelOnId(0, 3, true);
-    annotationData.setLabelOnId(0, 4, true);
-    annotationData.setLabelOnId(0, 5, true);
+    annotationData.setLabelValueOnIds(0, [0, 1, 2, 3, 4, 5], BOOLEAN_VALUE_TRUE);
 
     annotationData.createNewLabel();
-    annotationData.setLabelOnId(1, 2, true);
+    annotationData.setLabelValueOnIds(1, [2], BOOLEAN_VALUE_TRUE);
 
     /* eslint-disable @typescript-eslint/naming-convention */
     // ESLint doesn't like "0" and "1" being property keys.
@@ -142,6 +135,46 @@ describe("AnnotationData", () => {
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
+  it("can assign and return label values", () => {
+    const annotationData = new AnnotationData();
+    annotationData.createNewLabel();
+    annotationData.setLabelValueOnIds(0, [0, 1, 2], "A");
+    annotationData.setLabelValueOnIds(0, [3, 4], "B");
+    annotationData.setLabelValueOnIds(0, [5], "C");
+
+    const labelData = annotationData.getLabels()[0];
+    expect(labelData.valueToIds.get("A")).to.deep.equal(new Set([0, 1, 2]));
+    expect(labelData.valueToIds.get("B")).to.deep.equal(new Set([3, 4]));
+    expect(labelData.valueToIds.get("C")).to.deep.equal(new Set([5]));
+    expect(labelData.ids).to.deep.equal(new Set([0, 1, 2, 3, 4, 5]));
+
+    expect(annotationData.getValueFromId(0, 0)).to.equal("A");
+    expect(annotationData.getValueFromId(0, 1)).to.equal("A");
+    expect(annotationData.getValueFromId(0, 2)).to.equal("A");
+    expect(annotationData.getValueFromId(0, 3)).to.equal("B");
+    expect(annotationData.getValueFromId(0, 4)).to.equal("B");
+    expect(annotationData.getValueFromId(0, 5)).to.equal("C");
+  });
+
+  it("can reassign values", () => {
+    const annotationData = new AnnotationData();
+    annotationData.createNewLabel();
+
+    annotationData.setLabelValueOnIds(0, [1, 2], "A");
+    annotationData.setLabelValueOnIds(0, [1], "B");
+    annotationData.setLabelValueOnIds(0, [2, 3], "C");
+
+    const labelData = annotationData.getLabels()[0];
+    expect(labelData.ids).to.deep.equal(new Set([1, 2, 3]));
+    expect(labelData.valueToIds.get("A")).toBeUndefined();
+    expect(labelData.valueToIds.get("B")).to.deep.equal(new Set([1]));
+    expect(labelData.valueToIds.get("C")).to.deep.equal(new Set([2, 3]));
+
+    expect(annotationData.getValueFromId(0, 1)).to.equal("B");
+    expect(annotationData.getValueFromId(0, 2)).to.equal("C");
+    expect(annotationData.getValueFromId(0, 3)).to.equal("C");
+  });
+
   describe("toCsv", () => {
     const mockDataset = {
       getTime: (id: number): number => [0, 1, 2, 3][id],
@@ -150,50 +183,83 @@ describe("AnnotationData", () => {
 
     it("exports to CSV", () => {
       const annotationData = new AnnotationData();
-      annotationData.createNewLabel("Label 1");
-      annotationData.createNewLabel("Label 2");
-      annotationData.createNewLabel("Label 3");
+      annotationData.createNewLabel({ name: "Label 1" });
+      annotationData.createNewLabel({ name: "Label 2" });
+      annotationData.createNewLabel({ name: "Label 3" });
 
-      annotationData.setLabelOnId(0, 0, true);
-      annotationData.setLabelOnId(1, 1, true);
-      annotationData.setLabelOnId(2, 2, true);
+      annotationData.setLabelValueOnIds(0, [0], BOOLEAN_VALUE_TRUE);
+      annotationData.setLabelValueOnIds(1, [1], BOOLEAN_VALUE_TRUE);
+      annotationData.setLabelValueOnIds(2, [2], BOOLEAN_VALUE_TRUE);
 
       const csv = annotationData.toCsv(mockDataset);
+      const booleanTrue = BOOLEAN_VALUE_TRUE;
+      const booleanFalse = BOOLEAN_VALUE_FALSE;
       expect(csv).to.equal(
-        `ID,Track,Frame,Label 1,Label 2,Label 3\r\n` + "0,0,0,1,0,0\r\n" + "1,1,1,0,1,0\r\n" + "2,2,2,0,0,1"
+        `ID,Track,Frame,Label 1,Label 2,Label 3\r\n` +
+          `0,0,0,${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
+          `1,1,1,${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
+          `2,2,2,${booleanFalse},${booleanFalse},${booleanTrue}`
       );
+    });
+
+    it("exports different values to the CSV", () => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel({ name: "Label 1" });
+
+      annotationData.setLabelValueOnIds(0, [0, 1], "A");
+      annotationData.setLabelValueOnIds(0, [2], "B");
+      annotationData.setLabelValueOnIds(0, [3], "C");
+
+      const csv = annotationData.toCsv(mockDataset);
+      expect(csv).to.equal(`ID,Track,Frame,Label 1\r\n` + `0,0,0,A\r\n` + `1,1,1,A\r\n` + `2,2,2,B\r\n` + `3,3,3,C`);
     });
 
     it("handles labels with quote and comma characters", () => {
       const annotationData = new AnnotationData();
-      annotationData.createNewLabel('"label');
-      annotationData.createNewLabel(",,,,,");
-      annotationData.createNewLabel('a","fake label');
-      annotationData.createNewLabel('","');
+      annotationData.createNewLabel({ name: '"label' });
+      annotationData.createNewLabel({ name: ",,,,," });
+      annotationData.createNewLabel({ name: 'a","fake label' });
+      annotationData.createNewLabel({ name: '","' });
 
-      annotationData.setLabelOnId(0, 0, true);
-      annotationData.setLabelOnId(1, 1, true);
-      annotationData.setLabelOnId(2, 2, true);
-      annotationData.setLabelOnId(3, 3, true);
+      annotationData.setLabelValueOnIds(0, [0], BOOLEAN_VALUE_TRUE);
+      annotationData.setLabelValueOnIds(1, [1], BOOLEAN_VALUE_TRUE);
+      annotationData.setLabelValueOnIds(2, [2], BOOLEAN_VALUE_TRUE);
+      annotationData.setLabelValueOnIds(3, [3], BOOLEAN_VALUE_TRUE);
 
       const csv = annotationData.toCsv(mockDataset);
 
       // Check csv contents here.
       // Single quotes are escaped as double quotes.
+      const booleanTrue = BOOLEAN_VALUE_TRUE;
+      const booleanFalse = BOOLEAN_VALUE_FALSE;
       expect(csv).to.equal(
         `ID,Track,Frame,"""label",",,,,,","a"",""fake label",""","""\r\n` +
-          "0,0,0,1,0,0,0\r\n" +
-          "1,1,1,0,1,0,0\r\n" +
-          "2,2,2,0,0,1,0\r\n" +
-          "3,3,3,0,0,0,1"
+          `0,0,0,${booleanTrue},${booleanFalse},${booleanFalse},${booleanFalse}\r\n` +
+          `1,1,1,${booleanFalse},${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
+          `2,2,2,${booleanFalse},${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
+          `3,3,3,${booleanFalse},${booleanFalse},${booleanFalse},${booleanTrue}`
+      );
+    });
+
+    it("handles values with quote and comma characters", () => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel({ name: "Label 1" });
+
+      annotationData.setLabelValueOnIds(0, [0], '"value"');
+      annotationData.setLabelValueOnIds(0, [1], "value,value,value");
+      annotationData.setLabelValueOnIds(0, [2], ",,,");
+
+      const csv = annotationData.toCsv(mockDataset);
+      expect(csv).to.equal(
+        `ID,Track,Frame,Label 1\r\n` + `0,0,0,"""value"""\r\n` + `1,1,1,"value,value,value"\r\n` + `2,2,2,",,,"`
       );
     });
 
     it("trims column name whitespace on export", () => {
       const annotationData = new AnnotationData();
-      annotationData.createNewLabel(" \t Label 1");
-      annotationData.createNewLabel("\tLabel 2  ");
-      annotationData.createNewLabel("\t\tLabel 3 \t ");
+      annotationData.createNewLabel({ name: " \t Label 1" });
+      annotationData.createNewLabel({ name: "\tLabel 2  " });
+      annotationData.createNewLabel({ name: "\t\tLabel 3 \t " });
 
       const csv = annotationData.toCsv(mockDataset);
       expect(csv).to.equal(`ID,Track,Frame,Label 1,Label 2,Label 3\r\n`);
@@ -202,12 +268,12 @@ describe("AnnotationData", () => {
     it("escapes column names starting with special characters", () => {
       // See https://owasp.org/www-community/attacks/CSV_Injection
       const annotationData = new AnnotationData();
-      annotationData.createNewLabel("=SUM(A2:A5)");
-      annotationData.createNewLabel("@label");
-      annotationData.createNewLabel("+label");
-      annotationData.createNewLabel("-label");
-      annotationData.createNewLabel("\tlabel 1");
-      annotationData.createNewLabel("\rlabel 2");
+      annotationData.createNewLabel({ name: "=SUM(A2:A5)" });
+      annotationData.createNewLabel({ name: "@label" });
+      annotationData.createNewLabel({ name: "+label" });
+      annotationData.createNewLabel({ name: "-label" });
+      annotationData.createNewLabel({ name: "\tlabel 1" });
+      annotationData.createNewLabel({ name: "\rlabel 2" });
 
       const csv = annotationData.toCsv(mockDataset);
       expect(csv).to.equal(`ID,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`);

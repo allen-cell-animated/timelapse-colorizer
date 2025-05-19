@@ -7,12 +7,19 @@
   gap: 20px;
   --canvas-width-basis: 500px;
   flex-direction: row;
+  & > div {
+    /* By default, panels should be in a split row view.*/
+    max-width: calc(50vw);
+  }
 }
 
 @media screen and (max-width: 1250px) {
   /* Switch from row to column layout when the screen width goes below 1200px */
   .contentPanels {
     flex-direction: column;
+    & > div {
+      max-width: calc(100vw);
+    }
   }
 }
 
@@ -61,7 +68,7 @@
 }
 
 .colorizeCanvas {
-  max-width: 100%;
+  /* max-width: 100%; */
 }
 
 .canvasPanel .timeControls {
@@ -92,7 +99,10 @@
   flex-basis: 300px;
   min-width: 300px;
 
-  --height: 550px;
+  /* Magic number; aligns side view with viewport on 1920x1080
+   * monitors.
+   */
+  --height: 606px;
   height: var(--height);
 }
 

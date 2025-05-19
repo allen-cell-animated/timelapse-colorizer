@@ -1,6 +1,7 @@
 import Papa from "papaparse";
 import { Color } from "three";
 
+import { removeUndefinedProperties } from "../state/utils/data_validation";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
 
 import Dataset from "./Dataset";
@@ -9,10 +10,37 @@ const CSV_COL_ID = "ID";
 const CSV_COL_TIME = "Frame";
 const CSV_COL_TRACK = "Track";
 
-export type LabelData = {
+export const BOOLEAN_VALUE_TRUE = "true";
+export const BOOLEAN_VALUE_FALSE = "false";
+
+export const DEFAULT_ANNOTATION_LABEL_COLORS = KNOWN_CATEGORICAL_PALETTES.get(
+  DEFAULT_CATEGORICAL_PALETTE_KEY
+)!.colorStops;
+
+export enum LabelType {
+  BOOLEAN = "boolean",
+  INTEGER = "integer",
+  CUSTOM = "custom",
+}
+
+export type LabelOptions = {
+  type: LabelType;
   name: string;
   color: Color;
+  autoIncrement: boolean;
+};
+
+export type LabelData = {
+  options: LabelOptions;
   ids: Set<number>;
+  lastValue: string | null;
+
+  // Bidirectional mapping between IDs and values.
+  valueToIds: Map<string, Set<number>>;
+  idToValue: Map<number, string>;
+
+  // TODO: Store recently used values? Save values even if all IDs with them
+  // have been removed?
 };
 
 export interface IAnnotationDataGetters {
@@ -83,6 +111,17 @@ export interface IAnnotationDataGetters {
   getTimeToLabelIdMap(dataset: Dataset): Map<number, Record<number, number[]>>;
 
   /**
+   * Returns the next default label settings, including name and color. Useful
+   * for ensuring labels have unique names and colors, even if some have been
+   * deleted.
+   */
+  getNextDefaultLabelSettings(): LabelOptions;
+
+  getNextDefaultLabelValue(labelIdx: number, useLastValue: boolean): string;
+
+  getValueFromId(labelIdx: number, id: number): string | null;
+
+  /**
    * Converts the annotation data to a CSV string.
    *
    * @param dataset Dataset object to use for time and track information.
@@ -110,20 +149,16 @@ export interface IAnnotationDataGetters {
 }
 
 export interface IAnnotationDataSetters {
-  /** Creates a new label and returns its index in the array of labels (as
-   * returned by `getLabels()`).
-   * @param name The name of the label. If no name is provided, a default name
-   * ("Label {number}") will be used.
-   * @param color The color to use for the label. If no color is provided, a
-   * color will be chosen from the default categorical palette.
+  /**
+   * Creates a new label with the given options and returns its index in the
+   * array of labels (as returned by `getLabels()`).
    * */
-  createNewLabel(name?: string, color?: Color): number;
-
-  setLabelName(labelIdx: number, name: string): void;
-  setLabelColor(labelIdx: number, color: Color): void;
+  createNewLabel(options?: Partial<LabelOptions>): number;
+  setLabelOptions(labelIdx: number, options: Partial<LabelOptions>): void;
   deleteLabel(labelIdx: number): void;
-
-  setLabelOnId(labelIdx: number, id: number, value: boolean): void;
+  setLabelValueOnIds(labelIdx: number, ids: number[], value: string): void;
+  removeLabelOnIds(labelIdx: number, ids: number[]): void;
+  clear(): void;
 }
 
 export type IAnnotationData = IAnnotationDataGetters & IAnnotationDataSetters;
@@ -147,12 +182,17 @@ export class AnnotationData implements IAnnotationData {
     this.getLabeledIds = this.getLabeledIds.bind(this);
     this.getTimeToLabelIdMap = this.getTimeToLabelIdMap.bind(this);
     this.getLabels = this.getLabels.bind(this);
+    this.getNextDefaultLabelSettings = this.getNextDefaultLabelSettings.bind(this);
     this.createNewLabel = this.createNewLabel.bind(this);
-    this.setLabelName = this.setLabelName.bind(this);
-    this.setLabelColor = this.setLabelColor.bind(this);
     this.deleteLabel = this.deleteLabel.bind(this);
     this.isLabelOnId = this.isLabelOnId.bind(this);
-    this.setLabelOnId = this.setLabelOnId.bind(this);
+    this.setLabelOptions = this.setLabelOptions.bind(this);
+    this.setLabelValueOnId = this.setLabelValueOnId.bind(this);
+    this.setLabelValueOnIds = this.setLabelValueOnIds.bind(this);
+    this.removeLabelOnId = this.removeLabelOnId.bind(this);
+    this.removeLabelOnIds = this.removeLabelOnIds.bind(this);
+    this.getNextDefaultLabelValue = this.getNextDefaultLabelValue.bind(this);
+    this.getValueFromId = this.getValueFromId.bind(this);
     this.toCsv = this.toCsv.bind(this);
   }
 
@@ -222,22 +262,64 @@ export class AnnotationData implements IAnnotationData {
     return idsToLabels;
   }
 
+  getValueFromId(labelIdx: number, id: number): string | null {
+    // This lookup may be too slow. May need to cache lookup from ID to value.
+    this.validateIndex(labelIdx);
+    const labelData = this.labelData[labelIdx];
+    if (labelData.ids.has(id)) {
+      return labelData.idToValue.get(id) ?? null;
+    } else {
+      return null;
+    }
+  }
+
+  getNextDefaultLabelSettings(): LabelOptions {
+    const color = new Color(
+      DEFAULT_ANNOTATION_LABEL_COLORS[this.numLabelsCreated % DEFAULT_ANNOTATION_LABEL_COLORS.length]
+    );
+    const name = `Label ${this.numLabelsCreated + 1}`;
+    return { type: LabelType.BOOLEAN, name, color, autoIncrement: true };
+  }
+
+  getNextDefaultLabelValue(labelIdx: number, useLastValue: boolean): string {
+    this.validateIndex(labelIdx);
+    const labelData = this.labelData[labelIdx];
+    switch (labelData.options.type) {
+      case LabelType.BOOLEAN:
+        return BOOLEAN_VALUE_TRUE;
+      case LabelType.INTEGER:
+        if (labelData.lastValue === null) {
+          return "0";
+        } else if (labelData.options.autoIncrement && !useLastValue) {
+          const lastValueInt = parseInt(labelData.lastValue, 10);
+          return (lastValueInt + 1).toString();
+        } else {
+          return labelData.lastValue.toString();
+        }
+      case LabelType.CUSTOM:
+        if (!labelData.lastValue) {
+          return "Click to edit";
+        } else {
+          return labelData.lastValue;
+        }
+    }
+  }
+
   // Setters
 
-  /** Creates a new label and returns its index. */
-  createNewLabel(name?: string, color?: Color): number {
-    if (!color) {
-      const palette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
-      color = new Color(palette.colorStops[this.numLabelsCreated % palette.colorStops.length]);
-    }
-    if (!name) {
-      name = `Label ${this.numLabelsCreated + 1}`;
-    }
+  private markIdMapAsDirty(): void {
+    this.timeToLabelIdMap = null;
+  }
 
+  /** Creates a new label and returns its index. */
+  createNewLabel(options: Partial<LabelOptions> = {}): number {
+    options = removeUndefinedProperties(options);
     this.labelData.push({
-      name,
-      color,
+      options: { ...this.getNextDefaultLabelSettings(), ...options },
       ids: new Set(),
+      idToValue: new Map<number, string>(),
+      valueToIds: new Map<string, Set<number>>(),
+      lastValue: null,
     });
 
     this.numLabelsCreated++;
@@ -250,46 +332,115 @@ export class AnnotationData implements IAnnotationData {
     }
   }
 
-  setLabelName(labelIdx: number, name: string): void {
+  setLabelOptions(labelIdx: number, options: Partial<LabelOptions>): void {
     this.validateIndex(labelIdx);
-    this.labelData[labelIdx].name = name;
-  }
-
-  setLabelColor(labelIdx: number, color: Color): void {
-    this.validateIndex(labelIdx);
-    this.labelData[labelIdx].color = color;
+    options = removeUndefinedProperties(options);
+    const labelData = this.labelData[labelIdx];
+    labelData.options = { ...labelData.options, ...options };
+    this.markIdMapAsDirty();
   }
 
   deleteLabel(labelIdx: number): void {
     this.validateIndex(labelIdx);
     this.labelData.splice(labelIdx, 1);
-    this.timeToLabelIdMap = null;
+    this.markIdMapAsDirty();
   }
 
-  setLabelOnId(labelIdx: number, id: number, value: boolean): void {
-    this.validateIndex(labelIdx);
-    if (value) {
-      this.labelData[labelIdx].ids.add(id);
-    } else {
-      this.labelData[labelIdx].ids.delete(id);
+  /**
+   * Removes a single ID from the valueToIds map for a label. If the ID is the last
+   * one in the set, the value is removed from the map as well.
+   */
+  private removeIdFromValue(labelIdx: number, id: number, value: string): void {
+    const labelData = this.labelData[labelIdx];
+    if (labelData.valueToIds.has(value)) {
+      const ids = labelData.valueToIds.get(value)!;
+      ids.delete(id);
+      if (ids.size === 0) {
+        labelData.valueToIds.delete(value);
+      }
     }
-    this.timeToLabelIdMap = null;
+    if (labelData.idToValue.has(id)) {
+      labelData.idToValue.delete(id);
+    }
+    this.markIdMapAsDirty();
+  }
+
+  private setLabelValueOnId(labelIdx: number, id: number, value: string): void {
+    this.validateIndex(labelIdx);
+
+    const labelData = this.labelData[labelIdx];
+    if (labelData.ids.has(id)) {
+      // If this ID is already labeled, remove it from the old value to reassign
+      // it.
+      const oldValue = this.getValueFromId(labelIdx, id);
+      if (oldValue !== null && oldValue !== value) {
+        this.removeIdFromValue(labelIdx, id, oldValue);
+      }
+    }
+    if (!labelData.valueToIds.has(value)) {
+      labelData.valueToIds.set(value, new Set());
+    }
+    labelData.valueToIds.get(value)!.add(id);
+    labelData.idToValue.set(id, value);
+
+    labelData.ids.add(id);
+    labelData.lastValue = value;
+    this.markIdMapAsDirty();
+  }
+
+  setLabelValueOnIds(labelIdx: number, ids: number[], value: string): void {
+    this.validateIndex(labelIdx);
+    for (const id of ids) {
+      this.setLabelValueOnId(labelIdx, id, value);
+    }
+    this.markIdMapAsDirty();
+  }
+
+  private removeLabelOnId(labelIdx: number, id: number): void {
+    this.validateIndex(labelIdx);
+    const labelData = this.labelData[labelIdx];
+    labelData.ids.delete(id);
+
+    // Remove id <-> value mapping.
+    const value = labelData.idToValue.get(id);
+    if (value !== undefined) {
+      this.removeIdFromValue(labelIdx, id, value);
+    }
+    this.markIdMapAsDirty();
+  }
+
+  removeLabelOnIds(labelIdx: number, ids: number[]): void {
+    this.validateIndex(labelIdx);
+    for (const id of ids) {
+      this.removeLabelOnId(labelIdx, id);
+    }
+    this.markIdMapAsDirty();
   }
 
   toCsv(dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels();
     const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
 
-    headerRow.push(...this.labelData.map((label) => label.name.trim()));
+    headerRow.push(...this.labelData.map((label) => label.options.name.trim()));
 
-    const csvRows: number[][] = [];
+    const csvRows: (string | number)[][] = [];
+    // TODO: In the worst case scenario, there are many labels with many values,
+    // and every ID is labeled with each. In this case, getValueFromId can be
+    // O(N), which makes this for loop O(N^3)). Consider caching the lookup (ID
+    // -> value) if the CSV export step is slow.
     for (const [id, labels] of idsToLabels) {
       const track = dataset.getTrackId(id);
       const time = dataset.getTime(id);
 
-      const row = [id, track, time];
-      for (let i = 0; i < this.labelData.length; i++) {
-        row.push(labels.includes(i) ? 1 : 0);
+      const row: (string | number)[] = [id, track, time];
+      for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
+        if (labels.includes(labelIdx)) {
+          row.push(this.getValueFromId(labelIdx, id) ?? "");
+        } else if (this.labelData[labelIdx].options.type === LabelType.BOOLEAN) {
+          row.push(BOOLEAN_VALUE_FALSE);
+        } else {
+          row.push("");
+        }
       }
       csvRows.push(row);
     }
@@ -304,5 +455,11 @@ export class AnnotationData implements IAnnotationData {
     // prefixed with `#`.
 
     return csvString;
+  }
+
+  clear(): void {
+    this.labelData = [];
+    this.numLabelsCreated = 0;
+    this.markIdMapAsDirty();
   }
 }

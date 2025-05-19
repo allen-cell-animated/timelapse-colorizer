@@ -1,21 +1,21 @@
 import { Tag } from "antd";
 import React, { PropsWithChildren, ReactElement, useCallback } from "react";
 import styled from "styled-components";
+import { useShallow } from "zustand/shallow";
 
-import { Dataset, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode, ViewerConfig } from "../../colorizer";
-import { numberToStringDecimal } from "../../colorizer/utils/math_utils";
+import { AnnotationSelectionMode, PixelIdInfo, VECTOR_KEY_MOTION_DELTA, VectorTooltipMode } from "../../colorizer";
+import { formatNumber } from "../../colorizer/utils/math_utils";
 import { AnnotationState } from "../../colorizer/utils/react_utils";
-import { FlexColumn } from "../../styles/utils";
+import { selectVectorConfigFromState } from "../../state/slices";
+import { FlexColumn, FlexRow } from "../../styles/utils";
 
+import { LabelType } from "../../colorizer/AnnotationData";
+import { useViewerStateStore } from "../../state/ViewerState";
 import HoverTooltip from "./HoverTooltip";
 
 type CanvasHoverTooltipProps = {
-  dataset: Dataset | null;
-  featureKey: string;
-  lastValidHoveredId: number;
+  lastValidHoveredId: PixelIdInfo;
   showObjectHoverInfo: boolean;
-  motionDeltas: Float32Array | null;
-  config: ViewerConfig;
   annotationState: AnnotationState;
 };
 
@@ -29,6 +29,12 @@ const ObjectInfoCard = styled.div`
   overflow-wrap: break-word;
 
   transition: opacity 300ms ease-in-out;
+  width: fit-content;
+`;
+
+const DebugText = styled.p`
+  font-size: var(--font-size-label-small) !important;
+  color: var(--color-text-hint);
 `;
 
 /**
@@ -39,7 +45,14 @@ const ObjectInfoCard = styled.div`
  * - If vectors are enabled, the vector value (either magnitude or components) will be displayed.
  */
 export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverTooltipProps>): ReactElement {
-  const { dataset, featureKey, lastValidHoveredId: lastHoveredId, motionDeltas, config } = props;
+  const { lastValidHoveredId: lastHoveredId } = props;
+
+  const dataset = useViewerStateStore((state) => state.dataset);
+  const featureKey = useViewerStateStore((state) => state.featureKey);
+  const motionDeltas = useViewerStateStore((state) => state.vectorMotionDeltas);
+  const vectorConfig = useViewerStateStore(useShallow(selectVectorConfigFromState));
+
+  const featureName = featureKey ? dataset?.getFeatureName(featureKey) : undefined;
 
   const getFeatureValue = useCallback(
     (id: number): string => {
@@ -53,14 +66,14 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
       let featureValue = featureData?.data[id] ?? -1;
       featureValue = isFinite(featureValue) ? featureValue : NaN;
       const unitsLabel = featureData?.unit ? ` ${featureData?.unit}` : "";
-      return numberToStringDecimal(featureValue, 3) + unitsLabel;
+      return formatNumber(featureValue, 3) + unitsLabel;
     },
     [featureKey, dataset]
   );
 
   const getHoveredFeatureValue = useCallback((): string => {
-    if (lastHoveredId !== null && dataset) {
-      const featureVal = getFeatureValue(lastHoveredId);
+    if (lastHoveredId.globalId !== undefined && dataset !== null && featureKey !== null) {
+      const featureVal = getFeatureValue(lastHoveredId.globalId);
       const categories = dataset.getFeatureCategories(featureKey);
       if (categories !== null) {
         return categories[Number.parseInt(featureVal, 10)];
@@ -68,46 +81,49 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
         return featureVal;
       }
     }
-    return "";
+    return "N/A";
   }, [lastHoveredId, dataset, getFeatureValue, featureKey]);
   const hoveredFeatureValue = getHoveredFeatureValue();
 
   const getVectorTooltipText = useCallback((): string | null => {
-    if (!config.vectorConfig.visible || lastHoveredId === null || !motionDeltas) {
+    if (!vectorConfig.visible || lastHoveredId.globalId === undefined || !motionDeltas) {
       return null;
     }
-    const motionDelta = [motionDeltas[2 * lastHoveredId], motionDeltas[2 * lastHoveredId + 1]];
+    const globalId = lastHoveredId.globalId;
+    const motionDelta = [motionDeltas[2 * globalId], motionDeltas[2 * globalId + 1]];
 
     if (Number.isNaN(motionDelta[0]) || Number.isNaN(motionDelta[1])) {
       return null;
     }
 
-    const vectorKey = config.vectorConfig.key;
+    const vectorKey = vectorConfig.key;
     // TODO: If/when support for user vector data is added, this will need to get the vector's
     // display name from the dataset.
     const vectorName = vectorKey === VECTOR_KEY_MOTION_DELTA ? "Avg. motion delta" : vectorKey;
-    if (config.vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
+    if (vectorConfig.tooltipMode === VectorTooltipMode.MAGNITUDE) {
       const magnitude = Math.sqrt(motionDelta[0] ** 2 + motionDelta[1] ** 2);
       const angleDegrees = (360 + Math.atan2(-motionDelta[1], motionDelta[0]) * (180 / Math.PI)) % 360;
-      const magnitudeText = numberToStringDecimal(magnitude, 3);
-      const angleText = numberToStringDecimal(angleDegrees, 1);
+      const magnitudeText = formatNumber(magnitude, 3);
+      const angleText = formatNumber(angleDegrees, 1);
       return `${vectorName}: ${magnitudeText} px, ${angleText}°`;
     } else {
-      const allowIntegerTruncation = Number.isInteger(motionDelta[0]) && Number.isInteger(motionDelta[1]);
-      const x = numberToStringDecimal(motionDelta[0], 3, allowIntegerTruncation);
-      const y = numberToStringDecimal(motionDelta[1], 3, allowIntegerTruncation);
+      const showIntegersAsDecimals = !Number.isInteger(motionDelta[0]) || !Number.isInteger(motionDelta[1]);
+      const x = formatNumber(motionDelta[0], 3, showIntegersAsDecimals);
+      const y = formatNumber(motionDelta[1], 3, showIntegersAsDecimals);
       return `${vectorName}: (${x}, ${y}) px
        `;
     }
-  }, [config, lastHoveredId, motionDeltas]);
+  }, [vectorConfig, lastHoveredId, motionDeltas]);
   const vectorTooltipText = getVectorTooltipText();
 
   const objectInfoContent = [
-    <p key="track_id">Track ID: {lastHoveredId && dataset?.getTrackId(lastHoveredId)}</p>,
-    <p key="feature_value">
-      {dataset?.getFeatureName(featureKey) || "Feature"}:{" "}
-      <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
+    <p key="track_id">
+      Track ID: {lastHoveredId.globalId !== undefined ? dataset?.getTrackId(lastHoveredId.globalId) : "N/A"}
     </p>,
+    <p key="feature_value">
+      {featureName ?? "Feature"}: <span style={{ whiteSpace: "nowrap" }}>{hoveredFeatureValue}</span>
+    </p>,
+    <DebugText key="object_id">Pixel value: {lastHoveredId.segId}</DebugText>,
   ];
 
   if (vectorTooltipText) {
@@ -115,28 +131,36 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   }
 
   // Show all current labels applied to the hovered object
-  const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredId);
   const labelData = props.annotationState.data.getLabels();
-  if (labels.length > 0 && props.annotationState.visible) {
-    objectInfoContent.push(
-      <div style={{ lineHeight: "28px" }}>
-        {labels.map((labelIdx) => {
-          const label = labelData[labelIdx];
-          return (
-            // TODO: Tags do not change their text color based on the background color.
-            // Make a custom wrapper for Tag that does this; see
-            // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
-            <Tag
-              key={labelIdx}
-              style={{ width: "fit-content", margin: "0 2px" }}
-              color={"#" + label.color.getHexString()}
-            >
-              {label.name}
-            </Tag>
-          );
-        })}
-      </div>
-    );
+  const lastHoveredGlobalId = lastHoveredId.globalId;
+  if (lastHoveredGlobalId !== undefined) {
+    const labels = props.annotationState.data.getLabelsAppliedToId(lastHoveredGlobalId);
+    if (labels.length > 0 && props.annotationState.visible) {
+      objectInfoContent.push(
+        <div style={{ lineHeight: "28px" }}>
+          {labels.map((labelIdx) => {
+            const label = labelData[labelIdx];
+            const value =
+              label.options.type !== LabelType.BOOLEAN
+                ? props.annotationState.data.getValueFromId(labelIdx, lastHoveredGlobalId)
+                : undefined;
+            return (
+              // TODO: Tags do not change their text color based on the background color.
+              // Make a custom wrapper for Tag that does this; see
+              // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+              <Tag
+                key={labelIdx}
+                style={{ width: "fit-content", margin: "0 2px" }}
+                color={"#" + label.options.color.getHexString()}
+              >
+                {label.options.name}
+                {value ? " - " + value : ""}
+              </Tag>
+            );
+          })}
+        </div>
+      );
+    }
   }
 
   // If editing annotations, also show the current label being applied
@@ -144,11 +168,58 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
   const currentLabelIdx = props.annotationState.currentLabelIdx;
   if (props.annotationState.isAnnotationModeEnabled && currentLabelIdx !== null) {
     const currentLabelData = labelData[currentLabelIdx];
+
+    let value = null;
+    if (currentLabelData.options.type !== LabelType.BOOLEAN) {
+      value = props.annotationState.nextDefaultLabelValue;
+    }
+
     annotationLabel = (
-      <Tag style={{ width: "fit-content" }} color={"#" + currentLabelData.color.getHexString()} bordered={true}>
-        {currentLabelData.name}
-      </Tag>
+      <>
+        <Tag
+          style={{ width: "fit-content", margin: "0 2px" }}
+          color={"#" + currentLabelData.options.color.getHexString()}
+        >
+          {currentLabelData.options.name}
+          {value ? " - " + value : ""}
+        </Tag>
+      </>
     );
+
+    if (lastHoveredId.globalId !== undefined) {
+      const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
+      const isLabelBoolean = currentLabelData.options.type === LabelType.BOOLEAN;
+      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "unlabel" : "edit") : "label";
+      if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
+        annotationLabel = (
+          <FlexRow>
+            {annotationLabel}
+            <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
+              ✦ Click to {verb} entire track
+            </Tag>
+          </FlexRow>
+        );
+      } else if (props.annotationState.selectionMode === AnnotationSelectionMode.RANGE && dataset) {
+        if (props.showObjectHoverInfo) {
+          const hoveredRange = props.annotationState.getSelectRangeFromId(dataset, lastHoveredId.globalId);
+          if (hoveredRange !== null && hoveredRange.length > 1) {
+            // Get min and max track IDs
+            const id0 = hoveredRange[0];
+            const id1 = hoveredRange[hoveredRange.length - 1];
+            const t0 = dataset.getTime(id0);
+            const t1 = dataset.getTime(id1);
+            annotationLabel = (
+              <FlexRow>
+                {annotationLabel}
+                <Tag bordered={true} color="gold" style={{ width: "fit-content" }}>
+                  ✦ Click to {verb} {hoveredRange.length} objects from time {t0} to {t1}
+                </Tag>
+              </FlexRow>
+            );
+          }
+        }
+      }
+    }
   }
 
   const tooltipContent = (

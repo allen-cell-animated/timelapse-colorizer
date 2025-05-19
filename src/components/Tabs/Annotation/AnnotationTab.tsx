@@ -1,48 +1,39 @@
-import { CloseOutlined } from "@ant-design/icons";
-import { Color as AntdColor } from "@rc-component/color-picker";
-import { Button, ColorPicker, Table, TableProps } from "antd";
-import React, { ReactElement, useContext, useMemo } from "react";
-import styled from "styled-components";
-import { Color, ColorRepresentation } from "three";
+import { MenuOutlined, TableOutlined } from "@ant-design/icons";
+import { Modal, Radio, Tooltip } from "antd";
+import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
+import { useShallow } from "zustand/shallow";
 
-import { TagIconSVG } from "../../../assets";
-import { Dataset } from "../../../colorizer";
+import { AnnotationSelectionMode } from "../../../colorizer";
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
+import { useViewerStateStore } from "../../../state";
+import { StyledRadioGroup } from "../../../styles/components";
 import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/utils";
 import { download } from "../../../utils/file_io";
+import { SelectItem } from "../../Dropdowns/types";
 
-import { LabelData } from "../../../colorizer/AnnotationData";
-import { AppThemeContext } from "../../AppStyle";
-import SelectionDropdown, { SelectItem } from "../../Dropdowns/SelectionDropdown";
-import IconButton from "../../IconButton";
+import { LabelData, LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
+import { Z_INDEX_MODAL } from "../../AppStyle";
+import TextButton from "../../Buttons/TextButton";
+import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
+import LoadingSpinner from "../../LoadingSpinner";
+import AnnotationDisplayList from "./AnnotationDisplayList";
+import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
+import CreateLabelForm from "./CreateLabelForm";
 import LabelEditControls from "./LabelEditControls";
+
+const LABEL_DROPDOWN_LABEL_ID = "label-dropdown-label";
+const enum AnnotationViewType {
+  TABLE,
+  LIST,
+}
 
 type AnnotationTabProps = {
   annotationState: AnnotationState;
-  setTrackAndFrame: (track: number, frame: number) => void;
-  dataset: Dataset | null;
+  hoveredId: number | null;
 };
-
-type TableDataType = {
-  key: string;
-  id: number;
-  track: number;
-  time: number;
-};
-
-const StyledAntTable = styled(Table)`
-  .ant-table-row {
-    cursor: pointer;
-  }
-
-  &&&& .ant-table-cell {
-    padding: 4px 8px;
-  }
-`;
 
 export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
-  const theme = useContext(AppThemeContext);
   const {
     isAnnotationModeEnabled,
     setIsAnnotationModeEnabled,
@@ -51,185 +42,274 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     data: annotationData,
     createNewLabel,
     deleteLabel,
-    setLabelName,
-    setLabelColor,
-    setLabelOnId,
+    setLabelOptions,
+    removeLabelOnIds,
   } = props.annotationState;
+
+  const [isPending, startTransition] = useTransition();
+  const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
+  const [showCreateLabelModal, setShowCreateLabelModal] = useState(false);
+  const modalContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const store = useViewerStateStore(
+    useShallow((state) => ({
+      frame: state.currentFrame,
+      dataset: state.dataset,
+      setTrack: state.setTrack,
+      setFrame: state.setFrame,
+      selectedTrack: state.track,
+    }))
+  );
 
   const labels = annotationData.getLabels();
   const selectedLabel: LabelData | undefined = labels[currentLabelIdx ?? -1];
+  const selectedId = useMemo(() => {
+    return store.selectedTrack?.getIdAtTime(store.frame) ?? -1;
+  }, [store.frame, store.selectedTrack]);
+
+  // If range mode is enabled, highlight the range of IDs that would be selected
+  // if the user clicks on the currently hovered ID.
+  const highlightedIds = useMemo(() => {
+    if (
+      props.annotationState.selectionMode === AnnotationSelectionMode.RANGE &&
+      props.hoveredId !== null &&
+      store.dataset
+    ) {
+      return props.annotationState.getSelectRangeFromId(store.dataset, props.hoveredId);
+    }
+    return null;
+  }, [props.hoveredId, store.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
+
+  const onClickEnableAnnotationMode = useCallback(() => {
+    // If no labels are defined, prompt the user to create a new label
+    // before enabling annotation mode.
+    if (annotationData.getLabels().length === 0) {
+      setShowCreateLabelModal(true);
+    } else {
+      setIsAnnotationModeEnabled(!isAnnotationModeEnabled);
+    }
+  }, [isAnnotationModeEnabled, annotationData]);
 
   const onSelectLabelIdx = (idx: string): void => {
-    props.annotationState.setCurrentLabelIdx(parseInt(idx, 10));
+    startTransition(() => {
+      props.annotationState.setCurrentLabelIdx(parseInt(idx, 10));
+    });
   };
 
-  const onColorPickerChange = (_value: any, hex: string): void => {
-    if (currentLabelIdx !== null) {
-      setLabelColor(currentLabelIdx, new Color(hex as ColorRepresentation));
-    }
-  };
-
-  const onCreateNewLabel = (): void => {
-    const index = createNewLabel();
+  const onCreateNewLabel = (options: Partial<LabelOptions>): void => {
+    const index = createNewLabel(options);
     setCurrentLabelIdx(index);
   };
 
-  const onDeleteLabel = (): void => {
+  const onDeleteLabel = useCallback(() => {
     if (currentLabelIdx !== null) {
-      deleteLabel(currentLabelIdx);
-    }
-  };
-
-  const onClickObjectRow = (_event: React.MouseEvent<any, MouseEvent>, record: TableDataType): void => {
-    props.setTrackAndFrame(record.track, record.time);
-  };
-
-  const tableColumns: TableProps<TableDataType>["columns"] = [
-    {
-      title: "Object ID",
-      dataIndex: "id",
-      key: "id",
-      sorter: (a, b) => a.id - b.id,
-    },
-    {
-      title: "Track ID",
-      dataIndex: "track",
-      key: "track",
-      sorter: (a, b) => a.track - b.track,
-    },
-    {
-      title: "Time",
-      dataIndex: "time",
-      key: "time",
-      sorter: (a, b) => a.time - b.time,
-    },
-    // Column that contains a remove button for the ID.
-    {
-      title: "",
-      key: "action",
-      render: (_, record) => (
-        <IconButton
-          type="text"
-          onClick={(event) => {
-            // Rows have their own behavior on click (jumping to a timestamp),
-            // so we need to stop event propagation so that the row click event
-            // doesn't fire.
-            event.stopPropagation();
-            setLabelOnId(currentLabelIdx!, record.id, false);
-          }}
-        >
-          <CloseOutlined />
-          <VisuallyHidden>
-            Remove ID {record.id} (track {record.track})
-          </VisuallyHidden>
-        </IconButton>
-      ),
-    },
-  ];
-
-  const tableData: TableDataType[] = useMemo(() => {
-    const dataset = props.dataset;
-    if (currentLabelIdx !== null && dataset) {
-      const ids = annotationData.getLabeledIds(currentLabelIdx);
-      return ids.map((id) => {
-        const track = dataset.getTrackId(id);
-        const time = dataset.getTime(id);
-        return { key: id.toString(), id, track, time };
+      startTransition(() => {
+        deleteLabel(currentLabelIdx);
       });
     }
-    return [];
-  }, [annotationData, currentLabelIdx, props.dataset]);
+  }, [currentLabelIdx]);
+
+  const onClickObjectRow = useCallback(
+    (record: TableDataType): void => {
+      const trackId = record.track;
+      const track = store.dataset?.getTrack(trackId);
+      if (track) {
+        store.setTrack(track);
+        store.setFrame(record.time);
+      }
+    },
+    [store.dataset, store.setTrack, store.setFrame]
+  );
+
+  const onClickDeleteObject = useCallback(
+    (record: TableDataType): void => {
+      if (currentLabelIdx !== null) {
+        removeLabelOnIds(currentLabelIdx, [record.id]);
+      }
+    },
+    [currentLabelIdx, removeLabelOnIds]
+  );
 
   // Options for the selection dropdown
-  const selectLabelOptions: SelectItem[] = labels.map((label, index) => {
-    return {
-      value: index.toString(),
-      label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
-    };
-  });
+  const labelTypeToLabel: Record<LabelType, string> = {
+    [LabelType.BOOLEAN]: "",
+    [LabelType.INTEGER]: "I",
+    [LabelType.CUSTOM]: "C",
+  };
+
+  const selectLabelOptions: SelectItem[] = useMemo(
+    () =>
+      labels.map((label, index) => ({
+        value: index.toString(),
+        label: label.ids.size ? `${label.options.name} (${label.ids.size})` : label.options.name,
+        color: label.options.color,
+        colorLabel: labelTypeToLabel[label.options.type],
+      })),
+    [annotationData]
+  );
+
+  const tableIds = useMemo(() => {
+    return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
+  }, [currentLabelIdx, annotationData]);
+
+  const labelSelectionDropdown = (
+    <>
+      <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
+      <SelectionDropdown
+        selected={(currentLabelIdx ?? -1).toString()}
+        items={selectLabelOptions}
+        onChange={onSelectLabelIdx}
+        disabled={currentLabelIdx === null}
+        showSelectedItemTooltip={false}
+        htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
+      ></SelectionDropdown>
+    </>
+  );
 
   return (
     <FlexColumnAlignCenter $gap={10}>
-      <FlexRow style={{ width: "100%", justifyContent: "space-between" }}>
-        <AnnotationModeButton
-          active={isAnnotationModeEnabled}
-          onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
-        />
-        <Button
+      <FlexRow style={{ width: "100%", justifyContent: "space-between" }} ref={modalContainerRef}>
+        <AnnotationModeButton active={isAnnotationModeEnabled} onClick={onClickEnableAnnotationMode} />
+
+        {/* Appears when the user activates annotations for the first time and should define a label. */}
+        <Modal
+          open={showCreateLabelModal}
+          footer={null}
+          closable={true}
+          width={360}
+          title="Create new label"
+          onCancel={() => setShowCreateLabelModal(false)}
+          destroyOnClose={true}
+          getContainer={() => modalContainerRef.current ?? document.body}
+        >
+          <div style={{ marginTop: "15px" }}>
+            <CreateLabelForm
+              initialLabelOptions={annotationData.getNextDefaultLabelSettings()}
+              onConfirm={(options: Partial<LabelOptions>) => {
+                onCreateNewLabel(options);
+                setShowCreateLabelModal(false);
+                setIsAnnotationModeEnabled(true);
+              }}
+              onCancel={() => setShowCreateLabelModal(false)}
+              zIndex={Z_INDEX_MODAL + 50}
+              focusNameInput={true}
+            />
+          </div>
+        </Modal>
+
+        <TextButton
           onClick={() => {
-            const csvData = props.annotationState.data.toCsv(props.dataset!);
+            const csvData = props.annotationState.data.toCsv(store.dataset!);
             download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
             console.log(csvData);
           }}
         >
-          Export as CSV
-        </Button>
+          Export CSV
+        </TextButton>
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
-      <FlexRow $gap={10} style={{ width: "100%" }}>
-        <SelectionDropdown
-          selected={(currentLabelIdx ?? -1).toString()}
-          items={selectLabelOptions}
-          onChange={onSelectLabelIdx}
-          disabled={currentLabelIdx === null}
-          showSelectedItemTooltip={false}
-        ></SelectionDropdown>
-        <div>
-          {/* TODO: Remove color picker once color dots can be added to the dropdowns. */}
-          <ColorPicker
-            size="small"
-            value={new AntdColor(selectedLabel?.color.getHexString() || "#ffffff")}
-            onChange={onColorPickerChange}
-            disabledAlpha={true}
-            disabled={!isAnnotationModeEnabled}
-          />
-        </div>
+      <FlexRow $gap={6} style={{ width: "100%", flexWrap: "wrap" }}>
+        <FlexRow $gap={6} style={{ flexWrap: "wrap" }}>
+          {/*
+           * Hide edit-related buttons until edit mode is enabled.
+           * Note that currentLabelIdx will never be null when edit mode is enabled.
+           */}
+          {isAnnotationModeEnabled && currentLabelIdx !== null ? (
+            <LabelEditControls
+              onCreateNewLabel={onCreateNewLabel}
+              onDeleteLabel={onDeleteLabel}
+              setLabelOptions={(options) => setLabelOptions(currentLabelIdx, options)}
+              selectedLabel={selectedLabel}
+              selectedLabelIdx={currentLabelIdx}
+              selectionMode={props.annotationState.selectionMode}
+              setSelectionMode={props.annotationState.setSelectionMode}
+              defaultLabelOptions={props.annotationState.data.getNextDefaultLabelSettings()}
+            >
+              {labelSelectionDropdown}
+            </LabelEditControls>
+          ) : (
+            labelSelectionDropdown
+          )}
+        </FlexRow>
 
-        {/*
-         * Hide edit-related buttons until edit mode is enabled.
-         * Note that currentLabelIdx will never be null when edit mode is enabled.
-         */}
-        {isAnnotationModeEnabled && currentLabelIdx !== null && (
-          <LabelEditControls
-            onCreateNewLabel={onCreateNewLabel}
-            onDeleteLabel={onDeleteLabel}
-            setLabelColor={(color: Color) => setLabelColor(currentLabelIdx, color)}
-            setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
-            selectedLabel={selectedLabel}
-            selectedLabelIdx={currentLabelIdx}
-          />
-        )}
+        {/* View mode selection */}
+        <label>
+          <VisuallyHidden>View mode</VisuallyHidden>
+          <StyledRadioGroup
+            style={{ display: "flex", flexDirection: "row" }}
+            value={viewType}
+            onChange={(e) => startTransition(() => setViewType(e.target.value))}
+          >
+            <Tooltip trigger={["hover", "focus"]} title="Table view" placement="top">
+              <Radio.Button value={AnnotationViewType.TABLE} style={{ padding: "2px 6px 2px 7px" }}>
+                <TableOutlined style={{ fontSize: 18 }} />
+                <VisuallyHidden>Table view {viewType === AnnotationViewType.TABLE ? "(selected)" : ""}</VisuallyHidden>
+              </Radio.Button>
+            </Tooltip>
+            <Tooltip trigger={["hover", "focus"]} title="List view" placement="top">
+              <Radio.Button value={AnnotationViewType.LIST} style={{ padding: "2px 7px 2px 6px" }}>
+                <MenuOutlined style={{ fontSize: 18 }} />
+                <VisuallyHidden>List view {viewType === AnnotationViewType.LIST ? "(selected)" : ""}</VisuallyHidden>
+              </Radio.Button>
+            </Tooltip>
+          </StyledRadioGroup>
+        </label>
       </FlexRow>
 
-      {/* Table */}
-      <div style={{ width: "100%", marginTop: "10px" }}>
-        <StyledAntTable
-          dataSource={tableData}
-          columns={tableColumns}
-          size="small"
-          pagination={false}
-          // TODO: Rows aren't actually buttons, which means that they are not
-          // keyboard accessible. Either find a way to make them tab indexable
-          // or add a button that is equivalent to click?
-          onRow={(record) => {
-            return {
-              onClick: (event) => {
-                onClickObjectRow(event, record);
-              },
-            };
+      {/* Table or list view */}
+      <LoadingSpinner loading={isPending}>
+        <div
+          style={{
+            width: "100%",
+            marginTop: "10px",
+            visibility: viewType === AnnotationViewType.TABLE ? "visible" : "collapse",
+            display: viewType === AnnotationViewType.TABLE ? "block" : "none",
           }}
-          locale={{
-            emptyText: (
-              <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0" }}>
-                <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
-                <p>No annotated IDs</p>
-              </FlexColumnAlignCenter>
-            ),
+        >
+          <AnnotationTable
+            onClickObjectRow={onClickObjectRow}
+            onClickDeleteObject={onClickDeleteObject}
+            dataset={store.dataset}
+            ids={tableIds}
+            height={480}
+            selectedId={selectedId}
+          />
+        </div>
+        {/*
+         * AnnotationDisplayList has some internal optimizations for fetching track data.
+         * Changing visibility/display instead of removing it from the DOM keeps
+         * its internal state.
+         */}
+        <div
+          style={{
+            width: "100%",
+            marginTop: "10px",
+            visibility: viewType === AnnotationViewType.LIST ? "visible" : "collapse",
+            display: viewType === AnnotationViewType.LIST ? "block" : "none",
           }}
-        ></StyledAntTable>
-      </div>
-      {tableData.length > 0 && <p style={{ color: theme.color.text.hint }}>Click a row to jump to that object.</p>}
+        >
+          <AnnotationDisplayList
+            onClickObjectRow={onClickObjectRow}
+            onClickDeleteObject={onClickDeleteObject}
+            onClickTrack={(trackId) => {
+              const track = store.dataset?.getTrack(trackId);
+              if (track) {
+                store.setTrack(track);
+              }
+            }}
+            setFrame={store.setFrame}
+            dataset={store.dataset}
+            ids={tableIds}
+            highlightRange={highlightedIds}
+            lastClickedId={props.annotationState.lastClickedId}
+            selectedTrack={store.selectedTrack}
+            selectedId={selectedId}
+            frame={store.frame}
+            labelColor={selectedLabel?.options.color}
+          ></AnnotationDisplayList>
+        </div>
+      </LoadingSpinner>
     </FlexColumnAlignCenter>
   );
 }

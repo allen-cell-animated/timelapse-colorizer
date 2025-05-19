@@ -15,6 +15,9 @@ window.URL.createObjectURL = vi.fn();
 const { getComputedStyle } = window;
 window.getComputedStyle = (elt) => getComputedStyle(elt);
 
+// Mocks the `zustand` package so stores can be reset after each test run
+vi.mock("zustand");
+
 afterEach(() => {
   cleanup();
 });

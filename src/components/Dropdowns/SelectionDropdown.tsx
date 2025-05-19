@@ -1,10 +1,11 @@
 import { ButtonProps, Tooltip } from "antd";
 import Fuse from "fuse.js";
-import React, { ReactElement, ReactNode, useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { components, ControlProps, OptionProps } from "react-select";
 
 import { useDebounce } from "../../colorizer/utils/react_utils";
 import { FlexRowAlignCenter } from "../../styles/utils";
+import { SelectItem } from "./types";
 
 import StyledSelect from "./StyledSelect";
 
@@ -12,14 +13,6 @@ import StyledSelect from "./StyledSelect";
 // but before the prop value updates. -> this is especially noticeable when slow datasets.
 // Is there a way we can do this using async promises, maybe? If the promise rejects,
 // discard the changed value?
-
-export type SelectItem = {
-  value: string;
-  label: string;
-  /** Optional tooltip for an option. If set, a tooltip will be shown when
-   * the option is hovered or focused in the dropdown. */
-  tooltip?: string | ReactNode;
-};
 
 type SelectionDropdownProps = {
   /** Text label to include with the dropdown. If null or undefined, hides the label. */
@@ -29,14 +22,23 @@ type SelectionDropdownProps = {
    */
   htmlLabelId?: string;
   /** The value of the item that is currently selected. */
-  selected: string;
-  /** An array of SelectItems that describes the item properties (`{value, label}`),
-   * or an array of strings. Dropdown items will be presented in the provided array order.
+  selected: string | SelectItem | undefined;
+  /** An array of SelectItems that describes the item properties (`{value,
+   * label}`), or an array of strings. Dropdown items will be presented in the
+   * provided array order.
    *
-   * If a string array is provided, SelectItems objects will be
-   * auto-generated with `value` and `label` values set to the string.*/
+   * If a string array is provided, SelectItems objects will be auto-generated
+   * with `value` and `label` values set to the string.
+   *
+   * NOTE: Items should be memoized to prevent unnecessary re-renders. Without
+   * memoization, react-select will re-render dropdown options based on the
+   * `items` property on every render, which can cause unexpected or unwanted
+   * behavior such as flickering on hover during rapid page updates.
+   */
   items: SelectItem[] | string[];
+  controlTooltipPlacement?: "top" | "bottom" | "left" | "right";
   disabled?: boolean;
+  isSearchable?: boolean;
   /** The type of button to render for the dropdown. See Antd's button types:
    * https://ant.design/components/button#components-button-demo-basic */
   buttonType?: ButtonProps["type"] | "outlined";
@@ -51,17 +53,28 @@ type SelectionDropdownProps = {
 };
 
 const defaultProps: Partial<SelectionDropdownProps> = {
+  buttonType: "outlined",
   showSelectedItemTooltip: true,
+  controlTooltipPlacement: "right",
 };
 
-// Override options in the menu list to include tooltips.
-const Option = (props: OptionProps): ReactElement => {
+// Override options in the menu list to include tooltips and, optionally, image content.
+const Option = (props: OptionProps<SelectItem>): ReactElement => {
   // Debounce the tooltip so it only shows after a short delay when focusing/hovering over it.
   const isFocused = useDebounce(props.isFocused, 100) && props.isFocused;
   const title = (props as OptionProps<SelectItem>).data.tooltip;
+
+  const copiedProps = { ...props, data: { ...(props.data as SelectItem) } };
+
+  if ((props.data as SelectItem).image) {
+    copiedProps.children = (
+      <img src={copiedProps.data.image} alt={copiedProps.data.label} style={{ width: "100%", height: "100%" }}></img>
+    );
+  }
+
   return (
     <Tooltip
-      title={(props as OptionProps<SelectItem>).data.tooltip}
+      title={(copiedProps as OptionProps<SelectItem>).data.tooltip}
       trigger={["hover", "focus"]}
       placement="right"
       open={title !== undefined && isFocused ? true : undefined}
@@ -69,7 +82,7 @@ const Option = (props: OptionProps): ReactElement => {
       mouseLeaveDelay={0}
     >
       <div>
-        <components.Option {...props} />
+        <components.Option {...copiedProps} />
       </div>
     </Tooltip>
   );
@@ -87,23 +100,34 @@ function formatAsSelectItems(items: string[] | SelectItem[]): SelectItem[] {
 }
 
 /**
- * A Select component that supports web accessibility guidelines for keyboard controls.
- * Options can be searched by typing in the dropdown input.
+ * A Select component that supports web accessibility guidelines for keyboard
+ * controls. Options can be searched by typing in the dropdown input.
  *
- * Uses react-select internally but mimics the style of Ant Design for consistency.
+ * Uses react-select internally but mimics the style of Ant Design for
+ * consistency.
+ *
+ * NOTE: The `items` prop should be memoized to prevent unnecessary re-renders.
+ * Without memoization, react-select will re-render dropdown options based on
+ * the `items` property on every render, which can cause unexpected or unwanted
+ * behavior such as flickering on hover during rapid page updates.
  */
 export default function SelectionDropdown(inputProps: SelectionDropdownProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
-  const options = formatAsSelectItems(props.items);
+  const options = useMemo(() => formatAsSelectItems(props.items), [props.items]);
 
   // TODO: Show loading spinner?
   const [_isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState("");
   const [filteredValues, setFilteredValues] = useState<Set<string>>(new Set(options.map((item) => item.value)));
 
-  // Find the full options object corresponding with the selected object
-  const selectedOption = options.find((option) => option.value === props.selected);
+  let selectedOption: SelectItem | undefined;
+  if (typeof props.selected === "string") {
+    // Find the full options object corresponding with the selected object
+    selectedOption = options.find((option) => option.value === props.selected);
+  } else {
+    selectedOption = props.selected;
+  }
 
   // Warn if no labelling component/ID is provided for the component.
   useEffect(() => {
@@ -143,27 +167,36 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
   // Fixes a bug where the tooltip would show when hovering anywhere over the dropdown, including
   // other options.
   const Control = useCallback(
-    (controlProps: ControlProps): ReactElement => {
-      const selectedOption = controlProps.getValue()[0] as OptionProps<SelectItem> | undefined;
+    (controlProps: ControlProps<SelectItem>): ReactElement => {
+      const selectedOption = controlProps.getValue()[0] as SelectItem | undefined;
 
       return (
         <Tooltip
           title={selectedOption?.label}
           trigger={["hover", "focus"]}
-          placement="right"
+          placement={props.controlTooltipPlacement}
           open={props.showSelectedItemTooltip ? undefined : false}
         >
           <div>
-            <components.Control {...controlProps} />
+            <components.Control {...controlProps}>
+              {selectedOption?.image && (
+                <img
+                  src={selectedOption.image}
+                  alt={selectedOption.label}
+                  style={{ width: "100%", height: "100%", position: "absolute", pointerEvents: "none" }}
+                ></img>
+              )}
+              {controlProps.children}
+            </components.Control>
           </div>
         </Tooltip>
       );
     },
-    [props.showSelectedItemTooltip]
+    [props.showSelectedItemTooltip, props.controlTooltipPlacement]
   );
 
   // Create an ID for the HTML label element if one is provided.
-  const id = props.label ? `dropdown-label-${props.label.toLowerCase()}` : undefined;
+  const id = props.label ? `dropdown-label-${props.label.toLowerCase().replaceAll(" ", "_")}` : undefined;
 
   return (
     <FlexRowAlignCenter $gap={6}>
@@ -171,6 +204,7 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
       <StyledSelect
         aria-labelledby={id}
         classNamePrefix="react-select"
+        isMulti={false}
         placeholder=""
         type={props.buttonType ?? "outlined"}
         value={selectedOption}
@@ -179,9 +213,10 @@ export default function SelectionDropdown(inputProps: SelectionDropdownProps): R
         filterOption={(option) => filteredValues.has(option.value)}
         isDisabled={props.disabled}
         isClearable={false}
+        isSearchable={props.isSearchable}
         onChange={(value) => {
-          if (value && (value as SelectItem).value) {
-            props.onChange((value as SelectItem).value);
+          if (value && value.value) {
+            props.onChange(value.value);
           }
           startTransition(() => {
             setSearchInput("");

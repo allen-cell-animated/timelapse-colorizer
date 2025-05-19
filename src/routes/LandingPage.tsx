@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
 import { Dataset } from "../colorizer";
-import { paramsToUrlQueryString } from "../colorizer/utils/url_utils";
+import { serializedDataToUrl, serializeViewerParams } from "../state/utils/store_io";
 import { ExternalLink, FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 import { DatasetEntry, LocationState, ProjectEntry } from "../types";
 import { PageRoutes } from "./index";
@@ -123,7 +123,7 @@ const ProjectCard = styled.li`
   display: flex;
   width: 100%;
   flex-direction: column;
-  gap: 0px;
+  gap: 10px;
 
   & h3 {
     font-weight: bold;
@@ -146,7 +146,6 @@ const DatasetList = styled.ol`
   padding: 0;
   width: 100%;
   display: grid;
-  margin-top: 4px;
   // Use grid + subgrid to align the title, description, and button for each horizontal
   // row of cards. repeat is used to tile the layout if the cards wrap to a new line.
   grid-template-rows: repeat(3, auto);
@@ -221,7 +220,7 @@ export default function LandingPage(): ReactElement {
   // TODO: Should the load buttons be link elements or buttons?
   // Currently both the link and the button inside can be tab-selected.
   const renderDataset = (dataset: DatasetEntry, index: number): ReactElement => {
-    const viewerLink = `${PageRoutes.VIEWER}${paramsToUrlQueryString(dataset.loadParams)}`;
+    const viewerLink = `${PageRoutes.VIEWER}?${serializedDataToUrl(serializeViewerParams(dataset.loadParams))}`;
 
     return (
       <DatasetCard key={index}>
@@ -248,15 +247,16 @@ export default function LandingPage(): ReactElement {
       <h2>{project.name}</h2>
     );
 
-    const publicationElement = project.publicationLink ? (
+    const publication = project.publicationInfo;
+    const publicationElement = publication ? (
       <p>
-        Related publication:{" "}
-        <ExternalLink href={project.publicationLink.toString()}>{project.publicationName}</ExternalLink>
+        Related publication: <ExternalLink href={publication.url.toString()}>{publication.name}</ExternalLink> (
+        {publication.citation})
       </p>
     ) : null;
 
     const loadButton = project.loadParams ? (
-      <ButtonStyleLink to={"viewer" + paramsToUrlQueryString(project.loadParams)}>
+      <ButtonStyleLink to={"viewer?" + serializedDataToUrl(serializeViewerParams(project.loadParams))}>
         Load<VisuallyHidden> dataset {project.name}</VisuallyHidden>
       </ButtonStyleLink>
     ) : null;
@@ -291,12 +291,14 @@ export default function LandingPage(): ReactElement {
           </Suspense>
         </BannerVideoContainer>
         <BannerTextContainer>
-          <h1>Welcome to Timelapse Feature Explorer</h1>
+          <FlexColumnAlignCenter>
+            <h1 style={{ marginBottom: 0 }}>Timelapse Feature Explorer</h1>
+            <h2 style={{ margin: 0 }}>An interactive, web-based viewer for segmented timelapse data</h2>
+          </FlexColumnAlignCenter>
           <p>
-            The Timelapse Feature Explorer is a web-based application designed for the interactive visualization and
-            analysis of segmented time-series microscopy data. Ideal for biomedical researchers and other data
-            professionals, it offers an intuitive set of tools for scientific research and deeper understanding of
-            dynamic datasets.
+            Timelapse Feature Explorer is an online viewer for visualization and analysis of segmented time-series
+            microscopy data. Ideal for biomedical researchers and other data professionals, it offers an intuitive set
+            of tools for scientific research and deeper understanding of dynamic datasets.
           </p>
         </BannerTextContainer>
       </Banner>
@@ -328,7 +330,7 @@ export default function LandingPage(): ReactElement {
       </ContentContainer>
 
       <LoadPromptContainer>
-        <h2 style={{ margin: 0 }}>Load dataset(s) below or your own data to get started</h2>
+        <h2 style={{ margin: 0 }}>Load a dataset below or your own data to get started</h2>
       </LoadPromptContainer>
 
       <ContentContainer style={{ paddingBottom: "400px" }}>

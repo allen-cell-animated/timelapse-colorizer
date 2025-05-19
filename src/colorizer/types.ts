@@ -1,5 +1,6 @@
 import {
   Color,
+  DataTexture,
   FloatType,
   IntType,
   PixelFormat,
@@ -9,9 +10,12 @@ import {
   TextureDataType,
   UnsignedByteType,
   UnsignedIntType,
+  Vector2,
 } from "three";
 
 // This file provides a bit of type trickery to allow data loading code to be generic over multiple numeric types.
+
+export type HexColorString = `#${string}`;
 
 /** Available types for data loading (features, tracks, outliers, etc.), as a CPU buffer or a GPU texture */
 export enum FeatureDataType {
@@ -75,6 +79,51 @@ export const featureTypeSpecs: { [T in FeatureDataType]: FeatureTypeSpec<T> } = 
     internalFormat: "R8UI",
   },
 };
+
+// CANVAS //////////////////////////////////////
+
+export type FrameLoadResult = {
+  frame: number;
+  /** True if frame loading encountered an error. */
+  frameError: boolean;
+  backdropKey: string | null;
+  /** True if backdrop loading encountered an error */
+  backdropError: boolean;
+};
+
+export enum CanvasType {
+  CANVAS_2D = "2D",
+  CANVAS_3D = "3D",
+}
+
+export type Canvas2DScaleInfo = {
+  type: CanvasType.CANVAS_2D;
+  /**
+   * Size of the frame in [0, 1] canvas coordinates, accounting for zoom.
+   */
+  frameSizeInCanvasCoordinates: Vector2;
+  /**
+   * Transforms from [0,1] space of the canvas to the [0,1] space of the frame,
+   * account for zoom.
+   *
+   * e.g. If frame has the same aspect ratio as the canvas and zoom is set to
+   * 2x, then, assuming that the [0, 0] position of the frame and the canvas are
+   * in the same position, the position [1, 1] on the canvas should map to [0.5,
+   * 0.5] on the frame.
+   */
+  canvasToFrameCoordinates: Vector2;
+  /**
+   * Inverse of `canvasToFrameCoordinates`. Transforms from [0,1] space of the
+   * frame to the [0,1] space of the canvas, accounting for zoom.
+   */
+  frameToCanvasCoordinates: Vector2;
+};
+
+export type Canvas3DScaleInfo = {
+  type: CanvasType.CANVAS_3D;
+};
+
+export type CanvasScaleInfo = Canvas3DScaleInfo | Canvas2DScaleInfo;
 
 // MUST be synchronized with the DRAW_MODE_* constants in `colorize_RGBA8U.frag`!
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
@@ -152,41 +201,17 @@ export type VectorConfig = {
 // TODO: This should live in the viewer and not in `colorizer`. Same with `url_utils`.
 // CHANGING THESE VALUES CAN POTENTIALLY BREAK URLs. See `url_utils.parseDrawSettings` for parsing logic.
 export enum TabType {
-  FILTERS = "filters",
   TRACK_PLOT = "track_plot",
   SCATTER_PLOT = "scatter_plot",
-  SETTINGS = "settings",
+  CORRELATION_PLOT = "correlation_plot",
+  FILTERS = "filters",
   ANNOTATION = "annotation",
   PLOT_3D = "3d_plot",
+  SETTINGS = "settings",
 }
 
 export const isTabType = (tab: string): tab is TabType => {
   return Object.values(TabType).includes(tab as TabType);
-};
-
-/**
- * Configuration for the viewer. These are high-level settings
- * that are not specific to a particular dataset.
- */
-export type ViewerConfig = {
-  showTrackPath: boolean;
-  showScaleBar: boolean;
-  showTimestamp: boolean;
-  showLegendDuringExport: boolean;
-  showHeaderDuringExport: boolean;
-  keepRangeBetweenDatasets: boolean;
-  backdropVisible: boolean;
-  /** Brightness, as an integer percentage. */
-  backdropBrightness: number;
-  /** Saturation, as an integer percentage. */
-  backdropSaturation: number;
-  /** Object opacity when backdrop is visible, as an integer percentage. */
-  objectOpacity: number;
-  outOfRangeDrawSettings: DrawSettings;
-  outlierDrawSettings: DrawSettings;
-  outlineColor: Color;
-  openTab: TabType;
-  vectorConfig: VectorConfig;
 };
 
 export enum PlotRangeType {
@@ -201,6 +226,73 @@ export type ScatterPlotConfig = {
   rangeType: PlotRangeType;
 };
 
+export enum AnnotationSelectionMode {
+  TIME,
+  RANGE,
+  TRACK,
+}
+
+/**
+ * Data used to map from the segmentation ID (e.g. raw pixel value) of an object
+ * in a given frame to its global ID in the dataset, which is used to index into
+ * data arrays for feature, time, track, and other data. We use a lookup because
+ * segmentation IDs are not guaranteed to be unique across frames.
+ *
+ * The global ID of an object with segmentation ID `segId` and
+ * GlobalIdLookupInfo `info` is given by:
+ *
+ * ```
+ * info.lut[segId - info.minSegId] - 1
+ * ```
+ *
+ *  If the segmentation ID is not present in the dataset, the global ID is
+ * `NaN` or `-1`.
+ */
+export type GlobalIdLookupInfo = {
+  /**
+   * A LUT that maps from segmentation IDs to global IDs.
+   *
+   * An optimization is performed where all segmentation IDs are offset by the
+   * smallest segmentation ID in the frame to reduce the size of the LUT.
+   * Additionally, the value `0` is reserved to indicate that a segmentation ID
+   * does not have a global ID, so all global IDs are offset by 1.
+   *
+   * For example, if we had the following segmentation IDs and global IDs:
+   * 
+   * | Segmentation IDs | Global ID | Global ID + 1 |
+   * |------------------|-----------|---------------|
+   * | 3                | 0         | 1             |
+   * | 4                | 2         | 3             |
+   * | 6                | 4         | 5             |
+   * | 9                | 1         | 2             |
+
+   * The raw, pre-optimized LUT would be: `[0, 0, 0, 1, 3, 0, 5, 0, 0, 2]`. We
+   * can reduce the size of the LUT by removing the starting 0s and just
+   * tracking the smallest ID separately, which gives us `[1, 3, 0, 5, 0, 0,
+   * 2]`.
+   */
+  lut: Uint32Array;
+  /**
+   * The `lut` packed as a DataTexture with square dimensions. See comments on
+   * `lut` for more details on the contents.
+   */
+  texture: DataTexture;
+  /**
+   * The smallest segmentation on this frame, used for memory optimization.
+   */
+  minSegId: number;
+};
+
+export type PixelIdInfo = {
+  /** Segmentation ID of the pixel.*/
+  segId: number;
+  /**
+   * Global ID derived from the segmentation ID, used to index into data
+   * arrays. `undefined` if the segmentation ID is missing from the dataset.
+   */
+  globalId?: number;
+};
+
 /**
  * Callback used to report warnings to the user. The message is the title
  * of the warning, and the description is the body of the warning. If an array
@@ -208,8 +300,12 @@ export type ScatterPlotConfig = {
  */
 export type ReportWarningCallback = (message: string, description: string | string[]) => void;
 
+export type ReportErrorCallback = (message: string) => void;
+
+export type ReportLoadProgressCallback = (complete: number, total: number) => void;
+
 export enum LoadTroubleshooting {
-  CHECK_NETWORK = "This may be due to a network issue, the server being unreachable, or a misconfigured URL." +
+  CHECK_NETWORK = "This may be due to a network issue, the server being down or unreachable, or a misconfigured URL." +
     " Please check your network access.",
   CHECK_FILE_EXISTS = "Please check if the file exists and if you have access to it, or see the developer console for more details.",
   CHECK_FILE_OR_NETWORK = "This may be because of an unsupported format, missing files, or server and network issues. Please see the developer console for more details.",

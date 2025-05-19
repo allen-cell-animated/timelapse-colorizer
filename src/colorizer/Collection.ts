@@ -8,10 +8,17 @@ import {
   updateCollectionVersion,
 } from "./utils/collection_utils";
 import { formatAsBulletList, uncapitalizeFirstLetter } from "./utils/data_utils";
-import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout, formatPath, isJson, isUrl } from "./utils/url_utils";
+import {
+  DEFAULT_FETCH_TIMEOUT_MS,
+  fetchManifestJson,
+  fetchWithTimeout,
+  formatPath,
+  isJson,
+  isUrl,
+} from "./utils/url_utils";
 
 import Dataset from "./Dataset";
-import { IArrayLoader } from "./loaders/ILoader";
+import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 
 export type CollectionData = Map<string, CollectionEntry>;
 
@@ -25,6 +32,19 @@ export type DatasetLoadResult =
       loaded: true;
       dataset: Dataset;
     };
+
+export type CollectionLoadOptions = {
+  fetchMethod?: typeof fetchWithTimeout;
+  reportWarning?: ReportWarningCallback;
+};
+
+export type DatasetLoadOptions = {
+  manifestLoader?: typeof fetchManifestJson;
+  onLoadProgress?: (complete: number, total: number) => void;
+  arrayLoader?: IArrayLoader;
+  frameLoader?: ITextureImageLoader;
+  reportWarning?: ReportWarningCallback;
+};
 
 /**
  * Collections describe a group of datasets, designated with a string name and a path.
@@ -132,14 +152,7 @@ export default class Collection {
    *
    * See `DatasetLoadResult` for more details.
    */
-  public async tryLoadDataset(
-    datasetKey: string,
-    options: Partial<{
-      onLoadProgress?: (complete: number, total: number) => void;
-      arrayLoader?: IArrayLoader;
-      reportWarning?: ReportWarningCallback;
-    }> = {}
-  ): Promise<DatasetLoadResult> {
+  public async tryLoadDataset(datasetKey: string, options: DatasetLoadOptions = {}): Promise<DatasetLoadResult> {
     console.time("loadDataset");
 
     if (!this.hasDataset(datasetKey)) {
@@ -158,10 +171,14 @@ export default class Collection {
       options.onLoadProgress?.(completedLoadItems, totalLoadItems);
     };
 
-    // TODO: Override fetch method
     try {
-      const dataset = new Dataset(path, undefined, options.arrayLoader);
-      await dataset.open({ onLoadStart, onLoadComplete, reportWarning: options.reportWarning });
+      const dataset = new Dataset(path, options.frameLoader, options.arrayLoader);
+      await dataset.open({
+        onLoadStart,
+        onLoadComplete,
+        reportWarning: options.reportWarning,
+        manifestLoader: options.manifestLoader,
+      });
       console.timeEnd("loadDataset");
       return { loaded: true, dataset: dataset };
     } catch (e) {
@@ -275,7 +292,7 @@ export default class Collection {
    */
   public static async loadCollection(
     collectionParam: string,
-    options: Partial<{ fetchMethod: typeof fetchWithTimeout; reportWarning: ReportWarningCallback }> = {}
+    options: CollectionLoadOptions = {}
   ): Promise<Collection> {
     const absoluteCollectionUrl = Collection.formatAbsoluteCollectionPath(collectionParam);
 
