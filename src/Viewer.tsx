@@ -1,6 +1,7 @@
 import {
   CaretRightOutlined,
   CheckCircleOutlined,
+  EllipsisOutlined,
   LinkOutlined,
   PauseOutlined,
   StepBackwardFilled,
@@ -30,7 +31,7 @@ import { useAnnotations, useConstructor, useDebounce, useRecentCollections } fro
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
-import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
+import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
   loadInitialViewerStateFromParams,
@@ -79,6 +80,13 @@ import { useViewerStateStore } from "./state/ViewerState";
 
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
+
+type TabItem = {
+  label: string;
+  key: string;
+  visible?: boolean;
+  children: ReactNode;
+};
 
 function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
@@ -608,7 +616,7 @@ function Viewer(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
-  const allTabItems = [
+  const allTabItems: TabItem[] = [
     {
       label: "Track plot",
       key: TabType.TRACK_PLOT,
@@ -634,7 +642,6 @@ function Viewer(): ReactElement {
     {
       label: "Correlation plot",
       key: TabType.CORRELATION_PLOT,
-      visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
           <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
@@ -653,7 +660,6 @@ function Viewer(): ReactElement {
     {
       label: "Annotations",
       key: TabType.ANNOTATION,
-      visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
           <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId?.globalId ?? null} />
@@ -933,6 +939,7 @@ function Viewer(): ReactElement {
                 activeKey={currentTab}
                 onChange={(key) => setOpenTab(key as TabType)}
                 items={tabItems}
+                moreIcon={<EllipsisOutlined style={{ fontSize: theme.font.size.section }} />}
               />
             </div>
           </div>
