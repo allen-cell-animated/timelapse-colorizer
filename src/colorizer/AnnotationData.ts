@@ -18,6 +18,11 @@ export const DEFAULT_ANNOTATION_LABEL_COLORS = KNOWN_CATEGORICAL_PALETTES.get(
   DEFAULT_CATEGORICAL_PALETTE_KEY
 )!.colorStops;
 
+/** Gets a default color for a label based on the index. */
+function getDefaultColor(index: number): Color {
+  return new Color(DEFAULT_ANNOTATION_LABEL_COLORS[index % DEFAULT_ANNOTATION_LABEL_COLORS.length]);
+}
+
 export enum LabelType {
   BOOLEAN = "boolean",
   INTEGER = "integer",
@@ -309,9 +314,7 @@ export class AnnotationData implements IAnnotationData {
   }
 
   getNextDefaultLabelSettings(): LabelOptions {
-    const color = new Color(
-      DEFAULT_ANNOTATION_LABEL_COLORS[this.numLabelsCreated % DEFAULT_ANNOTATION_LABEL_COLORS.length]
-    );
+    const color = getDefaultColor(this.numLabelsCreated);
     const name = `Label ${this.numLabelsCreated + 1}`;
     return { type: LabelType.BOOLEAN, name, color, autoIncrement: true };
   }
@@ -541,7 +544,8 @@ export class AnnotationData implements IAnnotationData {
   static merge(
     annotationData1: AnnotationData,
     annotationData2: AnnotationData,
-    mergeMode: AnnotationMergeMode
+    mergeMode: AnnotationMergeMode,
+    reassignColors: boolean = true
   ): AnnotationData {
     const mergedAnnotationData = new AnnotationData();
     if (mergeMode === AnnotationMergeMode.OVERWRITE) {
@@ -552,6 +556,11 @@ export class AnnotationData implements IAnnotationData {
         ...annotationData1.labelData.map(cloneLabel),
         ...annotationData2.labelData.map(cloneLabel),
       ];
+      if (reassignColors) {
+        for (let i = annotationData1.labelData.length; i < mergedAnnotationData.labelData.length; i++) {
+          mergedAnnotationData.labelData[i].options.color = getDefaultColor(i);
+        }
+      }
       mergedAnnotationData.numLabelsCreated = annotationData1.numLabelsCreated + annotationData2.numLabelsCreated;
     } else {
       // merge
@@ -569,7 +578,11 @@ export class AnnotationData implements IAnnotationData {
           }
         } else {
           // Add the new label.
-          mergedAnnotationData.labelData.push(cloneLabel(labelData2));
+          const newLabelData = cloneLabel(labelData2);
+          if (reassignColors) {
+            newLabelData.options.color = getDefaultColor(mergedAnnotationData.numLabelsCreated);
+          }
+          mergedAnnotationData.labelData.push(newLabelData);
           mergedAnnotationData.numLabelsCreated++;
         }
       }
