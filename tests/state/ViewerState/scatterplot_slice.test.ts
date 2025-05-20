@@ -4,12 +4,14 @@ import { describe, expect, it } from "vitest";
 
 import { PlotRangeType } from "../../../src/colorizer";
 import { UrlParam } from "../../../src/colorizer/utils/url_utils";
-import { SCATTERPLOT_TIME_FEATURE } from "../../../src/components/Tabs/scatter_plot_data_utils";
+import { DEPRECATED_SCATTERPLOT_TIME_KEY } from "../../../src/components/Tabs/scatter_plot_data_utils";
 import { useViewerStateStore } from "../../../src/state";
 import { loadScatterPlotSliceFromParams, serializeScatterPlotSlice } from "../../../src/state/slices";
 import { ANY_ERROR } from "../../test_utils";
 import { MOCK_DATASET, MockFeatureKeys } from "./constants";
 import { setDatasetAsync } from "./utils";
+
+import { TIME_FEATURE_KEY } from "../../../src/colorizer/Dataset";
 
 describe("ScatterplotSlice", () => {
   it("can set range type", () => {
@@ -58,11 +60,11 @@ describe("ScatterplotSlice", () => {
 
       // Custom time feature
       act(() => {
-        result.current.setScatterXAxis(SCATTERPLOT_TIME_FEATURE.value);
-        result.current.setScatterYAxis(SCATTERPLOT_TIME_FEATURE.value);
+        result.current.setScatterXAxis(TIME_FEATURE_KEY);
+        result.current.setScatterYAxis(TIME_FEATURE_KEY);
       });
-      expect(result.current.scatterXAxis).toBe(SCATTERPLOT_TIME_FEATURE.value);
-      expect(result.current.scatterYAxis).toBe(SCATTERPLOT_TIME_FEATURE.value);
+      expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
+      expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
 
       // Null
       act(() => {
@@ -89,12 +91,12 @@ describe("ScatterplotSlice", () => {
     it("allows axes to keep time value on dataset change", async () => {
       const { result } = renderHook(() => useViewerStateStore());
       act(() => {
-        result.current.setScatterXAxis(SCATTERPLOT_TIME_FEATURE.value);
-        result.current.setScatterYAxis(SCATTERPLOT_TIME_FEATURE.value);
+        result.current.setScatterXAxis(TIME_FEATURE_KEY);
+        result.current.setScatterYAxis(TIME_FEATURE_KEY);
       });
       await setDatasetAsync(result, MOCK_DATASET);
-      expect(result.current.scatterXAxis).toBe(SCATTERPLOT_TIME_FEATURE.value);
-      expect(result.current.scatterYAxis).toBe(SCATTERPLOT_TIME_FEATURE.value);
+      expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
+      expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
     });
 
     it("nulls axes with feature keys that do not exist in the new dataset", async () => {
@@ -185,6 +187,18 @@ describe("ScatterplotSlice", () => {
         loadScatterPlotSliceFromParams(result.current, params);
       });
       expect(result.current.scatterRangeType).toBe(initialRangeType);
+    });
+
+    it("replaces the deprecated scatterplot time feature", () => {
+      const { result } = renderHook(() => useViewerStateStore());
+      const params = new URLSearchParams();
+      params.set(UrlParam.SCATTERPLOT_X_AXIS, DEPRECATED_SCATTERPLOT_TIME_KEY);
+      params.set(UrlParam.SCATTERPLOT_Y_AXIS, DEPRECATED_SCATTERPLOT_TIME_KEY);
+      act(() => {
+        loadScatterPlotSliceFromParams(result.current, params);
+      });
+      expect(result.current.scatterXAxis).toBe(TIME_FEATURE_KEY);
+      expect(result.current.scatterYAxis).toBe(TIME_FEATURE_KEY);
     });
   });
 });

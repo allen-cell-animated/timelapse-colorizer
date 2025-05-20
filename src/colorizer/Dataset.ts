@@ -13,6 +13,7 @@ import { AnalyticsEvent, triggerAnalyticsEvent } from "./utils/analytics";
 import { buildFrameToGlobalIdLookup, formatAsBulletList, getKeyFromName } from "./utils/data_utils";
 import { ManifestFile, ManifestFileMetadata, updateManifestVersion } from "./utils/dataset_utils";
 import { padCentroidsTo3d } from "./utils/math_utils";
+import { packDataTexture } from "./utils/texture_utils";
 import * as urlUtils from "./utils/url_utils";
 
 import DataCache from "./DataCache";
@@ -20,6 +21,9 @@ import { IArrayLoader, ITextureImageLoader } from "./loaders/ILoader";
 import ImageFrameLoader from "./loaders/ImageFrameLoader";
 import UrlArrayLoader from "./loaders/UrlArrayLoader";
 import Track from "./Track";
+
+export const TRACK_FEATURE_KEY = "_track_";
+export const TIME_FEATURE_KEY = "_time_";
 
 export enum FeatureType {
   CONTINUOUS = "continuous",
@@ -30,7 +34,7 @@ export enum FeatureType {
 export type FeatureData = {
   name: string;
   key: string;
-  data: Float32Array;
+  data: Float32Array | Uint32Array;
   tex: DataTexture;
   min: number;
   max: number;
@@ -437,6 +441,41 @@ export default class Dataset {
     return this.frameDimensions || new Vector2(1, 1);
   }
 
+  /** Adds auto-generated features for time and track to this Dataset. */
+  private addTimeAndTrackFeatures(): void {
+    if (this.trackIds && !this.features.has(TRACK_FEATURE_KEY)) {
+      const trackData = new Float32Array(this.trackIds);
+      this.features.set(TRACK_FEATURE_KEY, {
+        name: "Track ID",
+        key: TRACK_FEATURE_KEY,
+        data: this.trackIds,
+        tex: packDataTexture(trackData, FeatureDataType.F32),
+        min: 0,
+        max: this.trackIds.reduce((max, id) => Math.max(max, id), 0),
+        unit: "",
+        type: FeatureType.DISCRETE,
+        categories: null,
+        description: "Track ID of the object. This feature was added by the viewer.",
+      });
+    }
+
+    if (this.times && !this.features.has(TIME_FEATURE_KEY)) {
+      const timeData = new Float32Array(this.times);
+      this.features.set(TIME_FEATURE_KEY, {
+        name: "Time",
+        key: TIME_FEATURE_KEY,
+        data: this.times,
+        tex: packDataTexture(timeData, FeatureDataType.F32),
+        min: 0,
+        max: this.times.reduce((max, id) => Math.max(max, id), 0),
+        unit: "",
+        type: FeatureType.CONTINUOUS,
+        categories: null,
+        description: "Frame number where the object appears. This feature was added by the viewer.",
+      });
+    }
+  }
+
   /**
    * Opens the dataset and loads all necessary files from the manifest.
    * @param options Configuration options for the dataset loader.
@@ -574,6 +613,8 @@ export default class Dataset {
         LoadTroubleshooting.CHECK_FILE_OR_NETWORK,
       ]);
     }
+
+    this.addTimeAndTrackFeatures();
 
     // Construct default array of segmentation IDs if not provided in the manifest.
     if (!this.segIds) {

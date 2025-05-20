@@ -325,5 +325,13 @@ describe("Dataset", () => {
         new Uint16Array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8])
       );
     });
+
+    it("has track and time keys in the dataset", async () => {
+      const mockArrayLoaderSource = MOCK_DATASET_ARRAY_LOADER_DEFAULT_SOURCE;
+      const dataset = await makeMockDataset(MOCK_DATASET_MANIFEST, new MockArrayLoader(mockArrayLoaderSource));
+      // Regression test: this test will break if the key constants are modified or removed.
+      expect(dataset.featureKeys).includes("_track_");
+      expect(dataset.featureKeys).includes("_time_");
+    });
   });
 });

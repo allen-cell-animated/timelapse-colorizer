@@ -4,8 +4,11 @@ import { Color } from "three";
 import { ColorRamp, Dataset, HexColorString } from "../../colorizer";
 import { remap } from "../../colorizer/utils/math_utils";
 
-/** Extra feature added to the dropdowns representing the frame number. */
-export const SCATTERPLOT_TIME_FEATURE = { value: "scatterplot_time", label: "Time" };
+/**
+ * Extra feature added to the dropdowns representing the frame number.
+ * Deprecated because Time is now automatically added as a feature to the dataset.
+ */
+export const DEPRECATED_SCATTERPLOT_TIME_KEY = "scatterplot_time";
 
 export type DataArray = Uint32Array | Float32Array | number[];
 
@@ -121,36 +124,14 @@ export function scaleColorOpacityByMarkerCount(numMarkers: number, baseColor: He
   return (baseColor + opacityString) as HexColorString;
 }
 
-/** Retrieve feature name, if it exists. Accounts for the added time feature. */
-export const getFeatureOrTimeName = (featureKey: string | null, dataset: Dataset | null): string => {
-  if (featureKey === null || dataset === null) {
-    return "";
-  }
-  if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
-    return SCATTERPLOT_TIME_FEATURE.label;
-  }
-  return dataset.getFeatureName(featureKey) || "";
-};
-
-/** Retrieve feature name with units, if it exists. Accounts for the added time feature. */
-export const getFeatureOrTimeNameWithUnits = (featureKey: string | null, dataset: Dataset | null): string => {
-  if (featureKey === null || dataset === null) {
-    return "";
-  }
-  if (featureKey === SCATTERPLOT_TIME_FEATURE.value) {
-    return SCATTERPLOT_TIME_FEATURE.label;
-  }
-  return dataset.getFeatureNameWithUnits(featureKey) || "";
-};
-
 /**
  * Returns a Plotly hovertemplate string for a scatter plot trace.
  * The trace must include the `id` (object ID) and `customdata` (track ID) fields.
  */
 export function getHoverTemplate(dataset: Dataset, xAxisFeatureKey: string, yAxisFeatureKey: string): string {
   return (
-    `${getFeatureOrTimeName(xAxisFeatureKey, dataset)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
-    `<br>${getFeatureOrTimeName(yAxisFeatureKey, dataset)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
+    `${dataset.getFeatureName(xAxisFeatureKey)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
+    `<br>${dataset.getFeatureName(yAxisFeatureKey)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
     `<br>Track ID: %{customdata}<br>Object ID: %{id}<extra></extra>`
   );
 }
