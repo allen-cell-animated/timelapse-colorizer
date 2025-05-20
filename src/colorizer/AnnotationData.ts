@@ -3,6 +3,7 @@ import { Color } from "three";
 
 import { removeUndefinedProperties } from "../state/utils/data_validation";
 import { DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } from "./colors/categorical_palettes";
+import { getLabelTypeFromParsedCsv } from "./utils/data_utils";
 
 import Dataset from "./Dataset";
 
@@ -415,6 +416,70 @@ export class AnnotationData implements IAnnotationData {
       this.removeLabelOnId(labelIdx, id);
     }
     this.markIdMapAsDirty();
+  }
+
+  static fromCsv(_dataset: Dataset, csvString: string): AnnotationData {
+    const annotationData = new AnnotationData();
+    const result = Papa.parse(csvString, { header: true, skipEmptyLines: true, comments: "#" });
+
+    if (result.errors.length > 0) {
+      throw new Error(`Error parsing CSV: ${result.errors.map((e) => e.message).join(", ")}`);
+    }
+    const data = result.data as Record<string, string>[];
+    const headers = result.meta.fields as string[];
+
+    // Check for required ID column.
+    if (headers.indexOf(CSV_COL_ID) === -1) {
+      throw new Error(`CSV does not contain expected ID columns with the header "${CSV_COL_ID}".`);
+    }
+    // Remove the metadata columns
+    const labelNames = headers.filter(
+      (header) => header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME
+    );
+    const labelNameToType = getLabelTypeFromParsedCsv(headers, data);
+
+    // Create each of the labels from a header in the CSV.
+    for (let i = 0; i < labelNames.length; i++) {
+      const name = labelNames[i].trim();
+      const type = labelNameToType.get(name)!;
+      annotationData.createNewLabel({
+        name,
+        type,
+      });
+    }
+
+    for (const row of data) {
+      const id = parseInt(row[CSV_COL_ID], 10);
+      const track = parseInt(row[CSV_COL_TRACK], 10);
+      const time = parseInt(row[CSV_COL_TIME], 10);
+
+      // TODO: Check that the id is valid for the dataset, and that the track and time
+      // match for the ID. Count up any mismatches and return it as part of a
+      // Result object so we can warn the user.
+      if (isNaN(id) || isNaN(track) || isNaN(time)) {
+        console.warn(`Invalid ID, track, or time in CSV: ${row}`);
+        continue;
+      }
+      // Push row data to the labels.
+      for (let labelIdx = 0; labelIdx < labelNames.length; labelIdx++) {
+        const labelData = annotationData.labelData[labelIdx];
+        const isBoolean = labelData.options.type === LabelType.BOOLEAN;
+        const name = labelNames[labelIdx];
+        let value = row[name]?.trim();
+        // Ignore invalid values (and omit boolean false values)
+        if (value === undefined || value === "" || (isBoolean && value.toLowerCase() === BOOLEAN_VALUE_FALSE)) {
+          continue;
+        }
+        if (isBoolean) {
+          value = BOOLEAN_VALUE_TRUE;
+        }
+        annotationData.setLabelValueOnId(labelIdx, id, value);
+      }
+    }
+
+    // TODO: Report data mismatch? (if object IDs + times/seg IDs/tracks do not
+    // match up)
+    return annotationData;
   }
 
   toCsv(dataset: Dataset, delimiter: string = ","): string {
