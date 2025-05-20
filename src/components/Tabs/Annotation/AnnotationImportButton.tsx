@@ -45,7 +45,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
 
   const modalContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleFileUpload = async (file: File): Promise<void> => {
+  const handleFileUpload = (file: File): void => {
     setUploadedFile(file);
     setConvertedAnnotationData(null);
     setErrorText("");
@@ -59,7 +59,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
       const text = e.target?.result as string;
       try {
         // TODO: Do this in a worker to avoid blocking the UI thread?
-        const annotationData = await AnnotationData.fromCsv(dataset, text);
+        const annotationData = AnnotationData.fromCsv(dataset, text);
         setConvertedAnnotationData(annotationData);
       } catch (error) {
         setErrorText("Could not parse CSV file. Parsing failed with the following error: '" + error + "'");
