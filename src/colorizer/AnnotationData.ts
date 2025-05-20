@@ -526,7 +526,10 @@ export class AnnotationData implements IAnnotationData {
     }
     return { annotationData, mismatchedTimes, mismatchedTracks, unparseableRows, invalidIds, totalRows: data.length };
   }
-
+  /**
+   * Returns the index of a label with the matching name and type.
+   * Returns -1 if no such label exists.
+   */
   private findMatchingLabelIdx(name: string, type: LabelType): number {
     for (let i = 0; i < this.labelData.length; i++) {
       const labelData = this.labelData[i];
@@ -539,7 +542,23 @@ export class AnnotationData implements IAnnotationData {
 
   /**
    * Merges two annotation data objects and returns a new, resulting object,
-   * based on the merge mode.
+   * based on the merge mode. Data is deep-copied, so the original objects are
+   * not modified.
+   * @param annotationData1 The first annotation data object.
+   * @param annotationData2 The second annotation data object.
+   * @param mergeMode The merge mode to use. Can be one of:
+   * - `AnnotationMergeMode.APPEND`: Appends the labels from the second
+   *    annotation data object to the first one.
+   * - `AnnotationMergeMode.MERGE`: Merges label data for labels that match name
+   *   and type. If a label exists in both objects, the IDs are merged, with the
+   *   second object taking precedence for the values. Labels that do not match
+   *   are appended.
+   * - `AnnotationMergeMode.OVERWRITE`: Returns a copy of the second annotation
+   *   data object.
+   * @param reassignColors If true, reassigns colors on labels appended from the
+   *   second annotation data object to the default for that index. Defaults to
+   *   true.
+   * @returns A new annotation data object with the merged label data.
    */
   static merge(
     annotationData1: AnnotationData,
@@ -548,6 +567,7 @@ export class AnnotationData implements IAnnotationData {
     reassignColors: boolean = true
   ): AnnotationData {
     const mergedAnnotationData = new AnnotationData();
+
     if (mergeMode === AnnotationMergeMode.OVERWRITE) {
       mergedAnnotationData.labelData = [...annotationData2.labelData.map(cloneLabel)];
       mergedAnnotationData.numLabelsCreated = annotationData2.numLabelsCreated;
@@ -563,21 +583,23 @@ export class AnnotationData implements IAnnotationData {
       }
       mergedAnnotationData.numLabelsCreated = annotationData1.numLabelsCreated + annotationData2.numLabelsCreated;
     } else {
-      // merge
+      // Merge
       mergedAnnotationData.labelData = [...annotationData1.labelData.map(cloneLabel)];
       mergedAnnotationData.numLabelsCreated = annotationData1.numLabelsCreated;
+      // For each label in the second annotation data object, check if it
+      // exists in the first. If so, merge the IDs and overwrite the values.
       for (const labelData2 of annotationData2.labelData) {
         const labelIdx = mergedAnnotationData.findMatchingLabelIdx(labelData2.options.name, labelData2.options.type);
         if (labelIdx !== -1) {
           // There's an existing label that matches on name + type. Merge the
           // IDs and overwrite the values.
-          const labelData1 = mergedAnnotationData.labelData[labelIdx];
-          labelData1.ids = new Set([...labelData1.ids, ...labelData2.ids]);
+          const labelData = mergedAnnotationData.labelData[labelIdx];
+          labelData.ids = new Set([...labelData.ids, ...labelData2.ids]);
           for (const [value, ids] of labelData2.valueToIds.entries()) {
             mergedAnnotationData.setLabelValueOnIds(labelIdx, Array.from(ids), value);
           }
         } else {
-          // Add the new label.
+          // No match, so append as a new label.
           const newLabelData = cloneLabel(labelData2);
           if (reassignColors) {
             newLabelData.options.color = getDefaultColor(mergedAnnotationData.numLabelsCreated);

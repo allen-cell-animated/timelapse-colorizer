@@ -519,12 +519,14 @@ export const useAnnotations = (): AnnotationState => {
     const mergedData = AnnotationData.merge(annotationData, newData, mode);
     annotationDataRef.current = mergedData;
     if (mergedData.getLabels().length > 0) {
+      // Update selected label index to make sure it's still valid
       if (currentLabelIdx === null) {
         setCurrentLabelIdx(0);   
       } else if (currentLabelIdx >= mergedData.getLabels().length) {
         setCurrentLabelIdx(mergedData.getLabels().length - 1);
       }
     } else {
+      // Disable annotations if there are no labels
       setIsAnnotationEnabled(false);
       setCurrentLabelIdx(null);
     }
