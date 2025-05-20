@@ -79,21 +79,21 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       title: "Object ID",
       dataIndex: "id",
       key: "id",
-      width: "30%",
+      width: "20%",
       sorter: (a, b) => a.id - b.id,
     },
     {
       title: "Time",
       dataIndex: "time",
       key: "time",
-      width: "30%",
+      width: "20%",
       sorter: (a, b) => a.time - b.time,
     },
     // Column that contains a remove button for the ID.
     {
       title: "",
       key: "action",
-      width: "10%",
+      width: "5%",
       render: (_, record) => (
         <div style={{ display: "flex", justifyContent: "right" }}>
           <IconButton
@@ -122,7 +122,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       title: "Track ID",
       dataIndex: "track",
       key: "track",
-      width: "30%",
+      width: "20%",
       sorter: (a, b) => a.track - b.track,
     });
   }
@@ -132,7 +132,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       title: "Value",
       dataIndex: "value",
       key: "value",
-      width: "30%",
+      width: "40%",
       sorter: (a, b) => a.value.localeCompare(b.value),
     });
   }
