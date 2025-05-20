@@ -151,16 +151,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
-  const tableValues = useMemo(() => {
-    if (currentLabelIdx === null) {
-      return undefined;
-    }
-    const labelData = annotationData.getLabels()[currentLabelIdx];
-    if (labelData.options.type === LabelType.BOOLEAN) {
-      return undefined;
-    }
-    return labelData.idToValue;
-  }, [currentLabelIdx, annotationData]);
+  const isMultiValueLabel = selectedLabel && selectedLabel?.options.type !== LabelType.BOOLEAN;
+  const idToValue = isMultiValueLabel ? selectedLabel.idToValue : undefined;
+  const valueToIds = isMultiValueLabel ? selectedLabel.valueToIds : undefined;
 
   const labelSelectionDropdown = (
     <>
@@ -282,7 +275,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             onClickDeleteObject={onClickDeleteObject}
             dataset={store.dataset}
             ids={tableIds}
-            idToValue={tableValues}
+            idToValue={idToValue}
             height={480}
             selectedId={selectedId}
           />
@@ -312,7 +305,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             setFrame={store.setFrame}
             dataset={store.dataset}
             ids={tableIds}
-            idToValue={tableValues}
+            idToValue={idToValue}
+            valueToIds={valueToIds}
             highlightRange={highlightedIds}
             lastClickedId={props.annotationState.lastClickedId}
             selectedTrack={store.selectedTrack}

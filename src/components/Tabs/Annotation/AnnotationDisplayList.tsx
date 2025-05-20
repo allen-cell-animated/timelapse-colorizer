@@ -16,6 +16,7 @@ type AnnotationDisplayListProps = {
   dataset: Dataset | null;
   ids: number[];
   idToValue: Map<number, string> | undefined;
+  valueToIds: Map<string, Set<number>> | undefined;
   setFrame: (frame: number) => Promise<void>;
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
@@ -36,6 +37,59 @@ const ListLayoutContainer = styled.div`
   gap: 10px;
 `;
 
+type LookupInfo = {
+  trackIds: number[];
+  trackToIds: Map<string, number[]>;
+  valueToTrackIds?: Map<string, number[]>;
+};
+
+const getTrackLookups = (
+  dataset: Dataset,
+  ids: number[],
+  idToValue: Map<number, string> | undefined,
+  valueToIds: Map<string, Set<number>> | undefined
+): LookupInfo => {
+  const trackToIds: Map<string, number[]> = new Map();
+  const valueToTrackIds: Map<string, Set<number>> = new Map();
+  const trackIds: Set<number> = new Set();
+
+  // Reverse the order of IDs so that the most recently added IDs are at the
+  // front of the list.
+  const idsReversed = ids.toReversed();
+  for (const id of idsReversed) {
+    const trackId = dataset.getTrackId(id);
+    const trackIdString = trackId.toString();
+    if (!trackToIds.has(trackIdString)) {
+      trackToIds.set(trackIdString, [id]);
+    } else {
+      const ids = trackToIds.get(trackIdString);
+      if (ids) {
+        ids.push(id);
+      }
+    }
+
+    trackIds.add(trackId);
+
+    // Store value information.
+    if (idToValue && valueToIds) {
+      const value = idToValue.get(id);
+      if (!value) {
+        continue;
+      }
+      if (!valueToTrackIds.has(value)) {
+        valueToTrackIds.set(value, new Set([trackId]));
+      }
+      valueToTrackIds.get(value)!.add(trackId);
+    }
+  }
+
+  return {
+    trackIds: Array.from(trackIds),
+    trackToIds,
+    valueToTrackIds: new Map(valueToTrackIds.entries().map(([key, value]) => [key, Array.from(value)])),
+  };
+};
+
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
@@ -44,32 +98,17 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
   // Organize ids by track
-  const trackToIds: Map<string, number[]> = useMemo(() => {
+  // TODO: Transition here?
+  const { trackIds, trackToIds } = useMemo(() => {
     if (!props.dataset) {
-      return new Map();
+      return {
+        trackIds: [],
+        trackToIds: new Map(),
+        valueToTrackIds: new Map(),
+      };
     }
-    const map: Map<string, number[]> = new Map();
-    for (const id of props.ids) {
-      const trackId: string = props.dataset.getTrackId(id).toString();
-      if (!map.has(trackId)) {
-        map.set(trackId, [id]);
-      } else {
-        const ids = map.get(trackId);
-        if (ids) {
-          ids.push(id);
-        }
-      }
-    }
-    return map;
-  }, [props.dataset, props.ids]);
-
-  // Track IDs, in order of appearance in the ID list. The track that was last
-  // added will be at the top of the list.
-  const trackIds = useMemo(() => {
-    return Array.from(trackToIds.keys())
-      .map((trackId) => parseInt(trackId, 10))
-      .reverse();
-  }, [trackToIds]);
+    return getTrackLookups(props.dataset, props.ids, props.idToValue, props.valueToIds);
+  }, [props.dataset, props.ids, props.idToValue, props.valueToIds]);
 
   let listContents;
   if (props.ids.length === 0 || props.dataset === null) {
@@ -83,6 +122,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       </FlexRowAlignCenter>
     );
   } else {
+    // TODO: Handle updates to this in a transition so the UI updates don't block
+    // interaction.
     listContents = (
       <ul style={{ marginTop: 0 }}>
         {trackIds.map((trackId) => {
