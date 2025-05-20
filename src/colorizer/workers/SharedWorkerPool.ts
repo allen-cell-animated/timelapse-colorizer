@@ -1,6 +1,6 @@
 import workerpool from "workerpool";
 
-import { FeatureArrayType, FeatureDataType } from "../types";
+import { FeatureArrayType, FeatureDataType, FeatureThreshold } from "../types";
 import { DataTextureInfo } from "../utils/texture_utils";
 
 import Dataset from "../Dataset";
@@ -82,6 +82,17 @@ export default class SharedWorkerPool {
       return undefined;
     }
     return await this.workerPool.exec("getMotionDeltas", [trackIds, times, centroids, timeIntervals]);
+  }
+
+  async getInRangeLUT(dataset: Dataset, thresholds: FeatureThreshold[]): Promise<Uint8Array | null> {
+    // Ignore thresholds with features that don't exist in this dataset or whose units don't match
+    const validThresholds = thresholds.filter((threshold) => {
+      const featureData = dataset.getFeatureData(threshold.featureKey);
+      return featureData && featureData.unit === threshold.unit;
+    });
+    const numObjects = dataset.numObjects;
+    const featureData = validThresholds.map(({ featureKey }) => dataset.getFeatureData(featureKey)?.data);
+    return await this.workerPool.exec("getInRangeLUT", [numObjects, validThresholds, featureData]);
   }
 
   async terminate(): Promise<void> {
