@@ -15,6 +15,7 @@ import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
   ids: number[];
+  idToValue: Map<number, string> | undefined;
   setFrame: (frame: number) => Promise<void>;
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
@@ -207,6 +208,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             onClickDeleteObject={props.onClickDeleteObject}
             dataset={props.dataset}
             ids={selectedTrackId ? trackToIds.get(selectedTrackId?.toString()) ?? [] : []}
+            idToValue={props.idToValue}
             height={410}
             selectedId={props.selectedId}
             hideTrackColumn={true}

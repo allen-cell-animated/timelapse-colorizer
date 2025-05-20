@@ -17,7 +17,7 @@ import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
-import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
 import CreateLabelForm from "./CreateLabelForm";
 import LabelEditControls from "./LabelEditControls";
@@ -151,6 +151,16 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
+  const tableValues = useMemo(() => {
+    if (currentLabelIdx === null) {
+      return undefined;
+    }
+    const labelData = annotationData.getLabels()[currentLabelIdx];
+    if (labelData.options.type === LabelType.BOOLEAN) {
+      return undefined;
+    }
+    return labelData.idToValue;
+  }, [currentLabelIdx, annotationData]);
 
   const labelSelectionDropdown = (
     <>
@@ -267,11 +277,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             display: viewType === AnnotationViewType.TABLE ? "block" : "none",
           }}
         >
-          <AnnotationTable
+          <AnnotationDisplayTable
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
             dataset={store.dataset}
             ids={tableIds}
+            idToValue={tableValues}
             height={480}
             selectedId={selectedId}
           />
@@ -301,6 +312,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             setFrame={store.setFrame}
             dataset={store.dataset}
             ids={tableIds}
+            idToValue={tableValues}
             highlightRange={highlightedIds}
             lastClickedId={props.annotationState.lastClickedId}
             selectedTrack={store.selectedTrack}
