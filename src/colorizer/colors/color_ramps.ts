@@ -1,4 +1,6 @@
-import ColorRamp from "../ColorRamp";
+import { GLASBEY_DARK_COLORS, GLASBEY_DEFAULT_COLORS, GLASBEY_LIGHT_COLORS } from "./glasbey";
+
+import ColorRamp, { ColorRampType } from "../ColorRamp";
 
 // TODO: Could add additional tags for filtering, etc. to each color ramp!
 export type RawColorData = {
@@ -7,6 +9,12 @@ export type RawColorData = {
   /** Display name. */
   name: string;
   colorStops: `#${string}`[];
+  /**
+   * Ramps meant for features with many integer values (e.g. track ID).
+   * Most commonly used for glasbey color ramp visualizations, where lots
+   * of colors are needed to distinguish between many different values.
+   */
+  categorical?: boolean;
 };
 
 export type ColorRampData = RawColorData & {
@@ -18,7 +26,14 @@ export type ColorRampData = RawColorData & {
 // DO NOT REMOVE COLOR RAMPS FROM THIS LIST OR CHANGE THEIR KEYS. This will break backwards compatibility with URLs.
 // Instead, remove them from `DISPLAY_COLOR_RAMP_KEYS` to omit them from the UI.
 const rawColorRampData: RawColorData[] = [
-  { key: "matplotlib-cool", name: "Matplotlib - Cool", colorStops: ["#00ffff", "#ff00ff"] },
+  {
+    key: "matplotlib-cool",
+    name: "Matplotlib - Cool",
+    // TODO: This results in some banding in the scatterplot because Three is using linear SRGB
+    // color space for interpolation. This could potentially be fixed by manually calculating the
+    // interpolated colors in the color ramp.
+    colorStops: ["#00ffff", "#20e0ff", "#40c0ff", "#60a0ff", "#8080ff", "#a060ff", "#c040ff", "#e020ff", "#ff00ff"],
+  },
   {
     key: "matplotlib-viridis",
     name: "Matplotlib - Viridis",
@@ -257,13 +272,33 @@ const rawColorRampData: RawColorData[] = [
       "#372F37",
     ],
   },
+  {
+    // TODO: Add an additional description field to describe how the categorical
+    // repeating ramps function?
+    key: "colorcet-glasbey",
+    name: "Colorcet - Glasbey (Repeating)",
+    categorical: true,
+    colorStops: GLASBEY_DEFAULT_COLORS,
+  },
+  {
+    key: "colorcet-glasbey_light",
+    name: "Colorcet - Glasbey Light (Repeating)",
+    categorical: true,
+    colorStops: GLASBEY_LIGHT_COLORS,
+  },
+  {
+    key: "colorcet-glasbey_dark",
+    name: "Colorcet - Glasbey Dark (Repeating)",
+    categorical: true,
+    colorStops: GLASBEY_DARK_COLORS,
+  },
 ];
 
 // Convert the color stops into color ramps
 const colorRampData: ColorRampData[] = rawColorRampData.map((value) => {
   return {
     ...value,
-    colorRamp: new ColorRamp(value.colorStops),
+    colorRamp: new ColorRamp(value.colorStops, value.categorical ? ColorRampType.CATEGORICAL : ColorRampType.LINEAR),
   };
 });
 
@@ -296,5 +331,8 @@ export const DISPLAY_COLOR_RAMP_KEYS = [
   "fabio_crameri-romao",
   "fabio_crameri-viko",
   "fabio_crameri-broco",
+  "colorcet-glasbey",
+  "colorcet-glasbey_light",
+  "colorcet-glasbey_dark",
 ];
 export const DEFAULT_COLOR_RAMP_KEY = Array.from(colorRampMap.keys())[0];

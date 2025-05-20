@@ -1,9 +1,9 @@
 /* global RequestInit */
 // Typescript doesn't recognize RequestInit
-import { Color, HexColorString } from "three";
+import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { isThresholdCategorical } from "../types";
+import { HexColorString, isThresholdCategorical } from "../types";
 import {
   DrawSettings,
   FeatureThreshold,
@@ -61,9 +61,7 @@ export enum UrlParam {
 const ALLEN_FILE_PREFIX = "/allen/";
 const ALLEN_PREFIX_TO_HTTPS: Record<string, string> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/assay-dev": "https://dev-aics-dtp-001.int.allencell.org/assay-dev",
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  "/allen/aics/microscopy": "https://dev-aics-dtp-001.int.allencell.org/microscopy",
+  "/allen/aics/": "https://dev-aics-dtp-001.int.allencell.org/",
 };
 
 export const DEFAULT_FETCH_TIMEOUT_MS = 2000;
@@ -347,6 +345,11 @@ function normalizeFilePathSlashes(input: string): string {
   input = input.replaceAll("\\", "/");
   // Replace double slashes with single
   input = input.replaceAll("//", "/");
+  if (input.startsWith("//")) {
+    // If the string still starts with double slashes, remove the first.
+    // (Usually `\\\\` for Windows paths)
+    input = input.slice(1);
+  }
   return input;
 }
 

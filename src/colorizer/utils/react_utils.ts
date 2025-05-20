@@ -5,7 +5,7 @@ import { useLocalStorage } from "usehooks-ts";
 import { AnnotationSelectionMode } from "../types";
 import { useShortcutKey } from "./hooks";
 
-import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters } from "../AnnotationData";
+import { AnnotationData, IAnnotationDataGetters, IAnnotationDataSetters, LabelType } from "../AnnotationData";
 import Dataset from "../Dataset";
 
 // TODO: Move this to a folder outside of `colorizer`.
@@ -253,7 +253,7 @@ export const useRecentCollections = (): [RecentCollection[], (collection: Recent
   return [recentCollections, addRecentCollection];
 };
 
-export type AnnotationState =  {
+export type AnnotationState = {
   // Viewer state that lives outside the annotation data itself
   currentLabelIdx: number | null;
   setCurrentLabelIdx: (labelIdx: number) => void;
@@ -263,6 +263,18 @@ export type AnnotationState =  {
   setVisibility: (visible: boolean) => void;
   selectionMode: AnnotationSelectionMode;
   setSelectionMode: (mode: AnnotationSelectionMode) => void;
+  /** 
+   * The ID of the last clicked object. `null` if the user clicked on the
+   * background. 
+   */
+  lastClickedId: number | null;
+  /** 
+   * The range of values that should currently be editable. Value is non-null
+   * when a user interacts with an annotation in order to edit it.
+   */
+  activeEditRange: number[] | null;
+  clearActiveEditRange: () => void;
+  nextDefaultLabelValue: string | null;
   /**
    * For a given ID, returns the range of IDs that would be selected if the ID
    * is clicked with range selection mode turned on.
@@ -272,9 +284,8 @@ export type AnnotationState =  {
    * - Returns `null` if no range would be selected.
    * - A list of IDs to select if this ID is clicked with range selection mode turned on.
    */
-  lastClickedId: number | null;
   getSelectRangeFromId: (dataset: Dataset, id: number) => number[] | null;
-  handleAnnotationClick: (dataset: Dataset, id: number, selectRange?: boolean) => void;
+  handleAnnotationClick: (dataset: Dataset, id: number | null) => void;
   /**
    * Contains annotation data getters. Use this object directly as a dependency
    * in `useMemo` or `useCallback` to trigger updates when the underlying data
@@ -283,25 +294,42 @@ export type AnnotationState =  {
   data: IAnnotationDataGetters;
 } & IAnnotationDataSetters;
 
+// TODO: Move this into a zustand state slice. A lot of the logic here is
+// attempting to synchronize updates between the annotation data and the UI,
+// which can be handled by zustand.
 export const useAnnotations = (): AnnotationState => {
   const annotationData = useConstructor(() => new AnnotationData());
 
-  const [currentLabelIdx, setCurrentLabelIdx] = useState<number | null>(null);
+  const [currentLabelIdx, _setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
   const [visible, _setVisibility] = useState<boolean>(false);
-  
+
   const [baseSelectionMode, setBaseSelectionMode] = useState<AnnotationSelectionMode>(AnnotationSelectionMode.TIME);
-  
+
   const isSelectRangeHotkeyPressed = useShortcutKey("Shift");
+  const isReuseValueHotkeyPressed = useShortcutKey("Control");
+
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
+  /**
+   * The last range of IDs that were edited, used for range-related operations.
+   * If a user clicks on an object again that is one of the endpoints of this
+   * range, any operations will be applied to the entire range. Cleared when
+   * another object is clicked.
+  */
   const [lastEditedRange, setLastEditedRange] = useState<number[] | null>(null);
-  
+  const [activeEditRange, setActiveEditRange] = useState<number[] | null>(null);
+
   // When in time mode, allow hotkeys to temporarily change to range mode.
   let selectionMode = baseSelectionMode;
-  if (baseSelectionMode === AnnotationSelectionMode.TIME && isSelectRangeHotkeyPressed) {
+  if (isSelectRangeHotkeyPressed) {
     selectionMode = AnnotationSelectionMode.RANGE;
   }
-  
+
+  const setCurrentLabelIdx = (labelIdx: number | null): void => {
+    _setCurrentLabelIdx(labelIdx);
+    setActiveEditRange(null);
+  };
+
   const setSelectionMode = (newMode: AnnotationSelectionMode): void => {
     if (newMode === baseSelectionMode) {
       return;
@@ -318,7 +346,7 @@ export const useAnnotations = (): AnnotationState => {
 
   /** Increments every time a state update is required. */
   const [dataUpdateCounter, setDataUpdateCounter] = useState(0);
-  
+
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
   const setIsAnnotationEnabled = (enabled: boolean): void => {
@@ -330,6 +358,9 @@ export const useAnnotations = (): AnnotationState => {
         setDataUpdateCounter((value) => value + 1);
       }
     }
+    setLastClickedId(null);
+    setLastEditedRange(null);
+    setActiveEditRange(null);
     _setIsAnnotationEnabled(enabled);
   };
 
@@ -384,62 +415,92 @@ export const useAnnotations = (): AnnotationState => {
 
   // Return a list of IDs that would be selected if the ID was clicked with
   // range selection mode turned on.
-  const getSelectRangeFromId = useCallback((dataset: Dataset, id: number): number[] | null => {
-    // If this ID is one of the endpoints of the last range clicked,
-    // return the same range.
-    if (lastEditedRange !== null) {
-      const firstIdInRange = lastEditedRange[0];
-      const lastIdInRange = lastEditedRange[lastEditedRange.length - 1];
-      if (id === firstIdInRange || id === lastIdInRange) {
-        return lastEditedRange;
+  const getSelectRangeFromId = useCallback(
+    (dataset: Dataset, id: number): number[] | null => {
+      // If this ID is one of the endpoints of the last range clicked,
+      // return the same range.
+      if (lastEditedRange !== null) {
+        const firstIdInRange = lastEditedRange[0];
+        const lastIdInRange = lastEditedRange[lastEditedRange.length - 1];
+        if (id === firstIdInRange || id === lastIdInRange) {
+          return lastEditedRange;
+        }
       }
-    }
-    // Otherwise, check if both IDs are in the same track. If so,
-    // return a list of the IDs between the two of them.
-    if (dataset && lastClickedId !== null) {
-      const trackOfLastClickedId = dataset.getTrackId(lastClickedId);
-      const trackOfCurrentId = dataset.getTrackId(id);
-      if (trackOfLastClickedId === trackOfCurrentId) {
-        return getIdsInRange(dataset, lastClickedId, id);
+      // Otherwise, check if both IDs are in the same track. If so,
+      // return a list of the IDs between the two of them.
+      if (dataset && lastClickedId !== null) {
+        const trackOfLastClickedId = dataset.getTrackId(lastClickedId);
+        const trackOfCurrentId = dataset.getTrackId(id);
+        if (trackOfLastClickedId === trackOfCurrentId) {
+          return getIdsInRange(dataset, lastClickedId, id);
+        }
       }
-    }
-    // IDs are not in the same track.
-    return null;
-  }, [lastEditedRange, lastClickedId]);
+      // IDs are not in the same track.
+      return null;
+    },
+    [lastEditedRange, lastClickedId]
+  );
 
-  const handleAnnotationClick = useCallback((dataset: Dataset, id: number): void => {
-    if (!isAnnotationEnabled || currentLabelIdx === null) {
-      setLastClickedId(id);
-      return;
+  const nextDefaultLabelValue = useMemo(() => {
+    if (currentLabelIdx === null) {
+      return null;
     }
-    const track = dataset.getTrack(dataset.getTrackId(id));
-    if (!track) {
-      throw new Error(`useAnnotations:handleAnnotationClick: Track ID ${dataset.getTrackId(id)} not found.`);
-    }
-    const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
+    return annotationData.getNextDefaultLabelValue(currentLabelIdx, isReuseValueHotkeyPressed);
+  }, [currentLabelIdx, dataUpdateCounter, isReuseValueHotkeyPressed]);
 
-    const idRange = getSelectRangeFromId(dataset, id);
-    switch (selectionMode) {
-      case AnnotationSelectionMode.TRACK:
-        // Toggle entire track
-        annotationData.setLabelOnIds(currentLabelIdx, track.ids, !isLabeled);
-        break;
-      case AnnotationSelectionMode.RANGE:
-        if (idRange !== null) {
-          setLastEditedRange(idRange);
-          annotationData.setLabelOnIds(currentLabelIdx, idRange, !isLabeled);
-          setLastClickedId(null);
-        } else {
+  const handleAnnotationClick = useCallback(
+    (dataset: Dataset, id: number | null): void => {
+      if (!isAnnotationEnabled || currentLabelIdx === null || id === null) {
+        if (isAnnotationEnabled) {
           setLastClickedId(id);
         }
-        break;
-      case AnnotationSelectionMode.TIME:
-      default:
-        annotationData.setLabelOnIds(currentLabelIdx, [id], !isLabeled);
-        setLastClickedId(id);
-    }
-    setDataUpdateCounter((value) => value + 1);
-  }, [selectionMode, currentLabelIdx, getSelectRangeFromId]);
+        setLastEditedRange(null);
+        setActiveEditRange(null);
+        return;
+      }
+      const track = dataset.getTrack(dataset.getTrackId(id));
+      if (!track) {
+        throw new Error(`useAnnotations:handleAnnotationClick: Track ID ${dataset.getTrackId(id)} not found.`);
+      }
+      const isLabeled = annotationData.isLabelOnId(currentLabelIdx, id);
+      const labelData = annotationData.getLabels()[currentLabelIdx];
+
+      const toggleRange = (range: number[]): void => {
+        const defaultValue = annotationData.getNextDefaultLabelValue(currentLabelIdx, isReuseValueHotkeyPressed);
+        if (isLabeled && labelData.options.type === LabelType.BOOLEAN) {
+          // Clicking a boolean label toggles the label on and off
+          annotationData.removeLabelOnIds(currentLabelIdx, range);
+          setActiveEditRange(null);
+        } else if (isLabeled) {
+          // If clicking on a range that is already labeled, initiate editing of the label value for that range
+          setActiveEditRange(range);
+        }  else {
+          annotationData.setLabelValueOnIds(currentLabelIdx, range, defaultValue);
+          setActiveEditRange(null);
+        }
+      };
+
+      const idRange = getSelectRangeFromId(dataset, id);
+      switch (selectionMode) {
+        case AnnotationSelectionMode.TRACK:
+          // Toggle entire track
+          toggleRange(track.ids);
+          break;
+        case AnnotationSelectionMode.RANGE:
+          if (idRange !== null) {
+            setLastEditedRange(idRange);
+            toggleRange(idRange);
+          }
+          break;
+        case AnnotationSelectionMode.TIME:
+        default:
+          toggleRange([id]);
+      }
+      setLastClickedId(id);
+      setDataUpdateCounter((value) => value + 1);
+    },
+    [isAnnotationEnabled, selectionMode, currentLabelIdx, getSelectRangeFromId, isReuseValueHotkeyPressed]
+  );
 
   const clear = (): void => {
     annotationData.clear();
@@ -457,7 +518,10 @@ export const useAnnotations = (): AnnotationState => {
       getLabeledIds: annotationData.getLabeledIds,
       getTimeToLabelIdMap: annotationData.getTimeToLabelIdMap,
       isLabelOnId: annotationData.isLabelOnId,
+      getNextDefaultLabelSettings: annotationData.getNextDefaultLabelSettings,
       toCsv: annotationData.toCsv,
+      getNextDefaultLabelValue: annotationData.getNextDefaultLabelValue,
+      getValueFromId: annotationData.getValueFromId,
     }),
     [dataUpdateCounter]
   );
@@ -474,14 +538,17 @@ export const useAnnotations = (): AnnotationState => {
     setSelectionMode,
     data,
     handleAnnotationClick,
+    nextDefaultLabelValue,
     lastClickedId,
+    activeEditRange,
+    clearActiveEditRange: () => setActiveEditRange(null),
     getSelectRangeFromId,
     // Wrap state mutators
     createNewLabel: wrapFunctionInUpdate(annotationData.createNewLabel),
-    setLabelName: wrapFunctionInUpdate(annotationData.setLabelName),
-    setLabelColor: wrapFunctionInUpdate(annotationData.setLabelColor),
+    setLabelOptions: wrapFunctionInUpdate(annotationData.setLabelOptions),
     deleteLabel: wrapFunctionInUpdate(onDeleteLabel),
-    setLabelOnIds: wrapFunctionInUpdate(annotationData.setLabelOnIds),
+    setLabelValueOnIds: wrapFunctionInUpdate(annotationData.setLabelValueOnIds),
+    removeLabelOnIds: wrapFunctionInUpdate(annotationData.removeLabelOnIds),
     clear: wrapFunctionInUpdate(clear),
   };
 };

@@ -1,17 +1,19 @@
 import {
   CaretRightOutlined,
   CheckCircleOutlined,
+  EllipsisOutlined,
   LinkOutlined,
   PauseOutlined,
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
-import { Checkbox, notification, Slider, Tabs } from "antd";
+import { Checkbox, notification, Slider, Tabs, Tooltip } from "antd";
 import { NotificationConfig } from "antd/es/notification/interface";
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
+  ColorRampType,
   Dataset,
   DISPLAY_CATEGORICAL_PALETTE_KEYS,
   DISPLAY_COLOR_RAMP_KEYS,
@@ -19,6 +21,7 @@ import {
   KNOWN_CATEGORICAL_PALETTES,
   KNOWN_COLOR_RAMPS,
   LoadTroubleshooting,
+  PixelIdInfo,
   ReportWarningCallback,
   TabType,
 } from "./colorizer";
@@ -28,9 +31,10 @@ import { useAnnotations, useConstructor, useDebounce, useRecentCollections } fro
 import { showFailedUrlParseAlert } from "./components/Banner/alert_templates";
 import { SelectItem } from "./components/Dropdowns/types";
 import { SCATTERPLOT_TIME_FEATURE } from "./components/Tabs/scatter_plot_data_utils";
-import { DEFAULT_PLAYBACK_FPS, INTERNAL_BUILD } from "./constants";
+import { DEFAULT_PLAYBACK_FPS } from "./constants";
 import { getDifferingProperties } from "./state/utils/data_validation";
 import {
+  loadInitialViewerStateFromParams,
   loadViewerStateFromParams,
   selectSerializationDependencies,
   serializeViewerState,
@@ -42,7 +46,6 @@ import { loadInitialCollectionAndDataset } from "./utils/dataset_load_utils";
 
 import CanvasOverlay from "./colorizer/CanvasOverlay";
 import Collection from "./colorizer/Collection";
-import ColorizeCanvas2D, { BACKGROUND_ID } from "./colorizer/ColorizeCanvas2D";
 import { FeatureType } from "./colorizer/Dataset";
 import { renderCanvasStateParamsSelector } from "./colorizer/IRenderCanvas";
 import UrlArrayLoader from "./colorizer/loaders/UrlArrayLoader";
@@ -78,6 +81,13 @@ import { useViewerStateStore } from "./state/ViewerState";
 // TODO: Refactor with styled-components
 import styles from "./Viewer.module.css";
 
+type TabItem = {
+  label: string;
+  key: string;
+  visible?: boolean;
+  children: ReactNode;
+};
+
 function Viewer(): ReactElement {
   // STATE INITIALIZATION /////////////////////////////////////////////////////////
   const theme = useContext(AppThemeContext);
@@ -85,12 +95,15 @@ function Viewer(): ReactElement {
 
   const [, startTransition] = React.useTransition();
 
-  const canv = useConstructor(() => {
+  const canv: CanvasOverlay = useConstructor(() => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
-    const canvas = new CanvasOverlay(new ColorizeCanvas2D(), stateDeps);
+    const canvas = new CanvasOverlay(stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
     // Report frame load results to the store
-    canvas.setOnFrameLoadCallback(useViewerStateStore.getState().setFrameLoadResult);
+    canvas.setOnFrameLoadCallback((result) => {
+      useViewerStateStore.getState().setFrameLoadResult(result);
+      useViewerStateStore.setState({ currentFrame: result.frame });
+    });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
   });
@@ -105,6 +118,7 @@ function Viewer(): ReactElement {
   const [colorRampMin, colorRampMax] = useViewerStateStore((state) => state.colorRampRange);
   const categoricalPalette = useViewerStateStore((state) => state.categoricalPalette);
   const collection = useViewerStateStore((state) => state.collection);
+  const colorRamp = useViewerStateStore((state) => state.colorRamp);
   const colorRampKey = useViewerStateStore((state) => state.colorRampKey);
   const colorRampReversed = useViewerStateStore((state) => state.isColorRampReversed);
   const currentFrame = useViewerStateStore((state) => state.currentFrame);
@@ -174,7 +188,7 @@ function Viewer(): ReactElement {
    * canvas after a short delay.
    */
   const [frameInput, setFrameInput] = useState(0);
-  const [lastValidHoveredId, setLastValidHoveredId] = useState<number>(-1);
+  const [lastValidHoveredId, setLastValidHoveredId] = useState<PixelIdInfo>({ segId: -1, globalId: undefined });
   const [showObjectHoverInfo, setShowObjectHoverInfo] = useState(false);
   const currentHoveredId = showObjectHoverInfo ? lastValidHoveredId : null;
 
@@ -392,6 +406,8 @@ function Viewer(): ReactElement {
         return;
       }
 
+      loadInitialViewerStateFromParams(useViewerStateStore, searchParams);
+
       setIsDatasetLoading(true);
       setDatasetLoadProgress(null);
       isLoadingInitialDataset.current = true;
@@ -522,7 +538,8 @@ function Viewer(): ReactElement {
         await setFrame(frameInput);
       }
       if (isUserDirectlyControllingFrameInput) {
-        setFrame(frameInput).then(() => timeControls.play());
+        await setFrame(frameInput);
+        timeControls.play();
         // Update the frame and unpause playback when the slider is released.
         setIsUserDirectlyControllingFrameInput(false);
       }
@@ -535,9 +552,14 @@ function Viewer(): ReactElement {
   }, [isUserDirectlyControllingFrameInput, frameInput]);
 
   const onClickId = useCallback(
-    (id: number) => {
+    // `info` is null if the user clicked on a background pixel. Otherwise, it
+    // contains the segmentation ID (raw image pixel value) and the global ID.
+    // The global ID is undefined if the object does not exist in the dataset.
+    (info: PixelIdInfo | null) => {
       if (dataset) {
-        annotationState.handleAnnotationClick(dataset, id);
+        // Pass null if the user clicked on something non-interactive
+        // (background or a non-existent object).
+        annotationState.handleAnnotationClick(dataset, info?.globalId ?? null);
       }
     },
     [dataset, annotationState.handleAnnotationClick]
@@ -572,6 +594,9 @@ function Viewer(): ReactElement {
 
   const disableUi: boolean = isRecording || !datasetOpen;
   const disableTimeControlsUi = disableUi;
+  // Disable color ramp controls when the feature is numeric but we've selected
+  // a categorical color ramp (e.g. glasbey)
+  const disableRampControlsUi = !isFeatureCategorical && colorRamp.type === ColorRampType.CATEGORICAL;
 
   // TODO: Move into subcomponent for color ramp controls
   // Show min + max marks on the color ramp slider if a feature is selected and
@@ -591,7 +616,7 @@ function Viewer(): ReactElement {
     return [threshold.min, threshold.max];
   };
 
-  const allTabItems = [
+  const allTabItems: TabItem[] = [
     {
       label: "Track plot",
       key: TabType.TRACK_PLOT,
@@ -617,7 +642,6 @@ function Viewer(): ReactElement {
     {
       label: "Correlation plot",
       key: TabType.CORRELATION_PLOT,
-      visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
           <CorrelationPlotTab openScatterPlotTab={openScatterPlotTab} workerPool={workerPool} dataset={dataset} />
@@ -636,10 +660,9 @@ function Viewer(): ReactElement {
     {
       label: "Annotations",
       key: TabType.ANNOTATION,
-      visible: INTERNAL_BUILD,
       children: (
         <div className={styles.tabContent}>
-          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId} />
+          <AnnotationTab annotationState={annotationState} hoveredId={currentHoveredId?.globalId ?? null} />
         </div>
       ),
     },
@@ -654,6 +677,8 @@ function Viewer(): ReactElement {
     },
   ];
   const tabItems = allTabItems.filter((item) => item.visible !== false);
+  const visibleTabKeys = useMemo(() => new Set(tabItems.map((item) => item.key)), [INTERNAL_BUILD]);
+  const currentTab = visibleTabKeys.has(openTab) ? openTab : TabType.TRACK_PLOT;
 
   let datasetHeader: ReactNode = null;
   if (collection && collection.metadata.name) {
@@ -684,7 +709,7 @@ function Viewer(): ReactElement {
               totalFrames={dataset?.numberOfFrames || 0}
               setFrame={setFrame}
               getCanvasExportDimensions={() => canv.getExportDimensions()}
-              getCanvas={() => canv.domElement}
+              getCanvas={() => canv.canvas}
               // Stop playback when exporting
               onClick={() => timeControls.pause()}
               currentFrame={currentFrame}
@@ -764,18 +789,33 @@ function Viewer(): ReactElement {
                       isFeatureCategorical ? (
                         <CategoricalColorPicker categories={featureCategories} disabled={disableUi} />
                       ) : (
-                        <LabeledSlider
-                          type="range"
-                          min={colorRampMin}
-                          max={colorRampMax}
-                          minSliderBound={featureKey !== null ? dataset?.getFeatureData(featureKey)?.min : undefined}
-                          maxSliderBound={featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined}
-                          onChange={function (min: number, max: number): void {
-                            setColorRampRange([min, max]);
-                          }}
-                          marks={getColorMapSliderMarks()}
-                          disabled={disableUi}
-                        />
+                        <Tooltip
+                          trigger={["hover", "focus"]}
+                          title={
+                            disableRampControlsUi
+                              ? "Color ramp adjustment is disabled when a Glasbey color map is selected."
+                              : undefined
+                          }
+                        >
+                          <div style={{ width: "100%" }}>
+                            <LabeledSlider
+                              type="range"
+                              min={colorRampMin}
+                              max={colorRampMax}
+                              minSliderBound={
+                                featureKey !== null ? dataset?.getFeatureData(featureKey)?.min : undefined
+                              }
+                              maxSliderBound={
+                                featureKey !== null ? dataset?.getFeatureData(featureKey)?.max : undefined
+                              }
+                              onChange={function (min: number, max: number): void {
+                                setColorRampRange([min, max]);
+                              }}
+                              marks={getColorMapSliderMarks()}
+                              disabled={disableUi || disableRampControlsUi}
+                            />
+                          </div>
+                        </Tooltip>
                       )
                     }
                   </div>
@@ -803,11 +843,11 @@ function Viewer(): ReactElement {
                   canv={canv}
                   isRecording={isRecording}
                   onClickId={onClickId}
-                  onMouseHover={(id: number): void => {
-                    const isObject = id !== BACKGROUND_ID;
+                  onMouseHover={(info: PixelIdInfo | null): void => {
+                    const isObject = info !== null;
                     setShowObjectHoverInfo(isObject);
                     if (isObject) {
-                      setLastValidHoveredId(id);
+                      setLastValidHoveredId(info);
                     }
                   }}
                   onMouseLeave={() => setShowObjectHoverInfo(false)}
@@ -896,9 +936,10 @@ function Viewer(): ReactElement {
                 type="card"
                 style={{ marginBottom: 0, width: "100%" }}
                 size="large"
-                activeKey={openTab}
+                activeKey={currentTab}
                 onChange={(key) => setOpenTab(key as TabType)}
                 items={tabItems}
+                moreIcon={<EllipsisOutlined style={{ fontSize: theme.font.size.section }} />}
               />
             </div>
           </div>

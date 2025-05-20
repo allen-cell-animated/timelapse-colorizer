@@ -1,7 +1,6 @@
 import { MenuOutlined, TableOutlined } from "@ant-design/icons";
-import { Radio, Tooltip } from "antd";
+import { Modal, Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
-import { Color } from "three";
 import { useShallow } from "zustand/shallow";
 
 import { AnnotationSelectionMode } from "../../../colorizer";
@@ -12,13 +11,15 @@ import { FlexColumnAlignCenter, FlexRow, VisuallyHidden } from "../../../styles/
 import { download } from "../../../utils/file_io";
 import { SelectItem } from "../../Dropdowns/types";
 
-import { LabelData } from "../../../colorizer/AnnotationData";
+import { LabelData, LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
+import { Z_INDEX_MODAL } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
 import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationModeButton from "./AnnotationModeButton";
+import CreateLabelForm from "./CreateLabelForm";
 import LabelEditControls from "./LabelEditControls";
 
 const LABEL_DROPDOWN_LABEL_ID = "label-dropdown-label";
@@ -41,13 +42,14 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     data: annotationData,
     createNewLabel,
     deleteLabel,
-    setLabelName,
-    setLabelColor,
-    setLabelOnIds,
+    setLabelOptions,
+    removeLabelOnIds,
   } = props.annotationState;
 
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
+  const [showCreateLabelModal, setShowCreateLabelModal] = useState(false);
+  const modalContainerRef = React.useRef<HTMLDivElement>(null);
 
   const store = useViewerStateStore(
     useShallow((state) => ({
@@ -78,14 +80,24 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return null;
   }, [props.hoveredId, store.dataset, props.annotationState.selectionMode, props.annotationState.getSelectRangeFromId]);
 
+  const onClickEnableAnnotationMode = useCallback(() => {
+    // If no labels are defined, prompt the user to create a new label
+    // before enabling annotation mode.
+    if (annotationData.getLabels().length === 0) {
+      setShowCreateLabelModal(true);
+    } else {
+      setIsAnnotationModeEnabled(!isAnnotationModeEnabled);
+    }
+  }, [isAnnotationModeEnabled, annotationData]);
+
   const onSelectLabelIdx = (idx: string): void => {
     startTransition(() => {
       props.annotationState.setCurrentLabelIdx(parseInt(idx, 10));
     });
   };
 
-  const onCreateNewLabel = (): void => {
-    const index = createNewLabel();
+  const onCreateNewLabel = (options: Partial<LabelOptions>): void => {
+    const index = createNewLabel(options);
     setCurrentLabelIdx(index);
   };
 
@@ -112,19 +124,26 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const onClickDeleteObject = useCallback(
     (record: TableDataType): void => {
       if (currentLabelIdx !== null) {
-        setLabelOnIds(currentLabelIdx, [record.id], false);
+        removeLabelOnIds(currentLabelIdx, [record.id]);
       }
     },
-    [currentLabelIdx, setLabelOnIds]
+    [currentLabelIdx, removeLabelOnIds]
   );
 
   // Options for the selection dropdown
+  const labelTypeToLabel: Record<LabelType, string> = {
+    [LabelType.BOOLEAN]: "",
+    [LabelType.INTEGER]: "I",
+    [LabelType.CUSTOM]: "C",
+  };
+
   const selectLabelOptions: SelectItem[] = useMemo(
     () =>
       labels.map((label, index) => ({
         value: index.toString(),
-        label: label.ids.size ? `${label.name} (${label.ids.size})` : label.name,
-        color: label.color,
+        label: label.ids.size ? `${label.options.name} (${label.ids.size})` : label.options.name,
+        color: label.options.color,
+        colorLabel: labelTypeToLabel[label.options.type],
       })),
     [annotationData]
   );
@@ -133,13 +152,50 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
 
+  const labelSelectionDropdown = (
+    <>
+      <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
+      <SelectionDropdown
+        selected={(currentLabelIdx ?? -1).toString()}
+        items={selectLabelOptions}
+        onChange={onSelectLabelIdx}
+        disabled={currentLabelIdx === null}
+        showSelectedItemTooltip={false}
+        htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
+      ></SelectionDropdown>
+    </>
+  );
+
   return (
     <FlexColumnAlignCenter $gap={10}>
-      <FlexRow style={{ width: "100%", justifyContent: "space-between" }}>
-        <AnnotationModeButton
-          active={isAnnotationModeEnabled}
-          onClick={() => setIsAnnotationModeEnabled(!isAnnotationModeEnabled)}
-        />
+      <FlexRow style={{ width: "100%", justifyContent: "space-between" }} ref={modalContainerRef}>
+        <AnnotationModeButton active={isAnnotationModeEnabled} onClick={onClickEnableAnnotationMode} />
+
+        {/* Appears when the user activates annotations for the first time and should define a label. */}
+        <Modal
+          open={showCreateLabelModal}
+          footer={null}
+          closable={true}
+          width={360}
+          title="Create new label"
+          onCancel={() => setShowCreateLabelModal(false)}
+          destroyOnClose={true}
+          getContainer={() => modalContainerRef.current ?? document.body}
+        >
+          <div style={{ marginTop: "15px" }}>
+            <CreateLabelForm
+              initialLabelOptions={annotationData.getNextDefaultLabelSettings()}
+              onConfirm={(options: Partial<LabelOptions>) => {
+                onCreateNewLabel(options);
+                setShowCreateLabelModal(false);
+                setIsAnnotationModeEnabled(true);
+              }}
+              onCancel={() => setShowCreateLabelModal(false)}
+              zIndex={Z_INDEX_MODAL + 50}
+              focusNameInput={true}
+            />
+          </div>
+        </Modal>
 
         <TextButton
           onClick={() => {
@@ -153,33 +209,27 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
       </FlexRow>
 
       {/* Label selection and edit/create/delete buttons */}
-      <FlexRow $gap={6} style={{ width: "100%" }}>
-        <FlexRow $gap={6}>
-          <VisuallyHidden id={LABEL_DROPDOWN_LABEL_ID}>Current label</VisuallyHidden>
-          <SelectionDropdown
-            selected={(currentLabelIdx ?? -1).toString()}
-            items={selectLabelOptions}
-            onChange={onSelectLabelIdx}
-            disabled={currentLabelIdx === null}
-            showSelectedItemTooltip={false}
-            htmlLabelId={LABEL_DROPDOWN_LABEL_ID}
-          ></SelectionDropdown>
-
+      <FlexRow $gap={6} style={{ width: "100%", flexWrap: "wrap" }}>
+        <FlexRow $gap={6} style={{ flexWrap: "wrap" }}>
           {/*
            * Hide edit-related buttons until edit mode is enabled.
            * Note that currentLabelIdx will never be null when edit mode is enabled.
            */}
-          {isAnnotationModeEnabled && currentLabelIdx !== null && (
+          {isAnnotationModeEnabled && currentLabelIdx !== null ? (
             <LabelEditControls
               onCreateNewLabel={onCreateNewLabel}
               onDeleteLabel={onDeleteLabel}
-              setLabelColor={(color: Color) => setLabelColor(currentLabelIdx, color)}
-              setLabelName={(name: string) => setLabelName(currentLabelIdx, name)}
+              setLabelOptions={(options) => setLabelOptions(currentLabelIdx, options)}
               selectedLabel={selectedLabel}
               selectedLabelIdx={currentLabelIdx}
               selectionMode={props.annotationState.selectionMode}
               setSelectionMode={props.annotationState.setSelectionMode}
-            />
+              defaultLabelOptions={props.annotationState.data.getNextDefaultLabelSettings()}
+            >
+              {labelSelectionDropdown}
+            </LabelEditControls>
+          ) : (
+            labelSelectionDropdown
           )}
         </FlexRow>
 
@@ -256,7 +306,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             selectedTrack={store.selectedTrack}
             selectedId={selectedId}
             frame={store.frame}
-            labelColor={selectedLabel?.color}
+            labelColor={selectedLabel?.options.color}
           ></AnnotationDisplayList>
         </div>
       </LoadingSpinner>

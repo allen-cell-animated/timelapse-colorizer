@@ -10,11 +10,16 @@ export type DatasetEntry = {
   loadParams: ViewerParams;
 };
 
+export type PublicationInfo = {
+  url: URL;
+  name: string;
+  citation: string;
+};
+
 export type ProjectEntry = {
   name: string;
   description: ReactNode;
-  publicationLink?: URL;
-  publicationName?: string;
+  publicationInfo?: PublicationInfo;
   loadParams?: ViewerParams;
   datasets?: DatasetEntry[];
   inReview?: boolean;
