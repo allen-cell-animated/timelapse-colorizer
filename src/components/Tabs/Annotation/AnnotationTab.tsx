@@ -179,7 +179,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           footer={null}
           closable={true}
           width={360}
-          title="Create new label"
+          title="Create new annotation"
           onCancel={() => setShowCreateLabelModal(false)}
           destroyOnClose={true}
           getContainer={() => modalContainerRef.current ?? document.body}

@@ -34,9 +34,9 @@ describe("AnnotationData", () => {
 
     const labels = annotationData.getLabels();
     expect(labels.length).toBe(3);
-    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
-    compareRecord(labels[1].options, { name: "Label 2", color: defaultPalette.colors[1] });
-    compareRecord(labels[2].options, { name: "Label 3", color: defaultPalette.colors[2] });
+    compareRecord(labels[0].options, { name: "Annotation 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Annotation 2", color: defaultPalette.colors[1] });
+    compareRecord(labels[2].options, { name: "Annotation 3", color: defaultPalette.colors[2] });
   });
 
   it("allows updating of label names and colors", () => {
@@ -45,15 +45,15 @@ describe("AnnotationData", () => {
     annotationData.createNewLabel();
     annotationData.createNewLabel();
 
-    annotationData.setLabelOptions(0, { name: "New Label Name" });
+    annotationData.setLabelOptions(0, { name: "New Annotation Name" });
     annotationData.setLabelOptions(1, { color: new Color("#FF0000") });
-    annotationData.setLabelOptions(2, { name: "Another New Label Name", color: new Color("#00FF00") });
+    annotationData.setLabelOptions(2, { name: "Another New Annotation Name", color: new Color("#00FF00") });
 
     const labels = annotationData.getLabels();
     expect(labels.length).toBe(3);
-    compareRecord(labels[0].options, { name: "New Label Name", color: defaultPalette.colors[0] });
-    compareRecord(labels[1].options, { name: "Label 2", color: new Color("#FF0000") });
-    compareRecord(labels[2].options, { name: "Another New Label Name", color: new Color("#00FF00") });
+    compareRecord(labels[0].options, { name: "New Annotation Name", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Annotation 2", color: new Color("#FF0000") });
+    compareRecord(labels[2].options, { name: "Another New Annotation Name", color: new Color("#00FF00") });
   });
 
   it("deletes labels", () => {
@@ -65,16 +65,16 @@ describe("AnnotationData", () => {
     annotationData.deleteLabel(1);
     let labels = annotationData.getLabels();
     expect(labels.length).toBe(2);
-    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
-    compareRecord(labels[1].options, { name: "Label 3", color: defaultPalette.colors[2] });
+    compareRecord(labels[0].options, { name: "Annotation 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Annotation 3", color: defaultPalette.colors[2] });
 
     // Creating new label should reuse deleted index and increment name by 1
     annotationData.createNewLabel();
     labels = annotationData.getLabels();
     expect(labels.length).toBe(3);
-    compareRecord(labels[0].options, { name: "Label 1", color: defaultPalette.colors[0] });
-    compareRecord(labels[1].options, { name: "Label 3", color: defaultPalette.colors[2] });
-    compareRecord(labels[2].options, { name: "Label 4", color: defaultPalette.colors[3] });
+    compareRecord(labels[0].options, { name: "Annotation 1", color: defaultPalette.colors[0] });
+    compareRecord(labels[1].options, { name: "Annotation 3", color: defaultPalette.colors[2] });
+    compareRecord(labels[2].options, { name: "Annotation 4", color: defaultPalette.colors[3] });
   });
 
   it("can apply and remove labels from an ID", () => {

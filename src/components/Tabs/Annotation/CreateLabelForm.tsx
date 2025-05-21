@@ -64,10 +64,10 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
     // Perform validation step
     const newName = nameInput.trim();
     if (newName === "") {
-      setNameInputError("Label name cannot be empty.");
+      setNameInputError("Annotation name cannot be empty.");
       return;
     } else if (isMetadataColumnName(newName)) {
-      setNameInputError(`Label name '${newName}' is reserved for metadata. Please choose a different name.`);
+      setNameInputError(`Annotation name '${newName}' is reserved for metadata. Please choose a different name.`);
       return;
     }
 
@@ -134,7 +134,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
           <SettingsItem label="">
             <TooltipWithSubtitle
               trigger={["hover", "focus"]}
-              title="Increments the label value on each click"
+              title="Increments the value on each click"
               subtitle="Hold Ctrl to reuse last value"
               placement="right"
             >
