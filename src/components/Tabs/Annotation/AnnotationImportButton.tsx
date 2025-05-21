@@ -159,7 +159,8 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
                           <p style={{ margin: 0 }}>Merge matching annotations</p>
                           <p style={{ margin: 0 }}>
                             Matching annotations will be merged, all other annotations will be appended. If there are
-                            per-object conflicts, the imported CSV overrides existing data.
+                            conflicts where the same object is annotated with different values, the imported CSV takes
+                            priority.
                           </p>
                         </FlexColumn>
                       ) : (
