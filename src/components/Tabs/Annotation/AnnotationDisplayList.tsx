@@ -5,7 +5,7 @@ import { Color } from "three";
 import { TagIconSVG } from "../../../assets";
 import { Dataset, Track } from "../../../colorizer";
 import { ScrollShadowContainer, useScrollShadow } from "../../../colorizer/utils/react_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../../../styles/utils";
 
 import { AppThemeContext } from "../../AppStyle";
 import DropdownItem from "../../Dropdowns/DropdownItem";
@@ -35,6 +35,22 @@ const ListLayoutContainer = styled.div`
   width: 100%;
   height: 100%;
   gap: 10px;
+`;
+
+const ListMultiValueContainer = styled.div`
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto auto;
+  gap: 10px;
+  overflow-x: clip;
+
+  & ul {
+    padding-left: 20px;
+
+    & li {
+      list-style-position: outside;
+    }
+  }
 `;
 
 type LookupInfo = {
@@ -138,7 +154,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
   // Organize ids by track and value for display.
-  const { trackIds, trackToIds, valueToTrackIds } = useMemo(() => {
+  const { trackIds, trackToIds, valueToTrackIds } = useMemo((): LookupInfo => {
     if (!props.dataset) {
       return {
         trackIds: [],
@@ -185,13 +201,35 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   } else if (valueToTrackIds && valueToTrackIds.size > 0) {
     // Multi-value labels; organize tracks by value.
     listContents = (
-      <ul style={{ marginTop: 0 }}>
+      <ListMultiValueContainer>
+        {/* Render each label as its own section */}
         {Array.from(valueToTrackIds.entries()).map(([value, trackIds]) => {
-          const ids = trackToIds.get(trackIds[0].toString())!;
-          const isSelectedTrack = props.selectedTrack?.trackId === trackIds[0];
-          return <></>;
+          const trackIdsWithIds = trackIds.map((trackId) => {
+            const ids = trackToIds.get(trackId.toString())!;
+            return { trackId, ids };
+          });
+          return (
+            <FlexRow $gap={6} style={{ display: "grid", gridTemplateColumns: "subgrid", gridColumn: "span 2" }}>
+              <div
+                style={{
+                  display: "block",
+                  gridColumn: "1",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                  minWidth: "10px",
+                }}
+              >
+                <b>{value}</b>
+              </div>
+              <FlexColumn style={{ display: "grid", gridColumn: "2" }}>
+                <p>{trackIds.length} track(s)</p>
+                {createTrackList(trackIdsWithIds)}
+              </FlexColumn>
+            </FlexRow>
+          );
         })}
-      </ul>
+      </ListMultiValueContainer>
     );
   } else {
     // Boolean values. All tracks are displayed in a single list.
