@@ -571,6 +571,11 @@ export class AnnotationData implements IAnnotationData {
     if (mergeMode === AnnotationMergeMode.OVERWRITE) {
       mergedAnnotationData.labelData = [...annotationData2.labelData.map(cloneLabel)];
       mergedAnnotationData.numLabelsCreated = annotationData2.numLabelsCreated;
+      if (reassignColors) {
+        for (let i = 0; i < mergedAnnotationData.labelData.length; i++) {
+          mergedAnnotationData.labelData[i].options.color = getDefaultColor(i);
+        }
+      }
     } else if (mergeMode === AnnotationMergeMode.APPEND) {
       mergedAnnotationData.labelData = [
         ...annotationData1.labelData.map(cloneLabel),
