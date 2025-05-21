@@ -5,7 +5,7 @@ import { Color } from "three";
 import { TagIconSVG } from "../../../assets";
 import { Dataset, Track } from "../../../colorizer";
 import { ScrollShadowContainer, useScrollShadow } from "../../../colorizer/utils/react_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../../../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
 
 import { AppThemeContext } from "../../AppStyle";
 import DropdownItem from "../../Dropdowns/DropdownItem";
@@ -37,20 +37,10 @@ const ListLayoutContainer = styled.div`
   gap: 10px;
 `;
 
-const ListMultiValueContainer = styled.div`
-  display: grid;
-  width: 100%;
-  grid-template-columns: auto auto;
-  gap: 10px;
-  overflow-x: clip;
-
-  & ul {
-    padding-left: 20px;
-
-    & li {
-      list-style-position: outside;
-    }
-  }
+const VerticalDivider = styled.div`
+  height: 20px;
+  width: 1px;
+  background-color: var(--color-dividers);
 `;
 
 type LookupInfo = {
@@ -167,7 +157,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   function createTrackList(tracksAndIds: { trackId: number; ids: number[] }[]): ReactElement {
     return (
-      <ul style={{ marginTop: 0 }}>
+      <ul style={{ marginTop: 0, listStyle: "none", paddingLeft: "5px" }}>
         {tracksAndIds.map(({ trackId, ids }) => {
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
@@ -201,7 +191,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   } else if (valueToTrackIds && valueToTrackIds.size > 0) {
     // Multi-value labels; organize tracks by value.
     listContents = (
-      <ListMultiValueContainer>
+      <FlexColumn style={{ marginLeft: "10px" }}>
         {/* Render each label as its own section */}
         {Array.from(valueToTrackIds.entries()).map(([value, trackIds]) => {
           const trackIdsWithIds = trackIds.map((trackId) => {
@@ -209,41 +199,31 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             return { trackId, ids };
           });
           return (
-            <FlexRow $gap={6} style={{ display: "grid", gridTemplateColumns: "subgrid", gridColumn: "span 2" }}>
-              <div
-                style={{
-                  display: "block",
-                  gridColumn: "1",
-                  overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  textOverflow: "ellipsis",
-                  minWidth: "10px",
-                }}
-              >
-                <b>{value}</b>
-              </div>
-              <FlexColumn style={{ display: "grid", gridColumn: "2" }}>
-                <p>{trackIds.length} track(s)</p>
-                {createTrackList(trackIdsWithIds)}
-              </FlexColumn>
-            </FlexRow>
+            <FlexColumn>
+              <FlexRowAlignCenter $gap={5}>
+                <p style={{ minWidth: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <b>{value}</b>
+                </p>
+                <VerticalDivider />
+                <p style={{ whiteSpace: "nowrap" }}>
+                  {trackIds.length} track{trackIds.length > 1 ? "s" : ""}
+                </p>
+              </FlexRowAlignCenter>
+              <FlexColumn>{createTrackList(trackIdsWithIds)}</FlexColumn>
+            </FlexColumn>
           );
         })}
-      </ListMultiValueContainer>
+      </FlexColumn>
     );
   } else {
     // Boolean values. All tracks are displayed in a single list.
     // TODO: Handle updates to this in a transition so the UI updates don't block
     // interaction.
-    listContents = (
-      <ul style={{ marginTop: 0 }}>
-        {createTrackList(
-          trackIds.map((trackId) => {
-            const ids = trackToIds.get(trackId.toString())!;
-            return { trackId, ids };
-          })
-        )}
-      </ul>
+    listContents = createTrackList(
+      trackIds.map((trackId) => {
+        const ids = trackToIds.get(trackId.toString())!;
+        return { trackId, ids };
+      })
     );
   }
 
