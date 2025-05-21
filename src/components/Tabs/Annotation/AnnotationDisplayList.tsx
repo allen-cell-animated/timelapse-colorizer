@@ -90,6 +90,46 @@ const getTrackLookups = (
   };
 };
 
+const TrackListItem = (props: {
+  trackId: number;
+  ids: number[];
+  dataset: Dataset;
+  isSelectedTrack: boolean;
+  labelColor: Color;
+  onClickTrack: (trackId: number) => void;
+}): ReactElement => {
+  const { trackId, ids, dataset, isSelectedTrack, onClickTrack, labelColor } = props;
+  const theme = useContext(AppThemeContext);
+
+  const track = dataset.getTrack(trackId);
+  return (
+    <DropdownItem
+      key={trackId}
+      onClick={() => {
+        onClickTrack(trackId);
+      }}
+      selected={isSelectedTrack}
+    >
+      <FlexRowAlignCenter $gap={5}>
+        <AnnotationTrackThumbnail
+          widthPx={75}
+          heightPx={14}
+          ids={ids}
+          track={track ?? null}
+          dataset={dataset}
+          color={labelColor}
+        ></AnnotationTrackThumbnail>
+        <p style={{ margin: 0 }}>
+          {trackId}{" "}
+          <span style={{ color: theme.color.text.hint }}>
+            ({ids.length}/{track?.times.length ?? 0})
+          </span>
+        </p>
+      </FlexRowAlignCenter>
+    </DropdownItem>
+  );
+};
+
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
@@ -97,9 +137,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
-  // Organize ids by track
-  // TODO: Transition here?
-  const { trackIds, trackToIds } = useMemo(() => {
+  // Organize ids by track and value for display.
+  const { trackIds, trackToIds, valueToTrackIds } = useMemo(() => {
     if (!props.dataset) {
       return {
         trackIds: [],
@@ -109,6 +148,28 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     }
     return getTrackLookups(props.dataset, props.ids, props.idToValue, props.valueToIds);
   }, [props.dataset, props.ids, props.idToValue, props.valueToIds]);
+
+  function createTrackList(tracksAndIds: { trackId: number; ids: number[] }[]): ReactElement {
+    return (
+      <ul style={{ marginTop: 0 }}>
+        {tracksAndIds.map(({ trackId, ids }) => {
+          const isSelectedTrack = props.selectedTrack?.trackId === trackId;
+          return (
+            <li key={trackId}>
+              <TrackListItem
+                trackId={trackId}
+                ids={ids}
+                dataset={props.dataset!}
+                isSelectedTrack={isSelectedTrack}
+                labelColor={props.labelColor}
+                onClickTrack={props.onClickTrack}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
 
   let listContents;
   if (props.ids.length === 0 || props.dataset === null) {
@@ -121,44 +182,29 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
         </FlexColumnAlignCenter>
       </FlexRowAlignCenter>
     );
+  } else if (valueToTrackIds && valueToTrackIds.size > 0) {
+    // Multi-value labels; organize tracks by value.
+    listContents = (
+      <ul style={{ marginTop: 0 }}>
+        {Array.from(valueToTrackIds.entries()).map(([value, trackIds]) => {
+          const ids = trackToIds.get(trackIds[0].toString())!;
+          const isSelectedTrack = props.selectedTrack?.trackId === trackIds[0];
+          return <></>;
+        })}
+      </ul>
+    );
   } else {
+    // Boolean values. All tracks are displayed in a single list.
     // TODO: Handle updates to this in a transition so the UI updates don't block
     // interaction.
     listContents = (
       <ul style={{ marginTop: 0 }}>
-        {trackIds.map((trackId) => {
-          const track = props.dataset?.getTrack(trackId);
-          const ids = trackToIds.get(trackId.toString())!;
-          const isSelectedTrack = props.selectedTrack?.trackId === trackId;
-          return (
-            <li key={trackId}>
-              <DropdownItem
-                key={trackId}
-                onClick={() => {
-                  props.onClickTrack(trackId);
-                }}
-                selected={isSelectedTrack}
-              >
-                <FlexRowAlignCenter $gap={5}>
-                  <AnnotationTrackThumbnail
-                    widthPx={75}
-                    heightPx={14}
-                    ids={ids}
-                    track={track ?? null}
-                    dataset={props.dataset}
-                    color={props.labelColor}
-                  ></AnnotationTrackThumbnail>
-                  <p style={{ margin: 0 }}>
-                    {trackId}{" "}
-                    <span style={{ color: theme.color.text.hint }}>
-                      ({ids.length}/{track?.times.length ?? 0})
-                    </span>
-                  </p>
-                </FlexRowAlignCenter>
-              </DropdownItem>
-            </li>
-          );
-        })}
+        {createTrackList(
+          trackIds.map((trackId) => {
+            const ids = trackToIds.get(trackId.toString())!;
+            return { trackId, ids };
+          })
+        )}
       </ul>
     );
   }
