@@ -5,7 +5,13 @@ import { Dataset, DEFAULT_CATEGORICAL_PALETTE_KEY, KNOWN_CATEGORICAL_PALETTES } 
 import { MOCK_DATASET } from "../state/ViewerState/constants";
 import { compareRecord } from "../state/ViewerState/utils";
 
-import { AnnotationData, BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelType } from "../../src/colorizer/AnnotationData";
+import {
+  AnnotationData,
+  AnnotationMergeMode,
+  BOOLEAN_VALUE_FALSE,
+  BOOLEAN_VALUE_TRUE,
+  LabelType,
+} from "../../src/colorizer/AnnotationData";
 
 describe("AnnotationData", () => {
   const defaultPalette = KNOWN_CATEGORICAL_PALETTES.get(DEFAULT_CATEGORICAL_PALETTE_KEY)!;
@@ -446,6 +452,133 @@ describe("AnnotationData", () => {
       expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
       expect(labels[0].ids).toEqual(new Set([0, 1, 2]));
       expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2]));
+    });
+  });
+
+  describe("merge", () => {
+    const booleanLabelKey = "Boolean Label";
+    const customLabelKey = "Custom Label";
+
+    const getExampleAnnotationData1 = (): AnnotationData => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel({ name: customLabelKey, type: LabelType.CUSTOM });
+      annotationData.setLabelValueOnIds(0, [0, 1, 2], "a");
+      annotationData.setLabelValueOnIds(0, [3], "b");
+      return annotationData;
+    };
+
+    const getExampleAnnotationData2 = (): AnnotationData => {
+      const annotationData = new AnnotationData();
+      annotationData.createNewLabel({ name: booleanLabelKey, type: LabelType.BOOLEAN });
+      annotationData.setLabelValueOnIds(0, [0, 1, 4], BOOLEAN_VALUE_TRUE);
+      return annotationData;
+    };
+
+    it("can overwrite data", () => {
+      const annotationData1 = getExampleAnnotationData1();
+      const annotationData2 = getExampleAnnotationData2();
+      const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.OVERWRITE);
+
+      const labels = mergedData.getLabels();
+      expect(labels.length).toBe(1);
+
+      const originalLabel = annotationData2.getLabels()[0];
+      const newLabel = labels[0];
+      expect(newLabel.options.name).toBe(originalLabel.options.name);
+      expect(newLabel.options.type).toBe(originalLabel.options.type);
+      expect(newLabel.ids).toEqual(originalLabel.ids);
+      expect(newLabel.valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 4]));
+    });
+
+    it("makes a deep copy of merged data", () => {
+      const annotationData1 = getExampleAnnotationData1();
+      const annotationData2 = getExampleAnnotationData2();
+      const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.OVERWRITE);
+
+      // Merged data should be a deep copy of annotationData2
+      const labels = mergedData.getLabels();
+      expect(labels.length).toBe(1);
+
+      annotationData1.createNewLabel({ name: "New Label", type: LabelType.CUSTOM });
+      annotationData1.setLabelValueOnIds(0, [0], "new value");
+
+      annotationData2.createNewLabel({ name: "Another New Label", type: LabelType.CUSTOM });
+      annotationData2.removeLabelOnIds(0, [0, 1, 4]);
+
+      expect(mergedData.getLabels().length).toBe(1);
+      expect(mergedData.getLabels()[0].ids).toEqual(new Set([0, 1, 4]));
+    });
+
+    it("can append data", () => {
+      const annotationData1 = getExampleAnnotationData1();
+      const annotationData2 = getExampleAnnotationData2();
+
+      const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.APPEND);
+      const labels = mergedData.getLabels();
+      expect(labels.length).toBe(2);
+      expect(labels[0].options.name).toBe(customLabelKey);
+      expect(labels[0].options.type).toBe(LabelType.CUSTOM);
+      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3]));
+      expect(labels[0].valueToIds.get("a")).toEqual(new Set([0, 1, 2]));
+      expect(labels[0].valueToIds.get("b")).toEqual(new Set([3]));
+      expect(labels[1].options.name).toBe(booleanLabelKey);
+      expect(labels[1].options.type).toBe(LabelType.BOOLEAN);
+      expect(labels[1].ids).toEqual(new Set([0, 1, 4]));
+      expect(labels[1].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 4]));
+    });
+
+    it("can merge data", () => {
+      const annotationData1 = getExampleAnnotationData1();
+
+      const annotationData2 = new AnnotationData();
+      annotationData2.createNewLabel({ name: customLabelKey, type: LabelType.CUSTOM });
+      annotationData2.setLabelValueOnIds(0, [5, 6, 7], "c");
+      annotationData2.setLabelValueOnIds(0, [4], "a");
+
+      const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.MERGE);
+      const labels = mergedData.getLabels();
+      expect(labels.length).toBe(1);
+      expect(labels[0].options.name).toBe(customLabelKey);
+      expect(labels[0].options.type).toBe(LabelType.CUSTOM);
+      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3, 4, 5, 6, 7]));
+      expect(labels[0].valueToIds.get("a")).toEqual(new Set([0, 1, 2, 4]));
+      expect(labels[0].valueToIds.get("b")).toEqual(new Set([3]));
+      expect(labels[0].valueToIds.get("c")).toEqual(new Set([5, 6, 7]));
+    });
+
+    it("does not merge matching labels with different types", () => {
+      const annotationData1 = getExampleAnnotationData1();
+      const annotationData2 = new AnnotationData();
+      annotationData2.createNewLabel({ name: customLabelKey, type: LabelType.BOOLEAN });
+      annotationData2.setLabelValueOnIds(0, [5, 6, 7], BOOLEAN_VALUE_TRUE);
+
+      const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.MERGE);
+      const labels = mergedData.getLabels();
+      expect(labels.length).toBe(2);
+      expect(labels[0].options.name).toBe(customLabelKey);
+      expect(labels[0].options.type).toBe(LabelType.CUSTOM);
+      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3]));
+      expect(labels[1].options.name).toBe(customLabelKey);
+      expect(labels[1].options.type).toBe(LabelType.BOOLEAN);
+      expect(labels[1].ids).toEqual(new Set([5, 6, 7]));
+    });
+
+    it("overwrites conflicting values during merge", () => {
+      const annotationData1 = getExampleAnnotationData1();
+
+      const annotationData2 = new AnnotationData();
+      annotationData2.createNewLabel({ name: customLabelKey, type: LabelType.CUSTOM });
+      annotationData2.setLabelValueOnIds(0, [0, 1, 4, 5], "c");
+
+      const mergedData = AnnotationData.merge(annotationData1, annotationData2, AnnotationMergeMode.MERGE);
+      const labels = mergedData.getLabels();
+      expect(labels.length).toBe(1);
+      expect(labels[0].options.name).toBe(customLabelKey);
+      expect(labels[0].options.type).toBe(LabelType.CUSTOM);
+      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3, 4, 5]));
+      expect(labels[0].valueToIds.get("a")).toEqual(new Set([2]));
+      expect(labels[0].valueToIds.get("b")).toEqual(new Set([3]));
+      expect(labels[0].valueToIds.get("c")).toEqual(new Set([0, 1, 4, 5]));
     });
   });
 });
