@@ -1,4 +1,4 @@
-import React, { EventHandler, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { EventHandler, MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -52,24 +52,34 @@ export function useDebounce<T>(value: T, delayMs?: number): T {
 }
 
 /**
- * Returns a reference to a constructed value that will not be re-computed between renders.
+ * Returns a reference to a constructed value that will not be re-computed
+ * between renders.
  *
- * Functionally, this is a wrapper around useRef and allows it to be used in a type-safe way.
- * See https://react.dev/reference/react/useRef for more details.
+ * Functionally, this is a wrapper around useRef and guarantees the current
+ * value is non-null. See https://react.dev/reference/react/useRef for more
+ * details.
  *
- * @param constructor A callback used to assign the value. This will only be called once.
- * @returns The value as returned by the constructor.
+ * @param constructor A callback used to assign the value. This will only be
+ * called once.
+ * @returns A MutableRefObject wrapping the value as returned by the
+ * constructor.
  * @example
  * ```
- * const value = useConstructor(() => {return new ValueConstructor()});
+ * // For most use-cases, add `.current` to get the value:
+ * const value = useConstructor(() => {return new ValueConstructor()}).current;
+ *
+ * // You can also modify the value directly if needed:
+ * const otherValueRef = useConstructor(() => {return new ValueConstructor()});
+ * ...
+ * otherValueRef.current = newValue;
  * ```
  */
-export function useConstructor<T>(constructor: () => T): T {
-  const value = useRef<T | null>(null);
-  if (value.current === null) {
-    value.current = constructor();
+export function useConstructor<T>(constructor: () => T): MutableRefObject<T> {
+  const ref = useRef<T | null>(null);
+  if (ref.current === null) {
+    ref.current = constructor();
   }
-  return value.current;
+  return ref as MutableRefObject<T>;
 }
 
 /** Returns a shallow copy of an object, excluding all entries where the value is undefined. */
@@ -163,7 +173,7 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
           updateScrollInfo(scrollRef.current);
         }
       })
-  );
+  ).current;
 
   const onScrollHandler: EventHandler<any> = (event) => {
     updateScrollInfo(event.target);
@@ -275,6 +285,7 @@ export type AnnotationState = {
   activeEditRange: number[] | null;
   clearActiveEditRange: () => void;
   nextDefaultLabelValue: string | null;
+  replaceAnnotationData: (annotationData: AnnotationData) => void;
   /**
    * For a given ID, returns the range of IDs that would be selected if the ID
    * is clicked with range selection mode turned on.
@@ -298,7 +309,8 @@ export type AnnotationState = {
 // attempting to synchronize updates between the annotation data and the UI,
 // which can be handled by zustand.
 export const useAnnotations = (): AnnotationState => {
-  const annotationData = useConstructor(() => new AnnotationData());
+  const annotationDataRef = useConstructor(() => {return new AnnotationData();});
+  const annotationData = annotationDataRef.current;
 
   const [currentLabelIdx, _setCurrentLabelIdx] = useState<number | null>(null);
   const [isAnnotationEnabled, _setIsAnnotationEnabled] = useState<boolean>(false);
@@ -510,6 +522,21 @@ export const useAnnotations = (): AnnotationState => {
     setIsAnnotationEnabled(false);
   };
 
+  const replaceAnnotationData = (newAnnotationData: AnnotationData): void => {
+    annotationDataRef.current = newAnnotationData;
+    const numLabels = newAnnotationData.getLabels().length;
+    if (numLabels === 0 ) {
+      setCurrentLabelIdx(null);
+      setIsAnnotationEnabled(false);
+      return;
+    }
+    if (currentLabelIdx === null) {
+      setCurrentLabelIdx(0);   
+    } else if (currentLabelIdx >= numLabels) {
+      setCurrentLabelIdx(numLabels - 1);
+    }
+  };
+
   const data = useMemo(
     (): IAnnotationDataGetters => ({
       // Data getters
@@ -550,5 +577,6 @@ export const useAnnotations = (): AnnotationState => {
     setLabelValueOnIds: wrapFunctionInUpdate(annotationData.setLabelValueOnIds),
     removeLabelOnIds: wrapFunctionInUpdate(annotationData.removeLabelOnIds),
     clear: wrapFunctionInUpdate(clear),
+    replaceAnnotationData: wrapFunctionInUpdate(replaceAnnotationData),
   };
 };
