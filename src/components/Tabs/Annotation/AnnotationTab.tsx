@@ -313,7 +313,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             idToValue={idToValue}
             valueToIds={valueToIds}
             highlightRange={highlightedIds}
-            lastClickedId={props.annotationState.lastClickedId}
+            rangeStartId={props.annotationState.rangeStartId}
             selectedTrack={store.selectedTrack}
             selectedId={selectedId}
             frame={store.frame}

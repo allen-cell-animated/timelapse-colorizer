@@ -279,6 +279,11 @@ export type AnnotationState = {
    */
   lastClickedId: number | null;
   /** 
+   * The ID of the last object that can serve as the start of a range selection.
+   * `null` if there is no range start selected.
+   */
+  rangeStartId: number | null;
+  /** 
    * The range of values that should currently be editable. Value is non-null
    * when a user interacts with an annotation in order to edit it.
    */
@@ -322,6 +327,7 @@ export const useAnnotations = (): AnnotationState => {
   const isReuseValueHotkeyPressed = useShortcutKey("Control");
 
   const [lastClickedId, setLastClickedId] = useState<number | null>(null);
+  const [rangeStartId, setRangeStartId] = useState<number | null>(null);
   /**
    * The last range of IDs that were edited, used for range-related operations.
    * If a user clicks on an object again that is one of the endpoints of this
@@ -350,7 +356,7 @@ export const useAnnotations = (): AnnotationState => {
       // Clear the range-related data when switching, since otherwise
       // it can be confusing to have a previously interacted-with object
       // become part of a selected range.
-      setLastClickedId(null);
+      setRangeStartId(null);
       setLastEditedRange(null);
     }
     setBaseSelectionMode(newMode);
@@ -371,6 +377,7 @@ export const useAnnotations = (): AnnotationState => {
       }
     }
     setLastClickedId(null);
+    setRangeStartId(null);
     setLastEditedRange(null);
     setActiveEditRange(null);
     _setIsAnnotationEnabled(enabled);
@@ -440,17 +447,17 @@ export const useAnnotations = (): AnnotationState => {
       }
       // Otherwise, check if both IDs are in the same track. If so,
       // return a list of the IDs between the two of them.
-      if (dataset && lastClickedId !== null) {
-        const trackOfLastClickedId = dataset.getTrackId(lastClickedId);
+      if (dataset && rangeStartId !== null) {
+        const trackOfRangeStartId = dataset.getTrackId(rangeStartId);
         const trackOfCurrentId = dataset.getTrackId(id);
-        if (trackOfLastClickedId === trackOfCurrentId) {
-          return getIdsInRange(dataset, lastClickedId, id);
+        if (trackOfRangeStartId === trackOfCurrentId) {
+          return getIdsInRange(dataset, rangeStartId, id);
         }
       }
       // IDs are not in the same track.
       return null;
     },
-    [lastEditedRange, lastClickedId]
+    [lastEditedRange, rangeStartId]
   );
 
   const nextDefaultLabelValue = useMemo(() => {
@@ -466,6 +473,7 @@ export const useAnnotations = (): AnnotationState => {
         if (isAnnotationEnabled) {
           setLastClickedId(id);
         }
+        setRangeStartId(null);
         setLastEditedRange(null);
         setActiveEditRange(null);
         return;
@@ -492,7 +500,6 @@ export const useAnnotations = (): AnnotationState => {
         }
       };
 
-      setLastClickedId(id);
       const idRange = getSelectRangeFromId(dataset, id);
       switch (selectionMode) {
         case AnnotationSelectionMode.TRACK:
@@ -503,15 +510,18 @@ export const useAnnotations = (): AnnotationState => {
           if (idRange !== null) {
             setLastEditedRange(idRange);
             toggleRange(idRange);
-            // Clear last clicked ID so that the next click won't initiate
-            // another range selection.
-            setLastClickedId(null);
           }
           break;
         case AnnotationSelectionMode.TIME:
         default:
           toggleRange([id]);
       }
+      if (idRange !== null ) {
+        setRangeStartId(null);
+      } else {
+        setRangeStartId(id);
+      }
+      setLastClickedId(id);
       setDataUpdateCounter((value) => value + 1);
     },
     [isAnnotationEnabled, selectionMode, currentLabelIdx, getSelectRangeFromId, isReuseValueHotkeyPressed]
@@ -572,6 +582,7 @@ export const useAnnotations = (): AnnotationState => {
     handleAnnotationClick,
     nextDefaultLabelValue,
     lastClickedId,
+    rangeStartId,
     activeEditRange,
     clearActiveEditRange: () => setActiveEditRange(null),
     getSelectRangeFromId,
