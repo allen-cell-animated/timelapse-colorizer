@@ -157,7 +157,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   function createTrackList(tracksAndIds: { trackId: number; ids: number[] }[]): ReactElement {
     return (
-      <ul style={{ marginTop: 0, listStyle: "none", paddingLeft: "5px" }}>
+      <ul style={{ margin: 0, listStyle: "none", paddingLeft: "0" }}>
         {tracksAndIds.map(({ trackId, ids }) => {
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
