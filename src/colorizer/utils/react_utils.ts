@@ -492,6 +492,7 @@ export const useAnnotations = (): AnnotationState => {
         }
       };
 
+      setLastClickedId(id);
       const idRange = getSelectRangeFromId(dataset, id);
       switch (selectionMode) {
         case AnnotationSelectionMode.TRACK:
@@ -502,13 +503,15 @@ export const useAnnotations = (): AnnotationState => {
           if (idRange !== null) {
             setLastEditedRange(idRange);
             toggleRange(idRange);
+            // Clear last clicked ID so that the next click won't initiate
+            // another range selection.
+            setLastClickedId(null);
           }
           break;
         case AnnotationSelectionMode.TIME:
         default:
           toggleRange([id]);
       }
-      setLastClickedId(id);
       setDataUpdateCounter((value) => value + 1);
     },
     [isAnnotationEnabled, selectionMode, currentLabelIdx, getSelectRangeFromId, isReuseValueHotkeyPressed]
