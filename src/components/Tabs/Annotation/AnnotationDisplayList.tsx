@@ -22,7 +22,7 @@ type AnnotationDisplayListProps = {
   selectedTrack: Track | null;
   selectedId?: number;
   highlightRange: number[] | null;
-  lastClickedId: number | null;
+  rangeStartId: number | null;
   frame: number;
   labelColor: Color;
 };
@@ -126,8 +126,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   // Show a marker in the selected track thumbnail if the last clicked ID is
   // part of the selected track.
   let markedTime: number | undefined;
-  if (props.lastClickedId !== null && props.dataset) {
-    const id = props.lastClickedId;
+  if (props.rangeStartId !== null && props.dataset) {
+    const id = props.rangeStartId;
     const lastClickedTime = props.dataset.getTime(id);
     const isSelectedTrack = props.dataset.getTrackId(id) === selectedTrackId;
     if (lastClickedTime !== undefined && isSelectedTrack) {
