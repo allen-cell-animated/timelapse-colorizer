@@ -305,7 +305,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             dataset={store.dataset}
             ids={tableIds}
             highlightRange={highlightedIds}
-            lastClickedId={props.annotationState.lastClickedId}
+            rangeStartId={props.annotationState.rangeStartId}
             selectedTrack={store.selectedTrack}
             selectedId={selectedId}
             frame={store.frame}
