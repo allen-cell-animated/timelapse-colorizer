@@ -5,7 +5,7 @@ import { Color, ColorRepresentation } from "three";
 
 import { FlexColumn, FlexRow } from "../../../styles/utils";
 
-import { LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
+import { CSV_COL_ID, CSV_COL_TIME, CSV_COL_TRACK, LabelOptions, LabelType } from "../../../colorizer/AnnotationData";
 import { AppThemeContext, Z_INDEX_POPOVER } from "../../AppStyle";
 import { SettingsContainer, SettingsItem } from "../../SettingsContainer";
 import { TooltipWithSubtitle } from "../../Tooltips/TooltipWithSubtitle";
@@ -36,6 +36,10 @@ const labelTypeToDisplayName: Record<LabelType, string> = {
   [LabelType.CUSTOM]: "Custom",
 };
 
+const isMetadataColumnName = (name: string): boolean => {
+  return name === CSV_COL_ID || name === CSV_COL_TIME || name === CSV_COL_TRACK;
+};
+
 export default function CreateLabelForm(inputProps: CreateLabelFormProps): ReactElement {
   const props = { ...defaultProps, ...inputProps } as Required<CreateLabelFormProps>;
 
@@ -47,16 +51,29 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
 
   const theme = useContext(AppThemeContext);
 
+  const [nameInputError, setNameInputError] = useState("");
+
   useEffect(() => {
     if (nameInputRef.current && props.focusNameInput) {
       nameInputRef.current.focus({ preventScroll: true });
+      nameInputRef.current.select();
     }
   }, [props.focusNameInput]);
 
   const confirm = (): void => {
+    // Perform validation step
+    const newName = nameInput.trim();
+    if (newName === "") {
+      setNameInputError("Annotation name cannot be empty.");
+      return;
+    } else if (isMetadataColumnName(newName)) {
+      setNameInputError(`Annotation name '${newName}' is reserved for metadata. Please choose a different name.`);
+      return;
+    }
+
     props.onConfirm({
       color: color,
-      name: nameInput.trim(),
+      name: newName,
       type: labelType,
       autoIncrement: autoIncrement,
     });
@@ -71,13 +88,14 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
   return (
     <FlexColumn style={{ width: "300px" }} $gap={10}>
       <SettingsContainer gapPx={8}>
-        <SettingsItem label="Name">
+        <SettingsItem label="Name" labelStyle={{ margin: "2px 0 auto 0" }}>
           <Input
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onPressEnter={confirm}
             ref={nameInputRef}
           ></Input>
+          {nameInputError && <p style={{ color: theme.color.text.error }}>{nameInputError}</p>}
         </SettingsItem>
         <SettingsItem label="Color">
           {/* TODO: This is a fix for a bug where the ColorPicker's popover cannot have its
@@ -116,7 +134,7 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
           <SettingsItem label="">
             <TooltipWithSubtitle
               trigger={["hover", "focus"]}
-              title="Increments the label value on each click"
+              title="Increments the value on each click"
               subtitle="Hold Ctrl to reuse last value"
               placement="right"
             >

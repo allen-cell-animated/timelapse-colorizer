@@ -124,7 +124,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         destroyTooltipOnHide={true}
       >
         <div ref={createPopoverContainerRef}>
-          <Tooltip title="Create new label" placement="top">
+          <Tooltip title="Create new annotation" placement="top">
             <IconButton onClick={onClickCreateButton} type="primary">
               <TagAddIconSVG />
             </IconButton>
@@ -133,7 +133,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
       </Popover>
       {props.children}
       <Popover
-        title={<p style={{ fontSize: theme.font.size.label }}>Edit label</p>}
+        title={<p style={{ fontSize: theme.font.size.label }}>Edit annotation</p>}
         trigger={["click"]}
         placement="bottom"
         content={
@@ -156,7 +156,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         destroyTooltipOnHide={true}
       >
         <div ref={editPopoverContainerRef}>
-          <Tooltip title="Edit label" placement="top">
+          <Tooltip title="Edit annotation" placement="top">
             <IconButton onClick={onClickEditButton} type={showEditPopover ? "primary" : "outlined"}>
               <EditOutlined />
             </IconButton>
@@ -164,7 +164,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         </div>
       </Popover>
       <Popconfirm
-        title={`Delete label with ${props.selectedLabel.ids.size} object(s)?`}
+        title={`Delete annotation with ${props.selectedLabel.ids.size} object(s)?`}
         description={"This cannot be undone."}
         open={showDeletePopup}
         onOpenChange={hideOnOpenChange(setShowDeletePopup)}
@@ -173,7 +173,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         placement="bottom"
         getPopupContainer={() => editPopoverContainerRef.current!}
       >
-        <Tooltip title="Delete label" placement="top">
+        <Tooltip title="Delete annotation" placement="top">
           <IconButton type="outlined" onClick={onClickDeleteButton}>
             <DeleteOutlined />
           </IconButton>
