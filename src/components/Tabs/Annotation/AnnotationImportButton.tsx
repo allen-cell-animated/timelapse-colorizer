@@ -1,37 +1,34 @@
-import { UploadOutlined, WarningOutlined } from "@ant-design/icons";
-import { Card, Modal, Upload, UploadFile } from "antd";
-import React, { ReactElement, useContext, useMemo, useState } from "react";
-import styled from "styled-components";
+import { UploadOutlined } from "@ant-design/icons";
+import { Modal, Radio, Space, Upload, UploadFile } from "antd";
+import React, { ReactElement, useContext, useState } from "react";
+import styled, { css } from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { useViewerStateStore } from "../../../state";
-import { FlexColumn, FlexRow } from "../../../styles/utils";
+import { FlexColumn } from "../../../styles/utils";
 
-import { AnnotationData } from "../../../colorizer/AnnotationData";
+import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
+import MessageCard from "../../MessageCard";
+import AnnotationFileInfo from "./AnnotationFileInfo";
 
 type AnnotationImportButtonProps = {
   annotationState: AnnotationState;
 };
 
-const WarningStyleCard = styled(Card)`
-  border-color: var(--color-alert-warning-border);
-  background-color: var(--color-alert-warning-fill);
+const MultilineRadio = styled(Radio)<{ $expanded?: boolean }>`
+  & .ant-radio.ant-wave-target {
+    ${(props) => {
+      if (props.$expanded) {
+        return css`
+          margin: 3px 0 auto 0;
+        `;
+      }
+      return css``;
+    }}
+  }
 `;
-
-const WarningCard = (props: React.PropsWithChildren): ReactElement => {
-  return (
-    <WarningStyleCard size="small">
-      <FlexRow $gap={10}>
-        <div>
-          <WarningOutlined style={{ color: "var(--color-text-warning)", fontSize: "var(--font-size-label)" }} />
-        </div>
-        {props.children}
-      </FlexRow>
-    </WarningStyleCard>
-  );
-};
 
 export default function AnnotationImportButton(props: AnnotationImportButtonProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -39,15 +36,16 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
   const theme = useContext(AppThemeContext);
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [convertedAnnotationData, setConvertedAnnotationData] = useState<AnnotationData | null>(null);
+  const [parseResult, setParseResult] = useState<AnnotationParseResult | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [errorText, setErrorText] = useState("");
+  const [mergeMode, setMergeMode] = useState(AnnotationMergeMode.APPEND);
 
   const modalContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleFileUpload = (file: File): void => {
-    setUploadedFile(file);
-    setConvertedAnnotationData(null);
+  const handleFileUpload = async (file: File): Promise<void> => {
+    setUploadedFile(null);
+    setParseResult(null);
     setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
     if (!isCsv || !dataset) {
@@ -59,10 +57,13 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
       const text = e.target?.result as string;
       try {
         // TODO: Do this in a worker to avoid blocking the UI thread?
-        const annotationData = AnnotationData.fromCsv(dataset, text);
-        setConvertedAnnotationData(annotationData);
+        const result = await AnnotationData.fromCsv(dataset, text);
+        setParseResult(result);
       } catch (error) {
-        setErrorText("Could not parse CSV file. Parsing failed with the following error: '" + error + "'");
+        setErrorText('Could not parse CSV file. Parsing failed with the following error: "' + error + '"');
+        console.error("Error parsing CSV file:", error);
+      } finally {
+        setUploadedFile(file);
       }
     };
     reader.readAsText(file);
@@ -70,54 +71,34 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
 
   const handleCancel = (): void => {
     setShowModal(false);
-    setConvertedAnnotationData(null);
+    setParseResult(null);
     setUploadedFile(null);
     setErrorText("");
   };
 
   const handleImport = async (): Promise<void> => {
-    if (convertedAnnotationData) {
-      // TODO: give more advanced merging options here. There are three possible
-      // options:
-      // 1. Overwrite existing annotations (default, current behavior)
-      // 2. Keep both (no merging, labels are kept separate even if they have
-      //    matching names)
-      // 3. Merge annotations (merge matching labels with the same types. Users
-      //    should be given an option for how to handle when conflicts occur for
-      //    values (e.g. the imported CSV has a different value assigned to the
-      //    same ID))
-      annotationState.replaceAnnotationData(convertedAnnotationData);
+    if (parseResult) {
+      annotationState.importData(parseResult.annotationData, mergeMode);
       setShowModal(false);
-      setConvertedAnnotationData(null);
+      setParseResult(null);
       setUploadedFile(null);
       setErrorText("");
       annotationState.setVisibility(true);
     }
   };
 
-  const hasAnnotationData = annotationState.data.getLabels().length > 0;
-
-  const fileList: UploadFile[] = useMemo(() => {
-    if (!uploadedFile) {
-      return [];
-    }
-    return [
-      {
-        uid: "",
-        name: uploadedFile.name,
-        status: convertedAnnotationData !== null ? "done" : "error",
-      },
-    ];
-  }, [uploadedFile, convertedAnnotationData]);
+  const hasExistingAnnotationData = annotationState.data.getLabels().length > 0;
 
   const handleFileChange = (info: { fileList: UploadFile[] }): void => {
     if (info.fileList.length === 0) {
       // File was removed. Clear the state.
       setUploadedFile(null);
-      setConvertedAnnotationData(null);
+      setParseResult(null);
       setErrorText("");
     }
   };
+
+  //// Rendering ////
 
   return (
     <div ref={modalContainerRef}>
@@ -126,29 +107,71 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         title="Import CSV"
         open={showModal}
         okText="Import"
-        okButtonProps={{ disabled: !convertedAnnotationData }}
+        okButtonProps={{ disabled: !parseResult }}
         onOk={handleImport}
         onCancel={handleCancel}
         destroyOnClose={true}
       >
-        <FlexColumn $gap={10}>
-          <Upload.Dragger
-            name="file"
-            multiple={false}
-            accept=".csv"
-            fileList={fileList}
-            onChange={handleFileChange}
-            showUploadList={true}
-            beforeUpload={handleFileUpload}
-          >
-            <span style={{ color: theme.color.text.hint, fontSize: theme.font.size.header }}>
-              <UploadOutlined />
-            </span>
-            <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
-          </Upload.Dragger>
-          {errorText && <p style={{ color: theme.color.text.error }}>{errorText}</p>}
-          {convertedAnnotationData && hasAnnotationData && (
-            <WarningCard>Existing annotations will be overwritten during import.</WarningCard>
+        <FlexColumn $gap={6}>
+          {uploadedFile ? (
+            <AnnotationFileInfo
+              errorText={errorText}
+              file={uploadedFile}
+              parseResult={parseResult}
+              clearFile={() => {
+                setUploadedFile(null);
+                setParseResult(null);
+                setErrorText("");
+              }}
+            ></AnnotationFileInfo>
+          ) : (
+            <Upload.Dragger
+              name="file"
+              multiple={false}
+              accept=".csv"
+              onChange={handleFileChange}
+              showUploadList={true}
+              beforeUpload={handleFileUpload}
+            >
+              <>
+                <span style={{ color: theme.color.text.hint, fontSize: theme.font.size.header }}>
+                  <UploadOutlined />
+                </span>
+                <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
+              </>
+            </Upload.Dragger>
+          )}
+          {parseResult && hasExistingAnnotationData && (
+            <MessageCard type="info">
+              <FlexColumn>
+                <span style={{ marginBottom: 5 }}>
+                  You have existing annotations. How would you like to handle the imported annotations?
+                </span>
+                <Radio.Group value={mergeMode} onChange={(e) => setMergeMode(e.target.value)}>
+                  <Space direction="vertical">
+                    <Radio value={AnnotationMergeMode.APPEND}>Append as new annotations</Radio>
+                    <MultilineRadio
+                      value={AnnotationMergeMode.MERGE}
+                      $expanded={mergeMode === AnnotationMergeMode.MERGE}
+                    >
+                      {mergeMode === AnnotationMergeMode.MERGE ? (
+                        <FlexColumn>
+                          <p style={{ margin: 0 }}>Merge matching annotations</p>
+                          <p style={{ margin: 0 }}>
+                            Matching annotations will be merged, all other annotations will be appended. If there are
+                            conflicts where the same object is annotated with different values, the imported CSV takes
+                            priority.
+                          </p>
+                        </FlexColumn>
+                      ) : (
+                        <>Merge matching annotations</>
+                      )}
+                    </MultilineRadio>
+                    <Radio value={AnnotationMergeMode.OVERWRITE}>Replace all existing annotations</Radio>
+                  </Space>
+                </Radio.Group>
+              </FlexColumn>
+            </MessageCard>
           )}
         </FlexColumn>
       </Modal>

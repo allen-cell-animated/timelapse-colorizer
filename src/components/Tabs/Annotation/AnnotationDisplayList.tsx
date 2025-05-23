@@ -15,6 +15,8 @@ import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
   ids: number[];
+  idToValue: Map<number, string> | undefined;
+  valueToIds: Map<string, Set<number>> | undefined;
   setFrame: (frame: number) => Promise<void>;
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
@@ -22,7 +24,7 @@ type AnnotationDisplayListProps = {
   selectedTrack: Track | null;
   selectedId?: number;
   highlightRange: number[] | null;
-  lastClickedId: number | null;
+  rangeStartId: number | null;
   frame: number;
   labelColor: Color;
 };
@@ -35,6 +37,105 @@ const ListLayoutContainer = styled.div`
   gap: 10px;
 `;
 
+const VerticalDivider = styled.div`
+  height: 20px;
+  width: 1px;
+  background-color: var(--color-dividers);
+`;
+
+type LookupInfo = {
+  trackIds: number[];
+  trackToIds: Map<string, number[]>;
+  valueToTrackIds?: Map<string, number[]>;
+};
+
+const getTrackLookups = (
+  dataset: Dataset,
+  ids: number[],
+  idToValue: Map<number, string> | undefined,
+  valueToIds: Map<string, Set<number>> | undefined
+): LookupInfo => {
+  const trackToIds: Map<string, number[]> = new Map();
+  const valueToTrackIds: Map<string, Set<number>> = new Map();
+  const trackIds: Set<number> = new Set();
+
+  // Reverse the order of IDs so that the most recently added IDs are at the
+  // front of the list.
+  const idsReversed = ids.toReversed();
+  for (const id of idsReversed) {
+    const trackId = dataset.getTrackId(id);
+    const trackIdString = trackId.toString();
+    if (!trackToIds.has(trackIdString)) {
+      trackToIds.set(trackIdString, [id]);
+    } else {
+      const ids = trackToIds.get(trackIdString);
+      if (ids) {
+        ids.push(id);
+      }
+    }
+
+    trackIds.add(trackId);
+
+    // Store value information.
+    if (idToValue && valueToIds) {
+      const value = idToValue.get(id);
+      if (!value) {
+        continue;
+      }
+      if (!valueToTrackIds.has(value)) {
+        valueToTrackIds.set(value, new Set([trackId]));
+      }
+      valueToTrackIds.get(value)!.add(trackId);
+    }
+  }
+
+  return {
+    trackIds: Array.from(trackIds),
+    trackToIds,
+    valueToTrackIds: new Map(valueToTrackIds.entries().map(([key, value]) => [key, Array.from(value)])),
+  };
+};
+
+const TrackListItem = (props: {
+  trackId: number;
+  ids: number[];
+  dataset: Dataset;
+  isSelectedTrack: boolean;
+  labelColor: Color;
+  onClickTrack: (trackId: number) => void;
+}): ReactElement => {
+  const { trackId, ids, dataset, isSelectedTrack, onClickTrack, labelColor } = props;
+  const theme = useContext(AppThemeContext);
+
+  const track = dataset.getTrack(trackId);
+  return (
+    <DropdownItem
+      key={trackId}
+      onClick={() => {
+        onClickTrack(trackId);
+      }}
+      selected={isSelectedTrack}
+    >
+      <FlexRowAlignCenter $gap={5}>
+        <AnnotationTrackThumbnail
+          widthPx={75}
+          heightPx={14}
+          ids={ids}
+          track={track ?? null}
+          dataset={dataset}
+          color={labelColor}
+        ></AnnotationTrackThumbnail>
+        <p style={{ margin: 0 }}>
+          {trackId}{" "}
+          <span style={{ color: theme.color.text.hint }}>
+            ({ids.length}/{track?.times.length ?? 0})
+          </span>
+        </p>
+      </FlexRowAlignCenter>
+    </DropdownItem>
+  );
+};
+
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
@@ -42,33 +143,39 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
-  // Organize ids by track
-  const trackToIds: Map<string, number[]> = useMemo(() => {
+  // Organize ids by track and value for display.
+  const { trackIds, trackToIds, valueToTrackIds } = useMemo((): LookupInfo => {
     if (!props.dataset) {
-      return new Map();
+      return {
+        trackIds: [],
+        trackToIds: new Map(),
+        valueToTrackIds: new Map(),
+      };
     }
-    const map: Map<string, number[]> = new Map();
-    for (const id of props.ids) {
-      const trackId: string = props.dataset.getTrackId(id).toString();
-      if (!map.has(trackId)) {
-        map.set(trackId, [id]);
-      } else {
-        const ids = map.get(trackId);
-        if (ids) {
-          ids.push(id);
-        }
-      }
-    }
-    return map;
-  }, [props.dataset, props.ids]);
+    return getTrackLookups(props.dataset, props.ids, props.idToValue, props.valueToIds);
+  }, [props.dataset, props.ids, props.idToValue, props.valueToIds]);
 
-  // Track IDs, in order of appearance in the ID list. The track that was last
-  // added will be at the top of the list.
-  const trackIds = useMemo(() => {
-    return Array.from(trackToIds.keys())
-      .map((trackId) => parseInt(trackId, 10))
-      .reverse();
-  }, [trackToIds]);
+  function createTrackList(tracksAndIds: { trackId: number; ids: number[] }[]): ReactElement {
+    return (
+      <ul style={{ margin: 0, listStyle: "none", paddingLeft: "0" }}>
+        {tracksAndIds.map(({ trackId, ids }) => {
+          const isSelectedTrack = props.selectedTrack?.trackId === trackId;
+          return (
+            <li key={trackId}>
+              <TrackListItem
+                trackId={trackId}
+                ids={ids}
+                dataset={props.dataset!}
+                isSelectedTrack={isSelectedTrack}
+                labelColor={props.labelColor}
+                onClickTrack={props.onClickTrack}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
 
   let listContents;
   if (props.ids.length === 0 || props.dataset === null) {
@@ -77,47 +184,46 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
         <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: theme.color.text.disabled }}>
           <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
-          <p>Labeled tracks will appear here.</p>
+          <p>Annotated tracks will appear here.</p>
         </FlexColumnAlignCenter>
       </FlexRowAlignCenter>
     );
-  } else {
+  } else if (valueToTrackIds && valueToTrackIds.size > 0) {
+    // Multi-value labels; organize tracks by value.
     listContents = (
-      <ul style={{ marginTop: 0 }}>
-        {trackIds.map((trackId) => {
-          const track = props.dataset?.getTrack(trackId);
-          const ids = trackToIds.get(trackId.toString())!;
-          const isSelectedTrack = props.selectedTrack?.trackId === trackId;
+      <FlexColumn style={{ marginLeft: "10px" }}>
+        {/* Render each label as its own section */}
+        {Array.from(valueToTrackIds.entries()).map(([value, trackIds]) => {
+          const trackIdsWithIds = trackIds.map((trackId) => {
+            const ids = trackToIds.get(trackId.toString())!;
+            return { trackId, ids };
+          });
           return (
-            <li key={trackId}>
-              <DropdownItem
-                key={trackId}
-                onClick={() => {
-                  props.onClickTrack(trackId);
-                }}
-                selected={isSelectedTrack}
-              >
-                <FlexRowAlignCenter $gap={5}>
-                  <AnnotationTrackThumbnail
-                    widthPx={75}
-                    heightPx={14}
-                    ids={ids}
-                    track={track ?? null}
-                    dataset={props.dataset}
-                    color={props.labelColor}
-                  ></AnnotationTrackThumbnail>
-                  <p style={{ margin: 0 }}>
-                    {trackId}{" "}
-                    <span style={{ color: theme.color.text.hint }}>
-                      ({ids.length}/{track?.times.length ?? 0})
-                    </span>
-                  </p>
-                </FlexRowAlignCenter>
-              </DropdownItem>
-            </li>
+            <FlexColumn>
+              <FlexRowAlignCenter $gap={5}>
+                <p style={{ minWidth: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <b>{value}</b>
+                </p>
+                <VerticalDivider />
+                <p style={{ whiteSpace: "nowrap" }}>
+                  {trackIds.length} track{trackIds.length > 1 ? "s" : ""}
+                </p>
+              </FlexRowAlignCenter>
+              <FlexColumn>{createTrackList(trackIdsWithIds)}</FlexColumn>
+            </FlexColumn>
           );
         })}
-      </ul>
+      </FlexColumn>
+    );
+  } else {
+    // Boolean values. All tracks are displayed in a single list.
+    // TODO: Handle updates to this in a transition so the UI updates don't block
+    // interaction.
+    listContents = createTrackList(
+      trackIds.map((trackId) => {
+        const ids = trackToIds.get(trackId.toString())!;
+        return { trackId, ids };
+      })
     );
   }
 
@@ -126,8 +232,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   // Show a marker in the selected track thumbnail if the last clicked ID is
   // part of the selected track.
   let markedTime: number | undefined;
-  if (props.lastClickedId !== null && props.dataset) {
-    const id = props.lastClickedId;
+  if (props.rangeStartId !== null && props.dataset) {
+    const id = props.rangeStartId;
     const lastClickedTime = props.dataset.getTime(id);
     const isSelectedTrack = props.dataset.getTrackId(id) === selectedTrackId;
     if (lastClickedTime !== undefined && isSelectedTrack) {
@@ -154,11 +260,11 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           whiteSpace: "nowrap",
         }}
       >
-        <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks labeled"}</b>
+        <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks annotated"}</b>
       </p>
       {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
-        <FlexColumn style={{ height: "100%", width: "40%" }}>
+        <FlexColumn style={{ height: "100%", width: "45%" }}>
           <div style={{ position: "relative" }}>
             <div style={{ height: "490px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
               {listContents}
@@ -169,7 +275,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
         {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}
         <div
           style={{
-            width: "calc(60% + 5px)",
+            width: "calc(55% - 20px)",
             height: "calc(100% - 10px)",
             padding: "5px 10px 10px 10px",
             border: "1px solid var(--color-borders)",
@@ -207,6 +313,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             onClickDeleteObject={props.onClickDeleteObject}
             dataset={props.dataset}
             ids={selectedTrackId ? trackToIds.get(selectedTrackId?.toString()) ?? [] : []}
+            idToValue={props.idToValue}
             height={410}
             selectedId={props.selectedId}
             hideTrackColumn={true}
