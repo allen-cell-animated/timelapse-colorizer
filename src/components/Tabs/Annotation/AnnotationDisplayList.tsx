@@ -46,7 +46,7 @@ const VerticalDivider = styled.div`
 type LookupInfo = {
   trackIds: number[];
   trackToIds: Map<string, number[]>;
-  valueToTrackIds?: Map<string, number[]>;
+  valueToTracksToIds?: Map<string, Map<number, number[]>>;
 };
 
 const getTrackLookups = (
@@ -56,8 +56,10 @@ const getTrackLookups = (
   valueToIds: Map<string, Set<number>> | undefined
 ): LookupInfo => {
   const trackToIds: Map<string, number[]> = new Map();
-  const valueToTrackIds: Map<string, Set<number>> = new Map();
+  const valueToTracksToIds: Map<string, Map<number, number[]>> = new Map();
   const trackIds: Set<number> = new Set();
+
+  const hasValueInfo = idToValue !== undefined && valueToIds !== undefined;
 
   // Reverse the order of IDs so that the most recently added IDs are at the
   // front of the list.
@@ -77,22 +79,30 @@ const getTrackLookups = (
     trackIds.add(trackId);
 
     // Store value information.
-    if (idToValue && valueToIds) {
+    if (hasValueInfo) {
       const value = idToValue.get(id);
       if (!value) {
         continue;
       }
-      if (!valueToTrackIds.has(value)) {
-        valueToTrackIds.set(value, new Set([trackId]));
+      if (!valueToTracksToIds.has(value)) {
+        valueToTracksToIds.set(value, new Map());
       }
-      valueToTrackIds.get(value)!.add(trackId);
+      const trackIdToIds = valueToTracksToIds.get(value)!;
+      if (!trackIdToIds.has(trackId)) {
+        trackIdToIds.set(trackId, [id]);
+      } else {
+        const ids = trackIdToIds.get(trackId);
+        if (ids) {
+          ids.push(id);
+        }
+      }
     }
   }
 
   return {
     trackIds: Array.from(trackIds),
     trackToIds,
-    valueToTrackIds: new Map(valueToTrackIds.entries().map(([key, value]) => [key, Array.from(value)])),
+    valueToTracksToIds: hasValueInfo ? valueToTracksToIds : undefined,
   };
 };
 
@@ -144,12 +154,16 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
 
   // Organize ids by track and value for display.
-  const { trackIds, trackToIds, valueToTrackIds } = useMemo((): LookupInfo => {
+  const {
+    trackIds,
+    trackToIds,
+    valueToTracksToIds: valueToTrackIds,
+  } = useMemo((): LookupInfo => {
     if (!props.dataset) {
       return {
         trackIds: [],
         trackToIds: new Map(),
-        valueToTrackIds: new Map(),
+        valueToTracksToIds: new Map(),
       };
     }
     return getTrackLookups(props.dataset, props.ids, props.idToValue, props.valueToIds);
@@ -157,7 +171,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   function createTrackList(tracksAndIds: { trackId: number; ids: number[] }[]): ReactElement {
     return (
-      <ul style={{ marginTop: 0, listStyle: "none", paddingLeft: "5px" }}>
+      <ul style={{ margin: 0, listStyle: "none", paddingLeft: "5px" }}>
         {tracksAndIds.map(({ trackId, ids }) => {
           const isSelectedTrack = props.selectedTrack?.trackId === trackId;
           return (
@@ -193,11 +207,11 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     listContents = (
       <FlexColumn style={{ marginLeft: "10px" }}>
         {/* Render each label as its own section */}
-        {Array.from(valueToTrackIds.entries()).map(([value, trackIds]) => {
-          const trackIdsWithIds = trackIds.map((trackId) => {
-            const ids = trackToIds.get(trackId.toString())!;
-            return { trackId, ids };
-          });
+        {Array.from(valueToTrackIds.entries()).map(([value, trackIdToIds]) => {
+          const trackIdsWithIds = Array.from(trackIdToIds.entries()).map(([trackId, ids]) => ({
+            trackId,
+            ids,
+          }));
           return (
             <FlexColumn>
               <FlexRowAlignCenter $gap={5}>
@@ -206,7 +220,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 </p>
                 <VerticalDivider />
                 <p style={{ whiteSpace: "nowrap" }}>
-                  {trackIds.length} track{trackIds.length > 1 ? "s" : ""}
+                  {trackIdsWithIds.length} track{trackIdsWithIds.length > 1 ? "s" : ""}
                 </p>
               </FlexRowAlignCenter>
               <FlexColumn>{createTrackList(trackIdsWithIds)}</FlexColumn>
