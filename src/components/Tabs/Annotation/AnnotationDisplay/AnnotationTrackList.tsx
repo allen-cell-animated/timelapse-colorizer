@@ -58,6 +58,10 @@ type TrackListProps = {
   onClickTrack: (trackId: number) => void;
 };
 
+export const getTrackListHeightPx = (numTracks: number): number => {
+  return Math.floor(numTracks * 28);
+};
+
 /**
  * Displays an array of annotated tracks as an unsorted list of
  * clickable/interactive thumbnails.

@@ -92,7 +92,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       <ListLayoutContainer>
         <FlexColumn style={{ height: "100%", width: "45%" }}>
           <div style={{ position: "relative" }}>
-            <div style={{ height: "490px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
+            <div style={{ height: "450px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
               <AnnotationValueList lookupInfo={lookupInfo} {...props} />
             </div>
             <ScrollShadowContainer style={scrollShadowStyle} />
