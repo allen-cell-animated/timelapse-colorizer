@@ -154,6 +154,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   }, [currentLabelIdx, annotationData]);
   const isMultiValueLabel = selectedLabel && selectedLabel?.options.type !== LabelType.BOOLEAN;
   const idToValue = isMultiValueLabel ? selectedLabel.idToValue : undefined;
+  const valueToIds = isMultiValueLabel ? selectedLabel.valueToIds : undefined;
 
   const labelSelectionDropdown = (
     <>
@@ -308,6 +309,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             dataset={store.dataset}
             ids={tableIds}
             idToValue={idToValue}
+            valueToIds={valueToIds}
             highlightRange={highlightedIds}
             lastClickedId={props.annotationState.lastClickedId}
             selectedTrack={store.selectedTrack}
