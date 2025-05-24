@@ -152,7 +152,7 @@ export const ScrollShadowContainer = styled.div`
 export function useScrollShadow(shadowColor: string = "#00000030"): {
   scrollShadowStyle: React.CSSProperties;
   onScrollHandler: EventHandler<any>;
-  scrollRef: React.RefObject<HTMLDivElement>;
+  scrollRef: React.MutableRefObject<HTMLDivElement | null>;
 } {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -160,10 +160,14 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
   const [scrollHeight, setScrollHeight] = useState(0);
   const [clientHeight, setClientHeight] = useState(0);
 
-  const updateScrollInfo = (div: HTMLDivElement): void => {
+  const updateScrollInfo = (div: HTMLDivElement | null): void => {
+    if (!div) {
+      return;
+    }
     setScrollTop(div.scrollTop);
     setScrollHeight(div.scrollHeight);
     setClientHeight(div.clientHeight);
+    console.log("Setup scroll info. Top:", div.scrollTop, " Height:", div.scrollHeight, " ClientHeight:", div.clientHeight);
   };
 
   const mutationObserver = useConstructor(
@@ -182,6 +186,7 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
   // Update shadows before first interaction
   useEffect(() => {
     if (scrollRef.current) {
+      console.log("Found valid scrollRef, setting up observers")
       updateScrollInfo(scrollRef.current);
 
       mutationObserver.observe(scrollRef.current, {
@@ -194,7 +199,7 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
       };
     }
     return;
-  }, []);
+  }, [scrollRef.current, mutationObserver]);
 
   function getBoxShadow(): string {
     const scrolledToBottom = clientHeight === scrollHeight - scrollTop;

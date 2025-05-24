@@ -42,8 +42,6 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   const selectedTrackId = props.selectedTrack?.trackId;
 
-  const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
-
   // Organize ids by track and value for display.
   const lookupInfo = useMemo((): LookupInfo => {
     if (!props.dataset) {
@@ -91,11 +89,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
         <FlexColumn style={{ height: "100%", width: "45%" }}>
-          <div style={{ position: "relative" }}>
-            <div style={{ height: "450px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
-              <AnnotationValueList lookupInfo={lookupInfo} {...props} />
-            </div>
-            <ScrollShadowContainer style={scrollShadowStyle} />
+          <div style={{ height: "480px", overflowY: "auto" }}>
+            <AnnotationValueList lookupInfo={lookupInfo} {...props} />
           </div>
         </FlexColumn>
         {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}
