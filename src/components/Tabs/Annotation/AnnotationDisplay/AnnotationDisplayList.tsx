@@ -2,15 +2,14 @@ import React, { ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../colorizer";
-import { getEmptyLookupInfo, getTrackLookups, LookupInfo } from "../../../colorizer/utils/annotation_utils";
-import { ScrollShadowContainer, useScrollShadow } from "../../../colorizer/utils/react_utils";
-import { FlexColumn, FlexRowAlignCenter } from "../../../styles/utils";
+import { Dataset, Track } from "../../../../colorizer";
+import { getEmptyLookupInfo, getTrackLookups, LookupInfo } from "../../../../colorizer/utils/annotation_utils";
+import { FlexColumn, FlexRowAlignCenter } from "../../../../styles/utils";
 
-import { AppThemeContext } from "../../AppStyle";
-import AnnotationValueList from "./AnnotationDisplay/AnnotationValueList";
+import { AppThemeContext } from "../../../AppStyle";
+import AnnotationTrackThumbnail from "../AnnotationTrackThumbnail";
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
-import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
+import InnerList from "./InnerList";
 
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
@@ -90,7 +89,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       <ListLayoutContainer>
         <FlexColumn style={{ height: "100%", width: "45%" }}>
           <div style={{ height: "480px", overflowY: "auto" }}>
-            <AnnotationValueList lookupInfo={lookupInfo} {...props} />
+            <InnerList lookupInfo={lookupInfo} {...props} />
           </div>
         </FlexColumn>
         {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}

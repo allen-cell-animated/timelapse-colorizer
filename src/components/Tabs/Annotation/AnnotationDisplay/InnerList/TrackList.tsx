@@ -1,12 +1,12 @@
 import React, { ReactElement, useContext } from "react";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../../colorizer";
-import { FlexRowAlignCenter } from "../../../../styles/utils";
+import { Dataset, Track } from "../../../../../colorizer";
+import { FlexRowAlignCenter } from "../../../../../styles/utils";
 
-import { AppThemeContext } from "../../../AppStyle";
-import DropdownItem from "../../../Dropdowns/DropdownItem";
-import AnnotationTrackThumbnail from "../AnnotationTrackThumbnail";
+import { AppThemeContext } from "../../../../AppStyle";
+import DropdownItem from "../../../../Dropdowns/DropdownItem";
+import AnnotationTrackThumbnail from "../../AnnotationTrackThumbnail";
 
 type TrackListItemProps = {
   trackId: number;
@@ -66,7 +66,7 @@ export const getTrackListHeightPx = (numTracks: number): number => {
  * Displays an array of annotated tracks as an unsorted list of
  * clickable/interactive thumbnails.
  */
-export default function AnnotationTrackList(props: TrackListProps): ReactElement {
+export default function TrackList(props: TrackListProps): ReactElement {
   return (
     <ul style={{ margin: 0, listStyle: "none", paddingLeft: "5px" }}>
       {props.tracksAndIds.map(({ trackId, ids }) => {

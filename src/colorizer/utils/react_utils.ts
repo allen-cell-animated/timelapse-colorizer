@@ -198,6 +198,7 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
         mutationObserver.disconnect();
       };
     }
+    console.log("No scrollRef found", scrollRef.current);
     return;
   }, [scrollRef.current, mutationObserver]);
 
