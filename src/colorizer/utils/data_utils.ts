@@ -335,36 +335,37 @@ export function getLabelTypeFromParsedCsv(
 ): Map<string, LabelType> {
   const labelTypeMap = new Map<string, LabelType>();
   for (const header of headers) {
-    let hasIntegerValues = true;
-    let hasBooleanValues = true;
+    let isAllIntegers = true;
+    let isAllBooleans = true;
     for (const row of data) {
       const value = row[header]?.trim();
-      const valueAsInt = parseInt(value ?? "", 10);
       if (value === undefined || value === "") {
         continue;
-      } else if (value.toLowerCase() === BOOLEAN_VALUE_TRUE || value.toLowerCase() === BOOLEAN_VALUE_FALSE) {
-        hasIntegerValues = false;
+      }
+      const valueAsInt = parseInt(value ?? "", 10);
+      if (value.toLowerCase() === BOOLEAN_VALUE_TRUE || value.toLowerCase() === BOOLEAN_VALUE_FALSE) {
+        isAllIntegers = false;
       } else if (valueAsInt.toString(10) === value && Number.isInteger(valueAsInt)) {
         // ^ check that the value's string representation is the same as the
         // parsed integer (there would be a mismatch for float values, e.g.
         // "1.0" != 1)
-        hasBooleanValues = false;
+        isAllBooleans = false;
       } else {
         // String/custom value (neither int nor boolean)
-        hasBooleanValues = false;
-        hasIntegerValues = false;
+        isAllBooleans = false;
+        isAllIntegers = false;
         break;
       }
-      if (!hasIntegerValues && !hasBooleanValues) {
+      if (!isAllIntegers && !isAllBooleans) {
         // Triggers if there are both integer and boolean values in the same
         // column, which will be handled as custom
         break;
       }
     }
 
-    if (hasIntegerValues) {
+    if (isAllIntegers) {
       labelTypeMap.set(header, LabelType.INTEGER);
-    } else if (hasBooleanValues) {
+    } else if (isAllBooleans) {
       labelTypeMap.set(header, LabelType.BOOLEAN);
     } else {
       labelTypeMap.set(header, LabelType.CUSTOM);
