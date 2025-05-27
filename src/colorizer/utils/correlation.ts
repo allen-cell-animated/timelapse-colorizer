@@ -6,7 +6,7 @@
  * A number between -1 and 1 representing the correlation. Returns 0 if there
  * are no finite values in the input arrays.
  */
-export function pearson(x: Float32Array, y: Float32Array): number {
+export function pearson(x: Float32Array | Uint32Array, y: Float32Array | Uint32Array): number {
   // Adapted from: https://memory.psych.mun.ca/tech/js/correlation.shtml
   if (x.length !== y.length) {
     throw new Error(
@@ -76,7 +76,7 @@ export function pearson(x: Float32Array, y: Float32Array): number {
  * any indices `i` and `j`, the value at `[i][j]` (or `[j][i]`) is the
  * correlation coefficient between the `i`th and `j`th features.
  */
-export function computeCorrelations(featureData: Float32Array[]): number[][] {
+export function computeCorrelations(featureData: (Float32Array | Uint32Array)[]): number[][] {
   const out: number[][] = [];
   // Optimization: Only calculate coefficients for [x][y] where y < x. [x][x] is
   // always 1, and [x][y] == [y][x], so we only need to calculate it once for
