@@ -8,8 +8,6 @@ import { AppThemeContext } from "../../../../AppStyle";
 import DropdownItem from "../../../../Dropdowns/DropdownItem";
 import AnnotationTrackThumbnail from "../../AnnotationTrackThumbnail";
 
-export const TRACK_LIST_ITEM_HEIGHT_PX = 28;
-
 type TrackListItemProps = {
   trackId: number;
   ids: number[];

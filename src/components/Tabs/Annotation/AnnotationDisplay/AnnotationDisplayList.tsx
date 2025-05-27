@@ -9,7 +9,7 @@ import { FlexColumn, FlexRowAlignCenter } from "../../../../styles/utils";
 import { AppThemeContext } from "../../../AppStyle";
 import AnnotationTrackThumbnail from "../AnnotationTrackThumbnail";
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
-import InnerList from "./TrackList";
+import ValueAndTrackList from "./ValueAndTrackList";
 
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
@@ -89,7 +89,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       <ListLayoutContainer>
         <FlexColumn style={{ height: "100%", width: "45%" }}>
           <div style={{ height: "480px", overflowY: "auto" }}>
-            <InnerList lookupInfo={lookupInfo} {...props} />
+            <ValueAndTrackList lookupInfo={lookupInfo} {...props} />
           </div>
         </FlexColumn>
         {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}

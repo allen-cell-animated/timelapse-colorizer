@@ -11,7 +11,7 @@ import PlaceholderListItem from "./ListItems/PlaceholderListItem";
 import TrackListItem from "./ListItems/TrackListItem";
 import ValueListItem from "./ListItems/ValueListItem";
 
-type AnnotationDisplayInnerListProps = {
+type ValueAndTrackListProps = {
   lookupInfo: LookupInfo;
   dataset: Dataset | null;
   selectedTrack: Track | null;
@@ -47,7 +47,7 @@ type PlaceholderItemData = {
 
 type ListItemData = {
   dataset: Dataset | null;
-  selectedTrack?: Track | null;
+  selectedTrack: Track | null;
   labelColor: Color;
   onClickTrack: (trackId: number) => void;
   onFocus: (index: number) => void;
@@ -90,7 +90,7 @@ const listItemRenderer = ({
     return <ValueListItem {...item} style={style} />;
   } else if (item.type === ListItemType.TRACK) {
     return (
-      <div style={style} role="row" aria-rowindex={index + 1} key={item.trackId}>
+      <div style={style} key={item.trackId}>
         <TrackListItem
           trackId={item.trackId}
           ids={item.ids}
@@ -111,7 +111,7 @@ const listItemRenderer = ({
  * Displays either a placeholder, a list of tracks, or a list of values + tracks
  * based on the provided props. Uses list virtualization for increased performance.
  */
-export default function TrackList(props: AnnotationDisplayInnerListProps): ReactElement {
+export default function ValueAndTrackList(props: ValueAndTrackListProps): ReactElement {
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
   const listRef = React.useRef<FixedSizeList>(null);
 
@@ -145,9 +145,10 @@ export default function TrackList(props: AnnotationDisplayInnerListProps): React
   // Note: To use AutoSizer with scroll shadows, a default width and height must
   // be provided. Otherwise, the list won't be rendered on the initial render,
   // which causes the scroll ref to be left unset.
+
+  // TODO: Align with Listbox pattern? https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
   return (
     <div style={{ marginLeft: "10px", height: "100%", position: "relative" }}>
-      {/* Render each value as its own section */}
       <AutoSizer defaultWidth={300} defaultHeight={480}>
         {({ height, width }) => (
           <FixedSizeList
@@ -156,6 +157,10 @@ export default function TrackList(props: AnnotationDisplayInnerListProps): React
             onScroll={onScrollHandler}
             itemCount={listData.itemData.length}
             itemData={listData}
+            // TODO: Currently, all items are the same height. However, if this
+            // changes, the component should be changed to a VariableSizeList
+            // and the item sizes recorded. Note that this can cause some layout
+            // issues if the list is dynamically updated.
             itemSize={28}
             width={width}
             height={height}
