@@ -152,7 +152,7 @@ export const ScrollShadowContainer = styled.div`
 export function useScrollShadow(shadowColor: string = "#00000030"): {
   scrollShadowStyle: React.CSSProperties;
   onScrollHandler: EventHandler<any>;
-  scrollRef: React.MutableRefObject<HTMLDivElement | null>;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
 } {
   const scrollRef = useRef<HTMLDivElement>(null);
 

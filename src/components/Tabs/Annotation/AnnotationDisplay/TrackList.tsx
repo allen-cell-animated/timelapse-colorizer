@@ -1,15 +1,15 @@
 import React, { ReactElement, useMemo } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeList as List } from "react-window";
+import { FixedSizeList } from "react-window";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../../../colorizer";
-import { LookupInfo } from "../../../../../colorizer/utils/annotation_utils";
-import { ScrollShadowContainer, useScrollShadow } from "../../../../../colorizer/utils/react_utils";
+import { Dataset, Track } from "../../../../colorizer";
+import { LookupInfo } from "../../../../colorizer/utils/annotation_utils";
+import { ScrollShadowContainer, useScrollShadow } from "../../../../colorizer/utils/react_utils";
 
-import PlaceholderListItem from "./PlaceholderListItem";
-import TrackListItem from "./TrackListItem";
-import ValueListItem from "./ValueListItem";
+import PlaceholderListItem from "./ListItems/PlaceholderListItem";
+import TrackListItem from "./ListItems/TrackListItem";
+import ValueListItem from "./ListItems/ValueListItem";
 
 type AnnotationDisplayInnerListProps = {
   lookupInfo: LookupInfo;
@@ -109,11 +109,11 @@ const listItemRenderer = ({
 
 /**
  * Displays either a placeholder, a list of tracks, or a list of values + tracks
- * based on the provided props. Uses list virtualization for performance.
+ * based on the provided props. Uses list virtualization for increased performance.
  */
-export default function (props: AnnotationDisplayInnerListProps): ReactElement {
+export default function TrackList(props: AnnotationDisplayInnerListProps): ReactElement {
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
-  const listRef = React.useRef<List>(null);
+  const listRef = React.useRef<FixedSizeList>(null);
 
   const itemData = useMemo(() => {
     const { trackIds, trackToIds, valueToTracksToIds } = props.lookupInfo;
@@ -143,13 +143,14 @@ export default function (props: AnnotationDisplayInnerListProps): ReactElement {
   };
 
   // Note: To use AutoSizer with scroll shadows, a default width and height must
-  // be provided.
+  // be provided. Otherwise, the list won't be rendered on the initial render,
+  // which causes the scroll ref to be left unset.
   return (
     <div style={{ marginLeft: "10px", height: "100%", position: "relative" }}>
       {/* Render each value as its own section */}
       <AutoSizer defaultWidth={300} defaultHeight={480}>
         {({ height, width }) => (
-          <List
+          <FixedSizeList
             ref={listRef}
             outerRef={scrollRef}
             onScroll={onScrollHandler}
@@ -163,7 +164,7 @@ export default function (props: AnnotationDisplayInnerListProps): ReactElement {
             overscanCount={3}
           >
             {listItemRenderer}
-          </List>
+          </FixedSizeList>
         )}
       </AutoSizer>
       <ScrollShadowContainer style={scrollShadowStyle} />

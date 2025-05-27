@@ -8,9 +8,7 @@ type DropdownItemProps = {
   /** Whether the item is currently selected. False by default. */
   selected?: boolean;
   disabled?: boolean;
-  /** Callback that is fired whenever the item is clicked. */
   onClick: (key: React.Key) => void;
-  /** Callback that is fired whenever the item is focused. */
   onFocus?: () => void;
 };
 

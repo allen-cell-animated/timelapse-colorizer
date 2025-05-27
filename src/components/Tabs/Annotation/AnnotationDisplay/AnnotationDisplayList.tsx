@@ -9,7 +9,7 @@ import { FlexColumn, FlexRowAlignCenter } from "../../../../styles/utils";
 import { AppThemeContext } from "../../../AppStyle";
 import AnnotationTrackThumbnail from "../AnnotationTrackThumbnail";
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
-import InnerList from "./InnerList";
+import InnerList from "./TrackList";
 
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
