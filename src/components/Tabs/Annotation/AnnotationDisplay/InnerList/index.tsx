@@ -1,16 +1,46 @@
-import React, { ReactElement, useContext } from "react";
+import React, { ReactElement } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { VariableSizeList as List } from "react-window";
+import { FixedSizeList as List } from "react-window";
+import styled from "styled-components";
 import { Color } from "three";
 
 import { TagIconSVG } from "../../../../../assets";
 import { Dataset, Track } from "../../../../../colorizer";
+import { LookupInfo } from "../../../../../colorizer/utils/annotation_utils";
 import { ScrollShadowContainer, useScrollShadow } from "../../../../../colorizer/utils/react_utils";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../../../styles/utils";
-import { AnnotationDisplayInnerListProps } from "./types";
 
-import { AppThemeContext } from "../../../../AppStyle";
-import { TRACK_LIST_ITEM_HEIGHT_PX, TrackListItem } from "./TrackList";
+import { TrackListItem } from "./TrackList";
+
+type AnnotationDisplayInnerListProps = {
+  lookupInfo: LookupInfo;
+  dataset: Dataset | null;
+  selectedTrack: Track | null;
+  labelColor: Color;
+  onClickTrack: (trackId: number) => void;
+};
+
+const enum ListItemType {
+  TRACK = "TRACK",
+  VALUE = "VALUE",
+  PLACEHOLDER = "PLACEHOLDER",
+}
+
+type TrackItemData = {
+  type: ListItemType.TRACK;
+  trackId: number;
+  ids: number[];
+};
+
+type ValueItemData = {
+  type: ListItemType.VALUE;
+  value: string;
+  numTracks: number;
+};
+
+type PlaceholderItemData = {
+  type: ListItemType.PLACEHOLDER;
+};
 
 type ListItemData = {
   dataset: Dataset | null;
@@ -18,12 +48,18 @@ type ListItemData = {
   labelColor: Color;
   onClickTrack: (trackId: number) => void;
   onFocus: (index: number) => void;
-  trackAndIds?: { trackId: number; ids: number[] }[];
+  itemData: (TrackItemData | ValueItemData | PlaceholderItemData)[];
 };
 type ListItemRenderer = (props: { index: number; data: ListItemData; style: React.CSSProperties }) => ReactElement;
 
+const VerticalDivider = styled.div`
+  height: 20px;
+  width: 1px;
+  background-color: var(--color-dividers);
+`;
+
 const trackListRenderer: ListItemRenderer = ({ index, data, style }) => {
-  const trackAndIds = data.trackAndIds![index];
+  const trackAndIds = data.itemData[index] as TrackItemData;
   return (
     <div style={style} role="row" aria-rowindex={index + 1} key={trackAndIds.trackId}>
       <TrackListItem
@@ -39,16 +75,54 @@ const trackListRenderer: ListItemRenderer = ({ index, data, style }) => {
   );
 };
 
-// const valueAndTrackListRenderer: ListItemRenderer = ({ index, data, style }) => {
+const unpackValuesAndTracks = (
+  valueToTracksToIds: Map<string, Map<number, number[]>>
+): (TrackItemData | ValueItemData)[] => {
+  const items: (TrackItemData | ValueItemData)[] = [];
+  valueToTracksToIds.forEach((trackIdsToIds, value) => {
+    const numTracks = trackIdsToIds.size;
+    items.push({ type: ListItemType.VALUE, value, numTracks });
+    trackIdsToIds.forEach((ids, trackId) => {
+      items.push({ type: ListItemType.TRACK, trackId, ids });
+    });
+  });
+  return items;
+};
 
-// };
+const valueAndTrackListRenderer: ListItemRenderer = ({ index, data, style }) => {
+  const item = data.itemData[index];
+  if (item.type === ListItemType.VALUE) {
+    return (
+      <FlexRowAlignCenter $gap={5} style={style}>
+        <p style={{ minWidth: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <b>{item.value}</b>
+        </p>
+        <VerticalDivider />
+        <p style={{ whiteSpace: "nowrap" }}>
+          {item.numTracks} track{item.numTracks > 1 ? "s" : ""}
+        </p>
+      </FlexRowAlignCenter>
+    );
+  } else if (item.type === ListItemType.TRACK) {
+    return trackListRenderer({ index, data, style });
+  } else {
+    // Placeholder item
+    return (
+      <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
+        <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: "var(--color-text-disabled)" }}>
+          <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
+          <p>Labeled tracks will appear here.</p>
+        </FlexColumnAlignCenter>
+      </FlexRowAlignCenter>
+    );
+  }
+};
 
 /**
- * Displays either a placeholder, a list of tracks, or a list of values based on
- * the provided props.
+ * Displays either a placeholder, a list of tracks, or a list of values + tracks
+ * based on the provided props.
  */
 export default function (props: AnnotationDisplayInnerListProps): ReactElement {
-  const theme = useContext(AppThemeContext);
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
   const listRef = React.useRef<List>(null);
 
@@ -56,39 +130,30 @@ export default function (props: AnnotationDisplayInnerListProps): ReactElement {
   const { trackIds, trackToIds, valueToTracksToIds } = props.lookupInfo;
   const hasValueInfo = valueToTracksToIds !== undefined && valueToTracksToIds.size > 0;
 
-  let listItemHeightsPx: number[] = [];
-  let listRenderer: ListItemRenderer = () => <></>;
-  let listData: ListItemData = {
+  const listData: ListItemData = {
     ...props,
     onFocus: (index: number) => {
       if (listRef.current) {
         listRef.current.scrollToItem(index, "smart");
       }
     },
+    itemData: [],
   };
 
   // Show a placeholder if no annotations are provided
   if (props.lookupInfo.trackIds.length === 0 || dataset === null) {
-    listItemHeightsPx = [TRACK_LIST_ITEM_HEIGHT_PX];
-    listRenderer = () => (
-      <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
-        <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: theme.color.text.disabled }}>
-          <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
-          <p>Labeled tracks will appear here.</p>
-        </FlexColumnAlignCenter>
-      </FlexRowAlignCenter>
-    );
+    listData.itemData = [{ type: ListItemType.PLACEHOLDER }];
   } else if (!hasValueInfo) {
     const tracksAndIds = trackIds.map((trackId) => {
       const ids = trackToIds.get(trackId.toString())!;
-      return { trackId, ids };
+      return { trackId, ids, type: ListItemType.TRACK } as const;
     });
     // All items have a fixed height
-    listData.trackAndIds = tracksAndIds;
-    listItemHeightsPx = tracksAndIds.map(() => TRACK_LIST_ITEM_HEIGHT_PX);
-    listRenderer = trackListRenderer;
+    listData.itemData = tracksAndIds;
   } else {
     // Display list of values
+    const items = unpackValuesAndTracks(valueToTracksToIds);
+    listData.itemData = items;
   }
 
   return (
@@ -100,15 +165,15 @@ export default function (props: AnnotationDisplayInnerListProps): ReactElement {
             ref={listRef}
             outerRef={scrollRef}
             onScroll={onScrollHandler}
-            itemCount={listItemHeightsPx.length}
+            itemCount={listData.itemData.length}
             itemData={listData}
-            itemSize={(index: number) => listItemHeightsPx[index]}
+            itemSize={28}
             width={width}
             height={height}
             // outerElementType={outerElementType}
             overscanCount={3}
           >
-            {listRenderer}
+            {valueAndTrackListRenderer}
           </List>
         )}
       </AutoSizer>
