@@ -8,6 +8,8 @@ import { AppThemeContext } from "../../../../AppStyle";
 import DropdownItem from "../../../../Dropdowns/DropdownItem";
 import AnnotationTrackThumbnail from "../../AnnotationTrackThumbnail";
 
+export const TRACK_LIST_ITEM_HEIGHT_PX = 28;
+
 type TrackListItemProps = {
   trackId: number;
   ids: number[];
@@ -15,9 +17,10 @@ type TrackListItemProps = {
   isSelectedTrack: boolean;
   labelColor: Color;
   onClickTrack: (trackId: number) => void;
+  onFocus?: () => void;
 };
 
-function TrackListItem(props: TrackListItemProps): ReactElement {
+export function TrackListItem(props: TrackListItemProps): ReactElement {
   const { trackId, ids, dataset, isSelectedTrack, onClickTrack, labelColor } = props;
   const theme = useContext(AppThemeContext);
 
@@ -29,6 +32,7 @@ function TrackListItem(props: TrackListItemProps): ReactElement {
         onClickTrack(trackId);
       }}
       selected={isSelectedTrack}
+      onFocus={props.onFocus}
     >
       <FlexRowAlignCenter $gap={5}>
         <AnnotationTrackThumbnail

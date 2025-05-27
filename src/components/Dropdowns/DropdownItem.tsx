@@ -10,6 +10,8 @@ type DropdownItemProps = {
   disabled?: boolean;
   /** Callback that is fired whenever the item is clicked. */
   onClick: (key: React.Key) => void;
+  /** Callback that is fired whenever the item is focused. */
+  onFocus?: () => void;
 };
 
 const defaultProps: Partial<DropdownItemProps> = {
@@ -54,7 +56,13 @@ const DropdownItemButton = styled(Button)<{ $selected: boolean }>`
 export default function DropdownItem(inputProps: PropsWithChildren<DropdownItemProps>): ReactElement {
   const props = { ...defaultProps, ...inputProps } as PropsWithChildren<Required<DropdownItemProps>>;
   return (
-    <DropdownItemButton $selected={props.selected} key={props.key} type="text" onClick={() => props.onClick(props.key)}>
+    <DropdownItemButton
+      $selected={props.selected}
+      key={props.key}
+      type="text"
+      onClick={() => props.onClick(props.key)}
+      onFocus={props.onFocus}
+    >
       {props.children}
     </DropdownItemButton>
   );
