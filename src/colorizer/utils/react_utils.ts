@@ -167,7 +167,6 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
     setScrollTop(div.scrollTop);
     setScrollHeight(div.scrollHeight);
     setClientHeight(div.clientHeight);
-    console.log("Setup scroll info. Top:", div.scrollTop, " Height:", div.scrollHeight, " ClientHeight:", div.clientHeight);
   };
 
   const mutationObserver = useConstructor(
@@ -186,7 +185,6 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
   // Update shadows before first interaction
   useEffect(() => {
     if (scrollRef.current) {
-      console.log("Found valid scrollRef, setting up observers")
       updateScrollInfo(scrollRef.current);
 
       mutationObserver.observe(scrollRef.current, {
@@ -198,7 +196,6 @@ export function useScrollShadow(shadowColor: string = "#00000030"): {
         mutationObserver.disconnect();
       };
     }
-    console.log("No scrollRef found", scrollRef.current);
     return;
   }, [scrollRef.current, mutationObserver]);
 

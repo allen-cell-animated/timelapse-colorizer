@@ -69,10 +69,15 @@ export default function ValueList(props: AnnotationValueListProps): ReactElement
     );
   };
 
+  // NOTE: AutoSizer does not render the inner children until after the first
+  // render unless a default width + height is set. Without the default
+  // dimensions, `useScrollShadow` will not behave correctly because the div ref
+  // will be `null` on first render.
+
   return (
     <div style={{ marginLeft: "10px", height: "100%", position: "relative" }}>
       {/* Render each value as its own section */}
-      <AutoSizer>
+      <AutoSizer defaultWidth={300} defaultHeight={480}>
         {({ height, width }) => (
           <List
             outerRef={scrollRef}
