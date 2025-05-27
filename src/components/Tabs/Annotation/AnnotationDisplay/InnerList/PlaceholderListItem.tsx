@@ -5,7 +5,7 @@ import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../../../styles
 
 import { AppThemeContext } from "../../../../AppStyle";
 
-export default function PlaceholderList(): ReactElement {
+export default function PlaceholderListItem(): ReactElement {
   const theme = useContext(AppThemeContext);
   return (
     <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>

@@ -4,13 +4,13 @@ import { FixedSizeList as List } from "react-window";
 import styled from "styled-components";
 import { Color } from "three";
 
-import { TagIconSVG } from "../../../../../assets";
 import { Dataset, Track } from "../../../../../colorizer";
 import { LookupInfo } from "../../../../../colorizer/utils/annotation_utils";
 import { ScrollShadowContainer, useScrollShadow } from "../../../../../colorizer/utils/react_utils";
-import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../../../styles/utils";
+import { FlexRowAlignCenter } from "../../../../../styles/utils";
 
-import { TrackListItem } from "./TrackList";
+import PlaceholderListItem from "./PlaceholderListItem";
+import TrackListItem from "./TrackListItem";
 
 type AnnotationDisplayInnerListProps = {
   lookupInfo: LookupInfo;
@@ -107,20 +107,13 @@ const valueAndTrackListRenderer: ListItemRenderer = ({ index, data, style }) => 
     return trackListRenderer({ index, data, style });
   } else {
     // Placeholder item
-    return (
-      <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
-        <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: "var(--color-text-disabled)" }}>
-          <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
-          <p>Labeled tracks will appear here.</p>
-        </FlexColumnAlignCenter>
-      </FlexRowAlignCenter>
-    );
+    return <PlaceholderListItem />;
   }
 };
 
 /**
  * Displays either a placeholder, a list of tracks, or a list of values + tracks
- * based on the provided props.
+ * based on the provided props. Uses list virtualization for performance.
  */
 export default function (props: AnnotationDisplayInnerListProps): ReactElement {
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();

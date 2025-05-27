@@ -1,7 +1,7 @@
 import React, { ReactElement, useContext } from "react";
 import { Color } from "three";
 
-import { Dataset, Track } from "../../../../../colorizer";
+import { Dataset } from "../../../../../colorizer";
 import { FlexRowAlignCenter } from "../../../../../styles/utils";
 
 import { AppThemeContext } from "../../../../AppStyle";
@@ -20,7 +20,7 @@ type TrackListItemProps = {
   onFocus?: () => void;
 };
 
-export function TrackListItem(props: TrackListItemProps): ReactElement {
+export default function TrackListItem(props: TrackListItemProps): ReactElement {
   const { trackId, ids, dataset, isSelectedTrack, onClickTrack, labelColor } = props;
   const theme = useContext(AppThemeContext);
 
@@ -51,43 +51,5 @@ export function TrackListItem(props: TrackListItemProps): ReactElement {
         </p>
       </FlexRowAlignCenter>
     </DropdownItem>
-  );
-}
-
-type TrackListProps = {
-  tracksAndIds: { trackId: number; ids: number[] }[];
-  dataset: Dataset;
-  selectedTrack: Track | null;
-  labelColor: Color;
-  onClickTrack: (trackId: number) => void;
-};
-
-export const getTrackListHeightPx = (numTracks: number): number => {
-  return Math.floor(numTracks * 28);
-};
-
-/**
- * Displays an array of annotated tracks as an unsorted list of
- * clickable/interactive thumbnails.
- */
-export default function TrackList(props: TrackListProps): ReactElement {
-  return (
-    <ul style={{ margin: 0, listStyle: "none", paddingLeft: "5px" }}>
-      {props.tracksAndIds.map(({ trackId, ids }) => {
-        const isSelectedTrack = props.selectedTrack?.trackId === trackId;
-        return (
-          <li key={trackId}>
-            <TrackListItem
-              trackId={trackId}
-              ids={ids}
-              dataset={props.dataset!}
-              isSelectedTrack={isSelectedTrack}
-              labelColor={props.labelColor}
-              onClickTrack={props.onClickTrack}
-            />
-          </li>
-        );
-      })}
-    </ul>
   );
 }
