@@ -60,6 +60,7 @@ const theme = {
       hint: palette.gray40,
       disabled: palette.gray30,
       button: palette.gray0,
+      info: palette.link,
       error: palette.error,
       warning: palette.warning,
       success: palette.success,
@@ -176,6 +177,7 @@ const CssContainer = styled.div`
   --color-text-hint: ${theme.color.text.hint};
   --color-text-disabled: ${theme.color.text.disabled};
   --color-text-button: ${theme.color.text.button};
+  --color-text-info: ${theme.color.text.info};
   --color-text-error: ${theme.color.text.error};
   --color-text-warning: ${theme.color.text.warning};
   --color-text-success: ${theme.color.text.success};
