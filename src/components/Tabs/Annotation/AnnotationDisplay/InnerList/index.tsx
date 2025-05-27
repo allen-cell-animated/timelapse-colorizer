@@ -1,16 +1,15 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, useMemo } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList as List } from "react-window";
-import styled from "styled-components";
 import { Color } from "three";
 
 import { Dataset, Track } from "../../../../../colorizer";
 import { LookupInfo } from "../../../../../colorizer/utils/annotation_utils";
 import { ScrollShadowContainer, useScrollShadow } from "../../../../../colorizer/utils/react_utils";
-import { FlexRowAlignCenter } from "../../../../../styles/utils";
 
 import PlaceholderListItem from "./PlaceholderListItem";
 import TrackListItem from "./TrackListItem";
+import ValueListItem from "./ValueListItem";
 
 type AnnotationDisplayInnerListProps = {
   lookupInfo: LookupInfo;
@@ -26,18 +25,22 @@ const enum ListItemType {
   PLACEHOLDER = "PLACEHOLDER",
 }
 
+// Below we are using list virtualization to render a potentially large list of
+// items (tracks and/or values). Items can either be a track (with a thumbnail
+// and label), a value header, or a placeholder for when there are no tracks or
+// values selected. Value headers separate groups of tracks that share the same
+// value.
+
 type TrackItemData = {
   type: ListItemType.TRACK;
   trackId: number;
   ids: number[];
 };
-
 type ValueItemData = {
   type: ListItemType.VALUE;
   value: string;
   numTracks: number;
 };
-
 type PlaceholderItemData = {
   type: ListItemType.PLACEHOLDER;
 };
@@ -50,31 +53,13 @@ type ListItemData = {
   onFocus: (index: number) => void;
   itemData: (TrackItemData | ValueItemData | PlaceholderItemData)[];
 };
-type ListItemRenderer = (props: { index: number; data: ListItemData; style: React.CSSProperties }) => ReactElement;
 
-const VerticalDivider = styled.div`
-  height: 20px;
-  width: 1px;
-  background-color: var(--color-dividers);
-`;
-
-const trackListRenderer: ListItemRenderer = ({ index, data, style }) => {
-  const trackAndIds = data.itemData[index] as TrackItemData;
-  return (
-    <div style={style} role="row" aria-rowindex={index + 1} key={trackAndIds.trackId}>
-      <TrackListItem
-        trackId={trackAndIds.trackId}
-        ids={trackAndIds.ids}
-        dataset={data.dataset!}
-        isSelectedTrack={trackAndIds.trackId === data.selectedTrack?.trackId}
-        labelColor={data.labelColor}
-        onClickTrack={data.onClickTrack}
-        onFocus={() => data.onFocus(index)}
-      />
-    </div>
-  );
-};
-
+/**
+ * Unpacks values and tracks from the provided map structure, and returns an
+ * array of items that can be rendered in the list.
+ * @param valueToTracksToIds Map from a value to another map from track ID to an
+ * array of IDs.
+ */
 const unpackValuesAndTracks = (
   valueToTracksToIds: Map<string, Map<number, number[]>>
 ): (TrackItemData | ValueItemData)[] => {
@@ -89,24 +74,35 @@ const unpackValuesAndTracks = (
   return items;
 };
 
-const valueAndTrackListRenderer: ListItemRenderer = ({ index, data, style }) => {
+const listItemRenderer = ({
+  index,
+  data,
+  style,
+}: {
+  index: number;
+  data: ListItemData;
+  style: React.CSSProperties;
+}): ReactElement => {
   const item = data.itemData[index];
+  // Render either a value header, a track item, or a placeholder item based on
+  // the item's type.
   if (item.type === ListItemType.VALUE) {
-    return (
-      <FlexRowAlignCenter $gap={5} style={style}>
-        <p style={{ minWidth: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          <b>{item.value}</b>
-        </p>
-        <VerticalDivider />
-        <p style={{ whiteSpace: "nowrap" }}>
-          {item.numTracks} track{item.numTracks > 1 ? "s" : ""}
-        </p>
-      </FlexRowAlignCenter>
-    );
+    return <ValueListItem {...item} style={style} />;
   } else if (item.type === ListItemType.TRACK) {
-    return trackListRenderer({ index, data, style });
+    return (
+      <div style={style} role="row" aria-rowindex={index + 1} key={item.trackId}>
+        <TrackListItem
+          trackId={item.trackId}
+          ids={item.ids}
+          dataset={data.dataset!}
+          isSelectedTrack={item.trackId === data.selectedTrack?.trackId}
+          labelColor={data.labelColor}
+          onClickTrack={data.onClickTrack}
+          onFocus={() => data.onFocus(index)}
+        />
+      </div>
+    );
   } else {
-    // Placeholder item
     return <PlaceholderListItem />;
   }
 };
@@ -119,9 +115,22 @@ export default function (props: AnnotationDisplayInnerListProps): ReactElement {
   const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
   const listRef = React.useRef<List>(null);
 
-  const { dataset } = props;
-  const { trackIds, trackToIds, valueToTracksToIds } = props.lookupInfo;
-  const hasValueInfo = valueToTracksToIds !== undefined && valueToTracksToIds.size > 0;
+  const itemData = useMemo(() => {
+    const { trackIds, trackToIds, valueToTracksToIds } = props.lookupInfo;
+    const hasValueInfo = valueToTracksToIds !== undefined && valueToTracksToIds.size > 0;
+
+    if (props.lookupInfo.trackIds.length === 0 || props.dataset === null) {
+      return [{ type: ListItemType.PLACEHOLDER } as const];
+    } else if (!hasValueInfo) {
+      return trackIds.map((trackId) => {
+        const ids = trackToIds.get(trackId.toString())!;
+        return { trackId, ids, type: ListItemType.TRACK } as const;
+      });
+    } else {
+      // Display list of values
+      return unpackValuesAndTracks(valueToTracksToIds);
+    }
+  }, [props.lookupInfo, props.dataset]);
 
   const listData: ListItemData = {
     ...props,
@@ -130,25 +139,11 @@ export default function (props: AnnotationDisplayInnerListProps): ReactElement {
         listRef.current.scrollToItem(index, "smart");
       }
     },
-    itemData: [],
+    itemData,
   };
 
-  // Show a placeholder if no annotations are provided
-  if (props.lookupInfo.trackIds.length === 0 || dataset === null) {
-    listData.itemData = [{ type: ListItemType.PLACEHOLDER }];
-  } else if (!hasValueInfo) {
-    const tracksAndIds = trackIds.map((trackId) => {
-      const ids = trackToIds.get(trackId.toString())!;
-      return { trackId, ids, type: ListItemType.TRACK } as const;
-    });
-    // All items have a fixed height
-    listData.itemData = tracksAndIds;
-  } else {
-    // Display list of values
-    const items = unpackValuesAndTracks(valueToTracksToIds);
-    listData.itemData = items;
-  }
-
+  // Note: To use AutoSizer with scroll shadows, a default width and height must
+  // be provided.
   return (
     <div style={{ marginLeft: "10px", height: "100%", position: "relative" }}>
       {/* Render each value as its own section */}
@@ -163,10 +158,11 @@ export default function (props: AnnotationDisplayInnerListProps): ReactElement {
             itemSize={28}
             width={width}
             height={height}
-            // outerElementType={outerElementType}
+            // Determines the number of rows to render outside the visible area.
+            // Should be >= 2 to ensure tab navigation works correctly.
             overscanCount={3}
           >
-            {valueAndTrackListRenderer}
+            {listItemRenderer}
           </List>
         )}
       </AutoSizer>
