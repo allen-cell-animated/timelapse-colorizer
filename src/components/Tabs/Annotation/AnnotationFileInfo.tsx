@@ -21,6 +21,13 @@ function formatQuantityString(quantity: number, singular: string, plural: string
   return `${quantity} ${quantity === 1 ? singular : plural}`;
 }
 
+function formatTotalQuantityString(quantity: number, total: number, singular: string, plural: string): string {
+  if (quantity === total) {
+    return formatQuantityString(quantity, singular, plural);
+  }
+  return `${quantity}/${total} ${total === 1 ? singular : plural}`;
+}
+
 /**
  * Displays information about a parsed annotation file.
  * Shows the file name, number of objects parsed, labels, and any warnings about mismatched data.
@@ -69,8 +76,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
 
     const parsedObjects = parseResult.totalRows - parseResult.unparseableRows - parseResult.invalidIds;
     const totalObjects = parseResult.totalRows;
-    let parsedObjectsText = parsedObjects === totalObjects ? parsedObjects : `${parsedObjects}/${totalObjects}`;
-    parsedObjectsText += parsedObjects === 1 ? " object" : " objects";
+    const parsedObjectsText = formatTotalQuantityString(parsedObjects, totalObjects, "object", "objects");
     const labels = parseResult.annotationData.getLabels();
     const truncatedLabels = labels.slice(0, 5);
 
