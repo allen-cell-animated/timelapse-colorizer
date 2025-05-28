@@ -1,5 +1,5 @@
 import { Tooltip } from "antd";
-import React, { ReactElement, useContext, useMemo, useState } from "react";
+import React, { ReactElement, useContext, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
 
@@ -37,11 +37,27 @@ const ListLayoutContainer = styled.div`
   gap: 10px;
 `;
 
+const TooltipContainer = styled.div<{ $x?: number }>`
+  position: relative;
+  & .ant-tooltip {
+    /* Adjust tooltip position so it follows the mouse cursor. */
+    inset: auto auto auto ${(props) => props.$x ?? 0}px !important;
+    transform-origin: center center !important;
+    transform: translateX(-50%) translateY(-180%) !important;
+
+    & .ant-tooltip-inner {
+      text-align: center;
+    }
+  }
+`;
+
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
   const selectedTrackId = props.selectedTrack?.trackId;
-  // const [thumbnailHoveredX, setThumbnailHoveredX] = useState<number | null>(null);
+  const tooltipContainerRef = React.useRef<HTMLDivElement>(null);
+  const [thumbnailHoveredX, setThumbnailHoveredX] = useState<number | null>(null);
+  const lastHoveredX = useRef<number>(0);
   const [thumbnailHoveredTime, setThumbnailHoveredTime] = useState<number | null>(null);
 
   // Organize ids by track and value for display.
@@ -124,18 +140,16 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           }}
         >
           <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
-            <Tooltip
-              title={hoveredValue}
-              placement="top"
-              open={hoveredValue ? true : false}
-              trigger={["hover", "focus"]}
-            >
+            <TooltipContainer ref={tooltipContainerRef} $x={thumbnailHoveredX ?? lastHoveredX.current}>
               <AnnotationTrackThumbnail
                 frame={props.frame}
                 setFrame={props.setFrame}
-                onHover={(_x, time) => {
-                  // setThumbnailHoveredX(x);
+                onHover={(x, time) => {
+                  setThumbnailHoveredX(x);
                   setThumbnailHoveredTime(time);
+                  if (x !== null) {
+                    lastHoveredX.current = x;
+                  }
                 }}
                 ids={highlightedIds}
                 bgIds={bgIds}
@@ -145,7 +159,16 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 mark={markedTime}
                 highlightedIds={highlightRange}
               ></AnnotationTrackThumbnail>
-            </Tooltip>
+              <Tooltip
+                title={hoveredValue}
+                placement="top"
+                open={hoveredValue ? true : false}
+                trigger={["hover", "focus"]}
+                getPopupContainer={() => tooltipContainerRef.current ?? document.body}
+              >
+                <div style={{ position: "absolute", width: 0, height: 0, top: 5, left: 0 }}></div>
+              </Tooltip>
+            </TooltipContainer>
 
             <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
               {selectedTrackId ? (
