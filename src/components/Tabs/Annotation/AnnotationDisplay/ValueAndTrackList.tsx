@@ -35,6 +35,7 @@ type TrackItemData = {
   type: ListItemType.TRACK;
   trackId: number;
   ids: number[];
+  bgIds?: number[];
 };
 type ValueItemData = {
   type: ListItemType.VALUE;
@@ -61,6 +62,7 @@ type ListItemData = {
  * array of IDs.
  */
 const unpackValuesAndTracks = (
+  trackToIds: Map<string, number[]>,
   valueToTracksToIds: Map<string, Map<number, number[]>>
 ): (TrackItemData | ValueItemData)[] => {
   const items: (TrackItemData | ValueItemData)[] = [];
@@ -68,7 +70,8 @@ const unpackValuesAndTracks = (
     const numTracks = trackIdsToIds.size;
     items.push({ type: ListItemType.VALUE, value, numTracks });
     trackIdsToIds.forEach((ids, trackId) => {
-      items.push({ type: ListItemType.TRACK, trackId, ids });
+      const bgIds = trackToIds.get(trackId.toString()) || [];
+      items.push({ type: ListItemType.TRACK, trackId, bgIds, ids });
     });
   });
   return items;
@@ -94,6 +97,7 @@ const listItemRenderer = ({
         <TrackListItem
           trackId={item.trackId}
           ids={item.ids}
+          bgIds={item.bgIds}
           dataset={data.dataset!}
           isSelectedTrack={item.trackId === data.selectedTrack?.trackId}
           labelColor={data.labelColor}
@@ -128,7 +132,7 @@ export default function ValueAndTrackList(props: ValueAndTrackListProps): ReactE
       });
     } else {
       // Display list of values
-      return unpackValuesAndTracks(valueToTracksToIds);
+      return unpackValuesAndTracks(trackToIds, valueToTracksToIds);
     }
   }, [props.lookupInfo, props.dataset]);
 

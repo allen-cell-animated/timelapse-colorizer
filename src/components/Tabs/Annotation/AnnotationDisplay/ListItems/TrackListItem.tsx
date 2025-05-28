@@ -11,6 +11,7 @@ import AnnotationTrackThumbnail from "../../AnnotationTrackThumbnail";
 type TrackListItemProps = {
   trackId: number;
   ids: number[];
+  bgIds?: number[];
   dataset: Dataset;
   isSelectedTrack: boolean;
   labelColor: Color;
@@ -37,6 +38,7 @@ export default function TrackListItem(props: TrackListItemProps): ReactElement {
           widthPx={75}
           heightPx={14}
           ids={ids}
+          bgIds={props.bgIds}
           track={track ?? null}
           dataset={dataset}
           color={labelColor}

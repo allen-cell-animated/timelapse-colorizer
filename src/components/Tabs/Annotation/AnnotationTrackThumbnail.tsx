@@ -11,6 +11,12 @@ const HIGHLIGHT_CANVAS_CLASSNAME = "pulse";
 
 type AnnotationTrackThumbnailProps = {
   ids: number[];
+  /**
+   * Background IDs which will be highlighted in a lighter color. Used to
+   * distinguish between IDs in the track with the active value and IDs with
+   * other values assigned.
+   */
+  bgIds?: number[];
   track: Track | null;
   dataset: Dataset | null;
   color: Color;
@@ -29,6 +35,7 @@ type AnnotationTrackThumbnailProps = {
 const defaultProps = {
   heightPx: 18,
   widthPx: 150,
+  bgIds: [],
 };
 
 const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $interactive: boolean; $theme: AppTheme }>`
@@ -101,7 +108,7 @@ const drawInterval = (
 
 export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThumbnailProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
-  const { track, dataset, ids } = props;
+  const { track, dataset, ids, bgIds } = props;
   const theme = useContext(AppThemeContext);
 
   const [hoveredCanvasX, setHoveredCanvasX] = useState<number | null>(null);
@@ -240,6 +247,10 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     }
     const selectedTimes = ids.map((id) => dataset.getTime(id));
     const selectedIntervals = getIntervals(selectedTimes);
+
+    const bgTimes = props.bgIds.map((id) => dataset.getTime(id));
+    const bgIntervals = getIntervals(bgTimes);
+
     // Check for time intervals where there are no objects present for the track
     const missingIntervals = getIntervals(track.getMissingTimes());
 
@@ -248,12 +259,18 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
       drawInterval(ctx, xInterval, props.heightPx, theme.color.layout.borders);
     }
+    // Draw background intervals on the canvas
+    const bgColor = new Color(props.color).lerp(new Color("#fff"), 0.5).getHexString();
+    for (const interval of bgIntervals) {
+      const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
+      drawInterval(ctx, xInterval, props.heightPx, "#" + bgColor);
+    }
     // Draw selected intervals on the canvas
     for (const interval of selectedIntervals) {
       const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
       drawInterval(ctx, xInterval, props.heightPx, "#" + props.color.getHexString());
     }
-  }, [ids, track, props.highlightedIds, props.frame, props.widthPx, props.heightPx]);
+  }, [ids, bgIds, track, props.color, props.highlightedIds, props.frame, props.widthPx, props.heightPx]);
 
   return (
     <ThumbnailContainer
