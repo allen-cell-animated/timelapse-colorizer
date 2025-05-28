@@ -1,4 +1,5 @@
-import React, { ReactElement, useContext, useMemo } from "react";
+import { Tooltip } from "antd";
+import React, { ReactElement, useContext, useMemo, useState } from "react";
 import styled from "styled-components";
 import { Color } from "three";
 
@@ -40,6 +41,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const theme = useContext(AppThemeContext);
 
   const selectedTrackId = props.selectedTrack?.trackId;
+  // const [thumbnailHoveredX, setThumbnailHoveredX] = useState<number | null>(null);
+  const [thumbnailHoveredTime, setThumbnailHoveredTime] = useState<number | null>(null);
 
   // Organize ids by track and value for display.
   const lookupInfo = useMemo((): LookupInfo => {
@@ -55,10 +58,16 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   // If the selected track has an ID in the current frame, show it and all IDs
   // with the same value with a more prominently in the thumbnail.
+  // Also trigger this when the user hovers over a time in the thumbnail.
+  const hoveredId = thumbnailHoveredTime ? props.selectedTrack?.getIdAtTime(thumbnailHoveredTime) : undefined;
+  const hoveredValue = hoveredId ? props.idToValue?.get(hoveredId) : undefined;
   const currentId = props.selectedTrack?.getIdAtTime(props.frame);
-  if (currentId !== undefined && currentId !== -1 && props.idToValue && highlightedIds.includes(currentId)) {
-    const currentValue = props.idToValue?.get(currentId);
-    const currentValueIds = highlightedIds.filter((id) => props.idToValue?.get(id) === currentValue);
+  const currentValue = currentId ? props.idToValue?.get(currentId) : undefined;
+  // Hovered highlight takes precedence over current frame.
+  const value = hoveredValue ?? currentValue;
+  const id = hoveredValue ? hoveredId : currentId;
+  if (value !== undefined && id && highlightedIds.includes(id)) {
+    const currentValueIds = highlightedIds.filter((id) => props.idToValue?.get(id) === value);
     bgIds = highlightedIds;
     highlightedIds = currentValueIds;
   }
@@ -115,17 +124,28 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           }}
         >
           <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
-            <AnnotationTrackThumbnail
-              frame={props.frame}
-              setFrame={props.setFrame}
-              ids={highlightedIds}
-              bgIds={bgIds}
-              track={props.selectedTrack}
-              dataset={props.dataset}
-              color={props.labelColor}
-              mark={markedTime}
-              highlightedIds={highlightRange}
-            ></AnnotationTrackThumbnail>
+            <Tooltip
+              title={hoveredValue}
+              placement="top"
+              open={hoveredValue ? true : false}
+              trigger={["hover", "focus"]}
+            >
+              <AnnotationTrackThumbnail
+                frame={props.frame}
+                setFrame={props.setFrame}
+                onHover={(_x, time) => {
+                  // setThumbnailHoveredX(x);
+                  setThumbnailHoveredTime(time);
+                }}
+                ids={highlightedIds}
+                bgIds={bgIds}
+                track={props.selectedTrack}
+                dataset={props.dataset}
+                color={props.labelColor}
+                mark={markedTime}
+                highlightedIds={highlightRange}
+              ></AnnotationTrackThumbnail>
+            </Tooltip>
 
             <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
               {selectedTrackId ? (

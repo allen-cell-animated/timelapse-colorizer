@@ -23,6 +23,14 @@ type AnnotationTrackThumbnailProps = {
   heightPx?: number;
   widthPx?: number;
   setFrame?: (frame: number) => Promise<void>;
+  /**
+   * Callback called when the user hovers over the thumbnail.
+   * @param posX x-coordinate in pixels of the mouse cursor, relative to the
+   * thumbnail. `null` if the mouse has left the thumbnail.
+   * @param time Time in the track corresponding to the x-coordinate, or `null` if
+   * the mouse has left the thumbnail.
+   */
+  onHover?: (posX: number | null, time: number | null) => void;
   frame?: number;
   /** Draws a optional mark at the provided time. */
   mark?: number;
@@ -43,6 +51,7 @@ const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $in
   border: 1px solid ${(props) => props.$theme.color.layout.borders};
   overflow: hidden;
   width: ${(props) => props.$widthPx}px;
+  min-width: ${(props) => props.$widthPx}px;
   height: ${(props) => props.$heightPx}px;
   display: flex;
   cursor: ${(props) => (props.$interactive ? "pointer" : "auto")};
@@ -110,7 +119,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   const { track, dataset, ids, bgIds } = props;
   const theme = useContext(AppThemeContext);
 
-  const [hoveredCanvasX, setHoveredCanvasX] = useState<number | null>(null);
+  const [hoveredCanvasX, _setHoveredCanvasX] = useState<number | null>(null);
   const [awaitingFrame, setAwaitingFrame] = useState<number | null>(null);
 
   // The thumbnail uses three layered canvases. The time canvas on top just
@@ -146,6 +155,17 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   const timeToXCoord = useCallback(
     (time: number): number => (time - minTime) * indexToCanvasScale,
     [minTime, indexToCanvasScale]
+  );
+
+  const setHoveredCanvasX = useCallback(
+    (x: number | null): void => {
+      _setHoveredCanvasX(x);
+      if (props.onHover) {
+        const time = x !== null ? xCoordToTime(x) : null;
+        props.onHover(x, time);
+      }
+    },
+    [xCoordToTime, props.onHover]
   );
 
   // Add event listeners
