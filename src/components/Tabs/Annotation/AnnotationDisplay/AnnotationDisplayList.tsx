@@ -50,7 +50,18 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   }, [props.dataset, props.ids, props.idToValue, props.valueToIds]);
   const { trackIds, trackToIds } = lookupInfo;
 
-  const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
+  let highlightedIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
+  let bgIds: number[] = [];
+
+  // If the selected track has an ID in the current frame, show it and all IDs
+  // with the same value with a more prominently in the thumbnail.
+  const currentId = props.selectedTrack?.getIdAtTime(props.frame);
+  if (currentId !== undefined && currentId !== -1 && props.idToValue && highlightedIds.includes(currentId)) {
+    const currentValue = props.idToValue?.get(currentId);
+    const currentValueIds = highlightedIds.filter((id) => props.idToValue?.get(id) === currentValue);
+    bgIds = highlightedIds;
+    highlightedIds = currentValueIds;
+  }
 
   // Show a marker in the selected track thumbnail if the last clicked ID is
   // part of the selected track.
@@ -107,7 +118,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             <AnnotationTrackThumbnail
               frame={props.frame}
               setFrame={props.setFrame}
-              ids={selectedTrackIds}
+              ids={highlightedIds}
+              bgIds={bgIds}
               track={props.selectedTrack}
               dataset={props.dataset}
               color={props.labelColor}
@@ -120,7 +132,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 <span>
                   Track {selectedTrackId}{" "}
                   <span style={{ color: theme.color.text.hint }}>
-                    ({selectedTrackIds.length}/{props.selectedTrack?.times.length})
+                    ({highlightedIds.length}/{props.selectedTrack?.times.length})
                   </span>
                 </span>
               ) : (

@@ -35,7 +35,6 @@ type AnnotationTrackThumbnailProps = {
 const defaultProps = {
   heightPx: 18,
   widthPx: 150,
-  bgIds: [],
 };
 
 const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $interactive: boolean; $theme: AppTheme }>`
@@ -248,7 +247,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     const selectedTimes = ids.map((id) => dataset.getTime(id));
     const selectedIntervals = getIntervals(selectedTimes);
 
-    const bgTimes = props.bgIds.map((id) => dataset.getTime(id));
+    const bgTimes = (props.bgIds ?? []).map((id) => dataset.getTime(id));
     const bgIntervals = getIntervals(bgTimes);
 
     // Check for time intervals where there are no objects present for the track
@@ -260,7 +259,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       drawInterval(ctx, xInterval, props.heightPx, theme.color.layout.borders);
     }
     // Draw background intervals on the canvas
-    const bgColor = new Color(props.color).lerp(new Color("#fff"), 0.5).getHexString();
+    const bgColor = new Color(props.color).lerp(new Color("#fff"), 0.6).getHexString();
     for (const interval of bgIntervals) {
       const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
       drawInterval(ctx, xInterval, props.heightPx, "#" + bgColor);
