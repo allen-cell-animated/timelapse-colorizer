@@ -880,7 +880,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     <>
       {makeControlBar(menuItems)}
       <div style={{ position: "relative" }}>
-        <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}>
+        {/* <LoadingSpinner loading={isRendering || isDebouncePending} style={{ marginTop: "10px" }}> */}
+        <LoadingSpinner loading={isDebouncePending} style={{ marginTop: "10px" }}>
           {makePlotButtons()}
           <ScatterPlotContainer
             style={{ width: "100%", height: "475px", padding: "5px" }}
