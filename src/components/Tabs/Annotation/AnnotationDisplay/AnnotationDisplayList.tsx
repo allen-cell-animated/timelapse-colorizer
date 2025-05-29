@@ -42,7 +42,6 @@ const TooltipContainer = styled.div<{ $x?: number }>`
   & .ant-tooltip {
     /* Adjust tooltip position so it follows the mouse cursor. */
     inset: auto auto auto ${(props) => props.$x ?? 0}px !important;
-    transform-origin: center center !important;
     transform: translateX(-50%) translateY(-180%) !important;
 
     & .ant-tooltip-inner {
@@ -57,8 +56,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const selectedTrackId = props.selectedTrack?.trackId;
   const tooltipContainerRef = React.useRef<HTMLDivElement>(null);
   const [thumbnailHoveredX, setThumbnailHoveredX] = useState<number | null>(null);
-  const lastHoveredX = useRef<number>(0);
   const [thumbnailHoveredTime, setThumbnailHoveredTime] = useState<number | null>(null);
+  const lastHoveredX = useRef<number>(0);
 
   // Organize ids by track and value for display.
   const lookupInfo = useMemo((): LookupInfo => {
@@ -69,21 +68,24 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   }, [props.dataset, props.ids, props.idToValue, props.valueToIds]);
   const { trackIds, trackToIds } = lookupInfo;
 
+  // By default, highlight all selected IDs in the selected track.
   let highlightedIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
   let bgIds: number[] = [];
 
-  // If the selected track has an ID in the current frame, show it and all IDs
-  // with the same value with a more prominently in the thumbnail.
-  // Also trigger this when the user hovers over a time in the thumbnail.
-  const hoveredId = thumbnailHoveredTime ? props.selectedTrack?.getIdAtTime(thumbnailHoveredTime) : undefined;
-  const hoveredValue = hoveredId ? props.idToValue?.get(hoveredId) : undefined;
+  // If there is a selected ID in the current frame, highlight only IDs that
+  // match that ID's assigned value. Also trigger this when the user hovers over
+  // a time in the thumbnail.
   const currentId = props.selectedTrack?.getIdAtTime(props.frame);
   const currentValue = currentId ? props.idToValue?.get(currentId) : undefined;
-  // Hovered highlight takes precedence over current frame.
-  const value = hoveredValue ?? currentValue;
-  const id = hoveredValue ? hoveredId : currentId;
-  if (value !== undefined && id && highlightedIds.includes(id)) {
-    const currentValueIds = highlightedIds.filter((id) => props.idToValue?.get(id) === value);
+  const hoveredId = thumbnailHoveredTime ? props.selectedTrack?.getIdAtTime(thumbnailHoveredTime) : undefined;
+  const hoveredValue = hoveredId ? props.idToValue?.get(hoveredId) : undefined;
+  // Hovering takes precedence over current frame.
+  const highlightedId = hoveredValue ? hoveredId : currentId;
+  const highlightedValue = hoveredValue ?? currentValue;
+  if (highlightedValue !== undefined && highlightedId && highlightedIds.includes(highlightedId)) {
+    // Filter so only IDs with matching values are highlighted, and the rest are
+    // background.
+    const currentValueIds = highlightedIds.filter((id) => props.idToValue?.get(id) === highlightedValue);
     bgIds = highlightedIds;
     highlightedIds = currentValueIds;
   }
@@ -166,6 +168,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 trigger={["hover", "focus"]}
                 getPopupContainer={() => tooltipContainerRef.current ?? document.body}
               >
+                {/* Anchor element for the tooltip. Position of the tooltip is determined using `TooltipContainer` */}
                 <div style={{ position: "absolute", width: 0, height: 0, top: 5, left: 0 }}></div>
               </Tooltip>
             </TooltipContainer>

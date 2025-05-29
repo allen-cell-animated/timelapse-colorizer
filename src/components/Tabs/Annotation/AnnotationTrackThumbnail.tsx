@@ -278,7 +278,7 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
       drawInterval(ctx, xInterval, props.heightPx, theme.color.layout.borders);
     }
-    // Draw background intervals on the canvas
+    // Draw background intervals on the canvas in a lighter color
     const bgColor = new Color(props.color).lerp(new Color("#fff"), 0.6).getHexString();
     for (const interval of bgIntervals) {
       const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
