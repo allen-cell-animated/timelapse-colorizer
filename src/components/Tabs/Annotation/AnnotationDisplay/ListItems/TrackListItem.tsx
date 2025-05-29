@@ -41,12 +41,8 @@ export default function TrackListItem(props: TrackListItemProps): ReactElement {
           dataset={dataset}
           color={labelColor}
         ></AnnotationTrackThumbnail>
-        <p style={{ margin: 0 }}>
-          {trackId}{" "}
-          <span style={{ color: theme.color.text.hint }}>
-            ({ids.length}/{track?.times.length ?? 0})
-          </span>
-        </p>
+        <p style={{ margin: 0 }}>{trackId}</p>
+        <p style={{ margin: 0, color: theme.color.text.disabled, fontSize: "12px" }}>{ids.length}</p>
       </FlexRowAlignCenter>
     </DropdownItem>
   );

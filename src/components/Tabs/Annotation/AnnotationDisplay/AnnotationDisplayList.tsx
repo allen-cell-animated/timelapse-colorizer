@@ -67,7 +67,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     }
     return getTrackLookups(props.dataset, props.ids, props.idToValue, props.valueToIds);
   }, [props.dataset, props.ids, props.idToValue, props.valueToIds]);
-  const { trackIds, trackToIds } = lookupInfo;
+  const { trackIds, trackToIds, valueToTracksToIds } = lookupInfo;
 
   const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
 
@@ -92,12 +92,15 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   }
 
   let trackInfoText = `${trackIds.length} ${trackIds.length === 1 ? "track" : "tracks"}`;
+  if (valueToTracksToIds) {
+    trackInfoText += `, ${valueToTracksToIds.size} values`;
+  }
 
   return (
     <FlexColumn>
       {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
-        <FlexColumn style={{ height: "100%", width: "calc(45% - 16px)" }}>
+        <FlexColumn style={{ height: "100%", width: "calc(40% - 16px)" }}>
           <FlexRow style={{ marginBottom: "5px", alignItems: "flex-end" }} $gap={5}>
             <SectionLabel>Tracks</SectionLabel>
             <p style={{ margin: 0, color: theme.color.text.hint }}>({trackInfoText})</p>
@@ -110,7 +113,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
         {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}
         <FlexColumn
           style={{
-            width: "calc(55% - 15px)",
+            width: "calc(60% - 15px)",
             height: "calc(100% - 10px)",
             flexGrow: 2,
           }}
