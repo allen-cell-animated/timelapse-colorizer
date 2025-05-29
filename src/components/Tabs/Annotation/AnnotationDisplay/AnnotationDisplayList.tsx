@@ -55,6 +55,12 @@ const VerticalDivider = styled.span`
   align-self: stretch;
 `;
 
+const NO_WRAP: React.CSSProperties = {
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
+
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
   const theme = useContext(AppThemeContext);
 
@@ -103,7 +109,15 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
         <FlexColumn style={{ height: "100%", width: "calc(40% - 16px)" }}>
           <FlexRow style={{ marginBottom: "5px", alignItems: "flex-end" }} $gap={5}>
             <SectionLabel>Tracks</SectionLabel>
-            <p style={{ margin: 0, color: theme.color.text.hint }}>({trackInfoText})</p>
+            <p
+              style={{
+                margin: 0,
+                color: theme.color.text.hint,
+                ...NO_WRAP,
+              }}
+            >
+              ({trackInfoText})
+            </p>
           </FlexRow>
           <div style={{ height: "480px", overflowY: "auto" }}>
             <ValueAndTrackList lookupInfo={lookupInfo} {...props} />
@@ -119,7 +133,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           }}
         >
           <SectionLabel>Track detail</SectionLabel>
-          <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
+          <FlexRowAlignCenter style={{ marginBottom: "8px" }} $gap={4}>
             <AnnotationTrackThumbnail
               frame={props.frame}
               setFrame={props.setFrame}
@@ -131,18 +145,27 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
               highlightedIds={highlightRange}
             ></AnnotationTrackThumbnail>
 
-            <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
-              {selectedTrackId ? (
-                <span>
-                  Track {selectedTrackId}{" "}
-                  <span style={{ color: theme.color.text.hint }}>
-                    ({selectedTrackIds.length}/{props.selectedTrack?.times.length})
-                  </span>
-                </span>
-              ) : (
-                `No track selected`
-              )}
+            <p
+              style={{
+                fontSize: theme.font.size.label,
+                marginTop: 0,
+                marginLeft: "4px",
+                ...NO_WRAP,
+              }}
+            >
+              {selectedTrackId ? <span>Track {selectedTrackId} </span> : `No track selected`}
             </p>
+            {selectedTrackId && (
+              <p
+                style={{
+                  marginTop: 0,
+                  color: theme.color.text.hint,
+                  ...NO_WRAP,
+                }}
+              >
+                {selectedTrackIds.length}/{props.selectedTrack?.times.length}
+              </p>
+            )}
           </FlexRowAlignCenter>
           <AnnotationDisplayTable
             onClickObjectRow={props.onClickObjectRow}
