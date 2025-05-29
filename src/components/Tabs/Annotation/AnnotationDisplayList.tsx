@@ -5,7 +5,7 @@ import { Color } from "three";
 import { TagIconSVG } from "../../../assets";
 import { Dataset, Track } from "../../../colorizer";
 import { ScrollShadowContainer, useScrollShadow } from "../../../colorizer/utils/react_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
+import { FlexColumn, FlexColumnAlignCenter, FlexRow, FlexRowAlignCenter } from "../../../styles/utils";
 
 import { AppThemeContext } from "../../AppStyle";
 import DropdownItem from "../../Dropdowns/DropdownItem";
@@ -32,7 +32,26 @@ const ListLayoutContainer = styled.div`
   flex-direction: row;
   width: 100%;
   height: 100%;
-  gap: 10px;
+  gap: 15px;
+`;
+
+const SectionLabel = styled.p`
+  && {
+    font-size: var(--font-size-label);
+    margin-top: 0;
+    margin-bottom: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: bold;
+  }
+`;
+
+const VerticalDivider = styled.span`
+  width: 1px;
+  min-height: 50%;
+  margin: 5px 0;
+  background-color: var(--color-borders);
+  align-self: stretch;
 `;
 
 export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
@@ -143,22 +162,17 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     }
   }
 
+  let trackInfoText = `${trackIds.length} ${trackIds.length === 1 ? "track" : "tracks"}`;
+
   return (
     <FlexColumn>
-      <p
-        style={{
-          fontSize: theme.font.size.label,
-          marginTop: 0,
-          marginBottom: "5px",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks annotated"}</b>
-      </p>
       {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
-        <FlexColumn style={{ height: "100%", width: "40%" }}>
+        <FlexColumn style={{ height: "100%", width: "calc(40% - 16px)" }}>
+          <FlexRow style={{ marginBottom: "5px", alignItems: "flex-end" }} $gap={5}>
+            <SectionLabel>Tracks</SectionLabel>
+            <p style={{ margin: 0, color: theme.color.text.hint }}>({trackInfoText})</p>
+          </FlexRow>
           <div style={{ position: "relative" }}>
             <div style={{ height: "490px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
               {listContents}
@@ -166,17 +180,16 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             <ScrollShadowContainer style={scrollShadowStyle} />
           </div>
         </FlexColumn>
+        <VerticalDivider />
         {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}
-        <div
+        <FlexColumn
           style={{
-            width: "calc(60% + 5px)",
+            width: "calc(60% - 15px)",
             height: "calc(100% - 10px)",
-            padding: "5px 10px 10px 10px",
-            border: "1px solid var(--color-borders)",
-            borderRadius: "4px",
             flexGrow: 2,
           }}
         >
+          <SectionLabel>Track detail</SectionLabel>
           <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
             <AnnotationTrackThumbnail
               frame={props.frame}
@@ -211,7 +224,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             selectedId={props.selectedId}
             hideTrackColumn={true}
           ></AnnotationDisplayTable>
-        </div>
+        </FlexColumn>
       </ListLayoutContainer>
     </FlexColumn>
   );
