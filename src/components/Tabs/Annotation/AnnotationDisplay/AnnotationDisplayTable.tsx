@@ -125,7 +125,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
   ];
 
   if (props.idToValue) {
-    tableColumns.splice(2, 0, {
+    tableColumns.splice(3, 0, {
       title: "Value",
       dataIndex: "value",
       key: "value",
