@@ -1,5 +1,6 @@
 import { DeleteOutlined } from "@ant-design/icons";
-import { Card, Input, InputRef } from "antd";
+import { AutoComplete, AutoCompleteProps, Card } from "antd";
+import { BaseSelectRef } from "rc-select";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -29,7 +30,7 @@ const StyledCard = styled(Card)`
     padding: 8px;
     padding-top: 6px;
   }
-  & * {
+  &&& * {
     // Fixes a bug where the input popover's contents would persist when the
     // popover was hidden.
     transition: all 0.2s, visibility 0s;
@@ -39,7 +40,7 @@ const StyledCard = styled(Card)`
 export default function AnnotationInputPopover(props: AnnotationInputPopoverProps): ReactElement {
   const [inputValue, setInputValue] = useState("");
   const anchorRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<InputRef>(null);
+  const inputRef = React.useRef<BaseSelectRef>(null);
 
   const theme = useContext(AppThemeContext);
 
@@ -113,22 +114,24 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   //// Interaction handlers ////
 
-  const handleInputConfirm = (): void => {
+  const handleKeyInput: React.KeyboardEventHandler = (e): void => {
     if (currentLabelIdx === null || activeEditRange === null) {
       return;
     }
-    saveInputValue(currentLabelIdx, activeEditRange);
-    clearActiveEditRange();
+    if (e.key === "Enter") {
+      // Save the input value when Enter is pressed.
+      saveInputValue(currentLabelIdx, activeEditRange);
+      clearActiveEditRange();
+    }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleInputChange = (value: string): void => {
     // Editing the input value directly updates the label value in the annotation state.
     if (currentLabelIdx === null || activeEditRange === null) {
       return;
     }
     // Validate input based on label type.
     const labelData = props.annotationState.data.getLabels()[currentLabelIdx];
-    let value = e.target.value;
     if (labelData.options.type === LabelType.INTEGER) {
       value = value.replaceAll(/[^0-9]/g, "");
       if (value.length === 0) {
@@ -183,6 +186,19 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   // 1005). This can be fixed by updating the AnnotationData API to include a
   // setter for the last value field.
 
+  let options: AutoCompleteProps["options"] = [{ value: inputValue, label: inputValue }];
+  let showOptions = false;
+  if (currentLabelIdx !== null) {
+    const labelData = annotationData.getLabels()[currentLabelIdx];
+    if (labelData.options.type === LabelType.CUSTOM) {
+      options = Array.from(labelData.valueToIds.keys()).map((value) => ({
+        value,
+        label: value,
+      }));
+    }
+    showOptions = true;
+  }
+
   const editCount = activeEditRange?.length ?? 0;
 
   return (
@@ -194,16 +210,17 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
           </span>
           <FlexRow $gap={6}>
             {/* TODO: Resize input based on value? */}
-            <Input
+            <AutoComplete
               ref={inputRef}
               size="small"
-              defaultValue={inputValue}
-              style={{ pointerEvents: "auto" }}
+              // defaultValue={inputValue}
+              style={{ pointerEvents: "auto", width: "150px" }}
               value={inputValue}
+              options={options}
+              open={showOptions ? undefined : false}
               onChange={handleInputChange}
-              onPressEnter={handleInputConfirm}
-              width={"50px"}
-            ></Input>
+              onInputKeyDown={handleKeyInput}
+            ></AutoComplete>
             <IconButton type="link" onClick={handleDelete}>
               <DeleteOutlined />
             </IconButton>
