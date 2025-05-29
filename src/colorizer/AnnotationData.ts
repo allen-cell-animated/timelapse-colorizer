@@ -7,9 +7,9 @@ import { getLabelTypeFromParsedCsv } from "./utils/data_utils";
 
 import Dataset from "./Dataset";
 
-const CSV_COL_ID = "ID";
-const CSV_COL_TIME = "Frame";
-const CSV_COL_TRACK = "Track";
+export const CSV_COL_ID = "ID";
+export const CSV_COL_TIME = "Frame";
+export const CSV_COL_TRACK = "Track";
 
 export const BOOLEAN_VALUE_TRUE = "true";
 export const BOOLEAN_VALUE_FALSE = "false";
@@ -42,6 +42,34 @@ export type LabelData = {
 
   // TODO: Store recently used values? Save values even if all IDs with them
   // have been removed?
+};
+
+export type AnnotationParseResult = {
+  annotationData: AnnotationData;
+  /**
+   * The number of annotated objects that had times/frame numbers that did not
+   * match those of the dataset. If > 0, this likely indicates that annotations
+   * for a different dataset were imported.
+   */
+  mismatchedTimes: number;
+  /**
+   * The number of annotated objects that had times/frame numbers that did not
+   * match those of the dataset. If > 0, this likely indicates that annotations
+   * for a different dataset were imported.
+   */
+  mismatchedTracks: number;
+  /**
+   * Rows that could not be parsed due to invalid (non-numeric) IDs, tracks, or
+   * times. These rows will be skipped.
+   */
+  unparseableRows: number;
+  /**
+   * The number of rows with IDs that were not found in the dataset and were
+   * skipped. If > 0, this likely indicates that annotations for a different
+   * dataset were imported, or that the dataset was modified.
+   */
+  invalidIds: number;
+  totalRows: number;
 };
 
 export interface IAnnotationDataGetters {
@@ -418,10 +446,14 @@ export class AnnotationData implements IAnnotationData {
     this.markIdMapAsDirty();
   }
 
-  static fromCsv(_dataset: Dataset, csvString: string): AnnotationData {
+  static fromCsv(dataset: Dataset, csvString: string): AnnotationParseResult {
     const annotationData = new AnnotationData();
-    const result = Papa.parse(csvString, { header: true, skipEmptyLines: true, comments: "#" });
+    let mismatchedTimes = 0,
+      mismatchedTracks = 0,
+      unparseableRows = 0,
+      invalidIds = 0;
 
+    const result = Papa.parse(csvString, { header: true, skipEmptyLines: true, comments: "#" });
     if (result.errors.length > 0) {
       throw new Error(`Error parsing CSV: ${result.errors.map((e) => e.message).join(", ")}`);
     }
@@ -453,12 +485,19 @@ export class AnnotationData implements IAnnotationData {
       const track = parseInt(row[CSV_COL_TRACK], 10);
       const time = parseInt(row[CSV_COL_TIME], 10);
 
-      // TODO: Check that the id is valid for the dataset, and that the track and time
-      // match for the ID. Count up any mismatches and return it as part of a
-      // Result object so we can warn the user.
       if (isNaN(id) || isNaN(track) || isNaN(time)) {
-        console.warn(`Invalid ID, track, or time in CSV: ${row}`);
+        unparseableRows++;
         continue;
+      }
+      if (id < 0 || dataset.numObjects <= id) {
+        invalidIds++;
+        continue;
+      }
+      if (dataset.times?.[id] !== time) {
+        mismatchedTimes++;
+      }
+      if (dataset.trackIds?.[id] !== track) {
+        mismatchedTracks++;
       }
       // Push row data to the labels.
       for (let labelIdx = 0; labelIdx < labelNames.length; labelIdx++) {
@@ -476,10 +515,7 @@ export class AnnotationData implements IAnnotationData {
         annotationData.setLabelValueOnId(labelIdx, id, value);
       }
     }
-
-    // TODO: Report data mismatch? (if object IDs + times/seg IDs/tracks do not
-    // match up)
-    return annotationData;
+    return { annotationData, mismatchedTimes, mismatchedTracks, unparseableRows, invalidIds, totalRows: data.length };
   }
 
   toCsv(dataset: Dataset, delimiter: string = ","): string {
