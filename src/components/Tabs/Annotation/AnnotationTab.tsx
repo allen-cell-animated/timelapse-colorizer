@@ -17,7 +17,7 @@ import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
 import AnnotationDisplayList from "./AnnotationDisplayList";
-import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
 import AnnotationImportButton from "./AnnotationImportButton";
 import AnnotationModeButton from "./AnnotationModeButton";
 import CreateLabelForm from "./CreateLabelForm";
@@ -46,6 +46,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     setLabelOptions,
     removeLabelOnIds,
   } = props.annotationState;
+  const datasetKey = useViewerStateStore((state) => state.datasetKey);
 
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
@@ -152,6 +153,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
+  const isMultiValueLabel = selectedLabel && selectedLabel?.options.type !== LabelType.BOOLEAN;
+  const idToValue = isMultiValueLabel ? selectedLabel.idToValue : undefined;
 
   const labelSelectionDropdown = (
     <>
@@ -203,7 +206,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           <TextButton
             onClick={() => {
               const csvData = props.annotationState.data.toCsv(store.dataset!);
-              download("annotations.csv", "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+              const name = datasetKey ?? "annotations";
+              download(`${name}-annotations.csv`, "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
             }}
           >
             Export CSV
@@ -270,11 +274,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             display: viewType === AnnotationViewType.TABLE ? "block" : "none",
           }}
         >
-          <AnnotationTable
+          <AnnotationDisplayTable
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
             dataset={store.dataset}
             ids={tableIds}
+            idToValue={idToValue}
             height={480}
             selectedId={selectedId}
           />
@@ -304,6 +309,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             setFrame={store.setFrame}
             dataset={store.dataset}
             ids={tableIds}
+            idToValue={idToValue}
             highlightRange={highlightedIds}
             rangeStartId={props.annotationState.rangeStartId}
             selectedTrack={store.selectedTrack}
