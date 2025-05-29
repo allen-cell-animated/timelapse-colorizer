@@ -95,7 +95,7 @@ function Viewer(): ReactElement {
 
   const [, startTransition] = React.useTransition();
 
-  const canv: CanvasOverlay = useConstructor(() => {
+  const canv = useConstructor((): CanvasOverlay => {
     const stateDeps = renderCanvasStateParamsSelector(useViewerStateStore.getState());
     const canvas = new CanvasOverlay(stateDeps);
     canvas.domElement.className = styles.colorizeCanvas;
@@ -106,11 +106,11 @@ function Viewer(): ReactElement {
     });
     useViewerStateStore.getState().setFrameLoadCallback(async (frame: number) => await canvas.setFrame(frame));
     return canvas;
-  });
+  }).current;
 
   // Shared worker pool for background operations (e.g. loading data)
   const workerPool = getSharedWorkerPool();
-  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool));
+  const arrayLoader = useConstructor(() => new UrlArrayLoader(workerPool)).current;
 
   // TODO: Refactor dataset dropdowns, color ramp controls, and time controls into separate
   // components to greatly reduce the state required for this component.

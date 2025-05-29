@@ -16,8 +16,8 @@ import { Z_INDEX_MODAL } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
-import AnnotationDisplayList from "./AnnotationDisplayList";
-import AnnotationTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationDisplayList from "./AnnotationDisplay/AnnotationDisplayList";
+import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplay/AnnotationDisplayTable";
 import AnnotationImportButton from "./AnnotationImportButton";
 import AnnotationModeButton from "./AnnotationModeButton";
 import CreateLabelForm from "./CreateLabelForm";
@@ -153,6 +153,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
+  const isMultiValueLabel = selectedLabel && selectedLabel?.options.type !== LabelType.BOOLEAN;
+  const idToValue = isMultiValueLabel ? selectedLabel.idToValue : undefined;
+  const valueToIds = isMultiValueLabel ? selectedLabel.valueToIds : undefined;
 
   const labelSelectionDropdown = (
     <>
@@ -272,11 +275,12 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             display: viewType === AnnotationViewType.TABLE ? "block" : "none",
           }}
         >
-          <AnnotationTable
+          <AnnotationDisplayTable
             onClickObjectRow={onClickObjectRow}
             onClickDeleteObject={onClickDeleteObject}
             dataset={store.dataset}
             ids={tableIds}
+            idToValue={idToValue}
             height={480}
             selectedId={selectedId}
           />
@@ -306,6 +310,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             setFrame={store.setFrame}
             dataset={store.dataset}
             ids={tableIds}
+            idToValue={idToValue}
+            valueToIds={valueToIds}
             highlightRange={highlightedIds}
             lastClickedId={props.annotationState.lastClickedId}
             selectedTrack={store.selectedTrack}
