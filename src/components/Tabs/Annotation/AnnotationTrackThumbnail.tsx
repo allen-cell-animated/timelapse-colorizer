@@ -11,12 +11,26 @@ const HIGHLIGHT_CANVAS_CLASSNAME = "pulse";
 
 type AnnotationTrackThumbnailProps = {
   ids: number[];
+  /**
+   * Background IDs which will be highlighted in a lighter color. Used to
+   * distinguish between IDs in the track with the active value and IDs with
+   * other values assigned.
+   */
+  bgIds?: number[];
   track: Track | null;
   dataset: Dataset | null;
   color: Color;
   heightPx?: number;
   widthPx?: number;
   setFrame?: (frame: number) => Promise<void>;
+  /**
+   * Callback called when the user hovers over the thumbnail.
+   * @param posX x-coordinate in pixels of the mouse cursor, relative to the
+   * thumbnail. `null` if the mouse has left the thumbnail.
+   * @param time Time in the track corresponding to the x-coordinate, or `null` if
+   * the mouse has left the thumbnail.
+   */
+  onHover?: (posX: number | null, time: number | null) => void;
   frame?: number;
   /** Draws a optional mark at the provided time. */
   mark?: number;
@@ -37,6 +51,7 @@ const ThumbnailContainer = styled.div<{ $widthPx: number; $heightPx: number; $in
   border: 1px solid ${(props) => props.$theme.color.layout.borders};
   overflow: hidden;
   width: ${(props) => props.$widthPx}px;
+  min-width: ${(props) => props.$widthPx}px;
   height: ${(props) => props.$heightPx}px;
   display: flex;
   cursor: ${(props) => (props.$interactive ? "pointer" : "auto")};
@@ -101,10 +116,10 @@ const drawInterval = (
 
 export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThumbnailProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
-  const { track, dataset, ids } = props;
+  const { track, dataset, ids, bgIds } = props;
   const theme = useContext(AppThemeContext);
 
-  const [hoveredCanvasX, setHoveredCanvasX] = useState<number | null>(null);
+  const [hoveredCanvasX, _setHoveredCanvasX] = useState<number | null>(null);
   const [awaitingFrame, setAwaitingFrame] = useState<number | null>(null);
 
   // The thumbnail uses three layered canvases. The time canvas on top just
@@ -140,6 +155,17 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
   const timeToXCoord = useCallback(
     (time: number): number => (time - minTime) * indexToCanvasScale,
     [minTime, indexToCanvasScale]
+  );
+
+  const setHoveredCanvasX = useCallback(
+    (x: number | null): void => {
+      _setHoveredCanvasX(x);
+      if (props.onHover) {
+        const time = x !== null ? xCoordToTime(x) : null;
+        props.onHover(x, time);
+      }
+    },
+    [xCoordToTime, props.onHover]
   );
 
   // Add event listeners
@@ -240,6 +266,10 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
     }
     const selectedTimes = ids.map((id) => dataset.getTime(id));
     const selectedIntervals = getIntervals(selectedTimes);
+
+    const bgTimes = (props.bgIds ?? []).map((id) => dataset.getTime(id));
+    const bgIntervals = getIntervals(bgTimes);
+
     // Check for time intervals where there are no objects present for the track
     const missingIntervals = getIntervals(track.getMissingTimes());
 
@@ -248,12 +278,18 @@ export default function AnnotationTrackThumbnail(inputProps: AnnotationTrackThum
       const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
       drawInterval(ctx, xInterval, props.heightPx, theme.color.layout.borders);
     }
+    // Draw background intervals on the canvas in a lighter color
+    const bgColor = new Color(props.color).lerp(new Color("#fff"), 0.6).getHexString();
+    for (const interval of bgIntervals) {
+      const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
+      drawInterval(ctx, xInterval, props.heightPx, "#" + bgColor);
+    }
     // Draw selected intervals on the canvas
     for (const interval of selectedIntervals) {
       const xInterval: [number, number] = [timeToXCoord(interval[0]), timeToXCoord(interval[1] + 1)];
       drawInterval(ctx, xInterval, props.heightPx, "#" + props.color.getHexString());
     }
-  }, [ids, track, props.highlightedIds, props.frame, props.widthPx, props.heightPx]);
+  }, [ids, bgIds, track, props.color, props.highlightedIds, props.frame, props.widthPx, props.heightPx]);
 
   return (
     <ThumbnailContainer

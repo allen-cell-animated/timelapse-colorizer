@@ -203,6 +203,10 @@ export function formatAsBulletList(items: string[], maxDisplayCount: number = Nu
  * ```
  */
 export function getIntervals(values: number[]): [number, number][] {
+  if (values.length === 0) {
+    return [];
+  }
+
   let min = values[0];
   let max = values[0];
   for (const value of values) {
