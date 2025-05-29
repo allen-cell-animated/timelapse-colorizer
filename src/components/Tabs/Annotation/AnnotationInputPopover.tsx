@@ -145,6 +145,7 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     if (currentLabelIdx !== null && activeEditRange !== null) {
       props.annotationState.removeLabelOnIds(currentLabelIdx, activeEditRange);
     }
+    setInputValue("");
     clearActiveEditRange();
   };
 

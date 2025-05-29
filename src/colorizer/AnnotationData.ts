@@ -315,7 +315,7 @@ export class AnnotationData implements IAnnotationData {
 
   getNextDefaultLabelSettings(): LabelOptions {
     const color = getDefaultColor(this.numLabelsCreated);
-    const name = `Label ${this.numLabelsCreated + 1}`;
+    const name = `Annotation ${this.numLabelsCreated + 1}`;
     return { type: LabelType.BOOLEAN, name, color, autoIncrement: true };
   }
 
@@ -366,7 +366,7 @@ export class AnnotationData implements IAnnotationData {
 
   private validateIndex(idx: number): void {
     if (idx < 0 || idx >= this.labelData.length) {
-      throw new Error(`Invalid label index: ${idx}`);
+      throw new Error(`Invalid annotation index: ${idx}`);
     }
   }
 

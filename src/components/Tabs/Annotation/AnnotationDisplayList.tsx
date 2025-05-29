@@ -78,7 +78,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
         <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: theme.color.text.disabled }}>
           <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
-          <p>Labeled tracks will appear here.</p>
+          <p>Annotated tracks will appear here.</p>
         </FlexColumnAlignCenter>
       </FlexRowAlignCenter>
     );
@@ -155,7 +155,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           whiteSpace: "nowrap",
         }}
       >
-        <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks labeled"}</b>
+        <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks annotated"}</b>
       </p>
       {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
