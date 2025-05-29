@@ -15,6 +15,7 @@ import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
   ids: number[];
+  idToValue: Map<number, string> | undefined;
   setFrame: (frame: number) => Promise<void>;
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
@@ -158,7 +159,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       </p>
       {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
-        <FlexColumn style={{ height: "100%", width: "40%" }}>
+        <FlexColumn style={{ height: "100%", width: "45%" }}>
           <div style={{ position: "relative" }}>
             <div style={{ height: "490px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
               {listContents}
@@ -169,7 +170,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
         {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}
         <div
           style={{
-            width: "calc(60% + 5px)",
+            width: "calc(55% - 20px)",
             height: "calc(100% - 10px)",
             padding: "5px 10px 10px 10px",
             border: "1px solid var(--color-borders)",
@@ -207,6 +208,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             onClickDeleteObject={props.onClickDeleteObject}
             dataset={props.dataset}
             ids={selectedTrackId ? trackToIds.get(selectedTrackId?.toString()) ?? [] : []}
+            idToValue={props.idToValue}
             height={410}
             selectedId={props.selectedId}
             hideTrackColumn={true}

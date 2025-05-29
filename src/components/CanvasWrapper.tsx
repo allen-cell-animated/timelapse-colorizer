@@ -9,7 +9,6 @@ import { ImagesIconSVG, ImagesSlashIconSVG, NoImageSVG, TagIconSVG, TagSlashIcon
 import { AnnotationSelectionMode, LoadTroubleshooting, PixelIdInfo, TabType } from "../colorizer/types";
 import * as mathUtils from "../colorizer/utils/math_utils";
 import { AnnotationState } from "../colorizer/utils/react_utils";
-import { INTERNAL_BUILD } from "../constants";
 import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter, VisuallyHidden } from "../styles/utils";
 
 import { LabelData, LabelType } from "../colorizer/AnnotationData";
@@ -752,24 +751,22 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
         </TooltipWithSubtitle>
 
         {/* Annotation mode toggle */}
-        {INTERNAL_BUILD && (
-          <TooltipWithSubtitle
-            title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
-            subtitleList={annotationTooltipContents}
-            placement="right"
-            trigger={["hover", "focus"]}
+        <TooltipWithSubtitle
+          title={props.annotationState.visible ? "Hide annotations" : "Show annotations"}
+          subtitleList={annotationTooltipContents}
+          placement="right"
+          trigger={["hover", "focus"]}
+        >
+          <IconButton
+            type={props.annotationState.visible ? "primary" : "link"}
+            onClick={() => {
+              props.annotationState.setVisibility(!props.annotationState.visible);
+            }}
           >
-            <IconButton
-              type={props.annotationState.visible ? "primary" : "link"}
-              onClick={() => {
-                props.annotationState.setVisibility(!props.annotationState.visible);
-              }}
-            >
-              {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
-              <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
-            </IconButton>
-          </TooltipWithSubtitle>
-        )}
+            {props.annotationState.visible ? <TagSlashIconSVG /> : <TagIconSVG />}
+            <VisuallyHidden>{props.annotationState.visible ? "Hide annotations" : "Show annotations"}</VisuallyHidden>
+          </IconButton>
+        </TooltipWithSubtitle>
       </CanvasControlsContainer>
       <AnnotationInputPopover
         annotationState={props.annotationState}
