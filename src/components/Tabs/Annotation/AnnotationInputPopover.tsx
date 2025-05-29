@@ -1,6 +1,5 @@
 import { DeleteOutlined } from "@ant-design/icons";
-import { AutoComplete, AutoCompleteProps, Card } from "antd";
-import { BaseSelectRef } from "rc-select";
+import { AutoComplete, Card } from "antd";
 import React, { ReactElement, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -24,7 +23,7 @@ const StyledCard = styled(Card)`
   // card aligns with pixel grid.
   left: -${CARD_WIDTH_PX / 2}px;
   width: ${CARD_WIDTH_PX}px;
-  bottom: 90px;
+  bottom: -20px;
   z-index: 1;
   & .ant-card-body {
     padding: 8px;
@@ -38,10 +37,6 @@ const StyledCard = styled(Card)`
 `;
 
 export default function AnnotationInputPopover(props: AnnotationInputPopoverProps): ReactElement {
-  const [inputValue, setInputValue] = useState("");
-  const anchorRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<BaseSelectRef>(null);
-
   const theme = useContext(AppThemeContext);
 
   const {
@@ -54,10 +49,17 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
     activeEditRange,
     clearActiveEditRange,
   } = props.annotationState;
+
+  const [inputValue, setInputValue] = useState("");
+  const anchorRef = React.useRef<HTMLDivElement>(null);
+  const inputContainerRef = React.useRef<HTMLDivElement>(null);
+
   const originalValueRef = React.useRef<string | null>(null);
   const lastActiveEditRangeRef = useRef(props.annotationState.activeEditRange);
   const lastLabelIdxRef = useRef(props.annotationState.currentLabelIdx);
   const lastLabelCountRef = useRef(props.annotationState.data.getLabels().length);
+  // During editing, values are live-updated. the current input value is in set of values for a label
+  const originalOptionsRef = useRef<{ value: string; label: string }[]>([]);
 
   const hasValidData =
     isAnnotationModeEnabled && activeEditRange !== null && lastClickedId !== null && currentLabelIdx !== null;
@@ -95,6 +97,8 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       const value = annotationData.getValueFromId(currentLabelIdx, lastClickedId) ?? "";
       setInputValue(value);
       originalValueRef.current = value;
+      const labelData = annotationData.getLabels()[currentLabelIdx ?? -1];
+      originalOptionsRef.current = Array.from(labelData.valueToIds.keys()).map((value) => ({ value, label: value }));
     }
     lastLabelIdxRef.current = currentLabelIdx;
     lastLabelCountRef.current = annotationData.getLabels().length;
@@ -102,12 +106,13 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
 
   // Focus the input when the popover is visible.
   useEffect(() => {
-    if (hasValidData && inputRef.current) {
+    if (hasValidData && inputContainerRef.current) {
       // Adding a slight delay fixes a bug where the input is not consistently
       // focused
       setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        const inputElement = inputContainerRef.current!.querySelector("input");
+        inputElement?.focus();
+        inputElement?.select();
       }, 10);
     }
   }, [hasValidData]);
@@ -186,17 +191,10 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   // 1005). This can be fixed by updating the AnnotationData API to include a
   // setter for the last value field.
 
-  let options: AutoCompleteProps["options"] = [{ value: inputValue, label: inputValue }];
   let showOptions = false;
   if (currentLabelIdx !== null) {
     const labelData = annotationData.getLabels()[currentLabelIdx];
-    if (labelData.options.type === LabelType.CUSTOM) {
-      options = Array.from(labelData.valueToIds.keys()).map((value) => ({
-        value,
-        label: value,
-      }));
-    }
-    showOptions = true;
+    showOptions = labelData.options.type === LabelType.CUSTOM && activeEditRange !== null;
   }
 
   const editCount = activeEditRange?.length ?? 0;
@@ -208,18 +206,21 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
           <span style={{ fontSize: theme.font.size.labelSmall, color: theme.color.text.hint, marginTop: "0" }}>
             Editing {editCount} object{editCount > 1 ? "s" : ""}
           </span>
-          <FlexRow $gap={6}>
-            {/* TODO: Resize input based on value? */}
+          <FlexRow $gap={6} ref={inputContainerRef}>
             <AutoComplete
-              ref={inputRef}
               size="small"
-              // defaultValue={inputValue}
+              defaultValue={inputValue}
+              backfill={true}
               style={{ pointerEvents: "auto", width: "150px" }}
               value={inputValue}
-              options={options}
+              options={showOptions ? originalOptionsRef.current : []}
               open={showOptions ? undefined : false}
               onChange={handleInputChange}
               onInputKeyDown={handleKeyInput}
+              filterOption={(inputValue, option) =>
+                option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+              }
+              // getPopupContainer={() => inputContainerRef.current!}
             ></AutoComplete>
             <IconButton type="link" onClick={handleDelete}>
               <DeleteOutlined />
