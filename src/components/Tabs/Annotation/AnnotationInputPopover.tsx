@@ -58,7 +58,9 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   const lastActiveEditRangeRef = useRef(props.annotationState.activeEditRange);
   const lastLabelIdxRef = useRef(props.annotationState.currentLabelIdx);
   const lastLabelCountRef = useRef(props.annotationState.data.getLabels().length);
-  // During editing, values are live-updated. the current input value is in set of values for a label
+  // During editing, values are live-updated in annotations as the user types.
+  // To prevent the in-progress input value from appearing in the autocomplete
+  // options list, we update the options only when editing starts.
   const originalOptionsRef = useRef<{ value: string; label: string }[]>([]);
 
   const hasValidData =
@@ -97,7 +99,8 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
       const value = annotationData.getValueFromId(currentLabelIdx, lastClickedId) ?? "";
       setInputValue(value);
       originalValueRef.current = value;
-      const labelData = annotationData.getLabels()[currentLabelIdx ?? -1];
+      // Update the autocomplete options only when editing starts.
+      const labelData = annotationData.getLabels()[currentLabelIdx];
       originalOptionsRef.current = Array.from(labelData.valueToIds.keys()).map((value) => ({ value, label: value }));
     }
     lastLabelIdxRef.current = currentLabelIdx;
@@ -118,17 +121,6 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   }, [hasValidData]);
 
   //// Interaction handlers ////
-
-  const handleKeyInput: React.KeyboardEventHandler = (e): void => {
-    if (currentLabelIdx === null || activeEditRange === null) {
-      return;
-    }
-    if (e.key === "Enter") {
-      // Save the input value when Enter is pressed.
-      saveInputValue(currentLabelIdx, activeEditRange);
-      clearActiveEditRange();
-    }
-  };
 
   const handleInputChange = (value: string): void => {
     // Editing the input value directly updates the label value in the annotation state.
@@ -159,22 +151,25 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   // Reset to original value and close the popover when escape is pressed.
   const handleEscape = useCallback((): void => {
     if (originalValueRef.current !== null && hasValidData) {
+      setInputValue(originalValueRef.current);
       props.annotationState.setLabelValueOnIds(currentLabelIdx, activeEditRange, originalValueRef.current);
     }
     clearActiveEditRange();
   }, [hasValidData]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") {
-        handleEscape();
-      }
-    };
-    anchorRef.current?.addEventListener("keydown", handleKeyDown);
-    return () => {
-      anchorRef.current?.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleEscape]);
+  const handleKeyInput: React.KeyboardEventHandler = (e): void => {
+    if (currentLabelIdx === null || activeEditRange === null) {
+      return;
+    }
+    if (e.key === "Enter") {
+      // Save the input value when Enter is pressed.
+      saveInputValue(currentLabelIdx, activeEditRange);
+      clearActiveEditRange();
+    }
+    if (e.key === "Escape") {
+      handleEscape();
+    }
+  };
 
   // TODO: Use the actual popover component from Antd to get the little arrow at
   // the bottom? This requires visibility to be toggled every time anchor
@@ -191,12 +186,8 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
   // 1005). This can be fixed by updating the AnnotationData API to include a
   // setter for the last value field.
 
-  let showOptions = false;
-  if (currentLabelIdx !== null) {
-    const labelData = annotationData.getLabels()[currentLabelIdx];
-    showOptions = labelData.options.type === LabelType.CUSTOM && activeEditRange !== null;
-  }
-
+  const labelData = hasValidData ? annotationData.getLabels()[currentLabelIdx] : undefined;
+  const showOptions = labelData ? labelData.options.type === LabelType.CUSTOM : false;
   const editCount = activeEditRange?.length ?? 0;
 
   return (
@@ -210,7 +201,6 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
             <AutoComplete
               size="small"
               defaultValue={inputValue}
-              backfill={true}
               style={{ pointerEvents: "auto", width: "150px" }}
               value={inputValue}
               options={showOptions ? originalOptionsRef.current : []}
@@ -220,7 +210,6 @@ export default function AnnotationInputPopover(props: AnnotationInputPopoverProp
               filterOption={(inputValue, option) =>
                 option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
               }
-              // getPopupContainer={() => inputContainerRef.current!}
             ></AutoComplete>
             <IconButton type="link" onClick={handleDelete}>
               <DeleteOutlined />
