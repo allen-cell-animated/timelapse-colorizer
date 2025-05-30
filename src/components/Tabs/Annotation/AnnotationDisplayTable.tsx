@@ -15,6 +15,7 @@ const SELECTED_ROW_CLASSNAME = "selected-row";
 export type TableDataType = {
   key: string;
   id: number;
+  segId: number;
   track: number;
   value: string;
   time: number;
@@ -75,12 +76,19 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
   const theme = useContext(AppThemeContext);
 
   const tableColumns: TableProps<TableDataType>["columns"] = [
+    // {
+    //   title: "Object ID",
+    //   dataIndex: "id",
+    //   key: "id",
+    //   width: "20%",
+    //   sorter: (a, b) => a.id - b.id,
+    // },
     {
-      title: "Object ID",
-      dataIndex: "id",
-      key: "id",
+      title: "Label ID",
+      dataIndex: "segId",
+      key: "segId",
       width: "20%",
-      sorter: (a, b) => a.id - b.id,
+      sorter: (a, b) => a.segId - b.segId,
     },
     {
       title: "Track ID",
@@ -125,7 +133,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
   ];
 
   if (props.idToValue) {
-    tableColumns.splice(2, 0, {
+    tableColumns.splice(3, 0, {
       title: "Value",
       dataIndex: "value",
       key: "value",
@@ -142,10 +150,11 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
     const dataset = props.dataset;
     if (dataset) {
       return props.ids.map((id) => {
+        const segId = dataset.getSegmentationId(id);
         const track = dataset.getTrackId(id);
         const time = dataset.getTime(id);
         const value = props.idToValue?.get(id) ?? "";
-        return { key: id.toString(), id, track, time, value };
+        return { key: id.toString(), id, segId, track, time, value };
       });
     }
     return [];

@@ -8,6 +8,9 @@ import { getLabelTypeFromParsedCsv } from "./utils/data_utils";
 import Dataset from "./Dataset";
 
 export const CSV_COL_ID = "ID";
+// Currently segmentation ID/label is only exported for CSV readability,
+// but is not used to read annotations back in.
+export const CSV_COL_SEG_ID = "Label";
 export const CSV_COL_TIME = "Frame";
 export const CSV_COL_TRACK = "Track";
 
@@ -520,7 +523,7 @@ export class AnnotationData implements IAnnotationData {
 
   toCsv(dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels();
-    const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
+    const headerRow = [CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TRACK, CSV_COL_TIME];
 
     headerRow.push(...this.labelData.map((label) => label.options.name.trim()));
 
@@ -530,10 +533,11 @@ export class AnnotationData implements IAnnotationData {
     // O(N), which makes this for loop O(N^3)). Consider caching the lookup (ID
     // -> value) if the CSV export step is slow.
     for (const [id, labels] of idsToLabels) {
+      const segId = dataset.segIds?.[id] ?? "";
       const track = dataset.getTrackId(id);
       const time = dataset.getTime(id);
 
-      const row: (string | number)[] = [id, track, time];
+      const row: (string | number)[] = [id, segId, track, time];
       for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
         if (labels.includes(labelIdx)) {
           row.push(this.getValueFromId(labelIdx, id) ?? "");
