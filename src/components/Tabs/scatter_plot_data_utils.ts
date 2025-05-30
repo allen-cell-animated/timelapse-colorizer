@@ -16,6 +16,7 @@ export type TraceData = {
   x: number[];
   y: number[];
   objectIds: number[];
+  segIds: number[];
   trackIds: number[];
   color: HexColorString;
   marker: Partial<Plotly.PlotMarker>;
@@ -68,6 +69,7 @@ export function makeEmptyTraceData(color: HexColorString, marker: Partial<Plotly
     x: [],
     y: [],
     objectIds: [],
+    segIds: [],
     trackIds: [],
     color,
     marker,
@@ -93,6 +95,7 @@ export function splitTraceData(traceData: TraceData, maxPoints: number): TraceDa
       x: traceData.x.slice(i, end),
       y: traceData.y.slice(i, end),
       objectIds: traceData.objectIds.slice(i, end),
+      segIds: traceData.segIds.slice(i, end),
       trackIds: traceData.trackIds.slice(i, end),
       color: traceData.color,
       marker: traceData.marker,
@@ -132,7 +135,7 @@ export function getHoverTemplate(dataset: Dataset, xAxisFeatureKey: string, yAxi
   return (
     `${dataset.getFeatureName(xAxisFeatureKey)}: %{x} ${dataset.getFeatureUnits(xAxisFeatureKey)}` +
     `<br>${dataset.getFeatureName(yAxisFeatureKey)}: %{y} ${dataset.getFeatureUnits(yAxisFeatureKey)}` +
-    `<br>Track ID: %{customdata}<br>Object ID: %{id}<extra></extra>`
+    `<br>Track ID: %{customdata[0]}<br>Label ID: %{customdata[1]}<extra></extra>`
   );
 }
 
@@ -141,9 +144,13 @@ export function makeLineTrace(
   xData: DataArray,
   yData: DataArray,
   objectIds: number[],
+  segIds: number[],
   trackIds: number[],
   hovertemplate?: string
 ): Partial<Plotly.PlotData> {
+  const stackedCustomData = trackIds.map((id, index) => {
+    return [id.toString(), segIds[index].toString()];
+  });
   return {
     x: xData,
     y: yData,
@@ -153,7 +160,7 @@ export function makeLineTrace(
       color: "#aaaaaa",
     },
     ids: objectIds.map((id) => id.toString()),
-    customdata: trackIds.map((id) => id.toString()),
+    customdata: stackedCustomData,
     hoverinfo: "skip", // will be overridden if hovertemplate is provided
     hovertemplate,
   };

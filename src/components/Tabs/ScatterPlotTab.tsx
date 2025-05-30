@@ -267,8 +267,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     xData: DataArray,
     yData: DataArray,
     objectIds: number[],
+    segIds: number[],
     trackIds: number[]
-  ): { xData: DataArray; yData: DataArray; objectIds: number[]; trackIds: number[] } => {
+  ): { xData: DataArray; yData: DataArray; objectIds: number[]; segIds: number[]; trackIds: number[] } => {
     // Boolean array, true if both x and y are not NaN/infinity
     const isFiniteLut = Array.from(Array(xData.length)).map(
       (_, i) => Number.isFinite(xData[i]) && Number.isFinite(yData[i])
@@ -278,6 +279,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xData: xData.filter((_, i) => isFiniteLut[i]),
       yData: yData.filter((_, i) => isFiniteLut[i]),
       objectIds: objectIds.filter((_, i) => isFiniteLut[i]),
+      segIds: segIds.filter((_, i) => isFiniteLut[i]),
       trackIds: trackIds.filter((_, i) => isFiniteLut[i]),
     };
   };
@@ -303,21 +305,28 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         xData: DataArray;
         yData: DataArray;
         objectIds: number[];
+        segIds: number[];
         trackIds: number[];
       } => {
+    if (!dataset || !rawXData || !rawYData) {
+      return undefined;
+    }
+
     let xData: DataArray = [];
     let yData: DataArray = [];
     let objectIds: number[] = [];
+    let segIds: number[] = [];
     let trackIds: number[] = [];
 
     if (range === PlotRangeType.CURRENT_FRAME) {
       // Filter data to only show the current frame.
-      if (!dataset?.times) {
+      if (!dataset.times) {
         return undefined;
       }
       for (let i = 0; i < dataset.times.length; i++) {
         if (dataset.times[i] === currentFrame) {
           objectIds.push(i);
+          segIds.push(dataset.getSegmentationId(i));
           trackIds.push(dataset.getTrackId(i));
           xData.push(rawXData[i]);
           yData.push(rawYData[i]);
@@ -326,7 +335,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     } else if (range === PlotRangeType.CURRENT_TRACK) {
       // Filter data to only show the current track.
       if (!selectedTrack) {
-        return { xData: [], yData: [], objectIds: [], trackIds: [] };
+        return { xData: [], yData: [], objectIds: [], segIds: [], trackIds: [] };
       }
       for (let i = 0; i < selectedTrack.ids.length; i++) {
         const id = selectedTrack.ids[i];
@@ -334,17 +343,19 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         yData.push(rawYData[id]);
       }
       objectIds = Array.from(selectedTrack.ids);
+      segIds = objectIds.map(dataset.getSegmentationId);
       trackIds = Array(selectedTrack.ids.length).fill(selectedTrack.trackId);
     } else {
       // All time
       objectIds = [...rawXData.keys()];
+      segIds = objectIds.map(dataset.getSegmentationId);
       trackIds = Array.from(dataset!.trackIds || []);
       // Copying the reference is faster than `Array.from()`.
       xData = rawXData;
       yData = rawYData;
     }
     // TODO: Consider moving this or making it conditional if it causes performance issues.
-    return sanitizeNumericDataArrays(xData, yData, objectIds, trackIds);
+    return sanitizeNumericDataArrays(xData, yData, objectIds, segIds, trackIds);
   };
 
   /**
@@ -433,6 +444,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     );
   };
 
+  // TODO: Move to `scatter_plot_data_utils.ts`
   /**
    * Applies coloring to point traces in a scatterplot. Does this by splitting the data into multiple traces each with a solid
    * color, which is much faster than using Plotly's native color ramping. Also enforces a maximum number of points
@@ -451,6 +463,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     xData: DataArray,
     yData: DataArray,
     objectIds: number[],
+    segIds: number[],
     trackIds: number[],
     markerConfig: Partial<PlotMarker> & { outliers?: Partial<PlotMarker>; outOfRange?: Partial<PlotMarker> } = {},
     overrideColor?: Color,
@@ -542,6 +555,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       bucket.x.push(xData[i]);
       bucket.y.push(yData[i]);
       bucket.objectIds.push(objectIds[i]);
+      bucket.segIds.push(segIds[i]);
       bucket.trackIds.push(trackIds[i]);
     }
 
@@ -581,11 +595,14 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         return acc;
       }, [])
       .map((bucket) => {
+        const stackedCustomData = bucket.trackIds.map((trackId, index) => {
+          return [trackId.toString(), bucket.segIds[index].toString()];
+        });
         return {
           x: bucket.x,
           y: bucket.y,
           ids: bucket.objectIds.map((id) => id.toString()),
-          customdata: bucket.trackIds,
+          customdata: stackedCustomData,
           name: "",
           type: "scattergl",
           mode: "markers",
@@ -641,7 +658,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       clearPlotAndStopRender();
       return;
     }
-    const { xData, yData, objectIds, trackIds } = result;
+    const { xData, yData, segIds, objectIds, trackIds } = result;
 
     let markerBaseColor = undefined;
     if (rangeType === PlotRangeType.ALL_TIME && selectedTrack) {
@@ -656,6 +673,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
       xData,
       yData,
       objectIds,
+      segIds,
       trackIds,
       {},
       markerBaseColor,
@@ -690,7 +708,9 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
     if (trackData && rangeType !== PlotRangeType.CURRENT_FRAME) {
       // Render an extra trace for lines connecting the points in the current track when time is a feature.
       if (isUsingTime) {
-        traces.push(makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.trackIds));
+        traces.push(
+          makeLineTrace(trackData.xData, trackData.yData, trackData.objectIds, trackData.segIds, trackData.trackIds)
+        );
       }
       // Render track points
       const outOfRangeOutlineColor = outOfRangeDrawSettings.color.clone().multiplyScalar(0.8);
@@ -698,6 +718,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         trackData.xData,
         trackData.yData,
         trackData.objectIds,
+        trackData.segIds,
         trackData.trackIds,
         {
           outOfRange: {
@@ -719,6 +740,7 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
             [rawXData[currentObjectId]],
             [rawYData[currentObjectId]],
             [currentObjectId],
+            [dataset.getSegmentationId(currentObjectId)],
             [selectedTrack.trackId],
             { size: 4 }
           )
