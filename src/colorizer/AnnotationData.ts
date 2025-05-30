@@ -533,7 +533,7 @@ export class AnnotationData implements IAnnotationData {
     // O(N), which makes this for loop O(N^3)). Consider caching the lookup (ID
     // -> value) if the CSV export step is slow.
     for (const [id, labels] of idsToLabels) {
-      const segId = dataset.segIds?.[id] ?? "";
+      const segId = dataset.getSegmentationId(id);
       const track = dataset.getTrackId(id);
       const time = dataset.getTime(id);
 
