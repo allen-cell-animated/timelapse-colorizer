@@ -411,6 +411,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       const absTime = i + track.startTime();
 
       let trackIndex = track.times.findIndex((t) => t === absTime);
+      // TODO: How should we handle missing times? Use line segments so we can have discontinuities?
       if (trackIndex === -1) {
         // Track has no object for this time, use fallback
         trackIndex = lastTrackIndex;

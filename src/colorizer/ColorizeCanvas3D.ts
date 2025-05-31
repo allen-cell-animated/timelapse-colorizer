@@ -19,7 +19,9 @@ import { CanvasScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult
 import { getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
+import Dataset from "./Dataset";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
+import Track from "./Track";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -131,6 +133,37 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
   }
 
+  private updateTrackData(dataset: Dataset | null, track: Track | null): void {
+    if (!track || !track.centroids || track.centroids.length === 0 || !dataset) {
+      return;
+    }
+    // Make a new array of the centroid positions in pixel coordinates.
+    // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
+    const points = new Float32Array(track.duration() * 3);
+
+    let lastTrackIndex = 0;
+    for (let i = 0; i < track.duration(); i++) {
+      const absTime = i + track.startTime();
+
+      let trackIndex = track.times.findIndex((t) => t === absTime);
+      // TODO: How should we handle missing times? Use line segments so we can have discontinuities?
+      if (trackIndex === -1) {
+        // Track has no object for this time, use fallback
+        trackIndex = lastTrackIndex;
+      } else {
+        lastTrackIndex = trackIndex;
+      }
+
+      // Normalize from pixel coordinates to canvas space [-1, 1]
+      const centroid = dataset.getCentroid(track.ids[trackIndex])!;
+      points[3 * i + 0] = centroid[0];
+      points[3 * i + 1] = centroid[1];
+      points[3 * i + 2] = centroid[2];
+    }
+
+    this.view3d.setLineVertices(points);
+  }
+
   public setParams(params: RenderCanvasStateParams): Promise<void> {
     if (this.params === params) {
       return Promise.resolve();
@@ -174,6 +207,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
           this.setFrame(params.pendingFrame);
         });
       }
+    }
+
+    if (hasPropertyChanged(params, prevParams, ["track"])) {
+      this.updateTrackData(params.dataset, params.track);
     }
 
     this.render(false);
@@ -285,6 +322,23 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = callback;
   }
 
+  private syncTrackPathLine(): void {
+    // Show nothing if track doesn't exist or doesn't have centroid data
+    const track = this.params?.track;
+    if (!track || !track.centroids || !this.params?.showTrackPath) {
+      this.view3d.setLineVertexRange(0, 0);
+      return;
+    }
+
+    // Show path up to current frame
+    let range = this.currentFrame - track.startTime() + 1;
+    if (range > track.duration() || range < 0) {
+      // Hide track if we are outside the track range
+      range = 0;
+    }
+    this.view3d.setLineVertexRange(0, range);
+  }
+
   private syncSelectedId(): void {
     if (!this.volume || !this.params || !this.params.dataset) {
       return;
@@ -294,6 +348,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   render(synchronous = false): void {
+    this.syncTrackPathLine();
     this.syncSelectedId();
     this.view3d.redraw(synchronous);
   }
