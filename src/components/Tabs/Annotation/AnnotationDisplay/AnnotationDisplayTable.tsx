@@ -3,12 +3,12 @@ import { Table, TableProps } from "antd";
 import React, { memo, ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 
-import { TagIconSVG } from "../../../assets";
-import { Dataset } from "../../../colorizer";
-import { FlexColumnAlignCenter, VisuallyHidden } from "../../../styles/utils";
+import { TagIconSVG } from "../../../../assets";
+import { Dataset } from "../../../../colorizer";
+import { FlexColumnAlignCenter, VisuallyHidden } from "../../../../styles/utils";
 
-import { AppThemeContext } from "../../AppStyle";
-import IconButton from "../../IconButton";
+import { AppThemeContext } from "../../../AppStyle";
+import IconButton from "../../../IconButton";
 
 const SELECTED_ROW_CLASSNAME = "selected-row";
 
@@ -125,7 +125,7 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
   ];
 
   if (props.idToValue) {
-    tableColumns.splice(2, 0, {
+    tableColumns.splice(3, 0, {
       title: "Value",
       dataIndex: "value",
       key: "value",
