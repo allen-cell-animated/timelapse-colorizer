@@ -371,6 +371,9 @@ export const useAnnotations = (): AnnotationState => {
   // Annotation mode can only be enabled if there is at least one label, so create
   // one if necessary.
   const setIsAnnotationEnabled = (enabled: boolean): void => {
+    if (enabled === isAnnotationEnabled) {
+      return;
+    }
     if (enabled) {
       _setVisibility(true);
       if (annotationData.getLabels().length === 0) {
