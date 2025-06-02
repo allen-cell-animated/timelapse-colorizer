@@ -83,6 +83,13 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       sorter: (a, b) => a.id - b.id,
     },
     {
+      title: "Track ID",
+      dataIndex: "track",
+      key: "track",
+      width: "20%",
+      sorter: (a, b) => a.track - b.track,
+    },
+    {
       title: "Time",
       dataIndex: "time",
       key: "time",
@@ -117,16 +124,6 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
     },
   ];
 
-  if (!props.hideTrackColumn) {
-    tableColumns.splice(1, 0, {
-      title: "Track ID",
-      dataIndex: "track",
-      key: "track",
-      width: "20%",
-      sorter: (a, b) => a.track - b.track,
-    });
-  }
-
   if (props.idToValue) {
     tableColumns.splice(2, 0, {
       title: "Value",
@@ -135,6 +132,10 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
       width: "40%",
       sorter: (a, b) => a.value.localeCompare(b.value),
     });
+  }
+
+  if (props.hideTrackColumn) {
+    tableColumns.splice(1, 1);
   }
 
   const tableData: TableDataType[] = useMemo(() => {
