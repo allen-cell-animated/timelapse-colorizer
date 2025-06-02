@@ -171,7 +171,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
             flexGrow: 2,
           }}
         >
-          <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
+          <FlexRowAlignCenter style={{ marginBottom: "5px" }}>
             <TooltipContainer ref={tooltipContainerRef} $x={thumbnailHoveredX ?? lastHoveredX.current}>
               <AnnotationTrackThumbnail
                 frame={props.frame}
@@ -203,17 +203,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
               </Tooltip>
             </TooltipContainer>
 
-            <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
-              {selectedTrackId ? (
-                <span>
-                  Track {selectedTrackId}{" "}
-                  <span style={{ color: theme.color.text.hint }}>
-                    ({highlightedIds.length}/{props.selectedTrack?.times.length})
-                  </span>
-                </span>
-              ) : (
-                `No track selected`
-              )}
+            <p style={{ fontSize: theme.font.size.label, marginTop: 0, marginLeft: 10 }}>
+              {selectedTrackId ? <span>Track {selectedTrackId}</span> : `No track selected`}
             </p>
             {selectedTrackId && (
               <p
@@ -223,7 +214,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                   ...NO_WRAP,
                 }}
               >
-                {selectedTrackIds.length}/{props.selectedTrack?.times.length}
+                ({selectedTrackIds.length}/{props.selectedTrack?.times.length})
               </p>
             )}
           </FlexRowAlignCenter>
