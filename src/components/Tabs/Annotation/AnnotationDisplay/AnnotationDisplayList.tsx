@@ -1,0 +1,203 @@
+import { Tooltip } from "antd";
+import React, { ReactElement, useContext, useMemo, useRef, useState } from "react";
+import styled from "styled-components";
+import { Color } from "three";
+
+import { Dataset, Track } from "../../../../colorizer";
+import { getEmptyLookupInfo, getTrackLookups, LookupInfo } from "../../../../colorizer/utils/annotation_utils";
+import { FlexColumn, FlexRowAlignCenter } from "../../../../styles/utils";
+
+import { AppThemeContext } from "../../../AppStyle";
+import AnnotationTrackThumbnail from "../AnnotationTrackThumbnail";
+import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
+import ValueAndTrackList from "./ValueAndTrackList";
+
+type AnnotationDisplayListProps = {
+  dataset: Dataset | null;
+  ids: number[];
+  idToValue: Map<number, string> | undefined;
+  valueToIds: Map<string, Set<number>> | undefined;
+  setFrame: (frame: number) => Promise<void>;
+  onClickTrack: (trackId: number) => void;
+  onClickObjectRow: (record: TableDataType) => void;
+  onClickDeleteObject: (record: TableDataType) => void;
+  selectedTrack: Track | null;
+  selectedId?: number;
+  highlightRange: number[] | null;
+  rangeStartId: number | null;
+  frame: number;
+  labelColor: Color;
+};
+
+const ListLayoutContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  gap: 10px;
+`;
+
+const TooltipContainer = styled.div<{ $x?: number }>`
+  position: relative;
+  & .ant-tooltip {
+    /* Adjust tooltip position so it follows the mouse cursor. */
+    inset: auto auto auto ${(props) => props.$x ?? 0}px !important;
+    transform: translateX(-50%) translateY(-180%) !important;
+
+    & .ant-tooltip-inner {
+      text-align: center;
+    }
+  }
+`;
+
+export default function AnnotationDisplayList(props: AnnotationDisplayListProps): ReactElement {
+  const theme = useContext(AppThemeContext);
+
+  const selectedTrackId = props.selectedTrack?.trackId;
+  const tooltipContainerRef = React.useRef<HTMLDivElement>(null);
+  const [thumbnailHoveredX, setThumbnailHoveredX] = useState<number | null>(null);
+  const [thumbnailHoveredTime, setThumbnailHoveredTime] = useState<number | null>(null);
+  const lastHoveredX = useRef<number>(0);
+
+  // Organize ids by track and value for display.
+  const lookupInfo = useMemo((): LookupInfo => {
+    if (!props.dataset) {
+      return getEmptyLookupInfo();
+    }
+    return getTrackLookups(props.dataset, props.ids, props.idToValue, props.valueToIds);
+  }, [props.dataset, props.ids, props.idToValue, props.valueToIds]);
+  const { trackIds, trackToIds } = lookupInfo;
+
+  // By default, highlight all selected IDs in the selected track.
+  let highlightedIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
+  let bgIds: number[] = [];
+
+  // If there is a selected ID in the current frame, highlight only IDs that
+  // match that ID's assigned value. Also trigger this when the user hovers over
+  // a time in the thumbnail.
+  const currentId = props.selectedTrack?.getIdAtTime(props.frame);
+  const currentValue = currentId ? props.idToValue?.get(currentId) : undefined;
+  const hoveredId = thumbnailHoveredTime ? props.selectedTrack?.getIdAtTime(thumbnailHoveredTime) : undefined;
+  const hoveredValue = hoveredId ? props.idToValue?.get(hoveredId) : undefined;
+  // Hovering takes precedence over current frame.
+  const highlightedId = hoveredValue ? hoveredId : currentId;
+  const highlightedValue = hoveredValue ?? currentValue;
+  if (highlightedValue !== undefined && highlightedId && highlightedIds.includes(highlightedId)) {
+    // Filter so only IDs with matching values are highlighted, and the rest are
+    // background.
+    const currentValueIds = highlightedIds.filter((id) => props.idToValue?.get(id) === highlightedValue);
+    bgIds = highlightedIds;
+    highlightedIds = currentValueIds;
+  }
+
+  // Show a marker in the selected track thumbnail if the last clicked ID is
+  // part of the selected track.
+  let markedTime: number | undefined;
+  if (props.rangeStartId !== null && props.dataset) {
+    const id = props.rangeStartId;
+    const lastClickedTime = props.dataset.getTime(id);
+    const isSelectedTrack = props.dataset.getTrackId(id) === selectedTrackId;
+    if (lastClickedTime !== undefined && isSelectedTrack) {
+      markedTime = lastClickedTime;
+    }
+  }
+  // Highlight a range of objects in the selected track thumbnail if provided
+  let highlightRange: number[] | undefined;
+  if (props.highlightRange && props.highlightRange.length > 0) {
+    const trackId = props.dataset?.getTrackId(props.highlightRange[0]);
+    if (trackId === selectedTrackId) {
+      highlightRange = props.highlightRange;
+    }
+  }
+
+  return (
+    <FlexColumn>
+      <p
+        style={{
+          fontSize: theme.font.size.label,
+          marginTop: 0,
+          marginBottom: "5px",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks annotated"}</b>
+      </p>
+      {/* Column 1 is all of the tracks displayed as an unordered list */}
+      <ListLayoutContainer>
+        <FlexColumn style={{ height: "100%", width: "45%" }}>
+          <div style={{ height: "480px", overflowY: "auto" }}>
+            <ValueAndTrackList lookupInfo={lookupInfo} {...props} />
+          </div>
+        </FlexColumn>
+        {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}
+        <div
+          style={{
+            width: "calc(55% - 20px)",
+            height: "calc(100% - 10px)",
+            padding: "5px 10px 10px 10px",
+            border: "1px solid var(--color-borders)",
+            borderRadius: "4px",
+            flexGrow: 2,
+          }}
+        >
+          <FlexRowAlignCenter style={{ marginBottom: "5px" }} $gap={10}>
+            <TooltipContainer ref={tooltipContainerRef} $x={thumbnailHoveredX ?? lastHoveredX.current}>
+              <AnnotationTrackThumbnail
+                frame={props.frame}
+                setFrame={props.setFrame}
+                onHover={(x, time) => {
+                  setThumbnailHoveredX(x);
+                  setThumbnailHoveredTime(time);
+                  if (x !== null) {
+                    lastHoveredX.current = x;
+                  }
+                }}
+                ids={highlightedIds}
+                bgIds={bgIds}
+                track={props.selectedTrack}
+                dataset={props.dataset}
+                color={props.labelColor}
+                mark={markedTime}
+                highlightedIds={highlightRange}
+              ></AnnotationTrackThumbnail>
+              <Tooltip
+                title={hoveredValue}
+                placement="top"
+                open={hoveredValue ? true : false}
+                trigger={["hover", "focus"]}
+                getPopupContainer={() => tooltipContainerRef.current ?? document.body}
+              >
+                {/* Anchor element for the tooltip. Position of the tooltip is determined using `TooltipContainer` */}
+                <div style={{ position: "absolute", width: 0, height: 0, top: 5, left: 0 }}></div>
+              </Tooltip>
+            </TooltipContainer>
+
+            <p style={{ fontSize: theme.font.size.label, marginTop: 0 }}>
+              {selectedTrackId ? (
+                <span>
+                  Track {selectedTrackId}{" "}
+                  <span style={{ color: theme.color.text.hint }}>
+                    ({highlightedIds.length}/{props.selectedTrack?.times.length})
+                  </span>
+                </span>
+              ) : (
+                `No track selected`
+              )}
+            </p>
+          </FlexRowAlignCenter>
+          <AnnotationDisplayTable
+            onClickObjectRow={props.onClickObjectRow}
+            onClickDeleteObject={props.onClickDeleteObject}
+            dataset={props.dataset}
+            ids={selectedTrackId ? trackToIds.get(selectedTrackId?.toString()) ?? [] : []}
+            idToValue={props.idToValue}
+            height={410}
+            selectedId={props.selectedId}
+            hideTrackColumn={true}
+          ></AnnotationDisplayTable>
+        </div>
+      </ListLayoutContainer>
+    </FlexColumn>
+  );
+}
