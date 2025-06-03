@@ -189,7 +189,7 @@ export default function CanvasHoverTooltip(props: PropsWithChildren<CanvasHoverT
     if (lastHoveredId.globalId !== undefined) {
       const isHoveredIdLabeled = props.annotationState.data.isLabelOnId(currentLabelIdx, lastHoveredId.globalId);
       const isLabelBoolean = currentLabelData.options.type === LabelType.BOOLEAN;
-      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "unlabel" : "edit") : "label";
+      const verb = isHoveredIdLabeled ? (isLabelBoolean ? "clear" : "edit") : "annotate";
       if (props.annotationState.selectionMode === AnnotationSelectionMode.TRACK) {
         annotationLabel = (
           <FlexRow>

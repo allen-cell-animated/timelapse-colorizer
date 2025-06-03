@@ -10,7 +10,7 @@ import {
 } from "../types";
 import { packDataTexture } from "./texture_utils";
 
-import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelType } from "../AnnotationData";
+import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "../AnnotationData";
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
 
@@ -203,6 +203,10 @@ export function formatAsBulletList(items: string[], maxDisplayCount: number = Nu
  * ```
  */
 export function getIntervals(values: number[]): [number, number][] {
+  if (values.length === 0) {
+    return [];
+  }
+
   let min = values[0];
   let max = values[0];
   for (const value of values) {
@@ -372,4 +376,17 @@ export function getLabelTypeFromParsedCsv(
     }
   }
   return labelTypeMap;
+}
+
+export function cloneLabel(label: LabelData): LabelData {
+  return {
+    options: {
+      ...label.options,
+      color: label.options.color.clone(),
+    },
+    ids: new Set(label.ids),
+    lastValue: label.lastValue,
+    valueToIds: new Map(label.valueToIds),
+    idToValue: new Map(label.idToValue),
+  };
 }
