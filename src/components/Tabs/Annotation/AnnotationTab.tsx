@@ -150,6 +150,13 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     [annotationData]
   );
 
+  const hasLabelData = useMemo(() => {
+    if (labels.length === 0) {
+      return false;
+    }
+    return labels.some((label) => label.ids.size > 0);
+  }, [annotationData]);
+
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
@@ -174,7 +181,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRow style={{ width: "100%", justifyContent: "space-between" }} ref={modalContainerRef}>
-        <AnnotationModeButton active={isAnnotationModeEnabled} onClick={onClickEnableAnnotationMode} />
+        <AnnotationModeButton
+          active={isAnnotationModeEnabled}
+          onClick={onClickEnableAnnotationMode}
+          hasAnnotations={labels.length > 0}
+        />
 
         {/* Appears when the user activates annotations for the first time and should define a label. */}
         <Modal
@@ -210,6 +221,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               const name = datasetKey ?? "annotations";
               download(`${name}-annotations.csv`, "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
             }}
+            disabled={!hasLabelData}
           >
             Export CSV
           </TextButton>
