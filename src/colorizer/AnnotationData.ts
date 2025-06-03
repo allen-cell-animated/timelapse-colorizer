@@ -471,7 +471,7 @@ export class AnnotationData implements IAnnotationData {
 
     // Check for required ID column.
     if (headers.indexOf(CSV_COL_ID) === -1) {
-      throw new Error(`CSV does not contain expected ID columns with the header "${CSV_COL_ID}".`);
+      throw new Error(`CSV does not contain expected ID column with the header '${CSV_COL_ID}'.`);
     }
     // Remove the metadata columns
     const labelNames = headers.filter(
