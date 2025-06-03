@@ -106,6 +106,40 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
 
   return (
     <>
+      <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
+        <span style={{ fontSize: theme.font.size.label, width: "max-content" }}>Select by </span>
+        <StyledRadioGroup
+          style={{ display: "flex", flexDirection: "row" }}
+          value={props.selectionMode}
+          onChange={(e) => props.setSelectionMode(e.target.value)}
+        >
+          <TooltipWithSubtitle
+            trigger={["hover", "focus"]}
+            title="Select a single timepoint"
+            subtitle="(Hold Shift to select a range)"
+            placement="top"
+            autoAdjustOverflow={false}
+          >
+            <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
+          </TooltipWithSubtitle>
+          <Tooltip
+            trigger={["hover", "focus"]}
+            title="Selects range between two timepoints in a track"
+            autoAdjustOverflow={false}
+            placement="top"
+          >
+            <Radio.Button value={AnnotationSelectionMode.RANGE}>Range</Radio.Button>
+          </Tooltip>
+          <TooltipWithSubtitle
+            trigger={["hover", "focus"]}
+            title="Selects entire track"
+            subtitle="(Hold Shift to select a range)"
+            placement="top"
+          >
+            <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
+          </TooltipWithSubtitle>
+        </StyledRadioGroup>
+      </label>
       <Popover
         title={<p style={{ fontSize: theme.font.size.label }}>Create label</p>}
         trigger={["click"]}
@@ -125,7 +159,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
       >
         <div ref={createPopoverContainerRef}>
           <Tooltip title="Create new annotation" placement="top">
-            <IconButton onClick={onClickCreateButton} type="primary">
+            <IconButton onClick={onClickCreateButton} type={showCreatePopover ? "primary" : "outlined"}>
               <TagAddIconSVG />
             </IconButton>
           </Tooltip>
@@ -179,36 +213,6 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
           </IconButton>
         </Tooltip>
       </Popconfirm>
-
-      <label style={{ display: "flex", flexDirection: "row", gap: "6px", marginLeft: "8px" }}>
-        <span style={{ fontSize: theme.font.size.label, width: "max-content" }}>Select by </span>
-        <StyledRadioGroup
-          style={{ display: "flex", flexDirection: "row" }}
-          value={props.selectionMode}
-          onChange={(e) => props.setSelectionMode(e.target.value)}
-        >
-          <TooltipWithSubtitle
-            trigger={["hover", "focus"]}
-            title="Select a single timepoint"
-            subtitle="(Hold Shift to select a range)"
-            placement="top"
-            autoAdjustOverflow={false}
-          >
-            <Radio.Button value={AnnotationSelectionMode.TIME}>Time</Radio.Button>
-          </TooltipWithSubtitle>
-          <Tooltip
-            trigger={["hover", "focus"]}
-            title="Selects range between two timepoints in a track"
-            autoAdjustOverflow={false}
-            placement="top"
-          >
-            <Radio.Button value={AnnotationSelectionMode.RANGE}>Range</Radio.Button>
-          </Tooltip>
-          <Tooltip trigger={["hover", "focus"]} title="Selects entire track" placement="top">
-            <Radio.Button value={AnnotationSelectionMode.TRACK}>Track</Radio.Button>
-          </Tooltip>
-        </StyledRadioGroup>
-      </label>
     </>
   );
 }
