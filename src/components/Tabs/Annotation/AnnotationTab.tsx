@@ -182,7 +182,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           footer={null}
           closable={true}
           width={360}
-          title="Create new label"
+          title="Create new annotation"
           onCancel={() => setShowCreateLabelModal(false)}
           destroyOnClose={true}
           getContainer={() => modalContainerRef.current ?? document.body}
@@ -313,7 +313,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             idToValue={idToValue}
             valueToIds={valueToIds}
             highlightRange={highlightedIds}
-            lastClickedId={props.annotationState.lastClickedId}
+            rangeStartId={props.annotationState.rangeStartId}
             selectedTrack={store.selectedTrack}
             selectedId={selectedId}
             frame={store.frame}
