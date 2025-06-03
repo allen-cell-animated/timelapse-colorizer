@@ -5,6 +5,7 @@ import { Color } from "three";
 import { Dataset, Track } from "../../../../colorizer";
 import { getEmptyLookupInfo, getTrackLookups, LookupInfo } from "../../../../colorizer/utils/annotation_utils";
 import { FlexColumn, FlexRow, FlexRowAlignCenter } from "../../../../styles/utils";
+import { formatQuantityString } from "../../../../utils/formatting";
 
 import { AppThemeContext } from "../../../AppStyle";
 import AnnotationTrackThumbnail from "../AnnotationTrackThumbnail";
@@ -97,9 +98,9 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
     }
   }
 
-  let trackInfoText = `${trackIds.length} ${trackIds.length === 1 ? "track" : "tracks"}`;
+  let trackInfoText = formatQuantityString(trackIds.length, "track", "tracks");
   if (valueToTracksToIds) {
-    trackInfoText += `, ${valueToTracksToIds.size} values`;
+    trackInfoText += `, ${formatQuantityString(valueToTracksToIds.size, "value", "values")}`;
   }
 
   return (
