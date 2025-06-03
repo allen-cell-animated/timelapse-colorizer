@@ -56,13 +56,13 @@ export default function AnnotationModeButton(props: AnnotationModeButtonProps): 
           </FlexRowAlignCenter>
         ) : (
           <FlexRowAlignCenter $gap={6}>
-            <TagIconSVG /> Apply and edit labels
+            <TagIconSVG /> Apply and edit annotations
           </FlexRowAlignCenter>
         )}
       </AnnotationModeStyledButton>
       {props.active && (
         <p style={{ color: theme.color.text.hint }}>
-          <i>Editing in progress; click objects to apply label</i>
+          <i>Editing in progress; click objects to apply annotations</i>
         </p>
       )}
     </FlexRow>

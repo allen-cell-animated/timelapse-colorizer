@@ -83,7 +83,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
           whiteSpace: "nowrap",
         }}
       >
-        <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks labeled"}</b>
+        <b>{trackIds.length > 0 ? `${trackIds.length} track(s)` : "No tracks annotated"}</b>
       </p>
       {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
