@@ -45,6 +45,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
 
   const handleFileUpload = (file: File): void => {
     setUploadedFile(null);
+    setParseResult(null);
     setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
     if (!isCsv || !dataset) {
@@ -61,9 +62,8 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
       } catch (error) {
         setErrorText('Could not parse CSV file. Parsing failed with the following error: "' + error + '"');
         console.error("Error parsing CSV file:", error);
-      } finally {
-        setUploadedFile(file);
       }
+      setUploadedFile(file);
     };
     reader.readAsText(file);
   };
