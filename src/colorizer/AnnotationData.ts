@@ -477,7 +477,8 @@ export class AnnotationData implements IAnnotationData {
     }
     // Remove the metadata columns
     const labelNames = headers.filter(
-      (header) => header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME
+      (header) =>
+        header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME && header !== CSV_COL_SEG_ID
     );
     const labelNameToType = getLabelTypeFromParsedCsv(headers, data);
 
@@ -495,9 +496,11 @@ export class AnnotationData implements IAnnotationData {
       const id = parseInt(row[CSV_COL_ID], 10);
       const track = parseInt(row[CSV_COL_TRACK], 10);
       const time = parseInt(row[CSV_COL_TIME], 10);
+      // Seg ID is optional/can be NaN because it was added as a column after
+      // annotation export was first introduced.
       const segId = parseInt(row[CSV_COL_SEG_ID], 10);
 
-      if (isNaN(id) || isNaN(track) || isNaN(time) || isNaN(segId)) {
+      if (isNaN(id) || isNaN(track) || isNaN(time)) {
         unparseableRows++;
         continue;
       }
@@ -511,7 +514,7 @@ export class AnnotationData implements IAnnotationData {
       if (dataset.trackIds?.[id] !== track) {
         mismatchedTracks++;
       }
-      if (dataset.segIds?.[id] !== segId) {
+      if (!Number.isNaN(segId) && dataset.segIds?.[id] !== segId) {
         mismatchedLabels++;
       }
       // Push row data to the labels.
