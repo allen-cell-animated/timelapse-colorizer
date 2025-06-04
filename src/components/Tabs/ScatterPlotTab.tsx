@@ -595,6 +595,8 @@ export default memo(function ScatterPlotTab(props: ScatterPlotTabProps): ReactEl
         return acc;
       }, [])
       .map((bucket) => {
+        // Custom data is shown in the hover tooltip.
+        // Formatted as [trackId, segId][]
         const stackedCustomData = bucket.trackIds.map((trackId, index) => {
           return [trackId.toString(), bucket.segIds[index].toString()];
         });

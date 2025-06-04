@@ -76,13 +76,6 @@ const AnnotationDisplayTable = memo(function AnnotationDisplayTable(inputProps: 
   const theme = useContext(AppThemeContext);
 
   const tableColumns: TableProps<TableDataType>["columns"] = [
-    // {
-    //   title: "Object ID",
-    //   dataIndex: "id",
-    //   key: "id",
-    //   width: "20%",
-    //   sorter: (a, b) => a.id - b.id,
-    // },
     {
       title: "Label ID",
       dataIndex: "segId",
