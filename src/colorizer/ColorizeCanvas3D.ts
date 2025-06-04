@@ -154,13 +154,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         lastTrackIndex = trackIndex;
       }
 
-      // Normalize from pixel coordinates to canvas space [-1, 1]
       const centroid = dataset.getCentroid(track.ids[trackIndex])!;
       points[3 * i + 0] = centroid[0];
       points[3 * i + 1] = centroid[1];
       points[3 * i + 2] = centroid[2];
     }
-
     this.view3d.setLineVertices(points);
   }
 
@@ -253,7 +251,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     });
     this.view3d.enablePicking(volume, true, segChannel);
 
-    this.view3d.updateDensity(volume, 0.5);
+    // this.view3d.updateDensity(volume, 0.5);
+    this.view3d.updateDensity(volume, 0.05);
     this.view3d.updateExposure(0.6);
     this.view3d.setVolumeRotation(volume, [0, 0, 0]);
     this.view3d.setVolumeTranslation(volume, [0, 0, 0]);
@@ -261,6 +260,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setShowBoundingBox(volume, true);
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
+
+    this.updateTrackData(this.params?.dataset ?? null, this.params?.track ?? null);
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels
     // 0,75,255
