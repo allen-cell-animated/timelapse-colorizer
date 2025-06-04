@@ -8,8 +8,9 @@ import { getLabelTypeFromParsedCsv } from "./utils/data_utils";
 import Dataset from "./Dataset";
 
 export const CSV_COL_ID = "ID";
-// Currently segmentation ID/label is only exported for CSV readability,
-// but is not used to read annotations back in.
+// Column constants for segmentation ID, time, and track are used to validate
+// data when parsing CSV files and check for mismatches with the current
+// dataset.
 export const CSV_COL_SEG_ID = "Label";
 export const CSV_COL_TIME = "Frame";
 export const CSV_COL_TRACK = "Track";
@@ -61,6 +62,12 @@ export type AnnotationParseResult = {
    * for a different dataset were imported.
    */
   mismatchedTracks: number;
+  /**
+   * The number of annotated objects that had labels that did not match
+   * those of the dataset. If > 0, this likely indicates that annotations
+   * for a different dataset were imported, or that the dataset was modified.
+   */
+  mismatchedLabels: number;
   /**
    * Rows that could not be parsed due to invalid (non-numeric) IDs, tracks, or
    * times. These rows will be skipped.
@@ -453,6 +460,7 @@ export class AnnotationData implements IAnnotationData {
     const annotationData = new AnnotationData();
     let mismatchedTimes = 0,
       mismatchedTracks = 0,
+      mismatchedLabels = 0,
       unparseableRows = 0,
       invalidIds = 0;
 
@@ -487,8 +495,9 @@ export class AnnotationData implements IAnnotationData {
       const id = parseInt(row[CSV_COL_ID], 10);
       const track = parseInt(row[CSV_COL_TRACK], 10);
       const time = parseInt(row[CSV_COL_TIME], 10);
+      const segId = parseInt(row[CSV_COL_SEG_ID], 10);
 
-      if (isNaN(id) || isNaN(track) || isNaN(time)) {
+      if (isNaN(id) || isNaN(track) || isNaN(time) || isNaN(segId)) {
         unparseableRows++;
         continue;
       }
@@ -501,6 +510,9 @@ export class AnnotationData implements IAnnotationData {
       }
       if (dataset.trackIds?.[id] !== track) {
         mismatchedTracks++;
+      }
+      if (dataset.segIds?.[id] !== segId) {
+        mismatchedLabels++;
       }
       // Push row data to the labels.
       for (let labelIdx = 0; labelIdx < labelNames.length; labelIdx++) {
@@ -518,7 +530,15 @@ export class AnnotationData implements IAnnotationData {
         annotationData.setLabelValueOnId(labelIdx, id, value);
       }
     }
-    return { annotationData, mismatchedTimes, mismatchedTracks, unparseableRows, invalidIds, totalRows: data.length };
+    return {
+      annotationData,
+      mismatchedTimes,
+      mismatchedTracks,
+      mismatchedLabels,
+      unparseableRows,
+      invalidIds,
+      totalRows: data.length,
+    };
   }
 
   toCsv(dataset: Dataset, delimiter: string = ","): string {
