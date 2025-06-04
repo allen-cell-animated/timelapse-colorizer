@@ -97,6 +97,9 @@ const theme = {
         hover: palette.successMediumDark,
       },
     },
+    upload: {
+      backgroundHover: palette.themeGray,
+    },
     dropdown: {
       backgroundHover: palette.gray10,
       backgroundSelected: palette.themeGray,
@@ -220,6 +223,8 @@ const CssContainer = styled.div`
   --color-collapse-active: ${theme.color.themeDark};
 
   --color-focus-shadow: #f2ebfa;
+
+  --color-upload-background-hover: ${theme.color.upload.backgroundHover};
 
   --color-flag-background: ${theme.color.flag.background};
   --color-flag-text: ${theme.color.themeDark};

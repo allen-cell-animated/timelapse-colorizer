@@ -1,6 +1,6 @@
 import { UploadOutlined } from "@ant-design/icons";
 import { Modal, Radio, Space, Upload, UploadFile } from "antd";
-import React, { ReactElement, useContext, useState } from "react";
+import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
@@ -8,7 +8,6 @@ import { useViewerStateStore } from "../../../state";
 import { FlexColumn } from "../../../styles/utils";
 
 import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "../../../colorizer/AnnotationData";
-import { AppThemeContext } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import MessageCard from "../../MessageCard";
 import AnnotationFileInfo from "./AnnotationFileInfo";
@@ -30,10 +29,30 @@ const MultilineRadio = styled(Radio)<{ $expanded?: boolean }>`
   }
 `;
 
+const StyledUpload = styled(Upload.Dragger)`
+  &&& {
+    color: var(--color-text-hint);
+    & * {
+      transition: all 0.2s ease-in-out;
+    }
+
+    & .ant-upload-drag-container span {
+      font-size: var(--font-size-header);
+    }
+
+    &:hover {
+      color: var(--color-text-theme);
+
+      & .ant-upload-drag {
+        background-color: var(--color-upload-background-hover);
+      }
+    }
+  }
+`;
+
 export default function AnnotationImportButton(props: AnnotationImportButtonProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
   const { annotationState } = props;
-  const theme = useContext(AppThemeContext);
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parseResult, setParseResult] = useState<AnnotationParseResult | null>(null);
@@ -124,7 +143,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
               }}
             ></AnnotationFileInfo>
           ) : (
-            <Upload.Dragger
+            <StyledUpload
               name="file"
               multiple={false}
               accept=".csv"
@@ -132,13 +151,13 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
               showUploadList={true}
               beforeUpload={handleFileUpload}
             >
-              <>
-                <span style={{ color: theme.color.text.hint, fontSize: theme.font.size.header }}>
+              <FlexColumn>
+                <span>
                   <UploadOutlined />
                 </span>
-                <p style={{ color: theme.color.text.hint }}>Click or drag a .csv file to this area to upload</p>
-              </>
-            </Upload.Dragger>
+                <p>Click or drag a .csv file to this area to upload</p>
+              </FlexColumn>
+            </StyledUpload>
           )}
           {parseResult && hasExistingAnnotationData && (
             <MessageCard type="info">
