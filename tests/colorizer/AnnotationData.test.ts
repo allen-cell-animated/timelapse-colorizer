@@ -453,5 +453,51 @@ describe("AnnotationData", () => {
       expect(labels[0].ids).toEqual(new Set([0, 1, 2]));
       expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2]));
     });
+
+    it("parses label ID as a column", () => {
+      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `3,3,1,3,${BOOLEAN_VALUE_TRUE}\r\n`;
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const annotationData = result.annotationData;
+
+      // Does not parse label ID as an annotation, just as metadata
+      const labels = annotationData.getLabels();
+      expect(labels.length).toBe(1);
+      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3]));
+    });
+
+    it("detects mismatches on label ID", () => {
+      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `3,15,1,3,${BOOLEAN_VALUE_TRUE}\r\n`; // Mismatch on this line
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+
+      expect(result.mismatchedLabels).toEqual(1);
+      expect(result.annotationData.getLabels().length).toBe(1);
+    });
+
+    it("allows empty/NaN label IDs", () => {
+      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `3,,1,3,${BOOLEAN_VALUE_TRUE}\r\n`; // Empty on this line
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+
+      expect(result.mismatchedLabels).toEqual(0);
+      expect(result.unparseableRows).toEqual(0);
+    });
   });
 });
