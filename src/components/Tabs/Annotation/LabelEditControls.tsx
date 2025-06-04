@@ -1,4 +1,4 @@
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { CloseCircleFilled, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Popconfirm, Popover, Radio, Tooltip } from "antd";
 import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, useState } from "react";
 
@@ -202,6 +202,9 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         description={"This cannot be undone."}
         open={showDeletePopup}
         onOpenChange={hideOnOpenChange(setShowDeletePopup)}
+        okButtonProps={{ danger: true }}
+        okText="Delete"
+        icon={<CloseCircleFilled style={{ color: theme.color.text.error }} />}
         onConfirm={deleteLabel}
         onCancel={() => setShowDeletePopup(false)}
         placement="bottom"
