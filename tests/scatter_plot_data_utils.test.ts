@@ -104,6 +104,7 @@ describe("splitTraceData", () => {
       x: [],
       y: [],
       objectIds: [],
+      segIds: [],
       trackIds: [],
       color: "#ff00ff",
       marker: {},
@@ -112,6 +113,7 @@ describe("splitTraceData", () => {
       traceData.x.push(i);
       traceData.y.push(i);
       traceData.objectIds.push(i);
+      traceData.segIds.push(i);
       traceData.trackIds.push(i);
     }
     return traceData;
@@ -141,7 +143,7 @@ describe("splitTraceData", () => {
         const originalIndex = i * 100 + j;
         expect(trace.x[j]).to.equal(traceData.x[originalIndex]);
         expect(trace.y[j]).to.equal(traceData.y[originalIndex]);
-        expect(trace.objectIds[j]).to.equal(traceData.objectIds[originalIndex]);
+        expect(trace.segIds[j]).to.equal(traceData.segIds[originalIndex]);
         expect(trace.trackIds[j]).to.equal(traceData.trackIds[originalIndex]);
       }
     }

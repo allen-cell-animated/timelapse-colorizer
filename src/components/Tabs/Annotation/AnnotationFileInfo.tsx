@@ -42,7 +42,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
       return [];
     }
     const conversionWarnings: string[] = [];
-    const { invalidIds, mismatchedTimes, mismatchedTracks, unparseableRows } = parseResult;
+    const { invalidIds, mismatchedTimes, mismatchedTracks, mismatchedLabels, unparseableRows } = parseResult;
     if (invalidIds >= 1) {
       const warningText = formatQuantityString(invalidIds, "object had an ID that is", "objects had IDs that are");
       conversionWarnings.push(`- ${warningText} not in the dataset and could not be parsed.`);
@@ -51,12 +51,12 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
       const warningText = formatQuantityString(unparseableRows, "object", "objects");
       conversionWarnings.push(`- ${warningText} had non-numeric values in a metadata column and could not be parsed.`);
     }
-    const maxMismatchedData = Math.max(mismatchedTimes, mismatchedTracks);
+    const maxMismatchedData = Math.max(mismatchedTimes, mismatchedTracks, mismatchedLabels);
     if (maxMismatchedData >= 1) {
       const warningText = formatQuantityString(
         maxMismatchedData,
-        "object had a time or track that does",
-        "objects had times or tracks that do"
+        "object had a time, track, or label that does",
+        "objects had times, tracks, or labels that do"
       );
       conversionWarnings.push(`- ${warningText} not match the current dataset.`);
     }

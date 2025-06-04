@@ -185,6 +185,7 @@ describe("AnnotationData", () => {
   describe("toCsv", () => {
     const mockDataset = {
       getTime: (id: number): number => [0, 1, 2, 3][id],
+      getSegmentationId: (id: number): number => [0, 1, 2, 3][id],
       getTrackId: (id: number) => [0, 1, 2, 3][id],
     } as unknown as Dataset;
 
@@ -202,10 +203,10 @@ describe("AnnotationData", () => {
       const booleanTrue = BOOLEAN_VALUE_TRUE;
       const booleanFalse = BOOLEAN_VALUE_FALSE;
       expect(csv).to.equal(
-        `ID,Track,Frame,Label 1,Label 2,Label 3\r\n` +
-          `0,0,0,${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
-          `1,1,1,${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
-          `2,2,2,${booleanFalse},${booleanFalse},${booleanTrue}`
+        `ID,Label,Track,Frame,Label 1,Label 2,Label 3\r\n` +
+          `0,0,0,0,${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
+          `1,1,1,1,${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
+          `2,2,2,2,${booleanFalse},${booleanFalse},${booleanTrue}`
       );
     });
 
@@ -218,7 +219,9 @@ describe("AnnotationData", () => {
       annotationData.setLabelValueOnIds(0, [3], "C");
 
       const csv = annotationData.toCsv(mockDataset);
-      expect(csv).to.equal(`ID,Track,Frame,Label 1\r\n` + `0,0,0,A\r\n` + `1,1,1,A\r\n` + `2,2,2,B\r\n` + `3,3,3,C`);
+      expect(csv).to.equal(
+        `ID,Label,Track,Frame,Label 1\r\n` + `0,0,0,0,A\r\n` + `1,1,1,1,A\r\n` + `2,2,2,2,B\r\n` + `3,3,3,3,C`
+      );
     });
 
     it("handles labels with quote and comma characters", () => {
@@ -240,11 +243,11 @@ describe("AnnotationData", () => {
       const booleanTrue = BOOLEAN_VALUE_TRUE;
       const booleanFalse = BOOLEAN_VALUE_FALSE;
       expect(csv).to.equal(
-        `ID,Track,Frame,"""label",",,,,,","a"",""fake label",""","""\r\n` +
-          `0,0,0,${booleanTrue},${booleanFalse},${booleanFalse},${booleanFalse}\r\n` +
-          `1,1,1,${booleanFalse},${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
-          `2,2,2,${booleanFalse},${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
-          `3,3,3,${booleanFalse},${booleanFalse},${booleanFalse},${booleanTrue}`
+        `ID,Label,Track,Frame,"""label",",,,,,","a"",""fake label",""","""\r\n` +
+          `0,0,0,0,${booleanTrue},${booleanFalse},${booleanFalse},${booleanFalse}\r\n` +
+          `1,1,1,1,${booleanFalse},${booleanTrue},${booleanFalse},${booleanFalse}\r\n` +
+          `2,2,2,2,${booleanFalse},${booleanFalse},${booleanTrue},${booleanFalse}\r\n` +
+          `3,3,3,3,${booleanFalse},${booleanFalse},${booleanFalse},${booleanTrue}`
       );
     });
 
@@ -258,7 +261,10 @@ describe("AnnotationData", () => {
 
       const csv = annotationData.toCsv(mockDataset);
       expect(csv).to.equal(
-        `ID,Track,Frame,Label 1\r\n` + `0,0,0,"""value"""\r\n` + `1,1,1,"value,value,value"\r\n` + `2,2,2,",,,"`
+        `ID,Label,Track,Frame,Label 1\r\n` +
+          `0,0,0,0,"""value"""\r\n` +
+          `1,1,1,1,"value,value,value"\r\n` +
+          `2,2,2,2,",,,"`
       );
     });
 
@@ -269,7 +275,7 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel({ name: "\t\tLabel 3 \t " });
 
       const csv = annotationData.toCsv(mockDataset);
-      expect(csv).to.equal(`ID,Track,Frame,Label 1,Label 2,Label 3\r\n`);
+      expect(csv).to.equal(`ID,Label,Track,Frame,Label 1,Label 2,Label 3\r\n`);
     });
 
     it("escapes column names starting with special characters", () => {
@@ -283,7 +289,7 @@ describe("AnnotationData", () => {
       annotationData.createNewLabel({ name: "\rlabel 2" });
 
       const csv = annotationData.toCsv(mockDataset);
-      expect(csv).to.equal(`ID,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`);
+      expect(csv).to.equal(`ID,Label,Track,Frame,"'=SUM(A2:A5)","'@label","'+label","'-label",label 1,label 2\r\n`);
     });
   });
 
@@ -452,6 +458,52 @@ describe("AnnotationData", () => {
       expect(labels[0].options.type).toBe(LabelType.BOOLEAN);
       expect(labels[0].ids).toEqual(new Set([0, 1, 2]));
       expect(labels[0].valueToIds.get(BOOLEAN_VALUE_TRUE)).toEqual(new Set([0, 1, 2]));
+    });
+
+    it("parses label ID as a column", () => {
+      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `3,3,1,3,${BOOLEAN_VALUE_TRUE}\r\n`;
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+      const annotationData = result.annotationData;
+
+      // Does not parse label ID as an annotation, just as metadata
+      const labels = annotationData.getLabels();
+      expect(labels.length).toBe(1);
+      expect(labels[0].options.name).toBe(booleanLabelKey);
+      expect(labels[0].ids).toEqual(new Set([0, 1, 2, 3]));
+    });
+
+    it("detects mismatches on label ID", () => {
+      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `3,15,1,3,${BOOLEAN_VALUE_TRUE}\r\n`; // Mismatch on this line
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+
+      expect(result.mismatchedLabels).toEqual(1);
+      expect(result.annotationData.getLabels().length).toBe(1);
+    });
+
+    it("allows empty/NaN label IDs", () => {
+      const mockCsvHeaders = `ID,Label,Track,Frame,${booleanLabelKey}\r\n`;
+      const mockCsvData =
+        `0,0,0,0,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `1,1,0,1,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `2,2,0,2,${BOOLEAN_VALUE_TRUE}\r\n` +
+        `3,,1,3,${BOOLEAN_VALUE_TRUE}\r\n`; // Empty on this line
+      const mockCsv = mockCsvHeaders + mockCsvData;
+      const result = AnnotationData.fromCsv(MOCK_DATASET, mockCsv);
+
+      expect(result.mismatchedLabels).toEqual(0);
+      expect(result.unparseableRows).toEqual(0);
     });
   });
 

@@ -160,6 +160,8 @@ export default class Dataset {
     this.features = new Map();
     this.cachedTracks = new Map();
     this.metadata = defaultMetadata;
+
+    this.getSegmentationId = this.getSegmentationId.bind(this);
   }
 
   private resolvePathToUrl = (url: string): string => {
@@ -678,6 +680,10 @@ export default class Dataset {
   /** get track id of a given cell id */
   public getTrackId(index: number): number {
     return this.trackIds?.[index] || 0;
+  }
+
+  public getSegmentationId(index: number): number {
+    return this.segIds?.[index] || 0;
   }
 
   /**
