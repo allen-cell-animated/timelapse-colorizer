@@ -1,4 +1,4 @@
-import { UploadOutlined } from "@ant-design/icons";
+import { ImportOutlined, UploadOutlined } from "@ant-design/icons";
 import { Modal, Radio, Space, Upload, UploadFile } from "antd";
 import React, { ReactElement, useState } from "react";
 import styled, { css } from "styled-components";
@@ -199,6 +199,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         }}
         disabled={dataset === null}
       >
+        <ImportOutlined style={{ marginRight: "2px" }} />
         Import CSV
       </TextButton>
     </div>

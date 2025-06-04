@@ -1,4 +1,4 @@
-import { MenuOutlined, TableOutlined } from "@ant-design/icons";
+import { ExportOutlined, MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Modal, Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
 import { useShallow } from "zustand/shallow";
@@ -223,6 +223,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             }}
             disabled={!hasLabelData}
           >
+            <ExportOutlined style={{ marginRight: "2px" }} />
             Export CSV
           </TextButton>
         </FlexRow>
