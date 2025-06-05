@@ -345,6 +345,11 @@ export class AnnotationData implements IAnnotationData {
 
   // Setters
 
+  // TODO: There's a bug where, when the dataset is changed, the
+  // timeToLabelIdMap is not updated and onscreen rendering will look incorrect.
+  // It's also possible that annotations should be cleared in that case though,
+  // since the annotations will not match the dataset anymore.
+  // Maybe make this public? TBD
   private markIdMapAsDirty(): void {
     this.timeToLabelIdMap = null;
   }
