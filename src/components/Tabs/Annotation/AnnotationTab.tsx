@@ -175,8 +175,6 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     </>
   );
 
-  console.log("Color picker open:", isColorPickerOpen);
-
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRow style={{ width: "100%", justifyContent: "space-between" }} ref={modalContainerRef}>
@@ -194,6 +192,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           width={360}
           title="Create new annotation"
           onCancel={() => {
+            // Close the color picker first if it's open before allowing the
+            // modal to be closed.
             if (isColorPickerOpen) {
               setIsColorPickerOpen(false);
             } else {
@@ -217,7 +217,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
                 setShowCreateLabelModal(false);
                 setIsColorPickerOpen(false);
               }}
-              onColorPickerOpenChange={(open) => setTimeout(() => setIsColorPickerOpen(open), 15)}
+              // Requires a delay, otherwise the modal will immediately close
+              onColorPickerOpenChange={(open) => setTimeout(() => setIsColorPickerOpen(open), 1)}
               colorPickerOpen={isColorPickerOpen}
               zIndex={Z_INDEX_MODAL + 50}
               focusNameInput={true}

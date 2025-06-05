@@ -36,7 +36,6 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
 
   const [showCreatePopover, setShowCreatePopover] = useState(false);
   const createPopoverContainerRef = useRef<HTMLDivElement>(null);
-
   const [showEditPopover, setShowEditPopover] = useState(false);
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
 
@@ -71,8 +70,6 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
 
   const onClickCreateButton = (): void => {
     setShowCreatePopover(!showCreatePopover);
-    setShowEditPopover(false);
-    setShowDeletePopup(false);
   };
 
   // Delete button popover handlers
@@ -84,8 +81,6 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
 
   const onClickDeleteButton = (): void => {
     setShowDeletePopup(!showDeletePopup);
-    setShowCreatePopover(false);
-    setShowEditPopover(false);
   };
 
   /**

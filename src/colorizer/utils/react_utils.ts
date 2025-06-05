@@ -276,12 +276,10 @@ export type AnnotationState = {
   setVisibility: (visible: boolean) => void;
   /** 
    * Current selection mode. This is typically the `baseSelectionMode`, but it
-   * may be temporarily overridden  by user hotkeys.
+   * may be temporarily overridden by user hotkeys.
    */
   selectionMode: AnnotationSelectionMode;
-  /** 
-   * User-selected selection mode.
-  */
+  /** User-selected selection mode. */
   baseSelectionMode: AnnotationSelectionMode;
   setBaseSelectionMode: (mode: AnnotationSelectionMode) => void;
   /** 
