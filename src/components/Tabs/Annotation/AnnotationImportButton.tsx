@@ -42,10 +42,6 @@ const StyledUpload = styled(Upload.Dragger)`
 
     &:hover {
       color: var(--color-text-theme);
-
-      & .ant-upload-drag {
-        background-color: var(--color-upload-background-hover);
-      }
     }
   }
 `;
@@ -155,7 +151,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
                 <span>
                   <UploadOutlined />
                 </span>
-                <p>Click or drag a .csv file to this area to upload</p>
+                <p>Click or drag a .csv file here to upload</p>
               </FlexColumn>
             </StyledUpload>
           )}
