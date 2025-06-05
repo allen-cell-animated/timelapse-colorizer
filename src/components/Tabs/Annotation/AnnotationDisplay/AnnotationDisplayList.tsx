@@ -2,20 +2,20 @@ import React, { ReactElement, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { Color } from "three";
 
-import { TagIconSVG } from "../../../assets";
-import { Dataset, Track } from "../../../colorizer";
-import { ScrollShadowContainer, useScrollShadow } from "../../../colorizer/utils/react_utils";
-import { FlexColumn, FlexColumnAlignCenter, FlexRowAlignCenter } from "../../../styles/utils";
+import { Dataset, Track } from "../../../../colorizer";
+import { getEmptyLookupInfo, getTrackLookups, LookupInfo } from "../../../../colorizer/utils/annotation_utils";
+import { FlexColumn, FlexRowAlignCenter } from "../../../../styles/utils";
 
-import { AppThemeContext } from "../../AppStyle";
-import DropdownItem from "../../Dropdowns/DropdownItem";
+import { AppThemeContext } from "../../../AppStyle";
+import AnnotationTrackThumbnail from "../AnnotationTrackThumbnail";
 import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
-import AnnotationTrackThumbnail from "./AnnotationTrackThumbnail";
+import ValueAndTrackList from "./ValueAndTrackList";
 
 type AnnotationDisplayListProps = {
   dataset: Dataset | null;
   ids: number[];
   idToValue: Map<number, string> | undefined;
+  valueToIds: Map<string, Set<number>> | undefined;
   setFrame: (frame: number) => Promise<void>;
   onClickTrack: (trackId: number) => void;
   onClickObjectRow: (record: TableDataType) => void;
@@ -41,86 +41,14 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
 
   const selectedTrackId = props.selectedTrack?.trackId;
 
-  const { scrollShadowStyle, onScrollHandler, scrollRef } = useScrollShadow();
-
-  // Organize ids by track
-  const trackToIds: Map<string, number[]> = useMemo(() => {
+  // Organize ids by track and value for display.
+  const lookupInfo = useMemo((): LookupInfo => {
     if (!props.dataset) {
-      return new Map();
+      return getEmptyLookupInfo();
     }
-    const map: Map<string, number[]> = new Map();
-    for (const id of props.ids) {
-      const trackId: string = props.dataset.getTrackId(id).toString();
-      if (!map.has(trackId)) {
-        map.set(trackId, [id]);
-      } else {
-        const ids = map.get(trackId);
-        if (ids) {
-          ids.push(id);
-        }
-      }
-    }
-    return map;
-  }, [props.dataset, props.ids]);
-
-  // Track IDs, in order of appearance in the ID list. The track that was last
-  // added will be at the top of the list.
-  const trackIds = useMemo(() => {
-    return Array.from(trackToIds.keys())
-      .map((trackId) => parseInt(trackId, 10))
-      .reverse();
-  }, [trackToIds]);
-
-  let listContents;
-  if (props.ids.length === 0 || props.dataset === null) {
-    // Show placeholder if there are no elements
-    listContents = (
-      <FlexRowAlignCenter style={{ width: "100% ", height: "100px" }}>
-        <FlexColumnAlignCenter style={{ margin: "16px 0 10px 0", width: "100%", color: theme.color.text.disabled }}>
-          <TagIconSVG style={{ width: "24px", height: "24px", marginBottom: 0 }} />
-          <p>Annotated tracks will appear here.</p>
-        </FlexColumnAlignCenter>
-      </FlexRowAlignCenter>
-    );
-  } else {
-    listContents = (
-      <ul style={{ marginTop: 0 }}>
-        {trackIds.map((trackId) => {
-          const track = props.dataset?.getTrack(trackId);
-          const ids = trackToIds.get(trackId.toString())!;
-          const isSelectedTrack = props.selectedTrack?.trackId === trackId;
-          return (
-            <li key={trackId}>
-              <DropdownItem
-                key={trackId}
-                onClick={() => {
-                  props.onClickTrack(trackId);
-                }}
-                selected={isSelectedTrack}
-              >
-                <FlexRowAlignCenter $gap={5}>
-                  <AnnotationTrackThumbnail
-                    widthPx={75}
-                    heightPx={14}
-                    ids={ids}
-                    track={track ?? null}
-                    dataset={props.dataset}
-                    color={props.labelColor}
-                  ></AnnotationTrackThumbnail>
-                  <p style={{ margin: 0 }}>
-                    {trackId}{" "}
-                    <span style={{ color: theme.color.text.hint }}>
-                      ({ids.length}/{track?.times.length ?? 0})
-                    </span>
-                  </p>
-                </FlexRowAlignCenter>
-              </DropdownItem>
-            </li>
-          );
-        })}
-      </ul>
-    );
-  }
+    return getTrackLookups(props.dataset, props.ids, props.idToValue, props.valueToIds);
+  }, [props.dataset, props.ids, props.idToValue, props.valueToIds]);
+  const { trackIds, trackToIds } = lookupInfo;
 
   const selectedTrackIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
 
@@ -160,11 +88,8 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
       {/* Column 1 is all of the tracks displayed as an unordered list */}
       <ListLayoutContainer>
         <FlexColumn style={{ height: "100%", width: "45%" }}>
-          <div style={{ position: "relative" }}>
-            <div style={{ height: "490px", overflowY: "auto" }} ref={scrollRef} onScroll={onScrollHandler}>
-              {listContents}
-            </div>
-            <ScrollShadowContainer style={scrollShadowStyle} />
+          <div style={{ height: "480px", overflowY: "auto" }}>
+            <ValueAndTrackList lookupInfo={lookupInfo} {...props} />
           </div>
         </FlexColumn>
         {/* Column 2  is a side panel showing the labeled IDs for the selected track. */}

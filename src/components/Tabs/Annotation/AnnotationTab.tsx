@@ -16,8 +16,8 @@ import { Z_INDEX_MODAL } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import SelectionDropdown from "../../Dropdowns/SelectionDropdown";
 import LoadingSpinner from "../../LoadingSpinner";
-import AnnotationDisplayList from "./AnnotationDisplayList";
-import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplayTable";
+import AnnotationDisplayList from "./AnnotationDisplay/AnnotationDisplayList";
+import AnnotationDisplayTable, { TableDataType } from "./AnnotationDisplay/AnnotationDisplayTable";
 import AnnotationImportButton from "./AnnotationImportButton";
 import AnnotationModeButton from "./AnnotationModeButton";
 import CreateLabelForm from "./CreateLabelForm";
@@ -155,6 +155,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   }, [currentLabelIdx, annotationData]);
   const isMultiValueLabel = selectedLabel && selectedLabel?.options.type !== LabelType.BOOLEAN;
   const idToValue = isMultiValueLabel ? selectedLabel.idToValue : undefined;
+  const valueToIds = isMultiValueLabel ? selectedLabel.valueToIds : undefined;
 
   const labelSelectionDropdown = (
     <>
@@ -310,6 +311,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
             dataset={store.dataset}
             ids={tableIds}
             idToValue={idToValue}
+            valueToIds={valueToIds}
             highlightRange={highlightedIds}
             rangeStartId={props.annotationState.rangeStartId}
             selectedTrack={store.selectedTrack}
