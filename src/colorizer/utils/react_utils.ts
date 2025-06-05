@@ -274,8 +274,16 @@ export type AnnotationState = {
   setIsAnnotationModeEnabled: (enabled: boolean) => void;
   visible: boolean;
   setVisibility: (visible: boolean) => void;
+  /** 
+   * Current selection mode. This is typically the `baseSelectionMode`, but it
+   * may be temporarily overridden  by user hotkeys.
+   */
   selectionMode: AnnotationSelectionMode;
-  setSelectionMode: (mode: AnnotationSelectionMode) => void;
+  /** 
+   * User-selected selection mode.
+  */
+  baseSelectionMode: AnnotationSelectionMode;
+  setBaseSelectionMode: (mode: AnnotationSelectionMode) => void;
   /** 
    * The ID of the last clicked object. `null` if the user clicked on the
    * background. 
@@ -583,7 +591,8 @@ export const useAnnotations = (): AnnotationState => {
     visible,
     setVisibility,
     selectionMode,
-    setSelectionMode,
+    baseSelectionMode,
+    setBaseSelectionMode: setSelectionMode,
     data,
     handleAnnotationClick,
     nextDefaultLabelValue,

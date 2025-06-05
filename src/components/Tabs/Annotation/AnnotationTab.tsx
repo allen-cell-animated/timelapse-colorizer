@@ -262,7 +262,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               selectedLabel={selectedLabel}
               selectedLabelIdx={currentLabelIdx}
               selectionMode={props.annotationState.selectionMode}
-              setSelectionMode={props.annotationState.setSelectionMode}
+              setSelectionMode={props.annotationState.setBaseSelectionMode}
               defaultLabelOptions={props.annotationState.data.getNextDefaultLabelSettings()}
             >
               {labelSelectionDropdown}

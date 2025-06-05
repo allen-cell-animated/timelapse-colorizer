@@ -5,6 +5,7 @@ import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, 
 import { TagAddIconSVG } from "../../../assets";
 import { AnnotationSelectionMode } from "../../../colorizer";
 import { StyledRadioGroup } from "../../../styles/components";
+import { formatQuantityString } from "../../../utils/formatting";
 
 import { DEFAULT_ANNOTATION_LABEL_COLORS, LabelData, LabelOptions } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
@@ -82,14 +83,9 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
   };
 
   const onClickDeleteButton = (): void => {
-    if (props.selectedLabel.ids.size > 0) {
-      // Ask for confirmation only if there are selected objects.
-      setShowDeletePopup(!showDeletePopup);
-      setShowCreatePopover(false);
-      setShowEditPopover(false);
-    } else {
-      deleteLabel();
-    }
+    setShowDeletePopup(!showDeletePopup);
+    setShowCreatePopover(false);
+    setShowEditPopover(false);
   };
 
   /**
@@ -203,7 +199,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         </div>
       </Popover>
       <Popconfirm
-        title={`Delete annotation with ${props.selectedLabel.ids.size} object(s)?`}
+        title={`Delete annotation with ${formatQuantityString(props.selectedLabel.ids.size, "object", "objects")}?`}
         description={"This cannot be undone."}
         open={showDeletePopup}
         onOpenChange={createOpenChangeHandler(setShowDeletePopup)}
