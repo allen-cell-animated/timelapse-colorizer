@@ -69,7 +69,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   const { trackIds, trackToIds } = lookupInfo;
 
   // By default, highlight all selected IDs in the selected track.
-  let highlightedIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
+  let selectedIds = trackToIds.get(selectedTrackId?.toString() ?? "") ?? [];
   let bgIds: number[] = [];
 
   // If there is a selected ID in the current frame, highlight only IDs that
@@ -82,12 +82,12 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
   // Hovering takes precedence over current frame.
   const highlightedId = hoveredValue ? hoveredId : currentId;
   const highlightedValue = hoveredValue ?? currentValue;
-  if (highlightedValue !== undefined && highlightedId && highlightedIds.includes(highlightedId)) {
+  if (highlightedValue !== undefined && highlightedId && selectedIds.includes(highlightedId)) {
     // Filter so only IDs with matching values are highlighted, and the rest are
     // background.
-    const currentValueIds = highlightedIds.filter((id) => props.idToValue?.get(id) === highlightedValue);
-    bgIds = highlightedIds;
-    highlightedIds = currentValueIds;
+    const currentValueIds = selectedIds.filter((id) => props.idToValue?.get(id) === highlightedValue);
+    bgIds = selectedIds;
+    selectedIds = currentValueIds;
   }
 
   // Show a marker in the selected track thumbnail if the last clicked ID is
@@ -153,7 +153,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                     lastHoveredX.current = x;
                   }
                 }}
-                ids={highlightedIds}
+                ids={selectedIds}
                 bgIds={bgIds}
                 track={props.selectedTrack}
                 dataset={props.dataset}
@@ -178,7 +178,7 @@ export default function AnnotationDisplayList(props: AnnotationDisplayListProps)
                 <span>
                   Track {selectedTrackId}{" "}
                   <span style={{ color: theme.color.text.hint }}>
-                    ({highlightedIds.length}/{props.selectedTrack?.times.length})
+                    ({selectedIds.length}/{props.selectedTrack?.times.length})
                   </span>
                 </span>
               ) : (
