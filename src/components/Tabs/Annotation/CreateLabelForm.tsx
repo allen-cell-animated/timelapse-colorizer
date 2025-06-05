@@ -45,6 +45,13 @@ const isMetadataColumnName = (name: string): boolean => {
 export default function CreateLabelForm(inputProps: CreateLabelFormProps): ReactElement {
   const props = { ...defaultProps, ...inputProps };
 
+  const [colorPickerOpenState, setColorPickerOpenState] = useState(false);
+  const onColorPickerOpenChange = (open: boolean): void => {
+    setColorPickerOpenState(open);
+    props.onColorPickerOpenChange?.(open);
+  };
+  const colorPickerOpen = props.colorPickerOpen ?? colorPickerOpenState;
+
   const [labelType, setLabelType] = useState<LabelType>(props.initialLabelOptions.type);
   const [autoIncrement, setAutoIncrement] = useState(props.initialLabelOptions.autoIncrement);
   const [color, setColor] = useState(props.initialLabelOptions.color);
@@ -112,8 +119,8 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
                 onChange={onColorPickerChange}
                 disabledAlpha={true}
                 presets={DEFAULT_LABEL_COLOR_PRESETS}
-                onOpenChange={props.onColorPickerOpenChange}
-                open={props.colorPickerOpen}
+                onOpenChange={onColorPickerOpenChange}
+                open={colorPickerOpen}
               />
             </div>
           </ConfigProvider>
