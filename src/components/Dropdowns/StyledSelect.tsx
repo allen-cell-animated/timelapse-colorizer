@@ -84,6 +84,7 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
 
   & .react-select__control {
     box-shadow: none;
+    cursor: pointer;
 
     ${(props) => {
       // TODO: Can this be composed with Ant styling? It's similar to IconButton.tsx
@@ -164,6 +165,15 @@ const SelectContainer = styled.div<{ $type: ButtonProps["type"] | "outlined" }>`
 
     &.react-select__control--menu-is-open {
       border: 1px solid var(--color-button-outline-active);
+    }
+  }
+
+  /** Show pointer cursor over dropdown options */
+  & .react-select__option {
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
     }
   }
 `;

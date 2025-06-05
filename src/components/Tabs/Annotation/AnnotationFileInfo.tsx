@@ -3,7 +3,7 @@ import { Card } from "antd";
 import React, { ReactElement, useContext, useMemo } from "react";
 
 import { FlexColumn, FlexRow } from "../../../styles/utils";
-import { renderStringArrayAsJsx } from "../../../utils/formatting";
+import { formatQuantityString, renderStringArrayAsJsx } from "../../../utils/formatting";
 
 import { AnnotationParseResult } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
@@ -17,10 +17,6 @@ type AnnotationFileInfoProps = {
   parseResult: AnnotationParseResult | null;
   clearFile: () => void;
 };
-
-function formatQuantityString(quantity: number, singular: string, plural: string): string {
-  return `${quantity} ${quantity === 1 ? singular : plural}`;
-}
 
 function formatTotalQuantityString(quantity: number, total: number, singular: string, plural: string): string {
   if (quantity === total) {
