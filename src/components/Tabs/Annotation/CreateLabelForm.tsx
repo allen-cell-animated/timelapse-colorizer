@@ -16,13 +16,15 @@ type CreateLabelFormProps = {
   onConfirm: (options: Partial<LabelOptions>) => void;
   onCancel: () => void;
   onColorChanged?: (color: Color) => void;
+  onColorPickerOpenChange?: (open: boolean) => void;
+  colorPickerOpen?: boolean;
   confirmText?: string;
   focusNameInput?: boolean;
   zIndex?: number;
   allowTypeSelection?: boolean;
 };
 
-const defaultProps: Partial<CreateLabelFormProps> = {
+const defaultProps = {
   confirmText: "Create",
   focusNameInput: true,
   onColorChanged: () => {},
@@ -41,7 +43,7 @@ const isMetadataColumnName = (name: string): boolean => {
 };
 
 export default function CreateLabelForm(inputProps: CreateLabelFormProps): ReactElement {
-  const props = { ...defaultProps, ...inputProps } as Required<CreateLabelFormProps>;
+  const props = { ...defaultProps, ...inputProps };
 
   const [labelType, setLabelType] = useState<LabelType>(props.initialLabelOptions.type);
   const [autoIncrement, setAutoIncrement] = useState(props.initialLabelOptions.autoIncrement);
@@ -110,6 +112,8 @@ export default function CreateLabelForm(inputProps: CreateLabelFormProps): React
                 onChange={onColorPickerChange}
                 disabledAlpha={true}
                 presets={DEFAULT_LABEL_COLOR_PRESETS}
+                onOpenChange={props.onColorPickerOpenChange}
+                open={props.colorPickerOpen}
               />
             </div>
           </ConfigProvider>
