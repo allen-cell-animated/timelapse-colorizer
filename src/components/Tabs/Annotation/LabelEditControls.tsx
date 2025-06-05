@@ -34,8 +34,11 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
   const theme = useContext(AppThemeContext);
 
   const [showCreatePopover, setShowCreatePopover] = useState(false);
+  const [createColorPickerOpen, setCreateColorPickerOpen] = useState(false);
   const createPopoverContainerRef = useRef<HTMLDivElement>(null);
+
   const [showEditPopover, setShowEditPopover] = useState(false);
+  const [editColorPickerOpen, setEditColorPickerOpen] = useState(false);
   const editPopoverContainerRef = useRef<HTMLDivElement>(null);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
@@ -46,6 +49,9 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
 
   const onClickEditButton = (): void => {
     setShowEditPopover(!showEditPopover);
+    setEditColorPickerOpen(false);
+    setShowCreatePopover(false);
+    setShowDeletePopup(false);
     savedLabelOptions.current = {
       color: props.selectedLabel.options.color.clone(),
       name: props.selectedLabel.options.name,
@@ -53,10 +59,15 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
   };
 
   const onClickEditCancel = (): void => {
-    setShowEditPopover(false);
-    // Restore saved label options
-    if (savedLabelOptions.current) {
-      props.setLabelOptions(savedLabelOptions.current);
+    if (editColorPickerOpen) {
+      // If the color picker is open, close it.
+      setEditColorPickerOpen(false);
+    } else {
+      setShowEditPopover(false);
+      // Restore saved label options
+      if (savedLabelOptions.current) {
+        props.setLabelOptions(savedLabelOptions.current);
+      }
     }
   };
 
@@ -69,6 +80,9 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
 
   const onClickCreateButton = (): void => {
     setShowCreatePopover(!showCreatePopover);
+    setCreateColorPickerOpen(false);
+    setShowEditPopover(false);
+    setShowDeletePopup(false);
   };
 
   // Delete button popover handlers
@@ -81,7 +95,9 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
   const onClickDeleteButton = (): void => {
     if (props.selectedLabel.ids.size > 0) {
       // Ask for confirmation only if there are selected objects.
-      setShowDeletePopup(true);
+      setShowDeletePopup(!showDeletePopup);
+      setShowCreatePopover(false);
+      setShowEditPopover(false);
     } else {
       deleteLabel();
     }
@@ -91,9 +107,33 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
    * Popovers can report when a user has clicked off of them.
    * This creates a handler that will close the popover when the user clicks outside of it.
    */
-  const hideOnOpenChange = (setOpen: (open: boolean) => void) => {
+  const createOpenChangeHandler = (setOpen: (open: boolean) => void) => {
     return (open: boolean) => {
       if (!open) setOpen(false);
+    };
+  };
+
+  /**
+   * For popovers with color pickers. Creates a handler that will only close the
+   * popover if the color picker is not open. If the color picker is open, it
+   * will close the color picker instead.
+   */
+  const createOpenChangeHandlerWithPicker = (
+    setOpen: (open: boolean) => void,
+    pickerOpen: boolean,
+    setPickerOpen: (open: boolean) => void
+  ) => {
+    return (open: boolean) => {
+      if (!open) {
+        if (pickerOpen) {
+          // If the color picker is open, close it first.
+          setPickerOpen(false);
+        } else {
+          // Otherwise, allow the popover to be closed.
+          setOpen(false);
+          setPickerOpen(false);
+        }
+      }
     };
   };
 
@@ -102,6 +142,8 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
     setShowCreatePopover(false);
     setShowEditPopover(false);
     setShowDeletePopup(false);
+    setCreateColorPickerOpen(false);
+    setEditColorPickerOpen(false);
   }, [props.selectedLabelIdx]);
 
   return (
@@ -150,10 +192,16 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
             onConfirm={props.onCreateNewLabel}
             onCancel={() => setShowCreatePopover(false)}
             confirmText="Create"
+            colorPickerOpen={createColorPickerOpen}
+            onColorPickerOpenChange={setCreateColorPickerOpen}
           />
         }
         open={showCreatePopover}
-        onOpenChange={hideOnOpenChange(setShowCreatePopover)}
+        onOpenChange={createOpenChangeHandlerWithPicker(
+          setShowCreatePopover,
+          createColorPickerOpen,
+          setCreateColorPickerOpen
+        )}
         getPopupContainer={() => createPopoverContainerRef.current!}
         destroyTooltipOnHide={true}
       >
@@ -182,10 +230,16 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
             }}
             confirmText="Save"
             allowTypeSelection={false}
+            colorPickerOpen={editColorPickerOpen}
+            onColorPickerOpenChange={setEditColorPickerOpen}
           />
         }
         open={showEditPopover}
-        onOpenChange={hideOnOpenChange(setShowEditPopover)}
+        onOpenChange={createOpenChangeHandlerWithPicker(
+          setShowEditPopover,
+          editColorPickerOpen,
+          setEditColorPickerOpen
+        )}
         getPopupContainer={() => editPopoverContainerRef.current!}
         destroyTooltipOnHide={true}
       >
@@ -201,7 +255,7 @@ export default function LabelEditControls(props: PropsWithChildren<LabelEditCont
         title={`Delete annotation with ${props.selectedLabel.ids.size} object(s)?`}
         description={"This cannot be undone."}
         open={showDeletePopup}
-        onOpenChange={hideOnOpenChange(setShowDeletePopup)}
+        onOpenChange={createOpenChangeHandler(setShowDeletePopup)}
         okButtonProps={{ danger: true }}
         okText="Delete"
         icon={<CloseCircleFilled style={{ color: theme.color.text.error }} />}
