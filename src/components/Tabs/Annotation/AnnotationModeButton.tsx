@@ -37,6 +37,7 @@ const AnnotationModeStyledButton = styled(Button)<{ $active: boolean }>`
 type AnnotationModeButtonProps = {
   active: boolean;
   onClick: () => void;
+  hasAnnotations: boolean;
 };
 
 export default function AnnotationModeButton(props: AnnotationModeButtonProps): ReactElement {
@@ -56,7 +57,8 @@ export default function AnnotationModeButton(props: AnnotationModeButtonProps): 
           </FlexRowAlignCenter>
         ) : (
           <FlexRowAlignCenter $gap={6}>
-            <TagIconSVG /> Apply and edit annotations
+            <TagIconSVG />
+            {props.hasAnnotations ? "Edit" : "Create"} annotations
           </FlexRowAlignCenter>
         )}
       </AnnotationModeStyledButton>
