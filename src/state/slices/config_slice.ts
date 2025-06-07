@@ -32,6 +32,10 @@ const OUTLIER_DRAW_SETTINGS_DEFAULT: DrawSettings = {
 
 export type ConfigSliceState = {
   showTrackPath: boolean;
+  // showTrackPathDiscontinuities: boolean;
+  // trackPathColor: Color;
+  // trackPathWidthPx: number;
+
   showScaleBar: boolean;
   showTimestamp: boolean;
   showLegendDuringExport: boolean;

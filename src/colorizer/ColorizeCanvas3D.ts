@@ -48,6 +48,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   private pendingFrame: number;
   private currentFrame: number;
 
+  private trackPathLineId: number | null;
+
   constructor() {
     this.params = null;
     this.view3d = new View3d();
@@ -57,6 +59,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setShowAxis(true);
     this.view3d.setVolumeRenderMode(RENDERMODE_RAYMARCH);
     this.initLights();
+    this.trackPathLineId = null;
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -133,33 +136,65 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
   }
 
-  private updateTrackData(dataset: Dataset | null, track: Track | null): void {
+  private updateTrackData(dataset: Dataset | null, track: Track | null, showDiscontinuities: boolean): void {
+    if (!track && this.volume) {
+      this.view3d.updateDensity(this.volume, 0.5);
+    }
     if (!track || !track.centroids || track.centroids.length === 0 || !dataset) {
       return;
     }
-    // Make a new array of the centroid positions in pixel coordinates.
-    // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
-    const points = new Float32Array(track.duration() * 3);
+    // Initialize track path line if it doesn't exist
+    if (this.trackPathLineId === null && this.trackPathLineId !== -1) {
+      const newId = this.view3d.addLine();
+      if (newId === -1) {
+        return;
+      }
+      this.trackPathLineId = newId;
+    }
+    // Draw line segments between the centroids of the track's objects. Each
+    // segment has a start and end 3D coordinate, for a total of 6 floats per
+    // segment.
+    const points = new Float32Array((track.duration() - 1) * 3 * 2);
 
-    let lastTrackIndex = 0;
-    for (let i = 0; i < track.duration(); i++) {
+    let lastValidTime = track.times[0];
+    let lastValidId = track.ids[0];
+    for (let i = 1; i < track.duration(); i++) {
       const absTime = i + track.startTime();
 
-      let trackIndex = track.times.findIndex((t) => t === absTime);
-      // TODO: How should we handle missing times? Use line segments so we can have discontinuities?
-      if (trackIndex === -1) {
-        // Track has no object for this time, use fallback
-        trackIndex = lastTrackIndex;
-      } else {
-        lastTrackIndex = trackIndex;
-      }
+      const srcId = lastValidId;
+      const currId = track.getIdAtTime(absTime);
+      let dstId = currId;
 
-      const centroid = dataset.getCentroid(track.ids[trackIndex])!;
-      points[3 * i + 0] = centroid[0];
-      points[3 * i + 1] = centroid[1];
-      points[3 * i + 2] = centroid[2];
+      const isMissingTime = currId === -1;
+      const isDiscontinuousWithLastValidTime = lastValidTime !== absTime - 1;
+      if (absTime === 436) {
+        console.log("debug point");
+      }
+      if (isMissingTime || (isDiscontinuousWithLastValidTime && showDiscontinuities)) {
+        // If the track is missing a centroid at this time, or if it's
+        // discontinuous, "skip" this time by drawing a line segment with a
+        // length of 0 at the last valid time.
+        dstId = lastValidId;
+      }
+      const srcCentroid = dataset.getCentroid(srcId)!;
+      const dstCentroid = dataset.getCentroid(dstId)!;
+      points[(i - 1) * 2 * 3 + 0] = srcCentroid[0];
+      points[(i - 1) * 2 * 3 + 1] = srcCentroid[1];
+      points[(i - 1) * 2 * 3 + 2] = srcCentroid[2];
+      points[(i - 1) * 2 * 3 + 3] = dstCentroid[0];
+      points[(i - 1) * 2 * 3 + 4] = dstCentroid[1];
+      points[(i - 1) * 2 * 3 + 5] = dstCentroid[2];
+
+      // Update last valid time + ID
+      if (!isMissingTime) {
+        lastValidTime = absTime;
+        lastValidId = currId;
+      }
     }
-    this.view3d.setLineVertices(points);
+    this.view3d.setLinePositions(this.trackPathLineId, points);
+    if (this.volume) {
+      this.view3d.updateDensity(this.volume, 0.05);
+    }
   }
 
   public setParams(params: RenderCanvasStateParams): Promise<void> {
@@ -207,8 +242,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       }
     }
 
-    if (hasPropertyChanged(params, prevParams, ["track"])) {
-      this.updateTrackData(params.dataset, params.track);
+    if (hasPropertyChanged(params, prevParams, ["track", "dataset"])) {
+      this.updateTrackData(params.dataset, params.track, true);
     }
 
     this.render(false);
@@ -251,8 +286,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     });
     this.view3d.enablePicking(volume, true, segChannel);
 
-    // this.view3d.updateDensity(volume, 0.5);
-    this.view3d.updateDensity(volume, 0.05);
+    this.view3d.updateDensity(volume, 0.5);
+    // this.view3d.updateDensity(volume, 0.05);
     this.view3d.updateExposure(0.6);
     this.view3d.setVolumeRotation(volume, [0, 0, 0]);
     this.view3d.setVolumeTranslation(volume, [0, 0, 0]);
@@ -260,8 +295,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setShowBoundingBox(volume, true);
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
-
-    this.updateTrackData(this.params?.dataset ?? null, this.params?.track ?? null);
+    this.updateTrackData(this.params?.dataset ?? null, this.params?.track ?? null, true);
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels
     // 0,75,255
@@ -327,17 +361,21 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // Show nothing if track doesn't exist or doesn't have centroid data
     const track = this.params?.track;
     if (!track || !track.centroids || !this.params?.showTrackPath) {
-      this.view3d.setLineVertexRange(0, 0);
+      if (this.trackPathLineId !== null) {
+        this.view3d.setLineSegmentsVisible(this.trackPathLineId, 0);
+      }
       return;
     }
 
     // Show path up to current frame
-    let range = this.currentFrame - track.startTime() + 1;
+    let range = this.currentFrame - track.startTime();
     if (range > track.duration() || range < 0) {
       // Hide track if we are outside the track range
       range = 0;
     }
-    this.view3d.setLineVertexRange(0, range);
+    if (this.trackPathLineId !== null) {
+      this.view3d.setLineSegmentsVisible(this.trackPathLineId, range);
+    }
   }
 
   private syncSelectedId(): void {
