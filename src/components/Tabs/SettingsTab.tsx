@@ -254,6 +254,7 @@ export default function SettingsTab(): ReactElement {
                     maxSliderBound={5}
                     minInputBound={0}
                     maxInputBound={100}
+                    precision={1}
                     value={trackPathWidthPx}
                     onChange={setTrackPathWidthPx}
                     marks={[1]}
