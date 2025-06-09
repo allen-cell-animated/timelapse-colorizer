@@ -31,7 +31,15 @@ import {
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
 } from "./constants";
-import { Canvas2DScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult, PixelIdInfo } from "./types";
+import {
+  Canvas2DScaleInfo,
+  CanvasType,
+  DrawMode,
+  FeatureDataType,
+  FrameLoadResult,
+  PixelIdInfo,
+  TrackPathColorMode,
+} from "./types";
 import { getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -370,10 +378,12 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.updateScaling(dataset.frameResolution, this.canvasResolution);
   }
 
-  private setOutlineColor(color: Color): void {
-    this.setUniform("outlineColor", color.clone().convertLinearToSRGB());
-
-    // Update line color
+  private updateLineColor(): void {
+    if (!this.params) {
+      return;
+    }
+    const { trackPathColorMode, outlineColor, trackPathColor } = this.params;
+    const color = trackPathColorMode === TrackPathColorMode.USE_OUTLINE_COLOR ? outlineColor : trackPathColor;
     if (Array.isArray(this.line.material)) {
       this.line.material.forEach((mat) => {
         (mat as LineBasicMaterial).color = color;
@@ -488,7 +498,10 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       );
     }
     if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
-      this.setOutlineColor(params.outlineColor.clone().convertLinearToSRGB());
+      this.setUniform("outlineColor", params.outlineColor.clone().convertLinearToSRGB());
+    }
+    if (hasPropertyChanged(params, prevParams, ["trackPathColor", "trackPathColorMode", "outlineColor"])) {
+      this.updateLineColor();
     }
 
     // Update vector data

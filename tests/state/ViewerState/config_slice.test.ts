@@ -3,7 +3,7 @@ import { act } from "react-dom/test-utils";
 import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
-import { DrawMode, TabType } from "../../../src/colorizer";
+import { DrawMode, TabType, TrackPathColorMode } from "../../../src/colorizer";
 import { UrlParam } from "../../../src/colorizer/utils/url_utils";
 import { useViewerStateStore } from "../../../src/state";
 import { ConfigSlice, loadConfigSliceFromParams, serializeConfigSlice } from "../../../src/state/slices";
@@ -12,6 +12,8 @@ import { compareRecord } from "./utils";
 
 const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   showTrackPath: false,
+  trackPathColor: new Color(0x00ff00),
+  trackPathColorMode: TrackPathColorMode.USE_CUSTOM_COLOR,
   showScaleBar: false,
   showTimestamp: false,
   outOfRangeDrawSettings: { color: new Color(0xff0000), mode: DrawMode.USE_COLOR },
@@ -22,6 +24,8 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
 
 const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.SHOW_PATH]: "0",
+  [UrlParam.PATH_COLOR]: "00ff00",
+  [UrlParam.PATH_COLOR_MODE]: TrackPathColorMode.USE_CUSTOM_COLOR.toString(),
   [UrlParam.SHOW_SCALEBAR]: "0",
   [UrlParam.SHOW_TIMESTAMP]: "0",
   [UrlParam.FILTERED_COLOR]: "ff0000",
@@ -34,6 +38,8 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
 
 const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
   showTrackPath: true,
+  trackPathColor: new Color(0xffff00),
+  trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showScaleBar: true,
   showTimestamp: true,
   outOfRangeDrawSettings: { color: new Color(0xffff00), mode: DrawMode.HIDE },
@@ -44,6 +50,8 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
 
 const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
   [UrlParam.SHOW_PATH]: "1",
+  [UrlParam.PATH_COLOR]: "ffff00",
+  [UrlParam.PATH_COLOR_MODE]: TrackPathColorMode.USE_OUTLINE_COLOR.toString(),
   [UrlParam.SHOW_SCALEBAR]: "1",
   [UrlParam.SHOW_TIMESTAMP]: "1",
   [UrlParam.FILTERED_COLOR]: "ffff00",
@@ -59,6 +67,8 @@ describe("ConfigSlice", () => {
     const { result } = renderHook(() => useViewerStateStore());
     act(() => {
       result.current.setShowTrackPath(false);
+      result.current.setTrackPathColor(new Color(0x00ff00));
+      result.current.setTrackPathColorMode(TrackPathColorMode.USE_CUSTOM_COLOR);
       result.current.setShowScaleBar(false);
       result.current.setShowTimestamp(false);
       result.current.setShowLegendDuringExport(false);
@@ -70,6 +80,8 @@ describe("ConfigSlice", () => {
     });
 
     expect(result.current.showTrackPath).toBe(false);
+    expect(result.current.trackPathColor).toEqual(new Color(0x00ff00));
+    expect(result.current.trackPathColorMode).toBe(TrackPathColorMode.USE_CUSTOM_COLOR);
     expect(result.current.showScaleBar).toBe(false);
     expect(result.current.showTimestamp).toBe(false);
     expect(result.current.showLegendDuringExport).toBe(false);
@@ -81,6 +93,8 @@ describe("ConfigSlice", () => {
 
     act(() => {
       result.current.setShowTrackPath(true);
+      result.current.setTrackPathColor(new Color(0xffff00));
+      result.current.setTrackPathColorMode(TrackPathColorMode.USE_OUTLINE_COLOR);
       result.current.setShowScaleBar(true);
       result.current.setShowTimestamp(true);
       result.current.setShowLegendDuringExport(true);
@@ -91,6 +105,8 @@ describe("ConfigSlice", () => {
       result.current.setOpenTab(TabType.TRACK_PLOT);
     });
     expect(result.current.showTrackPath).toBe(true);
+    expect(result.current.trackPathColor).toEqual(new Color(0xffff00));
+    expect(result.current.trackPathColorMode).toBe(TrackPathColorMode.USE_OUTLINE_COLOR);
     expect(result.current.showScaleBar).toBe(true);
     expect(result.current.showTimestamp).toBe(true);
     expect(result.current.showLegendDuringExport).toBe(true);
