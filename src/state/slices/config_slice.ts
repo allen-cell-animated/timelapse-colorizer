@@ -13,9 +13,11 @@ import {
 } from "../../colorizer";
 import {
   decodeBoolean,
+  decodeFloat,
   decodeHexColor,
   encodeMaybeBoolean,
   encodeMaybeColor,
+  encodeMaybeNumber,
   parseDrawSettings,
   parseTrackPathMode,
   UrlParam,
@@ -36,6 +38,7 @@ export type ConfigSliceState = {
   showTrackPath: boolean;
   trackPathColor: Color;
   trackPathColorMode: TrackPathColorMode;
+  trackPathWidthPx: number;
   showScaleBar: boolean;
   showTimestamp: boolean;
   showLegendDuringExport: boolean;
@@ -51,6 +54,7 @@ export type ConfigSliceSerializableState = Pick<
   | "showTrackPath"
   | "trackPathColor"
   | "trackPathColorMode"
+  | "trackPathWidthPx"
   | "showScaleBar"
   | "showTimestamp"
   | "outOfRangeDrawSettings"
@@ -62,6 +66,7 @@ export type ConfigSliceSerializableState = Pick<
 export type ConfigSliceActions = {
   setShowTrackPath: (showTrackPath: boolean) => void;
   setTrackPathColor: (trackPathColor: Color) => void;
+  setTrackPathWidthPx: (trackPathWidthPx: number) => void;
   setTrackPathColorMode: (trackPathColorMode: TrackPathColorMode) => void;
   setShowScaleBar: (showScaleBar: boolean) => void;
   setShowTimestamp: (showTimestamp: boolean) => void;
@@ -79,6 +84,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   // State
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
+  trackPathWidthPx: 1,
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showScaleBar: true,
   showTimestamp: true,
@@ -92,6 +98,8 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   // Actions
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
   setTrackPathColor: (trackPathColor) => set({ trackPathColor }),
+  // Enforce minimum value of 0 for track path width.
+  setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: Math.max(0, trackPathWidthPx) }),
   setTrackPathColorMode: (trackPathColorMode) => set({ trackPathColorMode }),
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
   setShowTimestamp: (showTimestamp) => set({ showTimestamp }),
@@ -107,6 +115,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
   return {
     [UrlParam.SHOW_PATH]: encodeMaybeBoolean(slice.showTrackPath),
     [UrlParam.PATH_COLOR]: encodeMaybeColor(slice.trackPathColor),
+    [UrlParam.PATH_WIDTH]: encodeMaybeNumber(slice.trackPathWidthPx),
     [UrlParam.PATH_COLOR_MODE]: slice.trackPathColorMode?.toString(),
     [UrlParam.SHOW_SCALEBAR]: encodeMaybeBoolean(slice.showScaleBar),
     [UrlParam.SHOW_TIMESTAMP]: encodeMaybeBoolean(slice.showTimestamp),
@@ -124,6 +133,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
 export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSliceSerializableState => ({
   showTrackPath: slice.showTrackPath,
   trackPathColor: slice.trackPathColor,
+  trackPathWidthPx: slice.trackPathWidthPx,
   trackPathColorMode: slice.trackPathColorMode,
   showScaleBar: slice.showScaleBar,
   showTimestamp: slice.showTimestamp,
@@ -137,6 +147,7 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_PATH)), slice.setShowTrackPath);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_SCALEBAR)), slice.setShowScaleBar);
   setValueIfDefined(decodeBoolean(params.get(UrlParam.SHOW_TIMESTAMP)), slice.setShowTimestamp);
+  setValueIfDefined(decodeFloat(params.get(UrlParam.PATH_WIDTH)), slice.setTrackPathWidthPx);
 
   slice.setOutOfRangeDrawSettings(
     parseDrawSettings(

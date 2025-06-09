@@ -79,11 +79,13 @@ export default function SettingsTab(): ReactElement {
   const setShowTrackPath = useViewerStateStore((state) => state.setShowTrackPath);
   const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
   const setTrackPathColorMode = useViewerStateStore((state) => state.setTrackPathColorMode);
+  const setTrackPathWidthPx = useViewerStateStore((state) => state.setTrackPathWidthPx);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
   const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
+  const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
 
   let backdropOptions = useMemo(
     () =>
@@ -231,18 +233,36 @@ export default function SettingsTab(): ReactElement {
             ></Checkbox>
           </SettingsItem>
           {showTrackPath && (
-            <SettingsItem label="Track path color" id="track-path-color-label">
-              <DropdownWithColorPicker
-                selected={trackPathColorMode.toString()}
-                items={TRACK_MODE_ITEMS}
-                htmlLabelId={"track-path-color-label"}
-                onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
-                onColorChange={setTrackPathColor}
-                color={trackPathColor}
-                presets={DEFAULT_OUTLINE_COLOR_PRESETS}
-                showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
-              />
-            </SettingsItem>
+            <>
+              <SettingsItem label="Track path color" id="track-path-color-label">
+                <DropdownWithColorPicker
+                  selected={trackPathColorMode.toString()}
+                  items={TRACK_MODE_ITEMS}
+                  htmlLabelId={"track-path-color-label"}
+                  onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
+                  onColorChange={setTrackPathColor}
+                  color={trackPathColor}
+                  presets={DEFAULT_OUTLINE_COLOR_PRESETS}
+                  showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
+                />
+              </SettingsItem>
+              <SettingsItem label="Track path width">
+                <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
+                  <LabeledSlider
+                    type="value"
+                    minSliderBound={1}
+                    maxSliderBound={5}
+                    minInputBound={0}
+                    maxInputBound={100}
+                    value={trackPathWidthPx}
+                    onChange={setTrackPathWidthPx}
+                    marks={[1]}
+                    step={0.1}
+                    numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
+                  />
+                </div>
+              </SettingsItem>
+            </>
           )}
           <SettingsItem label="Show scale bar">
             <Checkbox

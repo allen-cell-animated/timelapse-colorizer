@@ -7,6 +7,9 @@
     "lib": ["ESNext", "DOM"],
     "moduleResolution": "Node",
     "strict": true,
+    "paths": {
+      "three/addons/lines/*": ["./node_modules/@types/three/examples/jsm/lines/*"]
+    },
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,

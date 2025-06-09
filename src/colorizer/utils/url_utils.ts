@@ -43,6 +43,7 @@ export enum UrlParam {
   OUTLINE_COLOR = "outline-color",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
+  PATH_WIDTH = "path-width",
   PATH_COLOR_MODE = "path-mode",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
