@@ -34,8 +34,7 @@ const HorizontalDiv = styled(FlexRowAlignCenter)`
 `;
 
 /**
- * Paired selection dropdown and color picker. Convenience component for
- * reusable layout.
+ * Reusable convenience dropdown component with an optional color picker.
  */
 export default function DropdownWithColorPicker(propsInput: DropdownWithColorPickerProps): ReactElement {
   const props = { ...defaultProps, ...propsInput };
@@ -50,13 +49,10 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         selected={props.selected.toString()}
         items={props.items}
         showSelectedItemTooltip={false}
-        onChange={(key: string) => {
-          props.onValueChange(key);
-        }}
+        onChange={props.onValueChange}
         disabled={props.disabled}
         width={"165px"}
       ></SelectionDropdown>
-
       <ColorPicker
         // Uses the default 1s transition animation
         style={{

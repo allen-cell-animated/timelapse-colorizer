@@ -136,6 +136,11 @@ describe("ConfigSlice", () => {
       result.current.setTrackPathWidthPx(-10);
     });
     expect(result.current.trackPathWidthPx).toBe(0);
+
+    act(() => {
+      result.current.setTrackPathWidthPx(100000);
+    });
+    expect(result.current.trackPathWidthPx).toBe(100);
   });
 
   describe("serializeConfigSlice", () => {

@@ -436,15 +436,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       this.points[3 * i + 1] = -((centroid[1] / dataset.frameResolution.y) * 2.0 - 1.0);
       this.points[3 * i + 2] = 0;
     }
-    // Assign new BufferAttribute because the old array has been discarded.
-    // this.line.geometry.setPositions(this.points);
     this.line.geometry.dispose();
     this.line.geometry = new LineGeometry();
     this.line.geometry.setPositions(this.points);
-    // this.line.geometry.computeBoundingSphere();
-
-    // this.line.geometry.setAttribute("position", new BufferAttribute(this.points, 3));
-    // this.line.geometry.getAttribute("position").needsUpdate = true;
   }
 
   private updateFeatureData(dataset: Dataset | null, featureKey: string | null): void {
@@ -677,7 +671,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     // Show nothing if track doesn't exist or doesn't have centroid data
     const track = this.params?.track;
     if (!track || !track.centroids || !this.params?.showTrackPath) {
-      this.line.geometry.setDrawRange(0, 0);
+      this.line.geometry.instanceCount = 0;
       return;
     }
 
@@ -689,7 +683,6 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       range = 0;
     }
 
-    // this.line.geometry.setDrawRange(0, range);
     this.line.geometry.instanceCount = Math.max(0, range - 1);
   }
 

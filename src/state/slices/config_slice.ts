@@ -1,4 +1,5 @@
 import { Color } from "three";
+import { clamp } from "three/src/math/MathUtils";
 import { StateCreator } from "zustand";
 
 import {
@@ -98,8 +99,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   // Actions
   setShowTrackPath: (showTrackPath) => set({ showTrackPath }),
   setTrackPathColor: (trackPathColor) => set({ trackPathColor }),
-  // Enforce minimum value of 0 for track path width.
-  setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: Math.max(0, trackPathWidthPx) }),
+  setTrackPathWidthPx: (trackPathWidthPx) => set({ trackPathWidthPx: clamp(trackPathWidthPx, 0, 100) }),
   setTrackPathColorMode: (trackPathColorMode) => set({ trackPathColorMode }),
   setShowScaleBar: (showScaleBar) => set({ showScaleBar }),
   setShowTimestamp: (showTimestamp) => set({ showTimestamp }),
