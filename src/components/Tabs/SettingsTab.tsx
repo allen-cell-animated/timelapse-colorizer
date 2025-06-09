@@ -1,5 +1,6 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
 import { Checkbox, ColorPicker } from "antd";
+import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
 
@@ -26,6 +27,25 @@ const DRAW_MODE_ITEMS: SelectItem[] = [
   { value: DrawMode.HIDE.toString(), label: "Hide" },
   { value: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
 ];
+
+const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
+  {
+    label: "Presets",
+    colors: [
+      "#ffffff",
+      "#f0f0f0",
+      "#dddddd",
+      "#c0c0c0",
+      "#9d9d9d",
+      "#808080",
+      "#525252",
+      "#393939",
+      "#191919",
+      "#000000",
+    ],
+  },
+];
+
 const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Use outline color" },
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Use custom color" },
@@ -181,6 +201,7 @@ export default function SettingsTab(): ReactElement {
               }}
               showColorPicker={outOfRangeDrawSettings.mode === DrawMode.USE_COLOR}
               items={DRAW_MODE_ITEMS}
+              presets={DRAW_MODE_COLOR_PRESETS}
             />
           </SettingsItem>
           <SettingsItem label="Outlier object color" id="outlier-object-color-label">
@@ -196,6 +217,7 @@ export default function SettingsTab(): ReactElement {
               }}
               showColorPicker={outlierDrawSettings.mode === DrawMode.USE_COLOR}
               items={DRAW_MODE_ITEMS}
+              presets={DRAW_MODE_COLOR_PRESETS}
             />
           </SettingsItem>
 
@@ -209,14 +231,15 @@ export default function SettingsTab(): ReactElement {
             ></Checkbox>
           </SettingsItem>
           {showTrackPath && (
-            <SettingsItem label="Track path color">
+            <SettingsItem label="Track path color" id="track-path-color-label">
               <DropdownWithColorPicker
                 selected={trackPathColorMode.toString()}
                 items={TRACK_MODE_ITEMS}
-                htmlLabelId={"track-path-label"}
+                htmlLabelId={"track-path-color-label"}
                 onValueChange={(value) => setTrackPathColorMode(Number.parseInt(value, 10) as TrackPathColorMode)}
                 onColorChange={setTrackPathColor}
                 color={trackPathColor}
+                presets={DEFAULT_OUTLINE_COLOR_PRESETS}
                 showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
               />
             </SettingsItem>

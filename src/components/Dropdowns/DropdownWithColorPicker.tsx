@@ -9,20 +9,7 @@ import { FlexRowAlignCenter } from "../../styles/utils";
 
 import SelectionDropdown from "./SelectionDropdown";
 
-const DEFAULT_PRESET_COLORS = [
-  "#ffffff",
-  "#f0f0f0",
-  "#dddddd",
-  "#c0c0c0",
-  "#9d9d9d",
-  "#808080",
-  "#525252",
-  "#393939",
-  "#191919",
-  "#000000",
-];
-
-type DrawModeSelectorProps = {
+type DropdownWithColorPickerProps = {
   selected: string;
   items: { value: string; label: string }[];
   /** HTML ID that the selection dropdown is labelled by. */
@@ -32,13 +19,12 @@ type DrawModeSelectorProps = {
   color: ThreeColor;
   disabled?: boolean;
   showColorPicker?: boolean;
-  presets?: string[];
+  presets?: PresetsItem[];
 };
 
-const defaultProps: Partial<DrawModeSelectorProps> = {
+const defaultProps: Partial<DropdownWithColorPickerProps> = {
   disabled: false,
   showColorPicker: true,
-  presets: DEFAULT_PRESET_COLORS,
 };
 
 const HorizontalDiv = styled(FlexRowAlignCenter)`
@@ -51,15 +37,8 @@ const HorizontalDiv = styled(FlexRowAlignCenter)`
  * Paired selection dropdown and color picker. Convenience component for
  * reusable layout.
  */
-export default function DropdownWithColorPicker(propsInput: DrawModeSelectorProps): ReactElement {
-  const props = { ...defaultProps, ...propsInput } as Required<DrawModeSelectorProps>;
-
-  const presets: PresetsItem[] = [
-    {
-      label: "Presets",
-      colors: props.presets,
-    },
-  ];
+export default function DropdownWithColorPicker(propsInput: DropdownWithColorPickerProps): ReactElement {
+  const props = { ...defaultProps, ...propsInput };
 
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
@@ -88,7 +67,7 @@ export default function DropdownWithColorPicker(propsInput: DrawModeSelectorProp
         disabledAlpha={true}
         defaultValue={new AntdColor(props.color.getHexString())}
         color={new AntdColor(props.color.getHexString())}
-        presets={presets}
+        presets={props.presets}
         // onChange returns a different color type, so must convert from hex
         onChange={(_color, hex) => props.onColorChange(new ThreeColor(hex as ColorRepresentation))}
         disabled={props.disabled}
