@@ -11,7 +11,7 @@ import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
 import { useViewerStateStore } from "../../state/ViewerState";
 import CustomCollapse from "../CustomCollapse";
-import DrawModeDropdown from "../Dropdowns/DrawModeDropdown";
+import DropdownWithColorPicker from "../Dropdowns/DropdownWithColorPicker";
 import SelectionDropdown from "../Dropdowns/SelectionDropdown";
 import LabeledSlider from "../LabeledSlider";
 import { SettingsContainer, SettingsItem } from "../SettingsContainer";
@@ -169,7 +169,7 @@ export default function SettingsTab(): ReactElement {
             </div>
           </SettingsItem>
           <SettingsItem label="Filtered object color">
-            <DrawModeDropdown
+            <DropdownWithColorPicker
               htmlLabelId="filtered-object-color-label"
               selected={outOfRangeDrawSettings.mode.toString()}
               color={outOfRangeDrawSettings.color}
@@ -184,7 +184,7 @@ export default function SettingsTab(): ReactElement {
             />
           </SettingsItem>
           <SettingsItem label="Outlier object color" id="outlier-object-color-label">
-            <DrawModeDropdown
+            <DropdownWithColorPicker
               htmlLabelId="outlier-object-color-label"
               selected={outlierDrawSettings.mode.toString()}
               color={outlierDrawSettings.color}
@@ -210,7 +210,7 @@ export default function SettingsTab(): ReactElement {
           </SettingsItem>
           {showTrackPath && (
             <SettingsItem label="Track path color">
-              <DrawModeDropdown
+              <DropdownWithColorPicker
                 selected={trackPathColorMode.toString()}
                 items={TRACK_MODE_ITEMS}
                 htmlLabelId={"track-path-label"}

@@ -48,9 +48,10 @@ const HorizontalDiv = styled(FlexRowAlignCenter)`
 `;
 
 /**
- * Paired dropdown and color picker.
+ * Paired selection dropdown and color picker. Convenience component for
+ * reusable layout.
  */
-export default function DrawModeSelector(propsInput: DrawModeSelectorProps): ReactElement {
+export default function DropdownWithColorPicker(propsInput: DrawModeSelectorProps): ReactElement {
   const props = { ...defaultProps, ...propsInput } as Required<DrawModeSelectorProps>;
 
   const presets: PresetsItem[] = [
