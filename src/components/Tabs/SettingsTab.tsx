@@ -257,7 +257,7 @@ export default function SettingsTab(): ReactElement {
                     precision={1}
                     value={trackPathWidthPx}
                     onChange={setTrackPathWidthPx}
-                    marks={[1]}
+                    marks={[1.5]}
                     step={0.1}
                     numberFormatter={(value?: number) => `${value?.toFixed(1)}`}
                   />

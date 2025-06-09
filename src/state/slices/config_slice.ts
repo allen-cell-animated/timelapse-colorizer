@@ -85,7 +85,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   // State
   showTrackPath: true,
   trackPathColor: new Color(OUTLINE_COLOR_DEFAULT),
-  trackPathWidthPx: 1,
+  trackPathWidthPx: 1.5,
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
   showScaleBar: true,
   showTimestamp: true,
