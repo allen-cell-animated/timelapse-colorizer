@@ -39,7 +39,7 @@ import {
   PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
-import { getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
+import { getColorFromId, getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp, { ColorRampType } from "./ColorRamp";
@@ -145,9 +145,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private pickMesh: Mesh;
 
   private vectorField: VectorField;
-  // Rendered track line that shows the trajectory of a cell.
+  /** Rendered track line that shows the trajectory of a cell. */
   private line: Line2;
-  private points: Float32Array;
+  /** Line used as an outline around the main line during certain coloring modes. */
+  // private bgLine: Line2;
+  /** Object IDs corresponding to each vertex in track line. */
+  private lineIds: number[];
+  private linePoints: Float32Array;
+  private lineColors: Float32Array | null;
 
   private savedScaleInfo: Canvas2DScaleInfo;
   private lastFrameLoadResult: FrameLoadResult | null;
@@ -214,16 +219,23 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.pickScene.add(this.pickMesh);
 
     // Configure track lines
-    this.points = new Float32Array([0, 0, 0]);
+    this.linePoints = new Float32Array([0, 0, 0]);
+    this.lineColors = new Float32Array([1, 1, 1]);
+    this.lineIds = [];
 
     const lineGeometry = new LineGeometry();
-    lineGeometry.setPositions(this.points);
+    lineGeometry.setPositions(this.linePoints);
     const lineMaterial = new LineMaterial({
       color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
+    // const bgLineMaterial = new LineMaterial({
+    //   color: FRAME_BACKGROUND_COLOR_DEFAULT,
+    //   linewidth: 2.0,
 
+    // })
     this.line = new Line2(lineGeometry, lineMaterial);
+    // this.bgLine = new Line2(lineGeometry, lineMaterial.clone());
     // Disable frustum culling for the line so it's always visible; prevents a bug
     // where the line disappears when the camera is zoomed in and panned.
     this.line.frustumCulled = false;
@@ -361,7 +373,69 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     });
   }
 
-  // PARAM HANDLING /////////////////////////////////////////////////////////////////////////
+  // TRACK PATH  ////////////////////////////////////////////////////////////////
+
+  private applyToLineMaterial(callback: (mat: LineMaterial) => void): void {
+    if (Array.isArray(this.line.material)) {
+      this.line.material.forEach((mat) => {
+        if (mat instanceof LineMaterial) {
+          callback(mat);
+        }
+      });
+    } else if (this.line.material instanceof LineMaterial) {
+      callback(this.line.material);
+    }
+  }
+
+  /** Updates vertex positions and vertex colors for the line geometry.
+   * Call whenever the line points or colors have changed.
+   */
+  private updateLineGeometry(): void {
+    this.line.geometry.dispose();
+    const geometry = new LineGeometry();
+    geometry.setPositions(this.linePoints);
+    if (this.lineColors) {
+      geometry.setColors(this.lineColors);
+    }
+    this.line.geometry = geometry;
+  }
+
+  /**
+   * Recomputes the vertex colors using the current colorizing rules.
+   */
+  private computeLineVertexColors(): void {
+    if (!this.params) {
+      this.lineColors = null;
+      return;
+    }
+    const vertexColors = new Float32Array(this.lineIds.length * 3);
+    for (let i = 0; i < this.lineIds.length; i++) {
+      const id = this.lineIds[i];
+      const color = getColorFromId(id, this.params);
+      vertexColors.set([color.r, color.g, color.b], i * 3);
+    }
+    this.lineColors = vertexColors;
+  }
+
+  private updateLineColor(): void {
+    if (!this.params) {
+      return;
+    }
+    const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
+    const color = {
+      [TrackPathColorMode.USE_FEATURE_COLOR]: new Color("#ffffff"),
+      [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
+      [TrackPathColorMode.USE_CUSTOM_COLOR]: trackPathColor,
+    }[trackPathColorMode];
+    this.applyToLineMaterial((mat: LineMaterial) => {
+      mat.color = color;
+      mat.linewidth = trackPathWidthPx;
+      mat.vertexColors = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
+      mat.needsUpdate = true;
+    });
+  }
+
+  // PARAM HANDLING //////////////////////////////////////////////////////////////
 
   private async handleNewDataset(dataset: Dataset | null): Promise<void> {
     if (dataset === null) {
@@ -375,24 +449,6 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.vectorField.setDataset(dataset);
     await this.forceFrameReload();
     this.updateScaling(dataset.frameResolution, this.canvasResolution);
-  }
-
-  private updateLine(): void {
-    if (!this.params) {
-      return;
-    }
-    const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
-    const color = trackPathColorMode === TrackPathColorMode.USE_OUTLINE_COLOR ? outlineColor : trackPathColor;
-    if (Array.isArray(this.line.material)) {
-      this.line.material.forEach((mat) => {
-        (mat as LineMaterial).color = color;
-        (mat as LineMaterial).linewidth = trackPathWidthPx;
-      });
-    } else {
-      (this.line.material as LineMaterial).color = color;
-      (this.line.material as LineMaterial).linewidth = trackPathWidthPx;
-      console.log("Setting line width to", trackPathWidthPx);
-    }
   }
 
   private setOutlierDrawMode(mode: DrawMode, color: Color): void {
@@ -415,7 +471,8 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     }
     // Make a new array of the centroid positions in pixel coordinates.
     // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
-    this.points = new Float32Array(track.duration() * 3);
+    this.linePoints = new Float32Array(track.duration() * 3);
+    this.lineIds = [];
 
     // Tracks may be missing objects for some timepoints, so use the last known good value as a fallback
     let lastTrackIndex = 0;
@@ -432,13 +489,11 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
 
       // Normalize from pixel coordinates to canvas space [-1, 1]
       const centroid = dataset.getCentroid(track.ids[trackIndex])!;
-      this.points[3 * i + 0] = (centroid[0] / dataset.frameResolution.x) * 2.0 - 1.0;
-      this.points[3 * i + 1] = -((centroid[1] / dataset.frameResolution.y) * 2.0 - 1.0);
-      this.points[3 * i + 2] = 0;
+      this.linePoints[3 * i + 0] = (centroid[0] / dataset.frameResolution.x) * 2.0 - 1.0;
+      this.linePoints[3 * i + 1] = -((centroid[1] / dataset.frameResolution.y) * 2.0 - 1.0);
+      this.linePoints[3 * i + 2] = 0;
+      this.lineIds.push(track.ids[trackIndex]);
     }
-    this.line.geometry.dispose();
-    this.line.geometry = new LineGeometry();
-    this.line.geometry.setPositions(this.points);
   }
 
   private updateFeatureData(dataset: Dataset | null, featureKey: string | null): void {
@@ -479,9 +534,6 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["dataset", "featureKey"])) {
       this.updateFeatureData(params.dataset, params.featureKey);
     }
-    if (hasPropertyChanged(params, prevParams, ["dataset", "track"])) {
-      this.updateTrackData(params.dataset, params.track);
-    }
     if (hasPropertyChanged(params, prevParams, ["inRangeLUT"])) {
       this.setInRangeLUT(params.inRangeLUT);
     }
@@ -502,15 +554,38 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
       this.setUniform("outlineColor", params.outlineColor.clone().convertLinearToSRGB());
     }
-    if (
+
+    // Update track path data
+    const doesTrackGeometryNeedUpdate = hasPropertyChanged(params, prevParams, ["dataset", "track"]);
+    const doesTrackVertexColorNeedUpdate =
+      params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
       hasPropertyChanged(params, prevParams, [
-        "trackPathColor",
         "trackPathColorMode",
-        "trackPathWidthPx",
-        "outlineColor",
-      ])
-    ) {
-      this.updateLine();
+        "dataset",
+        "track",
+        "featureKey",
+        "colorRamp",
+        "colorRampRange",
+        "categoricalPaletteRamp",
+        "inRangeLUT",
+        "outOfRangeDrawSettings",
+        "outlierDrawSettings",
+        "showTrackPath",
+      ]);
+    const doesColorNeedUpdate =
+      doesTrackVertexColorNeedUpdate ||
+      hasPropertyChanged(params, prevParams, ["trackPathColorMode", "trackPathColor", "outlineColor"]);
+    if (doesTrackGeometryNeedUpdate || doesTrackVertexColorNeedUpdate) {
+      if (doesTrackGeometryNeedUpdate) {
+        this.updateTrackData(params.dataset, params.track);
+      }
+      if (doesTrackVertexColorNeedUpdate) {
+        this.computeLineVertexColors();
+      }
+      this.updateLineGeometry();
+    }
+    if (doesColorNeedUpdate) {
+      this.updateLineColor();
     }
 
     // Update vector data

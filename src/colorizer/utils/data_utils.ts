@@ -1,3 +1,5 @@
+import { Color } from "three";
+
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
 import { ColorRampData } from "../colors/color_ramps";
 import {
@@ -396,4 +398,59 @@ export function cloneLabel(label: LabelData): LabelData {
     valueToIds: new Map(label.valueToIds),
     idToValue: new Map(label.idToValue),
   };
+}
+
+/**
+ * Gets the color for a given object ID based on feature data and other
+ * parameters.
+ * @param id The object ID to get the color for.
+ * @param params Parameters containing the dataset, feature key, color ramp, and
+ * other settings. These can be pulled directly from viewer state.
+ * @param defaultColor A default color to return if no feature data is available
+ * or the ID is out of range. If not provided, defaults to black (0, 0, 0).
+ * @returns The color for the given object ID, using the rules in the main
+ * viewport shader.
+ */
+export function getColorFromId(
+  id: number,
+  params: {
+    dataset: Dataset | null;
+    featureKey: string | null;
+    colorRamp: ColorRamp;
+    colorRampRange: [number, number];
+    categoricalPaletteRamp: ColorRamp;
+    outOfRangeDrawSettings: { color: Color };
+    inRangeLUT: Uint8Array;
+    outlierDrawSettings: { color: Color };
+  },
+  defaultColor: Color = new Color(0, 0, 0)
+): Color {
+  const {
+    dataset,
+    featureKey,
+    colorRamp,
+    colorRampRange,
+    categoricalPaletteRamp,
+    outOfRangeDrawSettings,
+    inRangeLUT,
+    outlierDrawSettings,
+  } = params;
+  if (dataset === null || featureKey === null || !dataset.hasFeatureKey(featureKey)) {
+    // No feature data, return default color
+    return defaultColor;
+  }
+  const featureValue = dataset.getFeatureData(featureKey)!.data[id];
+  if (inRangeLUT[id] === 0) {
+    return outOfRangeDrawSettings.color.clone().convertLinearToSRGB();
+  } else if (dataset.outliers?.[id] === 1 || !Number.isFinite(featureValue)) {
+    return outlierDrawSettings.color.clone().convertLinearToSRGB();
+  } else if (dataset.isFeatureCategorical(featureKey)) {
+    // Categorical feature, use categorical palette
+    const t = (featureValue % MAX_FEATURE_CATEGORIES) / (MAX_FEATURE_CATEGORIES - 1);
+    return categoricalPaletteRamp.sample(t);
+  } else {
+    // Numeric feature, use color ramp
+    const t = (featureValue - colorRampRange[0]) / (colorRampRange[1] - colorRampRange[0]);
+    return colorRamp.sample(t);
+  }
 }
