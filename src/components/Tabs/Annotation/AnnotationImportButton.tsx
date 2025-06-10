@@ -1,12 +1,13 @@
 import { UploadOutlined } from "@ant-design/icons";
-import { Modal, Upload, UploadFile } from "antd";
+import { Modal, Radio, Space, Upload, UploadFile } from "antd";
 import React, { ReactElement, useContext, useState } from "react";
+import styled, { css } from "styled-components";
 
 import { AnnotationState } from "../../../colorizer/utils/react_utils";
 import { useViewerStateStore } from "../../../state";
 import { FlexColumn } from "../../../styles/utils";
 
-import { AnnotationData, AnnotationParseResult } from "../../../colorizer/AnnotationData";
+import { AnnotationData, AnnotationMergeMode, AnnotationParseResult } from "../../../colorizer/AnnotationData";
 import { AppThemeContext } from "../../AppStyle";
 import TextButton from "../../Buttons/TextButton";
 import MessageCard from "../../MessageCard";
@@ -15,6 +16,19 @@ import AnnotationFileInfo from "./AnnotationFileInfo";
 type AnnotationImportButtonProps = {
   annotationState: AnnotationState;
 };
+
+const MultilineRadio = styled(Radio)<{ $expanded?: boolean }>`
+  & .ant-radio.ant-wave-target {
+    ${(props) => {
+      if (props.$expanded) {
+        return css`
+          margin: 3px 0 auto 0;
+        `;
+      }
+      return css``;
+    }}
+  }
+`;
 
 export default function AnnotationImportButton(props: AnnotationImportButtonProps): ReactElement {
   const dataset = useViewerStateStore((state) => state.dataset);
@@ -25,11 +39,12 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
   const [parseResult, setParseResult] = useState<AnnotationParseResult | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [errorText, setErrorText] = useState("");
+  const [mergeMode, setMergeMode] = useState(AnnotationMergeMode.APPEND);
 
   const modalContainerRef = React.useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (file: File): void => {
-    setUploadedFile(file);
+    setUploadedFile(null);
     setParseResult(null);
     setErrorText("");
     const isCsv = file.type === "text/csv" || file.name.endsWith(".csv");
@@ -48,6 +63,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
         setErrorText('Could not parse CSV file. Parsing failed with the following error: "' + error + '"');
         console.error("Error parsing CSV file:", error);
       }
+      setUploadedFile(file);
     };
     reader.readAsText(file);
   };
@@ -61,16 +77,7 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
 
   const handleImport = async (): Promise<void> => {
     if (parseResult) {
-      // TODO: give more advanced merging options here. There are three possible
-      // options:
-      // 1. Overwrite existing annotations (default, current behavior)
-      // 2. Keep both (no merging, labels are kept separate even if they have
-      //    matching names)
-      // 3. Merge annotations (merge matching labels with the same types. Users
-      //    should be given an option for how to handle when conflicts occur for
-      //    values (e.g. the imported CSV has a different value assigned to the
-      //    same ID))
-      annotationState.replaceAnnotationData(parseResult.annotationData);
+      annotationState.importData(parseResult.annotationData, mergeMode);
       setShowModal(false);
       setParseResult(null);
       setUploadedFile(null);
@@ -134,7 +141,36 @@ export default function AnnotationImportButton(props: AnnotationImportButtonProp
             </Upload.Dragger>
           )}
           {parseResult && hasExistingAnnotationData && (
-            <MessageCard type="warning">Existing annotations will be overwritten during import.</MessageCard>
+            <MessageCard type="info">
+              <FlexColumn>
+                <span style={{ marginBottom: 5 }}>
+                  You have existing annotations. How would you like to handle the imported annotations?
+                </span>
+                <Radio.Group value={mergeMode} onChange={(e) => setMergeMode(e.target.value)}>
+                  <Space direction="vertical">
+                    <Radio value={AnnotationMergeMode.APPEND}>Append as new annotations</Radio>
+                    <MultilineRadio
+                      value={AnnotationMergeMode.MERGE}
+                      $expanded={mergeMode === AnnotationMergeMode.MERGE}
+                    >
+                      {mergeMode === AnnotationMergeMode.MERGE ? (
+                        <FlexColumn>
+                          <p style={{ margin: 0 }}>Merge matching annotations</p>
+                          <p style={{ margin: 0 }}>
+                            Matching annotations will be merged, all other annotations will be appended. If there are
+                            conflicts where the same object is annotated with different values, the imported CSV takes
+                            priority.
+                          </p>
+                        </FlexColumn>
+                      ) : (
+                        <>Merge matching annotations</>
+                      )}
+                    </MultilineRadio>
+                    <Radio value={AnnotationMergeMode.OVERWRITE}>Replace all existing annotations</Radio>
+                  </Space>
+                </Radio.Group>
+              </FlexColumn>
+            </MessageCard>
           )}
         </FlexColumn>
       </Modal>

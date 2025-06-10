@@ -95,7 +95,7 @@ export default function AnnotationFileInfo(props: AnnotationFileInfoProps): Reac
           <FlexColumn>
             <p>
               Annotations were parsed for {parsedObjectsText} with{" "}
-              {formatQuantityString(labels.length, "label", "labels")}:
+              {formatQuantityString(labels.length, "annotation", "annotations")}:
             </p>
             <ExpandableList collapsedHeightPx={66} expandedMaxHeightPx={300} buttonStyle={{ marginLeft: "15px" }}>
               <ol style={{ margin: "0", paddingLeft: "30px" }}>

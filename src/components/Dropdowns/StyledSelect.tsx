@@ -34,6 +34,7 @@ const LABELED_COLOR_INDICATOR_BASE_STYLE = {
   marginRight: 6,
   height: 12,
   width: 12,
+  minWidth: 12,
   borderRadius: 2,
   fontSize: 9,
   textAlign: "center",
