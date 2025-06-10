@@ -478,8 +478,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       mat.vertexColors = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
       mat.needsUpdate = true;
     });
-    // TODO: Check if track path width needs to be scaled by screen pixel ratio?
-    this.bgLine.material.linewidth = trackPathWidthPx + 2;
+    // Show line outline only when coloring by feature color
+    const isColoredByFeature = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
+    this.bgLine.material.linewidth = isColoredByFeature ? trackPathWidthPx + 2 : 0;
     this.bgLine.material.needsUpdate = true;
   }
 
