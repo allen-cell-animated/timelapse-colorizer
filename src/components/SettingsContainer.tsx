@@ -11,6 +11,7 @@ type SettingsItemProps = {
    * of the parent `SettingsContainer`. */
   labelFormatter?: (label: string | ReactElement) => string | ReactElement;
   labelStyle?: React.CSSProperties;
+  style?: React.CSSProperties;
 };
 
 const defaultSettingsItemProps = {
@@ -34,7 +35,7 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   const formattedLabel = props.labelFormatter ? props.labelFormatter(props.label) : props.label;
 
   return (
-    <label>
+    <label style={props.style}>
       <span style={props.labelStyle} id={props.id}>
         {formattedLabel}
       </span>

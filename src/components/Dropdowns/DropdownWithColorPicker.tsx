@@ -51,7 +51,7 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         showSelectedItemTooltip={false}
         onChange={props.onValueChange}
         disabled={props.disabled}
-        width={"165px"}
+        width={"105px"}
       ></SelectionDropdown>
       <ColorPicker
         // Uses the default 1s transition animation
