@@ -16,6 +16,7 @@ import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from ".
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
 import { RenderCanvasStateParams } from "../IRenderCanvas";
+import Track from "../Track";
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
@@ -407,16 +408,10 @@ export function cloneLabel(label: LabelData): LabelData {
  * @param id The object ID to get the color for.
  * @param params Parameters containing the dataset, feature key, color ramp, and
  * other settings. These can be pulled directly from viewer state.
- * @param defaultColor A default color to return if no feature data is available
- * or the ID is out of range. If not provided, defaults to black (0, 0, 0).
  * @returns The color for the given object ID, using the rules in the main
  * viewport shader.
  */
-export function computeColorFromId(
-  id: number,
-  params: RenderCanvasStateParams,
-  defaultColor: Color = new Color(0, 0, 0)
-): Color {
+export function computeColorFromId(id: number, params: RenderCanvasStateParams): Color {
   const {
     dataset,
     featureKey,
@@ -429,7 +424,7 @@ export function computeColorFromId(
   } = params;
   if (dataset === null || featureKey === null || !dataset.hasFeatureKey(featureKey)) {
     // No feature data, return default color
-    return defaultColor;
+    return outlierDrawSettings.color.clone().convertLinearToSRGB();
   }
   const featureValue = dataset.getFeatureData(featureKey)!.data[id];
   if (inRangeLUT[id] === 0) {
@@ -478,4 +473,59 @@ export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasSt
     }
   }
   return vertexColors;
+}
+
+/**
+ * Calculates 3D coordinates for points in a track's path, to be rendered as a
+ * 3D polyline (see Three.js `Line2`). Also returns the object IDs for each
+ * vertex, which can be used to color the points based on feature data.
+ * @returns An object with two properties:
+ * - `ids`: An array of object IDs corresponding to each point in the path.
+ * - `points`: A Float32Array of 3D centroids for each point in the track's
+ *   path. Coordinates are given in terms of the centroid data (typically as
+ *   pixels/voxels in the frame). The length will be `3 * ids.length`.
+ */
+export function computeTrackLinePointsAndIds(dataset: Dataset, track: Track): { ids: number[]; points: Float32Array } {
+  if (track.centroids.length === 0) {
+    return { ids: [], points: new Float32Array(0) };
+  }
+  const points = new Float32Array(track.duration() * 3);
+  const ids = [];
+
+  // Tracks may be missing objects for some timepoints, so use the last known
+  // good value as a fallback
+  // TODO: This currently makes continuous lines, even if the track has gaps.
+  // Add an option to visualize discontinuities. (This will also require use
+  // of `LineSegments2` instead of `Line2`.)
+  let lastTrackIndex = 0;
+  for (let i = 0; i < track.duration(); i++) {
+    const absTime = i + track.startTime();
+
+    let trackIndex = track.times.findIndex((t) => t === absTime);
+    if (trackIndex === -1) {
+      // Track has no object for this time, use fallback
+      trackIndex = lastTrackIndex;
+    } else {
+      lastTrackIndex = trackIndex;
+    }
+
+    const centroid = dataset.getCentroid(track.ids[trackIndex])!;
+    points.set(centroid, i * 3);
+    ids.push(track.ids[trackIndex]);
+  }
+  return { ids, points };
+}
+
+/**
+ * Normalized 3D centroids to 2D canvas space in-place, where the X and Y coordinates are
+ * in the range [-1, 1] and the Z coordinate is always zero.
+ */
+export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Dataset): Float32Array {
+  for (let i = 0; i < points.length / 3; i++) {
+    points[3 * i + 0] = (points[3 * i + 0] / dataset.frameResolution.x) * 2.0 - 1.0;
+    points[3 * i + 1] = -((points[3 * i + 1] / dataset.frameResolution.y) * 2.0 - 1.0);
+    // Z coordinate is always zero for 2D canvas space
+    points[3 * i + 2] = 0;
+  }
+  return points;
 }
