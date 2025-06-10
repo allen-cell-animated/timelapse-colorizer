@@ -148,7 +148,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   /** Rendered track line that shows the trajectory of a cell. */
   private line: Line2;
   /** Line used as an outline around the main line during certain coloring modes. */
-  // private bgLine: Line2;
+  private bgLine: Line2;
   /** Object IDs corresponding to each vertex in track line. */
   private lineIds: number[];
   private linePoints: Float32Array;
@@ -229,18 +229,24 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       color: OUTLINE_COLOR_DEFAULT,
       linewidth: 1.0,
     });
-    // const bgLineMaterial = new LineMaterial({
-    //   color: FRAME_BACKGROUND_COLOR_DEFAULT,
-    //   linewidth: 2.0,
-
-    // })
+    const bgLineMaterial = new LineMaterial({
+      color: FRAME_BACKGROUND_COLOR_DEFAULT,
+      linewidth: 2.0,
+    });
     this.line = new Line2(lineGeometry, lineMaterial);
-    // this.bgLine = new Line2(lineGeometry, lineMaterial.clone());
+    this.bgLine = new Line2(lineGeometry, bgLineMaterial);
     // Disable frustum culling for the line so it's always visible; prevents a bug
     // where the line disappears when the camera is zoomed in and panned.
     this.line.frustumCulled = false;
+    this.bgLine.frustumCulled = false;
+
+    this.bgLine.renderOrder = 0; // Render the background line first
+    this.line.renderOrder = 1; // Render the foreground line second
+
+    // this.bgLine.material.side = BackSide;
 
     this.scene.add(this.line);
+    this.scene.add(this.bgLine);
 
     this.pickRenderTarget = new WebGLRenderTarget(1, 1, {
       depthBuffer: false,
@@ -335,6 +341,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       2 * this.panOffset.y * this.savedScaleInfo.frameToCanvasCoordinates.y,
       0
     );
+    this.bgLine.position.copy(this.line.position);
     this.vectorField.setPosition(this.panOffset, this.savedScaleInfo.frameToCanvasCoordinates);
     this.render();
   }
@@ -356,6 +363,8 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       2 * this.panOffset.y * frameToCanvasCoordinates.y,
       0
     );
+    this.bgLine.scale.copy(this.line.scale);
+    this.bgLine.position.copy(this.line.position);
     this.vectorField.setPosition(this.panOffset, frameToCanvasCoordinates);
     this.vectorField.setScale(frameToCanvasCoordinates, this.canvasResolution || new Vector2(1, 1));
   }
@@ -398,6 +407,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       geometry.setColors(this.lineColors);
     }
     this.line.geometry = geometry;
+    this.bgLine.geometry = geometry;
   }
 
   /**
@@ -417,7 +427,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.lineColors = vertexColors;
   }
 
-  private updateLineColor(): void {
+  private updateLineMaterial(): void {
     if (!this.params) {
       return;
     }
@@ -433,6 +443,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       mat.vertexColors = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
       mat.needsUpdate = true;
     });
+    // TODO: Check if track path width needs to be scaled by screen pixel ratio?
+    this.bgLine.material.linewidth = trackPathWidthPx + 2;
+    this.bgLine.material.needsUpdate = true;
   }
 
   // PARAM HANDLING //////////////////////////////////////////////////////////////
@@ -556,8 +569,8 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     }
 
     // Update track path data
-    const doesTrackGeometryNeedUpdate = hasPropertyChanged(params, prevParams, ["dataset", "track"]);
-    const doesTrackVertexColorNeedUpdate =
+    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, ["dataset", "track"]);
+    const doesLineVertexColorNeedUpdate =
       params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
       hasPropertyChanged(params, prevParams, [
         "trackPathColorMode",
@@ -572,20 +585,25 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
         "outlierDrawSettings",
         "showTrackPath",
       ]);
-    const doesColorNeedUpdate =
-      doesTrackVertexColorNeedUpdate ||
-      hasPropertyChanged(params, prevParams, ["trackPathColorMode", "trackPathColor", "outlineColor"]);
-    if (doesTrackGeometryNeedUpdate || doesTrackVertexColorNeedUpdate) {
-      if (doesTrackGeometryNeedUpdate) {
+    const doesLineMaterialNeedUpdate =
+      doesLineVertexColorNeedUpdate ||
+      hasPropertyChanged(params, prevParams, [
+        "trackPathColorMode",
+        "trackPathColor",
+        "outlineColor",
+        "trackPathWidthPx",
+      ]);
+    if (doesLineGeometryNeedUpdate || doesLineVertexColorNeedUpdate) {
+      if (doesLineGeometryNeedUpdate) {
         this.updateTrackData(params.dataset, params.track);
       }
-      if (doesTrackVertexColorNeedUpdate) {
+      if (doesLineVertexColorNeedUpdate) {
         this.computeLineVertexColors();
       }
       this.updateLineGeometry();
     }
-    if (doesColorNeedUpdate) {
-      this.updateLineColor();
+    if (doesLineMaterialNeedUpdate) {
+      this.updateLineMaterial();
     }
 
     // Update vector data
