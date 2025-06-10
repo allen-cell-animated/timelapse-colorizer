@@ -15,6 +15,7 @@ import { packDataTexture } from "./texture_utils";
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "../AnnotationData";
 import ColorRamp from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
+import { RenderCanvasStateParams } from "../IRenderCanvas";
 
 /** Returns whether the two arrays are deeply equal, where arr1[i] === arr2[i] for all i. */
 export function arrayElementsAreEqual<T>(arr1: T[], arr2: T[]): boolean {
@@ -401,8 +402,8 @@ export function cloneLabel(label: LabelData): LabelData {
 }
 
 /**
- * Gets the color for a given object ID based on feature data and other
- * parameters.
+ * Computes the onscreen color for a given object ID based on feature data and
+ * other parameters.
  * @param id The object ID to get the color for.
  * @param params Parameters containing the dataset, feature key, color ramp, and
  * other settings. These can be pulled directly from viewer state.
@@ -411,18 +412,9 @@ export function cloneLabel(label: LabelData): LabelData {
  * @returns The color for the given object ID, using the rules in the main
  * viewport shader.
  */
-export function getColorFromId(
+export function computeColorFromId(
   id: number,
-  params: {
-    dataset: Dataset | null;
-    featureKey: string | null;
-    colorRamp: ColorRamp;
-    colorRampRange: [number, number];
-    categoricalPaletteRamp: ColorRamp;
-    outOfRangeDrawSettings: { color: Color };
-    inRangeLUT: Uint8Array;
-    outlierDrawSettings: { color: Color };
-  },
+  params: RenderCanvasStateParams,
   defaultColor: Color = new Color(0, 0, 0)
 ): Color {
   const {
@@ -453,4 +445,37 @@ export function getColorFromId(
     const t = (featureValue - colorRampRange[0]) / (colorRampRange[1] - colorRampRange[0]);
     return colorRamp.sample(t);
   }
+}
+
+/**
+ * Returns a Float32Array of RGB (vertex) colors for the given object IDs. Colors
+ * are determined by the feature data, color ramp, and other parameters, and
+ * will match what is used in the main viewport shader.
+ * @param ids An array of object IDs to compute colors for.
+ * @param params Rendering parameters.
+ * @return A Float32Array of RGB color components, in a [0, 1] range. For each
+ * object ID at index `i` in `ids`, the RGB color will be given by:
+ * ```
+ * R: colors[i * 3 + 0]
+ * G: colors[i * 3 + 1]
+ * B: colors[i * 3 + 2]
+ * ```
+ */
+export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasStateParams): Float32Array {
+  // Especially for discontinuous lines, IDs may be repeated. Cache results to
+  // avoid repeat computation.
+  const idToColor = new Map<number, [number, number, number]>();
+  const vertexColors = new Float32Array(ids.length * 3);
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    if (idToColor.has(id)) {
+      vertexColors.set(idToColor.get(id)!, i * 3);
+    } else {
+      const color = computeColorFromId(id, params);
+      const rgb = color.toArray();
+      idToColor.set(id, rgb as [number, number, number]);
+      vertexColors.set(rgb, i * 3);
+    }
+  }
+  return vertexColors;
 }

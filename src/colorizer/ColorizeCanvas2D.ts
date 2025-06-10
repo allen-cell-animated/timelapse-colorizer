@@ -39,7 +39,7 @@ import {
   PixelIdInfo,
   TrackPathColorMode,
 } from "./types";
-import { getColorFromId, getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
+import { computeVertexColorsFromIds, getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import ColorRamp, { ColorRampType } from "./ColorRamp";
@@ -382,7 +382,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     });
   }
 
-  // TRACK PATH  ////////////////////////////////////////////////////////////////
+  // TRACK PATH LINE  ////////////////////////////////////////////////////////////////
 
   private applyToLineMaterial(callback: (mat: LineMaterial) => void): void {
     if (Array.isArray(this.line.material)) {
@@ -396,11 +396,13 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     }
   }
 
-  /** Updates vertex positions and vertex colors for the line geometry.
+  /**
+   * Updates vertex positions and vertex colors for the line geometry.
    * Call whenever the line points or colors have changed.
    */
   private updateLineGeometry(): void {
     this.line.geometry.dispose();
+    // TODO: We could reuse the geometry by initializing the buffer to be very large.
     const geometry = new LineGeometry();
     geometry.setPositions(this.linePoints);
     if (this.lineColors) {
@@ -410,21 +412,47 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.bgLine.geometry = geometry;
   }
 
+  private computeLinePointsAndIds(dataset: Dataset | null, track: Track | null): void {
+    if (!track || !track.centroids || track.centroids.length === 0 || !dataset) {
+      return;
+    }
+    // Make a new array of the centroid positions in pixel coordinates.
+    // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
+    this.linePoints = new Float32Array(track.duration() * 3);
+    this.lineIds = [];
+
+    // Tracks may be missing objects for some timepoints, so use the last known good value as a fallback
+    let lastTrackIndex = 0;
+    for (let i = 0; i < track.duration(); i++) {
+      const absTime = i + track.startTime();
+
+      let trackIndex = track.times.findIndex((t) => t === absTime);
+      if (trackIndex === -1) {
+        // Track has no object for this time, use fallback
+        trackIndex = lastTrackIndex;
+      } else {
+        lastTrackIndex = trackIndex;
+      }
+
+      // Normalize from pixel coordinates to canvas space [-1, 1]
+      const centroid = dataset.getCentroid(track.ids[trackIndex])!;
+      this.linePoints[3 * i + 0] = (centroid[0] / dataset.frameResolution.x) * 2.0 - 1.0;
+      this.linePoints[3 * i + 1] = -((centroid[1] / dataset.frameResolution.y) * 2.0 - 1.0);
+      this.linePoints[3 * i + 2] = 0;
+      this.lineIds.push(track.ids[trackIndex]);
+    }
+  }
+
   /**
    * Recomputes the vertex colors using the current colorizing rules.
+   * Must be run AFTER `computeTrackPointsAndIds`.
    */
   private computeLineVertexColors(): void {
     if (!this.params) {
       this.lineColors = null;
       return;
     }
-    const vertexColors = new Float32Array(this.lineIds.length * 3);
-    for (let i = 0; i < this.lineIds.length; i++) {
-      const id = this.lineIds[i];
-      const color = getColorFromId(id, this.params);
-      vertexColors.set([color.r, color.g, color.b], i * 3);
-    }
-    this.lineColors = vertexColors;
+    this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
   }
 
   private updateLineMaterial(): void {
@@ -475,37 +503,6 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.setUniform("outOfRangeDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
       this.setUniform("outOfRangeColor", color.clone().convertLinearToSRGB());
-    }
-  }
-
-  private updateTrackData(dataset: Dataset | null, track: Track | null): void {
-    if (!track || !track.centroids || track.centroids.length === 0 || !dataset) {
-      return;
-    }
-    // Make a new array of the centroid positions in pixel coordinates.
-    // Points are in 3D while centroids are pairs of 2D coordinates in a 1D array
-    this.linePoints = new Float32Array(track.duration() * 3);
-    this.lineIds = [];
-
-    // Tracks may be missing objects for some timepoints, so use the last known good value as a fallback
-    let lastTrackIndex = 0;
-    for (let i = 0; i < track.duration(); i++) {
-      const absTime = i + track.startTime();
-
-      let trackIndex = track.times.findIndex((t) => t === absTime);
-      if (trackIndex === -1) {
-        // Track has no object for this time, use fallback
-        trackIndex = lastTrackIndex;
-      } else {
-        lastTrackIndex = trackIndex;
-      }
-
-      // Normalize from pixel coordinates to canvas space [-1, 1]
-      const centroid = dataset.getCentroid(track.ids[trackIndex])!;
-      this.linePoints[3 * i + 0] = (centroid[0] / dataset.frameResolution.x) * 2.0 - 1.0;
-      this.linePoints[3 * i + 1] = -((centroid[1] / dataset.frameResolution.y) * 2.0 - 1.0);
-      this.linePoints[3 * i + 2] = 0;
-      this.lineIds.push(track.ids[trackIndex]);
     }
   }
 
@@ -595,7 +592,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       ]);
     if (doesLineGeometryNeedUpdate || doesLineVertexColorNeedUpdate) {
       if (doesLineGeometryNeedUpdate) {
-        this.updateTrackData(params.dataset, params.track);
+        this.computeLinePointsAndIds(params.dataset, params.track);
       }
       if (doesLineVertexColorNeedUpdate) {
         this.computeLineVertexColors();
