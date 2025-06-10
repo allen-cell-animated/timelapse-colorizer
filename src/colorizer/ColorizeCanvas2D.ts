@@ -26,6 +26,7 @@ import { get2DCanvasScaling } from "./canvas/utils";
 import {
   CANVAS_BACKGROUND_COLOR_DEFAULT,
   FRAME_BACKGROUND_COLOR_DEFAULT,
+  INITIAL_TRACK_PATH_BUFFER_SIZE,
   OUT_OF_RANGE_COLOR_DEFAULT,
   OUTLIER_COLOR_DEFAULT,
   OUTLINE_COLOR_DEFAULT,
@@ -153,6 +154,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private lineIds: number[];
   private linePoints: Float32Array;
   private lineColors: Float32Array | null;
+  private lineBufferSize: number;
 
   private savedScaleInfo: Canvas2DScaleInfo;
   private lastFrameLoadResult: FrameLoadResult | null;
@@ -219,8 +221,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.pickScene.add(this.pickMesh);
 
     // Configure track lines
-    this.linePoints = new Float32Array([0, 0, 0]);
-    this.lineColors = new Float32Array([1, 1, 1]);
+    this.lineBufferSize = INITIAL_TRACK_PATH_BUFFER_SIZE;
+    this.linePoints = new Float32Array(this.lineBufferSize);
+    this.lineColors = new Float32Array(this.lineBufferSize);
     this.lineIds = [];
 
     const lineGeometry = new LineGeometry();
@@ -401,9 +404,13 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
    * Call whenever the line points or colors have changed.
    */
   private updateLineGeometry(): void {
-    this.line.geometry.dispose();
-    // TODO: We could reuse the geometry by initializing the buffer to be very large.
-    const geometry = new LineGeometry();
+    let geometry = this.line.geometry;
+    if (this.linePoints.length > this.lineBufferSize) {
+      // Create a new geometry if the buffer size is too small
+      geometry.dispose();
+      geometry = new LineGeometry();
+      this.lineBufferSize = this.linePoints.length;
+    }
     geometry.setPositions(this.linePoints);
     if (this.lineColors) {
       geometry.setColors(this.lineColors);
