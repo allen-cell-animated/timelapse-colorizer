@@ -25,7 +25,7 @@ const NO_BACKDROP = {
 
 const DRAW_MODE_ITEMS: SelectItem[] = [
   { value: DrawMode.HIDE.toString(), label: "Hide" },
-  { value: DrawMode.USE_COLOR.toString(), label: "Use custom color" },
+  { value: DrawMode.USE_COLOR.toString(), label: "Custom" },
 ];
 
 const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
@@ -47,8 +47,8 @@ const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
 ];
 
 const TRACK_MODE_ITEMS: SelectItem[] = [
-  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Use outline color" },
-  { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Use custom color" },
+  { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Outline" },
+  { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
 ];
 
 export const SETTINGS_INDENT_PX = 24;
@@ -223,7 +223,12 @@ export default function SettingsTab(): ReactElement {
             />
           </SettingsItem>
 
-          <SettingsItem label={"Show track path"} labelStyle={{ height: "min-content" }} id="track-path-label">
+          <SettingsItem
+            label={"Show track path"}
+            labelStyle={{ height: "min-content" }}
+            id="track-path-label"
+            style={{ marginTop: "10px" }}
+          >
             <Checkbox
               type="checkbox"
               checked={showTrackPath}
@@ -246,7 +251,7 @@ export default function SettingsTab(): ReactElement {
                   showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
                 />
               </SettingsItem>
-              <SettingsItem label="Track path width">
+              <SettingsItem label="Track path width" style={{ marginBottom: "15px" }}>
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     type="value"
