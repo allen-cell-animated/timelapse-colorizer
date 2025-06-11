@@ -508,7 +508,7 @@ export function computeTrackLinePointsAndIds(
 
   let lastValidId = track.ids[0];
   let lastValidTime = track.times[0];
-  for (let i = 0; i < track.duration(); i++) {
+  for (let i = 1; i <= track.duration(); i++) {
     const absTime = i + track.startTime();
 
     const srcId = lastValidId;

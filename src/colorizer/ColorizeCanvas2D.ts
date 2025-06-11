@@ -742,7 +742,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     // Show path up to current frame
     let range = this.currentFrame - track.startTime();
 
-    if (range > track.duration() || range < 0) {
+    if (range >= track.duration() || range < 0) {
       // Hide track if we are outside the track range
       range = 0;
     }
