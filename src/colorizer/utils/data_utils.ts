@@ -436,8 +436,7 @@ export function computeColorFromId(id: number, params: RenderCanvasStateParams):
     const t = (featureValue % MAX_FEATURE_CATEGORIES) / (MAX_FEATURE_CATEGORIES - 1);
     return categoricalPaletteRamp.sample(t);
   } else if (colorRamp.type === ColorRampType.CATEGORICAL) {
-    const t = (Math.round(featureValue) % colorRamp.colorStops.length) / (colorRamp.colorStops.length - 1);
-    console.log(t, t * (colorRamp.colorStops.length - 1), colorRamp.colorStops.length);
+    const t = (featureValue % colorRamp.colorStops.length) / (colorRamp.colorStops.length - 1);
     return colorRamp.sample(t);
   } else {
     // Numeric feature, use color ramp
