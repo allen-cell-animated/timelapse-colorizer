@@ -1,5 +1,5 @@
 import { Color as AntdColor } from "@rc-component/color-picker";
-import { Checkbox, ColorPicker } from "antd";
+import { Checkbox, ColorPicker, Switch, Tooltip } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useMemo } from "react";
 import { Color, ColorRepresentation } from "three";
@@ -81,9 +81,11 @@ export default function SettingsTab(): ReactElement {
   const setTrackPathColor = useViewerStateStore((state) => state.setTrackPathColor);
   const setTrackPathColorMode = useViewerStateStore((state) => state.setTrackPathColorMode);
   const setTrackPathWidthPx = useViewerStateStore((state) => state.setTrackPathWidthPx);
+  const setShowTrackPathBreaks = useViewerStateStore((state) => state.setShowTrackPathBreaks);
   const showScaleBar = useViewerStateStore((state) => state.showScaleBar);
   const showTimestamp = useViewerStateStore((state) => state.showTimestamp);
   const showTrackPath = useViewerStateStore((state) => state.showTrackPath);
+  const showTrackPathBreaks = useViewerStateStore((state) => state.showTrackPathBreaks);
   const trackPathColor = useViewerStateStore((state) => state.trackPathColor);
   const trackPathColorMode = useViewerStateStore((state) => state.trackPathColorMode);
   const trackPathWidthPx = useViewerStateStore((state) => state.trackPathWidthPx);
@@ -225,18 +227,14 @@ export default function SettingsTab(): ReactElement {
           </SettingsItem>
 
           <SettingsItem
-            label={"Show track path"}
+            label={"Track path"}
             labelStyle={{ height: "min-content" }}
             id="track-path-label"
-            style={{ marginTop: "10px" }}
+            style={{ marginTop: "15px" }}
           >
-            <Checkbox
-              type="checkbox"
-              checked={showTrackPath}
-              onChange={(event) => {
-                setShowTrackPath(event.target.checked);
-              }}
-            ></Checkbox>
+            <div>
+              <Switch checked={showTrackPath} onChange={setShowTrackPath}></Switch>
+            </div>
           </SettingsItem>
           {showTrackPath && (
             <>
@@ -252,7 +250,7 @@ export default function SettingsTab(): ReactElement {
                   showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
                 />
               </SettingsItem>
-              <SettingsItem label="Track path width" style={{ marginBottom: "15px" }}>
+              <SettingsItem label="Track path width">
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     type="value"
@@ -269,25 +267,34 @@ export default function SettingsTab(): ReactElement {
                   />
                 </div>
               </SettingsItem>
+              <SettingsItem
+                label={"Show breaks"}
+                labelStyle={{ height: "min-content" }}
+                style={{ marginBottom: "20px", marginTop: "-5px" }}
+              >
+                <Tooltip title="Show breaks in the track path where the track is not continuous." placement="right">
+                  <div style={{ width: "fit-content" }}>
+                    <Checkbox
+                      type="checkbox"
+                      checked={showTrackPathBreaks}
+                      onChange={(event) => {
+                        setShowTrackPathBreaks(event.target.checked);
+                      }}
+                    ></Checkbox>
+                  </div>
+                </Tooltip>
+              </SettingsItem>
             </>
           )}
-          <SettingsItem label="Show scale bar">
-            <Checkbox
-              type="checkbox"
-              checked={showScaleBar}
-              onChange={(event) => {
-                setShowScaleBar(event.target.checked);
-              }}
-            />
+          <SettingsItem label="Scale bar">
+            <div>
+              <Switch checked={showScaleBar} onChange={setShowScaleBar} />
+            </div>
           </SettingsItem>
-          <SettingsItem label="Show timestamp">
-            <Checkbox
-              type="checkbox"
-              checked={showTimestamp}
-              onChange={(event) => {
-                setShowTimestamp(event.target.checked);
-              }}
-            />
+          <SettingsItem label="Timestamp">
+            <div>
+              <Switch checked={showTimestamp} onChange={setShowTimestamp} />
+            </div>
           </SettingsItem>
         </SettingsContainer>
       </CustomCollapse>
