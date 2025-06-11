@@ -476,42 +476,67 @@ export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasSt
 }
 
 /**
- * Calculates 3D coordinates for points in a track's path, to be rendered as a
- * 3D polyline (see Three.js `Line2`). Also returns the object IDs for each
- * vertex, which can be used to color the points based on feature data.
+ * Calculates pairs of vertex coordinates for a track's path, to be rendered as
+ * line segments (see Three.js `LineSegments2`). Also returns the object IDs for
+ * each vertex, which can be used to color the points based on feature data.
+ * @param dataset The Dataset to look up centroids from.
+ * @param track track object to compute path for.
+ * @param showDiscontinuities When true, the line will be discontinuous (show
+ * gaps) when the track is missing data. When false, the line will bridge
+ * missing times by drawing a line from the last valid point to the next.
  * @returns An object with two properties:
- * - `ids`: An array of object IDs corresponding to each point in the path.
- * - `points`: A Float32Array of 3D centroids for each point in the track's
- *   path. Coordinates are given in terms of the centroid data (typically as
- *   pixels/voxels in the frame). The length will be `3 * ids.length`.
+ * - `ids`: An array of object IDs corresponding to each vertex in the path.
+ * - `points`: A Float32Array of 3D vertices representing the track's path. Each
+ *   pair of vertices represents one line segment. Coordinates are given in
+ *   terms of the centroid data (typically as pixels/voxels in the frame). The
+ *   length will be `3 * ids.length`.
  */
-export function computeTrackLinePointsAndIds(dataset: Dataset, track: Track): { ids: number[]; points: Float32Array } {
+export function computeTrackLinePointsAndIds(
+  dataset: Dataset,
+  track: Track,
+  showDiscontinuities: boolean
+): { ids: number[]; points: Float32Array } {
   if (track.centroids.length === 0) {
     return { ids: [], points: new Float32Array(0) };
   }
-  const points = new Float32Array(track.duration() * 3);
+  // All vertices except for the beginning and end will be duplicated
+  const points = new Float32Array((track.duration() * 2 - 2) * 3);
   const ids = [];
 
-  // Tracks may be missing objects for some timepoints, so use the last known
-  // good value as a fallback
-  // TODO: This currently makes continuous lines, even if the track has gaps.
-  // Add an option to visualize discontinuities. (This will also require use
-  // of `LineSegments2` instead of `Line2`.)
-  let lastTrackIndex = 0;
+  let lastValidId = track.ids[0];
+  let lastValidTime = track.times[0];
   for (let i = 0; i < track.duration(); i++) {
     const absTime = i + track.startTime();
 
-    let trackIndex = track.times.findIndex((t) => t === absTime);
-    if (trackIndex === -1) {
-      // Track has no object for this time, use fallback
-      trackIndex = lastTrackIndex;
-    } else {
-      lastTrackIndex = trackIndex;
-    }
+    const srcId = lastValidId;
+    const currId = track.getIdAtTime(absTime);
+    let dstId = currId;
 
-    const centroid = dataset.getCentroid(track.ids[trackIndex])!;
-    points.set(centroid, i * 3);
-    ids.push(track.ids[trackIndex]);
+    const isMissingTime = currId === -1;
+    const isDiscontinuousWithLastValidTime = lastValidTime !== absTime - 1;
+    if (isMissingTime || (isDiscontinuousWithLastValidTime && showDiscontinuities)) {
+      // If the track is missing a centroid at this time, or if it's
+      // discontinuous, "skip" this time by drawing a line segment with a
+      // length of 0 at the last valid time.
+      dstId = lastValidId;
+    }
+    const srcCentroid = dataset.getCentroid(srcId)!;
+    const dstCentroid = dataset.getCentroid(dstId)!;
+    points[(i - 1) * 2 * 3 + 0] = srcCentroid[0];
+    points[(i - 1) * 2 * 3 + 1] = srcCentroid[1];
+    points[(i - 1) * 2 * 3 + 2] = srcCentroid[2];
+    points[(i - 1) * 2 * 3 + 3] = dstCentroid[0];
+    points[(i - 1) * 2 * 3 + 4] = dstCentroid[1];
+    points[(i - 1) * 2 * 3 + 5] = dstCentroid[2];
+
+    ids.push(srcId);
+    ids.push(dstId);
+
+    // Update last valid time + ID
+    if (!isMissingTime) {
+      lastValidTime = absTime;
+      lastValidId = currId;
+    }
   }
   return { ids, points };
 }

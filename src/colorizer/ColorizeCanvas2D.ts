@@ -16,9 +16,9 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
-import { Line2 } from "three/addons/lines/Line2.js";
-import { LineGeometry } from "three/addons/lines/LineGeometry";
 import { LineMaterial } from "three/addons/lines/LineMaterial";
+import { LineSegments2 } from "three/addons/lines/LineSegments2";
+import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry";
 import { clamp } from "three/src/math/MathUtils";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
@@ -155,9 +155,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   // discontinuities in the track path line. This will require a refactor of how
   // line vertices are calculated, since vertices will be repeated.
   /** Rendered track line that shows the trajectory of a cell. */
-  private line: Line2;
+  private line: LineSegments2;
   /** Line used as an outline around the main line during certain coloring modes. */
-  private bgLine: Line2;
+  private bgLine: LineSegments2;
   /** Object IDs corresponding to each vertex in track line. */
   private lineIds: number[];
   private linePoints: Float32Array;
@@ -232,9 +232,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.lineBufferSize = INITIAL_TRACK_PATH_BUFFER_SIZE;
     this.linePoints = new Float32Array(this.lineBufferSize);
     this.lineColors = new Float32Array(this.lineBufferSize);
-    this.lineIds = [];
+    this.lineIds = [-1];
 
-    const lineGeometry = new LineGeometry();
+    const lineGeometry = new LineSegmentsGeometry();
     lineGeometry.setPositions(this.linePoints);
     const lineMaterial = new LineMaterial({
       color: OUTLINE_COLOR_DEFAULT,
@@ -246,8 +246,8 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       color: FRAME_BACKGROUND_COLOR_DEFAULT,
       linewidth: 2.0,
     });
-    this.line = new Line2(lineGeometry, lineMaterial);
-    this.bgLine = new Line2(lineGeometry, bgLineMaterial);
+    this.line = new LineSegments2(lineGeometry, lineMaterial);
+    this.bgLine = new LineSegments2(lineGeometry, bgLineMaterial);
     // Disable frustum culling for the line so it's always visible; prevents a bug
     // where the line disappears when the camera is zoomed in and panned.
     this.line.frustumCulled = false;
@@ -334,6 +334,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     if (this.params?.dataset) {
       this.updateScaling(this.params.dataset.frameResolution, this.canvasResolution);
     }
+    this.updateLineMaterial();
     this.render();
   }
 
@@ -399,12 +400,15 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
    * Updates the line geometry with new vertex positions and vertex colors.
    */
   private updateLineGeometry(points: Float32Array, colors: Float32Array): void {
+    if (points.length === 0 || colors.length === 0) {
+      return;
+    }
     let geometry = this.line.geometry;
     // Reuse the same geometry object unless the buffer size is too small.
     // See https://threejs.org/manual/#en/how-to-update-things
     if (points.length > this.lineBufferSize) {
       geometry.dispose();
-      geometry = new LineGeometry();
+      geometry = new LineSegmentsGeometry();
       this.lineBufferSize = points.length;
     }
     geometry.setPositions(points);
@@ -426,14 +430,16 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     };
     const color = modeToColor[trackPathColorMode];
 
+    // Scale line width slightly with zoom.
+    const baseLineWidth = trackPathWidthPx + (this.zoomMultiplier - 1.0) * 0.5;
     this.line.material.color = color;
-    this.line.material.linewidth = trackPathWidthPx;
+    this.line.material.linewidth = baseLineWidth;
     this.line.material.vertexColors = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
     this.line.material.needsUpdate = true;
 
     // Show line outline only when coloring by feature color
     const isColoredByFeature = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
-    this.bgLine.material.linewidth = isColoredByFeature ? trackPathWidthPx + 2 : 0;
+    this.bgLine.material.linewidth = isColoredByFeature ? baseLineWidth + 2 : 0;
     this.bgLine.material.needsUpdate = true;
   }
 
@@ -527,13 +533,18 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     }
 
     // Update track path data
-    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, ["dataset", "track"]);
+    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, [
+      "dataset",
+      "track",
+      "showTrackPathBreaks",
+    ]);
     const doesLineVertexColorNeedUpdate =
       params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
       hasPropertyChanged(params, prevParams, [
-        "trackPathColorMode",
         "dataset",
         "track",
+        "trackPathColorMode",
+        "showTrackPathBreaks",
         "featureKey",
         "colorRamp",
         "colorRampRange",
@@ -553,7 +564,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       ]);
     if (doesLineGeometryNeedUpdate || doesLineVertexColorNeedUpdate) {
       if (doesLineGeometryNeedUpdate && params.dataset && params.track) {
-        const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track);
+        const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track, params.showTrackPathBreaks);
         this.lineIds = ids;
         this.linePoints = normalizePointsTo2dCanvasSpace(points, params.dataset);
       }
@@ -729,14 +740,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     }
 
     // Show path up to current frame
-    let range = this.currentFrame - track.startTime() + 1;
+    let range = this.currentFrame - track.startTime();
 
     if (range > track.duration() || range < 0) {
       // Hide track if we are outside the track range
       range = 0;
     }
 
-    this.line.geometry.instanceCount = Math.max(0, range - 1);
+    this.line.geometry.instanceCount = Math.max(0, range);
   }
 
   private syncHighlightedId(): void {
