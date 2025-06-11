@@ -470,8 +470,8 @@ export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasSt
       vertexColors.set(idToColor.get(id)!, i * 3);
     } else {
       const color = computeColorFromId(id, params);
-      const rgb = color.toArray();
-      idToColor.set(id, rgb as [number, number, number]);
+      const rgb = [color.r, color.g, color.b] as [number, number, number];
+      idToColor.set(id, rgb);
       vertexColors.set(rgb, i * 3);
     }
   }
