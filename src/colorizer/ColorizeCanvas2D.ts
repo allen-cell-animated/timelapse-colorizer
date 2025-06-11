@@ -334,6 +334,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     if (this.params?.dataset) {
       this.updateScaling(this.params.dataset.frameResolution, this.canvasResolution);
     }
+    this.updateLineMaterial();
     this.render();
   }
 
@@ -426,14 +427,16 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     };
     const color = modeToColor[trackPathColorMode];
 
+    // Scale line width slightly with zoom.
+    const baseLineWidth = trackPathWidthPx + (this.zoomMultiplier - 1.0) * 0.5;
     this.line.material.color = color;
-    this.line.material.linewidth = trackPathWidthPx;
+    this.line.material.linewidth = baseLineWidth;
     this.line.material.vertexColors = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
     this.line.material.needsUpdate = true;
 
     // Show line outline only when coloring by feature color
     const isColoredByFeature = trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR;
-    this.bgLine.material.linewidth = isColoredByFeature ? trackPathWidthPx + 2 : 0;
+    this.bgLine.material.linewidth = isColoredByFeature ? baseLineWidth + 2 : 0;
     this.bgLine.material.needsUpdate = true;
   }
 
