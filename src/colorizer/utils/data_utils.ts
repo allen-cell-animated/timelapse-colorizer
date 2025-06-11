@@ -436,7 +436,8 @@ export function computeColorFromId(id: number, params: RenderCanvasStateParams):
     const t = (featureValue % MAX_FEATURE_CATEGORIES) / (MAX_FEATURE_CATEGORIES - 1);
     return categoricalPaletteRamp.sample(t);
   } else if (colorRamp.type === ColorRampType.CATEGORICAL) {
-    const t = (featureValue % colorRamp.colorStops.length) / (colorRamp.colorStops.length - 1);
+    const t = (Math.round(featureValue) % colorRamp.colorStops.length) / (colorRamp.colorStops.length - 1);
+    console.log(t, t * (colorRamp.colorStops.length - 1), colorRamp.colorStops.length);
     return colorRamp.sample(t);
   } else {
     // Numeric feature, use color ramp
@@ -470,8 +471,8 @@ export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasSt
       vertexColors.set(idToColor.get(id)!, i * 3);
     } else {
       const color = computeColorFromId(id, params);
-      const rgb = color.toArray();
-      idToColor.set(id, rgb as [number, number, number]);
+      const rgb = [color.r, color.g, color.b] as [number, number, number];
+      idToColor.set(id, rgb);
       vertexColors.set(rgb, i * 3);
     }
   }
