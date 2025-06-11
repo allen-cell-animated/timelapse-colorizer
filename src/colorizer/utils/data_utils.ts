@@ -13,7 +13,7 @@ import {
 import { packDataTexture } from "./texture_utils";
 
 import { BOOLEAN_VALUE_FALSE, BOOLEAN_VALUE_TRUE, LabelData, LabelType } from "../AnnotationData";
-import ColorRamp from "../ColorRamp";
+import ColorRamp, { ColorRampType } from "../ColorRamp";
 import Dataset, { FeatureType } from "../Dataset";
 import { RenderCanvasStateParams } from "../IRenderCanvas";
 import Track from "../Track";
@@ -435,6 +435,9 @@ export function computeColorFromId(id: number, params: RenderCanvasStateParams):
     // Categorical feature, use categorical palette
     const t = (featureValue % MAX_FEATURE_CATEGORIES) / (MAX_FEATURE_CATEGORIES - 1);
     return categoricalPaletteRamp.sample(t);
+  } else if (colorRamp.type === ColorRampType.CATEGORICAL) {
+    const t = (featureValue % colorRamp.colorStops.length) / (colorRamp.colorStops.length - 1);
+    return colorRamp.sample(t);
   } else {
     // Numeric feature, use color ramp
     const t = (featureValue - colorRampRange[0]) / (colorRampRange[1] - colorRampRange[0]);
