@@ -424,13 +424,13 @@ export function computeColorFromId(id: number, params: RenderCanvasStateParams):
   } = params;
   if (dataset === null || featureKey === null || !dataset.hasFeatureKey(featureKey)) {
     // No feature data, return default color
-    return outlierDrawSettings.color.clone().convertLinearToSRGB();
+    return outlierDrawSettings.color.clone();
   }
   const featureValue = dataset.getFeatureData(featureKey)!.data[id];
   if (inRangeLUT[id] === 0) {
-    return outOfRangeDrawSettings.color.clone().convertLinearToSRGB();
+    return outOfRangeDrawSettings.color.clone();
   } else if (dataset.outliers?.[id] === 1 || !Number.isFinite(featureValue)) {
-    return outlierDrawSettings.color.clone().convertLinearToSRGB();
+    return outlierDrawSettings.color.clone();
   } else if (dataset.isFeatureCategorical(featureKey)) {
     // Categorical feature, use categorical palette
     const t = (featureValue % MAX_FEATURE_CATEGORIES) / (MAX_FEATURE_CATEGORIES - 1);
@@ -545,7 +545,7 @@ export function computeTrackLinePointsAndIds(
 }
 
 /**
- * Normalized 3D centroids to 2D canvas space in-place, where the X and Y coordinates are
+ * Normalizes 3D centroids to 2D canvas space in-place, where the X and Y coordinates are
  * in the range [-1, 1] and the Z coordinate is always zero.
  */
 export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Dataset): Float32Array {

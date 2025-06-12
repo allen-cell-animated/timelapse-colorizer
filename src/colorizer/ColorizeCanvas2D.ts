@@ -462,14 +462,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private setOutlierDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outlierDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
-      this.setUniform("outlierColor", color.clone().convertLinearToSRGB());
+      this.setUniform("outlierColor", color.clone());
     }
   }
 
   private setOutOfRangeDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outOfRangeDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
-      this.setUniform("outOfRangeColor", color.clone().convertLinearToSRGB());
+      this.setUniform("outOfRangeColor", color.clone());
     }
   }
 
