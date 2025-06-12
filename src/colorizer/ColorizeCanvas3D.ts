@@ -2,6 +2,7 @@ import {
   AREA_LIGHT,
   ColorizeFeature,
   Light,
+  Line3d,
   LoadSpec,
   RawArrayLoader,
   RENDERMODE_RAYMARCH,
@@ -46,9 +47,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   private pendingFrame: number;
   private currentFrame: number;
 
-  private trackPathLineId: number | null;
   private linePoints: Float32Array;
   private lineIds: number[];
+  private lineObject: Line3d | null;
 
   constructor() {
     this.params = null;
@@ -59,9 +60,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setShowAxis(true);
     this.view3d.setVolumeRenderMode(RENDERMODE_RAYMARCH);
     this.initLights();
-    this.trackPathLineId = null;
+
     this.linePoints = new Float32Array(0);
     this.lineIds = [];
+    this.lineObject = null;
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -146,12 +148,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return;
     }
     // Initialize track path line if it doesn't exist
-    if (this.trackPathLineId === null && this.trackPathLineId !== -1) {
-      const newId = this.view3d.addLine();
-      if (newId === -1) {
-        return;
-      }
-      this.trackPathLineId = newId;
+    if (this.lineObject === null) {
+      this.lineObject = new Line3d();
+      this.view3d.addSceneObject(this.lineObject);
     }
     const { ids, points } = computeTrackLinePointsAndIds(
       this.params.dataset,
@@ -160,7 +159,12 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     );
     this.lineIds = ids;
     this.linePoints = points;
-    this.view3d.setLinePositions(this.trackPathLineId, this.linePoints);
+    this.lineObject.setLineVertexData(this.linePoints);
+    if (this.volume) {
+      console.log("Setting line scale for volume:", this.volume.physicalSize);
+      this.lineObject.setScale(new Vector3(1, 1, 1).divide(this.volume?.physicalSize));
+      this.lineObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
+    }
     // TODO: Compute line colors for color by feature
     if (this.volume) {
       this.view3d.updateDensity(this.volume, 0.15);
@@ -244,6 +248,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       this.view3d.redraw();
     });
     this.view3d.addVolume(volume);
+    this.volume = volume;
 
     const segChannel = this.params.dataset?.frames3d?.segmentationChannel ?? 0;
     this.view3d.setVolumeChannelEnabled(volume, segChannel, true);
@@ -266,13 +271,12 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setShowBoundingBox(volume, true);
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
+
     this.updateTrackVertices();
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels
     // 0,75,255
     // this.view3d.setGamma(volume, 0, 75, 255);
-
-    this.volume = volume;
 
     await this.loader.loadVolumeData(volume);
     return volume;
@@ -332,8 +336,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // Show nothing if track doesn't exist or doesn't have centroid data
     const track = this.params?.track;
     if (!track || !track.centroids || !this.params?.showTrackPath) {
-      if (this.trackPathLineId !== null) {
-        this.view3d.setLineSegmentsVisible(this.trackPathLineId, 0);
+      if (this.lineObject !== null) {
+        this.lineObject.setNumSegmentsVisible(0);
       }
       return;
     }
@@ -344,8 +348,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       // Hide track if we are outside the track range
       range = 0;
     }
-    if (this.trackPathLineId !== null) {
-      this.view3d.setLineSegmentsVisible(this.trackPathLineId, range);
+    if (this.lineObject !== null) {
+      this.lineObject.setNumSegmentsVisible(range);
     }
   }
 
