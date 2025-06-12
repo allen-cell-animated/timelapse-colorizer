@@ -30,6 +30,8 @@ type BaseLabeledSliderProps = {
   // TODO: Add a way to fetch significant figures for each feature. This is a temporary fix
   // and may not work for all features. Use scientific notation maybe?
   maxDecimalsToDisplay?: number;
+  /** Optional precision for the numeric input field. */
+  precision?: number;
   /**
    * Optional method for formatting display numbers, used in the slider tooltip and the text labels
    * under the slider endpoints. If undefined, formats numbers to `maxDecimalsToDisplay` decimal places.
@@ -243,6 +245,7 @@ export default function LabeledSlider(inputProps: LabeledSliderProps): ReactElem
     disabled: props.disabled,
     style: { width: "80px" },
     type: "number",
+    precision: props.precision,
   };
 
   type InputNumberProps = Partial<Parameters<typeof InputNumber>[0]>;

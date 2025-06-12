@@ -66,7 +66,7 @@ export default class CanvasOverlay implements IRenderCanvas {
   private labelData: LabelData[];
   private timeToLabelIds: Map<number, Record<number, number[]>>;
   private selectedLabelIdx: number | null;
-  private lastClickedId: number | null;
+  private rangeStartId: number | null;
 
   private scaleBarStyle: ScaleBarStyle;
   private timestampStyle: TimestampStyle;
@@ -143,7 +143,7 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.labelData = [];
     this.timeToLabelIds = new Map();
     this.selectedLabelIdx = null;
-    this.lastClickedId = null;
+    this.rangeStartId = null;
 
     this.scaleBarStyle = styles?.scaleBar || defaultScaleBarStyle;
     this.timestampStyle = styles?.timestamp || defaultTimestampStyle;
@@ -300,16 +300,16 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     // If the dataset has changed types, construct and initialize the inner
     // canvas.
-    let hasUpdatedCanvasParams = false;
+    let hasAlreadyUpdatedCanvasParams = false;
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       const dataset = params.dataset;
       if (dataset && this.doesCanvasTypeNeedUpdate(dataset)) {
         await this.updateCanvasType(dataset);
-        hasUpdatedCanvasParams = true;
+        hasAlreadyUpdatedCanvasParams = true;
       }
     }
 
-    if (!hasUpdatedCanvasParams) {
+    if (!hasAlreadyUpdatedCanvasParams) {
       await this.innerCanvas.setParams(params);
     }
 
@@ -339,12 +339,12 @@ export default class CanvasOverlay implements IRenderCanvas {
     labelData: LabelData[],
     timeToLabelIds: Map<number, Record<number, number[]>>,
     selectedLabelIdx: number | null,
-    lastClickedId: number | null
+    rangeStartId: number | null
   ): void {
     this.labelData = labelData;
     this.timeToLabelIds = timeToLabelIds;
     this.selectedLabelIdx = selectedLabelIdx;
-    this.lastClickedId = lastClickedId;
+    this.rangeStartId = rangeStartId;
     this.render(false);
   }
 
@@ -368,7 +368,7 @@ export default class CanvasOverlay implements IRenderCanvas {
       labelData: this.labelData,
       timeToLabelIds: this.timeToLabelIds,
       selectedLabelIdx: this.selectedLabelIdx,
-      lastSelectedId: this.lastClickedId,
+      rangeStartId: this.rangeStartId,
       // TODO: Make this into a matrix transformation from 3D centroid to 2D
       // onscreen position.
       frameToCanvasCoordinates:

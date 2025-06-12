@@ -265,12 +265,12 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
       annotationLabels,
       timeToAnnotationLabelIds,
       props.annotationState.currentLabelIdx,
-      props.annotationState.lastClickedId
+      props.annotationState.rangeStartId
     );
   }, [
     dataset,
     props.annotationState.data,
-    props.annotationState.lastClickedId,
+    props.annotationState.rangeStartId,
     props.annotationState.currentLabelIdx,
     props.annotationState.visible,
   ]);

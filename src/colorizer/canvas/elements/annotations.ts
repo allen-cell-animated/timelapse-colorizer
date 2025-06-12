@@ -9,7 +9,7 @@ export type AnnotationParams = BaseRenderParams & {
   labelData: LabelData[];
   timeToLabelIds: Map<number, Record<number, number[]>>;
   selectedLabelIdx: number | null;
-  lastSelectedId: number | null;
+  rangeStartId: number | null;
 
   frameToCanvasCoordinates: Vector2;
   frame: number;
@@ -92,13 +92,13 @@ function getMarkerScale(params: AnnotationParams, style: AnnotationStyle): numbe
   return dampenedZoomScale;
 }
 
-function drawLastClickedId(
+function drawRangeStartId(
   origin: Vector2,
   ctx: CanvasRenderingContext2D,
   params: AnnotationParams,
   style: AnnotationStyle
 ): void {
-  const pos = getCanvasPixelCoordsFromId(params.lastSelectedId, params);
+  const pos = getCanvasPixelCoordsFromId(params.rangeStartId, params);
   if (pos === null) {
     return;
   }
@@ -251,7 +251,7 @@ export function getAnnotationRenderer(
         }
       }
 
-      drawLastClickedId(origin, ctx, params, style);
+      drawRangeStartId(origin, ctx, params, style);
 
       for (const [id, labelIdxs] of idsToLabels) {
         drawAnnotationMarker(origin, ctx, params, style, id, labelIdxs);
