@@ -6,7 +6,7 @@ import { Color, ColorRepresentation } from "three";
 
 import { OUTLINE_COLOR_DEFAULT } from "../../colorizer/constants";
 import { DrawMode, TrackPathColorMode } from "../../colorizer/types";
-import { FlexColumn } from "../../styles/utils";
+import { FlexColumn, VisuallyHidden } from "../../styles/utils";
 import { SelectItem } from "../Dropdowns/types";
 import { DEFAULT_OUTLINE_COLOR_PRESETS } from "./Settings/constants";
 
@@ -274,6 +274,7 @@ export default function SettingsTab(): ReactElement {
               >
                 <Tooltip title="Show breaks in the track path where the track is not continuous." placement="right">
                   <div style={{ width: "fit-content" }}>
+                    <VisuallyHidden>Show breaks in the track path where the track is not continuous.</VisuallyHidden>
                     <Checkbox
                       type="checkbox"
                       checked={showTrackPathBreaks}

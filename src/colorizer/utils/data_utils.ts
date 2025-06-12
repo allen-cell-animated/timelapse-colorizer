@@ -483,16 +483,16 @@ export function computeVertexColorsFromIds(ids: number[], params: RenderCanvasSt
  * line segments (see Three.js `LineSegments2`). Also returns the object IDs for
  * each vertex, which can be used to color the points based on feature data.
  * @param dataset The Dataset to look up centroids from.
- * @param track track object to compute path for.
+ * @param track Track object to compute path for.
  * @param showDiscontinuities When true, the line will be discontinuous (show
  * gaps) when the track is missing data. When false, the line will bridge
  * missing times by drawing a line from the last valid point to the next.
  * @returns An object with two properties:
  * - `ids`: An array of object IDs corresponding to each vertex in the path.
- * - `points`: A Float32Array of 3D vertices representing the track's path. Each
- *   pair of vertices represents one line segment. Coordinates are given in
- *   terms of the centroid data (typically as pixels/voxels in the frame). The
- *   length will be `3 * ids.length`.
+ * - `points`: A Float32Array of 3D vertex coordinates representing the track's
+ *   path. Each pair of vertices represents one line segment. Coordinates are
+ *   given in terms of the centroid data (typically as pixels/voxels in the
+ *   frame). The length will be `3 * ids.length`.
  */
 export function computeTrackLinePointsAndIds(
   dataset: Dataset,
@@ -502,7 +502,8 @@ export function computeTrackLinePointsAndIds(
   if (track.centroids.length === 0) {
     return { ids: [], points: new Float32Array(0) };
   }
-  // All vertices except for the beginning and end will be duplicated
+  // All vertices except for the beginning and end will be duplicated, and each
+  // vertex has 3 coordinates.
   const points = new Float32Array((track.duration() * 2 - 2) * 3);
   const ids = [];
 
