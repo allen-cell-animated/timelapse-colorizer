@@ -97,7 +97,13 @@ export default class ColorRamp {
     // Scale t so it represents a (float) index in the array of color stops
     const tIndex = t * (this.colorStops.length - 1);
 
-    // Get the two colors on either side of the tIndex
+    if (this.type === ColorRampType.CATEGORICAL) {
+      // For categorical ramps, we return the nearest color
+      return this.colorStops[Math.round(tIndex)].clone();
+    }
+
+    // For linear ramps, we need to interpolate between the two colors  on
+    // either side of the tIndex
     const minIndex = Math.floor(tIndex);
     const maxIndex = Math.ceil(tIndex);
     // For single-color color ramps, or if t is the exact index of a color stop

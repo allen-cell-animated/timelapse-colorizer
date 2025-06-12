@@ -49,6 +49,7 @@ const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
 const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Outline" },
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
+  { value: TrackPathColorMode.USE_FEATURE_COLOR.toString(), label: "Feature" },
 ];
 
 export const SETTINGS_INDENT_PX = 24;

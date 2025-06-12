@@ -124,6 +124,8 @@ vec4 getColorRamp(float val) {
 vec4 getCategoricalColor(float featureValue) {
   float width = float(textureSize(colorRamp, 0).x);
   float modValue = mod(featureValue, width);
+  // The categorical texture uses no interpolation, so when sampling, `modValue`
+  // is rounded to the nearest integer.
   return getColorRamp(modValue / (width - 1.0));
 }
 
