@@ -400,6 +400,9 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
    * Updates the line geometry with new vertex positions and vertex colors.
    */
   private updateLineGeometry(points: Float32Array, colors: Float32Array): void {
+    if (points.length === 0 || colors.length === 0) {
+      return;
+    }
     let geometry = this.line.geometry;
     // Reuse the same geometry object unless the buffer size is too small.
     // See https://threejs.org/manual/#en/how-to-update-things
@@ -459,14 +462,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
   private setOutlierDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outlierDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
-      this.setUniform("outlierColor", color.clone().convertLinearToSRGB());
+      this.setUniform("outlierColor", color.clone());
     }
   }
 
   private setOutOfRangeDrawMode(mode: DrawMode, color: Color): void {
     this.setUniform("outOfRangeDrawMode", mode);
     if (mode === DrawMode.USE_COLOR) {
-      this.setUniform("outOfRangeColor", color.clone().convertLinearToSRGB());
+      this.setUniform("outOfRangeColor", color.clone());
     }
   }
 
