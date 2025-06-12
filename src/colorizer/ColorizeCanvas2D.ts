@@ -391,7 +391,6 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     } else {
       (this.line.material as LineMaterial).color = color;
       (this.line.material as LineMaterial).linewidth = trackPathWidthPx;
-      console.log("Setting line width to", trackPathWidthPx);
     }
   }
 
