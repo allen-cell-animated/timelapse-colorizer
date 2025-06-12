@@ -16,12 +16,10 @@ import { Vector2, Vector3 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import { CanvasScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult, PixelIdInfo } from "./types";
-import { getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
+import { computeTrackLinePointsAndIds, getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
-import Dataset from "./Dataset";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
-import Track from "./Track";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -49,6 +47,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   private currentFrame: number;
 
   private trackPathLineId: number | null;
+  private linePoints: Float32Array;
+  private lineIds: number[];
 
   constructor() {
     this.params = null;
@@ -60,6 +60,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setVolumeRenderMode(RENDERMODE_RAYMARCH);
     this.initLights();
     this.trackPathLineId = null;
+    this.linePoints = new Float32Array(0);
+    this.lineIds = [];
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -136,11 +138,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
   }
 
-  private updateTrackData(dataset: Dataset | null, track: Track | null, showDiscontinuities: boolean): void {
-    if (!track && this.volume) {
-      this.view3d.updateDensity(this.volume, 0.5);
-    }
-    if (!track || !track.centroids || track.centroids.length === 0 || !dataset) {
+  private updateTrackVertices(): void {
+    if (!this.params || !this.params.track || !this.params.dataset) {
+      if (this.volume) {
+        this.view3d.updateDensity(this.volume, 0.5);
+      }
       return;
     }
     // Initialize track path line if it doesn't exist
@@ -151,49 +153,17 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       }
       this.trackPathLineId = newId;
     }
-    // Draw line segments between the centroids of the track's objects. Each
-    // segment has a start and end 3D coordinate, for a total of 6 floats per
-    // segment.
-    const points = new Float32Array((track.duration() - 1) * 3 * 2);
-
-    let lastValidTime = track.times[0];
-    let lastValidId = track.ids[0];
-    for (let i = 1; i < track.duration(); i++) {
-      const absTime = i + track.startTime();
-
-      const srcId = lastValidId;
-      const currId = track.getIdAtTime(absTime);
-      let dstId = currId;
-
-      const isMissingTime = currId === -1;
-      const isDiscontinuousWithLastValidTime = lastValidTime !== absTime - 1;
-      if (absTime === 436) {
-        console.log("debug point");
-      }
-      if (isMissingTime || (isDiscontinuousWithLastValidTime && showDiscontinuities)) {
-        // If the track is missing a centroid at this time, or if it's
-        // discontinuous, "skip" this time by drawing a line segment with a
-        // length of 0 at the last valid time.
-        dstId = lastValidId;
-      }
-      const srcCentroid = dataset.getCentroid(srcId)!;
-      const dstCentroid = dataset.getCentroid(dstId)!;
-      points[(i - 1) * 2 * 3 + 0] = srcCentroid[0];
-      points[(i - 1) * 2 * 3 + 1] = srcCentroid[1];
-      points[(i - 1) * 2 * 3 + 2] = srcCentroid[2];
-      points[(i - 1) * 2 * 3 + 3] = dstCentroid[0];
-      points[(i - 1) * 2 * 3 + 4] = dstCentroid[1];
-      points[(i - 1) * 2 * 3 + 5] = dstCentroid[2];
-
-      // Update last valid time + ID
-      if (!isMissingTime) {
-        lastValidTime = absTime;
-        lastValidId = currId;
-      }
-    }
-    this.view3d.setLinePositions(this.trackPathLineId, points);
+    const { ids, points } = computeTrackLinePointsAndIds(
+      this.params.dataset,
+      this.params.track,
+      this.params.showTrackPathBreaks
+    );
+    this.lineIds = ids;
+    this.linePoints = points;
+    this.view3d.setLinePositions(this.trackPathLineId, this.linePoints);
+    // TODO: Compute line colors for color by feature
     if (this.volume) {
-      this.view3d.updateDensity(this.volume, 0.05);
+      this.view3d.updateDensity(this.volume, 0.15);
     }
   }
 
@@ -243,7 +213,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
 
     if (hasPropertyChanged(params, prevParams, ["track", "dataset"])) {
-      this.updateTrackData(params.dataset, params.track, true);
+      this.updateTrackVertices();
     }
 
     this.render(false);
@@ -285,6 +255,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       emissiveColor: [0, 0, 0],
     });
     this.view3d.enablePicking(volume, true, segChannel);
+    this.view3d.setInterpolationEnabled(volume, true);
 
     this.view3d.updateDensity(volume, 0.5);
     // this.view3d.updateDensity(volume, 0.05);
@@ -295,7 +266,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setShowBoundingBox(volume, true);
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
-    this.updateTrackData(this.params?.dataset ?? null, this.params?.track ?? null, true);
+    this.updateTrackVertices();
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels
     // 0,75,255
