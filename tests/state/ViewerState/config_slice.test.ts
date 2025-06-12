@@ -15,6 +15,7 @@ const EXAMPLE_SLICE_1: Partial<ConfigSlice> = {
   trackPathColor: new Color(0x00ff00),
   trackPathWidthPx: 2,
   trackPathColorMode: TrackPathColorMode.USE_CUSTOM_COLOR,
+  showTrackPathBreaks: false,
   showScaleBar: false,
   showTimestamp: false,
   outOfRangeDrawSettings: { color: new Color(0xff0000), mode: DrawMode.USE_COLOR },
@@ -28,6 +29,7 @@ const EXAMPLE_SLICE_1_PARAMS: SerializedStoreData = {
   [UrlParam.PATH_COLOR]: "00ff00",
   [UrlParam.PATH_WIDTH]: "2",
   [UrlParam.PATH_COLOR_MODE]: TrackPathColorMode.USE_CUSTOM_COLOR.toString(),
+  [UrlParam.SHOW_PATH_BREAKS]: "0",
   [UrlParam.SHOW_SCALEBAR]: "0",
   [UrlParam.SHOW_TIMESTAMP]: "0",
   [UrlParam.FILTERED_COLOR]: "ff0000",
@@ -43,6 +45,7 @@ const EXAMPLE_SLICE_2: Partial<ConfigSlice> = {
   trackPathColor: new Color(0xffff00),
   trackPathWidthPx: 3,
   trackPathColorMode: TrackPathColorMode.USE_OUTLINE_COLOR,
+  showTrackPathBreaks: true,
   showScaleBar: true,
   showTimestamp: true,
   outOfRangeDrawSettings: { color: new Color(0xffff00), mode: DrawMode.HIDE },
@@ -56,6 +59,7 @@ const EXAMPLE_SLICE_2_PARAMS: SerializedStoreData = {
   [UrlParam.PATH_COLOR]: "ffff00",
   [UrlParam.PATH_WIDTH]: "3",
   [UrlParam.PATH_COLOR_MODE]: TrackPathColorMode.USE_OUTLINE_COLOR.toString(),
+  [UrlParam.SHOW_PATH_BREAKS]: "1",
   [UrlParam.SHOW_SCALEBAR]: "1",
   [UrlParam.SHOW_TIMESTAMP]: "1",
   [UrlParam.FILTERED_COLOR]: "ffff00",
@@ -74,6 +78,7 @@ describe("ConfigSlice", () => {
       result.current.setTrackPathColor(new Color(0x00ff00));
       result.current.setTrackPathWidthPx(2);
       result.current.setTrackPathColorMode(TrackPathColorMode.USE_CUSTOM_COLOR);
+      result.current.setShowTrackPathBreaks(false);
       result.current.setShowScaleBar(false);
       result.current.setShowTimestamp(false);
       result.current.setShowLegendDuringExport(false);
@@ -88,6 +93,7 @@ describe("ConfigSlice", () => {
     expect(result.current.trackPathColor).toEqual(new Color(0x00ff00));
     expect(result.current.trackPathWidthPx).toBe(2);
     expect(result.current.trackPathColorMode).toBe(TrackPathColorMode.USE_CUSTOM_COLOR);
+    expect(result.current.showTrackPathBreaks).toBe(false);
     expect(result.current.showScaleBar).toBe(false);
     expect(result.current.showTimestamp).toBe(false);
     expect(result.current.showLegendDuringExport).toBe(false);
@@ -102,6 +108,7 @@ describe("ConfigSlice", () => {
       result.current.setTrackPathColor(new Color(0xffff00));
       result.current.setTrackPathWidthPx(3);
       result.current.setTrackPathColorMode(TrackPathColorMode.USE_OUTLINE_COLOR);
+      result.current.setShowTrackPathBreaks(true);
       result.current.setShowScaleBar(true);
       result.current.setShowTimestamp(true);
       result.current.setShowLegendDuringExport(true);
@@ -115,6 +122,7 @@ describe("ConfigSlice", () => {
     expect(result.current.trackPathColor).toEqual(new Color(0xffff00));
     expect(result.current.trackPathWidthPx).toBe(3);
     expect(result.current.trackPathColorMode).toBe(TrackPathColorMode.USE_OUTLINE_COLOR);
+    expect(result.current.showTrackPathBreaks).toBe(true);
     expect(result.current.showScaleBar).toBe(true);
     expect(result.current.showTimestamp).toBe(true);
     expect(result.current.showLegendDuringExport).toBe(true);
