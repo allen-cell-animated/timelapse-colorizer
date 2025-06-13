@@ -45,6 +45,9 @@ import {
   computeVertexColorsFromIds,
   getGlobalIdFromSegId,
   hasPropertyChanged,
+  LINE_GEOMETRY_DEPS,
+  LINE_MATERIAL_DEPS,
+  LINE_VERTEX_COLOR_DEPS,
   normalizePointsTo2dCanvasSpace,
 } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
@@ -533,35 +536,13 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     }
 
     // Update track path data
-    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, [
-      "dataset",
-      "track",
-      "showTrackPathBreaks",
-    ]);
+    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, LINE_GEOMETRY_DEPS);
     const doesLineVertexColorNeedUpdate =
       params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
-      hasPropertyChanged(params, prevParams, [
-        "dataset",
-        "track",
-        "trackPathColorMode",
-        "showTrackPathBreaks",
-        "featureKey",
-        "colorRamp",
-        "colorRampRange",
-        "categoricalPaletteRamp",
-        "inRangeLUT",
-        "outOfRangeDrawSettings",
-        "outlierDrawSettings",
-        "showTrackPath",
-      ]);
+      hasPropertyChanged(params, prevParams, LINE_VERTEX_COLOR_DEPS);
     const doesLineMaterialNeedUpdate =
-      doesLineVertexColorNeedUpdate ||
-      hasPropertyChanged(params, prevParams, [
-        "trackPathColorMode",
-        "trackPathColor",
-        "outlineColor",
-        "trackPathWidthPx",
-      ]);
+      doesLineVertexColorNeedUpdate || hasPropertyChanged(params, prevParams, LINE_MATERIAL_DEPS);
+
     if (doesLineGeometryNeedUpdate || doesLineVertexColorNeedUpdate) {
       if (doesLineGeometryNeedUpdate && params.dataset && params.track) {
         const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track, params.showTrackPathBreaks);

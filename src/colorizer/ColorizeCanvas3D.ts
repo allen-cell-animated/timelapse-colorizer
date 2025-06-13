@@ -30,6 +30,9 @@ import {
   computeVertexColorsFromIds,
   getGlobalIdFromSegId,
   hasPropertyChanged,
+  LINE_GEOMETRY_DEPS,
+  LINE_MATERIAL_DEPS,
+  LINE_VERTEX_COLOR_DEPS,
 } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -64,6 +67,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   private linePoints: Float32Array;
   private lineIds: number[];
   private lineObject: Line3d;
+  /**
+   * Second copy of the base line object, with transparency + overlay enabled.
+   * This allows the line to be shown "through" objects.
+   */
+  private lineOverlayObject: Line3d;
   private lineColors: Float32Array;
 
   constructor() {
@@ -80,6 +88,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.lineColors = new Float32Array(0);
     this.lineIds = [];
     this.lineObject = new Line3d();
+    this.lineOverlayObject = new Line3d();
+
+    // TODO: Allow users to control opacity of the overlay line
+    this.lineOverlayObject.setOpacity(0.25);
+    this.lineOverlayObject.setOverlay(true);
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -170,26 +183,27 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     const color = modeToColor[trackPathColorMode];
     this.lineObject.setColor(color, trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR);
     this.lineObject.setLineWidth(trackPathWidthPx);
+    this.lineOverlayObject.setColor(color, trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR);
+    this.lineOverlayObject.setLineWidth(trackPathWidthPx); // Use world units for overlay
   }
 
   private updateLineGeometry(points: Float32Array, colors: Float32Array): void {
     if (!this.params || !this.params.track || !this.params.dataset) {
-      if (this.volume) {
-        this.view3d.updateDensity(this.volume, 0.5);
-      }
       return;
     }
-    if (!this.view3d.hasSceneObject(this.lineObject)) {
-      this.view3d.addSceneObject(this.lineObject);
+    if (!this.view3d.hasLineObject(this.lineObject)) {
+      this.view3d.addLineObject(this.lineObject);
+      this.view3d.addLineObject(this.lineOverlayObject);
     }
 
     this.lineObject.setLineVertexData(points, colors);
+    this.lineOverlayObject.setLineVertexData(points, colors);
 
     if (this.volume) {
       this.lineObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
       this.lineObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
-      // Make objects more transparent when a track is selected
-      this.view3d.updateDensity(this.volume, 0.15);
+      this.lineOverlayObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
+      this.lineOverlayObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
     }
   }
 
@@ -239,36 +253,13 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
 
     // Update track path data
-    // TODO: Repeated code from ColorizeCanvas2D... move?
-    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, [
-      "dataset",
-      "track",
-      "showTrackPathBreaks",
-    ]);
+    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, LINE_GEOMETRY_DEPS);
     const doesLineVertexColorNeedUpdate =
       params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
-      hasPropertyChanged(params, prevParams, [
-        "dataset",
-        "track",
-        "trackPathColorMode",
-        "showTrackPathBreaks",
-        "featureKey",
-        "colorRamp",
-        "colorRampRange",
-        "categoricalPaletteRamp",
-        "inRangeLUT",
-        "outOfRangeDrawSettings",
-        "outlierDrawSettings",
-        "showTrackPath",
-      ]);
+      hasPropertyChanged(params, prevParams, LINE_VERTEX_COLOR_DEPS);
     const doesLineMaterialNeedUpdate =
-      doesLineVertexColorNeedUpdate ||
-      hasPropertyChanged(params, prevParams, [
-        "trackPathColorMode",
-        "trackPathColor",
-        "outlineColor",
-        "trackPathWidthPx",
-      ]);
+      doesLineVertexColorNeedUpdate || hasPropertyChanged(params, prevParams, LINE_MATERIAL_DEPS);
+
     if (doesLineGeometryNeedUpdate || doesLineVertexColorNeedUpdate) {
       if (doesLineGeometryNeedUpdate && params.dataset && params.track) {
         const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track, params.showTrackPathBreaks);
@@ -401,6 +392,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     const track = this.params?.track;
     if (!track || !track.centroids || !this.params?.showTrackPath) {
       this.lineObject.setNumSegmentsVisible(0);
+      this.lineOverlayObject.setNumSegmentsVisible(0);
       return;
     }
 
@@ -411,6 +403,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       range = 0;
     }
     this.lineObject.setNumSegmentsVisible(range);
+    this.lineOverlayObject.setNumSegmentsVisible(range);
   }
 
   private syncSelectedId(): void {
@@ -428,6 +421,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   dispose(): void {
+    this.view3d.removeLineObject(this.lineObject);
+    this.view3d.removeLineObject(this.lineOverlayObject);
+    this.lineObject.cleanup();
+    this.lineOverlayObject.cleanup();
     this.view3d.removeAllVolumes();
   }
 

@@ -558,3 +558,23 @@ export function normalizePointsTo2dCanvasSpace(points: Float32Array, dataset: Da
   }
   return points;
 }
+
+export const LINE_GEOMETRY_DEPS: (keyof RenderCanvasStateParams)[] = ["dataset", "track", "showTrackPathBreaks"];
+export const LINE_VERTEX_COLOR_DEPS: (keyof RenderCanvasStateParams)[] = [
+  ...LINE_GEOMETRY_DEPS,
+  "trackPathColorMode",
+  "featureKey",
+  "colorRamp",
+  "colorRampRange",
+  "categoricalPaletteRamp",
+  "inRangeLUT",
+  "outOfRangeDrawSettings",
+  "outlierDrawSettings",
+  "showTrackPath",
+];
+export const LINE_MATERIAL_DEPS: (keyof RenderCanvasStateParams)[] = [
+  "trackPathColorMode",
+  "trackPathColor",
+  "outlineColor",
+  "trackPathWidthPx",
+];
