@@ -13,11 +13,24 @@ import {
   VolumeLoaderContext,
   WorkerLoader,
 } from "@aics/vole-core";
-import { Vector2, Vector3 } from "three";
+import { Color, Vector2, Vector3 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
-import { CanvasScaleInfo, CanvasType, DrawMode, FeatureDataType, FrameLoadResult, PixelIdInfo } from "./types";
-import { computeTrackLinePointsAndIds, getGlobalIdFromSegId, hasPropertyChanged } from "./utils/data_utils";
+import {
+  CanvasScaleInfo,
+  CanvasType,
+  DrawMode,
+  FeatureDataType,
+  FrameLoadResult,
+  PixelIdInfo,
+  TrackPathColorMode,
+} from "./types";
+import {
+  computeTrackLinePointsAndIds,
+  computeVertexColorsFromIds,
+  getGlobalIdFromSegId,
+  hasPropertyChanged,
+} from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
@@ -49,7 +62,8 @@ export class ColorizeCanvas3D implements IRenderCanvas {
 
   private linePoints: Float32Array;
   private lineIds: number[];
-  private lineObject: Line3d | null;
+  private lineObject: Line3d;
+  private lineColors: Float32Array;
 
   constructor() {
     this.params = null;
@@ -62,8 +76,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.initLights();
 
     this.linePoints = new Float32Array(0);
+    this.lineColors = new Float32Array(0);
     this.lineIds = [];
-    this.lineObject = null;
+    this.lineObject = new Line3d();
 
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.style.width = "10px";
@@ -140,33 +155,38 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
   }
 
-  private updateTrackVertices(): void {
+  private updateLineMaterial(): void {
+    if (!this.params) {
+      return;
+    }
+    const { trackPathColorMode, outlineColor, trackPathColor, trackPathWidthPx } = this.params;
+    const modeToColor = {
+      [TrackPathColorMode.USE_FEATURE_COLOR]: new Color("#ffffff"),
+      [TrackPathColorMode.USE_OUTLINE_COLOR]: outlineColor,
+      [TrackPathColorMode.USE_CUSTOM_COLOR]: trackPathColor,
+    };
+    const color = modeToColor[trackPathColorMode];
+    this.lineObject.setColor(color, trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR);
+    this.lineObject.setLineWidth(trackPathWidthPx);
+  }
+
+  private updateLineGeometry(points: Float32Array, colors: Float32Array): void {
     if (!this.params || !this.params.track || !this.params.dataset) {
       if (this.volume) {
         this.view3d.updateDensity(this.volume, 0.5);
       }
       return;
     }
-    // Initialize track path line if it doesn't exist
-    if (this.lineObject === null) {
-      this.lineObject = new Line3d();
+    if (!this.view3d.hasSceneObject(this.lineObject)) {
       this.view3d.addSceneObject(this.lineObject);
     }
-    const { ids, points } = computeTrackLinePointsAndIds(
-      this.params.dataset,
-      this.params.track,
-      this.params.showTrackPathBreaks
-    );
-    this.lineIds = ids;
-    this.linePoints = points;
-    this.lineObject.setLineVertexData(this.linePoints);
+
+    this.lineObject.setLineVertexData(points, colors);
+
     if (this.volume) {
-      console.log("Setting line scale for volume:", this.volume.physicalSize);
-      this.lineObject.setScale(new Vector3(1, 1, 1).divide(this.volume?.physicalSize));
+      this.lineObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
       this.lineObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
-    }
-    // TODO: Compute line colors for color by feature
-    if (this.volume) {
+      // Make objects more transparent when a track is selected
       this.view3d.updateDensity(this.volume, 0.15);
     }
   }
@@ -216,8 +236,50 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       }
     }
 
-    if (hasPropertyChanged(params, prevParams, ["track", "dataset"])) {
-      this.updateTrackVertices();
+    // Update track path data
+    // TODO: Repeated code from ColorizeCanvas2D... move?
+    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, [
+      "dataset",
+      "track",
+      "showTrackPathBreaks",
+    ]);
+    const doesLineVertexColorNeedUpdate =
+      params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
+      hasPropertyChanged(params, prevParams, [
+        "dataset",
+        "track",
+        "trackPathColorMode",
+        "showTrackPathBreaks",
+        "featureKey",
+        "colorRamp",
+        "colorRampRange",
+        "categoricalPaletteRamp",
+        "inRangeLUT",
+        "outOfRangeDrawSettings",
+        "outlierDrawSettings",
+        "showTrackPath",
+      ]);
+    const doesLineMaterialNeedUpdate =
+      doesLineVertexColorNeedUpdate ||
+      hasPropertyChanged(params, prevParams, [
+        "trackPathColorMode",
+        "trackPathColor",
+        "outlineColor",
+        "trackPathWidthPx",
+      ]);
+    if (doesLineGeometryNeedUpdate || doesLineVertexColorNeedUpdate) {
+      if (doesLineGeometryNeedUpdate && params.dataset && params.track) {
+        const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track, params.showTrackPathBreaks);
+        this.lineIds = ids;
+        this.linePoints = points;
+      }
+      if (doesLineVertexColorNeedUpdate) {
+        this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
+      }
+      this.updateLineGeometry(this.linePoints, this.lineColors);
+    }
+    if (doesLineMaterialNeedUpdate) {
+      this.updateLineMaterial();
     }
 
     this.render(false);
@@ -272,7 +334,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setBoundingBoxColor(volume, [0.5, 0.5, 0.5]);
     this.view3d.resetCamera();
 
-    this.updateTrackVertices();
+    this.updateLineGeometry(this.linePoints, this.lineColors);
 
     // TODO: Look at gamma/levels setting? Vole-app looks good at levels
     // 0,75,255
@@ -336,9 +398,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     // Show nothing if track doesn't exist or doesn't have centroid data
     const track = this.params?.track;
     if (!track || !track.centroids || !this.params?.showTrackPath) {
-      if (this.lineObject !== null) {
-        this.lineObject.setNumSegmentsVisible(0);
-      }
+      this.lineObject.setNumSegmentsVisible(0);
       return;
     }
 
@@ -348,9 +408,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       // Hide track if we are outside the track range
       range = 0;
     }
-    if (this.lineObject !== null) {
-      this.lineObject.setNumSegmentsVisible(range);
-    }
+    this.lineObject.setNumSegmentsVisible(range);
   }
 
   private syncSelectedId(): void {
