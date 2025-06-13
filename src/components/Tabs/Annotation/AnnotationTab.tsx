@@ -1,4 +1,4 @@
-import { MenuOutlined, TableOutlined } from "@ant-design/icons";
+import { ExportOutlined, MenuOutlined, TableOutlined } from "@ant-design/icons";
 import { Modal, Radio, Tooltip } from "antd";
 import React, { ReactElement, useCallback, useMemo, useState, useTransition } from "react";
 import { useShallow } from "zustand/shallow";
@@ -50,7 +50,9 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
   const [isPending, startTransition] = useTransition();
   const [viewType, setViewType] = useState<AnnotationViewType>(AnnotationViewType.LIST);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const [showCreateLabelModal, setShowCreateLabelModal] = useState(false);
+
   const modalContainerRef = React.useRef<HTMLDivElement>(null);
 
   const store = useViewerStateStore(
@@ -150,6 +152,8 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
     [annotationData]
   );
 
+  const hasAnnotations = labels.length > 0;
+
   const tableIds = useMemo(() => {
     return currentLabelIdx !== null ? annotationData.getLabeledIds(currentLabelIdx) : [];
   }, [currentLabelIdx, annotationData]);
@@ -174,7 +178,11 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
   return (
     <FlexColumnAlignCenter $gap={10}>
       <FlexRow style={{ width: "100%", justifyContent: "space-between" }} ref={modalContainerRef}>
-        <AnnotationModeButton active={isAnnotationModeEnabled} onClick={onClickEnableAnnotationMode} />
+        <AnnotationModeButton
+          active={isAnnotationModeEnabled}
+          onClick={onClickEnableAnnotationMode}
+          hasAnnotations={hasAnnotations}
+        />
 
         {/* Appears when the user activates annotations for the first time and should define a label. */}
         <Modal
@@ -183,7 +191,16 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
           closable={true}
           width={360}
           title="Create new annotation"
-          onCancel={() => setShowCreateLabelModal(false)}
+          onCancel={() => {
+            // Close the color picker first if it's open before allowing the
+            // modal to be closed.
+            if (isColorPickerOpen) {
+              setIsColorPickerOpen(false);
+            } else {
+              setShowCreateLabelModal(false);
+              setIsColorPickerOpen(false);
+            }
+          }}
           destroyOnClose={true}
           getContainer={() => modalContainerRef.current ?? document.body}
         >
@@ -193,9 +210,16 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               onConfirm={(options: Partial<LabelOptions>) => {
                 onCreateNewLabel(options);
                 setShowCreateLabelModal(false);
+                setIsColorPickerOpen(false);
                 setIsAnnotationModeEnabled(true);
               }}
-              onCancel={() => setShowCreateLabelModal(false)}
+              onCancel={() => {
+                setShowCreateLabelModal(false);
+                setIsColorPickerOpen(false);
+              }}
+              // Requires a delay, otherwise the modal will immediately close
+              onColorPickerOpenChange={(open) => setTimeout(() => setIsColorPickerOpen(open), 1)}
+              colorPickerOpen={isColorPickerOpen}
               zIndex={Z_INDEX_MODAL + 50}
               focusNameInput={true}
             />
@@ -204,15 +228,23 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
 
         <FlexRow $gap={2}>
           <AnnotationImportButton annotationState={props.annotationState} />
-          <TextButton
-            onClick={() => {
-              const csvData = props.annotationState.data.toCsv(store.dataset!);
-              const name = datasetKey ?? "annotations";
-              download(`${name}-annotations.csv`, "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
-            }}
+          <Tooltip
+            title={"Create an annotation first to enable exporting"}
+            placement="top"
+            open={hasAnnotations ? false : undefined}
           >
-            Export CSV
-          </TextButton>
+            <TextButton
+              onClick={() => {
+                const csvData = props.annotationState.data.toCsv(store.dataset!);
+                const name = datasetKey ?? "annotations";
+                download(`${name}-annotations.csv`, "data:text/csv;charset=utf-8," + encodeURIComponent(csvData));
+              }}
+              disabled={!hasAnnotations}
+            >
+              <ExportOutlined style={{ marginRight: "2px" }} />
+              Export CSV
+            </TextButton>
+          </Tooltip>
         </FlexRow>
       </FlexRow>
 
@@ -231,7 +263,7 @@ export default function AnnotationTab(props: AnnotationTabProps): ReactElement {
               selectedLabel={selectedLabel}
               selectedLabelIdx={currentLabelIdx}
               selectionMode={props.annotationState.selectionMode}
-              setSelectionMode={props.annotationState.setSelectionMode}
+              setSelectionMode={props.annotationState.setBaseSelectionMode}
               defaultLabelOptions={props.annotationState.data.getNextDefaultLabelSettings()}
             >
               {labelSelectionDropdown}

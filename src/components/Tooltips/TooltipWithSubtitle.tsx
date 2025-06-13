@@ -1,5 +1,5 @@
 import { Tooltip, TooltipProps } from "antd";
-import React, { ReactElement, ReactNode, useRef } from "react";
+import React, { ReactElement, ReactNode } from "react";
 
 /**
  * A wrapper around the Ant Design Tooltip that adds support for a subtitle (or
@@ -8,7 +8,6 @@ import React, { ReactElement, ReactNode, useRef } from "react";
 export function TooltipWithSubtitle(
   props: TooltipProps & { title: ReactNode; subtitle?: ReactNode; subtitleList?: ReactNode[] }
 ): ReactElement {
-  const divRef = useRef<HTMLDivElement>(null);
   return (
     <Tooltip
       {...props}
@@ -25,11 +24,8 @@ export function TooltipWithSubtitle(
             ))}
         </>
       }
-      getPopupContainer={() => divRef.current ?? document.body}
     >
       {props.children}
-      {/* TODO: include invisible text here copying the tooltip? */}
-      <div ref={divRef}></div>
     </Tooltip>
   );
 }
