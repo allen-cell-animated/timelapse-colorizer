@@ -179,10 +179,10 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       [TrackPathColorMode.USE_CUSTOM_COLOR]: trackPathColor,
     };
     const color = modeToColor[trackPathColorMode];
-    this.lineObject.setColor(color, trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR);
-    this.lineObject.setLineWidth(trackPathWidthPx);
-    this.lineOverlayObject.setColor(color, trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR);
-    this.lineOverlayObject.setLineWidth(trackPathWidthPx); // Use world units for overlay
+    for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
+      lineObject.setColor(color, trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR);
+      lineObject.setLineWidth(trackPathWidthPx);
+    }
   }
 
   private updateLineGeometry(points: Float32Array, colors: Float32Array): void {
@@ -194,14 +194,12 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       this.view3d.addLineObject(this.lineOverlayObject);
     }
 
-    this.lineObject.setLineVertexData(points, colors);
-    this.lineOverlayObject.setLineVertexData(points, colors);
-
-    if (this.volume) {
-      this.lineObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
-      this.lineObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
-      this.lineOverlayObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
-      this.lineOverlayObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
+    for (const lineObject of [this.lineObject, this.lineOverlayObject]) {
+      lineObject.setLineVertexData(points, colors);
+      if (this.volume) {
+        lineObject.setScale(new Vector3(1, 1, 1).divide(this.volume.physicalSize));
+        lineObject.setTranslation(new Vector3(-0.5, -0.5, -0.5));
+      }
     }
   }
 
@@ -311,7 +309,6 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.view3d.setInterpolationEnabled(volume, true);
 
     this.view3d.updateDensity(volume, 0.5);
-    // this.view3d.updateDensity(volume, 0.05);
     this.view3d.updateExposure(0.6);
     this.view3d.setVolumeRotation(volume, [0, 0, 0]);
     this.view3d.setVolumeTranslation(volume, [0, 0, 0]);
@@ -381,15 +378,14 @@ export class ColorizeCanvas3D implements IRenderCanvas {
   }
 
   private syncTrackPathLine(): void {
-    // Show nothing if track doesn't exist or doesn't have centroid data
-    const track = this.params?.track;
-    if (!track || !track.centroids || !this.params?.showTrackPath) {
+    // Show nothing if track doesn't exist
+    if (!this.params || !this.params.track || !this.params.showTrackPath) {
       this.lineObject.setNumSegmentsVisible(0);
       this.lineOverlayObject.setNumSegmentsVisible(0);
       return;
     }
-
     // Show path up to current frame
+    const track = this.params.track;
     let range = this.currentFrame - track.startTime();
     if (range > track.duration() || range < 0) {
       // Hide track if we are outside the track range
