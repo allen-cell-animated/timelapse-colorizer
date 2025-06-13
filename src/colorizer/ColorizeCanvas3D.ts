@@ -33,6 +33,7 @@ import {
 } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
+import { ColorRampType } from "./ColorRamp";
 import { IRenderCanvas, RenderCanvasStateParams } from "./IRenderCanvas";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
@@ -138,6 +139,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
         const feature: ColorizeFeature = {
           idsToFeatureValue: featureData.tex,
           featureValueToColor: ramp.texture,
+          useRepeatingColor: ramp.type === ColorRampType.CATEGORICAL,
           inRangeIds: packDataTexture(Array.from(this.params.inRangeLUT), FeatureDataType.U8),
           outlierData: packDataTexture(Array.from(dataset.outliers ?? []), FeatureDataType.U8),
           featureMin: range[0],
