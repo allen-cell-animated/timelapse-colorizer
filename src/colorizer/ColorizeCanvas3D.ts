@@ -29,10 +29,8 @@ import {
   computeTrackLinePointsAndIds,
   computeVertexColorsFromIds,
   getGlobalIdFromSegId,
+  getLineUpdateFlags,
   hasPropertyChanged,
-  LINE_GEOMETRY_DEPS,
-  LINE_MATERIAL_DEPS,
-  LINE_VERTEX_COLOR_DEPS,
 } from "./utils/data_utils";
 import { packDataTexture } from "./utils/texture_utils";
 
@@ -253,25 +251,20 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     }
 
     // Update track path data
-    const doesLineGeometryNeedUpdate = hasPropertyChanged(params, prevParams, LINE_GEOMETRY_DEPS);
-    const doesLineVertexColorNeedUpdate =
-      params.trackPathColorMode === TrackPathColorMode.USE_FEATURE_COLOR &&
-      hasPropertyChanged(params, prevParams, LINE_VERTEX_COLOR_DEPS);
-    const doesLineMaterialNeedUpdate =
-      doesLineVertexColorNeedUpdate || hasPropertyChanged(params, prevParams, LINE_MATERIAL_DEPS);
+    const { geometryNeedsUpdate, vertexColorNeedsUpdate, materialNeedsUpdate } = getLineUpdateFlags(prevParams, params);
 
-    if (doesLineGeometryNeedUpdate || doesLineVertexColorNeedUpdate) {
-      if (doesLineGeometryNeedUpdate && params.dataset && params.track) {
+    if (geometryNeedsUpdate || vertexColorNeedsUpdate) {
+      if (geometryNeedsUpdate && params.dataset && params.track) {
         const { ids, points } = computeTrackLinePointsAndIds(params.dataset, params.track, params.showTrackPathBreaks);
         this.lineIds = ids;
         this.linePoints = points;
       }
-      if (doesLineVertexColorNeedUpdate) {
+      if (vertexColorNeedsUpdate) {
         this.lineColors = computeVertexColorsFromIds(this.lineIds, this.params);
       }
       this.updateLineGeometry(this.linePoints, this.lineColors);
     }
-    if (doesLineMaterialNeedUpdate) {
+    if (materialNeedsUpdate) {
       this.updateLineMaterial();
     }
 
