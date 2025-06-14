@@ -125,3 +125,8 @@ export function get2DCanvasScaling(
     frameToCanvasCoordinates,
   };
 }
+
+/** Rounds a number to the nearest even integer. */
+export function toEven(value: number): number {
+  return Math.round(value / 2) * 2;
+}

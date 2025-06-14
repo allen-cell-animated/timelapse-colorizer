@@ -80,7 +80,10 @@ export function getFooterRenderer(ctx: CanvasRenderingContext2D, params: FooterP
   if (maxContentHeight === 0) {
     return EMPTY_RENDER_INFO;
   }
-  const height = Math.round(maxContentHeight + style.paddingPx.y * 2);
+
+  // Fudge height by a few pixels in case of misalignment of footer bottom and
+  // canvas bottom edges.
+  const height = Math.round(maxContentHeight + style.paddingPx.y * 2) + 2;
   const width = Math.round(params.canvasSize.x + 1);
 
   return {
