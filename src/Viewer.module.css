@@ -68,7 +68,7 @@
 }
 
 .colorizeCanvas {
-  /* max-width: 100%; */
+  overflow: hidden;
 }
 
 .canvasPanel .timeControls {
