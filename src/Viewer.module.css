@@ -28,6 +28,7 @@
   border-radius: 5px 5px 0 0;
   flex-basis: var(--canvas-width-basis);
   flex-grow: 1;
+  overflow: hidden;
 }
 
 .canvasControlsContainer {
