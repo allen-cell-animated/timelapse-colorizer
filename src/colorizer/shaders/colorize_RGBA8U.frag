@@ -36,7 +36,8 @@ uniform float objectOpacity;
 
 uniform vec3 backgroundColor;
 uniform vec3 outlineColor;
-uniform float outlineWidthPx;
+uniform vec3 edgeColor;
+uniform float edgeColorAlpha;
 // Background color for the canvas, anywhere where the frame is not drawn.
 uniform vec3 canvasBackgroundColor;
 
@@ -48,6 +49,8 @@ const uint DRAW_MODE_COLOR = 1u;
 const uint BACKGROUND_ID = 0u;
 const uint MISSING_DATA_ID = 0xFFFFFFFFu;
 const int ID_OFFSET = 1;
+const float OUTLINE_WIDTH_PX = 2.0;
+const float EDGE_WIDTH_PX = 1.0;
 
 uniform vec3 outlierColor;
 uniform uint outlierDrawMode;
@@ -129,8 +132,7 @@ vec4 getCategoricalColor(float featureValue) {
   return getColorRamp(modValue / (width - 1.0));
 }
 
-bool isEdge(vec2 uv) {
-  float thickness = 2.0;
+bool isEdge(vec2 uv, int id, float thickness) {
   // step size is equal to 1 onscreen canvas pixel     
   float wStep = 1.0 / float(canvasSizePx.x) * float(canvasToFrameScale.x);
   float hStep = 1.0 / float(canvasSizePx.y) * float(canvasToFrameScale.y);        
@@ -140,7 +142,7 @@ bool isEdge(vec2 uv) {
   int T = int(getId(uv + vec2(0, thickness * hStep))) - ID_OFFSET;
   int B = int(getId(uv + vec2(0, -thickness * hStep))) - ID_OFFSET;
   // if any neighbors are not highlightedId then color this as edge
-  return highlightedId != -1 && (R != highlightedId || L != highlightedId || T != highlightedId || B != highlightedId);
+  return id != -1 && (R != id || L != id || T != id || B != id);
 }
 
 vec4 getColorFromDrawMode(uint drawMode, vec3 defaultColor) {
@@ -197,9 +199,10 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
     return TRANSPARENT;
   }
 
+  int offsetId = int(id) - ID_OFFSET;
   // do an outline around highlighted object
-  if (int(id) - ID_OFFSET == highlightedId) {
-    if (isEdge(sUv)) {
+  if (offsetId == highlightedId) {
+    if (isEdge(sUv, highlightedId, OUTLINE_WIDTH_PX)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
     }
@@ -215,6 +218,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   bool isInRange = getUintFromTex(inRangeIds, int(id) - ID_OFFSET).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
   bool isMissingData = (id == MISSING_DATA_ID);
+  // bool isEdgePixel = offsetId != highlightedId && isEdge(sUv, offsetId, EDGE_WIDTH_PX);
+  bool isEdgePixel = (edgeColorAlpha != 0.0) && (offsetId != highlightedId) && (isEdge(sUv, offsetId, EDGE_WIDTH_PX));
 
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
@@ -232,6 +237,10 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
     }
   } else {
     color = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
+  }
+  if (isEdgePixel) {
+    vec4 edgeColor = vec4(0.0, 0.0, 0.0, 0.25);
+    color = alphaBlend(edgeColor, color);
   }
   color.a *= opacity;
   return color;
