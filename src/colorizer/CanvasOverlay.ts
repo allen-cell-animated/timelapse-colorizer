@@ -300,16 +300,16 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     // If the dataset has changed types, construct and initialize the inner
     // canvas.
-    let hasUpdatedCanvasParams = false;
+    let hasAlreadyUpdatedCanvasParams = false;
     if (hasPropertyChanged(params, prevParams, ["dataset"])) {
       const dataset = params.dataset;
       if (dataset && this.doesCanvasTypeNeedUpdate(dataset)) {
         await this.updateCanvasType(dataset);
-        hasUpdatedCanvasParams = true;
+        hasAlreadyUpdatedCanvasParams = true;
       }
     }
 
-    if (!hasUpdatedCanvasParams) {
+    if (!hasAlreadyUpdatedCanvasParams) {
       await this.innerCanvas.setParams(params);
     }
 

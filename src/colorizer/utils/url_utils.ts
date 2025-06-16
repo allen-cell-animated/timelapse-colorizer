@@ -3,7 +3,7 @@
 import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { HexColorString, isThresholdCategorical } from "../types";
+import { HexColorString, isThresholdCategorical, TrackPathColorMode } from "../types";
 import {
   DrawSettings,
   FeatureThreshold,
@@ -18,7 +18,6 @@ import { AnyManifestFile } from "./dataset_utils";
 import { formatNumber } from "./math_utils";
 
 // TODO: This file needs to be split up for easier reading and unit testing.
-// This could also be a great opportunity to reconsider how we store and manage state.
 
 export const URL_COLOR_RAMP_REVERSED_SUFFIX = "!";
 export enum UrlParam {
@@ -43,6 +42,10 @@ export enum UrlParam {
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
   SHOW_PATH = "path",
+  PATH_COLOR = "path-color",
+  PATH_WIDTH = "path-width",
+  PATH_COLOR_MODE = "path-mode",
+  SHOW_PATH_BREAKS = "path-breaks",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
@@ -285,6 +288,11 @@ export function parseDrawSettings(
     color: isHexColor(hexColor) ? new Color(hexColor) : defaultSettings.color,
     mode: mode && isDrawMode(modeInt) ? modeInt : defaultSettings.mode,
   };
+}
+
+export function parseTrackPathMode(mode: string | null): TrackPathColorMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  return mode && modeInt in TrackPathColorMode ? (modeInt as TrackPathColorMode) : undefined;
 }
 
 export function encodeBoolean(value: boolean): string {

@@ -139,6 +139,12 @@ export const isDrawMode = (mode: number): mode is DrawMode => {
   return mode === DrawMode.HIDE || mode === DrawMode.USE_COLOR;
 };
 
+export enum TrackPathColorMode {
+  USE_OUTLINE_COLOR = 0,
+  USE_CUSTOM_COLOR = 1,
+  USE_FEATURE_COLOR = 2,
+}
+
 // Similar to `FeatureType`, but indicates that thresholds are lossy when it comes
 // to numeric data. Numeric thresholds do not track if their source feature is integer
 // (FeatureType.DISCRETE) or a float (FeatureType.CONTINUOUS).
