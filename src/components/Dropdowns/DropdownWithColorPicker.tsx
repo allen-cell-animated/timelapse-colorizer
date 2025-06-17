@@ -3,7 +3,7 @@ import { ColorPicker } from "antd";
 import { PresetsItem } from "antd/es/color-picker/interface";
 import React, { ReactElement, useRef } from "react";
 import styled from "styled-components";
-import { ColorRepresentation, Color as ThreeColor } from "three";
+import { Color as ThreeColor,ColorRepresentation } from "three";
 
 import { FlexRowAlignCenter } from "../../styles/utils";
 
@@ -15,7 +15,7 @@ type DropdownWithColorPickerProps = {
   /** HTML ID that the selection dropdown is labelled by. */
   htmlLabelId: string;
   onValueChange: (mode: string) => void;
-  color: ThreeColor | AntdColor;
+  color: ThreeColor;
   disabled?: boolean;
   showColorPicker?: boolean;
   presets?: PresetsItem[];
@@ -43,6 +43,13 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
   const colorPickerRef = useRef<HTMLParagraphElement>(null);
 
   const showAlpha = props.alpha !== undefined;
+  let colorHexString = props.color.getHexString();
+  if (showAlpha && props.alpha !== undefined) {
+    colorHexString += Math.round(props.alpha * 255)
+      .toString(16)
+      .padStart(2, "0");
+  }
+  const propColor = new AntdColor(colorHexString);
 
   return (
     <HorizontalDiv ref={colorPickerRef}>
@@ -64,8 +71,8 @@ export default function DropdownWithColorPicker(propsInput: DropdownWithColorPic
         }}
         size="small"
         disabledAlpha={!showAlpha}
-        defaultValue={props.color instanceof AntdColor ? props.color : new AntdColor(props.color.getHexString())}
-        color={props.color instanceof AntdColor ? props.color : new AntdColor(props.color.getHexString())}
+        defaultValue={propColor}
+        color={propColor}
         presets={props.presets}
         // onChange returns a different color type, so must convert from hex
         onChange={(color, hex) =>

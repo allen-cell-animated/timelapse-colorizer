@@ -118,8 +118,6 @@ export default function SettingsTab(): ReactElement {
     selectedBackdropKey = NO_BACKDROP.value;
   }
 
-  console.log("#" + edgeColor.getHexString() + (edgeColorAlpha * 255).toString(16).padStart(2, "0"));
-
   return (
     <FlexColumn $gap={5}>
       <CustomCollapse label="Backdrop">
@@ -216,11 +214,9 @@ export default function SettingsTab(): ReactElement {
                 setEdgeMode(Number.parseInt(mode, 10) as DrawMode);
               }}
               showColorPicker={edgeMode === DrawMode.USE_COLOR}
-              color={
-                new AntdColor("#" + edgeColor.getHexString() + (edgeColorAlpha * 255).toString(16).padStart(2, "0"))
-              }
-              onColorChange={setEdgeColor}
+              color={edgeColor}
               alpha={edgeColorAlpha}
+              onColorChange={setEdgeColor}
               presets={EDGE_COLOR_PRESETS}
             />
           </SettingsItem>

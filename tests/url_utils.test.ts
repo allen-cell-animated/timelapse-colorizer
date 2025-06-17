@@ -99,53 +99,54 @@ describe("Loading + saving from URL query strings", () => {
       expect(encodeColorWithAlpha(new Color("#ff00ff"), 0xa0 / 255)).to.equal("ff00ffa0");
     });
 
-    it("handles zero alpha values", () => {
+    it("handles alpha value of zero", () => {
       expect(encodeColorWithAlpha(new Color("#000"), 0x00 / 255)).to.equal("00000000");
     });
 
     it("pads alpha value with zeroes", () => {
-      expect(encodeColorWithAlpha(new Color("#010203"), 0x04 / 255)).to.equal("01020304");
+      expect(encodeColorWithAlpha(new Color("#010203"), 4 / 255)).to.equal("01020304");
     });
   });
 
   describe("decodeHexAlphaColor", () => {
     it("returns alpha of 1 when no alpha is provided", () => {
-      const paramToColor = {
-        "000000": { color: new Color("#000000"), alpha: 1 },
-        ffffff: { color: new Color("#ffffff"), alpha: 1 },
-        "808080": { color: new Color("#808080"), alpha: 1 },
-        ff0000: { color: new Color("#ff0000"), alpha: 1 },
-      };
-      for (const [param, color] of Object.entries(paramToColor)) {
+      const paramToColor = new Map([
+        ["000000", { color: new Color("#000000"), alpha: 1 }],
+        ["ffffff", { color: new Color("#ffffff"), alpha: 1 }],
+        ["808080", { color: new Color("#808080"), alpha: 1 }],
+        ["ff0000", { color: new Color("#ff0000"), alpha: 1 }],
+      ]);
+
+      for (const [param, color] of paramToColor.entries()) {
         const result = decodeHexAlphaColor(param);
         expect(result).to.deep.equal(color);
       }
     });
 
     it("parses 8-digit hex colors", () => {
-      const paramToColor = {
-        "000000ff": { color: new Color("#000000"), alpha: 0xff / 255 },
-        ffffffff: { color: new Color("#ffffff"), alpha: 0xff / 255 },
-        "00000040": { color: new Color("#000000"), alpha: 0x40 / 255 },
-        "00000000": { color: new Color("#000000"), alpha: 0x00 / 255 },
-        a1b2c3d4: { color: new Color("#a1b2c3"), alpha: 0xd4 / 255 },
-        "01020304": { color: new Color("#010203"), alpha: 0x04 / 255 },
-        "#01020304": { color: new Color("#010203"), alpha: 0x04 / 255 },
-      };
-      for (const [param, color] of Object.entries(paramToColor)) {
+      const paramToColor = new Map([
+        ["000000ff", { color: new Color("#000000"), alpha: 0xff / 255 }],
+        ["ffffffff", { color: new Color("#ffffff"), alpha: 0xff / 255 }],
+        ["00000040", { color: new Color("#000000"), alpha: 0x40 / 255 }],
+        ["00000000", { color: new Color("#000000"), alpha: 0x00 / 255 }],
+        ["a1b2c3d4", { color: new Color("#a1b2c3"), alpha: 0xd4 / 255 }],
+        ["01020304", { color: new Color("#010203"), alpha: 0x04 / 255 }],
+        ["#01020304", { color: new Color("#010203"), alpha: 0x04 / 255 }],
+      ]);
+      for (const [param, color] of paramToColor.entries()) {
         const result = decodeHexAlphaColor(param);
         expect(result).to.deep.equal(color);
       }
     });
 
     it("parses 4-digit hex colors", () => {
-      const paramToColor = {
-        "0000": { color: new Color("#000000"), alpha: 0x00 / 255 },
-        ffff: { color: new Color("#fff"), alpha: 0xff / 255 },
-        abcd: { color: new Color("#abc"), alpha: 0xdd / 255 },
-        "#abcd": { color: new Color("#abc"), alpha: 0xdd / 255 },
-      };
-      for (const [param, color] of Object.entries(paramToColor)) {
+      const paramToColor = new Map([
+        ["0000", { color: new Color("#000000"), alpha: 0x00 / 255 }],
+        ["ffff", { color: new Color("#fff"), alpha: 0xff / 255 }],
+        ["abcd", { color: new Color("#abc"), alpha: 0xdd / 255 }],
+        ["#abcd", { color: new Color("#abc"), alpha: 0xdd / 255 }],
+      ]);
+      for (const [param, color] of paramToColor.entries()) {
         const result = decodeHexAlphaColor(param);
         expect(result).to.deep.equal(color, `Failed to decode hex color ${param}`);
       }

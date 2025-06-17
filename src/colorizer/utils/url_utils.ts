@@ -289,15 +289,16 @@ export function decodeHexAlphaColor(value: string | null): { color: Color; alpha
   value = value.startsWith("#") ? value : "#" + value;
 
   if (isHexAlphaColor(value)) {
-    const isFourDigitHex = value.length === 5; // #RGBA vs #RRGGBBAA
+    const isShortenedHex = value.length === 5; // #RGBA vs #RRGGBBAA
     // Extract the color and alpha components
-    const colorHex = isFourDigitHex ? value.slice(0, -1) : value.slice(0, -2);
-    const alphaHex = isFourDigitHex ? value.slice(-1) + value.slice(-1) : value.slice(-2);
+    const colorHex = isShortenedHex ? value.slice(0, -1) : value.slice(0, -2);
+    // Double up the last digit for 4-digit hex colors.
+    const alphaHex = isShortenedHex ? value.slice(-1).repeat(2) : value.slice(-2);
     const color = new Color(colorHex);
-    const alpha = isFourDigitHex ? parseInt(alphaHex, 16) / 255 : parseInt(alphaHex, 16) / 255;
+    const alpha = isShortenedHex ? parseInt(alphaHex, 16) / 255 : parseInt(alphaHex, 16) / 255;
     return { color, alpha };
   } else if (isHexColor(value)) {
-    // If it's a regular hex color, return it with alpha 1
+    // If it's a regular hex color (3 or 6 digits), return it with alpha 1
     return { color: new Color(value), alpha: 1 };
   } else {
     return undefined;

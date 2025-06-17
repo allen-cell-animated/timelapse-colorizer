@@ -192,16 +192,16 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Get the segmentation id at this pixel
-  uint id = getId(sUv);
+  uint rawId = getId(sUv);
 
   // A segmentation id of 0 represents background
-  if (id == BACKGROUND_ID) {
+  if (rawId == BACKGROUND_ID) {
     return TRANSPARENT;
   }
 
-  int offsetId = int(id) - ID_OFFSET;
+  int id = int(rawId) - ID_OFFSET;
   // do an outline around highlighted object
-  if (offsetId == highlightedId) {
+  if (id == highlightedId) {
     if (isEdge(sUv, highlightedId, OUTLINE_WIDTH_PX)) {
       // ignore opacity for edge color
       return vec4(outlineColor, 1.0);
@@ -209,17 +209,16 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   }
 
   // Data buffer starts at 0, non-background segmentation IDs start at 1
-  float featureVal = getFloatFromTex(featureData, int(id) - ID_OFFSET).r;
-  uint outlierVal = getUintFromTex(outlierData, int(id) - ID_OFFSET).r;
+  float featureVal = getFloatFromTex(featureData, id).r;
+  uint outlierVal = getUintFromTex(outlierData, id).r;
   float normFeatureVal = (featureVal - featureColorRampMin) / (featureColorRampMax - featureColorRampMin);
 
   // Use the selected draw mode to handle out of range and outlier values;
   // otherwise color with the color ramp as usual.
-  bool isInRange = getUintFromTex(inRangeIds, int(id) - ID_OFFSET).r == 1u;
+  bool isInRange = getUintFromTex(inRangeIds, id).r == 1u;
   bool isOutlier = isinf(featureVal) || outlierVal != 0u;
-  bool isMissingData = (id == MISSING_DATA_ID);
-  // bool isEdgePixel = offsetId != highlightedId && isEdge(sUv, offsetId, EDGE_WIDTH_PX);
-  bool isEdgePixel = (edgeColorAlpha != 0.0) && (offsetId != highlightedId) && (isEdge(sUv, offsetId, EDGE_WIDTH_PX));
+  bool isMissingData = (rawId == MISSING_DATA_ID);
+  bool isEdgePixel = (edgeColorAlpha != 0.0) && (id != highlightedId) && (isEdge(sUv, id, EDGE_WIDTH_PX));
 
   // Features outside the filtered/thresholded range will all be treated the same (use `outOfRangeDrawColor`).
   // Features inside the range can either be outliers or standard values, and are colored accordingly.
