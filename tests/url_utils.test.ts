@@ -1,8 +1,11 @@
+import { Color } from "three";
 import { describe, expect, it } from "vitest";
 
 import { FeatureThreshold, ThresholdType } from "../src/colorizer/types";
 import {
+  decodeHexAlphaColor,
   deserializeThresholds,
+  encodeColorWithAlpha,
   isAllenPath,
   isHexColor,
   isJson,
@@ -86,6 +89,73 @@ describe("Loading + saving from URL query strings", () => {
 
     it("Ignores hex values with alpha", () => {
       expect(isHexColor("#aabbccdd")).to.be.false;
+    });
+  });
+
+  describe("encodeColorWithAlpha", () => {
+    it("encodes 8-digit hex colors", () => {
+      expect(encodeColorWithAlpha(new Color("#aabbcc"), 0xdd / 255)).to.equal("aabbccdd");
+      expect(encodeColorWithAlpha(new Color("#ff0000"), 0xff / 255)).to.equal("ff0000ff");
+      expect(encodeColorWithAlpha(new Color("#ff00ff"), 0xa0 / 255)).to.equal("ff00ffa0");
+    });
+
+    it("handles zero alpha values", () => {
+      expect(encodeColorWithAlpha(new Color("#000"), 0x00 / 255)).to.equal("00000000");
+    });
+
+    it("pads alpha value with zeroes", () => {
+      expect(encodeColorWithAlpha(new Color("#010203"), 0x04 / 255)).to.equal("01020304");
+    });
+  });
+
+  describe("decodeHexAlphaColor", () => {
+    it("returns alpha of 1 when no alpha is provided", () => {
+      const paramToColor = {
+        "000000": { color: new Color("#000000"), alpha: 1 },
+        ffffff: { color: new Color("#ffffff"), alpha: 1 },
+        "808080": { color: new Color("#808080"), alpha: 1 },
+        ff0000: { color: new Color("#ff0000"), alpha: 1 },
+      };
+      for (const [param, color] of Object.entries(paramToColor)) {
+        const result = decodeHexAlphaColor(param);
+        expect(result).to.deep.equal(color);
+      }
+    });
+
+    it("parses 8-digit hex colors", () => {
+      const paramToColor = {
+        "000000ff": { color: new Color("#000000"), alpha: 0xff / 255 },
+        ffffffff: { color: new Color("#ffffff"), alpha: 0xff / 255 },
+        "00000040": { color: new Color("#000000"), alpha: 0x40 / 255 },
+        "00000000": { color: new Color("#000000"), alpha: 0x00 / 255 },
+        a1b2c3d4: { color: new Color("#a1b2c3"), alpha: 0xd4 / 255 },
+        "01020304": { color: new Color("#010203"), alpha: 0x04 / 255 },
+        "#01020304": { color: new Color("#010203"), alpha: 0x04 / 255 },
+      };
+      for (const [param, color] of Object.entries(paramToColor)) {
+        const result = decodeHexAlphaColor(param);
+        expect(result).to.deep.equal(color);
+      }
+    });
+
+    it("parses 4-digit hex colors", () => {
+      const paramToColor = {
+        "0000": { color: new Color("#000000"), alpha: 0x00 / 255 },
+        ffff: { color: new Color("#fff"), alpha: 0xff / 255 },
+        abcd: { color: new Color("#abc"), alpha: 0xdd / 255 },
+        "#abcd": { color: new Color("#abc"), alpha: 0xdd / 255 },
+      };
+      for (const [param, color] of Object.entries(paramToColor)) {
+        const result = decodeHexAlphaColor(param);
+        expect(result).to.deep.equal(color, `Failed to decode hex color ${param}`);
+      }
+    });
+
+    it("ignores null or invalid input", () => {
+      expect(decodeHexAlphaColor(null)).to.be.undefined;
+      expect(decodeHexAlphaColor("a")).to.be.undefined;
+      expect(decodeHexAlphaColor("abcdefgh")).to.be.undefined;
+      expect(decodeHexAlphaColor("0.8")).to.be.undefined;
     });
   });
 
