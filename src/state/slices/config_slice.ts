@@ -23,6 +23,7 @@ import {
   encodeMaybeColor,
   encodeMaybeColorWithAlpha,
   encodeMaybeNumber,
+  parseDrawMode,
   parseDrawSettings,
   parseTrackPathMode,
   UrlParam,
@@ -54,6 +55,7 @@ export type ConfigSliceState = {
   outlineColor: Color;
   edgeColor: Color;
   edgeColorAlpha: number;
+  edgeMode: DrawMode;
   openTab: TabType;
 };
 
@@ -71,6 +73,7 @@ export type ConfigSliceSerializableState = Pick<
   | "outlineColor"
   | "edgeColor"
   | "edgeColorAlpha"
+  | "edgeMode"
   | "openTab"
 >;
 
@@ -88,6 +91,7 @@ export type ConfigSliceActions = {
   setOutlierDrawSettings: (outlierDrawSettings: DrawSettings) => void;
   setOutlineColor: (outlineColor: Color) => void;
   setEdgeColor: (edgeColor: Color, alpha: number) => void;
+  setEdgeMode: (edgeMode: DrawMode) => void;
   setOpenTab: (openTab: TabType) => void;
 };
 
@@ -109,6 +113,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   outlineColor: new Color(OUTLINE_COLOR_DEFAULT),
   edgeColor: new Color(EDGE_COLOR_DEFAULT),
   edgeColorAlpha: EDGE_COLOR_ALPHA_DEFAULT,
+  edgeMode: DrawMode.USE_COLOR,
   openTab: TabType.TRACK_PLOT,
 
   // Actions
@@ -125,6 +130,7 @@ export const createConfigSlice: StateCreator<ConfigSlice, [], [], ConfigSlice> =
   setOutlierDrawSettings: (outlierDrawSettings) => set({ outlierDrawSettings }),
   setOutlineColor: (outlineColor) => set({ outlineColor }),
   setEdgeColor: (edgeColor, alpha) => set({ edgeColor, edgeColorAlpha: clamp(alpha, 0, 1) }),
+  setEdgeMode: (edgeMode) => set({ edgeMode }),
   setOpenTab: (openTab) => set({ openTab }),
 });
 
@@ -144,6 +150,7 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.OUTLIER_MODE]: slice.outlierDrawSettings?.mode.toString(),
     [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice.outlineColor),
     [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
+    [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
     [UrlParam.OPEN_TAB]: slice.openTab,
   };
 };
@@ -160,6 +167,7 @@ export const selectConfigSliceSerializationDeps = (slice: ConfigSlice): ConfigSl
   outOfRangeDrawSettings: slice.outOfRangeDrawSettings,
   outlierDrawSettings: slice.outlierDrawSettings,
   outlineColor: slice.outlineColor,
+  edgeMode: slice.edgeMode,
   edgeColor: slice.edgeColor,
   edgeColorAlpha: slice.edgeColorAlpha,
   openTab: slice.openTab,
@@ -201,6 +209,10 @@ export const loadConfigSliceFromParams = (slice: ConfigSlice, params: URLSearchP
   const edgeColorParam = decodeHexAlphaColor(params.get(UrlParam.EDGE_COLOR));
   if (edgeColorParam) {
     slice.setEdgeColor(edgeColorParam.color, clamp(edgeColorParam.alpha, 0, 1));
+  }
+  const edgeModeParam = parseDrawMode(params.get(UrlParam.EDGE_MODE));
+  if (edgeModeParam !== undefined) {
+    slice.setEdgeMode(edgeModeParam);
   }
 
   const openTabParam = params.get(UrlParam.OPEN_TAB);

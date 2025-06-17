@@ -3,7 +3,7 @@
 import { Color } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../../constants";
-import { HexColorString, isThresholdCategorical, TrackPathColorMode } from "../types";
+import { DrawMode, HexColorString, isThresholdCategorical, TrackPathColorMode } from "../types";
 import {
   DrawSettings,
   FeatureThreshold,
@@ -42,6 +42,7 @@ export enum UrlParam {
   FILTERED_COLOR = "filter-color",
   OUTLINE_COLOR = "outline-color",
   EDGE_COLOR = "edge-color",
+  EDGE_MODE = "edge",
   SHOW_PATH = "path",
   PATH_COLOR = "path-color",
   PATH_WIDTH = "path-width",
@@ -317,6 +318,11 @@ export function decodeFloat(value: string | null): number | undefined {
 
 export function decodeInt(value: string | null): number | undefined {
   return value === null ? undefined : parseInt(value, 10);
+}
+
+export function parseDrawMode(mode: string | null): DrawMode | undefined {
+  const modeInt = parseInt(mode || "-1", 10);
+  return mode && isDrawMode(modeInt) ? modeInt : undefined;
 }
 
 export function parseDrawSettings(

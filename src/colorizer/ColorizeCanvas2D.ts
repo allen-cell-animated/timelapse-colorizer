@@ -537,10 +537,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     if (hasPropertyChanged(params, prevParams, ["outlineColor"])) {
       this.setUniform("outlineColor", params.outlineColor.clone().convertLinearToSRGB());
     }
-    if (hasPropertyChanged(params, prevParams, ["edgeColor", "edgeColorAlpha"])) {
-      console.log("Setting edge color", params.edgeColor, params.edgeColorAlpha);
-      this.setUniform("edgeColor", params.edgeColor.clone().convertLinearToSRGB());
-      this.setUniform("edgeColorAlpha", clamp(params.edgeColorAlpha, 0, 1));
+    if (hasPropertyChanged(params, prevParams, ["edgeColor", "edgeColorAlpha", "edgeMode"])) {
+      if (params.edgeMode === DrawMode.HIDE) {
+        this.setUniform("edgeColor", new Color(0, 0, 0));
+        this.setUniform("edgeColorAlpha", 0);
+      } else {
+        this.setUniform("edgeColor", params.edgeColor.clone().convertLinearToSRGB());
+        this.setUniform("edgeColorAlpha", clamp(params.edgeColorAlpha, 0, 1));
+      }
     }
 
     // Update track path data

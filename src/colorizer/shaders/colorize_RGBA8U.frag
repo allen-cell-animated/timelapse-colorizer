@@ -239,8 +239,8 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
     color = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
   }
   if (isEdgePixel) {
-    vec4 edgeColor = vec4(0.0, 0.0, 0.0, 0.25);
-    color = alphaBlend(edgeColor, color);
+    vec4 transparentEdgeColor = vec4(edgeColor, edgeColorAlpha);
+    color = alphaBlend(transparentEdgeColor, color);
   }
   color.a *= opacity;
   return color;

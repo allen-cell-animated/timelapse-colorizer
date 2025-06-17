@@ -46,6 +46,13 @@ const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
   },
 ];
 
+const EDGE_COLOR_PRESETS: PresetsItem[] = [
+  {
+    label: "Presets",
+    colors: ["#ffffff", "#ffffffc0", "#ffffff80", "#ffffff40", "#00000040", "#00000080", "#000000c0", "#000000"],
+  },
+];
+
 const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Outline" },
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
@@ -63,6 +70,9 @@ export default function SettingsTab(): ReactElement {
   const backdropSaturation = useViewerStateStore((state) => state.backdropSaturation);
   const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
   const dataset = useViewerStateStore((state) => state.dataset);
+  const edgeColor = useViewerStateStore((state) => state.edgeColor);
+  const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
+  const edgeMode = useViewerStateStore((state) => state.edgeMode);
   const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
   const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
@@ -71,6 +81,8 @@ export default function SettingsTab(): ReactElement {
   const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
   const setBackdropSaturation = useViewerStateStore((state) => state.setBackdropSaturation);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
+  const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
+  const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
@@ -105,6 +117,8 @@ export default function SettingsTab(): ReactElement {
     backdropOptions = [NO_BACKDROP];
     selectedBackdropKey = NO_BACKDROP.value;
   }
+
+  console.log("#" + edgeColor.getHexString() + (edgeColorAlpha * 255).toString(16).padStart(2, "0"));
 
   return (
     <FlexColumn $gap={5}>
@@ -193,7 +207,24 @@ export default function SettingsTab(): ReactElement {
               />
             </div>
           </SettingsItem>
-          <SettingsItem label="Filtered object color">
+          <SettingsItem label="Edge color" id="edge-color-label">
+            <DropdownWithColorPicker
+              htmlLabelId="edge-color-label"
+              selected={edgeMode.toString()}
+              items={DRAW_MODE_ITEMS}
+              onValueChange={(mode: string) => {
+                setEdgeMode(Number.parseInt(mode, 10) as DrawMode);
+              }}
+              showColorPicker={edgeMode === DrawMode.USE_COLOR}
+              color={
+                new AntdColor("#" + edgeColor.getHexString() + (edgeColorAlpha * 255).toString(16).padStart(2, "0"))
+              }
+              onColorChange={setEdgeColor}
+              alpha={edgeColorAlpha}
+              presets={EDGE_COLOR_PRESETS}
+            />
+          </SettingsItem>
+          <SettingsItem label="Filtered object color" id="filtered-object-color-label">
             <DropdownWithColorPicker
               htmlLabelId="filtered-object-color-label"
               selected={outOfRangeDrawSettings.mode.toString()}

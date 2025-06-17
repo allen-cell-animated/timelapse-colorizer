@@ -19,6 +19,7 @@ export type RenderCanvasStateParams = Pick<
   | "outlineColor"
   | "edgeColor"
   | "edgeColorAlpha"
+  | "edgeMode"
   | "trackPathColor"
   | "trackPathWidthPx"
   | "trackPathColorMode"
@@ -50,6 +51,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   categoricalPaletteRamp: state.categoricalPaletteRamp,
   outlineColor: state.outlineColor,
   edgeColor: state.edgeColor,
+  edgeMode: state.edgeMode,
   edgeColorAlpha: state.edgeColorAlpha,
   trackPathColor: state.trackPathColor,
   trackPathWidthPx: state.trackPathWidthPx,
