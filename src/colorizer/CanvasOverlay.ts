@@ -495,7 +495,6 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.headerSize = headerRenderer.sizePx;
     this.footerSize = footerRenderer.sizePx;
 
-    // TODO: Do we need devicePixelRatio here?
     const devicePixelRatio = getPixelRatio();
     const canvasWidth = toEven(Math.round(this.innerCanvasSize.x * devicePixelRatio));
     const canvasHeight = toEven(
