@@ -56,3 +56,14 @@ export function renderStringArrayAsJsx(items: string[] | string | undefined): Re
 
   return <RenderedStringContainer>{elements}</RenderedStringContainer>;
 }
+
+/**
+ * Formats a quantity string, using either the singular or plural form.
+ * @param quantity count of items.
+ * @param singular the singular form of the item name
+ * @param plural the plural form of the item name
+ * @returns a string formatted as "{quantity} {singular/plural}"
+ */
+export function formatQuantityString(quantity: number, singular: string, plural: string): string {
+  return `${quantity} ${quantity === 1 ? singular : plural}`;
+}
