@@ -254,7 +254,7 @@ export function encodeMaybeColor(value: Color | undefined): string | undefined {
 }
 
 export function encodeColorWithAlpha(value: Color, alpha: number): string {
-  return `#${value.getHexString()}${Math.round(alpha * 255)
+  return `${value.getHexString()}${Math.round(alpha * 255)
     .toString(16)
     .padStart(2, "0")}`;
 }

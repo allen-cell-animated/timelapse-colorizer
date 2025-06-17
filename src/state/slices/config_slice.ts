@@ -149,8 +149,8 @@ export const serializeConfigSlice = (slice: Partial<ConfigSliceSerializableState
     [UrlParam.OUTLIER_COLOR]: encodeMaybeColor(slice.outlierDrawSettings?.color),
     [UrlParam.OUTLIER_MODE]: slice.outlierDrawSettings?.mode.toString(),
     [UrlParam.OUTLINE_COLOR]: encodeMaybeColor(slice.outlineColor),
-    [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
     [UrlParam.EDGE_MODE]: slice.edgeMode?.toString(),
+    [UrlParam.EDGE_COLOR]: encodeMaybeColorWithAlpha(slice.edgeColor, slice.edgeColorAlpha),
     [UrlParam.OPEN_TAB]: slice.openTab,
   };
 };
