@@ -3,6 +3,7 @@ import { Color } from "three";
 
 import { Dataset } from "../../../../../colorizer";
 import { FlexRowAlignCenter } from "../../../../../styles/utils";
+import { formatQuantityString } from "../../../../../utils/formatting";
 
 import { AppThemeContext } from "../../../../AppStyle";
 import DropdownItem from "../../../../Dropdowns/DropdownItem";
@@ -41,11 +42,9 @@ export default function TrackListItem(props: TrackListItemProps): ReactElement {
           dataset={dataset}
           color={labelColor}
         ></AnnotationTrackThumbnail>
-        <p style={{ margin: 0 }}>
-          {trackId}{" "}
-          <span style={{ color: theme.color.text.hint }}>
-            ({ids.length}/{track?.times.length ?? 0})
-          </span>
+        <p style={{ margin: 0 }}>{trackId}</p>
+        <p style={{ margin: 0, color: theme.color.text.hint, fontSize: theme.font.size.labelSmall }}>
+          | {formatQuantityString(ids.length, "object", "objects")}
         </p>
       </FlexRowAlignCenter>
     </DropdownItem>
