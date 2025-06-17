@@ -12,6 +12,7 @@ export type RenderCanvasStateParams = Pick<
   | "featureKey"
   | "track"
   | "showTrackPath"
+  | "showTrackPathBreaks"
   | "colorRamp"
   | "colorRampRange"
   | "categoricalPaletteRamp"
@@ -41,6 +42,7 @@ export const renderCanvasStateParamsSelector = (state: ViewerStoreState): Render
   pendingFrame: state.pendingFrame,
   track: state.track,
   showTrackPath: state.showTrackPath,
+  showTrackPathBreaks: state.showTrackPathBreaks,
   colorRamp: state.colorRamp,
   colorRampRange: state.colorRampRange,
   categoricalPaletteRamp: state.categoricalPaletteRamp,

@@ -45,6 +45,7 @@ export enum UrlParam {
   PATH_COLOR = "path-color",
   PATH_WIDTH = "path-width",
   PATH_COLOR_MODE = "path-mode",
+  SHOW_PATH_BREAKS = "path-breaks",
   SHOW_SCALEBAR = "scalebar",
   SHOW_TIMESTAMP = "timestamp",
   KEEP_RANGE = "keep-range",
