@@ -8,6 +8,10 @@ import { cloneLabel, getLabelTypeFromParsedCsv } from "./utils/data_utils";
 import Dataset from "./Dataset";
 
 export const CSV_COL_ID = "ID";
+// Column constants for segmentation ID, time, and track are used to validate
+// data when parsing CSV files and check for mismatches with the current
+// dataset.
+export const CSV_COL_SEG_ID = "Label";
 export const CSV_COL_TIME = "Frame";
 export const CSV_COL_TRACK = "Track";
 
@@ -69,6 +73,12 @@ export type AnnotationParseResult = {
    * for a different dataset were imported.
    */
   mismatchedTracks: number;
+  /**
+   * The number of annotated objects that had labels that did not match
+   * those of the dataset. If > 0, this likely indicates that annotations
+   * for a different dataset were imported, or that the dataset was modified.
+   */
+  mismatchedLabels: number;
   /**
    * Rows that could not be parsed due to invalid (non-numeric) IDs, tracks, or
    * times. These rows will be skipped.
@@ -464,6 +474,7 @@ export class AnnotationData implements IAnnotationData {
     const annotationData = new AnnotationData();
     let mismatchedTimes = 0,
       mismatchedTracks = 0,
+      mismatchedLabels = 0,
       unparseableRows = 0,
       invalidIds = 0;
 
@@ -480,7 +491,8 @@ export class AnnotationData implements IAnnotationData {
     }
     // Remove the metadata columns
     const labelNames = headers.filter(
-      (header) => header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME
+      (header) =>
+        header !== CSV_COL_ID && header !== CSV_COL_TRACK && header !== CSV_COL_TIME && header !== CSV_COL_SEG_ID
     );
     const labelNameToType = getLabelTypeFromParsedCsv(headers, data);
 
@@ -498,6 +510,9 @@ export class AnnotationData implements IAnnotationData {
       const id = parseInt(row[CSV_COL_ID], 10);
       const track = parseInt(row[CSV_COL_TRACK], 10);
       const time = parseInt(row[CSV_COL_TIME], 10);
+      // Seg ID is optional/can be NaN because it was added as a column after
+      // annotation export was first introduced.
+      const segId = parseInt(row[CSV_COL_SEG_ID], 10);
 
       if (isNaN(id) || isNaN(track) || isNaN(time)) {
         unparseableRows++;
@@ -512,6 +527,9 @@ export class AnnotationData implements IAnnotationData {
       }
       if (dataset.trackIds?.[id] !== track) {
         mismatchedTracks++;
+      }
+      if (!Number.isNaN(segId) && dataset.segIds?.[id] !== segId) {
+        mismatchedLabels++;
       }
       // Push row data to the labels.
       for (let labelIdx = 0; labelIdx < labelNames.length; labelIdx++) {
@@ -529,7 +547,15 @@ export class AnnotationData implements IAnnotationData {
         annotationData.setLabelValueOnId(labelIdx, id, value);
       }
     }
-    return { annotationData, mismatchedTimes, mismatchedTracks, unparseableRows, invalidIds, totalRows: data.length };
+    return {
+      annotationData,
+      mismatchedTimes,
+      mismatchedTracks,
+      mismatchedLabels,
+      unparseableRows,
+      invalidIds,
+      totalRows: data.length,
+    };
   }
   /**
    * Returns the index of a label with the matching name and type.
@@ -624,7 +650,7 @@ export class AnnotationData implements IAnnotationData {
 
   toCsv(dataset: Dataset, delimiter: string = ","): string {
     const idsToLabels = this.getIdsToLabels();
-    const headerRow = [CSV_COL_ID, CSV_COL_TRACK, CSV_COL_TIME];
+    const headerRow = [CSV_COL_ID, CSV_COL_SEG_ID, CSV_COL_TRACK, CSV_COL_TIME];
 
     headerRow.push(...this.labelData.map((label) => label.options.name.trim()));
 
@@ -634,10 +660,11 @@ export class AnnotationData implements IAnnotationData {
     // O(N), which makes this for loop O(N^3)). Consider caching the lookup (ID
     // -> value) if the CSV export step is slow.
     for (const [id, labels] of idsToLabels) {
+      const segId = dataset.getSegmentationId(id);
       const track = dataset.getTrackId(id);
       const time = dataset.getTime(id);
 
-      const row: (string | number)[] = [id, track, time];
+      const row: (string | number)[] = [id, segId, track, time];
       for (let labelIdx = 0; labelIdx < this.labelData.length; labelIdx++) {
         if (labels.includes(labelIdx)) {
           row.push(this.getValueFromId(labelIdx, id) ?? "");
