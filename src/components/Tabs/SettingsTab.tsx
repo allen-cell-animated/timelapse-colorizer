@@ -25,7 +25,7 @@ const NO_BACKDROP = {
 
 const DRAW_MODE_ITEMS: SelectItem[] = [
   { value: DrawMode.HIDE.toString(), label: "Hide" },
-  { value: DrawMode.USE_COLOR.toString(), label: "Custom" },
+  { value: DrawMode.USE_COLOR.toString(), label: "Use color" },
 ];
 
 const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
@@ -46,6 +46,13 @@ const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
   },
 ];
 
+const EDGE_COLOR_PRESETS: PresetsItem[] = [
+  {
+    label: "Presets",
+    colors: ["#ffffff", "#ffffffc0", "#ffffff80", "#ffffff40", "#00000040", "#00000080", "#000000c0", "#000000"],
+  },
+];
+
 const TRACK_MODE_ITEMS: SelectItem[] = [
   { value: TrackPathColorMode.USE_OUTLINE_COLOR.toString(), label: "Outline" },
   { value: TrackPathColorMode.USE_CUSTOM_COLOR.toString(), label: "Custom" },
@@ -63,6 +70,9 @@ export default function SettingsTab(): ReactElement {
   const backdropSaturation = useViewerStateStore((state) => state.backdropSaturation);
   const backdropVisible = useViewerStateStore((state) => state.backdropVisible);
   const dataset = useViewerStateStore((state) => state.dataset);
+  const edgeColor = useViewerStateStore((state) => state.edgeColor);
+  const edgeColorAlpha = useViewerStateStore((state) => state.edgeColorAlpha);
+  const edgeMode = useViewerStateStore((state) => state.edgeMode);
   const objectOpacity = useViewerStateStore((state) => state.objectOpacity);
   const outlierDrawSettings = useViewerStateStore((state) => state.outlierDrawSettings);
   const outlineColor = useViewerStateStore((state) => state.outlineColor);
@@ -71,6 +81,8 @@ export default function SettingsTab(): ReactElement {
   const setBackdropKey = useViewerStateStore((state) => state.setBackdropKey);
   const setBackdropSaturation = useViewerStateStore((state) => state.setBackdropSaturation);
   const setBackdropVisible = useViewerStateStore((state) => state.setBackdropVisible);
+  const setEdgeColor = useViewerStateStore((state) => state.setEdgeColor);
+  const setEdgeMode = useViewerStateStore((state) => state.setEdgeMode);
   const setObjectOpacity = useViewerStateStore((state) => state.setObjectOpacity);
   const setOutlierDrawSettings = useViewerStateStore((state) => state.setOutlierDrawSettings);
   const setOutlineColor = useViewerStateStore((state) => state.setOutlineColor);
@@ -180,7 +192,8 @@ export default function SettingsTab(): ReactElement {
 
       <CustomCollapse label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem label="Outline color">
+          <SettingsItem label="Highlight">
+            {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
             <div>
               <ColorPicker
                 style={{ width: "min-content" }}
@@ -193,7 +206,22 @@ export default function SettingsTab(): ReactElement {
               />
             </div>
           </SettingsItem>
-          <SettingsItem label="Filtered object color">
+          <SettingsItem label="Outline" id="edge-color-label">
+            <DropdownWithColorPicker
+              htmlLabelId="edge-color-label"
+              selected={edgeMode.toString()}
+              items={DRAW_MODE_ITEMS}
+              onValueChange={(mode: string) => {
+                setEdgeMode(Number.parseInt(mode, 10) as DrawMode);
+              }}
+              showColorPicker={edgeMode === DrawMode.USE_COLOR}
+              color={edgeColor}
+              alpha={edgeColorAlpha}
+              onColorChange={setEdgeColor}
+              presets={EDGE_COLOR_PRESETS}
+            />
+          </SettingsItem>
+          <SettingsItem label="Filtered objects" id="filtered-object-color-label">
             <DropdownWithColorPicker
               htmlLabelId="filtered-object-color-label"
               selected={outOfRangeDrawSettings.mode.toString()}
@@ -209,7 +237,7 @@ export default function SettingsTab(): ReactElement {
               presets={DRAW_MODE_COLOR_PRESETS}
             />
           </SettingsItem>
-          <SettingsItem label="Outlier object color" id="outlier-object-color-label">
+          <SettingsItem label="Outliers" id="outlier-object-color-label">
             <DropdownWithColorPicker
               htmlLabelId="outlier-object-color-label"
               selected={outlierDrawSettings.mode.toString()}
@@ -238,7 +266,7 @@ export default function SettingsTab(): ReactElement {
           </SettingsItem>
           {showTrackPath && (
             <>
-              <SettingsItem label="Track path color" id="track-path-color-label">
+              <SettingsItem label="Color" id="track-path-color-label">
                 <DropdownWithColorPicker
                   selected={trackPathColorMode.toString()}
                   items={TRACK_MODE_ITEMS}
@@ -250,7 +278,7 @@ export default function SettingsTab(): ReactElement {
                   showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
                 />
               </SettingsItem>
-              <SettingsItem label="Track path width">
+              <SettingsItem label="Width">
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     type="value"
