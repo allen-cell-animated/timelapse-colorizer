@@ -1,4 +1,4 @@
-import { CheckCircleOutlined } from "@ant-design/icons";
+import { CameraOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import {
   App,
   Button,
@@ -16,7 +16,6 @@ import React, { ReactElement, useCallback, useContext, useEffect, useRef, useSta
 import styled from "styled-components";
 import { clamp } from "three/src/math/MathUtils";
 
-import { ExportIconSVG } from "../assets";
 import { AnalyticsEvent, triggerAnalyticsEvent } from "../colorizer/utils/analytics";
 import { useViewerStateStore } from "../state";
 import { StyledRadioGroup } from "../styles/components";
@@ -466,7 +465,7 @@ export default function Export(inputProps: ExportButtonProps): ReactElement {
         disabled={props.disabled}
         id="export-button"
       >
-        <ExportIconSVG />
+        <CameraOutlined />
         <p>Export</p>
       </TextButton>
 

@@ -659,6 +659,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
     )
   );
   const labelData: LabelData | undefined = labels[props.annotationState.currentLabelIdx ?? 0];
+  const shouldShowRangeSelectionHotkey = props.annotationState.baseSelectionMode !== AnnotationSelectionMode.RANGE;
   const shouldShowReuseValueHotkey = labelData?.options.type === LabelType.INTEGER && labelData?.options.autoIncrement;
 
   return (
@@ -671,9 +672,11 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
             <span style={{ marginLeft: "2px" }}>
               <b>Annotation editing in progress...</b>
             </span>
-            <FlexRowAlignCenter $gap={6}>
-              <HotkeyText>Shift</HotkeyText> hold to select range
-            </FlexRowAlignCenter>
+            {shouldShowRangeSelectionHotkey && (
+              <FlexRowAlignCenter $gap={6}>
+                <HotkeyText>Shift</HotkeyText> hold to select range
+              </FlexRowAlignCenter>
+            )}
             {shouldShowReuseValueHotkey && (
               <FlexRowAlignCenter $gap={6}>
                 <HotkeyText>Ctrl</HotkeyText>
