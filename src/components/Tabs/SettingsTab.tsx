@@ -25,7 +25,7 @@ const NO_BACKDROP = {
 
 const DRAW_MODE_ITEMS: SelectItem[] = [
   { value: DrawMode.HIDE.toString(), label: "Hide" },
-  { value: DrawMode.USE_COLOR.toString(), label: "Custom" },
+  { value: DrawMode.USE_COLOR.toString(), label: "Use color" },
 ];
 
 const DRAW_MODE_COLOR_PRESETS: PresetsItem[] = [
@@ -192,7 +192,8 @@ export default function SettingsTab(): ReactElement {
 
       <CustomCollapse label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem label="Highlight color">
+          <SettingsItem label="Highlight">
+            {/* NOTE: 'Highlight color' is 'outline' internally, and 'Outline color' is 'edge' for legacy reasons. */}
             <div>
               <ColorPicker
                 style={{ width: "min-content" }}
@@ -205,7 +206,7 @@ export default function SettingsTab(): ReactElement {
               />
             </div>
           </SettingsItem>
-          <SettingsItem label="Outline color" id="edge-color-label">
+          <SettingsItem label="Outline" id="edge-color-label">
             <DropdownWithColorPicker
               htmlLabelId="edge-color-label"
               selected={edgeMode.toString()}
@@ -220,7 +221,7 @@ export default function SettingsTab(): ReactElement {
               presets={EDGE_COLOR_PRESETS}
             />
           </SettingsItem>
-          <SettingsItem label="Filtered object color" id="filtered-object-color-label">
+          <SettingsItem label="Filtered objects" id="filtered-object-color-label">
             <DropdownWithColorPicker
               htmlLabelId="filtered-object-color-label"
               selected={outOfRangeDrawSettings.mode.toString()}
@@ -236,7 +237,7 @@ export default function SettingsTab(): ReactElement {
               presets={DRAW_MODE_COLOR_PRESETS}
             />
           </SettingsItem>
-          <SettingsItem label="Outlier object color" id="outlier-object-color-label">
+          <SettingsItem label="Outliers" id="outlier-object-color-label">
             <DropdownWithColorPicker
               htmlLabelId="outlier-object-color-label"
               selected={outlierDrawSettings.mode.toString()}
@@ -265,7 +266,7 @@ export default function SettingsTab(): ReactElement {
           </SettingsItem>
           {showTrackPath && (
             <>
-              <SettingsItem label="Track path color" id="track-path-color-label">
+              <SettingsItem label="Color" id="track-path-color-label">
                 <DropdownWithColorPicker
                   selected={trackPathColorMode.toString()}
                   items={TRACK_MODE_ITEMS}
@@ -277,7 +278,7 @@ export default function SettingsTab(): ReactElement {
                   showColorPicker={trackPathColorMode === TrackPathColorMode.USE_CUSTOM_COLOR}
                 />
               </SettingsItem>
-              <SettingsItem label="Track path width">
+              <SettingsItem label="Width">
                 <div style={{ maxWidth: MAX_SLIDER_WIDTH, width: "100%" }}>
                   <LabeledSlider
                     type="value"
