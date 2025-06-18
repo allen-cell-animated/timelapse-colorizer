@@ -1,4 +1,4 @@
-import { Vector2 } from "three";
+import { Matrix4, Vector2 } from "three";
 
 import { ViewerStoreState } from "../state/slices";
 import { CanvasScaleInfo, FrameLoadResult, PixelIdInfo } from "./types";
@@ -121,4 +121,11 @@ export interface IRenderCanvas {
    * - If there is no segmentation present, returns `null`.
    */
   getIdAtPixel(x: number, y: number): PixelIdInfo | null;
+
+  /**
+   * Returns a Matrix4 that projects from a 3D coordinate (in frame
+   * pixels/volume voxels) to a 2D canvas pixel coordinate, where (0,0) is the
+   * top left corner of the canvas.
+   */
+  getScreenSpaceMatrix(): Matrix4;
 }

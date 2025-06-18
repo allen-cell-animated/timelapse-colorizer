@@ -13,7 +13,7 @@ import {
   VolumeLoaderContext,
   WorkerLoader,
 } from "@aics/vole-core";
-import { Color, Vector2, Vector3 } from "three";
+import { Color, Matrix4, Quaternion, Vector2, Vector3 } from "three";
 
 import { MAX_FEATURE_CATEGORIES } from "../constants";
 import {
@@ -429,5 +429,33 @@ export class ColorizeCanvas3D implements IRenderCanvas {
       return { segId, globalId };
     }
     return null;
+  }
+
+  public getScreenSpaceMatrix(): Matrix4 {
+    if (!this.volume) {
+      // Return an identity matrix if the volume is not loaded
+      return new Matrix4();
+    }
+
+    // 1. Normalize from volume voxel coordinates to world space. Also,
+    //    translate so that the center of the volume is at (0, 0, 0).
+    const volumeScale = new Vector3(1, 1, 1)
+      .multiply(this.volume.physicalPixelSize)
+      .divideScalar(this.volume.physicalScale);
+    const normalizeVoxelToWorld = new Matrix4().compose(new Vector3(-0.5, -0.5, -0.5), new Quaternion(), volumeScale);
+
+    // 2. Get the view projection matrix, which transforms from world space to
+    //    screen space in the [-1, 1] range.
+    const viewProjectionMatrix = this.view3d.getViewProjectionMatrix();
+
+    // 3. Scale the [-1, 1] range to canvas pixels, and move the origin to the
+    //    top left corner of the canvas.
+    const viewProjectionToScreen = new Matrix4().compose(
+      new Vector3(0.5 * this.canvasResolution.x, -0.5 * this.canvasResolution.y, 0), // Scale to screen
+      new Quaternion(), // No rotation
+      new Vector3(0.5 * this.canvasResolution.x, 0.5 * this.canvasResolution.y, 1) // Translate origin
+    );
+
+    return viewProjectionToScreen.multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);
   }
 }

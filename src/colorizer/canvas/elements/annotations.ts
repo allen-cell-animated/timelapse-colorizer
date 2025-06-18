@@ -1,4 +1,4 @@
-import { Vector2 } from "three";
+import { Matrix4, Vector2, Vector3 } from "three";
 
 import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 
@@ -12,6 +12,7 @@ export type AnnotationParams = BaseRenderParams & {
   rangeStartId: number | null;
 
   frameToCanvasCoordinates: Vector2;
+  centroidToCanvasMatrix: Matrix4;
   frame: number;
   panOffset: Vector2;
 };
@@ -51,31 +52,31 @@ export const defaultAnnotationStyle: AnnotationStyle = {
   maxTextCharacters: 20,
 };
 
-/** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
- * accounting for panning and zooming. For both, (0,0) is the top left corner.
- */
-function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationParams): Vector2 {
-  // Position is in pixel coordinates of the frame. Transform to relative frame coordinates,
-  // then to relative canvas coordinates, and finally into canvas pixel coordinates.
-  const frameResolution = params.dataset?.frameResolution;
-  if (!frameResolution) {
-    return new Vector2(0, 0);
-  }
-  pos = pos.clone();
-  pos.divide(frameResolution); // to relative frame coordinates
-  pos.sub(new Vector2(0.5, 0.5)); // Center (0,0) at center of frame
-  pos.add(params.panOffset.clone().multiply(new Vector2(1, -1))); // apply panning offset
-  pos.multiply(params.frameToCanvasCoordinates); // to relative canvas coordinates
-  pos.multiply(params.canvasSize); // to canvas pixel coordinates
-  pos.add(params.canvasSize.clone().multiplyScalar(0.5)); // Move origin to top left corner
-  return pos;
-}
+// /** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
+//  * accounting for panning and zooming. For both, (0,0) is the top left corner.
+//  */
+// function framePixelCoordsToCanvasPixelCoords(pos: Vector2, params: AnnotationParams): Vector2 {
+//   // Position is in pixel coordinates of the frame. Transform to relative frame coordinates,
+//   // then to relative canvas coordinates, and finally into canvas pixel coordinates.
+//   const frameResolution = params.dataset?.frameResolution;
+//   if (!frameResolution) {
+//     return new Vector2(0, 0);
+//   }
+//   pos = pos.clone();
+//   pos.divide(frameResolution); // to relative frame coordinates
+//   pos.sub(new Vector2(0.5, 0.5)); // Center (0,0) at center of frame
+//   pos.add(params.panOffset.clone().multiply(new Vector2(1, -1))); // apply panning offset
+//   pos.multiply(params.frameToCanvasCoordinates); // to relative canvas coordinates
+//   pos.multiply(params.canvasSize); // to canvas pixel coordinates
+//   pos.add(params.canvasSize.clone().multiplyScalar(0.5)); // Move origin to top left corner
+//   return pos;
+// }
 
 /**
  * For a given object ID, returns its centroid in canvas pixel coordinates if
  * it's visible in the current frame. Otherwise, returns null.
  */
-function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams): Vector2 | null {
+function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams): Vector3 | null {
   if (id === null || params.dataset === null || params.dataset.getTime(id) !== params.frame) {
     return null;
   }
@@ -83,7 +84,8 @@ function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams)
   if (!centroid) {
     return null;
   }
-  return framePixelCoordsToCanvasPixelCoords(new Vector2(centroid[0], centroid[1]), params);
+  const centroidVector = new Vector3(...centroid);
+  return centroidVector.applyMatrix4(params.centroidToCanvasMatrix);
 }
 
 function getMarkerScale(params: AnnotationParams, style: AnnotationStyle): number {
@@ -98,12 +100,14 @@ function drawRangeStartId(
   params: AnnotationParams,
   style: AnnotationStyle
 ): void {
-  const pos = getCanvasPixelCoordsFromId(params.rangeStartId, params);
-  if (pos === null) {
+  const pos3d = getCanvasPixelCoordsFromId(params.rangeStartId, params);
+  if (pos3d === null) {
     return;
   }
+  const pos = new Vector2(pos3d.x, pos3d.y);
   pos.add(origin);
   ctx.strokeStyle = style.borderColor;
+  // TODO: get marker scale from pos3d Z distance.
   const zoomScale = getMarkerScale(params, style);
   ctx.setLineDash([3, 2]);
   ctx.beginPath();
@@ -135,10 +139,11 @@ function drawAnnotationMarker(
   labelIdx: number[]
 ): void {
   const labelData = params.labelData[labelIdx[0]];
-  const pos = getCanvasPixelCoordsFromId(id, params);
-  if (pos === null) {
+  const pos3d = getCanvasPixelCoordsFromId(id, params);
+  if (pos3d === null) {
     return;
   }
+  const pos = new Vector2(pos3d.x, pos3d.y);
   pos.add(origin);
   ctx.strokeStyle = style.borderColor;
 

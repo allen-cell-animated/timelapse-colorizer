@@ -1,4 +1,4 @@
-import { Vector2 } from "three";
+import { Matrix4, Vector2 } from "three";
 
 import {
   defaultFooterStyle,
@@ -213,6 +213,11 @@ export default class CanvasOverlay implements IRenderCanvas {
     return this.innerCanvas.getIdAtPixel(x, y - headerHeight);
   }
 
+  // TODO: Should this be part of IRenderCanvas at all?
+  public getScreenSpaceMatrix(): Matrix4 {
+    return this.innerCanvas.getScreenSpaceMatrix();
+  }
+
   // Getters/Setters ////////////////////////////////
 
   public updateScaleBarStyle(style: Partial<ScaleBarStyle>): void {
@@ -373,6 +378,7 @@ export default class CanvasOverlay implements IRenderCanvas {
       // onscreen position.
       frameToCanvasCoordinates:
         scaleInfo.type === CanvasType.CANVAS_2D ? scaleInfo.frameToCanvasCoordinates : new Vector2(1, 1),
+      centroidToCanvasMatrix: this.innerCanvas.getScreenSpaceMatrix(),
       frame: this.currentFrame,
       panOffset: this.panOffset,
     };
