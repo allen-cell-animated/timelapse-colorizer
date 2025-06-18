@@ -245,6 +245,12 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.render(false);
   }
 
+  public resetCamera(): void {
+    if (this.innerCanvas instanceof ColorizeCanvas3D) {
+      this.innerCanvas.resetCamera();
+    }
+  }
+
   public setZoom(zoom: number): void {
     // TODO: Replace all these checks for specific instances with canvas type (2D/3D)
     if (this.innerCanvas instanceof ColorizeCanvas2D) {

@@ -314,8 +314,9 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
   useEffect(() => {
     canvasZoomInverse.current = 1.0;
     canvasPanOffset.current = new Vector2(0, 0);
-    // canv.setZoom(1.0);
-    // canv.setPan(0, 0);
+    canv.setZoom(1.0);
+    canv.setPan(0, 0);
+    canv.resetCamera();
   }, [collection]);
 
   /**
@@ -700,6 +701,7 @@ export default function CanvasWrapper(inputProps: CanvasWrapperProps): ReactElem
               canvasPanOffset.current = new Vector2(0, 0);
               canv.setZoom(1.0);
               canv.setPan(0, 0);
+              canv.resetCamera();
             }}
             type="link"
           >

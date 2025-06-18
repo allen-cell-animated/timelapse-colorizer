@@ -99,6 +99,11 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.canvasResolution.set(width, height);
   }
 
+  public resetCamera(): void {
+    console.log("Resetting camera");
+    this.view3d.resetCamera();
+  }
+
   private configureColorizeFeature(volume: Volume, channelIndex: number): void {
     if (!this.params) {
       return;
