@@ -237,11 +237,12 @@ vec4 getObjectColor(vec2 sUv, float opacity) {
   } else {
     color = getColorFromDrawMode(outOfRangeDrawMode, outOfRangeColor);
   }
-  if (color.a != 0.0 && isEdgePixel) {
+  float baseAlpha = color.a;
+  color.a *= opacity;
+  if (baseAlpha != 0.0 && isEdgePixel) {
     vec4 transparentEdgeColor = vec4(edgeColor, edgeColorAlpha);
     color = alphaBlend(transparentEdgeColor, color);
   }
-  color.a *= opacity;
   return color;
 }
 

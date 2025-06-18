@@ -192,7 +192,7 @@ export default function SettingsTab(): ReactElement {
 
       <CustomCollapse label="Objects">
         <SettingsContainer indentPx={SETTINGS_INDENT_PX} gapPx={SETTINGS_GAP_PX}>
-          <SettingsItem label="Outline color">
+          <SettingsItem label="Highlight color">
             <div>
               <ColorPicker
                 style={{ width: "min-content" }}
@@ -205,7 +205,7 @@ export default function SettingsTab(): ReactElement {
               />
             </div>
           </SettingsItem>
-          <SettingsItem label="Edge color" id="edge-color-label">
+          <SettingsItem label="Outline color" id="edge-color-label">
             <DropdownWithColorPicker
               htmlLabelId="edge-color-label"
               selected={edgeMode.toString()}
