@@ -381,6 +381,8 @@ export default class CanvasOverlay implements IRenderCanvas {
       centroidToCanvasMatrix: this.innerCanvas.getScreenSpaceMatrix(),
       frame: this.currentFrame,
       panOffset: this.panOffset,
+      // Do not provide lookup for 2D canvas
+      getIdAtPixel: this.innerCanvasType === CanvasType.CANVAS_3D ? this.innerCanvas.getIdAtPixel : null,
     };
     return getAnnotationRenderer(this.ctx, params, this.annotationStyle);
   }

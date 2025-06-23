@@ -101,6 +101,7 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     this.onLoadFrameCallback = () => {};
 
     this.getScreenSpaceMatrix = this.getScreenSpaceMatrix.bind(this);
+    this.getIdAtPixel = this.getIdAtPixel.bind(this);
   }
 
   private initLights(): void {
@@ -464,9 +465,9 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     );
 
     // 4. Invert Z axis
-    const setZToZoom = new Matrix4().makeTranslation(new Vector3(0, 0, 100));
+    const setZToZoom = new Matrix4().makeTranslation(new Vector3(0, 0, 59));
     setZToZoom.multiply(
-      new Matrix4().makeScale(1, 1, -100) // Higher Z-values should be smaller
+      new Matrix4().makeScale(1, 1, -60) // Higher Z-values should be smaller
     );
 
     return setZToZoom.multiply(viewProjectionToScreen).multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);

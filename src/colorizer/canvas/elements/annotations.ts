@@ -1,5 +1,7 @@
 import { Matrix4, Vector2, Vector3 } from "three";
+import { clamp, lerp } from "three/src/math/MathUtils";
 
+import { PixelIdInfo } from "../../types";
 import { BaseRenderParams, defaultFontStyle, EMPTY_RENDER_INFO, FontStyle, RenderInfo } from "../types";
 
 import { LabelData, LabelType } from "../../AnnotationData";
@@ -10,6 +12,7 @@ export type AnnotationParams = BaseRenderParams & {
   timeToLabelIds: Map<number, Record<number, number[]>>;
   selectedLabelIdx: number | null;
   rangeStartId: number | null;
+  getIdAtPixel: ((x: number, y: number) => PixelIdInfo | null) | null;
 
   frameToCanvasCoordinates: Vector2;
   centroidToCanvasMatrix: Matrix4;
@@ -34,6 +37,9 @@ export type AnnotationStyle = FontStyle & {
   textPaddingTopPx: number;
   textPaddingBottomPx: number;
   maxTextCharacters: number;
+  /** Opacity of markers for objects that are obscured by other objects. */
+  maxClipOpacity: number;
+  minClipOpacity: number;
 };
 
 export const defaultAnnotationStyle: AnnotationStyle = {
@@ -50,6 +56,8 @@ export const defaultAnnotationStyle: AnnotationStyle = {
   textPaddingTopPx: 2,
   textPaddingBottomPx: 2,
   maxTextCharacters: 20,
+  maxClipOpacity: 0.5,
+  minClipOpacity: 0.25,
 };
 
 // /** Transforms a 2D frame pixel coordinate into a 2D canvas pixel coordinate,
@@ -107,6 +115,7 @@ function drawRangeStartId(
   }
   const pos = new Vector2(pos3d.x, pos3d.y);
   pos.add(origin);
+
   ctx.strokeStyle = style.borderColor;
   // TODO: get marker scale from pos3d Z distance.
   const zoomScale = getMarkerScale(pos3d.z, style);
@@ -142,10 +151,23 @@ function drawAnnotationMarker(
 ): void {
   const labelData = params.labelData[labelIdx[0]];
   const pos3d = getCanvasPixelCoordsFromId(id, params);
+  console.log("Drawing annotation for ID", id, "at", pos3d);
   if (pos3d === null) {
     return;
   }
   const pos = new Vector2(pos3d.x, pos3d.y);
+
+  if (params.getIdAtPixel !== null) {
+    const pixelIdInfo = params.getIdAtPixel(pos.x, pos.y);
+    const isObscured = pixelIdInfo !== null && pixelIdInfo.globalId !== id;
+    // If the range start ID is visible, set the opacity based on whether it's
+    // obscured by other objects.
+    const t = clamp(1 - pos3d.z * 0.1, 0, 1);
+    ctx.globalAlpha = isObscured ? lerp(style.minClipOpacity, style.maxClipOpacity, t) : 1;
+  } else {
+    ctx.globalAlpha = 1;
+  }
+
   pos.add(origin);
   ctx.strokeStyle = style.borderColor;
 

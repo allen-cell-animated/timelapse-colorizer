@@ -290,6 +290,7 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
     this.render = this.render.bind(this);
     this.updateScaling = this.updateScaling.bind(this);
     this.setFrame = this.setFrame.bind(this);
+    this.getIdAtPixel = this.getIdAtPixel.bind(this);
   }
 
   private setUniform<U extends keyof ColorizeUniformTypes>(name: U, value: ColorizeUniformTypes[U]): void {
