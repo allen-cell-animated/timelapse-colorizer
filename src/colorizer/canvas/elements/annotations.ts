@@ -89,8 +89,8 @@ function getCanvasPixelCoordsFromId(id: number | null, params: AnnotationParams)
   return canvasPos;
 }
 
-function getMarkerScale(params: AnnotationParams, style: AnnotationStyle): number {
-  const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
+function getMarkerScale(zoomScale: number, style: AnnotationStyle): number {
+  // const zoomScale = Math.max(params.frameToCanvasCoordinates.x, params.frameToCanvasCoordinates.y);
   const dampenedZoomScale = zoomScale * style.scaleWithZoomPct + (1 - style.scaleWithZoomPct);
   return dampenedZoomScale;
 }
@@ -109,10 +109,11 @@ function drawRangeStartId(
   pos.add(origin);
   ctx.strokeStyle = style.borderColor;
   // TODO: get marker scale from pos3d Z distance.
-  const zoomScale = getMarkerScale(params, style);
+  const zoomScale = getMarkerScale(pos3d.z, style);
   ctx.setLineDash([3, 2]);
   ctx.beginPath();
-  ctx.arc(pos.x, pos.y, style.booleanMarkerRadiusPx * zoomScale, 0, 2 * Math.PI);
+  const radius = Math.max(style.booleanMarkerRadiusPx * zoomScale, 0);
+  ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.stroke();
   ctx.setLineDash([]);
@@ -150,8 +151,8 @@ function drawAnnotationMarker(
 
   // Scale markers by the zoom level.
   const isBooleanLabel = labelData.options.type === LabelType.BOOLEAN;
-  const dampenedZoomScale = getMarkerScale(params, style);
-  const scaledBooleanMarkerRadiusPx = style.booleanMarkerRadiusPx * dampenedZoomScale;
+  const dampenedZoomScale = getMarkerScale(pos3d.z, style);
+  const scaledBooleanMarkerRadiusPx = Math.max(0, style.booleanMarkerRadiusPx * dampenedZoomScale);
 
   // Draw an additional secondary marker behind the main one if there are multiple labels.
   if (labelIdx.length > 1) {

@@ -456,13 +456,19 @@ export class ColorizeCanvas3D implements IRenderCanvas {
     const viewProjectionMatrix = this.view3d.getViewProjectionMatrix();
 
     // 3. Scale the [-1, 1] range to canvas pixels, and move the origin to the
-    //    top left corner of the canvas.
+    //    top left corner of the canvas. Normalize the Z axis to the [0, 1] range.
     const viewProjectionToScreen = new Matrix4().compose(
-      new Vector3(0.5 * this.canvasResolution.x, 0.5 * this.canvasResolution.y, 0), // Translate origin
+      new Vector3(0.5 * this.canvasResolution.x, 0.5 * this.canvasResolution.y, 0.5), // Translate origin
       new Quaternion(0, 0, 0, 1),
       new Vector3(0.5 * this.canvasResolution.x, -0.5 * this.canvasResolution.y, 0.5) // Scale to screen
     );
 
-    return viewProjectionToScreen.multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);
+    // 4. Invert Z axis
+    const setZToZoom = new Matrix4().makeTranslation(new Vector3(0, 0, 100));
+    setZToZoom.multiply(
+      new Matrix4().makeScale(1, 1, -100) // Higher Z-values should be smaller
+    );
+
+    return setZToZoom.multiply(viewProjectionToScreen).multiply(viewProjectionMatrix).multiply(normalizeVoxelToWorld);
   }
 }

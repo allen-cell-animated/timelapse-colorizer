@@ -728,8 +728,14 @@ export default class ColorizeCanvas2D implements IRenderCanvas {
       new Vector3(frameToCanvasPxScale.x, frameToCanvasPxScale.y, 0) // Scale to canvas pixels
     );
 
+    // 4. Set Z distance using zoom factor.
+    const setZToZoom = new Matrix4().makeTranslation(0, 0, this.zoomMultiplier);
+
     // Combine all transformations into a single matrix
-    return normFrameCoordsToCanvasPixels.multiply(panningOffset).multiply(framePixelsToNormFrameCoords);
+    return setZToZoom
+      .multiply(normFrameCoordsToCanvasPixels)
+      .multiply(panningOffset)
+      .multiply(framePixelsToNormFrameCoords);
   }
 
   // RENDERING /////////////////////////////////////////////////////////////////////////////
