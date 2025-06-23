@@ -24,7 +24,7 @@ import {
   getAnnotationRenderer,
 } from "./canvas/elements/annotations";
 import { BaseRenderParams, RenderInfo } from "./canvas/types";
-import { getPixelRatio } from "./canvas/utils";
+import { getPixelRatio, toEven } from "./canvas/utils";
 import { CanvasScaleInfo, CanvasType, FrameLoadResult, PixelIdInfo } from "./types";
 import { hasPropertyChanged } from "./utils/data_utils";
 
@@ -202,9 +202,11 @@ export default class CanvasOverlay implements IRenderCanvas {
   }
 
   public setResolution(width: number, height: number): void {
-    this.innerCanvasSize.x = width;
-    this.innerCanvasSize.y = height;
-    this.innerCanvas.setResolution(width, height);
+    // Enforce even resolution because some video codecs only support even
+    // dimensions.
+    this.innerCanvasSize.x = toEven(width);
+    this.innerCanvasSize.y = toEven(height);
+    this.innerCanvas.setResolution(this.innerCanvasSize.x, this.innerCanvasSize.y);
     this.render();
   }
 
@@ -440,8 +442,8 @@ export default class CanvasOverlay implements IRenderCanvas {
 
     // Update canvas resolution + size.
     const devicePixelRatio = getPixelRatio();
-    const baseCanvasWidthPx = this.innerCanvasSize.x;
-    const baseCanvasHeightPx = this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y;
+    const baseCanvasWidthPx = toEven(this.innerCanvasSize.x);
+    const baseCanvasHeightPx = toEven(this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y);
 
     // We use devicePixelRatio to scale the canvas with browser zoom / high-DPI
     // displays so text + graphics are sharp.
@@ -494,9 +496,9 @@ export default class CanvasOverlay implements IRenderCanvas {
     this.footerSize = footerRenderer.sizePx;
 
     const devicePixelRatio = getPixelRatio();
-    const canvasWidth = Math.round(this.innerCanvasSize.x * devicePixelRatio);
-    const canvasHeight = Math.round(
-      (this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio
+    const canvasWidth = toEven(Math.round(this.innerCanvasSize.x * devicePixelRatio));
+    const canvasHeight = toEven(
+      Math.round((this.innerCanvasSize.y + this.headerSize.y + this.footerSize.y) * devicePixelRatio)
     );
     return [canvasWidth, canvasHeight];
   }
