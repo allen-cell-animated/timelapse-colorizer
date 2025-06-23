@@ -83,6 +83,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
               width: width,
               height: height,
             },
+            fastStart: "in-memory",
           });
           return;
         }

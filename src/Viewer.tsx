@@ -2,8 +2,8 @@ import {
   CaretRightOutlined,
   CheckCircleOutlined,
   EllipsisOutlined,
-  LinkOutlined,
   PauseOutlined,
+  ShareAltOutlined,
   StepBackwardFilled,
   StepForwardFilled,
 } from "@ant-design/icons";
@@ -717,8 +717,8 @@ function Viewer(): ReactElement {
               setIsRecording={setIsRecording}
             />
             <TextButton onClick={openCopyNotification}>
-              <LinkOutlined />
-              <p>Copy URL</p>
+              <ShareAltOutlined />
+              <p>Share</p>
             </TextButton>
           </FlexRowAlignCenter>
           <HelpDropdown />
